@@ -756,6 +756,7 @@ def build_trade_plan(
     decisions: ConsensusDecisions,
     interval_mask: np.ndarray,
     *,
+    size_multiplier: np.ndarray | None = None,
     per_position_stop_risk_fraction: float = 0.001,
     aggregate_stop_risk_fraction: float = 0.0015,
     maximum_symbol_notional_fraction: float = 1.0 / 3.0,
@@ -768,6 +769,11 @@ def build_trade_plan(
 
     mask = np.asarray(interval_mask, dtype=bool)
     shape = (payoff.timestamps, len(SYMBOLS))
+    multipliers = (
+        np.ones(shape, dtype=np.float64)
+        if size_multiplier is None
+        else np.asarray(size_multiplier, dtype=np.float64)
+    )
     numeric = np.asarray(
         [
             per_position_stop_risk_fraction,
@@ -783,6 +789,11 @@ def build_trade_plan(
         mask.shape != (payoff.timestamps,)
         or decisions.actions.shape != shape
         or decisions.score_bps.shape != shape
+        or multipliers.shape != shape
+        or not np.isfinite(multipliers).all()
+        or np.any(multipliers < 0.0)
+        or np.any(multipliers > 1.0)
+        or np.any((decisions.actions != 0) & (multipliers <= 0.0))
         or not np.isfinite(numeric).all()
         or np.any(numeric <= 0.0)
         or aggregate_stop_risk_fraction < per_position_stop_risk_fraction
@@ -829,7 +840,8 @@ def build_trade_plan(
             np.minimum(
                 maximum_symbol_notional_fraction,
                 per_position_stop_risk_fraction * 10_000.0 / stop,
-            ),
+            )
+            * multipliers[timestamp_index],
             0.0,
         )
         total_stop_risk = float(np.sum(raw_size * stop / 10_000.0))

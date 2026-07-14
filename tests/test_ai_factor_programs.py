@@ -8,8 +8,10 @@ import pytest
 from simple_ai_trading.ai_factor_programs import (
     apply_factor_transform,
     fit_factor_transform,
+    parse_action_conditioned_factor_response_ledger,
     parse_factor_response,
     parse_factor_response_ledger,
+    validate_action_conditioned_factor_program,
     validate_factor_program,
 )
 
@@ -24,6 +26,16 @@ def _mapping(name: str, expression: str) -> dict[str, str]:
         "mechanism": "Risk-adjusted momentum conditional on available liquidity.",
         "failure_mode": "Momentum can reverse during abrupt regime changes.",
         "expected_horizon": "one_hour",
+    }
+
+
+def _action_mapping(name: str, expression: str) -> dict[str, str]:
+    return {
+        **_mapping(name, expression),
+        "action_symmetry": (
+            "Positive values favor the candidate long row and, after the same "
+            "action-aligned transform, favor the candidate short row identically."
+        ),
     }
 
 
@@ -128,6 +140,44 @@ def test_factor_response_ledger_preserves_valid_siblings() -> None:
     assert [item.name for item in accepted] == ["valid_factor"]
     assert rejected[0]["name"] == "invalid_factor"
     assert "unknown feature" in str(rejected[0]["reason"])
+
+
+def test_action_conditioned_factor_requires_auditable_side_symmetry() -> None:
+    mapping = _action_mapping("aligned_momentum", "tanh(return_60m)")
+    program = validate_action_conditioned_factor_program(
+        mapping,
+        model="qwen3.5:9b",
+        feature_names=FEATURE_NAMES,
+    )
+    assert program.as_factor_program().program_sha256 == program.base_program_sha256
+    assert program.program_sha256 != program.base_program_sha256
+
+    mapping["action_symmetry"] = "Uses the same transform for either candidate side."
+    with pytest.raises(ValueError, match="both long and short"):
+        validate_action_conditioned_factor_program(
+            mapping,
+            model="qwen3.5:9b",
+            feature_names=FEATURE_NAMES,
+        )
+
+
+def test_action_conditioned_response_preserves_valid_siblings() -> None:
+    invalid = _action_mapping("future_factor", "future_return + 1.0")
+    accepted, rejected = parse_action_conditioned_factor_response_ledger(
+        json.dumps(
+            {
+                "factors": [
+                    _action_mapping("aligned_flow", "tanh(return_60m)"),
+                    invalid,
+                ]
+            }
+        ),
+        model="fin-r1:8b",
+        feature_names=FEATURE_NAMES,
+        maximum_factors=3,
+    )
+    assert [item.name for item in accepted] == ["aligned_flow"]
+    assert rejected[0]["name"] == "future_factor"
 
 
 def test_factor_transform_uses_training_bounds_and_deduplicates() -> None:

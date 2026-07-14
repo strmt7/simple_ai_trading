@@ -153,6 +153,13 @@ def test_consensus_and_replay_apply_market_and_portfolio_gates() -> None:
     assert plan.closed_trades == timestamps * len(SYMBOLS) - 1
     first_batch = plan.size_fraction[plan.decision_index == 0]
     assert np.sum(first_batch) <= (1.0 / 3.0) + 1e-12
+    reduced = build_trade_plan(
+        payoff,
+        decisions,
+        interval,
+        size_multiplier=np.where(decisions.actions != 0, 0.25, 0.0),
+    )
+    assert np.max(reduced.size_fraction) < np.max(plan.size_fraction)
     stress = replay_trade_plan(
         payoff,
         plan,
