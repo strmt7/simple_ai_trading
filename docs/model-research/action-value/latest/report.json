@@ -16,6 +16,21 @@
       "sha256": "713039d151796f7b253eb546179fad60d97d482c39e28b276b44cf72367af052"
     },
     {
+      "bytes": 5694,
+      "path": "charts/controller-attrition.svg",
+      "sha256": "f51bcf86431d0a53c8855b3a3ed3540e0f305c1b4eab9e1e0ecee1a9c129693c"
+    },
+    {
+      "bytes": 5825,
+      "path": "charts/controller-economics.svg",
+      "sha256": "d5cf27935fccddcc3278be0eac96845a33667905bacd1372d07b538cf813e509"
+    },
+    {
+      "bytes": 5391,
+      "path": "charts/controller-score-calibration.svg",
+      "sha256": "c96f90ca64e1bc65b55001ecf69b497db358edcafdcd0ee1b0bfccb74cb130ac"
+    },
+    {
       "bytes": 4692,
       "path": "charts/economics.svg",
       "sha256": "f48081a71d70dd1853855c136fc9da0bfbade9165514ba174abb3548182e638e"
@@ -34,6 +49,46 @@
       "bytes": 99569,
       "path": "charts/september-equity.svg",
       "sha256": "c7edf68a567bda75f62026e5b5ff01ff36200b409ef9c3078f08f9b5b680dd65"
+    },
+    {
+      "bytes": 88891,
+      "path": "controller-attrition.csv",
+      "sha256": "efb12ac6c3c367b07fd4cdde4a37a66154114933059398dd47bf0b3631e3f83a"
+    },
+    {
+      "bytes": 7212,
+      "path": "controller-diagnostic-report.json",
+      "sha256": "e476c085737c5f7fc7395a30040e23d077758b6e2dd0522402042dd15bef4299"
+    },
+    {
+      "bytes": 5967,
+      "path": "controller-economics.csv",
+      "sha256": "9eddeec53365b4569f3fcb7805f93cadf9cee8421911ba61640c229f62045002"
+    },
+    {
+      "bytes": 1117,
+      "path": "controller-overlap.csv",
+      "sha256": "fdf915be96537fc16eb421ed239d9739edb9bac9e5bed17d7255f3702174241e"
+    },
+    {
+      "bytes": 10662,
+      "path": "controller-score-calibration.csv",
+      "sha256": "6864d97390eba29b093cdfafe01d84b548e669923878b7b2323841842f607b70"
+    },
+    {
+      "bytes": 6517,
+      "path": "controller-symbol-economics.csv",
+      "sha256": "fa88e6a1fc1dc77b0244e7cba70b7e8746ac28083bf3019221d105647593654c"
+    },
+    {
+      "bytes": 65135,
+      "path": "controller-trades.csv",
+      "sha256": "2f5230282fb5f8ee590e0213596e834d2518a05de2129b3e85e990c2e11cabc4"
+    },
+    {
+      "bytes": 5604,
+      "path": "controller-vote-patterns.csv",
+      "sha256": "75ebb60569f3b0a17287ad08f6668f2fa88614ad677887ba0684e447503c1878"
     },
     {
       "bytes": 987809,
@@ -71,9 +126,9 @@
       "sha256": "aaaa93ecb7222b810c9220b5673ff37d9f501257ffb449771c3ea835af0473f5"
     },
     {
-      "bytes": 2281,
+      "bytes": 3441,
       "path": "README.md",
-      "sha256": "259e7beb28cdf3b313973aa96f8f23480d9052e4f6006ab83ed46c46673c0dfd"
+      "sha256": "ca2001961f4382a26a5b15586253eb70d16e119bd020a605f509106a084cab53"
     },
     {
       "bytes": 50810,
@@ -103,12 +158,14 @@
     "trading_authority": false,
     "untouched_data_expansion_authorized": false
   },
-  "publication_canonical_sha256": "146e7c976c045c8621cd6ba84f9851e06f1ac81196964267103c5e8aa03c5881",
+  "publication_canonical_sha256": "4e414e31ac8e047b5ef5100f108d4483cf9f0a11428c66e39c8505cd59c405ae",
   "published_at_utc": "2026-07-14T00:43:27.560257+00:00",
   "publisher_path": "tools/publish_round55_bounded_alpha.py",
   "result": {
     "accepted_ai_factor_programs": 7,
     "ai_uplift_gate_passed": false,
+    "diagnostic_control_reproduced_exactly": true,
+    "diagnostic_controller_rules": 3,
     "forbidden_existing_rows_loaded": false,
     "model_artifacts": 18,
     "passed_treatments": 0,
@@ -121,6 +178,10 @@
     "ai_ledger_sha256": "c2a9044082eb04b057b84a506486b7d25be02103fa298905a46a16453d81de40",
     "binding_path": "docs/model-research/action-value/round-055-bounded-alpha-execution-binding.json",
     "binding_sha256": "731c0216b53226376bb465c3fce0d3d32cb6bcecf063d98e3cd2ac9e9c9315ed",
+    "controller_diagnostic_canonical_sha256": "f9e422d1c67e90145b2a6cc465f3eaa6661a5f24686dd5adf5709c4f14a9b630",
+    "controller_diagnostic_design_sha256": "7f875029049b987338666b7ab41c3204650e7c3df36cf20f885be8eb8d953f42",
+    "controller_diagnostic_file_sha256": "e476c085737c5f7fc7395a30040e23d077758b6e2dd0522402042dd15bef4299",
+    "controller_diagnostic_implementation_commit": "60d65330a845128ad454b00de45a3eec4f9cd426",
     "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
     "design_path": "docs/model-research/action-value/round-055-bounded-alpha-lightgbm-ai-design.json",
     "design_sha256": "e6746db669ffc2633f197cf61dd73b369c2889381900f4e73a375192922f2827",
