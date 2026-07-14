@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
+from functools import partial
 import hashlib
 import hmac
 import json
@@ -1338,32 +1340,60 @@ class PolymarketPublicRecorder:
         store: PolymarketEvidenceStore,
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
     ) -> None:
+        loop = asyncio.get_running_loop()
+        executor = ThreadPoolExecutor(
+            max_workers=1,
+            thread_name_prefix="polymarket-evidence-writer",
+        )
+        writer_store: PolymarketEvidenceStore | None = None
+
+        def open_writer_store() -> PolymarketEvidenceStore:
+            opened = PolymarketEvidenceStore(
+                store.path,
+                memory_limit=store.memory_limit,
+                threads=store.threads,
+            )
+            opened.connect()
+            return opened
+
+        async def invoke(function: Callable[..., object], *args: object) -> object:
+            return await loop.run_in_executor(
+                executor,
+                partial(function, *args),
+            )
+
         pending_messages: list[RawStreamMessage] = []
-        while True:
-            item = await output.get()
-            if item is None:
+        try:
+            writer_store = await loop.run_in_executor(executor, open_writer_store)
+            while True:
+                item = await output.get()
+                if item is None:
+                    if pending_messages:
+                        await invoke(
+                            writer_store.append_messages,
+                            run_id,
+                            tuple(pending_messages),
+                        )
+                    return
+                if isinstance(item, RawStreamMessage):
+                    pending_messages.append(item)
+                    if len(pending_messages) < 256 and not output.empty():
+                        continue
                 if pending_messages:
-                    await asyncio.to_thread(
-                        store.append_messages,
+                    await invoke(
+                        writer_store.append_messages,
                         run_id,
                         tuple(pending_messages),
                     )
-                return
-            if isinstance(item, RawStreamMessage):
-                pending_messages.append(item)
-                if len(pending_messages) < 256 and not output.empty():
-                    continue
-            if pending_messages:
-                await asyncio.to_thread(
-                    store.append_messages,
-                    run_id,
-                    tuple(pending_messages),
-                )
-                pending_messages = []
-            if isinstance(item, StreamGap):
-                await asyncio.to_thread(store.record_gap, run_id, item)
-            elif isinstance(item, MarketEvidence):
-                await asyncio.to_thread(store.record_market_evidence, run_id, item)
+                    pending_messages = []
+                if isinstance(item, StreamGap):
+                    await invoke(writer_store.record_gap, run_id, item)
+                elif isinstance(item, MarketEvidence):
+                    await invoke(writer_store.record_market_evidence, run_id, item)
+        finally:
+            if writer_store is not None:
+                await loop.run_in_executor(executor, writer_store.close)
+            executor.shutdown(wait=True, cancel_futures=True)
 
     async def _clob_stream(
         self,
@@ -1382,8 +1412,7 @@ class PolymarketPublicRecorder:
                     CLOB_MARKET_WEBSOCKET,
                     open_timeout=10,
                     close_timeout=3,
-                    ping_interval=20,
-                    ping_timeout=20,
+                    ping_interval=None,
                     max_size=_MAX_RAW_MESSAGE_BYTES,
                     max_queue=1024,
                 ) as websocket:
@@ -1407,17 +1436,19 @@ class PolymarketPublicRecorder:
                             changed = asyncio.create_task(self.registry.changed.wait())
                             stopping = asyncio.create_task(stop.wait())
                             transient = (receive, changed, stopping)
-                            done, _ = await asyncio.wait(
-                                {*transient, heartbeat_task},
-                                return_when=asyncio.FIRST_COMPLETED,
-                            )
-                            for task in transient:
-                                if task not in done:
-                                    task.cancel()
-                            await asyncio.gather(
-                                *(task for task in transient if task not in done),
-                                return_exceptions=True,
-                            )
+                            try:
+                                done, _ = await asyncio.wait(
+                                    {*transient, heartbeat_task},
+                                    return_when=asyncio.FIRST_COMPLETED,
+                                )
+                            finally:
+                                for task in transient:
+                                    if not task.done():
+                                        task.cancel()
+                                await asyncio.gather(
+                                    *transient,
+                                    return_exceptions=True,
+                                )
                             if heartbeat_task in done:
                                 heartbeat_task.result()
                                 if stop.is_set():
@@ -1598,17 +1629,19 @@ class PolymarketPublicRecorder:
                             watched: set[asyncio.Task[object]] = set(transient)
                             if heartbeat_task is not None:
                                 watched.add(heartbeat_task)
-                            done, _ = await asyncio.wait(
-                                watched,
-                                return_when=asyncio.FIRST_COMPLETED,
-                            )
-                            for task in transient:
-                                if task not in done:
-                                    task.cancel()
-                            await asyncio.gather(
-                                *(task for task in transient if task not in done),
-                                return_exceptions=True,
-                            )
+                            try:
+                                done, _ = await asyncio.wait(
+                                    watched,
+                                    return_when=asyncio.FIRST_COMPLETED,
+                                )
+                            finally:
+                                for task in transient:
+                                    if not task.done():
+                                        task.cancel()
+                                await asyncio.gather(
+                                    *transient,
+                                    return_exceptions=True,
+                                )
                             if heartbeat_task is not None and heartbeat_task in done:
                                 heartbeat_task.result()
                                 if stop.is_set():
