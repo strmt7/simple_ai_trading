@@ -138,14 +138,41 @@ def run(arguments: argparse.Namespace) -> int:
         raise ValueError("Round 55 source certificate identity differs")
     ai_report = _read_object(arguments.ai_report.resolve(), "Round 55 AI report")
     ai_ledger = _read_object(arguments.ai_ledger.resolve(), "Round 55 AI ledger")
+    ai_implementation_commit = str(ai_report.get("implementation_commit", ""))
     if (
         ai_report.get("schema_version") != AI_REPORT_SCHEMA
         or ai_report.get("design_sha256") != design_sha
-        or ai_report.get("implementation_commit") != implementation_commit
+        or not ai_implementation_commit
         or ai_ledger.get("schema_version") != AI_LEDGER_SCHEMA
         or ai_ledger.get("design_sha256") != design_sha
     ):
         raise ValueError("Round 55 AI evidence is not bound to this implementation")
+    if subprocess.run(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "merge-base",
+            "--is-ancestor",
+            ai_implementation_commit,
+            implementation_commit,
+        ],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode:
+        raise ValueError("Round 55 AI evidence commit is not an ancestor")
+    ai_blobs = ai_report.get("implementation_blobs")
+    if not isinstance(ai_blobs, dict) or not ai_blobs:
+        raise ValueError("Round 55 AI implementation blobs are absent")
+    for source_path, expected_oid in ai_blobs.items():
+        if (
+            _git("rev-parse", f"{ai_implementation_commit}:{source_path}")
+            != str(expected_oid)
+            or _git("rev-parse", f"{implementation_commit}:{source_path}")
+            != str(expected_oid)
+        ):
+            raise ValueError(f"Round 55 AI implementation blob changed: {source_path}")
     payload: dict[str, object] = {
         "schema_version": BINDING_SCHEMA,
         "round": ROUND,
