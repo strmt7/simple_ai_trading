@@ -7,6 +7,7 @@ import pytest
 
 from simple_ai_trading.paper_execution import (
     AggressiveTradePrint,
+    BinancePaperExecutionAdapter,
     BinanceBpsFeeModel,
     BookLevel,
     PAPER_EXECUTION_SCHEMA_VERSION,
@@ -16,8 +17,11 @@ from simple_ai_trading.paper_execution import (
     PaperOrderTransition,
     PassiveQueueState,
     PolymarketFeeModel,
+    PolymarketPaperExecutionAdapter,
     apply_passive_trade_print,
     assert_shared_venue_execution_contract,
+    binance_book_ticker_snapshot,
+    paper_intent_id,
     simulate_aggressive_order,
 )
 
@@ -269,3 +273,277 @@ def test_venue_adapters_must_publish_the_shared_contract_identity() -> None:
     assert_shared_venue_execution_contract((Adapter(), Adapter()))
     with pytest.raises(ValueError, match="shared paper execution"):
         assert_shared_venue_execution_contract((object(),))
+
+
+def test_shared_adapter_derives_inventory_and_keeps_partial_close_blocking() -> None:
+    connection = duckdb.connect(":memory:")
+    journal = PaperOrderJournal(connection)
+    adapter = BinancePaperExecutionAdapter(
+        journal,
+        market_type="futures",
+        maker_fee_bps=Decimal("10"),
+        taker_fee_bps=Decimal("10"),
+    )
+    open_id = paper_intent_id("binance-futures", "position-1", "open")
+    opening = PaperOrderIntent(
+        intent_id=open_id,
+        venue="binance-futures",
+        market_id="BTCUSDT",
+        asset_id="BTCUSDT",
+        symbol="BTCUSDT",
+        outcome="LONG",
+        side="BUY",
+        order_type="FAK",
+        limit_price=Decimal("101"),
+        quantity=Decimal("2"),
+        created_at_ms=1_000,
+        expires_at_ms=5_000,
+    )
+    open_book = binance_book_ticker_snapshot(
+        {
+            "symbol": "BTCUSDT",
+            "bidPrice": "99",
+            "bidQty": "4",
+            "askPrice": "100",
+            "askQty": "2",
+        },
+        market_type="futures",
+        symbol="BTCUSDT",
+        received_wall_ms=1_700,
+        received_monotonic_ns=10,
+    )
+    opened = adapter.execute_aggressive(
+        opening,
+        open_book,
+        execution_time_ms=1_800,
+        submission_latency_ms=750,
+        maximum_book_age_ms=500,
+    )
+
+    first_close = PaperOrderIntent(
+        intent_id=paper_intent_id("binance-futures", "position-1", "close", attempt=1),
+        venue="binance-futures",
+        market_id="BTCUSDT",
+        asset_id="BTCUSDT",
+        symbol="BTCUSDT",
+        outcome="LONG",
+        side="SELL",
+        order_type="FAK",
+        limit_price=Decimal("98"),
+        quantity=Decimal("2"),
+        created_at_ms=2_000,
+        expires_at_ms=5_000,
+        parent_inventory_id=open_id,
+    )
+    partial_book = binance_book_ticker_snapshot(
+        {
+            "symbol": "BTCUSDT",
+            "bidPrice": "99",
+            "bidQty": "1",
+            "askPrice": "100",
+            "askQty": "5",
+        },
+        market_type="futures",
+        symbol="BTCUSDT",
+        received_wall_ms=2_700,
+        received_monotonic_ns=20,
+    )
+    partial = adapter.execute_aggressive(
+        first_close,
+        partial_book,
+        execution_time_ms=2_800,
+        submission_latency_ms=750,
+        maximum_book_age_ms=500,
+        closing_position=True,
+    )
+    partial_report = journal.reconcile("binance-futures")
+
+    assert opened.state == "FILLED"
+    assert partial.state == "CLOSE_PENDING"
+    assert journal.current(first_close.intent_id).terminal is False
+    assert partial_report.can_open is False
+    assert partial_report.can_close is True
+    assert partial_report.inventory[0].remaining_quantity == Decimal("1")
+    assert partial_report.blocking_intent_ids == (first_close.intent_id,)
+
+    second_close = PaperOrderIntent(
+        **{
+            **first_close.__dict__,
+            "intent_id": paper_intent_id(
+                "binance-futures", "position-1", "close", attempt=2
+            ),
+            "quantity": Decimal("1"),
+            "created_at_ms": 3_000,
+            "expires_at_ms": 6_000,
+        }
+    )
+    final_book = binance_book_ticker_snapshot(
+        {
+            "symbol": "BTCUSDT",
+            "bidPrice": "98.5",
+            "bidQty": "1",
+            "askPrice": "99",
+            "askQty": "5",
+            "E": 3_700,
+        },
+        market_type="futures",
+        symbol="BTCUSDT",
+        received_wall_ms=3_700,
+        received_monotonic_ns=30,
+    )
+    final = adapter.execute_aggressive(
+        second_close,
+        final_book,
+        execution_time_ms=3_800,
+        submission_latency_ms=750,
+        maximum_book_age_ms=500,
+        closing_position=True,
+    )
+    final_report = journal.reconcile("binance-futures")
+
+    assert final.state == "FILLED"
+    assert final_report.ok is True
+    assert final_report.inventory[0].remaining_quantity == 0
+    assert final_report.blocking_intent_ids == ()
+    assert final_report.can_open is True
+    assert journal.integrity_errors() == ()
+
+
+def test_adapters_reject_external_inventory_naked_shorts_and_terminal_replay() -> None:
+    connection = duckdb.connect(":memory:")
+    journal = PaperOrderJournal(connection)
+    binance = BinancePaperExecutionAdapter(
+        journal,
+        market_type="spot",
+        maker_fee_bps=Decimal("10"),
+        taker_fee_bps=Decimal("10"),
+    )
+    book = binance_book_ticker_snapshot(
+        {
+            "s": "BTCUSDT",
+            "bidPrice": "99",
+            "bidQty": "1",
+            "askPrice": "100",
+            "askQty": "1",
+        },
+        market_type="spot",
+        symbol="BTCUSDT",
+        received_wall_ms=1_700,
+        received_monotonic_ns=1,
+    )
+    naked_short = PaperOrderIntent(
+        intent_id="spot-short",
+        venue="binance-spot",
+        market_id="BTCUSDT",
+        asset_id="BTCUSDT",
+        symbol="BTCUSDT",
+        outcome="SHORT",
+        side="SELL",
+        order_type="FAK",
+        limit_price=Decimal("99"),
+        quantity=Decimal("1"),
+        created_at_ms=1_000,
+        expires_at_ms=5_000,
+    )
+    with pytest.raises(ValueError, match="naked short"):
+        binance.execute_aggressive(
+            naked_short,
+            book,
+            execution_time_ms=1_800,
+            submission_latency_ms=750,
+            maximum_book_age_ms=500,
+        )
+    with pytest.raises(KeyError, match="unknown paper intent"):
+        journal.current("spot-short")
+
+    polymarket = PolymarketPaperExecutionAdapter(
+        journal,
+        fee=PolymarketFeeModel(True, Decimal("0.07"), 1, True),
+    )
+    polymarket_sell = _intent(intent_id="poly-short", side="SELL")
+    with pytest.raises(ValueError, match="naked token shorts"):
+        polymarket.execute_aggressive(
+            polymarket_sell,
+            _book(asks=(), bids=(BookLevel(Decimal("0.5"), Decimal("10")),)),
+            execution_time_ms=1_800,
+            submission_latency_ms=750,
+            maximum_book_age_ms=500,
+        )
+
+    opening = PaperOrderIntent(
+        **{
+            **naked_short.__dict__,
+            "intent_id": "spot-open",
+            "outcome": "LONG",
+            "side": "BUY",
+            "limit_price": Decimal("101"),
+        }
+    )
+    binance.execute_aggressive(
+        opening,
+        book,
+        execution_time_ms=1_800,
+        submission_latency_ms=750,
+        maximum_book_age_ms=500,
+    )
+    with pytest.raises(ValueError, match="already active or resolved"):
+        binance.execute_aggressive(
+            opening,
+            book,
+            execution_time_ms=1_800,
+            submission_latency_ms=750,
+            maximum_book_age_ms=500,
+        )
+    assert journal.reconcile().inventory[0].remaining_quantity == Decimal("1")
+
+
+def test_close_parent_is_verified_before_close_intent_is_recorded() -> None:
+    connection = duckdb.connect(":memory:")
+    journal = PaperOrderJournal(connection)
+    adapter = BinancePaperExecutionAdapter(
+        journal,
+        market_type="futures",
+        maker_fee_bps=Decimal("0"),
+        taker_fee_bps=Decimal("0"),
+    )
+    close = PaperOrderIntent(
+        intent_id="external-close",
+        venue="binance-futures",
+        market_id="BTCUSDT",
+        asset_id="BTCUSDT",
+        symbol="BTCUSDT",
+        outcome="LONG",
+        side="SELL",
+        order_type="FAK",
+        limit_price=Decimal("90"),
+        quantity=Decimal("1"),
+        created_at_ms=1_000,
+        expires_at_ms=5_000,
+        parent_inventory_id="not-owned",
+    )
+    book = binance_book_ticker_snapshot(
+        {
+            "symbol": "BTCUSDT",
+            "bidPrice": "99",
+            "bidQty": "1",
+            "askPrice": "100",
+            "askQty": "1",
+        },
+        market_type="futures",
+        symbol="BTCUSDT",
+        received_wall_ms=1_700,
+        received_monotonic_ns=1,
+    )
+
+    with pytest.raises(KeyError, match="unknown paper intent"):
+        adapter.execute_aggressive(
+            close,
+            book,
+            execution_time_ms=1_800,
+            submission_latency_ms=750,
+            maximum_book_age_ms=500,
+            closing_position=True,
+        )
+    assert (
+        connection.execute("SELECT count(*) FROM paper_order_intent").fetchone()[0] == 0
+    )

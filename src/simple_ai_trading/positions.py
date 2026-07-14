@@ -69,6 +69,8 @@ class OpenPosition:
     open_client_order_id: str = ""
     open_exchange_order_id: str = ""
     exchange_status: str = "local"
+    paper_open_intent_id: str = ""
+    entry_fees: float = 0.0
 
     def unrealized_pnl(self, mark_price: float) -> float:
         if self.side == "LONG":
@@ -110,6 +112,8 @@ class ClosedTrade:
     close_client_order_id: str = ""
     close_exchange_order_id: str = ""
     exchange_status: str = "local"
+    paper_open_intent_id: str = ""
+    paper_close_intent_id: str = ""
 
 
 _OPEN_REQUIRED_FIELDS = frozenset({
@@ -146,10 +150,12 @@ _OPEN_OPTIONAL_TEXT_FIELDS = frozenset({
     "open_client_order_id",
     "open_exchange_order_id",
     "exchange_status",
+    "paper_open_intent_id",
 })
 _OPEN_REQUIRED_FINITE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
-_OPEN_OPTIONAL_FINITE_FIELDS = frozenset({"stop_loss_pct", "take_profit_pct"})
+_OPEN_OPTIONAL_FINITE_FIELDS = frozenset({"stop_loss_pct", "take_profit_pct", "entry_fees"})
 _OPEN_POSITIVE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
+_OPEN_NONNEGATIVE_FIELDS = frozenset({"entry_fees"})
 _OPEN_MARKET_TYPES = frozenset({"spot", "futures"})
 _OPEN_SIDES = frozenset({"LONG", "SHORT"})
 
@@ -279,6 +285,10 @@ class PositionsStore:
             qty=remaining_qty,
             notional=max(0.0, remaining_qty * float(position.entry_price)),
             exchange_status="PARTIALLY_FILLED",
+            entry_fees=max(
+                0.0,
+                float(position.entry_fees) * (remaining_qty / max(open_qty, 1e-18)),
+            ),
         )
         opens = [p for p in self.load_open() if p.id != position.id]
         opens.append(remaining)
@@ -380,6 +390,8 @@ class PositionsStore:
                 continue
             if name in _OPEN_POSITIVE_FIELDS and float(value) <= 0.0:
                 errors.append(f"open_positions_entry_{index}_non_positive_number={name}")
+            if name in _OPEN_NONNEGATIVE_FIELDS and float(value) < 0.0:
+                errors.append(f"open_positions_entry_{index}_negative_number={name}")
 
         opened_at_ms = entry.get("opened_at_ms")
         if (

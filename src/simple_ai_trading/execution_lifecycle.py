@@ -11,13 +11,25 @@ integrity failures still fail closed.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Mapping
+from typing import Mapping, Protocol
 
 from .api_budget import ApiBudgetReport, api_budget_startup_block_reason
 from .positions import OpenPosition, PositionsStore, bot_ownership_rejection_reason
 from .reconciliation import ReconciliationReport
 from .risk_controls import RiskPolicyReport, build_risk_policy_report
 from .types import RuntimeConfig, StrategyConfig
+
+
+class PaperReconciliation(Protocol):
+    """Venue-neutral paper reconciliation capability contract."""
+
+    venue: str
+
+    @property
+    def can_open(self) -> bool: ...
+
+    @property
+    def can_close(self) -> bool: ...
 
 
 @dataclass(frozen=True)
@@ -126,6 +138,20 @@ def _api_budget_reason(report: ApiBudgetReport | Mapping[str, object] | None) ->
     return api_budget_startup_block_reason(report, max_used_ratio=0.80)
 
 
+def _paper_reconciliation_detail(report: PaperReconciliation) -> str:
+    position_errors = tuple(getattr(report, "position_errors", ()))
+    journal = getattr(report, "journal", report)
+    blocking = tuple(getattr(journal, "blocking_intent_ids", ()))
+    integrity = tuple(getattr(journal, "integrity_errors", ()))
+    ownership = tuple(getattr(journal, "ownership_errors", ()))
+    return (
+        f"venue={report.venue} can_open={report.can_open} "
+        f"can_close={report.can_close} blocking={len(blocking)} "
+        f"position_errors={len(position_errors)} integrity_errors={len(integrity)} "
+        f"ownership_errors={len(ownership)}"
+    )
+
+
 def build_execution_lifecycle_plan(
     runtime: RuntimeConfig,
     strategy: StrategyConfig,
@@ -136,7 +162,9 @@ def build_execution_lifecycle_plan(
     reconciliation: ReconciliationReport | None = None,
     risk_report: RiskPolicyReport | None = None,
     api_budget_report: ApiBudgetReport | Mapping[str, object] | None = None,
+    paper_reconciliation: PaperReconciliation | None = None,
     require_reconciliation: bool = True,
+    require_paper_reconciliation: bool = False,
     require_api_budget_headroom: bool = True,
 ) -> ExecutionLifecyclePlan:
     """Return the fail-closed order lifecycle plan for the current state."""
@@ -167,6 +195,29 @@ def build_execution_lifecycle_plan(
 
     if dry_run:
         checks.append(_check("ok", "order mode", "paper/dry-run"))
+        if require_paper_reconciliation:
+            if paper_reconciliation is None:
+                checks.append(
+                    _check(
+                        "block",
+                        "paper reconciliation",
+                        "missing durable paper ownership reconciliation",
+                        blocks_open=True,
+                        blocks_close=True,
+                    )
+                )
+            else:
+                blocks_open = not paper_reconciliation.can_open
+                blocks_close = not paper_reconciliation.can_close
+                checks.append(
+                    _check(
+                        "block" if blocks_open or blocks_close else "ok",
+                        "paper reconciliation",
+                        _paper_reconciliation_detail(paper_reconciliation),
+                        blocks_open=blocks_open,
+                        blocks_close=blocks_close,
+                    )
+                )
     else:
         safe_endpoint = bool(runtime.testnet or getattr(runtime, "demo", False))
         checks.append(
@@ -178,7 +229,10 @@ def build_execution_lifecycle_plan(
                 blocks_close=not safe_endpoint,
             )
         )
-        has_credentials = bool(str(runtime.api_key or "").strip() and str(runtime.api_secret or "").strip())
+        has_credentials = bool(
+            str(runtime.api_key or "").strip()
+            and str(runtime.api_secret or "").strip()
+        )
         checks.append(
             _check(
                 "ok" if has_credentials else "block",
@@ -186,6 +240,19 @@ def build_execution_lifecycle_plan(
                 "configured" if has_credentials else "missing API key/secret",
                 blocks_open=not has_credentials,
                 blocks_close=not has_credentials,
+            )
+        )
+
+    incompatible_positions = live_positions if dry_run else paper_positions
+    if incompatible_positions:
+        incompatible_mode = "live" if dry_run else "paper"
+        checks.append(
+            _check(
+                "block",
+                "mode isolation",
+                f"{incompatible_mode}_positions_present={len(incompatible_positions)}",
+                blocks_open=True,
+                blocks_close=True,
             )
         )
 
@@ -345,6 +412,7 @@ def render_execution_lifecycle_plan(plan: ExecutionLifecyclePlan) -> str:
 __all__ = [
     "ExecutionLifecyclePlan",
     "LifecycleCheck",
+    "PaperReconciliation",
     "build_execution_lifecycle_plan",
     "render_execution_lifecycle_plan",
 ]

@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from simple_ai_trading.api import BinanceAPIError
+from simple_ai_trading.binance_paper import BinancePaperBroker
 from simple_ai_trading.autonomous import (
     AutonomousConfig,
     AutonomousControl,
@@ -66,6 +67,16 @@ class FakeClient:
 
     def get_symbol_price(self, symbol: str):
         return (float(self._price), 0)
+
+    def get_book_ticker(self, symbol: str):
+        spread = max(0.01, abs(float(self._price)) * 0.0001)
+        return {
+            "symbol": symbol,
+            "bidPrice": str(float(self._price) - spread),
+            "bidQty": "1000000",
+            "askPrice": str(float(self._price) + spread),
+            "askQty": "1000000",
+        }
 
     def place_order(
         self,
@@ -379,6 +390,29 @@ def test_evaluate_auto_close_no_close_path(tmp_path: Path) -> None:
     assert reason == ""
 
 
+def _stage_paper_position(
+    cfg: AutonomousConfig,
+    client: FakeClient,
+    position: OpenPosition,
+    *,
+    taker_fee_bps: float = 10.0,
+) -> OpenPosition:
+    journal_path = cfg.paper_journal_path or Path(cfg.positions_root) / "paper_execution.duckdb"
+    with BinancePaperBroker(
+        journal_path,
+        client,  # type: ignore[arg-type]
+        market_type=position.market_type,
+        taker_fee_bps=taker_fee_bps,
+    ) as broker:
+        opened, result = broker.open_position(position)
+        assert opened is not None
+        assert result.state == "FILLED"
+        store = PositionsStore(root=cfg.positions_root)
+        store.record_open(opened)
+        assert broker.reconcile_positions(store).ok is True
+    return opened
+
+
 def test_evaluate_auto_close_uses_model_time_barrier_and_reverse_signal() -> None:
     pos = replace(_make_position("LONG", entry=100.0), opened_at_ms=1_000)
     strategy = StrategyConfig(
@@ -675,14 +709,16 @@ def test_run_loop_operator_stop_closes_open_positions(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=None)
     control_path = tmp_path / "state.json"
     store = PositionsStore(root=cfg.positions_root)
-    store.record_open(_make_position("LONG", entry=100.0))
+    client = FakeClient()
+    _stage_paper_position(cfg, client, _make_position("LONG", entry=100.0))
 
     def dec(_c, _r, _s, _o):
+        client._price = 123.0
         AutonomousControl(path=control_path).write(STATE_STOPPING)
         return Decision(side="FLAT", confidence=0.0, mark_price=123.0)
 
     result = run_loop(
-        FakeClient(),
+        client,
         _runtime(),
         replace(_strategy(), take_profit_pct=10.0, stop_loss_pct=10.0),
         cfg,
@@ -695,19 +731,41 @@ def test_run_loop_operator_stop_closes_open_positions(tmp_path: Path) -> None:
     assert result.closed_trades == 1
     assert store.load_open() == []
     ledger = store.load_ledger()
-    assert ledger[-1].exit_price == 123.0
+    assert ledger[-1].exit_price == pytest.approx(122.9877)
     assert ledger[-1].reason == "operator-stop"
 
 
-def test_close_all_open_positions_falls_back_to_entry_price(tmp_path: Path) -> None:
+def test_close_all_open_positions_without_broker_preserves_position(tmp_path: Path) -> None:
     store = PositionsStore(root=tmp_path / "positions")
-    store.record_open(_make_position("SHORT", entry=75.0))
+    position = _make_position("SHORT", entry=75.0)
+    store.record_open(position)
 
-    assert close_all_open_positions(store, None, "manual-stop", clock=lambda: 1.0) == 1
-    assert store.load_open() == []
-    trade = store.load_ledger()[0]
-    assert trade.exit_price == 75.0
-    assert trade.reason == "manual-stop"
+    assert close_all_open_positions(store, None, "manual-stop", clock=lambda: 1.0) == 0
+    assert store.load_open() == [position]
+    assert store.load_ledger() == []
+
+
+def test_run_loop_refuses_untracked_paper_position_without_mutation(tmp_path: Path) -> None:
+    cfg = _make_config(tmp_path)
+    store = PositionsStore(root=cfg.positions_root)
+    position = _make_position("LONG", entry=100.0)
+    store.record_open(position)
+
+    with pytest.raises(RuntimeError, match="paper_position_intent_missing"):
+        run_loop(
+            FakeClient(),
+            _runtime(),
+            _strategy(),
+            cfg,
+            decision_fn=lambda *_: Decision(
+                side="FLAT", confidence=0.0, mark_price=100.0
+            ),
+            sleep=lambda _d: None,
+            clock=_tick_clock(),
+        )
+
+    assert store.load_open() == [position]
+    assert store.load_ledger() == []
 
 
 def test_close_tracked_live_verified_position_uses_reduce_only_order(tmp_path: Path) -> None:
@@ -1043,14 +1101,14 @@ def test_run_loop_closes_position_via_auto_close(tmp_path: Path) -> None:
         max_unrealized_close_pct=0.01,
     )
     # Pre-stage an open position with a tiny profit so the auto-close trips.
-    store = PositionsStore(root=cfg.positions_root)
-    store.record_open(_make_position("LONG", entry=100.0))
+    client = FakeClient()
+    _stage_paper_position(cfg, client, _make_position("LONG", entry=100.0))
 
     def dec(_c, _r, _s, _o):
         return Decision(side="FLAT", confidence=0.0, mark_price=200.0)
 
     result = run_loop(
-        FakeClient(), _runtime(), _strategy(), cfg,
+        client, _runtime(), _strategy(), cfg,
         decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
     )
     assert result.closed_trades == 1
@@ -1112,12 +1170,13 @@ def test_run_loop_partial_auto_close_exits_incomplete(tmp_path: Path) -> None:
 
 def test_run_loop_opens_position_when_flat_and_long_signal(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=1)
+    client = FakeClient()
 
     def dec(_c, _r, _s, _o):
         return Decision(side="LONG", confidence=0.8, mark_price=100.0)
 
     result = run_loop(
-        FakeClient(), _runtime(), _strategy(), cfg,
+        client, _runtime(), _strategy(), cfg,
         decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
     )
     assert result.opened_trades == 1
@@ -1125,6 +1184,69 @@ def test_run_loop_opens_position_when_flat_and_long_signal(tmp_path: Path) -> No
     opens = store.load_open()
     assert len(opens) == 1
     assert opens[0].side == "LONG"
+    assert opens[0].entry_price == pytest.approx(100.01)
+    assert opens[0].entry_fees > 0
+    assert opens[0].paper_open_intent_id
+    with BinancePaperBroker(
+        cfg.positions_root / "paper_execution.duckdb",
+        client,  # type: ignore[arg-type]
+        market_type="spot",
+        taker_fee_bps=_strategy().taker_fee_bps,
+    ) as broker:
+        assert broker.reconcile_positions(store).ok is True
+
+
+def test_run_loop_paper_close_book_outage_preserves_retryable_position(
+    tmp_path: Path,
+) -> None:
+    class CloseBookOutageClient(FakeClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.book_calls = 0
+
+        def get_book_ticker(self, symbol: str):
+            self.book_calls += 1
+            if self.book_calls > 1:
+                raise BinanceAPIError("book stream unavailable")
+            return super().get_book_ticker(symbol)
+
+    cfg = _make_config(
+        tmp_path,
+        stop_after_iterations=1,
+        max_unrealized_close_pct=0.01,
+    )
+    client = CloseBookOutageClient()
+    opened = _stage_paper_position(
+        cfg,
+        client,
+        _make_position("LONG", entry=100.0),
+    )
+
+    result = run_loop(
+        client,
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=lambda *_: Decision(
+            side="FLAT", confidence=0.0, mark_price=200.0
+        ),
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
+    )
+
+    store = PositionsStore(root=cfg.positions_root)
+    assert result.exit_reason == "close-order-failed"
+    assert store.load_open() == [opened]
+    assert store.load_ledger() == []
+    with BinancePaperBroker(
+        cfg.positions_root / "paper_execution.duckdb",
+        FakeClient(),  # type: ignore[arg-type]
+        market_type="spot",
+        taker_fee_bps=_strategy().taker_fee_bps,
+    ) as broker:
+        report = broker.reconcile_positions(store)
+        assert report.can_close is True
+        assert report.journal.blocking_intent_ids == ()
 
 
 def test_run_loop_live_open_submits_bot_client_order_id(tmp_path: Path) -> None:
@@ -1244,8 +1366,8 @@ def test_entry_gate_blocks_unpredictable_regime(tmp_path: Path) -> None:
 def test_run_loop_respects_max_open_positions(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=2)
     # Pre-stage a position so the open branch is skipped.
-    store = PositionsStore(root=cfg.positions_root)
-    store.record_open(_make_position("LONG", entry=50.0))
+    client = FakeClient(price=50.0)
+    _stage_paper_position(cfg, client, _make_position("LONG", entry=50.0))
     strat = replace(StrategyConfig(),
                     take_profit_pct=10.0, stop_loss_pct=10.0,
                     max_open_positions=1)
@@ -1256,7 +1378,7 @@ def test_run_loop_respects_max_open_positions(tmp_path: Path) -> None:
         return Decision(side="LONG", confidence=0.9, mark_price=50.0)
 
     result = run_loop(
-        FakeClient(), _runtime(), strat, cfg,
+        client, _runtime(), strat, cfg,
         decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
     )
     # No new opens despite LONG signal
