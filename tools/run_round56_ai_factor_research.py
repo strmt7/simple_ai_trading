@@ -267,7 +267,8 @@ def _prompt(feature_names: tuple[str, ...], factors: int) -> tuple[str, str]:
         "supports the candidate action: a long row uses the original sign and a short "
         "row uses the reflected sign. action_favorable_semivolatility measures motion "
         "with the candidate action; action_adverse_semivolatility measures motion "
-        "against it. action_sign is intentionally unavailable. A valid expression must "
+        "against it. The numerical side-identity field is intentionally omitted. A "
+        "valid expression must "
         "therefore mean the same thing for candidate long and candidate short rows. "
         "Expressions may use only the names and operators below. Binary operators are "
         "+, -, and *. Raw /, **, comparisons, booleans, indexing, attributes, methods, "
@@ -353,6 +354,12 @@ def run(arguments: argparse.Namespace) -> int:
     models = tuple(str(model) for model in contract["models"])
     factors = int(contract["programs_requested_per_model"])
     system_prompt, user_prompt = _prompt(feature_names, factors)
+    if (
+        "action_sign" in system_prompt
+        or "action_sign" in user_prompt
+        or "action_sign" in feature_names
+    ):
+        raise RuntimeError("Round 56 excluded side identity leaked into the AI request")
     base_url = arguments.ollama_url.rstrip("/")
     tags = _get_json(f"{base_url}/api/tags", arguments.timeout)
     inventory_rows = tags.get("models")
