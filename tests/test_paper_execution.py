@@ -547,3 +547,112 @@ def test_close_parent_is_verified_before_close_intent_is_recorded() -> None:
     assert (
         connection.execute("SELECT count(*) FROM paper_order_intent").fetchone()[0] == 0
     )
+
+
+def test_official_settlement_closes_exact_remaining_inventory_without_fake_order() -> None:
+    connection = duckdb.connect(":memory:")
+    journal = PaperOrderJournal(connection)
+    adapter = PolymarketPaperExecutionAdapter(
+        journal,
+        fee=PolymarketFeeModel(True, Decimal("0.07"), 1, True),
+    )
+    opening = _intent(
+        intent_id="polymarket-opening",
+        side="BUY",
+        quantity=Decimal("5"),
+        limit_price=Decimal("0.55"),
+    )
+    book = _book(
+        bids=(BookLevel(Decimal("0.49"), Decimal("10")),),
+        asks=(BookLevel(Decimal("0.50"), Decimal("10")),),
+    )
+    result = adapter.execute_aggressive(
+        opening,
+        book,
+        execution_time_ms=1_800,
+        submission_latency_ms=750,
+        maximum_book_age_ms=500,
+    )
+    assert result.state == "FILLED"
+
+    settlement = journal.record_settlement(
+        settlement_id="official-resolution-1",
+        opening_intent_id=opening.intent_id,
+        quantity=Decimal("5"),
+        payout_per_unit=Decimal("1"),
+        fee_quote=Decimal("0"),
+        occurred_at_ms=6_000,
+        source_event_id="market-resolved-event",
+        source_payload_sha256="a" * 64,
+    )
+    report = journal.reconcile("polymarket")
+
+    assert settlement.payout_per_unit == 1
+    assert report.inventory[0].remaining_quantity == 0
+    assert report.can_open is True
+    assert journal.integrity_errors() == ()
+    with pytest.raises(ValueError, match="no remaining quantity"):
+        journal.record_settlement(
+            settlement_id="official-resolution-2",
+            opening_intent_id=opening.intent_id,
+            quantity=Decimal("5"),
+            payout_per_unit=Decimal("1"),
+            fee_quote=Decimal("0"),
+            occurred_at_ms=6_001,
+            source_event_id="market-resolved-event-2",
+            source_payload_sha256="b" * 64,
+        )
+
+
+def test_settlement_inventory_proof_detects_late_order_history_mutation() -> None:
+    connection = duckdb.connect(":memory:")
+    journal = PaperOrderJournal(connection)
+    adapter = PolymarketPaperExecutionAdapter(
+        journal,
+        fee=PolymarketFeeModel(False, Decimal("0"), 1, True),
+    )
+    opening = _intent(
+        intent_id="settled-opening",
+        side="BUY",
+        quantity=Decimal("5"),
+        limit_price=Decimal("0.55"),
+    )
+    adapter.execute_aggressive(
+        opening,
+        _book(asks=(BookLevel(Decimal("0.50"), Decimal("5")),), bids=()),
+        execution_time_ms=1_800,
+        submission_latency_ms=750,
+        maximum_book_age_ms=500,
+    )
+    journal.record_settlement(
+        settlement_id="official-resolution",
+        opening_intent_id=opening.intent_id,
+        quantity=Decimal("5"),
+        payout_per_unit=Decimal("0"),
+        fee_quote=Decimal("0"),
+        occurred_at_ms=6_000,
+        source_event_id="resolution-event",
+        source_payload_sha256="c" * 64,
+    )
+    journal.record_intent(
+        PaperOrderIntent(
+            intent_id="late-child",
+            venue="polymarket",
+            market_id=opening.market_id,
+            asset_id=opening.asset_id,
+            symbol=opening.symbol,
+            outcome=opening.outcome,
+            side="SELL",
+            order_type="FAK",
+            limit_price=Decimal("0.40"),
+            quantity=Decimal("1"),
+            created_at_ms=6_100,
+            expires_at_ms=6_200,
+            parent_inventory_id=opening.intent_id,
+        )
+    )
+
+    errors = journal.integrity_errors()
+    assert any(
+        error.startswith("settlement_inventory_proof_mismatch:") for error in errors
+    )

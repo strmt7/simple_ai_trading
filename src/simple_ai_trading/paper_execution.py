@@ -325,6 +325,21 @@ class PaperInventory:
 
 
 @dataclass(frozen=True)
+class PaperInventorySettlement:
+    settlement_id: str
+    opening_intent_id: str
+    venue: str
+    quantity: Decimal
+    payout_per_unit: Decimal
+    fee_quote: Decimal
+    occurred_at_ms: int
+    source_event_id: str
+    source_payload_sha256: str
+    inventory_proof_sha256: str
+    settlement_sha256: str
+
+
+@dataclass(frozen=True)
 class PaperReconciliationReport:
     venue: str
     inventory: tuple[PaperInventory, ...]
@@ -390,6 +405,21 @@ class PaperOrderJournal:
                 previous_event_sha256 VARCHAR NOT NULL,
                 event_sha256 VARCHAR NOT NULL,
                 UNIQUE(intent_id, sequence_number)
+            );
+
+            CREATE TABLE IF NOT EXISTS paper_inventory_settlement (
+                settlement_id VARCHAR PRIMARY KEY,
+                schema_version VARCHAR NOT NULL,
+                opening_intent_id VARCHAR NOT NULL UNIQUE,
+                venue VARCHAR NOT NULL,
+                quantity VARCHAR NOT NULL,
+                payout_per_unit VARCHAR NOT NULL,
+                fee_quote VARCHAR NOT NULL,
+                occurred_at_ms BIGINT NOT NULL,
+                source_event_id VARCHAR NOT NULL,
+                source_payload_sha256 VARCHAR NOT NULL,
+                inventory_proof_sha256 VARCHAR NOT NULL,
+                settlement_sha256 VARCHAR NOT NULL
             );
             """
         )
@@ -750,7 +780,232 @@ class PaperOrderJournal:
                 if actual != str(event[13]):
                     errors.append(f"event_hash_mismatch:{row[0]}:{event[2]}")
                 previous_sha = str(event[13])
+        settlements = self.connection.execute(
+            """
+            SELECT settlement_id, schema_version, opening_intent_id, venue,
+                   quantity, payout_per_unit, fee_quote, occurred_at_ms,
+                   source_event_id, source_payload_sha256,
+                   inventory_proof_sha256, settlement_sha256
+            FROM paper_inventory_settlement ORDER BY settlement_id
+            """
+        ).fetchall()
+        for row in settlements:
+            payload = {
+                "schema_version": str(row[1]),
+                "settlement_id": str(row[0]),
+                "opening_intent_id": str(row[2]),
+                "venue": str(row[3]),
+                "quantity": str(row[4]),
+                "payout_per_unit": str(row[5]),
+                "fee_quote": str(row[6]),
+                "occurred_at_ms": int(row[7]),
+                "source_event_id": str(row[8]),
+                "source_payload_sha256": str(row[9]),
+                "inventory_proof_sha256": str(row[10]),
+            }
+            if str(row[1]) != PAPER_JOURNAL_SCHEMA_VERSION:
+                errors.append(f"settlement_schema_mismatch:{row[0]}")
+            try:
+                settlement = self._validated_settlement_payload(payload)
+            except ValueError as exc:
+                errors.append(f"settlement_payload_invalid:{row[0]}:{exc}")
+                continue
+            if _canonical_sha256(settlement) != str(row[11]):
+                errors.append(f"settlement_hash_mismatch:{row[0]}")
+            try:
+                inventory_proof = self._inventory_proof(str(row[2]))
+            except KeyError:
+                errors.append(f"settlement_parent_missing:{row[0]}")
+            else:
+                if inventory_proof != str(row[10]):
+                    errors.append(f"settlement_inventory_proof_mismatch:{row[0]}")
         return tuple(errors)
+
+    @staticmethod
+    def _validated_settlement_payload(
+        payload: Mapping[str, object],
+    ) -> dict[str, object]:
+        settlement_id = _identifier(payload.get("settlement_id"), name="settlement_id")
+        opening_id = _identifier(
+            payload.get("opening_intent_id"), name="opening_intent_id"
+        )
+        venue = _identifier(
+            str(payload.get("venue") or "").lower(), name="venue"
+        )
+        quantity = _decimal(payload.get("quantity"), name="quantity", positive=True)
+        payout = _decimal(payload.get("payout_per_unit"), name="payout_per_unit")
+        fee = _decimal(payload.get("fee_quote"), name="fee_quote")
+        occurred_at = int(payload.get("occurred_at_ms", -1))
+        source_event_id = _identifier(
+            payload.get("source_event_id"), name="source_event_id"
+        )
+        source_sha = str(payload.get("source_payload_sha256") or "").lower()
+        inventory_sha = str(payload.get("inventory_proof_sha256") or "").lower()
+        if payout < 0 or payout > 1:
+            raise ValueError("settlement payout must lie in [0, 1]")
+        if fee < 0:
+            raise ValueError("settlement fee must be non-negative")
+        if occurred_at < 0:
+            raise ValueError("settlement timestamp must be non-negative")
+        if not _SHA256.fullmatch(source_sha):
+            raise ValueError("settlement source hash is invalid")
+        if not _SHA256.fullmatch(inventory_sha):
+            raise ValueError("settlement inventory proof is invalid")
+        return {
+            "schema_version": PAPER_JOURNAL_SCHEMA_VERSION,
+            "settlement_id": settlement_id,
+            "opening_intent_id": opening_id,
+            "venue": venue,
+            "quantity": _decimal_text(quantity),
+            "payout_per_unit": _decimal_text(payout),
+            "fee_quote": _decimal_text(fee),
+            "occurred_at_ms": occurred_at,
+            "source_event_id": source_event_id,
+            "source_payload_sha256": source_sha,
+            "inventory_proof_sha256": inventory_sha,
+        }
+
+    def _inventory_proof(self, opening_intent_id: str) -> str:
+        normalized = _identifier(opening_intent_id, name="opening_intent_id")
+        rows = self._current_rows()
+        related = [
+            (str(row[0]), str(row[19]))
+            for row in rows
+            if str(row[0]) == normalized or str(row[13]) == normalized
+        ]
+        if not any(intent_id == normalized for intent_id, _sha in related):
+            raise KeyError(f"unknown paper intent: {normalized}")
+        return _canonical_sha256(
+            {
+                "opening_intent_id": normalized,
+                "current_order_events": sorted(related),
+            }
+        )
+
+    def record_settlement(
+        self,
+        *,
+        settlement_id: str,
+        opening_intent_id: str,
+        quantity: object,
+        payout_per_unit: object,
+        fee_quote: object,
+        occurred_at_ms: int,
+        source_event_id: str,
+        source_payload_sha256: str,
+    ) -> PaperInventorySettlement:
+        """Remove proven inventory only from an immutable external resolution."""
+
+        opening_id = _identifier(opening_intent_id, name="opening_intent_id")
+        parent = self.intent(opening_id)
+        report = self.reconcile(parent.venue)
+        if not report.ok:
+            raise ValueError("paper inventory cannot settle while reconciliation fails")
+        inventory = next(
+            (
+                item
+                for item in report.inventory
+                if item.opening_intent_id == opening_id
+            ),
+            None,
+        )
+        if inventory is None or inventory.remaining_quantity <= 0:
+            raise ValueError("paper inventory has no remaining quantity to settle")
+        requested = _decimal(quantity, name="quantity", positive=True)
+        tolerance = max(Decimal("0.000000000001"), requested * Decimal("1e-12"))
+        if abs(requested - inventory.remaining_quantity) > tolerance:
+            raise ValueError("official settlement must consume all remaining inventory")
+        rows = self._current_rows(parent.venue)
+        unsafe = [
+            str(row[0])
+            for row in rows
+            if (
+                str(row[0]) == opening_id or str(row[13]) == opening_id
+            )
+            and str(row[14]) in BLOCKING_ORDER_STATES
+            and str(row[14]) != "CLOSE_PENDING"
+        ]
+        if unsafe:
+            raise ValueError("unresolved paper orders block inventory settlement")
+        inventory_proof = self._inventory_proof(opening_id)
+        payload = self._validated_settlement_payload(
+            {
+                "settlement_id": settlement_id,
+                "opening_intent_id": opening_id,
+                "venue": parent.venue,
+                "quantity": requested,
+                "payout_per_unit": payout_per_unit,
+                "fee_quote": fee_quote,
+                "occurred_at_ms": int(occurred_at_ms),
+                "source_event_id": source_event_id,
+                "source_payload_sha256": source_payload_sha256,
+                "inventory_proof_sha256": inventory_proof,
+            }
+        )
+        if int(payload["occurred_at_ms"]) < self.current(opening_id).occurred_at_ms:
+            raise ValueError("settlement occurred before the opening fill")
+        settlement_sha = _canonical_sha256(payload)
+        existing = self.connection.execute(
+            """
+            SELECT settlement_sha256 FROM paper_inventory_settlement
+            WHERE settlement_id = ? OR opening_intent_id = ?
+            """,
+            [payload["settlement_id"], opening_id],
+        ).fetchone()
+        if existing is not None:
+            if str(existing[0]) != settlement_sha:
+                raise ValueError("inventory already has different settlement evidence")
+            return self.settlement(opening_id)
+        self.connection.execute(
+            """
+            INSERT INTO paper_inventory_settlement VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+            """,
+            [
+                payload["settlement_id"],
+                payload["schema_version"],
+                opening_id,
+                payload["venue"],
+                payload["quantity"],
+                payload["payout_per_unit"],
+                payload["fee_quote"],
+                payload["occurred_at_ms"],
+                payload["source_event_id"],
+                payload["source_payload_sha256"],
+                inventory_proof,
+                settlement_sha,
+            ],
+        )
+        return self.settlement(opening_id)
+
+    def settlement(self, opening_intent_id: str) -> PaperInventorySettlement:
+        normalized = _identifier(opening_intent_id, name="opening_intent_id")
+        row = self.connection.execute(
+            """
+            SELECT settlement_id, opening_intent_id, venue, quantity,
+                   payout_per_unit, fee_quote, occurred_at_ms, source_event_id,
+                   source_payload_sha256, inventory_proof_sha256,
+                   settlement_sha256
+            FROM paper_inventory_settlement WHERE opening_intent_id = ?
+            """,
+            [normalized],
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"paper inventory is not settled: {normalized}")
+        return PaperInventorySettlement(
+            settlement_id=str(row[0]),
+            opening_intent_id=str(row[1]),
+            venue=str(row[2]),
+            quantity=Decimal(str(row[3])),
+            payout_per_unit=Decimal(str(row[4])),
+            fee_quote=Decimal(str(row[5])),
+            occurred_at_ms=int(row[6]),
+            source_event_id=str(row[7]),
+            source_payload_sha256=str(row[8]),
+            inventory_proof_sha256=str(row[9]),
+            settlement_sha256=str(row[10]),
+        )
 
     def intent(self, intent_id: str) -> PaperOrderIntent:
         """Load one immutable intent from the journal."""
@@ -813,6 +1068,9 @@ class PaperOrderJournal:
     def reconcile(self, venue: str | None = None) -> PaperReconciliationReport:
         """Derive bot-owned inventory and unresolved orders from the hash chain."""
 
+        normalized_venue = None
+        if venue is not None:
+            normalized_venue = _identifier(str(venue).lower(), name="venue")
         rows = self._current_rows(venue)
         by_id = {str(row[0]): row for row in rows}
         ownership_errors: list[str] = []
@@ -842,6 +1100,36 @@ class PaperOrderJournal:
             closed_by_parent[parent_id] = closed_by_parent.get(
                 parent_id, Decimal("0")
             ) + Decimal(str(row[16]))
+
+        settlements = self.connection.execute(
+            """
+            SELECT settlement_id, opening_intent_id, venue, quantity
+            FROM paper_inventory_settlement
+            WHERE (? IS NULL OR venue = ?)
+            ORDER BY settlement_id
+            """,
+            [normalized_venue, normalized_venue],
+        ).fetchall()
+        for settlement_id, parent_id, settlement_venue, quantity in settlements:
+            parent = by_id.get(str(parent_id))
+            if parent is None:
+                ownership_errors.append(
+                    f"settlement_parent_missing:{settlement_id}:{parent_id}"
+                )
+                continue
+            if str(parent[13]):
+                ownership_errors.append(
+                    f"settlement_parent_is_not_opening_intent:{settlement_id}"
+                )
+                continue
+            if str(parent[1]) != str(settlement_venue):
+                ownership_errors.append(
+                    f"settlement_parent_venue_mismatch:{settlement_id}"
+                )
+                continue
+            closed_by_parent[str(parent_id)] = closed_by_parent.get(
+                str(parent_id), Decimal("0")
+            ) + Decimal(str(quantity))
 
         inventory: list[PaperInventory] = []
         for row in rows:
@@ -1560,6 +1848,7 @@ __all__ = [
     "PaperExecutionResult",
     "PaperFill",
     "PaperInventory",
+    "PaperInventorySettlement",
     "PaperOrderIntent",
     "PaperOrderJournal",
     "PaperOrderSnapshot",
