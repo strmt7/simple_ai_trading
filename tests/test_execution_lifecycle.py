@@ -9,6 +9,7 @@ from simple_ai_trading.execution_lifecycle import (
     build_execution_lifecycle_plan,
     render_execution_lifecycle_plan,
 )
+from simple_ai_trading.paper_execution import PaperReconciliationReport
 from simple_ai_trading.positions import OpenPosition, PositionsStore, bot_client_order_id
 from simple_ai_trading.reconciliation import ReconciliationMismatch, ReconciliationReport
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
@@ -82,6 +83,78 @@ def test_dry_run_lifecycle_does_not_require_signed_reconciliation(tmp_path: Path
     assert plan.can_close is True
     assert plan.effective_dry_run is True
     assert "paper/dry-run" in render_execution_lifecycle_plan(plan)
+
+
+def test_required_paper_reconciliation_blocks_when_missing(tmp_path: Path) -> None:
+    plan = build_execution_lifecycle_plan(
+        _runtime(dry_run=True, api_key="", api_secret=""),
+        _strategy(),
+        PositionsStore(root=tmp_path),
+        action="open",
+        effective_dry_run=True,
+        require_paper_reconciliation=True,
+    )
+
+    assert plan.can_open is False
+    assert plan.can_close is False
+    assert any(
+        reason.startswith("paper reconciliation:")
+        for reason in plan.open_block_reasons
+    )
+
+
+def test_unresolved_paper_order_blocks_open_but_keeps_close_capability(
+    tmp_path: Path,
+) -> None:
+    reconciliation = PaperReconciliationReport(
+        venue="binance-futures",
+        inventory=(),
+        blocking_intent_ids=("pending-close",),
+        integrity_errors=(),
+        ownership_errors=(),
+    )
+    plan = build_execution_lifecycle_plan(
+        _runtime(dry_run=True, api_key="", api_secret=""),
+        _strategy(),
+        PositionsStore(root=tmp_path),
+        action="close",
+        effective_dry_run=True,
+        paper_reconciliation=reconciliation,
+        require_paper_reconciliation=True,
+    )
+
+    assert plan.can_open is False
+    assert plan.can_close is True
+    assert "blocking=1" in "; ".join(plan.open_block_reasons)
+
+
+def test_execution_lifecycle_blocks_mixed_live_and_paper_modes(tmp_path: Path) -> None:
+    paper_store = PositionsStore(root=tmp_path / "paper")
+    paper_store.record_open(_position(verified=False, dry_run=False))
+    paper_plan = build_execution_lifecycle_plan(
+        _runtime(dry_run=True, api_key="", api_secret=""),
+        _strategy(),
+        paper_store,
+        action="start",
+        effective_dry_run=True,
+    )
+
+    live_store = PositionsStore(root=tmp_path / "live")
+    live_store.record_open(_position(dry_run=True))
+    live_runtime = _runtime()
+    live_plan = build_execution_lifecycle_plan(
+        live_runtime,
+        _strategy(),
+        live_store,
+        action="start",
+        effective_dry_run=False,
+        reconciliation=_ok_reconciliation(live_runtime),
+    )
+
+    assert paper_plan.can_open is False and paper_plan.can_close is False
+    assert live_plan.can_open is False and live_plan.can_close is False
+    assert "mode isolation:live_positions_present=1" in paper_plan.open_block_reasons
+    assert "mode isolation:paper_positions_present=1" in live_plan.open_block_reasons
 
 
 def test_live_lifecycle_blocks_without_reconciliation(tmp_path: Path) -> None:

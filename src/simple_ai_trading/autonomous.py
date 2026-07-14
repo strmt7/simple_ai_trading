@@ -38,6 +38,7 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .api import BinanceAPIError, BinanceClient
+from .binance_paper import BinancePaperBroker
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
 from .intervals import interval_milliseconds
 from .logging_ext import configure as configure_logging
@@ -138,6 +139,7 @@ class AutonomousConfig:
     heartbeat_path: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "heartbeat.json")
     positions_root: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR)
     log_path: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "autonomous.log")
+    paper_journal_path: Path | None = None
     starting_reference_cash: float = 1000.0
 
 
@@ -409,6 +411,7 @@ def _close_to_trade(
         owner=position.owner,
         open_client_order_id=position.open_client_order_id,
         open_exchange_order_id=position.open_exchange_order_id,
+        paper_open_intent_id=position.paper_open_intent_id,
     )
 
 
@@ -595,13 +598,9 @@ def close_all_open_positions(
     clock=time.time,
     client: BinanceClient | None = None,
     reduce_only: bool = True,
+    paper_broker: BinancePaperBroker | None = None,
 ) -> int:
-    """Close every locally tracked open position at ``mark_price``.
-
-    Autonomous authenticated exchange execution is still disabled elsewhere;
-    this function is the fail-closed local ledger guard so operator stop,
-    process restarts, and emergency exits do not leave stale local positions.
-    """
+    """Close verified positions through the configured live or paper broker."""
 
     return close_tracked_open_positions(
         store,
@@ -610,6 +609,7 @@ def close_all_open_positions(
         clock=clock,
         client=client,
         reduce_only=reduce_only,
+        paper_broker=paper_broker,
     ).closed
 
 
@@ -621,15 +621,32 @@ def close_tracked_open_positions(
     clock=time.time,
     client: BinanceClient | None = None,
     reduce_only: bool = True,
+    paper_broker: BinancePaperBroker | None = None,
 ) -> CloseAllReport:
     """Close bot-owned local ledger positions and preserve anything uncertain."""
+
+    positions = list(store.load_open())
+    paper_positions = [position for position in positions if position.dry_run]
+    if paper_positions and paper_broker is not None:
+        paper_reconciliation = paper_broker.reconcile_positions(store)
+        if not paper_reconciliation.can_close:
+            reason_text = f"paper-reconciliation-blocked:{paper_reconciliation.asdict()}"
+            return CloseAllReport(
+                closed=0,
+                skipped=0,
+                failed=len(paper_positions),
+                partial=0,
+                failures=tuple(
+                    f"{position.id}:{reason_text}" for position in paper_positions
+                ),
+            )
 
     closed = 0
     skipped = 0
     failed = 0
     partial = 0
     failures: list[str] = []
-    for position in list(store.load_open()):
+    for position in positions:
         ownership_rejection = bot_ownership_rejection_reason(position)
         if ownership_rejection is not None:
             skipped += 1
@@ -648,8 +665,18 @@ def close_tracked_open_positions(
                     reduce_only=reduce_only,
                 )
             else:
-                trade = replace(trade, exchange_status="paper")
-        except BinanceAPIError as exc:
+                if paper_broker is None:
+                    raise ValueError("paper close requires shared execution broker")
+                paper_trade, paper_result = paper_broker.close_position(
+                    position,
+                    reason=reason,
+                )
+                if paper_trade is None:
+                    raise ValueError(
+                        f"paper close unresolved:{paper_result.state}:{paper_result.reason}"
+                    )
+                trade = paper_trade
+        except (BinanceAPIError, ValueError) as exc:
             failed += 1
             failures.append(f"{position.id}:{exc}")
             continue
@@ -923,9 +950,37 @@ def run_loop(
     if not cfg.dry_run:
         api_budget_report = ensure_api_budget_headroom(runtime, client)
         logger.info("autonomous api-budget %s", summarize_api_budget(api_budget_report))
+    store = PositionsStore(root=cfg.positions_root)
+    paper_broker: BinancePaperBroker | None = None
+    if cfg.dry_run:
+        journal_path = (
+            Path(cfg.paper_journal_path)
+            if cfg.paper_journal_path is not None
+            else Path(cfg.positions_root) / "paper_execution.duckdb"
+        )
+        paper_broker = BinancePaperBroker(
+            journal_path,
+            client,
+            market_type=runtime.market_type,
+            taker_fee_bps=strategy.taker_fee_bps,
+        )
+        try:
+            paper_startup = paper_broker.reconcile_positions(store)
+            needs_new_entry_permission = not store.load_open()
+            unsafe_startup = not paper_startup.can_close or (
+                needs_new_entry_permission and not paper_startup.can_open
+            )
+        except Exception:
+            paper_broker.close()
+            raise
+        if unsafe_startup:
+            paper_broker.close()
+            raise RuntimeError(
+                "Autonomous paper mode refuses to start with unsafe execution lifecycle: "
+                f"{paper_startup.asdict()}"
+            )
     control = AutonomousControl(path=cfg.control_path)
     control.write(STATE_RUNNING, note=f"objective={objective.name}")
-    store = PositionsStore(root=cfg.positions_root)
     reconcile = reconcile_fn or _default_reconcile
     if not cfg.dry_run:
         startup_lifecycle = _loop_lifecycle_plan(
@@ -993,6 +1048,7 @@ def run_loop(
                     clock=clock,
                     client=None if cfg.dry_run else client,
                     reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                    paper_broker=paper_broker,
                 )
                 closed += close_report.closed
                 if close_report.closed:
@@ -1110,6 +1166,7 @@ def run_loop(
                             clock=clock,
                             client=None if cfg.dry_run else client,
                             reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                            paper_broker=paper_broker,
                         )
                         closed += close_report.closed
                         if close_report.closed:
@@ -1193,6 +1250,7 @@ def run_loop(
                         clock=clock,
                         client=None if cfg.dry_run else client,
                         reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                        paper_broker=paper_broker,
                     )
                     closed += close_report.closed
                     if close_report.closed:
@@ -1221,7 +1279,26 @@ def run_loop(
                     interval_ms=interval_milliseconds(runtime.interval),
                 )
                 if should_close:
-                    if not cfg.dry_run:
+                    if cfg.dry_run:
+                        if paper_broker is None:
+                            logger.error(
+                                "autonomous iter=%d paper close lifecycle has no broker id=%s",
+                                iteration,
+                                position.id,
+                            )
+                            exit_reason = "paper-close-lifecycle-blocked"
+                            break
+                        paper_close_lifecycle = paper_broker.reconcile_positions(store)
+                        if not paper_close_lifecycle.can_close:
+                            logger.error(
+                                "autonomous iter=%d paper close lifecycle blocked id=%s report=%s",
+                                iteration,
+                                position.id,
+                                paper_close_lifecycle.asdict(),
+                            )
+                            exit_reason = "paper-close-lifecycle-blocked"
+                            break
+                    else:
                         try:
                             close_lifecycle = _loop_lifecycle_plan(
                                 client,
@@ -1257,8 +1334,26 @@ def run_loop(
                                 reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
                             )
                         else:
-                            trade = replace(trade, exchange_status="paper")
-                    except BinanceAPIError as exc:
+                            if paper_broker is None:
+                                raise ValueError(
+                                    "paper close requires shared execution broker"
+                                )
+                            paper_trade, paper_result = paper_broker.close_position(
+                                position,
+                                reason=reason,
+                            )
+                            if paper_trade is None:
+                                logger.error(
+                                    "autonomous iter=%d paper-close-unresolved id=%s state=%s reason=%s",
+                                    iteration,
+                                    position.id,
+                                    paper_result.state,
+                                    paper_result.reason,
+                                )
+                                exit_reason = f"{reason}:close-incomplete"
+                                break
+                            trade = paper_trade
+                    except (BinanceAPIError, ValueError) as exc:
                         logger.error("autonomous iter=%d close-order-failed id=%s error=%s", iteration, position.id, exc)
                         exit_reason = "close-order-failed"
                         break
@@ -1280,7 +1375,11 @@ def run_loop(
                         break
             if exit_reason == "close-order-failed" or exit_reason.endswith(":close-incomplete"):
                 break
-            if exit_reason in {"close-reconciliation-failed", "close-lifecycle-blocked"}:
+            if exit_reason in {
+                "close-reconciliation-failed",
+                "close-lifecycle-blocked",
+                "paper-close-lifecycle-blocked",
+            }:
                 break
 
             # Open new position only after the same risk gates used in operator
@@ -1294,7 +1393,24 @@ def run_loop(
                 now_ms_value=int(clock() * 1000),
             )
             if decision.side in {"LONG", "SHORT"} and gate.allowed:
-                if not cfg.dry_run:
+                if cfg.dry_run:
+                    if paper_broker is None:
+                        logger.error(
+                            "autonomous iter=%d paper open lifecycle has no broker",
+                            iteration,
+                        )
+                        exit_reason = "paper-open-lifecycle-blocked"
+                        break
+                    paper_open_lifecycle = paper_broker.reconcile_positions(store)
+                    if not paper_open_lifecycle.can_open:
+                        logger.error(
+                            "autonomous iter=%d paper open lifecycle blocked: %s",
+                            iteration,
+                            paper_open_lifecycle.asdict(),
+                        )
+                        exit_reason = "paper-open-lifecycle-blocked"
+                        break
+                else:
                     try:
                         open_lifecycle = _loop_lifecycle_plan(
                             client,
@@ -1322,17 +1438,37 @@ def run_loop(
                     decision, runtime, strategy, objective, cfg, clock=clock,
                 )
                 try:
-                    position = _submit_open_position(client, position)
-                except BinanceAPIError as exc:
+                    paper_result = None
+                    if position.dry_run:
+                        if paper_broker is None:
+                            raise ValueError(
+                                "paper open requires shared execution broker"
+                            )
+                        position, paper_result = paper_broker.open_position(position)
+                    else:
+                        position = _submit_open_position(client, position)
+                except (BinanceAPIError, ValueError) as exc:
                     logger.error("autonomous iter=%d open-order-failed id=%s error=%s", iteration, position.id, exc)
                     exit_reason = "open-order-failed"
                     break
-                store.record_open(position)
-                opened += 1
-                logger.info(
-                    "autonomous iter=%d open id=%s side=%s qty=%.6f entry=%.2f",
-                    iteration, position.id, position.side, position.qty, position.entry_price,
-                )
+                if position is None:
+                    skipped += 1
+                    logger.info(
+                        "autonomous iter=%d paper-open-unfilled state=%s reason=%s",
+                        iteration,
+                        paper_result.state,
+                        paper_result.reason,
+                    )
+                    if paper_result.state == "UNKNOWN":
+                        exit_reason = "paper-open-unknown"
+                        break
+                else:
+                    store.record_open(position)
+                    opened += 1
+                    logger.info(
+                        "autonomous iter=%d open id=%s side=%s qty=%.6f entry=%.2f",
+                        iteration, position.id, position.side, position.qty, position.entry_price,
+                    )
             elif decision.side in {"LONG", "SHORT"}:
                 skipped += 1
                 logger.info(
@@ -1370,6 +1506,8 @@ def run_loop(
             sleep(poll)
     finally:
         control.write(STATE_STOPPED, note=exit_reason)
+        if paper_broker is not None:
+            paper_broker.close()
 
     return LoopResult(
         iterations=iteration,

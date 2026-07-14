@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation, ROUND_CEILING
 import hashlib
 import json
 import re
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Mapping
 
 import duckdb
 
@@ -31,10 +31,18 @@ ORDER_STATES = frozenset(
         "CLOSE_PENDING",
     }
 )
-TERMINAL_ORDER_STATES = frozenset(
-    {"FILLED", "CANCELLED", "EXPIRED", "REJECTED", "CLOSE_PENDING"}
+TERMINAL_ORDER_STATES = frozenset({"FILLED", "CANCELLED", "EXPIRED", "REJECTED"})
+BLOCKING_ORDER_STATES = frozenset(
+    {
+        "INTENT",
+        "SUBMITTED",
+        "ACKNOWLEDGED",
+        "PARTIAL",
+        "CANCEL_PENDING",
+        "UNKNOWN",
+        "CLOSE_PENDING",
+    }
 )
-BLOCKING_ORDER_STATES = frozenset({"UNKNOWN", "CLOSE_PENDING"})
 _ORDER_TYPES = frozenset({"GTC", "GTD", "FOK", "FAK"})
 _SIDES = frozenset({"BUY", "SELL"})
 _SOURCES = frozenset({"execution", "reconciliation", "operator", "risk", "simulator"})
@@ -93,6 +101,7 @@ _ALLOWED_TRANSITIONS = {
             "CLOSE_PENDING",
         }
     ),
+    "CLOSE_PENDING": frozenset({"PARTIAL", "FILLED", "UNKNOWN", "CLOSE_PENDING"}),
 }
 
 
@@ -297,6 +306,43 @@ class PaperOrderSnapshot:
     @property
     def blocks_new_exposure(self) -> bool:
         return self.state in BLOCKING_ORDER_STATES
+
+
+@dataclass(frozen=True)
+class PaperInventory:
+    """Bot-owned paper inventory derived only from immutable order events."""
+
+    opening_intent_id: str
+    venue: str
+    market_id: str
+    asset_id: str
+    symbol: str
+    outcome: str
+    opening_side: str
+    opened_quantity: Decimal
+    closed_quantity: Decimal
+    remaining_quantity: Decimal
+
+
+@dataclass(frozen=True)
+class PaperReconciliationReport:
+    venue: str
+    inventory: tuple[PaperInventory, ...]
+    blocking_intent_ids: tuple[str, ...]
+    integrity_errors: tuple[str, ...]
+    ownership_errors: tuple[str, ...]
+
+    @property
+    def ok(self) -> bool:
+        return not self.integrity_errors and not self.ownership_errors
+
+    @property
+    def can_open(self) -> bool:
+        return self.ok and not self.blocking_intent_ids
+
+    @property
+    def can_close(self) -> bool:
+        return self.ok
 
 
 class PaperOrderJournal:
@@ -532,6 +578,14 @@ class PaperOrderJournal:
         if previous.state == "UNKNOWN" and transition.state != "UNKNOWN":
             if transition.source != "reconciliation":
                 raise ValueError("only reconciliation may resolve an UNKNOWN order")
+        if previous.state == "CLOSE_PENDING" and transition.state in {
+            "PARTIAL",
+            "FILLED",
+        }:
+            if transition.source != "reconciliation":
+                raise ValueError(
+                    "only reconciliation may apply a late CLOSE_PENDING fill"
+                )
         if transition.occurred_at_ms < previous.occurred_at_ms:
             raise ValueError("paper order transition time regressed")
         filled = transition.cumulative_filled_quantity
@@ -542,6 +596,11 @@ class PaperOrderJournal:
             raise ValueError("cumulative filled quantity exceeds order quantity")
         if transition.cumulative_fee_quote + tolerance < previous.cumulative_fee_quote:
             raise ValueError("cumulative fee regressed")
+        if abs(filled - previous.cumulative_filled_quantity) <= tolerance:
+            if transition.average_fill_price != previous.average_fill_price:
+                raise ValueError("average fill price changed without a new fill")
+            if transition.cumulative_fee_quote != previous.cumulative_fee_quote:
+                raise ValueError("cumulative fee changed without a new fill")
         if transition.state == "PARTIAL" and not (
             Decimal("0") < filled < order_quantity
         ):
@@ -692,6 +751,161 @@ class PaperOrderJournal:
                     errors.append(f"event_hash_mismatch:{row[0]}:{event[2]}")
                 previous_sha = str(event[13])
         return tuple(errors)
+
+    def intent(self, intent_id: str) -> PaperOrderIntent:
+        """Load one immutable intent from the journal."""
+
+        normalized = _identifier(intent_id, name="intent_id")
+        row = self.connection.execute(
+            """
+            SELECT intent_id, venue, market_id, asset_id, symbol, outcome, side,
+                   order_type, limit_price, quantity, created_at_ms, expires_at_ms,
+                   owner, parent_inventory_id
+            FROM paper_order_intent WHERE intent_id = ?
+            """,
+            [normalized],
+        ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown paper intent: {normalized}")
+        return PaperOrderIntent(
+            intent_id=str(row[0]),
+            venue=str(row[1]),
+            market_id=str(row[2]),
+            asset_id=str(row[3]),
+            symbol=str(row[4]),
+            outcome=str(row[5]),
+            side=str(row[6]),
+            order_type=str(row[7]),
+            limit_price=Decimal(str(row[8])),
+            quantity=Decimal(str(row[9])),
+            created_at_ms=int(row[10]),
+            expires_at_ms=int(row[11]),
+            owner=str(row[12]),
+            parent_inventory_id=str(row[13]),
+        ).validated()
+
+    def _current_rows(self, venue: str | None = None) -> list[tuple[object, ...]]:
+        normalized_venue = None
+        if venue is not None:
+            normalized_venue = _identifier(str(venue).lower(), name="venue")
+        return self.connection.execute(
+            """
+            WITH ranked AS (
+                SELECT *, row_number() OVER (
+                    PARTITION BY intent_id ORDER BY sequence_number DESC
+                ) AS current_rank
+                FROM paper_order_event
+            )
+            SELECT i.intent_id, i.venue, i.market_id, i.asset_id, i.symbol,
+                   i.outcome, i.side, i.order_type, i.limit_price, i.quantity,
+                   i.created_at_ms, i.expires_at_ms, i.owner,
+                   i.parent_inventory_id, e.state, e.occurred_at_ms,
+                   e.cumulative_filled_quantity, e.average_fill_price,
+                   e.cumulative_fee_quote, e.event_sha256
+            FROM paper_order_intent AS i
+            JOIN ranked AS e ON e.intent_id = i.intent_id AND e.current_rank = 1
+            WHERE (? IS NULL OR i.venue = ?)
+            ORDER BY i.intent_id
+            """,
+            [normalized_venue, normalized_venue],
+        ).fetchall()
+
+    def reconcile(self, venue: str | None = None) -> PaperReconciliationReport:
+        """Derive bot-owned inventory and unresolved orders from the hash chain."""
+
+        rows = self._current_rows(venue)
+        by_id = {str(row[0]): row for row in rows}
+        ownership_errors: list[str] = []
+        closed_by_parent: dict[str, Decimal] = {}
+        for row in rows:
+            child_id = str(row[0])
+            parent_id = str(row[13])
+            if not parent_id:
+                continue
+            parent = by_id.get(parent_id)
+            if parent is None:
+                ownership_errors.append(f"close_parent_missing:{child_id}:{parent_id}")
+                continue
+            if str(parent[13]):
+                ownership_errors.append(
+                    f"close_parent_is_not_opening_intent:{child_id}"
+                )
+                continue
+            if any(str(row[index]) != str(parent[index]) for index in (1, 2, 3, 4)):
+                ownership_errors.append(f"close_parent_identity_mismatch:{child_id}")
+                continue
+            if str(row[6]) == str(parent[6]):
+                ownership_errors.append(
+                    f"close_side_does_not_reverse_parent:{child_id}"
+                )
+                continue
+            closed_by_parent[parent_id] = closed_by_parent.get(
+                parent_id, Decimal("0")
+            ) + Decimal(str(row[16]))
+
+        inventory: list[PaperInventory] = []
+        for row in rows:
+            opening_id = str(row[0])
+            if str(row[13]):
+                continue
+            opened = Decimal(str(row[16]))
+            closed = closed_by_parent.get(opening_id, Decimal("0"))
+            tolerance = max(Decimal("0.000000000001"), opened * Decimal("1e-12"))
+            if closed > opened + tolerance:
+                ownership_errors.append(f"inventory_overclosed:{opening_id}")
+            if opened <= 0:
+                continue
+            inventory.append(
+                PaperInventory(
+                    opening_intent_id=opening_id,
+                    venue=str(row[1]),
+                    market_id=str(row[2]),
+                    asset_id=str(row[3]),
+                    symbol=str(row[4]),
+                    outcome=str(row[5]),
+                    opening_side=str(row[6]),
+                    opened_quantity=opened,
+                    closed_quantity=min(opened, closed),
+                    remaining_quantity=max(Decimal("0"), opened - closed),
+                )
+            )
+        remaining_by_opening = {
+            item.opening_intent_id: item.remaining_quantity for item in inventory
+        }
+        blocking_items: list[str] = []
+        for row in rows:
+            if str(row[14]) not in BLOCKING_ORDER_STATES:
+                continue
+            parent_id = str(row[13])
+            if (
+                str(row[14]) == "CLOSE_PENDING"
+                and parent_id
+                and remaining_by_opening.get(parent_id, Decimal("0")) <= 0
+            ):
+                continue
+            blocking_items.append(str(row[0]))
+        blocking = tuple(blocking_items)
+        report_venue = "*" if venue is None else str(venue).lower()
+        return PaperReconciliationReport(
+            venue=report_venue,
+            inventory=tuple(inventory),
+            blocking_intent_ids=blocking,
+            integrity_errors=self.integrity_errors(),
+            ownership_errors=tuple(sorted(set(ownership_errors))),
+        )
+
+    def owned_quantity(self, opening_intent_id: str) -> Decimal:
+        """Return remaining bot-owned quantity or fail on inconsistent ownership."""
+
+        normalized = _identifier(opening_intent_id, name="opening_intent_id")
+        report = self.reconcile()
+        if not report.ok:
+            detail = "; ".join((*report.integrity_errors, *report.ownership_errors))
+            raise ValueError(f"paper ownership reconciliation failed: {detail}")
+        for inventory in report.inventory:
+            if inventory.opening_intent_id == normalized:
+                return inventory.remaining_quantity
+        return Decimal("0")
 
 
 @dataclass(frozen=True)
@@ -952,6 +1166,285 @@ def _empty_execution(
     )
 
 
+def paper_intent_id(
+    venue: str,
+    inventory_id: str,
+    action: str,
+    *,
+    attempt: int = 1,
+) -> str:
+    """Return one deterministic cross-venue paper intent identifier."""
+
+    normalized_venue = _identifier(str(venue).lower(), name="venue")
+    normalized_inventory = _identifier(inventory_id, name="inventory_id")
+    normalized_action = str(action or "").strip().lower()
+    if normalized_action not in {"open", "close"}:
+        raise ValueError("paper intent action must be open or close")
+    attempt_number = int(attempt)
+    if attempt_number < 1:
+        raise ValueError("paper intent attempt must be positive")
+    digest = _canonical_sha256(
+        {
+            "venue": normalized_venue,
+            "inventory_id": normalized_inventory,
+            "action": normalized_action,
+            "attempt": attempt_number,
+        }
+    )
+    return f"paper-{normalized_venue}-{normalized_action}-{digest[:32]}"
+
+
+def binance_book_ticker_snapshot(
+    payload: Mapping[str, object],
+    *,
+    market_type: str,
+    symbol: str,
+    received_wall_ms: int,
+    received_monotonic_ns: int,
+) -> PaperBookSnapshot:
+    """Normalize one real Binance BBO response without inventing depth or time."""
+
+    normalized_market = str(market_type or "").strip().lower()
+    if normalized_market not in {"spot", "futures"}:
+        raise ValueError("Binance paper market_type must be spot or futures")
+    normalized_symbol = _identifier(str(symbol).upper(), name="symbol")
+    raw = dict(payload)
+    payload_symbol = str(raw.get("symbol") or raw.get("s") or "").upper()
+    if payload_symbol != normalized_symbol:
+        raise ValueError("Binance book ticker symbol does not match the request")
+
+    def level(price_name: str, quantity_name: str) -> BookLevel:
+        return BookLevel(
+            price=_decimal(raw.get(price_name), name=price_name, positive=True),
+            quantity=_decimal(
+                raw.get(quantity_name), name=quantity_name, positive=True
+            ),
+        )
+
+    source_time_ms = 0
+    for name in ("T", "E", "time"):
+        value = raw.get(name)
+        if value is None:
+            continue
+        try:
+            candidate = int(value)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if candidate >= 0:
+            source_time_ms = candidate
+            break
+    payload_json = _canonical_json(raw)
+    return PaperBookSnapshot(
+        venue=f"binance-{normalized_market}",
+        market_id=normalized_symbol,
+        asset_id=normalized_symbol,
+        bids=(level("bidPrice", "bidQty"),),
+        asks=(level("askPrice", "askQty"),),
+        source_time_ms=source_time_ms,
+        received_wall_ms=int(received_wall_ms),
+        received_monotonic_ns=int(received_monotonic_ns),
+        source_payload_sha256=hashlib.sha256(payload_json.encode("ascii")).hexdigest(),
+    ).validated()
+
+
+class ConservativePaperExecutionAdapter:
+    """Single execution path shared by Binance and Polymarket paper orders."""
+
+    execution_schema_version = PAPER_EXECUTION_SCHEMA_VERSION
+
+    def __init__(
+        self,
+        journal: PaperOrderJournal,
+        *,
+        venue: str,
+        fee: FeeFunction,
+    ) -> None:
+        self.journal = journal
+        self.venue = _identifier(str(venue).lower(), name="venue")
+        self.fee = fee
+
+    def _validate_venue_order(
+        self,
+        intent: PaperOrderIntent,
+        *,
+        closing_position: bool,
+    ) -> None:
+        del intent, closing_position
+
+    def execute_aggressive(
+        self,
+        intent: PaperOrderIntent,
+        book: PaperBookSnapshot,
+        *,
+        execution_time_ms: int,
+        submission_latency_ms: int,
+        maximum_book_age_ms: int,
+        closing_position: bool = False,
+    ) -> PaperExecutionResult:
+        order = intent.validated()
+        snapshot = book.validated()
+        if order.venue != self.venue:
+            raise ValueError("paper intent venue does not match the adapter")
+        if bool(order.parent_inventory_id) != bool(closing_position):
+            raise ValueError(
+                "closing paper intents require exactly one parent inventory"
+            )
+        self._validate_venue_order(order, closing_position=closing_position)
+        owned_quantity = None
+        if closing_position:
+            parent = self.journal.intent(order.parent_inventory_id)
+            if parent.parent_inventory_id:
+                raise ValueError("paper close parent must be an opening intent")
+            if any(
+                current != expected
+                for current, expected in (
+                    (order.venue, parent.venue),
+                    (order.market_id, parent.market_id),
+                    (order.asset_id, parent.asset_id),
+                    (order.symbol, parent.symbol),
+                )
+            ):
+                raise ValueError("paper close identity does not match parent inventory")
+            if order.side == parent.side:
+                raise ValueError("paper close side does not reverse parent inventory")
+            owned_quantity = self.journal.owned_quantity(order.parent_inventory_id)
+            if owned_quantity < order.quantity:
+                raise ValueError("paper close exceeds bot-owned inventory")
+        initial = self.journal.record_intent(order)
+        if initial.state != "INTENT":
+            raise ValueError(
+                f"paper intent is already active or resolved: {initial.state}"
+            )
+        submitted_event_id = _canonical_sha256(
+            {
+                "intent_id": order.intent_id,
+                "stage": "submitted",
+                "book_sha256": snapshot.source_payload_sha256,
+            }
+        )
+        submitted = self.journal.transition(
+            order.intent_id,
+            PaperOrderTransition(
+                event_id=submitted_event_id,
+                state="SUBMITTED",
+                occurred_at_ms=order.created_at_ms,
+                source="simulator",
+                source_event_id=snapshot.source_payload_sha256,
+                source_payload_sha256=snapshot.source_payload_sha256,
+            ),
+        )
+        result = simulate_aggressive_order(
+            order,
+            snapshot,
+            execution_time_ms=execution_time_ms,
+            submission_latency_ms=submission_latency_ms,
+            maximum_book_age_ms=maximum_book_age_ms,
+            fee=self.fee,
+            owned_quantity=owned_quantity,
+            closing_position=closing_position,
+        )
+        if (
+            closing_position
+            and result.remaining_quantity > 0
+            and result.state != "UNKNOWN"
+        ):
+            result = replace(
+                result,
+                state="CLOSE_PENDING",
+                reason=f"close_unresolved:{result.reason}",
+            )
+        cumulative_filled = (
+            submitted.cumulative_filled_quantity + result.filled_quantity
+        )
+        if result.filled_quantity > 0:
+            previous_notional = (
+                submitted.cumulative_filled_quantity * submitted.average_fill_price
+            )
+            added_notional = result.filled_quantity * result.average_fill_price
+            cumulative_average = (
+                previous_notional + added_notional
+            ) / cumulative_filled
+        else:
+            cumulative_average = submitted.average_fill_price
+        cumulative_fee = submitted.cumulative_fee_quote + result.fee_quote
+        final_event_id = _canonical_sha256(
+            {
+                "intent_id": order.intent_id,
+                "stage": "execution",
+                "execution_time_ms": int(execution_time_ms),
+                "book_sha256": snapshot.source_payload_sha256,
+                "state": result.state,
+            }
+        )
+        self.journal.transition(
+            order.intent_id,
+            PaperOrderTransition(
+                event_id=final_event_id,
+                state=result.state,
+                occurred_at_ms=int(execution_time_ms),
+                cumulative_filled_quantity=cumulative_filled,
+                average_fill_price=cumulative_average,
+                cumulative_fee_quote=cumulative_fee,
+                reason=result.reason,
+                source="simulator",
+                source_event_id=snapshot.source_payload_sha256,
+                source_payload_sha256=snapshot.source_payload_sha256,
+            ),
+        )
+        return result
+
+
+class BinancePaperExecutionAdapter(ConservativePaperExecutionAdapter):
+    def __init__(
+        self,
+        journal: PaperOrderJournal,
+        *,
+        market_type: str,
+        maker_fee_bps: Decimal,
+        taker_fee_bps: Decimal,
+    ) -> None:
+        normalized_market = str(market_type or "").strip().lower()
+        if normalized_market not in {"spot", "futures"}:
+            raise ValueError("Binance paper market_type must be spot or futures")
+        self.market_type = normalized_market
+        super().__init__(
+            journal,
+            venue=f"binance-{normalized_market}",
+            fee=BinanceBpsFeeModel(maker_fee_bps, taker_fee_bps),
+        )
+
+    def _validate_venue_order(
+        self,
+        intent: PaperOrderIntent,
+        *,
+        closing_position: bool,
+    ) -> None:
+        if self.market_type == "spot" and not closing_position and intent.side != "BUY":
+            raise ValueError("Binance spot paper execution prohibits naked short opens")
+
+
+class PolymarketPaperExecutionAdapter(ConservativePaperExecutionAdapter):
+    def __init__(
+        self,
+        journal: PaperOrderJournal,
+        *,
+        fee: PolymarketFeeModel,
+    ) -> None:
+        super().__init__(journal, venue="polymarket", fee=fee)
+
+    def _validate_venue_order(
+        self,
+        intent: PaperOrderIntent,
+        *,
+        closing_position: bool,
+    ) -> None:
+        if intent.limit_price >= 1:
+            raise ValueError("Polymarket paper price must be below one")
+        expected_side = "SELL" if closing_position else "BUY"
+        if intent.side != expected_side:
+            raise ValueError("Polymarket paper execution prohibits naked token shorts")
+
+
 @dataclass(frozen=True)
 class PassiveQueueState:
     intent_id: str
@@ -1056,22 +1549,29 @@ def assert_shared_venue_execution_contract(adapters: Iterable[object]) -> None:
 __all__ = [
     "AggressiveTradePrint",
     "BLOCKING_ORDER_STATES",
+    "BinancePaperExecutionAdapter",
     "BinanceBpsFeeModel",
     "BookLevel",
+    "ConservativePaperExecutionAdapter",
     "ORDER_STATES",
     "PAPER_EXECUTION_SCHEMA_VERSION",
     "PAPER_JOURNAL_SCHEMA_VERSION",
     "PaperBookSnapshot",
     "PaperExecutionResult",
     "PaperFill",
+    "PaperInventory",
     "PaperOrderIntent",
     "PaperOrderJournal",
     "PaperOrderSnapshot",
     "PaperOrderTransition",
+    "PaperReconciliationReport",
     "PassiveQueueState",
     "PolymarketFeeModel",
+    "PolymarketPaperExecutionAdapter",
     "TERMINAL_ORDER_STATES",
     "apply_passive_trade_print",
     "assert_shared_venue_execution_contract",
+    "binance_book_ticker_snapshot",
+    "paper_intent_id",
     "simulate_aggressive_order",
 ]
