@@ -6,6 +6,7 @@ import argparse
 from datetime import UTC, datetime
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
@@ -173,6 +174,20 @@ def _slug(model: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", model.lower()).strip("-")
 
 
+def _parameter_billions(inventory_row: Mapping[str, object]) -> float:
+    details = inventory_row.get("details")
+    if not isinstance(details, Mapping):
+        raise ValueError("Ollama model inventory has no details")
+    raw = str(details.get("parameter_size", "")).strip().upper()
+    match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)B", raw)
+    if match is None:
+        raise ValueError("Ollama model parameter size is not auditable")
+    value = float(match.group(1))
+    if not math.isfinite(value) or value <= 0.0:
+        raise ValueError("Ollama model parameter size is invalid")
+    return value
+
+
 def _schema(factors: int) -> dict[str, object]:
     return {
         "type": "object",
@@ -194,7 +209,10 @@ def _schema(factors: int) -> dict[str, object]:
                         "expected_horizon",
                     ],
                     "properties": {
-                        "name": {"type": "string"},
+                        "name": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9_]{2,63}$",
+                        },
                         "expression": {"type": "string"},
                         "mechanism": {"type": "string"},
                         "failure_mode": {"type": "string"},
@@ -223,6 +241,8 @@ def _prompt(feature_names: tuple[str, ...], factors: int) -> tuple[str, str]:
         "forbidden. Allowed functions and arity: abs(x), clip(x, lower_constant, "
         "upper_constant), maximum(x, y), minimum(x, y), safe_divide(x, y), sign(x), "
         "and tanh(x). Keep constants finite and no larger than 10000 in absolute value. "
+        "Every name must be descriptive lower snake case matching "
+        "^[a-z][a-z0-9_]{2,63}$. "
         "Returns, realized volatility, ranges, and residual returns ending in _bps are in "
         "basis points; flow, path-efficiency, relative-volume, liquidity, and ratio fields "
         "are dimensionless; calendar sine/cosine and symbol flags are dimensionless. "
@@ -347,13 +367,29 @@ def run(arguments: argparse.Namespace) -> int:
             program_rejections = (
                 {"index": None, "name": None, "reason": str(exc)},
             )
+        inventory_row = inventory[model]
+        parameter_billions = _parameter_billions(inventory_row)
+        parameter_eligible = parameter_billions >= float(
+            contract["minimum_parameter_scale_billions"]
+        )
+        if not parameter_eligible:
+            program_rejections = tuple(program_rejections) + tuple(
+                {
+                    "index": index,
+                    "name": program.name,
+                    "reason": "model_parameter_scale_below_frozen_minimum",
+                }
+                for index, program in enumerate(programs)
+            )
+            programs = ()
         accepted.extend(programs)
         rejected.extend(
             {"model": model, **dict(item)} for item in program_rejections
         )
-        inventory_row = inventory[model]
         model_evidence[model] = {
             "inventory": dict(inventory_row),
+            "parameter_billions": parameter_billions,
+            "parameter_scale_eligible": parameter_eligible,
             "show_canonical_sha256": _canonical_sha256(show),
             "request_path": str(request_path.resolve()),
             "request_file_sha256": _file_sha256(request_path),
