@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import re
 import time
-from typing import Mapping, Sequence
+from typing import Mapping, Protocol, Sequence
 import uuid
 
 import duckdb
@@ -42,6 +42,10 @@ _STREAMS = frozenset(
 )
 _MAX_RAW_MESSAGE_BYTES = 8 * 1024 * 1024
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
+
+
+class _TextSender(Protocol):
+    async def send(self, message: str) -> object: ...
 
 
 def _canonical_json(value: object) -> str:
@@ -1339,19 +1343,27 @@ class PolymarketPublicRecorder:
             item = await output.get()
             if item is None:
                 if pending_messages:
-                    store.append_messages(run_id, pending_messages)
+                    await asyncio.to_thread(
+                        store.append_messages,
+                        run_id,
+                        tuple(pending_messages),
+                    )
                 return
             if isinstance(item, RawStreamMessage):
                 pending_messages.append(item)
                 if len(pending_messages) < 256 and not output.empty():
                     continue
             if pending_messages:
-                store.append_messages(run_id, pending_messages)
+                await asyncio.to_thread(
+                    store.append_messages,
+                    run_id,
+                    tuple(pending_messages),
+                )
                 pending_messages = []
             if isinstance(item, StreamGap):
-                store.record_gap(run_id, item)
+                await asyncio.to_thread(store.record_gap, run_id, item)
             elif isinstance(item, MarketEvidence):
-                store.record_market_evidence(run_id, item)
+                await asyncio.to_thread(store.record_market_evidence, run_id, item)
 
     async def _clob_stream(
         self,
@@ -1370,7 +1382,8 @@ class PolymarketPublicRecorder:
                     CLOB_MARKET_WEBSOCKET,
                     open_timeout=10,
                     close_timeout=3,
-                    ping_interval=None,
+                    ping_interval=20,
+                    ping_timeout=20,
                     max_size=_MAX_RAW_MESSAGE_BYTES,
                     max_queue=1024,
                 ) as websocket:
@@ -1385,61 +1398,74 @@ class PolymarketPublicRecorder:
                         )
                     )
                     backoff = 1.0
-                    while not stop.is_set():
-                        receive = asyncio.create_task(websocket.recv())
-                        changed = asyncio.create_task(self.registry.changed.wait())
-                        stopping = asyncio.create_task(stop.wait())
-                        done, pending = await asyncio.wait(
-                            {receive, changed, stopping},
-                            timeout=10.0,
-                            return_when=asyncio.FIRST_COMPLETED,
-                        )
-                        for task in pending:
-                            task.cancel()
-                        await asyncio.gather(*pending, return_exceptions=True)
-                        if not done:
-                            await websocket.send("PING")
-                            continue
-                        if stopping in done and stopping.result():
-                            return
-                        if receive in done:
-                            raw = receive.result()
-                            sequence += 1
-                            await output.put(
-                                RawStreamMessage(
-                                    "clob_market",
-                                    connection_id,
-                                    sequence,
-                                    _wall_ms(),
-                                    _monotonic_ns(),
-                                    _text_frame(raw),
-                                )
+                    heartbeat_task = asyncio.create_task(
+                        _periodic_text_heartbeat(websocket, stop, "PING", 10.0)
+                    )
+                    try:
+                        while not stop.is_set():
+                            receive = asyncio.create_task(websocket.recv())
+                            changed = asyncio.create_task(self.registry.changed.wait())
+                            stopping = asyncio.create_task(stop.wait())
+                            transient = (receive, changed, stopping)
+                            done, _ = await asyncio.wait(
+                                {*transient, heartbeat_task},
+                                return_when=asyncio.FIRST_COMPLETED,
                             )
-                        if changed in done and changed.result():
-                            self.registry.changed.clear()
-                            desired = set(self.registry.token_ids())
-                            additions = sorted(desired - current)
-                            removals = sorted(current - desired)
-                            if additions:
-                                await websocket.send(
-                                    _canonical_json(
-                                        {
-                                            "assets_ids": additions,
-                                            "operation": "subscribe",
-                                            "custom_feature_enabled": True,
-                                        }
+                            for task in transient:
+                                if task not in done:
+                                    task.cancel()
+                            await asyncio.gather(
+                                *(task for task in transient if task not in done),
+                                return_exceptions=True,
+                            )
+                            if heartbeat_task in done:
+                                heartbeat_task.result()
+                                if stop.is_set():
+                                    return
+                                raise RuntimeError("CLOB heartbeat stopped early")
+                            if stopping in done and stopping.result():
+                                return
+                            if receive in done:
+                                raw = receive.result()
+                                sequence += 1
+                                await output.put(
+                                    RawStreamMessage(
+                                        "clob_market",
+                                        connection_id,
+                                        sequence,
+                                        _wall_ms(),
+                                        _monotonic_ns(),
+                                        _text_frame(raw),
                                     )
                                 )
-                            if removals:
-                                await websocket.send(
-                                    _canonical_json(
-                                        {
-                                            "assets_ids": removals,
-                                            "operation": "unsubscribe",
-                                        }
+                            if changed in done and changed.result():
+                                self.registry.changed.clear()
+                                desired = set(self.registry.token_ids())
+                                additions = sorted(desired - current)
+                                removals = sorted(current - desired)
+                                if additions:
+                                    await websocket.send(
+                                        _canonical_json(
+                                            {
+                                                "assets_ids": additions,
+                                                "operation": "subscribe",
+                                                "custom_feature_enabled": True,
+                                            }
+                                        )
                                     )
-                                )
-                            current = desired
+                                if removals:
+                                    await websocket.send(
+                                        _canonical_json(
+                                            {
+                                                "assets_ids": removals,
+                                                "operation": "unsubscribe",
+                                            }
+                                        )
+                                    )
+                                current = desired
+                    finally:
+                        heartbeat_task.cancel()
+                        await asyncio.gather(heartbeat_task, return_exceptions=True)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
@@ -1552,29 +1578,65 @@ class PolymarketPublicRecorder:
                     if subscription is not None:
                         await websocket.send(subscription)
                     backoff = 1.0
-                    while not stop.is_set():
-                        try:
-                            raw = await asyncio.wait_for(
-                                websocket.recv(), timeout=heartbeat_seconds
-                            )
-                        except TimeoutError:
-                            if heartbeat is not None:
-                                await websocket.send(heartbeat)
-                            continue
-                        sequence += 1
-                        text = _text_frame(raw)
-                        await output.put(
-                            RawStreamMessage(
-                                stream,
-                                connection_id,
-                                sequence,
-                                _wall_ms(),
-                                _monotonic_ns(),
-                                text,
+                    heartbeat_task = (
+                        asyncio.create_task(
+                            _periodic_text_heartbeat(
+                                websocket,
+                                stop,
+                                heartbeat,
+                                heartbeat_seconds,
                             )
                         )
-                        if text == "PING":
-                            await websocket.send("PONG")
+                        if heartbeat is not None
+                        else None
+                    )
+                    try:
+                        while not stop.is_set():
+                            receive = asyncio.create_task(websocket.recv())
+                            stopping = asyncio.create_task(stop.wait())
+                            transient = (receive, stopping)
+                            watched: set[asyncio.Task[object]] = set(transient)
+                            if heartbeat_task is not None:
+                                watched.add(heartbeat_task)
+                            done, _ = await asyncio.wait(
+                                watched,
+                                return_when=asyncio.FIRST_COMPLETED,
+                            )
+                            for task in transient:
+                                if task not in done:
+                                    task.cancel()
+                            await asyncio.gather(
+                                *(task for task in transient if task not in done),
+                                return_exceptions=True,
+                            )
+                            if heartbeat_task is not None and heartbeat_task in done:
+                                heartbeat_task.result()
+                                if stop.is_set():
+                                    return
+                                raise RuntimeError(f"{stream} heartbeat stopped early")
+                            if stopping in done and stopping.result():
+                                return
+                            raw = receive.result()
+                            sequence += 1
+                            text = _text_frame(raw)
+                            await output.put(
+                                RawStreamMessage(
+                                    stream,
+                                    connection_id,
+                                    sequence,
+                                    _wall_ms(),
+                                    _monotonic_ns(),
+                                    text,
+                                )
+                            )
+                            if text == "PING":
+                                await websocket.send("PONG")
+                    finally:
+                        if heartbeat_task is not None:
+                            heartbeat_task.cancel()
+                            await asyncio.gather(
+                                heartbeat_task, return_exceptions=True
+                            )
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
@@ -1595,6 +1657,23 @@ def _text_frame(raw: object) -> str:
     if isinstance(raw, bytes):
         return raw.decode("utf-8", errors="strict")
     return str(raw)
+
+
+async def _periodic_text_heartbeat(
+    websocket: _TextSender,
+    stop: asyncio.Event,
+    message: str,
+    seconds: float,
+) -> None:
+    interval = float(seconds)
+    if interval <= 0.0:
+        raise ValueError("heartbeat interval must be positive")
+    while not stop.is_set():
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=interval)
+            return
+        except TimeoutError:
+            await websocket.send(message)
 
 
 async def _bounded_backoff(stop: asyncio.Event, seconds: float) -> None:
