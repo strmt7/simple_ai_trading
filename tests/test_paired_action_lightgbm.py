@@ -270,3 +270,63 @@ def test_calibration_reloads_and_decisions_apply_all_gates(tmp_path: Path) -> No
     assert decisions.actions[0, 0] == 0
     assert np.all(decisions.actions[1:] == 1)
     assert np.all((decisions.size_multiplier >= 0.0) & (decisions.size_multiplier <= 1.0))
+
+
+def test_round56_predictive_diagnostics_use_held_forward_arrays() -> None:
+    from tools.run_round56_paired_action import _predictive_diagnostics
+
+    rng = np.random.default_rng(5610)
+    timestamps = 200
+    truth = np.empty((timestamps, len(SYMBOLS), 2), dtype=np.float64)
+    truth[..., 0] = 8.0 + rng.normal(scale=0.5, size=truth.shape[:2])
+    truth[..., 1] = -8.0 + rng.normal(scale=0.5, size=truth.shape[:2])
+    point = np.empty((2, 3, *truth.shape), dtype=np.float64)
+    q20 = np.empty_like(point)
+    for view in range(2):
+        for seed in range(3):
+            point[view, seed] = truth + rng.normal(scale=0.5, size=truth.shape)
+            q20[view, seed] = truth - 1.0 + rng.normal(scale=0.2, size=truth.shape)
+    fit = np.zeros(timestamps, dtype=bool)
+    fit[:120] = True
+    timestamps_ms = np.arange(timestamps, dtype=np.int64) * HOUR_MS
+    calibration = fit_paired_action_calibration(
+        treatment_id="baseline_72",
+        point_predictions_bps=point,
+        q20_predictions_bps=q20,
+        truth_bps=truth,
+        timestamp_mask=fit,
+        timestamps_ms=timestamps_ms,
+    )
+    validation = ~fit
+    baseline_point = np.zeros_like(point[:, :, validation])
+    baseline_q20 = np.zeros_like(q20[:, :, validation])
+    design = {
+        "predictive_gates": {
+            "minimum_pooled_point_mse_skill_vs_causal_constant": -100.0,
+            "minimum_each_action_point_mse_skill_vs_causal_constant": -100.0,
+            "minimum_pooled_q20_pinball_skill_vs_causal_constant": -100.0,
+            "minimum_each_action_q20_pinball_skill_vs_causal_constant": -100.0,
+            "minimum_pooled_spearman": 0.0,
+            "minimum_months_with_positive_spearman": 1,
+            "minimum_top_score_quintile_realized_mean_bps": 0.0,
+            "minimum_pooled_q20_coverage": 0.0,
+            "maximum_pooled_q20_coverage": 1.0,
+            "minimum_each_action_q20_coverage": 0.0,
+            "maximum_each_action_q20_coverage": 1.0,
+            "maximum_reload_prediction_error_bps": 1e-6,
+        }
+    }
+    diagnostics, gate = _predictive_diagnostics(
+        design,
+        calibration=calibration,
+        point_predictions=point[:, :, validation],
+        q20_predictions=q20[:, :, validation],
+        point_baselines=baseline_point,
+        q20_baselines=baseline_q20,
+        truth_bps=truth[validation],
+        timestamps_ms=timestamps_ms[validation],
+        maximum_reload_error_bps=0.0,
+    )
+    assert diagnostics["finite"] is True
+    assert diagnostics["point"]["pooled_spearman"] > 0.0
+    assert gate["checks"]["finite_predictions"] is True
