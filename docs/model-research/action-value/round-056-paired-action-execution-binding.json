@@ -1,0 +1,132 @@
+{
+  "schema_version": "round-056-paired-action-execution-binding-v1",
+  "round": 56,
+  "design_sha256": "893cbc7e24b1125d16e36affa23329a3e18fc74f08131231619870ab831d99d4",
+  "implementation_commit": "244902e1604f664c1693db8620a782ab88ca7da7",
+  "blobs": [
+    {
+      "path": "docs/model-research/action-value/round-056-paired-action-distributional-design.json",
+      "git_blob_oid": "13869e32a250b424eb05ed3515b74afd964a6241"
+    },
+    {
+      "path": "src/simple_ai_trading/ai_factor_programs.py",
+      "git_blob_oid": "e8a61d61127b5e4c7e21d6f246c7c032f6b63b96"
+    },
+    {
+      "path": "src/simple_ai_trading/bounded_alpha_lightgbm.py",
+      "git_blob_oid": "a5631c8f41cba4acc52c68e9e201b4dfba1fb70b"
+    },
+    {
+      "path": "src/simple_ai_trading/compute.py",
+      "git_blob_oid": "bde295ca773e31f3c40d237a9da9f792b2328945"
+    },
+    {
+      "path": "src/simple_ai_trading/cross_asset_cost_data.py",
+      "git_blob_oid": "331a13f86d390a15d79adeb475be8637c6844073"
+    },
+    {
+      "path": "src/simple_ai_trading/derivatives_hurdle_data.py",
+      "git_blob_oid": "bb5e8db1a8ed1c98990e477e88625d61e625b9b6"
+    },
+    {
+      "path": "src/simple_ai_trading/lightgbm_backend.py",
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c"
+    },
+    {
+      "path": "src/simple_ai_trading/paired_action_lightgbm.py",
+      "git_blob_oid": "44e45a657682f9b7e57b904b9d6e4f4ad042b753"
+    },
+    {
+      "path": "src/simple_ai_trading/stop_time_payoff_data.py",
+      "git_blob_oid": "21d4ef9f3e68cdd19d8dc3848fc6057e6b81b2f7"
+    },
+    {
+      "path": "src/simple_ai_trading/storage.py",
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f"
+    },
+    {
+      "path": "tests/test_ai_factor_programs.py",
+      "git_blob_oid": "126293fb9e93fd4b9369d1ba63e18038638197be"
+    },
+    {
+      "path": "tests/test_bounded_alpha_lightgbm.py",
+      "git_blob_oid": "4efd52e6d3a5e481dc24fab19c6d77797a5ced8a"
+    },
+    {
+      "path": "tests/test_paired_action_lightgbm.py",
+      "git_blob_oid": "053fc0e4f1ed3e6a32423608b033155f6ee86a67"
+    },
+    {
+      "path": "tests/test_stop_time_payoff_data.py",
+      "git_blob_oid": "386d5202e2831b4659441d8196731bae6e34bc77"
+    },
+    {
+      "path": "tools/create_round56_paired_action_binding.py",
+      "git_blob_oid": "a11fe369400730d7153b9c7e831b9b74cf9e902c"
+    },
+    {
+      "path": "tools/run_round56_ai_factor_research.py",
+      "git_blob_oid": "74c07dc8215cc4b30dc8748af5185bae0ccbe428"
+    },
+    {
+      "path": "tools/run_round56_paired_action.py",
+      "git_blob_oid": "19057762c6b8a88a8169cd99b784dd717d5f0e28"
+    }
+  ],
+  "derived_cache": [
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\features.npy",
+      "bytes": 26111372,
+      "sha256": "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14",
+      "name": "features.npy"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\forward_return_bps.npy",
+      "bytes": 1471184,
+      "sha256": "864d02e1f1ef5bae8f3b51e16ae90e1077ba8852cb67ea0a766a06ec956b9ce7",
+      "name": "forward_return_bps.npy"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\hourly_return_bps.npy",
+      "bytes": 367892,
+      "sha256": "277cb6022dddefe1ba52c83a8827ec45e41f45fb877f7db59599561373b10dbf",
+      "name": "hourly_return_bps.npy"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\metadata.json",
+      "bytes": 3159,
+      "sha256": "033480cd3b5669a060f297e7e477c2543a551602834914803bfd1127608d1135",
+      "name": "metadata.json"
+    },
+    {
+      "path": "E:\\SimpleAITradingData\\round45-joint-sam-tcn-20260713-v1\\derived_dataset\\timestamps_ms.npy",
+      "bytes": 245304,
+      "sha256": "b85c541d78c29f34a12b75f42656cf09ae4c6a47dcef5334c4d60d2e90e6591f",
+      "name": "timestamps_ms.npy"
+    }
+  ],
+  "external_evidence": {
+    "source_certificate": {
+      "path": "E:\\SimpleAITradingData\\round38-derivatives-source-20260712-v2\\certificate.json",
+      "bytes": 4575,
+      "sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7"
+    },
+    "ai_report": {
+      "path": "E:\\SimpleAITradingData\\round56-ai-factors-20260714-v2\\report.json",
+      "bytes": 7076,
+      "sha256": "bb57497438ef7631c5b0c11f63f300d4697bfbabfb00f63a3549a80eeb0b34d6"
+    },
+    "ai_ledger": {
+      "path": "E:\\SimpleAITradingData\\round56-ai-factors-20260714-v2\\factor-program-ledger.json",
+      "bytes": 10073,
+      "sha256": "a862bb7c958a3cd08ad9bd034cd7e538f7b5e448101dfd31b2488f4c1733a9f4"
+    },
+    "rejected_ai_report": {
+      "path": "E:\\SimpleAITradingData\\round56-ai-factors-20260714-v1\\report.json",
+      "bytes": 7078,
+      "sha256": "154e4e31fa4d0cfb4081ab5c6d1939fcb188f4f12bcbf14401867630c0c13d31"
+    }
+  },
+  "command": ".venv311\\Scripts\\python.exe tools\\run_round56_paired_action.py --binding docs\\model-research\\action-value\\round-056-paired-action-execution-binding.json --source-certificate <external-certificate.json> --derived-cache <round45-derived-cache> --ai-report <round56-v2-report.json> --ai-ledger <round56-v2-factor-program-ledger.json> --rejected-ai-report <round56-v1-report.json> --evidence-root <new-external-evidence-root> --compute-backend directml",
+  "binding_sha256": "ffdcd1226fe55af6edaf331d4908ec0945b5871fa021035fd2702d0795aeaa9a"
+}
