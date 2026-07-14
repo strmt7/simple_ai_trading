@@ -382,9 +382,32 @@ def load_verified_minute_panel(
 ) -> tuple[dict[str, MinuteSeries], SourceEvidence]:
     """Load only the frozen warmup-through-viability source window."""
 
+    return load_verified_minute_panel_window(
+        database_path,
+        materialization_end=MATERIALIZATION_END,
+        progress=progress,
+    )
+
+
+def load_verified_minute_panel_window(
+    database_path: str | Path,
+    *,
+    materialization_end: str,
+    progress: ProgressCallback | None = None,
+) -> tuple[dict[str, MinuteSeries], SourceEvidence]:
+    """Load a complete certified prefix without reading later candle values."""
+
     path = Path(database_path)
+    try:
+        requested_end_ms = _date_ms(materialization_end)
+    except ValueError as exc:
+        raise ValueError("materialization end must be an ISO date") from exc
+    if not (
+        _date_ms(FEATURE_WARMUP_START) <= requested_end_ms <= _date_ms(MATERIALIZATION_END)
+    ):
+        raise ValueError("materialization end falls outside the certified source window")
     start_ms = _date_ms(FEATURE_WARMUP_START)
-    end_exclusive_ms = _date_ms(MATERIALIZATION_END) + 86_400_000
+    end_exclusive_ms = requested_end_ms + 86_400_000
     with _read_only_connection(path) as connection:
         archives = tuple(_archive_evidence(connection, symbol) for symbol in SYMBOLS)
         panel: dict[str, MinuteSeries] = {}
@@ -411,7 +434,7 @@ def load_verified_minute_panel(
     source = SourceEvidence(
         database_path=str(path.resolve()),
         materialized_start=FEATURE_WARMUP_START,
-        materialized_end=MATERIALIZATION_END,
+        materialized_end=materialization_end,
         archive_evidence=archives,
         series_evidence=tuple(evidence),
         panel_stream_sha256=panel_digest.hexdigest(),
@@ -789,6 +812,7 @@ __all__ = [
     "SourceEvidence",
     "build_cross_asset_dataset",
     "load_verified_minute_panel",
+    "load_verified_minute_panel_window",
     "role_by_name",
     "utc_date",
     "utc_month",
