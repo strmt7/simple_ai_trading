@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
@@ -23,6 +23,12 @@ _KNOWN_NO_BOOK_CHANGE_EVENTS = frozenset(
 _BOOK_DEPTH_EVENTS = frozenset({"book", "price_change"})
 _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS = 1_000
 _BEST_CORROBORATION_MAX_ARRIVAL_NS = 2_000_000_000
+_CAUSAL_REORDER_MAX_SOURCE_SKEW_MS = 1_000
+_CAUSAL_REORDER_MAX_ARRIVAL_NS = 2_000_000_000
+_CAUSALLY_ORDERED_EVENTS = _BOOK_DEPTH_EVENTS | frozenset(
+    {"best_bid_ask", "tick_size_change", "market_resolved"}
+)
+POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION = "polymarket-replay-diagnostics-v1"
 
 
 def _canonical_json(value: object) -> str:
@@ -110,6 +116,21 @@ class PolymarketResolutionEvidence:
     event_sha256: str
 
 
+@dataclass(frozen=True)
+class PolymarketReplayDiagnostics:
+    schema_version: str
+    total_event_count: int
+    causally_ordered_event_count: int
+    late_event_count: int
+    maximum_source_regression_ms: int
+    maximum_late_arrival_delay_ns: int
+    deferred_event_count: int
+    maximum_availability_delay_ns: int
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 @dataclass
 class _BookState:
     bids: dict[Decimal, Decimal]
@@ -139,6 +160,8 @@ class _EventRow:
     sequence_number: int
     received_wall_ms: int
     received_monotonic_ns: int
+    available_wall_ms: int
+    available_monotonic_ns: int
     sub_index: int
 
 
@@ -152,11 +175,13 @@ class PolymarketEvidenceReplay:
         markets: tuple[PolymarketFiveMinuteMarket, ...],
         books: tuple[PolymarketRecordedBook, ...],
         resolutions: tuple[PolymarketResolutionEvidence, ...],
+        diagnostics: PolymarketReplayDiagnostics,
     ) -> None:
         self.run_id = run_id
         self.markets = markets
         self.books = books
         self.resolutions = resolutions
+        self.diagnostics = diagnostics
         self._books_by_token: dict[str, tuple[PolymarketRecordedBook, ...]] = {}
         for token in sorted({book.token_id for book in books}):
             self._books_by_token[token] = tuple(
@@ -214,6 +239,7 @@ class PolymarketEvidenceReplay:
 
         markets = cls._load_markets(store, selected)
         events = cls._load_events(store, selected)
+        events, diagnostics = cls._causal_event_order(events, markets)
         books, resolutions = cls._reconstruct(selected, markets, events)
         if not books:
             raise ValueError("Polymarket replay contains no validated book states")
@@ -222,6 +248,7 @@ class PolymarketEvidenceReplay:
             markets=markets,
             books=books,
             resolutions=resolutions,
+            diagnostics=diagnostics,
         )
 
     @staticmethod
@@ -295,10 +322,113 @@ class PolymarketEvidenceReplay:
                     sequence_number=int(row[7]),
                     received_wall_ms=int(row[8]),
                     received_monotonic_ns=int(row[9]),
+                    available_wall_ms=int(row[8]),
+                    available_monotonic_ns=int(row[9]),
                     sub_index=int(row[10]),
                 )
             )
         return tuple(events)
+
+    @classmethod
+    def _causal_event_order(
+        cls,
+        events: tuple[_EventRow, ...],
+        markets: tuple[PolymarketFiveMinuteMarket, ...],
+    ) -> tuple[tuple[_EventRow, ...], PolymarketReplayDiagnostics]:
+        market_by_condition = {market.condition_id: market for market in markets}
+        by_condition: dict[str, list[tuple[int, _EventRow]]] = {}
+        passthrough: list[_EventRow] = []
+        for row in events:
+            condition = str(row.event.get("market") or row.condition_id).lower()
+            if (
+                row.event_type not in _CAUSALLY_ORDERED_EVENTS
+                or condition not in market_by_condition
+            ):
+                passthrough.append(row)
+                continue
+            source_time = _timestamp(
+                row.event.get("timestamp"), name=f"{row.event_type} timestamp"
+            )
+            by_condition.setdefault(condition, []).append((source_time, row))
+
+        ordered: list[_EventRow] = []
+        late_event_count = 0
+        maximum_source_regression_ms = 0
+        maximum_late_arrival_delay_ns = 0
+        deferred_event_count = 0
+        maximum_availability_delay_ns = 0
+        for condition in sorted(by_condition):
+            arrivals = by_condition[condition]
+            maximum_source_time = -1
+            maximum_source_row: _EventRow | None = None
+            for source_time, row in arrivals:
+                if source_time < maximum_source_time:
+                    if maximum_source_row is None:
+                        raise TypeError("causal source watermark is unavailable")
+                    source_skew = maximum_source_time - source_time
+                    arrival_delay = (
+                        row.received_monotonic_ns
+                        - maximum_source_row.received_monotonic_ns
+                    )
+                    late_event_count += 1
+                    maximum_source_regression_ms = max(
+                        maximum_source_regression_ms, source_skew
+                    )
+                    maximum_late_arrival_delay_ns = max(
+                        maximum_late_arrival_delay_ns, arrival_delay
+                    )
+                    if (
+                        source_skew > _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
+                        or not 0
+                        <= arrival_delay
+                        <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
+                    ):
+                        raise ValueError(
+                            "CLOB event exceeded the bounded causal reorder window"
+                        )
+                elif source_time >= maximum_source_time:
+                    maximum_source_time = max(maximum_source_time, source_time)
+                    maximum_source_row = row
+
+            available_monotonic_ns = 0
+            available_wall_ms = 0
+            for _source_time, row in sorted(
+                arrivals,
+                key=lambda item: (item[0], cls._event_arrival_key(item[1])),
+            ):
+                if row.received_monotonic_ns > available_monotonic_ns:
+                    available_monotonic_ns = row.received_monotonic_ns
+                    available_wall_ms = row.received_wall_ms
+                else:
+                    available_monotonic_ns += 1
+                    available_wall_ms = max(available_wall_ms, row.received_wall_ms)
+                availability_delay = (
+                    available_monotonic_ns - row.received_monotonic_ns
+                )
+                if availability_delay > 0:
+                    deferred_event_count += 1
+                    maximum_availability_delay_ns = max(
+                        maximum_availability_delay_ns, availability_delay
+                    )
+                ordered.append(
+                    replace(
+                        row,
+                        available_wall_ms=available_wall_ms,
+                        available_monotonic_ns=available_monotonic_ns,
+                    )
+                )
+        ordered.extend(passthrough)
+        diagnostics = PolymarketReplayDiagnostics(
+            schema_version=POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION,
+            total_event_count=len(events),
+            causally_ordered_event_count=sum(len(rows) for rows in by_condition.values()),
+            late_event_count=late_event_count,
+            maximum_source_regression_ms=maximum_source_regression_ms,
+            maximum_late_arrival_delay_ns=maximum_late_arrival_delay_ns,
+            deferred_event_count=deferred_event_count,
+            maximum_availability_delay_ns=maximum_availability_delay_ns,
+        )
+        return tuple(ordered), diagnostics
 
     @classmethod
     def _reconstruct(
@@ -569,13 +699,17 @@ class PolymarketEvidenceReplay:
                 }
                 if current is not None and payload.source_time_ms < current.source_time_ms:
                     raise ValueError("full book source time regressed")
-                if current is not None and current.book_hash == book_hash:
-                    if current.bids != payload_bids or current.asks != payload_asks:
-                        raise ValueError(
-                            "full book disagrees with reconstructed depth for its hash"
-                        )
+                if (
+                    current is not None
+                    and current.book_hash == book_hash
+                    and current.bids == payload_bids
+                    and current.asks == payload_asks
+                ):
                     current.source_time_ms = payload.source_time_ms
                 else:
+                    # A trade can change depth without a price_change event. The
+                    # official full book is therefore an authoritative resync,
+                    # even when its opaque exchange hash equals the last delta.
                     current = _BookState(
                         bids=payload_bids,
                         asks=payload_asks,
@@ -849,8 +983,8 @@ class PolymarketEvidenceReplay:
             winning_asset_id=winner,
             winning_outcome=winning_outcome,
             resolved_at_ms=resolved_at,
-            received_wall_ms=row.received_wall_ms,
-            received_monotonic_ns=row.received_monotonic_ns,
+            received_wall_ms=row.available_wall_ms,
+            received_monotonic_ns=row.available_monotonic_ns,
             event_sha256=row.event_sha256,
         )
 
@@ -875,8 +1009,8 @@ class PolymarketEvidenceReplay:
                 BookLevel(price, state.asks[price]) for price in sorted(state.asks)
             ),
             source_time_ms=state.source_time_ms,
-            received_wall_ms=row.received_wall_ms,
-            received_monotonic_ns=row.received_monotonic_ns,
+            received_wall_ms=row.available_wall_ms,
+            received_monotonic_ns=row.available_monotonic_ns,
             source_payload_sha256=state.provenance_sha256,
         ).validated()
         return PolymarketRecordedBook(
@@ -926,7 +1060,9 @@ class PolymarketEvidenceReplay:
 
 
 __all__ = [
+    "POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION",
     "PolymarketEvidenceReplay",
     "PolymarketRecordedBook",
+    "PolymarketReplayDiagnostics",
     "PolymarketResolutionEvidence",
 ]

@@ -1460,33 +1460,52 @@ class PolymarketPublicRecorder:
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
-        subscription = {
-            "action": "subscribe",
-            "subscriptions": [
+        subscriptions = (
+            _canonical_json(
                 {
-                    "topic": "crypto_prices",
-                    "type": "update",
-                    "filters": "btcusdt,ethusdt,solusdt",
-                },
-                *(
+                    "action": "subscribe",
+                    "subscriptions": [
+                        {
+                            "topic": "crypto_prices",
+                            "type": "update",
+                            "filters": "btcusdt,ethusdt,solusdt",
+                        }
+                    ],
+                }
+            ),
+            *(
+                _canonical_json(
                     {
-                        "topic": "crypto_prices_chainlink",
-                        "type": "*",
-                        "filters": _canonical_json({"symbol": f"{asset}/usd"}),
+                        "action": "subscribe",
+                        "subscriptions": [
+                            {
+                                "topic": "crypto_prices_chainlink",
+                                "type": "*",
+                                "filters": _canonical_json(
+                                    {"symbol": f"{asset}/usd"}
+                                ),
+                            }
+                        ],
                     }
-                    for asset in ("btc", "eth", "sol")
-                ),
-            ],
-        }
-        await self._simple_stream(
-            stream="polymarket_rtds",
-            url=POLYMARKET_RTDS_WEBSOCKET,
-            subscription=_canonical_json(subscription),
-            heartbeat="PING",
-            heartbeat_seconds=5.0,
-            output=output,
-            stop=stop,
+                )
+                for asset in ("btc", "eth", "sol")
+            ),
         )
+        # Isolate filtered Chainlink symbols so server-side replacement of one
+        # topic subscription cannot silently remove another asset's feed.
+        async with asyncio.TaskGroup() as task_group:
+            for subscription in subscriptions:
+                task_group.create_task(
+                    self._simple_stream(
+                        stream="polymarket_rtds",
+                        url=POLYMARKET_RTDS_WEBSOCKET,
+                        subscription=subscription,
+                        heartbeat="PING",
+                        heartbeat_seconds=5.0,
+                        output=output,
+                        stop=stop,
+                    )
+                )
 
     async def _binance_stream(
         self,
