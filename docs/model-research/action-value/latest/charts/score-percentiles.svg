@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Extreme raw scores were not monotonically profitable</title>
+<desc>Post-hoc consumed-data diagnosis of the model-preferred side; not a selected policy or promotion result</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Extreme raw scores were not monotonically profitable</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Post-hoc consumed-data diagnosis of the model-preferred side; not a selected policy or promotion result</text>
+<line x1="105" y1="580.0" x2="1145" y2="580.0" stroke="#334155"/>
+<text x="91" y="585.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-20.9</text>
+<line x1="105" y1="491.0" x2="1145" y2="491.0" stroke="#334155"/>
+<text x="91" y="496.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-16.3</text>
+<line x1="105" y1="402.0" x2="1145" y2="402.0" stroke="#334155"/>
+<text x="91" y="407.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-11.6</text>
+<line x1="105" y1="313.0" x2="1145" y2="313.0" stroke="#334155"/>
+<text x="91" y="318.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-7.0</text>
+<line x1="105" y1="224.0" x2="1145" y2="224.0" stroke="#334155"/>
+<text x="91" y="229.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-2.4</text>
+<line x1="105" y1="135.0" x2="1145" y2="135.0" stroke="#334155"/>
+<text x="91" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">2.2</text>
+<text x="105.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 50%</text>
+<text x="278.3" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 30%</text>
+<text x="451.7" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 20%</text>
+<text x="625.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 10%</text>
+<text x="798.3" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 5%</text>
+<text x="971.7" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 2%</text>
+<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">top 1%</text>
+<path d="M 105.0 461.4 L 278.3 467.5 L 451.7 478.7 L 625.0 500.4 L 798.3 482.8 L 971.7 497.9 L 1145.0 512.4" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="461.4" r="4" fill="#60a5fa"/>
+<circle cx="278.3" cy="467.5" r="4" fill="#60a5fa"/>
+<circle cx="451.7" cy="478.7" r="4" fill="#60a5fa"/>
+<circle cx="625.0" cy="500.4" r="4" fill="#60a5fa"/>
+<circle cx="798.3" cy="482.8" r="4" fill="#60a5fa"/>
+<circle cx="971.7" cy="497.9" r="4" fill="#60a5fa"/>
+<circle cx="1145.0" cy="512.4" r="4" fill="#60a5fa"/>
+<rect x="105" y="657" width="16" height="4" fill="#60a5fa"/>
+<text x="129" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Baseline</text>
+<path d="M 105.0 458.0 L 278.3 466.0 L 451.7 474.5 L 625.0 463.1 L 798.3 405.7 L 971.7 483.5 L 1145.0 536.9" fill="none" stroke="#14b8a6" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="458.0" r="4" fill="#14b8a6"/>
+<circle cx="278.3" cy="466.0" r="4" fill="#14b8a6"/>
+<circle cx="451.7" cy="474.5" r="4" fill="#14b8a6"/>
+<circle cx="625.0" cy="463.1" r="4" fill="#14b8a6"/>
+<circle cx="798.3" cy="405.7" r="4" fill="#14b8a6"/>
+<circle cx="971.7" cy="483.5" r="4" fill="#14b8a6"/>
+<circle cx="1145.0" cy="536.9" r="4" fill="#14b8a6"/>
+<rect x="355" y="657" width="16" height="4" fill="#14b8a6"/>
+<text x="379" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Governed AI factors</text>
+<text transform="translate(25 357.5) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Mean realized stress payoff (bps)</text>
+</svg>

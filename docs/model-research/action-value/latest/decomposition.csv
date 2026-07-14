@@ -1,0 +1,11 @@
+round,treatment,dimension,value,rows,raw_spearman,realized_stress_mean_bps,post_hoc_consumed_diagnostic
+56,baseline_72,symbol,BTCUSDT,8734,0.028831737513102473,-16.245205157860973,true
+56,baseline_72,symbol,ETHUSDT,8734,0.024428357579673297,-15.942874351054543,true
+56,baseline_72,symbol,SOLUSDT,8734,-0.002434689524288663,-16.19625619931133,true
+56,baseline_72,action,long,13101,0.017855079400910044,-15.870600923647126,true
+56,baseline_72,action,short,13101,0.0069623857072412185,-16.38562288183744,true
+56,ai_program_augmented,symbol,BTCUSDT,8734,0.03603718987748328,-16.245205157860973,true
+56,ai_program_augmented,symbol,ETHUSDT,8734,0.03084604289314548,-15.942874351054543,true
+56,ai_program_augmented,symbol,SOLUSDT,8734,0.0026756735192871904,-16.19625619931133,true
+56,ai_program_augmented,action,long,13101,0.01952557129547321,-15.870600923647126,true
+56,ai_program_augmented,action,short,13101,0.018167120266278734,-16.38562288183744,true

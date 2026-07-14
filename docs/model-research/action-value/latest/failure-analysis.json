@@ -1,0 +1,33 @@
+{
+  "schema_version": "round-056-paired-action-failure-analysis-v1",
+  "round": 56,
+  "source_report_sha256": "8fb9cdca77608554e187830d5ff636ea7013a7bce9a4a3a1805afd76e5a8f764",
+  "status": "rejected_post_hoc_diagnosis",
+  "facts": {
+    "baseline_pooled_spearman": 0.005420802534953856,
+    "ai_pooled_spearman": 0.019215710806679262,
+    "baseline_positive_months": 3,
+    "ai_positive_months": 5,
+    "ai_top_quintile_stress_bps": -14.658046778123861,
+    "ai_post_hoc_top_two_percent_stress_bps": -12.822602369089921,
+    "ai_post_hoc_top_two_percent_before_frozen_charge_bps": 3.177397630910079,
+    "ai_sol_raw_spearman": 0.0026756735192871904,
+    "economic_replay_performed": false
+  },
+  "diagnosis": [
+    "The paired target and explicit action identity improved structural correctness but did not identify positive after-cost action values.",
+    "The two governed AI factors improved pooled and monthly rank consistency but did not establish positive top-quintile payoff or AI uplift.",
+    "Post-hoc extreme-score means were non-monotonic, so a tighter threshold would be outcome-driven curve fitting rather than a justified repair.",
+    "Hourly state resolution is too coarse to support the requested intraday cadence or exploit short-lived order-flow effects already present in the verified tick warehouse.",
+    "SOLUSDT remained the weakest raw rank component; future work must retain all three symbols but model symbol-specific microstructure and costs."
+  ],
+  "prohibited_inferences": [
+    "profitability",
+    "AI uplift",
+    "testnet readiness",
+    "live trading readiness",
+    "leverage readiness",
+    "threshold promotion from the post-hoc percentile table"
+  ],
+  "analysis_sha256": "753db15f7d4002a9ff05f82d8162ae27232a4883aafbb8572a481ac2b8b857ee"
+}

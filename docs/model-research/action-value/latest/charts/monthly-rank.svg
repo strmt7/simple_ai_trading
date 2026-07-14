@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>AI factors improved monthly rank consistency</title>
+<desc>Held-forward action-payoff Spearman; AI was positive in 5/6 months, but still failed the payoff hurdle</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">AI factors improved monthly rank consistency</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Held-forward action-payoff Spearman; AI was positive in 5/6 months, but still failed the payoff hurdle</text>
+<line x1="105" y1="580.0" x2="1145" y2="580.0" stroke="#334155"/>
+<text x="91" y="585.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-3.5</text>
+<line x1="105" y1="491.0" x2="1145" y2="491.0" stroke="#334155"/>
+<text x="91" y="496.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-1.6</text>
+<line x1="105" y1="402.0" x2="1145" y2="402.0" stroke="#334155"/>
+<text x="91" y="407.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.2</text>
+<line x1="105" y1="313.0" x2="1145" y2="313.0" stroke="#334155"/>
+<text x="91" y="318.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">2.0</text>
+<line x1="105" y1="224.0" x2="1145" y2="224.0" stroke="#334155"/>
+<text x="91" y="229.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">3.8</text>
+<line x1="105" y1="135.0" x2="1145" y2="135.0" stroke="#334155"/>
+<text x="91" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">5.7</text>
+<text x="105.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">01</text>
+<text x="313.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">02</text>
+<text x="521.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">03</text>
+<text x="729.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">04</text>
+<text x="937.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">05</text>
+<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">06</text>
+<path d="M 105.0 419.3 L 313.0 389.9 L 521.0 531.2 L 729.0 240.9 L 937.0 232.4 L 1145.0 470.2" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="419.3" r="4" fill="#60a5fa"/>
+<circle cx="313.0" cy="389.9" r="4" fill="#60a5fa"/>
+<circle cx="521.0" cy="531.2" r="4" fill="#60a5fa"/>
+<circle cx="729.0" cy="240.9" r="4" fill="#60a5fa"/>
+<circle cx="937.0" cy="232.4" r="4" fill="#60a5fa"/>
+<circle cx="1145.0" cy="470.2" r="4" fill="#60a5fa"/>
+<rect x="105" y="657" width="16" height="4" fill="#60a5fa"/>
+<text x="129" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Baseline</text>
+<path d="M 105.0 293.6 L 313.0 192.9 L 521.0 471.5 L 729.0 183.8 L 937.0 244.9 L 1145.0 400.5" fill="none" stroke="#14b8a6" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="105.0" cy="293.6" r="4" fill="#14b8a6"/>
+<circle cx="313.0" cy="192.9" r="4" fill="#14b8a6"/>
+<circle cx="521.0" cy="471.5" r="4" fill="#14b8a6"/>
+<circle cx="729.0" cy="183.8" r="4" fill="#14b8a6"/>
+<circle cx="937.0" cy="244.9" r="4" fill="#14b8a6"/>
+<circle cx="1145.0" cy="400.5" r="4" fill="#14b8a6"/>
+<rect x="355" y="657" width="16" height="4" fill="#14b8a6"/>
+<text x="379" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Governed AI factors</text>
+<text transform="translate(25 357.5) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Spearman x 100</text>
+</svg>
