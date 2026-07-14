@@ -1,0 +1,113 @@
+{
+  "claims": {
+    "authenticated_trading_permitted": false,
+    "live_money_permitted": false,
+    "profitability_claim_permitted": false,
+    "promotion_permitted": false,
+    "reason": "Second-level CLOB, cross-feed latency, queue, and official-resolution evidence must be collected prospectively before a model can be evaluated."
+  },
+  "data_contract": {
+    "database": "One append-only DuckDB evidence store with transactional micro-batches and explicit stream-gap records.",
+    "direct_binance": "Record official BTCUSDT, ETHUSDT, and SOLUSDT trade/BBO stream event timestamps and local monotonic arrival timestamps.",
+    "fabricated_or_interpolated_rows_permitted": false,
+    "market_discovery": "Gamma API events and markets; require recurrence=5m, active=true, closed=false, enableOrderBook=true, acceptingOrders=true, exact token IDs, eventStartTime, endDate, tick size, minimum size, feesEnabled, and feeSchedule.",
+    "polymarket_clob": "Record full book snapshots, price-level changes, last trades, best bid/ask, tick-size changes, new-market, and market-resolved events for both outcome tokens.",
+    "polymarket_rtds": "Record public crypto_prices and crypto_prices_chainlink updates with source timestamps and local monotonic arrival timestamps.",
+    "public_history_limit": "The CLOB price-history endpoint has minute fidelity and is not accepted as second-level execution evidence.",
+    "symbols": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ]
+  },
+  "design_sha256": "de7373982e51084c66623a8ba11b34b6250ac7c0d59c886243bf8a0f0aa07aea",
+  "execution_contract": {
+    "aggressive_fill": "Walk observed price-time book depth after empirically sampled submission latency. Implement FOK and FAK semantics exactly; midpoint and last-price fills are prohibited.",
+    "fee_model": "Read each market's feeSchedule and apply the protocol fee formula at each match price with documented precision. No static rate is authoritative.",
+    "heartbeat": "Model the CLOB heartbeat TTL in paper mode; no fill may occur after the last provable connected state and simulated server-side cancellation.",
+    "latency": "Persist source event time, local wall time, and local monotonic arrival time. Calibrate causal empirical submission/data distributions and replay p50/p95/p99 plus an outage stress case.",
+    "passive_fill": "Start behind all displayed quantity at the limit price. Only opposite aggressive prints at that price consume queue ahead; cancellations and level disappearance receive zero fill credit.",
+    "partial_fill": "Reserve cash and create inventory only for filled quantity. Every remainder stays tracked until cancelled, expired, or reconciled.",
+    "settlement": "Simulate MATCHED, MINED, CONFIRMED, RETRYING, and FAILED. Realized P&L requires CONFIRMED paper settlement or official market resolution.",
+    "stop": "Cancel and close bot-owned paper state only. Walk executable bids for owned outcome tokens; unresolved remainder is CLOSE_PENDING and blocks new exposure."
+  },
+  "lifecycle_parity": {
+    "external_position_policy": "Never adopt, net, cancel, sell, or settle state lacking verified bot ownership.",
+    "idempotency": "Every intent has one deterministic venue-neutral bot ID and an append-only transition journal. Duplicate submission returns the existing lifecycle.",
+    "required_shared_core": [
+      "ownership",
+      "idempotency",
+      "reconciliation",
+      "outage_recovery",
+      "pause",
+      "stop_and_close",
+      "loss_budgets",
+      "data_freshness",
+      "api_budget",
+      "coordinator_deadlines"
+    ],
+    "venue_fork_permitted": false
+  },
+  "market_contract": {
+    "allowlist_source": "Automatic Gamma metadata and series recurrence; no manually compiled market IDs.",
+    "market_type": "BTC/ETH/SOL 5-minute Up/Down binary outcomes only",
+    "resolution": "Use official Polymarket market resolution. Binance direction is never substituted for Chainlink resolution.",
+    "up_rule": "Official end reference price greater than or equal to official start reference price",
+    "wrong_asset_or_duration_action": "fail closed"
+  },
+  "model_contract": {
+    "ai": "Optional multibillion local AI treatment is asynchronous and matched against the same ML path. It cannot bypass deterministic data, fee, ownership, execution, or risk gates.",
+    "baseline": "Calibrated probability of official Up outcome plus separate CLOB execution/fill model. Trade only positive expected value after actual price-dependent fees, spread, depth, latency, and tail reserve.",
+    "hedging": "Purchasing the opposing outcome is a distinct after-cost action; naked shorting and assumed perfect complement execution are prohibited.",
+    "latency_edge": "Direct Binance versus Polymarket RTDS/CLOB timing is a measured feature hypothesis, not an assumed edge.",
+    "minimum_evidence": "Gap-free prospective windows with complete books, both RTDS feeds, direct Binance, dynamic fees, source/local timestamps, and official outcomes.",
+    "trade_quota": false
+  },
+  "operational_contract": {
+    "ai_deadline_can_block_risk_execution_or_reconciliation": false,
+    "reconnect_sequence": [
+      "cancel_or_expire_unprovable_resting_orders",
+      "refresh_market_metadata",
+      "refresh_both_outcome_books",
+      "reconcile_bot_owned_journal",
+      "verify_official_resolutions",
+      "check_loss_budgets",
+      "record_clean_observation",
+      "cooldown",
+      "allow_new_entry"
+    ],
+    "stream_gap_policy": "Record the gap, invalidate affected training windows, refresh a REST book snapshot, and prohibit inferred events.",
+    "supervision": "Market data, model, AI, risk, execution, reconciliation, and settlement loops publish independent heartbeats and bounded-deadline results."
+  },
+  "rate_limit_contract": {
+    "entry_reserve": "No new paper/live-like session starts above 80% of any observed limit; emergency reconciliation and close capacity is reserved separately.",
+    "metadata_refresh": "Use event-driven updates and cache immutable market metadata; periodic refresh no faster than necessary.",
+    "source": "Current official endpoint limits and throttling behavior are configuration evidence, not hard-coded invariants.",
+    "websocket_first": true
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/market-data/websocket/rtds",
+    "https://docs.polymarket.com/api-reference/authentication",
+    "https://docs.polymarket.com/trading/orders/create",
+    "https://docs.polymarket.com/concepts/order-lifecycle",
+    "https://docs.polymarket.com/trading/fees",
+    "https://docs.polymarket.com/api-reference/rate-limits",
+    "https://github.com/Polymarket/py-clob-client-v2"
+  ],
+  "risk_contract": {
+    "default_profile": "conservative",
+    "loss_basis": "Maximum binary settlement loss, not stop distance",
+    "no_reinvestment_default": true,
+    "polymarket_leverage": 1.0,
+    "portfolio": "Apply shared daily/session loss, drawdown, concentration, correlation, cooldown, and stale-data gates. A stop is not assumed to cap loss in a gapping or empty five-minute book.",
+    "risk_levels": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ]
+  },
+  "round": 1,
+  "schema_version": "polymarket-5m-paper-parity-design-v1",
+  "status": "frozen_for_implementation"
+}

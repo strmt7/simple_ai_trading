@@ -1,0 +1,222 @@
+{
+  "ai_contract": {
+    "alpha_candidate": "qwen_value_blind_queue_factor_programs",
+    "asynchronous_risk_review": true,
+    "execution_critical_path": false,
+    "matched_ablation": "The AI treatment appends every syntactically valid, non-duplicate, value-blind factor program to the identical numerical model. It uses the same rows, targets, costs, seeds, calibration, policy, and replay as the baseline.",
+    "minimum_parameter_class": "multibillion local model",
+    "numeric_order_authority": false,
+    "required_runtime_evidence": "A hash-bound local runtime benchmark must identify the exact model, GPU backend, memory use, and latency before AI factors are generated.",
+    "time_moe_status": "research-only until a pinned 2.4B checkpoint passes DirectML compatibility, deterministic replay, random-walk forecast skill, and bounded-latency gates on this host",
+    "uplift_rule": "AI must improve predictive proper scores and paired after-cost stress economics without worse drawdown, concentration, tail loss, or temporal stability. A mixed result fails."
+  },
+  "chronological_roles": {
+    "early_stop": "2023-06-01 through 2023-06-04 UTC",
+    "evaluation": "2023-06-09 through 2023-06-14 UTC; consumed development evidence only",
+    "maximum_target_embargo_seconds": 316,
+    "policy_calibration": "2023-06-07 through 2023-06-08 UTC; both days must pass separately",
+    "probability_calibration": "2023-06-05 through 2023-06-06 UTC",
+    "role_boundary_rule": "Every feature, placement, queue window, fill, path quote, exit, and target must finish inside one role. Side and action support are purged independently.",
+    "training": "2023-05-16 through 2023-05-31 UTC"
+  },
+  "claims": {
+    "ai_uplift_claim_permitted": false,
+    "leverage_permitted": false,
+    "profitability_claim_permitted": false,
+    "promotion_permitted": false,
+    "reason": "The source interval has been repeatedly inspected and is selection-contaminated. This is a mechanism screen only.",
+    "selection_contaminated": true,
+    "testnet_or_live_authority_permitted": false
+  },
+  "data_contract": {
+    "archive_products": [
+      "bookTicker",
+      "trades",
+      "bookDepth"
+    ],
+    "decision_cadence_seconds": 10,
+    "end_date": "2023-06-14",
+    "event_source": "Official Binance Data Vision USD-M daily archives",
+    "feature_version": "l1-tape-aggregate-depth-causal-v9 plus frozen action-specific queue and exponential-flow features",
+    "historical_depth_limit": "The source contains L1 BBO, exact trades, and sampled aggregate percentage-band depth. It is not order-level L2 and cannot prove queue position.",
+    "persistent_warehouse": "external DuckDB tick warehouse",
+    "start_date": "2023-05-16",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_fabricated_or_interpolated_rows_permitted": false,
+    "target_path_resolution_ms": 100
+  },
+  "design_sha256": "61165c1150f5349ff1b15f2243e7520ecbd7af44578edda7fc2be8bb56b66cdf",
+  "economic_screen": {
+    "base_and_paired_stress_profit_factor_above_one": true,
+    "base_and_paired_stress_total_net_bps_positive": true,
+    "daily_roi_target_used_as_gate": false,
+    "forced_activity_or_trade_quota": false,
+    "leverage": 1.0,
+    "maximum_single_symbol_positive_pnl_share": 0.7,
+    "maximum_unlevered_drawdown_bps": 100.0,
+    "minimum_closed_trades": 30,
+    "minimum_positive_symbols": 2,
+    "non_overlap": "At most one open position or outstanding order per symbol; a passive order must be filled, cancelled, or expired before another action for that symbol.",
+    "policy_selection": "Choose one frozen coverage only on policy calibration after both calibration UTC days pass independently. Evaluation cannot choose or repair a threshold.",
+    "reinvestment": false,
+    "stress_replay": "Reprice the exact selected base ledger without reselecting actions using doubled placement/protection latency, maker entry cost raised to the observed taker cost, and two additional basis points of slippage per executed side."
+  },
+  "execution_contract": {
+    "aggressive_entry": "After 750 ms placement latency, cross the observed ask for long or bid for short, subject to quote age and 10% displayed-L1 participation.",
+    "base_protection_delay_ms": 750,
+    "historical_cost_contract": {
+      "additional_slippage_bps_per_executed_side": 1.0,
+      "maker_entry_fee_bps": 2.0,
+      "taker_entry_fee_bps": 5.0,
+      "taker_exit_fee_bps": 5.0,
+      "warning": "These frozen development costs are not a live account quote. Paper/testnet/live runtime must query and record signed account commission rates per symbol and use the worse valid rate when evidence is missing."
+    },
+    "horizon_seconds_after_fill": 300,
+    "max_l1_participation": 0.1,
+    "max_quote_age_ms": 1000,
+    "order_notional_quote": 1000.0,
+    "passive_entry": {
+      "cancellation_fill_credit": false,
+      "expiry_seconds": 15,
+      "fill_buckets_seconds": [
+        5,
+        10,
+        15
+      ],
+      "fill_price": "placement bid for long and placement ask for short",
+      "full_fill_threshold": "initial displayed L1 queue ahead plus complete bot order quantity",
+      "matching_prints": "Long uses buyer_is_maker=true prints exactly at the placement bid; short uses buyer_is_maker=false prints exactly at the placement ask.",
+      "quote_disappearance_fill_credit": false
+    },
+    "placement_latency_ms": 750,
+    "same_100ms_collision_rule": "stop first",
+    "stop_and_take": "Reuse the causal 1.5x/2.25x volatility barriers bounded to 18-80 bps stop and 30-120 bps take; exits cross the contemporaneous opposite BBO.",
+    "stress_placement_and_protection_delay_ms": 1500
+  },
+  "external_pre_design_evidence": {
+    "canonical_report_sha256": "31f38e893c8f41f3cd4c436a10048a9c4f7ece7edf3e477a07a052839ba155d0",
+    "file_sha256": "d42b7e9d89c417e1a1c83056d98777a3ae311e06dbde137f736f4e51cb92487d",
+    "profit_and_loss_read": false,
+    "purpose": "structural full-fill class support only",
+    "report_name": "round57-passive-fill-support-20260714-v2.json",
+    "selected_expiry_seconds": 15,
+    "selection_rule": "Choose the shortest probed expiry with at least 10% full-fill support for both sides of every symbol; no economics were inspected."
+  },
+  "model_contract": {
+    "actions": [
+      "passive_long",
+      "passive_short",
+      "aggressive_long",
+      "aggressive_short",
+      "abstain"
+    ],
+    "candidates": [
+      {
+        "id": "shared_aggressive_action_lightgbm",
+        "role": "Matched taker-only control using the same causal state and aggressive targets."
+      },
+      {
+        "id": "queue_censored_make_take_lightgbm",
+        "role": "Shared action-conditioned fill-survival, conditional-payoff, and lower-tail model."
+      },
+      {
+        "id": "queue_censored_make_take_lightgbm_ai",
+        "role": "Matched treatment appending only governed value-blind AI factor programs."
+      },
+      {
+        "id": "compact_temporal_directml_benchmark",
+        "role": "A simple residual temporal benchmark, run only after target and tree predictive gates pass; complexity receives no presumption of superiority."
+      }
+    ],
+    "decision_value": "Passive value equals calibrated fill probability times calibrated conditional after-cost payoff. Aggressive value is calibrated after-cost payoff. Abstain has exactly zero value.",
+    "exponential_flow_half_lives_seconds": [
+      1,
+      2,
+      5,
+      10,
+      30,
+      60
+    ],
+    "fill_survival": "Discrete conditional hazards for complete fill in (0,5], (5,10], and (10,15] seconds plus right-censored no-fill, evaluated by log loss, Brier score, calibration, and integrated Brier skill.",
+    "lightgbm": {
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "early_stopping_rounds": 50,
+      "feature_fraction": 0.8,
+      "lambda_l1": 0.1,
+      "lambda_l2": 1.0,
+      "learning_rate": 0.03,
+      "max_bin": 127,
+      "max_depth": 8,
+      "minimum_leaf_rows": 256,
+      "num_boost_round": 1000,
+      "num_leaves": 31,
+      "opencl_fp64_accumulation_required": true,
+      "seeds": [
+        5701,
+        5702,
+        5703
+      ]
+    },
+    "payoff_heads": "Conditional mean and 20th-percentile exact after-cost payoff given complete fill, plus post-fill 5/15-second adverse-selection diagnostics.",
+    "shared_action_rows": "Every state produces paired long/short and passive/aggressive rows with action-aligned features; no independent score scales are allowed."
+  },
+  "objective": "Determine whether conservative queue-censored passive entry improves executable after-cost action value over the rejected taker-only path without hiding non-fills or adverse selection.",
+  "predecessor_evidence": {
+    "finding": "Round 56 improved pooled rank diagnostics but both treatments failed positive top-quintile payoff after the frozen 16 bps stress charge; no economic replay was authorized.",
+    "round_56_report_canonical_sha256": "8fb9cdca77608554e187830d5ff636ea7013a7bce9a4a3a1805afd76e5a8f764",
+    "round_56_report_file_sha256": "08fa37b8a5d896786e07cd90262574556531796df48c33373a3057eb2f99b6a7",
+    "round_56_status": "rejected"
+  },
+  "quality_gates": {
+    "economic": [
+      "Policy calibration aggregate and each constituent UTC day must be positive under base and paired stress before evaluation is interpreted.",
+      "Evaluation requires at least 30 non-overlapping closed trades, two positive symbols, bounded concentration, positive base and stress return, profit factor above one, and drawdown no greater than 100 bps.",
+      "No leverage, annualized ROI, promotion, or live authority is permitted by this screen."
+    ],
+    "numerical": [
+      "Every archive manifest, feature row, target, model, prediction, calibration object, action, order lifecycle, and cash flow is finite and hash-bound.",
+      "Every passive full fill is reproducible from initial L1 queue, own size, matching trade IDs, prices, quantities, and timestamps; cancellations never count as fills.",
+      "All models reload exactly and OpenCL/DirectML paths record backend identity and CPU fallback explicitly."
+    ],
+    "predictive": [
+      "Positive fill log-loss and integrated-Brier skill versus chronological prevalence for both passive sides of every symbol.",
+      "Positive conditional-payoff MSE and pinball skill plus minimum Spearman 0.02 for both passive sides of every symbol.",
+      "The top calibrated action-value quintile must exceed the bottom quintile and be positive after frozen costs on policy calibration before replay.",
+      "At least two of three symbols and both long/short pooled sides must retain positive rank association in evaluation."
+    ]
+  },
+  "research_basis": [
+    {
+      "source": "https://arxiv.org/abs/2306.05479",
+      "use": "Fill time is a censored survival target and should be evaluated with proper scores."
+    },
+    {
+      "source": "https://doi.org/10.2139/ssrn.5074873",
+      "use": "Live Binance BTC perpetual evidence requires joint fill-probability and post-fill adverse-selection modeling."
+    },
+    {
+      "source": "https://arxiv.org/abs/1312.0563",
+      "use": "Queue state and order-flow intensities motivate queue-aware execution features."
+    },
+    {
+      "source": "https://arxiv.org/abs/2403.09267",
+      "use": "High forecast scores do not establish complete actionable transactions."
+    },
+    {
+      "source": "https://arxiv.org/abs/2502.15757",
+      "use": "Simple LOB-adapted baselines remain mandatory controls for complex temporal models."
+    },
+    {
+      "source": "https://github.com/binance/binance-public-data",
+      "use": "Official checksum-verified USD-M BBO and trade archives provide the historical source of record."
+    }
+  ],
+  "round": 57,
+  "schema_version": "round-057-queue-censored-make-take-design-v1",
+  "status": "frozen"
+}
