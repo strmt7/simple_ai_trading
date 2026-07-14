@@ -50,7 +50,7 @@ from simple_ai_trading.cross_asset_cost_data import (  # noqa: E402
     load_verified_minute_panel_window,
 )
 from simple_ai_trading.derivatives_hurdle_data import (  # noqa: E402
-    load_derivatives_state,
+    load_verified_funding_states,
 )
 from simple_ai_trading.stop_time_payoff_data import (  # noqa: E402
     EVENT_NAMES,
@@ -329,17 +329,44 @@ def _validate_ai_evidence(
     report = _read_object(report_path, "Round 55 AI report")
     report_canonical = dict(report)
     report_sha = str(report_canonical.pop("report_sha256", ""))
+    ai_implementation_commit = str(report.get("implementation_commit", ""))
     if (
         report.get("schema_version") != AI_REPORT_SCHEMA
         or report.get("round") != ROUND
         or report.get("status") != "complete"
         or report.get("design_sha256") != design_sha256
-        or report.get("implementation_commit") != implementation_commit
+        or not ai_implementation_commit
         or report.get("market_values_read") is not False
         or report.get("outcomes_read") is not False
         or report_sha != _canonical_sha256(report_canonical)
     ):
         raise ValueError("Round 55 AI report identity is invalid")
+    if subprocess.run(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "merge-base",
+            "--is-ancestor",
+            ai_implementation_commit,
+            implementation_commit,
+        ],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode:
+        raise ValueError("Round 55 AI implementation is not an ancestor")
+    implementation_blobs = report.get("implementation_blobs")
+    if not isinstance(implementation_blobs, Mapping) or not implementation_blobs:
+        raise ValueError("Round 55 AI implementation blobs are absent")
+    for source_path, expected_oid in implementation_blobs.items():
+        path_text = str(source_path)
+        oid_text = str(expected_oid)
+        if (
+            _git("rev-parse", f"{ai_implementation_commit}:{path_text}") != oid_text
+            or _git("rev-parse", f"{implementation_commit}:{path_text}") != oid_text
+        ):
+            raise ValueError(f"Round 55 AI implementation blob changed: {path_text}")
     ledger = _read_object(ledger_path, "Round 55 AI factor ledger")
     ledger_canonical = dict(ledger)
     ledger_sha = str(ledger_canonical.pop("ledger_sha256", ""))
@@ -817,14 +844,13 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         materialization_end="2024-10-01",
         progress=progress,
     )
-    premium, funding, derivatives_source = load_derivatives_state(
+    funding, funding_source = load_verified_funding_states(
         arguments.database.resolve(),
         panel,
         price_source,
         source_certificate_path=arguments.source_certificate.resolve(),
         progress=progress,
     )
-    del premium
     volatility_index = feature_names.index("target_realized_volatility_60m_bps")
     payoff = build_stop_time_payoff_dataset(
         panel,
@@ -840,8 +866,8 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
             round_trip_execution_charge_bps=STRESS_COST_BPS,
         ),
     )
-    source_evidence = derivatives_source.asdict()
-    del panel, funding, price_source, derivatives_source
+    source_evidence = funding_source.asdict()
+    del panel, funding, price_source, funding_source
     gc.collect()
     payoff_evidence = _payoff_manifest(evidence_root, payoff, source_evidence)
     progress(

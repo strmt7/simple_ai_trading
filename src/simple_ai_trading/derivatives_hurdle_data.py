@@ -78,6 +78,42 @@ class DerivativesSourceEvidence:
 
 
 @dataclass(frozen=True)
+class FundingSeriesEvidence:
+    symbol: str
+    rows: int
+    first_calc_time_ms: int
+    last_calc_time_ms: int
+    minimum_interval_hours: int
+    maximum_interval_hours: int
+    stream_sha256: str
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class FundingSourceEvidence:
+    source_certificate_path: str
+    source_certificate_sha256: str
+    price_flow: SourceEvidence
+    funding_series: tuple[FundingSeriesEvidence, ...]
+    funding_panel_sha256: str
+    selection_confirmation_or_terminal_rows_read: bool
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "source_certificate_path": self.source_certificate_path,
+            "source_certificate_sha256": self.source_certificate_sha256,
+            "price_flow": self.price_flow.asdict(),
+            "funding_series": [item.asdict() for item in self.funding_series],
+            "funding_panel_sha256": self.funding_panel_sha256,
+            "selection_confirmation_or_terminal_rows_read": (
+                self.selection_confirmation_or_terminal_rows_read
+            ),
+        }
+
+
+@dataclass(frozen=True)
 class PremiumState:
     observed: np.ndarray
     age_minutes: np.ndarray
@@ -514,6 +550,70 @@ def load_derivatives_state(
     )
 
 
+def load_verified_funding_states(
+    database_path: str | Path,
+    panel: Mapping[str, MinuteSeries],
+    price_source_evidence: SourceEvidence,
+    *,
+    source_certificate_path: str | Path,
+    progress: ProgressCallback | None = None,
+) -> tuple[dict[str, FundingState], FundingSourceEvidence]:
+    """Load a certified funding prefix without materializing premium-index state."""
+
+    if set(panel) != set(SYMBOLS):
+        raise ValueError("funding prefix panel symbols are incomplete")
+    certificate_path = Path(source_certificate_path).resolve()
+    _certificate, certificate_sha = _load_source_certificate(certificate_path)
+    reference_time = panel[SYMBOLS[0]].open_time_ms
+    if reference_time.size == 0:
+        raise ValueError("funding prefix reference grid is empty")
+    for symbol in SYMBOLS[1:]:
+        if not np.array_equal(reference_time, panel[symbol].open_time_ms):
+            raise ValueError(f"funding prefix minute grid differs for {symbol}")
+    funding: dict[str, FundingState] = {}
+    evidence: list[FundingSeriesEvidence] = []
+    with _read_only_connection(Path(database_path)) as connection:
+        for symbol in SYMBOLS:
+            state, quality, stream_sha = _load_funding_state(
+                connection,
+                symbol=symbol,
+                grid_time_ms=reference_time,
+            )
+            funding[symbol] = state
+            evidence.append(
+                FundingSeriesEvidence(
+                    symbol=symbol,
+                    rows=quality[0],
+                    first_calc_time_ms=quality[1],
+                    last_calc_time_ms=quality[2],
+                    minimum_interval_hours=quality[3],
+                    maximum_interval_hours=quality[4],
+                    stream_sha256=stream_sha,
+                )
+            )
+            if progress is not None:
+                progress(
+                    "funding_source_load",
+                    {
+                        "symbol": symbol,
+                        "funding_rows": quality[0],
+                        "last_calc_time_ms": quality[2],
+                    },
+                )
+    digest = hashlib.sha256()
+    for item in evidence:
+        digest.update(item.symbol.encode("ascii"))
+        digest.update(bytes.fromhex(item.stream_sha256))
+    return funding, FundingSourceEvidence(
+        source_certificate_path=str(certificate_path),
+        source_certificate_sha256=certificate_sha,
+        price_flow=price_source_evidence,
+        funding_series=tuple(evidence),
+        funding_panel_sha256=digest.hexdigest(),
+        selection_confirmation_or_terminal_rows_read=False,
+    )
+
+
 def _derivatives_feature_arrays(
     premium: Mapping[str, PremiumState],
     funding: Mapping[str, FundingState],
@@ -816,9 +916,12 @@ __all__ = [
     "DerivativesSourceEvidence",
     "EXECUTION_CHARGE_BPS",
     "FundingState",
+    "FundingSeriesEvidence",
+    "FundingSourceEvidence",
     "PREMIUM_MAX_AGE_MINUTES",
     "PREMIUM_MIN_ROLLING_COVERAGE",
     "PremiumState",
     "build_derivatives_hurdle_dataset",
     "load_derivatives_state",
+    "load_verified_funding_states",
 ]

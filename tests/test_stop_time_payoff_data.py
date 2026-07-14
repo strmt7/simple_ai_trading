@@ -9,7 +9,10 @@ from simple_ai_trading.cross_asset_cost_data import (
     SYMBOLS,
     load_verified_minute_panel_window,
 )
-from simple_ai_trading.derivatives_hurdle_data import FundingState
+from simple_ai_trading.derivatives_hurdle_data import (
+    FundingState,
+    load_verified_funding_states,
+)
 from simple_ai_trading.stop_time_payoff_data import (
     STOP_EVENT,
     TIMEOUT_EVENT,
@@ -120,4 +123,14 @@ def test_verified_panel_window_rejects_rows_beyond_frozen_source() -> None:
         load_verified_minute_panel_window(
             "unused.sqlite",
             materialization_end="2025-07-01",
+        )
+
+
+def test_funding_prefix_loader_rejects_incomplete_symbol_panel() -> None:
+    with pytest.raises(ValueError, match="panel symbols are incomplete"):
+        load_verified_funding_states(
+            "unused.sqlite",
+            {},
+            None,  # type: ignore[arg-type]
+            source_certificate_path="unused.json",
         )
