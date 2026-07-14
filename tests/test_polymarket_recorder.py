@@ -183,6 +183,25 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
     ]
 
 
+def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
+    messages = [
+        _message("polymarket_rtds", "PING", sequence=sequence)
+        for sequence in range(1, 301)
+    ]
+    with PolymarketEvidenceStore(
+        tmp_path / "bounded-batch.duckdb",
+        memory_limit="512MB",
+        threads=1,
+    ) as store:
+        store.start_run("bounded-batch", EPOCH * 1_000)
+        store.append_messages("bounded-batch", messages)
+        count = store.connect().execute(
+            "SELECT count(*) FROM polymarket_raw_message"
+        ).fetchone()[0]
+
+    assert count == 300
+
+
 def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
     tmp_path,
 ) -> None:
