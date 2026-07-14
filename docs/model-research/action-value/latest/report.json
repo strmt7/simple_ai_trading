@@ -1,89 +1,94 @@
 {
   "artifacts": [
     {
-      "bytes": 4580,
-      "path": "charts/directional-rank.svg",
-      "sha256": "c5fc4af12b4eb4586ccbff90035abcb5291afee25d3ccf7e89990d85a5ffcdac"
+      "bytes": 3930,
+      "path": "ai-factors.csv",
+      "sha256": "7acfdbc2f8bb72d90fb240b18fa796addd63567830725a916a512b3c50ac1dcd"
     },
     {
-      "bytes": 4716,
-      "path": "charts/finite-hold.svg",
-      "sha256": "b73c87e555e7ef699bded6e3902cd9dfd6838f97a546b807a0271f6f953b10e6"
+      "bytes": 4640,
+      "path": "charts/activity.svg",
+      "sha256": "820b3faed226531dc64c90d8f6dcca8b32cbfc7153f9f7029bee1fa452663884"
     },
     {
-      "bytes": 3538,
-      "path": "charts/holding-duration.svg",
-      "sha256": "c3a893559780461eb06caac761d10030926cc60dd31b4681b199bf7a0ae62c12"
+      "bytes": 3032,
+      "path": "charts/ai-uplift.svg",
+      "sha256": "713039d151796f7b253eb546179fad60d97d482c39e28b276b44cf72367af052"
     },
     {
-      "bytes": 3273,
+      "bytes": 4692,
+      "path": "charts/economics.svg",
+      "sha256": "f48081a71d70dd1853855c136fc9da0bfbade9165514ba174abb3548182e638e"
+    },
+    {
+      "bytes": 4110,
       "path": "charts/model-skill.svg",
-      "sha256": "3d492a9a2fdd8f1ffb6e0004c4121c0a88b7178fcc1d2898c513f27744330dbf"
+      "sha256": "dd21d74ad08935ee9815d46352580102bb75c1aa2fa8216648c21dbfc1e68337"
     },
     {
-      "bytes": 3613,
-      "path": "charts/policy-economics.svg",
-      "sha256": "a67ed309752abf075ac3ec8d866f49dc2de15c533b19bdeef6c5f4cf9385b126"
-    },
-    {
-      "bytes": 3791,
+      "bytes": 3858,
       "path": "charts/research-progress.svg",
-      "sha256": "c3d9416897dc39fe4d6f10486fbce7e64cfcf8cfb7d4162bbe51276c061fd05d"
+      "sha256": "e0083f5f3c57bb0cd411eedc8ecbf2e51a3e3f2941f172795f1980257d2bf55c"
     },
     {
-      "bytes": 2270,
-      "path": "directional-rank.csv",
-      "sha256": "7cc453c6ed7471c88421c93fb85d668b0143c61379823f681a0f1cf9a9ad7086"
+      "bytes": 99569,
+      "path": "charts/september-equity.svg",
+      "sha256": "c7edf68a567bda75f62026e5b5ff01ff36200b409ef9c3078f08f9b5b680dd65"
     },
     {
-      "bytes": 17128,
-      "path": "failure-diagnostic.json",
-      "sha256": "c2de85558288bbd9befa9e4cc7ecd5966b9d7db8e281bfd4090562ca445b8bec"
+      "bytes": 987809,
+      "path": "equity.csv",
+      "sha256": "1df7031f3f4531462a87c966d75f4eed0320a164e4b193e8c10e1fb12f5c457a"
     },
     {
-      "bytes": 1911,
-      "path": "finite-hold.csv",
-      "sha256": "201b956f50f48010d9fed6d8653401f4fea16851005203b34a5691b5594730b4"
-    },
-    {
-      "bytes": 686,
+      "bytes": 1776,
       "path": "gates.csv",
-      "sha256": "f280115a36820e357a1432e7ddd6beda4f1c9dbfaffeddd39a75e9f968d3e139"
+      "sha256": "b9ff1538446c694de8bee2b6a750f86370332ed7fd8ef6e1fc9634008587ddd0"
     },
     {
-      "bytes": 1629,
-      "path": "holding-runs.csv",
-      "sha256": "82066a06c43ec3c951561baa282b2c7e4ef3003bd1e79e1b5fdbad75e415e045"
+      "bytes": 643790,
+      "path": "hourly-ledger.csv",
+      "sha256": "5ac1c013e0cac8a1744052ae1bc2801f1a322b082e1c17b47b949ef79b9f887c"
     },
     {
-      "bytes": 309,
-      "path": "holding-summary.csv",
-      "sha256": "2b1237262197e414938b511c3c56ebd9ce40c25577c642820912e27544baaced"
-    },
-    {
-      "bytes": 1171,
+      "bytes": 8431,
       "path": "models.csv",
-      "sha256": "0eeb954a6f9996d1d6cf15101ce91ac23e6ba2580b7baa5cc8215e6a68344f22"
+      "sha256": "a6c53556f3bfd00b202374f62ba5c2adac10ab5c2a67f71ffc371200fd02924b"
     },
     {
-      "bytes": 2077,
-      "path": "policies.csv",
-      "sha256": "7144e4d38edc227c020845e2ca561a621d9c826c2b2169af54d4e3452d1ac66f"
+      "bytes": 1228,
+      "path": "monthly-economics.csv",
+      "sha256": "c9510c6e1bb76511d8e7d3a307a0a4a48a886d10a1568a1fb591814d85052ea2"
     },
     {
-      "bytes": 19637,
+      "bytes": 6683,
+      "path": "predictive-rank.csv",
+      "sha256": "2a3a8b6d86f2f4a02a9abbff440b1f2c4234441bd29239c8fe78327a0253d3bb"
+    },
+    {
+      "bytes": 20160,
       "path": "progress.csv",
-      "sha256": "dae05d525031dcc4bcf26fd6e27820509c1bd21495c9c2ab34e5362b35318c47"
+      "sha256": "aaaa93ecb7222b810c9220b5673ff37d9f501257ffb449771c3ea835af0473f5"
     },
     {
-      "bytes": 1800,
+      "bytes": 2281,
       "path": "README.md",
-      "sha256": "d5795802f2683d3949a44367eb707a8dce3b5e3813a78ab86860534433bbfdc7"
+      "sha256": "259e7beb28cdf3b313973aa96f8f23480d9052e4f6006ab83ed46c46673c0dfd"
     },
     {
-      "bytes": 16943,
+      "bytes": 50810,
       "path": "screen.json",
-      "sha256": "e1a6e53d4be1d21ef101f7172083740af5ad332ec8933ca445625b32f5085642"
+      "sha256": "32d0bf5e0693b33833d0c19fbc71a54fb9b686992a0df2c8bd17599179b577be"
+    },
+    {
+      "bytes": 11070,
+      "path": "trades.csv",
+      "sha256": "c288cf450664c32fb7e9a42cdf1909d5acb3c4f44fbcdd7fcb425a8a4c91b30a"
+    },
+    {
+      "bytes": 5194,
+      "path": "treatments.csv",
+      "sha256": "03fb8d644f6fae0aeb0f488f7828942876d070486cb5dc675de557a95d5dfba2"
     }
   ],
   "claims": {
@@ -98,32 +103,31 @@
     "trading_authority": false,
     "untouched_data_expansion_authorized": false
   },
-  "publication_canonical_sha256": "c3c11cecf5d1d145079a51fa2ee4f4ba0cf4406579589ca8098a08649db373ee",
-  "published_at_utc": "2026-07-13T23:35:43.108471+00:00",
-  "publisher_path": "tools/publish_round54_sequential_failure.py",
+  "publication_canonical_sha256": "146e7c976c045c8621cd6ba84f9851e06f1ac81196964267103c5e8aa03c5881",
+  "published_at_utc": "2026-07-14T00:43:27.560257+00:00",
+  "publisher_path": "tools/publish_round55_bounded_alpha.py",
   "result": {
-    "calibration_policies": 2,
-    "evaluation_replayed": false,
-    "finite_hold_rules_tested": 8,
-    "maximum_observed_holding_hours": 791,
-    "models": 3,
-    "passed_calibration_policies": 0
+    "accepted_ai_factor_programs": 7,
+    "ai_uplift_gate_passed": false,
+    "forbidden_existing_rows_loaded": false,
+    "model_artifacts": 18,
+    "passed_treatments": 0,
+    "side_models": 36,
+    "treatments": 2
   },
-  "round": 54,
-  "schema_version": "round-054-action-value-publication-v1",
+  "round": 55,
+  "schema_version": "round-055-bounded-alpha-publication-v1",
   "source": {
+    "ai_ledger_sha256": "c2a9044082eb04b057b84a506486b7d25be02103fa298905a46a16453d81de40",
+    "binding_path": "docs/model-research/action-value/round-055-bounded-alpha-execution-binding.json",
+    "binding_sha256": "731c0216b53226376bb465c3fce0d3d32cb6bcecf063d98e3cd2ac9e9c9315ed",
     "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
-    "design_file_sha256": "fbb92bf3cae13144f61f7db5488af72ea04e78aeacf0def47246ff4b870e6e3a",
-    "design_path": "docs/model-research/action-value/round-054-sequential-distributional-action-value-prototype-design.json",
-    "design_sha256": "bc6bc8ea8e4fb8f2d44234c5a987201530786754e2e821e804e7fdb1b3a8a5c4",
-    "diagnostic_canonical_sha256": "dd392f0fa1278860424bc27e5764ad84ac943c98ad992f4ec707ff6a94d7369f",
-    "diagnostic_file_sha256": "c2de85558288bbd9befa9e4cc7ecd5966b9d7db8e281bfd4090562ca445b8bec",
-    "diagnostic_implementation_blob": "85a825f2695b601e63470ea9d4724fee708c70b9",
-    "diagnostic_implementation_commit": "3b2500c7c44532bec51e374c6577b75773a0a54a",
-    "diagnostic_path": "E:\\SimpleAITradingData\\round54-sequential-failure-diagnostic-20260714-v1.json",
-    "report_canonical_sha256": "8aff454b63201ccab8a53d7a9cf4a9f46bad04a284074c7e7a22e001fb9385ff",
-    "report_file_sha256": "e1a6e53d4be1d21ef101f7172083740af5ad332ec8933ca445625b32f5085642",
-    "report_path": "E:\\SimpleAITradingData\\round54-sequential-action-value-20260714-v2\\report.json",
-    "training_implementation_commit": "b5edce7283dd59b25dc76513d7e8d5e89104ba89"
+    "design_path": "docs/model-research/action-value/round-055-bounded-alpha-lightgbm-ai-design.json",
+    "design_sha256": "e6746db669ffc2633f197cf61dd73b369c2889381900f4e73a375192922f2827",
+    "implementation_commit": "e1bb011385a326602ac73c9c86b017c48178b20d",
+    "payoff_dataset_sha256": "bdae1a7ebd7140fa63e74a66e43159f884fd39635656fba45f2a3ff11884c519",
+    "report_canonical_sha256": "47dc22e987fff9cb508ff09fed2222e80391d18797496d4f2f9e476aee887919",
+    "report_file_sha256": "b556ff0302d230ef620a7bfb11ad49ad35f5d083ebc390d5174657a4f466fda2",
+    "report_path": "E:\\SimpleAITradingData\\round55-bounded-alpha-20260714-v2\\report.json"
   }
 }

@@ -17,24 +17,25 @@
 <line x1="105" y1="135.0" x2="1145" y2="135.0" stroke="#334155"/>
 <text x="91" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">20.8</text>
 <text x="105.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">12</text>
-<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">54</text>
-<text x="303.1" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">20</text>
-<text x="550.7" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">30</text>
-<text x="798.3" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">40</text>
-<text x="1046.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">50</text>
-<path d="M 105.0 369.8 L 872.6 351.5 L 897.4 352.7 L 922.1 348.1 L 946.9 346.5 L 971.7 347.9 L 996.4 353.7 L 1021.2 352.6 L 1046.0 536.9 L 1095.5 312.8 L 1120.2 178.1 L 1145.0 341.4" fill="none" stroke="#14b8a6" stroke-width="3" stroke-linejoin="round"/>
+<text x="1145.0" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">55</text>
+<text x="298.5" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">20</text>
+<text x="540.3" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">30</text>
+<text x="782.2" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">40</text>
+<text x="1024.1" y="614" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="12">50</text>
+<path d="M 105.0 369.8 L 854.8 351.5 L 879.0 352.7 L 903.1 348.1 L 927.3 346.5 L 951.5 347.9 L 975.7 353.7 L 999.9 352.6 L 1024.1 536.9 L 1072.4 312.8 L 1096.6 178.1 L 1120.8 341.4 L 1145.0 325.3" fill="none" stroke="#14b8a6" stroke-width="3" stroke-linejoin="round"/>
 <circle cx="105.0" cy="369.8" r="4" fill="#14b8a6"/>
-<circle cx="872.6" cy="351.5" r="4" fill="#14b8a6"/>
-<circle cx="897.4" cy="352.7" r="4" fill="#14b8a6"/>
-<circle cx="922.1" cy="348.1" r="4" fill="#14b8a6"/>
-<circle cx="946.9" cy="346.5" r="4" fill="#14b8a6"/>
-<circle cx="971.7" cy="347.9" r="4" fill="#14b8a6"/>
-<circle cx="996.4" cy="353.7" r="4" fill="#14b8a6"/>
-<circle cx="1021.2" cy="352.6" r="4" fill="#14b8a6"/>
-<circle cx="1046.0" cy="536.9" r="4" fill="#14b8a6"/>
-<circle cx="1095.5" cy="312.8" r="4" fill="#14b8a6"/>
-<circle cx="1120.2" cy="178.1" r="4" fill="#14b8a6"/>
-<circle cx="1145.0" cy="341.4" r="4" fill="#14b8a6"/>
+<circle cx="854.8" cy="351.5" r="4" fill="#14b8a6"/>
+<circle cx="879.0" cy="352.7" r="4" fill="#14b8a6"/>
+<circle cx="903.1" cy="348.1" r="4" fill="#14b8a6"/>
+<circle cx="927.3" cy="346.5" r="4" fill="#14b8a6"/>
+<circle cx="951.5" cy="347.9" r="4" fill="#14b8a6"/>
+<circle cx="975.7" cy="353.7" r="4" fill="#14b8a6"/>
+<circle cx="999.9" cy="352.6" r="4" fill="#14b8a6"/>
+<circle cx="1024.1" cy="536.9" r="4" fill="#14b8a6"/>
+<circle cx="1072.4" cy="312.8" r="4" fill="#14b8a6"/>
+<circle cx="1096.6" cy="178.1" r="4" fill="#14b8a6"/>
+<circle cx="1120.8" cy="341.4" r="4" fill="#14b8a6"/>
+<circle cx="1145.0" cy="325.3" r="4" fill="#14b8a6"/>
 <rect x="105" y="657" width="16" height="4" fill="#14b8a6"/>
 <text x="129" y="665" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Descriptive best policy</text>
 <text transform="translate(25 357.5) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Approximate net bps per closed trade</text>
