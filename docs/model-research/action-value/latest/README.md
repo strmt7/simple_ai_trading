@@ -1,36 +1,30 @@
-# Round 55: Stop-Bounded Payoff Models
+# Round 56: Paired Action Values
 
-> **Rejected development evidence.** No profitability, untouched-confirmation, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
+> **Rejected development evidence.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
 
-Round 55 trained `18` OpenCL LightGBM artifacts (`36` side models) on BTCUSDT, ETHUSDT, and SOLUSDT. Targets used real one-minute Binance futures paths, exact gap-through stops, settled funding, and a `16 bps` round-trip stress charge. Every position stopped or timed out within `60 minutes`; notional used fixed initial capital with no reinvestment and no leverage.
+Round 56 trained `24` AMD OpenCL LightGBM artifacts on BTCUSDT, ETHUSDT, and SOLUSDT. Long and short were explicit paired actions. Labels used real one-minute futures paths, gap-through stops, settled funding, and a frozen `16 bps` round-trip stress charge. Model reload error was exactly zero.
 
-| Treatment | Period | Trades | Stress return | Max drawdown | Profit factor |
-|---|---:|---:|---:|---:|---:|
-| Baseline | Jul-Aug 2024 | 27 | +0.2447% | 0.1806% | 1.733 |
-| 8B AI factors | Jul-Aug 2024 | 14 | +0.3659% | 0.0253% | 11.515 |
-| Baseline | Sep 2024 | 7 | +0.0900% | 0.1645% | 1.547 |
-| 8B AI factors | Sep 2024 | 5 | +0.0559% | 0.1645% | 1.340 |
+| Held-forward metric (Jan-Jun 2024) | Baseline | Governed AI factors |
+|---|---:|---:|
+| Point MSE skill vs causal constant | 0.413% | 0.535% |
+| Pooled Spearman | 0.00542 | 0.01922 |
+| Positive-Spearman months | 3/6 | 5/6 |
+| Top score quintile, realized stress payoff | -15.41 bps | -14.66 bps |
+| q20 pinball skill | 5.950% | 5.912% |
+| q20 coverage | 19.68% | 19.70% |
 
-Both treatments failed six frozen gates: development and September trade/day counts, September P&L concentration, and the familywise block-bootstrap lower bound. The seven Fino1/Qwen3 factor programs improved July-August descriptively but reduced September stress return by `-0.0341%`; the paired lower bound was `-0.01424 bps/hour`. AI uplift therefore failed.
+The baseline failed monthly rank consistency and positive top-quintile payoff. The two accepted Fino1 factor programs improved rank consistency to `5/6` positive months and pooled Spearman to `0.01922`, but the top quintile still lost `14.66 bps` per action row after stress costs. The AI treatment therefore failed before economic replay. Trades, ROI, drawdown, and leverage were not evaluated.
 
-The run read `24,096` hourly timestamps and `72,288` symbol paths through September 2024. It generated no synthetic rows and did not load the `6,551` excluded October 2024-June 2025 timestamps. A future interval remains untouched, but Round 55 authorized no access to it.
-
-## Frozen Attrition Diagnostic
-
-The separately frozen diagnostic exactly reproduced the control without refitting a model or trying a threshold. The baseline had `201` July-August symbol-hours where at least one view voted, `70` where two views agreed, and only `31` where all three agreed; market-state gates then removed just `4`. Relaxed baseline controllers lost money in both consumed periods. The pooled-nine AI diagnostic returned +0.2056% over 26 July-August trades and +0.1100% over 8 September trades, while its matched baselines returned -0.2094% and -0.1134%. Those are post-hoc, sparse, non-monotonic score diagnostics on consumed data, not AI-uplift or profitability evidence.
+The run used `24,096` hourly timestamps and `144,576` paired action rows derived from real minute paths. It generated no synthetic rows and did not read October 2024 or later observations. The percentile analysis is explicitly post-hoc and cannot select a policy.
 
 ## Evidence
 
 | View | Graph | Source |
 |---|---|---|
-| Model skill | [SVG](charts/model-skill.svg) | [CSV](models.csv) |
-| Path economics | [SVG](charts/economics.svg) | [CSV](treatments.csv) |
-| Trading activity | [SVG](charts/activity.svg) | [CSV](treatments.csv) |
-| Matched AI effect | [SVG](charts/ai-uplift.svg) | [CSV](treatments.csv) |
-| September equity | [SVG](charts/september-equity.svg) | [CSV](equity.csv) |
-| Controller attrition | [SVG](charts/controller-attrition.svg) | [CSV](controller-attrition.csv) |
-| Diagnostic economics | [SVG](charts/controller-economics.svg) | [CSV](controller-economics.csv) |
-| Score calibration | [SVG](charts/controller-score-calibration.svg) | [CSV](controller-score-calibration.csv) |
+| Forecast skill | [SVG](charts/predictive-skill.svg) | [CSV](predictive-summary.csv) |
+| Monthly rank | [SVG](charts/monthly-rank.svg) | [CSV](monthly-rank.csv) |
+| Payoff stratification | [SVG](charts/payoff-stratification.svg) | [CSV](predictive-summary.csv) |
+| Extreme-score diagnosis | [SVG](charts/score-percentiles.svg) | [CSV](score-percentiles.csv) |
 | Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`trades.csv`, `hourly-ledger.csv`, `monthly-economics.csv`, `predictive-rank.csv`, `ai-factors.csv`, `gates.csv`, `controller-symbol-economics.csv`, `controller-overlap.csv`, `controller-vote-patterns.csv`, `controller-trades.csv`, `screen.json`, and `controller-diagnostic-report.json` preserve the underlying evidence. Every chart is regenerated from tracked tabular data.
+`model-fold-skill.csv`, `decomposition.csv`, `gates.csv`, `ai-factors.csv`, `failure-analysis.json`, and `screen.json` preserve the remaining evidence. Every chart is regenerated from tracked tabular data.

@@ -1,0 +1,13 @@
+round,treatment,month,spearman,role
+56,baseline_72,2024-01,-0.0017434191167673145,held_forward_predictive_validation
+56,baseline_72,2024-02,0.004281412291800631,held_forward_predictive_validation
+56,baseline_72,2024-03,-0.024704871415069465,held_forward_predictive_validation
+56,baseline_72,2024-04,0.03485085399558918,held_forward_predictive_validation
+56,baseline_72,2024-05,0.03659885837241251,held_forward_predictive_validation
+56,baseline_72,2024-06,-0.012175292642882179,held_forward_predictive_validation
+56,ai_program_augmented,2024-01,0.024039547308152765,held_forward_predictive_validation
+56,ai_program_augmented,2024-02,0.044700615826316854,held_forward_predictive_validation
+56,ai_program_augmented,2024-03,-0.012451477497300564,held_forward_predictive_validation
+56,ai_program_augmented,2024-04,0.046573856200428594,held_forward_predictive_validation
+56,ai_program_augmented,2024-05,0.03402324050983038,held_forward_predictive_validation
+56,ai_program_augmented,2024-06,0.00210838556884594,held_forward_predictive_validation
