@@ -1,8 +1,9 @@
 # Polymarket 5-minute paper trading
 
-**Status:** frozen paper-only design. No authenticated order placement, wallet,
-private key, live-money claim, or profitability claim is implemented or
-authorized by this document.
+**Status:** the prospective public-data recorder and shared paper execution
+contract are implemented. Strategy, official settlement, and autonomous shadow
+execution remain incomplete. No authenticated order placement, wallet, private
+key, live-money claim, or profitability claim is implemented or authorized.
 
 The Polymarket lane targets only BTC, ETH, and SOL 5-minute Up/Down markets.
 It reuses the Binance paper-trading lifecycle and risk core. Venue-specific
@@ -109,6 +110,23 @@ RTDS + direct-Binance recorder and paper shadow engine. Only complete windows
 with gap-free books, source timestamps, fees, and official outcomes may enter
 training. AI is a matched optional treatment and must beat the same ML baseline
 after spread, fees, depth, latency, partial fills, and settlement failures.
+
+Run the public recorder from either the CLI or the generated Windows command
+surface:
+
+```powershell
+simple-ai-trading polymarket-record --duration-seconds 300 `
+  --database data/polymarket-paper.duckdb
+```
+
+The recorder writes exact WebSocket frame text, canonical REST evidence,
+normalized event indexes, connection gaps, per-market fee/tick/depth metadata,
+and the shared append-only paper-order journal into one resource-bounded DuckDB
+database. Completion requires BTC/ETH/SOL market evidence plus CLOB, RTDS, and
+direct Binance frames. A run with a reconnect gap is `degraded`; malformed,
+incomplete, or hash-inconsistent evidence is `failed`. Binance spot
+`bookTicker` frames currently do not carry exchange event timestamps, so those
+fields remain null instead of receiving an invented time.
 
 Primary references: [authentication](https://docs.polymarket.com/api-reference/authentication),
 [market WebSocket](https://docs.polymarket.com/market-data/websocket/market-channel),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import builtins
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
@@ -104,6 +105,7 @@ from .positions import (
     bot_ownership_rejection_reason,
     new_position_id,
 )
+from .polymarket_recorder import PolymarketPublicRecorder
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
     EntryRiskDecision,
@@ -409,6 +411,24 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_api_budget.add_argument("--compact", action="store_true", help="print one status-bar friendly line")
     parser_api_budget.add_argument("--json", action="store_true")
     parser_api_budget.set_defaults(func=command_api_budget)
+
+    parser_polymarket_record = subparsers.add_parser(
+        "polymarket-record",
+        help="record prospective BTC/ETH/SOL 5-minute public evidence for paper trading",
+        description=(
+            "Record public Polymarket CLOB/RTDS and direct Binance streams into a "
+            "single audit-ready DuckDB database. This command never authenticates or "
+            "places an order."
+        ),
+    )
+    parser_polymarket_record.add_argument("--database", default="data/polymarket-paper.duckdb")
+    parser_polymarket_record.add_argument("--duration-seconds", type=int, default=300)
+    parser_polymarket_record.add_argument("--discovery-interval-seconds", type=int, default=60)
+    parser_polymarket_record.add_argument("--queue-capacity", type=int, default=20_000)
+    parser_polymarket_record.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_record.add_argument("--json", action="store_true")
+    parser_polymarket_record.set_defaults(func=command_polymarket_record)
 
     parser_archive_sync = subparsers.add_parser(
         "archive-sync",
@@ -5687,6 +5707,38 @@ def command_api_budget(args: argparse.Namespace) -> int:
         return 0
     print(render_api_budget(report if isinstance(report, Mapping) else report))
     return 0
+
+
+def command_polymarket_record(args: argparse.Namespace) -> int:
+    """Capture public, prospective evidence for the Polymarket paper lane."""
+    try:
+        recorder = PolymarketPublicRecorder(
+            Path(args.database),
+            queue_capacity=int(args.queue_capacity),
+            discovery_interval_seconds=int(args.discovery_interval_seconds),
+            memory_limit=str(args.memory_limit),
+            database_threads=int(args.database_threads),
+        )
+        report = asyncio.run(recorder.run(duration_seconds=int(args.duration_seconds)))
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(f"polymarket-record failed: {exc.__class__.__name__}: {exc}", file=sys.stderr)
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(report.asdict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-record: "
+            f"status={report.status} duration={report.duration_seconds:.3f}s "
+            f"markets={report.market_snapshot_count} messages={report.raw_message_count} "
+            f"events={report.normalized_event_count} gaps={report.stream_gap_count}"
+        )
+        for stream, count in sorted(report.stream_counts.items()):
+            print(f"  {stream}: {count}")
+        print(f"database: {report.database}")
+        print(f"report_sha256: {report.report_sha256}")
+        for error in (*report.errors, *report.integrity_errors):
+            print(f"error: {error}", file=sys.stderr)
+    return 0 if report.status == "complete" else 2
 
 
 def command_archive_sync(args: argparse.Namespace) -> int:
