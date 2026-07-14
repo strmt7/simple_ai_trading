@@ -21,7 +21,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 ## Current Scope
 
 - Major-asset day trading on Binance testnet or Demo Trading endpoints, limited to BTC, ETH, and SOL.
-- Polymarket BTC/ETH/SOL 5-minute markets have a [paper-only parity design](docs/POLYMARKET_PAPER_TRADING.md); its prospective recorder and simulator are not yet implemented and it has no live-money authority.
+- Polymarket BTC/ETH/SOL 5-minute markets have a [paper-only parity design](docs/POLYMARKET_PAPER_TRADING.md), a prospective public-data recorder, and a shared conservative fill simulator. Strategy, settlement, and autonomous shadow execution remain incomplete; there is no live-money authority.
 - Default symbols: `BTCUSDC`, `ETHUSDC`, `SOLUSDC`; USD-M futures workflows use the matching `BTCUSDT`, `ETHUSDT`, and `SOLUSDT` contracts.
 - Unsupported bases, low-liquidity assets, leveraged-token patterns, and lookalike symbols are rejected before data sync, archive ingestion, universe ranking, or optimization.
 - Conservative risk profile by default, with `conservative`, `regular`, and `aggressive` profiles.
@@ -136,6 +136,7 @@ simple-ai-trading coordinator
 simple-ai-trading universe
 simple-ai-trading data-sync --symbol BTCUSDC --interval 1m --full-history
 simple-ai-trading api-budget --compact
+simple-ai-trading polymarket-record --duration-seconds 300 --database data/polymarket-paper.duckdb
 simple-ai-trading archive-sync --symbol BTCUSDC --interval 1s --cadence monthly
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --plan-only --require-checksum --json
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --require-checksum
