@@ -1,22 +1,29 @@
-# Round 54: Sequential Distributional Action Value
+# Round 55: Stop-Bounded Payoff Models
 
-> **Rejected before evaluation.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
+> **Rejected development evidence.** No profitability, untouched-confirmation, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
 
-Three DirectML-trained dueling causal TCNs reduced matched early-stop Bellman residual loss by `25.76%` to `26.20%`, but that was not directional or economic proof. Calibration directional rank peaked at `0.044239`. The median-Q controller held a position for up to `791` hours and returned `-30.87%` under stress with `43.96%` drawdown.
+Round 55 trained `18` OpenCL LightGBM artifacts (`36` side models) on BTCUSDT, ETHUSDT, and SOLUSDT. Targets used real one-minute Binance futures paths, exact gap-through stops, settled funding, and a `16 bps` round-trip stress charge. Every position stopped or timed out within `60 minutes`; notional used fixed initial capital with no reinvestment and no leverage.
 
-A post-hoc finite-hold diagnostic found its least-bad point at `8h`: `+1.07%` stress return across `99` trades, `12.43%` drawdown, and a `-0.6336` bps/hour bootstrap lower bound. It remains rejected and selection-contaminated.
+| Treatment | Period | Trades | Stress return | Max drawdown | Profit factor |
+|---|---:|---:|---:|---:|---:|
+| Baseline | Jul-Aug 2024 | 27 | +0.2447% | 0.1806% | 1.733 |
+| 8B AI factors | Jul-Aug 2024 | 14 | +0.3659% | 0.0253% | 11.515 |
+| Baseline | Sep 2024 | 7 | +0.0900% | 0.1645% | 1.547 |
+| 8B AI factors | Sep 2024 | 5 | +0.0559% | 0.1645% | 1.340 |
 
-Round 55 must forecast finite-horizon return distributions directly, keep the controller bounded, and gate directional skill, proper scores, path risk, net action value, bootstrap evidence, activity, and asset breadth separately. The evaluation interval remains unread.
+Both treatments failed six frozen gates: development and September trade/day counts, September P&L concentration, and the familywise block-bootstrap lower bound. The seven Fino1/Qwen3 factor programs improved July-August descriptively but reduced September stress return by `-0.0341%`; the paired lower bound was `-0.01424 bps/hour`. AI uplift therefore failed.
+
+The run read `24,096` hourly timestamps and `72,288` symbol paths through September 2024. It generated no synthetic rows and did not load the `6,551` excluded October 2024-June 2025 timestamps. A future interval remains untouched, but Round 55 authorized no access to it.
 
 ## Evidence
 
 | View | Graph | Source |
 |---|---|---|
-| Bellman fit | [SVG](charts/model-skill.svg) | [CSV](models.csv) |
-| Directional rank | [SVG](charts/directional-rank.svg) | [CSV](directional-rank.csv) |
-| Policy economics | [SVG](charts/policy-economics.svg) | [CSV](policies.csv) |
-| Holding duration | [SVG](charts/holding-duration.svg) | [CSV](holding-summary.csv) |
-| Bounded-hold screen | [SVG](charts/finite-hold.svg) | [CSV](finite-hold.csv) |
+| Model skill | [SVG](charts/model-skill.svg) | [CSV](models.csv) |
+| Path economics | [SVG](charts/economics.svg) | [CSV](treatments.csv) |
+| Trading activity | [SVG](charts/activity.svg) | [CSV](treatments.csv) |
+| Matched AI effect | [SVG](charts/ai-uplift.svg) | [CSV](treatments.csv) |
+| September equity | [SVG](charts/september-equity.svg) | [CSV](equity.csv) |
 | Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`screen.json`, `failure-diagnostic.json`, and `holding-runs.csv` preserve the full verified evidence. `report.json` binds every publication artifact to the exact external reports, design, dataset, model artifacts, and diagnostic implementation.
+`trades.csv`, `hourly-ledger.csv`, `monthly-economics.csv`, `predictive-rank.csv`, `ai-factors.csv`, `gates.csv`, and `screen.json` preserve the underlying evidence. Every chart is regenerated from tracked tabular data.

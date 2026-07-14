@@ -528,14 +528,16 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 54 trained three DirectML distributional action-value TCNs on BTC, ETH,
-and SOL. Bellman residual skill reached `25.76%` to `26.20%`, but pooled
-directional rank remained weak and the greedy controller held positions for up
-to `791` hours. Its median-Q stress replay returned `-30.87%` with `43.96%`
-drawdown. A post-hoc 8-hour cap produced a `+1.07%` calibration point estimate,
-but still had `12.43%` drawdown and a negative block-bootstrap lower bound. The
-round was rejected before evaluation; no profitability, untouched-data,
-testnet, live-trading, leverage, AI-uplift, or execution authority is claimed.
+Round 55 trained `18` OpenCL LightGBM artifacts (`36` long/short models) on
+real BTC, ETH, and SOL one-minute futures paths. Stop-bounded, 60-minute
+payoffs included exact gap-through exits, settled funding, and a `16 bps`
+round-trip stress charge. The baseline produced `27` July-August and `7`
+September trades; the governed 8B-model factor treatment produced `14` and
+`5`. Both failed six frozen activity, concentration, and familywise-bootstrap
+gates. AI improved the July-August point estimate but reduced September return
+by `3.4135` initial-capital bps, so its matched uplift gate failed. The round
+was rejected without reading the untouched future interval and makes no
+profitability, leverage, testnet, live-trading, or execution claim.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
