@@ -46,6 +46,25 @@ def test_factor_program_rejects_dynamic_python_and_unknown_features() -> None:
             model="qwen3:8b",
             feature_names=FEATURE_NAMES,
         )
+    meaningless = _mapping("weak_failure", "tanh(return_60m)")
+    meaningless["failure_mode"] = "0"
+    with pytest.raises(ValueError, match="failure_mode"):
+        validate_factor_program(
+            meaningless,
+            model="qwen3:8b",
+            feature_names=FEATURE_NAMES,
+        )
+
+
+def test_factor_program_rejects_symbol_claim_without_symbol_feature() -> None:
+    symbol_claim = _mapping("ethusdt_flow_confirmation", "tanh(return_60m)")
+    symbol_claim["mechanism"] = "ETHUSDT flow confirms the target trend over one hour."
+    with pytest.raises(ValueError, match="names ethusdt"):
+        validate_factor_program(
+            symbol_claim,
+            model="fino1:8b",
+            feature_names=FEATURE_NAMES,
+        )
 
 
 def test_factor_response_is_strict_json_without_markdown_repair() -> None:

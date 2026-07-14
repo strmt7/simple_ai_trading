@@ -97,11 +97,21 @@ def _sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
-def _validate_text(value: object, label: str, *, maximum: int) -> str:
+def _validate_text(
+    value: object,
+    label: str,
+    *,
+    maximum: int,
+    minimum: int = 1,
+) -> str:
     if not isinstance(value, str):
         raise ValueError(f"factor {label} must be text")
     text = value.strip()
-    if not text or len(text) > maximum or any(ord(character) < 32 for character in text):
+    if (
+        len(text) < minimum
+        or len(text) > maximum
+        or any(ord(character) < 32 for character in text)
+    ):
         raise ValueError(f"factor {label} is invalid")
     return text
 
@@ -204,9 +214,11 @@ def validate_factor_program(
     expression = _validate_text(
         value["expression"], "expression", maximum=_MAX_TEXT_LENGTH
     )
-    mechanism = _validate_text(value["mechanism"], "mechanism", maximum=800)
+    mechanism = _validate_text(
+        value["mechanism"], "mechanism", maximum=800, minimum=20
+    )
     failure_mode = _validate_text(
-        value["failure_mode"], "failure_mode", maximum=800
+        value["failure_mode"], "failure_mode", maximum=800, minimum=20
     )
     expected_horizon = _validate_text(
         value["expected_horizon"], "expected_horizon", maximum=80
@@ -221,6 +233,17 @@ def validate_factor_program(
         depth=0,
         count=[0],
     )
+    referenced_features = {
+        node.id for node in ast.walk(tree) if isinstance(node, ast.Name)
+    }
+    descriptive_text = f"{name} {mechanism}".lower()
+    for symbol in ("btcusdt", "ethusdt", "solusdt"):
+        if symbol in descriptive_text and not any(
+            feature.startswith(f"{symbol}_") for feature in referenced_features
+        ):
+            raise ValueError(
+                f"factor description names {symbol} without a matching feature"
+            )
     canonical_expression = ast.unparse(tree).strip()
     identity = {
         "model": model_name,
