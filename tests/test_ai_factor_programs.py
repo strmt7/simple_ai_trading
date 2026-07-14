@@ -67,6 +67,15 @@ def test_factor_program_rejects_symbol_claim_without_symbol_feature() -> None:
         )
 
 
+def test_factor_program_rejects_incompatible_additive_units() -> None:
+    with pytest.raises(ValueError, match="incompatible additive units"):
+        validate_factor_program(
+            _mapping("unit_mismatch", "return_60m_bps - liquidity_ratio"),
+            model="fino1:8b",
+            feature_names=("return_60m_bps", "liquidity_ratio"),
+        )
+
+
 def test_factor_response_is_strict_json_without_markdown_repair() -> None:
     text = json.dumps(
         {
