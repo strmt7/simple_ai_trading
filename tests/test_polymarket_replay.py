@@ -11,6 +11,12 @@ from simple_ai_trading import cli
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_paper import PolymarketPaperBroker
+from simple_ai_trading.polymarket_features import (
+    POLYMARKET_FEATURE_NAMES,
+    PolymarketFeatureConfig,
+    build_polymarket_feature_dataset,
+    materialize_polymarket_feature_dataset,
+)
 from simple_ai_trading.polymarket_recorder import (
     MarketEvidence,
     PolymarketEvidenceStore,
@@ -106,6 +112,8 @@ def _finish_replay_store(
     wrong_best: bool = False,
     trade_resync: bool = False,
     trade_resync_lag_ms: int = 1,
+    feature_evidence: bool = False,
+    pre_window_trade_quantity: str = "0.1",
 ) -> None:
     store.start_run(run_id, EPOCH * 1_000)
     for asset in ("BTC", "ETH", "SOL"):
@@ -323,6 +331,59 @@ def _finish_replay_store(
                 monotonic_ns=1_011_200_000,
             ),
         )
+    if feature_evidence:
+        clob_messages.insert(
+            1,
+            _message(
+                "clob_market",
+                {
+                    "event_type": "book",
+                    "market": btc.condition_id,
+                    "asset_id": btc.down_token_id,
+                    "timestamp": str(EPOCH * 1_000 + 1_000),
+                    "hash": "down-full-book",
+                    "bids": [{"price": "0.49", "size": "12"}],
+                    "asks": [{"price": "0.51", "size": "11"}],
+                },
+                sequence=39,
+                wall_offset_ms=1_001,
+                monotonic_ns=1_000_100_000,
+            ),
+        )
+        clob_messages.extend(
+            [
+                _message(
+                    "clob_market",
+                    {
+                        "event_type": "book",
+                        "market": btc.condition_id,
+                        "asset_id": btc.up_token_id,
+                        "timestamp": str(EPOCH * 1_000 + 6_000),
+                        "hash": "up-feature-book",
+                        "bids": [{"price": "0.49", "size": "10"}],
+                        "asks": [{"price": "0.51", "size": "10"}],
+                    },
+                    sequence=42,
+                    wall_offset_ms=6_001,
+                    monotonic_ns=6_000_000_000,
+                ),
+                _message(
+                    "clob_market",
+                    {
+                        "event_type": "book",
+                        "market": btc.condition_id,
+                        "asset_id": btc.down_token_id,
+                        "timestamp": str(EPOCH * 1_000 + 6_000),
+                        "hash": "down-feature-book",
+                        "bids": [{"price": "0.49", "size": "12"}],
+                        "asks": [{"price": "0.51", "size": "11"}],
+                    },
+                    sequence=43,
+                    wall_offset_ms=6_001,
+                    monotonic_ns=6_001_000_000,
+                ),
+            ]
+        )
     auxiliary = [
         _message(
             "polymarket_rtds",
@@ -355,6 +416,153 @@ def _finish_replay_store(
             monotonic_ns=1_000_600_000,
         ),
     ]
+    if feature_evidence:
+        auxiliary = [
+            _message(
+                "polymarket_rtds",
+                {
+                    "topic": "crypto_prices_chainlink",
+                    "type": "subscribe",
+                    "timestamp": EPOCH * 1_000 + 800,
+                    "payload": {
+                        "symbol": "btc/usd",
+                        "data": [
+                            {"timestamp": EPOCH * 1_000, "value": 60_000},
+                            {
+                                "timestamp": EPOCH * 1_000 + 1_000,
+                                "value": 60_006,
+                            },
+                        ],
+                    },
+                },
+                sequence=1,
+                wall_offset_ms=800,
+                monotonic_ns=800_000_000,
+            ),
+            _message(
+                "polymarket_rtds",
+                {
+                    "topic": "crypto_prices",
+                    "type": "subscribe",
+                    "timestamp": EPOCH * 1_000 + 810,
+                    "payload": {
+                        "symbol": "btcusdt",
+                        "data": [
+                            {"timestamp": EPOCH * 1_000, "value": 60_001},
+                            {
+                                "timestamp": EPOCH * 1_000 + 1_000,
+                                "value": 60_007,
+                            },
+                        ],
+                    },
+                },
+                sequence=2,
+                wall_offset_ms=810,
+                monotonic_ns=810_000_000,
+            ),
+            _message(
+                "binance_spot",
+                {
+                    "stream": "btcusdt@bookTicker",
+                    "data": {
+                        "u": 1,
+                        "s": "BTCUSDT",
+                        "b": "60005",
+                        "B": "2",
+                        "a": "60007",
+                        "A": "3",
+                    },
+                },
+                sequence=1,
+                wall_offset_ms=820,
+                monotonic_ns=820_000_000,
+            ),
+            _message(
+                "binance_spot",
+                {
+                    "stream": "btcusdt@trade",
+                    "data": {
+                        "e": "trade",
+                        "E": EPOCH * 1_000 + 830,
+                        "T": EPOCH * 1_000 + 829,
+                        "s": "BTCUSDT",
+                        "p": "60006",
+                        "q": pre_window_trade_quantity,
+                        "m": False,
+                    },
+                },
+                sequence=2,
+                wall_offset_ms=830,
+                monotonic_ns=830_000_000,
+            ),
+            _message(
+                "polymarket_rtds",
+                {
+                    "topic": "crypto_prices_chainlink",
+                    "type": "update",
+                    "timestamp": EPOCH * 1_000 + 5_100,
+                    "payload": {
+                        "symbol": "btc/usd",
+                        "timestamp": EPOCH * 1_000 + 5_000,
+                        "value": 60_006,
+                    },
+                },
+                sequence=3,
+                wall_offset_ms=5_100,
+                monotonic_ns=5_100_000_000,
+            ),
+            _message(
+                "polymarket_rtds",
+                {
+                    "topic": "crypto_prices",
+                    "type": "update",
+                    "timestamp": EPOCH * 1_000 + 5_110,
+                    "payload": {
+                        "symbol": "btcusdt",
+                        "timestamp": EPOCH * 1_000 + 5_000,
+                        "value": 60_007,
+                    },
+                },
+                sequence=4,
+                wall_offset_ms=5_110,
+                monotonic_ns=5_110_000_000,
+            ),
+            _message(
+                "binance_spot",
+                {
+                    "stream": "btcusdt@bookTicker",
+                    "data": {
+                        "u": 2,
+                        "s": "BTCUSDT",
+                        "b": "60005",
+                        "B": "2.5",
+                        "a": "60007",
+                        "A": "2.5",
+                    },
+                },
+                sequence=3,
+                wall_offset_ms=5_800,
+                monotonic_ns=5_800_000_000,
+            ),
+            _message(
+                "binance_spot",
+                {
+                    "stream": "btcusdt@trade",
+                    "data": {
+                        "e": "trade",
+                        "E": EPOCH * 1_000 + 5_900,
+                        "T": EPOCH * 1_000 + 5_899,
+                        "s": "BTCUSDT",
+                        "p": "60006",
+                        "q": "0.2",
+                        "m": True,
+                    },
+                },
+                sequence=4,
+                wall_offset_ms=5_900,
+                monotonic_ns=5_900_000_000,
+            ),
+        ]
     store.append_messages(run_id, [*clob_messages, *auxiliary])
     report = store.finish_run(
         run_id,
@@ -424,6 +632,166 @@ def test_replay_rejects_events_outside_bounded_causal_reorder_window(
         )
         with pytest.raises(ValueError, match="bounded causal reorder window"):
             PolymarketEvidenceReplay.load(store, run_id="stale-book")
+
+
+def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "features.duckdb") as store:
+        _finish_replay_store(store, "features", feature_evidence=True)
+        config = PolymarketFeatureConfig(
+            cadence_ms=50,
+            warmup_ms=0,
+            minimum_resolved_markets_per_asset=1,
+        )
+        first = build_polymarket_feature_dataset(
+            store,
+            run_id="features",
+            config=config,
+        )
+        second = build_polymarket_feature_dataset(
+            store,
+            run_id="features",
+            config=config,
+        )
+        created = materialize_polymarket_feature_dataset(store, first)
+        existing = materialize_polymarket_feature_dataset(store, second)
+        store.connect().execute(
+            """
+            UPDATE polymarket_feature_row SET feature_values_json = '[]'
+            WHERE dataset_id = ? AND feature_id = ?
+            """,
+            [first.dataset_id, first.rows[0].feature_id],
+        )
+        with pytest.raises(ValueError, match="feature rows are inconsistent"):
+            materialize_polymarket_feature_dataset(store, first)
+
+    assert first.dataset_id == second.dataset_id
+    assert first.dataset_sha256 == second.dataset_sha256
+    assert first.rows == second.rows
+    assert created.status == "created"
+    assert existing.status == "existing"
+    assert created.row_count == existing.row_count == len(first.rows)
+    assert len(first.rows) >= 1
+    row = first.rows[0]
+    assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 49
+    assert row.official_up is True
+    assert row.resolution_event_id
+    assert row.feature_map()["ask_pair_cost"] == pytest.approx(1.02)
+    assert row.feature_map()["chainlink_anchor_gap_ms"] == 0.0
+    assert first.labeled_market_counts["BTC"] == 1
+    assert first.training_ready is False
+    assert "insufficient_featured_resolved_markets:ETH:0/1" in first.training_errors
+
+
+def test_polymarket_feature_materialization_accepts_a_truthful_empty_dataset(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "empty-features.duckdb") as store:
+        _finish_replay_store(store, "empty-features", feature_evidence=True)
+        dataset = build_polymarket_feature_dataset(
+            store,
+            run_id="empty-features",
+            config=PolymarketFeatureConfig(
+                cadence_ms=50,
+                warmup_ms=60_000,
+                minimum_resolved_markets_per_asset=1,
+            ),
+        )
+        created = materialize_polymarket_feature_dataset(store, dataset)
+        existing = materialize_polymarket_feature_dataset(store, dataset)
+
+    assert dataset.rows == ()
+    assert dataset.shadow_ready is False
+    assert created.status == "created"
+    assert existing.status == "existing"
+    assert created.row_count == existing.row_count == 0
+
+
+def test_polymarket_feature_provenance_binds_pre_window_causal_events(
+    tmp_path,
+) -> None:
+    config = PolymarketFeatureConfig(
+        cadence_ms=50,
+        warmup_ms=0,
+        minimum_resolved_markets_per_asset=1,
+    )
+    with PolymarketEvidenceStore(tmp_path / "prefix-a.duckdb") as first_store:
+        _finish_replay_store(
+            first_store,
+            "causal-prefix",
+            feature_evidence=True,
+            pre_window_trade_quantity="0.1",
+        )
+        first = build_polymarket_feature_dataset(
+            first_store,
+            run_id="causal-prefix",
+            config=config,
+        )
+    with PolymarketEvidenceStore(tmp_path / "prefix-b.duckdb") as second_store:
+        _finish_replay_store(
+            second_store,
+            "causal-prefix",
+            feature_evidence=True,
+            pre_window_trade_quantity="0.2",
+        )
+        second = build_polymarket_feature_dataset(
+            second_store,
+            run_id="causal-prefix",
+            config=config,
+        )
+
+    assert first.rows[0].feature_values == second.rows[0].feature_values
+    assert (
+        first.rows[0].input_provenance_sha256
+        != second.rows[0].input_provenance_sha256
+    )
+    assert first.rows[0].row_sha256 != second.rows[0].row_sha256
+
+
+def test_polymarket_feature_cli_and_generated_windows_contract_share_options(
+    tmp_path,
+    capsys,
+) -> None:
+    database = tmp_path / "feature-cli.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "feature-cli", feature_evidence=True)
+
+    status_code = cli.main(
+        [
+            "polymarket-features",
+            "--database",
+            str(database),
+            "--run-id",
+            "feature-cli",
+            "--cadence-ms",
+            "50",
+            "--warmup-ms",
+            "0",
+            "--minimum-resolved-markets-per-asset",
+            "1",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    spec = next(spec for spec in command_specs() if spec.name == "polymarket-features")
+
+    assert status_code == 2
+    assert payload["row_count"] >= 1
+    assert payload["labeled_row_count"] >= 1
+    assert payload["materialization"]["status"] == "created"
+    assert payload["shadow_ready"] is False
+    assert payload["training_ready"] is False
+    assert {option.dest for option in spec.options} == {
+        "database",
+        "run_id",
+        "cadence_ms",
+        "warmup_ms",
+        "minimum_resolved_markets_per_asset",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
 
 
 def test_replay_rejects_semantically_inconsistent_published_best_price(

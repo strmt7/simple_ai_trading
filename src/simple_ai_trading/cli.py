@@ -107,7 +107,12 @@ from .positions import (
 )
 from .polymarket_paper import PolymarketPaperBroker
 from .polymarket_coverage import inspect_polymarket_feed_coverage
-from .polymarket_recorder import PolymarketPublicRecorder
+from .polymarket_features import (
+    PolymarketFeatureConfig,
+    build_polymarket_feature_dataset,
+    materialize_polymarket_feature_dataset,
+)
+from .polymarket_recorder import PolymarketEvidenceStore, PolymarketPublicRecorder
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
     EntryRiskDecision,
@@ -431,6 +436,29 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_record.add_argument("--json", action="store_true")
     parser_polymarket_record.set_defaults(func=command_polymarket_record)
+
+    parser_polymarket_features = subparsers.add_parser(
+        "polymarket-features",
+        help="build leakage-safe BTC/ETH/SOL 5-minute model features",
+        description=(
+            "Build and materialize hash-bound decision-time features from one "
+            "complete prospective Polymarket recorder run. Official outcomes are "
+            "attached only as future labels; unresolved rows remain shadow-only."
+        ),
+    )
+    parser_polymarket_features.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_features.add_argument("--run-id", default=None)
+    parser_polymarket_features.add_argument("--cadence-ms", type=int, default=250)
+    parser_polymarket_features.add_argument("--warmup-ms", type=int, default=5_000)
+    parser_polymarket_features.add_argument(
+        "--minimum-resolved-markets-per-asset", type=int, default=30
+    )
+    parser_polymarket_features.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_features.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_features.add_argument("--json", action="store_true")
+    parser_polymarket_features.set_defaults(func=command_polymarket_features)
 
     parser_polymarket_paper = subparsers.add_parser(
         "polymarket-paper",
@@ -5769,6 +5797,50 @@ def command_polymarket_record(args: argparse.Namespace) -> int:
         for error in (*report.errors, *report.integrity_errors):
             print(f"error: {error}", file=sys.stderr)
     return 0 if report.status == "complete" else 2
+
+
+def command_polymarket_features(args: argparse.Namespace) -> int:
+    """Materialize causal feature rows from one immutable prospective run."""
+
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            dataset = build_polymarket_feature_dataset(
+                store,
+                run_id=getattr(args, "run_id", None),
+                config=PolymarketFeatureConfig(
+                    cadence_ms=int(args.cadence_ms),
+                    warmup_ms=int(args.warmup_ms),
+                    minimum_resolved_markets_per_asset=int(
+                        args.minimum_resolved_markets_per_asset
+                    ),
+                ),
+            )
+            materialization = materialize_polymarket_feature_dataset(store, dataset)
+            payload = dataset.summary()
+            payload["materialization"] = materialization.asdict()
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-features failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-features: "
+            f"run={dataset.run_id} rows={len(dataset.rows)} "
+            f"labeled_rows={dataset.labeled_row_count} "
+            f"shadow_ready={dataset.shadow_ready} "
+            f"training_ready={dataset.training_ready} "
+            f"materialization={materialization.status}"
+        )
+        print(f"dataset_sha256: {dataset.dataset_sha256}")
+    return 0 if dataset.shadow_ready else 2
 
 
 def command_polymarket_paper(args: argparse.Namespace) -> int:
