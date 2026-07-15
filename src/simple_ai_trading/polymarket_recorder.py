@@ -814,6 +814,113 @@ class PolymarketEvidenceStore:
         )
         return report
 
+    def fail_run(
+        self,
+        run_id: str,
+        *,
+        started_at_ms: int,
+        ended_at_ms: int,
+        database: str,
+        errors: Sequence[str],
+    ) -> RecorderReport:
+        """Terminalize an interrupted run without requiring the full evidence audit."""
+
+        connection = self.connect()
+        terminal_errors = [str(error) for error in errors]
+
+        def query_rows(
+            label: str, query: str
+        ) -> list[tuple[object, ...]]:
+            try:
+                return connection.execute(query, [run_id]).fetchall()
+            except Exception as exc:
+                terminal_errors.append(
+                    f"terminal_summary_{label}:{exc.__class__.__name__}:{exc}"
+                )
+                return []
+
+        def query_count(label: str, table: str) -> int:
+            rows = query_rows(
+                label,
+                f"SELECT count(*) FROM {table} WHERE run_id = ?",
+            )
+            return int(rows[0][0]) if rows else 0
+
+        market_count = query_count("markets", "polymarket_market_snapshot")
+        raw_count = query_count("messages", "polymarket_raw_message")
+        event_count = query_count("events", "polymarket_public_event")
+        gap_count = query_count("gaps", "polymarket_stream_gap")
+        stream_counts = {
+            str(stream): int(count)
+            for stream, count in query_rows(
+                "streams",
+                """
+                SELECT stream, count(*) FROM polymarket_raw_message
+                WHERE run_id = ? GROUP BY stream ORDER BY stream
+                """,
+            )
+        }
+        conditions = tuple(
+            str(row[0])
+            for row in query_rows(
+                "conditions",
+                """
+                SELECT DISTINCT condition_id FROM polymarket_market_snapshot
+                WHERE run_id = ? ORDER BY condition_id
+                """,
+            )
+        )
+        assets = tuple(
+            str(row[0])
+            for row in query_rows(
+                "assets",
+                """
+                SELECT DISTINCT asset FROM polymarket_market_snapshot
+                WHERE run_id = ? ORDER BY asset
+                """,
+            )
+        )
+        integrity = ("terminal_integrity_audit_incomplete",)
+        payload: dict[str, object] = {
+            "schema_version": POLYMARKET_RECORDER_SCHEMA_VERSION,
+            "run_id": run_id,
+            "status": "failed",
+            "database": database,
+            "started_at_ms": int(started_at_ms),
+            "ended_at_ms": int(ended_at_ms),
+            "duration_seconds": max(
+                0.0, (ended_at_ms - started_at_ms) / 1_000.0
+            ),
+            "market_snapshot_count": market_count,
+            "raw_message_count": raw_count,
+            "normalized_event_count": event_count,
+            "stream_gap_count": gap_count,
+            "stream_counts": stream_counts,
+            "assets": assets,
+            "conditions": conditions,
+            "integrity_errors": integrity,
+            "errors": tuple(terminal_errors),
+        }
+        report_sha = _canonical_sha256(payload)
+        payload["report_sha256"] = report_sha
+        report = RecorderReport(**payload)
+        connection.execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET status = 'failed', ended_at_ms = ?, report_json = ?,
+                report_sha256 = ?, error = ?
+            WHERE run_id = ?
+            """,
+            [
+                int(ended_at_ms),
+                _canonical_json(report.asdict()),
+                report_sha,
+                "; ".join(terminal_errors),
+                run_id,
+            ],
+        )
+        return report
+
     def integrity_errors(self, run_id: str) -> tuple[str, ...]:
         connection = self.connect()
         errors: list[str] = []
@@ -853,14 +960,13 @@ class PolymarketEvidenceStore:
                     errors.append(f"recorder_report_status_mismatch:{run_id}")
             except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
                 errors.append(f"recorder_report_invalid:{run_id}:{exc}")
-        last_message_id = ""
         message_count = 0
         for batch in _query_batches(
             connection,
             """
             SELECT message_id, run_id, stream, connection_id, sequence_number,
                    raw_payload_sha256, raw_text
-            FROM polymarket_raw_message WHERE run_id = ? ORDER BY message_id
+            FROM polymarket_raw_message WHERE run_id = ?
             """,
             [run_id],
         ):
@@ -874,12 +980,6 @@ class PolymarketEvidenceStore:
                 claimed,
                 raw_text,
             ) in batch:
-                normalized_message_id = str(message_id)
-                if normalized_message_id == last_message_id:
-                    errors.append(
-                        f"duplicate_raw_message_id:{normalized_message_id}"
-                    )
-                last_message_id = normalized_message_id
                 actual = hashlib.sha256(str(raw_text).encode("utf-8")).hexdigest()
                 if actual != str(claimed):
                     errors.append(f"raw_message_hash_mismatch:{message_id}")
@@ -894,39 +994,20 @@ class PolymarketEvidenceStore:
                 )
                 if not hmac.compare_digest(str(message_id), expected_id):
                     errors.append(f"raw_message_id_mismatch:{message_id}")
-        duplicate_sequences = connection.execute(
-            """
-            SELECT stream, connection_id, sequence_number
-            FROM polymarket_raw_message
-            WHERE run_id = ?
-            GROUP BY stream, connection_id, sequence_number
-            HAVING count(*) > 1
-            ORDER BY stream, connection_id, sequence_number
-            """,
-            [run_id],
-        ).fetchall()
-        errors.extend(
-            f"duplicate_raw_message_sequence:{stream}:{connection_id}:{sequence}"
-            for stream, connection_id, sequence in duplicate_sequences
-        )
-        last_event_id = ""
+        # The enforced UNIQUE keys reject exact source/event duplication at write
+        # time. Per-row content-address verification above also catches a copied
+        # identifier paired with a different unique key, without an unbounded sort.
         event_count = 0
         for batch in _query_batches(
             connection,
             """
             SELECT event_id, message_id, sub_index, event_sha256, event_json
-            FROM polymarket_public_event WHERE run_id = ? ORDER BY event_id
+            FROM polymarket_public_event WHERE run_id = ?
             """,
             [run_id],
         ):
             event_count += len(batch)
             for event_id, message_id, sub_index, claimed, event_json in batch:
-                normalized_event_id = str(event_id)
-                if normalized_event_id == last_event_id:
-                    errors.append(
-                        f"duplicate_public_event_id:{normalized_event_id}"
-                    )
-                last_event_id = normalized_event_id
                 actual = hashlib.sha256(str(event_json).encode("ascii")).hexdigest()
                 if actual != str(claimed):
                     errors.append(f"event_hash_mismatch:{event_id}")
@@ -946,21 +1027,6 @@ class PolymarketEvidenceStore:
                 else:
                     if canonical != str(event_json):
                         errors.append(f"event_json_not_canonical:{event_id}")
-        duplicate_event_sequences = connection.execute(
-            """
-            SELECT message_id, sub_index
-            FROM polymarket_public_event
-            WHERE run_id = ?
-            GROUP BY message_id, sub_index
-            HAVING count(*) > 1
-            ORDER BY message_id, sub_index
-            """,
-            [run_id],
-        ).fetchall()
-        errors.extend(
-            f"duplicate_public_event_sequence:{message_id}:{sub_index}"
-            for message_id, sub_index in duplicate_event_sequences
-        )
         orphan_events = connection.execute(
             """
             SELECT e.event_id
@@ -1369,13 +1435,25 @@ class PolymarketPublicRecorder:
                         if detail not in self.errors:
                             self.errors.append(detail)
             ended = _wall_ms()
-            return store.finish_run(
-                run_id,
-                started_at_ms=started,
-                ended_at_ms=ended,
-                database=str(self.database.resolve()),
-                errors=self.errors,
-            )
+            try:
+                return store.finish_run(
+                    run_id,
+                    started_at_ms=started,
+                    ended_at_ms=ended,
+                    database=str(self.database.resolve()),
+                    errors=self.errors,
+                )
+            except Exception as exc:
+                self.errors.append(
+                    f"finish_run:{exc.__class__.__name__}:{exc}"
+                )
+                return store.fail_run(
+                    run_id,
+                    started_at_ms=started,
+                    ended_at_ms=ended,
+                    database=str(self.database.resolve()),
+                    errors=self.errors,
+                )
 
     async def _supervise(
         self,

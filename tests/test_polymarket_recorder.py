@@ -535,6 +535,44 @@ def test_writer_owned_connection_preserves_final_report_cursor(tmp_path) -> None
     assert report.raw_message_count == 1
 
 
+def test_recorder_terminalizes_when_full_finish_audit_fails(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    database = tmp_path / "terminal-failure.duckdb"
+    recorder = PolymarketPublicRecorder(database)
+
+    async def _failed_discovery(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("offline")
+
+    def _failed_finish(*_args: object, **_kwargs: object) -> RecorderReport:
+        raise RuntimeError("audit memory ceiling")
+
+    monkeypatch.setattr(recorder, "_discover", _failed_discovery)
+    monkeypatch.setattr(PolymarketEvidenceStore, "finish_run", _failed_finish)
+
+    report = asyncio.run(recorder.run(duration_seconds=5))
+    with PolymarketEvidenceStore(database) as store:
+        persisted = store.connect().execute(
+            """
+            SELECT status, ended_at_ms, report_sha256, error
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [report.run_id],
+        ).fetchone()
+
+    assert report.status == "failed"
+    assert report.ended_at_ms >= report.started_at_ms
+    assert report.report_sha256
+    assert report.integrity_errors == ("terminal_integrity_audit_incomplete",)
+    assert any(error.startswith("finish_run:RuntimeError:") for error in report.errors)
+    assert persisted is not None
+    assert persisted[0] == "failed"
+    assert persisted[1] == report.ended_at_ms
+    assert persisted[2] == report.report_sha256
+    assert "finish_run:RuntimeError:audit memory ceiling" in persisted[3]
+
+
 def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
     tmp_path,
 ) -> None:
@@ -598,8 +636,8 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
     assert any(error.startswith("event_hash_mismatch:") for error in errors)
     assert any(error.startswith("snapshot_payload_mismatch:") for error in errors)
     assert any(error.startswith("stream_gap_id_mismatch:") for error in errors)
-    assert any(error.startswith("duplicate_raw_message_id:") for error in errors)
-    assert any(error.startswith("duplicate_public_event_id:") for error in errors)
+    assert any(error.startswith("raw_message_id_mismatch:") for error in errors)
+    assert any(error.startswith("event_id_mismatch:") for error in errors)
 
 
 def test_finished_report_binds_evidence_counts_against_valid_late_append(
