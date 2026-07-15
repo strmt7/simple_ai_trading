@@ -1306,6 +1306,11 @@ def test_round9_action_value_contract_code_and_document_are_identical() -> None:
     assert claimed == POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
     assert contract["ai_boundary"]["event_loop_llm_permitted"] is False
+    continuity = contract["continuity_contract"]
+    assert "zero queue-saturation" in continuity["global_run_gate"]
+    assert "entire group" in continuity["synchronized_exclusion"]
+    assert "Official outcomes" in continuity["eligibility_freeze"]
+    assert "Pre-gap" in continuity["fresh_reconnect_baseline"]
     assert contract["truth_constraints"]["profitability_claim"] is False
 
 

@@ -30,7 +30,7 @@ from .polymarket_repricing import (
 
 
 POLYMARKET_ACTION_VALUE_CONTRACT_SHA256 = (
-    "3b31a9204e6c618bd936a6f9437c0d497d7542d9802f7eea935e4e35ac9f9312"
+    "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800"
 )
 POLYMARKET_ACTION_FEATURE_SCHEMA_VERSION = "polymarket-causal-action-feature-v1"
 POLYMARKET_ACTION_LABEL_SCHEMA_VERSION = "polymarket-causal-action-label-v1"
