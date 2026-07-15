@@ -1274,11 +1274,19 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
                 probability_report.test_log_loss_delta < 0.0
                 and probability_report.test_brier_delta < 0.0
             ),
+            "minimum_confirmatory_test_time_groups_met": (
+                len(split.test_group_starts_ms) >= 30
+            ),
             "after_cost_execution_improved": (
                 model_execution.net_realized_pnl_quote
                 > baseline_execution.net_realized_pnl_quote
             ),
+            "after_cost_model_improved_at_every_stress_latency": (
+                model_execution.net_realized_pnl_quote
+                > baseline_execution.net_realized_pnl_quote
+            ),
             "all_positions_officially_settled": True,
+            "all_order_outcomes_terminal": True,
             "ai_enabled": False,
             "ai_uplift_accepted": False,
             "live_trading_authority": False,
@@ -1357,6 +1365,29 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     selection_text = " ".join(selection_chart.itertext())
     assert "INNER TRAINING FOLDS" in selection_text
     assert "OUTER VALIDATION GATE" in selection_text
+
+    gate_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
+    gate_tampered["evidence_gates"]["after_cost_execution_improved"] = not bool(
+        gate_tampered["evidence_gates"]["after_cost_execution_improved"]
+    )
+    gate_identity = dict(gate_tampered)
+    gate_identity.pop("artifact_sha256")
+    gate_tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            gate_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    gate_tampered_path = tmp_path / "gate-tampered.json"
+    gate_tampered_path.write_text(
+        json.dumps(gate_tampered),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="evidence gates do not reconstruct"):
+        validate_polymarket_model_artifact(gate_tampered_path)
 
     selection_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
     tampered_model = selection_tampered["model"]

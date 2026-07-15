@@ -2005,6 +2005,95 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
                 "report_sha256"
             ) != executions[str(policy)].get("report_sha256"):
                 raise ValueError(f"{policy} primary latency report does not match")
+    all_latency_reports = [
+        _as_mapping(report, f"{policy} latency execution")
+        for policy_reports in sensitivity_policies.values()
+        for policy, report in _as_mapping(
+            policy_reports,
+            "latency policy reports",
+        ).items()
+    ]
+    expected_gates = {
+        "validation_probability_improved": (
+            _finite_float(
+                probability["validation_log_loss_delta"],
+                "validation log-loss delta",
+            )
+            < 0.0
+        ),
+        "untouched_test_probability_improved": (
+            _finite_float(
+                probability["test_log_loss_delta"],
+                "test log-loss delta",
+            )
+            < 0.0
+            and _finite_float(
+                probability["test_brier_delta"],
+                "test Brier delta",
+            )
+            < 0.0
+        ),
+        "minimum_confirmatory_test_time_groups_met": len(time_groups) >= 30,
+        "after_cost_execution_improved": (
+            _decimal(
+                executions["model"]["net_realized_pnl_quote"],
+                "model net PnL",
+            )
+            > _decimal(
+                executions["baseline"]["net_realized_pnl_quote"],
+                "baseline net PnL",
+            )
+        ),
+        "after_cost_model_improved_at_every_stress_latency": all(
+            _decimal(
+                _as_mapping(
+                    _as_mapping(
+                        sensitivity_policies["model"],
+                        "model latency reports",
+                    )[str(latency)],
+                    "model latency report",
+                )["net_realized_pnl_quote"],
+                "model latency PnL",
+            )
+            > _decimal(
+                _as_mapping(
+                    _as_mapping(
+                        sensitivity_policies["baseline"],
+                        "baseline latency reports",
+                    )[str(latency)],
+                    "baseline latency report",
+                )["net_realized_pnl_quote"],
+                "baseline latency PnL",
+            )
+            for latency in latency_values
+        ),
+        "all_positions_officially_settled": all(
+            int(report["filled_order_count"])
+            == int(report["winning_order_count"])
+            + int(report["losing_order_count"])
+            and all(
+                trade.get("execution_state") != "FILLED"
+                or bool(str(trade.get("official_resolution_event_id", "")))
+                for trade in report["trades"]
+            )
+            for report in all_latency_reports
+        ),
+        "all_order_outcomes_terminal": all(
+            trade.get("execution_state") != "UNKNOWN"
+            for report in all_latency_reports
+            for trade in report["trades"]
+        ),
+        "ai_enabled": ai.get("enabled") is True,
+        "ai_uplift_accepted": bool(
+            ai.get("enabled") is True
+            and _as_mapping(ai["uplift"], "AI uplift").get("accepted") is True
+        ),
+        "live_trading_authority": False,
+        "profitability_claim": False,
+    }
+    gates = _as_mapping(payload.get("evidence_gates"), "evidence gates")
+    if dict(gates) != expected_gates:
+        raise ValueError("Polymarket evidence gates do not reconstruct")
     return ValidatedPolymarketArtifact(
         payload=payload,
         artifact_sha256=claimed_artifact_sha256,
