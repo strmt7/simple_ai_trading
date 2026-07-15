@@ -33,15 +33,23 @@
     },
     "threshold_selection": "Among validation thresholds with at least 30 sequential completed trades overall and five per asset, positive aggregate stress utility, positive median market PnL, and no filled-entry/failed-exit event, select the highest Wilson lower bound for positive-complete precision; ties select the higher threshold. If none pass, select no_trade."
   },
-  "contract_sha256": "3b31a9204e6c618bd936a6f9437c0d497d7542d9802f7eea935e4e35ac9f9312",
+  "continuity_contract": {
+    "eligibility_freeze": "Compute and persist synchronized-group eligibility only from local receipt timestamps, connection segments, stream-gap evidence, queue-saturation evidence, immutable market times, and frozen feature/execution horizons. Official outcomes, future prices, action labels, utilities, predictions, and model scores must not influence inclusion or exclusion.",
+    "fresh_reconnect_baseline": "After a reconnect, a CLOB market must receive a new full book snapshot and Binance and RTDS must each provide fresh observations on their new connection before evidence may resume. Pre-gap book, trade, price, or rolling-window state must never cross the connection boundary.",
+    "global_run_gate": "The recorder run must finish with a valid terminal report, zero recorder errors, zero queue-saturation or dropped-message evidence, and a passing full integrity audit. Audited transport gaps are permitted only when they do not intersect an included synchronized market evidence window.",
+    "included_market_window": "For every included market, CLOB, direct Binance, and RTDS evidence from event_start_ms minus the frozen 2000 ms Chainlink-anchor allowance through the latest admissible exit confirmation must remain inside one fresh connection segment per required stream, with no intersecting stream gap. The latest confirmation boundary is derived only from market end, the frozen 30 second close exclusion, recorded execution parameters, and frozen local latency and confirmation limits.",
+    "minimum_eligible_support": "At least 30 eligible synchronized markets per asset must remain after deterministic exclusions and before any split or model fit.",
+    "synchronized_exclusion": "If any required source or any BTC, ETH, or SOL market in a synchronized five-minute start-time group fails the frozen continuity rule, exclude the entire group across all assets and both actions. Partial groups and post-label substitution are prohibited."
+  },
+  "contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
   "data_contract": {
     "allowed_assets": [
       "BTC",
       "ETH",
       "SOL"
     ],
-    "confirmation_capture": "A run must start after this contract hash is committed, finish strict and gap-free, have no queue saturation or recorder error, and pass the complete integrity audit.",
-    "development_only_runs": "Any run captured before this contract, any segmented run, and the active queue-saturated long capture may diagnose plumbing or reject a model family but cannot confirm an edge.",
+    "confirmation_capture": "A run must start after this amended contract hash is committed and satisfy the frozen continuity_contract. A globally gap-free transport history is not required; every included synchronized market window must be gap-free and segment-pure, and gaps outside included windows remain audited exclusions rather than silently ignored evidence.",
+    "development_only_runs": "Any run captured before this amended contract, the completed queue-saturated long capture, and any future run that fails the continuity_contract may diagnose plumbing or reject a model family but cannot confirm an edge.",
     "minimum_featured_markets_per_asset": 30,
     "prospective_public_sources": "Polymarket public level-2 market channel, direct Binance spot bookTicker and aggTrade streams, RTDS Chainlink settlement-reference stream, immutable Gamma/CLOB market metadata, and recorded execution parameters.",
     "replay_memory": "Process immutable market-condition batches after one full-run integrity audit. Repeating the full audit per batch or materializing the entire long run in RAM is prohibited.",
@@ -128,6 +136,7 @@
   },
   "research_basis": [
     "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/market-data/websocket/rtds",
     "https://docs.polymarket.com/trading/orderbook",
     "https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams",
     "https://arxiv.org/abs/2403.09267",
@@ -149,7 +158,7 @@
     "test_fraction": 0.2,
     "validation_fraction": 0.2
   },
-  "status": "amended_for_explicit_creation_book_and_active_tick_semantics_then_refrozen_before_any_round_9_decision_label_model_fit_or_model_score_was_computed",
+  "status": "amended_for_local_window_continuity_after_a_development_only_label_diagnostic_but_before_any_round_9_model_fit_score_or_confirmation_capture_then_refrozen",
   "truth_constraints": {
     "current_edge_established": false,
     "current_long_capture_confirmatory": false,
