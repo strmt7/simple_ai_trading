@@ -127,13 +127,14 @@ def test_clob_market_info_must_match_gamma_tokens_tick_and_fee() -> None:
     evidence = validate_clob_market_info(market, payload)
     assert evidence["taker_base_fee"] == 1000
     assert evidence["taker_order_delay_enabled"] is True
+    assert evidence["general_order_delay_seconds"] == 0
 
     drifted = deepcopy(payload)
     drifted["mts"] = 0.001
     with pytest.raises(ValueError, match="order parameters drifted"):
         validate_clob_market_info(market, drifted)
 
-    for field in ("mbf", "tbf", "oas"):
+    for field in ("mbf", "tbf", "oas", "sd"):
         invalid = deepcopy(payload)
         invalid[field] = 1.5
         with pytest.raises(ValueError, match="nonnegative integer"):

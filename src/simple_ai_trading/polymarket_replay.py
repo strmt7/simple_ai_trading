@@ -13,6 +13,7 @@ from .paper_execution import BookLevel, PaperBookSnapshot
 from .polymarket import (
     POLYMARKET_TAKER_ORDER_DELAY_MS,
     PolymarketFiveMinuteMarket,
+    parse_clob_general_order_delay_seconds,
     parse_polymarket_five_minute_market,
     validate_clob_order_book,
 )
@@ -145,6 +146,7 @@ class PolymarketMarketExecutionEvidence:
     maker_base_fee: int
     taker_base_fee: int
     taker_order_delay_enabled: bool
+    general_order_delay_seconds: int
     minimum_order_age_seconds: int
     clob_info_sha256: str
     up_fee_rate_sha256: str
@@ -166,6 +168,7 @@ class PolymarketMarketExecutionEvidence:
             "taker_base_fee": item.taker_base_fee,
             "taker_order_delay_enabled": item.taker_order_delay_enabled,
             "taker_order_delay_ms": item.taker_order_delay_ms,
+            "general_order_delay_seconds": item.general_order_delay_seconds,
             "minimum_order_age_seconds": item.minimum_order_age_seconds,
             "clob_info_sha256": item.clob_info_sha256,
             "up_fee_rate_sha256": item.up_fee_rate_sha256,
@@ -174,6 +177,10 @@ class PolymarketMarketExecutionEvidence:
         }
 
     def validated(self) -> "PolymarketMarketExecutionEvidence":
+        if self.general_order_delay_seconds != 0:
+            raise ValueError(
+                "Round 9 does not model a nonzero CLOB general order delay"
+            )
         if (
             not self.run_id
             or not self.condition_id
@@ -182,6 +189,7 @@ class PolymarketMarketExecutionEvidence:
             or self.maker_base_fee < 0
             or self.taker_base_fee < 0
             or not isinstance(self.taker_order_delay_enabled, bool)
+            or self.general_order_delay_seconds < 0
             or self.minimum_order_age_seconds < 0
             or len(self.clob_info_sha256) != 64
             or len(self.up_fee_rate_sha256) != 64
@@ -721,7 +729,7 @@ class PolymarketEvidenceReplay:
                 SELECT condition_id, observed_wall_ms, observed_monotonic_ns,
                        maker_base_fee, taker_base_fee,
                        taker_order_delay_enabled, minimum_order_age_seconds,
-                       clob_info_sha256, up_fee_rate_sha256,
+                       clob_info_json, clob_info_sha256, up_fee_rate_sha256,
                        down_fee_rate_sha256, snapshot_sha256
                 FROM polymarket_market_snapshot
                 WHERE run_id = ?{condition_filter}
@@ -731,23 +739,35 @@ class PolymarketEvidenceReplay:
             )
             .fetchall()
         )
-        evidence = tuple(
-            PolymarketMarketExecutionEvidence(
-                run_id=run_id,
-                condition_id=str(row[0]),
-                observed_wall_ms=int(row[1]),
-                observed_monotonic_ns=int(row[2]),
-                maker_base_fee=int(row[3]),
-                taker_base_fee=int(row[4]),
-                taker_order_delay_enabled=bool(row[5]),
-                minimum_order_age_seconds=int(row[6]),
-                clob_info_sha256=str(row[7]),
-                up_fee_rate_sha256=str(row[8]),
-                down_fee_rate_sha256=str(row[9]),
-                snapshot_sha256=str(row[10]),
-            ).validated()
-            for row in rows
-        )
+        evidence_items: list[PolymarketMarketExecutionEvidence] = []
+        for row in rows:
+            try:
+                clob_info = json.loads(str(row[7]))
+            except json.JSONDecodeError as exc:
+                raise ValueError("stored CLOB market info is invalid JSON") from exc
+            if not isinstance(clob_info, Mapping):
+                raise ValueError("stored CLOB market info must be an object")
+            general_delay_seconds = parse_clob_general_order_delay_seconds(clob_info)
+            if bool(row[5]) != (clob_info.get("itode") is True):
+                raise ValueError("stored CLOB taker-delay flag is inconsistent")
+            evidence_items.append(
+                PolymarketMarketExecutionEvidence(
+                    run_id=run_id,
+                    condition_id=str(row[0]),
+                    observed_wall_ms=int(row[1]),
+                    observed_monotonic_ns=int(row[2]),
+                    maker_base_fee=int(row[3]),
+                    taker_base_fee=int(row[4]),
+                    taker_order_delay_enabled=bool(row[5]),
+                    general_order_delay_seconds=general_delay_seconds,
+                    minimum_order_age_seconds=int(row[6]),
+                    clob_info_sha256=str(row[8]),
+                    up_fee_rate_sha256=str(row[9]),
+                    down_fee_rate_sha256=str(row[10]),
+                    snapshot_sha256=str(row[11]),
+                ).validated()
+            )
+        evidence = tuple(evidence_items)
         if not evidence:
             raise ValueError("Polymarket replay contains no market execution evidence")
         return evidence

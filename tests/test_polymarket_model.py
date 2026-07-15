@@ -423,6 +423,7 @@ def _replay_fixture(
                 maker_base_fee=0,
                 taker_base_fee=0,
                 taker_order_delay_enabled=taker_order_delay_enabled,
+                general_order_delay_seconds=0,
                 minimum_order_age_seconds=0,
                 clob_info_sha256=hashlib.sha256(
                     f"clob:{market.condition_id}".encode("ascii")
@@ -1369,6 +1370,27 @@ def test_repricing_contract_code_and_document_are_identical() -> None:
     )
     assert contract["economic_contract"]["midpoint_or_last_trade_fill_credit"] is False
     assert contract["truth_constraints"]["profitability_claim"] is False
+
+
+def test_execution_evidence_rejects_unmodeled_general_delay() -> None:
+    evidence = PolymarketMarketExecutionEvidence(
+        run_id="run",
+        condition_id="0x" + "1" * 64,
+        observed_wall_ms=1,
+        observed_monotonic_ns=1,
+        maker_base_fee=0,
+        taker_base_fee=0,
+        taker_order_delay_enabled=True,
+        general_order_delay_seconds=1,
+        minimum_order_age_seconds=0,
+        clob_info_sha256="a" * 64,
+        up_fee_rate_sha256="b" * 64,
+        down_fee_rate_sha256="c" * 64,
+        snapshot_sha256="d" * 64,
+    )
+
+    with pytest.raises(ValueError, match="nonzero CLOB general order delay"):
+        evidence.validated()
 
 
 def test_model_fit_rejects_substituted_split_sample() -> None:
