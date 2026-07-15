@@ -1,0 +1,38 @@
+{
+  "schema_version": "finance-risk-review-candidate-preregistration-v1",
+  "created_at_utc": "2026-07-15T23:12:07Z",
+  "git_commit": "d076201c65af8b2e9dbd48701ec6864eba5e284b",
+  "benchmark_contract": "finance-risk-review-adversarial-v7",
+  "benchmark_source_sha256": "bc7fe57e435f82850d82ff7b4ef8653c43ef7a5ae03c4ba9b4bd60e9acaa7ef0",
+  "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+  "prior_comparison_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+  "candidate": {
+    "model": "qwen3:14b",
+    "source": "https://ollama.com/library/qwen3:14b",
+    "selection_reason": "This is the smallest untested step above the rejected 8B and 9B candidates that remains practical on the host's AMD GPU. It was selected before installation or v7 inference.",
+    "installed_at_preregistration": false
+  },
+  "frozen_run": {
+    "case_count": 11,
+    "minimum_score": 0.78,
+    "timeout_seconds": 60,
+    "temperature": 0,
+    "thinking": false,
+    "prompt_or_case_changes_allowed": false,
+    "run_count": 1,
+    "run_after_active_recorder_finalization": true
+  },
+  "admission": {
+    "all_responses_valid_json": true,
+    "all_actions_exact": true,
+    "all_risk_ranges_exact": true,
+    "all_required_terms_present": true,
+    "minimum_score_required": 0.78
+  },
+  "interpretation": {
+    "governance_pass_is_trading_edge": false,
+    "governance_pass_grants_order_authority": false,
+    "paired_same_period_after_cost_uplift_still_required": true,
+    "failed_candidate_may_be_tuned_on_v7_cases": false
+  }
+}

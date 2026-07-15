@@ -1,0 +1,52 @@
+{
+  "schema_version": "polymarket-round9-primary-source-audit-v1",
+  "observed_at_utc": "2026-07-15T23:12:07Z",
+  "scope": "BTC, ETH, and SOL Polymarket five-minute paper research",
+  "round_9_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6b1cfd2334d87f2f5a12",
+  "profitability_claim": false,
+  "trading_authority": false,
+  "findings": [
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "finding": "High predictive accuracy need not produce actionable trades; evaluation should measure complete executable transactions.",
+      "round_9_application": "The frozen label is a causal two-leg FOK round trip after recorded depth, fees, and latency, not a direction-only accuracy target.",
+      "status": "implemented"
+    },
+    {
+      "title": "Forecasting High Frequency Order Flow Imbalance",
+      "url": "https://arxiv.org/abs/2408.03594",
+      "finding": "Event-time order arrivals and their clustering can contain information lost by fixed-window aggregation.",
+      "round_9_application": "Round 9 retains its frozen 100/250/1000/5000 ms causal Binance imbalance inputs. An event-time Hawkes challenger may be preregistered only after the ridge result; it cannot be retrofitted into this confirmation.",
+      "status": "future_challenger_only"
+    },
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "finding": "Order-flow imbalance, spread, depth, and adverse-selection features can transfer across crypto assets, but tradability must be checked after conservative execution costs.",
+      "round_9_application": "The frozen vector already contains causal imbalance, spread, depth, volatility, and age features. CatBoost or GMADL remains an untested future challenger and has no presumed edge.",
+      "status": "implemented_inputs_only"
+    },
+    {
+      "title": "The Anatomy of a Decentralized Prediction Market: Microstructure Evidence from the Polymarket Order Book",
+      "url": "https://arxiv.org/abs/2604.24366",
+      "finding": "Polymarket public-feed trade-direction inference agrees with on-chain direction only about 59 percent of the time; change-side data is not an aggressor label.",
+      "round_9_application": "No Polymarket aggressor-direction feature is used. Public change-side values reconstruct bid and ask books only; directional imbalance comes from Binance's explicit aggressor flag.",
+      "status": "audited_no_invalid_direction_feature"
+    },
+    {
+      "title": "Settlement Manipulation in Prediction Markets",
+      "url": "https://arxiv.org/abs/2606.31675",
+      "finding": "Five-minute Bitcoin contracts exhibit abnormal underlying order flow and reversals in the final settlement seconds.",
+      "round_9_application": "The frozen execution path rejects entries and exits inside the final 30 seconds. That exclusion remains mandatory and cannot be relaxed to increase trade count.",
+      "status": "implemented_close_window_exclusion"
+    },
+    {
+      "title": "Polymarket Crypto 5-Minute and 15-Minute Market Data",
+      "url": "https://huggingface.co/datasets/obadiaha/polymarket-crypto-5m-15m",
+      "finding": "The third-party dataset reports ten-second order books and one-minute Binance candles, without the recorder's local receipt clocks or exact execution-parameter snapshots.",
+      "round_9_application": "It is insufficient for subsecond causal fill labels and is excluded from Round 9 confirmation evidence. Any later use requires an independent provenance and integrity audit.",
+      "status": "rejected_for_confirmation"
+    }
+  ]
+}
