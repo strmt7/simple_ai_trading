@@ -355,10 +355,14 @@ class PolymarketPaperBroker:
         *,
         market: PolymarketFiveMinuteMarket,
         decision: PolymarketRecordedBook,
-        latency_ms: int,
+        total_latency_ms: int,
+        submission_latency_ms: int,
         closing_position: bool,
     ) -> tuple[PaperExecutionResult, _ExecutionSelection]:
-        selection = self._select_execution(decision, latency_ms=latency_ms)
+        selection = self._select_execution(
+            decision,
+            latency_ms=total_latency_ms,
+        )
         snapshot = (
             selection.book.snapshot
             if selection.book is not None
@@ -374,7 +378,7 @@ class PolymarketPaperBroker:
             intent,
             snapshot,
             execution_time_ms=selection.execution_time_ms,
-            submission_latency_ms=int(latency_ms),
+            submission_latency_ms=int(submission_latency_ms),
             maximum_book_age_ms=self.maximum_book_age_ms,
             closing_position=closing_position,
         )
@@ -382,7 +386,7 @@ class PolymarketPaperBroker:
             intent,
             decision=decision,
             selection=selection,
-            latency_ms=int(latency_ms),
+            latency_ms=int(total_latency_ms),
         )
         return result, selection
 
@@ -395,6 +399,8 @@ class PolymarketPaperBroker:
         quantity: object,
         maximum_price: object,
         submission_latency_ms: int,
+        decision_delay_ms: int = 0,
+        order_type: str = "FAK",
     ) -> tuple[PolymarketPaperPosition | None, PaperExecutionResult]:
         reconciliation = self.reconcile()
         if not reconciliation.can_open:
@@ -417,7 +423,16 @@ class PolymarketPaperBroker:
         latency = int(submission_latency_ms)
         if latency <= 0 or latency > 60_000:
             raise ValueError("submission_latency_ms must lie in [1, 60000]")
-        created_at = decision.received_wall_ms
+        decision_delay = int(decision_delay_ms)
+        if decision_delay < 0 or decision_delay > 60_000:
+            raise ValueError("decision_delay_ms must lie in [0, 60000]")
+        total_latency = decision_delay + latency
+        if total_latency > 60_000:
+            raise ValueError("decision delay plus submission latency exceeds 60000ms")
+        normalized_order_type = str(order_type or "").strip().upper()
+        if normalized_order_type not in {"FAK", "FOK"}:
+            raise ValueError("Polymarket paper order_type must be FAK or FOK")
+        created_at = decision.received_wall_ms + decision_delay
         expires_at = min(market.end_ms, created_at + self.order_ttl_ms)
         if expires_at <= created_at:
             raise ValueError("paper order has no valid lifetime before market end")
@@ -430,7 +445,7 @@ class PolymarketPaperBroker:
             symbol=market.asset,
             outcome=normalized_outcome,
             side="BUY",
-            order_type="FAK",
+            order_type=normalized_order_type,
             limit_price=limit,
             quantity=requested_quantity,
             created_at_ms=created_at,
@@ -440,7 +455,8 @@ class PolymarketPaperBroker:
             intent,
             market=market,
             decision=decision,
-            latency_ms=latency,
+            total_latency_ms=total_latency,
+            submission_latency_ms=latency,
             closing_position=False,
         )
         if result.filled_quantity <= 0:
@@ -524,7 +540,8 @@ class PolymarketPaperBroker:
             intent,
             market=market,
             decision=decision,
-            latency_ms=latency,
+            total_latency_ms=latency,
+            submission_latency_ms=latency,
             closing_position=True,
         )
         if result.filled_quantity <= 0:
@@ -659,7 +676,10 @@ class PolymarketPaperBroker:
         selection: _ExecutionSelection,
         latency_ms: int,
     ) -> None:
-        effective_latency = max(0, selection.execution_time_ms - intent.created_at_ms)
+        effective_latency = max(
+            0,
+            selection.execution_time_ms - decision.received_wall_ms,
+        )
         payload = {
             "schema_version": POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION,
             "intent_id": intent.intent_id,
