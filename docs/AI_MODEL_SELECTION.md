@@ -108,6 +108,10 @@ Ollama model digest and metadata. Cache hits retain the original measured model
 latency for order-book replay; failures, malformed output, low-confidence
 approvals, and over-latency responses are never cached. A later action experiment
 must remain veto-only and pass the separate 90-day matched-period uplift contract.
+Before any veto prompt, Polymarket also requires the selected benchmark's sibling
+provenance file to bind its exact SHA-256, Ollama manifest, verified multibillion
+weight blob, and current installed digest. A changed tag or manifest fails before
+generation instead of silently reusing stale governance evidence.
 
 ### Kronos Forecast Evidence (Rejected)
 

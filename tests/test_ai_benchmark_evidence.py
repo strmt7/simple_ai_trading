@@ -4,11 +4,14 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
     _result_from_case_results,
     merge_finance_ai_benchmark_payloads,
 )
+from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,3 +106,22 @@ def test_tracked_ai_model_provenance_binds_reports_and_weight_blobs() -> None:
             assert len(value) == 64
             assert all(character in "0123456789abcdef" for character in value)
     assert models["fino1:8b"]["conversion_status"] == "third_party_gguf_quantization"
+
+    selected = load_local_ai_model_provenance(
+        REPORT_PATH,
+        REPORT_PATH.read_bytes(),
+        model="qwen3:8b",
+    )
+    assert selected.benchmark_sha256 == _sha256(REPORT_PATH)
+    assert selected.ollama_manifest_digest == models["qwen3:8b"][
+        "ollama_manifest_digest"
+    ]
+
+
+def test_local_ai_model_provenance_rejects_unbound_benchmark_bytes() -> None:
+    with pytest.raises(ValueError, match="does not bind"):
+        load_local_ai_model_provenance(
+            REPORT_PATH,
+            REPORT_PATH.read_bytes() + b" ",
+            model="qwen3:8b",
+        )

@@ -177,6 +177,9 @@ identical valid case can reuse the integrity-checked response in the same DuckDB
 but replay still uses the first measured model latency. The cache is invalidated
 by any case, request, prompt/schema, endpoint-policy, threshold, model-digest, or
 model-metadata change. Invalid or late responses remain fail-closed and uncached.
+The selected risk benchmark must also have a sibling provenance record whose
+benchmark hash and Ollama manifest digest match the live local model before any
+prompt is sent.
 
 Live model scoring uses a separate unresolved-input schema. It binds the source
 feature-row digest, model-config digest, fixed horizon, causal feature vector,
