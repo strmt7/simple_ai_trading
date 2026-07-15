@@ -1,11 +1,30 @@
 {
   "schema_version": "polymarket-round9-primary-source-audit-v1",
-  "observed_at_utc": "2026-07-15T23:12:07Z",
+  "observed_at_utc": "2026-07-15T23:32:32Z",
   "scope": "BTC, ETH, and SOL Polymarket five-minute paper research",
   "round_9_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
   "profitability_claim": false,
   "trading_authority": false,
+  "implementation_limitations": [
+    {
+      "limitation": "The 39 frozen predictors do not directly include the chosen outcome's absolute executable bid/ask, active tick, minimum order size, dynamic fee rate/exponent, or recorded venue taker delay.",
+      "effect": "Exact depth, fee, tick, size, and latency still determine every label, but the baseline can only infer parts of that execution state indirectly from relative book, age, depth, liquidity, and volume features.",
+      "handling": "Do not retrofit Round 9 after observing results. If it fails, preregister these decision-time execution fields in a future independent challenger."
+    },
+    {
+      "limitation": "The positive_complete classifier is a composite hurdle: entry availability, FOK fill, exit fill, and strictly positive after-cost round-trip utility must all succeed.",
+      "effect": "A single ridge or MLP probability cannot distinguish fill failure from a completed but unprofitable action, which can limit calibration and economic ranking under class imbalance.",
+      "handling": "Keep the frozen baseline intact. A future challenger may separately model fill probability and conditional utility or rank actions by a calibrated utility distribution, with new untouched evidence."
+    }
+  ],
   "findings": [
+    {
+      "title": "Polymarket CLOB V2 Migration and Dynamic Fees",
+      "url": "https://docs.polymarket.com/v2-migration",
+      "finding": "CLOB V2 has been the production protocol since 2026-04-28. The production host remains clob.polymarket.com, fees are dynamic per market and applied at match time, and legacy V1-signed orders have no production compatibility.",
+      "round_9_application": "The paper replay queries and hash-binds V2 market info, cross-checks Gamma fee schedules, charges the recorded per-market curve on both taker legs, and grants no order authority. Any future Polymarket order client must use V2 semantics and pass a separate live-readiness review.",
+      "status": "implemented_paper_protocol_boundary"
+    },
     {
       "title": "Deep Limit Order Book Forecasting",
       "url": "https://arxiv.org/abs/2403.09267",
