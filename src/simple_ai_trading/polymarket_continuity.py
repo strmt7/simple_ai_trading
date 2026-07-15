@@ -265,8 +265,28 @@ def _continuity_evidence(
     dict[tuple[int, str], tuple[object, ...]],
     dict[int, tuple[str, ...]],
     dict[str, int],
+    dict[tuple[str, str], int],
 ]:
     connection = store.connect()
+    connection.execute("DROP TABLE IF EXISTS continuity_connection_start")
+    connection.execute(
+        """
+        CREATE TEMP TABLE continuity_connection_start AS
+        SELECT stream, connection_id, min(received_wall_ms) AS started_at_ms
+        FROM polymarket_raw_message
+        WHERE run_id = ?
+          AND stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
+        GROUP BY stream, connection_id
+        """,
+        [run_id],
+    )
+    connection_rows = connection.execute(
+        """
+        SELECT stream, connection_id, started_at_ms
+        FROM continuity_connection_start
+        ORDER BY stream, connection_id
+        """
+    ).fetchall()
     clob_rows = connection.execute(
         """
         WITH clob AS (
@@ -352,20 +372,14 @@ def _continuity_evidence(
     ).fetchall()
     gap_rows = connection.execute(
         """
-        WITH connection_start AS (
-            SELECT stream, connection_id, min(received_wall_ms) AS started_at_ms
-            FROM polymarket_raw_message
-            WHERE run_id = ?
-              AND stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
-            GROUP BY stream, connection_id
-        ), gap_interval AS (
+        WITH gap_interval AS (
             SELECT g.gap_id, g.stream, g.opened_at_ms,
                    min(s.started_at_ms) FILTER (
                        WHERE s.connection_id <> g.connection_id
                          AND s.started_at_ms > g.opened_at_ms
                    ) AS resumed_at_ms
             FROM polymarket_stream_gap AS g
-            LEFT JOIN connection_start AS s ON s.stream = g.stream
+            LEFT JOIN continuity_connection_start AS s ON s.stream = g.stream
             WHERE g.run_id = ?
               AND g.stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
             GROUP BY g.gap_id, g.stream, g.connection_id, g.opened_at_ms
@@ -381,7 +395,7 @@ def _continuity_evidence(
         GROUP BY w.event_start_ms, g.stream
         ORDER BY w.event_start_ms, g.stream
         """,
-        [run_id, run_id],
+        [run_id],
     ).fetchall()
     snapshot_rows = connection.execute(
         """
@@ -409,6 +423,10 @@ def _continuity_evidence(
             for start in {int(row[0]) for row in gap_rows}
         },
         {str(condition): int(wall_ms) for condition, wall_ms in snapshot_rows},
+        {
+            (str(stream), str(connection_id)): int(started_at_ms)
+            for stream, connection_id, started_at_ms in connection_rows
+        },
     )
 
 
@@ -539,7 +557,9 @@ def evaluate_polymarket_continuity_eligibility(
             raise ValueError("Polymarket continuity requires complete synchronized groups")
         synchronized[event_start_ms] = ordered
     _create_window_tables(store, synchronized, cfg)
-    clob, binance, rtds, gaps, snapshots = _continuity_evidence(store, selected)
+    clob, binance, rtds, gaps, snapshots, connection_starts = (
+        _continuity_evidence(store, selected)
+    )
     evaluated: list[PolymarketContinuityGroup] = []
     for event_start_ms, market_group in synchronized.items():
         reasons: list[str] = list(gaps.get(event_start_ms, ()))
@@ -582,6 +602,9 @@ def evaluate_polymarket_continuity_eligibility(
                     "window_event_count": window_events,
                     "window_connection_count": window_connections,
                     "window_connection_id": window_connection,
+                    "window_connection_started_at_ms": connection_starts.get(
+                        ("clob_market", window_connection)
+                    ),
                     "baseline_connection_id": baseline_connection,
                     "baseline_received_wall_ms": baseline_wall_ms,
                 }
@@ -591,6 +614,13 @@ def evaluate_polymarket_continuity_eligibility(
                     reasons.append(f"missing_clob_window:{market.asset}:{outcome}")
                 if window_connections != 1:
                     reasons.append(f"clob_segment_count:{market.asset}:{outcome}:{window_connections}")
+                connection_start = connection_starts.get(
+                    ("clob_market", window_connection)
+                )
+                if connection_start is None or connection_start > window_start:
+                    reasons.append(
+                        f"clob_segment_started_after_window:{market.asset}:{outcome}"
+                    )
                 if baseline_connection and window_connection != baseline_connection:
                     reasons.append(f"clob_baseline_segment_mismatch:{market.asset}:{outcome}")
             asset_evidence["clob"] = token_evidence
@@ -600,6 +630,9 @@ def evaluate_polymarket_continuity_eligibility(
                 "trade_event_count": int(binance_values[1] or 0),
                 "connection_count": int(binance_values[2] or 0),
                 "connection_id": str(binance_values[3] or ""),
+                "connection_started_at_ms": connection_starts.get(
+                    ("binance_spot", str(binance_values[3] or ""))
+                ),
             }
             if int(binance_values[0] or 0) == 0:
                 reasons.append(f"missing_binance_book:{market.asset}")
@@ -607,16 +640,32 @@ def evaluate_polymarket_continuity_eligibility(
                 reasons.append(f"missing_binance_trade:{market.asset}")
             if int(binance_values[2] or 0) != 1:
                 reasons.append(f"binance_segment_count:{market.asset}:{int(binance_values[2] or 0)}")
+            binance_connection_start = connection_starts.get(
+                ("binance_spot", str(binance_values[3] or ""))
+            )
+            if (
+                binance_connection_start is None
+                or binance_connection_start > window_start
+            ):
+                reasons.append(f"binance_segment_started_after_window:{market.asset}")
             rtds_values = rtds.get((event_start_ms, market.asset), (0, 0, None))
             asset_evidence["rtds_chainlink"] = {
                 "event_count": int(rtds_values[0] or 0),
                 "connection_count": int(rtds_values[1] or 0),
                 "connection_id": str(rtds_values[2] or ""),
+                "connection_started_at_ms": connection_starts.get(
+                    ("polymarket_rtds", str(rtds_values[2] or ""))
+                ),
             }
             if int(rtds_values[0] or 0) == 0:
                 reasons.append(f"missing_rtds_chainlink:{market.asset}")
             if int(rtds_values[1] or 0) != 1:
                 reasons.append(f"rtds_segment_count:{market.asset}:{int(rtds_values[1] or 0)}")
+            rtds_connection_start = connection_starts.get(
+                ("polymarket_rtds", str(rtds_values[2] or ""))
+            )
+            if rtds_connection_start is None or rtds_connection_start > window_start:
+                reasons.append(f"rtds_segment_started_after_window:{market.asset}")
             evidence["assets"][market.asset] = asset_evidence
         frozen_reasons = tuple(sorted(set(reasons)))
         provisional_group = PolymarketContinuityGroup(

@@ -1478,6 +1478,7 @@ def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(
     assert not first.confirmation_eligible
     assert "run_started_before_round9_contract_commit" in first.confirmation_reasons
     assert "run_started_after_window_start" in first.groups[0].reasons
+    assert "clob_segment_started_after_window:BTC:Up" in first.groups[0].reasons
     assert first.groups[0].evidence["run_bounds"] == {
         "started_at_ms": EPOCH * 1_000,
         "ended_at_ms": EPOCH * 1_000 + 302_000,
@@ -1507,6 +1508,7 @@ def test_polymarket_continuity_excludes_gap_opened_before_window(
     reasons = report.groups[0].reasons
     assert "stream_gap:binance_spot:1" in reasons
     assert "run_started_after_window_start" not in reasons
+    assert "binance_segment_started_after_window:BTC" in reasons
 
 
 def test_polymarket_continuity_cli_and_native_contract_share_controls(
