@@ -947,6 +947,44 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
             model_execution=model_execution.asdict(),
         )
 
+    forged_response = json.loads(json.dumps(ai_evidence))
+    forged_result = forged_response["veto_report"]["results"][0]
+    forged_result["response_payload"]["message"]["content"] = json.dumps(
+        {
+            "action": "veto",
+            "confidence": 0.9,
+            "reason_codes": ["insufficient_evidence"],
+            "summary": "This response contradicts the recorded parsed decision.",
+        }
+    )
+    forged_result["response_sha256"] = hashlib.sha256(
+        json.dumps(
+            forged_result["response_payload"],
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    forged_report_identity = dict(forged_response["veto_report"])
+    forged_report_identity.pop("report_sha256")
+    forged_response["veto_report"]["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            forged_report_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="AI veto result"):
+        _validate_ai_evidence(
+            forged_response,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+
     tampered = json.loads(json.dumps(ai_evidence))
     prompt_case = tampered["prompt_cases"][0]
     prompt_case["prompt_payload"]["official_up"] = True

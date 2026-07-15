@@ -26,7 +26,7 @@ _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
-_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v1"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v2"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
@@ -861,6 +861,56 @@ def _matched_ai_uplift_periods(
     ]
 
 
+def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
+    if not isinstance(response, Mapping):
+        return None
+    message = response.get("message")
+    if not isinstance(message, Mapping) or not isinstance(message.get("content"), str):
+        return None
+    try:
+        parsed = json.loads(message["content"])
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, Mapping) or set(parsed) != {
+        "action",
+        "confidence",
+        "reason_codes",
+        "summary",
+    }:
+        return None
+    action = str(parsed.get("action", "")).strip().lower()
+    raw_confidence = parsed.get("confidence")
+    raw_codes = parsed.get("reason_codes")
+    summary = str(parsed.get("summary", "")).strip()
+    if (
+        action not in {"approve", "veto", "cooldown"}
+        or not isinstance(raw_confidence, (int, float))
+        or not isinstance(raw_codes, list)
+        or not 1 <= len(raw_codes) <= 4
+        or not summary
+        or len(summary) > 180
+    ):
+        return None
+    confidence = float(raw_confidence)
+    codes = tuple(dict.fromkeys(str(value) for value in raw_codes))
+    if (
+        not math.isfinite(confidence)
+        or not 0.0 <= confidence <= 1.0
+        or len(codes) != len(raw_codes)
+        or any(code not in _AI_REASON_CODES for code in codes)
+    ):
+        return None
+    return {
+        "action": action,
+        "confidence": confidence,
+        "reason_codes": list(codes),
+        "summary": summary,
+        "valid": True,
+        "failure_reason": "",
+        "permits_entry": action == "approve",
+    }
+
+
 def _validate_ai_evidence(
     ai: Mapping[str, Any],
     *,
@@ -1200,6 +1250,7 @@ def _validate_ai_evidence(
                 "model",
                 "latency_seconds",
                 "response_sha256",
+                "response_payload",
                 "decision",
             },
             name="AI veto result",
@@ -1225,12 +1276,20 @@ def _validate_ai_evidence(
         valid = decision.get("valid")
         permits = decision.get("permits_entry")
         failure_reason = str(decision.get("failure_reason", ""))
+        parsed_response = _parsed_valid_ai_response(result.get("response_payload"))
+        valid_response_was_overridden = latency > maximum_latency or (
+            parsed_response is not None
+            and parsed_response["action"] == "approve"
+            and float(parsed_response["confidence"]) < minimum_confidence
+        )
         if (
             result.get("case_id") != case["case_id"]
             or result.get("condition_id") != case["condition_id"]
             or result.get("model") != model_name
             or latency < 0.0
             or not _is_sha256(result.get("response_sha256"))
+            or result.get("response_sha256")
+            != _canonical_sha256(result.get("response_payload"))
             or action not in {"approve", "veto", "cooldown"}
             or not 0.0 <= confidence <= 1.0
             or not isinstance(reason_codes, list)
@@ -1242,6 +1301,12 @@ def _validate_ai_evidence(
             or permits is not (valid and action == "approve")
             or not isinstance(decision.get("summary"), str)
             or len(str(decision["summary"])) > 180
+            or (valid and dict(decision) != parsed_response)
+            or (
+                not valid
+                and parsed_response is not None
+                and not valid_response_was_overridden
+            )
             or (valid and failure_reason)
             or (valid and latency > maximum_latency)
             or (valid and action == "approve" and confidence < minimum_confidence)
