@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from decimal import Decimal
 import hashlib
 import json
@@ -182,7 +183,9 @@ def _source_fixture(
         for asset in _ASSETS:
             market = _market(asset, group)
             markets.append(market)
-            selected_horizons = horizons[:-1] if omit_last_horizon and group == 0 else horizons
+            selected_horizons = (
+                horizons[:-1] if omit_last_horizon and group == 0 else horizons
+            )
             for horizon in selected_horizons:
                 identity = f"{group}-{asset}-{horizon}"
                 wall_ms = market.end_ms - horizon * 1_000
@@ -236,9 +239,7 @@ def _replay_fixture(
     selected_markets = tuple(
         market for market in markets if market.condition_id in selected_conditions
     )
-    market_by_condition = {
-        market.condition_id: market for market in selected_markets
-    }
+    market_by_condition = {market.condition_id: market for market in selected_markets}
     books: list[PolymarketRecordedBook] = []
     sequence = 0
     for sample in samples:
@@ -263,11 +264,7 @@ def _replay_fixture(
             ):
                 sequence += 1
                 wall_ms = sample.decision_received_wall_ms + latency_ms
-                phase_ask = (
-                    ask + execution_ask_offset
-                    if phase == "execution"
-                    else ask
-                )
+                phase_ask = ask + execution_ask_offset if phase == "execution" else ask
                 snapshot = PaperBookSnapshot(
                     venue="polymarket",
                     market_id=market.market_id,
@@ -277,8 +274,7 @@ def _replay_fixture(
                     source_time_ms=wall_ms,
                     received_wall_ms=wall_ms,
                     received_monotonic_ns=(
-                        sample.decision_received_monotonic_ns
-                        + latency_ms * 1_000_000
+                        sample.decision_received_monotonic_ns + latency_ms * 1_000_000
                     ),
                     source_payload_sha256=f"{sequence:064x}",
                 )
@@ -421,9 +417,12 @@ def test_fit_is_deterministic_bounded_and_has_no_trading_authority() -> None:
         "market_baseline",
         first_model.inner_selected_candidate,
     ]
-    for train_start, train_end, validation_start, validation_end in (
-        first_model.inner_fold_boundaries_ms
-    ):
+    for (
+        train_start,
+        train_end,
+        validation_start,
+        validation_end,
+    ) in first_model.inner_fold_boundaries_ms:
         assert train_start <= train_end < validation_start <= validation_end
         assert validation_end <= max(split.train_group_starts_ms)
         assert validation_end < min(split.validation_group_starts_ms)
@@ -464,7 +463,9 @@ def test_unjustified_correction_falls_back_to_market_probability() -> None:
     assert report.test_log_loss_delta == pytest.approx(0.0)
 
 
-def test_execution_policy_uses_depth_latency_fees_risk_and_official_settlement() -> None:
+def test_execution_policy_uses_depth_latency_fees_risk_and_official_settlement() -> (
+    None
+):
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
     split = split_polymarket_model_dataset(dataset)
@@ -543,7 +544,9 @@ def test_execution_uses_only_the_latest_book_available_at_arrival() -> None:
 
     assert report.filled_order_count == report.evaluated_market_count
     assert all(trade.effective_latency_ms == 100 for trade in report.trades)
-    assert all("execution" not in trade.execution_book_event_id for trade in report.trades)
+    assert all(
+        "execution" not in trade.execution_book_event_id for trade in report.trades
+    )
 
 
 def test_execution_charges_ai_decision_delay_before_network_latency() -> None:
@@ -667,9 +670,11 @@ def test_ai_veto_cases_are_pre_execution_label_free_and_hash_bound() -> None:
     selection = build_polymarket_policy_selection(
         split.test,
         predictions,
-        tuple(market for market in markets if market.condition_id in {
-            item.condition_id for item in split.test
-        }),
+        tuple(
+            market
+            for market in markets
+            if market.condition_id in {item.condition_id for item in split.test}
+        ),
         config=execution_config,
     )
 
@@ -831,7 +836,9 @@ def test_ai_low_confidence_or_malformed_output_vetoes_without_order_authority() 
 
     assert ai_report.approval_count == 0
     assert ai_report.provider_failure_count == 2
-    assert all(not ai_report.market_permissions[case.condition_id] for case in cases[:2])
+    assert all(
+        not ai_report.market_permissions[case.condition_id] for case in cases[:2]
+    )
     assert all(not result.decision.valid for result in ai_report.results)
 
 
@@ -958,9 +965,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         "confirmatory_evidence_contract": {
             "independent_unit": "shared_btc_eth_sol_five_minute_time_group",
             "minimum_untouched_test_time_groups": 30,
-            "observed_untouched_test_time_groups": len(
-                split.test_group_starts_ms
-            ),
+            "observed_untouched_test_time_groups": len(split.test_group_starts_ms),
             "minimum_markets_per_asset": 30,
             "confirmatory_ready": len(split.test_group_starts_ms) >= 30,
             "trading_authority": False,
@@ -1027,11 +1032,9 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     assert manifest["claims"]["profitability_claim"] is False
     assert manifest["source_artifact_sha256"] == payload["artifact_sha256"]
     score_summary = json.loads(
-        (
-            research_root
-            / "latest"
-            / "held-out-group-score-summary.json"
-        ).read_text(encoding="utf-8")
+        (research_root / "latest" / "held-out-group-score-summary.json").read_text(
+            encoding="utf-8"
+        )
     )
     assert score_summary["scopes"]["ALL"]["time_group_count"] == len(
         split.test_group_starts_ms
@@ -1044,11 +1047,78 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         assert hashlib.sha256(output.read_bytes()).hexdigest() == entry["sha256"]
     for chart in (research_root / "latest" / "charts").glob("*.svg"):
         ET.fromstring(chart.read_text(encoding="utf-8"))
+    with (research_root / "latest" / "tables" / "model-selection.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        selection_rows = list(csv.DictReader(handle))
+    assert len(selection_rows) == 8
+    assert sum(row["stage"] == "inner_selection" for row in selection_rows) == 6
+    assert sum(row["selected_for_outer_gate"] == "True" for row in selection_rows) == 2
+    selection_chart = ET.fromstring(
+        (research_root / "latest" / "charts" / "model-selection.svg").read_text(
+            encoding="utf-8"
+        )
+    )
+    selection_text = " ".join(selection_chart.itertext())
+    assert "INNER TRAINING FOLDS" in selection_text
+    assert "OUTER VALIDATION GATE" in selection_text
+
+    selection_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
+    tampered_model = selection_tampered["model"]
+    assert isinstance(tampered_model, dict)
+    boundaries = tampered_model["inner_fold_boundaries_ms"]
+    assert isinstance(boundaries, list) and boundaries
+    first_boundary = boundaries[0]
+    assert isinstance(first_boundary, list)
+    first_boundary[1] = first_boundary[2]
+    model_identity = dict(tampered_model)
+    model_identity.pop("model_sha256")
+    tampered_model["model_sha256"] = hashlib.sha256(
+        json.dumps(
+            model_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    tampered_probability = selection_tampered["probability_report"]
+    assert isinstance(tampered_probability, dict)
+    tampered_probability["model_sha256"] = tampered_model["model_sha256"]
+    probability_identity = dict(tampered_probability)
+    probability_identity.pop("report_sha256")
+    tampered_probability["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            probability_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    selection_identity = dict(selection_tampered)
+    selection_identity.pop("artifact_sha256")
+    selection_tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            selection_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    selection_tampered_path = tmp_path / "selection-tampered.json"
+    selection_tampered_path.write_text(
+        json.dumps(selection_tampered),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="fold boundaries are not chronological"):
+        validate_polymarket_model_artifact(selection_tampered_path)
 
     tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
-    tampered["held_out_prediction_evidence"]["rows"][0][
-        "model_up_probability"
-    ] = "0.999"
+    tampered["held_out_prediction_evidence"]["rows"][0]["model_up_probability"] = (
+        "0.999"
+    )
     canonical_tampered = dict(tampered)
     canonical_tampered.pop("artifact_sha256")
     tampered["artifact_sha256"] = hashlib.sha256(
@@ -1064,6 +1134,42 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
     with pytest.raises(ValueError, match="prediction evidence identity"):
         validate_polymarket_model_artifact(tampered_path)
+
+    metric_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
+    metric_evidence = metric_tampered["held_out_prediction_evidence"]
+    assert isinstance(metric_evidence, dict)
+    metric_rows = metric_evidence["rows"]
+    assert isinstance(metric_rows, list) and metric_rows
+    metric_row = metric_rows[0]
+    assert isinstance(metric_row, dict)
+    metric_row["model_up_probability"] = "0.999"
+    metric_evidence["rows_sha256"] = hashlib.sha256(
+        json.dumps(
+            metric_rows,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    metric_identity = dict(metric_tampered)
+    metric_identity.pop("artifact_sha256")
+    metric_tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            metric_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    metric_tampered_path = tmp_path / "metric-tampered.json"
+    metric_tampered_path.write_text(
+        json.dumps(metric_tampered),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="model test metrics .* does not reconcile"):
+        validate_polymarket_model_artifact(metric_tampered_path)
 
     accounting_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
 

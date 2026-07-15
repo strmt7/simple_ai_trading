@@ -21,6 +21,8 @@ from typing import Any
 _ARTIFACT_SCHEMA = "polymarket-prospective-model-experiment-v1"
 _PREDICTION_SCHEMA = "polymarket-held-out-predictions-v1"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
+_MODEL_SCHEMA = "polymarket-market-anchored-logit-v2"
+_PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "ai")
 _COLORS = {
@@ -154,6 +156,210 @@ def _verify_embedded_digest(
         raise ValueError(f"{name} {digest_key} is invalid")
 
 
+def _named_losses(value: object, name: str) -> tuple[tuple[str, float], ...]:
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"{name} must be a non-empty array")
+    rows: list[tuple[str, float]] = []
+    for raw in value:
+        if not isinstance(raw, list) or len(raw) != 2 or not str(raw[0]):
+            raise ValueError(f"{name} row is malformed")
+        rows.append((str(raw[0]), _finite_float(raw[1], f"{name} loss")))
+    if len({row[0] for row in rows}) != len(rows):
+        raise ValueError(f"{name} candidate names are not unique")
+    return tuple(rows)
+
+
+def _probability_metrics_from_rows(
+    rows: Sequence[Mapping[str, Any]],
+    probability_key: str,
+) -> dict[str, float | int]:
+    total_weight = 0.0
+    log_loss = 0.0
+    brier = 0.0
+    accuracy = 0.0
+    sharpness = 0.0
+    bins = [[0.0, 0.0, 0.0] for _ in range(10)]
+    for row in rows:
+        probability = _finite_float(row.get(probability_key), probability_key)
+        weight = _finite_float(row.get("market_weight"), "market weight")
+        label = 1.0 if row.get("official_up") is True else 0.0
+        total_weight += weight
+        log_loss += weight * -(
+            label * math.log(probability) + (1.0 - label) * math.log1p(-probability)
+        )
+        brier += weight * (probability - label) ** 2
+        accuracy += weight * float((probability >= 0.5) == bool(label))
+        sharpness += weight * abs(probability - 0.5)
+        bin_index = min(int(probability * 10), 9)
+        bins[bin_index][0] += weight
+        bins[bin_index][1] += weight * label
+        bins[bin_index][2] += weight * probability
+    if total_weight <= 0.0:
+        raise ValueError("held-out probability evidence has no effective weight")
+    calibration_error = 0.0
+    for bin_weight, observed_sum, predicted_sum in bins:
+        if bin_weight > 0.0:
+            calibration_error += (bin_weight / total_weight) * abs(
+                observed_sum / bin_weight - predicted_sum / bin_weight
+            )
+    return {
+        "row_count": len(rows),
+        "market_count": len({str(row["condition_id"]) for row in rows}),
+        "time_group_count": len({int(row["event_start_ms"]) for row in rows}),
+        "effective_market_weight": total_weight,
+        "weighted_log_loss": log_loss / total_weight,
+        "weighted_brier_score": brier / total_weight,
+        "weighted_calibration_error": calibration_error,
+        "weighted_accuracy": accuracy / total_weight,
+        "weighted_sharpness": sharpness / total_weight,
+    }
+
+
+def _validate_probability_metrics(
+    reported: Mapping[str, Any],
+    expected: Mapping[str, float | int],
+    *,
+    name: str,
+) -> None:
+    for key in ("row_count", "market_count", "time_group_count"):
+        if int(reported.get(key, -1)) != int(expected[key]):
+            raise ValueError(f"{name} {key} does not reconcile")
+    for key in (
+        "effective_market_weight",
+        "weighted_log_loss",
+        "weighted_brier_score",
+        "weighted_calibration_error",
+        "weighted_accuracy",
+        "weighted_sharpness",
+    ):
+        if not math.isclose(
+            _finite_float(reported.get(key), f"{name} {key}"),
+            float(expected[key]),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(f"{name} {key} does not reconcile")
+
+
+def _validate_nested_model_selection(
+    model: Mapping[str, Any],
+    probability: Mapping[str, Any],
+    split: Mapping[str, Any],
+) -> None:
+    if (
+        model.get("schema_version") != _MODEL_SCHEMA
+        or probability.get("schema_version") != _PROBABILITY_SCHEMA
+    ):
+        raise ValueError("unsupported nested Polymarket model schema")
+    if model.get("model_sha256") != probability.get("model_sha256") or model.get(
+        "selected_candidate"
+    ) != probability.get("selected_candidate"):
+        raise ValueError("nested Polymarket model report is inconsistent")
+
+    config = _as_mapping(model.get("config"), "model config")
+    raw_l2 = config.get("l2_candidates")
+    if not isinstance(raw_l2, list) or not raw_l2:
+        raise ValueError("nested model L2 candidates are missing")
+    l2_candidates = tuple(_finite_float(value, "L2 candidate") for value in raw_l2)
+    if l2_candidates != tuple(sorted(set(l2_candidates))) or min(l2_candidates) <= 0:
+        raise ValueError("nested model L2 candidates are invalid")
+    candidate_names = tuple(
+        f"offset_l2_{format(value, '.17g')}" for value in l2_candidates
+    )
+    inner_losses = _named_losses(
+        model.get("candidate_inner_log_losses"),
+        "inner model losses",
+    )
+    if tuple(name for name, _loss in inner_losses) != (
+        "market_baseline",
+        *candidate_names,
+    ):
+        raise ValueError("nested model inner candidate set drifted")
+    expected_inner_name, _expected_inner_loss = min(
+        inner_losses[1:],
+        key=lambda item: (
+            item[1],
+            -float(item[0].removeprefix("offset_l2_")),
+            item[0],
+        ),
+    )
+    inner_selected = str(model.get("inner_selected_candidate", ""))
+    if inner_selected != expected_inner_name:
+        raise ValueError("nested model inner selection is inconsistent")
+
+    validation_losses = _named_losses(
+        model.get("validation_gate_log_losses"),
+        "outer validation gate losses",
+    )
+    if tuple(name for name, _loss in validation_losses) != (
+        "market_baseline",
+        inner_selected,
+    ):
+        raise ValueError("nested model validation gate candidate set drifted")
+    required_improvement = _finite_float(
+        config.get("minimum_validation_log_loss_improvement"),
+        "minimum validation improvement",
+    )
+    gate_passed = validation_losses[1][1] <= (
+        validation_losses[0][1] - required_improvement
+    )
+    expected_selected = inner_selected if gate_passed else "market_baseline"
+    selected = str(model.get("selected_candidate", ""))
+    selected_l2 = model.get("selected_l2")
+    if (
+        selected != expected_selected
+        or (selected == "market_baseline" and selected_l2 is not None)
+        or (
+            selected != "market_baseline"
+            and _finite_float(selected_l2, "selected L2")
+            != float(selected.removeprefix("offset_l2_"))
+        )
+    ):
+        raise ValueError("nested model promotion gate is inconsistent")
+    if selected == "market_baseline" and any(
+        _finite_float(value, "fallback coefficient") != 0.0
+        for value in model.get("coefficients", ())
+    ):
+        raise ValueError("nested model fallback coefficients are not zero")
+
+    train_groups = tuple(int(value) for value in split.get("train_group_starts_ms", ()))
+    if not train_groups or train_groups != tuple(sorted(set(train_groups))):
+        raise ValueError("nested model training groups are invalid")
+    fold_count = int(config.get("inner_fold_count", -1))
+    validation_size = int(config.get("inner_validation_time_groups", -1))
+    purge_size = int(config.get("inner_purge_time_groups", -1))
+    minimum_train = int(config.get("minimum_inner_train_time_groups", -1))
+    raw_boundaries = model.get("inner_fold_boundaries_ms")
+    if (
+        not isinstance(raw_boundaries, list)
+        or int(model.get("inner_fold_count", -1)) != fold_count
+        or len(raw_boundaries) != fold_count
+        or int(model.get("training_time_group_count", -1)) != len(train_groups)
+    ):
+        raise ValueError("nested model fold count is inconsistent")
+    first_validation = len(train_groups) - fold_count * validation_size
+    expected_boundaries: list[list[int]] = []
+    for fold_index in range(fold_count):
+        validation_start = first_validation + fold_index * validation_size
+        train_end = validation_start - purge_size
+        if (
+            validation_start < 0
+            or train_end < minimum_train
+            or validation_start + validation_size > len(train_groups)
+        ):
+            raise ValueError("nested model fold configuration exceeds training data")
+        expected_boundaries.append(
+            [
+                train_groups[0],
+                train_groups[train_end - 1],
+                train_groups[validation_start],
+                train_groups[validation_start + validation_size - 1],
+            ]
+        )
+    if raw_boundaries != expected_boundaries:
+        raise ValueError("nested model fold boundaries are not chronological")
+
+
 @dataclass(frozen=True)
 class ValidatedPolymarketArtifact:
     payload: Mapping[str, Any]
@@ -247,9 +453,7 @@ def _validate_execution_report(
 
     filled = [row for row in trades if row.get("execution_state") == "FILLED"]
     settled = [
-        row
-        for row in filled
-        if str(row.get("official_resolution_event_id", ""))
+        row for row in filled if str(row.get("official_resolution_event_id", ""))
     ]
     wins = [row for row in filled if _decimal(row["realized_pnl_quote"], "PnL") > 0]
     losses = [row for row in filled if _decimal(row["realized_pnl_quote"], "PnL") <= 0]
@@ -321,7 +525,8 @@ def _validate_execution_report(
     final = _decimal(report.get("final_equity_quote"), f"{name} final equity")
     reported_net = _decimal(report.get("net_realized_pnl_quote"), f"{name} net PnL")
     if (
-        deployed != _decimal(report.get("gross_deployed_capital_quote"), f"{name} deployed")
+        deployed
+        != _decimal(report.get("gross_deployed_capital_quote"), f"{name} deployed")
         or payouts != _decimal(report.get("gross_payout_quote"), f"{name} payouts")
         or fees != _decimal(report.get("total_fees_quote"), f"{name} fees")
         or realized != reported_net
@@ -383,10 +588,9 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         raise ValueError("unsupported Polymarket model artifact schema")
     canonical = dict(payload)
     claimed_artifact_sha256 = str(canonical.pop("artifact_sha256", ""))
-    if (
-        len(claimed_artifact_sha256) != 64
-        or claimed_artifact_sha256 != _canonical_sha256(canonical)
-    ):
+    if len(
+        claimed_artifact_sha256
+    ) != 64 or claimed_artifact_sha256 != _canonical_sha256(canonical):
         raise ValueError("Polymarket model artifact identity is invalid")
     _verify_claims(payload, name="model artifact")
 
@@ -404,12 +608,15 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
     if not (
         model.get("source_dataset_sha256") == model_dataset.get("dataset_sha256")
         and model.get("source_split_sha256") == split.get("split_sha256")
-        and probability.get("source_dataset_sha256") == model_dataset.get("dataset_sha256")
+        and probability.get("source_dataset_sha256")
+        == model_dataset.get("dataset_sha256")
         and probability.get("source_split_sha256") == split.get("split_sha256")
-        and model_dataset.get("source_dataset_sha256") == feature_dataset.get("dataset_sha256")
+        and model_dataset.get("source_dataset_sha256")
+        == feature_dataset.get("dataset_sha256")
         and payload.get("run_id") == feature_dataset.get("run_id")
     ):
         raise ValueError("Polymarket model provenance chain is inconsistent")
+    _validate_nested_model_selection(model, probability, split)
     if model_dataset.get("training_ready") is not True:
         raise ValueError("Polymarket model dataset was not training-ready")
 
@@ -455,12 +662,23 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             or len(str(row.get("input_provenance_sha256", ""))) != 64
         ):
             raise ValueError("held-out prediction row is malformed")
-        baseline = _finite_float(row.get("baseline_up_probability"), "baseline probability")
-        model_probability = _finite_float(row.get("model_up_probability"), "model probability")
+        baseline = _finite_float(
+            row.get("baseline_up_probability"), "baseline probability"
+        )
+        model_probability = _finite_float(
+            row.get("model_up_probability"), "model probability"
+        )
         weight = _finite_float(row.get("market_weight"), "market weight")
-        if not (0.0 < baseline < 1.0 and 0.0 < model_probability < 1.0 and weight > 0.0):
-            raise ValueError("held-out probability or market weight is outside its domain")
-        if condition_id in condition_labels and condition_labels[condition_id] is not label:
+        if not (
+            0.0 < baseline < 1.0 and 0.0 < model_probability < 1.0 and weight > 0.0
+        ):
+            raise ValueError(
+                "held-out probability or market weight is outside its domain"
+            )
+        if (
+            condition_id in condition_labels
+            and condition_labels[condition_id] is not label
+        ):
             raise ValueError("held-out market has inconsistent official labels")
         if condition_id in condition_assets and condition_assets[condition_id] != asset:
             raise ValueError("held-out market has inconsistent assets")
@@ -469,20 +687,119 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         time_groups.add(event_start)
         condition_labels[condition_id] = label
         condition_assets[condition_id] = asset
-    expected_groups = tuple(int(value) for value in split.get("test_group_starts_ms", ()))
-    test_metrics = _as_mapping(
-        _as_mapping(probability.get("baseline_metrics"), "baseline metrics").get("test"),
+    expected_groups = tuple(
+        int(value) for value in split.get("test_group_starts_ms", ())
+    )
+    baseline_roles = _as_mapping(
+        probability.get("baseline_metrics"),
+        "baseline metrics",
+    )
+    model_roles = _as_mapping(
+        probability.get("model_metrics"),
+        "model metrics",
+    )
+    baseline_test_metrics = _as_mapping(
+        baseline_roles.get("test"),
         "baseline test metrics",
+    )
+    model_test_metrics = _as_mapping(
+        model_roles.get("test"),
+        "model test metrics",
     )
     if (
         set(expected_groups) != time_groups
         or evidence.get("market_count") != len(conditions)
         or evidence.get("time_group_count") != len(time_groups)
-        or int(test_metrics.get("row_count", -1)) != len(predictions)
-        or int(test_metrics.get("market_count", -1)) != len(conditions)
-        or int(test_metrics.get("time_group_count", -1)) != len(time_groups)
     ):
         raise ValueError("held-out predictions do not match the frozen split")
+    expected_baseline_test = _probability_metrics_from_rows(
+        predictions,
+        "baseline_up_probability",
+    )
+    expected_model_test = _probability_metrics_from_rows(
+        predictions,
+        "model_up_probability",
+    )
+    _validate_probability_metrics(
+        baseline_test_metrics,
+        expected_baseline_test,
+        name="baseline test metrics",
+    )
+    _validate_probability_metrics(
+        model_test_metrics,
+        expected_model_test,
+        name="model test metrics",
+    )
+
+    validation_losses = _named_losses(
+        model["validation_gate_log_losses"],
+        "outer validation gate losses",
+    )
+    selected_model_validation_loss = (
+        validation_losses[0][1]
+        if model["selected_candidate"] == "market_baseline"
+        else validation_losses[1][1]
+    )
+    baseline_validation_metrics = _as_mapping(
+        baseline_roles.get("validation"),
+        "baseline validation metrics",
+    )
+    model_validation_metrics = _as_mapping(
+        model_roles.get("validation"),
+        "model validation metrics",
+    )
+    comparisons = (
+        (
+            _finite_float(
+                baseline_validation_metrics.get("weighted_log_loss"),
+                "baseline validation log loss",
+            ),
+            validation_losses[0][1],
+            "baseline validation log loss",
+        ),
+        (
+            _finite_float(
+                model_validation_metrics.get("weighted_log_loss"),
+                "model validation log loss",
+            ),
+            selected_model_validation_loss,
+            "model validation log loss",
+        ),
+        (
+            _finite_float(
+                probability.get("validation_log_loss_delta"),
+                "validation log-loss delta",
+            ),
+            selected_model_validation_loss - validation_losses[0][1],
+            "validation log-loss delta",
+        ),
+        (
+            _finite_float(
+                probability.get("test_log_loss_delta"),
+                "test log-loss delta",
+            ),
+            float(expected_model_test["weighted_log_loss"])
+            - float(expected_baseline_test["weighted_log_loss"]),
+            "test log-loss delta",
+        ),
+        (
+            _finite_float(
+                probability.get("test_brier_delta"),
+                "test Brier delta",
+            ),
+            float(expected_model_test["weighted_brier_score"])
+            - float(expected_baseline_test["weighted_brier_score"]),
+            "test Brier delta",
+        ),
+    )
+    for reported_value, expected_value, name in comparisons:
+        if not math.isclose(
+            reported_value,
+            expected_value,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(f"{name} does not reconcile")
     confirmation = _as_mapping(
         payload.get("confirmatory_evidence_contract"),
         "confirmatory evidence contract",
@@ -499,7 +816,10 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         raise ValueError("confirmatory evidence contract is inconsistent")
 
     executions: dict[str, Mapping[str, Any]] = {}
-    for policy, key in (("baseline", "baseline_execution"), ("model", "model_execution")):
+    for policy, key in (
+        ("baseline", "baseline_execution"),
+        ("model", "model_execution"),
+    ):
         report = _as_mapping(payload.get(key), f"{policy} execution")
         _verify_claims(report, name=f"{policy} execution")
         _verify_embedded_digest(report, "report_sha256", name=f"{policy} execution")
@@ -544,8 +864,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             or not 1 <= value <= 60_000
             for value in latency_values
         )
-        or int(sensitivity.get("primary_network_latency_ms", -1))
-        not in latency_values
+        or int(sensitivity.get("primary_network_latency_ms", -1)) not in latency_values
     ):
         raise ValueError("execution latency sensitivity contract is invalid")
     sensitivity_policies = _as_mapping(
@@ -564,7 +883,14 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
                 reports[str(latency)],
                 f"{policy} {latency}ms execution",
             )
-            if int(_as_mapping(scenario["config"], "scenario config")["submission_latency_ms"]) != latency:
+            if (
+                int(
+                    _as_mapping(scenario["config"], "scenario config")[
+                        "submission_latency_ms"
+                    ]
+                )
+                != latency
+            ):
                 raise ValueError(f"{policy} latency scenario config drifted")
             _validate_execution_report(
                 scenario,
@@ -572,11 +898,9 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
                 expected_time_group_count=len(time_groups),
                 name=f"{policy} {latency}ms execution",
             )
-            if (
-                latency == primary_latency
-                and scenario.get("report_sha256")
-                != executions[str(policy)].get("report_sha256")
-            ):
+            if latency == primary_latency and scenario.get(
+                "report_sha256"
+            ) != executions[str(policy)].get("report_sha256"):
                 raise ValueError(f"{policy} primary latency report does not match")
     return ValidatedPolymarketArtifact(
         payload=payload,
@@ -589,7 +913,10 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
 def _probability_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
     report = _as_mapping(payload["probability_report"], "probability report")
     rows: list[dict[str, object]] = []
-    for treatment, key in (("market_implied", "baseline_metrics"), ("residual_model", "model_metrics")):
+    for treatment, key in (
+        ("market_implied", "baseline_metrics"),
+        ("residual_model", "model_metrics"),
+    ):
         roles = _as_mapping(report[key], f"{treatment} probability metrics")
         for role in ("train", "validation", "test"):
             metric = _as_mapping(roles[role], f"{treatment} {role} metrics")
@@ -608,6 +935,62 @@ def _probability_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
                     "weighted_sharpness": metric["weighted_sharpness"],
                 }
             )
+    return rows
+
+
+def _model_selection_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
+    model = _as_mapping(payload["model"], "model")
+    inner = _named_losses(
+        model["candidate_inner_log_losses"],
+        "inner model losses",
+    )
+    validation = _named_losses(
+        model["validation_gate_log_losses"],
+        "outer validation gate losses",
+    )
+    inner_baseline = inner[0][1]
+    validation_baseline = validation[0][1]
+    selected_inner = str(model["inner_selected_candidate"])
+    accepted = str(model["selected_candidate"])
+    rows: list[dict[str, object]] = []
+    for candidate, loss in inner:
+        rows.append(
+            {
+                "stage": "inner_selection",
+                "evidence_unit": "purged_rolling_fold_weighted_mean",
+                "candidate": candidate,
+                "l2": (
+                    ""
+                    if candidate == "market_baseline"
+                    else candidate.removeprefix("offset_l2_")
+                ),
+                "weighted_log_loss": loss,
+                "baseline_log_loss": inner_baseline,
+                "delta_vs_stage_baseline": loss - inner_baseline,
+                "selected_for_outer_gate": candidate == selected_inner,
+                "accepted_after_outer_gate": candidate == accepted,
+                "fold_count": int(model["inner_fold_count"]),
+            }
+        )
+    for candidate, loss in validation:
+        rows.append(
+            {
+                "stage": "outer_promotion_gate",
+                "evidence_unit": "chronological_validation_tail",
+                "candidate": candidate,
+                "l2": (
+                    ""
+                    if candidate == "market_baseline"
+                    else candidate.removeprefix("offset_l2_")
+                ),
+                "weighted_log_loss": loss,
+                "baseline_log_loss": validation_baseline,
+                "delta_vs_stage_baseline": loss - validation_baseline,
+                "selected_for_outer_gate": candidate == selected_inner,
+                "accepted_after_outer_gate": candidate == accepted,
+                "fold_count": 1,
+            }
+        )
     return rows
 
 
@@ -643,8 +1026,7 @@ def _held_out_group_score_rows(
                 row for row in selected if int(row["event_start_ms"]) == event_start
             ]
             weight = sum(
-                _finite_float(row["market_weight"], "market weight")
-                for row in group
+                _finite_float(row["market_weight"], "market weight") for row in group
             )
             if weight <= 0:
                 raise ValueError("held-out group has no effective weight")
@@ -664,12 +1046,10 @@ def _held_out_group_score_rows(
                     "model probability",
                 )
                 baseline_log_loss += row_weight * -(
-                    label * math.log(baseline)
-                    + (1.0 - label) * math.log1p(-baseline)
+                    label * math.log(baseline) + (1.0 - label) * math.log1p(-baseline)
                 )
                 model_log_loss += row_weight * -(
-                    label * math.log(model)
-                    + (1.0 - label) * math.log1p(-model)
+                    label * math.log(model) + (1.0 - label) * math.log1p(-model)
                 )
                 baseline_brier += row_weight * (baseline - label) ** 2
                 model_brier += row_weight * (model - label) ** 2
@@ -732,7 +1112,9 @@ def _group_score_summary(
             for start in range(len(deltas))
         ]
         seed = int(
-            hashlib.sha256(f"{artifact_sha256}:{scope}".encode("ascii")).hexdigest()[:16],
+            hashlib.sha256(f"{artifact_sha256}:{scope}".encode("ascii")).hexdigest()[
+                :16
+            ],
             16,
         )
         generator = random.Random(seed)
@@ -740,7 +1122,9 @@ def _group_score_summary(
         for _ in range(10_000):
             sample: list[float] = []
             while len(sample) < len(deltas):
-                sample.extend(circular_blocks[generator.randrange(len(circular_blocks))])
+                sample.extend(
+                    circular_blocks[generator.randrange(len(circular_blocks))]
+                )
             bootstrap_means.append(sum(sample[: len(deltas)]) / len(deltas))
         lower = _quantile(bootstrap_means, 0.025)
         upper = _quantile(bootstrap_means, 0.975)
@@ -837,12 +1221,8 @@ def _latency_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
                         row["execution_state"] == "UNKNOWN" for row in trades
                     ),
                     "net_realized_pnl_quote": report["net_realized_pnl_quote"],
-                    "return_on_initial_capital": report[
-                        "return_on_initial_capital"
-                    ],
-                    "maximum_drawdown_fraction": report[
-                        "maximum_drawdown_fraction"
-                    ],
+                    "return_on_initial_capital": report["return_on_initial_capital"],
+                    "maximum_drawdown_fraction": report["maximum_drawdown_fraction"],
                     "report_sha256": report["report_sha256"],
                 }
             )
@@ -908,11 +1288,7 @@ def _per_asset_rows(
 ) -> list[dict[str, object]]:
     market_counts = {
         asset: len(
-            {
-                str(row["condition_id"])
-                for row in predictions
-                if row["asset"] == asset
-            }
+            {str(row["condition_id"]) for row in predictions if row["asset"] == asset}
         )
         for asset in _ASSETS
     }
@@ -945,12 +1321,20 @@ def _per_asset_rows(
                     "evaluated_markets": market_counts[asset],
                     "signals": len(selected),
                     "fills": len(filled),
-                    "wins": sum(_decimal(row["realized_pnl_quote"], "trade PnL") > 0 for row in filled),
-                    "losses": sum(_decimal(row["realized_pnl_quote"], "trade PnL") < 0 for row in filled),
+                    "wins": sum(
+                        _decimal(row["realized_pnl_quote"], "trade PnL") > 0
+                        for row in filled
+                    ),
+                    "losses": sum(
+                        _decimal(row["realized_pnl_quote"], "trade PnL") < 0
+                        for row in filled
+                    ),
                     "fees_quote": str(fees),
                     "deployed_capital_quote": str(deployed),
                     "net_realized_pnl_quote": str(pnl),
-                    "return_on_deployed_capital": str(pnl / deployed if deployed > 0 else Decimal("0")),
+                    "return_on_deployed_capital": str(
+                        pnl / deployed if deployed > 0 else Decimal("0")
+                    ),
                 }
             )
     return rows
@@ -987,7 +1371,9 @@ def _ai_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
     return rows
 
 
-def _svg_base(title: str, subtitle: str, description: str, *, height: int = 700) -> list[str]:
+def _svg_base(
+    title: str, subtitle: str, description: str, *, height: int = 700
+) -> list[str]:
     return [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="{height}" viewBox="0 0 1200 {height}" role="img">',
         f"<title>{escape(title)}</title>",
@@ -998,7 +1384,9 @@ def _svg_base(title: str, subtitle: str, description: str, *, height: int = 700)
     ]
 
 
-def _probability_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -> str:
+def _probability_svg(
+    rows: Sequence[Mapping[str, object]], *, start: str, end: str
+) -> str:
     selected = {
         (str(row["role"]), str(row["treatment"])): row
         for row in rows
@@ -1024,8 +1412,12 @@ def _probability_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: s
     for index in range(5):
         value = maximum * index / 4
         y = bottom - (bottom - top) * index / 4
-        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>')
-        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:.3f}</text>')
+        lines.append(
+            f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>'
+        )
+        lines.append(
+            f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:.3f}</text>'
+        )
     group_width = width / len(categories)
     for index, (label, role, metric) in enumerate(categories):
         center = left + group_width * (index + 0.5)
@@ -1035,9 +1427,15 @@ def _probability_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: s
             x = center + offset - 38.0
             y = bottom - height
             color = _COLORS["baseline" if treatment == "market_implied" else "model"]
-            lines.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="76" height="{height:.1f}" rx="3" fill="{color}"/>')
-            lines.append(f'<text x="{x + 38:.1f}" y="{y - 10:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700">{value:.4f}</text>')
-        lines.append(f'<text x="{center:.1f}" y="608" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="15">{escape(label)}</text>')
+            lines.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="76" height="{height:.1f}" rx="3" fill="{color}"/>'
+            )
+            lines.append(
+                f'<text x="{x + 38:.1f}" y="{y - 10:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700">{value:.4f}</text>'
+            )
+        lines.append(
+            f'<text x="{center:.1f}" y="608" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="15">{escape(label)}</text>'
+        )
     lines.extend(
         (
             f'<rect x="390" y="645" width="18" height="18" rx="2" fill="{_COLORS["baseline"]}"/><text x="418" y="659" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Market-implied prior</text>',
@@ -1045,6 +1443,127 @@ def _probability_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: s
             "</svg>",
         )
     )
+    return "\n".join(lines) + "\n"
+
+
+def _model_selection_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    start: str,
+    end: str,
+) -> str:
+    inner = [row for row in rows if row["stage"] == "inner_selection"]
+    outer = [row for row in rows if row["stage"] == "outer_promotion_gate"]
+    ordered = [*inner, *outer]
+    deltas = [
+        _finite_float(row["delta_vs_stage_baseline"], "selection delta")
+        for row in ordered
+    ]
+    extent = max(max((abs(value) for value in deltas), default=0.0) * 1.15, 0.0001)
+    plot_left, plot_center, plot_right = 460.0, 700.0, 940.0
+    row_centers = [180.0 + index * 54.0 for index in range(len(inner))]
+    row_centers.extend(540.0 + index * 58.0 for index in range(len(outer)))
+    lines = _svg_base(
+        "Nested model selection",
+        f"Inner purged rolling selection, then one outer promotion gate; {start} to {end}",
+        "Log-loss deltas derived from model-selection.csv. Negative values improve on the market-implied baseline.",
+        height=740,
+    )
+    for value, x in ((-extent, plot_left), (0.0, plot_center), (extent, plot_right)):
+        lines.append(
+            f'<line x1="{x:.1f}" y1="132" x2="{x:.1f}" y2="650" '
+            f'stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>'
+        )
+        lines.append(
+            f'<text x="{x:.1f}" y="122" text-anchor="middle" '
+            f'fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" '
+            f'font-size="12">{value:+.5f}</text>'
+        )
+    lines.append(
+        f'<text x="64" y="151" fill="{_COLORS["muted"]}" '
+        'font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700">'
+        "INNER TRAINING FOLDS</text>"
+    )
+    lines.append(
+        f'<line x1="64" y1="505" x2="1136" y2="505" stroke="{_COLORS["grid"]}"/>'
+    )
+    lines.append(
+        f'<text x="64" y="530" fill="{_COLORS["muted"]}" '
+        'font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700">'
+        "OUTER VALIDATION GATE</text>"
+    )
+    for row, y, delta in zip(ordered, row_centers, deltas, strict=True):
+        candidate = str(row["candidate"])
+        stage = str(row["stage"])
+        label = (
+            "Market-implied prior"
+            if candidate == "market_baseline"
+            else f"L2 = {_finite_float(row['l2'], 'L2 label'):.6g}"
+        )
+        value_x = plot_center + 240.0 * delta / extent
+        bar_x = min(plot_center, value_x)
+        bar_width = max(abs(value_x - plot_center), 2.0)
+        color = (
+            _COLORS["baseline"]
+            if delta == 0.0
+            else _COLORS["model"]
+            if delta < 0.0
+            else _COLORS["negative"]
+        )
+        accepted = bool(row["accepted_after_outer_gate"])
+        inner_winner = bool(row["selected_for_outer_gate"])
+        rejected = (
+            stage == "outer_promotion_gate"
+            and candidate != "market_baseline"
+            and inner_winner
+            and not accepted
+        )
+        stroke = (
+            _COLORS["negative"]
+            if rejected
+            else _COLORS["model"]
+            if accepted
+            else _COLORS["ai"]
+            if inner_winner
+            else color
+        )
+        stroke_width = 3 if accepted or rejected else 2 if inner_winner else 0
+        lines.append(
+            f'<text x="438" y="{y + 5:.1f}" text-anchor="end" '
+            f'fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" '
+            f'font-size="14">{escape(label)}</text>'
+        )
+        lines.append(
+            f'<rect x="{bar_x:.1f}" y="{y - 13:.1f}" width="{bar_width:.1f}" '
+            f'height="26" rx="2" fill="{color}" stroke="{stroke}" '
+            f'stroke-width="{stroke_width}"/>'
+        )
+        lines.append(
+            f'<text x="960" y="{y + 5:.1f}" fill="{_COLORS["text"]}" '
+            f'font-family="Consolas,monospace" font-size="13">{delta:+.6f}</text>'
+        )
+        if stage == "inner_selection" and inner_winner:
+            status = "INNER WINNER"
+        elif rejected:
+            status = "REJECTED"
+        elif accepted and candidate == "market_baseline":
+            status = "FALLBACK"
+        elif accepted:
+            status = "ACCEPTED"
+        else:
+            status = ""
+        if status:
+            lines.append(
+                f'<text x="1060" y="{y + 5:.1f}" fill="{stroke}" '
+                'font-family="Segoe UI,Arial,sans-serif" font-size="11" '
+                f'font-weight="700">{status}</text>'
+            )
+    lines.append(
+        f'<text x="64" y="704" fill="{_COLORS["muted"]}" '
+        'font-family="Segoe UI,Arial,sans-serif" font-size="13">'
+        "Selection uses training folds only. The outer tail can reject, but cannot retune, the frozen candidate.</text>"
+    )
+    lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
 
@@ -1059,8 +1578,7 @@ def _group_score_svg(
         key=lambda row: int(row["event_start_ms"]),
     )
     values = [
-        _finite_float(row["log_loss_delta"], "group log-loss delta")
-        for row in selected
+        _finite_float(row["log_loss_delta"], "group log-loss delta") for row in selected
     ]
     extent = max(max((abs(value) for value in values), default=0.0) * 1.2, 0.01)
     left, top, bottom, width = 120.0, 150.0, 570.0, 1010.0
@@ -1072,8 +1590,12 @@ def _group_score_svg(
     )
     for value in (-extent, -extent / 2, 0.0, extent / 2, extent):
         y = zero - (bottom - top) * 0.5 * value / extent
-        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>')
-        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:.4f}</text>')
+        lines.append(
+            f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>'
+        )
+        lines.append(
+            f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:.4f}</text>'
+        )
     slot = width / max(1, len(selected))
     bar_width = max(3.0, min(70.0, slot * 0.72))
     for index, (row, value) in enumerate(zip(selected, values, strict=True)):
@@ -1082,23 +1604,39 @@ def _group_score_svg(
         y = min(zero, y_value)
         height = max(abs(y_value - zero), 1.0)
         color = _COLORS["model"] if value < 0.0 else _COLORS["negative"]
-        lines.append(f'<rect x="{center - bar_width / 2:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="2" fill="{color}"/>')
+        lines.append(
+            f'<rect x="{center - bar_width / 2:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="2" fill="{color}"/>'
+        )
         if len(selected) <= 12:
             label_y = y + height + 16 if value < 0.0 else y - 8
-            lines.append(f'<text x="{center:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="11">{value:+.4f}</text>')
-    tick_indexes = sorted(
-        {
-            round(index * (len(selected) - 1) / min(5, len(selected) - 1))
-            for index in range(min(5, len(selected) - 1) + 1)
-        }
-    ) if len(selected) > 1 else [0]
+            lines.append(
+                f'<text x="{center:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="11">{value:+.4f}</text>'
+            )
+    tick_indexes = (
+        sorted(
+            {
+                round(index * (len(selected) - 1) / min(5, len(selected) - 1))
+                for index in range(min(5, len(selected) - 1) + 1)
+            }
+        )
+        if len(selected) > 1
+        else [0]
+    )
     for index in tick_indexes:
         center = left + slot * (index + 0.5)
         timestamp = int(selected[index]["event_start_ms"])
-        label = datetime.fromtimestamp(timestamp / 1_000.0, tz=timezone.utc).strftime("%H:%MZ")
-        lines.append(f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>')
-    lines.append(f'<text x="120" y="660" fill="{_COLORS["model"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Negative: residual model improved</text>')
-    lines.append(f'<text x="880" y="660" fill="{_COLORS["negative"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Positive: residual model degraded</text>')
+        label = datetime.fromtimestamp(timestamp / 1_000.0, tz=timezone.utc).strftime(
+            "%H:%MZ"
+        )
+        lines.append(
+            f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>'
+        )
+    lines.append(
+        f'<text x="120" y="660" fill="{_COLORS["model"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Negative: residual model improved</text>'
+    )
+    lines.append(
+        f'<text x="880" y="660" fill="{_COLORS["negative"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Positive: residual model degraded</text>'
+    )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -1127,8 +1665,12 @@ def _equity_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -
     for index in range(5):
         value = low + (high - low) * index / 4
         y = bottom - (bottom - top) * index / 4
-        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>')
-        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>')
+        lines.append(
+            f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>'
+        )
+        lines.append(
+            f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>'
+        )
     for policy in _POLICIES:
         values = by_policy.get(policy)
         if not values:
@@ -1138,17 +1680,25 @@ def _equity_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -
             x = left + width * (timestamp - min_time) / max(1, max_time - min_time)
             y = bottom - (bottom - top) * (equity - low) / (high - low)
             points.append(f"{x:.2f},{y:.2f}")
-        lines.append(f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>')
+        lines.append(
+            f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>'
+        )
     tick_count = 5
     for index in range(tick_count):
         timestamp = min_time + (max_time - min_time) * index // (tick_count - 1)
         x = left + width * index / (tick_count - 1)
-        label = datetime.fromtimestamp(timestamp / 1_000.0, tz=timezone.utc).strftime("%H:%MZ")
-        lines.append(f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>')
+        label = datetime.fromtimestamp(timestamp / 1_000.0, tz=timezone.utc).strftime(
+            "%H:%MZ"
+        )
+        lines.append(
+            f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>'
+        )
     legend_x = 350
     for index, policy in enumerate(name for name in _POLICIES if name in by_policy):
         x = legend_x + index * 190
-        lines.append(f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>')
+        lines.append(
+            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>'
+        )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -1166,28 +1716,48 @@ def _asset_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) ->
     )
     for value in (-extent, -extent / 2, 0.0, extent / 2, extent):
         y = zero - (bottom - top) * 0.5 * value / extent
-        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>')
-        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>')
+        lines.append(
+            f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>'
+        )
+        lines.append(
+            f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>'
+        )
     group_width = width / len(_ASSETS)
     bar_width = min(68.0, group_width / (len(policies) + 1))
     for asset_index, asset in enumerate(_ASSETS):
         center = left + group_width * (asset_index + 0.5)
         for policy_index, policy in enumerate(policies):
-            row = next(item for item in rows if item["asset"] == asset and item["policy"] == policy)
+            row = next(
+                item
+                for item in rows
+                if item["asset"] == asset and item["policy"] == policy
+            )
             value = _finite_float(row["net_realized_pnl_quote"], "asset PnL")
-            x = center + (policy_index - (len(policies) - 1) / 2) * (bar_width + 10) - bar_width / 2
+            x = (
+                center
+                + (policy_index - (len(policies) - 1) / 2) * (bar_width + 10)
+                - bar_width / 2
+            )
             y_value = zero - (bottom - top) * 0.5 * value / extent
             y = min(zero, y_value)
             height = max(abs(y_value - zero), 1.0)
             color = _COLORS[policy]
-            lines.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="3" fill="{color}"/>')
+            lines.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="3" fill="{color}"/>'
+            )
             label_y = y - 9 if value >= 0 else y + height + 19
-            lines.append(f'<text x="{x + bar_width / 2:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f} / {row["fills"]} fills</text>')
-        lines.append(f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">{asset}</text>')
+            lines.append(
+                f'<text x="{x + bar_width / 2:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f} / {row["fills"]} fills</text>'
+            )
+        lines.append(
+            f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">{asset}</text>'
+        )
     legend_x = 350
     for index, policy in enumerate(policies):
         x = legend_x + index * 190
-        lines.append(f'<rect x="{x}" y="642" width="18" height="18" rx="2" fill="{_COLORS[policy]}"/><text x="{x + 28}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>')
+        lines.append(
+            f'<rect x="{x}" y="642" width="18" height="18" rx="2" fill="{_COLORS[policy]}"/><text x="{x + 28}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>'
+        )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -1201,8 +1771,7 @@ def _latency_svg(
     policies = tuple(dict.fromkeys(str(row["policy"]) for row in rows))
     latencies = sorted({int(row["network_latency_ms"]) for row in rows})
     values = [
-        _finite_float(row["net_realized_pnl_quote"], "latency PnL")
-        for row in rows
+        _finite_float(row["net_realized_pnl_quote"], "latency PnL") for row in rows
     ]
     low = min(values + [0.0])
     high = max(values + [0.0])
@@ -1218,14 +1787,20 @@ def _latency_svg(
     for index in range(5):
         value = low + (high - low) * index / 4
         y = bottom - (bottom - top) * index / 4
-        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>')
-        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>')
+        lines.append(
+            f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>'
+        )
+        lines.append(
+            f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>'
+        )
     x_by_latency = {
         latency: left + width * index / max(1, len(latencies) - 1)
         for index, latency in enumerate(latencies)
     }
     for latency, x in x_by_latency.items():
-        lines.append(f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{latency} ms</text>')
+        lines.append(
+            f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{latency} ms</text>'
+        )
     for policy in policies:
         policy_rows = {
             int(row["network_latency_ms"]): row
@@ -1243,13 +1818,19 @@ def _latency_svg(
             y = bottom - (bottom - top) * (value - low) / (high - low)
             points.append(f"{x:.2f},{y:.2f}")
             coordinates.append((x, y, value))
-        lines.append(f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>')
+        lines.append(
+            f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>'
+        )
         for x, y, value in coordinates:
-            lines.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{_COLORS[policy]}"/><text x="{x:.1f}" y="{y - 11:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f}</text>')
+            lines.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{_COLORS[policy]}"/><text x="{x:.1f}" y="{y - 11:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f}</text>'
+            )
     legend_x = 350
     for index, policy in enumerate(policies):
         x = legend_x + index * 190
-        lines.append(f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>')
+        lines.append(
+            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>'
+        )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -1261,8 +1842,15 @@ def _progress_rows(
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     if prior_round_path is not None and prior_round_path.is_file():
-        prior = _as_mapping(json.loads(prior_round_path.read_text(encoding="utf-8")), "prior round")
-        counts = _as_mapping(_as_mapping(prior.get("dataset"), "prior dataset").get("labeled_market_counts"), "prior market counts")
+        prior = _as_mapping(
+            json.loads(prior_round_path.read_text(encoding="utf-8")), "prior round"
+        )
+        counts = _as_mapping(
+            _as_mapping(prior.get("dataset"), "prior dataset").get(
+                "labeled_market_counts"
+            ),
+            "prior market counts",
+        )
         rows.append(
             {
                 "round": int(prior.get("round", 2)),
@@ -1270,7 +1858,9 @@ def _progress_rows(
                 "BTC_markets": counts.get("BTC", 0),
                 "ETH_markets": counts.get("ETH", 0),
                 "SOL_markets": counts.get("SOL", 0),
-                "feature_rows": _as_mapping(prior["dataset"], "prior dataset").get("row_count", 0),
+                "feature_rows": _as_mapping(prior["dataset"], "prior dataset").get(
+                    "row_count", 0
+                ),
                 "model_evaluated": False,
                 "test_log_loss_delta": "",
                 "model_net_realized_pnl_quote": "",
@@ -1278,7 +1868,10 @@ def _progress_rows(
             }
         )
     payload = artifact.payload
-    counts = _as_mapping(_as_mapping(payload["model_dataset"], "model dataset")["market_counts"], "market counts")
+    counts = _as_mapping(
+        _as_mapping(payload["model_dataset"], "model dataset")["market_counts"],
+        "market counts",
+    )
     report = _as_mapping(payload["probability_report"], "probability report")
     model_execution = artifact.executions["model"]
     rows.append(
@@ -1288,7 +1881,9 @@ def _progress_rows(
             "BTC_markets": counts["BTC"],
             "ETH_markets": counts["ETH"],
             "SOL_markets": counts["SOL"],
-            "feature_rows": _as_mapping(payload["feature_dataset"], "feature dataset")["row_count"],
+            "feature_rows": _as_mapping(payload["feature_dataset"], "feature dataset")[
+                "row_count"
+            ],
             "model_evaluated": True,
             "test_log_loss_delta": report["test_log_loss_delta"],
             "model_net_realized_pnl_quote": model_execution["net_realized_pnl_quote"],
@@ -1299,11 +1894,7 @@ def _progress_rows(
 
 
 def _progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
-    maximum = max(
-        int(row[f"{asset}_markets"])
-        for row in rows
-        for asset in _ASSETS
-    )
+    maximum = max(int(row[f"{asset}_markets"]) for row in rows for asset in _ASSETS)
     maximum = max(maximum, 30)
     lines = _svg_base(
         "Prospective evidence progression",
@@ -1312,8 +1903,12 @@ def _progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
     )
     left, top, bottom, width = 120.0, 150.0, 570.0, 1010.0
     gate_y = bottom - (bottom - top) * 30 / maximum
-    lines.append(f'<line x1="{left:.1f}" y1="{gate_y:.1f}" x2="{left + width:.1f}" y2="{gate_y:.1f}" stroke="#f8fafc" stroke-width="2" stroke-dasharray="8 7"/>')
-    lines.append(f'<text x="{left + width - 5:.1f}" y="{gate_y - 9:.1f}" text-anchor="end" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">30-market research gate</text>')
+    lines.append(
+        f'<line x1="{left:.1f}" y1="{gate_y:.1f}" x2="{left + width:.1f}" y2="{gate_y:.1f}" stroke="#f8fafc" stroke-width="2" stroke-dasharray="8 7"/>'
+    )
+    lines.append(
+        f'<text x="{left + width - 5:.1f}" y="{gate_y - 9:.1f}" text-anchor="end" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">30-market research gate</text>'
+    )
     group_width = width / len(rows)
     for round_index, row in enumerate(rows):
         center = left + group_width * (round_index + 0.5)
@@ -1323,13 +1918,23 @@ def _progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
             x = center + (asset_index - 1) * (bar_width + 14) - bar_width / 2
             height = (bottom - top) * value / maximum
             y = bottom - height
-            lines.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="3" fill="{_COLORS[asset]}"/>')
-            lines.append(f'<text x="{x + bar_width / 2:.1f}" y="{y - 9:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700">{value}</text>')
-        lines.append(f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">Round {row["round"]}</text>')
-        lines.append(f'<text x="{center:.1f}" y="634" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{escape(str(row["status"]))}</text>')
+            lines.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="3" fill="{_COLORS[asset]}"/>'
+            )
+            lines.append(
+                f'<text x="{x + bar_width / 2:.1f}" y="{y - 9:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700">{value}</text>'
+            )
+        lines.append(
+            f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">Round {row["round"]}</text>'
+        )
+        lines.append(
+            f'<text x="{center:.1f}" y="634" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{escape(str(row["status"]))}</text>'
+        )
     for index, asset in enumerate(_ASSETS):
         x = 410 + index * 145
-        lines.append(f'<rect x="{x}" y="656" width="18" height="18" rx="2" fill="{_COLORS[asset]}"/><text x="{x + 28}" y="671" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{asset}</text>')
+        lines.append(
+            f'<rect x="{x}" y="656" width="18" height="18" rx="2" fill="{_COLORS[asset]}"/><text x="{x + 28}" y="671" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{asset}</text>'
+        )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
 
@@ -1343,6 +1948,7 @@ def _results_markdown(
 ) -> str:
     payload = artifact.payload
     report = _as_mapping(payload["probability_report"], "probability report")
+    trained_model = _as_mapping(payload["model"], "model")
     baseline = artifact.executions["baseline"]
     model = artifact.executions["model"]
     ai = _as_mapping(payload["ai"], "AI evidence")
@@ -1361,8 +1967,7 @@ def _results_markdown(
         "combined group score summary",
     )
     gate_rows = "\n".join(
-        f"| `{key}` | `{str(value).lower()}` |"
-        for key, value in gates.items()
+        f"| `{key}` | `{str(value).lower()}` |" for key, value in gates.items()
     )
     return f"""# Polymarket research round {round_number}
 
@@ -1371,33 +1976,40 @@ BTC, ETH, and SOL five-minute markets from `{start}` through `{end}`. It is
 research evidence only: no live trading, portfolio, leverage, or profitability
 claim is made.
 
+![Nested model selection](latest/charts/model-selection.svg)
+
+The purged inner folds selected `{trained_model["inner_selected_candidate"]}`.
+The independent outer validation gate then
+**{"accepted" if trained_model["selected_candidate"] != "market_baseline" else "rejected"}**
+that frozen candidate; it was not used to retune regularization.
+
 ![Proper-score comparison](latest/charts/probability-quality.svg)
 
-The selected candidate was `{report['selected_candidate']}`. Relative to the
+The selected candidate was `{report["selected_candidate"]}`. Relative to the
 market-implied prior, validation log-loss changed by
-`{_finite_float(report['validation_log_loss_delta'], 'validation delta'):.8f}`
+`{_finite_float(report["validation_log_loss_delta"], "validation delta"):.8f}`
 and untouched-test log-loss changed by
-`{_finite_float(report['test_log_loss_delta'], 'test delta'):.8f}`. Lower is
+`{_finite_float(report["test_log_loss_delta"], "test delta"):.8f}`. Lower is
 better; the test Brier-score change was
-`{_finite_float(report['test_brier_delta'], 'Brier delta'):.8f}`.
+`{_finite_float(report["test_brier_delta"], "Brier delta"):.8f}`.
 
 ![Time-group score deltas](latest/charts/held-out-group-scores.svg)
 
-The untouched tail contains `{all_groups['time_group_count']}` shared five-minute
+The untouched tail contains `{all_groups["time_group_count"]}` shared five-minute
 time groups. Its deterministic moving-block bootstrap interval for mean log-loss
 delta is
-`[{_finite_float(all_groups['moving_block_bootstrap_95pct_lower'], 'lower interval'):.8f},
-{_finite_float(all_groups['moving_block_bootstrap_95pct_upper'], 'upper interval'):.8f}]`.
-Confirmatory status is **{'ready' if all_groups['confirmatory_ready'] else 'not ready'}**;
+`[{_finite_float(all_groups["moving_block_bootstrap_95pct_lower"], "lower interval"):.8f},
+{_finite_float(all_groups["moving_block_bootstrap_95pct_upper"], "upper interval"):.8f}]`.
+Confirmatory status is **{"ready" if all_groups["confirmatory_ready"] else "not ready"}**;
 the frozen minimum is 30 untouched groups and the entire interval must be below
 zero. This interval is an exploratory dependence-aware diagnostic, not a p-value.
 
 ![Held-out settled equity](latest/charts/held-out-equity.svg)
 
-The baseline replay filled `{baseline['filled_order_count']}` orders and settled
-`{baseline['net_realized_pnl_quote']}` quote PnL. The residual-model replay filled
-`{model['filled_order_count']}` orders and settled
-`{model['net_realized_pnl_quote']}` quote PnL. These are short prospective
+The baseline replay filled `{baseline["filled_order_count"]}` orders and settled
+`{baseline["net_realized_pnl_quote"]}` quote PnL. The residual-model replay filled
+`{model["filled_order_count"]}` orders and settled
+`{model["net_realized_pnl_quote"]}` quote PnL. These are short prospective
 diagnostics after modeled dynamic fees and recorded depth, not evidence of a
 durable edge. {ai_line}
 
@@ -1415,6 +2027,7 @@ durable edge. {ai_line}
 
 - [Experiment artifact](round-{round_number:03d}-prospective-model-experiment.json)
 - [Held-out prediction rows](latest/tables/held-out-predictions.csv)
+- [Nested model selection](latest/tables/model-selection.csv)
 - [Probability metrics](latest/tables/probability-metrics.csv)
 - [Held-out time-group scores](latest/tables/held-out-group-scores.csv)
 - [Time-group uncertainty summary](latest/held-out-group-score-summary.json)
@@ -1447,6 +2060,7 @@ def publish_polymarket_model_artifact(
     start = _utc(min(int(row["event_start_ms"]) for row in validated.predictions))
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
     probability_rows = _probability_rows(validated.payload)
+    model_selection_rows = _model_selection_rows(validated.payload)
     group_score_rows = _held_out_group_score_rows(validated.predictions)
     group_score_summary = _group_score_summary(
         group_score_rows,
@@ -1467,6 +2081,7 @@ def publish_polymarket_model_artifact(
     charts.mkdir(parents=True, exist_ok=True)
     tables.mkdir(parents=True, exist_ok=True)
     current_chart_names = {
+        "model-selection.svg",
         "probability-quality.svg",
         "held-out-group-scores.svg",
         "held-out-equity.svg",
@@ -1488,6 +2103,7 @@ def publish_polymarket_model_artifact(
 
     table_payloads = {
         "held-out-predictions.csv": predictions,
+        "model-selection.csv": model_selection_rows,
         "probability-metrics.csv": probability_rows,
         "held-out-group-scores.csv": group_score_rows,
         "execution-summary.csv": summary_rows,
@@ -1501,13 +2117,25 @@ def publish_polymarket_model_artifact(
     for name, rows in table_payloads.items():
         _write_csv(tables / name, rows)
     _write_json(latest / "held-out-group-score-summary.json", group_score_summary)
-    _write_text(charts / "probability-quality.svg", _probability_svg(probability_rows, start=start, end=end))
+    _write_text(
+        charts / "model-selection.svg",
+        _model_selection_svg(model_selection_rows, start=start, end=end),
+    )
+    _write_text(
+        charts / "probability-quality.svg",
+        _probability_svg(probability_rows, start=start, end=end),
+    )
     _write_text(
         charts / "held-out-group-scores.svg",
         _group_score_svg(group_score_rows, start=start, end=end),
     )
-    _write_text(charts / "held-out-equity.svg", _equity_svg(equity_rows, start=start, end=end))
-    _write_text(charts / "per-asset-execution.svg", _asset_svg(per_asset_rows, start=start, end=end))
+    _write_text(
+        charts / "held-out-equity.svg", _equity_svg(equity_rows, start=start, end=end)
+    )
+    _write_text(
+        charts / "per-asset-execution.svg",
+        _asset_svg(per_asset_rows, start=start, end=end),
+    )
     _write_text(
         charts / "latency-sensitivity.svg",
         _latency_svg(latency_rows, start=start, end=end),
