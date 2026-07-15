@@ -9,7 +9,7 @@ import json
 import math
 import random
 import time
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 import warnings
 
 import numpy as np
@@ -46,6 +46,7 @@ POLYMARKET_MLP_BOOTSTRAP_SAMPLES = 2000
 POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE = 0.00001
 _FEATURE_COUNT = len(POLYMARKET_ACTION_FEATURE_NAMES)
 _MEMBER_PARAMETER_COUNT = 4673
+ProgressCallback = Callable[[str, Mapping[str, object]], None]
 
 
 def _canonical_json(value: object) -> str:
@@ -99,9 +100,16 @@ class PolymarketMLPBackendEvidence:
     preflight_objective: float
     preflight_parameter_delta: float
     preflight_seconds: float
+    training_seconds: float
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+    def identity_payload(self) -> dict[str, object]:
+        payload = self.asdict()
+        payload.pop("preflight_seconds")
+        payload.pop("training_seconds")
+        return payload
 
 
 @dataclass(frozen=True)
@@ -230,7 +238,7 @@ class PolymarketMLPEnsemble:
             "feature_mean": _float_text(self.feature_mean),
             "feature_scale": _float_text(self.feature_scale),
             "member_sha256": [item.member_sha256 for item in self.members],
-            "backend": self.backend.asdict(),
+            "backend": self.backend.identity_payload(),
             "reproducibility_max_probability_drift": format(
                 self.reproducibility_max_probability_drift,
                 ".17g",
@@ -244,6 +252,7 @@ class PolymarketMLPEnsemble:
             self.backend.preflight_objective,
             self.backend.preflight_parameter_delta,
             self.backend.preflight_seconds,
+            self.backend.training_seconds,
         )
         if (
             not _is_sha256(self.dataset_sha256)
@@ -643,6 +652,7 @@ def _preflight(
         preflight_objective=objective_value,
         preflight_parameter_delta=parameter_delta,
         preflight_seconds=elapsed,
+        training_seconds=0.0,
     )
 
 
@@ -704,6 +714,8 @@ def _fit_member(
     training_weights: np.ndarray,
     validation_features: np.ndarray,
     validation_labels: np.ndarray,
+    progress: ProgressCallback | None = None,
+    run_kind: str = "ensemble",
 ) -> PolymarketMLPMember:
     torch.manual_seed(seed)
     model = _new_torch_model(torch).to(device)
@@ -713,6 +725,7 @@ def _fit_member(
     best_state: dict[str, Any] | None = None
     stale_epochs = 0
     trace: list[PolymarketMLPEpoch] = []
+    last_batch_heartbeat = time.perf_counter()
     for epoch in range(1, POLYMARKET_MLP_MAX_EPOCHS + 1):
         model.train()
         order = np.random.default_rng(seed + epoch).permutation(
@@ -743,6 +756,19 @@ def _fit_member(
             rows = int(selected.size)
             total_loss += float(loss.detach().cpu()) * rows
             total_rows += rows
+            heartbeat = time.perf_counter()
+            if progress is not None and heartbeat - last_batch_heartbeat >= 30.0:
+                progress(
+                    "polymarket_mlp_batch",
+                    {
+                        "run_kind": run_kind,
+                        "seed": seed,
+                        "epoch": epoch,
+                        "rows_complete": min(offset + rows, order.size),
+                        "rows_total": int(order.size),
+                    },
+                )
+                last_batch_heartbeat = heartbeat
         validation_probability = _predict_torch(
             torch,
             model,
@@ -771,8 +797,25 @@ def _fit_member(
             stale_epochs = 0
         else:
             stale_epochs += 1
-            if stale_epochs >= POLYMARKET_MLP_PATIENCE:
-                break
+        if progress is not None and (
+            epoch == 1
+            or epoch % 5 == 0
+            or stale_epochs >= POLYMARKET_MLP_PATIENCE
+        ):
+            progress(
+                "polymarket_mlp_epoch",
+                {
+                    "run_kind": run_kind,
+                    "seed": seed,
+                    "epoch": epoch,
+                    "training_loss": trace[-1].training_loss,
+                    "validation_log_loss": validation_loss,
+                    "best_validation_log_loss": best_loss,
+                    "stale_epochs": stale_epochs,
+                },
+            )
+        if stale_epochs >= POLYMARKET_MLP_PATIENCE:
+            break
     if best_state is None or best_epoch <= 0:
         raise RuntimeError("Polymarket MLP produced no finite validation checkpoint")
     model.load_state_dict(best_state)
@@ -894,6 +937,7 @@ def fit_and_evaluate_polymarket_mlp(
     parent: PolymarketRidgeReport,
     *,
     compute_backend: str = "auto",
+    progress: ProgressCallback | None = None,
 ) -> PolymarketMLPReport:
     """Fit the preregistered nonlinear challenger and open test only if admitted."""
 
@@ -922,11 +966,26 @@ def fit_and_evaluate_polymarket_mlp(
     standardized_validation = (validation_x - mean) / scale
     weights = _condition_weights(dataset, train_indices)
     torch, device, backend = _torch_runtime(compute_backend)
+    training_started = time.perf_counter()
     backend_evidence = _preflight(torch, device, backend)
+    if progress is not None:
+        progress(
+            "polymarket_mlp_preflight",
+            {
+                "backend": backend_evidence.kind,
+                "device": backend_evidence.device,
+                "fallback_reason": backend_evidence.fallback_reason,
+                "training_rows": int(training_x.shape[0]),
+                "validation_rows": int(validation_x.shape[0]),
+            },
+        )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        members = tuple(
-            _fit_member(
+        fitted_members: list[PolymarketMLPMember] = []
+        for seed in POLYMARKET_MLP_SEEDS:
+            if progress is not None:
+                progress("polymarket_mlp_seed", {"seed": seed, "status": "started"})
+            member = _fit_member(
                 torch,
                 device,
                 seed=seed,
@@ -935,9 +994,25 @@ def fit_and_evaluate_polymarket_mlp(
                 training_weights=weights,
                 validation_features=standardized_validation,
                 validation_labels=validation_y,
+                progress=progress,
             )
-            for seed in POLYMARKET_MLP_SEEDS
-        )
+            fitted_members.append(member)
+            if progress is not None:
+                progress(
+                    "polymarket_mlp_seed",
+                    {
+                        "seed": seed,
+                        "status": "complete",
+                        "best_epoch": member.best_epoch,
+                        "epochs_ran": member.epochs_ran,
+                    },
+                )
+        members = tuple(fitted_members)
+        if progress is not None:
+            progress(
+                "polymarket_mlp_reproducibility",
+                {"seed": POLYMARKET_MLP_SEEDS[0], "status": "started"},
+            )
         repeated = _fit_member(
             torch,
             device,
@@ -947,10 +1022,16 @@ def fit_and_evaluate_polymarket_mlp(
             training_weights=weights,
             validation_features=standardized_validation,
             validation_labels=validation_y,
+            progress=progress,
+            run_kind="reproducibility",
         )
     fallback = _fallback_messages([str(item.message) for item in caught])
     if fallback:
         raise RuntimeError(f"Polymarket MLP training used CPU fallback: {fallback}")
+    backend_evidence = replace(
+        backend_evidence,
+        training_seconds=time.perf_counter() - training_started,
+    )
     first_probability = members[0].predict_standardized(standardized_validation)
     repeated_probability = repeated.predict_standardized(standardized_validation)
     reproducibility_drift = float(
@@ -960,6 +1041,15 @@ def fit_and_evaluate_polymarket_mlp(
         raise ValueError(
             "Polymarket MLP same-seed probability drift exceeds tolerance:"
             f"{reproducibility_drift:.9g}"
+        )
+    if progress is not None:
+        progress(
+            "polymarket_mlp_reproducibility",
+            {
+                "seed": POLYMARKET_MLP_SEEDS[0],
+                "status": "complete",
+                "maximum_probability_drift": reproducibility_drift,
+            },
         )
     provisional_ensemble = PolymarketMLPEnsemble(
         dataset_sha256=dataset.dataset_sha256,
@@ -1010,7 +1100,19 @@ def fit_and_evaluate_polymarket_mlp(
     )
     passed = [item for item in validation_evaluations if item.metrics.gate_passed]
     admitted = bool(passed) and validation_uplift.lower_95 > 0.0
+    if progress is not None:
+        progress(
+            "polymarket_mlp_validation",
+            {
+                "admitted_to_test": admitted,
+                "validation_log_loss": validation_loss,
+                "ridge_validation_log_loss": ridge_validation_loss,
+                "log_loss_uplift_lower_95": validation_uplift.lower_95,
+            },
+        )
     if admitted:
+        if progress is not None:
+            progress("polymarket_mlp_test", {"status": "started"})
         selected_validation = max(
             passed,
             key=lambda item: (
@@ -1090,6 +1192,18 @@ def fit_and_evaluate_polymarket_mlp(
                 test_reasons.append(f"test_asset_utility_below_ridge:{asset}")
         if test_uplift.lower_95 <= 0.0:
             test_reasons.append("test_utility_bootstrap_lower_not_positive")
+        if progress is not None:
+            progress(
+                "polymarket_mlp_test",
+                {
+                    "status": "complete",
+                    "test_log_loss": test_loss,
+                    "test_stress_utility_quote": (
+                        test_metrics.aggregate_stress_utility_quote
+                    ),
+                    "gate_reason_count": len(test_reasons),
+                },
+            )
     provisional = PolymarketMLPReport(
         dataset_sha256=dataset.dataset_sha256,
         parent_ridge_report_sha256=parent.report_sha256,
@@ -1277,6 +1391,12 @@ def materialize_polymarket_mlp_report(
             }
         ),
     )
+    runtime_json = _canonical_json(report.ensemble.backend.asdict())
+    runtime_row = (
+        report.report_sha256,
+        _sha256(report.ensemble.backend.asdict()),
+        runtime_json,
+    )
     connection = store.connect()
     connection.execute(
         """
@@ -1302,6 +1422,12 @@ def materialize_polymarket_mlp_report(
             epochs_ran INTEGER NOT NULL,
             model_json VARCHAR NOT NULL,
             PRIMARY KEY(report_sha256, seed)
+        );
+        CREATE TABLE IF NOT EXISTS polymarket_mlp_runtime_evidence (
+            report_sha256 VARCHAR NOT NULL,
+            runtime_sha256 VARCHAR NOT NULL,
+            backend_json VARCHAR NOT NULL,
+            PRIMARY KEY(report_sha256, runtime_sha256)
         );
         CREATE TABLE IF NOT EXISTS polymarket_mlp_epoch (
             report_sha256 VARCHAR NOT NULL,
@@ -1402,6 +1528,20 @@ def materialize_polymarket_mlp_report(
             ).fetchall()
             if [tuple(row) for row in rows] != sorted(expected, key=sort_key):
                 raise ValueError(f"stored {table} rows are inconsistent")
+        stored_runtime = connection.execute(
+            """
+            SELECT backend_json FROM polymarket_mlp_runtime_evidence
+            WHERE report_sha256 = ? AND runtime_sha256 = ?
+            """,
+            runtime_row[:2],
+        ).fetchone()
+        if stored_runtime is None:
+            connection.execute(
+                "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
+                runtime_row,
+            )
+        elif str(stored_runtime[0]) != runtime_json:
+            raise ValueError("stored Polymarket MLP runtime evidence is inconsistent")
         status = "existing"
     else:
         connection.execute("BEGIN TRANSACTION")
@@ -1409,6 +1549,10 @@ def materialize_polymarket_mlp_report(
             connection.execute(
                 "INSERT INTO polymarket_mlp_report VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 report_row,
+            )
+            connection.execute(
+                "INSERT INTO polymarket_mlp_runtime_evidence VALUES (?, ?, ?)",
+                runtime_row,
             )
             for table, rows, _ordering, _sort_key in tables:
                 if rows:

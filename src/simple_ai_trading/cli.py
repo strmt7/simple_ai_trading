@@ -6531,6 +6531,20 @@ def command_polymarket_ridge(args: argparse.Namespace) -> int:
 def command_polymarket_mlp(args: argparse.Namespace) -> int:
     """Fit and persist the preregistered nonlinear action challenger."""
 
+    started = time.monotonic()
+
+    def progress(phase: str, payload: Mapping[str, object]) -> None:
+        details = " ".join(
+            f"{key}={value}" for key, value in sorted(payload.items())
+        )
+        print(
+            "polymarket-mlp-progress: "
+            f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
+            + (f" {details}" if details else ""),
+            file=sys.stderr,
+            flush=True,
+        )
+
     try:
         with PolymarketEvidenceStore(
             Path(args.database),
@@ -6545,6 +6559,7 @@ def command_polymarket_mlp(args: argparse.Namespace) -> int:
                 dataset,
                 parent,
                 compute_backend=str(args.compute_backend),
+                progress=progress,
             )
             materialization = materialize_polymarket_mlp_report(
                 store,

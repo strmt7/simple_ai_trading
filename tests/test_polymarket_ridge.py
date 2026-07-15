@@ -269,15 +269,21 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
 ) -> None:
     dataset = _dataset(90)
     parent = fit_and_evaluate_polymarket_ridge(dataset)
+    progress: list[tuple[str, dict[str, object]]] = []
 
     report = fit_and_evaluate_polymarket_mlp(
         dataset,
         parent,
         compute_backend="cpu",
+        progress=lambda phase, payload: progress.append((phase, dict(payload))),
     )
 
     assert tuple(item.seed for item in report.ensemble.members) == POLYMARKET_MLP_SEEDS
     assert report.ensemble.backend.kind == "cpu"
+    assert "preflight_seconds" in report.ensemble.backend.asdict()
+    assert "training_seconds" in report.ensemble.backend.asdict()
+    assert "preflight_seconds" not in report.ensemble.identity_payload()["backend"]
+    assert "training_seconds" not in report.ensemble.identity_payload()["backend"]
     assert report.ensemble.reproducibility_max_probability_drift <= 0.00001
     assert report.validation_log_loss < report.ridge_validation_log_loss
     assert report.test_evaluated
@@ -286,9 +292,20 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
     assert report.asdict()["foundation_ai_authorized"] is False
     assert report.asdict()["profitability_claim"] is False
     assert report.asdict()["trading_authority"] is False
+    assert {phase for phase, _payload in progress} >= {
+        "polymarket_mlp_preflight",
+        "polymarket_mlp_seed",
+        "polymarket_mlp_epoch",
+        "polymarket_mlp_reproducibility",
+        "polymarket_mlp_validation",
+        "polymarket_mlp_test",
+    }
     with PolymarketEvidenceStore(tmp_path / "mlp.duckdb") as store:
         created = materialize_polymarket_mlp_report(store, dataset, parent, report)
         existing = materialize_polymarket_mlp_report(store, dataset, parent, report)
+        runtime_count = store.connect().execute(
+            "SELECT count(*) FROM polymarket_mlp_runtime_evidence"
+        ).fetchone()[0]
         store.connect().execute(
             """
             UPDATE polymarket_mlp_prediction SET probability = 0.123
@@ -301,6 +318,7 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
 
     assert created.status == "created"
     assert existing.status == "existing"
+    assert runtime_count == 1
     assert created.validation_prediction_count > 0
     assert created.test_prediction_count > 0
     monkeypatch.setattr(
