@@ -33,7 +33,7 @@
     },
     "threshold_selection": "Among validation thresholds with at least 30 sequential completed trades overall and five per asset, positive aggregate stress utility, positive median market PnL, and no filled-entry/failed-exit event, select the highest Wilson lower bound for positive-complete precision; ties select the higher threshold. If none pass, select no_trade."
   },
-  "contract_sha256": "af9c70ca1283748e4ee5f379bf2b179925f37ac4c757c4982487fdbc6bc504de",
+  "contract_sha256": "3b31a9204e6c618bd936a6f9437c0d497d7542d9802f7eea935e4e35ac9f9312",
   "data_contract": {
     "allowed_assets": [
       "BTC",
@@ -65,6 +65,8 @@
     "fees": "Walk displayed depth and charge the recorded V2 feeSchedule at every matched level on both legs, rounded conservatively to five USDC decimals. No rebate, midpoint, hidden depth, partial-fill, or last-trade credit.",
     "final_window": "Both entry and exit targets must be at least 30 seconds before market end.",
     "inventory": "Unlike the Round 8 ceiling, no prepositioned-inventory assumption may turn an unowned outcome into a sellable position.",
+    "limits_and_active_tick": "Create the BUY at 1 minus the latest active tick and the SELL at the latest active tick. Each exact limit must be valid under both its same-segment creation book and first post-target execution-confirmation book; tick drift rejects the leg.",
+    "order_creation_books": "Use the latest locally received same-token, same-connection-segment book at or before each order-creation target. It must be no older than 500 ms on the monotonic clock. Future, stale, cross-segment, midpoint, and last-trade creation prices are prohibited.",
     "parameters": "Recorded tick size, minimum size, itode taker delay, minimum order age, and V2 fee schedule are required at simulated arrival. Unknown never means zero.",
     "primary_holding_period_ms": 1000,
     "primary_local_submission_latency_ms": 500
@@ -147,7 +149,7 @@
     "test_fraction": 0.2,
     "validation_fraction": 0.2
   },
-  "status": "frozen_before_any_round_9_decision_label_model_fit_or_model_score_was_computed",
+  "status": "amended_for_explicit_creation_book_and_active_tick_semantics_then_refrozen_before_any_round_9_decision_label_model_fit_or_model_score_was_computed",
   "truth_constraints": {
     "current_edge_established": false,
     "current_long_capture_confirmatory": false,
