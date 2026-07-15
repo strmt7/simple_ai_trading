@@ -113,6 +113,7 @@ from .polymarket_features import (
     materialize_polymarket_feature_dataset,
 )
 from .polymarket_recorder import PolymarketEvidenceStore, PolymarketPublicRecorder
+from .polymarket_resolution import PolymarketResolutionFinalizer
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
     EntryRiskDecision,
@@ -436,6 +437,28 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_record.add_argument("--json", action="store_true")
     parser_polymarket_record.set_defaults(func=command_polymarket_record)
+
+    parser_polymarket_resolve = subparsers.add_parser(
+        "polymarket-resolve",
+        help="finalize BTC/ETH/SOL 5-minute paper labels from official public sources",
+        description=(
+            "Persist an outcome only after the official CLOB and Gamma APIs are both "
+            "terminal and agree exactly. This command never authenticates or places "
+            "an order."
+        ),
+    )
+    parser_polymarket_resolve.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_resolve.add_argument("--run-id", default=None)
+    parser_polymarket_resolve.add_argument("--wait-seconds", type=int, default=0)
+    parser_polymarket_resolve.add_argument(
+        "--poll-interval-seconds", type=int, default=15
+    )
+    parser_polymarket_resolve.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_resolve.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_resolve.add_argument("--json", action="store_true")
+    parser_polymarket_resolve.set_defaults(func=command_polymarket_resolve)
 
     parser_polymarket_features = subparsers.add_parser(
         "polymarket-features",
@@ -5796,6 +5819,67 @@ def command_polymarket_record(args: argparse.Namespace) -> int:
         print(f"report_sha256: {report.report_sha256}")
         for error in (*report.errors, *report.integrity_errors):
             print(f"error: {error}", file=sys.stderr)
+    return 0 if report.status == "complete" else 2
+
+
+def command_polymarket_resolve(args: argparse.Namespace) -> int:
+    """Persist independently cross-checked official outcomes for paper evidence."""
+
+    wait_seconds = int(args.wait_seconds)
+    poll_seconds = int(args.poll_interval_seconds)
+    if wait_seconds < 0 or wait_seconds > 3_600:
+        print("polymarket-resolve failed: --wait-seconds must lie in [0, 3600]", file=sys.stderr)
+        return 2
+    if poll_seconds < 1 or poll_seconds > 300:
+        print(
+            "polymarket-resolve failed: --poll-interval-seconds must lie in [1, 300]",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            selected = str(getattr(args, "run_id", None) or "").strip()
+            if not selected:
+                row = store.connect().execute(
+                    """
+                    SELECT run_id FROM polymarket_recorder_run
+                    WHERE status IN ('complete', 'degraded')
+                    ORDER BY ended_at_ms DESC, run_id DESC LIMIT 1
+                    """
+                ).fetchone()
+                if row is None:
+                    raise ValueError("no finished Polymarket recorder run is available")
+                selected = str(row[0])
+            finalizer = PolymarketResolutionFinalizer(store)
+            deadline = time.monotonic() + wait_seconds
+            while True:
+                report = finalizer.finalize(run_id=selected)
+                remaining = deadline - time.monotonic()
+                if report.status == "complete" or remaining <= 0:
+                    break
+                time.sleep(min(float(poll_seconds), remaining))
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-resolve failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-resolve: "
+            f"status={report.status} run={report.run_id} "
+            f"finalized={report.finalized_count}/{report.market_count} "
+            f"new={report.newly_finalized_count}"
+        )
+        for condition_id in report.pending_condition_ids:
+            print(f"pending: {condition_id}")
     return 0 if report.status == "complete" else 2
 
 

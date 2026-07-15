@@ -413,6 +413,16 @@ inline constexpr CommandOptionSpec kOptions_polymarket_record[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_resolve[] = {
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
+    {L"--wait-seconds", L"wait_seconds", L"", L"0", L"", L"1", false, true, false},
+    {L"--poll-interval-seconds", L"poll_interval_seconds", L"", L"15", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_positions[] = {
     {L"--stats", L"stats", L"", L"false", L"also print realized + unrealized stats", L"0", false, false, false},
     {L"--learning", L"learning", L"", L"false", L"also print bounded post-trade learning feedback", L"0", false, false, false},
@@ -838,6 +848,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one complete prospective Polymarket recorder run. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 8},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a complete prospective Polymarket recorder run. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 13},
     {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 7},
+    {L"polymarket-resolve", L"Persist an outcome only after the official CLOB and Gamma APIs are both terminal and agree exactly. This command never authenticates or places an order.", kOptions_polymarket_resolve, 7},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
     {L"reconcile", L"usage: simple-ai-trading reconcile [-h] [--json] [--output OUTPUT]                                    [--quantity-tolerance QUANTITY_TOLERANCE]", kOptions_reconcile, 3},

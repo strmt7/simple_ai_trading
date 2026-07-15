@@ -191,3 +191,14 @@ def test_discovery_batches_all_assets_and_never_uses_precompiled_market_ids() ->
     assert timeout == 3
     assert sum(1 for key, _ in params if key == "slug") == 6
     assert ("closed", "false") in params
+
+
+def test_public_client_uses_official_full_market_resolution_endpoints() -> None:
+    condition_id = "0x" + "7" * 64
+    session = _Session({"condition_id": condition_id})
+    client = PolymarketPublicClient(session=session, timeout_seconds=3)
+
+    assert client.clob_market(condition_id) == {"condition_id": condition_id}
+    assert session.calls[-1][0] == f"https://clob.polymarket.com/markets/{condition_id}"
+    assert client.gamma_market("1001") == {"condition_id": condition_id}
+    assert session.calls[-1][0] == f"{GAMMA_MARKETS_URL}/1001"

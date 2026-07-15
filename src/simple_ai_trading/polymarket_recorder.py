@@ -361,6 +361,26 @@ class PolymarketEvidenceStore:
                 reason VARCHAR NOT NULL,
                 last_sequence_number UBIGINT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS polymarket_resolution_evidence (
+                resolution_id VARCHAR PRIMARY KEY,
+                run_id VARCHAR NOT NULL,
+                schema_version VARCHAR NOT NULL,
+                condition_id VARCHAR NOT NULL,
+                market_id VARCHAR NOT NULL,
+                asset VARCHAR NOT NULL,
+                observed_wall_ms BIGINT NOT NULL,
+                observed_monotonic_ns UBIGINT NOT NULL,
+                winning_asset_id VARCHAR NOT NULL,
+                winning_outcome VARCHAR NOT NULL,
+                clob_payload_json VARCHAR NOT NULL,
+                clob_payload_sha256 VARCHAR NOT NULL,
+                gamma_payload_json VARCHAR NOT NULL,
+                gamma_payload_sha256 VARCHAR NOT NULL,
+                evidence_payload_json VARCHAR NOT NULL,
+                evidence_sha256 VARCHAR NOT NULL,
+                UNIQUE(run_id, condition_id)
+            );
             """
         )
 
