@@ -279,9 +279,11 @@ class PolymarketEvidenceStore:
         self.read_only = read_only
         self.connection: duckdb.DuckDBPyConnection | None = None
         self.paper_journal: PaperOrderJournal | None = None
-        # A read-only DuckDB connection observes one immutable file state. Cache
-        # its full row-hash audit so feature and execution replay do not rescan it.
-        self._read_only_integrity_cache: dict[str, tuple[str, ...]] = {}
+        # Terminal recorder tables are immutable through this API. Cache only
+        # their full row-hash audit; mutable paper-journal checks always rerun.
+        self._terminal_evidence_integrity_cache: dict[
+            str, tuple[str, tuple[str, ...]]
+        ] = {}
 
     def connect(self) -> duckdb.DuckDBPyConnection:
         if self.connection is None:
@@ -311,7 +313,7 @@ class PolymarketEvidenceStore:
             self.connection.close()
             self.connection = None
             self.paper_journal = None
-            self._read_only_integrity_cache.clear()
+            self._terminal_evidence_integrity_cache.clear()
 
     def __enter__(self) -> "PolymarketEvidenceStore":
         self.connect()
@@ -455,7 +457,40 @@ class PolymarketEvidenceStore:
             [run_id, POLYMARKET_RECORDER_SCHEMA_VERSION, int(started_at_ms)],
         )
 
+    def _require_running_run(self, run_id: str) -> None:
+        row = self.connect().execute(
+            "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
+            [run_id],
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"unknown Polymarket recorder run: {run_id}")
+        if str(row[0]) != "running":
+            raise ValueError("terminal Polymarket recorder evidence is immutable")
+
+    def _terminal_evidence_fingerprint(self, run_id: str) -> str:
+        row = self.connect().execute(
+            """
+            SELECT r.schema_version, r.status, r.started_at_ms, r.ended_at_ms,
+                   r.report_json, r.report_sha256, r.error,
+                   (SELECT count(*) FROM polymarket_market_snapshot WHERE run_id = ?),
+                   (SELECT count(*) FROM polymarket_raw_message WHERE run_id = ?),
+                   (SELECT count(*) FROM polymarket_public_event WHERE run_id = ?),
+                   (SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?)
+            FROM polymarket_recorder_run AS r WHERE r.run_id = ?
+            """,
+            [run_id, run_id, run_id, run_id, run_id],
+        ).fetchone()
+        return _canonical_sha256(
+            {
+                "run_id": run_id,
+                "terminal_metadata_and_counts": None
+                if row is None
+                else [None if value is None else str(value) for value in row],
+            }
+        )
+
     def record_market_evidence(self, run_id: str, evidence: MarketEvidence) -> str:
+        self._require_running_run(run_id)
         market = evidence.market
         _validated_canonical_payload(
             "Gamma market", market.gamma_payload_json, market.gamma_payload_sha256
@@ -569,6 +604,7 @@ class PolymarketEvidenceStore:
     ) -> None:
         if not messages:
             return
+        self._require_running_run(run_id)
         for start in range(0, len(messages), _WRITER_BATCH_SIZE):
             self._append_message_batch(
                 run_id,
@@ -686,6 +722,7 @@ class PolymarketEvidenceStore:
         return raw_row, tuple(event_rows)
 
     def record_gap(self, run_id: str, gap: StreamGap) -> str:
+        self._require_running_run(run_id)
         gap = gap.validated()
         payload = {
             "run_id": run_id,
@@ -940,8 +977,14 @@ class PolymarketEvidenceStore:
         return report
 
     def integrity_errors(self, run_id: str) -> tuple[str, ...]:
-        if self.read_only and run_id in self._read_only_integrity_cache:
-            return self._read_only_integrity_cache[run_id]
+        cached = self._terminal_evidence_integrity_cache.get(run_id)
+        if cached is not None and cached[0] == self._terminal_evidence_fingerprint(
+            run_id
+        ):
+            errors = list(cached[1])
+            if self.paper_journal is not None:
+                errors.extend(self.paper_journal.integrity_errors())
+            return tuple(errors)
         connection = self.connect()
         errors: list[str] = []
         run_row = connection.execute(
@@ -955,7 +998,10 @@ class PolymarketEvidenceStore:
         if run_row is None:
             result = (f"missing_recorder_run:{run_id}",)
             if self.read_only:
-                self._read_only_integrity_cache[run_id] = result
+                self._terminal_evidence_integrity_cache[run_id] = (
+                    self._terminal_evidence_fingerprint(run_id),
+                    result,
+                )
             return result
         run_schema, run_status, run_started, run_ended, report_json, report_sha = run_row
         parsed_report: Mapping[str, object] | None = None
@@ -1172,12 +1218,15 @@ class PolymarketEvidenceStore:
                     errors.append(
                         f"recorder_snapshot_outside_run:{run_id}:{out_of_window_snapshots}"
                     )
+        evidence_result = tuple(errors)
+        if str(run_status) != "running":
+            self._terminal_evidence_integrity_cache[run_id] = (
+                self._terminal_evidence_fingerprint(run_id),
+                evidence_result,
+            )
         if self.paper_journal is not None:
             errors.extend(self.paper_journal.integrity_errors())
-        result = tuple(errors)
-        if self.read_only:
-            self._read_only_integrity_cache[run_id] = result
-        return result
+        return tuple(errors)
 
 
 def _snapshot_integrity_errors(row: Sequence[object]) -> tuple[str, ...]:
