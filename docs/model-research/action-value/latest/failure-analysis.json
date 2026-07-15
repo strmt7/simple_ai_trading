@@ -1,39 +1,50 @@
 {
-  "schema_version": "round-058-two-sided-maker-feasibility-analysis-v1",
-  "round": 58,
-  "source_report_sha256": "46da40b3ddd8818ebfd45ea0d8a1cec260e88354d6b952fbdc9b2e0d1a2c2bdd",
-  "status": "rejected_posthoc_feasibility",
+  "schema_version": "round-059-funding-persistence-failure-analysis-v1",
+  "round": 59,
+  "source_report_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0",
+  "status": "rejected_funding_persistence_support",
   "selection_contaminated": true,
   "facts": {
-    "observed_utc_days": 1,
-    "eligible_decisions": 25709,
-    "both_fill_rows": 737,
-    "singleton_rows": 10481,
-    "symbols_with_p99_spread_above_prior_fee_reference": 0,
-    "symbols_with_p99_spread_above_prior_base_cost_reference": 0,
-    "returns_read": false,
-    "costs_read_by_probe": false,
-    "pnl_read": false,
-    "model_trained": false,
-    "policy_selected": false,
-    "ai_evaluated": false
+    "symbol_cells": 27,
+    "passing_symbol_cells": 0,
+    "breadth_cells": 9,
+    "passing_breadth_cells": 0,
+    "ordinary_positive_trigger_7d_mean_gross_bps": {
+      "BTCUSDT": 14.840630386740056,
+      "ETHUSDT": 14.178820994474943,
+      "SOLUSDT": -5.970615697675038
+    },
+    "elevated_trigger_7d_episode_counts": {
+      "BTCUSDT": 20,
+      "ETHUSDT": 20,
+      "SOLUSDT": 25
+    },
+    "elevated_trigger_7d_lower_95_stress_reference_bps": {
+      "BTCUSDT": -1.7996831250004637,
+      "ETHUSDT": 2.0236946249996284,
+      "SOLUSDT": -1.2557786000012354
+    },
+    "minimum_required_episodes_per_symbol": 40,
+    "spot_history_ingestion_authorized": false,
+    "price_or_basis_rows_read": false,
+    "model_or_ai_evaluated": false
   },
   "decision": [
-    "Do not train or promote a symmetric best-bid/best-ask touch-making policy under the prior frozen retail cost reference.",
-    "All three symbols had a 99th-percentile two-fill placement spread below the prior 4 bps round-trip fee reference.",
-    "One-sided fills were materially more common than two-sided completions, leaving unresolved inventory exposure."
+    "Do not ingest the multi-year spot corpus or train a basis/funding model under this evidence.",
+    "Ordinary positive funding did not amortize the frozen four-leg cost references over seven days.",
+    "The >=2 bps trigger had positive mean seven-day support after the stress reference, but only 20/20/25 episodes and nonpositive lower confidence support for BTC and SOL."
   ],
-  "retained_infrastructure": [
-    "Checksum-bound official event ingestion and the queue-censored fill simulator remain useful execution infrastructure.",
-    "Any future passive strategy needs a separately frozen economic mechanism and untouched evidence."
+  "retained_hypothesis": [
+    "Elevated funding may warrant a separately frozen full-available-history funding-only replication with the same thresholds and gates.",
+    "No gate may be relaxed using these consumed outcomes."
   ],
   "prohibited_inferences": [
     "profitability",
+    "basis neutrality",
     "AI uplift",
     "testnet readiness",
     "live trading readiness",
-    "leverage readiness",
-    "performance across other dates or regimes"
+    "leverage readiness"
   ],
-  "analysis_sha256": "0f316a25ad10e42215c9d39c2aa71a1ce469b385587c627ed6472fb8a7dcb708"
+  "analysis_sha256": "08101cd25682ab352c874f195c5c7e023d52797410cda1d3fef52815afb83641"
 }

@@ -1,20 +1,23 @@
 {
-  "schema_version": "round-058-two-sided-maker-feasibility-publication-v1",
-  "round": 58,
-  "publisher_path": "tools/publish_round58_two_sided_maker_feasibility.py",
+  "schema_version": "round-059-funding-persistence-feasibility-publication-v1",
+  "round": 59,
+  "publisher_path": "tools/publish_round59_funding_persistence_feasibility.py",
   "source": {
-    "report_file": "round58-two-sided-support-20260715.json",
-    "report_file_sha256": "0471f049129ba58556c50412c0681f425faaf25696657ac45f92afd94810d18e",
-    "report_canonical_sha256": "46da40b3ddd8818ebfd45ea0d8a1cec260e88354d6b952fbdc9b2e0d1a2c2bdd",
-    "cost_reference_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-contract.json",
-    "cost_reference_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
-    "implementation_commit": "58aa5a52b8fd8bde2a329fbf8d49841d96405a0a",
-    "probe_path": "tools/probe_round58_two_sided_maker_support.py",
-    "probe_git_blob_oid": "adef23780ae6a682a4434e30f21b8e82ab55857c"
+    "report_file": "round59-funding-persistence-20260715-v1.json",
+    "report_file_sha256": "f99843b7998a9bc473f7c8d8c80c52a8e718e7729e5d9896263bdfe01538d14e",
+    "report_canonical_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0",
+    "design_path": "docs/model-research/action-value/round-059-funding-persistence-feasibility-design.json",
+    "design_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
+    "source_certificate_file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "implementation_commit": "c263fbd525f85a6cef86c1e8930d09844927a3d6",
+    "runner_path": "tools/run_round59_funding_persistence_feasibility.py",
+    "runner_git_blob_oid": "78a8dde241e6c6568de75e3d46a6f99cceff4263"
   },
   "claims": {
-    "status": "rejected_posthoc_feasibility",
+    "status": "rejected_funding_persistence_support",
     "selection_contaminated": true,
+    "spot_history_ingestion_authorized": false,
     "profitability_claim": false,
     "ai_uplift_claim": false,
     "trading_authority": false,
@@ -24,85 +27,77 @@
     "performance_claim": false
   },
   "result": {
-    "observed_utc_days": 1,
-    "eligible_decisions": 25709,
-    "both_fill_rows": 737,
-    "singleton_rows": 10481,
-    "symbols_with_p99_spread_above_prior_fee_reference": 0,
-    "symbols_with_p99_spread_above_prior_base_cost_reference": 0,
-    "prior_frozen_fee_reference_bps": 4.0,
-    "prior_frozen_base_cost_reference_bps": 6.0,
-    "model_trained": false,
-    "policy_selected": false,
-    "economic_replay_performed": false,
-    "ai_ablation_performed": false
+    "symbol_cells": 27,
+    "breadth_cells": 9,
+    "passing_breadth_cells": 0,
+    "spot_history_ingestion_authorized": false
   },
   "artifacts": [
     {
-      "path": "charts/inventory-exposure.svg",
-      "bytes": 6567,
-      "sha256": "31add07e8ccdffee2a9eaa8cfe8db75a10bde6e10409cc426c696b8d7fa3b788"
+      "path": "breadth-gates.csv",
+      "bytes": 683,
+      "sha256": "40eb32940d14d112c1f0cbc18ef9243e9cf8f5fb0858806a0dff9e00aa57a0bc"
     },
     {
-      "path": "charts/joint-fill-support.svg",
-      "bytes": 4906,
-      "sha256": "3d3fb47b814e660d04538ba0cbad7432fd536b92a6a1d930d346a50dd360de26"
+      "path": "charts/elevated-funding-support.svg",
+      "bytes": 5065,
+      "sha256": "193757f8ba61a3da14bf344201950efd7a21de70024af200a6eddb7ad1732706"
+    },
+    {
+      "path": "charts/funding-sign-persistence.svg",
+      "bytes": 4153,
+      "sha256": "7f74a767e48104bdd057e7fcd38394b992947463b63fc46cac9b298994067502"
     },
     {
       "path": "charts/research-progress.svg",
-      "bytes": 5302,
-      "sha256": "1947597a0bc0f6875c8dbacbb3145ccd8edf0ef0a2228193846734a36fdb1064"
+      "bytes": 5280,
+      "sha256": "3311e1436d14dfc43d5adf5ce586bfc90cd5d0cbd6e58352ea8c59efabfe9e2d"
     },
     {
-      "path": "charts/spread-feasibility.svg",
-      "bytes": 6580,
-      "sha256": "95b32cbe1d5501fd65bf658504fe241a85fe37dc00a2c9bffec7e7760ecd9301"
+      "path": "charts/seven-day-gross-carry.svg",
+      "bytes": 6699,
+      "sha256": "bd1c156977b906fb435e89fe3b08a68aacbc1bd269bbb3d3f1a41b4e15d26688"
     },
     {
       "path": "failure-analysis.json",
-      "bytes": 1632,
-      "sha256": "b6eb36ad28b447c0ab181ec7434355423caa47f4f282132daeda3a825091b983"
+      "bytes": 1927,
+      "sha256": "b9e3c895cc372b00c40cd1295f8069941db30ca17b179b4029b459faa1a4bdac"
     },
     {
-      "path": "fill-bucket-cross.csv",
-      "bytes": 3086,
-      "sha256": "236009722f341a71a513460f065adeb3f57f3b2f6b710d0fd931861c4b86171e"
-    },
-    {
-      "path": "inventory-exposure.csv",
-      "bytes": 497,
-      "sha256": "f8488ef8c1b06a3494c74605754223e6cf1f270c9359becc6447fafa4a2f81ac"
-    },
-    {
-      "path": "joint-fill-support.csv",
-      "bytes": 619,
-      "sha256": "3523a0ba823fa04b7d23f547050f4136ac6397bf7be14ce7b3a219ae95c76c4a"
+      "path": "funding-cells.csv",
+      "bytes": 14838,
+      "sha256": "09c896bae7c30a8ed5dd395f983e8ed31fdfaaa77efed68dbe3aec84df14416e"
     },
     {
       "path": "progress.csv",
-      "bytes": 21602,
-      "sha256": "67fd6d109189ffc600f16e29b2761be5f8e1a9b66888b6e3d9e815e88efa002f"
+      "bytes": 22082,
+      "sha256": "edcfb2f115968a24552d0aa11d6d4f0ea27e8cb69e35ec7c6b4b5b078e8a7d58"
     },
     {
       "path": "README.md",
-      "bytes": 3124,
-      "sha256": "5ce88189fb532945d2391bdc56bafae139a379d8f7486922016cf35a3b2258fc"
+      "bytes": 3238,
+      "sha256": "8b3dff4ed38c2432dd40b9afcbf62a2f40bcd06b8bd45c9f467ad0e9a86ef6df"
     },
     {
       "path": "screen.json",
-      "bytes": 23604,
-      "sha256": "0471f049129ba58556c50412c0681f425faaf25696657ac45f92afd94810d18e"
+      "bytes": 65671,
+      "sha256": "f99843b7998a9bc473f7c8d8c80c52a8e718e7729e5d9896263bdfe01538d14e"
+    },
+    {
+      "path": "sign-persistence.csv",
+      "bytes": 371,
+      "sha256": "3d34fe225e5bc925a135f4f0a8665fe343c1cb7c8e356fd51d20f8dcfa9879f2"
+    },
+    {
+      "path": "source-certificate.json",
+      "bytes": 4575,
+      "sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7"
     },
     {
       "path": "source-coverage.csv",
-      "bytes": 1733,
-      "sha256": "50b637f0bdb3375637813f0cb66e5b11fae36328f8cdd62e93e2d8318fd4b775"
-    },
-    {
-      "path": "spread-feasibility.csv",
-      "bytes": 648,
-      "sha256": "8172721125c338402b3dcd74dadbfb3ebd5ab3bd76b049693034ee75955ebd09"
+      "bytes": 924,
+      "sha256": "43411e1369ddd6cbc9d56f17f98b5a25449d8506b5bb363b4efe6ac33dc074fc"
     }
   ],
-  "publication_canonical_sha256": "34ddf6199703e6769e184772da4638906a036df1aac667628fa172c1ba675cc4"
+  "publication_canonical_sha256": "2b0e3a12134ba181e2663b5df8a8ddede787d116aa2b32e81545fa2ab41b7798"
 }
