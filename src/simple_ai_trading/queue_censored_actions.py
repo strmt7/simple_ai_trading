@@ -510,7 +510,7 @@ def build_passive_fill_result(
 
     provisional = PassiveFillResult(
         schema_version=PASSIVE_FILL_SCHEMA_VERSION,
-        buyer_is_maker=buyer_is_maker,
+        buyer_is_maker=bool(buyer_is_maker),
         expiry_ms=expiry,
         order_notional_quote=notional,
         source_trade_sha256=source_trade_sha256,
