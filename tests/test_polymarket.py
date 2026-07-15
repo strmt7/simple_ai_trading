@@ -133,6 +133,12 @@ def test_clob_market_info_must_match_gamma_tokens_tick_and_fee() -> None:
     with pytest.raises(ValueError, match="order parameters drifted"):
         validate_clob_market_info(market, drifted)
 
+    for field in ("mbf", "tbf", "oas"):
+        invalid = deepcopy(payload)
+        invalid[field] = 1.5
+        with pytest.raises(ValueError, match="nonnegative integer"):
+            validate_clob_market_info(market, invalid)
+
 
 def test_clob_book_normalizes_raw_order_without_inventing_depth() -> None:
     market = parse_polymarket_five_minute_market(_market())
