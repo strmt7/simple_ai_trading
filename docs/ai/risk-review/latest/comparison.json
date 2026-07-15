@@ -12,6 +12,15 @@
       "reasoning_or_risk_review": true
     },
     {
+      "family": "qwen3.5",
+      "finance_specialized": false,
+      "local_priority": 95,
+      "model": "qwen3.5:9b",
+      "model_parameters_b": 9.0,
+      "notes": "newer 9B local structured-output challenger; must clear the full adversarial risk gate and paired uplift before selection",
+      "reasoning_or_risk_review": true
+    },
+    {
       "family": "deepseek-r1",
       "finance_specialized": false,
       "local_priority": 90,
@@ -41,10 +50,10 @@
     {
       "family": "fin-r1",
       "finance_specialized": true,
-      "local_priority": 58,
-      "model": "fin-r1:7b",
-      "model_parameters_b": 7.0,
-      "notes": "finance-reasoning local alias candidate; must be locally served, benchmarked, and prove uplift",
+      "local_priority": 92,
+      "model": "fin-r1:8b",
+      "model_parameters_b": 8.0,
+      "notes": "7.62B Q6 finance-reasoning candidate installed on this host; must pass adversarial risk review and paired uplift",
       "reasoning_or_risk_review": true
     },
     {
