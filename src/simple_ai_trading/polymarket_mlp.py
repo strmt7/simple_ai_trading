@@ -36,13 +36,14 @@ POLYMARKET_MLP_CONTRACT_SHA256 = (
     "a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2"
 )
 POLYMARKET_MLP_MODEL_SCHEMA_VERSION = "polymarket-round9-causal-mlp-model-v1"
-POLYMARKET_MLP_REPORT_SCHEMA_VERSION = "polymarket-round9-causal-mlp-report-v1"
+POLYMARKET_MLP_REPORT_SCHEMA_VERSION = "polymarket-round9-causal-mlp-report-v2"
 POLYMARKET_MLP_SEEDS = (4701, 4702, 4703)
 POLYMARKET_MLP_BATCH_SIZE = 4096
 POLYMARKET_MLP_MAX_EPOCHS = 200
 POLYMARKET_MLP_PATIENCE = 20
 POLYMARKET_MLP_MIN_DELTA = 0.000001
 POLYMARKET_MLP_BOOTSTRAP_SAMPLES = 2000
+POLYMARKET_MLP_MIN_TEST_GROUPS = 30
 POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE = 0.00001
 _FEATURE_COUNT = len(POLYMARKET_ACTION_FEATURE_NAMES)
 _MEMBER_PARAMETER_COUNT = 4673
@@ -321,6 +322,8 @@ class PolymarketMLPReport:
     ridge_validation_log_loss: float
     validation_log_loss_uplift: PolymarketMLPBootstrap
     validation_trials: tuple[PolymarketPolicyMetrics, ...]
+    validation_stress_utility_uplift_quote: float | None
+    validation_admission_reasons: tuple[str, ...]
     selected_policy: str
     selected_threshold: float | None
     test_evaluated: bool
@@ -344,6 +347,10 @@ class PolymarketMLPReport:
             "ridge_validation_log_loss": self.ridge_validation_log_loss,
             "validation_log_loss_uplift": self.validation_log_loss_uplift.asdict(),
             "validation_trials": [item.asdict() for item in self.validation_trials],
+            "validation_stress_utility_uplift_quote": (
+                self.validation_stress_utility_uplift_quote
+            ),
+            "validation_admission_reasons": list(self.validation_admission_reasons),
             "selected_policy": self.selected_policy,
             "selected_threshold": self.selected_threshold,
             "test_evaluated": self.test_evaluated,
@@ -378,6 +385,8 @@ class PolymarketMLPReport:
             or self.selected_policy not in {"causal_mlp", "no_trade"}
             or (self.selected_policy == "no_trade")
             != (self.selected_threshold is None)
+            or self.test_evaluated != (not self.validation_admission_reasons)
+            or self.test_evaluated != (self.selected_policy == "causal_mlp")
             or self.test_evaluated
             != (
                 self.test_log_loss is not None
@@ -388,6 +397,12 @@ class PolymarketMLPReport:
             != (self.test_evaluated and not self.test_gate_reasons)
             or not math.isfinite(self.validation_log_loss)
             or not math.isfinite(self.ridge_validation_log_loss)
+            or (
+                self.validation_stress_utility_uplift_quote is not None
+                and not math.isfinite(self.validation_stress_utility_uplift_quote)
+            )
+            or tuple(sorted(set(self.validation_admission_reasons)))
+            != self.validation_admission_reasons
             or not _is_sha256(self.report_sha256)
             or self.report_sha256 != _sha256(self.identity_payload())
         ):
@@ -1099,27 +1114,78 @@ def fit_and_evaluate_polymarket_mlp(
         for threshold in POLYMARKET_RIDGE_THRESHOLD_GRID
     )
     passed = [item for item in validation_evaluations if item.metrics.gate_passed]
-    admitted = bool(passed) and validation_uplift.lower_95 > 0.0
-    if progress is not None:
-        progress(
-            "polymarket_mlp_validation",
-            {
-                "admitted_to_test": admitted,
-                "validation_log_loss": validation_loss,
-                "ridge_validation_log_loss": ridge_validation_loss,
-                "log_loss_uplift_lower_95": validation_uplift.lower_95,
-            },
-        )
-    if admitted:
-        if progress is not None:
-            progress("polymarket_mlp_test", {"status": "started"})
-        selected_validation = max(
+    selected_validation = (
+        max(
             passed,
             key=lambda item: (
                 item.metrics.wilson_lower_bound_95,
                 float(item.metrics.threshold or 0.0),
             ),
         )
+        if passed
+        else None
+    )
+    ridge_validation_evaluation = evaluate_polymarket_policy(
+        dataset,
+        validation_indices,
+        ridge_validation_probability,
+        parent.selected_threshold,
+        require_asset_profit=False,
+    )
+    expected_ridge_validation = next(
+        (
+            item
+            for item in parent.validation_trials
+            if item.threshold == parent.selected_threshold
+        ),
+        None,
+    )
+    if (
+        expected_ridge_validation is None
+        or ridge_validation_evaluation.metrics.asdict()
+        != expected_ridge_validation.asdict()
+    ):
+        raise ValueError("Polymarket MLP parent validation policy replay differs")
+    validation_utility_uplift = (
+        None
+        if selected_validation is None
+        else (
+            selected_validation.metrics.aggregate_stress_utility_quote
+            - ridge_validation_evaluation.metrics.aggregate_stress_utility_quote
+        )
+    )
+    admission_reasons: list[str] = []
+    if selected_validation is None:
+        admission_reasons.append("no_validation_threshold_passed")
+    if validation_uplift.lower_95 <= 0.0:
+        admission_reasons.append("validation_log_loss_uplift_lower_not_positive")
+    if validation_utility_uplift is None or validation_utility_uplift <= 0.0:
+        admission_reasons.append("validation_stress_utility_not_above_ridge")
+    if len(expected_split.test_groups) < POLYMARKET_MLP_MIN_TEST_GROUPS:
+        admission_reasons.append(
+            "untouched_test_group_count:"
+            f"{len(expected_split.test_groups)}/{POLYMARKET_MLP_MIN_TEST_GROUPS}"
+        )
+    frozen_admission_reasons = tuple(sorted(set(admission_reasons)))
+    admitted = not frozen_admission_reasons
+    if progress is not None:
+        progress(
+            "polymarket_mlp_validation",
+            {
+                "admitted_to_test": admitted,
+                "admission_reasons": list(frozen_admission_reasons),
+                "validation_log_loss": validation_loss,
+                "ridge_validation_log_loss": ridge_validation_loss,
+                "log_loss_uplift_lower_95": validation_uplift.lower_95,
+                "stress_utility_uplift_quote": validation_utility_uplift,
+                "untouched_test_group_count": len(expected_split.test_groups),
+            },
+        )
+    if admitted:
+        if progress is not None:
+            progress("polymarket_mlp_test", {"status": "started"})
+        if selected_validation is None:
+            raise RuntimeError("Polymarket MLP admission state is inconsistent")
         selected_policy = "causal_mlp"
         selected_threshold = selected_validation.metrics.threshold
     else:
@@ -1213,6 +1279,8 @@ def fit_and_evaluate_polymarket_mlp(
         ridge_validation_log_loss=ridge_validation_loss,
         validation_log_loss_uplift=validation_uplift,
         validation_trials=tuple(item.metrics for item in validation_evaluations),
+        validation_stress_utility_uplift_quote=validation_utility_uplift,
+        validation_admission_reasons=frozen_admission_reasons,
         selected_policy=selected_policy,
         selected_threshold=selected_threshold,
         test_evaluated=admitted,
@@ -1580,6 +1648,7 @@ __all__ = [
     "POLYMARKET_MLP_BATCH_SIZE",
     "POLYMARKET_MLP_CONTRACT_SHA256",
     "POLYMARKET_MLP_MODEL_SCHEMA_VERSION",
+    "POLYMARKET_MLP_MIN_TEST_GROUPS",
     "POLYMARKET_MLP_REPORT_SCHEMA_VERSION",
     "POLYMARKET_MLP_SEEDS",
     "PolymarketMLPBackendEvidence",
