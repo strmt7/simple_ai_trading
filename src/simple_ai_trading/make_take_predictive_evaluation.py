@@ -12,8 +12,8 @@ import numpy as np
 
 from .make_take_action_features import MAKE_TAKE_ACTION_NAMES
 from .make_take_payoff_lightgbm import (
+    MakeTakePayoffLightGBMArtifact,
     MakeTakeConditionalPayoffPredictionBatch,
-    TrainedMakeTakePayoffLightGBMModel,
     predict_make_take_conditional_payoff_panel,
     validate_make_take_payoff_lightgbm_model,
 )
@@ -23,8 +23,8 @@ from .make_take_payoff_panel import (
     validate_make_take_conditional_payoff_panel,
 )
 from .queue_fill_lightgbm import (
+    QueueFillLightGBMArtifact,
     QueueFillPredictionBatch,
-    TrainedQueueFillLightGBMModel,
     predict_queue_fill_lightgbm_model,
     validate_queue_fill_lightgbm_model,
 )
@@ -439,8 +439,8 @@ def validate_make_take_predictive_evaluation(
 def build_make_take_predictive_evaluation(
     *,
     role: str,
-    fill_model: TrainedQueueFillLightGBMModel,
-    payoff_model: TrainedMakeTakePayoffLightGBMModel,
+    fill_model: QueueFillLightGBMArtifact,
+    payoff_model: MakeTakePayoffLightGBMArtifact,
     training_fill_panels: Sequence[PassiveFillSurvivalPanel],
     evaluation_fill_panels: Sequence[PassiveFillSurvivalPanel],
     training_payoff_panels: Sequence[MakeTakeConditionalPayoffPanel],
