@@ -12,7 +12,10 @@ import pytest
 from simple_ai_trading import cli
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
-from simple_ai_trading.polymarket_paper import PolymarketPaperBroker
+from simple_ai_trading.polymarket_paper import (
+    PolymarketPaperBroker,
+    PolymarketPaperCoordinator,
+)
 from simple_ai_trading.polymarket_features import (
     POLYMARKET_FEATURE_NAMES,
     PolymarketFeatureConfig,
@@ -1654,6 +1657,12 @@ def test_polymarket_broker_fails_closed_after_execution_observation_timeout(
         run_id="observation-timeout-run",
         maximum_execution_observation_delay_ms=1,
     ) as broker:
+        coordinator = PolymarketPaperCoordinator(
+            broker,
+            control_path=tmp_path / "observation-timeout-control.json",
+        )
+        coordinator.resume()
+        coordinator.require_open_allowed()
         decision = broker.replay.books[0]
         position, execution = broker.open_position(
             position_id="observation-timeout-position",
@@ -1672,11 +1681,15 @@ def test_polymarket_broker_fails_closed_after_execution_observation_timeout(
             """
         ).fetchone()
         reconciliation = broker.reconcile()
+        stop_report = coordinator.stop_all_positions(submission_latency_ms=5)
+        control = coordinator.status()
 
     assert position is None
     assert execution.state == "UNKNOWN"
     assert context == (5, 5, 1, "")
     assert reconciliation.can_open is False
+    assert stop_report.status == "STOPPING"
+    assert control["state"] == "STOPPING"
 
 
 def test_polymarket_broker_blocks_time_travel_and_context_tampering(tmp_path) -> None:
@@ -1963,12 +1976,69 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     status_payload = json.loads(capsys.readouterr().out)
     assert status_code == 0
     assert status_payload["reconciliation"]["can_open"] is True
+    assert status_payload["control"]["state"] == "STOPPED"
     assert (
         status_payload["replay_diagnostics"]["schema_version"]
         == "polymarket-replay-diagnostics-v2"
     )
     assert status_payload["feed_coverage"]["shadow_ready"] is False
     assert status_payload["feed_coverage"]["training_ready"] is False
+
+    resume_code = cli.main(
+        [
+            "polymarket-paper",
+            "--database",
+            str(database),
+            "--run-id",
+            "cli-run",
+            "--action",
+            "resume",
+            "--json",
+        ]
+    )
+    resume_payload = json.loads(capsys.readouterr().out)
+    assert resume_code == 0
+    assert resume_payload["control"]["state"] == "RUNNING"
+
+    pause_code = cli.main(
+        [
+            "polymarket-paper",
+            "--database",
+            str(database),
+            "--run-id",
+            "cli-run",
+            "--action",
+            "pause",
+            "--json",
+        ]
+    )
+    pause_payload = json.loads(capsys.readouterr().out)
+    assert pause_code == 0
+    assert pause_payload["control"]["state"] == "PAUSED"
+    assert cli.main(
+        [
+            "polymarket-paper",
+            "--database",
+            str(database),
+            "--run-id",
+            "cli-run",
+            "--action",
+            "open",
+        ]
+    ) == 2
+    assert "control blocks open while PAUSED" in capsys.readouterr().err
+    assert cli.main(
+        [
+            "polymarket-paper",
+            "--database",
+            str(database),
+            "--run-id",
+            "cli-run",
+            "--action",
+            "resume",
+        ]
+    ) == 0
+    capsys.readouterr()
 
     missing_latency_code = cli.main(
         [
@@ -2045,11 +2115,21 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     assert stop_payload["operation"]["stop"]["status"] == "STOPPED"
     assert stop_payload["operation"]["stop"]["settlement_count"] == 1
     assert stop_payload["positions"] == []
-    assert set(action_option.choices) == {"status", "open", "close", "settle", "stop"}
+    assert stop_payload["control"]["state"] == "STOPPED"
+    assert set(action_option.choices) == {
+        "status",
+        "resume",
+        "pause",
+        "open",
+        "close",
+        "settle",
+        "stop",
+    }
     assert {option.dest for option in spec.options} == {
         "database",
         "run_id",
         "action",
+        "control_path",
         "event_id",
         "position_id",
         "opening_intent_id",

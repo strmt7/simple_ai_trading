@@ -3,8 +3,8 @@
 **Status:** the prospective public-data recorder, fail-closed level-2 replay,
 causal feature materializer, shared paper execution contract, manual
 evidence-bound open/close actions, cross-checked official resolution settlement,
-and fail-closed Stop are implemented. Continuous strategy coordination and
-Pause remain incomplete.
+durable operator Pause/Resume, and fail-closed Stop are implemented. Continuous
+strategy coordination remains incomplete.
 No authenticated order placement, wallet, private key, live-money claim, or
 profitability claim is implemented or authorized.
 
@@ -17,7 +17,7 @@ The lifecycle, risk, and outage sections below are the required parity contract.
 The current executable subset is the public recorder, strict replay by default,
 explicit segmented reconnect replay, manual aggressive FAK/FOK paper open/close,
 journal reconciliation, official-resolution settlement, and a reconciled Stop
-operation. Pause coordination, passive queue replay, empirical latency calibration, automated
+operation. Passive queue replay, empirical latency calibration, automated
 strategy/AI decisions, and independent live liveness loops remain incomplete and
 must not be represented as available.
 
@@ -75,8 +75,8 @@ nonzero latency. If the book cannot absorb the full position, the remainder stay
 visible and the result remains `STOPPING`; the software does not report flat.
 An unresolved `UNKNOWN` intent also keeps the result at `STOPPING`. Externally
 opened positions are never adopted, netted, sold, or settled by the bot. The
-future `Pause` action must block new intents but continue data, risk, reconciliation,
-settlement, and verified close handling.
+  `Pause` persists through restart and blocks new intents while leaving
+  reconciliation, settlement, verified close handling, and Stop available.
 
 ## Required fill simulation
 
@@ -218,6 +218,10 @@ token at `0`; settlement never masquerades as a CLOB sale.
 simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
   --action status --json
 simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
+  --action resume --json
+simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
+  --action pause --json
+simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
   --action stop --latency-ms 100 --json
 ```
 
@@ -238,6 +242,11 @@ model/AI review time separately through `--decision-delay-ms` before network
 submission latency. `--max-execution-observation-delay-ms` controls the same
 fail-closed confirmation bound in model research and paper execution; the bound,
 requested latency, effective observed latency, and source events are hash-bound.
+The database-specific operator state defaults to `STOPPED`. `resume` requires a
+clean reconciliation, `pause` blocks new exposure across process restarts, and
+Stop writes `STOPPING` before attempting any close. A malformed or unreadable
+state file also fails closed as `STOPPED`. Close, settlement, reconciliation, and
+Stop remain available while paused.
 
 Primary references: [authentication](https://docs.polymarket.com/api-reference/authentication),
 [market WebSocket](https://docs.polymarket.com/market-data/websocket/market-channel),
