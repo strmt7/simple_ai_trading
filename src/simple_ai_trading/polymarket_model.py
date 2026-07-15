@@ -19,9 +19,9 @@ from .polymarket_features import (
 )
 
 
-POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v1"
-POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v1"
-POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v2"
+POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v2"
+POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v2"
+POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v3"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
 POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v2"
 
@@ -34,6 +34,8 @@ POLYMARKET_MODEL_FEATURE_NAMES = (
     "direct_return_5000ms_bps",
     "direct_realized_volatility_1000ms_bps",
     "direct_realized_volatility_5000ms_bps",
+    "direct_diffusion_market_logit_gap",
+    "chainlink_diffusion_market_logit_gap",
     "direct_trade_imbalance_250ms",
     "direct_trade_imbalance_1000ms",
     "direct_trade_imbalance_5000ms",
@@ -379,18 +381,71 @@ def _relative_bps(value: float, reference: float, *, name: str) -> float:
     return 10_000.0 * (value - reference) / reference
 
 
-def _model_features(values: Mapping[str, float], asset: str) -> tuple[float, ...]:
+def _logit(probability: float) -> float:
+    if not 0.0 < probability < 1.0:
+        raise ValueError("logit probability must lie inside (0, 1)")
+    return math.log(probability) - math.log1p(-probability)
+
+
+def _diffusion_market_logit_gap(
+    *,
+    distance_from_open_bps: float,
+    realized_volatility_5000ms_bps: float,
+    remaining_seconds: float,
+    market_probability: float,
+) -> float:
+    """Return a bounded driftless-diffusion proxy minus the market logit."""
+
+    if realized_volatility_5000ms_bps < 0.0 or remaining_seconds <= 0.0:
+        raise ValueError("diffusion proxy inputs are outside their domains")
+    projected_volatility_bps = max(realized_volatility_5000ms_bps, 1e-6) * math.sqrt(
+        remaining_seconds / 5.0
+    )
+    z_score = max(
+        -8.0,
+        min(8.0, distance_from_open_bps / projected_volatility_bps),
+    )
+    diffusion_probability = 0.5 * (1.0 + math.erf(z_score / math.sqrt(2.0)))
+    diffusion_probability = max(1e-6, min(1.0 - 1e-6, diffusion_probability))
+    return max(
+        -12.0,
+        min(12.0, _logit(diffusion_probability) - _logit(market_probability)),
+    )
+
+
+def _model_features(
+    values: Mapping[str, float],
+    asset: str,
+    *,
+    baseline_up_probability: float,
+) -> tuple[float, ...]:
     up_midpoint = values["up_midpoint"]
     down_midpoint = values["down_midpoint"]
+    direct_distance = values["binance_distance_from_chainlink_open_bps"]
+    direct_chainlink_basis = values["binance_chainlink_basis_bps"]
+    remaining_seconds = values["remaining_seconds"]
+    volatility_5000ms = values["binance_realized_volatility_5000ms_bps"]
     derived = (
-        values["remaining_seconds"],
-        values["binance_distance_from_chainlink_open_bps"],
-        values["binance_chainlink_basis_bps"],
+        remaining_seconds,
+        direct_distance,
+        direct_chainlink_basis,
         values["binance_return_250ms_bps"],
         values["binance_return_1000ms_bps"],
         values["binance_return_5000ms_bps"],
         values["binance_realized_volatility_1000ms_bps"],
-        values["binance_realized_volatility_5000ms_bps"],
+        volatility_5000ms,
+        _diffusion_market_logit_gap(
+            distance_from_open_bps=direct_distance,
+            realized_volatility_5000ms_bps=volatility_5000ms,
+            remaining_seconds=remaining_seconds,
+            market_probability=baseline_up_probability,
+        ),
+        _diffusion_market_logit_gap(
+            distance_from_open_bps=direct_distance - direct_chainlink_basis,
+            realized_volatility_5000ms_bps=volatility_5000ms,
+            remaining_seconds=remaining_seconds,
+            market_probability=baseline_up_probability,
+        ),
         values["binance_trade_imbalance_250ms"],
         values["binance_trade_imbalance_1000ms"],
         values["binance_trade_imbalance_5000ms"],
@@ -569,7 +624,11 @@ def build_polymarket_model_dataset(
                 decision_received_monotonic_ns=row.decision_received_monotonic_ns,
                 decision_event_id=row.decision_event_id,
                 horizon_seconds=horizon,
-                feature_values=_model_features(values, market.asset),
+                feature_values=_model_features(
+                    values,
+                    market.asset,
+                    baseline_up_probability=baseline,
+                ),
                 baseline_up_probability=baseline,
                 up_best_bid=values["up_best_bid"],
                 up_best_ask=values["up_best_ask"],

@@ -21,7 +21,7 @@ from typing import Any
 _ARTIFACT_SCHEMA = "polymarket-prospective-model-experiment-v1"
 _PREDICTION_SCHEMA = "polymarket-held-out-predictions-v1"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
-_MODEL_SCHEMA = "polymarket-market-anchored-logit-v2"
+_MODEL_SCHEMA = "polymarket-market-anchored-logit-v3"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "ai")
