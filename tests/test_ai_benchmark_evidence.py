@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,7 @@ import pytest
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
     _result_from_case_results,
+    default_finance_ai_test_cases,
     merge_finance_ai_benchmark_payloads,
 )
 from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
@@ -17,6 +19,9 @@ from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
 ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "ai" / "risk-review" / "latest"
 REPORT_PATH = LATEST / "comparison.json"
+QWEN3_14B_PREREGISTRATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v7-preregistration.json"
+)
 
 
 def _json(path: Path) -> dict[str, object]:
@@ -27,6 +32,29 @@ def _json(path: Path) -> dict[str, object]:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _canonical_sha256(value: object) -> str:
+    payload = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    return hashlib.sha256(payload.encode("ascii")).hexdigest()
+
+
+def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
+    preregistration = _json(QWEN3_14B_PREREGISTRATION)
+    source = ROOT / "src" / "simple_ai_trading" / "ai_model_benchmark.py"
+    suite = [asdict(case) for case in default_finance_ai_test_cases()]
+
+    assert preregistration["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
+    assert preregistration["benchmark_source_sha256"] == _sha256(source)
+    assert preregistration["test_suite_sha256"] == _canonical_sha256(suite)
+    assert preregistration["frozen_run"]["run_count"] == 1  # type: ignore[index]
+    assert preregistration["frozen_run"]["prompt_or_case_changes_allowed"] is False  # type: ignore[index]
 
 
 def test_tracked_ai_benchmark_rebuilds_from_hash_bound_source_responses() -> None:
