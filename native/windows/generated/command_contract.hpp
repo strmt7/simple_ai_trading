@@ -417,7 +417,8 @@ inline constexpr CommandOptionSpec kOptions_polymarket_model[] = {
 inline constexpr CommandOptionSpec kOptions_polymarket_paper[] = {
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
     {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
-    {L"--action", L"action", L"status, open, close, settle, stop", L"status", L"", L"1", false, true, false},
+    {L"--action", L"action", L"status, resume, pause, open, close, settle, stop", L"status", L"", L"1", false, true, false},
+    {L"--control-path", L"control_path", L"", L"", L"optional operator-state path; defaults beside the evidence database", L"1", false, true, false},
     {L"--event-id", L"event_id", L"", L"", L"", L"1", false, true, false},
     {L"--position-id", L"position_id", L"", L"", L"", L"1", false, true, false},
     {L"--opening-intent-id", L"opening_intent_id", L"", L"", L"", L"1", false, true, false},
@@ -886,7 +887,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 23},
-    {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 17},
+    {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 18},
     {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 5},
     {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 7},
     {L"polymarket-resolve", L"Persist an outcome only after the official CLOB and Gamma APIs are both terminal and agree exactly. This command never authenticates or places an order.", kOptions_polymarket_resolve, 7},

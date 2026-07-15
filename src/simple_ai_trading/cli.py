@@ -105,7 +105,7 @@ from .positions import (
     bot_ownership_rejection_reason,
     new_position_id,
 )
-from .polymarket_paper import PolymarketPaperBroker
+from .polymarket_paper import PolymarketPaperBroker, PolymarketPaperCoordinator
 from .polymarket_ai_veto import (
     PolymarketAIVetoConfig,
     benchmark_polymarket_ai_veto,
@@ -626,8 +626,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--run-id", default=None)
     parser_polymarket_paper.add_argument(
         "--action",
-        choices=["status", "open", "close", "settle", "stop"],
+        choices=["status", "resume", "pause", "open", "close", "settle", "stop"],
         default="status",
+    )
+    parser_polymarket_paper.add_argument(
+        "--control-path",
+        default=None,
+        help="optional operator-state path; defaults beside the evidence database",
     )
     parser_polymarket_paper.add_argument("--event-id", default=None)
     parser_polymarket_paper.add_argument("--position-id", default=None)
@@ -6748,8 +6753,13 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as broker:
+            coordinator = PolymarketPaperCoordinator(
+                broker,
+                control_path=getattr(args, "control_path", None),
+            )
             operation: dict[str, object] = {"action": action}
             if action == "open":
+                coordinator.require_open_allowed()
                 event_id = required("event_id")
                 outcome = required("outcome")
                 matches = [
@@ -6816,8 +6826,12 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                         resolution=resolutions[0],
                     )
                 )
+            elif action == "pause":
+                operation["control"] = coordinator.pause()
+            elif action == "resume":
+                operation["control"] = coordinator.resume()
             elif action == "stop":
-                stop_report = broker.stop_all_positions(
+                stop_report = coordinator.stop_all_positions(
                     submission_latency_ms=int(required("latency_ms")),
                 )
                 operation["stop"] = stop_report.asdict()
@@ -6833,6 +6847,7 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
             )
             payload = {
                 "run_id": broker.replay.run_id,
+                "control": coordinator.status(),
                 "operation": operation,
                 "reconciliation": reconciliation.asdict(),
                 "replay_diagnostics": broker.replay.diagnostics.asdict(),

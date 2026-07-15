@@ -9,6 +9,13 @@ import json
 import math
 from pathlib import Path
 
+from .autonomous import (
+    STATE_PAUSED,
+    STATE_RUNNING,
+    STATE_STOPPED,
+    STATE_STOPPING,
+    AutonomousControl,
+)
 from .paper_execution import (
     PaperExecutionResult,
     PaperOrderIntent,
@@ -28,6 +35,12 @@ from .polymarket_resolution import load_official_resolutions
 
 
 POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION = "polymarket-paper-context-v2"
+
+
+def default_polymarket_control_path(database: str | Path) -> Path:
+    """Return the operator state file paired with one paper evidence database."""
+
+    return Path(f"{Path(database)}.control.json")
 
 
 def _canonical_json(value: object) -> str:
@@ -1162,12 +1175,100 @@ class PolymarketPaperBroker:
         )
 
 
+class PolymarketPaperCoordinator:
+    """Apply the shared autonomous operator state machine to paper actions."""
+
+    def __init__(
+        self,
+        broker: PolymarketPaperBroker,
+        *,
+        control_path: str | Path | None = None,
+    ) -> None:
+        self.broker = broker
+        self.control = AutonomousControl(
+            path=(
+                Path(control_path)
+                if control_path is not None
+                else default_polymarket_control_path(broker.store.path)
+            )
+        )
+
+    def status(self) -> dict[str, object]:
+        payload = dict(self.control.read())
+        payload["path"] = str(self.control.path)
+        payload["run_id"] = self.broker.replay.run_id
+        return payload
+
+    def require_open_allowed(self) -> PolymarketPaperReconciliation:
+        state = self.control.state()
+        if state != STATE_RUNNING:
+            raise ValueError(f"Polymarket paper control blocks open while {state}")
+        reconciliation = self.broker.reconcile()
+        if not reconciliation.can_open:
+            raise ValueError(
+                f"Polymarket paper reconciliation blocks open: {reconciliation.asdict()}"
+            )
+        return reconciliation
+
+    def pause(self) -> dict[str, object]:
+        state = self.control.state()
+        if state == STATE_PAUSED:
+            return self.status()
+        if state != STATE_RUNNING:
+            raise ValueError(f"Polymarket paper cannot pause while {state}")
+        self.control.write(
+            STATE_PAUSED,
+            note=f"Polymarket run {self.broker.replay.run_id} paused",
+        )
+        return self.status()
+
+    def resume(self) -> dict[str, object]:
+        state = self.control.state()
+        if state == STATE_STOPPING:
+            raise ValueError("Polymarket paper cannot resume while Stop is unresolved")
+        reconciliation = self.broker.reconcile()
+        if not reconciliation.can_open:
+            raise ValueError(
+                f"Polymarket paper cannot resume: {reconciliation.asdict()}"
+            )
+        self.control.write(
+            STATE_RUNNING,
+            note=f"Polymarket run {self.broker.replay.run_id} resumed",
+        )
+        return self.status()
+
+    def stop_all_positions(
+        self,
+        *,
+        submission_latency_ms: int,
+    ) -> PolymarketPaperStopReport:
+        self.control.write(
+            STATE_STOPPING,
+            note=f"Polymarket run {self.broker.replay.run_id} Stop requested",
+        )
+        report = self.broker.stop_all_positions(
+            submission_latency_ms=submission_latency_ms,
+        )
+        final_state = STATE_STOPPED if report.stopped else STATE_STOPPING
+        self.control.write(
+            final_state,
+            note=(
+                f"Polymarket run {self.broker.replay.run_id} flat"
+                if report.stopped
+                else f"Polymarket run {self.broker.replay.run_id} Stop unresolved"
+            ),
+        )
+        return report
+
+
 __all__ = [
     "POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION",
     "PolymarketPaperBroker",
     "PolymarketPaperClose",
+    "PolymarketPaperCoordinator",
     "PolymarketPaperPosition",
     "PolymarketPaperReconciliation",
     "PolymarketPaperSettlement",
     "PolymarketPaperStopReport",
+    "default_polymarket_control_path",
 ]
