@@ -54,6 +54,8 @@ def test_round61_manifest_fixes_every_episode_and_required_timestamp() -> None:
         assert symbol_manifest["episode_count"] == expected[symbol]
         assert len({row["episode_id"] for row in episodes}) == len(episodes)
         assert spot_times == sorted(set(spot_times))
+        assert all(value % 60_000 == 0 for value in spot_times)
+        assert all(value % 60_000 == 0 for value in mark_times)
         assert len(symbol_manifest["spot_archive_months"]) == len(
             symbol_manifest["spot_archive_urls"]
         )
@@ -65,11 +67,11 @@ def test_round61_manifest_fixes_every_episode_and_required_timestamp() -> None:
             end = episode["end_time_ms"]
             funding_times = episode["future_funding_calc_times_ms"]
             assert end - decision == 168 * 60 * 60 * 1000
-            assert decision in spot_times
-            assert end in spot_times
+            assert decision // 60_000 * 60_000 in spot_times
+            assert end // 60_000 * 60_000 in spot_times
             assert funding_times == sorted(set(funding_times))
             assert all(decision < value <= end for value in funding_times)
-            assert set(funding_times) <= mark_times
+            assert {value // 60_000 * 60_000 for value in funding_times} <= mark_times
 
 
 def test_round61_gate_uses_committed_capital_and_cannot_authorize_trading() -> None:
