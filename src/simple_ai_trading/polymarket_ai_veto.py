@@ -128,6 +128,12 @@ class PolymarketAIVetoCase:
             "prompt_payload": dict(self.prompt_payload),
         }
 
+    def asdict(self) -> dict[str, object]:
+        return {
+            **self.identity_payload(),
+            "case_sha256": self.case_sha256,
+        }
+
 
 @dataclass(frozen=True)
 class PolymarketAIVetoDecision:

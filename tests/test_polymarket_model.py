@@ -13,6 +13,13 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pytest
 
+from simple_ai_trading.ai_uplift import assess_ai_uplift
+from simple_ai_trading.cli import (
+    _polymarket_execution_uplift_metrics,
+    _polymarket_held_out_prediction_evidence,
+    _polymarket_latency_scenarios,
+    _polymarket_matched_uplift_periods,
+)
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
@@ -43,6 +50,8 @@ from simple_ai_trading.polymarket_model_execution import (
     evaluate_polymarket_execution_policy,
 )
 from simple_ai_trading.polymarket_publication import (
+    _ai_case_rows,
+    _validate_ai_evidence,
     publish_polymarket_model_artifact,
     validate_polymarket_model_artifact,
 )
@@ -52,11 +61,6 @@ from simple_ai_trading.polymarket_replay import (
     PolymarketReplayDiagnostics,
     PolymarketResolutionEvidence,
 )
-from simple_ai_trading.cli import (
-    _polymarket_held_out_prediction_evidence,
-    _polymarket_latency_scenarios,
-)
-
 
 _ASSETS = ("BTC", "ETH", "SOL")
 _SOURCE_SHA256 = "a" * 64
@@ -809,6 +813,208 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
     assert baseline == approved
     assert not ai_report.trading_authority
     assert not ai_report.profitability_claim
+
+
+def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, probability_report = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(split.test, markets)
+    execution_config = PolymarketExecutionResearchConfig().validated()
+    selection = build_polymarket_policy_selection(
+        split.test,
+        predictions,
+        replay.markets,
+        config=execution_config,
+    )
+    cases = build_polymarket_ai_veto_cases(
+        selection,
+        probability_report,
+        execution_config,
+    )
+
+    def approve(
+        url: str,
+        _payload: dict[str, object],
+        _timeout: float,
+        _method: str,
+    ) -> object:
+        if url.endswith("/api/tags"):
+            return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
+        if url.endswith("/api/show"):
+            return {"model": "qwen3.5:9b", "parameters": "9B"}
+        return {
+            "message": {
+                "content": json.dumps(
+                    {
+                        "action": "approve",
+                        "confidence": 0.9,
+                        "reason_codes": ["edge_after_fees"],
+                        "summary": "The frozen proposal passes the veto-only review.",
+                    }
+                )
+            }
+        }
+
+    ai_report = benchmark_polymarket_ai_veto(
+        cases,
+        all_condition_ids=[item.condition_id for item in split.test],
+        selection_sha256=selection.selection_sha256,
+        risk_benchmark_evidence_sha256="a" * 64,
+        config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+        post_json=approve,  # type: ignore[arg-type]
+    )
+    model_execution = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+        config=execution_config,
+    )
+    delays = {condition: 0 for condition in model_execution.market_permissions}
+    for result in ai_report.results:
+        delays[result.condition_id] = int(
+            np.ceil(max(0.0, result.latency_seconds) * 1_000.0)
+        )
+    ai_execution = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+        config=execution_config,
+        market_permissions=ai_report.market_permissions,
+        decision_delay_ms_by_condition=delays,
+    )
+    prediction_rows = _polymarket_held_out_prediction_evidence(
+        split.test,
+        [item.baseline_up_probability for item in split.test],
+        predictions,
+    )["rows"]
+    assert isinstance(prediction_rows, list)
+    uplift = assess_ai_uplift(
+        _polymarket_execution_uplift_metrics(
+            model_execution,
+            dataset_fingerprint=dataset.dataset_sha256,
+        ),
+        _polymarket_execution_uplift_metrics(
+            ai_execution,
+            dataset_fingerprint=dataset.dataset_sha256,
+        ),
+        model_name="qwen3.5:9b",
+        model_parameters_b=ai_report.model_parameters_b,
+        model_artifact_sha256=ai_report.report_sha256,
+        matched_periods=_polymarket_matched_uplift_periods(
+            split,
+            model_execution,
+            ai_execution,
+        ),
+    )
+    ai_evidence: dict[str, object] = {
+        "enabled": True,
+        "risk_benchmark": {
+            "path": "docs/model-research/polymarket/latest/ai-risk-selected.json",
+            "sha256": "a" * 64,
+            "contract": "finance-risk-review-adversarial-v6",
+            "selected_model": "qwen3.5:9b",
+            "score": 1.0,
+        },
+        "policy_selection": selection.asdict(),
+        "prompt_cases": [case.asdict() for case in cases],
+        "veto_report": ai_report.asdict(),
+        "execution": ai_execution.asdict(),
+        "uplift": uplift.asdict(),
+    }
+    assert (
+        _validate_ai_evidence(
+            ai_evidence,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+        == ai_execution.asdict()
+    )
+    case_rows = _ai_case_rows({"ai": ai_evidence})
+    assert len(case_rows) == len(cases)
+    assert all("official_up" not in row["prompt_payload_json"] for row in case_rows)
+
+    forged_uplift = json.loads(json.dumps(ai_evidence))
+    forged_uplift["uplift"]["accepted"] = not forged_uplift["uplift"]["accepted"]
+    with pytest.raises(ValueError, match="AI uplift evidence"):
+        _validate_ai_evidence(
+            forged_uplift,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+
+    tampered = json.loads(json.dumps(ai_evidence))
+    prompt_case = tampered["prompt_cases"][0]
+    prompt_case["prompt_payload"]["official_up"] = True
+    prompt_case["case_id"] = hashlib.sha256(
+        json.dumps(
+            {
+                "selection_sha256": tampered["policy_selection"][
+                    "selection_sha256"
+                ],
+                "model_report_sha256": probability_report.report_sha256,
+                "sample_id": prompt_case["sample_id"],
+                "prompt_payload": prompt_case["prompt_payload"],
+            },
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    prompt_identity = dict(prompt_case)
+    prompt_identity.pop("case_sha256")
+    prompt_case["case_sha256"] = hashlib.sha256(
+        json.dumps(
+            prompt_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    veto_report = tampered["veto_report"]
+    veto_report["case_set_sha256"] = hashlib.sha256(
+        json.dumps(
+            {
+                "schema_version": "polymarket-ai-veto-case-v2",
+                "selection_sha256": tampered["policy_selection"][
+                    "selection_sha256"
+                ],
+                "case_sha256": [
+                    item["case_sha256"] for item in tampered["prompt_cases"]
+                ],
+            },
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    veto_report["results"][0]["case_id"] = prompt_case["case_id"]
+    report_identity = dict(veto_report)
+    report_identity.pop("report_sha256")
+    veto_report["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            report_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+
+    with pytest.raises(ValueError, match="AI prompt fields"):
+        _validate_ai_evidence(
+            tampered,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
 
 
 def test_ai_low_confidence_or_malformed_output_vetoes_without_order_authority() -> None:

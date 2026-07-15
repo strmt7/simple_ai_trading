@@ -17,14 +17,65 @@ import random
 import shutil
 from typing import Any
 
+from .ai_uplift import assess_ai_uplift
+
 
 _ARTIFACT_SCHEMA = "polymarket-prospective-model-experiment-v1"
 _PREDICTION_SCHEMA = "polymarket-held-out-predictions-v1"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
+_AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v1"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "ai")
+_AI_MICROSTRUCTURE_FIELDS = (
+    "direct_distance_from_chainlink_open_bps",
+    "direct_chainlink_basis_bps",
+    "direct_return_100ms_bps",
+    "direct_return_250ms_bps",
+    "direct_return_1000ms_bps",
+    "direct_return_5000ms_bps",
+    "direct_realized_volatility_100ms_bps",
+    "direct_realized_volatility_1000ms_bps",
+    "direct_realized_volatility_5000ms_bps",
+    "direct_diffusion_market_logit_gap",
+    "chainlink_diffusion_market_logit_gap",
+    "direct_trade_imbalance_100ms",
+    "direct_trade_imbalance_250ms",
+    "direct_trade_imbalance_1000ms",
+    "direct_trade_imbalance_5000ms",
+    "direct_top_imbalance",
+    "direct_spread_bps",
+    "up_microprice_deviation_bps",
+    "down_microprice_deviation_bps",
+    "up_top_imbalance",
+    "down_top_imbalance",
+    "outcome_midpoint_sum_error_bps",
+    "executable_ask_pair_premium_bps",
+    "executable_bid_pair_discount_bps",
+)
+_AI_FRESHNESS_FIELDS = (
+    "up_book_age_ms",
+    "down_book_age_ms",
+    "direct_binance_age_ms",
+    "chainlink_source_age_ms",
+    "chainlink_arrival_age_ms",
+    "chainlink_anchor_gap_ms",
+)
+_AI_REASON_CODES = {
+    "edge_after_fees",
+    "weak_probability_uplift",
+    "market_disagreement",
+    "liquidity_stress",
+    "latency_risk",
+    "source_staleness",
+    "volatile_regime",
+    "orderbook_imbalance",
+    "model_calibration_risk",
+    "insufficient_evidence",
+    "cooldown_required",
+}
 _COLORS = {
     "background": "#0b1220",
     "panel": "#111c2e",
@@ -575,6 +626,744 @@ def _validate_execution_report(
         raise ValueError(f"{name} equity path summary does not reconcile")
 
 
+def _is_sha256(value: object) -> bool:
+    text = str(value or "")
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
+
+
+def _require_exact_keys(
+    value: Mapping[str, Any],
+    expected: set[str],
+    *,
+    name: str,
+) -> None:
+    if set(value) != expected:
+        raise ValueError(f"{name} fields do not match the frozen schema")
+
+
+def _validate_ai_prompt_shape(prompt: Mapping[str, Any]) -> None:
+    _require_exact_keys(
+        prompt,
+        {
+            "schema_version",
+            "task",
+            "asset",
+            "five_minute_market",
+            "remaining_seconds",
+            "proposed_outcome",
+            "model_probability",
+            "market_implied_probability",
+            "model_probability_uplift",
+            "decision_best_ask",
+            "protective_limit_price",
+            "expected_edge_per_contract_after_fee",
+            "minimum_required_edge_per_contract",
+            "maximum_loss_fraction_per_market",
+            "maximum_loss_fraction_per_time_group",
+            "assumed_submission_latency_ms",
+            "microstructure",
+            "source_freshness_ms",
+            "liquidity_context",
+            "validation_only_model_evidence",
+            "hard_constraints",
+        },
+        name="AI prompt",
+    )
+    microstructure = _as_mapping(prompt["microstructure"], "AI microstructure")
+    freshness = _as_mapping(prompt["source_freshness_ms"], "AI freshness")
+    liquidity = _as_mapping(prompt["liquidity_context"], "AI liquidity")
+    validation = _as_mapping(
+        prompt["validation_only_model_evidence"],
+        "AI validation-only evidence",
+    )
+    constraints = _as_mapping(prompt["hard_constraints"], "AI hard constraints")
+    _require_exact_keys(
+        microstructure,
+        set(_AI_MICROSTRUCTURE_FIELDS),
+        name="AI microstructure",
+    )
+    _require_exact_keys(freshness, set(_AI_FRESHNESS_FIELDS), name="AI freshness")
+    _require_exact_keys(
+        liquidity,
+        {
+            "proposed_outcome_ask_depth_3_contracts",
+            "market_liquidity_quote",
+            "market_volume_quote",
+        },
+        name="AI liquidity",
+    )
+    _require_exact_keys(
+        validation,
+        {
+            "market_baseline_log_loss",
+            "residual_model_log_loss",
+            "log_loss_delta",
+            "validation_market_count",
+        },
+        name="AI validation-only evidence",
+    )
+    expected_constraints = {
+        "cannot_create_or_reverse_trade": True,
+        "cannot_increase_size_or_limit": True,
+        "invalid_or_uncertain_response_means_veto": True,
+    }
+    if dict(constraints) != expected_constraints:
+        raise ValueError("AI prompt hard constraints were weakened")
+    if (
+        prompt.get("schema_version") != _AI_CASE_SCHEMA
+        or prompt.get("task") != "veto_only_review_of_frozen_ml_proposal"
+        or prompt.get("asset") not in _ASSETS
+        or prompt.get("five_minute_market") is not True
+        or prompt.get("proposed_outcome") not in {"Up", "Down"}
+        or isinstance(prompt.get("remaining_seconds"), bool)
+        or int(prompt.get("remaining_seconds", -1)) not in {30, 60, 120, 180, 240}
+        or isinstance(prompt.get("assumed_submission_latency_ms"), bool)
+        or not 1 <= int(prompt.get("assumed_submission_latency_ms", -1)) <= 60_000
+    ):
+        raise ValueError("AI prompt contract is invalid")
+    model_probability = _finite_float(
+        prompt.get("model_probability"),
+        "AI model probability",
+    )
+    market_probability = _finite_float(
+        prompt.get("market_implied_probability"),
+        "AI market probability",
+    )
+    uplift = _finite_float(prompt.get("model_probability_uplift"), "AI uplift")
+    if not (
+        0.0 < model_probability < 1.0
+        and 0.0 < market_probability < 1.0
+        and math.isclose(
+            uplift,
+            model_probability - market_probability,
+            rel_tol=0.0,
+            abs_tol=2e-8,
+        )
+    ):
+        raise ValueError("AI prompt probabilities are inconsistent")
+    for field in (
+        "decision_best_ask",
+        "protective_limit_price",
+        "expected_edge_per_contract_after_fee",
+        "minimum_required_edge_per_contract",
+        "maximum_loss_fraction_per_market",
+        "maximum_loss_fraction_per_time_group",
+    ):
+        _decimal(prompt.get(field), f"AI prompt {field}")
+    if any(
+        not math.isfinite(_finite_float(value, f"AI microstructure {name}"))
+        for name, value in microstructure.items()
+    ):
+        raise ValueError("AI prompt microstructure is not finite")
+    if any(
+        _finite_float(value, f"AI freshness {name}") < 0.0
+        for name, value in freshness.items()
+    ) or any(
+        _finite_float(value, f"AI liquidity {name}") < 0.0
+        for name, value in liquidity.items()
+    ):
+        raise ValueError("AI prompt freshness or liquidity is outside its domain")
+    for name in (
+        "market_baseline_log_loss",
+        "residual_model_log_loss",
+        "log_loss_delta",
+    ):
+        _finite_float(validation.get(name), f"AI validation evidence {name}")
+    if (
+        isinstance(validation.get("validation_market_count"), bool)
+        or int(validation.get("validation_market_count", -1)) < 1
+    ):
+        raise ValueError("AI validation market count is invalid")
+
+
+def _execution_uplift_metrics(
+    report: Mapping[str, Any],
+    *,
+    dataset_fingerprint: str,
+) -> dict[str, object]:
+    trades = [
+        _as_mapping(item, "AI uplift trade")
+        for item in report.get("trades", ())
+        if isinstance(item, Mapping) and item.get("execution_state") == "FILLED"
+    ]
+    values = [
+        float(_decimal(item["realized_pnl_quote"], "AI uplift trade PnL"))
+        for item in trades
+    ]
+    gains = sum(value for value in values if value > 0.0)
+    losses = abs(sum(value for value in values if value < 0.0))
+    loss_streak = 0
+    maximum_loss_streak = 0
+    for value in values:
+        loss_streak = loss_streak + 1 if value < 0.0 else 0
+        maximum_loss_streak = max(maximum_loss_streak, loss_streak)
+    drawdown = _finite_float(
+        report.get("maximum_drawdown_fraction"),
+        "AI uplift drawdown",
+    )
+    net = _finite_float(report.get("net_realized_pnl_quote"), "AI uplift PnL")
+    return {
+        "realized_pnl": net,
+        "roi_pct": 100.0
+        * _finite_float(
+            report.get("return_on_initial_capital"),
+            "AI uplift return",
+        ),
+        "max_drawdown": drawdown,
+        "expectancy": net / len(values) if values else 0.0,
+        "profit_factor": (
+            gains / losses if losses > 0.0 else (gains if gains > 0.0 else 0.0)
+        ),
+        "closed_trades": len(values),
+        "win_rate": (
+            sum(value > 0.0 for value in values) / len(values) if values else 0.0
+        ),
+        "liquidation_events": 0,
+        "max_consecutive_losses": maximum_loss_streak,
+        "downside_return_risk_ratio": net / drawdown if drawdown > 0.0 else 0.0,
+        "dataset_fingerprint": dataset_fingerprint,
+        "evidence_sha256": str(report.get("report_sha256", "")),
+    }
+
+
+def _matched_ai_uplift_periods(
+    predictions: Sequence[Mapping[str, Any]],
+    baseline: Mapping[str, Any],
+    ai: Mapping[str, Any],
+) -> list[dict[str, object]]:
+    baseline_by_end = {
+        int(item["settled_at_ms"]): _finite_float(
+            item["group_realized_pnl_quote"],
+            "baseline group PnL",
+        )
+        for item in baseline.get("equity_curve", ())
+        if isinstance(item, Mapping)
+    }
+    ai_by_end = {
+        int(item["settled_at_ms"]): _finite_float(
+            item["group_realized_pnl_quote"],
+            "AI group PnL",
+        )
+        for item in ai.get("equity_curve", ())
+        if isinstance(item, Mapping)
+    }
+    return [
+        {
+            "scope": "polymarket_btc_eth_sol_five_minute_test",
+            "period_start_ms": start_ms,
+            "period_end_ms": start_ms + 300_000,
+            "baseline_return": baseline_by_end.get(start_ms + 300_000, 0.0),
+            "ai_return": ai_by_end.get(start_ms + 300_000, 0.0),
+        }
+        for start_ms in sorted({int(row["event_start_ms"]) for row in predictions})
+    ]
+
+
+def _validate_ai_evidence(
+    ai: Mapping[str, Any],
+    *,
+    predictions: Sequence[Mapping[str, Any]],
+    probability: Mapping[str, Any],
+    model_execution: Mapping[str, Any],
+) -> Mapping[str, Any] | None:
+    if ai.get("enabled") is False:
+        _verify_claims(ai, name="AI-disabled evidence")
+        return None
+    if ai.get("enabled") is not True:
+        raise ValueError("AI evidence enabled state is invalid")
+    _require_exact_keys(
+        ai,
+        {
+            "enabled",
+            "risk_benchmark",
+            "policy_selection",
+            "prompt_cases",
+            "veto_report",
+            "execution",
+            "uplift",
+        },
+        name="AI evidence",
+    )
+    selection = _as_mapping(ai["policy_selection"], "AI policy selection")
+    _require_exact_keys(
+        selection,
+        {
+            "evaluated_market_count",
+            "candidate_count",
+            "candidates",
+            "reason_counts",
+            "selection_sha256",
+        },
+        name="AI policy selection",
+    )
+    conditions = {str(row["condition_id"]) for row in predictions}
+    prediction_by_sample = {str(row["sample_id"]): row for row in predictions}
+    if (
+        int(selection.get("evaluated_market_count", -1)) != len(conditions)
+        or not _is_sha256(selection.get("selection_sha256"))
+        or not isinstance(selection.get("candidates"), list)
+    ):
+        raise ValueError("AI policy selection identity is invalid")
+    candidates = [
+        _as_mapping(item, "AI policy candidate") for item in selection["candidates"]
+    ]
+    if int(selection.get("candidate_count", -1)) != len(candidates):
+        raise ValueError("AI policy candidate count is inconsistent")
+    reason_counts = _as_mapping(selection.get("reason_counts"), "AI selection reasons")
+    if any(
+        not str(name)
+        or isinstance(count, bool)
+        or not isinstance(count, int)
+        or count < 0
+        for name, count in reason_counts.items()
+    ) or sum(reason_counts.values()) + len(candidates) != len(conditions):
+        raise ValueError("AI policy selection coverage is inconsistent")
+    candidate_by_sample: dict[str, Mapping[str, Any]] = {}
+    candidate_conditions: set[str] = set()
+    for candidate in candidates:
+        _require_exact_keys(
+            candidate,
+            {
+                "sample_id",
+                "condition_id",
+                "asset",
+                "event_start_ms",
+                "decision_received_wall_ms",
+                "outcome",
+                "predicted_probability",
+                "expected_edge_per_contract",
+                "decision_best_ask",
+                "limit_price",
+            },
+            name="AI policy candidate",
+        )
+        sample_id = str(candidate["sample_id"])
+        condition_id = str(candidate["condition_id"])
+        prediction = prediction_by_sample.get(sample_id)
+        outcome = str(candidate["outcome"])
+        if (
+            prediction is None
+            or condition_id != str(prediction["condition_id"])
+            or condition_id in candidate_conditions
+            or sample_id in candidate_by_sample
+            or candidate["asset"] != prediction["asset"]
+            or int(candidate["event_start_ms"]) != int(prediction["event_start_ms"])
+            or int(candidate["decision_received_wall_ms"])
+            != int(prediction["decision_received_wall_ms"])
+            or outcome not in {"Up", "Down"}
+        ):
+            raise ValueError("AI policy candidate does not bind held-out evidence")
+        model_up = _finite_float(
+            prediction["model_up_probability"],
+            "held-out model probability",
+        )
+        expected_probability = model_up if outcome == "Up" else 1.0 - model_up
+        if str(candidate["predicted_probability"]) != format(
+            expected_probability,
+            ".17g",
+        ):
+            raise ValueError("AI policy candidate probability is inconsistent")
+        best_ask = _decimal(candidate["decision_best_ask"], "candidate best ask")
+        limit = _decimal(candidate["limit_price"], "candidate limit")
+        edge = _decimal(candidate["expected_edge_per_contract"], "candidate edge")
+        if not (
+            Decimal("0") < best_ask < Decimal("1")
+            and best_ask <= limit < 1
+            and edge >= 0
+        ):
+            raise ValueError("AI policy candidate economics are invalid")
+        candidate_by_sample[sample_id] = candidate
+        candidate_conditions.add(condition_id)
+    raw_cases = ai.get("prompt_cases")
+    if not isinstance(raw_cases, list):
+        raise ValueError("AI prompt cases must be an array")
+    cases = [_as_mapping(item, "AI prompt case") for item in raw_cases]
+    if len(cases) != len(candidates):
+        raise ValueError("AI prompt case count does not match frozen proposals")
+    validation_baseline = _as_mapping(
+        _as_mapping(probability["baseline_metrics"], "baseline metrics")["validation"],
+        "baseline validation metrics",
+    )
+    validation_model = _as_mapping(
+        _as_mapping(probability["model_metrics"], "model metrics")["validation"],
+        "model validation metrics",
+    )
+    execution_config = _as_mapping(
+        model_execution["config"],
+        "model execution config",
+    )
+    case_ids: set[str] = set()
+    case_sha256_values: list[str] = []
+    for case in cases:
+        _require_exact_keys(
+            case,
+            {
+                "schema_version",
+                "case_id",
+                "condition_id",
+                "sample_id",
+                "asset",
+                "event_start_ms",
+                "decision_received_wall_ms",
+                "prompt_payload",
+                "case_sha256",
+            },
+            name="AI prompt case",
+        )
+        identity = dict(case)
+        case_sha256 = str(identity.pop("case_sha256"))
+        prompt = _as_mapping(case["prompt_payload"], "AI prompt")
+        _validate_ai_prompt_shape(prompt)
+        sample_id = str(case["sample_id"])
+        candidate = candidate_by_sample.get(sample_id)
+        prediction = prediction_by_sample.get(sample_id)
+        case_id = str(case["case_id"])
+        if (
+            case.get("schema_version") != _AI_CASE_SCHEMA
+            or candidate is None
+            or prediction is None
+            or case_id in case_ids
+            or case_sha256 != _canonical_sha256(identity)
+            or str(case["condition_id"]) != str(candidate["condition_id"])
+            or case["asset"] != candidate["asset"]
+            or int(case["event_start_ms"]) != int(candidate["event_start_ms"])
+            or int(case["decision_received_wall_ms"])
+            != int(candidate["decision_received_wall_ms"])
+        ):
+            raise ValueError("AI prompt case identity is invalid")
+        expected_case_id = _canonical_sha256(
+            {
+                "selection_sha256": selection["selection_sha256"],
+                "model_report_sha256": probability["report_sha256"],
+                "sample_id": sample_id,
+                "prompt_payload": prompt,
+            }
+        )
+        outcome = str(candidate["outcome"])
+        baseline_up = _finite_float(
+            prediction["baseline_up_probability"],
+            "held-out market probability",
+        )
+        outcome_prior = baseline_up if outcome == "Up" else 1.0 - baseline_up
+        candidate_probability = _finite_float(
+            candidate["predicted_probability"],
+            "candidate probability",
+        )
+        expected_prompt_values = {
+            "asset": candidate["asset"],
+            "remaining_seconds": int(prediction["horizon_seconds"]),
+            "proposed_outcome": outcome,
+            "model_probability": round(candidate_probability, 8),
+            "market_implied_probability": round(outcome_prior, 8),
+            "model_probability_uplift": round(
+                candidate_probability - outcome_prior,
+                8,
+            ),
+            "decision_best_ask": str(candidate["decision_best_ask"]),
+            "protective_limit_price": str(candidate["limit_price"]),
+            "expected_edge_per_contract_after_fee": str(
+                candidate["expected_edge_per_contract"]
+            ),
+            "minimum_required_edge_per_contract": str(
+                execution_config["minimum_expected_edge_per_contract"]
+            ),
+            "maximum_loss_fraction_per_market": str(
+                execution_config["maximum_loss_fraction_per_market"]
+            ),
+            "maximum_loss_fraction_per_time_group": str(
+                execution_config["maximum_loss_fraction_per_time_group"]
+            ),
+            "assumed_submission_latency_ms": int(
+                execution_config["submission_latency_ms"]
+            ),
+        }
+        if case_id != expected_case_id or any(
+            prompt.get(name) != value for name, value in expected_prompt_values.items()
+        ):
+            raise ValueError("AI prompt does not reconstruct from frozen evidence")
+        expected_validation = {
+            "market_baseline_log_loss": round(
+                _finite_float(
+                    validation_baseline["weighted_log_loss"],
+                    "baseline validation log loss",
+                ),
+                10,
+            ),
+            "residual_model_log_loss": round(
+                _finite_float(
+                    validation_model["weighted_log_loss"],
+                    "model validation log loss",
+                ),
+                10,
+            ),
+            "log_loss_delta": round(
+                _finite_float(
+                    probability["validation_log_loss_delta"],
+                    "validation log-loss delta",
+                ),
+                10,
+            ),
+            "validation_market_count": int(validation_model["market_count"]),
+        }
+        if dict(prompt["validation_only_model_evidence"]) != expected_validation:
+            raise ValueError("AI prompt contains non-frozen validation evidence")
+        case_ids.add(case_id)
+        case_sha256_values.append(case_sha256)
+    expected_case_order = sorted(
+        cases,
+        key=lambda item: (
+            int(item["decision_received_wall_ms"]),
+            str(item["asset"]),
+            str(item["condition_id"]),
+        ),
+    )
+    if cases != expected_case_order:
+        raise ValueError("AI prompt cases are not chronological")
+
+    veto = _as_mapping(ai["veto_report"], "AI veto report")
+    _verify_claims(veto, name="AI veto report")
+    _verify_embedded_digest(veto, "report_sha256", name="AI veto report")
+    config = _as_mapping(veto.get("config"), "AI veto config")
+    benchmark = _as_mapping(ai["risk_benchmark"], "AI risk benchmark")
+    _require_exact_keys(
+        config,
+        {
+            "model",
+            "base_url",
+            "timeout_seconds",
+            "minimum_approval_confidence",
+            "maximum_advisory_latency_seconds",
+            "seed",
+        },
+        name="AI veto config",
+    )
+    model_name = str(config.get("model", ""))
+    base_url = str(config.get("base_url", "")).rstrip("/")
+    timeout_seconds = _finite_float(config.get("timeout_seconds"), "AI timeout")
+    minimum_confidence = _finite_float(
+        config.get("minimum_approval_confidence"),
+        "AI approval confidence floor",
+    )
+    maximum_latency = _finite_float(
+        config.get("maximum_advisory_latency_seconds"),
+        "AI advisory latency ceiling",
+    )
+    expected_case_set_sha256 = _canonical_sha256(
+        {
+            "schema_version": _AI_CASE_SCHEMA,
+            "selection_sha256": selection["selection_sha256"],
+            "case_sha256": case_sha256_values,
+        }
+    )
+    if (
+        veto.get("schema_version") != _AI_REPORT_SCHEMA
+        or veto.get("advisory_only") is not True
+        or veto.get("selection_sha256") != selection["selection_sha256"]
+        or veto.get("case_set_sha256") != expected_case_set_sha256
+        or int(veto.get("case_count", -1)) != len(cases)
+        or not model_name
+        or not (
+            base_url.startswith("http://127.0.0.1:")
+            or base_url.startswith("http://localhost:")
+        )
+        or not 1.0 <= timeout_seconds <= 300.0
+        or not 0.5 <= minimum_confidence <= 1.0
+        or not 0.1 <= maximum_latency <= 60.0
+        or isinstance(config.get("seed"), bool)
+        or int(config.get("seed", -1)) < 0
+        or _finite_float(veto.get("model_parameters_b"), "AI model size") < 2.0
+        or not _is_sha256(veto.get("model_digest"))
+        or not _is_sha256(veto.get("model_metadata_sha256"))
+        or not _is_sha256(veto.get("risk_benchmark_evidence_sha256"))
+        or veto.get("risk_benchmark_evidence_sha256") != benchmark.get("sha256")
+        or benchmark.get("selected_model") != model_name
+        or not str(benchmark.get("contract", ""))
+        or not str(benchmark.get("path", ""))
+    ):
+        raise ValueError("AI veto report provenance is inconsistent")
+    _finite_float(benchmark.get("score"), "AI risk benchmark score")
+    results_value = veto.get("results")
+    if not isinstance(results_value, list) or len(results_value) != len(cases):
+        raise ValueError("AI veto result count is inconsistent")
+    results = [_as_mapping(item, "AI veto result") for item in results_value]
+    expected_permissions = {condition: True for condition in conditions}
+    latencies: list[float] = []
+    valid_count = approval_count = veto_count = cooldown_count = failure_count = 0
+    for case, result in zip(cases, results, strict=True):
+        _require_exact_keys(
+            result,
+            {
+                "case_id",
+                "condition_id",
+                "model",
+                "latency_seconds",
+                "response_sha256",
+                "decision",
+            },
+            name="AI veto result",
+        )
+        decision = _as_mapping(result["decision"], "AI veto decision")
+        _require_exact_keys(
+            decision,
+            {
+                "action",
+                "confidence",
+                "reason_codes",
+                "summary",
+                "valid",
+                "failure_reason",
+                "permits_entry",
+            },
+            name="AI veto decision",
+        )
+        latency = _finite_float(result["latency_seconds"], "AI veto latency")
+        action = str(decision.get("action", ""))
+        confidence = _finite_float(decision.get("confidence"), "AI confidence")
+        reason_codes = decision.get("reason_codes")
+        valid = decision.get("valid")
+        permits = decision.get("permits_entry")
+        failure_reason = str(decision.get("failure_reason", ""))
+        if (
+            result.get("case_id") != case["case_id"]
+            or result.get("condition_id") != case["condition_id"]
+            or result.get("model") != model_name
+            or latency < 0.0
+            or not _is_sha256(result.get("response_sha256"))
+            or action not in {"approve", "veto", "cooldown"}
+            or not 0.0 <= confidence <= 1.0
+            or not isinstance(reason_codes, list)
+            or not 1 <= len(reason_codes) <= 4
+            or len(set(reason_codes)) != len(reason_codes)
+            or any(code not in _AI_REASON_CODES for code in reason_codes)
+            or not isinstance(valid, bool)
+            or not isinstance(permits, bool)
+            or permits is not (valid and action == "approve")
+            or not isinstance(decision.get("summary"), str)
+            or len(str(decision["summary"])) > 180
+            or (valid and failure_reason)
+            or (valid and latency > maximum_latency)
+            or (valid and action == "approve" and confidence < minimum_confidence)
+            or (
+                not valid
+                and (action != "veto" or confidence != 0.0 or not failure_reason)
+            )
+        ):
+            raise ValueError("AI veto result is malformed or not fail-closed")
+        expected_permissions[str(case["condition_id"])] = permits
+        latencies.append(latency)
+        valid_count += int(valid)
+        approval_count += int(action == "approve")
+        veto_count += int(action == "veto")
+        cooldown_count += int(action == "cooldown")
+        failure_count += int(not valid)
+    permissions = _as_mapping(veto.get("market_permissions"), "AI permissions")
+    expected_permission_sha256 = _canonical_sha256(
+        {
+            "schema_version": "polymarket-market-permission-v1",
+            "permissions": dict(sorted(expected_permissions.items())),
+        }
+    )
+    reported_average = _finite_float(
+        veto.get("average_latency_seconds"),
+        "AI average latency",
+    )
+    reported_maximum = _finite_float(
+        veto.get("maximum_latency_seconds"),
+        "AI maximum latency",
+    )
+    expected_average = sum(latencies) / len(latencies) if latencies else 0.0
+    expected_maximum = max(latencies, default=0.0)
+    if (
+        dict(permissions) != dict(sorted(expected_permissions.items()))
+        or veto.get("market_permission_sha256") != expected_permission_sha256
+        or int(veto.get("valid_response_count", -1)) != valid_count
+        or int(veto.get("approval_count", -1)) != approval_count
+        or int(veto.get("veto_count", -1)) != veto_count
+        or int(veto.get("cooldown_count", -1)) != cooldown_count
+        or int(veto.get("provider_failure_count", -1)) != failure_count
+        or not math.isclose(
+            reported_average, expected_average, rel_tol=1e-12, abs_tol=1e-12
+        )
+        or not math.isclose(
+            reported_maximum, expected_maximum, rel_tol=1e-12, abs_tol=1e-12
+        )
+    ):
+        raise ValueError("AI veto aggregate evidence does not reconcile")
+
+    ai_execution = _as_mapping(ai["execution"], "AI execution")
+    expected_delays = {condition: 0 for condition in conditions}
+    for result in results:
+        expected_delays[str(result["condition_id"])] = int(
+            math.ceil(max(0.0, float(result["latency_seconds"])) * 1_000.0)
+        )
+    expected_delay_sha256 = _canonical_sha256(
+        {
+            "schema_version": "polymarket-decision-delay-input-v1",
+            "decision_delay_ms_by_condition": dict(sorted(expected_delays.items())),
+        }
+    )
+    expected_probability_input_sha256 = _canonical_sha256(
+        {
+            "schema_version": "polymarket-probability-input-v1",
+            "sample_ids": [str(row["sample_id"]) for row in predictions],
+            "probabilities": [
+                format(
+                    _finite_float(
+                        row["model_up_probability"],
+                        "held-out model probability",
+                    ),
+                    ".17g",
+                )
+                for row in predictions
+            ],
+            "market_permission_sha256": expected_permission_sha256,
+            "decision_delay_input_sha256": expected_delay_sha256,
+        }
+    )
+    if (
+        ai_execution.get("market_permissions")
+        != dict(sorted(expected_permissions.items()))
+        or ai_execution.get("market_permission_sha256") != expected_permission_sha256
+        or ai_execution.get("decision_delay_ms_by_condition")
+        != dict(sorted(expected_delays.items()))
+        or ai_execution.get("decision_delay_input_sha256")
+        != expected_delay_sha256
+        or ai_execution.get("probability_input_sha256")
+        != expected_probability_input_sha256
+        or ai_execution.get("config") != model_execution.get("config")
+    ):
+        raise ValueError("AI execution is not bound to veto-only decisions")
+    uplift = _as_mapping(ai["uplift"], "AI uplift")
+    _verify_claims(uplift, name="AI uplift")
+    dataset_fingerprint = str(probability.get("source_dataset_sha256", ""))
+    expected_uplift = assess_ai_uplift(
+        _execution_uplift_metrics(
+            model_execution,
+            dataset_fingerprint=dataset_fingerprint,
+        ),
+        _execution_uplift_metrics(
+            ai_execution,
+            dataset_fingerprint=dataset_fingerprint,
+        ),
+        model_name=model_name,
+        model_parameters_b=_finite_float(
+            veto.get("model_parameters_b"),
+            "AI veto model size",
+        ),
+        model_artifact_sha256=str(veto["report_sha256"]),
+        matched_periods=_matched_ai_uplift_periods(
+            predictions,
+            model_execution,
+            ai_execution,
+        ),
+    ).asdict()
+    if _canonical_json(uplift) != _canonical_json(expected_uplift):
+        raise ValueError("AI uplift evidence is not model-bound")
+    return ai_execution
+
+
 def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketArtifact:
     """Fail closed unless the experiment and every publication input are coherent."""
 
@@ -825,18 +1614,16 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         _verify_embedded_digest(report, "report_sha256", name=f"{policy} execution")
         executions[policy] = report
     ai = _as_mapping(payload.get("ai"), "AI evidence")
-    if ai.get("enabled") is True:
-        veto = _as_mapping(ai.get("veto_report"), "AI veto report")
-        ai_execution = _as_mapping(ai.get("execution"), "AI execution")
-        _verify_claims(veto, name="AI veto report")
+    ai_execution = _validate_ai_evidence(
+        ai,
+        predictions=predictions,
+        probability=probability,
+        model_execution=executions["model"],
+    )
+    if ai_execution is not None:
         _verify_claims(ai_execution, name="AI execution")
-        _verify_embedded_digest(veto, "report_sha256", name="AI veto report")
         _verify_embedded_digest(ai_execution, "report_sha256", name="AI execution")
-        if veto.get("advisory_only") is not True:
-            raise ValueError("AI evidence is not advisory-only")
         executions["ai"] = ai_execution
-    elif ai.get("enabled") is not False:
-        raise ValueError("AI evidence enabled state is invalid")
 
     for policy, report in executions.items():
         _validate_execution_report(
@@ -898,6 +1685,17 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
                 expected_time_group_count=len(time_groups),
                 name=f"{policy} {latency}ms execution",
             )
+            if (
+                scenario.get("market_permissions")
+                != executions[str(policy)].get("market_permissions")
+                or scenario.get("decision_delay_ms_by_condition")
+                != executions[str(policy)].get("decision_delay_ms_by_condition")
+                or scenario.get("probability_input_sha256")
+                != executions[str(policy)].get("probability_input_sha256")
+            ):
+                raise ValueError(
+                    f"{policy} latency scenario changed frozen policy inputs"
+                )
             if latency == primary_latency and scenario.get(
                 "report_sha256"
             ) != executions[str(policy)].get("report_sha256"):
@@ -1366,6 +2164,51 @@ def _ai_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
                 "summary": decision["summary"],
                 "failure_reason": decision["failure_reason"],
                 "response_sha256": result["response_sha256"],
+            }
+        )
+    return rows
+
+
+def _ai_case_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
+    ai = _as_mapping(payload["ai"], "AI evidence")
+    base = {
+        "enabled": bool(ai.get("enabled")),
+        "case_id": "",
+        "case_sha256": "",
+        "sample_id": "",
+        "condition_id": "",
+        "asset": "",
+        "event_start_utc": "",
+        "decision_received_utc": "",
+        "proposed_outcome": "",
+        "prompt_schema_version": "",
+        "prompt_payload_sha256": "",
+        "prompt_payload_json": "",
+        "reason": "",
+    }
+    if ai.get("enabled") is not True:
+        return [{**base, "reason": ai.get("reason", "operator_disabled")}]
+    raw_cases = ai.get("prompt_cases")
+    if not isinstance(raw_cases, list) or not raw_cases:
+        return [{**base, "reason": "no_positive_after_fee_proposals"}]
+    rows: list[dict[str, object]] = []
+    for raw_case in raw_cases:
+        case = _as_mapping(raw_case, "AI prompt case")
+        prompt = _as_mapping(case["prompt_payload"], "AI prompt")
+        rows.append(
+            {
+                **base,
+                "case_id": case["case_id"],
+                "case_sha256": case["case_sha256"],
+                "sample_id": case["sample_id"],
+                "condition_id": case["condition_id"],
+                "asset": case["asset"],
+                "event_start_utc": _utc(case["event_start_ms"]),
+                "decision_received_utc": _utc(case["decision_received_wall_ms"]),
+                "proposed_outcome": prompt["proposed_outcome"],
+                "prompt_schema_version": prompt["schema_version"],
+                "prompt_payload_sha256": _canonical_sha256(prompt),
+                "prompt_payload_json": _canonical_json(prompt),
             }
         )
     return rows
@@ -2036,6 +2879,7 @@ durable edge. {ai_line}
 - [Execution ledger](latest/tables/trades.csv)
 - [Per-asset execution](latest/tables/per-asset-execution.csv)
 - [Latency sensitivity](latest/tables/latency-sensitivity.csv)
+- [Immutable AI prompt cases](latest/tables/ai-prompt-cases.csv)
 - [AI decisions](latest/tables/ai-decisions.csv)
 - [Round progression](latest/tables/research-progress.csv)
 - [Integrity manifest](latest/publication-integrity.json)
@@ -2071,6 +2915,7 @@ def publish_polymarket_model_artifact(
     equity_rows = _equity_rows(validated.executions)
     trade_rows = _trade_rows(validated.executions)
     per_asset_rows = _per_asset_rows(validated.predictions, validated.executions)
+    ai_case_rows = _ai_case_rows(validated.payload)
     ai_rows = _ai_rows(validated.payload)
     prior = Path(prior_round_path).resolve() if prior_round_path is not None else None
     progress_rows = _progress_rows(validated, prior, round_number)
@@ -2111,6 +2956,7 @@ def publish_polymarket_model_artifact(
         "trades.csv": trade_rows,
         "per-asset-execution.csv": per_asset_rows,
         "latency-sensitivity.csv": latency_rows,
+        "ai-prompt-cases.csv": ai_case_rows,
         "ai-decisions.csv": ai_rows,
         "research-progress.csv": progress_rows,
     }
