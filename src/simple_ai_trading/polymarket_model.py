@@ -24,6 +24,16 @@ POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v4"
 POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v4"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
 POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v2"
+POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION = (
+    "polymarket-market-anchored-profile-logit-v1"
+)
+POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION = (
+    "polymarket-profile-challenger-report-v1"
+)
+POLYMARKET_PROFILE_CONTRACT_SHA256 = (
+    "ae983f4f0cfbcaa130cc5a7d4ec0d3b08cb240ee631e44921b869e69508974ec"
+)
+POLYMARKET_PROFILE_L2_CANDIDATES = (0.001, 0.01, 0.1, 1.0, 10.0)
 
 POLYMARKET_MODEL_FEATURE_NAMES = (
     "remaining_seconds",
@@ -67,6 +77,67 @@ POLYMARKET_MODEL_RISK_CONTEXT_NAMES = (
     "down_ask_depth_3_contracts",
     "log1p_market_liquidity_quote",
     "log1p_market_volume_quote",
+)
+POLYMARKET_PROFILE_FEATURES = (
+    (
+        "diffusion_core",
+        (
+            "remaining_seconds",
+            "direct_distance_from_chainlink_open_bps",
+            "direct_chainlink_basis_bps",
+            "direct_realized_volatility_100ms_bps",
+            "direct_realized_volatility_1000ms_bps",
+            "direct_realized_volatility_5000ms_bps",
+            "direct_diffusion_market_logit_gap",
+            "chainlink_diffusion_market_logit_gap",
+            "direct_spread_bps",
+            "asset_is_eth",
+            "asset_is_sol",
+        ),
+    ),
+    (
+        "fast_cross_venue_flow",
+        (
+            "remaining_seconds",
+            "direct_distance_from_chainlink_open_bps",
+            "direct_chainlink_basis_bps",
+            "direct_return_100ms_bps",
+            "direct_return_250ms_bps",
+            "direct_return_1000ms_bps",
+            "direct_return_5000ms_bps",
+            "direct_realized_volatility_100ms_bps",
+            "direct_realized_volatility_1000ms_bps",
+            "direct_realized_volatility_5000ms_bps",
+            "direct_trade_imbalance_100ms",
+            "direct_trade_imbalance_250ms",
+            "direct_trade_imbalance_1000ms",
+            "direct_trade_imbalance_5000ms",
+            "direct_top_imbalance",
+            "direct_spread_bps",
+            "asset_is_eth",
+            "asset_is_sol",
+        ),
+    ),
+    ("full", POLYMARKET_MODEL_FEATURE_NAMES),
+    (
+        "prediction_book_state",
+        (
+            "remaining_seconds",
+            "direct_distance_from_chainlink_open_bps",
+            "direct_chainlink_basis_bps",
+            "direct_diffusion_market_logit_gap",
+            "chainlink_diffusion_market_logit_gap",
+            "up_microprice_deviation_bps",
+            "down_microprice_deviation_bps",
+            "up_top_imbalance",
+            "down_top_imbalance",
+            "outcome_midpoint_sum_error_bps",
+            "executable_ask_pair_premium_bps",
+            "executable_bid_pair_discount_bps",
+            "asset_is_eth",
+            "asset_is_sol",
+        ),
+    ),
 )
 
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
@@ -413,6 +484,103 @@ class PolymarketModelReport:
             "validation_log_loss_delta": self.validation_log_loss_delta,
             "test_log_loss_delta": self.test_log_loss_delta,
             "test_brier_delta": self.test_brier_delta,
+            "report_sha256": self.report_sha256,
+            "trading_authority": self.trading_authority,
+            "execution_claim": self.execution_claim,
+            "profitability_claim": self.profitability_claim,
+            "portfolio_claim": self.portfolio_claim,
+            "leverage_applied": self.leverage_applied,
+        }
+
+
+@dataclass(frozen=True)
+class TrainedPolymarketProfileModel:
+    """Hash-bound reduced-profile challenger with no order authority."""
+
+    schema_version: str
+    contract_sha256: str
+    source_dataset_sha256: str
+    source_split_sha256: str
+    control_model_sha256: str
+    config: PolymarketModelConfig
+    feature_names: tuple[str, ...]
+    selected_profile: str | None
+    selected_feature_names: tuple[str, ...]
+    winsor_lower: tuple[float, ...]
+    winsor_upper: tuple[float, ...]
+    robust_center: tuple[float, ...]
+    robust_scale: tuple[float, ...]
+    coefficients: tuple[float, ...]
+    selected_candidate: str
+    selected_l2: float | None
+    inner_selected_candidate: str
+    candidate_inner_log_losses: tuple[tuple[str, float], ...]
+    validation_gate_log_losses: tuple[tuple[str, float], ...]
+    inner_fold_count: int
+    inner_fold_boundaries_ms: tuple[tuple[int, int, int, int], ...]
+    training_sample_count: int
+    training_market_count: int
+    training_time_group_count: int
+    model_sha256: str
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    def asdict(self) -> dict[str, object]:
+        payload = _profile_model_payload(self)
+        payload["model_sha256"] = self.model_sha256
+        return payload
+
+
+@dataclass(frozen=True)
+class PolymarketProfileModelReport:
+    """Proper-score comparison of the frozen profile challenger and control."""
+
+    schema_version: str
+    contract_sha256: str
+    source_dataset_sha256: str
+    source_split_sha256: str
+    control_model_sha256: str
+    challenger_model_sha256: str
+    selected_candidate: str
+    baseline_metrics: Mapping[str, PolymarketProbabilityMetrics]
+    control_metrics: Mapping[str, PolymarketProbabilityMetrics]
+    challenger_metrics: Mapping[str, PolymarketProbabilityMetrics]
+    validation_log_loss_delta_vs_control: float
+    test_log_loss_delta_vs_control: float
+    test_brier_delta_vs_control: float
+    report_sha256: str
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "schema_version": self.schema_version,
+            "contract_sha256": self.contract_sha256,
+            "source_dataset_sha256": self.source_dataset_sha256,
+            "source_split_sha256": self.source_split_sha256,
+            "control_model_sha256": self.control_model_sha256,
+            "challenger_model_sha256": self.challenger_model_sha256,
+            "selected_candidate": self.selected_candidate,
+            "baseline_metrics": {
+                key: value.asdict() for key, value in self.baseline_metrics.items()
+            },
+            "control_metrics": {
+                key: value.asdict() for key, value in self.control_metrics.items()
+            },
+            "challenger_metrics": {
+                key: value.asdict() for key, value in self.challenger_metrics.items()
+            },
+            "validation_log_loss_delta_vs_control": (
+                self.validation_log_loss_delta_vs_control
+            ),
+            "test_log_loss_delta_vs_control": self.test_log_loss_delta_vs_control,
+            "test_brier_delta_vs_control": self.test_brier_delta_vs_control,
             "report_sha256": self.report_sha256,
             "trading_authority": self.trading_authority,
             "execution_claim": self.execution_claim,
@@ -801,6 +969,41 @@ def _split_payload(split: PolymarketModelSplit) -> dict[str, object]:
     }
 
 
+def _validate_model_split_identity(
+    dataset: PolymarketModelDataset,
+    split: PolymarketModelSplit,
+) -> None:
+    if split.source_dataset_sha256 != dataset.dataset_sha256:
+        raise ValueError("Polymarket model split belongs to another dataset")
+    if split.split_sha256 != _canonical_sha256(_split_payload(split)):
+        raise ValueError("Polymarket model split identity is invalid")
+    dataset_by_id = {item.sample_id: item for item in dataset.samples}
+    if len(dataset_by_id) != len(dataset.samples):
+        raise ValueError("Polymarket model dataset contains duplicate sample IDs")
+    role_groups = {
+        "train": set(split.train_group_starts_ms),
+        "validation": set(split.validation_group_starts_ms),
+        "test": set(split.test_group_starts_ms),
+    }
+    seen_ids: set[str] = set()
+    for role, groups in role_groups.items():
+        actual = split.samples_for(role)
+        expected = tuple(
+            item for item in dataset.samples if item.event_start_ms in groups
+        )
+        if tuple((item.sample_id, item.sample_sha256) for item in actual) != tuple(
+            (item.sample_id, item.sample_sha256) for item in expected
+        ):
+            raise ValueError("Polymarket model split sample provenance is invalid")
+        for sample in actual:
+            if dataset_by_id.get(sample.sample_id) != sample:
+                raise ValueError("Polymarket model split substituted a sample")
+            sample.validated()
+            if sample.sample_id in seen_ids:
+                raise ValueError("Polymarket model split repeats a sample")
+            seen_ids.add(sample.sample_id)
+
+
 def _market_outcome_counts(
     samples: Sequence[PolymarketModelSample],
 ) -> dict[bool, int]:
@@ -1091,6 +1294,80 @@ def predict_polymarket_probabilities(
     )
 
 
+def predict_polymarket_profile_probabilities(
+    model: TrainedPolymarketProfileModel,
+    samples: Sequence[PolymarketModelSample],
+) -> np.ndarray:
+    """Apply a hash-bound frozen-profile challenger with no execution authority."""
+
+    if model.schema_version != POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION:
+        raise ValueError("unsupported Polymarket profile model schema")
+    if model.contract_sha256 != POLYMARKET_PROFILE_CONTRACT_SHA256:
+        raise ValueError("Polymarket profile model contract is inconsistent")
+    if model.model_sha256 != _canonical_sha256(_profile_model_payload(model)):
+        raise ValueError("Polymarket profile model identity is invalid")
+    if model.feature_names != POLYMARKET_MODEL_FEATURE_NAMES:
+        raise ValueError("Polymarket profile model feature contract is inconsistent")
+    if any(
+        (
+            model.trading_authority,
+            model.execution_claim,
+            model.profitability_claim,
+            model.portfolio_claim,
+            model.leverage_applied,
+        )
+    ):
+        raise ValueError("Polymarket profile model cannot carry trading authority")
+    width = len(POLYMARKET_MODEL_FEATURE_NAMES)
+    arrays = (
+        model.winsor_lower,
+        model.winsor_upper,
+        model.robust_center,
+        model.robust_scale,
+    )
+    if (
+        any(len(value) != width for value in arrays)
+        or len(model.coefficients) != width + 1
+        or len(model.control_model_sha256) != 64
+    ):
+        raise ValueError("Polymarket profile model parameter width is invalid")
+    if model.selected_candidate == "market_baseline":
+        if (
+            model.selected_profile is not None
+            or model.selected_feature_names
+            or model.selected_l2 is not None
+            or any(value != 0.0 for value in model.coefficients)
+        ):
+            raise ValueError("Polymarket profile baseline fallback is inconsistent")
+    else:
+        profile, feature_names, l2 = _profile_candidate_details(
+            model.selected_candidate
+        )
+        if (
+            model.selected_profile != profile
+            or model.selected_feature_names != feature_names
+            or model.selected_l2 != l2
+        ):
+            raise ValueError("Polymarket profile selection is inconsistent")
+        active_indexes = set(_profile_feature_indexes(feature_names))
+        if any(
+            model.coefficients[index + 1] != 0.0
+            for index in range(width)
+            if index not in active_indexes
+        ):
+            raise ValueError("Polymarket excluded profile coefficients must be zero")
+    _profile_candidate_details(model.inner_selected_candidate)
+    return _predict_arrays(
+        samples,
+        lower=np.asarray(model.winsor_lower, dtype=np.float64),
+        upper=np.asarray(model.winsor_upper, dtype=np.float64),
+        center=np.asarray(model.robust_center, dtype=np.float64),
+        scale=np.asarray(model.robust_scale, dtype=np.float64),
+        coefficients=np.asarray(model.coefficients, dtype=np.float64),
+        maximum_absolute_correction=model.config.maximum_absolute_logit_correction,
+    )
+
+
 def evaluate_polymarket_probabilities(
     samples: Sequence[PolymarketModelSample],
     probabilities: Sequence[float] | np.ndarray,
@@ -1172,6 +1449,90 @@ def _model_payload(model: TrainedPolymarketOffsetModel) -> dict[str, object]:
     }
 
 
+def _profile_model_payload(
+    model: TrainedPolymarketProfileModel,
+) -> dict[str, object]:
+    return {
+        "schema_version": model.schema_version,
+        "contract_sha256": model.contract_sha256,
+        "source_dataset_sha256": model.source_dataset_sha256,
+        "source_split_sha256": model.source_split_sha256,
+        "control_model_sha256": model.control_model_sha256,
+        "config": model.config.asdict(),
+        "feature_names": list(model.feature_names),
+        "selected_profile": model.selected_profile,
+        "selected_feature_names": list(model.selected_feature_names),
+        "winsor_lower": _format_floats(model.winsor_lower),
+        "winsor_upper": _format_floats(model.winsor_upper),
+        "robust_center": _format_floats(model.robust_center),
+        "robust_scale": _format_floats(model.robust_scale),
+        "coefficients": _format_floats(model.coefficients),
+        "selected_candidate": model.selected_candidate,
+        "selected_l2": (
+            None if model.selected_l2 is None else format(model.selected_l2, ".17g")
+        ),
+        "inner_selected_candidate": model.inner_selected_candidate,
+        "candidate_inner_log_losses": [
+            [name, format(value, ".17g")]
+            for name, value in model.candidate_inner_log_losses
+        ],
+        "validation_gate_log_losses": [
+            [name, format(value, ".17g")]
+            for name, value in model.validation_gate_log_losses
+        ],
+        "inner_fold_count": model.inner_fold_count,
+        "inner_fold_boundaries_ms": [
+            list(value) for value in model.inner_fold_boundaries_ms
+        ],
+        "training_sample_count": model.training_sample_count,
+        "training_market_count": model.training_market_count,
+        "training_time_group_count": model.training_time_group_count,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
+
+
+def _profile_candidate_name(profile: str, l2: float) -> str:
+    return f"offset_profile_{profile}_l2_{format(float(l2), '.17g')}"
+
+
+def _profile_candidate_details(
+    name: str,
+) -> tuple[str, tuple[str, ...], float]:
+    for profile, feature_names in POLYMARKET_PROFILE_FEATURES:
+        for l2 in POLYMARKET_PROFILE_L2_CANDIDATES:
+            if name == _profile_candidate_name(profile, l2):
+                return profile, feature_names, l2
+    raise ValueError("unknown frozen Polymarket profile candidate")
+
+
+def _profile_feature_indexes(feature_names: Sequence[str]) -> tuple[int, ...]:
+    if len(feature_names) != len(set(feature_names)):
+        raise ValueError("Polymarket profile contains duplicate features")
+    index_by_name = {
+        name: index for index, name in enumerate(POLYMARKET_MODEL_FEATURE_NAMES)
+    }
+    try:
+        return tuple(index_by_name[name] for name in feature_names)
+    except KeyError as exc:
+        raise ValueError("Polymarket profile contains an undeclared feature") from exc
+
+
+def _expand_profile_coefficients(
+    active_coefficients: np.ndarray,
+    feature_indexes: Sequence[int],
+) -> np.ndarray:
+    if active_coefficients.shape != (len(feature_indexes) + 1,):
+        raise ValueError("Polymarket profile coefficient width is invalid")
+    expanded = np.zeros(len(POLYMARKET_MODEL_FEATURE_NAMES) + 1, dtype=np.float64)
+    expanded[0] = active_coefficients[0]
+    expanded[1 + np.asarray(feature_indexes, dtype=np.int64)] = active_coefficients[1:]
+    return expanded
+
+
 def _baseline_probabilities(
     samples: Sequence[PolymarketModelSample],
 ) -> np.ndarray:
@@ -1229,10 +1590,7 @@ def fit_polymarket_offset_model(
 ) -> tuple[TrainedPolymarketOffsetModel, PolymarketModelReport]:
     """Select inside training, gate on validation, and score untouched test data."""
 
-    if split.source_dataset_sha256 != dataset.dataset_sha256:
-        raise ValueError("Polymarket model split belongs to another dataset")
-    if split.split_sha256 != _canonical_sha256(_split_payload(split)):
-        raise ValueError("Polymarket model split identity is invalid")
+    _validate_model_split_identity(dataset, split)
     cfg = dataset.config.validated()
     inner_folds = _inner_rolling_folds(split.train, cfg)
     inner_weight = 0.0
@@ -1451,6 +1809,306 @@ def fit_polymarket_offset_model(
     return model, report
 
 
+def fit_polymarket_profile_challenger(
+    dataset: PolymarketModelDataset,
+    split: PolymarketModelSplit,
+    control_model: TrainedPolymarketOffsetModel,
+) -> tuple[TrainedPolymarketProfileModel, PolymarketProfileModelReport]:
+    """Fit the preregistered profile grid without consulting test outcomes."""
+
+    _validate_model_split_identity(dataset, split)
+    cfg = dataset.config.validated()
+    if (
+        tuple(cfg.l2_candidates) != POLYMARKET_PROFILE_L2_CANDIDATES
+        or cfg.inner_fold_count != 3
+        or not math.isclose(
+            cfg.minimum_validation_log_loss_improvement,
+            0.0001,
+            rel_tol=0.0,
+            abs_tol=1e-15,
+        )
+    ):
+        raise ValueError("Polymarket profile challenger requires its frozen grid")
+    if (
+        control_model.schema_version != POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION
+        or control_model.source_dataset_sha256 != dataset.dataset_sha256
+        or control_model.source_split_sha256 != split.split_sha256
+        or control_model.config != cfg
+    ):
+        raise ValueError("Polymarket profile control model is inconsistent")
+    predict_polymarket_probabilities(control_model, split.train)
+
+    profile_indexes = {
+        profile: _profile_feature_indexes(feature_names)
+        for profile, feature_names in POLYMARKET_PROFILE_FEATURES
+    }
+    inner_folds = _inner_rolling_folds(split.train, cfg)
+    candidate_sums = {
+        _profile_candidate_name(profile, l2): 0.0
+        for profile, _feature_names in POLYMARKET_PROFILE_FEATURES
+        for l2 in POLYMARKET_PROFILE_L2_CANDIDATES
+    }
+    inner_weight = 0.0
+    baseline_inner_sum = 0.0
+    for inner_train, inner_validation in inner_folds:
+        lower, upper, center, scale = _fit_transform(inner_train)
+        full_design = _apply_transform(
+            inner_train,
+            lower,
+            upper,
+            center,
+            scale,
+        )
+        labels, weights, offsets = _targets_weights_offsets(inner_train)
+        fold_labels, fold_weights, _ = _targets_weights_offsets(inner_validation)
+        fold_weight = float(np.sum(fold_weights))
+        inner_weight += fold_weight
+        baseline_inner_sum += fold_weight * _weighted_log_loss_arrays(
+            fold_labels,
+            _baseline_probabilities(inner_validation),
+            fold_weights,
+        )
+        for profile, _feature_names in POLYMARKET_PROFILE_FEATURES:
+            indexes = profile_indexes[profile]
+            active_design = full_design[:, indexes]
+            for l2 in POLYMARKET_PROFILE_L2_CANDIDATES:
+                name = _profile_candidate_name(profile, l2)
+                active_coefficients = _fit_offset_coefficients(
+                    active_design,
+                    labels,
+                    weights,
+                    offsets,
+                    l2=l2,
+                    maximum_iterations=cfg.maximum_iterations,
+                    tolerance=cfg.convergence_tolerance,
+                )
+                coefficients = _expand_profile_coefficients(
+                    active_coefficients,
+                    indexes,
+                )
+                predictions = _predict_arrays(
+                    inner_validation,
+                    lower=lower,
+                    upper=upper,
+                    center=center,
+                    scale=scale,
+                    coefficients=coefficients,
+                    maximum_absolute_correction=(
+                        cfg.maximum_absolute_logit_correction
+                    ),
+                )
+                candidate_sums[name] += fold_weight * _weighted_log_loss_arrays(
+                    fold_labels,
+                    predictions,
+                    fold_weights,
+                )
+    if inner_weight <= 0.0:
+        raise ValueError("inner profile selection has no effective weight")
+
+    candidate_inner_losses = [
+        ("market_baseline", baseline_inner_sum / inner_weight),
+        *[
+            (
+                _profile_candidate_name(profile, l2),
+                candidate_sums[_profile_candidate_name(profile, l2)]
+                / inner_weight,
+            )
+            for profile, _feature_names in POLYMARKET_PROFILE_FEATURES
+            for l2 in POLYMARKET_PROFILE_L2_CANDIDATES
+        ],
+    ]
+
+    def selection_key(item: tuple[str, float]) -> tuple[float, int, float, str]:
+        profile, feature_names, l2 = _profile_candidate_details(item[0])
+        return item[1], len(feature_names), -l2, profile
+
+    inner_name, _inner_loss = min(candidate_inner_losses[1:], key=selection_key)
+    inner_profile, inner_feature_names, inner_l2 = _profile_candidate_details(
+        inner_name
+    )
+    inner_indexes = profile_indexes[inner_profile]
+
+    lower, upper, center, scale = _fit_transform(split.train)
+    full_train_design = _apply_transform(
+        split.train,
+        lower,
+        upper,
+        center,
+        scale,
+    )
+    train_labels, train_weights, train_offsets = _targets_weights_offsets(split.train)
+    active_coefficients = _fit_offset_coefficients(
+        full_train_design[:, inner_indexes],
+        train_labels,
+        train_weights,
+        train_offsets,
+        l2=inner_l2,
+        maximum_iterations=cfg.maximum_iterations,
+        tolerance=cfg.convergence_tolerance,
+    )
+    candidate_coefficients = _expand_profile_coefficients(
+        active_coefficients,
+        inner_indexes,
+    )
+    validation_labels, validation_weights, _ = _targets_weights_offsets(
+        split.validation
+    )
+    baseline_validation_loss = _weighted_log_loss_arrays(
+        validation_labels,
+        _baseline_probabilities(split.validation),
+        validation_weights,
+    )
+    candidate_validation_loss = _weighted_log_loss_arrays(
+        validation_labels,
+        _predict_arrays(
+            split.validation,
+            lower=lower,
+            upper=upper,
+            center=center,
+            scale=scale,
+            coefficients=candidate_coefficients,
+            maximum_absolute_correction=cfg.maximum_absolute_logit_correction,
+        ),
+        validation_weights,
+    )
+    validation_gate_losses = (
+        ("market_baseline", baseline_validation_loss),
+        (inner_name, candidate_validation_loss),
+    )
+    if (
+        candidate_validation_loss
+        <= baseline_validation_loss
+        - cfg.minimum_validation_log_loss_improvement
+    ):
+        selected_name = inner_name
+        selected_profile: str | None = inner_profile
+        selected_feature_names = inner_feature_names
+        selected_l2: float | None = inner_l2
+        selected_coefficients = candidate_coefficients
+    else:
+        selected_name = "market_baseline"
+        selected_profile = None
+        selected_feature_names = ()
+        selected_l2 = None
+        selected_coefficients = np.zeros(
+            len(POLYMARKET_MODEL_FEATURE_NAMES) + 1,
+            dtype=np.float64,
+        )
+
+    provisional = TrainedPolymarketProfileModel(
+        schema_version=POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION,
+        contract_sha256=POLYMARKET_PROFILE_CONTRACT_SHA256,
+        source_dataset_sha256=dataset.dataset_sha256,
+        source_split_sha256=split.split_sha256,
+        control_model_sha256=control_model.model_sha256,
+        config=cfg,
+        feature_names=POLYMARKET_MODEL_FEATURE_NAMES,
+        selected_profile=selected_profile,
+        selected_feature_names=selected_feature_names,
+        winsor_lower=tuple(float(value) for value in lower),
+        winsor_upper=tuple(float(value) for value in upper),
+        robust_center=tuple(float(value) for value in center),
+        robust_scale=tuple(float(value) for value in scale),
+        coefficients=tuple(float(value) for value in selected_coefficients),
+        selected_candidate=selected_name,
+        selected_l2=selected_l2,
+        inner_selected_candidate=inner_name,
+        candidate_inner_log_losses=tuple(candidate_inner_losses),
+        validation_gate_log_losses=validation_gate_losses,
+        inner_fold_count=len(inner_folds),
+        inner_fold_boundaries_ms=tuple(
+            (
+                min(item.event_start_ms for item in inner_train),
+                max(item.event_start_ms for item in inner_train),
+                min(item.event_start_ms for item in inner_validation),
+                max(item.event_start_ms for item in inner_validation),
+            )
+            for inner_train, inner_validation in inner_folds
+        ),
+        training_sample_count=len(split.train),
+        training_market_count=len({item.condition_id for item in split.train}),
+        training_time_group_count=len(split.train_group_starts_ms),
+        model_sha256="",
+    )
+    model = replace(
+        provisional,
+        model_sha256=_canonical_sha256(_profile_model_payload(provisional)),
+    )
+
+    baseline_metrics: dict[str, PolymarketProbabilityMetrics] = {}
+    control_metrics: dict[str, PolymarketProbabilityMetrics] = {}
+    challenger_metrics: dict[str, PolymarketProbabilityMetrics] = {}
+    for role in ("train", "validation", "test"):
+        samples = split.samples_for(role)
+        baseline_metrics[role] = evaluate_polymarket_probabilities(
+            samples,
+            _baseline_probabilities(samples),
+        )
+        control_metrics[role] = evaluate_polymarket_probabilities(
+            samples,
+            predict_polymarket_probabilities(control_model, samples),
+        )
+        challenger_metrics[role] = evaluate_polymarket_probabilities(
+            samples,
+            predict_polymarket_profile_probabilities(model, samples),
+        )
+    validation_delta = (
+        challenger_metrics["validation"].weighted_log_loss
+        - control_metrics["validation"].weighted_log_loss
+    )
+    test_log_loss_delta = (
+        challenger_metrics["test"].weighted_log_loss
+        - control_metrics["test"].weighted_log_loss
+    )
+    test_brier_delta = (
+        challenger_metrics["test"].weighted_brier_score
+        - control_metrics["test"].weighted_brier_score
+    )
+    report_payload = {
+        "schema_version": POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION,
+        "contract_sha256": POLYMARKET_PROFILE_CONTRACT_SHA256,
+        "source_dataset_sha256": dataset.dataset_sha256,
+        "source_split_sha256": split.split_sha256,
+        "control_model_sha256": control_model.model_sha256,
+        "challenger_model_sha256": model.model_sha256,
+        "selected_candidate": selected_name,
+        "baseline_metrics": {
+            key: value.asdict() for key, value in baseline_metrics.items()
+        },
+        "control_metrics": {
+            key: value.asdict() for key, value in control_metrics.items()
+        },
+        "challenger_metrics": {
+            key: value.asdict() for key, value in challenger_metrics.items()
+        },
+        "validation_log_loss_delta_vs_control": validation_delta,
+        "test_log_loss_delta_vs_control": test_log_loss_delta,
+        "test_brier_delta_vs_control": test_brier_delta,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
+    report = PolymarketProfileModelReport(
+        schema_version=POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION,
+        contract_sha256=POLYMARKET_PROFILE_CONTRACT_SHA256,
+        source_dataset_sha256=dataset.dataset_sha256,
+        source_split_sha256=split.split_sha256,
+        control_model_sha256=control_model.model_sha256,
+        challenger_model_sha256=model.model_sha256,
+        selected_candidate=selected_name,
+        baseline_metrics=baseline_metrics,
+        control_metrics=control_metrics,
+        challenger_metrics=challenger_metrics,
+        validation_log_loss_delta_vs_control=validation_delta,
+        test_log_loss_delta_vs_control=test_log_loss_delta,
+        test_brier_delta_vs_control=test_brier_delta,
+        report_sha256=_canonical_sha256(report_payload),
+    )
+    return model, report
+
+
 __all__ = [
     "POLYMARKET_MODEL_DATASET_SCHEMA_VERSION",
     "POLYMARKET_MODEL_FEATURE_NAMES",
@@ -1459,16 +2117,25 @@ __all__ = [
     "POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION",
     "POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION",
     "POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION",
+    "POLYMARKET_PROFILE_CONTRACT_SHA256",
+    "POLYMARKET_PROFILE_FEATURES",
+    "POLYMARKET_PROFILE_L2_CANDIDATES",
+    "POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION",
+    "POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION",
     "PolymarketModelConfig",
     "PolymarketModelDataset",
     "PolymarketModelReport",
     "PolymarketModelSample",
     "PolymarketModelSplit",
     "PolymarketProbabilityMetrics",
+    "PolymarketProfileModelReport",
     "TrainedPolymarketOffsetModel",
+    "TrainedPolymarketProfileModel",
     "build_polymarket_model_dataset",
     "evaluate_polymarket_probabilities",
     "fit_polymarket_offset_model",
+    "fit_polymarket_profile_challenger",
     "predict_polymarket_probabilities",
+    "predict_polymarket_profile_probabilities",
     "split_polymarket_model_dataset",
 ]
