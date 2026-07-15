@@ -16,6 +16,10 @@ from simple_ai_trading.polymarket_action_value import (
     build_polymarket_action_value_dataset,
     materialize_polymarket_action_value_dataset,
 )
+from simple_ai_trading.polymarket_action_pipeline import (
+    PolymarketActionPipelineConfig,
+    materialize_polymarket_action_value_batches,
+)
 from simple_ai_trading.polymarket_paper import (
     PolymarketPaperBroker,
     PolymarketPaperCoordinator,
@@ -1361,6 +1365,56 @@ def test_polymarket_action_materialization_is_idempotent_and_tamper_evident(
     assert existing.status == "existing"
     assert created.action_count == existing.action_count == len(dataset.features)
     assert dataset.features
+
+
+def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "action-pipeline.duckdb") as store:
+        _finish_replay_store(store, "action-pipeline", feature_evidence=True)
+        assert store._payload_connection().execute(
+            "SELECT current_setting('preserve_insertion_order')"
+        ).fetchone() == (False,)
+        with pytest.raises(ValueError, match="bounded-memory policy"):
+            PolymarketActionPipelineConfig(
+                market_groups_per_batch=2
+            ).validated()
+        config = PolymarketActionPipelineConfig(
+            market_groups_per_batch=1,
+            feature=PolymarketFeatureConfig(
+                cadence_ms=250,
+                warmup_ms=0,
+                minimum_resolved_markets_per_asset=1,
+            ),
+        )
+        segmented = PolymarketActionPipelineConfig(
+            market_groups_per_batch=1,
+            feature=replace(config.feature, allow_segmented_gaps=True),
+        )
+        with pytest.raises(ValueError, match="hash-bound eligible condition IDs"):
+            materialize_polymarket_action_value_batches(
+                store,
+                run_id="action-pipeline",
+                config=segmented,
+            )
+
+        first = materialize_polymarket_action_value_batches(
+            store,
+            run_id="action-pipeline",
+            config=config,
+        )
+        second = materialize_polymarket_action_value_batches(
+            store,
+            run_id="action-pipeline",
+            config=config,
+        )
+
+    assert first.report_sha256 == second.report_sha256
+    assert first.action_count == second.action_count
+    assert first.batches[0].status == "created"
+    assert second.batches[0].status == "existing"
+    assert first.batches[0].batch_sha256 == second.batches[0].batch_sha256
+    assert not first.asdict()["profitability_claim"]
 
 
 def test_polymarket_feature_provenance_binds_pre_window_causal_events(

@@ -439,7 +439,6 @@ class PolymarketActionValueDataset:
             not _is_sha256(self.source_feature_dataset_sha256)
             or not self.source_run_id
             or len(self.features) != len(self.labels)
-            or not self.features
             or any(item.validated().source_run_id != self.source_run_id for item in self.features)
             or any(
                 feature.action_feature_sha256 != label.action_feature_sha256

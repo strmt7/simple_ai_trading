@@ -411,6 +411,7 @@ class PolymarketEvidenceStore:
             self.payload_connection.execute(f"SET memory_limit='{self.memory_limit}'")
             self.payload_connection.execute(f"SET threads={self.threads}")
             self.payload_connection.execute("SET TimeZone='UTC'")
+            self.payload_connection.execute("SET preserve_insertion_order=false")
         return self.payload_connection
 
     def __enter__(self) -> "PolymarketEvidenceStore":
