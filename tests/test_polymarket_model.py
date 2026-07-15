@@ -135,6 +135,9 @@ def _feature_values(
             "binance_top_imbalance": (
                 (0.5 if official_up else -0.5) if predictive else 0.0
             ),
+            "binance_return_100ms_bps": (
+                (2.0 if official_up else -2.0) if predictive else 0.0
+            ),
             "binance_return_250ms_bps": (
                 (5.0 if official_up else -5.0) if predictive else 0.0
             ),
@@ -144,8 +147,12 @@ def _feature_values(
             "binance_return_5000ms_bps": (
                 (20.0 if official_up else -20.0) if predictive else 0.0
             ),
+            "binance_realized_volatility_100ms_bps": 1.0,
             "binance_realized_volatility_1000ms_bps": 2.0,
             "binance_realized_volatility_5000ms_bps": 5.0,
+            "binance_trade_imbalance_100ms": (
+                (0.30 if official_up else -0.30) if predictive else 0.0
+            ),
             "binance_trade_imbalance_250ms": (
                 (0.25 if official_up else -0.25) if predictive else 0.0
             ),
@@ -373,7 +380,7 @@ def test_market_grouping_equal_weights_and_purged_split() -> None:
     assert len(dataset.samples) == 30 * 3 * 5
     assert dataset.market_counts == {"BTC": 30, "ETH": 30, "SOL": 30}
     assert dataset.time_group_count == 30
-    assert len(POLYMARKET_MODEL_FEATURE_NAMES) == 24
+    assert len(POLYMARKET_MODEL_FEATURE_NAMES) == 27
     up_features = next(item for item in dataset.samples if item.official_up).feature_map()
     down_features = next(
         item for item in dataset.samples if not item.official_up

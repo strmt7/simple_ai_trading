@@ -19,9 +19,9 @@ from .polymarket_features import (
 )
 
 
-POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v2"
-POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v2"
-POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v3"
+POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v3"
+POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v3"
+POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v4"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
 POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v2"
 
@@ -29,13 +29,16 @@ POLYMARKET_MODEL_FEATURE_NAMES = (
     "remaining_seconds",
     "direct_distance_from_chainlink_open_bps",
     "direct_chainlink_basis_bps",
+    "direct_return_100ms_bps",
     "direct_return_250ms_bps",
     "direct_return_1000ms_bps",
     "direct_return_5000ms_bps",
+    "direct_realized_volatility_100ms_bps",
     "direct_realized_volatility_1000ms_bps",
     "direct_realized_volatility_5000ms_bps",
     "direct_diffusion_market_logit_gap",
     "chainlink_diffusion_market_logit_gap",
+    "direct_trade_imbalance_100ms",
     "direct_trade_imbalance_250ms",
     "direct_trade_imbalance_1000ms",
     "direct_trade_imbalance_5000ms",
@@ -429,9 +432,11 @@ def _model_features(
         remaining_seconds,
         direct_distance,
         direct_chainlink_basis,
+        values["binance_return_100ms_bps"],
         values["binance_return_250ms_bps"],
         values["binance_return_1000ms_bps"],
         values["binance_return_5000ms_bps"],
+        values["binance_realized_volatility_100ms_bps"],
         values["binance_realized_volatility_1000ms_bps"],
         volatility_5000ms,
         _diffusion_market_logit_gap(
@@ -446,6 +451,7 @@ def _model_features(
             remaining_seconds=remaining_seconds,
             market_probability=baseline_up_probability,
         ),
+        values["binance_trade_imbalance_100ms"],
         values["binance_trade_imbalance_250ms"],
         values["binance_trade_imbalance_1000ms"],
         values["binance_trade_imbalance_5000ms"],
