@@ -20,8 +20,8 @@ from .polymarket_replay import (
 )
 
 
-POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v4"
-POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v4"
+POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v5"
+POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v5"
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 POLYMARKET_FEATURE_NAMES = (
     "elapsed_fraction",
@@ -282,6 +282,7 @@ class _MarketSnapshotPoint:
 @dataclass(frozen=True)
 class _PricePoint:
     asset: str
+    connection_id: str
     source_time_ms: int
     received_wall_ms: int
     received_monotonic_ns: int
@@ -293,6 +294,7 @@ class _PricePoint:
 @dataclass(frozen=True)
 class _BinanceBookPoint:
     asset: str
+    connection_id: str
     received_wall_ms: int
     received_monotonic_ns: int
     bid: float
@@ -310,11 +312,36 @@ class _BinanceBookPoint:
 @dataclass(frozen=True)
 class _BinanceTradePoint:
     asset: str
+    connection_id: str
     received_monotonic_ns: int
     signed_quote: Decimal
     gross_quote: Decimal
     event_id: str
     event_sha256: str
+
+
+class _ConnectionCursor:
+    def __init__(
+        self,
+        points: Sequence[_BinanceBookPoint | _BinanceTradePoint],
+    ) -> None:
+        self.points = tuple(
+            sorted(
+                points,
+                key=lambda item: (item.received_monotonic_ns, item.event_id),
+            )
+        )
+        self.index = 0
+        self.latest_connection_id = ""
+
+    def advance(self, received_monotonic_ns: int) -> str:
+        while (
+            self.index < len(self.points)
+            and self.points[self.index].received_monotonic_ns <= received_monotonic_ns
+        ):
+            self.latest_connection_id = self.points[self.index].connection_id
+            self.index += 1
+        return self.latest_connection_id
 
 
 class _PriceCursor:
@@ -331,6 +358,10 @@ class _PriceCursor:
         )
         self.index = 0
         self.available: list[tuple[int, int, str, _PricePoint]] = []
+        self.available_by_connection: dict[
+            str, list[tuple[int, int, str, _PricePoint]]
+        ] = {}
+        self.latest_received: _PricePoint | None = None
 
     def advance(self, received_monotonic_ns: int) -> None:
         while (
@@ -347,15 +378,40 @@ class _PriceCursor:
                     point,
                 ),
             )
+            insort(
+                self.available_by_connection.setdefault(point.connection_id, []),
+                (
+                    point.source_time_ms,
+                    point.received_monotonic_ns,
+                    point.event_id,
+                    point,
+                ),
+            )
+            self.latest_received = point
             self.index += 1
 
-    def latest_at_or_before(self, source_time_ms: int) -> _PricePoint | None:
+    def active_connection_id(self) -> str:
+        return (
+            "" if self.latest_received is None else self.latest_received.connection_id
+        )
+
+    def latest_at_or_before(
+        self,
+        source_time_ms: int,
+        *,
+        connection_id: str | None = None,
+    ) -> _PricePoint | None:
+        available = (
+            self.available
+            if connection_id is None
+            else self.available_by_connection.get(str(connection_id), [])
+        )
         index = bisect_right(
-            self.available,
+            available,
             int(source_time_ms),
             key=lambda item: item[0],
         )
-        return None if index == 0 else self.available[index - 1][3]
+        return None if index == 0 else available[index - 1][3]
 
 
 class _BookCursor:
@@ -387,12 +443,17 @@ class _BookSeries:
                 key=lambda item: (item.received_monotonic_ns, item.event_id),
             )
         )
+        connections = {item.connection_id for item in self.points}
+        if len(connections) != 1:
+            raise ValueError("Binance book series crossed connection segments")
+        self.connection_id = next(iter(connections))
         self.times = tuple(item.received_monotonic_ns for item in self.points)
         prefix_digests = [
             _canonical_sha256(
                 {
-                    "schema_version": "binance-book-causal-prefix-v1",
+                    "schema_version": "binance-book-causal-prefix-v2",
                     "stream": "binance_spot",
+                    "connection_id": self.connection_id,
                 }
             )
         ]
@@ -400,7 +461,7 @@ class _BookSeries:
             prefix_digests.append(
                 _canonical_sha256(
                     {
-                        "schema_version": "binance-book-causal-prefix-v1",
+                        "schema_version": "binance-book-causal-prefix-v2",
                         "previous_sha256": prefix_digests[-1],
                         "event_id": item.event_id,
                         "event_sha256": item.event_sha256,
@@ -461,12 +522,17 @@ class _TradeSeries:
                 key=lambda item: (item.received_monotonic_ns, item.event_id),
             )
         )
+        connections = {item.connection_id for item in self.points}
+        if len(connections) != 1:
+            raise ValueError("Binance trade series crossed connection segments")
+        self.connection_id = next(iter(connections))
         self.times = tuple(item.received_monotonic_ns for item in self.points)
         prefix_digests = [
             _canonical_sha256(
                 {
-                    "schema_version": "binance-trade-causal-prefix-v1",
+                    "schema_version": "binance-trade-causal-prefix-v2",
                     "stream": "binance_spot",
+                    "connection_id": self.connection_id,
                 }
             )
         ]
@@ -478,7 +544,7 @@ class _TradeSeries:
             prefix_digests.append(
                 _canonical_sha256(
                     {
-                        "schema_version": "binance-trade-causal-prefix-v1",
+                        "schema_version": "binance-trade-causal-prefix-v2",
                         "previous_sha256": prefix_digests[-1],
                         "event_id": item.event_id,
                         "event_sha256": item.event_sha256,
@@ -526,6 +592,7 @@ def _parse_feed_points(
         event_type = decoded.event_type
         received_wall_ms = decoded.received_wall_ms
         received_monotonic_ns = decoded.received_monotonic_ns
+        connection_id = str(decoded.connection_id)
         asset = decoded.symbol.upper()
         if asset not in chainlink:
             raise ValueError(
@@ -552,6 +619,7 @@ def _parse_feed_points(
                 direct_books[asset].append(
                     _BinanceBookPoint(
                         asset=asset,
+                        connection_id=connection_id,
                         received_wall_ms=int(received_wall_ms),
                         received_monotonic_ns=int(received_monotonic_ns),
                         bid=bid,
@@ -576,6 +644,7 @@ def _parse_feed_points(
                 direct_trades[asset].append(
                     _BinanceTradePoint(
                         asset=asset,
+                        connection_id=connection_id,
                         received_monotonic_ns=int(received_monotonic_ns),
                         signed_quote=-gross_quote if buyer_is_maker else gross_quote,
                         gross_quote=gross_quote,
@@ -609,6 +678,7 @@ def _parse_feed_points(
             chainlink[asset].append(
                 _PricePoint(
                     asset=asset,
+                    connection_id=connection_id,
                     source_time_ms=_timestamp(raw_time, name="RTDS source timestamp"),
                     received_wall_ms=int(received_wall_ms),
                     received_monotonic_ns=int(received_monotonic_ns),
@@ -742,10 +812,28 @@ def build_polymarket_feature_dataset(
     book_cursors = {
         asset: _BookCursor(points) for asset, points in direct_books.items()
     }
-    book_series = {asset: _BookSeries(points) for asset, points in direct_books.items()}
-    trade_series = {
-        asset: _TradeSeries(points) for asset, points in direct_trades.items()
+    direct_connection_cursors = {
+        asset: _ConnectionCursor((*direct_books[asset], *direct_trades[asset]))
+        for asset in _ASSETS
     }
+    book_series: dict[str, dict[str, _BookSeries]] = {}
+    trade_series: dict[str, dict[str, _TradeSeries]] = {}
+    for asset, points in direct_books.items():
+        grouped: dict[str, list[_BinanceBookPoint]] = {}
+        for point in points:
+            grouped.setdefault(point.connection_id, []).append(point)
+        book_series[asset] = {
+            connection_id: _BookSeries(segment)
+            for connection_id, segment in grouped.items()
+        }
+    for asset, points in direct_trades.items():
+        grouped_trades: dict[str, list[_BinanceTradePoint]] = {}
+        for point in points:
+            grouped_trades.setdefault(point.connection_id, []).append(point)
+        trade_series[asset] = {
+            connection_id: _TradeSeries(segment)
+            for connection_id, segment in grouped_trades.items()
+        }
     resolution_by_condition: dict[str, PolymarketResolutionEvidence] = {
         item.condition_id: item for item in replay.resolutions
     }
@@ -807,20 +895,36 @@ def build_polymarket_feature_dataset(
         chainlink_cursor = chainlink_cursors[asset]
         chainlink_cursor.advance(decision_ns)
         direct_book = book_cursors[asset].advance(decision_ns)
-        anchor = chainlink_cursor.latest_at_or_before(market.event_start_ms)
-        chainlink_now = chainlink_cursor.latest_at_or_before(decision_wall_ms)
+        active_direct_connection = direct_connection_cursors[asset].advance(decision_ns)
+        active_chainlink_connection = chainlink_cursor.active_connection_id()
+        chainlink_now = chainlink_cursor.latest_at_or_before(
+            decision_wall_ms,
+            connection_id=active_chainlink_connection,
+        )
+        if chainlink_now is None:
+            _skip(skipped, "missing_chainlink_current_price")
+            continue
+        anchor = chainlink_cursor.latest_at_or_before(
+            market.event_start_ms,
+            connection_id=chainlink_now.connection_id,
+        )
         if anchor is None:
-            _skip(skipped, "missing_chainlink_open_anchor")
+            _skip(skipped, "missing_chainlink_open_anchor_in_active_segment")
             continue
         anchor_gap_ms = market.event_start_ms - anchor.source_time_ms
         if anchor_gap_ms < 0 or anchor_gap_ms > cfg.maximum_chainlink_anchor_gap_ms:
             _skip(skipped, "chainlink_open_anchor_gap")
             continue
-        if chainlink_now is None:
-            _skip(skipped, "missing_chainlink_current_price")
-            continue
         if direct_book is None:
             _skip(skipped, "missing_direct_binance_book")
+            continue
+        if direct_book.connection_id != active_direct_connection:
+            _skip(skipped, "missing_direct_binance_book_in_active_segment")
+            continue
+        active_book_series = book_series[asset].get(direct_book.connection_id)
+        active_trade_series = trade_series[asset].get(direct_book.connection_id)
+        if active_book_series is None or active_trade_series is None:
+            _skip(skipped, "missing_direct_binance_segment")
             continue
 
         direct_age_ms = (decision_ns - direct_book.received_monotonic_ns) / 1_000_000.0
@@ -839,7 +943,7 @@ def build_polymarket_feature_dataset(
         ):
             _skip(skipped, "stale_or_future_chainlink_price")
             continue
-        if not book_series[asset].has_lookback(decision_ns, 5_000):
+        if not active_book_series.has_lookback(decision_ns, 5_000):
             _skip(skipped, "insufficient_direct_binance_lookback")
             continue
 
@@ -856,14 +960,14 @@ def build_polymarket_feature_dataset(
             decision_wall_ms - market.event_start_ms
         ) / market_duration_ms
         remaining_seconds = (market.end_ms - decision_wall_ms) / 1_000.0
-        trade_100, _gross_100 = trade_series[asset].stats(decision_ns, 100)
-        trade_250, gross_250 = trade_series[asset].stats(decision_ns, 250)
-        trade_1000, gross_1000 = trade_series[asset].stats(decision_ns, 1_000)
-        trade_5000, gross_5000 = trade_series[asset].stats(decision_ns, 5_000)
-        book_prefix_count, book_prefix_sha256 = book_series[asset].causal_prefix(
+        trade_100, _gross_100 = active_trade_series.stats(decision_ns, 100)
+        trade_250, gross_250 = active_trade_series.stats(decision_ns, 250)
+        trade_1000, gross_1000 = active_trade_series.stats(decision_ns, 1_000)
+        trade_5000, gross_5000 = active_trade_series.stats(decision_ns, 5_000)
+        book_prefix_count, book_prefix_sha256 = active_book_series.causal_prefix(
             decision_ns
         )
-        trade_prefix_count, trade_prefix_sha256 = trade_series[asset].causal_prefix(
+        trade_prefix_count, trade_prefix_sha256 = active_trade_series.causal_prefix(
             decision_ns
         )
         if book_prefix_count < 1:
@@ -884,13 +988,13 @@ def build_polymarket_feature_dataset(
             direct_book.ask,
             10_000.0 * (direct_book.ask - direct_book.bid) / direct_book.midpoint,
             _ratio_imbalance(direct_book.bid_quantity, direct_book.ask_quantity),
-            book_series[asset].return_bps(decision_ns, 100),
-            book_series[asset].return_bps(decision_ns, 250),
-            book_series[asset].return_bps(decision_ns, 1_000),
-            book_series[asset].return_bps(decision_ns, 5_000),
-            book_series[asset].realized_volatility_bps(decision_ns, 100),
-            book_series[asset].realized_volatility_bps(decision_ns, 1_000),
-            book_series[asset].realized_volatility_bps(decision_ns, 5_000),
+            active_book_series.return_bps(decision_ns, 100),
+            active_book_series.return_bps(decision_ns, 250),
+            active_book_series.return_bps(decision_ns, 1_000),
+            active_book_series.return_bps(decision_ns, 5_000),
+            active_book_series.realized_volatility_bps(decision_ns, 100),
+            active_book_series.realized_volatility_bps(decision_ns, 1_000),
+            active_book_series.realized_volatility_bps(decision_ns, 5_000),
             trade_100,
             trade_250,
             trade_1000,
@@ -942,10 +1046,12 @@ def build_polymarket_feature_dataset(
                 "direct_binance_latest_book": {
                     "event_id": direct_book.event_id,
                     "event_sha256": direct_book.event_sha256,
+                    "connection_id": direct_book.connection_id,
                     "received_wall_ms": direct_book.received_wall_ms,
                     "received_monotonic_ns": direct_book.received_monotonic_ns,
                 },
                 "direct_binance_causal_prefix": {
+                    "connection_id": active_book_series.connection_id,
                     "book_event_count": book_prefix_count,
                     "book_prefix_sha256": book_prefix_sha256,
                     "trade_event_count": trade_prefix_count,
@@ -954,6 +1060,7 @@ def build_polymarket_feature_dataset(
                 "chainlink_anchor": {
                     "event_id": anchor.event_id,
                     "event_sha256": anchor.event_sha256,
+                    "connection_id": anchor.connection_id,
                     "source_time_ms": anchor.source_time_ms,
                     "received_wall_ms": anchor.received_wall_ms,
                     "received_monotonic_ns": anchor.received_monotonic_ns,
@@ -961,6 +1068,7 @@ def build_polymarket_feature_dataset(
                 "chainlink_current": {
                     "event_id": chainlink_now.event_id,
                     "event_sha256": chainlink_now.event_sha256,
+                    "connection_id": chainlink_now.connection_id,
                     "source_time_ms": chainlink_now.source_time_ms,
                     "received_wall_ms": chainlink_now.received_wall_ms,
                     "received_monotonic_ns": chainlink_now.received_monotonic_ns,

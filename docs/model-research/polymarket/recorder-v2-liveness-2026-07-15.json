@@ -1,0 +1,54 @@
+{
+  "comparison_limits": {
+    "controlled_same_sample_ab": false,
+    "market_windows_differ": true,
+    "profitability_evidence": false,
+    "purpose": "Live-host recorder liveness, bounded backlog, integrity, and write-amplification diagnostic only."
+  },
+  "measurements": {
+    "before_coalescing": {
+      "audit_seconds_after_capture": 83.567,
+      "average_messages_per_chunk": 5.669206897906274,
+      "compressed_bytes": 18815458,
+      "compressed_to_uncompressed_ratio": 0.23614765708193663,
+      "database_bytes_after_checkpoint": 162541568,
+      "duration_seconds": 182.988,
+      "integrity_error_count": 0,
+      "queue_capacity": 20000,
+      "queue_high_watermark": 1866,
+      "raw_chunk_count": 25457,
+      "raw_message_count": 144321,
+      "recorder_report_sha256": "63c64b4db078224f7f3b3fdd20d294f3b23983a41f6ad9484407d6b727b6cd29",
+      "run_id": "a5e69402b8a646a4ab49026d33857a47",
+      "status": "complete",
+      "stream_gap_count": 0,
+      "uncompressed_bytes": 79676666
+    },
+    "coalesced_writer": {
+      "audit_seconds_after_capture": 2.925,
+      "average_messages_per_chunk": 76.37435897435897,
+      "compressed_bytes": 3191530,
+      "compressed_to_uncompressed_ratio": 0.115442301908352,
+      "database_bytes_after_checkpoint": 43790336,
+      "duration_seconds": 63.013,
+      "integrity_error_count": 0,
+      "queue_capacity": 20000,
+      "queue_high_watermark": 250,
+      "raw_chunk_count": 585,
+      "raw_message_count": 44679,
+      "recorder_report_sha256": "d054b9fb81800e770d26ca07a9033f29d0d1a366db4fa530e306a9e4fb62c2c9",
+      "run_id": "ebd7115f0034422cb5586385eb9e1f2a",
+      "status": "complete",
+      "stream_gap_count": 0,
+      "uncompressed_bytes": 27646105
+    }
+  },
+  "observed_change": {
+    "chunks_per_10000_messages_after": 130.93399583697038,
+    "chunks_per_10000_messages_before": 1763.9151613417312,
+    "chunks_per_10000_messages_reduction_fraction": 0.9257708087630616,
+    "messages_per_chunk_factor": 13.47178897326277
+  },
+  "schema_version": "polymarket-recorder-v2-liveness-benchmark-v1",
+  "storage_schema_version": "polymarket-evidence-storage-v2"
+}

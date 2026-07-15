@@ -49,11 +49,19 @@ _STREAMS = frozenset(
 )
 _MAX_RAW_MESSAGE_BYTES = 8 * 1024 * 1024
 _MAX_RAW_CHUNK_BYTES = 64 * 1024 * 1024
+_CLOB_MAX_MESSAGE_BYTES = 512 * 1024
+_SIMPLE_STREAM_MAX_MESSAGE_BYTES = 64 * 1024
+_CLOB_MAX_QUEUE_FRAMES = 2_048
+_SIMPLE_STREAM_MAX_QUEUE_FRAMES = 1_024
+_OUTPUT_PUT_TIMEOUT_SECONDS = 5.0
+_STREAM_INACTIVITY_SECONDS = 30.0
+_STABLE_CONNECTION_SECONDS = 30.0
 _RAW_CHUNK_FRAME_FORMAT = "length-prefixed-utf8-v1"
 _RAW_CHUNK_CODEC = "zstd"
 _RAW_CHUNK_COMPRESSION_LEVEL = 1
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
 _WRITER_BATCH_SIZE = 1_024
+_WRITER_COALESCE_SECONDS = 0.1
 _WRITER_MIN_DRAIN_SECONDS = 60.0
 _WRITER_MAX_DRAIN_SECONDS = 600.0
 _WRITER_STALL_SECONDS = 30.0
@@ -2292,6 +2300,9 @@ class PolymarketPublicRecorder:
         self._written_message_count = 0
         self._written_market_snapshot_count = 0
         self._written_gap_count = 0
+        self._received_message_count = 0
+        self._received_stream_counts: dict[str, int] = {}
+        self._queue_high_watermark = 0
 
     def _notify_progress(
         self,
@@ -2317,6 +2328,12 @@ class PolymarketPublicRecorder:
             "written_message_count": self._written_message_count,
             "written_market_snapshot_count": self._written_market_snapshot_count,
             "written_gap_count": self._written_gap_count,
+            "received_message_count": self._received_message_count,
+            "received_stream_counts": dict(
+                sorted(self._received_stream_counts.items())
+            ),
+            "queue_capacity": self.queue_capacity,
+            "queue_high_watermark": self._queue_high_watermark,
             "queue_size": max(0, int(queue_size)),
             "error_count": len(self.errors),
         }
@@ -2346,6 +2363,9 @@ class PolymarketPublicRecorder:
         self._written_message_count = 0
         self._written_market_snapshot_count = 0
         self._written_gap_count = 0
+        self._received_message_count = 0
+        self._received_stream_counts = {}
+        self._queue_high_watermark = 0
         run_id = uuid.uuid4().hex
         started = _wall_ms()
         stop = asyncio.Event()
@@ -2526,6 +2546,37 @@ class PolymarketPublicRecorder:
             )
             return report
 
+    async def _emit_output(
+        self,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        item: RawStreamMessage | StreamGap | MarketEvidence,
+    ) -> None:
+        try:
+            await asyncio.wait_for(
+                output.put(item),
+                timeout=_OUTPUT_PUT_TIMEOUT_SECONDS,
+            )
+        except TimeoutError as exc:
+            raise RuntimeError(
+                f"evidence queue remained full for {_OUTPUT_PUT_TIMEOUT_SECONDS:.1f}s"
+            ) from exc
+
+    async def _emit_raw_message(
+        self,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        message: RawStreamMessage,
+    ) -> None:
+        validated = message.validated()
+        await self._emit_output(output, validated)
+        self._received_message_count += 1
+        self._received_stream_counts[validated.stream] = (
+            self._received_stream_counts.get(validated.stream, 0) + 1
+        )
+        self._queue_high_watermark = max(
+            self._queue_high_watermark,
+            output.qsize(),
+        )
+
     async def _progress_loop(
         self,
         progress: Callable[[str, Mapping[str, object]], None],
@@ -2585,9 +2636,10 @@ class PolymarketPublicRecorder:
                 market,
                 now_ms,
             )
-            await output.put(evidence)
+            await self._emit_output(output, evidence)
             for sequence, raw in enumerate(books, start=1):
-                await output.put(
+                await self._emit_raw_message(
+                    output,
                     RawStreamMessage(
                         stream="clob_rest_book",
                         connection_id=f"rest-{run_id}-{market.condition_id}",
@@ -2595,7 +2647,7 @@ class PolymarketPublicRecorder:
                         received_wall_ms=raw[0],
                         received_monotonic_ns=raw[1],
                         raw_text=raw[2],
-                    )
+                    ),
                 )
 
     def _fetch_market_evidence(
@@ -2715,12 +2767,35 @@ class PolymarketPublicRecorder:
                     return
                 if isinstance(item, RawStreamMessage):
                     pending_messages.append(item)
-                    if (
-                        len(pending_messages) < _WRITER_BATCH_SIZE
-                        and not output.empty()
-                    ):
+                    deadline = loop.time() + _WRITER_COALESCE_SECONDS
+                    control_item: StreamGap | MarketEvidence | None = None
+                    control_pending = False
+                    while len(pending_messages) < _WRITER_BATCH_SIZE:
+                        remaining = deadline - loop.time()
+                        if remaining <= 0.0:
+                            break
+                        try:
+                            candidate = output.get_nowait()
+                        except asyncio.QueueEmpty:
+                            try:
+                                candidate = await asyncio.wait_for(
+                                    output.get(),
+                                    timeout=remaining,
+                                )
+                            except TimeoutError:
+                                break
+                        if isinstance(candidate, RawStreamMessage):
+                            pending_messages.append(candidate)
+                            continue
+                        control_item = candidate
+                        control_pending = True
+                        break
+                    await flush_pending_messages()
+                    if not control_pending:
                         continue
-                await flush_pending_messages()
+                    item = control_item
+                    if item is None:
+                        return
                 if isinstance(item, StreamGap):
                     await invoke(writer_store.record_gap, run_id, item)
                     self._written_gap_count += 1
@@ -2739,8 +2814,9 @@ class PolymarketPublicRecorder:
     ) -> None:
         backoff = 1.0
         while not stop.is_set():
-            connection_id = uuid.uuid4().hex
+            connection_id = f"clob:{uuid.uuid4().hex}"
             sequence = 0
+            connected_at = 0.0
             try:
                 tokens = self.registry.token_ids()
                 if not tokens:
@@ -2750,9 +2826,12 @@ class PolymarketPublicRecorder:
                     open_timeout=10,
                     close_timeout=3,
                     ping_interval=None,
-                    max_size=_MAX_RAW_MESSAGE_BYTES,
-                    max_queue=1024,
+                    ping_timeout=None,
+                    max_size=_CLOB_MAX_MESSAGE_BYTES,
+                    max_queue=_CLOB_MAX_QUEUE_FRAMES,
+                    compression=None,
                 ) as websocket:
+                    connected_at = asyncio.get_running_loop().time()
                     current = set(tokens)
                     await websocket.send(
                         _canonical_json(
@@ -2763,7 +2842,6 @@ class PolymarketPublicRecorder:
                             }
                         )
                     )
-                    backoff = 1.0
                     heartbeat_task = asyncio.create_task(
                         _periodic_text_heartbeat(websocket, stop, "PING", 10.0)
                     )
@@ -2776,6 +2854,7 @@ class PolymarketPublicRecorder:
                             try:
                                 done, _ = await asyncio.wait(
                                     {*transient, heartbeat_task},
+                                    timeout=_STREAM_INACTIVITY_SECONDS,
                                     return_when=asyncio.FIRST_COMPLETED,
                                 )
                             finally:
@@ -2786,6 +2865,10 @@ class PolymarketPublicRecorder:
                                     *transient,
                                     return_exceptions=True,
                                 )
+                            if not done:
+                                raise RuntimeError(
+                                    "CLOB market stream exceeded the inactivity bound"
+                                )
                             if heartbeat_task in done:
                                 heartbeat_task.result()
                                 if stop.is_set():
@@ -2795,17 +2878,19 @@ class PolymarketPublicRecorder:
                                 return
                             if receive in done:
                                 raw = receive.result()
-                                sequence += 1
-                                await output.put(
+                                next_sequence = sequence + 1
+                                await self._emit_raw_message(
+                                    output,
                                     RawStreamMessage(
                                         "clob_market",
                                         connection_id,
-                                        sequence,
+                                        next_sequence,
                                         _wall_ms(),
                                         _monotonic_ns(),
                                         _text_frame(raw),
-                                    )
+                                    ),
                                 )
+                                sequence = next_sequence
                             if changed in done and changed.result():
                                 self.registry.changed.clear()
                                 desired = set(self.registry.token_ids())
@@ -2837,7 +2922,8 @@ class PolymarketPublicRecorder:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                await output.put(
+                await self._emit_output(
+                    output,
                     StreamGap(
                         "clob_market",
                         connection_id,
@@ -2846,6 +2932,12 @@ class PolymarketPublicRecorder:
                         sequence,
                     )
                 )
+                if (
+                    connected_at > 0.0
+                    and asyncio.get_running_loop().time() - connected_at
+                    >= _STABLE_CONNECTION_SECONDS
+                ):
+                    backoff = 1.0
                 await _bounded_backoff(stop, backoff)
                 backoff = min(30.0, backoff * 2.0)
 
@@ -2857,34 +2949,42 @@ class PolymarketPublicRecorder:
         assets = ("btc", "eth", "sol")
         subscriptions = (
             *(
-                _canonical_json(
-                    {
-                        "action": "subscribe",
-                        "subscriptions": [
-                            {
-                                "topic": "crypto_prices",
-                                "type": "update",
-                                "filters": _canonical_json(
-                                    {"symbol": f"{asset.upper()}USDT"}
-                                ),
-                            }
-                        ],
-                    }
+                (
+                    f"rtds:binance:{asset}",
+                    _canonical_json(
+                        {
+                            "action": "subscribe",
+                            "subscriptions": [
+                                {
+                                    "topic": "crypto_prices",
+                                    "type": "update",
+                                    "filters": _canonical_json(
+                                        {"symbol": f"{asset.upper()}USDT"}
+                                    ),
+                                }
+                            ],
+                        }
+                    ),
                 )
                 for asset in assets
             ),
             *(
-                _canonical_json(
-                    {
-                        "action": "subscribe",
-                        "subscriptions": [
-                            {
-                                "topic": "crypto_prices_chainlink",
-                                "type": "update",
-                                "filters": _canonical_json({"symbol": f"{asset}/usd"}),
-                            }
-                        ],
-                    }
+                (
+                    f"rtds:chainlink:{asset}",
+                    _canonical_json(
+                        {
+                            "action": "subscribe",
+                            "subscriptions": [
+                                {
+                                    "topic": "crypto_prices_chainlink",
+                                    "type": "update",
+                                    "filters": _canonical_json(
+                                        {"symbol": f"{asset}/usd"}
+                                    ),
+                                }
+                            ],
+                        }
+                    ),
                 )
                 for asset in assets
             ),
@@ -2892,10 +2992,11 @@ class PolymarketPublicRecorder:
         # Keep every topic/symbol subscription isolated. RTDS keys subscriptions
         # by topic and can otherwise replace one asset while acknowledging all.
         async with asyncio.TaskGroup() as task_group:
-            for subscription in subscriptions:
+            for lane, subscription in subscriptions:
                 task_group.create_task(
                     self._simple_stream(
                         stream="polymarket_rtds",
+                        lane=lane,
                         url=POLYMARKET_RTDS_WEBSOCKET,
                         subscription=subscription,
                         heartbeat="PING",
@@ -2912,44 +3013,49 @@ class PolymarketPublicRecorder:
     ) -> None:
         await self._simple_stream(
             stream="binance_spot",
+            lane="binance:combined:btc-eth-sol",
             url=BINANCE_SPOT_WEBSOCKET,
             subscription=None,
             heartbeat=None,
             heartbeat_seconds=20.0,
             output=output,
             stop=stop,
-            protocol_ping_interval=20.0,
         )
 
     async def _simple_stream(
         self,
         *,
         stream: str,
+        lane: str,
         url: str,
         subscription: str | None,
         heartbeat: str | None,
         heartbeat_seconds: float,
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
-        protocol_ping_interval: float | None = None,
     ) -> None:
+        normalized_lane = str(lane or "").strip().lower()
+        if not re.fullmatch(r"[a-z0-9][a-z0-9:_-]{0,95}", normalized_lane):
+            raise ValueError("public stream lane is invalid")
         backoff = 1.0
         while not stop.is_set():
-            connection_id = uuid.uuid4().hex
+            connection_id = f"{normalized_lane}:{uuid.uuid4().hex}"
             sequence = 0
+            connected_at = 0.0
             try:
                 async with connect(
                     url,
                     open_timeout=10,
                     close_timeout=3,
-                    ping_interval=protocol_ping_interval,
-                    ping_timeout=20,
-                    max_size=_MAX_RAW_MESSAGE_BYTES,
-                    max_queue=1024,
+                    ping_interval=None,
+                    ping_timeout=None,
+                    max_size=_SIMPLE_STREAM_MAX_MESSAGE_BYTES,
+                    max_queue=_SIMPLE_STREAM_MAX_QUEUE_FRAMES,
+                    compression=None,
                 ) as websocket:
+                    connected_at = asyncio.get_running_loop().time()
                     if subscription is not None:
                         await websocket.send(subscription)
-                    backoff = 1.0
                     heartbeat_task = (
                         asyncio.create_task(
                             _periodic_text_heartbeat(
@@ -2973,6 +3079,7 @@ class PolymarketPublicRecorder:
                             try:
                                 done, _ = await asyncio.wait(
                                     watched,
+                                    timeout=_STREAM_INACTIVITY_SECONDS,
                                     return_when=asyncio.FIRST_COMPLETED,
                                 )
                             finally:
@@ -2983,6 +3090,10 @@ class PolymarketPublicRecorder:
                                     *transient,
                                     return_exceptions=True,
                                 )
+                            if not done:
+                                raise RuntimeError(
+                                    f"{stream} exceeded the inactivity bound"
+                                )
                             if heartbeat_task is not None and heartbeat_task in done:
                                 heartbeat_task.result()
                                 if stop.is_set():
@@ -2991,18 +3102,20 @@ class PolymarketPublicRecorder:
                             if stopping in done and stopping.result():
                                 return
                             raw = receive.result()
-                            sequence += 1
+                            next_sequence = sequence + 1
                             text = _text_frame(raw)
-                            await output.put(
+                            await self._emit_raw_message(
+                                output,
                                 RawStreamMessage(
                                     stream,
                                     connection_id,
-                                    sequence,
+                                    next_sequence,
                                     _wall_ms(),
                                     _monotonic_ns(),
                                     text,
-                                )
+                                ),
                             )
+                            sequence = next_sequence
                             if text == "PING":
                                 await websocket.send("PONG")
                     finally:
@@ -3012,7 +3125,8 @@ class PolymarketPublicRecorder:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                await output.put(
+                await self._emit_output(
+                    output,
                     StreamGap(
                         stream,
                         connection_id,
@@ -3021,6 +3135,12 @@ class PolymarketPublicRecorder:
                         sequence,
                     )
                 )
+                if (
+                    connected_at > 0.0
+                    and asyncio.get_running_loop().time() - connected_at
+                    >= _STABLE_CONNECTION_SECONDS
+                ):
+                    backoff = 1.0
                 await _bounded_backoff(stop, backoff)
                 backoff = min(30.0, backoff * 2.0)
 

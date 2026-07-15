@@ -546,6 +546,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--minimum-resolved-markets-per-asset", type=int, default=30
     )
     parser_polymarket_model.add_argument(
+        "--allow-segmented-gaps",
+        action="store_true",
+        help=(
+            "admit only continuity segments that reset CLOB, direct Binance, and "
+            "RTDS state after a hash-audited reconnect"
+        ),
+    )
+    parser_polymarket_model.add_argument(
         "--latency-ms",
         type=int,
         default=100,
@@ -6388,6 +6396,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as store:
+            allow_segmented_gaps = bool(
+                getattr(args, "allow_segmented_gaps", False)
+            )
             feature_dataset = build_polymarket_feature_dataset(
                 store,
                 run_id=getattr(args, "run_id", None),
@@ -6395,7 +6406,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     cadence_ms=int(args.cadence_ms),
                     warmup_ms=int(args.warmup_ms),
                     minimum_resolved_markets_per_asset=minimum_markets,
-                    allow_segmented_gaps=False,
+                    allow_segmented_gaps=allow_segmented_gaps,
                 ),
             )
             progress(
@@ -6447,7 +6458,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             execution_replay = PolymarketEvidenceReplay.load(
                 store,
                 run_id=feature_dataset.run_id,
-                allow_segmented_gaps=False,
+                allow_segmented_gaps=allow_segmented_gaps,
                 book_sample_interval_ms=0,
                 condition_ids=test_conditions,
             )
@@ -6963,10 +6974,6 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
             getattr(args, "allow_segmented_gaps", False)
         )
         if action == "run-model":
-            if allow_segmented_gaps:
-                raise ValueError(
-                    "--action run-model requires strict gap-free source verification"
-                )
             artifact_path = Path(required("artifact"))
             source_verification_path = Path(required("source_verification"))
             model_plan = build_polymarket_paper_plan(
@@ -6977,6 +6984,11 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                     getattr(args, "allow_unconfirmed_research", False)
                 ),
             )
+            if allow_segmented_gaps and not model_plan.allow_segmented_gaps:
+                raise ValueError(
+                    "--allow-segmented-gaps disagrees with the verified model artifact"
+                )
+            allow_segmented_gaps = model_plan.allow_segmented_gaps
             supplied_run_id = str(broker_run_id or "").strip()
             if supplied_run_id and supplied_run_id != model_plan.run_id:
                 raise ValueError("--run-id disagrees with the verified model artifact")

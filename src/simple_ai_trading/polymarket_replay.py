@@ -32,6 +32,32 @@ _CAUSALLY_ORDERED_EVENTS = _BOOK_DEPTH_EVENTS | frozenset(
     {"best_bid_ask", "tick_size_change", "market_resolved"}
 )
 POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION = "polymarket-replay-diagnostics-v2"
+_NAMED_LIVE_LANE_STREAMS = {
+    "clob": "clob_market",
+    "binance:combined:btc-eth-sol": "binance_spot",
+    "rtds:binance:btc": "polymarket_rtds",
+    "rtds:binance:eth": "polymarket_rtds",
+    "rtds:binance:sol": "polymarket_rtds",
+    "rtds:chainlink:btc": "polymarket_rtds",
+    "rtds:chainlink:eth": "polymarket_rtds",
+    "rtds:chainlink:sol": "polymarket_rtds",
+}
+
+
+def _named_live_lane(stream: str, connection_id: str) -> str | None:
+    lane, separator, instance_id = connection_id.rpartition(":")
+    expected_stream = _NAMED_LIVE_LANE_STREAMS.get(lane)
+    if expected_stream is None:
+        return None
+    if (
+        separator != ":"
+        or len(instance_id) != 32
+        or any(character not in "0123456789abcdef" for character in instance_id)
+    ):
+        raise ValueError("named stream connection has an invalid instance identity")
+    if stream != expected_stream:
+        raise ValueError("named stream connection is bound to the wrong stream")
+    return lane
 
 
 def _canonical_json(value: object) -> str:
@@ -367,21 +393,22 @@ class PolymarketEvidenceReplay:
             """,
             [run_id],
         ).fetchall()
-        if not rows:
-            return 0
-        if not allow_segmented_gaps:
+        if rows and not allow_segmented_gaps:
             raise ValueError("Polymarket replay refuses runs with stream gaps")
-        seen_connections: set[str] = set()
+        segmentable_streams = {"clob_market", "binance_spot", "polymarket_rtds"}
+        seen_connections: set[tuple[str, str]] = set()
         for stream, connection_id, opened_at_ms, last_sequence_number in rows:
             normalized_stream = str(stream)
             normalized_connection = str(connection_id)
-            if normalized_stream != "clob_market":
+            if normalized_stream not in segmentable_streams:
                 raise ValueError(
-                    "segmented Polymarket replay permits only CLOB market gaps"
+                    "segmented Polymarket replay found a non-segmentable stream gap"
                 )
-            if normalized_connection in seen_connections:
-                raise ValueError("CLOB connection has duplicate stream-gap evidence")
-            seen_connections.add(normalized_connection)
+            _named_live_lane(normalized_stream, normalized_connection)
+            connection_key = (normalized_stream, normalized_connection)
+            if connection_key in seen_connections:
+                raise ValueError("stream connection has duplicate gap evidence")
+            seen_connections.add(connection_key)
             evidence = connection.execute(
                 """
                 SELECT count(*), max(sequence_number), max(received_wall_ms),
@@ -396,12 +423,63 @@ class PolymarketEvidenceReplay:
                     normalized_connection,
                 ],
             ).fetchone()
-            if evidence is None or int(evidence[0] or 0) < 1:
-                raise ValueError("CLOB stream gap has no matching connection evidence")
-            if int(evidence[1]) != int(last_sequence_number):
-                raise ValueError("CLOB stream gap does not close the final sequence")
+            evidence_count = 0 if evidence is None else int(evidence[0] or 0)
+            expected_last_sequence = int(last_sequence_number)
+            if expected_last_sequence == 0:
+                if evidence_count != 0:
+                    raise ValueError(
+                        "zero-sequence stream gap has matching message evidence"
+                    )
+                continue
+            if evidence_count < 1:
+                raise ValueError("stream gap has no matching connection evidence")
+            if int(evidence[1]) != expected_last_sequence:
+                raise ValueError("stream gap does not close the final sequence")
             if int(evidence[2]) > int(opened_at_ms) or int(evidence[3] or 0):
-                raise ValueError("CLOB stream gap precedes messages on its connection")
+                raise ValueError("stream gap precedes messages on its connection")
+
+        connection_rows = connection.execute(
+            """
+            SELECT stream, connection_id,
+                   min(received_monotonic_ns), max(received_monotonic_ns),
+                   min(sequence_number)
+            FROM polymarket_raw_message
+            WHERE run_id = ?
+              AND stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
+            GROUP BY stream, connection_id
+            """,
+            [run_id],
+        ).fetchall()
+        named_lanes: dict[str, list[tuple[int, int, str, str]]] = {}
+        for stream, connection_id, first_ns, last_ns, first_sequence in connection_rows:
+            normalized_stream = str(stream)
+            normalized_connection = str(connection_id)
+            lane = _named_live_lane(normalized_stream, normalized_connection)
+            if lane is None:
+                continue
+            if int(first_sequence) != 1:
+                raise ValueError("named stream connection does not begin at sequence one")
+            named_lanes.setdefault(lane, []).append(
+                (
+                    int(first_ns),
+                    int(last_ns),
+                    normalized_stream,
+                    normalized_connection,
+                )
+            )
+        for lane_connections in named_lanes.values():
+            lane_connections.sort(key=lambda item: (item[0], item[3]))
+            for current, following in zip(
+                lane_connections,
+                lane_connections[1:],
+                strict=False,
+            ):
+                if current[1] > following[0]:
+                    raise ValueError("named stream connection segments overlap")
+                if (current[2], current[3]) not in seen_connections:
+                    raise ValueError(
+                        "named stream connection transition has no gap evidence"
+                    )
         return len(rows)
 
     @staticmethod

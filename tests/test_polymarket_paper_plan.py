@@ -34,6 +34,9 @@ def _artifact(*, confirmed: bool = True) -> SimpleNamespace:
         artifact_sha256="1" * 64,
         payload={
             "run_id": "paper-plan-run",
+            "feature_dataset": {
+                "config": {"allow_segmented_gaps": False},
+            },
             "evidence_gates": gates,
             "execution_latency_sensitivity": {
                 "primary_network_latency_ms": 100,
@@ -103,6 +106,7 @@ def test_model_paper_plan_is_promotion_and_source_gated(
     assert plan.artifact_sha256 == "1" * 64
     assert plan.source_verification_sha256 == "2" * 64
     assert plan.recorder_report_sha256 == "5" * 64
+    assert plan.allow_segmented_gaps is False
     assert len(plan.plan_sha256) == 64
 
     source["execution_report_sha256_by_policy_and_latency"] = {
@@ -137,9 +141,7 @@ def test_unconfirmed_model_requires_explicit_research_override(
     )
     assert plan.confirmed_for_paper_run is False
     assert plan.research_override is True
-    assert plan.blocking_reasons == (
-        "minimum_confirmatory_test_time_groups_met",
-    )
+    assert plan.blocking_reasons == ("minimum_confirmatory_test_time_groups_met",)
     assert plan.trading_authority is False
     assert plan.live_order_authority is False
     assert plan.profitability_claim is False

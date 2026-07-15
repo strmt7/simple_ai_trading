@@ -3,7 +3,7 @@
   "artifact_integrity": [
     {
       "bytes": 3590,
-      "path": "docs/model-research/polymarket/latest/charts/causal-feature-coverage.svg",
+      "path": "docs/model-research/polymarket/round-002/charts/causal-feature-coverage.svg",
       "sha256": "53a6034cda909745d53b67abfb8ad9d466e358fe8c017a6351ee1345dc7472ae"
     },
     {
@@ -143,7 +143,7 @@
   "tracked_artifacts": [
     "docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json",
     "docs/model-research/polymarket/round-002-market-rows.csv",
-    "docs/model-research/polymarket/latest/charts/causal-feature-coverage.svg"
+    "docs/model-research/polymarket/round-002/charts/causal-feature-coverage.svg"
   ],
   "tracked_repo_artifact": true
 }

@@ -1,0 +1,80 @@
+{
+  "contract_sha256": "d8eee2f9531e7f493d2e3f614069795348c7d6a3bdaf8c885c751ed574b23027",
+  "evidence_scope": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "current_degraded_run_policy": "Recorder and storage diagnostic only; it was inspected before this contract and cannot be confirmatory model evidence.",
+    "replacement_capture_required": true,
+    "venue": "Polymarket BTC/ETH/SOL five-minute markets"
+  },
+  "lifecycle_parity": {
+    "external_inventory_may_be_touched": false,
+    "same_as_binance_paper_core": [
+      "deterministic_intent_identity",
+      "append_only_order_transitions",
+      "owned_inventory_only",
+      "reconciliation_before_exposure",
+      "unknown_state_reserves_risk",
+      "pause",
+      "resume_after_reconciliation",
+      "stop_and_close_owned_positions",
+      "outage_recovery",
+      "data_freshness_deadlines",
+      "loss_budgets"
+    ]
+  },
+  "promotion_constraints": {
+    "activity_is_not_a_promotion_criterion": true,
+    "gap_affected_rows_may_not_be_used": true,
+    "profitability_claim": false,
+    "paper_or_live_authority_granted": false,
+    "source_reconstruction_must_reproduce_the_continuity_policy": true
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/overview",
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/market-data/websocket/rtds",
+    "https://developers.binance.com/en/docs/binance-spot-api-docs/web-socket-streams",
+    "https://websockets.readthedocs.io/en/16.0/topics/memory.html"
+  ],
+  "schema_version": "polymarket-prospective-continuity-preregistration-v2",
+  "segmentation_policy": {
+    "binance_spot": {
+      "connection_scoped_book_returns_volatility_and_trade_flow": true,
+      "minimum_fresh_lookback_ms": 5000,
+      "redundant_client_protocol_pings_forbidden": true,
+      "server_ping_auto_pong_required": true
+    },
+    "clob_market": {
+      "both_outcome_books_required": true,
+      "delta_before_full_book_baseline_is_fatal": true,
+      "execution_across_connection_segments_forbidden": true,
+      "state_reset_on_connection_change": true
+    },
+    "common": {
+      "gap_must_close_the_persisted_final_sequence": true,
+      "messages_after_recorded_gap_on_same_connection_forbidden": true,
+      "named_lane_transition_requires_gap_evidence": true,
+      "segmented_mode_is_explicit_opt_in": true,
+      "silent_drop_forbidden": true,
+      "strict_gap_free_mode_remains_default": true,
+      "zero_message_failed_attempt_requires_sequence_zero": true
+    },
+    "polymarket_rtds_chainlink": {
+      "current_and_open_anchor_must_share_connection": true,
+      "historical_subscription_rows_become_available_only_at_receipt": true,
+      "one_topic_symbol_per_named_connection_lane": true
+    }
+  },
+  "status": "frozen_before_replacement_capture_outcomes",
+  "truth_constraints": {
+    "current_run_outcomes_seen": true,
+    "future_capture_outcomes_seen": false,
+    "no_interpolation_across_gaps": true,
+    "no_synthetic_market_data": true,
+    "official_resolution_requires_clob_gamma_agreement": true
+  }
+}
