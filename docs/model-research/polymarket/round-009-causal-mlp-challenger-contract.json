@@ -1,0 +1,45 @@
+{
+  "artifact": {
+    "model": "Canonical float-text weights, train-only normalization, fixed architecture, training trace, backend evidence, partition predictions, sequential actions, equity, per-condition PnL, and report must be hash-bound and stored in DuckDB.",
+    "replay": "Publication must reconstruct the selected policy from persisted predictions and causal action labels; generated charts are views of canonical JSON/CSV tables only."
+  },
+  "contract_sha256": "a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2",
+  "data": {
+    "eligibility": "Use exactly one post-contract, confirmation-eligible Round 9 continuity report and its hash-bound action pipeline. Reconstruct every source, feature, label, and execution receipt before fitting.",
+    "features": "Use only the exact 39 decision-time Polymarket action features. They already contain causal 100 ms through 5 s summaries. Official outcomes, future books, fills, labels, utilities, calendar identity, and model scores are forbidden inputs.",
+    "minimum_breadth": "Require at least 60 synchronized BTC/ETH/SOL five-minute groups. Every retained partition must contain both official market outcomes for every asset, at least 100 positive-complete labels, and at least 100 eligible negatives.",
+    "parent_dataset": "Use the exact grouped chronological train/purge/validation/purge/test split persisted by the frozen ridge report. No row, condition, group, or partition may move.",
+    "rows": "Train and score classifier-eligible actions only. action_unavailable is excluded; entry_no_fill and filled_entry_failed_exit remain negative labels."
+  },
+  "evaluation": {
+    "economic_policy": "Apply the parent sequential one-condition position policy exactly: threshold grid 0.5, 0.6, 0.7, 0.8, 0.9; probability ties abstain; no-fill locks until its recorded receipt; failed exit charges full entry cost and permanently blocks the condition.",
+    "test_admission": "Open the untouched test exactly once only if validation has positive 95% group-block-bootstrap log-loss uplift over ridge, the selected neural threshold passes every parent validation economic gate, backend replay is reproducible, and the parent ridge report development_passed is true.",
+    "test_gate": "The neural test must pass the parent test gate, have strictly lower log loss and strictly greater aggregate stress utility than ridge, have no greater realized drawdown, have no lower utility for BTC, ETH, or SOL, and have a positive 95% synchronized-group moving-block-bootstrap lower bound for paired per-condition utility uplift.",
+    "truth": "A passed experiment is challenger evidence only. It is not a profitability claim, live-money authority, Polymarket order authority, or permission to alter deterministic ownership, close, reconciliation, liquidity, or risk controls."
+  },
+  "fit": {
+    "architecture": "One fixed 39 -> 64 GELU -> 32 GELU -> 1 logit multilayer perceptron with biases, 4,673 trainable parameters, no dropout, no batch normalization, no embedding, and no architecture candidates.",
+    "backend": "Prefer a proved DirectML device on Windows; allow explicit CPU fallback. Record requested/effective backend, device, package versions, wall time, and fallback reason. Never claim GPU use from configuration alone.",
+    "batching": "Use CPU-generated deterministic epoch permutations, batch size 4096, one training process, bounded tensors, and no data-loader workers.",
+    "ensemble": "Fit seeds 4701, 4702, and 4703 under the identical contract and average their probabilities. Seeds are never selected or discarded by score.",
+    "loss": "Mean condition-balanced binary cross-entropy: rows within each condition share equal total weight and the weights are normalized to mean one. Do not class-weight, oversample, or synthesize labels.",
+    "optimizer": "AdamW with learning rate 0.001, weight decay 0.0001, at most 200 epochs, validation-log-loss patience 20, minimum improvement 0.000001, and best-epoch restoration independently for each fixed seed.",
+    "preprocessing": "Subtract the training-only arithmetic mean and divide by the training-only population standard deviation; replace a non-finite or <=1e-12 scale with 1. Validation and test never refit preprocessing.",
+    "reproducibility": "Before evidence fitting, run a bounded finite-forward/backward/update preflight on the effective device. Repeat seed 4701 once and require maximum absolute validation-probability drift <=0.00001; otherwise invalidate the challenger."
+  },
+  "foundation_ai_boundary": {
+    "current_evidence": "The installed qwen3:8b passed structured risk-review cases; qwen3.5:9b and fin-r1:8b were rejected. Those are governance results, not alpha evidence.",
+    "latency": "A multibillion-parameter language model is excluded from the 250 ms action scorer. Any later LLM experiment must be veto-only, cache canonical case hashes, record measured response delay, replay that delay against the actual future book, and fail closed.",
+    "promotion": "The separate AI uplift policy still requires at least 30 contiguous hash-bound matched periods spanning at least 90 days, positive after-cost uplift, a positive 95% block-bootstrap lower bound, and non-degrading tail risk. This short confirmation capture cannot authorize an LLM overlay."
+  },
+  "parent_ridge_contract_sha256": "4b192e7f30af3e3d6e7dfb1b2b3342518e23de6d750b6b1cfd2334d87f2f5a12",
+  "research_basis": [
+    "https://arxiv.org/abs/1808.03668",
+    "https://arxiv.org/abs/2502.15757",
+    "https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html",
+    "https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers",
+    "https://docs.ollama.com/gpu"
+  ],
+  "schema_version": "polymarket-round9-causal-mlp-challenger-contract-v1",
+  "status": "frozen_before_any_round_9_neural_evidence_fit_or_model_score"
+}
