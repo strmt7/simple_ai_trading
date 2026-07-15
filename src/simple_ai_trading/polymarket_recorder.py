@@ -2273,7 +2273,7 @@ class PolymarketPublicRecorder:
         database: str | Path,
         *,
         client: PolymarketPublicClient | None = None,
-        queue_capacity: int = 20_000,
+        queue_capacity: int = 100_000,
         discovery_interval_seconds: int = 60,
         memory_limit: str = "4GB",
         database_threads: int = 2,
@@ -2303,6 +2303,16 @@ class PolymarketPublicRecorder:
         self._received_message_count = 0
         self._received_stream_counts: dict[str, int] = {}
         self._queue_high_watermark = 0
+
+    def _record_queue_saturation(self) -> None:
+        if self._queue_high_watermark < self.queue_capacity:
+            return
+        detail = (
+            "evidence_queue_saturated:"
+            f"{self._queue_high_watermark}/{self.queue_capacity}"
+        )
+        if detail not in self.errors:
+            self.errors.append(detail)
 
     def _notify_progress(
         self,
@@ -2492,6 +2502,7 @@ class PolymarketPublicRecorder:
                         )
                         if detail not in self.errors:
                             self.errors.append(detail)
+            self._record_queue_saturation()
             ended = _wall_ms()
 
             def audit_progress(

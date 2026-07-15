@@ -1067,7 +1067,11 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
     memory_option = next(
         option for option in spec.options if option.dest == "memory_limit"
     )
+    queue_option = next(
+        option for option in spec.options if option.dest == "queue_capacity"
+    )
     assert memory_option.default == "4GB"
+    assert queue_option.default == 100_000
     assert {option.dest for option in spec.options} == {
         "database",
         "duration_seconds",
@@ -1079,6 +1083,17 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         "progress_path",
         "json",
     }
+
+
+def test_recorder_saturation_is_a_terminal_operational_failure(tmp_path) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "saturation.duckdb")
+
+    assert recorder.queue_capacity == 100_000
+    recorder._queue_high_watermark = recorder.queue_capacity
+    recorder._record_queue_saturation()
+    recorder._record_queue_saturation()
+
+    assert recorder.errors == ["evidence_queue_saturated:100000/100000"]
 
 
 def test_read_only_evidence_store_never_creates_or_initializes_a_database(
