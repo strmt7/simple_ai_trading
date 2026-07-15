@@ -3,7 +3,7 @@
   "round": 57,
   "design_sha256": "61165c1150f5349ff1b15f2243e7520ecbd7af44578edda7fc2be8bb56b66cdf",
   "contract_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
-  "implementation_commit": "be90dd3681000fcdec64cdded7567550fd79670c",
+  "implementation_commit": "57017244837d6c94f03403393253d823e6c62c7a",
   "blobs": [
     {
       "path": "docs/model-research/action-value/round-057-queue-censored-make-take-design.json",
@@ -47,7 +47,7 @@
     },
     {
       "path": "src/simple_ai_trading/make_take_path_payoffs.py",
-      "git_blob_oid": "780a208b2e8bfa8f0908b12fb6736ce174c1fbcc"
+      "git_blob_oid": "8345fdebab6546e99f08a5c119101b4322851452"
     },
     {
       "path": "src/simple_ai_trading/make_take_payoff_lightgbm.py",
@@ -139,7 +139,7 @@
     },
     {
       "path": "tests/test_make_take_path_payoffs.py",
-      "git_blob_oid": "ca74db1eb0a2e6ba5d37d4611fdd3d7136804f4d"
+      "git_blob_oid": "172a5194a078792059662726abe992ceb5f0ba5f"
     },
     {
       "path": "tests/test_make_take_payoff_lightgbm.py",
@@ -236,5 +236,5 @@
   "profitability_claim": false,
   "portfolio_claim": false,
   "leverage_applied": false,
-  "binding_sha256": "ea701be4fcbeaa727bac22b6b6a3564755c1761634712996dac8a811e6c682bc"
+  "binding_sha256": "04e3900823bf60d7a93ab8d734aa85375b5a71e1b8d3854db55daddd05f98bb4"
 }
