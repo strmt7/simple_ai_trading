@@ -48,13 +48,13 @@ from tools.run_round59_funding_persistence_feasibility import (  # noqa: E402
 
 
 ROUND = 61
-DESIGN_SCHEMA = "round-061-carry-economic-replay-design-v1"
-MANIFEST_SCHEMA = "round-061-carry-event-manifest-v1"
+DESIGN_SCHEMA = "round-061-carry-economic-replay-design-v2"
+MANIFEST_SCHEMA = "round-061-carry-event-manifest-v2"
 CERTIFICATE_SCHEMA = "round-061-carry-event-source-certificate-v1"
-DESIGN_SHA256 = "b242d0c7f81a60c13b4cdb33aba213c5869d7a28f193baa81eaa437417274a50"
-MANIFEST_SHA256 = "3f85653c254e5f31b6f19d324cd81179fef8fb4c540fae1a1e829edd7cc9b8a5"
+DESIGN_SHA256 = "6ee379609c42e480122cff49d9fa3deaa73952857e99ceb8af2175b7c2e4d8f3"
+MANIFEST_SHA256 = "8b5a8037176c5e37af2c261c0ab79dd9f43f6e0d9024e78f6306694293126594"
 MANIFEST_FILE_SHA256 = (
-    "8b57bf7704c286c31fad057393aea0fcf283c67a17e71d98b37a225f965a102c"
+    "65a5c20b2ad8a85add95d49f5ea94260d36062c8fed004dfd5ee7e310814700f"
 )
 SPOT_SOURCE = "binance_public_archive_event_filter_round61"
 MARK_SOURCE = "binance_public_archive_markPriceKlines_event_filter_round61"
@@ -108,9 +108,23 @@ def _validate_manifest(path: Path) -> dict[str, object]:
         or claimed != MANIFEST_SHA256
         or _canonical_sha256(canonical) != claimed
         or manifest.get("price_values_read") is not False
+        or manifest.get("source_alignment_revision") != 2
+        or manifest.get("kline_open_time_mapping")
+        != "floor(raw_event_timestamp_ms / 60000) * 60000"
         or tuple(manifest.get("symbols", ())) != SYMBOLS
     ):
         raise ValueError("Round 61 event manifest drifted")
+    for item in manifest["symbol_manifests"]:
+        if any(
+            int(value) % 60_000
+            for key in (
+                "required_spot_open_times_ms",
+                "required_futures_execution_open_times_ms",
+                "required_mark_open_times_ms",
+            )
+            for value in item[key]
+        ):
+            raise ValueError("Round 61 required kline timestamp is not minute-aligned")
     return manifest
 
 

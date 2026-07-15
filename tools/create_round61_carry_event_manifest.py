@@ -44,11 +44,15 @@ ROUND60_REPORT_FILE_SHA256 = (
 ROUND60_REPORT_CANONICAL_SHA256 = (
     "a020bd2f26280b82705ffa4bda83b37d439dfa09377eda64ffdfcbf17c9e9ba4"
 )
-MANIFEST_SCHEMA = "round-061-carry-event-manifest-v1"
+MANIFEST_SCHEMA = "round-061-carry-event-manifest-v2"
 
 
 def _period(timestamp_ms: int) -> str:
     return datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).strftime("%Y-%m")
+
+
+def _open_minute(timestamp_ms: int) -> int:
+    return int(timestamp_ms) // 60_000 * 60_000
 
 
 def _validate_report(path: Path) -> dict[str, object]:
@@ -126,8 +130,8 @@ def create(arguments: argparse.Namespace) -> dict[str, object]:
                         "future_funding_calc_times_ms": funding_times,
                     }
                 )
-                spot_times.update((decision_ms, end_ms))
-                mark_times.update(funding_times)
+                spot_times.update((_open_minute(decision_ms), _open_minute(end_ms)))
+                mark_times.update(_open_minute(value) for value in funding_times)
             spot_months = sorted({_period(value) for value in spot_times})
             mark_months = sorted({_period(value) for value in mark_times})
             symbol_manifest: dict[str, object] = {
@@ -199,6 +203,9 @@ def create(arguments: argparse.Namespace) -> dict[str, object]:
         "source_certificate_file_sha256": certificate_file_sha,
         "source_certificate_canonical_sha256": certificate_sha,
         "price_values_read": False,
+        "source_alignment_revision": 2,
+        "kline_open_time_mapping": "floor(raw_event_timestamp_ms / 60000) * 60000",
+        "revision_reason": "The aborted v1 source attempt proved that settled funding timestamps can carry sub-minute millisecond offsets; no source row was stored and no economic value was calculated.",
         "trigger": {
             "operator": "greater_or_equal",
             "value_bps": 2.0,

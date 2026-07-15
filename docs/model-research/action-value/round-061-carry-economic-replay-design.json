@@ -1,7 +1,7 @@
 {
-  "schema_version": "round-061-carry-economic-replay-design-v1",
+  "schema_version": "round-061-carry-economic-replay-design-v2",
   "round": 61,
-  "design_sha256": "b242d0c7f81a60c13b4cdb33aba213c5869d7a28f193baa81eaa437417274a50",
+  "design_sha256": "6ee379609c42e480122cff49d9fa3deaa73952857e99ceb8af2175b7c2e4d8f3",
   "phase": "synchronized_spot_perpetual_minute_stress_economic_replay",
   "predecessor": {
     "round": 60,
@@ -11,7 +11,10 @@
     "publication_canonical_sha256": "f07b576a414bafc4b7b01e404595b200fb0d8055ebd67ea822938994a0ef02cc"
   },
   "governance": {
-    "freeze_before_spot_or_mark_price_value_access": true,
+    "initial_v1_frozen_before_spot_or_mark_price_value_access": true,
+    "v1_aborted_on_timestamp_alignment_before_any_price_row_storage": true,
+    "v2_frozen_before_any_economic_value_calculation": true,
+    "v2_change_limited_to_flooring_raw_event_timestamps_to_containing_kline_minutes": true,
     "source_data_partially_previously_consumed": true,
     "selection_contaminated": true,
     "promotion_permitted": false,
@@ -27,8 +30,8 @@
   "economic_question": "After matched-base spot and perpetual basis movement, dynamic settled funding cash flows, four taker fees, intraminute adverse execution bounds, and a capacity gate, does the single precommitted Round 60 funding cell retain positive and diversified support?",
   "event_contract": {
     "manifest_path": "docs/model-research/action-value/round-061-carry-event-manifest.json",
-    "manifest_file_sha256": "8b57bf7704c286c31fad057393aea0fcf283c67a17e71d98b37a225f965a102c",
-    "manifest_canonical_sha256": "3f85653c254e5f31b6f19d324cd81179fef8fb4c540fae1a1e829edd7cc9b8a5",
+    "manifest_file_sha256": "65a5c20b2ad8a85add95d49f5ea94260d36062c8fed004dfd5ee7e310814700f",
+    "manifest_canonical_sha256": "8b5a8037176c5e37af2c261c0ab79dd9f43f6e0d9024e78f6306694293126594",
     "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
     "trigger_operator": "greater_or_equal",
     "trigger_value_bps": 2.0,
@@ -37,7 +40,8 @@
     "episodes_non_overlapping_per_symbol": true,
     "current_triggering_settlement_excluded": true,
     "future_window": "decision_time < calc_time <= decision_time + 168 hours",
-    "additional_episode_search_permitted": false
+    "additional_episode_search_permitted": false,
+    "raw_event_to_kline_open_time": "floor(raw_event_timestamp_ms / 60000) * 60000"
   },
   "source_contract": {
     "provider": "Binance public data archives",
@@ -47,7 +51,7 @@
       "data_type": "klines",
       "interval": "1m",
       "cadence": "monthly",
-      "required_open_times": "manifest.required_spot_open_times_ms",
+      "required_open_times": "manifest.required_spot_open_times_ms after explicit containing-minute mapping",
       "ingest_only_required_rows": true,
       "required_archive_checksum_status": "verified",
       "full_archive_row_stream_hash_required": true,
@@ -57,7 +61,7 @@
       "market_type": "USD-M perpetual futures",
       "data_type": "klines",
       "interval": "1m",
-      "required_open_times": "manifest.required_futures_execution_open_times_ms",
+      "required_open_times": "manifest.required_futures_execution_open_times_ms after explicit containing-minute mapping",
       "existing_archive_metadata_checksum_required": true,
       "existing_row_source_required": "binance_public_archive"
     },
@@ -66,7 +70,7 @@
       "data_type": "markPriceKlines",
       "interval": "1m",
       "cadence": "monthly",
-      "required_open_times": "manifest.required_mark_open_times_ms",
+      "required_open_times": "manifest.required_mark_open_times_ms after explicit containing-minute mapping",
       "ingest_only_required_rows": true,
       "required_archive_checksum_status": "verified",
       "full_archive_row_stream_hash_required": true,
