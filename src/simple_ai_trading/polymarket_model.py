@@ -734,7 +734,7 @@ def _diffusion_market_logit_gap(
     )
 
 
-def _model_features(
+def build_polymarket_model_features(
     values: Mapping[str, float],
     asset: str,
     *,
@@ -796,7 +796,9 @@ def _model_features(
     return tuple(float(value) for value in derived)
 
 
-def _risk_context(values: Mapping[str, float]) -> tuple[float, ...]:
+def build_polymarket_risk_context(
+    values: Mapping[str, float],
+) -> tuple[float, ...]:
     context = (
         values["up_book_age_ms"],
         values["down_book_age_ms"],
@@ -972,12 +974,12 @@ def build_polymarket_inference_input(
         decision_received_monotonic_ns=row.decision_received_monotonic_ns,
         decision_event_id=row.decision_event_id,
         horizon_seconds=horizon,
-        feature_values=_model_features(
+        feature_values=build_polymarket_model_features(
             values,
             market.asset,
             baseline_up_probability=baseline,
         ),
-        risk_context_values=_risk_context(values),
+        risk_context_values=build_polymarket_risk_context(values),
         baseline_up_probability=baseline,
         up_best_bid=values["up_best_bid"],
         up_best_ask=values["up_best_ask"],
@@ -1115,12 +1117,12 @@ def build_polymarket_model_dataset(
                 decision_received_monotonic_ns=row.decision_received_monotonic_ns,
                 decision_event_id=row.decision_event_id,
                 horizon_seconds=horizon,
-                feature_values=_model_features(
+                feature_values=build_polymarket_model_features(
                     values,
                     market.asset,
                     baseline_up_probability=baseline,
                 ),
-                risk_context_values=_risk_context(values),
+                risk_context_values=build_polymarket_risk_context(values),
                 baseline_up_probability=baseline,
                 up_best_bid=values["up_best_bid"],
                 up_best_ask=values["up_best_ask"],
@@ -2411,7 +2413,9 @@ __all__ = [
     "TrainedPolymarketOffsetModel",
     "TrainedPolymarketProfileModel",
     "build_polymarket_inference_input",
+    "build_polymarket_model_features",
     "build_polymarket_model_dataset",
+    "build_polymarket_risk_context",
     "evaluate_polymarket_probabilities",
     "fit_polymarket_offset_model",
     "fit_polymarket_profile_challenger",

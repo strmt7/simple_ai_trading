@@ -32,6 +32,12 @@ from simple_ai_trading.polymarket_ai_veto import (
     benchmark_polymarket_ai_veto,
     build_polymarket_ai_veto_cases,
 )
+from simple_ai_trading.polymarket_action_value import (
+    POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+    build_polymarket_action_feature,
+    build_polymarket_action_label,
+    build_polymarket_action_value_dataset,
+)
 from simple_ai_trading.polymarket_features import (
     POLYMARKET_FEATURE_NAMES,
     PolymarketFeatureConfig,
@@ -81,6 +87,7 @@ from simple_ai_trading.polymarket_replay import (
 from simple_ai_trading.polymarket_repricing import (
     POLYMARKET_REPRICING_CONTRACT_SHA256,
     PolymarketRepricingConfig,
+    PolymarketRepricingExecutionContext,
     evaluate_polymarket_repricing_ceiling,
 )
 from simple_ai_trading.polymarket_source_verification import (
@@ -808,6 +815,56 @@ def _repricing_replay_fixture(
     )
 
 
+def _round9_source_row(
+    replay: PolymarketEvidenceReplay,
+) -> tuple[PolymarketFeatureRow, PolymarketFiveMinuteMarket]:
+    source, markets = _source_fixture()
+    dataset = build_polymarket_model_dataset(source, markets)
+    sample = next(item for item in dataset.samples if item.asset == "BTC")
+    row = next(
+        item for item in source.rows if item.feature_id == sample.source_feature_id
+    )
+    provisional = replace(row, row_sha256="")
+    row = replace(
+        provisional,
+        row_sha256=polymarket_feature_row_sha256(provisional),
+    ).validated()
+    market = next(
+        item for item in replay.markets if item.condition_id == row.condition_id
+    )
+    assert row.decision_event_id == sample.decision_event_id
+    return row, market
+
+
+def _round9_execution(
+    replay: PolymarketEvidenceReplay,
+    *,
+    outcome: str = "Up",
+):
+    row, market = _round9_source_row(replay)
+    context = PolymarketRepricingExecutionContext(replay)
+    feature = build_polymarket_action_feature(row, market, outcome)
+    decision = context.decision_at(
+        market,
+        event_id=row.decision_event_id,
+        received_wall_ms=row.decision_received_wall_ms,
+        received_monotonic_ns=row.decision_received_monotonic_ns,
+        outcome=outcome,
+        maximum_creation_book_age_ms=500,
+    )
+    assert decision is not None
+    execution = context.execute(
+        market,
+        decision,
+        latency_ms=500,
+        holding_period_ms=1_000,
+        minimum_remaining_market_time_ms=30_000,
+        maximum_order_creation_book_age_ms=500,
+        maximum_post_target_execution_observation_delay_ms=500,
+    )
+    return row, market, feature, execution
+
+
 def test_profile_challenger_falls_back_without_validation_evidence() -> None:
     source, markets = _source_fixture(predictive=False)
     feature_indexes = {
@@ -1083,6 +1140,173 @@ def test_repricing_ceiling_rejects_limit_invalidated_by_tick_change() -> None:
     assert sum(opportunity.terminal_reason_counts.values()) == (
         opportunity.decision_count
     )
+
+
+def test_round9_action_features_are_label_free_and_outcome_oriented() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture()
+    row, market = _round9_source_row(replay)
+
+    up = build_polymarket_action_feature(row, market, "Up")
+    down = build_polymarket_action_feature(row, market, "Down")
+    changed_label = replace(
+        row,
+        official_up=not bool(row.official_up),
+        resolution_event_id="different-resolution",
+        row_sha256="",
+    )
+    changed_label = replace(
+        changed_label,
+        row_sha256=polymarket_feature_row_sha256(changed_label),
+    )
+    repeated = build_polymarket_action_feature(changed_label, market, "Up")
+    up_values = up.feature_map()
+    down_values = down.feature_map()
+
+    assert repeated.action_feature_sha256 == up.action_feature_sha256
+    assert repeated.feature_values == up.feature_values
+    assert down_values["chosen_return_250ms_bps"] == pytest.approx(
+        -up_values["chosen_return_250ms_bps"]
+    )
+    assert down_values["chosen_microprice_deviation_bps"] == pytest.approx(
+        up_values["opposite_microprice_deviation_bps"]
+    )
+    assert down_values["chosen_book_age_ms"] == pytest.approx(
+        up_values["opposite_book_age_ms"]
+    )
+    assert {
+        "official_up",
+        "resolution_event_id",
+        "row_sha256",
+    }.isdisjoint(up.asdict())
+
+
+def test_round9_complete_action_uses_exact_two_leg_net_value() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture()
+    _row, _market, feature, execution = _round9_execution(replay)
+
+    label = build_polymarket_action_label(feature, execution)
+
+    assert execution.terminal_reason == "complete_round_trip"
+    assert execution.net_quote is not None and execution.net_quote > 0
+    assert label.category == "successful_round_trip"
+    assert label.positive_complete
+    assert label.stress_utility_quote == execution.net_quote
+    assert label.entry_cost_quote == execution.entry_cost_quote
+    assert label.exit_proceeds_quote == execution.exit_proceeds_quote
+    assert not label.condition_blocked
+
+
+def test_round9_dataset_builds_both_actions_and_rejects_sampled_execution() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture()
+    row, _market = _round9_source_row(replay)
+    source, _markets = _source_fixture()
+    source = replace(
+        source,
+        rows=(row,),
+        candidate_count=1,
+        labeled_market_counts={"BTC": 1, "ETH": 0, "SOL": 0},
+    )
+
+    dataset = build_polymarket_action_value_dataset(
+        source,
+        PolymarketRepricingExecutionContext(replay),
+    )
+
+    assert len(dataset.features) == len(dataset.labels) == 2
+    assert {item.outcome for item in dataset.features} == {"Up", "Down"}
+    assert dataset.dataset_sha256
+    assert not dataset.summary()["profitability_claim"]
+    sampled = PolymarketEvidenceReplay(
+        run_id=replay.run_id,
+        markets=replay.markets,
+        books=replay.books,
+        resolutions=replay.resolutions,
+        diagnostics=replace(replay.diagnostics, book_sample_interval_ms=250),
+        market_execution_evidence=replay.market_execution_evidence,
+    )
+    with pytest.raises(ValueError, match="source contract"):
+        build_polymarket_action_value_dataset(
+            source,
+            PolymarketRepricingExecutionContext(sampled),
+        )
+
+
+def test_round9_no_fill_has_zero_utility_and_no_inventory() -> None:
+    replay, entry, _exit_bid = _repricing_replay_fixture()
+    shallow_entry = replace(
+        entry,
+        snapshot=replace(
+            entry.snapshot,
+            asks=(BookLevel(entry.snapshot.asks[0].price, Decimal("1")),),
+            source_payload_sha256="9" * 64,
+        ),
+    )
+    books = tuple(
+        shallow_entry
+        if (item.event_id, item.token_id) == (entry.event_id, entry.token_id)
+        else item
+        for item in replay.books
+    )
+    shallow = PolymarketEvidenceReplay(
+        run_id=replay.run_id,
+        markets=replay.markets,
+        books=books,
+        resolutions=replay.resolutions,
+        diagnostics=replay.diagnostics,
+        market_execution_evidence=replay.market_execution_evidence,
+    )
+
+    _row, _market, feature, execution = _round9_execution(shallow)
+    label = build_polymarket_action_label(feature, execution)
+
+    assert execution.terminal_reason == "entry_not_filled"
+    assert not execution.entry_filled
+    assert execution.entry_cost_quote is None
+    assert label.category == "entry_no_fill"
+    assert label.classifier_eligible
+    assert label.stress_utility_quote == 0
+    assert not label.condition_blocked
+
+
+def test_round9_failed_exit_loses_full_entry_cost_and_blocks_condition() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture(cross_segment_exit=True)
+    _row, _market, feature, execution = _round9_execution(replay)
+
+    label = build_polymarket_action_label(feature, execution)
+
+    assert execution.entry_filled
+    assert not execution.exit_filled
+    assert execution.entry_cost_quote is not None
+    assert execution.terminal_reason == "missing_exit_execution_book"
+    assert label.category == "filled_entry_failed_exit"
+    assert label.classifier_eligible
+    assert label.stress_utility_quote == -execution.entry_cost_quote
+    assert label.condition_blocked
+    assert not label.positive_complete
+
+
+def test_round9_action_value_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-009-causal-action-value-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert contract["ai_boundary"]["event_loop_llm_permitted"] is False
+    assert contract["truth_constraints"]["profitability_claim"] is False
 
 
 def test_repricing_contract_code_and_document_are_identical() -> None:

@@ -1324,22 +1324,61 @@ class PolymarketEvidenceStore:
                     }
                 )
                 normalized = _event_index(str(stream), event)
-                expected_source_time = normalized["source_time_ms"]
-                expected_publisher_time = normalized["publisher_time_ms"]
-                if (
-                    str(event_run) != run_id
-                    or actual_event_sha != str(event_sha256)
-                    or not hmac.compare_digest(str(event_id), expected_event_id)
-                    or (compact and str(inline_event_json))
-                    or (not compact and canonical != str(inline_event_json))
-                    or str(normalized["event_type"]) != str(event_type)
-                    or str(normalized["symbol"]) != str(symbol)
-                    or str(normalized["condition_id"]) != str(condition_id)
-                    or str(normalized["asset_id"]) != str(asset_id)
-                    or expected_source_time != source_time_ms
-                    or expected_publisher_time != publisher_time_ms
-                ):
-                    raise ValueError("normalized event disagrees with its raw source")
+                stored_index = {
+                    "event_type": str(event_type),
+                    "symbol": str(symbol),
+                    "condition_id": str(condition_id),
+                    "asset_id": str(asset_id),
+                    "source_time_ms": source_time_ms,
+                    "publisher_time_ms": publisher_time_ms,
+                }
+
+                def index_mismatches(candidate: Mapping[str, object]) -> list[str]:
+                    return [
+                        name
+                        for name, stored_value in stored_index.items()
+                        if candidate[name] != stored_value
+                    ]
+
+                metadata_mismatches = index_mismatches(normalized)
+                if metadata_mismatches and not compact:
+                    legacy = _event_index(
+                        str(stream),
+                        event,
+                        canonicalize_chainlink_topic=False,
+                    )
+                    legacy_mismatches = index_mismatches(legacy)
+                    if not legacy_mismatches:
+                        metadata_mismatches = []
+                mismatches = [
+                    *([] if str(event_run) == run_id else ["run_id"]),
+                    *(
+                        []
+                        if actual_event_sha == str(event_sha256)
+                        else ["event_sha256"]
+                    ),
+                    *(
+                        []
+                        if hmac.compare_digest(str(event_id), expected_event_id)
+                        else ["event_id"]
+                    ),
+                    *(
+                        []
+                        if not compact or not str(inline_event_json)
+                        else ["compact_event_json"]
+                    ),
+                    *(
+                        []
+                        if compact or canonical == str(inline_event_json)
+                        else ["event_json"]
+                    ),
+                    *metadata_mismatches,
+                ]
+                if mismatches:
+                    raise ValueError(
+                        "normalized event disagrees with its raw source:"
+                        f"{event_id}:{','.join(mismatches)}"
+                    )
                 yield DecodedPublicEvent(
                     event_id=str(event_id),
                     run_id=run_id,
@@ -1901,6 +1940,12 @@ class PolymarketEvidenceStore:
                     f"{event_count}:{expected_event_count}"
                 )
         else:
+            expected_event_count = int(
+                connection.execute(
+                    "SELECT count(*) FROM polymarket_public_event WHERE run_id = ?",
+                    [run_id],
+                ).fetchone()[0]
+            )
             for batch in _query_batches(
                 connection,
                 """
@@ -1936,36 +1981,19 @@ class PolymarketEvidenceStore:
                         errors.append(f"raw_message_id_mismatch:{message_id}")
                 notify("integrity-raw-messages")
             notify("integrity-public-events", force=True)
-            for batch in _query_batches(
-                connection,
-                """
-                SELECT event_id, message_id, sub_index, event_sha256, event_json
-                FROM polymarket_public_event WHERE run_id = ?
-                """,
-                [run_id],
-            ):
-                event_count += len(batch)
-                for event_id, message_id, sub_index, claimed, event_json in batch:
-                    actual = hashlib.sha256(str(event_json).encode("ascii")).hexdigest()
-                    if actual != str(claimed):
-                        errors.append(f"event_hash_mismatch:{event_id}")
-                    expected_id = _canonical_sha256(
-                        {
-                            "message_id": str(message_id),
-                            "sub_index": int(sub_index),
-                            "event_sha256": str(claimed),
-                        }
-                    )
-                    if not hmac.compare_digest(str(event_id), expected_id):
-                        errors.append(f"event_id_mismatch:{event_id}")
-                    try:
-                        canonical = _canonical_json(_strict_json_loads(str(event_json)))
-                    except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
-                        errors.append(f"event_json_invalid:{event_id}:{exc}")
-                    else:
-                        if canonical != str(event_json):
-                            errors.append(f"event_json_not_canonical:{event_id}")
+            try:
+                for _event in self.iter_public_events(run_id, ordered=False):
+                    event_count += 1
                     notify("integrity-public-events")
+            except (TypeError, ValueError) as exc:
+                errors.append(
+                    f"event_source_reconstruction_failed:{exc.__class__.__name__}:{exc}"
+                )
+            if event_count != expected_event_count:
+                errors.append(
+                    f"normalized_event_count_mismatch:{run_id}:"
+                    f"{event_count}:{expected_event_count}"
+                )
         notify("integrity-relational-checks", force=True)
         orphan_events = connection.execute(
             """
@@ -2180,7 +2208,12 @@ def _snapshot_integrity_errors(row: Sequence[object]) -> tuple[str, ...]:
     return tuple(errors)
 
 
-def _event_index(stream: str, event: Mapping[str, object]) -> dict[str, object]:
+def _event_index(
+    stream: str,
+    event: Mapping[str, object],
+    *,
+    canonicalize_chainlink_topic: bool = True,
+) -> dict[str, object]:
     event_type = ""
     symbol = ""
     condition_id = ""
@@ -2202,7 +2235,11 @@ def _event_index(stream: str, event: Mapping[str, object]) -> dict[str, object]:
             raw_symbol = str(payload.get("symbol") or "").lower()
             # RTDS currently labels Chainlink bootstrap snapshots as
             # ``crypto_prices``; its slash-delimited symbol remains unambiguous.
-            if topic == "crypto_prices" and "/" in raw_symbol:
+            if (
+                canonicalize_chainlink_topic
+                and topic == "crypto_prices"
+                and "/" in raw_symbol
+            ):
                 topic = "crypto_prices_chainlink"
             symbol = (
                 raw_symbol.split("/")[0].upper()
