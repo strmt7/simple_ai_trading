@@ -1,32 +1,39 @@
-# Round 57: Queue-Censored Make/Take
+# Round 58: Two-Sided Maker Feasibility
 
-> **Rejected development evidence.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
+> **Rejected post-hoc structural diagnostic.** This is consumed development evidence, not a pre-registered profitability test. It grants no trading, testnet, live, leverage, AI-uplift, or performance authority.
 
-Round 57 trained fixed three-seed queue-fill and payoff ensembles with AMD OpenCL LightGBM on real official Binance USD-M BTCUSDT, ETHUSDT, and SOLUSDT events. Decisions were spaced 10 seconds apart. Labels used an explicit 750 ms placement delay, a 15-second queue-censored passive-order lifetime, observed spread and queue, a 100 ms path grid, fees, slippage, protection latency, and a five-minute post-fill lifecycle.
+Round 58 asked a narrow question before spending more GPU time: can simultaneous best-bid and best-ask orders complete often enough, and capture enough observed spread, to justify training a symmetric touch-making model? The value-blind probe used checksum-verified official Binance USD-M BTCUSDT, ETHUSDT, and SOLUSDT events from **2023-06-01 UTC**. It read no returns, costs, P&L, strategy outcomes, or policy thresholds.
 
-The queue-fill mechanism generalized. The directional payoff mechanism did not. Every fill cell passed in policy calibration and consumed evaluation, but only 3/12 evaluation payoff cells passed and every evaluation top-score quintile remained negative after costs. The run therefore stopped before policy selection and economic replay. Trades, ROI, drawdown, leverage, and AI uplift were not evaluated.
+The answer is no under the prior frozen research cost reference. Two-sided fills occurred in only 2.36-3.18% of eligible decisions, while one-sided fills occurred in 28.03-47.19%. Every symbol's 99th-percentile two-fill placement spread was below 1 bps. The earlier frozen contract models 2 bps maker fee per side, or 4 bps round trip before its additional 1 bps per-side slippage reference. Account-specific production fees must still be queried from the venue; these values are a pinned research comparison, not a universal Binance fee claim.
 
-| Evaluation fill skill | Long log loss | Long Brier | Short log loss | Short Brier |
+| Joint fill support | Eligible decisions | Both sides | One side only | No fill |
 |---|---:|---:|---:|---:|
-| BTCUSDT | 19.63% | 22.40% | 19.33% | 21.80% |
-| ETHUSDT | 18.02% | 19.10% | 18.24% | 19.19% |
-| SOLUSDT | 6.03% | 5.22% | 6.57% | 5.01% |
+| BTCUSDT | 8,639 | 3.07% | 47.19% | 49.74% |
+| ETHUSDT | 8,639 | 2.36% | 46.78% | 50.86% |
+| SOLUSDT | 8,431 | 3.18% | 28.03% | 68.79% |
 
-| Top-quintile realized net payoff (bps) | Passive long | Passive short | Aggressive long | Aggressive short |
+| Two-fill placement spread (bps) | p50 | p90 | p99 | Maximum |
 |---|---:|---:|---:|---:|
-| BTCUSDT | -10.02 | -8.76 | -12.15 | -11.33 |
-| ETHUSDT | -10.98 | -9.46 | -12.71 | -10.91 |
-| SOLUSDT | -7.48 | -16.52 | -16.58 | -10.72 |
+| BTCUSDT | 0.0372 | 0.0374 | 0.0375 | 1.5718 |
+| ETHUSDT | 0.0537 | 0.0540 | 0.1589 | 0.7059 |
+| SOLUSDT | 0.4835 | 0.4881 | 0.9714 | 7.3206 |
 
-The retained hypothesis is narrow: queue-fill survival is useful execution infrastructure. The rejected hypothesis is that this L1/tape directional model can clear the frozen maker-entry/taker-exit or taker-entry/taker-exit costs. No threshold, leverage, or language model is allowed to repair that negative mechanism on consumed outcomes.
+No model was trained, no trades were replayed, and ROI, drawdown, profit factor, leverage, and AI uplift were not computed. This early rejection is intentional: a model cannot manufacture gross spread that is absent from the observed mechanism. The next candidate must use a structurally different source of edge and a newly frozen design.
 
 ## Evidence
 
-| View | Graph | Source |
+| View | Graph | Tracked source |
 |---|---|---|
-| Queue-fill proper-score skill | [SVG](charts/fill-survival-skill.svg) | [CSV](fill-survival.csv) |
-| Realized top-quintile payoff | [SVG](charts/top-quintile-net-payoff.svg) | [CSV](conditional-payoff.csv) |
-| Opportunity-weighted action value | [SVG](charts/expected-action-value.svg) | [CSV](action-values.csv) |
-| Round progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
+| Joint fill support | [SVG](charts/joint-fill-support.svg) | [CSV](joint-fill-support.csv) |
+| Spread versus prior cost reference | [SVG](charts/spread-feasibility.svg) | [CSV](spread-feasibility.csv) |
+| Inventory exposure duration | [SVG](charts/inventory-exposure.svg) | [CSV](inventory-exposure.csv) |
+| Research progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`source-coverage.csv`, `model-artifacts.csv`, `gates.csv`, `failure-analysis.json`, and `screen.json` preserve the remaining source-bound evidence. Every chart is regenerated from tracked tabular data.
+`source-coverage.csv`, `fill-bucket-cross.csv`, `failure-analysis.json`, and the exact `screen.json` preserve the underlying evidence. Every chart is regenerated from a tracked CSV.
+
+## Research basis
+
+- [Binance official public market-data archives](https://data.binance.vision/)
+- [Avellaneda and Stoikov: High-frequency trading in a limit order book](https://doi.org/10.1080/14697680701381228)
+- [Huang, Lehalle, and Rosenbaum: the queue-reactive model](https://arxiv.org/abs/1312.0563)
+- [The Market Maker's Dilemma: fill probability and post-fill returns](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5074873)

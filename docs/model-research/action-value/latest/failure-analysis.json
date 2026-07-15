@@ -1,28 +1,31 @@
 {
-  "schema_version": "round-057-queue-censored-make-take-failure-analysis-v1",
-  "round": 57,
-  "source_report_sha256": "c026542c7073496317f02a3f30dbf4274e7c7155a5026d79d8d76883ed924f27",
-  "status": "rejected_policy_predictive",
+  "schema_version": "round-058-two-sided-maker-feasibility-analysis-v1",
+  "round": 58,
+  "source_report_sha256": "46da40b3ddd8818ebfd45ea0d8a1cec260e88354d6b952fbdc9b2e0d1a2c2bdd",
+  "status": "rejected_posthoc_feasibility",
+  "selection_contaminated": true,
   "facts": {
-    "evaluation_fill_cells_passed": 6,
-    "evaluation_fill_cells_total": 6,
-    "evaluation_payoff_cells_passed": 3,
-    "evaluation_payoff_cells_total": 12,
-    "evaluation_positive_top_quintile_cells": 0,
-    "evaluation_top_quintile_best_net_bps": -7.478680699165135,
-    "evaluation_top_quintile_worst_net_bps": -16.57837194184206,
-    "policy_selection_performed": false,
-    "economic_replay_performed": false,
-    "ai_ablation_performed": false
+    "observed_utc_days": 1,
+    "eligible_decisions": 25709,
+    "both_fill_rows": 737,
+    "singleton_rows": 10481,
+    "symbols_with_p99_spread_above_prior_fee_reference": 0,
+    "symbols_with_p99_spread_above_prior_base_cost_reference": 0,
+    "returns_read": false,
+    "costs_read_by_probe": false,
+    "pnl_read": false,
+    "model_trained": false,
+    "policy_selected": false,
+    "ai_evaluated": false
   },
-  "retained_mechanism": [
-    "The queue-fill survival ensemble passed every policy-calibration and consumed-evaluation symbol-side cell on both proper scores.",
-    "Future passive lifecycle research may reuse the fill model only under a separately frozen design and new held-forward evidence."
+  "decision": [
+    "Do not train or promote a symmetric best-bid/best-ask touch-making policy under the prior frozen retail cost reference.",
+    "All three symbols had a 99th-percentile two-fill placement spread below the prior 4 bps round-trip fee reference.",
+    "One-sided fills were materially more common than two-sided completions, leaving unresolved inventory exposure."
   ],
-  "rejected_mechanism": [
-    "Conditional directional payoff failed the frozen predictive gate.",
-    "All 12 consumed-evaluation top-score quintiles had negative realized net payoff after the frozen execution costs.",
-    "The current lifecycle always pays a taker exit, so a separately frozen passive-exit mechanism is the next cost hypothesis; it is not an edge claim."
+  "retained_infrastructure": [
+    "Checksum-bound official event ingestion and the queue-censored fill simulator remain useful execution infrastructure.",
+    "Any future passive strategy needs a separately frozen economic mechanism and untouched evidence."
   ],
   "prohibited_inferences": [
     "profitability",
@@ -30,7 +33,7 @@
     "testnet readiness",
     "live trading readiness",
     "leverage readiness",
-    "threshold repair from consumed outcomes"
+    "performance across other dates or regimes"
   ],
-  "analysis_sha256": "8197b0b94aae62eee627055f02d7a09a41562bf89a09c2c43763bfd869d46d8b"
+  "analysis_sha256": "0f316a25ad10e42215c9d39c2aa71a1ce469b385587c627ed6472fb8a7dcb708"
 }
