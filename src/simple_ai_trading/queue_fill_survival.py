@@ -53,6 +53,8 @@ class PassiveFillSurvivalPanel:
     source_action_feature_sha256: str
     source_entry_sha256: str
     source_dataset_sha256: str
+    source_first_decision_time_ms: int
+    source_last_decision_time_ms: int
     event_index: np.ndarray
     decision_time_ms: np.ndarray
     action_side: np.ndarray
@@ -70,6 +72,8 @@ class PassiveFillSurvivalPanel:
             "symbol": self.symbol,
             "rows": self.rows,
             "feature_count": len(self.feature_names),
+            "source_first_decision_time_ms": self.source_first_decision_time_ms,
+            "source_last_decision_time_ms": self.source_last_decision_time_ms,
             "long_rows": int(np.count_nonzero(self.action_side == 1)),
             "short_rows": int(np.count_nonzero(self.action_side == -1)),
             "bucket_counts": {
@@ -177,6 +181,8 @@ def build_passive_fill_survival_panel(
         "source_action_feature_sha256": action_features.batch_sha256,
         "source_entry_sha256": entries.batch_sha256,
         "source_dataset_sha256": action_features.source_dataset_sha256,
+        "source_first_decision_time_ms": int(action_features.decision_time_ms[0]),
+        "source_last_decision_time_ms": int(action_features.decision_time_ms[-1]),
         "arrays": {
             "event_index": _array_sha256(repeated_event_indexes),
             "decision_time_ms": _array_sha256(repeated_decision_times),
@@ -202,6 +208,8 @@ def build_passive_fill_survival_panel(
         source_action_feature_sha256=action_features.batch_sha256,
         source_entry_sha256=entries.batch_sha256,
         source_dataset_sha256=action_features.source_dataset_sha256,
+        source_first_decision_time_ms=int(action_features.decision_time_ms[0]),
+        source_last_decision_time_ms=int(action_features.decision_time_ms[-1]),
         event_index=repeated_event_indexes,
         decision_time_ms=repeated_decision_times,
         action_side=action_side,
