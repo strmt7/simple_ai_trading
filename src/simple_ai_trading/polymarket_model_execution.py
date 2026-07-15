@@ -571,7 +571,7 @@ def build_polymarket_policy_selection(
     )
 
 
-def _trade_payload(trade: PolymarketExecutionTrade) -> dict[str, object]:
+def _trade_identity_payload(trade: PolymarketExecutionTrade) -> dict[str, object]:
     return {
         "schema_version": POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION,
         "trade_id": trade.trade_id,
@@ -605,6 +605,13 @@ def _trade_payload(trade: PolymarketExecutionTrade) -> dict[str, object]:
         "realized_pnl_quote": _decimal_text(trade.realized_pnl_quote),
         "official_resolution_event_id": trade.official_resolution_event_id,
         "source_payload_sha256": trade.source_payload_sha256,
+    }
+
+
+def _trade_payload(trade: PolymarketExecutionTrade) -> dict[str, object]:
+    return {
+        **_trade_identity_payload(trade),
+        "trade_sha256": trade.trade_sha256,
     }
 
 
@@ -950,7 +957,10 @@ def evaluate_polymarket_execution_policy(
                 trade_sha256="",
             )
             trades.append(
-                replace(trade, trade_sha256=_canonical_sha256(_trade_payload(trade)))
+                replace(
+                    trade,
+                    trade_sha256=_canonical_sha256(_trade_identity_payload(trade)),
+                )
             )
             group_end = max(group_end, market.end_ms)
         equity += group_pnl

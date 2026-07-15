@@ -50,7 +50,10 @@ from simple_ai_trading.polymarket_replay import (
     PolymarketReplayDiagnostics,
     PolymarketResolutionEvidence,
 )
-from simple_ai_trading.cli import _polymarket_held_out_prediction_evidence
+from simple_ai_trading.cli import (
+    _polymarket_held_out_prediction_evidence,
+    _polymarket_latency_scenarios,
+)
 
 
 _ASSETS = ("BTC", "ETH", "SOL")
@@ -861,6 +864,17 @@ def test_invalid_model_configuration_is_rejected(kwargs: dict[str, object]) -> N
         PolymarketModelConfig(**kwargs).validated()
 
 
+def test_latency_scenarios_are_predeclared_bounded_and_include_primary() -> None:
+    assert _polymarket_latency_scenarios(
+        "1000,50,250,50",
+        primary_latency_ms=100,
+    ) == (50, 100, 250, 1000)
+    with pytest.raises(ValueError, match="must be integers"):
+        _polymarket_latency_scenarios("50,fast", primary_latency_ms=100)
+    with pytest.raises(ValueError, match="1-12 values"):
+        _polymarket_latency_scenarios("0,50", primary_latency_ms=100)
+
+
 def test_polymarket_publication_is_derived_and_tamper_evident(
     tmp_path: Path,
 ) -> None:
@@ -907,6 +921,20 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         "held_out_prediction_evidence": prediction_evidence,
         "baseline_execution": baseline_execution.asdict(),
         "model_execution": model_execution.asdict(),
+        "execution_latency_sensitivity": {
+            "schema_version": "polymarket-execution-latency-sensitivity-v1",
+            "primary_network_latency_ms": 100,
+            "network_latencies_ms": [100],
+            "policies": {
+                "baseline": {"100": baseline_execution.asdict()},
+                "model": {"100": model_execution.asdict()},
+            },
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        },
         "ai": {
             "enabled": False,
             "reason": "contract_test_fixture",
@@ -993,3 +1021,62 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
     with pytest.raises(ValueError, match="prediction evidence identity"):
         validate_polymarket_model_artifact(tampered_path)
+
+    accounting_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
+
+    def falsify_report(report: dict[str, object]) -> None:
+        trades = report["trades"]
+        assert isinstance(trades, list) and trades
+        trade = trades[0]
+        assert isinstance(trade, dict)
+        trade["realized_pnl_quote"] = "999"
+        trade_identity = dict(trade)
+        trade_identity.pop("trade_sha256")
+        trade["trade_sha256"] = hashlib.sha256(
+            json.dumps(
+                trade_identity,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest()
+        report_identity = dict(report)
+        report_identity.pop("report_sha256")
+        report["report_sha256"] = hashlib.sha256(
+            json.dumps(
+                report_identity,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest()
+
+    model_report = accounting_tampered["model_execution"]
+    assert isinstance(model_report, dict)
+    falsify_report(model_report)
+    sensitivity = accounting_tampered["execution_latency_sensitivity"]
+    assert isinstance(sensitivity, dict)
+    sensitivity_policies = sensitivity["policies"]
+    assert isinstance(sensitivity_policies, dict)
+    sensitivity_model = sensitivity_policies["model"]
+    assert isinstance(sensitivity_model, dict)
+    sensitivity_report = sensitivity_model["100"]
+    assert isinstance(sensitivity_report, dict)
+    falsify_report(sensitivity_report)
+    accounting_identity = dict(accounting_tampered)
+    accounting_identity.pop("artifact_sha256")
+    accounting_tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            accounting_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    accounting_path = tmp_path / "accounting-tampered.json"
+    accounting_path.write_text(json.dumps(accounting_tampered), encoding="utf-8")
+    with pytest.raises(ValueError, match="filled-trade accounting"):
+        validate_polymarket_model_artifact(accounting_path)
