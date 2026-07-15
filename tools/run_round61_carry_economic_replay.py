@@ -77,6 +77,12 @@ def _minute(timestamp_ms: int) -> int:
     return int(timestamp_ms) // MINUTE_MS * MINUTE_MS
 
 
+def _archive_checksum_verified(row: Mapping[str, object]) -> bool:
+    return row.get("checksum_status") == "verified" and row.get(
+        "archive_sha256"
+    ) == row.get("checksum_sha256")
+
+
 def _validate_source_certificate(
     path: Path,
     *,
@@ -110,17 +116,12 @@ def _validate_source_certificate(
         or len(futures) != 95
         or len(series) != 9
         or any(
-            row.get("checksum_status") != "verified"
-            or row.get("archive_sha256") != row.get("checksum_sha256")
+            not _archive_checksum_verified(row)
             or int(row.get("missing_required_rows", -1))
             != len(row.get("missing_required_open_times_ms", ()))
             for row in archives
         )
-        or any(
-            row.get("checksum_status") != "verified"
-            or row.get("sha256") != row.get("checksum_sha256")
-            for row in futures
-        )
+        or any(not _archive_checksum_verified(row) for row in futures)
     ):
         raise ValueError("Round 61 source certificate identity drifted")
     expected_series = {
