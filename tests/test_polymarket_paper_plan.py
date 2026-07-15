@@ -109,6 +109,13 @@ def test_model_paper_plan_is_promotion_and_source_gated(
     assert plan.allow_segmented_gaps is False
     assert len(plan.plan_sha256) == 64
 
+    with pytest.raises(ValueError, match="must be auto, baseline, model, or ai"):
+        paper_plan.build_polymarket_paper_plan(
+            tmp_path / "artifact.json",
+            verification_path,
+            policy="profile_model",
+        )
+
     source["execution_report_sha256_by_policy_and_latency"] = {
         "baseline": {"100": "4" * 64},
         "model": {"100": "6" * 64},

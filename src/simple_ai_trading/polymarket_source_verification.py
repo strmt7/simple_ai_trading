@@ -18,7 +18,9 @@ from .polymarket_model import (
     PolymarketModelConfig,
     build_polymarket_model_dataset,
     fit_polymarket_offset_model,
+    fit_polymarket_profile_challenger,
     predict_polymarket_probabilities,
+    predict_polymarket_profile_probabilities,
     split_polymarket_model_dataset,
 )
 from .polymarket_model_execution import (
@@ -32,7 +34,7 @@ from .polymarket_replay import PolymarketEvidenceReplay
 
 
 POLYMARKET_SOURCE_VERIFICATION_SCHEMA_VERSION = (
-    "polymarket-source-verification-v1"
+    "polymarket-source-verification-v2"
 )
 POLYMARKET_SOURCE_VERIFICATION_CHECKS = (
     "recorder_integrity_replayed",
@@ -41,6 +43,7 @@ POLYMARKET_SOURCE_VERIFICATION_CHECKS = (
     "chronological_split_reconstructed",
     "model_fit_reconstructed",
     "probability_report_reconstructed",
+    "profile_challenger_reconstructed",
     "held_out_predictions_reconstructed",
     "all_execution_scenarios_reconstructed",
 )
@@ -145,7 +148,10 @@ class PolymarketSourceVerificationReport:
     split_sha256: str
     model_sha256: str
     probability_report_sha256: str
+    profile_model_sha256: str
+    profile_probability_report_sha256: str
     held_out_rows_sha256: str
+    profile_held_out_rows_sha256: str
     execution_report_sha256_by_policy_and_latency: Mapping[
         str, Mapping[str, str]
     ]
@@ -175,7 +181,12 @@ class PolymarketSourceVerificationReport:
             "split_sha256": self.split_sha256,
             "model_sha256": self.model_sha256,
             "probability_report_sha256": self.probability_report_sha256,
+            "profile_model_sha256": self.profile_model_sha256,
+            "profile_probability_report_sha256": (
+                self.profile_probability_report_sha256
+            ),
             "held_out_rows_sha256": self.held_out_rows_sha256,
+            "profile_held_out_rows_sha256": self.profile_held_out_rows_sha256,
             "execution_report_sha256_by_policy_and_latency": {
                 policy: dict(sorted(reports.items()))
                 for policy, reports in sorted(
@@ -245,7 +256,10 @@ def validate_polymarket_source_verification(
             "split_sha256",
             "model_sha256",
             "probability_report_sha256",
+            "profile_model_sha256",
+            "profile_probability_report_sha256",
             "held_out_rows_sha256",
+            "profile_held_out_rows_sha256",
         )
     )
     scenario_hashes_valid = isinstance(execution_hashes, Mapping)
@@ -255,6 +269,7 @@ def validate_polymarket_source_verification(
         scenario_hashes_valid = {"baseline", "model"}.issubset(policies) and policies <= {
             "baseline",
             "model",
+            "profile_model",
             "model_retry",
             "ai",
         }
@@ -406,12 +421,32 @@ def verify_polymarket_model_artifact_source(
             payload["probability_report"],
             name="probability report",
         )
+        profile_model, profile_probability_report = (
+            fit_polymarket_profile_challenger(
+                model_dataset,
+                split,
+                model,
+            )
+        )
+        _require_canonical_match(
+            profile_model.asdict(),
+            payload["profile_model"],
+            name="profile model fit",
+        )
+        _require_canonical_match(
+            profile_probability_report.asdict(),
+            payload["profile_probability_report"],
+            name="profile probability report",
+        )
 
         baseline_probabilities = [
             item.baseline_up_probability for item in split.test
         ]
         model_probabilities = list(
             predict_polymarket_probabilities(model, split.test)
+        )
+        profile_probabilities = list(
+            predict_polymarket_profile_probabilities(profile_model, split.test)
         )
         reconstructed_predictions = [
             {
@@ -428,6 +463,25 @@ def verify_polymarket_model_artifact_source(
             reconstructed_predictions,
             validated.predictions,
             name="held-out prediction rows",
+        )
+        reconstructed_profile_predictions = [
+            {
+                **row,
+                "profile_model_up_probability": format(
+                    float(profile_probability),
+                    ".17g",
+                ),
+            }
+            for row, profile_probability in zip(
+                reconstructed_predictions,
+                profile_probabilities,
+                strict=True,
+            )
+        ]
+        _require_canonical_match(
+            reconstructed_profile_predictions,
+            validated.profile_predictions,
+            name="profile held-out prediction rows",
         )
 
         test_conditions = tuple(
@@ -457,7 +511,11 @@ def verify_polymarket_model_artifact_source(
             probabilities = (
                 baseline_probabilities
                 if policy == "baseline"
-                else model_probabilities
+                else (
+                    profile_probabilities
+                    if policy == "profile_model"
+                    else model_probabilities
+                )
             )
             reports = _mapping(raw_reports, f"{policy} execution scenarios")
             execution_hashes[policy] = {}
@@ -526,7 +584,22 @@ def verify_polymarket_model_artifact_source(
         split_sha256=split.split_sha256,
         model_sha256=model.model_sha256,
         probability_report_sha256=probability_report.report_sha256,
+        profile_model_sha256=profile_model.model_sha256,
+        profile_probability_report_sha256=(
+            profile_probability_report.report_sha256
+        ),
         held_out_rows_sha256=_canonical_sha256(reconstructed_predictions),
+        profile_held_out_rows_sha256=_canonical_sha256(
+            [
+                {
+                    "sample_id": row["sample_id"],
+                    "profile_model_up_probability": row[
+                        "profile_model_up_probability"
+                    ],
+                }
+                for row in reconstructed_profile_predictions
+            ]
+        ),
         execution_report_sha256_by_policy_and_latency=execution_hashes,
         verified_feature_row_count=len(feature_dataset.rows),
         verified_model_sample_count=len(model_dataset.samples),

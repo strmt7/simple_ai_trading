@@ -86,9 +86,15 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
     split_summary = {"split_sha256": "4" * 64}
     model_payload = {"model_sha256": "5" * 64}
     probability_payload = {"report_sha256": "6" * 64}
+    profile_model_payload = {"model_sha256": "b" * 64}
+    profile_probability_payload = {"report_sha256": "c" * 64}
     prediction = {
         **sample.asdict(),
         "model_up_probability": "0.59999999999999998",
+    }
+    profile_prediction = {
+        **prediction,
+        "profile_model_up_probability": "0.65000000000000002",
     }
 
     def execution_payload(report_sha256: str) -> dict[str, object]:
@@ -103,6 +109,7 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
     baseline_payload = execution_payload("7" * 64)
     model_execution_payload = execution_payload("8" * 64)
     retry_execution_payload = execution_payload("a" * 64)
+    profile_execution_payload = execution_payload("d" * 64)
     payload = {
         "run_id": "run-1",
         "feature_dataset": feature_summary,
@@ -110,10 +117,13 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
         "split": split_summary,
         "model": model_payload,
         "probability_report": probability_payload,
+        "profile_model": profile_model_payload,
+        "profile_probability_report": profile_probability_payload,
         "execution_latency_sensitivity": {
             "policies": {
                 "baseline": {"100": baseline_payload},
                 "model": {"100": model_execution_payload},
+                "profile_model": {"100": profile_execution_payload},
                 "model_retry": {"100": retry_execution_payload},
             }
         },
@@ -122,6 +132,7 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
         payload=payload,
         artifact_sha256="9" * 64,
         predictions=(prediction,),
+        profile_predictions=(profile_prediction,),
     )
     feature_dataset = SimpleNamespace(
         rows=(object(), object()),
@@ -146,10 +157,19 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
         report_sha256="6" * 64,
         asdict=lambda: probability_payload,
     )
+    profile_model = SimpleNamespace(
+        model_sha256="b" * 64,
+        asdict=lambda: profile_model_payload,
+    )
+    profile_probability = SimpleNamespace(
+        report_sha256="c" * 64,
+        asdict=lambda: profile_probability_payload,
+    )
     executions = {
         "7" * 64: _Execution(baseline_payload, "7" * 64),
         "8" * 64: _Execution(model_execution_payload, "8" * 64),
         "a" * 64: _Execution(retry_execution_payload, "a" * 64),
+        "d" * 64: _Execution(profile_execution_payload, "d" * 64),
     }
 
     monkeypatch.setattr(
@@ -189,6 +209,16 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
         lambda *_args: [0.6],
     )
     monkeypatch.setattr(
+        verification,
+        "fit_polymarket_profile_challenger",
+        lambda *_args: (profile_model, profile_probability),
+    )
+    monkeypatch.setattr(
+        verification,
+        "predict_polymarket_profile_probabilities",
+        lambda *_args: [0.65],
+    )
+    monkeypatch.setattr(
         verification.PolymarketEvidenceReplay,
         "load",
         lambda *_args, **_kwargs: object(),
@@ -202,6 +232,8 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
             executions["7" * 64]
             if permissions == {sample.condition_id: True}
             and _args[1][0] == sample.baseline_up_probability
+            else executions["d" * 64]
+            if _args[1][0] == 0.65
             else executions["8" * 64]
         )
         if drift["enabled"]:
@@ -229,9 +261,9 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
     )
 
     assert report.status == "verified"
-    assert report.verified_execution_scenario_count == 3
-    assert report.verified_execution_trade_count == 3
-    assert report.verified_filled_order_count == 3
+    assert report.verified_execution_scenario_count == 4
+    assert report.verified_execution_trade_count == 4
+    assert report.verified_filled_order_count == 4
     verification.validate_polymarket_source_verification(
         report.asdict(),
         artifact_sha256="9" * 64,
