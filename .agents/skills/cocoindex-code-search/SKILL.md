@@ -38,6 +38,11 @@ directly to `rg`.
   artifacts. Binary files are not semantic-search evidence.
 - MCP search is read-only and never refreshes an index implicitly. Treat stale
   results as routing hints, not current truth.
+- Keep routing output bounded: five results is the default and ten is the hard
+  maximum. Refine the query or add path/language filters instead of loading a
+  larger result set.
+- Benchmark UTF-8 output bytes as a context-volume proxy, but never report
+  those bytes as measured model tokens.
 - The wrapper may reuse an existing daemon and must stop only daemons it owns.
 - Do not build a cold index during high-load model training or without enough
   disk headroom.

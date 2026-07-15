@@ -16,6 +16,10 @@ skills are intentionally not copied.
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
 
+A fresh 2026-07-15 upstream check found CocoIndex Code `0.2.37` still marked
+latest on PyPI and the pinned Karpathy commit still at `main`; no unmeasured
+upgrade was introduced.
+
 The main CI workflow also runs `tools/audit_financial_terminology.py`. It rejects
 superseded labels in authored documentation, Windows UI text, publication
 generators, and tracked evidence filenames while preserving immutable raw model
@@ -23,9 +27,9 @@ responses and backward-compatible serialized identifiers.
 
 The imported repo-local skills are `cocoindex-code-search`, `search-first`,
 `source-audit`, `ai-regression-testing`, `docs-knowledge-maintainer`, and
-`karpathy-guidelines`. Their overlays enforce testnet safety, reproducible
-financial evidence, CLI/Windows parity, secret hygiene, and the repository's
-single-session rule.
+`karpathy-guidelines`; `context-budget` is the repository's local context
+overlay. Together they enforce testnet safety, reproducible financial evidence,
+CLI/Windows parity, secret hygiene, and the single-session rule.
 
 ## CocoIndex Contract
 
@@ -54,6 +58,12 @@ content; semantic results are routing evidence, not correctness evidence.
 `mcp-smoke` validates registration and the JSON-RPC handshake without creating
 an index. The package benchmark cases and dependency hashes are recorded in
 [`reference/cocoindex-code-agent-benchmark-2026-07-11.md`](reference/cocoindex-code-agent-benchmark-2026-07-11.md).
+
+Semantic routing defaults to five results and rejects limits above ten. Refine
+queries or add path/language filters before widening. Benchmark artifacts record
+both characters and exact UTF-8 output bytes for broad `rg`, semantic routing,
+and the focused hybrid path. Bytes are a reproducible context-volume proxy, not
+a claim about model-specific token usage.
 
 ## Verification Lanes
 
