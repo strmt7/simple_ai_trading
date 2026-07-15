@@ -130,6 +130,10 @@ or Binance stream gaps are never admitted. AI is a matched optional treatment
 and must beat the same ML baseline after spread, fees, depth, latency, partial
 fills, and settlement failures.
 
+Each AI treatment retains its exact label-free prompt and raw local-model
+response. The publisher reconstructs candidate, permission, decision-delay, and
+uplift chains instead of trusting aggregate AI claims.
+
 ### Verified prospective run
 
 Research round 2 used one real, gap-free 553.008-second capture from

@@ -6127,23 +6127,17 @@ def _polymarket_held_out_prediction_evidence(
         len(sample_rows) == len(baseline_rows) == len(model_rows)
     ):
         raise ValueError("held-out Polymarket prediction evidence is incomplete")
+    if any(
+        format(item.baseline_up_probability, ".17g") != format(baseline, ".17g")
+        for item, baseline in zip(sample_rows, baseline_rows, strict=True)
+    ):
+        raise ValueError("held-out market priors do not match model samples")
     rows = [
         {
-            "sample_id": item.sample_id,
-            "condition_id": item.condition_id,
-            "market_id": item.market_id,
-            "asset": item.asset,
-            "event_start_ms": int(item.event_start_ms),
-            "end_ms": int(item.end_ms),
-            "decision_received_wall_ms": int(item.decision_received_wall_ms),
-            "horizon_seconds": int(item.horizon_seconds),
-            "official_up": bool(item.official_up),
-            "market_weight": format(float(item.market_weight), ".17g"),
-            "baseline_up_probability": format(baseline, ".17g"),
+            **item.asdict(),
             "model_up_probability": format(model, ".17g"),
-            "input_provenance_sha256": item.input_provenance_sha256,
         }
-        for item, baseline, model in zip(
+        for item, _baseline, model in zip(
             sample_rows,
             baseline_rows,
             model_rows,
@@ -6158,7 +6152,7 @@ def _polymarket_held_out_prediction_evidence(
         allow_nan=False,
     ).encode("ascii")
     return {
-        "schema_version": "polymarket-held-out-predictions-v1",
+        "schema_version": "polymarket-held-out-predictions-v2",
         "role": "untouched_chronological_test",
         "row_count": len(rows),
         "market_count": len({item.condition_id for item in sample_rows}),

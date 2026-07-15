@@ -216,6 +216,15 @@ class PolymarketModelSample:
             )
         )
 
+    def identity_payload(self) -> dict[str, object]:
+        return _sample_payload(self)
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            **self.identity_payload(),
+            "sample_sha256": self.sample_sha256,
+        }
+
     def validated(self) -> "PolymarketModelSample":
         if (
             len(self.feature_values) != len(POLYMARKET_MODEL_FEATURE_NAMES)

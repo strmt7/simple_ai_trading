@@ -90,6 +90,12 @@ settlement, PnL, timestamps, or future fill state. It cannot create a side, reve
 a side, increase size, or relax a price. Invalid, uncertain, slow, or unavailable
 output vetoes entry.
 
+The experiment artifact preserves each canonical prompt and raw local-model
+response. Publication independently rebuilds case IDs, proposal linkage,
+permissions, measured decision delays, parsed actions, and matched-period uplift;
+rehashed label injection, response/action disagreement, or a forged uplift verdict
+is rejected.
+
 Live AMD-host adversarial risk benchmark on 2026-07-15:
 
 | Model | Parameters | Score | Actions | Valid JSON | Mean latency | Gate |
