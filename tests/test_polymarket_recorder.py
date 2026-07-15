@@ -747,8 +747,34 @@ def test_finished_report_hash_is_verified_on_reopen(tmp_path) -> None:
     assert "recorder_report_embedded_hash_mismatch:run-report" in errors
 
 
+def test_terminal_integrity_audit_emits_bounded_progress(tmp_path) -> None:
+    observed: list[tuple[str, dict[str, object]]] = []
+    with PolymarketEvidenceStore(tmp_path / "progress.duckdb") as store:
+        _complete_store(store, "run-progress")
+        report = store.finish_run(
+            "run-progress",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(tmp_path / "progress.duckdb"),
+            errors=(),
+            progress=lambda phase, payload: observed.append(
+                (phase, dict(payload))
+            ),
+            progress_interval_seconds=5,
+        )
+
+    phases = [phase for phase, _payload in observed]
+    final_payload = observed[-1][1]
+    assert report.status == "complete"
+    assert phases[0] == "integrity-started"
+    assert "integrity-public-events" in phases
+    assert phases[-1] == "integrity-complete"
+    assert final_payload["verified_raw_message_count"] == report.raw_message_count
+    assert final_payload["verified_event_count"] == report.normalized_event_count
+
+
 def test_polymarket_record_is_generated_from_cli_contract_and_runs(
-    monkeypatch, capsys
+    monkeypatch, capsys, tmp_path
 ) -> None:
     captured: dict[str, object] = {}
 
@@ -757,8 +783,31 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
             captured["database"] = database
             captured.update(options)
 
-        async def run(self, *, duration_seconds: int) -> RecorderReport:
+        async def run(
+            self,
+            *,
+            duration_seconds: int,
+            progress,
+            progress_interval_seconds: int,
+        ) -> RecorderReport:
             captured["duration_seconds"] = duration_seconds
+            captured["progress_interval_seconds"] = progress_interval_seconds
+            progress(
+                "capturing",
+                {
+                    "schema_version": "polymarket-recorder-progress-v1",
+                    "run_id": "run-cli",
+                    "phase": "capturing",
+                    "observed_at_ms": 2_000,
+                    "elapsed_seconds": 1.0,
+                    "duration_seconds": duration_seconds,
+                    "written_message_count": 4,
+                    "written_market_snapshot_count": 3,
+                    "written_gap_count": 0,
+                    "queue_size": 2,
+                    "error_count": 0,
+                },
+            )
             return RecorderReport(
                 schema_version="polymarket-public-recorder-v1",
                 run_id="run-cli",
@@ -784,6 +833,7 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
             )
 
     monkeypatch.setattr(cli, "PolymarketPublicRecorder", _Recorder)
+    progress_path = tmp_path / "recorder-progress.json"
     status = cli.main(
         [
             "polymarket-record",
@@ -797,10 +847,16 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
             "512MB",
             "--database-threads",
             "1",
+            "--progress-interval-seconds",
+            "5",
+            "--progress-path",
+            str(progress_path),
             "--json",
         ]
     )
-    output = json.loads(capsys.readouterr().out)
+    captured_output = capsys.readouterr()
+    output = json.loads(captured_output.out)
+    progress_output = json.loads(progress_path.read_text(encoding="utf-8"))
     spec = next(spec for spec in command_specs() if spec.name == "polymarket-record")
 
     assert status == 0
@@ -812,7 +868,12 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         "memory_limit": "512MB",
         "database_threads": 1,
         "duration_seconds": 5,
+        "progress_interval_seconds": 5,
     }
+    assert "phase=capturing" in captured_output.err
+    assert progress_output["written_message_count"] == 4
+    memory_option = next(option for option in spec.options if option.dest == "memory_limit")
+    assert memory_option.default == "4GB"
     assert {option.dest for option in spec.options} == {
         "database",
         "duration_seconds",
@@ -820,6 +881,8 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         "queue_capacity",
         "memory_limit",
         "database_threads",
+        "progress_interval_seconds",
+        "progress_path",
         "json",
     }
 

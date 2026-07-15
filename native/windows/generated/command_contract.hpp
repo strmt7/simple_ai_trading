@@ -456,8 +456,10 @@ inline constexpr CommandOptionSpec kOptions_polymarket_record[] = {
     {L"--duration-seconds", L"duration_seconds", L"", L"300", L"", L"1", false, true, false},
     {L"--discovery-interval-seconds", L"discovery_interval_seconds", L"", L"60", L"", L"1", false, true, false},
     {L"--queue-capacity", L"queue_capacity", L"", L"20000", L"", L"1", false, true, false},
-    {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"4GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30", L"bounded capture and integrity-audit progress cadence", L"1", false, true, false},
+    {L"--progress-path", L"progress_path", L"", L"", L"optional atomic JSON sidecar for CLI/app progress", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -906,7 +908,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 23},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},
     {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 8},
-    {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 7},
+    {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 9},
     {L"polymarket-resolve", L"Persist an outcome only after the official CLOB and Gamma APIs are both terminal and agree exactly. This command never authenticates or places an order.", kOptions_polymarket_resolve, 7},
     {L"polymarket-verify", L"Independently rebuild features, the chronological split, deterministic model fit, held-out predictions, and every execution-latency scenario from the immutable recorder database. This command has no trading authority.", kOptions_polymarket_verify, 6},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},

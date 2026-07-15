@@ -31,6 +31,7 @@ from .polymarket import (
 
 POLYMARKET_EVIDENCE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
 POLYMARKET_RECORDER_SCHEMA_VERSION = "polymarket-public-recorder-v1"
+POLYMARKET_RECORDER_PROGRESS_SCHEMA_VERSION = "polymarket-recorder-progress-v1"
 CLOB_MARKET_WEBSOCKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
 POLYMARKET_RTDS_WEBSOCKET = "wss://ws-live-data.polymarket.com"
 BINANCE_SPOT_WEBSOCKET = (
@@ -755,6 +756,8 @@ class PolymarketEvidenceStore:
         ended_at_ms: int,
         database: str,
         errors: Sequence[str],
+        progress: Callable[[str, Mapping[str, object]], None] | None = None,
+        progress_interval_seconds: int = 30,
     ) -> RecorderReport:
         connection = self.connect()
         market_count = int(
@@ -811,7 +814,11 @@ class PolymarketEvidenceStore:
                 [run_id],
             ).fetchall()
         )
-        integrity = self.integrity_errors(run_id)
+        integrity = self.integrity_errors(
+            run_id,
+            progress=progress,
+            progress_interval_seconds=progress_interval_seconds,
+        )
         required_streams = {"clob_market", "polymarket_rtds", "binance_spot"}
         coverage_errors: list[str] = []
         missing_streams = sorted(required_streams - set(stream_counts))
@@ -976,17 +983,51 @@ class PolymarketEvidenceStore:
         )
         return report
 
-    def integrity_errors(self, run_id: str) -> tuple[str, ...]:
+    def integrity_errors(
+        self,
+        run_id: str,
+        *,
+        progress: Callable[[str, Mapping[str, object]], None] | None = None,
+        progress_interval_seconds: int = 30,
+    ) -> tuple[str, ...]:
+        interval = max(1, int(progress_interval_seconds))
+        audit_started = time.monotonic()
+        last_progress_at = audit_started
+        message_count = 0
+        event_count = 0
+
+        def notify(phase: str, *, force: bool = False) -> None:
+            nonlocal last_progress_at
+            if progress is None:
+                return
+            now = time.monotonic()
+            if not force and now - last_progress_at < interval:
+                return
+            last_progress_at = now
+            try:
+                progress(
+                    phase,
+                    {
+                        "audit_elapsed_seconds": max(0.0, now - audit_started),
+                        "verified_raw_message_count": message_count,
+                        "verified_event_count": event_count,
+                    },
+                )
+            except Exception:
+                return
+
         cached = self._terminal_evidence_integrity_cache.get(run_id)
         if cached is not None and cached[0] == self._terminal_evidence_fingerprint(
             run_id
         ):
+            notify("integrity-cache-hit", force=True)
             errors = list(cached[1])
             if self.paper_journal is not None:
                 errors.extend(self.paper_journal.integrity_errors())
             return tuple(errors)
         connection = self.connect()
         errors: list[str] = []
+        notify("integrity-started", force=True)
         run_row = connection.execute(
             """
             SELECT schema_version, status, started_at_ms, ended_at_ms,
@@ -1002,6 +1043,7 @@ class PolymarketEvidenceStore:
                     self._terminal_evidence_fingerprint(run_id),
                     result,
                 )
+            notify("integrity-complete", force=True)
             return result
         run_schema, run_status, run_started, run_ended, report_json, report_sha = run_row
         parsed_report: Mapping[str, object] | None = None
@@ -1029,7 +1071,6 @@ class PolymarketEvidenceStore:
                     errors.append(f"recorder_report_status_mismatch:{run_id}")
             except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
                 errors.append(f"recorder_report_invalid:{run_id}:{exc}")
-        message_count = 0
         for batch in _query_batches(
             connection,
             """
@@ -1063,10 +1104,11 @@ class PolymarketEvidenceStore:
                 )
                 if not hmac.compare_digest(str(message_id), expected_id):
                     errors.append(f"raw_message_id_mismatch:{message_id}")
+            notify("integrity-raw-messages")
         # The enforced UNIQUE keys reject exact source/event duplication at write
         # time. Per-row content-address verification above also catches a copied
         # identifier paired with a different unique key, without an unbounded sort.
-        event_count = 0
+        notify("integrity-public-events", force=True)
         for batch in _query_batches(
             connection,
             """
@@ -1096,6 +1138,8 @@ class PolymarketEvidenceStore:
                 else:
                     if canonical != str(event_json):
                         errors.append(f"event_json_not_canonical:{event_id}")
+            notify("integrity-public-events")
+        notify("integrity-relational-checks", force=True)
         orphan_events = connection.execute(
             """
             SELECT e.event_id
@@ -1226,6 +1270,7 @@ class PolymarketEvidenceStore:
             )
         if self.paper_journal is not None:
             errors.extend(self.paper_journal.integrity_errors())
+        notify("integrity-complete", force=True)
         return tuple(errors)
 
 
@@ -1388,7 +1433,7 @@ class PolymarketPublicRecorder:
         client: PolymarketPublicClient | None = None,
         queue_capacity: int = 20_000,
         discovery_interval_seconds: int = 60,
-        memory_limit: str = "1GB",
+        memory_limit: str = "4GB",
         database_threads: int = 2,
     ) -> None:
         self.database = Path(database)
@@ -1410,13 +1455,65 @@ class PolymarketPublicRecorder:
             raise ValueError("database_threads must lie in [1, 8]")
         self.registry = _MarketRegistry()
         self.errors: list[str] = []
+        self._written_message_count = 0
+        self._written_market_snapshot_count = 0
+        self._written_gap_count = 0
 
-    async def run(self, *, duration_seconds: int) -> RecorderReport:
+    def _notify_progress(
+        self,
+        progress: Callable[[str, Mapping[str, object]], None] | None,
+        phase: str,
+        *,
+        run_id: str,
+        started_at_ms: int,
+        duration_seconds: int,
+        queue_size: int,
+        details: Mapping[str, object] | None = None,
+    ) -> None:
+        if progress is None:
+            return
+        observed_at_ms = _wall_ms()
+        payload: dict[str, object] = {
+            "schema_version": POLYMARKET_RECORDER_PROGRESS_SCHEMA_VERSION,
+            "run_id": run_id,
+            "phase": phase,
+            "observed_at_ms": observed_at_ms,
+            "elapsed_seconds": max(
+                0.0, (observed_at_ms - started_at_ms) / 1_000.0
+            ),
+            "duration_seconds": int(duration_seconds),
+            "written_message_count": self._written_message_count,
+            "written_market_snapshot_count": self._written_market_snapshot_count,
+            "written_gap_count": self._written_gap_count,
+            "queue_size": max(0, int(queue_size)),
+            "error_count": len(self.errors),
+        }
+        if details:
+            payload.update(details)
+        try:
+            progress(phase, payload)
+        except Exception:
+            # Operator telemetry cannot interrupt or invalidate captured evidence.
+            return
+
+    async def run(
+        self,
+        *,
+        duration_seconds: int,
+        progress: Callable[[str, Mapping[str, object]], None] | None = None,
+        progress_interval_seconds: int = 30,
+    ) -> RecorderReport:
         duration = int(duration_seconds)
         if duration < 5 or duration > 86_400:
             raise ValueError("duration_seconds must lie in [5, 86400]")
+        progress_interval = int(progress_interval_seconds)
+        if progress_interval < 5 or progress_interval > 300:
+            raise ValueError("progress_interval_seconds must lie in [5, 300]")
         self.registry = _MarketRegistry()
         self.errors = []
+        self._written_message_count = 0
+        self._written_market_snapshot_count = 0
+        self._written_gap_count = 0
         run_id = uuid.uuid4().hex
         started = _wall_ms()
         stop = asyncio.Event()
@@ -1429,7 +1526,30 @@ class PolymarketPublicRecorder:
             threads=self.database_threads,
         ) as store:
             store.start_run(run_id, started)
+            self._notify_progress(
+                progress,
+                "capture-started",
+                run_id=run_id,
+                started_at_ms=started,
+                duration_seconds=duration,
+                queue_size=output.qsize(),
+            )
             writer = asyncio.create_task(self._writer(run_id, store, output))
+            progress_task = (
+                asyncio.create_task(
+                    self._progress_loop(
+                        progress,
+                        stop,
+                        output,
+                        run_id=run_id,
+                        started_at_ms=started,
+                        duration_seconds=duration,
+                        interval_seconds=progress_interval,
+                    )
+                )
+                if progress is not None
+                else None
+            )
             producers: list[asyncio.Task[None]] = []
             try:
                 try:
@@ -1486,11 +1606,22 @@ class PolymarketPublicRecorder:
                 self.errors.append(f"recorder:{exc.__class__.__name__}:{exc}")
             finally:
                 stop.set()
+                if progress_task is not None:
+                    progress_task.cancel()
+                    await asyncio.gather(progress_task, return_exceptions=True)
                 for task in producers:
                     task.cancel()
                 await asyncio.gather(*producers, return_exceptions=True)
                 if not writer.done():
                     try:
+                        self._notify_progress(
+                            progress,
+                            "writer-draining",
+                            run_id=run_id,
+                            started_at_ms=started,
+                            duration_seconds=duration,
+                            queue_size=output.qsize(),
+                        )
                         await asyncio.wait_for(output.put(None), timeout=5.0)
                         await _wait_for_writer_drain(writer, output)
                     except Exception as exc:
@@ -1510,24 +1641,84 @@ class PolymarketPublicRecorder:
                         if detail not in self.errors:
                             self.errors.append(detail)
             ended = _wall_ms()
+
+            def audit_progress(
+                phase: str,
+                details: Mapping[str, object],
+            ) -> None:
+                self._notify_progress(
+                    progress,
+                    phase,
+                    run_id=run_id,
+                    started_at_ms=started,
+                    duration_seconds=duration,
+                    queue_size=output.qsize(),
+                    details=details,
+                )
+
             try:
-                return store.finish_run(
+                report = store.finish_run(
                     run_id,
                     started_at_ms=started,
                     ended_at_ms=ended,
                     database=str(self.database.resolve()),
                     errors=self.errors,
+                    progress=audit_progress,
+                    progress_interval_seconds=progress_interval,
                 )
             except Exception as exc:
                 self.errors.append(
                     f"finish_run:{exc.__class__.__name__}:{exc}"
                 )
-                return store.fail_run(
+                report = store.fail_run(
                     run_id,
                     started_at_ms=started,
                     ended_at_ms=ended,
                     database=str(self.database.resolve()),
                     errors=self.errors,
+                )
+            self._notify_progress(
+                progress,
+                "finalized",
+                run_id=run_id,
+                started_at_ms=started,
+                duration_seconds=duration,
+                queue_size=output.qsize(),
+                details={
+                    "status": report.status,
+                    "report_sha256": report.report_sha256,
+                    "raw_message_count": report.raw_message_count,
+                    "normalized_event_count": report.normalized_event_count,
+                    "verified_raw_message_count": report.raw_message_count,
+                    "verified_event_count": report.normalized_event_count,
+                    "stream_gap_count": report.stream_gap_count,
+                },
+            )
+            return report
+
+    async def _progress_loop(
+        self,
+        progress: Callable[[str, Mapping[str, object]], None],
+        stop: asyncio.Event,
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
+        *,
+        run_id: str,
+        started_at_ms: int,
+        duration_seconds: int,
+        interval_seconds: int,
+    ) -> None:
+        while not stop.is_set():
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=int(interval_seconds))
+                return
+            except TimeoutError:
+                self._notify_progress(
+                    progress,
+                    "capturing",
+                    run_id=run_id,
+                    started_at_ms=started_at_ms,
+                    duration_seconds=duration_seconds,
+                    queue_size=output.qsize(),
                 )
 
     async def _supervise(
@@ -1675,17 +1866,22 @@ class PolymarketPublicRecorder:
             )
 
         pending_messages: list[RawStreamMessage] = []
+
+        async def flush_pending_messages() -> None:
+            nonlocal pending_messages
+            if not pending_messages:
+                return
+            batch = tuple(pending_messages)
+            await invoke(writer_store.append_messages, run_id, batch)
+            self._written_message_count += len(batch)
+            pending_messages = []
+
         try:
             writer_store = await loop.run_in_executor(executor, open_writer_store)
             while True:
                 item = await output.get()
                 if item is None:
-                    if pending_messages:
-                        await invoke(
-                            writer_store.append_messages,
-                            run_id,
-                            tuple(pending_messages),
-                        )
+                    await flush_pending_messages()
                     return
                 if isinstance(item, RawStreamMessage):
                     pending_messages.append(item)
@@ -1694,17 +1890,13 @@ class PolymarketPublicRecorder:
                         and not output.empty()
                     ):
                         continue
-                if pending_messages:
-                    await invoke(
-                        writer_store.append_messages,
-                        run_id,
-                        tuple(pending_messages),
-                    )
-                    pending_messages = []
+                await flush_pending_messages()
                 if isinstance(item, StreamGap):
                     await invoke(writer_store.record_gap, run_id, item)
+                    self._written_gap_count += 1
                 elif isinstance(item, MarketEvidence):
                     await invoke(writer_store.record_market_evidence, run_id, item)
+                    self._written_market_snapshot_count += 1
         finally:
             if writer_store is not None:
                 await loop.run_in_executor(executor, writer_store.close)
