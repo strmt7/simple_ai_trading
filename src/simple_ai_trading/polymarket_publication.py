@@ -182,6 +182,193 @@ class PolymarketPublicationResult:
         }
 
 
+def _validate_execution_report(
+    report: Mapping[str, Any],
+    *,
+    conditions: set[str],
+    expected_time_group_count: int,
+    name: str,
+) -> None:
+    if report.get("schema_version") != "polymarket-execution-report-v2":
+        raise ValueError(f"{name} uses an unsupported execution schema")
+    _verify_claims(report, name=name)
+    _verify_embedded_digest(report, "report_sha256", name=name)
+    trades_value = report.get("trades")
+    equity_value = report.get("equity_curve")
+    if not isinstance(trades_value, list) or not isinstance(equity_value, list):
+        raise ValueError(f"{name} execution ledger is malformed")
+    trades = [_as_mapping(row, f"{name} trade") for row in trades_value]
+    equity = [_as_mapping(row, f"{name} equity point") for row in equity_value]
+    permissions = _as_mapping(
+        report.get("market_permissions"),
+        f"{name} market permissions",
+    )
+    delays = _as_mapping(
+        report.get("decision_delay_ms_by_condition"),
+        f"{name} decision delays",
+    )
+    if (
+        set(permissions) != conditions
+        or any(not isinstance(value, bool) for value in permissions.values())
+        or set(delays) != conditions
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or not 0 <= value <= 300_000
+            for value in delays.values()
+        )
+        or report.get("market_permission_sha256")
+        != _canonical_sha256(
+            {
+                "schema_version": "polymarket-market-permission-v1",
+                "permissions": dict(sorted(permissions.items())),
+            }
+        )
+        or report.get("decision_delay_input_sha256")
+        != _canonical_sha256(
+            {
+                "schema_version": "polymarket-decision-delay-input-v1",
+                "decision_delay_ms_by_condition": dict(sorted(delays.items())),
+            }
+        )
+    ):
+        raise ValueError(f"{name} permission or latency map is invalid")
+    config = _as_mapping(report.get("config"), f"{name} execution config")
+    submission_latency = int(config["submission_latency_ms"])
+    if not 1 <= submission_latency <= 60_000:
+        raise ValueError(f"{name} network latency is invalid")
+    if (
+        int(report.get("evaluated_market_count", -1)) != len(conditions)
+        or int(report.get("attempted_order_count", -1)) != len(trades)
+        or len(equity) != expected_time_group_count
+    ):
+        raise ValueError(f"{name} execution coverage is inconsistent")
+
+    filled = [row for row in trades if row.get("execution_state") == "FILLED"]
+    settled = [
+        row
+        for row in filled
+        if str(row.get("official_resolution_event_id", ""))
+    ]
+    wins = [row for row in filled if _decimal(row["realized_pnl_quote"], "PnL") > 0]
+    losses = [row for row in filled if _decimal(row["realized_pnl_quote"], "PnL") <= 0]
+    if (
+        int(report.get("filled_order_count", -1)) != len(filled)
+        or len(filled) != len(settled)
+        or int(report.get("winning_order_count", -1)) != len(wins)
+        or int(report.get("losing_order_count", -1)) != len(losses)
+    ):
+        raise ValueError(f"{name} contains unsettled or miscounted filled trades")
+
+    deployed = Decimal("0")
+    payouts = Decimal("0")
+    fees = Decimal("0")
+    realized = Decimal("0")
+    trade_ids: set[str] = set()
+    for trade in trades:
+        condition_id = str(trade.get("condition_id", ""))
+        trade_id = str(trade.get("trade_id", ""))
+        trade_sha256 = str(trade.get("trade_sha256", ""))
+        decision_delay = int(trade.get("decision_delay_ms", -1))
+        trade_identity = dict(trade)
+        trade_identity.pop("trade_sha256", None)
+        if (
+            str(trade.get("asset", "")) not in _ASSETS
+            or condition_id not in conditions
+            or len(trade_id) != 64
+            or trade_id in trade_ids
+            or len(trade_sha256) != 64
+            or trade_sha256 != _canonical_sha256(trade_identity)
+            or decision_delay != delays[condition_id]
+            or int(trade.get("submission_latency_ms", -1)) != submission_latency
+            or int(trade.get("effective_latency_ms", -1))
+            != decision_delay + submission_latency
+        ):
+            raise ValueError(f"{name} trade identity or latency binding is invalid")
+        trade_ids.add(trade_id)
+        quantity = _decimal(trade.get("quantity"), f"{name} trade quantity")
+        filled_quantity = _decimal(
+            trade.get("filled_quantity"),
+            f"{name} filled quantity",
+        )
+        average = _decimal(
+            trade.get("average_fill_price"),
+            f"{name} fill price",
+        )
+        fee = _decimal(trade.get("fee_quote"), f"{name} trade fee")
+        payout = _decimal(
+            trade.get("gross_payout_quote"),
+            f"{name} trade payout",
+        )
+        pnl = _decimal(
+            trade.get("realized_pnl_quote"),
+            f"{name} trade PnL",
+        )
+        if min(quantity, filled_quantity, average, fee, payout) < 0:
+            raise ValueError(f"{name} trade contains a negative accounting value")
+        if trade.get("execution_state") == "FILLED":
+            if filled_quantity != quantity or pnl != payout - average * quantity - fee:
+                raise ValueError(f"{name} filled-trade accounting is inconsistent")
+            deployed += average * quantity + fee
+            payouts += payout
+            fees += fee
+            realized += pnl
+        elif any(value != 0 for value in (filled_quantity, average, fee, payout, pnl)):
+            raise ValueError(f"{name} non-fill carries economic credit")
+
+    initial = _decimal(report.get("initial_capital_quote"), f"{name} initial equity")
+    final = _decimal(report.get("final_equity_quote"), f"{name} final equity")
+    reported_net = _decimal(report.get("net_realized_pnl_quote"), f"{name} net PnL")
+    if (
+        deployed != _decimal(report.get("gross_deployed_capital_quote"), f"{name} deployed")
+        or payouts != _decimal(report.get("gross_payout_quote"), f"{name} payouts")
+        or fees != _decimal(report.get("total_fees_quote"), f"{name} fees")
+        or realized != reported_net
+        or final != initial + reported_net
+    ):
+        raise ValueError(f"{name} aggregate accounting does not reconcile")
+
+    running = initial
+    peak = initial
+    maximum_drawdown = Decimal("0")
+    maximum_drawdown_fraction = Decimal("0")
+    settled_times: list[int] = []
+    for point in equity:
+        settled_at = int(point.get("settled_at_ms", -1))
+        group_pnl = _decimal(point.get("group_realized_pnl_quote"), "group PnL")
+        running += group_pnl
+        peak = max(peak, running)
+        drawdown = peak - running
+        drawdown_fraction = drawdown / peak if peak > 0 else Decimal("0")
+        if (
+            settled_at < 0
+            or running != _decimal(point.get("equity_quote"), "equity")
+            or peak != _decimal(point.get("peak_equity_quote"), "peak equity")
+            or drawdown != _decimal(point.get("drawdown_quote"), "drawdown")
+            or drawdown_fraction
+            != _decimal(point.get("drawdown_fraction"), "drawdown fraction")
+        ):
+            raise ValueError(f"{name} equity curve does not reconcile")
+        maximum_drawdown = max(maximum_drawdown, drawdown)
+        maximum_drawdown_fraction = max(
+            maximum_drawdown_fraction,
+            drawdown_fraction,
+        )
+        settled_times.append(settled_at)
+    if (
+        settled_times != sorted(set(settled_times))
+        or running != final
+        or maximum_drawdown
+        != _decimal(report.get("maximum_drawdown_quote"), "maximum drawdown")
+        or maximum_drawdown_fraction
+        != _decimal(
+            report.get("maximum_drawdown_fraction"),
+            "maximum drawdown fraction",
+        )
+    ):
+        raise ValueError(f"{name} equity path summary does not reconcile")
+
+
 def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketArtifact:
     """Fail closed unless the experiment and every publication input are coherent."""
 
@@ -317,83 +504,65 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         raise ValueError("AI evidence enabled state is invalid")
 
     for policy, report in executions.items():
-        trades = report.get("trades")
-        equity = report.get("equity_curve")
-        if not isinstance(trades, list) or not isinstance(equity, list):
-            raise ValueError(f"{policy} execution ledger is malformed")
-        permissions = _as_mapping(
-            report.get("market_permissions"),
-            f"{policy} market permissions",
+        _validate_execution_report(
+            report,
+            conditions=conditions,
+            expected_time_group_count=len(time_groups),
+            name=f"{policy} primary execution",
         )
-        delays = _as_mapping(
-            report.get("decision_delay_ms_by_condition"),
-            f"{policy} decision delays",
+
+    sensitivity = _as_mapping(
+        payload.get("execution_latency_sensitivity"),
+        "execution latency sensitivity",
+    )
+    _verify_claims(sensitivity, name="execution latency sensitivity")
+    latency_values = sensitivity.get("network_latencies_ms")
+    if (
+        sensitivity.get("schema_version")
+        != "polymarket-execution-latency-sensitivity-v1"
+        or not isinstance(latency_values, list)
+        or not latency_values
+        or latency_values != sorted(set(latency_values))
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, int)
+            or not 1 <= value <= 60_000
+            for value in latency_values
         )
-        if (
-            set(permissions) != conditions
-            or any(not isinstance(value, bool) for value in permissions.values())
-            or set(delays) != conditions
-            or any(
-                isinstance(value, bool)
-                or not isinstance(value, int)
-                or not 0 <= value <= 300_000
-                for value in delays.values()
+        or int(sensitivity.get("primary_network_latency_ms", -1))
+        not in latency_values
+    ):
+        raise ValueError("execution latency sensitivity contract is invalid")
+    sensitivity_policies = _as_mapping(
+        sensitivity.get("policies"),
+        "execution latency policies",
+    )
+    if set(sensitivity_policies) != set(executions):
+        raise ValueError("execution latency sensitivity policy set is invalid")
+    primary_latency = int(sensitivity["primary_network_latency_ms"])
+    for policy, raw_reports in sensitivity_policies.items():
+        reports = _as_mapping(raw_reports, f"{policy} latency reports")
+        if set(reports) != {str(value) for value in latency_values}:
+            raise ValueError(f"{policy} latency scenario set is incomplete")
+        for latency in latency_values:
+            scenario = _as_mapping(
+                reports[str(latency)],
+                f"{policy} {latency}ms execution",
             )
-            or report.get("market_permission_sha256")
-            != _canonical_sha256(
-                {
-                    "schema_version": "polymarket-market-permission-v1",
-                    "permissions": dict(sorted(permissions.items())),
-                }
+            if int(_as_mapping(scenario["config"], "scenario config")["submission_latency_ms"]) != latency:
+                raise ValueError(f"{policy} latency scenario config drifted")
+            _validate_execution_report(
+                scenario,
+                conditions=conditions,
+                expected_time_group_count=len(time_groups),
+                name=f"{policy} {latency}ms execution",
             )
-            or report.get("decision_delay_input_sha256")
-            != _canonical_sha256(
-                {
-                    "schema_version": "polymarket-decision-delay-input-v1",
-                    "decision_delay_ms_by_condition": dict(sorted(delays.items())),
-                }
-            )
-        ):
-            raise ValueError(f"{policy} execution permission or latency map is invalid")
-        submission_latency = int(
-            _as_mapping(report.get("config"), f"{policy} execution config")[
-                "submission_latency_ms"
-            ]
-        )
-        filled = [row for row in trades if row.get("execution_state") == "FILLED"]
-        settled = [row for row in filled if str(row.get("official_resolution_event_id", ""))]
-        if (
-            int(report.get("filled_order_count", -1)) != len(filled)
-            or len(filled) != len(settled)
-            or len(filled)
-            != int(report.get("winning_order_count", -1))
-            + int(report.get("losing_order_count", -1))
-        ):
-            raise ValueError(f"{policy} execution contains unsettled filled trades")
-        for trade in trades:
-            condition_id = str(trade.get("condition_id", ""))
-            decision_delay = int(trade.get("decision_delay_ms", -1))
             if (
-                str(trade.get("asset", "")) not in _ASSETS
-                or condition_id not in conditions
-                or decision_delay != delays[condition_id]
-                or int(trade.get("submission_latency_ms", -1))
-                != submission_latency
-                or int(trade.get("effective_latency_ms", -1))
-                != decision_delay + submission_latency
+                latency == primary_latency
+                and scenario.get("report_sha256")
+                != executions[str(policy)].get("report_sha256")
             ):
-                raise ValueError(
-                    f"{policy} execution trade asset or latency binding is invalid"
-                )
-            for key in (
-                "quantity",
-                "filled_quantity",
-                "average_fill_price",
-                "fee_quote",
-                "gross_payout_quote",
-                "realized_pnl_quote",
-            ):
-                _decimal(trade.get(key), f"{policy} trade {key}")
+                raise ValueError(f"{policy} primary latency report does not match")
     return ValidatedPolymarketArtifact(
         payload=payload,
         artifact_sha256=claimed_artifact_sha256,
@@ -473,6 +642,54 @@ def _execution_summary_rows(
         {"policy": policy, **{field: report[field] for field in fields}}
         for policy, report in executions.items()
     ]
+
+
+def _latency_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
+    sensitivity = _as_mapping(
+        payload["execution_latency_sensitivity"],
+        "execution latency sensitivity",
+    )
+    latencies = [int(value) for value in sensitivity["network_latencies_ms"]]
+    policies = _as_mapping(sensitivity["policies"], "latency policies")
+    rows: list[dict[str, object]] = []
+    for policy, raw_reports in policies.items():
+        reports = _as_mapping(raw_reports, f"{policy} latency reports")
+        for latency in latencies:
+            report = _as_mapping(reports[str(latency)], "latency report")
+            delays = [
+                int(value)
+                for value in _as_mapping(
+                    report["decision_delay_ms_by_condition"],
+                    "decision delays",
+                ).values()
+            ]
+            trades = report["trades"]
+            rows.append(
+                {
+                    "policy": policy,
+                    "network_latency_ms": latency,
+                    "mean_decision_delay_ms": (
+                        sum(delays) / len(delays) if delays else 0.0
+                    ),
+                    "maximum_decision_delay_ms": max(delays, default=0),
+                    "evaluated_markets": report["evaluated_market_count"],
+                    "signals": report["signal_market_count"],
+                    "attempted_orders": report["attempted_order_count"],
+                    "fills": report["filled_order_count"],
+                    "indeterminate_orders": sum(
+                        row["execution_state"] == "UNKNOWN" for row in trades
+                    ),
+                    "net_realized_pnl_quote": report["net_realized_pnl_quote"],
+                    "return_on_initial_capital": report[
+                        "return_on_initial_capital"
+                    ],
+                    "maximum_drawdown_fraction": report[
+                        "maximum_drawdown_fraction"
+                    ],
+                    "report_sha256": report["report_sha256"],
+                }
+            )
+    return rows
 
 
 def _equity_rows(
@@ -763,6 +980,68 @@ def _asset_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) ->
     return "\n".join(lines) + "\n"
 
 
+def _latency_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    start: str,
+    end: str,
+) -> str:
+    policies = tuple(dict.fromkeys(str(row["policy"]) for row in rows))
+    latencies = sorted({int(row["network_latency_ms"]) for row in rows})
+    values = [
+        _finite_float(row["net_realized_pnl_quote"], "latency PnL")
+        for row in rows
+    ]
+    low = min(values + [0.0])
+    high = max(values + [0.0])
+    padding = max((high - low) * 0.15, 1.0)
+    low -= padding
+    high += padding
+    left, top, bottom, width = 120.0, 150.0, 570.0, 1010.0
+    lines = _svg_base(
+        "Network-latency sensitivity",
+        f"Causal full-depth FOK replay; held-out window {start} to {end}",
+        "Settled after-fee PnL by predeclared network latency from latency-sensitivity.csv. AI lines also include measured model decision delay.",
+    )
+    for index in range(5):
+        value = low + (high - low) * index / 4
+        y = bottom - (bottom - top) * index / 4
+        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}"/>')
+        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:,.2f}</text>')
+    x_by_latency = {
+        latency: left + width * index / max(1, len(latencies) - 1)
+        for index, latency in enumerate(latencies)
+    }
+    for latency, x in x_by_latency.items():
+        lines.append(f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{latency} ms</text>')
+    for policy in policies:
+        policy_rows = {
+            int(row["network_latency_ms"]): row
+            for row in rows
+            if row["policy"] == policy
+        }
+        points: list[str] = []
+        coordinates: list[tuple[float, float, float]] = []
+        for latency in latencies:
+            value = _finite_float(
+                policy_rows[latency]["net_realized_pnl_quote"],
+                "latency PnL",
+            )
+            x = x_by_latency[latency]
+            y = bottom - (bottom - top) * (value - low) / (high - low)
+            points.append(f"{x:.2f},{y:.2f}")
+            coordinates.append((x, y, value))
+        lines.append(f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>')
+        for x, y, value in coordinates:
+            lines.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{_COLORS[policy]}"/><text x="{x:.1f}" y="{y - 11:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f}</text>')
+    legend_x = 350
+    for index, policy in enumerate(policies):
+        x = legend_x + index * 190
+        lines.append(f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>')
+    lines.append("</svg>")
+    return "\n".join(lines) + "\n"
+
+
 def _progress_rows(
     artifact: ValidatedPolymarketArtifact,
     prior_round_path: Path | None,
@@ -896,6 +1175,8 @@ durable edge. {ai_line}
 
 ![After-fee PnL by asset](latest/charts/per-asset-execution.svg)
 
+![Network-latency sensitivity](latest/charts/latency-sensitivity.svg)
+
 ## Evidence gates
 
 | Gate | Result |
@@ -911,6 +1192,7 @@ durable edge. {ai_line}
 - [Settled equity curves](latest/tables/equity-curves.csv)
 - [Execution ledger](latest/tables/trades.csv)
 - [Per-asset execution](latest/tables/per-asset-execution.csv)
+- [Latency sensitivity](latest/tables/latency-sensitivity.csv)
 - [AI decisions](latest/tables/ai-decisions.csv)
 - [Round progression](latest/tables/research-progress.csv)
 - [Integrity manifest](latest/publication-integrity.json)
@@ -936,6 +1218,7 @@ def publish_polymarket_model_artifact(
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
     probability_rows = _probability_rows(validated.payload)
     summary_rows = _execution_summary_rows(validated.executions)
+    latency_rows = _latency_rows(validated.payload)
     equity_rows = _equity_rows(validated.executions)
     trade_rows = _trade_rows(validated.executions)
     per_asset_rows = _per_asset_rows(validated.predictions, validated.executions)
@@ -952,6 +1235,7 @@ def publish_polymarket_model_artifact(
         "probability-quality.svg",
         "held-out-equity.svg",
         "per-asset-execution.svg",
+        "latency-sensitivity.svg",
         "research-progress.svg",
     }
     for old_chart in charts.glob("*.svg"):
@@ -973,6 +1257,7 @@ def publish_polymarket_model_artifact(
         "equity-curves.csv": equity_rows,
         "trades.csv": trade_rows,
         "per-asset-execution.csv": per_asset_rows,
+        "latency-sensitivity.csv": latency_rows,
         "ai-decisions.csv": ai_rows,
         "research-progress.csv": progress_rows,
     }
@@ -981,6 +1266,10 @@ def publish_polymarket_model_artifact(
     _write_text(charts / "probability-quality.svg", _probability_svg(probability_rows, start=start, end=end))
     _write_text(charts / "held-out-equity.svg", _equity_svg(equity_rows, start=start, end=end))
     _write_text(charts / "per-asset-execution.svg", _asset_svg(per_asset_rows, start=start, end=end))
+    _write_text(
+        charts / "latency-sensitivity.svg",
+        _latency_svg(latency_rows, start=start, end=end),
+    )
     _write_text(charts / "research-progress.svg", _progress_svg(progress_rows))
 
     results_name = f"round-{round_number:03d}-prospective-model-results.md"

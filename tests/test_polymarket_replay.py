@@ -1356,6 +1356,7 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
         "warmup_ms",
         "minimum_resolved_markets_per_asset",
         "latency_ms",
+        "latency_stress_ms",
         "minimum_edge",
         "initial_capital",
         "maximum_loss_fraction_per_market",

@@ -33,8 +33,13 @@ Probability scores alone cannot establish an edge. The paired economic diagnosti
 - chooses at most the first positive after-fee proposal per market;
 - uses the venue's per-market taker fee, tick, and minimum order size;
 - sets the highest fee-aware limit that retains the required expected edge;
-- waits the configured latency, then walks displayed full-depth books with FOK;
+- reconstructs the latest book received no later than order arrival, never the
+  first future update, then walks displayed full depth with FOK;
+- evaluates predeclared 50, 100, 250, 500, and 1,000 ms network-latency cases;
+- adds each measured local-AI response time before network latency in the AI arm;
 - rejects stale, gapped, crossed, future, or insufficient-depth states;
+- records every abstaining time group and reserves worst-case risk for any
+  indeterminate order state;
 - caps worst-case loss at 0.5% per market and 1.5% per five-minute group;
 - settles only from official CLOB/Gamma cross-checked evidence.
 
@@ -44,6 +49,19 @@ implementation follows those contracts rather than crediting midpoint fills
 ([order book](https://docs.polymarket.com/trading/orderbook),
 [prices](https://docs.polymarket.com/concepts/prices-orderbook),
 [fees](https://docs.polymarket.com/trading/fees)).
+
+The July 2026 contract is CLOB V2. FOK orders must fill entirely or cancel, a BUY
+market-order amount is denominated in quote currency, its price is a worst-price
+limit, and `tick_size_change` events are critical inputs. Public market data uses
+WebSocket updates rather than polling; trading endpoints have separate burst and
+sustained limits
+([create order](https://docs.polymarket.com/trading/orders/create),
+[market channel](https://docs.polymarket.com/market-data/websocket/market-channel),
+[rate limits](https://docs.polymarket.com/api-reference/rate-limits),
+[changelog](https://docs.polymarket.com/changelog)). The current implementation
+is paper research only. A future authenticated adapter must translate the
+share-based internal intent into the V2 BUY quote amount and reconcile the user
+channel before it can receive any live authority.
 
 ## AI ablation
 

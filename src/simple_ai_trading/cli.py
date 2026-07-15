@@ -531,7 +531,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--latency-ms",
         type=int,
         default=100,
-        help="measured decision-to-execution delay used by full-depth paper replay",
+        help="primary assumed network order latency used by causal full-depth replay",
+    )
+    parser_polymarket_model.add_argument(
+        "--latency-stress-ms",
+        default="50,100,250,500,1000",
+        help="predeclared comma-separated network latencies for execution sensitivity",
     )
     parser_polymarket_model.add_argument(
         "--minimum-edge",
@@ -6164,11 +6169,37 @@ def _polymarket_held_out_prediction_evidence(
     }
 
 
+def _polymarket_latency_scenarios(
+    value: object,
+    *,
+    primary_latency_ms: int,
+) -> tuple[int, ...]:
+    raw = [item.strip() for item in str(value or "").split(",") if item.strip()]
+    try:
+        latencies = {int(item) for item in raw}
+    except ValueError as exc:
+        raise ValueError("Polymarket latency stress values must be integers") from exc
+    latencies.add(int(primary_latency_ms))
+    if (
+        not latencies
+        or len(latencies) > 12
+        or any(not 1 <= latency <= 60_000 for latency in latencies)
+    ):
+        raise ValueError(
+            "Polymarket latency stress values must contain 1-12 values in [1, 60000]"
+        )
+    return tuple(sorted(latencies))
+
+
 def command_polymarket_model(args: argparse.Namespace) -> int:
     """Run one hash-bound probability and full-depth execution experiment."""
 
     try:
         minimum_markets = int(args.minimum_resolved_markets_per_asset)
+        latency_scenarios = _polymarket_latency_scenarios(
+            args.latency_stress_ms,
+            primary_latency_ms=int(args.latency_ms),
+        )
         with PolymarketEvidenceStore(
             Path(args.database),
             memory_limit=str(args.memory_limit),
@@ -6250,6 +6281,35 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 execution_replay,
                 config=execution_config,
             )
+            latency_sensitivity: dict[str, dict[int, Any]] = {
+                "baseline": {},
+                "model": {},
+            }
+            for latency_ms in latency_scenarios:
+                scenario_config = replace(
+                    execution_config,
+                    submission_latency_ms=latency_ms,
+                ).validated()
+                latency_sensitivity["baseline"][latency_ms] = (
+                    baseline_execution
+                    if latency_ms == execution_config.submission_latency_ms
+                    else evaluate_polymarket_execution_policy(
+                        split.test,
+                        baseline_probabilities,
+                        execution_replay,
+                        config=scenario_config,
+                    )
+                )
+                latency_sensitivity["model"][latency_ms] = (
+                    model_execution
+                    if latency_ms == execution_config.submission_latency_ms
+                    else evaluate_polymarket_execution_policy(
+                        split.test,
+                        model_probabilities,
+                        execution_replay,
+                        config=scenario_config,
+                    )
+                )
         ai_payload: dict[str, object]
         ai_execution = None
         ai_uplift = None
@@ -6348,6 +6408,24 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 market_permissions=ai_report.market_permissions,
                 decision_delay_ms_by_condition=ai_decision_delays,
             )
+            latency_sensitivity["ai"] = {}
+            for latency_ms in latency_scenarios:
+                scenario_config = replace(
+                    execution_config,
+                    submission_latency_ms=latency_ms,
+                ).validated()
+                latency_sensitivity["ai"][latency_ms] = (
+                    ai_execution
+                    if latency_ms == execution_config.submission_latency_ms
+                    else evaluate_polymarket_execution_policy(
+                        split.test,
+                        model_probabilities,
+                        execution_replay,
+                        config=scenario_config,
+                        market_permissions=ai_report.market_permissions,
+                        decision_delay_ms_by_condition=ai_decision_delays,
+                    )
+                )
             ai_uplift = assess_ai_uplift(
                 _polymarket_execution_uplift_metrics(
                     model_execution,
@@ -6380,9 +6458,28 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 "execution": ai_execution.asdict(),
                 "uplift": ai_uplift.asdict(),
             }
-        execution_reports = [baseline_execution, model_execution]
-        if ai_execution is not None:
-            execution_reports.append(ai_execution)
+        execution_reports = [
+            report
+            for policy_reports in latency_sensitivity.values()
+            for report in policy_reports.values()
+        ]
+        latency_sensitivity_payload = {
+            "schema_version": "polymarket-execution-latency-sensitivity-v1",
+            "primary_network_latency_ms": execution_config.submission_latency_ms,
+            "network_latencies_ms": list(latency_scenarios),
+            "policies": {
+                policy: {
+                    str(latency): reports[latency].asdict()
+                    for latency in latency_scenarios
+                }
+                for policy, reports in latency_sensitivity.items()
+            },
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
         evidence_gates = {
             "validation_probability_improved": (
                 probability_report.validation_log_loss_delta < 0.0
@@ -6394,6 +6491,11 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "after_cost_execution_improved": (
                 model_execution.net_realized_pnl_quote
                 > baseline_execution.net_realized_pnl_quote
+            ),
+            "after_cost_model_improved_at_every_stress_latency": all(
+                latency_sensitivity["model"][latency].net_realized_pnl_quote
+                > latency_sensitivity["baseline"][latency].net_realized_pnl_quote
+                for latency in latency_scenarios
             ),
             "all_positions_officially_settled": (
                 all(
@@ -6432,6 +6534,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "held_out_prediction_evidence": prediction_evidence,
             "baseline_execution": baseline_execution.asdict(),
             "model_execution": model_execution.asdict(),
+            "execution_latency_sensitivity": latency_sensitivity_payload,
             "ai": ai_payload,
             "evidence_gates": evidence_gates,
             "trading_authority": False,
