@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from functools import partial
@@ -44,11 +44,32 @@ _STREAMS = frozenset(
 )
 _MAX_RAW_MESSAGE_BYTES = 8 * 1024 * 1024
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
-_WRITER_BATCH_SIZE = 256
+_WRITER_BATCH_SIZE = 1_024
 _WRITER_MIN_DRAIN_SECONDS = 60.0
 _WRITER_MAX_DRAIN_SECONDS = 600.0
 _WRITER_STALL_SECONDS = 30.0
 _WRITER_ASSUMED_MINIMUM_MESSAGES_PER_SECOND = 100.0
+_INTEGRITY_FETCH_SIZE = 4_096
+
+_RAW_MESSAGE_INSERT_SQL = """
+    INSERT INTO polymarket_raw_message (
+        message_id, run_id, schema_version, stream, connection_id,
+        sequence_number, received_wall_ms, received_monotonic_ns,
+        raw_payload_sha256, raw_text, parse_status, parse_error
+    )
+    SELECT unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?),
+           unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?)
+"""
+_PUBLIC_EVENT_INSERT_SQL = """
+    INSERT INTO polymarket_public_event (
+        event_id, run_id, message_id, sub_index, stream, event_type, symbol,
+        condition_id, asset_id, source_time_ms, publisher_time_ms, event_json,
+        event_sha256
+    )
+    SELECT unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?),
+           unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?),
+           unnest(?)
+"""
 
 
 class _TextSender(Protocol):
@@ -63,6 +84,26 @@ def _canonical_json(value: object) -> str:
         sort_keys=True,
         allow_nan=False,
     )
+
+
+def _columnar_batch(
+    rows: Sequence[tuple[object, ...]],
+    *,
+    width: int,
+) -> tuple[list[object], ...]:
+    if not rows or any(len(row) != width for row in rows):
+        raise ValueError("DuckDB evidence batch has an invalid row width")
+    return tuple(list(column) for column in zip(*rows, strict=True))
+
+
+def _query_batches(
+    connection: duckdb.DuckDBPyConnection,
+    query: str,
+    parameters: Sequence[object],
+) -> Iterator[list[tuple[object, ...]]]:
+    cursor = connection.execute(query, parameters)
+    while rows := cursor.fetchmany(_INTEGRITY_FETCH_SIZE):
+        yield rows
 
 
 def _canonical_sha256(value: object) -> str:
@@ -243,6 +284,7 @@ class PolymarketEvidenceStore:
             self.connection.execute(f"SET threads={self.threads}")
             self.connection.execute("SET TimeZone='UTC'")
             self.connection.execute("SET preserve_insertion_order=false")
+            self.connection.execute("PRAGMA enable_checkpoint_on_shutdown")
             self._init_schema()
             self.paper_journal = PaperOrderJournal(self.connection)
         return self.connection
@@ -320,7 +362,7 @@ class PolymarketEvidenceStore:
             );
 
             CREATE TABLE IF NOT EXISTS polymarket_raw_message (
-                message_id VARCHAR PRIMARY KEY,
+                message_id VARCHAR NOT NULL,
                 run_id VARCHAR NOT NULL,
                 schema_version VARCHAR NOT NULL,
                 stream VARCHAR NOT NULL,
@@ -336,7 +378,7 @@ class PolymarketEvidenceStore:
             );
 
             CREATE TABLE IF NOT EXISTS polymarket_public_event (
-                event_id VARCHAR PRIMARY KEY,
+                event_id VARCHAR NOT NULL,
                 run_id VARCHAR NOT NULL,
                 message_id VARCHAR NOT NULL,
                 sub_index UINTEGER NOT NULL,
@@ -532,22 +574,14 @@ class PolymarketEvidenceStore:
         connection = self.connect()
         connection.execute("BEGIN TRANSACTION")
         try:
-            connection.executemany(
-                """
-                INSERT INTO polymarket_raw_message VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                )
-                """,
-                raw_rows,
+            connection.execute(
+                _RAW_MESSAGE_INSERT_SQL,
+                _columnar_batch(raw_rows, width=12),
             )
             if event_rows:
-                connection.executemany(
-                    """
-                    INSERT INTO polymarket_public_event VALUES (
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                    )
-                    """,
-                    event_rows,
+                connection.execute(
+                    _PUBLIC_EVENT_INSERT_SQL,
+                    _columnar_batch(event_rows, width=13),
                 )
             connection.execute("COMMIT")
         except Exception:
@@ -819,67 +853,127 @@ class PolymarketEvidenceStore:
                     errors.append(f"recorder_report_status_mismatch:{run_id}")
             except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
                 errors.append(f"recorder_report_invalid:{run_id}:{exc}")
-        messages = connection.execute(
+        last_message_id = ""
+        message_count = 0
+        for batch in _query_batches(
+            connection,
             """
             SELECT message_id, run_id, stream, connection_id, sequence_number,
                    raw_payload_sha256, raw_text
             FROM polymarket_raw_message WHERE run_id = ? ORDER BY message_id
             """,
             [run_id],
+        ):
+            message_count += len(batch)
+            for (
+                message_id,
+                message_run,
+                stream,
+                connection_id,
+                sequence,
+                claimed,
+                raw_text,
+            ) in batch:
+                normalized_message_id = str(message_id)
+                if normalized_message_id == last_message_id:
+                    errors.append(
+                        f"duplicate_raw_message_id:{normalized_message_id}"
+                    )
+                last_message_id = normalized_message_id
+                actual = hashlib.sha256(str(raw_text).encode("utf-8")).hexdigest()
+                if actual != str(claimed):
+                    errors.append(f"raw_message_hash_mismatch:{message_id}")
+                expected_id = _canonical_sha256(
+                    {
+                        "run_id": str(message_run),
+                        "stream": str(stream),
+                        "connection_id": str(connection_id),
+                        "sequence_number": int(sequence),
+                        "raw_payload_sha256": str(claimed),
+                    }
+                )
+                if not hmac.compare_digest(str(message_id), expected_id):
+                    errors.append(f"raw_message_id_mismatch:{message_id}")
+        duplicate_sequences = connection.execute(
+            """
+            SELECT stream, connection_id, sequence_number
+            FROM polymarket_raw_message
+            WHERE run_id = ?
+            GROUP BY stream, connection_id, sequence_number
+            HAVING count(*) > 1
+            ORDER BY stream, connection_id, sequence_number
+            """,
+            [run_id],
         ).fetchall()
-        for (
-            message_id,
-            message_run,
-            stream,
-            connection_id,
-            sequence,
-            claimed,
-            raw_text,
-        ) in messages:
-            actual = hashlib.sha256(str(raw_text).encode("utf-8")).hexdigest()
-            if actual != str(claimed):
-                errors.append(f"raw_message_hash_mismatch:{message_id}")
-            expected_id = _canonical_sha256(
-                {
-                    "run_id": str(message_run),
-                    "stream": str(stream),
-                    "connection_id": str(connection_id),
-                    "sequence_number": int(sequence),
-                    "raw_payload_sha256": str(claimed),
-                }
-            )
-            if not hmac.compare_digest(str(message_id), expected_id):
-                errors.append(f"raw_message_id_mismatch:{message_id}")
-        events = connection.execute(
+        errors.extend(
+            f"duplicate_raw_message_sequence:{stream}:{connection_id}:{sequence}"
+            for stream, connection_id, sequence in duplicate_sequences
+        )
+        last_event_id = ""
+        event_count = 0
+        for batch in _query_batches(
+            connection,
             """
             SELECT event_id, message_id, sub_index, event_sha256, event_json
             FROM polymarket_public_event WHERE run_id = ? ORDER BY event_id
             """,
             [run_id],
+        ):
+            event_count += len(batch)
+            for event_id, message_id, sub_index, claimed, event_json in batch:
+                normalized_event_id = str(event_id)
+                if normalized_event_id == last_event_id:
+                    errors.append(
+                        f"duplicate_public_event_id:{normalized_event_id}"
+                    )
+                last_event_id = normalized_event_id
+                actual = hashlib.sha256(str(event_json).encode("ascii")).hexdigest()
+                if actual != str(claimed):
+                    errors.append(f"event_hash_mismatch:{event_id}")
+                expected_id = _canonical_sha256(
+                    {
+                        "message_id": str(message_id),
+                        "sub_index": int(sub_index),
+                        "event_sha256": str(claimed),
+                    }
+                )
+                if not hmac.compare_digest(str(event_id), expected_id):
+                    errors.append(f"event_id_mismatch:{event_id}")
+                try:
+                    canonical = _canonical_json(_strict_json_loads(str(event_json)))
+                except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+                    errors.append(f"event_json_invalid:{event_id}:{exc}")
+                else:
+                    if canonical != str(event_json):
+                        errors.append(f"event_json_not_canonical:{event_id}")
+        duplicate_event_sequences = connection.execute(
+            """
+            SELECT message_id, sub_index
+            FROM polymarket_public_event
+            WHERE run_id = ?
+            GROUP BY message_id, sub_index
+            HAVING count(*) > 1
+            ORDER BY message_id, sub_index
+            """,
+            [run_id],
         ).fetchall()
-        message_ids = {str(row[0]) for row in messages}
-        for event_id, message_id, sub_index, claimed, event_json in events:
-            if str(message_id) not in message_ids:
-                errors.append(f"event_without_message:{event_id}")
-            actual = hashlib.sha256(str(event_json).encode("ascii")).hexdigest()
-            if actual != str(claimed):
-                errors.append(f"event_hash_mismatch:{event_id}")
-            expected_id = _canonical_sha256(
-                {
-                    "message_id": str(message_id),
-                    "sub_index": int(sub_index),
-                    "event_sha256": str(claimed),
-                }
+        errors.extend(
+            f"duplicate_public_event_sequence:{message_id}:{sub_index}"
+            for message_id, sub_index in duplicate_event_sequences
+        )
+        orphan_events = connection.execute(
+            """
+            SELECT e.event_id
+            FROM polymarket_public_event AS e
+            WHERE e.run_id = ? AND NOT EXISTS (
+                SELECT 1 FROM polymarket_raw_message AS r
+                WHERE r.run_id = e.run_id AND r.message_id = e.message_id
             )
-            if not hmac.compare_digest(str(event_id), expected_id):
-                errors.append(f"event_id_mismatch:{event_id}")
-            try:
-                canonical = _canonical_json(_strict_json_loads(str(event_json)))
-            except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
-                errors.append(f"event_json_invalid:{event_id}:{exc}")
-            else:
-                if canonical != str(event_json):
-                    errors.append(f"event_json_not_canonical:{event_id}")
+            ORDER BY e.event_id
+            """,
+            [run_id],
+        ).fetchall()
+        errors.extend(f"event_without_message:{row[0]}" for row in orphan_events)
         invalid_messages = connection.execute(
             """
             SELECT message_id FROM polymarket_raw_message
@@ -944,8 +1038,12 @@ class PolymarketEvidenceStore:
                 ("started_at_ms", int(run_started), parsed_report.get("started_at_ms")),
                 ("ended_at_ms", int(run_ended or 0), parsed_report.get("ended_at_ms")),
                 ("market_snapshot_count", len(snapshots), parsed_report.get("market_snapshot_count")),
-                ("raw_message_count", len(messages), parsed_report.get("raw_message_count")),
-                ("normalized_event_count", len(events), parsed_report.get("normalized_event_count")),
+                ("raw_message_count", message_count, parsed_report.get("raw_message_count")),
+                (
+                    "normalized_event_count",
+                    event_count,
+                    parsed_report.get("normalized_event_count"),
+                ),
                 ("stream_gap_count", len(gaps), parsed_report.get("stream_gap_count")),
                 ("stream_counts", actual_stream_counts, parsed_report.get("stream_counts")),
                 ("assets", actual_assets, parsed_report.get("assets")),
@@ -1070,17 +1168,21 @@ def _event_index(stream: str, event: Mapping[str, object]) -> dict[str, object]:
     elif stream == "polymarket_rtds":
         topic = str(event.get("topic") or "")
         message_type = str(event.get("type") or "")
-        event_type = f"{topic}:{message_type}".strip(":") or "unknown"
         publisher_time_ms = _safe_int(event.get("timestamp"))
         payload = event.get("payload")
         if isinstance(payload, Mapping):
             raw_symbol = str(payload.get("symbol") or "").lower()
+            # RTDS currently labels Chainlink bootstrap snapshots as
+            # ``crypto_prices``; its slash-delimited symbol remains unambiguous.
+            if topic == "crypto_prices" and "/" in raw_symbol:
+                topic = "crypto_prices_chainlink"
             symbol = (
                 raw_symbol.split("/")[0].upper()
                 if "/" in raw_symbol
                 else raw_symbol.removesuffix("usdt").upper()
             )
             source_time_ms = _safe_int(payload.get("timestamp"))
+        event_type = f"{topic}:{message_type}".strip(":") or "unknown"
     elif stream == "binance_spot":
         stream_name = str(event.get("stream") or "").lower()
         symbol = stream_name.split("@")[0].removesuffix("usdt").upper()
@@ -1577,18 +1679,24 @@ class PolymarketPublicRecorder:
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
+        assets = ("btc", "eth", "sol")
         subscriptions = (
-            _canonical_json(
-                {
-                    "action": "subscribe",
-                    "subscriptions": [
-                        {
-                            "topic": "crypto_prices",
-                            "type": "update",
-                            "filters": "btcusdt,ethusdt,solusdt",
-                        }
-                    ],
-                }
+            *(
+                _canonical_json(
+                    {
+                        "action": "subscribe",
+                        "subscriptions": [
+                            {
+                                "topic": "crypto_prices",
+                                "type": "update",
+                                "filters": _canonical_json(
+                                    {"symbol": f"{asset.upper()}USDT"}
+                                ),
+                            }
+                        ],
+                    }
+                )
+                for asset in assets
             ),
             *(
                 _canonical_json(
@@ -1597,7 +1705,7 @@ class PolymarketPublicRecorder:
                         "subscriptions": [
                             {
                                 "topic": "crypto_prices_chainlink",
-                                "type": "*",
+                                "type": "update",
                                 "filters": _canonical_json(
                                     {"symbol": f"{asset}/usd"}
                                 ),
@@ -1605,11 +1713,11 @@ class PolymarketPublicRecorder:
                         ],
                     }
                 )
-                for asset in ("btc", "eth", "sol")
+                for asset in assets
             ),
         )
-        # Isolate filtered Chainlink symbols so server-side replacement of one
-        # topic subscription cannot silently remove another asset's feed.
+        # Keep every topic/symbol subscription isolated. RTDS keys subscriptions
+        # by topic and can otherwise replace one asset while acknowledging all.
         async with asyncio.TaskGroup() as task_group:
             for subscription in subscriptions:
                 task_group.create_task(

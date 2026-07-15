@@ -1,10 +1,11 @@
 # Polymarket 5-minute paper trading
 
 **Status:** the prospective public-data recorder, fail-closed level-2 replay,
-shared paper execution contract, manual evidence-bound open/close actions, and
-cross-checked official resolution settlement are implemented. Continuous strategy
-coordination remains incomplete. No authenticated order placement, wallet,
-private key, live-money claim, or profitability claim is implemented or authorized.
+causal feature materializer, shared paper execution contract, manual
+evidence-bound open/close actions, and cross-checked official resolution
+settlement are implemented. Continuous strategy coordination remains incomplete.
+No authenticated order placement, wallet, private key, live-money claim, or
+profitability claim is implemented or authorized.
 
 The Polymarket lane targets only BTC, ETH, and SOL 5-minute Up/Down markets.
 It reuses the Binance paper-trading lifecycle and risk core. Venue-specific
@@ -26,7 +27,8 @@ flowchart LR
   O["Polymarket CLOB order book"] --> R
   G["Gamma market metadata"] --> R
   R --> D["Append-only DuckDB evidence"]
-  D --> M["Probability and execution models"]
+  D --> F["Causal feature dataset"]
+  F --> M["Probability and execution models"]
   M --> K["Shared deterministic risk coordinator"]
   K --> P["Shared paper order lifecycle"]
   P --> X["Polymarket fill and settlement adapter"]
@@ -40,10 +42,12 @@ flowchart LR
 - CLOB WebSocket events provide full aggregated books, price-level changes,
   trades, and best bid/ask changes. A reconnect or unprovable gap requires a
   fresh REST snapshot; missing events are never interpolated.
-- Polymarket RTDS provides independent Binance and Chainlink crypto prices for
-  BTC, ETH, and SOL. Direct Binance streams are recorded too. Any latency edge
-  must be measured prospectively from source timestamps and local monotonic
-  arrival clocks; it is never assumed.
+- Polymarket RTDS provides Binance and Chainlink crypto prices for BTC, ETH, and
+  SOL. Direct Binance streams are the primary spot-price input; live Chainlink is
+  the mandatory settlement-reference input. RTDS Binance is retained as optional
+  relay telemetry and is never imputed when absent or stale. Any latency edge must
+  be measured prospectively from source timestamps and local monotonic arrival
+  clocks; it is never assumed.
 - The official market outcome, not a Binance price inference, settles paper
   positions. Finalization requires exact agreement between independently fetched
   closed CLOB and Gamma market records; disagreement remains pending.
@@ -95,10 +99,11 @@ and Polymarket leverage is disabled. Hedging means purchasing the opposing
 outcome and must include both spreads and fees; naked outcome-token shorting is
 not simulated.
 
-The future coordinator must require fresh CLOB, Chainlink, RTDS Binance, and direct Binance
+The future coordinator must require fresh CLOB, Chainlink, and direct Binance
 feeds; synchronized clocks; known fees; sufficient displayed depth; no market
-gap; adequate API reserve; and enough time before event close. The coordinator
-can abstain for an entire market or day. There is no trade quota.
+gap; adequate API reserve; and enough time before event close. A strategy that
+uses optional RTDS Binance telemetry must separately prove that feed fresh. The
+coordinator can abstain for an entire market or day. There is no trade quota.
 
 ## Outages and liveness
 
@@ -125,6 +130,36 @@ or Binance stream gaps are never admitted. AI is a matched optional treatment
 and must beat the same ML baseline after spread, fees, depth, latency, partial
 fills, and settlement failures.
 
+### Verified prospective run
+
+Research round 2 used one real, gap-free 553.008-second capture from
+`2026-07-15T00:46:38.779Z` through `00:55:51.787Z`. The immutable recorder
+contains 559,482 raw frames, 559,445 normalized events, 12 market snapshots,
+and 12 dual-source official resolutions. Strict replay reconstructed 612,522
+book transitions and materialized 16,097 causal candidate states.
+
+The final 46-feature dataset contains 3,458 unique, officially labeled rows
+across two in-window resolved markets per asset. Rebuilding it produced the
+same dataset hash and an `existing` materialization result. The first market was
+already open when capture began and the fourth began after capture ended, so
+neither is represented as a complete feature interval.
+Bounded database scans then rebuilt the 939.5 MiB evidence store under the
+default 1 GiB, two-thread database limits in 73.4 seconds.
+
+| Evidence | Verified value |
+| --- | ---: |
+| Recorder report SHA-256 | `70dcd66b488dd7c0fb0c22719d7409bc22a48e80465f66b40a7d10577ed06495` |
+| Dataset SHA-256 | `a137ffbb32691fdb9be0299f16f339a0e26db43e67379b6532713400c0d2a053` |
+| BTC / ETH / SOL feature rows | 1,278 / 1,158 / 1,022 |
+| Null labels / temporal violations / stream gaps | 0 / 0 / 0 |
+
+This run validates the recorder-to-label pipeline only. The diagnostic command
+used a one-market minimum; production model fitting remains blocked by the
+default requirement of at least 30 featured resolved markets per asset. No ROI,
+accuracy, AI-edge, or profitability graph is valid yet. The exact round report,
+market rows, and current coverage chart are in
+[`model-research/polymarket`](model-research/polymarket/latest/README.md).
+
 Run the public recorder from either the CLI or the generated Windows command
 surface:
 
@@ -147,7 +182,10 @@ The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,
 and the shared append-only paper-order journal into one resource-bounded DuckDB
 database. Completion requires BTC/ETH/SOL market evidence plus CLOB, RTDS, and
-direct Binance frames. A run with a reconnect gap is `degraded`; malformed,
+direct Binance frames. Feature readiness additionally requires live Chainlink,
+direct Binance BBO/trades, and executable CLOB state for every asset. RTDS
+history and live updates are counted separately. A run with a reconnect gap is
+`degraded`; malformed,
 incomplete, hash-inconsistent, post-finalization, or report-count-mismatched
 evidence is rejected. Binance spot
 `bookTicker` frames currently do not carry exchange event timestamps, so those
@@ -183,6 +221,7 @@ explicit `--latency-ms`; no unmeasured optimistic default is supplied.
 Primary references: [authentication](https://docs.polymarket.com/api-reference/authentication),
 [market WebSocket](https://docs.polymarket.com/market-data/websocket/market-channel),
 [RTDS](https://docs.polymarket.com/market-data/websocket/rtds),
+[official RTDS client](https://github.com/Polymarket/real-time-data-client),
 [orders](https://docs.polymarket.com/trading/orders/create),
 [order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle),
 [fees](https://docs.polymarket.com/trading/fees), and

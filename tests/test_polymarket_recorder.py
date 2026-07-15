@@ -184,9 +184,10 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
 
 
 def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
+    message_count = 2_050
     messages = [
         _message("polymarket_rtds", "PING", sequence=sequence)
-        for sequence in range(1, 301)
+        for sequence in range(1, message_count + 1)
     ]
     with PolymarketEvidenceStore(
         tmp_path / "bounded-batch.duckdb",
@@ -195,11 +196,15 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
     ) as store:
         store.start_run("bounded-batch", EPOCH * 1_000)
         store.append_messages("bounded-batch", messages)
-        count = store.connect().execute(
-            "SELECT count(*) FROM polymarket_raw_message"
-        ).fetchone()[0]
+        stats = store.connect().execute(
+            """
+            SELECT count(*), min(sequence_number), max(sequence_number),
+                   count(DISTINCT sequence_number)
+            FROM polymarket_raw_message
+            """
+        ).fetchone()
 
-    assert count == 300
+    assert stats == (message_count, 1, message_count, message_count)
 
 
 def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
@@ -250,7 +255,7 @@ def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
                             "type": "subscribe",
                             "timestamp": EPOCH * 1_000 + index,
                             "payload": {
-                                "symbol": f"{lower}/usd",
+                                "symbol": f"{lower}usdt",
                                 "data": [
                                     {
                                         "timestamp": EPOCH * 1_000 - 1_000,
@@ -335,13 +340,50 @@ def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
             "clob_token_baselines": 2,
             "direct_binance_book_tickers": 1,
             "direct_binance_trades": 1,
-            "rtds_binance_samples": 2,
-            "rtds_chainlink_samples": 1,
+            "rtds_binance_history_samples": 2,
+            "rtds_binance_live_updates": 0,
+            "rtds_chainlink_history_samples": 0,
+            "rtds_chainlink_live_updates": 1,
             "official_resolutions": 1,
         }
 
 
-def test_rtds_uses_independent_subscriptions_for_each_chainlink_asset(
+def test_rtds_chainlink_bootstrap_topic_is_canonicalized_from_symbol(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "chainlink-bootstrap.duckdb") as store:
+        store.start_run("chainlink-bootstrap", EPOCH * 1_000)
+        store.append_messages(
+            "chainlink-bootstrap",
+            [
+                _message(
+                    "polymarket_rtds",
+                    {
+                        "topic": "crypto_prices",
+                        "type": "subscribe",
+                        "payload": {
+                            "symbol": "btc/usd",
+                            "data": [
+                                {
+                                    "timestamp": EPOCH * 1_000,
+                                    "value": "60000",
+                                }
+                            ],
+                        },
+                    },
+                )
+            ],
+        )
+        indexed = store.connect().execute(
+            """
+            SELECT event_type, symbol FROM polymarket_public_event
+            WHERE run_id = ?
+            """,
+            ["chainlink-bootstrap"],
+        ).fetchone()
+
+    assert indexed == ("crypto_prices_chainlink:subscribe", "BTC")
+
+
+def test_rtds_uses_independent_json_subscriptions_for_each_crypto_feed(
     tmp_path, monkeypatch
 ) -> None:
     recorder = PolymarketPublicRecorder(tmp_path / "subscriptions.duckdb")
@@ -353,7 +395,7 @@ def test_rtds_uses_independent_subscriptions_for_each_chainlink_asset(
     monkeypatch.setattr(recorder, "_simple_stream", _capture_simple_stream)
     asyncio.run(recorder._rtds_stream(asyncio.Queue(), asyncio.Event()))
 
-    assert len(captured) == 4
+    assert len(captured) == 6
     assert {call["url"] for call in captured} == {
         "wss://ws-live-data.polymarket.com"
     }
@@ -363,17 +405,19 @@ def test_rtds_uses_independent_subscriptions_for_each_chainlink_asset(
     messages = [json.loads(message) for message in subscription_messages]
     assert all(message["action"] == "subscribe" for message in messages)
     assert all(len(message["subscriptions"]) == 1 for message in messages)
-    assert messages[0]["subscriptions"] == [
-        {
-            "filters": "btcusdt,ethusdt,solusdt",
-            "topic": "crypto_prices",
-            "type": "update",
-        }
-    ]
-    chainlink_filters = {
-        json.loads(message["subscriptions"][0]["filters"])["symbol"]
-        for message in messages[1:]
+    subscriptions = [message["subscriptions"][0] for message in messages]
+    binance_filters = {
+        json.loads(subscription["filters"])["symbol"]
+        for subscription in subscriptions
+        if subscription["topic"] == "crypto_prices"
     }
+    chainlink_filters = {
+        json.loads(subscription["filters"])["symbol"]
+        for subscription in subscriptions
+        if subscription["topic"] == "crypto_prices_chainlink"
+    }
+    assert all(subscription["type"] == "update" for subscription in subscriptions)
+    assert binance_filters == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
     assert chainlink_filters == {"btc/usd", "eth/usd", "sol/usd"}
 
 
@@ -527,12 +571,35 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
             WHERE gap_id = (SELECT min(gap_id) FROM polymarket_stream_gap)
             """
         )
+        connection.execute(
+            """
+            INSERT INTO polymarket_raw_message
+            SELECT message_id, run_id, schema_version, stream, connection_id,
+                   sequence_number + 10000, received_wall_ms,
+                   received_monotonic_ns, raw_payload_sha256, raw_text,
+                   parse_status, parse_error
+            FROM polymarket_raw_message
+            WHERE message_id = (SELECT min(message_id) FROM polymarket_raw_message)
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO polymarket_public_event
+            SELECT event_id, run_id, message_id, sub_index + 10000, stream,
+                   event_type, symbol, condition_id, asset_id, source_time_ms,
+                   publisher_time_ms, event_json, event_sha256
+            FROM polymarket_public_event
+            WHERE event_id = (SELECT min(event_id) FROM polymarket_public_event)
+            """
+        )
         errors = store.integrity_errors("run-tampered")
 
     assert any(error.startswith("raw_message_hash_mismatch:") for error in errors)
     assert any(error.startswith("event_hash_mismatch:") for error in errors)
     assert any(error.startswith("snapshot_payload_mismatch:") for error in errors)
     assert any(error.startswith("stream_gap_id_mismatch:") for error in errors)
+    assert any(error.startswith("duplicate_raw_message_id:") for error in errors)
+    assert any(error.startswith("duplicate_public_event_id:") for error in errors)
 
 
 def test_finished_report_binds_evidence_counts_against_valid_late_append(

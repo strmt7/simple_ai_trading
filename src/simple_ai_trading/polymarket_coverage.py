@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
 import json
-from typing import Mapping
+from typing import Any, Iterator, Mapping
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_recorder import PolymarketEvidenceStore
@@ -13,7 +13,7 @@ from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_resolution import load_official_resolutions
 
 
-POLYMARKET_COVERAGE_SCHEMA_VERSION = "polymarket-feed-coverage-v2"
+POLYMARKET_COVERAGE_SCHEMA_VERSION = "polymarket-feed-coverage-v3"
 DEFAULT_MINIMUM_RESOLVED_MARKETS_PER_ASSET = 30
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 _COUNT_KEYS = (
@@ -21,10 +21,19 @@ _COUNT_KEYS = (
     "clob_token_baselines",
     "direct_binance_book_tickers",
     "direct_binance_trades",
-    "rtds_binance_samples",
-    "rtds_chainlink_samples",
+    "rtds_binance_history_samples",
+    "rtds_binance_live_updates",
+    "rtds_chainlink_history_samples",
+    "rtds_chainlink_live_updates",
     "official_resolutions",
 )
+
+
+def _iter_cursor_rows(
+    cursor: Any, *, batch_size: int = 4_096
+) -> Iterator[tuple[object, ...]]:
+    while rows := cursor.fetchmany(batch_size):
+        yield from rows
 
 
 @dataclass(frozen=True)
@@ -99,10 +108,15 @@ def _rtds_sample_count(event: Mapping[str, object]) -> tuple[str, str, int]:
         return "", "", 0
     if not isinstance(payload, Mapping):
         raise ValueError("RTDS crypto payload is not an object")
-    asset = _asset(payload.get("symbol"))
+    raw_symbol = str(payload.get("symbol") or "").strip()
+    asset = _asset(raw_symbol)
     if not asset:
         raise ValueError("RTDS crypto symbol is unsupported")
-    source = "rtds_binance_samples" if topic == "crypto_prices" else "rtds_chainlink_samples"
+    source = (
+        "rtds_chainlink"
+        if topic == "crypto_prices_chainlink" or "/" in raw_symbol
+        else "rtds_binance"
+    )
     if message_type == "subscribe":
         rows = payload.get("data")
         if not isinstance(rows, list) or not rows:
@@ -112,11 +126,11 @@ def _rtds_sample_count(event: Mapping[str, object]) -> tuple[str, str, int]:
                 raise ValueError("RTDS subscribe history row is malformed")
             _timestamp(row.get("timestamp"), name="RTDS history timestamp")
             _positive_decimal(row.get("value"), name="RTDS history value")
-        return asset, source, len(rows)
+        return asset, f"{source}_history_samples", len(rows)
     if message_type == "update":
         _timestamp(payload.get("timestamp"), name="RTDS update timestamp")
         _positive_decimal(payload.get("value"), name="RTDS update value")
-        return asset, source, 1
+        return asset, f"{source}_live_updates", 1
     return asset, source, 0
 
 
@@ -191,16 +205,18 @@ def inspect_polymarket_feed_coverage(
     data_errors: list[str] = []
     if gap_validation_error:
         data_errors.append(f"stream_gap_invalid:{gap_validation_error}")
-    event_rows = connection.execute(
+    event_cursor = connection.execute(
         """
         SELECT event_id, stream, event_type, symbol, condition_id,
                asset_id, event_json
         FROM polymarket_public_event
-        WHERE run_id = ? ORDER BY event_id
+        WHERE run_id = ?
         """,
         [selected],
-    ).fetchall()
-    for event_id, stream, event_type, symbol, condition_id, asset_id, event_json in event_rows:
+    )
+    for event_id, stream, event_type, symbol, condition_id, asset_id, event_json in (
+        _iter_cursor_rows(event_cursor)
+    ):
         try:
             event = json.loads(str(event_json))
             if not isinstance(event, Mapping):
@@ -276,8 +292,7 @@ def inspect_polymarket_feed_coverage(
             "clob_token_baselines": expected_baselines,
             "direct_binance_book_tickers": 1,
             "direct_binance_trades": 1,
-            "rtds_binance_samples": 1,
-            "rtds_chainlink_samples": 1,
+            "rtds_chainlink_live_updates": 1,
         }
         for key, minimum in requirements.items():
             if minimum <= 0 or values[key] < minimum:

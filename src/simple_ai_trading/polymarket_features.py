@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import math
-from typing import Mapping, Sequence
+from typing import Any, Iterator, Mapping, Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_coverage import inspect_polymarket_feed_coverage
@@ -20,8 +20,8 @@ from .polymarket_replay import (
 )
 
 
-POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v2"
-POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v2"
+POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v3"
+POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v3"
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 POLYMARKET_FEATURE_NAMES = (
     "elapsed_fraction",
@@ -49,8 +49,6 @@ POLYMARKET_FEATURE_NAMES = (
     "chainlink_return_from_open_bps",
     "binance_distance_from_chainlink_open_bps",
     "binance_chainlink_basis_bps",
-    "rtds_binance_chainlink_basis_bps",
-    "direct_rtds_binance_basis_bps",
     "binance_best_bid",
     "binance_best_ask",
     "binance_spread_bps",
@@ -69,11 +67,17 @@ POLYMARKET_FEATURE_NAMES = (
     "direct_binance_age_ms",
     "chainlink_source_age_ms",
     "chainlink_arrival_age_ms",
-    "rtds_binance_source_age_ms",
     "chainlink_anchor_gap_ms",
     "log1p_market_liquidity_quote",
     "log1p_market_volume_quote",
 )
+
+
+def _iter_cursor_rows(
+    cursor: Any, *, batch_size: int = 4_096
+) -> Iterator[tuple[object, ...]]:
+    while rows := cursor.fetchmany(batch_size):
+        yield from rows
 
 
 def _canonical_json(value: object) -> str:
@@ -142,7 +146,6 @@ class PolymarketFeatureConfig:
     maximum_direct_binance_age_ms: int = 1_000
     maximum_chainlink_source_age_ms: int = 3_000
     maximum_chainlink_arrival_age_ms: int = 3_000
-    maximum_rtds_binance_source_age_ms: int = 120_000
     maximum_chainlink_anchor_gap_ms: int = 2_000
     minimum_resolved_markets_per_asset: int = 30
     allow_segmented_gaps: bool = False
@@ -155,7 +158,6 @@ class PolymarketFeatureConfig:
             "maximum_direct_binance_age_ms": (50, 10_000),
             "maximum_chainlink_source_age_ms": (250, 30_000),
             "maximum_chainlink_arrival_age_ms": (250, 30_000),
-            "maximum_rtds_binance_source_age_ms": (1_000, 300_000),
             "maximum_chainlink_anchor_gap_ms": (0, 10_000),
             "minimum_resolved_markets_per_asset": (1, 100_000),
         }
@@ -518,25 +520,24 @@ def _parse_feed_points(
     run_id: str,
 ) -> tuple[
     dict[str, tuple[_PricePoint, ...]],
-    dict[str, tuple[_PricePoint, ...]],
     dict[str, tuple[_BinanceBookPoint, ...]],
     dict[str, tuple[_BinanceTradePoint, ...]],
 ]:
     chainlink: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
-    rtds_binance: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
     direct_books: dict[str, list[_BinanceBookPoint]] = {key: [] for key in _ASSETS}
     direct_trades: dict[str, list[_BinanceTradePoint]] = {key: [] for key in _ASSETS}
-    rows = store.connect().execute(
+    cursor = store.connect().execute(
         """
         SELECT e.event_id, e.event_sha256, e.stream, e.event_type, e.symbol,
                e.event_json, r.received_wall_ms, r.received_monotonic_ns
         FROM polymarket_public_event AS e
-        JOIN polymarket_raw_message AS r ON r.message_id = e.message_id
+        JOIN polymarket_raw_message AS r
+          ON r.run_id = e.run_id AND r.message_id = e.message_id
         WHERE e.run_id = ? AND e.stream IN ('binance_spot', 'polymarket_rtds')
         ORDER BY r.received_monotonic_ns, e.event_id
         """,
         [run_id],
-    ).fetchall()
+    )
     for (
         event_id,
         event_sha256,
@@ -546,7 +547,7 @@ def _parse_feed_points(
         event_json,
         received_wall_ms,
         received_monotonic_ns,
-    ) in rows:
+    ) in _iter_cursor_rows(cursor):
         asset = str(symbol).upper()
         if asset not in chainlink:
             raise ValueError("prospective feature evidence contains an unsupported asset")
@@ -612,11 +613,12 @@ def _parse_feed_points(
         payload = event.get("payload")
         if not isinstance(payload, Mapping):
             raise ValueError("RTDS feature payload is malformed")
-        target = (
-            chainlink[asset]
-            if normalized_type.startswith("crypto_prices_chainlink:")
-            else rtds_binance[asset]
-        )
+        raw_symbol = str(payload.get("symbol") or "")
+        if not (
+            normalized_type.startswith("crypto_prices_chainlink:")
+            or "/" in raw_symbol
+        ):
+            continue
         message_type = str(event.get("type") or "").lower()
         raw_points: list[tuple[object, object, int]] = []
         if message_type == "subscribe":
@@ -630,7 +632,7 @@ def _parse_feed_points(
         elif message_type == "update":
             raw_points.append((payload.get("timestamp"), payload.get("value"), 0))
         for raw_time, raw_price, index in raw_points:
-            target.append(
+            chainlink[asset].append(
                 _PricePoint(
                     asset=asset,
                     source_time_ms=_timestamp(raw_time, name="RTDS source timestamp"),
@@ -645,7 +647,6 @@ def _parse_feed_points(
             )
     return (
         {key: tuple(value) for key, value in chainlink.items()},
-        {key: tuple(value) for key, value in rtds_binance.items()},
         {key: tuple(value) for key, value in direct_books.items()},
         {key: tuple(value) for key, value in direct_trades.items()},
     )
@@ -755,15 +756,10 @@ def build_polymarket_feature_dataset(
         minimum_resolved_markets_per_asset=cfg.minimum_resolved_markets_per_asset,
         allow_segmented_gaps=cfg.allow_segmented_gaps,
     )
-    chainlink, rtds_binance, direct_books, direct_trades = _parse_feed_points(
-        store, selected
-    )
+    chainlink, direct_books, direct_trades = _parse_feed_points(store, selected)
     market_snapshots = _load_market_snapshot_points(store, selected)
     chainlink_cursors = {
         asset: _PriceCursor(points) for asset, points in chainlink.items()
-    }
-    rtds_cursors = {
-        asset: _PriceCursor(points) for asset, points in rtds_binance.items()
     }
     book_cursors = {
         asset: _BookCursor(points) for asset, points in direct_books.items()
@@ -833,13 +829,10 @@ def build_polymarket_feature_dataset(
 
         asset = market.asset
         chainlink_cursor = chainlink_cursors[asset]
-        rtds_cursor = rtds_cursors[asset]
         chainlink_cursor.advance(decision_ns)
-        rtds_cursor.advance(decision_ns)
         direct_book = book_cursors[asset].advance(decision_ns)
         anchor = chainlink_cursor.latest_at_or_before(market.event_start_ms)
         chainlink_now = chainlink_cursor.latest_at_or_before(decision_wall_ms)
-        rtds_now = rtds_cursor.latest_at_or_before(decision_wall_ms)
         if anchor is None:
             _skip(skipped, "missing_chainlink_open_anchor")
             continue
@@ -850,9 +843,6 @@ def build_polymarket_feature_dataset(
         if chainlink_now is None:
             _skip(skipped, "missing_chainlink_current_price")
             continue
-        if rtds_now is None:
-            _skip(skipped, "missing_rtds_binance_price")
-            continue
         if direct_book is None:
             _skip(skipped, "missing_direct_binance_book")
             continue
@@ -862,7 +852,6 @@ def build_polymarket_feature_dataset(
             decision_ns - chainlink_now.received_monotonic_ns
         ) / 1_000_000.0
         chainlink_source_age_ms = decision_wall_ms - chainlink_now.source_time_ms
-        rtds_source_age_ms = decision_wall_ms - rtds_now.source_time_ms
         if (
             direct_age_ms < 0.0
             or direct_age_ms > cfg.maximum_direct_binance_age_ms
@@ -876,12 +865,6 @@ def build_polymarket_feature_dataset(
             or chainlink_arrival_age_ms > cfg.maximum_chainlink_arrival_age_ms
         ):
             _skip(skipped, "stale_or_future_chainlink_price")
-            continue
-        if (
-            rtds_source_age_ms < 0
-            or rtds_source_age_ms > cfg.maximum_rtds_binance_source_age_ms
-        ):
-            _skip(skipped, "stale_or_future_rtds_binance_price")
             continue
         if not book_series[asset].has_lookback(decision_ns, 5_000):
             _skip(skipped, "insufficient_direct_binance_lookback")
@@ -923,8 +906,6 @@ def build_polymarket_feature_dataset(
             _log_basis_bps(chainlink_now.price, anchor.price),
             _log_basis_bps(direct_book.midpoint, anchor.price),
             _log_basis_bps(direct_book.midpoint, chainlink_now.price),
-            _log_basis_bps(rtds_now.price, chainlink_now.price),
-            _log_basis_bps(direct_book.midpoint, rtds_now.price),
             direct_book.bid,
             direct_book.ask,
             10_000.0 * (direct_book.ask - direct_book.bid) / direct_book.midpoint,
@@ -943,7 +924,6 @@ def build_polymarket_feature_dataset(
             direct_age_ms,
             float(chainlink_source_age_ms),
             chainlink_arrival_age_ms,
-            float(rtds_source_age_ms),
             float(anchor_gap_ms),
             math.log1p(float(market.liquidity_quote)),
             math.log1p(float(market.volume_quote)),
@@ -1009,13 +989,6 @@ def build_polymarket_feature_dataset(
                     "source_time_ms": chainlink_now.source_time_ms,
                     "received_wall_ms": chainlink_now.received_wall_ms,
                     "received_monotonic_ns": chainlink_now.received_monotonic_ns,
-                },
-                "rtds_binance_current": {
-                    "event_id": rtds_now.event_id,
-                    "event_sha256": rtds_now.event_sha256,
-                    "source_time_ms": rtds_now.source_time_ms,
-                    "received_wall_ms": rtds_now.received_wall_ms,
-                    "received_monotonic_ns": rtds_now.received_monotonic_ns,
                 },
             }
         )

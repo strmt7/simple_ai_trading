@@ -1,0 +1,149 @@
+{
+  "artifact_class": "exchange_sourced_prospective_pipeline_evidence",
+  "artifact_integrity": [
+    {
+      "bytes": 3590,
+      "path": "docs/model-research/polymarket/latest/charts/causal-feature-coverage.svg",
+      "sha256": "53a6034cda909745d53b67abfb8ad9d466e358fe8c017a6351ee1345dc7472ae"
+    },
+    {
+      "bytes": 1043,
+      "columns": [
+        "asset",
+        "slug",
+        "event_start_ms",
+        "end_ms",
+        "feature_rows",
+        "first_decision_ms",
+        "last_decision_ms",
+        "official_outcome"
+      ],
+      "path": "docs/model-research/polymarket/round-002-market-rows.csv",
+      "row_count": 12,
+      "sha256": "134a6d5a5783107896668a4bb5d4490a20b1b6832383ef3ca3febf87df1e4a22"
+    }
+  ],
+  "claims": {
+    "ai_edge_evaluated": false,
+    "authenticated_trading_permitted": false,
+    "model_training_permitted": false,
+    "profitability_evaluated": false,
+    "promotion_permitted": false,
+    "reason": "Only two featured resolved markets per asset are available; the production minimum is 30 per asset."
+  },
+  "dataset": {
+    "candidate_count": 16097,
+    "dataset_sha256": "a137ffbb32691fdb9be0299f16f339a0e26db43e67379b6532713400c0d2a053",
+    "feature_count": 46,
+    "labeled_market_counts": {
+      "BTC": 2,
+      "ETH": 2,
+      "SOL": 2
+    },
+    "labeled_row_count": 3458,
+    "null_label_count": 0,
+    "row_count": 3458,
+    "schema_version": "polymarket-causal-dataset-v3",
+    "temporal_violation_count": 0
+  },
+  "feed_contract": {
+    "direct_binance": "mandatory primary spot BBO and trade stream",
+    "polymarket_clob": "mandatory executable outcome-token depth",
+    "rtds_binance": "optional relay telemetry; never imputed or used as a freshness substitute",
+    "rtds_chainlink": "mandatory live settlement-reference stream"
+  },
+  "live_protocol_verification": {
+    "distinct_websocket_connections": 6,
+    "observed_live_updates": [
+      "crypto_prices:btcusdt",
+      "crypto_prices:ethusdt",
+      "crypto_prices:solusdt",
+      "crypto_prices_chainlink:btc/usd",
+      "crypto_prices_chainlink:eth/usd",
+      "crypto_prices_chainlink:sol/usd"
+    ],
+    "stream_gaps": 0,
+    "subscription_contract": "one compact JSON symbol filter per topic and connection"
+  },
+  "paper_parity": {
+    "foreign_inventory_mutation_permitted": false,
+    "official_settlement_required": true,
+    "shared_core": "PaperOrderJournal",
+    "unknown_state_blocks_new_exposure": true,
+    "venue": "polymarket"
+  },
+  "per_asset": {
+    "BTC": {
+      "chainlink_history_samples": 58,
+      "chainlink_live_updates": 535,
+      "direct_binance_book_tickers": 27933,
+      "direct_binance_trades": 7854,
+      "feature_rows": 1278,
+      "official_resolutions": 4
+    },
+    "ETH": {
+      "chainlink_history_samples": 58,
+      "chainlink_live_updates": 536,
+      "direct_binance_book_tickers": 31225,
+      "direct_binance_trades": 15304,
+      "feature_rows": 1158,
+      "official_resolutions": 4
+    },
+    "SOL": {
+      "chainlink_history_samples": 58,
+      "chainlink_live_updates": 536,
+      "direct_binance_book_tickers": 8197,
+      "direct_binance_trades": 2159,
+      "feature_rows": 1022,
+      "official_resolutions": 4
+    }
+  },
+  "recorder": {
+    "duration_seconds": 553.008,
+    "ended_at_utc": "2026-07-15T00:55:51.787Z",
+    "integrity_errors": [],
+    "market_snapshot_count": 12,
+    "normalized_event_count": 559445,
+    "raw_message_count": 559482,
+    "report_sha256": "70dcd66b488dd7c0fb0c22719d7409bc22a48e80465f66b40a7d10577ed06495",
+    "run_id": "0184b6a4bc0846a9b241aadc0491f016",
+    "started_at_utc": "2026-07-15T00:46:38.779Z",
+    "status": "complete",
+    "stream_gap_count": 0
+  },
+  "replay": {
+    "book_state_transition_count": 612522,
+    "causally_ordered_event_count": 459465,
+    "deferred_event_count": 436036,
+    "late_event_count": 3184,
+    "materialized_book_count": 16097,
+    "maximum_availability_delay_ns": 16000042,
+    "maximum_late_arrival_delay_ns": 32000000,
+    "maximum_source_regression_ms": 16,
+    "state_reset_count": 3,
+    "suppressed_book_count": 596425,
+    "total_event_count": 465163
+  },
+  "resource_verification": {
+    "database_size_mib": 939.5,
+    "duckdb_memory_limit": "1GB",
+    "duckdb_threads": 2,
+    "elapsed_seconds": 73.4,
+    "sampled_process_working_set_mib_at_30_seconds": 822.3,
+    "status": "pass"
+  },
+  "research_basis": [
+    "https://github.com/Polymarket/real-time-data-client",
+    "https://docs.polymarket.com/market-data/websocket/rtds",
+    "https://docs.polymarket.com/market-data/websocket/market-channel"
+  ],
+  "round": 2,
+  "schema_version": "polymarket-prospective-pipeline-evidence-v1",
+  "status": "pipeline_verified_model_evaluation_blocked",
+  "tracked_artifacts": [
+    "docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json",
+    "docs/model-research/polymarket/round-002-market-rows.csv",
+    "docs/model-research/polymarket/latest/charts/causal-feature-coverage.svg"
+  ],
+  "tracked_repo_artifact": true
+}

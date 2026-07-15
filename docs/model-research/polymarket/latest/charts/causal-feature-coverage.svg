@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Prospective causal feature coverage by asset</title>
+<desc>Feature rows from a real 553.008-second Polymarket capture: BTC 1278, ETH 1158, and SOL 1022. Each asset has two featured resolved markets against a production minimum of 30.</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="60" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Prospective causal feature coverage</text>
+<text x="64" y="91" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Real BTC/ETH/SOL capture, 2026-07-15 00:46:38Z to 00:55:51Z (553.008 seconds)</text>
+<line x1="110" y1="570" x2="1135" y2="570" stroke="#475569" stroke-width="1"/>
+<line x1="110" y1="470" x2="1135" y2="470" stroke="#243244" stroke-width="1"/>
+<line x1="110" y1="370" x2="1135" y2="370" stroke="#243244" stroke-width="1"/>
+<line x1="110" y1="270" x2="1135" y2="270" stroke="#243244" stroke-width="1"/>
+<line x1="110" y1="170" x2="1135" y2="170" stroke="#243244" stroke-width="1"/>
+<text x="96" y="575" text-anchor="end" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="13">0</text>
+<text x="96" y="475" text-anchor="end" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="13">350</text>
+<text x="96" y="375" text-anchor="end" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="13">700</text>
+<text x="96" y="275" text-anchor="end" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="13">1,050</text>
+<text x="96" y="175" text-anchor="end" fill="#94a3b8" font-family="Segoe UI,Arial,sans-serif" font-size="13">1,400</text>
+<rect x="180" y="205" width="220" height="365" fill="#14b8a6"/>
+<rect x="490" y="239" width="220" height="331" fill="#3b82f6"/>
+<rect x="800" y="278" width="220" height="292" fill="#f59e0b"/>
+<text x="290" y="188" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">1,278</text>
+<text x="600" y="222" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">1,158</text>
+<text x="910" y="261" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">1,022</text>
+<text x="290" y="608" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">BTC</text>
+<text x="600" y="608" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">ETH</text>
+<text x="910" y="608" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">SOL</text>
+<text x="290" y="632" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">2 featured markets</text>
+<text x="600" y="632" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">2 featured markets</text>
+<text x="910" y="632" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">2 featured markets</text>
+<text x="64" y="674" fill="#fca5a5" font-family="Segoe UI,Arial,sans-serif" font-size="14">Model evaluation blocked: production minimum is 30 featured resolved markets per asset. This is not a profitability chart.</text>
+<text transform="translate(28 370) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Causal labeled feature rows</text>
+</svg>
