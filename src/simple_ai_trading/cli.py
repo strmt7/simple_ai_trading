@@ -6189,11 +6189,32 @@ def _polymarket_latency_scenarios(
 def command_polymarket_model(args: argparse.Namespace) -> int:
     """Run one hash-bound probability and full-depth execution experiment."""
 
+    started_monotonic = time.monotonic()
+
+    def progress(phase: str, **details: object) -> None:
+        if getattr(args, "json", False):
+            return
+        suffix = " ".join(
+            f"{key}={value}" for key, value in sorted(details.items())
+        )
+        print(
+            "polymarket-model-progress: "
+            f"phase={phase} elapsed_seconds={time.monotonic() - started_monotonic:.1f}"
+            + (f" {suffix}" if suffix else ""),
+            file=sys.stderr,
+            flush=True,
+        )
+
     try:
         minimum_markets = int(args.minimum_resolved_markets_per_asset)
         latency_scenarios = _polymarket_latency_scenarios(
             args.latency_stress_ms,
             primary_latency_ms=int(args.latency_ms),
+        )
+        progress(
+            "feature-build",
+            minimum_markets_per_asset=minimum_markets,
+            run_id=getattr(args, "run_id", None) or "latest",
         )
         with PolymarketEvidenceStore(
             Path(args.database),
@@ -6210,14 +6231,21 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     allow_segmented_gaps=False,
                 ),
             )
+            progress(
+                "feature-materialization",
+                candidate_count=feature_dataset.candidate_count,
+                row_count=len(feature_dataset.rows),
+            )
             feature_materialization = materialize_polymarket_feature_dataset(
                 store,
                 feature_dataset,
             )
+            progress("market-load")
             markets = PolymarketEvidenceReplay.load_markets(
                 store,
                 run_id=feature_dataset.run_id,
             )
+            progress("model-dataset", market_count=len(markets))
             model_dataset = build_polymarket_model_dataset(
                 feature_dataset,
                 markets,
@@ -6226,13 +6254,28 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     minimum_time_groups=minimum_markets,
                 ),
             )
+            progress(
+                "chronological-split",
+                sample_count=len(model_dataset.samples),
+                time_group_count=model_dataset.time_group_count,
+            )
             split = split_polymarket_model_dataset(model_dataset)
+            progress(
+                "model-fit",
+                test_groups=len(split.test_group_starts_ms),
+                train_groups=len(split.train_group_starts_ms),
+                validation_groups=len(split.validation_group_starts_ms),
+            )
             model, probability_report = fit_polymarket_offset_model(
                 model_dataset,
                 split,
             )
             test_conditions = tuple(
                 sorted({item.condition_id for item in split.test})
+            )
+            progress(
+                "execution-replay-load",
+                test_condition_count=len(test_conditions),
             )
             execution_replay = PolymarketEvidenceReplay.load(
                 store,
@@ -6247,6 +6290,11 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             model_probabilities = predict_polymarket_probabilities(
                 model,
                 split.test,
+            )
+            progress(
+                "held-out-evidence",
+                selected_candidate=model.selected_candidate,
+                test_sample_count=len(split.test),
             )
             prediction_evidence = _polymarket_held_out_prediction_evidence(
                 split.test,
@@ -6264,12 +6312,14 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     args.maximum_loss_fraction_per_time_group
                 ),
             ).validated()
+            progress("execution-baseline", latency_ms=execution_config.submission_latency_ms)
             baseline_execution = evaluate_polymarket_execution_policy(
                 split.test,
                 baseline_probabilities,
                 execution_replay,
                 config=execution_config,
             )
+            progress("execution-model", latency_ms=execution_config.submission_latency_ms)
             model_execution = evaluate_polymarket_execution_policy(
                 split.test,
                 model_probabilities,
@@ -6281,6 +6331,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 "model": {},
             }
             for latency_ms in latency_scenarios:
+                progress("latency-sensitivity", latency_ms=latency_ms)
                 scenario_config = replace(
                     execution_config,
                     submission_latency_ms=latency_ms,
@@ -6322,6 +6373,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             )
             from .ai_uplift import assess_ai_uplift
 
+            progress("ai-benchmark-verification", model=str(args.ai_model))
             benchmark_path = Path(str(args.ai_benchmark))
             benchmark_bytes = benchmark_path.read_bytes()
             benchmark_payload = json.loads(benchmark_bytes.decode("utf-8"))
@@ -6359,6 +6411,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 probability_report,
                 execution_config,
             )
+            progress("ai-veto", case_count=len(ai_cases), model=ai_model)
 
             def ai_progress(_event: str, item: Mapping[str, object]) -> None:
                 if not getattr(args, "json", False):
@@ -6438,6 +6491,11 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     model_execution,
                     ai_execution,
                 ),
+            )
+            progress(
+                "ai-uplift",
+                accepted=ai_uplift.accepted,
+                filled_orders=ai_execution.filled_order_count,
             )
             ai_payload = {
                 "enabled": True,
@@ -6566,6 +6624,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
         output = str(getattr(args, "output", None) or "").strip()
         if output:
             write_json_atomic(Path(output), payload, sort_keys=True)
+        progress("complete", artifact_sha256=artifact_sha256)
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
         print(
             f"polymarket-model failed: {exc.__class__.__name__}: {exc}",
