@@ -1,779 +1,1438 @@
 {
-  "schema_version": "round-058-two-sided-maker-support-v1",
-  "status": "complete",
-  "purpose": "two_sided_structural_fill_support_only",
-  "strategy_outcomes_read": false,
-  "price_returns_read": false,
-  "costs_read": false,
-  "profit_and_loss_read": false,
-  "policy_thresholds_selected": false,
-  "market_source": "official Binance Data Vision USD-M daily archives",
-  "day_utc": "2023-06-01",
-  "symbols": [
-    "BTCUSDT",
-    "ETHUSDT",
-    "SOLUSDT"
-  ],
-  "contract": {
-    "decision_cadence_seconds": 10,
-    "placement_latency_ms": 750,
-    "maximum_quote_age_ms": 1000,
-    "order_notional_quote_per_side": 500.0,
-    "maker_order_expiry_ms": 15000,
-    "full_displayed_l1_queue_ahead": true,
-    "own_order_quantity_included": true,
-    "cancellation_fill_credit": false,
-    "matching_exact_price_prints_only": true,
-    "full_fill_required": true
+  "schema_version": "round-059-funding-persistence-feasibility-report-v1",
+  "round": 59,
+  "design_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
+  "implementation_commit": "c263fbd525f85a6cef86c1e8930d09844927a3d6",
+  "status": "rejected_funding_persistence_support",
+  "source": {
+    "certificate_file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "database_file": "market_data.sqlite",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "start_period": "2021-12",
+    "end_period": "2025-06"
+  },
+  "cost_references_bps": {
+    "optimistic_futures_maker_only": 4.0,
+    "repo_offline_four_leg_taker": 28.0,
+    "stress_four_leg": 32.0
   },
   "symbol_results": [
     {
       "symbol": "BTCUSDT",
       "source": {
-        "manifests": [
-          {
-            "archive_id": "933c70e22f42ebccf9305f5f6a11946428626b9588613cd047bf3db084e67570",
-            "schema_version": "binance-usdm-tick-v6",
-            "provider": "binance",
-            "market_type": "futures",
-            "symbol": "BTCUSDT",
-            "data_type": "bookTicker",
-            "period": "2023-06-01",
-            "url": "https://data.binance.vision/data/futures/um/daily/bookTicker/BTCUSDT/BTCUSDT-bookTicker-2023-06-01.zip",
-            "status": "complete",
-            "is_current": true,
-            "compressed_bytes": 139629837,
-            "uncompressed_bytes": 1081448400,
-            "source_sha256": "4c2eacb52de302de717cf7c7d4193cb80ae1bc7da4bfa1c1dcfd60a9b32ae28c",
-            "expected_sha256": "4c2eacb52de302de717cf7c7d4193cb80ae1bc7da4bfa1c1dcfd60a9b32ae28c",
-            "checksum_status": "verified",
-            "rows_read": 11395780,
-            "derived_rows": 86397,
-            "first_exchange_time_ms": 1685577600009,
-            "last_exchange_time_ms": 1685663999999,
-            "invalid_rows": 0,
-            "duplicate_ids": 0,
-            "update_id_regressions": 0,
-            "event_time_regressions": 0,
-            "out_of_order_rows": 0,
-            "crossed_books": 0
+        "symbol": "BTCUSDT",
+        "periods": 43,
+        "rows": 3924,
+        "first_calc_time_ms": 1638316800000,
+        "last_calc_time_ms": 1751299200002,
+        "minimum_interval_hours": 8,
+        "maximum_interval_hours": 8,
+        "archive_identity_sha256": "56d7fcf6091943e30cc4716b66369c570d08955706447db6c3214e5598503ede",
+        "funding_row_stream_sha256": "6418db353e775fb89c60c9f561be99a303ae7472a88218b08d0e9ed42919ca56",
+        "period_evidence_sha256": "be962f91c9b269eacecec6418f5a05a89ed97fe5ea99e045a08ce24628e99bec"
+      },
+      "sign_transition": {
+        "positive_to_positive": 3088,
+        "positive_to_nonpositive": 302,
+        "nonpositive_to_positive": 302,
+        "nonpositive_to_nonpositive": 231,
+        "next_positive_given_positive": 0.9109144542772861,
+        "next_positive_given_nonpositive": 0.5666041275797373
+      },
+      "cells": [
+        {
+          "symbol": "BTCUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 5901,
+          "episodes": 1117,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1751155200004,
+          "mean_gross_funding_bps": 2.123753625783303,
+          "median_gross_funding_bps": 1.9491999999998733,
+          "p10_gross_funding_bps": 0.16534000000023585,
+          "p90_gross_funding_bps": 3.1190999999998192,
+          "bootstrap_lower_95_mean_gross_bps": 1.8182505908683588,
+          "bootstrap_upper_95_mean_gross_bps": 2.4890876477170485,
+          "mean_future_settlements": 2.7681289167412713,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -1.8762463742166968,
+              "median_net_reference_bps": -2.0508000000001267,
+              "positive_net_reference_fraction": 0.07430617726051925,
+              "bootstrap_lower_95_mean_net_reference_bps": -2.181749409131641,
+              "bootstrap_upper_95_mean_net_reference_bps": -1.5109123522829517
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -25.8762463742167,
+              "median_net_reference_bps": -26.050800000000127,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -26.181749409131644,
+              "bootstrap_upper_95_mean_net_reference_bps": -25.51091235228295
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -29.8762463742167,
+              "median_net_reference_bps": -30.050800000000127,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -30.181749409131644,
+              "bootstrap_upper_95_mean_net_reference_bps": -29.51091235228295
+            }
           },
-          {
-            "archive_id": "766d0ca7109318f058b07029a9969ad87de8ae2320dfd16a0500614ee76ea248",
-            "schema_version": "binance-usdm-tick-v6",
-            "provider": "binance",
-            "market_type": "futures",
-            "symbol": "BTCUSDT",
-            "data_type": "trades",
-            "period": "2023-06-01",
-            "url": "https://data.binance.vision/data/futures/um/daily/trades/BTCUSDT/BTCUSDT-trades-2023-06-01.zip",
-            "status": "complete",
-            "is_current": true,
-            "compressed_bytes": 27124136,
-            "uncompressed_bytes": 181752221,
-            "source_sha256": "c2f814f7b6907ab22f7448ed74b3fa428c634a2094844cd4537e2d65961f4c6c",
-            "expected_sha256": "c2f814f7b6907ab22f7448ed74b3fa428c634a2094844cd4537e2d65961f4c6c",
-            "checksum_status": "verified",
-            "rows_read": 3436492,
-            "derived_rows": 85753,
-            "first_exchange_time_ms": 1685577600033,
-            "last_exchange_time_ms": 1685663999995,
-            "invalid_rows": 0,
-            "duplicate_ids": 0,
-            "update_id_regressions": 0,
-            "event_time_regressions": 0,
-            "out_of_order_rows": 0,
-            "crossed_books": 0
-          }
-        ],
-        "manifest_sha256": "72136ff7c8ce8796808a13d360a118cbf7e0159605f040c6891ce45d7189f1d8",
-        "book_ticker_100ms_rows_read": 824458,
-        "trade_rows_read": 3436492
-      },
-      "decision_rows_planned": 8639,
-      "decision_rows_quote_age_eligible": 8639,
-      "decision_rows_quote_age_rejected": 0,
-      "quote_age_ms": {
-        "p50": 50.0,
-        "p90": 50.0,
-        "p99": 250.0,
-        "max": 450.0
-      },
-      "placement_spread_bps": {
-        "p50": 0.037215949266755644,
-        "p90": 0.037334886464623906,
-        "p99": 0.03745472659799631,
-        "max": 1.5717621699296025
-      },
-      "both_fill_placement_spread_bps": {
-        "p50": 0.037228973077674254,
-        "p90": 0.037375129736449964,
-        "p99": 0.037526540579868595,
-        "max": 1.5717621699296025
-      },
-      "singleton_placement_spread_bps": {
-        "p50": 0.03721899657582739,
-        "p90": 0.03733745140532818,
-        "p99": 0.03745119177240852,
-        "max": 1.2682544715292288
-      },
-      "joint_fill_state": {
-        "none": {
-          "rows": 4297,
-          "ratio": 0.4973955318902651
-        },
-        "bid_only": {
-          "rows": 1989,
-          "ratio": 0.23023498090056718
-        },
-        "ask_only": {
-          "rows": 2088,
-          "ratio": 0.24169464058340084
-        },
-        "both": {
-          "rows": 265,
-          "ratio": 0.03067484662576687
-        },
-        "total_rows": 8639
-      },
-      "joint_fill_sequencing": {
-        "bid_first": 129,
-        "ask_first": 136,
-        "same_exchange_timestamp": 0
-      },
-      "both_fill_inventory_exposure_ms": {
-        "p50": 2584.0,
-        "p90": 7870.2,
-        "p99": 12794.00000000001,
-        "max": 13604.0
-      },
-      "singleton_maximum_inventory_exposure_before_expiry_ms": {
-        "p50": 11418.0,
-        "p90": 14421.4,
-        "p99": 14928.24,
-        "max": 14994.0
-      },
-      "fill_bucket_cross_table": [
-        {
-          "bid_bucket": 0,
-          "ask_bucket": 0,
-          "rows": 4297
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 1,
-          "rows": 1279
+          "symbol": "BTCUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 5902,
+          "episodes": 407,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750982400000,
+          "mean_gross_funding_bps": 6.384000737100612,
+          "median_gross_funding_bps": 5.6363000000000945,
+          "p10_gross_funding_bps": 0.8993599999999812,
+          "p90_gross_funding_bps": 9.603779999999231,
+          "bootstrap_lower_95_mean_gross_bps": 5.132766038083436,
+          "bootstrap_upper_95_mean_gross_bps": 7.799803968058792,
+          "mean_future_settlements": 8.744471744471744,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 2.384000737100613,
+              "median_net_reference_bps": 1.6363000000000945,
+              "positive_net_reference_fraction": 0.6388206388206388,
+              "bootstrap_lower_95_mean_net_reference_bps": 1.1327660380834361,
+              "bootstrap_upper_95_mean_net_reference_bps": 3.7998039680587916
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -21.615999262899386,
+              "median_net_reference_bps": -22.363699999999906,
+              "positive_net_reference_fraction": 0.022113022113022112,
+              "bootstrap_lower_95_mean_net_reference_bps": -22.86723396191656,
+              "bootstrap_upper_95_mean_net_reference_bps": -20.20019603194121
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -25.615999262899386,
+              "median_net_reference_bps": -26.363699999999906,
+              "positive_net_reference_fraction": 0.019656019656019656,
+              "bootstrap_lower_95_mean_net_reference_bps": -26.86723396191656,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.20019603194121
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 2,
-          "rows": 538
+          "symbol": "BTCUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 5903,
+          "episodes": 181,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750233600001,
+          "mean_gross_funding_bps": 14.840630386740056,
+          "median_gross_funding_bps": 11.794200000000421,
+          "p10_gross_funding_bps": 2.79110000000006,
+          "p90_gross_funding_bps": 24.682600000000416,
+          "bootstrap_lower_95_mean_gross_bps": 11.485328991712546,
+          "bootstrap_upper_95_mean_gross_bps": 19.382265193369797,
+          "mean_future_settlements": 20.773480662983424,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 10.840630386740056,
+              "median_net_reference_bps": 7.794200000000421,
+              "positive_net_reference_fraction": 0.8674033149171271,
+              "bootstrap_lower_95_mean_net_reference_bps": 7.485328991712545,
+              "bootstrap_upper_95_mean_net_reference_bps": 15.382265193369797
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -13.159369613259944,
+              "median_net_reference_bps": -16.205799999999577,
+              "positive_net_reference_fraction": 0.07734806629834254,
+              "bootstrap_lower_95_mean_net_reference_bps": -16.514671008287454,
+              "bootstrap_upper_95_mean_net_reference_bps": -8.617734806630203
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -17.15936961325994,
+              "median_net_reference_bps": -20.205799999999577,
+              "positive_net_reference_fraction": 0.06077348066298342,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.514671008287454,
+              "bootstrap_upper_95_mean_net_reference_bps": -12.617734806630203
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 3,
-          "rows": 271
+          "symbol": "BTCUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 5911,
+          "episodes": 608,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1751212800001,
+          "mean_gross_funding_bps": 3.157474342105198,
+          "median_gross_funding_bps": 2.9999999999996696,
+          "p10_gross_funding_bps": 1.2773200000000124,
+          "p90_gross_funding_bps": 5.1105500000000195,
+          "bootstrap_lower_95_mean_gross_bps": 2.730218207236801,
+          "bootstrap_upper_95_mean_gross_bps": 3.688364358552589,
+          "mean_future_settlements": 2.7697368421052633,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -0.842525657894802,
+              "median_net_reference_bps": -1.0000000000003304,
+              "positive_net_reference_fraction": 0.13322368421052633,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.2697817927631994,
+              "bootstrap_upper_95_mean_net_reference_bps": -0.31163564144741096
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -24.842525657894804,
+              "median_net_reference_bps": -25.00000000000033,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.2697817927632,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.31163564144741
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -28.842525657894804,
+              "median_net_reference_bps": -29.00000000000033,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -29.2697817927632,
+              "bootstrap_upper_95_mean_net_reference_bps": -28.31163564144741
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 0,
-          "rows": 1233
+          "symbol": "BTCUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 5912,
+          "episodes": 264,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750579200000,
+          "mean_gross_funding_bps": 8.618973863636192,
+          "median_gross_funding_bps": 7.8011999999993975,
+          "p10_gross_funding_bps": 3.2746999999996307,
+          "p90_gross_funding_bps": 13.531220000000062,
+          "bootstrap_lower_95_mean_gross_bps": 7.157331638257504,
+          "bootstrap_upper_95_mean_gross_bps": 10.575793484848244,
+          "mean_future_settlements": 8.761363636363637,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 4.618973863636193,
+              "median_net_reference_bps": 3.8011999999993975,
+              "positive_net_reference_fraction": 0.8446969696969697,
+              "bootstrap_lower_95_mean_net_reference_bps": 3.157331638257504,
+              "bootstrap_upper_95_mean_net_reference_bps": 6.575793484848244
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -19.381026136363804,
+              "median_net_reference_bps": -20.198800000000602,
+              "positive_net_reference_fraction": 0.03409090909090909,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.842668361742497,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.42420651515176
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -23.381026136363804,
+              "median_net_reference_bps": -24.198800000000602,
+              "positive_net_reference_fraction": 0.030303030303030304,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.842668361742497,
+              "bootstrap_upper_95_mean_net_reference_bps": -21.42420651515176
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 1,
-          "rows": 68
+          "symbol": "BTCUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 5913,
+          "episodes": 134,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750579200000,
+          "mean_gross_funding_bps": 17.98644029850711,
+          "median_gross_funding_bps": 15.86204999999962,
+          "p10_gross_funding_bps": 6.58573000000055,
+          "p90_gross_funding_bps": 30.093119999999892,
+          "bootstrap_lower_95_mean_gross_bps": 14.036841902984772,
+          "bootstrap_upper_95_mean_gross_bps": 23.412131268656168,
+          "mean_future_settlements": 20.71641791044776,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 13.986440298507112,
+              "median_net_reference_bps": 11.86204999999962,
+              "positive_net_reference_fraction": 0.9477611940298507,
+              "bootstrap_lower_95_mean_net_reference_bps": 10.036841902984772,
+              "bootstrap_upper_95_mean_net_reference_bps": 19.412131268656168
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -10.01355970149289,
+              "median_net_reference_bps": -12.13795000000038,
+              "positive_net_reference_fraction": 0.11940298507462686,
+              "bootstrap_lower_95_mean_net_reference_bps": -13.963158097015228,
+              "bootstrap_upper_95_mean_net_reference_bps": -4.587868731343834
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -14.01355970149289,
+              "median_net_reference_bps": -16.13795000000038,
+              "positive_net_reference_fraction": 0.08955223880597014,
+              "bootstrap_lower_95_mean_net_reference_bps": -17.963158097015228,
+              "bootstrap_upper_95_mean_net_reference_bps": -8.587868731343834
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 2,
-          "rows": 22
+          "symbol": "BTCUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 5921,
+          "episodes": 74,
+          "first_decision_time_ms": 1638345600000,
+          "last_decision_time_ms": 1733702400000,
+          "mean_gross_funding_bps": 8.26004999999996,
+          "median_gross_funding_bps": 7.241649999999849,
+          "p10_gross_funding_bps": 3.1373999999998876,
+          "p90_gross_funding_bps": 14.569569999999894,
+          "bootstrap_lower_95_mean_gross_bps": 6.372615405405329,
+          "bootstrap_upper_95_mean_gross_bps": 10.418041655405364,
+          "mean_future_settlements": 2.8783783783783785,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 4.26004999999996,
+              "median_net_reference_bps": 3.2416499999998494,
+              "positive_net_reference_fraction": 0.7837837837837838,
+              "bootstrap_lower_95_mean_net_reference_bps": 2.3726154054053286,
+              "bootstrap_upper_95_mean_net_reference_bps": 6.418041655405363
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -19.73995000000004,
+              "median_net_reference_bps": -20.75835000000015,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -21.62738459459467,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.58195834459464
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -23.73995000000004,
+              "median_net_reference_bps": -24.75835000000015,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.62738459459467,
+              "bootstrap_upper_95_mean_net_reference_bps": -21.58195834459464
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 3,
-          "rows": 14
+          "symbol": "BTCUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 5922,
+          "episodes": 34,
+          "first_decision_time_ms": 1638345600000,
+          "last_decision_time_ms": 1733702400000,
+          "mean_gross_funding_bps": 21.402747058823365,
+          "median_gross_funding_bps": 18.25259999999995,
+          "p10_gross_funding_bps": 9.475699999999533,
+          "p90_gross_funding_bps": 36.701339999999945,
+          "bootstrap_lower_95_mean_gross_bps": 15.124403235293922,
+          "bootstrap_upper_95_mean_gross_bps": 28.63848647058807,
+          "mean_future_settlements": 8.735294117647058,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 17.402747058823365,
+              "median_net_reference_bps": 14.252599999999953,
+              "positive_net_reference_fraction": 1.0,
+              "bootstrap_lower_95_mean_net_reference_bps": 11.124403235293922,
+              "bootstrap_upper_95_mean_net_reference_bps": 24.63848647058807
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -6.5972529411766345,
+              "median_net_reference_bps": -9.747400000000047,
+              "positive_net_reference_fraction": 0.23529411764705882,
+              "bootstrap_lower_95_mean_net_reference_bps": -12.875596764706078,
+              "bootstrap_upper_95_mean_net_reference_bps": 0.6384864705880691
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -10.597252941176635,
+              "median_net_reference_bps": -13.747400000000047,
+              "positive_net_reference_fraction": 0.20588235294117646,
+              "bootstrap_lower_95_mean_net_reference_bps": -16.875596764706078,
+              "bootstrap_upper_95_mean_net_reference_bps": -3.361513529411931
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 2,
-          "ask_bucket": 0,
-          "rows": 491
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 1,
-          "rows": 31
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 2,
-          "rows": 44
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 3,
-          "rows": 23
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 0,
-          "rows": 265
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 1,
-          "rows": 11
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 2,
-          "rows": 27
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 3,
-          "rows": 25
+          "symbol": "BTCUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 5923,
+          "episodes": 20,
+          "first_decision_time_ms": 1638345600000,
+          "last_decision_time_ms": 1733212800000,
+          "mean_gross_funding_bps": 43.437779999999634,
+          "median_gross_funding_bps": 33.56929999999987,
+          "p10_gross_funding_bps": 20.80044000000046,
+          "p90_gross_funding_bps": 78.62635999999925,
+          "bootstrap_lower_95_mean_gross_bps": 30.200316874999537,
+          "bootstrap_upper_95_mean_gross_bps": 58.49722874999945,
+          "mean_future_settlements": 20.8,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 39.437779999999634,
+              "median_net_reference_bps": 29.56929999999987,
+              "positive_net_reference_fraction": 1.0,
+              "bootstrap_lower_95_mean_net_reference_bps": 26.200316874999537,
+              "bootstrap_upper_95_mean_net_reference_bps": 54.49722874999945
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": 15.43777999999963,
+              "median_net_reference_bps": 5.5692999999998705,
+              "positive_net_reference_fraction": 0.65,
+              "bootstrap_lower_95_mean_net_reference_bps": 2.2003168749995363,
+              "bootstrap_upper_95_mean_net_reference_bps": 30.49722874999945
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": 11.437779999999632,
+              "median_net_reference_bps": 1.5692999999998705,
+              "positive_net_reference_fraction": 0.5,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.7996831250004637,
+              "bootstrap_upper_95_mean_net_reference_bps": 26.49722874999945
+            }
+          },
+          "symbol_gate_passed": false
         }
       ],
-      "bid_fill": {
-        "schema_version": "queue-censored-passive-fill-v1",
-        "buyer_is_maker": true,
-        "expiry_ms": 15000,
-        "order_notional_quote": 500.0,
-        "source_trade_sha256": "7d83f53a076343837b503cecd00526c808c7d298f0d993f9e70a72a5a3c23aa3",
-        "rows": 8639,
-        "filled_rows": 2254,
-        "fill_rate": 0.26090982752633407,
-        "fill_bucket_counts": {
-          "0": 6385,
-          "1": 1337,
-          "2": 589,
-          "3": 328
-        },
-        "result_sha256": "2852bc9e0aa69562e4534504ff284b5dfe4516798d21814712a6f9f1de130ec7",
-        "trading_authority": false,
-        "profitability_claim": false
-      },
-      "ask_fill": {
-        "schema_version": "queue-censored-passive-fill-v1",
-        "buyer_is_maker": false,
-        "expiry_ms": 15000,
-        "order_notional_quote": 500.0,
-        "source_trade_sha256": "7d83f53a076343837b503cecd00526c808c7d298f0d993f9e70a72a5a3c23aa3",
-        "rows": 8639,
-        "filled_rows": 2353,
-        "fill_rate": 0.2723694872091677,
-        "fill_bucket_counts": {
-          "0": 6286,
-          "1": 1389,
-          "2": 631,
-          "3": 333
-        },
-        "result_sha256": "052e3661a20ae71c8dc932c487babc5c92fd76f12d1388070ec0fed9844f5f87",
-        "trading_authority": false,
-        "profitability_claim": false
-      },
-      "result_sha256": "68501db267149b7a753b4639d8ee36478c7232c5f7a47505ae4576858a457b79"
+      "result_sha256": "71bf10020fcfc3de1a50c66908f43c5f6082d96d940cad48cbef412865a650ff"
     },
     {
       "symbol": "ETHUSDT",
       "source": {
-        "manifests": [
-          {
-            "archive_id": "972d0d99cd2d362ae4635b4c59c6b153b117ea385ffccdc11bd3df5223a294fe",
-            "schema_version": "binance-usdm-tick-v6",
-            "provider": "binance",
-            "market_type": "futures",
-            "symbol": "ETHUSDT",
-            "data_type": "bookTicker",
-            "period": "2023-06-01",
-            "url": "https://data.binance.vision/data/futures/um/daily/bookTicker/ETHUSDT/ETHUSDT-bookTicker-2023-06-01.zip",
-            "status": "complete",
-            "is_current": true,
-            "compressed_bytes": 85162177,
-            "uncompressed_bytes": 603375871,
-            "source_sha256": "934e1464b24726be58c27c884b4b3c312b2b40ef7b5cb88c5272e20379bae752",
-            "expected_sha256": "934e1464b24726be58c27c884b4b3c312b2b40ef7b5cb88c5272e20379bae752",
-            "checksum_status": "verified",
-            "rows_read": 6400396,
-            "derived_rows": 86396,
-            "first_exchange_time_ms": 1685577600027,
-            "last_exchange_time_ms": 1685663999997,
-            "invalid_rows": 0,
-            "duplicate_ids": 0,
-            "update_id_regressions": 0,
-            "event_time_regressions": 0,
-            "out_of_order_rows": 0,
-            "crossed_books": 0
+        "symbol": "ETHUSDT",
+        "periods": 43,
+        "rows": 3924,
+        "first_calc_time_ms": 1638316800000,
+        "last_calc_time_ms": 1751299200002,
+        "minimum_interval_hours": 8,
+        "maximum_interval_hours": 8,
+        "archive_identity_sha256": "c063e85dd220674dfbd6ef7caf13717be6199589c87fe22ffa7ba110b44a8445",
+        "funding_row_stream_sha256": "0f59ac430b4578a972c901f3b39a197526bb0d9de53d8e84ab7a52518c258e5c",
+        "period_evidence_sha256": "943021d76b54b0ba3003c10cfc6768a4518befd70dceaee905a11f564071d127"
+      },
+      "sign_transition": {
+        "positive_to_positive": 2978,
+        "positive_to_nonpositive": 317,
+        "nonpositive_to_positive": 317,
+        "nonpositive_to_nonpositive": 311,
+        "next_positive_given_positive": 0.903793626707132,
+        "next_positive_given_nonpositive": 0.5047770700636943
+      },
+      "cells": [
+        {
+          "symbol": "ETHUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 6001,
+          "episodes": 1102,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1751155200004,
+          "mean_gross_funding_bps": 2.177261343012674,
+          "median_gross_funding_bps": 1.9988499999999687,
+          "p10_gross_funding_bps": 0.027399999999795695,
+          "p90_gross_funding_bps": 3.310899999999922,
+          "bootstrap_lower_95_mean_gross_bps": 1.8694820372050585,
+          "bootstrap_upper_95_mean_gross_bps": 2.5648286456442415,
+          "mean_future_settlements": 2.767695099818512,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -1.822738656987326,
+              "median_net_reference_bps": -2.001150000000031,
+              "positive_net_reference_fraction": 0.07985480943738657,
+              "bootstrap_lower_95_mean_net_reference_bps": -2.1305179627949418,
+              "bootstrap_upper_95_mean_net_reference_bps": -1.4351713543557587
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -25.822738656987326,
+              "median_net_reference_bps": -26.00115000000003,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -26.13051796279494,
+              "bootstrap_upper_95_mean_net_reference_bps": -25.43517135435576
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -29.822738656987333,
+              "median_net_reference_bps": -30.00115000000003,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -30.13051796279494,
+              "bootstrap_upper_95_mean_net_reference_bps": -29.43517135435576
+            }
           },
-          {
-            "archive_id": "101c0340a73761989785bca5a83eea9382495287e1f7ff052d3c7036f44bf2f8",
-            "schema_version": "binance-usdm-tick-v6",
-            "provider": "binance",
-            "market_type": "futures",
-            "symbol": "ETHUSDT",
-            "data_type": "trades",
-            "period": "2023-06-01",
-            "url": "https://data.binance.vision/data/futures/um/daily/trades/ETHUSDT/ETHUSDT-trades-2023-06-01.zip",
-            "status": "complete",
-            "is_current": true,
-            "compressed_bytes": 21641671,
-            "uncompressed_bytes": 115605932,
-            "source_sha256": "0c4cb3901af36d9b08c9c847f4db0b3f3a596d752a3850a9f728277653f2b9e1",
-            "expected_sha256": "0c4cb3901af36d9b08c9c847f4db0b3f3a596d752a3850a9f728277653f2b9e1",
-            "checksum_status": "verified",
-            "rows_read": 2178965,
-            "derived_rows": 81898,
-            "first_exchange_time_ms": 1685577600042,
-            "last_exchange_time_ms": 1685663999926,
-            "invalid_rows": 0,
-            "duplicate_ids": 0,
-            "update_id_regressions": 0,
-            "event_time_regressions": 0,
-            "out_of_order_rows": 0,
-            "crossed_books": 0
-          }
-        ],
-        "manifest_sha256": "b44f0deb01b787c155719c89fd33a6ccc2ecba8b0230b12b4bd193e8ecd687cc",
-        "book_ticker_100ms_rows_read": 783866,
-        "trade_rows_read": 2178965
-      },
-      "decision_rows_planned": 8639,
-      "decision_rows_quote_age_eligible": 8639,
-      "decision_rows_quote_age_rejected": 0,
-      "quote_age_ms": {
-        "p50": 50.0,
-        "p90": 150.0,
-        "p99": 250.0,
-        "max": 450.0
-      },
-      "placement_spread_bps": {
-        "p50": 0.053712039016495794,
-        "p90": 0.05392986959673607,
-        "p99": 0.05401762573691293,
-        "max": 0.7059462394787275
-      },
-      "both_fill_placement_spread_bps": {
-        "p50": 0.053720262681578035,
-        "p90": 0.05395340908975754,
-        "p99": 0.15887904218419002,
-        "max": 0.7059462394787275
-      },
-      "singleton_placement_spread_bps": {
-        "p50": 0.05371607829651737,
-        "p90": 0.05393452348734229,
-        "p99": 0.054026194060252664,
-        "max": 0.4315460135950744
-      },
-      "joint_fill_state": {
-        "none": {
-          "rows": 4394,
-          "ratio": 0.5086236832966778
-        },
-        "bid_only": {
-          "rows": 2045,
-          "ratio": 0.2367172126403519
-        },
-        "ask_only": {
-          "rows": 1996,
-          "ratio": 0.23104525986804028
-        },
-        "both": {
-          "rows": 204,
-          "ratio": 0.02361384419492997
-        },
-        "total_rows": 8639
-      },
-      "joint_fill_sequencing": {
-        "bid_first": 101,
-        "ask_first": 102,
-        "same_exchange_timestamp": 1
-      },
-      "both_fill_inventory_exposure_ms": {
-        "p50": 2629.0,
-        "p90": 7465.5,
-        "p99": 12253.9,
-        "max": 13997.0
-      },
-      "singleton_maximum_inventory_exposure_before_expiry_ms": {
-        "p50": 11134.0,
-        "p90": 14306.0,
-        "p99": 14897.199999999999,
-        "max": 14994.0
-      },
-      "fill_bucket_cross_table": [
-        {
-          "bid_bucket": 0,
-          "ask_bucket": 0,
-          "rows": 4394
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 1,
-          "rows": 1205
+          "symbol": "ETHUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 6002,
+          "episodes": 407,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750982400000,
+          "mean_gross_funding_bps": 6.320581326781243,
+          "median_gross_funding_bps": 5.656199999999334,
+          "p10_gross_funding_bps": 0.4800399999997651,
+          "p90_gross_funding_bps": 11.15669999999982,
+          "bootstrap_lower_95_mean_gross_bps": 4.916507659705072,
+          "bootstrap_upper_95_mean_gross_bps": 7.864432530712433,
+          "mean_future_settlements": 8.74938574938575,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 2.320581326781244,
+              "median_net_reference_bps": 1.656199999999334,
+              "positive_net_reference_fraction": 0.6314496314496314,
+              "bootstrap_lower_95_mean_net_reference_bps": 0.9165076597050718,
+              "bootstrap_upper_95_mean_net_reference_bps": 3.864432530712433
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -21.67941867321876,
+              "median_net_reference_bps": -22.343800000000666,
+              "positive_net_reference_fraction": 0.02702702702702703,
+              "bootstrap_lower_95_mean_net_reference_bps": -23.083492340294928,
+              "bootstrap_upper_95_mean_net_reference_bps": -20.13556746928757
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -25.67941867321876,
+              "median_net_reference_bps": -26.343800000000666,
+              "positive_net_reference_fraction": 0.019656019656019656,
+              "bootstrap_lower_95_mean_net_reference_bps": -27.083492340294928,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.13556746928757
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 2,
-          "rows": 536
+          "symbol": "ETHUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 6003,
+          "episodes": 181,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750291200005,
+          "mean_gross_funding_bps": 14.178820994474943,
+          "median_gross_funding_bps": 12.731200000000165,
+          "p10_gross_funding_bps": -0.3272000000000518,
+          "p90_gross_funding_bps": 27.017099999998017,
+          "bootstrap_lower_95_mean_gross_bps": 9.975118632596661,
+          "bootstrap_upper_95_mean_gross_bps": 18.827217182320236,
+          "mean_future_settlements": 20.76243093922652,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 10.178820994474947,
+              "median_net_reference_bps": 8.731200000000165,
+              "positive_net_reference_fraction": 0.8342541436464088,
+              "bootstrap_lower_95_mean_net_reference_bps": 5.9751186325966605,
+              "bootstrap_upper_95_mean_net_reference_bps": 14.827217182320235
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -13.821179005525053,
+              "median_net_reference_bps": -15.268799999999835,
+              "positive_net_reference_fraction": 0.08287292817679558,
+              "bootstrap_lower_95_mean_net_reference_bps": -18.02488136740334,
+              "bootstrap_upper_95_mean_net_reference_bps": -9.172782817679765
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -17.821179005525057,
+              "median_net_reference_bps": -19.268799999999835,
+              "positive_net_reference_fraction": 0.08287292817679558,
+              "bootstrap_lower_95_mean_net_reference_bps": -22.02488136740334,
+              "bootstrap_upper_95_mean_net_reference_bps": -13.172782817679765
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 3,
-          "rows": 255
+          "symbol": "ETHUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 6011,
+          "episodes": 627,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750147200006,
+          "mean_gross_funding_bps": 3.1524972886761953,
+          "median_gross_funding_bps": 2.959699999999996,
+          "p10_gross_funding_bps": 0.9809399999999372,
+          "p90_gross_funding_bps": 5.7116400000001,
+          "bootstrap_lower_95_mean_gross_bps": 2.7059802870813088,
+          "bootstrap_upper_95_mean_gross_bps": 3.6704155422647142,
+          "mean_future_settlements": 2.7607655502392343,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -0.8475027113238051,
+              "median_net_reference_bps": -1.0403000000000042,
+              "positive_net_reference_fraction": 0.14035087719298245,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.294019712918691,
+              "bootstrap_upper_95_mean_net_reference_bps": -0.329584457735286
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -24.847502711323806,
+              "median_net_reference_bps": -25.040300000000006,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.294019712918693,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.329584457735287
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -28.847502711323813,
+              "median_net_reference_bps": -29.040300000000006,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -29.294019712918693,
+              "bootstrap_upper_95_mean_net_reference_bps": -28.329584457735287
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 0,
-          "rows": 1221
+          "symbol": "ETHUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 6012,
+          "episodes": 271,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750147200006,
+          "mean_gross_funding_bps": 8.465727306272948,
+          "median_gross_funding_bps": 7.324899999999468,
+          "p10_gross_funding_bps": 2.3422999999999847,
+          "p90_gross_funding_bps": 16.646200000000334,
+          "bootstrap_lower_95_mean_gross_bps": 6.7637664667896376,
+          "bootstrap_upper_95_mean_gross_bps": 10.48636230627294,
+          "mean_future_settlements": 8.793357933579335,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 4.465727306272949,
+              "median_net_reference_bps": 3.3248999999994684,
+              "positive_net_reference_fraction": 0.8118081180811808,
+              "bootstrap_lower_95_mean_net_reference_bps": 2.763766466789638,
+              "bootstrap_upper_95_mean_net_reference_bps": 6.48636230627294
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -19.534272693727054,
+              "median_net_reference_bps": -20.675100000000533,
+              "positive_net_reference_fraction": 0.03690036900369004,
+              "bootstrap_lower_95_mean_net_reference_bps": -21.236233533210363,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.513637693727063
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -23.534272693727054,
+              "median_net_reference_bps": -24.675100000000533,
+              "positive_net_reference_fraction": 0.02952029520295203,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.236233533210363,
+              "bootstrap_upper_95_mean_net_reference_bps": -21.513637693727063
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 1,
-          "rows": 64
+          "symbol": "ETHUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 6013,
+          "episodes": 139,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750147200006,
+          "mean_gross_funding_bps": 17.533475539568116,
+          "median_gross_funding_bps": 14.672900000000377,
+          "p10_gross_funding_bps": 4.960840000000022,
+          "p90_gross_funding_bps": 32.31510000000013,
+          "bootstrap_lower_95_mean_gross_bps": 12.64726843525171,
+          "bootstrap_upper_95_mean_gross_bps": 22.97366133093479,
+          "mean_future_settlements": 20.741007194244606,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 13.533475539568116,
+              "median_net_reference_bps": 10.672900000000377,
+              "positive_net_reference_fraction": 0.9280575539568345,
+              "bootstrap_lower_95_mean_net_reference_bps": 8.64726843525171,
+              "bootstrap_upper_95_mean_net_reference_bps": 18.97366133093479
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -10.466524460431886,
+              "median_net_reference_bps": -13.327099999999623,
+              "positive_net_reference_fraction": 0.12949640287769784,
+              "bootstrap_lower_95_mean_net_reference_bps": -15.35273156474829,
+              "bootstrap_upper_95_mean_net_reference_bps": -5.02633866906521
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -14.466524460431886,
+              "median_net_reference_bps": -17.327099999999625,
+              "positive_net_reference_fraction": 0.1079136690647482,
+              "bootstrap_lower_95_mean_net_reference_bps": -19.35273156474829,
+              "bootstrap_upper_95_mean_net_reference_bps": -9.026338669065211
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 2,
-          "rows": 22
+          "symbol": "ETHUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 6021,
+          "episodes": 77,
+          "first_decision_time_ms": 1673683200001,
+          "last_decision_time_ms": 1733644800000,
+          "mean_gross_funding_bps": 8.871180519480507,
+          "median_gross_funding_bps": 8.145400000000025,
+          "p10_gross_funding_bps": 4.338139999999934,
+          "p90_gross_funding_bps": 15.038179999999901,
+          "bootstrap_lower_95_mean_gross_bps": 7.301796525973989,
+          "bootstrap_upper_95_mean_gross_bps": 10.562029935064906,
+          "mean_future_settlements": 2.896103896103896,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 4.871180519480509,
+              "median_net_reference_bps": 4.145400000000025,
+              "positive_net_reference_fraction": 0.922077922077922,
+              "bootstrap_lower_95_mean_net_reference_bps": 3.301796525973989,
+              "bootstrap_upper_95_mean_net_reference_bps": 6.562029935064905
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -19.12881948051949,
+              "median_net_reference_bps": -19.854599999999976,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.698203474026013,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.437970064935094
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -23.12881948051949,
+              "median_net_reference_bps": -23.854599999999976,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.698203474026013,
+              "bootstrap_upper_95_mean_net_reference_bps": -21.437970064935094
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 3,
-          "rows": 9
+          "symbol": "ETHUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 6022,
+          "episodes": 35,
+          "first_decision_time_ms": 1673683200001,
+          "last_decision_time_ms": 1733472000000,
+          "mean_gross_funding_bps": 23.025314285714234,
+          "median_gross_funding_bps": 20.80660000000012,
+          "p10_gross_funding_bps": 11.383139999999791,
+          "p90_gross_funding_bps": 38.18995999999994,
+          "bootstrap_lower_95_mean_gross_bps": 18.26506899999994,
+          "bootstrap_upper_95_mean_gross_bps": 28.48952021428566,
+          "mean_future_settlements": 8.885714285714286,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 19.025314285714234,
+              "median_net_reference_bps": 16.80660000000012,
+              "positive_net_reference_fraction": 1.0,
+              "bootstrap_lower_95_mean_net_reference_bps": 14.26506899999994,
+              "bootstrap_upper_95_mean_net_reference_bps": 24.48952021428566
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -4.974685714285769,
+              "median_net_reference_bps": -7.19339999999988,
+              "positive_net_reference_fraction": 0.34285714285714286,
+              "bootstrap_lower_95_mean_net_reference_bps": -9.73493100000006,
+              "bootstrap_upper_95_mean_net_reference_bps": 0.48952021428565745
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -8.974685714285767,
+              "median_net_reference_bps": -11.19339999999988,
+              "positive_net_reference_fraction": 0.17142857142857143,
+              "bootstrap_lower_95_mean_net_reference_bps": -13.73493100000006,
+              "bootstrap_upper_95_mean_net_reference_bps": -3.5104797857143426
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 2,
-          "ask_bucket": 0,
-          "rows": 545
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 1,
-          "rows": 22
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 2,
-          "rows": 25
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 3,
-          "rows": 15
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 0,
-          "rows": 279
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 1,
-          "rows": 12
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 2,
-          "rows": 13
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 3,
-          "rows": 22
+          "symbol": "ETHUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 6023,
+          "episodes": 20,
+          "first_decision_time_ms": 1673683200001,
+          "last_decision_time_ms": 1733126400001,
+          "mean_gross_funding_bps": 46.816819999999765,
+          "median_gross_funding_bps": 36.09010000000009,
+          "p10_gross_funding_bps": 23.027169999998474,
+          "p90_gross_funding_bps": 79.74787999999995,
+          "bootstrap_lower_95_mean_gross_bps": 34.02369462499963,
+          "bootstrap_upper_95_mean_gross_bps": 62.02228087500006,
+          "mean_future_settlements": 20.8,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 42.816819999999765,
+              "median_net_reference_bps": 32.09010000000009,
+              "positive_net_reference_fraction": 1.0,
+              "bootstrap_lower_95_mean_net_reference_bps": 30.023694624999628,
+              "bootstrap_upper_95_mean_net_reference_bps": 58.02228087500006
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": 18.816819999999765,
+              "median_net_reference_bps": 8.090100000000096,
+              "positive_net_reference_fraction": 0.75,
+              "bootstrap_lower_95_mean_net_reference_bps": 6.023694624999628,
+              "bootstrap_upper_95_mean_net_reference_bps": 34.02228087500006
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": 14.816819999999765,
+              "median_net_reference_bps": 4.0901000000000955,
+              "positive_net_reference_fraction": 0.65,
+              "bootstrap_lower_95_mean_net_reference_bps": 2.0236946249996284,
+              "bootstrap_upper_95_mean_net_reference_bps": 30.022280875000057
+            }
+          },
+          "symbol_gate_passed": false
         }
       ],
-      "bid_fill": {
-        "schema_version": "queue-censored-passive-fill-v1",
-        "buyer_is_maker": true,
-        "expiry_ms": 15000,
-        "order_notional_quote": 500.0,
-        "source_trade_sha256": "e5844c12c0977ad29872c799322ed71a119324eed346585e6fc6a5a426d94114",
-        "rows": 8639,
-        "filled_rows": 2249,
-        "fill_rate": 0.26033105683528185,
-        "fill_bucket_counts": {
-          "0": 6390,
-          "1": 1316,
-          "2": 607,
-          "3": 326
-        },
-        "result_sha256": "604e2944251881610efedd7f080269461c00b3d68f3cec8b68ec8661eb11731c",
-        "trading_authority": false,
-        "profitability_claim": false
-      },
-      "ask_fill": {
-        "schema_version": "queue-censored-passive-fill-v1",
-        "buyer_is_maker": false,
-        "expiry_ms": 15000,
-        "order_notional_quote": 500.0,
-        "source_trade_sha256": "e5844c12c0977ad29872c799322ed71a119324eed346585e6fc6a5a426d94114",
-        "rows": 8639,
-        "filled_rows": 2200,
-        "fill_rate": 0.25465910406297027,
-        "fill_bucket_counts": {
-          "0": 6439,
-          "1": 1303,
-          "2": 596,
-          "3": 301
-        },
-        "result_sha256": "c98a8242c198d6e086b5a227ca303258d760aaf759fa89d2bf1b6f31b4d503d4",
-        "trading_authority": false,
-        "profitability_claim": false
-      },
-      "result_sha256": "c4c4e6beb5b18a6cc6a6310324101884f96c33b8d9b6bf0bdb4ffc6d94088ac3"
+      "result_sha256": "3cafb18026068434a9bf0f2bf680be5f92da82919dc1f3d39df23081ed9f2933"
     },
     {
       "symbol": "SOLUSDT",
       "source": {
-        "manifests": [
-          {
-            "archive_id": "f52f0dfd12b3b6b9dd227513cd8e39336aecfc99bc5d9b32cd45d0c012434ba9",
-            "schema_version": "binance-usdm-tick-v6",
-            "provider": "binance",
-            "market_type": "futures",
-            "symbol": "SOLUSDT",
-            "data_type": "bookTicker",
-            "period": "2023-06-01",
-            "url": "https://data.binance.vision/data/futures/um/daily/bookTicker/SOLUSDT/SOLUSDT-bookTicker-2023-06-01.zip",
-            "status": "complete",
-            "is_current": true,
-            "compressed_bytes": 23040983,
-            "uncompressed_bytes": 162339680,
-            "source_sha256": "845f4bdf808c49ed80e78bcb36a8b249af10c433605c8f8bf1cb53eef99a156a",
-            "expected_sha256": "845f4bdf808c49ed80e78bcb36a8b249af10c433605c8f8bf1cb53eef99a156a",
-            "checksum_status": "verified",
-            "rows_read": 1774552,
-            "derived_rows": 83960,
-            "first_exchange_time_ms": 1685577600044,
-            "last_exchange_time_ms": 1685663999839,
-            "invalid_rows": 0,
-            "duplicate_ids": 0,
-            "update_id_regressions": 0,
-            "event_time_regressions": 0,
-            "out_of_order_rows": 0,
-            "crossed_books": 0
+        "symbol": "SOLUSDT",
+        "periods": 43,
+        "rows": 3999,
+        "first_calc_time_ms": 1638316800000,
+        "last_calc_time_ms": 1751299200002,
+        "minimum_interval_hours": 2,
+        "maximum_interval_hours": 8,
+        "archive_identity_sha256": "dcaceecc5b5544c9dbce7abc7f0a09b87ea19475b2f8910c4edde3ea259b7aa6",
+        "funding_row_stream_sha256": "3686fafbb913a0eacbbc50c6b6cfc30dfe3de9cbc7811c05caabebee12a67013",
+        "period_evidence_sha256": "1cea03fdb970de5d7e09580bceb5c7290481e1c7fdc6264d3e9aacd6b32e9e05"
+      },
+      "sign_transition": {
+        "positive_to_positive": 2390,
+        "positive_to_nonpositive": 398,
+        "nonpositive_to_positive": 398,
+        "nonpositive_to_nonpositive": 812,
+        "next_positive_given_positive": 0.857245337159254,
+        "next_positive_given_nonpositive": 0.32892561983471075
+      },
+      "cells": [
+        {
+          "symbol": "SOLUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 6101,
+          "episodes": 975,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1751155200004,
+          "mean_gross_funding_bps": 1.9240833846152918,
+          "median_gross_funding_bps": 1.9999999999997797,
+          "p10_gross_funding_bps": -0.9325199999999437,
+          "p90_gross_funding_bps": 4.93413999999992,
+          "bootstrap_lower_95_mean_gross_bps": 1.1518908692306737,
+          "bootstrap_upper_95_mean_gross_bps": 2.665556261538363,
+          "mean_future_settlements": 2.790769230769231,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -2.075916615384709,
+              "median_net_reference_bps": -2.0000000000002203,
+              "positive_net_reference_fraction": 0.11384615384615385,
+              "bootstrap_lower_95_mean_net_reference_bps": -2.848109130769326,
+              "bootstrap_upper_95_mean_net_reference_bps": -1.334443738461637
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -26.075916615384713,
+              "median_net_reference_bps": -26.00000000000022,
+              "positive_net_reference_fraction": 0.0010256410256410256,
+              "bootstrap_lower_95_mean_net_reference_bps": -26.848109130769327,
+              "bootstrap_upper_95_mean_net_reference_bps": -25.334443738461637
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -30.07591661538471,
+              "median_net_reference_bps": -30.00000000000022,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -30.848109130769327,
+              "bootstrap_upper_95_mean_net_reference_bps": -29.334443738461637
+            }
           },
-          {
-            "archive_id": "89e821941c9ebf2643fd69718e1da5b94200d611a05bbf7595bc57a251d68270",
-            "schema_version": "binance-usdm-tick-v6",
-            "provider": "binance",
-            "market_type": "futures",
-            "symbol": "SOLUSDT",
-            "data_type": "trades",
-            "period": "2023-06-01",
-            "url": "https://data.binance.vision/data/futures/um/daily/trades/SOLUSDT/SOLUSDT-trades-2023-06-01.zip",
-            "status": "complete",
-            "is_current": true,
-            "compressed_bytes": 3349107,
-            "uncompressed_bytes": 20143844,
-            "source_sha256": "a56816cc9cf148c074c99efb35365e0b9dbaadd3d8878ee4c7e1982e22eab1bc",
-            "expected_sha256": "a56816cc9cf148c074c99efb35365e0b9dbaadd3d8878ee4c7e1982e22eab1bc",
-            "checksum_status": "verified",
-            "rows_read": 414676,
-            "derived_rows": 45295,
-            "first_exchange_time_ms": 1685577600245,
-            "last_exchange_time_ms": 1685663997828,
-            "invalid_rows": 0,
-            "duplicate_ids": 0,
-            "update_id_regressions": 0,
-            "event_time_regressions": 0,
-            "out_of_order_rows": 0,
-            "crossed_books": 0
-          }
-        ],
-        "manifest_sha256": "f5d3f28a82ed38c19d96bd9e6fbaf92735eb448998921997fa6dc584062dcf5a",
-        "book_ticker_100ms_rows_read": 413403,
-        "trade_rows_read": 414676
-      },
-      "decision_rows_planned": 8639,
-      "decision_rows_quote_age_eligible": 8431,
-      "decision_rows_quote_age_rejected": 208,
-      "quote_age_ms": {
-        "p50": 150.0,
-        "p90": 450.0,
-        "p99": 750.0,
-        "max": 950.0
-      },
-      "placement_spread_bps": {
-        "p50": 0.48348885558269217,
-        "p90": 0.4863576674285497,
-        "p99": 0.48865585458690575,
-        "max": 7.320644216690653
-      },
-      "both_fill_placement_spread_bps": {
-        "p50": 0.48348885558269217,
-        "p90": 0.4880739141568391,
-        "p99": 0.9713646607136138,
-        "max": 7.320644216690653
-      },
-      "singleton_placement_spread_bps": {
-        "p50": 0.4834421078081519,
-        "p90": 0.4860976084009039,
-        "p99": 0.48887564180795096,
-        "max": 2.4415254651111162
-      },
-      "joint_fill_state": {
-        "none": {
-          "rows": 5800,
-          "ratio": 0.6879373739769897
-        },
-        "bid_only": {
-          "rows": 1126,
-          "ratio": 0.133554738465188
-        },
-        "ask_only": {
-          "rows": 1237,
-          "ratio": 0.1467204364844028
-        },
-        "both": {
-          "rows": 268,
-          "ratio": 0.03178745107341952
-        },
-        "total_rows": 8431
-      },
-      "joint_fill_sequencing": {
-        "bid_first": 134,
-        "ask_first": 134,
-        "same_exchange_timestamp": 0
-      },
-      "both_fill_inventory_exposure_ms": {
-        "p50": 3285.0,
-        "p90": 8766.300000000001,
-        "p99": 12136.349999999995,
-        "max": 13003.0
-      },
-      "singleton_maximum_inventory_exposure_before_expiry_ms": {
-        "p50": 8755.0,
-        "p90": 13544.2,
-        "p99": 14740.76,
-        "max": 14998.0
-      },
-      "fill_bucket_cross_table": [
-        {
-          "bid_bucket": 0,
-          "ask_bucket": 0,
-          "rows": 5800
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 1,
-          "rows": 506
+          "symbol": "SOLUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 6102,
+          "episodes": 381,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750896000000,
+          "mean_gross_funding_bps": 4.050617060367175,
+          "median_gross_funding_bps": 4.988499999999951,
+          "p10_gross_funding_bps": -3.5996999999999937,
+          "p90_gross_funding_bps": 13.027499999999081,
+          "bootstrap_lower_95_mean_gross_bps": 0.27568008530157034,
+          "bootstrap_upper_95_mean_gross_bps": 7.323783576115209,
+          "mean_future_settlements": 8.855643044619423,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 0.05061706036717552,
+              "median_net_reference_bps": 0.9884999999999513,
+              "positive_net_reference_fraction": 0.5406824146981627,
+              "bootstrap_lower_95_mean_net_reference_bps": -3.72431991469843,
+              "bootstrap_upper_95_mean_net_reference_bps": 3.323783576115208
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -23.949382939632827,
+              "median_net_reference_bps": -23.011500000000048,
+              "positive_net_reference_fraction": 0.031496062992125984,
+              "bootstrap_lower_95_mean_net_reference_bps": -27.72431991469843,
+              "bootstrap_upper_95_mean_net_reference_bps": -20.676216423884792
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -27.949382939632827,
+              "median_net_reference_bps": -27.011500000000048,
+              "positive_net_reference_fraction": 0.028871391076115485,
+              "bootstrap_lower_95_mean_net_reference_bps": -31.72431991469843,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.676216423884792
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 2,
-          "rows": 403
+          "symbol": "SOLUSDT",
+          "trigger_id": "positive",
+          "trigger_operator": "strictly_greater",
+          "trigger_value_bps": 0.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 6103,
+          "episodes": 172,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750521600000,
+          "mean_gross_funding_bps": -5.970615697675038,
+          "median_gross_funding_bps": 9.844299999998974,
+          "p10_gross_funding_bps": -10.6254499999992,
+          "p90_gross_funding_bps": 32.268989999998446,
+          "bootstrap_lower_95_mean_gross_bps": -46.84033383720977,
+          "bootstrap_upper_95_mean_gross_bps": 17.161482965115628,
+          "mean_future_settlements": 21.11046511627907,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -9.970615697675038,
+              "median_net_reference_bps": 5.844299999998973,
+              "positive_net_reference_fraction": 0.6686046511627907,
+              "bootstrap_lower_95_mean_net_reference_bps": -50.84033383720977,
+              "bootstrap_upper_95_mean_net_reference_bps": 13.161482965115628
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -33.970615697675036,
+              "median_net_reference_bps": -18.155700000001026,
+              "positive_net_reference_fraction": 0.12209302325581395,
+              "bootstrap_lower_95_mean_net_reference_bps": -74.84033383720976,
+              "bootstrap_upper_95_mean_net_reference_bps": -10.838517034884372
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -37.970615697675036,
+              "median_net_reference_bps": -22.155700000001026,
+              "positive_net_reference_fraction": 0.10465116279069768,
+              "bootstrap_lower_95_mean_net_reference_bps": -78.84033383720976,
+              "bootstrap_upper_95_mean_net_reference_bps": -14.838517034884372
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 0,
-          "ask_bucket": 3,
-          "rows": 328
+          "symbol": "SOLUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 6111,
+          "episodes": 653,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1751097600002,
+          "mean_gross_funding_bps": 3.2044598774883926,
+          "median_gross_funding_bps": 2.7164999999995665,
+          "p10_gross_funding_bps": 0.5341599999996172,
+          "p90_gross_funding_bps": 6.814039999999978,
+          "bootstrap_lower_95_mean_gross_bps": 2.63318957120968,
+          "bootstrap_upper_95_mean_gross_bps": 3.9178826186829077,
+          "mean_future_settlements": 2.753445635528331,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -0.7955401225116072,
+              "median_net_reference_bps": -1.2835000000004335,
+              "positive_net_reference_fraction": 0.17151607963246554,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.36681042879032,
+              "bootstrap_upper_95_mean_net_reference_bps": -0.08211738131709245
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -24.79554012251161,
+              "median_net_reference_bps": -25.283500000000434,
+              "positive_net_reference_fraction": 0.0015313935681470138,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.36681042879032,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.08211738131709
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -28.795540122511603,
+              "median_net_reference_bps": -29.283500000000434,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -29.36681042879032,
+              "bootstrap_upper_95_mean_net_reference_bps": -28.08211738131709
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 0,
-          "rows": 454
+          "symbol": "SOLUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 6112,
+          "episodes": 282,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750838400000,
+          "mean_gross_funding_bps": 1.3183730496450479,
+          "median_gross_funding_bps": 7.434649999999788,
+          "p10_gross_funding_bps": -1.07992999999984,
+          "p90_gross_funding_bps": 17.356900000000063,
+          "bootstrap_lower_95_mean_gross_bps": -13.47770677305001,
+          "bootstrap_upper_95_mean_gross_bps": 9.942772535460646,
+          "mean_future_settlements": 8.787234042553191,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -2.6816269503549512,
+              "median_net_reference_bps": 3.4346499999997877,
+              "positive_net_reference_fraction": 0.6985815602836879,
+              "bootstrap_lower_95_mean_net_reference_bps": -17.47770677305001,
+              "bootstrap_upper_95_mean_net_reference_bps": 5.942772535460645
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -26.68162695035495,
+              "median_net_reference_bps": -20.565350000000212,
+              "positive_net_reference_fraction": 0.0425531914893617,
+              "bootstrap_lower_95_mean_net_reference_bps": -41.47770677305001,
+              "bootstrap_upper_95_mean_net_reference_bps": -18.057227464539356
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -30.681626950354953,
+              "median_net_reference_bps": -24.565350000000212,
+              "positive_net_reference_fraction": 0.03900709219858156,
+              "bootstrap_lower_95_mean_net_reference_bps": -45.47770677305001,
+              "bootstrap_upper_95_mean_net_reference_bps": -22.057227464539356
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 1,
-          "rows": 50
+          "symbol": "SOLUSDT",
+          "trigger_id": "at_least_1bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 1.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 6113,
+          "episodes": 143,
+          "first_decision_time_ms": 1638316800000,
+          "last_decision_time_ms": 1750032000000,
+          "mean_gross_funding_bps": -3.3127608391615415,
+          "median_gross_funding_bps": 12.705099999998914,
+          "p10_gross_funding_bps": -5.8223199999998485,
+          "p90_gross_funding_bps": 35.79755999999883,
+          "bootstrap_lower_95_mean_gross_bps": -44.377638111888764,
+          "bootstrap_upper_95_mean_gross_bps": 20.315995996502746,
+          "mean_future_settlements": 20.83916083916084,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": -7.312760839161542,
+              "median_net_reference_bps": 8.705099999998914,
+              "positive_net_reference_fraction": 0.7482517482517482,
+              "bootstrap_lower_95_mean_net_reference_bps": -48.377638111888764,
+              "bootstrap_upper_95_mean_net_reference_bps": 16.315995996502746
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -31.312760839161538,
+              "median_net_reference_bps": -15.294900000001086,
+              "positive_net_reference_fraction": 0.15384615384615385,
+              "bootstrap_lower_95_mean_net_reference_bps": -72.37763811188877,
+              "bootstrap_upper_95_mean_net_reference_bps": -7.684004003497256
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -35.31276083916154,
+              "median_net_reference_bps": -19.294900000001086,
+              "positive_net_reference_fraction": 0.11888111888111888,
+              "bootstrap_lower_95_mean_net_reference_bps": -76.37763811188877,
+              "bootstrap_upper_95_mean_net_reference_bps": -11.684004003497256
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 2,
-          "rows": 37
+          "symbol": "SOLUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 24,
+          "bootstrap_seed": 6121,
+          "episodes": 100,
+          "first_decision_time_ms": 1673683200001,
+          "last_decision_time_ms": 1733702400000,
+          "mean_gross_funding_bps": 9.070620999999957,
+          "median_gross_funding_bps": 7.533549999999833,
+          "p10_gross_funding_bps": 3.224199999999733,
+          "p90_gross_funding_bps": 17.142440000000093,
+          "bootstrap_lower_95_mean_gross_bps": 7.141847824999974,
+          "bootstrap_upper_95_mean_gross_bps": 11.434026774999964,
+          "mean_future_settlements": 2.85,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 5.0706209999999565,
+              "median_net_reference_bps": 3.5335499999998334,
+              "positive_net_reference_fraction": 0.82,
+              "bootstrap_lower_95_mean_net_reference_bps": 3.141847824999974,
+              "bootstrap_upper_95_mean_net_reference_bps": 7.434026774999964
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -18.929379000000043,
+              "median_net_reference_bps": -20.466450000000165,
+              "positive_net_reference_fraction": 0.01,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.858152175000026,
+              "bootstrap_upper_95_mean_net_reference_bps": -16.565973225000036
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -22.929379000000043,
+              "median_net_reference_bps": -24.466450000000165,
+              "positive_net_reference_fraction": 0.0,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.858152175000026,
+              "bootstrap_upper_95_mean_net_reference_bps": -20.565973225000036
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 1,
-          "ask_bucket": 3,
-          "rows": 10
+          "symbol": "SOLUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 72,
+          "bootstrap_seed": 6122,
+          "episodes": 45,
+          "first_decision_time_ms": 1673683200001,
+          "last_decision_time_ms": 1733587200000,
+          "mean_gross_funding_bps": 24.48414444444419,
+          "median_gross_funding_bps": 19.51889999999984,
+          "p10_gross_funding_bps": 9.316479999998961,
+          "p90_gross_funding_bps": 47.42193999999989,
+          "bootstrap_lower_95_mean_gross_bps": 17.659597277777337,
+          "bootstrap_upper_95_mean_gross_bps": 32.44874038888877,
+          "mean_future_settlements": 8.844444444444445,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 20.48414444444419,
+              "median_net_reference_bps": 15.518899999999839,
+              "positive_net_reference_fraction": 1.0,
+              "bootstrap_lower_95_mean_net_reference_bps": 13.659597277777337,
+              "bootstrap_upper_95_mean_net_reference_bps": 28.448740388888776
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": -3.5158555555558104,
+              "median_net_reference_bps": -8.481100000000161,
+              "positive_net_reference_fraction": 0.26666666666666666,
+              "bootstrap_lower_95_mean_net_reference_bps": -10.340402722222663,
+              "bootstrap_upper_95_mean_net_reference_bps": 4.448740388888775
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": -7.515855555555811,
+              "median_net_reference_bps": -12.481100000000161,
+              "positive_net_reference_fraction": 0.26666666666666666,
+              "bootstrap_lower_95_mean_net_reference_bps": -14.340402722222663,
+              "bootstrap_upper_95_mean_net_reference_bps": 0.4487403888887751
+            }
+          },
+          "symbol_gate_passed": false
         },
         {
-          "bid_bucket": 2,
-          "ask_bucket": 0,
-          "rows": 380
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 1,
-          "rows": 29
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 2,
-          "rows": 33
-        },
-        {
-          "bid_bucket": 2,
-          "ask_bucket": 3,
-          "rows": 26
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 0,
-          "rows": 292
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 1,
-          "rows": 26
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 2,
-          "rows": 23
-        },
-        {
-          "bid_bucket": 3,
-          "ask_bucket": 3,
-          "rows": 34
+          "symbol": "SOLUSDT",
+          "trigger_id": "at_least_2bp",
+          "trigger_operator": "greater_or_equal",
+          "trigger_value_bps": 2.0,
+          "horizon_hours": 168,
+          "bootstrap_seed": 6123,
+          "episodes": 25,
+          "first_decision_time_ms": 1673683200001,
+          "last_decision_time_ms": 1733702400000,
+          "mean_gross_funding_bps": 48.484775999999144,
+          "median_gross_funding_bps": 40.09569999999935,
+          "p10_gross_funding_bps": 18.07261999999832,
+          "p90_gross_funding_bps": 99.17864000000033,
+          "bootstrap_lower_95_mean_gross_bps": 30.744221399998764,
+          "bootstrap_upper_95_mean_gross_bps": 68.28497519999975,
+          "mean_future_settlements": 20.72,
+          "cost_comparisons": {
+            "optimistic_futures_maker_only": {
+              "cost_reference_bps": 4.0,
+              "mean_net_reference_bps": 44.484775999999144,
+              "median_net_reference_bps": 36.09569999999935,
+              "positive_net_reference_fraction": 1.0,
+              "bootstrap_lower_95_mean_net_reference_bps": 26.744221399998764,
+              "bootstrap_upper_95_mean_net_reference_bps": 64.28497519999975
+            },
+            "repo_offline_four_leg_taker": {
+              "cost_reference_bps": 28.0,
+              "mean_net_reference_bps": 20.48477599999915,
+              "median_net_reference_bps": 12.095699999999347,
+              "positive_net_reference_fraction": 0.68,
+              "bootstrap_lower_95_mean_net_reference_bps": 2.744221399998765,
+              "bootstrap_upper_95_mean_net_reference_bps": 40.28497519999976
+            },
+            "stress_four_leg": {
+              "cost_reference_bps": 32.0,
+              "mean_net_reference_bps": 16.48477599999915,
+              "median_net_reference_bps": 8.095699999999347,
+              "positive_net_reference_fraction": 0.64,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.2557786000012354,
+              "bootstrap_upper_95_mean_net_reference_bps": 36.28497519999976
+            }
+          },
+          "symbol_gate_passed": false
         }
       ],
-      "bid_fill": {
-        "schema_version": "queue-censored-passive-fill-v1",
-        "buyer_is_maker": true,
-        "expiry_ms": 15000,
-        "order_notional_quote": 500.0,
-        "source_trade_sha256": "410f8484057f2ae6ff295387a502f08e1a846ad48fc5d76a33a9d69a3a91aa23",
-        "rows": 8431,
-        "filled_rows": 1394,
-        "fill_rate": 0.16534218953860752,
-        "fill_bucket_counts": {
-          "0": 7037,
-          "1": 551,
-          "2": 468,
-          "3": 375
-        },
-        "result_sha256": "6e07b62858fa8b268876eca7f621d3e5f99a840bbe1973f8589ce155d9c535c9",
-        "trading_authority": false,
-        "profitability_claim": false
-      },
-      "ask_fill": {
-        "schema_version": "queue-censored-passive-fill-v1",
-        "buyer_is_maker": false,
-        "expiry_ms": 15000,
-        "order_notional_quote": 500.0,
-        "source_trade_sha256": "410f8484057f2ae6ff295387a502f08e1a846ad48fc5d76a33a9d69a3a91aa23",
-        "rows": 8431,
-        "filled_rows": 1505,
-        "fill_rate": 0.17850788755782232,
-        "fill_bucket_counts": {
-          "0": 6926,
-          "1": 611,
-          "2": 496,
-          "3": 398
-        },
-        "result_sha256": "48b91590a1e3bdb9fe8e4613364d7c691af835a9a3f30672d7756af168b26038",
-        "trading_authority": false,
-        "profitability_claim": false
-      },
-      "result_sha256": "3bfd6c1319d97cf427e0472219e12d92cd4f2be3dc755331f4ea33d2cd50e8f9"
+      "result_sha256": "8d6fd785fa79591b34eba4d38a5b42767853a89de7c51b2b969c7bd3ac1c084a"
     }
   ],
-  "trading_authority": false,
+  "breadth_gates": [
+    {
+      "trigger_id": "positive",
+      "horizon_hours": 24,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "positive",
+      "horizon_hours": 72,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "positive",
+      "horizon_hours": 168,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "at_least_1bp",
+      "horizon_hours": 24,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "at_least_1bp",
+      "horizon_hours": 72,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "at_least_1bp",
+      "horizon_hours": 168,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "at_least_2bp",
+      "horizon_hours": 24,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "at_least_2bp",
+      "horizon_hours": 72,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    },
+    {
+      "trigger_id": "at_least_2bp",
+      "horizon_hours": 168,
+      "passed_symbols": [],
+      "required_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
+      "passed": false
+    }
+  ],
+  "spot_history_ingestion_authorized": false,
+  "selection_contaminated": true,
+  "price_rows_read": false,
+  "premium_index_rows_read": false,
+  "spot_rows_read": false,
+  "model_trained": false,
+  "ai_evaluated": false,
   "profitability_claim": false,
+  "trading_authority": false,
+  "testnet_or_live_authority": false,
   "leverage_applied": false,
-  "report_sha256": "46da40b3ddd8818ebfd45ea0d8a1cec260e88354d6b952fbdc9b2e0d1a2c2bdd"
+  "result": {
+    "symbol_cells": 27,
+    "breadth_cells": 9,
+    "passing_breadth_cells": 0,
+    "spot_history_ingestion_authorized": false
+  },
+  "report_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0"
 }

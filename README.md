@@ -544,17 +544,18 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 58 used a value-blind, checksum-bound support probe on official Binance
-USD-M BTC, ETH, and SOL events from 2023-06-01 before spending more GPU time on
-a symmetric touch-making model. Two-sided fills occurred in only `2.36-3.18%`
-of eligible decisions, versus `28.03-47.19%` one-sided fills. Every symbol's
-99th-percentile two-fill placement spread was below `1` bps, compared with the
-prior frozen `4` bps round-trip fee reference and `6` bps fee-plus-slippage
-reference. The mechanism was rejected before model training. The probe read no
-returns, costs, P&L, strategy outcomes, or policy thresholds and makes no
-profitability, testnet, live-trading, leverage, AI-uplift, or execution claim.
-Round 57 remains in the rolling progress record: its queue-fill model
-generalized, but its directional payoff model did not clear realistic costs.
+Round 59 re-hashed 129 official Binance BTC, ETH, and SOL funding archives from
+December 2021 through June 2025 before deciding whether a synchronized spot
+history build was justified. Ordinary positive-funding episodes did not clear
+the pinned four-leg cost references. A rare `>=2` bps trigger had positive
+seven-day sample means after the 32 bps stress reference, but only `20/20/25`
+non-overlapping BTC/ETH/SOL episodes existed versus 40 required, and BTC/SOL
+lower confidence bounds crossed zero. All 27 symbol cells and nine breadth
+cells failed, so no spot build or model training was authorized. The screen
+read no prices, basis, P&L, model, or AI rows and makes no profitability,
+testnet, live-trading, leverage, AI-uplift, or execution claim. Rounds 57 and 58
+remain in the rolling progress record as rejected payoff and symmetric-maker
+mechanisms.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8

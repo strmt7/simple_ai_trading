@@ -573,16 +573,18 @@ labeled, predicted, or evaluated. Its decision remains in the cumulative
 [`progress.csv`](model-research/action-value/latest/progress.csv); the per-round
 bundle was superseded under latest-only retention. The current
 [`action-value/latest`](model-research/action-value/latest/README.md) bundle is
-Round 58. Its value-blind support probe used official BTCUSDT, ETHUSDT, and
-SOLUSDT events from 2023-06-01 and rejected symmetric touch making before
-training: two-sided fills were only `2.36-3.18%`, one-sided fills were
-`28.03-47.19%`, and every two-fill spread p99 was below `1` bps against the
-prior frozen `4` bps fee and `6` bps fee-plus-slippage references. The probe
-read no returns, costs, P&L, outcomes, or policy thresholds. Round 57 remains
-in the cumulative record: queue-fill survival generalized, but all 12
-evaluation payoff top quintiles were negative after its frozen costs. None of
-these records grants leverage, profitability, AI uplift, execution, or trading
-authority.
+Round 59. It reconstructed every monthly BTCUSDT, ETHUSDT, and SOLUSDT funding
+row from 129 checksum-certified archive streams spanning December 2021 through
+June 2025. Ordinary positive-funding episodes did not clear four-leg cost
+references. The rare `>=2` bps trigger had positive seven-day sample means
+after the 32 bps stress reference, but only `20/20/25` non-overlapping episodes
+existed versus 40 required; BTC and SOL lower confidence bounds crossed zero.
+All 27 symbol cells and nine breadth cells failed, so synchronized spot-history
+ingestion and model training were not authorized. It read no prices, basis,
+P&L, model, or AI rows. Round 58 remains in the cumulative record as the
+value-blind rejection of symmetric touch making, and Round 57 retains only its
+queue-fill infrastructure. None of these records grants leverage,
+profitability, AI uplift, execution, or trading authority.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

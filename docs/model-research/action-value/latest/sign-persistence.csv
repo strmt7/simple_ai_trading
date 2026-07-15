@@ -1,0 +1,4 @@
+round,symbol,positive_to_positive,positive_to_nonpositive,nonpositive_to_positive,nonpositive_to_nonpositive,next_positive_given_positive,next_positive_given_nonpositive
+59,BTCUSDT,3088,302,302,231,0.9109144542772861,0.5666041275797373
+59,ETHUSDT,2978,317,317,311,0.903793626707132,0.5047770700636943
+59,SOLUSDT,2390,398,398,812,0.857245337159254,0.32892561983471075
