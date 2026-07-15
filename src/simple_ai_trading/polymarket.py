@@ -18,6 +18,8 @@ from .paper_execution import BookLevel, PaperBookSnapshot, PolymarketFeeModel
 
 
 POLYMARKET_MARKET_SCHEMA_VERSION = "polymarket-crypto-5m-market-v1"
+# Polymarket identifies this independently from the general ``seconds_delay``
+# field. See the official 2026-06-05 CLOB maintenance record.
 POLYMARKET_TAKER_ORDER_DELAY_MS = 250
 SUPPORTED_POLYMARKET_ASSETS = ("BTC", "ETH", "SOL")
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
@@ -70,6 +72,25 @@ def _nonnegative_integer(value: object, *, name: str) -> int:
     if parsed != parsed.to_integral_value():
         raise ValueError(f"{name} must be a nonnegative integer")
     return int(parsed)
+
+
+def parse_clob_general_order_delay_seconds(payload: Mapping[str, object]) -> int:
+    """Read the independent general delay from compact or full CLOB metadata."""
+
+    values = [
+        payload[key]
+        for key in ("sd", "seconds_delay")
+        if payload.get(key) is not None
+    ]
+    if not values:
+        return 0
+    parsed = tuple(
+        _nonnegative_integer(value, name="CLOB general order delay")
+        for value in values
+    )
+    if len(set(parsed)) != 1:
+        raise ValueError("CLOB general order-delay fields disagree")
+    return parsed[0]
 
 
 def _json_list(value: object, *, name: str) -> list[object]:
@@ -331,6 +352,7 @@ def validate_clob_market_info(
             name="CLOB taker base fee",
         ),
         "taker_order_delay_enabled": raw.get("itode") is True,
+        "general_order_delay_seconds": parse_clob_general_order_delay_seconds(raw),
         "minimum_order_age_seconds": _nonnegative_integer(
             0 if raw.get("oas") is None else raw["oas"],
             name="CLOB minimum order age",
@@ -556,6 +578,7 @@ __all__ = [
     "PolymarketFeeSchedule",
     "PolymarketFiveMinuteMarket",
     "PolymarketPublicClient",
+    "parse_clob_general_order_delay_seconds",
     "parse_polymarket_five_minute_market",
     "validate_clob_order_book",
     "validate_clob_market_info",
