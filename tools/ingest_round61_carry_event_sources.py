@@ -48,10 +48,10 @@ from tools.run_round59_funding_persistence_feasibility import (  # noqa: E402
 
 
 ROUND = 61
-DESIGN_SCHEMA = "round-061-carry-economic-replay-design-v2"
+DESIGN_SCHEMA = "round-061-carry-economic-replay-design-v3"
 MANIFEST_SCHEMA = "round-061-carry-event-manifest-v2"
 CERTIFICATE_SCHEMA = "round-061-carry-event-source-certificate-v1"
-DESIGN_SHA256 = "6ee379609c42e480122cff49d9fa3deaa73952857e99ceb8af2175b7c2e4d8f3"
+DESIGN_SHA256 = "544faedcb31348e08e24212980a6660a79d9e0459b9517dc3f457864ecaf777c"
 MANIFEST_SHA256 = "8b5a8037176c5e37af2c261c0ab79dd9f43f6e0d9024e78f6306694293126594"
 MANIFEST_FILE_SHA256 = (
     "65a5c20b2ad8a85add95d49f5ea94260d36062c8fed004dfd5ee7e310814700f"
@@ -59,6 +59,10 @@ MANIFEST_FILE_SHA256 = (
 SPOT_SOURCE = "binance_public_archive_event_filter_round61"
 MARK_SOURCE = "binance_public_archive_markPriceKlines_event_filter_round61"
 FUTURES_SOURCE = "binance_public_archive"
+LEGACY_CHECKPOINT_DESIGN_SHA256 = (
+    "6ee379609c42e480122cff49d9fa3deaa73952857e99ceb8af2175b7c2e4d8f3"
+)
+LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT = "80d96fa507b69f38e1869a08a1db6c9f93ca1534"
 
 
 def _git(*arguments: str) -> str:
@@ -91,6 +95,15 @@ def _validate_design(path: Path) -> dict[str, object]:
         or source.get("synthetic_interpolation_permitted") is not False
         or source.get("forward_or_backward_fill_permitted") is not False
         or source.get("REST_historical_trade_fallback_permitted") is not False
+        or source.get("duplicate_required_row_is_fatal") is not True
+        or source.get("missing_required_row_makes_affected_episode_source_ineligible")
+        is not True
+        or source.get("missing_required_row_is_never_interpolated_or_filled")
+        is not True
+        or source.get("source_ineligible_episodes_are_not_economically_scored")
+        is not True
+        or source.get("minimum_source_eligible_fraction_per_symbol") != 0.9
+        or source.get("minimum_source_eligible_episodes_per_symbol") != 40
     ):
         raise ValueError("Round 61 source design drifted")
     return design
@@ -191,6 +204,7 @@ def _parse_filtered_archive(
     period: str,
     required_times: Sequence[int],
     mark_price: bool,
+    allow_missing_required: bool = False,
 ) -> tuple[list[Candle], dict[str, object]]:
     required = set(int(value) for value in required_times)
     period_start, period_end = _period_bounds_ms(period)
@@ -240,8 +254,8 @@ def _parse_filtered_archive(
                 previous_time = candle.open_time
                 rows += 1
     observed = [candle.open_time for candle in selected]
-    if observed != sorted(required):
-        missing = sorted(required - set(observed))
+    missing = sorted(required - set(observed))
+    if missing and not allow_missing_required:
         raise ValueError(f"archive is missing {len(missing)} required rows")
     evidence = {
         "full_rows": rows,
@@ -252,6 +266,8 @@ def _parse_filtered_archive(
         "full_row_stream_sha256": full_digest.hexdigest(),
         "selected_rows": len(selected),
         "selected_row_stream_sha256": selected_digest.hexdigest(),
+        "missing_required_rows": len(missing),
+        "missing_required_open_times_ms": missing,
     }
     return selected, evidence
 
@@ -365,18 +381,46 @@ def _load_checkpoint(
     checkpoint = _read_object(path, "Round 61 source checkpoint")
     canonical = dict(checkpoint)
     claimed = str(canonical.pop("source_certificate_sha256", ""))
+    identity = (
+        str(checkpoint.get("design_sha256", "")),
+        str(checkpoint.get("implementation_commit", "")),
+    )
+    allowed_identities = {
+        (DESIGN_SHA256, implementation_commit),
+        (
+            LEGACY_CHECKPOINT_DESIGN_SHA256,
+            LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT,
+        ),
+    }
     if (
         checkpoint.get("schema_version") != CERTIFICATE_SCHEMA
-        or checkpoint.get("design_sha256") != DESIGN_SHA256
         or checkpoint.get("manifest_sha256") != MANIFEST_SHA256
-        or checkpoint.get("implementation_commit") != implementation_commit
+        or identity not in allowed_identities
         or claimed != _canonical_sha256(canonical)
     ):
         raise ValueError("Round 61 source checkpoint identity drifted")
     evidence = checkpoint.get("filtered_archive_evidence", [])
     if not isinstance(evidence, list):
         raise ValueError("Round 61 source checkpoint archive evidence is invalid")
-    return [dict(row) for row in evidence]
+    normalized: list[dict[str, object]] = []
+    for raw_row in evidence:
+        if not isinstance(raw_row, dict):
+            raise ValueError("Round 61 source checkpoint row is invalid")
+        row = dict(raw_row)
+        required = int(row.get("required_rows", -1))
+        selected = int(row.get("selected_rows", -1))
+        missing = required - selected
+        if required < 0 or selected < 0 or missing < 0:
+            raise ValueError("Round 61 source checkpoint row counts are invalid")
+        row.setdefault("missing_required_rows", missing)
+        row.setdefault("missing_required_open_times_ms", [])
+        if int(row["missing_required_rows"]) != missing:
+            raise ValueError("Round 61 source checkpoint missing-row count drifted")
+        missing_times = row["missing_required_open_times_ms"]
+        if not isinstance(missing_times, list) or len(missing_times) != missing:
+            raise ValueError("Round 61 source checkpoint missing timestamps drifted")
+        normalized.append(row)
+    return normalized
 
 
 def _write_checkpoint(
@@ -444,7 +488,7 @@ def _ingest_filtered_archives(
             if (
                 prior.get("url") == url
                 and prior.get("required_rows") == len(required)
-                and observed == len(required)
+                and observed == int(prior.get("selected_rows", -1))
                 and digest == prior.get("selected_row_stream_sha256")
             ):
                 print(
@@ -479,6 +523,7 @@ def _ingest_filtered_archives(
                 period=period,
                 required_times=required,
                 mark_price=mark_price,
+                allow_missing_required=True,
             )
             ingested_at_ms = int(time.time() * 1000)
             if mark_price:
@@ -517,7 +562,7 @@ def _ingest_filtered_archives(
                 mark_price=mark_price,
             )
             if (
-                observed != len(required)
+                observed != int(parsed["selected_rows"])
                 or selected_digest != parsed["selected_row_stream_sha256"]
             ):
                 raise ValueError(f"stored rows failed audit: {kind} {symbol} {period}")
@@ -555,7 +600,8 @@ def _ingest_filtered_archives(
                         "period": period,
                         "status": "complete",
                         "archive_rows": parsed["full_rows"],
-                        "selected_rows": len(required),
+                        "selected_rows": parsed["selected_rows"],
+                        "missing_required_rows": parsed["missing_required_rows"],
                         "bytes_downloaded": bytes_downloaded,
                     },
                     separators=(",", ":"),
@@ -683,14 +729,14 @@ def _filtered_series_evidence(
                 required_times=required,
                 mark_price=mark,
             )
-            if observed != len(required):
-                raise ValueError(f"{symbol} {kind} selected rows are incomplete")
             output.append(
                 {
                     "symbol": symbol,
                     "kind": kind,
                     "required_rows": len(required),
                     "stored_rows": observed,
+                    "missing_required_rows": len(required) - observed,
+                    "required_row_availability_fraction": observed / len(required),
                     "selected_row_stream_sha256": digest,
                 }
             )

@@ -78,6 +78,7 @@ def test_round61_gate_uses_committed_capital_and_cannot_authorize_trading() -> N
     design = _read(DESIGN_PATH)
     governance = design["governance"]
     position = design["position_contract"]
+    source = design["source_contract"]
     gate = design["risk_and_authorization_gate"]
 
     assert position["futures_leverage"] == 1.0
@@ -86,8 +87,12 @@ def test_round61_gate_uses_committed_capital_and_cannot_authorize_trading() -> N
         == 2.0 * position["target_spot_entry_notional_usdt"]
     )
     assert gate["minimum_capacity_eligible_episodes_per_symbol"] == 40
+    assert gate["minimum_source_eligible_episodes_per_symbol"] == 40
+    assert gate["minimum_source_eligible_fraction_per_symbol"] == 0.9
     assert gate["maximum_sequential_drawdown_committed_capital_bps"] == 200.0
     assert gate["same_frozen_contract_must_pass_all_symbols"] is True
+    assert source["missing_required_row_is_never_interpolated_or_filled"] is True
+    assert source["source_ineligible_episodes_are_not_economically_scored"] is True
     assert governance["model_training_permitted"] is False
     assert governance["ai_evaluation_permitted"] is False
     assert governance["trading_authority_permitted"] is False

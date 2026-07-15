@@ -1,7 +1,7 @@
 {
-  "schema_version": "round-061-carry-economic-replay-design-v2",
+  "schema_version": "round-061-carry-economic-replay-design-v3",
   "round": 61,
-  "design_sha256": "6ee379609c42e480122cff49d9fa3deaa73952857e99ceb8af2175b7c2e4d8f3",
+  "design_sha256": "544faedcb31348e08e24212980a6660a79d9e0459b9517dc3f457864ecaf777c",
   "phase": "synchronized_spot_perpetual_minute_stress_economic_replay",
   "predecessor": {
     "round": 60,
@@ -15,6 +15,9 @@
     "v1_aborted_on_timestamp_alignment_before_any_price_row_storage": true,
     "v2_frozen_before_any_economic_value_calculation": true,
     "v2_change_limited_to_flooring_raw_event_timestamps_to_containing_kline_minutes": true,
+    "v2_aborted_on_verified_multi_hour_spot_archive_gap_before_economic_calculation": true,
+    "v3_change_limited_to_treating_unfilled_required_minutes_as_non_executable_without_interpolation": true,
+    "v3_frozen_before_any_economic_value_calculation": true,
     "source_data_partially_previously_consumed": true,
     "selection_contaminated": true,
     "promotion_permitted": false,
@@ -82,7 +85,12 @@
       "funding_interval_hours_range": [1, 8]
     },
     "persistent_zip_archive_permitted": false,
-    "missing_or_duplicate_required_row_is_fatal": true,
+    "duplicate_required_row_is_fatal": true,
+    "missing_required_row_makes_affected_episode_source_ineligible": true,
+    "missing_required_row_is_never_interpolated_or_filled": true,
+    "source_ineligible_episodes_are_not_economically_scored": true,
+    "minimum_source_eligible_fraction_per_symbol": 0.9,
+    "minimum_source_eligible_episodes_per_symbol": 40,
     "synthetic_interpolation_permitted": false,
     "forward_or_backward_fill_permitted": false,
     "REST_historical_trade_fallback_permitted": false
@@ -153,6 +161,8 @@
   },
   "risk_and_authorization_gate": {
     "all_source_rows_and_archive_hashes_must_reconcile": true,
+    "minimum_source_eligible_fraction_per_symbol": 0.9,
+    "minimum_source_eligible_episodes_per_symbol": 40,
     "minimum_capacity_eligible_fraction": 0.9,
     "minimum_capacity_eligible_episodes_per_symbol": 40,
     "minimum_stress_net_positive_fraction": 0.55,
@@ -171,7 +181,7 @@
   },
   "report_contract": {
     "required_tables": [
-      "archive and selected-row reconciliation",
+      "archive, selected-row, and source-eligibility reconciliation",
       "episode component PnL",
       "capacity eligibility",
       "yearly stability",
