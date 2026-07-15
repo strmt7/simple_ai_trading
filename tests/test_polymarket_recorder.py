@@ -287,6 +287,76 @@ def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> No
     assert errors == ()
 
 
+def test_legacy_rtds_chainlink_type_remains_raw_verifiable(tmp_path) -> None:
+    database = tmp_path / "legacy-chainlink-v1.duckdb"
+    raw_event = {
+        "topic": "crypto_prices",
+        "type": "subscribe",
+        "timestamp": EPOCH * 1_000,
+        "payload": {
+            "symbol": "btc/usd",
+            "data": [{"timestamp": EPOCH * 1_000 - 1, "value": "60000"}],
+        },
+    }
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("legacy-chainlink-v1", EPOCH * 1_000)
+        store.connect().execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = 'polymarket-public-evidence-v1'
+            WHERE run_id = 'legacy-chainlink-v1'
+            """
+        )
+        store.append_messages(
+            "legacy-chainlink-v1",
+            [_message("polymarket_rtds", raw_event)],
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_public_event
+            SET event_type = 'crypto_prices:subscribe'
+            WHERE run_id = 'legacy-chainlink-v1'
+            """
+        )
+
+        events = tuple(store.iter_public_events("legacy-chainlink-v1"))
+        errors = store.integrity_errors("legacy-chainlink-v1")
+
+    assert len(events) == 1
+    assert events[0].event_type == "crypto_prices:subscribe"
+    assert events[0].event == raw_event
+    assert errors == ()
+
+
+def test_current_rtds_chainlink_type_rejects_legacy_index_drift(tmp_path) -> None:
+    database = tmp_path / "current-chainlink-v2.duckdb"
+    raw_event = {
+        "topic": "crypto_prices",
+        "type": "subscribe",
+        "timestamp": EPOCH * 1_000,
+        "payload": {
+            "symbol": "btc/usd",
+            "data": [{"timestamp": EPOCH * 1_000 - 1, "value": "60000"}],
+        },
+    }
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("current-chainlink-v2", EPOCH * 1_000)
+        store.append_messages(
+            "current-chainlink-v2",
+            [_message("polymarket_rtds", raw_event)],
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_public_event
+            SET event_type = 'crypto_prices:subscribe'
+            WHERE run_id = 'current-chainlink-v2'
+            """
+        )
+
+        with pytest.raises(ValueError, match="event_type"):
+            tuple(store.iter_public_events("current-chainlink-v2"))
+
+
 def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
     tmp_path,
 ) -> None:

@@ -14,6 +14,7 @@ from typing import Iterable, Mapping, Sequence
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .paper_execution import (
     PaperOrderIntent,
+    PaperExecutionResult,
     paper_intent_id,
     simulate_aggressive_order,
 )
@@ -137,6 +138,96 @@ class PolymarketRepricingConfig:
             self.minimum_positive_market_fraction_per_asset
         )
         return payload
+
+
+@dataclass(frozen=True)
+class PolymarketRepricingDecision:
+    """One causal decision clock and its latest known chosen-token book."""
+
+    event_id: str
+    condition_id: str
+    token_id: str
+    outcome: str
+    segment_id: str
+    received_wall_ms: int
+    received_monotonic_ns: int
+    creation_book: PolymarketRecordedBook
+
+    @classmethod
+    def from_book(
+        cls, book: PolymarketRecordedBook
+    ) -> "PolymarketRepricingDecision":
+        return cls(
+            event_id=book.event_id,
+            condition_id=book.market.condition_id,
+            token_id=book.token_id,
+            outcome=book.outcome,
+            segment_id=book.segment_id,
+            received_wall_ms=book.received_wall_ms,
+            received_monotonic_ns=book.received_monotonic_ns,
+            creation_book=book,
+        )
+
+    def validated(self, *, maximum_creation_book_age_ms: int) -> "PolymarketRepricingDecision":
+        book = self.creation_book
+        age_ns = self.received_monotonic_ns - book.received_monotonic_ns
+        if (
+            not self.event_id
+            or not self.condition_id
+            or not self.token_id
+            or self.outcome not in {"Up", "Down"}
+            or not self.segment_id
+            or self.received_wall_ms < 0
+            or self.received_monotonic_ns < 0
+            or book.market.condition_id != self.condition_id
+            or book.token_id != self.token_id
+            or book.outcome != self.outcome
+            or book.segment_id != self.segment_id
+            or age_ns < 0
+            or age_ns > int(maximum_creation_book_age_ms) * 1_000_000
+        ):
+            raise ValueError("Polymarket repricing decision is invalid")
+        return self
+
+
+@dataclass(frozen=True)
+class PolymarketRepricingDecisionExecution:
+    """Exact shared two-leg execution result for one decision and outcome."""
+
+    terminal_reason: str
+    decision: PolymarketRepricingDecision
+    entry_book: PolymarketRecordedBook | None = None
+    exit_decision_book: PolymarketRecordedBook | None = None
+    exit_book: PolymarketRecordedBook | None = None
+    entry_parameter: PolymarketMarketExecutionEvidence | None = None
+    exit_parameter: PolymarketMarketExecutionEvidence | None = None
+    entry_result: PaperExecutionResult | None = None
+    exit_result: PaperExecutionResult | None = None
+    entry_venue_taker_delay_ms: int | None = None
+    exit_venue_taker_delay_ms: int | None = None
+    entry_execution_target_wall_ms: int | None = None
+    exit_decision_target_wall_ms: int | None = None
+    exit_execution_target_wall_ms: int | None = None
+    entry_execution_target_monotonic_ns: int | None = None
+    exit_decision_target_monotonic_ns: int | None = None
+    exit_execution_target_monotonic_ns: int | None = None
+    entry_cost_quote: Decimal | None = None
+    exit_proceeds_quote: Decimal | None = None
+    net_quote: Decimal | None = None
+
+    @property
+    def entry_filled(self) -> bool:
+        return self.entry_result is not None and self.entry_result.state == "FILLED"
+
+    @property
+    def exit_filled(self) -> bool:
+        return (
+            self.entry_result is not None
+            and self.exit_result is not None
+            and self.exit_result.state == "FILLED"
+            and self.exit_result.filled_quantity
+            == self.entry_result.filled_quantity
+        )
 
 
 @dataclass(frozen=True)
@@ -653,9 +744,28 @@ class _BookIndex:
         delay_ms: int,
         maximum_observation_delay_ms: int,
     ) -> PolymarketRecordedBook | None:
-        key = (reference.token_id, reference.segment_id)
+        return self.first_at_or_after(
+            token_id=reference.token_id,
+            segment_id=reference.segment_id,
+            condition_id=reference.market.condition_id,
+            target_monotonic_ns=(
+                reference.received_monotonic_ns + int(delay_ms) * 1_000_000
+            ),
+            maximum_observation_delay_ms=maximum_observation_delay_ms,
+        )
+
+    def first_at_or_after(
+        self,
+        *,
+        token_id: str,
+        segment_id: str,
+        condition_id: str,
+        target_monotonic_ns: int,
+        maximum_observation_delay_ms: int,
+    ) -> PolymarketRecordedBook | None:
+        key = (token_id, segment_id)
         values = self.books.get(key, ())
-        target = reference.received_monotonic_ns + int(delay_ms) * 1_000_000
+        target = int(target_monotonic_ns)
         deadline = target + int(maximum_observation_delay_ms) * 1_000_000
         index = self._lower_bound(values, target)
         if index >= len(values):
@@ -663,8 +773,8 @@ class _BookIndex:
         candidate = values[index]
         if (
             candidate.received_monotonic_ns > deadline
-            or candidate.market.condition_id != reference.market.condition_id
-            or candidate.received_wall_ms >= reference.market.end_ms
+            or candidate.market.condition_id != condition_id
+            or candidate.received_wall_ms >= candidate.market.end_ms
         ):
             return None
         return candidate
@@ -675,9 +785,28 @@ class _BookIndex:
         delay_ms: int,
         maximum_age_ms: int,
     ) -> PolymarketRecordedBook | None:
-        key = (reference.token_id, reference.segment_id)
+        return self.latest_at_or_before_target(
+            token_id=reference.token_id,
+            segment_id=reference.segment_id,
+            condition_id=reference.market.condition_id,
+            target_monotonic_ns=(
+                reference.received_monotonic_ns + int(delay_ms) * 1_000_000
+            ),
+            maximum_age_ms=maximum_age_ms,
+        )
+
+    def latest_at_or_before_target(
+        self,
+        *,
+        token_id: str,
+        segment_id: str,
+        condition_id: str,
+        target_monotonic_ns: int,
+        maximum_age_ms: int,
+    ) -> PolymarketRecordedBook | None:
+        key = (token_id, segment_id)
         values = self.books.get(key, ())
-        target = reference.received_monotonic_ns + int(delay_ms) * 1_000_000
+        target = int(target_monotonic_ns)
         segment_deadline = self.segment_deadline_ns.get(key)
         if segment_deadline is not None and target >= segment_deadline:
             return None
@@ -686,8 +815,8 @@ class _BookIndex:
             return None
         candidate = values[index]
         if (
-            candidate.market.condition_id != reference.market.condition_id
-            or candidate.received_wall_ms >= reference.market.end_ms
+            candidate.market.condition_id != condition_id
+            or candidate.received_wall_ms >= candidate.market.end_ms
             or target - candidate.received_monotonic_ns
             > int(maximum_age_ms) * 1_000_000
         ):
@@ -739,6 +868,361 @@ def _valid_limit_for_tick(price: Decimal, tick_size: Decimal) -> bool:
         tick_size <= price <= Decimal("1") - tick_size
         and price % tick_size == 0
     )
+
+
+class PolymarketRepricingExecutionContext:
+    """Build shared replay indexes once and execute exact two-leg decisions."""
+
+    def __init__(self, replay: PolymarketEvidenceReplay) -> None:
+        evidence = tuple(item.validated() for item in replay.market_execution_evidence)
+        conditions = {market.condition_id for market in replay.markets}
+        if not evidence or {item.condition_id for item in evidence} != conditions:
+            raise ValueError(
+                "Polymarket repricing execution parameters do not cover markets"
+            )
+        if any(item.run_id != replay.run_id for item in evidence):
+            raise ValueError("Polymarket repricing execution evidence run differs")
+        self.run_id = replay.run_id
+        self.book_sample_interval_ms = replay.diagnostics.book_sample_interval_ms
+        self.market_by_condition = {
+            market.condition_id: market for market in replay.markets
+        }
+        decision_events: dict[
+            tuple[str, str], list[PolymarketRecordedBook]
+        ] = {}
+        for book in replay.books:
+            decision_events.setdefault(
+                (book.market.condition_id, book.event_id), []
+            ).append(book)
+        self.decision_events = {
+            key: tuple(values) for key, values in decision_events.items()
+        }
+        self.book_index = _BookIndex(replay)
+        self.parameter_index = _ExecutionParameterIndex(evidence)
+
+    def decision_at(
+        self,
+        market: PolymarketFiveMinuteMarket,
+        *,
+        event_id: str,
+        received_wall_ms: int,
+        received_monotonic_ns: int,
+        outcome: str,
+        maximum_creation_book_age_ms: int,
+    ) -> PolymarketRepricingDecision | None:
+        """Resolve one hash-bound feature clock to its latest causal token book."""
+
+        if (
+            self.market_by_condition.get(market.condition_id) != market
+            or not event_id
+            or received_wall_ms < 0
+            or received_monotonic_ns < 0
+            or outcome not in {"Up", "Down"}
+            or maximum_creation_book_age_ms < 0
+        ):
+            raise ValueError("Polymarket repricing decision clock is invalid")
+        anchors = tuple(
+            book
+            for book in self.decision_events.get(
+                (market.condition_id, event_id), ()
+            )
+            if book.received_wall_ms == received_wall_ms
+            and book.received_monotonic_ns == received_monotonic_ns
+        )
+        if not anchors:
+            raise ValueError("Polymarket decision event is absent from replay evidence")
+        segments = {book.segment_id for book in anchors}
+        if len(segments) != 1:
+            raise ValueError("Polymarket decision event crosses continuity segments")
+        segment_id = next(iter(segments))
+        token_id = market.up_token_id if outcome == "Up" else market.down_token_id
+        creation_book = self.book_index.latest_at_or_before_target(
+            token_id=token_id,
+            segment_id=segment_id,
+            condition_id=market.condition_id,
+            target_monotonic_ns=received_monotonic_ns,
+            maximum_age_ms=maximum_creation_book_age_ms,
+        )
+        if creation_book is None:
+            return None
+        return PolymarketRepricingDecision(
+            event_id=event_id,
+            condition_id=market.condition_id,
+            token_id=token_id,
+            outcome=outcome,
+            segment_id=segment_id,
+            received_wall_ms=received_wall_ms,
+            received_monotonic_ns=received_monotonic_ns,
+            creation_book=creation_book,
+        ).validated(maximum_creation_book_age_ms=maximum_creation_book_age_ms)
+
+    def execute(
+        self,
+        market: PolymarketFiveMinuteMarket,
+        decision: PolymarketRepricingDecision,
+        *,
+        latency_ms: int,
+        holding_period_ms: int,
+        minimum_remaining_market_time_ms: int,
+        maximum_order_creation_book_age_ms: int,
+        maximum_post_target_execution_observation_delay_ms: int,
+    ) -> PolymarketRepricingDecisionExecution:
+        """Replay one share-sized V2 FOK entry and owned-quantity FOK exit."""
+
+        selected = decision.validated(
+            maximum_creation_book_age_ms=maximum_order_creation_book_age_ms
+        )
+        if (
+            market.condition_id != selected.condition_id
+            or selected.token_id not in market.token_ids
+            or selected.outcome
+            != ("Up" if selected.token_id == market.up_token_id else "Down")
+            or latency_ms <= 0
+            or holding_period_ms <= 0
+        ):
+            raise ValueError("Polymarket repricing execution request is invalid")
+
+        def terminal(
+            reason: str,
+            **values: object,
+        ) -> PolymarketRepricingDecisionExecution:
+            if reason not in _TERMINAL_REASONS:
+                raise ValueError("Polymarket repricing terminal reason is invalid")
+            return PolymarketRepricingDecisionExecution(
+                terminal_reason=reason,
+                decision=selected,
+                **values,
+            )
+
+        quantity = market.minimum_order_size
+        fee = market.fee_schedule.fee_model()
+        entry_parameter = self.parameter_index.latest_at_or_before(
+            market.condition_id,
+            selected.received_monotonic_ns + latency_ms * 1_000_000,
+        )
+        if entry_parameter is None:
+            return terminal("missing_entry_execution_parameters")
+        if entry_parameter.minimum_order_age_seconds != 0:
+            return terminal(
+                "unsupported_entry_minimum_order_age",
+                entry_parameter=entry_parameter,
+            )
+        entry_venue_delay_ms = entry_parameter.taker_order_delay_ms
+        entry_total_latency_ms = latency_ms + entry_venue_delay_ms
+        entry_target_wall_ms = selected.received_wall_ms + entry_total_latency_ms
+        entry_target_monotonic_ns = (
+            selected.received_monotonic_ns + entry_total_latency_ms * 1_000_000
+        )
+        entry_values = {
+            "entry_parameter": entry_parameter,
+            "entry_venue_taker_delay_ms": entry_venue_delay_ms,
+            "entry_execution_target_wall_ms": entry_target_wall_ms,
+            "entry_execution_target_monotonic_ns": entry_target_monotonic_ns,
+        }
+        if (
+            market.end_ms - entry_target_wall_ms
+            < minimum_remaining_market_time_ms
+        ):
+            return terminal("entry_enters_excluded_close_window", **entry_values)
+        entry = self.book_index.first_at_or_after(
+            token_id=selected.token_id,
+            segment_id=selected.segment_id,
+            condition_id=selected.condition_id,
+            target_monotonic_ns=entry_target_monotonic_ns,
+            maximum_observation_delay_ms=(
+                maximum_post_target_execution_observation_delay_ms
+            ),
+        )
+        if entry is None:
+            return terminal("missing_entry_execution_book", **entry_values)
+        entry_values["entry_book"] = entry
+        if (
+            market.end_ms - entry.received_wall_ms
+            < minimum_remaining_market_time_ms
+        ):
+            return terminal("entry_enters_excluded_close_window", **entry_values)
+        entry_limit = Decimal("1") - selected.creation_book.tick_size
+        if not _valid_limit_for_tick(
+            entry_limit, selected.creation_book.tick_size
+        ) or not _valid_limit_for_tick(entry_limit, entry.tick_size):
+            return terminal("entry_tick_drift", **entry_values)
+
+        entry_seed = _canonical_sha256(
+            {
+                "leg": "entry",
+                "condition_id": market.condition_id,
+                "outcome": selected.outcome,
+                "decision_event_id": selected.event_id,
+                "per_leg_submission_latency_ms": latency_ms,
+                "holding_period_ms": holding_period_ms,
+                "entry_execution_parameter_sha256": (
+                    entry_parameter.snapshot_sha256
+                ),
+            }
+        )
+        entry_intent = PaperOrderIntent(
+            intent_id=paper_intent_id("polymarket", entry_seed, "open"),
+            venue="polymarket",
+            market_id=market.condition_id,
+            asset_id=selected.token_id,
+            symbol=market.asset,
+            outcome=selected.outcome,
+            side="BUY",
+            order_type="FOK",
+            limit_price=entry_limit,
+            quantity=quantity,
+            created_at_ms=selected.received_wall_ms,
+            expires_at_ms=market.end_ms,
+        ).validated()
+        entry_result = simulate_aggressive_order(
+            entry_intent,
+            entry.snapshot,
+            execution_time_ms=entry.received_wall_ms,
+            submission_latency_ms=entry_total_latency_ms,
+            maximum_book_age_ms=(
+                maximum_post_target_execution_observation_delay_ms
+            ),
+            fee=fee,
+        )
+        entry_values["entry_result"] = entry_result
+        if entry_result.state != "FILLED":
+            return terminal("entry_not_filled", **entry_values)
+        entry_cost = (
+            entry_result.average_fill_price * entry_result.filled_quantity
+            + entry_result.fee_quote
+        )
+        entry_values["entry_cost_quote"] = entry_cost
+
+        exit_target_monotonic_ns = (
+            entry.received_monotonic_ns + holding_period_ms * 1_000_000
+        )
+        exit_decision = self.book_index.latest_at_or_before_target(
+            token_id=selected.token_id,
+            segment_id=selected.segment_id,
+            condition_id=selected.condition_id,
+            target_monotonic_ns=exit_target_monotonic_ns,
+            maximum_age_ms=maximum_order_creation_book_age_ms,
+        )
+        if exit_decision is None:
+            return terminal("missing_exit_decision_book", **entry_values)
+        exit_parameter = self.parameter_index.latest_at_or_before(
+            market.condition_id,
+            exit_target_monotonic_ns + latency_ms * 1_000_000,
+        )
+        exit_created_at_ms = entry.received_wall_ms + holding_period_ms
+        exit_values = {
+            **entry_values,
+            "exit_decision_book": exit_decision,
+            "exit_decision_target_wall_ms": exit_created_at_ms,
+            "exit_decision_target_monotonic_ns": exit_target_monotonic_ns,
+        }
+        if exit_parameter is None:
+            return terminal("missing_exit_execution_parameters", **exit_values)
+        exit_values["exit_parameter"] = exit_parameter
+        if exit_parameter.minimum_order_age_seconds != 0:
+            return terminal("unsupported_exit_minimum_order_age", **exit_values)
+        exit_venue_delay_ms = exit_parameter.taker_order_delay_ms
+        exit_total_latency_ms = latency_ms + exit_venue_delay_ms
+        exit_execution_target_wall_ms = (
+            exit_created_at_ms + exit_total_latency_ms
+        )
+        exit_execution_target_monotonic_ns = (
+            exit_target_monotonic_ns + exit_total_latency_ms * 1_000_000
+        )
+        exit_values.update(
+            {
+                "exit_venue_taker_delay_ms": exit_venue_delay_ms,
+                "exit_execution_target_wall_ms": exit_execution_target_wall_ms,
+                "exit_execution_target_monotonic_ns": (
+                    exit_execution_target_monotonic_ns
+                ),
+            }
+        )
+        if (
+            market.end_ms - exit_execution_target_wall_ms
+            < minimum_remaining_market_time_ms
+        ):
+            return terminal("exit_enters_excluded_close_window", **exit_values)
+        exit_book = self.book_index.first_at_or_after(
+            token_id=selected.token_id,
+            segment_id=selected.segment_id,
+            condition_id=selected.condition_id,
+            target_monotonic_ns=exit_execution_target_monotonic_ns,
+            maximum_observation_delay_ms=(
+                maximum_post_target_execution_observation_delay_ms
+            ),
+        )
+        if exit_book is None:
+            return terminal("missing_exit_execution_book", **exit_values)
+        exit_values["exit_book"] = exit_book
+        if (
+            market.end_ms - exit_book.received_wall_ms
+            < minimum_remaining_market_time_ms
+        ):
+            return terminal("exit_enters_excluded_close_window", **exit_values)
+        exit_limit = exit_decision.tick_size
+        if not _valid_limit_for_tick(
+            exit_limit, exit_decision.tick_size
+        ) or not _valid_limit_for_tick(exit_limit, exit_book.tick_size):
+            return terminal("exit_tick_drift", **exit_values)
+
+        exit_seed = _canonical_sha256(
+            {
+                "leg": "exit",
+                "condition_id": market.condition_id,
+                "outcome": selected.outcome,
+                "decision_event_id": selected.event_id,
+                "entry_intent_id": entry_intent.intent_id,
+                "exit_creation_book_event_id": exit_decision.event_id,
+                "per_leg_submission_latency_ms": latency_ms,
+                "holding_period_ms": holding_period_ms,
+                "exit_execution_parameter_sha256": (
+                    exit_parameter.snapshot_sha256
+                ),
+            }
+        )
+        exit_intent = PaperOrderIntent(
+            intent_id=paper_intent_id("polymarket", exit_seed, "close"),
+            venue="polymarket",
+            market_id=market.condition_id,
+            asset_id=selected.token_id,
+            symbol=market.asset,
+            outcome=selected.outcome,
+            side="SELL",
+            order_type="FOK",
+            limit_price=exit_limit,
+            quantity=entry_result.filled_quantity,
+            created_at_ms=exit_created_at_ms,
+            expires_at_ms=market.end_ms,
+        ).validated()
+        exit_result = simulate_aggressive_order(
+            exit_intent,
+            exit_book.snapshot,
+            execution_time_ms=exit_book.received_wall_ms,
+            submission_latency_ms=exit_total_latency_ms,
+            maximum_book_age_ms=(
+                maximum_post_target_execution_observation_delay_ms
+            ),
+            fee=fee,
+            owned_quantity=entry_result.filled_quantity,
+            closing_position=True,
+        )
+        exit_values["exit_result"] = exit_result
+        if (
+            exit_result.state != "FILLED"
+            or exit_result.filled_quantity != entry_result.filled_quantity
+        ):
+            return terminal("exit_not_filled", **exit_values)
+        exit_proceeds = (
+            exit_result.average_fill_price * exit_result.filled_quantity
+            - exit_result.fee_quote
+        )
+        return terminal(
+            "complete_round_trip",
+            **exit_values,
+            exit_proceeds_quote=exit_proceeds,
+            net_quote=exit_proceeds - entry_cost,
+        )
 
 
 def _source_replay_evidence_sha256(replay: PolymarketEvidenceReplay) -> str:
@@ -817,15 +1301,13 @@ def _scenario_opportunity(
     outcome: str,
     token_id: str,
     decisions: Sequence[PolymarketRecordedBook],
-    index: _BookIndex,
-    execution_parameters: _ExecutionParameterIndex,
+    execution_context: PolymarketRepricingExecutionContext,
     *,
     latency_ms: int,
     holding_period_ms: int,
     config: PolymarketRepricingConfig,
 ) -> PolymarketRepricingOpportunity:
     quantity = market.minimum_order_size
-    fee = market.fee_schedule.fee_model()
     terminal_reason_counts = {reason: 0 for reason in _TERMINAL_REASONS}
     best: tuple[
         Decimal,
@@ -842,200 +1324,54 @@ def _scenario_opportunity(
         int,
     ] | None = None
 
-    def finish(reason: str) -> None:
-        terminal_reason_counts[reason] += 1
-
     for decision in decisions:
-        entry_parameter = execution_parameters.latest_at_or_before(
-            market.condition_id,
-            decision.received_monotonic_ns + latency_ms * 1_000_000,
-        )
-        if entry_parameter is None:
-            finish("missing_entry_execution_parameters")
-            continue
-        if entry_parameter.minimum_order_age_seconds != 0:
-            finish("unsupported_entry_minimum_order_age")
-            continue
-        entry_venue_delay_ms = entry_parameter.taker_order_delay_ms
-        entry_total_latency_ms = latency_ms + entry_venue_delay_ms
-        entry_execution_target_wall_ms = (
-            decision.received_wall_ms + entry_total_latency_ms
-        )
-        if (
-            market.end_ms - entry_execution_target_wall_ms
-            < config.minimum_remaining_market_time_ms
-        ):
-            finish("entry_enters_excluded_close_window")
-            continue
-        entry = index.first_after(
-            decision,
-            entry_total_latency_ms,
-            config.maximum_post_target_execution_observation_delay_ms,
-        )
-        if entry is None:
-            finish("missing_entry_execution_book")
-            continue
-        if (
-            market.end_ms - entry.received_wall_ms
-            < config.minimum_remaining_market_time_ms
-        ):
-            finish("entry_enters_excluded_close_window")
-            continue
-        entry_limit = Decimal("1") - decision.tick_size
-        if not _valid_limit_for_tick(
-            entry_limit, decision.tick_size
-        ) or not _valid_limit_for_tick(entry_limit, entry.tick_size):
-            finish("entry_tick_drift")
-            continue
-        exit_decision = index.latest_at_or_before(
-            entry,
-            holding_period_ms,
-            config.maximum_order_creation_book_age_ms,
-        )
-        if exit_decision is None:
-            finish("missing_exit_decision_book")
-            continue
-        exit_created_monotonic_ns = (
-            entry.received_monotonic_ns + holding_period_ms * 1_000_000
-        )
-        exit_parameter = execution_parameters.latest_at_or_before(
-            market.condition_id,
-            exit_created_monotonic_ns + latency_ms * 1_000_000,
-        )
-        if exit_parameter is None:
-            finish("missing_exit_execution_parameters")
-            continue
-        if exit_parameter.minimum_order_age_seconds != 0:
-            finish("unsupported_exit_minimum_order_age")
-            continue
-        exit_venue_delay_ms = exit_parameter.taker_order_delay_ms
-        exit_total_latency_ms = latency_ms + exit_venue_delay_ms
-        exit_created_at_ms = entry.received_wall_ms + holding_period_ms
-        exit_execution_target_wall_ms = exit_created_at_ms + exit_total_latency_ms
-        if (
-            market.end_ms - exit_execution_target_wall_ms
-            < config.minimum_remaining_market_time_ms
-        ):
-            finish("exit_enters_excluded_close_window")
-            continue
-        exit_book = index.first_after(
-            entry,
-            holding_period_ms + exit_total_latency_ms,
-            config.maximum_post_target_execution_observation_delay_ms,
-        )
-        if exit_book is None:
-            finish("missing_exit_execution_book")
-            continue
-        if (
-            market.end_ms - exit_book.received_wall_ms
-            < config.minimum_remaining_market_time_ms
-        ):
-            finish("exit_enters_excluded_close_window")
-            continue
-        exit_limit = exit_decision.tick_size
-        if not _valid_limit_for_tick(
-            exit_limit, exit_decision.tick_size
-        ) or not _valid_limit_for_tick(exit_limit, exit_book.tick_size):
-            finish("exit_tick_drift")
-            continue
-        seed = _canonical_sha256(
-            {
-                "condition_id": market.condition_id,
-                "outcome": outcome,
-                "decision_event_id": decision.event_id,
-                "per_leg_submission_latency_ms": latency_ms,
-                "holding_period_ms": holding_period_ms,
-                "entry_execution_parameter_sha256": (
-                    entry_parameter.snapshot_sha256
-                ),
-                "exit_execution_parameter_sha256": (
-                    exit_parameter.snapshot_sha256
-                ),
-            }
-        )
-        entry_intent = PaperOrderIntent(
-            intent_id=paper_intent_id("polymarket", seed, "open"),
-            venue="polymarket",
-            market_id=market.condition_id,
-            asset_id=token_id,
-            symbol=market.asset,
-            outcome=outcome,
-            side="BUY",
-            order_type="FOK",
-            limit_price=entry_limit,
-            quantity=quantity,
-            created_at_ms=decision.received_wall_ms,
-            expires_at_ms=market.end_ms,
-        ).validated()
-        entry_result = simulate_aggressive_order(
-            entry_intent,
-            entry.snapshot,
-            execution_time_ms=entry.received_wall_ms,
-            submission_latency_ms=entry_total_latency_ms,
-            maximum_book_age_ms=(
+        execution = execution_context.execute(
+            market,
+            PolymarketRepricingDecision.from_book(decision),
+            latency_ms=latency_ms,
+            holding_period_ms=holding_period_ms,
+            minimum_remaining_market_time_ms=(
+                config.minimum_remaining_market_time_ms
+            ),
+            maximum_order_creation_book_age_ms=(
+                config.maximum_order_creation_book_age_ms
+            ),
+            maximum_post_target_execution_observation_delay_ms=(
                 config.maximum_post_target_execution_observation_delay_ms
             ),
-            fee=fee,
         )
-        if entry_result.state != "FILLED":
-            finish("entry_not_filled")
+        terminal_reason_counts[execution.terminal_reason] += 1
+        if execution.terminal_reason != "complete_round_trip":
             continue
-        exit_intent = PaperOrderIntent(
-            intent_id=paper_intent_id("polymarket", seed, "close"),
-            venue="polymarket",
-            market_id=market.condition_id,
-            asset_id=token_id,
-            symbol=market.asset,
-            outcome=outcome,
-            side="SELL",
-            order_type="FOK",
-            limit_price=exit_limit,
-            quantity=quantity,
-            created_at_ms=exit_created_at_ms,
-            expires_at_ms=market.end_ms,
-        ).validated()
-        exit_result = simulate_aggressive_order(
-            exit_intent,
-            exit_book.snapshot,
-            execution_time_ms=exit_book.received_wall_ms,
-            submission_latency_ms=exit_total_latency_ms,
-            maximum_book_age_ms=(
-                config.maximum_post_target_execution_observation_delay_ms
-            ),
-            fee=fee,
-            owned_quantity=entry_result.filled_quantity,
-            closing_position=True,
-        )
         if (
-            exit_result.state != "FILLED"
-            or exit_result.filled_quantity != entry_result.filled_quantity
+            execution.entry_book is None
+            or execution.exit_decision_book is None
+            or execution.exit_book is None
+            or execution.entry_cost_quote is None
+            or execution.exit_proceeds_quote is None
+            or execution.net_quote is None
+            or execution.entry_venue_taker_delay_ms is None
+            or execution.exit_venue_taker_delay_ms is None
+            or execution.entry_execution_target_wall_ms is None
+            or execution.exit_decision_target_wall_ms is None
+            or execution.exit_execution_target_wall_ms is None
         ):
-            finish("exit_not_filled")
-            continue
-        finish("complete_round_trip")
-        entry_cost = (
-            entry_result.average_fill_price * entry_result.filled_quantity
-            + entry_result.fee_quote
-        )
-        exit_proceeds = (
-            exit_result.average_fill_price * exit_result.filled_quantity
-            - exit_result.fee_quote
-        )
-        net = exit_proceeds - entry_cost
+            raise ValueError("complete Polymarket repricing execution is incomplete")
+        net = execution.net_quote
         if best is None or net > best[0]:
             best = (
                 net,
                 decision,
-                entry,
-                exit_decision,
-                exit_book,
-                entry_cost,
-                exit_proceeds,
-                entry_venue_delay_ms,
-                exit_venue_delay_ms,
-                entry_execution_target_wall_ms,
-                exit_created_at_ms,
-                exit_execution_target_wall_ms,
+                execution.entry_book,
+                execution.exit_decision_book,
+                execution.exit_book,
+                execution.entry_cost_quote,
+                execution.exit_proceeds_quote,
+                execution.entry_venue_taker_delay_ms,
+                execution.exit_venue_taker_delay_ms,
+                execution.entry_execution_target_wall_ms,
+                execution.exit_decision_target_wall_ms,
+                execution.exit_execution_target_wall_ms,
             )
 
     provisional = PolymarketRepricingOpportunity(
@@ -1365,8 +1701,7 @@ def evaluate_polymarket_repricing_ceiling(
         ):
             raise ValueError("Polymarket repricing book metadata is inconsistent")
 
-    index = _BookIndex(replay)
-    execution_parameter_index = _ExecutionParameterIndex(execution_evidence)
+    execution_context = PolymarketRepricingExecutionContext(replay)
     opportunities: list[PolymarketRepricingOpportunity] = []
     for market in sorted(
         markets,
@@ -1376,7 +1711,9 @@ def evaluate_polymarket_repricing_ceiling(
             ("Up", market.up_token_id),
             ("Down", market.down_token_id),
         ):
-            decisions = _sample_decisions(index.books_for_token(token_id), cfg)
+            decisions = _sample_decisions(
+                execution_context.book_index.books_for_token(token_id), cfg
+            )
             for latency_ms in cfg.per_leg_submission_latencies_ms:
                 for holding_period_ms in cfg.holding_periods_ms:
                     opportunities.append(
@@ -1385,8 +1722,7 @@ def evaluate_polymarket_repricing_ceiling(
                             outcome,
                             token_id,
                             decisions,
-                            index,
-                            execution_parameter_index,
+                            execution_context,
                             latency_ms=latency_ms,
                             holding_period_ms=holding_period_ms,
                             config=cfg,
@@ -1445,6 +1781,9 @@ __all__ = [
     "POLYMARKET_REPRICING_CONTRACT_SHA256",
     "POLYMARKET_REPRICING_REPORT_SCHEMA_VERSION",
     "PolymarketRepricingConfig",
+    "PolymarketRepricingDecision",
+    "PolymarketRepricingDecisionExecution",
+    "PolymarketRepricingExecutionContext",
     "PolymarketRepricingOpportunity",
     "PolymarketRepricingReport",
     "evaluate_polymarket_repricing_ceiling",
