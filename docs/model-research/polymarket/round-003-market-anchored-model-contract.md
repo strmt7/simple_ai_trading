@@ -84,9 +84,11 @@ channel before it can receive any live authority.
 ## AI ablation
 
 AI is veto-only. It receives the exact frozen pre-execution ML proposals and causal
-features, never labels, settlement, PnL, timestamps, or future fill state. It cannot
-create a side, reverse a side, increase size, or relax a price. Invalid, uncertain,
-slow, or unavailable output vetoes entry.
+features, plus hash-bound source-age, depth, and market-liquidity context. Risk
+context is kept outside the ridge design matrix. AI never receives labels,
+settlement, PnL, timestamps, or future fill state. It cannot create a side, reverse
+a side, increase size, or relax a price. Invalid, uncertain, slow, or unavailable
+output vetoes entry.
 
 Live AMD-host adversarial risk benchmark on 2026-07-15:
 

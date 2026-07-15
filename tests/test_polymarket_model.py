@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import replace
 from decimal import Decimal
 import hashlib
 import json
@@ -391,6 +392,10 @@ def test_market_grouping_equal_weights_and_purged_split() -> None:
     ):
         assert up_features[name] > 0.0
         assert down_features[name] < 0.0
+    risk_context = dataset.samples[0].risk_context_map()
+    assert risk_context["direct_binance_age_ms"] == 10.0
+    assert risk_context["up_ask_depth_3_contracts"] == 500.0
+    assert risk_context["log1p_market_liquidity_quote"] == 11.5
     for condition in {item.condition_id for item in dataset.samples}:
         assert sum(
             item.market_weight
@@ -460,6 +465,12 @@ def test_fit_is_deterministic_bounded_and_has_no_trading_authority() -> None:
     assert float(np.max(np.abs(predicted_logits - baseline_logits))) <= (
         first_model.config.maximum_absolute_logit_correction + 1e-12
     )
+    tampered_context = replace(
+        split.test[0],
+        risk_context_values=(999.0, *split.test[0].risk_context_values[1:]),
+    )
+    with pytest.raises(ValueError, match="sample identity is invalid"):
+        predict_polymarket_probabilities(first_model, (tampered_context,))
 
 
 def test_unjustified_correction_falls_back_to_market_probability() -> None:
@@ -716,6 +727,12 @@ def test_ai_veto_cases_are_pre_execution_label_free_and_hash_bound() -> None:
     assert "resolution" not in serialized_prompts
     assert "realized_pnl" not in serialized_prompts
     assert "outcome_net" not in serialized_prompts
+    assert "source_freshness_ms" in first[0].prompt_payload
+    assert "liquidity_context" in first[0].prompt_payload
+    microstructure = first[0].prompt_payload["microstructure"]
+    assert isinstance(microstructure, dict)
+    assert "direct_return_100ms_bps" in microstructure
+    assert "direct_diffusion_market_logit_gap" in microstructure
     assert all(len(case.case_sha256) == 64 for case in first)
 
 
