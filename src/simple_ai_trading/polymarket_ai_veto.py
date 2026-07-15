@@ -602,6 +602,10 @@ def benchmark_polymarket_ai_veto(
         raise ValueError("Polymarket AI veto requires evaluated condition IDs")
     if len({case.case_id for case in cases}) != len(cases):
         raise ValueError("Polymarket AI veto cases are duplicated")
+    if len({case.condition_id for case in cases}) != len(cases):
+        raise ValueError(
+            "Polymarket AI veto requires exactly one case per market condition"
+        )
     if any(
         case.condition_id not in conditions
         or case.case_sha256 != _canonical_sha256(case.identity_payload())
@@ -739,7 +743,9 @@ def benchmark_polymarket_ai_veto(
             )
     permissions = {condition: True for condition in conditions}
     for result in results:
-        permissions[result.condition_id] = result.decision.permits_entry
+        permissions[result.condition_id] = (
+            permissions[result.condition_id] and result.decision.permits_entry
+        )
     permission_sha256 = _canonical_sha256(
         {
             "schema_version": "polymarket-market-permission-v1",

@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pytest
 
+from simple_ai_trading import polymarket_ai_veto as ai_veto_module
 from simple_ai_trading.ai_uplift import assess_ai_uplift
 from simple_ai_trading.cli import (
     _polymarket_execution_uplift_metrics,
@@ -1867,6 +1868,31 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
             expected_model_digest="e" * 64,
         )
     assert chat_calls == completed_chat_calls
+
+    duplicate_condition = replace(
+        cases[1],
+        condition_id=cases[0].condition_id,
+        case_sha256="",
+    )
+    duplicate_condition = replace(
+        duplicate_condition,
+        case_sha256=ai_veto_module._canonical_sha256(
+            duplicate_condition.identity_payload()
+        ),
+    )
+
+    def unexpected_provider(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("duplicate conditions must fail before provider access")
+
+    with pytest.raises(ValueError, match="exactly one case per market condition"):
+        benchmark_polymarket_ai_veto(
+            (cases[0], duplicate_condition),
+            all_condition_ids=[cases[0].condition_id],
+            selection_sha256=selection.selection_sha256,
+            risk_benchmark_evidence_sha256="a" * 64,
+            config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+            post_json=unexpected_provider,  # type: ignore[arg-type]
+        )
 
 
 def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
