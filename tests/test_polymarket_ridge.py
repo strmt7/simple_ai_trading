@@ -198,21 +198,20 @@ def test_round9_ridge_cli_and_native_contract_share_the_frozen_input(
 ) -> None:
     dataset = _dataset()
     monkeypatch.setattr(cli, "load_polymarket_ridge_dataset", lambda *_a, **_k: dataset)
+    arguments = [
+        "polymarket-ridge",
+        "--database",
+        str(tmp_path / "ridge-cli.duckdb"),
+        "--pipeline-report-sha256",
+        dataset.pipeline_report_sha256,
+        "--memory-limit",
+        "512MB",
+        "--database-threads",
+        "1",
+        "--json",
+    ]
 
-    status = cli.main(
-        [
-            "polymarket-ridge",
-            "--database",
-            str(tmp_path / "ridge-cli.duckdb"),
-            "--pipeline-report-sha256",
-            dataset.pipeline_report_sha256,
-            "--memory-limit",
-            "512MB",
-            "--database-threads",
-            "1",
-            "--json",
-        ]
-    )
+    status = cli.main(arguments)
     payload = json.loads(capsys.readouterr().out)
     spec = next(item for item in command_specs() if item.name == "polymarket-ridge")
 
@@ -228,6 +227,62 @@ def test_round9_ridge_cli_and_native_contract_share_the_frozen_input(
         "database_threads",
         "json",
     }
+
+    def unexpected_refit(*_args, **_kwargs):
+        raise AssertionError("a completed ridge claim must never reopen test")
+
+    monkeypatch.setattr(cli, "fit_and_evaluate_polymarket_ridge", unexpected_refit)
+    repeated_status = cli.main(arguments)
+    repeated_payload = json.loads(capsys.readouterr().out)
+
+    assert repeated_status == 0
+    assert repeated_payload["report_sha256"] == payload["report_sha256"]
+    assert repeated_payload["materialization"]["status"] == "existing"
+
+
+def test_round9_ridge_failed_claim_cannot_silently_retry(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    dataset = _dataset()
+    database = tmp_path / "ridge-failed-claim.duckdb"
+    monkeypatch.setattr(cli, "load_polymarket_ridge_dataset", lambda *_a, **_k: dataset)
+    calls = 0
+
+    def fail_after_claim(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        raise RuntimeError("forced fit failure")
+
+    monkeypatch.setattr(cli, "fit_and_evaluate_polymarket_ridge", fail_after_claim)
+    arguments = [
+        "polymarket-ridge",
+        "--database",
+        str(database),
+        "--pipeline-report-sha256",
+        dataset.pipeline_report_sha256,
+        "--json",
+    ]
+
+    assert cli.main(arguments) == 2
+    first_error = capsys.readouterr().err
+    assert "forced fit failure" in first_error
+    assert cli.main(arguments) == 2
+    second_error = capsys.readouterr().err
+
+    assert calls == 1
+    assert "already claimed:state=failed" in second_error
+    with PolymarketEvidenceStore(database) as store:
+        state, failure_sha256 = store.connect().execute(
+            """
+            SELECT state, failure_sha256 FROM polymarket_ridge_fit_claim
+            WHERE pipeline_report_sha256 = ?
+            """,
+            [dataset.pipeline_report_sha256],
+        ).fetchone()
+    assert state == "failed"
+    assert len(failure_sha256) == 64
 
 
 def test_round9_mlp_contract_code_and_document_are_identical() -> None:

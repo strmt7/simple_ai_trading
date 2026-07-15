@@ -784,7 +784,7 @@ def test_writer_coalesces_sparse_messages_into_one_bounded_batch(
             recorder._writer("writer-coalesce", source_store, output)
         )
         await output.put(_message("clob_market", {"event_type": "book"}))
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.15)
         await output.put(_message("polymarket_rtds", "PING"))
         await output.put(None)
         await asyncio.wait_for(writer, timeout=1.0)
@@ -1180,7 +1180,7 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         option for option in spec.options if option.dest == "queue_capacity"
     )
     assert memory_option.default == "4GB"
-    assert queue_option.default == 100_000
+    assert queue_option.default == 200_000
     assert {option.dest for option in spec.options} == {
         "database",
         "duration_seconds",
@@ -1197,12 +1197,12 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
 def test_recorder_saturation_is_a_terminal_operational_failure(tmp_path) -> None:
     recorder = PolymarketPublicRecorder(tmp_path / "saturation.duckdb")
 
-    assert recorder.queue_capacity == 100_000
+    assert recorder.queue_capacity == 200_000
     recorder._queue_high_watermark = recorder.queue_capacity
     recorder._record_queue_saturation()
     recorder._record_queue_saturation()
 
-    assert recorder.errors == ["evidence_queue_saturated:100000/100000"]
+    assert recorder.errors == ["evidence_queue_saturated:200000/200000"]
 
 
 def test_read_only_evidence_store_never_creates_or_initializes_a_database(

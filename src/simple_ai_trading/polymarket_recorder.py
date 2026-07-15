@@ -62,7 +62,7 @@ _RAW_CHUNK_CODEC = "zstd"
 _RAW_CHUNK_COMPRESSION_LEVEL = 1
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
 _WRITER_BATCH_SIZE = 1_024
-_WRITER_COALESCE_SECONDS = 0.1
+_WRITER_COALESCE_SECONDS = 0.5
 _WRITER_MIN_DRAIN_SECONDS = 60.0
 _WRITER_MAX_DRAIN_SECONDS = 600.0
 _WRITER_STALL_SECONDS = 30.0
@@ -2413,7 +2413,7 @@ class PolymarketPublicRecorder:
         database: str | Path,
         *,
         client: PolymarketPublicClient | None = None,
-        queue_capacity: int = 100_000,
+        queue_capacity: int = 200_000,
         discovery_interval_seconds: int = 60,
         memory_limit: str = "4GB",
         database_threads: int = 2,
