@@ -45,12 +45,15 @@ from simple_ai_trading.polymarket_model import (
     split_polymarket_model_dataset,
 )
 from simple_ai_trading.polymarket_model_execution import (
+    POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
+    POLYMARKET_RETRY_CONTRACT_SHA256,
     PolymarketExecutionResearchConfig,
     build_polymarket_policy_selection,
     evaluate_polymarket_execution_policy,
     evaluate_polymarket_retry_execution_policy,
 )
 from simple_ai_trading.polymarket_publication import (
+    POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
     _ai_case_rows,
     _validate_ai_evidence,
     publish_polymarket_model_artifact,
@@ -1359,13 +1362,48 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         replay,
         config=config,
     )
+    model_retry_execution = evaluate_polymarket_retry_execution_policy(
+        split.test,
+        model_probabilities,
+        replay,
+        config=config,
+    )
+    retry_gates = {
+        "probability_model_gates_passed": (
+            probability_report.validation_log_loss_delta < 0.0
+            and probability_report.test_log_loss_delta < 0.0
+            and probability_report.test_brier_delta < 0.0
+        ),
+        "minimum_confirmatory_test_time_groups_met": (
+            len(split.test_group_starts_ms) >= 30
+        ),
+        "positive_after_cost_at_every_latency": (
+            model_retry_execution.net_realized_pnl_quote > 0
+        ),
+        "improved_after_cost_at_every_latency": (
+            model_retry_execution.net_realized_pnl_quote
+            > model_execution.net_realized_pnl_quote
+        ),
+        "return_on_deployed_not_worse_at_every_latency": (
+            model_retry_execution.return_on_deployed_capital
+            >= model_execution.return_on_deployed_capital
+        ),
+        "maximum_drawdown_not_worse_at_every_latency": (
+            model_retry_execution.maximum_drawdown_fraction
+            <= model_execution.maximum_drawdown_fraction
+        ),
+        "all_order_outcomes_terminal": all(
+            trade.execution_state != "UNKNOWN"
+            for trade in model_retry_execution.trades
+        ),
+    }
     prediction_evidence = _polymarket_held_out_prediction_evidence(
         split.test,
         baseline_probabilities,
         model_probabilities,
     )
     payload: dict[str, object] = {
-        "schema_version": "polymarket-prospective-model-experiment-v1",
+        "schema_version": POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
         "run_id": source.run_id,
         "feature_dataset": source.summary(),
         "feature_materialization": {
@@ -1382,6 +1420,20 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         "held_out_prediction_evidence": prediction_evidence,
         "baseline_execution": baseline_execution.asdict(),
         "model_execution": model_execution.asdict(),
+        "model_retry_execution": model_retry_execution.asdict(),
+        "retry_challenger": {
+            "schema_version": POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
+            "contract_sha256": POLYMARKET_RETRY_CONTRACT_SHA256,
+            "control_policy": "model",
+            "challenger_policy": "model_retry",
+            "gates": retry_gates,
+            "accepted": all(retry_gates.values()),
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        },
         "execution_latency_sensitivity": {
             "schema_version": "polymarket-execution-latency-sensitivity-v1",
             "primary_network_latency_ms": 100,
@@ -1389,6 +1441,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
             "policies": {
                 "baseline": {"100": baseline_execution.asdict()},
                 "model": {"100": model_execution.asdict()},
+                "model_retry": {"100": model_retry_execution.asdict()},
             },
             "trading_authority": False,
             "execution_claim": False,
@@ -1430,6 +1483,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
                 model_execution.net_realized_pnl_quote
                 > baseline_execution.net_realized_pnl_quote
             ),
+            "retry_challenger_accepted": all(retry_gates.values()),
             "all_positions_officially_settled": True,
             "all_order_outcomes_terminal": True,
             "ai_enabled": False,
@@ -1474,17 +1528,21 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         execution_report_sha256_by_policy_and_latency={
             "baseline": {"100": baseline_execution.report_sha256},
             "model": {"100": model_execution.report_sha256},
+            "model_retry": {"100": model_retry_execution.report_sha256},
         },
         verified_feature_row_count=len(source.rows),
         verified_model_sample_count=len(dataset.samples),
         verified_held_out_sample_count=len(split.test),
-        verified_execution_scenario_count=2,
+        verified_execution_scenario_count=3,
         verified_execution_trade_count=(
-            len(baseline_execution.trades) + len(model_execution.trades)
+            len(baseline_execution.trades)
+            + len(model_execution.trades)
+            + len(model_retry_execution.trades)
         ),
         verified_filled_order_count=(
             baseline_execution.filled_order_count
             + model_execution.filled_order_count
+            + model_retry_execution.filled_order_count
         ),
         checks={name: True for name in POLYMARKET_SOURCE_VERIFICATION_CHECKS},
         report_sha256="",
@@ -1523,6 +1581,34 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         source_verification=verification.asdict(),
     )
     assert repeated.manifest_sha256 == result.manifest_sha256
+    incomplete_source_verification = verification.asdict()
+    incomplete_source_verification[
+        "execution_report_sha256_by_policy_and_latency"
+    ].pop("model_retry")
+    incomplete_source_verification["verified_execution_scenario_count"] = 2
+    incomplete_source_verification["verified_execution_trade_count"] -= len(
+        model_retry_execution.trades
+    )
+    incomplete_source_verification[
+        "verified_filled_order_count"
+    ] -= model_retry_execution.filled_order_count
+    incomplete_source_verification.pop("report_sha256")
+    incomplete_source_verification["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            incomplete_source_verification,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="every artifact execution scenario"):
+        publish_polymarket_model_artifact(
+            artifact_path,
+            research_root,
+            round_number=3,
+            source_verification=incomplete_source_verification,
+        )
     manifest = json.loads(
         (research_root / "latest" / "publication-integrity.json").read_text(
             encoding="utf-8"

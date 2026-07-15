@@ -102,6 +102,7 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
 
     baseline_payload = execution_payload("7" * 64)
     model_execution_payload = execution_payload("8" * 64)
+    retry_execution_payload = execution_payload("a" * 64)
     payload = {
         "run_id": "run-1",
         "feature_dataset": feature_summary,
@@ -113,6 +114,7 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
             "policies": {
                 "baseline": {"100": baseline_payload},
                 "model": {"100": model_execution_payload},
+                "model_retry": {"100": retry_execution_payload},
             }
         },
     }
@@ -147,6 +149,7 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
     executions = {
         "7" * 64: _Execution(baseline_payload, "7" * 64),
         "8" * 64: _Execution(model_execution_payload, "8" * 64),
+        "a" * 64: _Execution(retry_execution_payload, "a" * 64),
     }
 
     monkeypatch.setattr(
@@ -215,15 +218,20 @@ def test_source_verifier_reconstructs_every_latency_scenario_and_fails_on_drift(
         "evaluate_polymarket_execution_policy",
         evaluate,
     )
+    monkeypatch.setattr(
+        verification,
+        "evaluate_polymarket_retry_execution_policy",
+        lambda *_args, **_kwargs: executions["a" * 64],
+    )
     report = verification.verify_polymarket_model_artifact_source(
         tmp_path / "artifact.json",
         tmp_path / "evidence.duckdb",
     )
 
     assert report.status == "verified"
-    assert report.verified_execution_scenario_count == 2
-    assert report.verified_execution_trade_count == 2
-    assert report.verified_filled_order_count == 2
+    assert report.verified_execution_scenario_count == 3
+    assert report.verified_execution_trade_count == 3
+    assert report.verified_filled_order_count == 3
     verification.validate_polymarket_source_verification(
         report.asdict(),
         artifact_sha256="9" * 64,

@@ -6,6 +6,9 @@ from pathlib import Path
 
 import numpy as np
 
+from simple_ai_trading.polymarket_model_execution import (
+    POLYMARKET_RETRY_CONTRACT_SHA256,
+)
 from tools.probe_round57_passive_fill_support import (
     _canonical_json,
     _fill_counts,
@@ -105,6 +108,8 @@ def test_frozen_designs_have_valid_identities_and_shared_lifecycle() -> None:
 
 
 def test_polymarket_retry_contract_preserves_binance_paper_safety() -> None:
+    persisted = json.loads(POLYMARKET_RETRY_CONTRACT.read_text(encoding="utf-8"))
+    assert persisted["contract_sha256"] == POLYMARKET_RETRY_CONTRACT_SHA256
     contract = _assert_contract_identity(POLYMARKET_RETRY_CONTRACT)
 
     assert contract["status"] == "frozen_before_round_003_outcomes"

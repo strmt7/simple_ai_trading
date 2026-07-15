@@ -30,6 +30,12 @@ POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v3"
 POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION = (
     "polymarket-causal-retry-execution-report-v2"
 )
+POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION = (
+    "polymarket-causal-retry-challenger-evidence-v1"
+)
+POLYMARKET_RETRY_CONTRACT_SHA256 = (
+    "6d768a32192a4d1d2dbbf6a8fa513e7d60bf96d6be992ff97b70dfb73cfca043"
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -1271,6 +1277,8 @@ __all__ = [
     "POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION",
     "POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION",
     "POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION",
+    "POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION",
+    "POLYMARKET_RETRY_CONTRACT_SHA256",
     "PolymarketEquityPoint",
     "PolymarketExecutionReport",
     "PolymarketExecutionResearchConfig",

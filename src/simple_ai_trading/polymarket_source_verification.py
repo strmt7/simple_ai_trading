@@ -25,6 +25,7 @@ from .polymarket_model_execution import (
     POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION,
     PolymarketExecutionResearchConfig,
     evaluate_polymarket_execution_policy,
+    evaluate_polymarket_retry_execution_policy,
 )
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay
@@ -254,6 +255,7 @@ def validate_polymarket_source_verification(
         scenario_hashes_valid = {"baseline", "model"}.issubset(policies) and policies <= {
             "baseline",
             "model",
+            "model_retry",
             "ai",
         }
         for policy, raw_reports in execution_hashes.items():
@@ -479,7 +481,12 @@ def verify_polymarket_model_artifact_source(
                         "execution decision delays",
                     )
                 )
-                reconstructed = evaluate_polymarket_execution_policy(
+                evaluator = (
+                    evaluate_polymarket_retry_execution_policy
+                    if policy == "model_retry"
+                    else evaluate_polymarket_execution_policy
+                )
+                reconstructed = evaluator(
                     split.test,
                     probabilities,
                     replay,
