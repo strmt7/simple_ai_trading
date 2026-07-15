@@ -8,7 +8,10 @@ import pytest
 
 from simple_ai_trading import cli
 from simple_ai_trading.ai_model_benchmark import (
+    AI_MODEL_BENCHMARK_CONTRACT,
+    _prompt,
     benchmark_finance_ai_models,
+    default_finance_ai_test_cases,
     finance_ai_candidates,
     rescore_finance_ai_benchmark_payload,
 )
@@ -144,6 +147,26 @@ def _benchmark_response(
     }
 
 
+def _benchmark_post(
+    actions: list[tuple[str, float]],
+):
+    remaining = iter(actions)
+
+    def post(_url, payload, _timeout):
+        assert '"case_name"' not in payload["messages"][1]["content"]
+        action, risk = next(remaining)
+        return _benchmark_response(action, risk)
+
+    return post
+
+
+def test_finance_ai_model_prompt_excludes_case_labels() -> None:
+    for case in default_finance_ai_test_cases():
+        prompt = _prompt(case)
+        assert case.name not in prompt
+        assert '"case_name"' not in prompt
+
+
 def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() -> None:
     actions = {
         "veto_failed_ai_uplift": ("veto", 0.90),
@@ -159,17 +182,10 @@ def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() ->
         "human_review_conflicting_provenance": ("human_review", 0.72),
     }
 
-    def fake_post(_url, payload, _timeout):
-        text = payload["messages"][1]["content"]
-        for name, (action, risk) in actions.items():
-            if name in text:
-                return _benchmark_response(action, risk)
-        return _benchmark_response("human_review", 0.50)
-
     report = benchmark_finance_ai_models(
         models=["qwen3:8b"],
         installed_models=["qwen3:8b"],
-        post_json=fake_post,
+        post_json=_benchmark_post(list(actions.values())),
     )
 
     assert report.passed is True
@@ -231,36 +247,31 @@ def test_finance_ai_rescore_verifies_normalized_response_hashes() -> None:
         "human_review_conflicting_provenance": ("human_review", 0.50),
     }
 
-    def fake_post(_url, payload, _timeout):
-        text = payload["messages"][1]["content"]
-        for name, (action, risk) in actions.items():
-            if name in text:
-                return _benchmark_response(action, risk)
-        raise AssertionError("unknown benchmark case")
-
     source = benchmark_finance_ai_models(
         models=["qwen3:8b"],
         installed_models=["qwen3:8b"],
-        post_json=fake_post,
+        post_json=_benchmark_post(list(actions.values())),
         minimum_score=0.90,
     ).asdict()
-    source["benchmark_contract"] = "finance-risk-review-adversarial-v4"
     rescored = rescore_finance_ai_benchmark_payload(source)
 
     assert rescored.passed is True
     assert rescored.selected_model == "qwen3:8b"
-    assert rescored.source_evidence[0]["source_contract"].endswith("v4")
+    assert rescored.source_evidence[0]["source_contract"] == AI_MODEL_BENCHMARK_CONTRACT
 
     tampered = benchmark_finance_ai_models(
         models=["qwen3:8b"],
         installed_models=["qwen3:8b"],
-        post_json=fake_post,
+        post_json=_benchmark_post(list(actions.values())),
         minimum_score=0.90,
     ).asdict()
-    tampered["benchmark_contract"] = "finance-risk-review-adversarial-v4"
     tampered["results"][0]["case_results"][0]["rationale"] = "tampered"
     with pytest.raises(ValueError, match="response hash changed"):
         rescore_finance_ai_benchmark_payload(tampered)
+
+    source["benchmark_contract"] = "finance-risk-review-adversarial-v6"
+    with pytest.raises(ValueError, match="fresh inference"):
+        rescore_finance_ai_benchmark_payload(source)
 
 
 def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> None:

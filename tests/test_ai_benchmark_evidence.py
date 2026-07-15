@@ -31,8 +31,10 @@ def _sha256(path: Path) -> str:
 
 def test_tracked_ai_benchmark_rebuilds_from_hash_bound_source_responses() -> None:
     source_paths = (
-        LATEST / "qwen3-8b-source-v4.json",
-        LATEST / "fino1-8b-source-v4.json",
+        LATEST / "qwen3-8b-source-v7.json",
+        LATEST / "fin-r1-8b-source-v7.json",
+        LATEST / "qwen35-9b-source-v7.json",
+        LATEST / "fino1-8b-source-v7.json",
     )
     sources = [_json(path) for path in source_paths]
     tracked = _json(REPORT_PATH)
@@ -45,13 +47,20 @@ def test_tracked_ai_benchmark_rebuilds_from_hash_bound_source_responses() -> Non
     assert tracked["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
     assert tracked["financial_edge_tested"] is False
     assert tracked["trading_authority"] is False
-    assert tracked["selected_model"] == "qwen3:8b"
+    assert tracked["selected_model"] is None
     results = {item["model"]: item for item in tracked["results"]}  # type: ignore[index]
-    assert results["qwen3:8b"]["passed"] is True
-    assert results["fino1:8b"]["passed"] is False
-    assert results["fino1:8b"]["failures"] == [
-        "veto_liquidation_hidden_by_roi: missing_terms=leverage"
-    ]
+    assert set(results) == {"qwen3:8b", "fin-r1:8b", "qwen3.5:9b", "fino1:8b"}
+    assert all(item["passed"] is False for item in results.values())
+    assert results["qwen3:8b"]["action_match_cases"] == 9
+    assert all(
+        results[model]["action_match_cases"] == 8
+        for model in ("fin-r1:8b", "qwen3.5:9b", "fino1:8b")
+    )
+    assert all(
+        len(case["model_input_sha256"]) == 64
+        for result in results.values()
+        for case in result["case_results"]
+    )
 
 
 def test_aggregate_score_is_stable_across_python_float_sum_changes() -> None:
@@ -97,7 +106,7 @@ def test_tracked_ai_model_provenance_binds_reports_and_weight_blobs() -> None:
         path = ROOT / source["path"]
         assert source["sha256"] == _sha256(path)
     models = {item["model"]: item for item in provenance["models"]}  # type: ignore[index]
-    assert set(models) == {"qwen3:8b", "fino1:8b"}
+    assert set(models) == {"qwen3:8b", "fin-r1:8b", "qwen3.5:9b", "fino1:8b"}
     for model in models.values():
         assert model["locally_verified"] is True
         assert int(model["size_bytes"]) > 2_000_000_000
@@ -105,7 +114,8 @@ def test_tracked_ai_model_provenance_binds_reports_and_weight_blobs() -> None:
             value = str(model[field])
             assert len(value) == 64
             assert all(character in "0123456789abcdef" for character in value)
-    assert models["fino1:8b"]["conversion_status"] == "third_party_gguf_quantization"
+    for model in ("fin-r1:8b", "fino1:8b"):
+        assert models[model]["conversion_status"] == "third_party_gguf_quantization"
 
     selected = load_local_ai_model_provenance(
         REPORT_PATH,

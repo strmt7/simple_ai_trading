@@ -1,21 +1,31 @@
 {
   "schema_version": "ollama-local-model-provenance-v1",
-  "generated_at": "2026-07-10T22:15:51.0900031Z",
+  "generated_at": "2026-07-15T22:53:48.4187460Z",
   "benchmark": {
-    "contract": "finance-risk-review-adversarial-v6",
+    "contract": "finance-risk-review-adversarial-v7",
     "path": "docs/ai/risk-review/latest/comparison.json",
-    "sha256": "3d56b582915c142283b282dc06ef3bea6689a68123e0c4611ccc71109cee9d71"
+    "sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd"
   },
   "source_reports": [
     {
       "model": "qwen3:8b",
-      "path": "docs/ai/risk-review/latest/qwen3-8b-source-v4.json",
-      "sha256": "74cdb307ccfc2dee30b8fca994cd38432d9abec2e018798dc88b70034652b643"
+      "path": "docs/ai/risk-review/latest/qwen3-8b-source-v7.json",
+      "sha256": "39a516693b6eff87865319dedf0c45e8c442893373c69835288825cd0d0f60e0"
+    },
+    {
+      "model": "fin-r1:8b",
+      "path": "docs/ai/risk-review/latest/fin-r1-8b-source-v7.json",
+      "sha256": "6111cd5919f1771d16ce7517c491bcb6452b640c8f04fff4341feeeafcf7d6cb"
+    },
+    {
+      "model": "qwen3.5:9b",
+      "path": "docs/ai/risk-review/latest/qwen35-9b-source-v7.json",
+      "sha256": "539d3005aa5af661c4e3b210e3c334d651eeee40e15396e225649e296dccd8a6"
     },
     {
       "model": "fino1:8b",
-      "path": "docs/ai/risk-review/latest/fino1-8b-source-v4.json",
-      "sha256": "2ed1df8730b802fb99a4a8b079b1ff3e644f43c1a3f7ea33a38dc31a34c713a2"
+      "path": "docs/ai/risk-review/latest/fino1-8b-source-v7.json",
+      "sha256": "8b6c4fdc62876703196a614d900269275902d9c06ec9deb8a04858e3f65ec405"
     }
   ],
   "models": [
@@ -30,6 +40,41 @@
       "quantization": "Q4_K_M",
       "capabilities": [
         "completion",
+        "tools",
+        "thinking"
+      ],
+      "locally_verified": true
+    },
+    {
+      "model": "fin-r1:8b",
+      "source_reference": "hf.co/bartowski/SUFE-AIFLM-Lab_Fin-R1-GGUF:Q6_K",
+      "upstream_model_reference": "SUFE-AIFLM-Lab/Fin-R1",
+      "conversion_status": "third_party_gguf_quantization",
+      "ollama_manifest_digest": "7a02f6045046a36f53f1541e6fe0ceaff202c2ca48a47c1292fc82e055a4a377",
+      "base_blob_sha256": "10a9f2315b98ef67ad8ea34750da125566f8d24c0075a5df2cb3845e6a2fa177",
+      "size_bytes": 6254198848,
+      "family": "qwen2",
+      "parameter_size": "7.62B",
+      "quantization": "Q6_K",
+      "capabilities": [
+        "completion",
+        "tools",
+        "insert"
+      ],
+      "locally_verified": true
+    },
+    {
+      "model": "qwen3.5:9b",
+      "source_reference": "ollama-library/qwen3.5:9b",
+      "ollama_manifest_digest": "6488c96fa5faab64bb65cbd30d4289e20e6130ef535a93ef9a49f42eda893ea7",
+      "base_blob_sha256": "dec52a44569a2a25341c4e4d3fee25846eed4f6f0b936278e3a3c900bb99d37c",
+      "size_bytes": 6594462816,
+      "family": "qwen35",
+      "parameter_size": "9.7B",
+      "quantization": "Q4_K_M",
+      "capabilities": [
+        "completion",
+        "vision",
         "tools",
         "thinking"
       ],
@@ -55,7 +100,9 @@
   ],
   "limitations": [
     "Local manifest and blob identity do not prove financial edge.",
-    "The Fino1 GGUF conversion is third-party and was evaluated solely by observed local behavior.",
-    "Neither model has direct order authority."
+    "Case labels and expected actions were excluded from every v7 model prompt.",
+    "All four measured models failed the v7 all-cases gate; no model is selected.",
+    "The Fin-R1 and Fino1 GGUF conversions are third-party and were evaluated solely by observed local behavior.",
+    "No language model has direct order authority."
   ]
 }

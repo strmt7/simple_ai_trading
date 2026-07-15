@@ -2131,16 +2131,16 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     ai_evidence: dict[str, object] = {
         "enabled": True,
         "risk_benchmark": {
-            "path": "docs/model-research/polymarket/latest/ai-risk-selected.json",
+            "path": "docs/ai/risk-review/latest/comparison.json",
             "sha256": "a" * 64,
-            "contract": "finance-risk-review-adversarial-v6",
+            "contract": "finance-risk-review-adversarial-v7",
             "selected_model": "qwen3.5:9b",
             "score": 1.0,
             "model_provenance": {
                 "path": "docs/ai/risk-review/latest/model-provenance.json",
                 "provenance_sha256": "c" * 64,
                 "benchmark_sha256": "a" * 64,
-                "benchmark_contract": "finance-risk-review-adversarial-v6",
+                "benchmark_contract": "finance-risk-review-adversarial-v7",
                 "model": "qwen3.5:9b",
                 "ollama_manifest_digest": "f" * 64,
                 "base_blob_sha256": "d" * 64,

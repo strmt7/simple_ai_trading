@@ -26,7 +26,7 @@ agents to canonical evidence without replacing that evidence.
 | Polymarket model | `src/simple_ai_trading/polymarket_model.py` and `tests/test_polymarket_model.py` | `docs/model-research/polymarket/latest/README.md` and the nearest numbered contract |
 | Polymarket recorder/replay | matching recorder or replay module and test | `docs/model-research/polymarket/prospective-continuity-contract-v2.json` |
 | Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md` or `docs/POLYMARKET_PAPER_TRADING.md` only at the relevant heading |
-| AI provider/model | nearest AI module and test | `docs/AI_MODEL_SELECTION.md` and `docs/ai_model_benchmark_latest.json` |
+| AI provider/model | nearest AI module and test | `docs/ai/risk-review/latest/comparison.json` and its sibling provenance |
 | CLI | command handler, parser definition, and CLI tests | parser-generated help; do not infer parity from docs |
 | Windows app | `src/simple_ai_trading/windows_app.py` and its UI/parity tests | `native/windows/generated/command_contract.hpp` and `tests/test_ai_runtime_and_parity.py` |
 | CI/release | one workflow and its test/lint config | `docs/AGENT_WORKFLOWS.md` |
@@ -56,9 +56,12 @@ agents to canonical evidence without replacing that evidence.
 - Run Round 9 fits only through `polymarket-ridge` and `polymarket-mlp`. Both
   write a durable claim before test access; completed ridge claims load the
   signed report, and any interrupted or failed claim blocks silent retries.
-- Generic finance-LLM benchmark scores are not alpha evidence. Kronos failed
-  the repository's causal random-walk benchmark. Any future AI treatment must
-  beat the same-period non-AI path after costs without worsening tail risk.
+- The v6 finance-LLM benchmark is revoked because case IDs leaked expected
+  actions. Fresh label-free v7 inference rejected Qwen3 8B (`9/11`) and three
+  other priority 8B/9B models (`8/11` each); no AI model is selected. Kronos
+  also failed the causal random-walk benchmark. Any future AI treatment must
+  first pass governance, then beat the same-period non-AI path after costs
+  without worsening tail risk.
 
 ## Efficient workflow
 
