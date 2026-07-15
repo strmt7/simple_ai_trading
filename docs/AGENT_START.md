@@ -53,9 +53,9 @@ agents to canonical evidence without replacing that evidence.
 - Round 9 MLP report v2 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
-- Run the Round 9 ridge only through `polymarket-ridge`. It writes a durable fit
-  claim before test evaluation; completed claims load the signed report, while
-  interrupted or failed claims block silent retries.
+- Run Round 9 fits only through `polymarket-ridge` and `polymarket-mlp`. Both
+  write a durable claim before test access; completed ridge claims load the
+  signed report, and any interrupted or failed claim blocks silent retries.
 - Generic finance-LLM benchmark scores are not alpha evidence. Kronos failed
   the repository's causal random-walk benchmark. Any future AI treatment must
   beat the same-period non-AI path after costs without worsening tail risk.

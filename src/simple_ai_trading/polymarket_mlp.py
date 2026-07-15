@@ -17,6 +17,12 @@ from scipy.special import expit, ndtr
 
 from .compute import BackendInfo, resolve_backend
 from .polymarket_action_value import POLYMARKET_ACTION_FEATURE_NAMES
+from .polymarket_fit_claim import (
+    PolymarketFitClaim,
+    begin_polymarket_fit_claim,
+    complete_polymarket_fit_claim,
+    fail_polymarket_fit_claim,
+)
 from .polymarket_ridge import (
     POLYMARKET_RIDGE_CONTRACT_SHA256,
     POLYMARKET_RIDGE_THRESHOLD_GRID,
@@ -421,6 +427,72 @@ class PolymarketMLPMaterialization:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+
+def begin_polymarket_mlp_fit(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+) -> PolymarketFitClaim:
+    """Claim one ridge parent before nonlinear test access."""
+
+    dataset.validated()
+    parent.validated()
+    if parent.dataset_sha256 != dataset.dataset_sha256:
+        raise ValueError("Polymarket MLP claim dataset is inconsistent")
+    return begin_polymarket_fit_claim(
+        store,
+        experiment="round9_mlp",
+        parent_sha256=parent.report_sha256,
+        contract_sha256=POLYMARKET_MLP_CONTRACT_SHA256,
+        dataset_sha256=dataset.dataset_sha256,
+        report_table="polymarket_mlp_report",
+        report_parent_column="parent_ridge_report_sha256",
+    )
+
+
+def complete_polymarket_mlp_fit(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketRidgeDataset,
+    parent: PolymarketRidgeReport,
+    report: PolymarketMLPReport,
+) -> None:
+    """Bind a materialized nonlinear report to its fit claim."""
+
+    dataset.validated()
+    parent.validated()
+    report.validated()
+    if (
+        parent.dataset_sha256 != dataset.dataset_sha256
+        or report.dataset_sha256 != dataset.dataset_sha256
+        or report.parent_ridge_report_sha256 != parent.report_sha256
+    ):
+        raise ValueError("Polymarket MLP completion identity is inconsistent")
+    complete_polymarket_fit_claim(
+        store,
+        experiment="round9_mlp",
+        parent_sha256=parent.report_sha256,
+        contract_sha256=POLYMARKET_MLP_CONTRACT_SHA256,
+        dataset_sha256=dataset.dataset_sha256,
+        report_table="polymarket_mlp_report",
+        report_parent_column="parent_ridge_report_sha256",
+        report_sha256=report.report_sha256,
+    )
+
+
+def fail_polymarket_mlp_fit(
+    store: PolymarketEvidenceStore,
+    parent: PolymarketRidgeReport,
+    error: BaseException,
+) -> None:
+    """Persist a nonlinear fit failure so test cannot be silently reopened."""
+
+    fail_polymarket_fit_claim(
+        store,
+        experiment="round9_mlp",
+        parent_sha256=parent.report_sha256,
+        error=error,
+    )
 
 
 def _partition_indices(
@@ -1658,6 +1730,9 @@ __all__ = [
     "PolymarketMLPMaterialization",
     "PolymarketMLPMember",
     "PolymarketMLPReport",
+    "begin_polymarket_mlp_fit",
+    "complete_polymarket_mlp_fit",
+    "fail_polymarket_mlp_fit",
     "fit_and_evaluate_polymarket_mlp",
     "materialize_polymarket_mlp_report",
 ]

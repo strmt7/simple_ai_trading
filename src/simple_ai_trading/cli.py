@@ -121,6 +121,9 @@ from .polymarket_action_pipeline import (
     materialize_polymarket_action_value_batches,
 )
 from .polymarket_mlp import (
+    begin_polymarket_mlp_fit,
+    complete_polymarket_mlp_fit,
+    fail_polymarket_mlp_fit,
     fit_and_evaluate_polymarket_mlp,
     materialize_polymarket_mlp_report,
 )
@@ -6577,18 +6580,34 @@ def command_polymarket_mlp(args: argparse.Namespace) -> int:
                 store,
                 report_sha256=str(args.ridge_report_sha256),
             )
-            report = fit_and_evaluate_polymarket_mlp(
-                dataset,
-                parent,
-                compute_backend=str(args.compute_backend),
-                progress=progress,
-            )
-            materialization = materialize_polymarket_mlp_report(
-                store,
-                dataset,
-                parent,
-                report,
-            )
+            claim = begin_polymarket_mlp_fit(store, dataset, parent)
+            if claim.status == "existing":
+                raise ValueError(
+                    "Polymarket MLP is already complete:"
+                    f"report_sha256={claim.report_sha256}"
+                )
+            try:
+                report = fit_and_evaluate_polymarket_mlp(
+                    dataset,
+                    parent,
+                    compute_backend=str(args.compute_backend),
+                    progress=progress,
+                )
+                materialization = materialize_polymarket_mlp_report(
+                    store,
+                    dataset,
+                    parent,
+                    report,
+                )
+                complete_polymarket_mlp_fit(
+                    store,
+                    dataset,
+                    parent,
+                    report,
+                )
+            except Exception as exc:
+                fail_polymarket_mlp_fit(store, parent, exc)
+                raise
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
         print(
             f"polymarket-mlp failed: {exc.__class__.__name__}: {exc}",
