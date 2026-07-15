@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
-import json
-from typing import Any, Iterator, Mapping
+from typing import Mapping
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_recorder import PolymarketEvidenceStore
@@ -27,13 +26,6 @@ _COUNT_KEYS = (
     "rtds_chainlink_live_updates",
     "official_resolutions",
 )
-
-
-def _iter_cursor_rows(
-    cursor: Any, *, batch_size: int = 4_096
-) -> Iterator[tuple[object, ...]]:
-    while rows := cursor.fetchmany(batch_size):
-        yield from rows
 
 
 @dataclass(frozen=True)
@@ -205,22 +197,25 @@ def inspect_polymarket_feed_coverage(
     data_errors: list[str] = []
     if gap_validation_error:
         data_errors.append(f"stream_gap_invalid:{gap_validation_error}")
-    event_cursor = connection.execute(
-        """
-        SELECT event_id, stream, event_type, symbol, condition_id,
-               asset_id, event_json
-        FROM polymarket_public_event
-        WHERE run_id = ?
-        """,
-        [selected],
-    )
-    for event_id, stream, event_type, symbol, condition_id, asset_id, event_json in (
-        _iter_cursor_rows(event_cursor)
-    ):
+    event_iterator = iter(store.iter_public_events(selected))
+    while True:
         try:
-            event = json.loads(str(event_json))
-            if not isinstance(event, Mapping):
-                raise ValueError("normalized event is not an object")
+            decoded = next(event_iterator)
+        except StopIteration:
+            break
+        except ValueError as exc:
+            data_errors.append(
+                f"feed_source_reconstruction_failed:{exc.__class__.__name__}:{exc}"
+            )
+            break
+        event_id = decoded.event_id
+        stream = decoded.stream
+        event_type = decoded.event_type
+        symbol = decoded.symbol
+        condition_id = decoded.condition_id
+        asset_id = decoded.asset_id
+        try:
+            event = decoded.event
             normalized_stream = str(stream)
             normalized_type = str(event_type).lower()
             if normalized_stream in {"clob_market", "clob_rest_book"}:
@@ -256,7 +251,7 @@ def inspect_polymarket_feed_coverage(
                 asset, key, sample_count = _rtds_sample_count(event)
                 if asset and key:
                     counts[asset][key] += sample_count
-        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        except (TypeError, ValueError) as exc:
             data_errors.append(
                 f"feed_event_invalid:{event_id}:{exc.__class__.__name__}:{exc}"
             )

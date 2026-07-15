@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import math
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Mapping, Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_coverage import inspect_polymarket_feed_coverage
@@ -74,13 +74,6 @@ POLYMARKET_FEATURE_NAMES = (
     "log1p_market_liquidity_quote",
     "log1p_market_volume_quote",
 )
-
-
-def _iter_cursor_rows(
-    cursor: Any, *, batch_size: int = 4_096
-) -> Iterator[tuple[object, ...]]:
-    while rows := cursor.fetchmany(batch_size):
-        yield from rows
 
 
 def _canonical_json(value: object) -> str:
@@ -342,8 +335,7 @@ class _PriceCursor:
     def advance(self, received_monotonic_ns: int) -> None:
         while (
             self.index < len(self.points)
-            and self.points[self.index].received_monotonic_ns
-            <= received_monotonic_ns
+            and self.points[self.index].received_monotonic_ns <= received_monotonic_ns
         ):
             point = self.points[self.index]
             insort(
@@ -380,8 +372,7 @@ class _BookCursor:
     def advance(self, received_monotonic_ns: int) -> _BinanceBookPoint | None:
         while (
             self.index < len(self.points)
-            and self.points[self.index].received_monotonic_ns
-            <= received_monotonic_ns
+            and self.points[self.index].received_monotonic_ns <= received_monotonic_ns
         ):
             self.latest = self.points[self.index]
             self.index += 1
@@ -430,9 +421,7 @@ class _BookSeries:
     def has_lookback(self, received_monotonic_ns: int, window_ms: int) -> bool:
         if not self.times:
             return False
-        return self.times[0] <= (
-            received_monotonic_ns - int(window_ms) * 1_000_000
-        )
+        return self.times[0] <= (received_monotonic_ns - int(window_ms) * 1_000_000)
 
     def causal_prefix(self, received_monotonic_ns: int) -> tuple[int, str]:
         count = bisect_right(self.times, int(received_monotonic_ns))
@@ -460,9 +449,7 @@ class _BookSeries:
         if current <= 0:
             return 0.0
         first_return = max(1, anchor + 1)
-        variance = math.fsum(
-            self.squared_returns[first_return : current + 1]
-        )
+        variance = math.fsum(self.squared_returns[first_return : current + 1])
         return 10_000.0 * math.sqrt(max(0.0, variance))
 
 
@@ -529,37 +516,22 @@ def _parse_feed_points(
     chainlink: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
     direct_books: dict[str, list[_BinanceBookPoint]] = {key: [] for key in _ASSETS}
     direct_trades: dict[str, list[_BinanceTradePoint]] = {key: [] for key in _ASSETS}
-    cursor = store.connect().execute(
-        """
-        SELECT e.event_id, e.event_sha256, e.stream, e.event_type, e.symbol,
-               e.event_json, r.received_wall_ms, r.received_monotonic_ns
-        FROM polymarket_public_event AS e
-        JOIN polymarket_raw_message AS r
-          ON r.run_id = e.run_id AND r.message_id = e.message_id
-        WHERE e.run_id = ? AND e.stream IN ('binance_spot', 'polymarket_rtds')
-        ORDER BY r.received_monotonic_ns, e.event_id
-        """,
-        [run_id],
-    )
-    for (
-        event_id,
-        event_sha256,
-        stream,
-        event_type,
-        symbol,
-        event_json,
-        received_wall_ms,
-        received_monotonic_ns,
-    ) in _iter_cursor_rows(cursor):
-        asset = str(symbol).upper()
+    for decoded in store.iter_public_events(
+        run_id,
+        streams=("binance_spot", "polymarket_rtds"),
+    ):
+        event_id = decoded.event_id
+        event_sha256 = decoded.event_sha256
+        stream = decoded.stream
+        event_type = decoded.event_type
+        received_wall_ms = decoded.received_wall_ms
+        received_monotonic_ns = decoded.received_monotonic_ns
+        asset = decoded.symbol.upper()
         if asset not in chainlink:
-            raise ValueError("prospective feature evidence contains an unsupported asset")
-        try:
-            event = json.loads(str(event_json))
-        except json.JSONDecodeError as exc:
-            raise ValueError("prospective feature evidence contains invalid JSON") from exc
-        if not isinstance(event, Mapping):
-            raise ValueError("prospective feature event must be an object")
+            raise ValueError(
+                "prospective feature evidence contains an unsupported asset"
+            )
+        event = decoded.event
         normalized_stream = str(stream)
         normalized_type = str(event_type).lower()
         if normalized_stream == "binance_spot":
@@ -618,8 +590,7 @@ def _parse_feed_points(
             raise ValueError("RTDS feature payload is malformed")
         raw_symbol = str(payload.get("symbol") or "")
         if not (
-            normalized_type.startswith("crypto_prices_chainlink:")
-            or "/" in raw_symbol
+            normalized_type.startswith("crypto_prices_chainlink:") or "/" in raw_symbol
         ):
             continue
         message_type = str(event.get("type") or "").lower()
@@ -659,15 +630,19 @@ def _load_market_snapshot_points(
     store: PolymarketEvidenceStore,
     run_id: str,
 ) -> dict[str, _MarketSnapshotPoint]:
-    rows = store.connect().execute(
-        """
+    rows = (
+        store.connect()
+        .execute(
+            """
         SELECT condition_id, observed_wall_ms, observed_monotonic_ns,
                snapshot_sha256
         FROM polymarket_market_snapshot
         WHERE run_id = ? ORDER BY condition_id
         """,
-        [run_id],
-    ).fetchall()
+            [run_id],
+        )
+        .fetchall()
+    )
     snapshots: dict[str, _MarketSnapshotPoint] = {}
     for condition_id, wall_ms, monotonic_ns, snapshot_sha256 in rows:
         condition = str(condition_id).lower()
@@ -699,9 +674,9 @@ def _clob_features(book: PolymarketRecordedBook) -> tuple[float, ...]:
     if best_bid >= best_ask or min(bid_quantity, ask_quantity) <= 0.0:
         raise ValueError("CLOB feature state is crossed or empty")
     midpoint = (best_bid + best_ask) / 2.0
-    microprice = (
-        best_ask * bid_quantity + best_bid * ask_quantity
-    ) / (bid_quantity + ask_quantity)
+    microprice = (best_ask * bid_quantity + best_bid * ask_quantity) / (
+        bid_quantity + ask_quantity
+    )
     return (
         best_bid,
         best_ask,
@@ -767,9 +742,7 @@ def build_polymarket_feature_dataset(
     book_cursors = {
         asset: _BookCursor(points) for asset, points in direct_books.items()
     }
-    book_series = {
-        asset: _BookSeries(points) for asset, points in direct_books.items()
-    }
+    book_series = {asset: _BookSeries(points) for asset, points in direct_books.items()}
     trade_series = {
         asset: _TradeSeries(points) for asset, points in direct_trades.items()
     }
@@ -855,10 +828,7 @@ def build_polymarket_feature_dataset(
             decision_ns - chainlink_now.received_monotonic_ns
         ) / 1_000_000.0
         chainlink_source_age_ms = decision_wall_ms - chainlink_now.source_time_ms
-        if (
-            direct_age_ms < 0.0
-            or direct_age_ms > cfg.maximum_direct_binance_age_ms
-        ):
+        if direct_age_ms < 0.0 or direct_age_ms > cfg.maximum_direct_binance_age_ms:
             _skip(skipped, "stale_or_future_direct_binance_book")
             continue
         if (
@@ -940,9 +910,7 @@ def build_polymarket_feature_dataset(
         ):
             raise ValueError("Polymarket feature vector is non-finite or misaligned")
         resolution = resolution_by_condition.get(condition)
-        official_up = (
-            None if resolution is None else resolution.winning_outcome == "Up"
-        )
+        official_up = None if resolution is None else resolution.winning_outcome == "Up"
         resolution_event_id = "" if resolution is None else resolution.event_id
         provenance = _canonical_sha256(
             {
@@ -1049,10 +1017,14 @@ def build_polymarket_feature_dataset(
                 f"{count}/{cfg.minimum_resolved_markets_per_asset}"
             )
 
-    report_row = store.connect().execute(
-        "SELECT report_sha256 FROM polymarket_recorder_run WHERE run_id = ?",
-        [selected],
-    ).fetchone()
+    report_row = (
+        store.connect()
+        .execute(
+            "SELECT report_sha256 FROM polymarket_recorder_run WHERE run_id = ?",
+            [selected],
+        )
+        .fetchone()
+    )
     if report_row is None:
         raise ValueError("Polymarket feature run report is unavailable")
     dataset_payload = {
@@ -1093,10 +1065,14 @@ def materialize_polymarket_feature_dataset(
 ) -> PolymarketFeatureMaterialization:
     """Persist one immutable derived dataset beside, never inside, raw evidence."""
 
-    report_row = store.connect().execute(
-        "SELECT report_sha256 FROM polymarket_recorder_run WHERE run_id = ?",
-        [dataset.run_id],
-    ).fetchone()
+    report_row = (
+        store.connect()
+        .execute(
+            "SELECT report_sha256 FROM polymarket_recorder_run WHERE run_id = ?",
+            [dataset.run_id],
+        )
+        .fetchone()
+    )
     if report_row is None:
         raise ValueError("Polymarket feature run report is unavailable")
     expected_dataset_payload = {

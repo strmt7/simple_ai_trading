@@ -12,11 +12,13 @@ import hmac
 import json
 from pathlib import Path
 import re
+import struct
 import time
 from typing import Mapping, Protocol, Sequence
 import uuid
 
 import duckdb
+import zstandard
 from websockets.asyncio.client import connect
 
 from .paper_execution import PaperOrderJournal
@@ -32,6 +34,8 @@ from .polymarket import (
 POLYMARKET_EVIDENCE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
 POLYMARKET_RECORDER_SCHEMA_VERSION = "polymarket-public-recorder-v1"
 POLYMARKET_RECORDER_PROGRESS_SCHEMA_VERSION = "polymarket-recorder-progress-v1"
+POLYMARKET_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v2"
+_LEGACY_STORAGE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
 CLOB_MARKET_WEBSOCKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
 POLYMARKET_RTDS_WEBSOCKET = "wss://ws-live-data.polymarket.com"
 BINANCE_SPOT_WEBSOCKET = (
@@ -44,6 +48,10 @@ _STREAMS = frozenset(
     {"clob_market", "polymarket_rtds", "binance_spot", "clob_rest_book"}
 )
 _MAX_RAW_MESSAGE_BYTES = 8 * 1024 * 1024
+_MAX_RAW_CHUNK_BYTES = 64 * 1024 * 1024
+_RAW_CHUNK_FRAME_FORMAT = "length-prefixed-utf8-v1"
+_RAW_CHUNK_CODEC = "zstd"
+_RAW_CHUNK_COMPRESSION_LEVEL = 1
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
 _WRITER_BATCH_SIZE = 1_024
 _WRITER_MIN_DRAIN_SECONDS = 60.0
@@ -52,7 +60,7 @@ _WRITER_STALL_SECONDS = 30.0
 _WRITER_ASSUMED_MINIMUM_MESSAGES_PER_SECOND = 100.0
 _INTEGRITY_FETCH_SIZE = 4_096
 
-_RAW_MESSAGE_INSERT_SQL = """
+_LEGACY_RAW_MESSAGE_INSERT_SQL = """
     INSERT INTO polymarket_raw_message (
         message_id, run_id, schema_version, stream, connection_id,
         sequence_number, received_wall_ms, received_monotonic_ns,
@@ -60,6 +68,18 @@ _RAW_MESSAGE_INSERT_SQL = """
     )
     SELECT unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?),
            unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?)
+"""
+_COMPACT_RAW_MESSAGE_INSERT_SQL = """
+    INSERT INTO polymarket_raw_message (
+        message_id, run_id, schema_version, stream, connection_id,
+        sequence_number, received_wall_ms, received_monotonic_ns,
+        raw_payload_sha256, raw_text, parse_status, parse_error,
+        storage_chunk_id, chunk_message_index, raw_offset, raw_size,
+        normalized_event_count
+    )
+    SELECT unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?),
+           unnest(?), unnest(?), unnest(?), unnest(?), unnest(?), unnest(?),
+           unnest(?), unnest(?), unnest(?), unnest(?), unnest(?)
 """
 _PUBLIC_EVENT_INSERT_SQL = """
     INSERT INTO polymarket_public_event (
@@ -109,6 +129,30 @@ def _query_batches(
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _compact_message_manifest_hash(row: Sequence[object]) -> str:
+    if len(row) != 17:
+        raise ValueError("compact raw-message manifest row has an invalid width")
+    return _canonical_sha256(
+        {
+            "message_id": str(row[0]),
+            "run_id": str(row[1]),
+            "schema_version": str(row[2]),
+            "stream": str(row[3]),
+            "connection_id": str(row[4]),
+            "sequence_number": int(row[5]),
+            "received_wall_ms": int(row[6]),
+            "received_monotonic_ns": int(row[7]),
+            "raw_payload_sha256": str(row[8]),
+            "parse_status": str(row[10]),
+            "parse_error": str(row[11]),
+            "chunk_message_index": int(row[13]),
+            "raw_offset": int(row[14]),
+            "raw_size": int(row[15]),
+            "normalized_event_count": int(row[16]),
+        }
+    )
 
 
 def _wall_ms() -> int:
@@ -183,6 +227,27 @@ class RawStreamMessage:
             received_monotonic_ns=monotonic,
             raw_text=raw_text,
         )
+
+
+@dataclass(frozen=True)
+class DecodedPublicEvent:
+    event_id: str
+    run_id: str
+    message_id: str
+    sub_index: int
+    stream: str
+    event_type: str
+    symbol: str
+    condition_id: str
+    asset_id: str
+    source_time_ms: int | None
+    publisher_time_ms: int | None
+    event_sha256: str
+    event: Mapping[str, object]
+    connection_id: str
+    sequence_number: int
+    received_wall_ms: int
+    received_monotonic_ns: int
 
 
 @dataclass(frozen=True)
@@ -279,12 +344,19 @@ class PolymarketEvidenceStore:
             raise ValueError("read_only must be a boolean")
         self.read_only = read_only
         self.connection: duckdb.DuckDBPyConnection | None = None
+        self.payload_connection: duckdb.DuckDBPyConnection | None = None
         self.paper_journal: PaperOrderJournal | None = None
         # Terminal recorder tables are immutable through this API. Cache only
         # their full row-hash audit; mutable paper-journal checks always rerun.
         self._terminal_evidence_integrity_cache: dict[
             str, tuple[str, tuple[str, ...]]
         ] = {}
+        self._next_chunk_index_by_run: dict[str, int] = {}
+        self._frame_cache_id = ""
+        self._frame_cache = b""
+        self._decompressor = zstandard.ZstdDecompressor(
+            max_window_size=_MAX_RAW_CHUNK_BYTES // 1024
+        )
 
     def connect(self) -> duckdb.DuckDBPyConnection:
         if self.connection is None:
@@ -310,11 +382,28 @@ class PolymarketEvidenceStore:
         return self.connection
 
     def close(self) -> None:
+        if self.payload_connection is not None:
+            self.payload_connection.close()
+            self.payload_connection = None
         if self.connection is not None:
             self.connection.close()
             self.connection = None
             self.paper_journal = None
             self._terminal_evidence_integrity_cache.clear()
+            self._next_chunk_index_by_run.clear()
+            self._frame_cache_id = ""
+            self._frame_cache = b""
+
+    def _payload_connection(self) -> duckdb.DuckDBPyConnection:
+        if self.payload_connection is None:
+            self.payload_connection = duckdb.connect(
+                str(self.path),
+                read_only=self.read_only,
+            )
+            self.payload_connection.execute(f"SET memory_limit='{self.memory_limit}'")
+            self.payload_connection.execute(f"SET threads={self.threads}")
+            self.payload_connection.execute("SET TimeZone='UTC'")
+        return self.payload_connection
 
     def __enter__(self) -> "PolymarketEvidenceStore":
         self.connect()
@@ -332,6 +421,8 @@ class PolymarketEvidenceStore:
             CREATE TABLE IF NOT EXISTS polymarket_recorder_run (
                 run_id VARCHAR PRIMARY KEY,
                 schema_version VARCHAR NOT NULL,
+                storage_schema_version VARCHAR NOT NULL DEFAULT
+                    'polymarket-public-evidence-v1',
                 status VARCHAR NOT NULL,
                 started_at_ms BIGINT NOT NULL,
                 ended_at_ms BIGINT,
@@ -395,7 +486,35 @@ class PolymarketEvidenceStore:
                 raw_text VARCHAR NOT NULL,
                 parse_status VARCHAR NOT NULL,
                 parse_error VARCHAR NOT NULL,
+                storage_chunk_id VARCHAR,
+                chunk_message_index UINTEGER,
+                raw_offset UBIGINT,
+                raw_size UINTEGER,
+                normalized_event_count UINTEGER,
                 UNIQUE(run_id, stream, connection_id, sequence_number)
+            );
+
+            CREATE TABLE IF NOT EXISTS polymarket_raw_chunk (
+                chunk_id VARCHAR PRIMARY KEY,
+                run_id VARCHAR NOT NULL,
+                schema_version VARCHAR NOT NULL,
+                chunk_index UBIGINT NOT NULL,
+                frame_format VARCHAR NOT NULL,
+                codec VARCHAR NOT NULL,
+                compression_level UTINYINT NOT NULL,
+                message_count UINTEGER NOT NULL,
+                first_message_id VARCHAR NOT NULL,
+                last_message_id VARCHAR NOT NULL,
+                message_manifest_xor VARCHAR NOT NULL,
+                uncompressed_bytes UBIGINT NOT NULL,
+                uncompressed_sha256 VARCHAR NOT NULL,
+                compressed_bytes UBIGINT NOT NULL,
+                compressed_sha256 VARCHAR NOT NULL,
+                compressed_payload BLOB NOT NULL,
+                UNIQUE(run_id, chunk_index),
+                CHECK(message_count BETWEEN 1 AND 1024),
+                CHECK(uncompressed_bytes BETWEEN 1 AND 67108864),
+                CHECK(compressed_bytes >= 1)
             );
 
             CREATE TABLE IF NOT EXISTS polymarket_public_event (
@@ -446,31 +565,98 @@ class PolymarketEvidenceStore:
             );
             """
         )
+        connection.execute(
+            """
+            ALTER TABLE polymarket_recorder_run ADD COLUMN IF NOT EXISTS
+                storage_schema_version VARCHAR DEFAULT
+                    'polymarket-public-evidence-v1';
+            ALTER TABLE polymarket_raw_message ADD COLUMN IF NOT EXISTS
+                storage_chunk_id VARCHAR;
+            ALTER TABLE polymarket_raw_message ADD COLUMN IF NOT EXISTS
+                chunk_message_index UINTEGER;
+            ALTER TABLE polymarket_raw_message ADD COLUMN IF NOT EXISTS
+                raw_offset UBIGINT;
+            ALTER TABLE polymarket_raw_message ADD COLUMN IF NOT EXISTS
+                raw_size UINTEGER;
+            ALTER TABLE polymarket_raw_message ADD COLUMN IF NOT EXISTS
+                normalized_event_count UINTEGER;
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = 'polymarket-public-evidence-v1'
+            WHERE storage_schema_version IS NULL OR storage_schema_version = '';
+            """
+        )
 
     def start_run(self, run_id: str, started_at_ms: int) -> None:
         self.connect().execute(
             """
             INSERT INTO polymarket_recorder_run (
-                run_id, schema_version, status, started_at_ms, ended_at_ms,
-                report_json, report_sha256, error
-            ) VALUES (?, ?, 'running', ?, NULL, '', '', '')
+                run_id, schema_version, storage_schema_version, status,
+                started_at_ms, ended_at_ms, report_json, report_sha256, error
+            ) VALUES (?, ?, ?, 'running', ?, NULL, '', '', '')
             """,
-            [run_id, POLYMARKET_RECORDER_SCHEMA_VERSION, int(started_at_ms)],
+            [
+                run_id,
+                POLYMARKET_RECORDER_SCHEMA_VERSION,
+                POLYMARKET_STORAGE_SCHEMA_VERSION,
+                int(started_at_ms),
+            ],
         )
 
     def _require_running_run(self, run_id: str) -> None:
-        row = self.connect().execute(
-            "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
-            [run_id],
-        ).fetchone()
+        row = (
+            self.connect()
+            .execute(
+                "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
+                [run_id],
+            )
+            .fetchone()
+        )
         if row is None:
             raise ValueError(f"unknown Polymarket recorder run: {run_id}")
         if str(row[0]) != "running":
             raise ValueError("terminal Polymarket recorder evidence is immutable")
 
-    def _terminal_evidence_fingerprint(self, run_id: str) -> str:
-        row = self.connect().execute(
+    def _storage_schema_version(self, run_id: str) -> str:
+        connection = self.connect()
+        has_column = bool(
+            connection.execute(
+                """
+                SELECT count(*) FROM duckdb_columns()
+                WHERE table_name = 'polymarket_recorder_run'
+                  AND column_name = 'storage_schema_version'
+                """
+            ).fetchone()[0]
+        )
+        if not has_column:
+            row = connection.execute(
+                "SELECT run_id FROM polymarket_recorder_run WHERE run_id = ?",
+                [run_id],
+            ).fetchone()
+            if row is None:
+                raise ValueError(f"unknown Polymarket recorder run: {run_id}")
+            return _LEGACY_STORAGE_SCHEMA_VERSION
+        row = connection.execute(
             """
+            SELECT storage_schema_version FROM polymarket_recorder_run
+            WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"unknown Polymarket recorder run: {run_id}")
+        version = str(row[0] or _LEGACY_STORAGE_SCHEMA_VERSION)
+        if version not in {
+            _LEGACY_STORAGE_SCHEMA_VERSION,
+            POLYMARKET_STORAGE_SCHEMA_VERSION,
+        }:
+            raise ValueError(f"unsupported Polymarket storage schema: {version}")
+        return version
+
+    def _terminal_evidence_fingerprint(self, run_id: str) -> str:
+        row = (
+            self.connect()
+            .execute(
+                """
             SELECT r.schema_version, r.status, r.started_at_ms, r.ended_at_ms,
                    r.report_json, r.report_sha256, r.error,
                    (SELECT count(*) FROM polymarket_market_snapshot WHERE run_id = ?),
@@ -479,8 +665,10 @@ class PolymarketEvidenceStore:
                    (SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?)
             FROM polymarket_recorder_run AS r WHERE r.run_id = ?
             """,
-            [run_id, run_id, run_id, run_id, run_id],
-        ).fetchone()
+                [run_id, run_id, run_id, run_id, run_id],
+            )
+            .fetchone()
+        )
         return _canonical_sha256(
             {
                 "run_id": run_id,
@@ -606,13 +794,31 @@ class PolymarketEvidenceStore:
         if not messages:
             return
         self._require_running_run(run_id)
-        for start in range(0, len(messages), _WRITER_BATCH_SIZE):
-            self._append_message_batch(
-                run_id,
-                messages[start : start + _WRITER_BATCH_SIZE],
-            )
+        validated = tuple(message.validated() for message in messages)
+        if self._storage_schema_version(run_id) == _LEGACY_STORAGE_SCHEMA_VERSION:
+            for start in range(0, len(validated), _WRITER_BATCH_SIZE):
+                self._append_legacy_message_batch(
+                    run_id,
+                    validated[start : start + _WRITER_BATCH_SIZE],
+                )
+            return
+        pending: list[RawStreamMessage] = []
+        pending_bytes = 0
+        for message in validated:
+            framed_size = 4 + len(message.raw_text.encode("utf-8"))
+            if pending and (
+                len(pending) >= _WRITER_BATCH_SIZE
+                or pending_bytes + framed_size > _MAX_RAW_CHUNK_BYTES
+            ):
+                self._append_compact_message_chunk(run_id, pending)
+                pending = []
+                pending_bytes = 0
+            pending.append(message)
+            pending_bytes += framed_size
+        if pending:
+            self._append_compact_message_chunk(run_id, pending)
 
-    def _append_message_batch(
+    def _append_legacy_message_batch(
         self,
         run_id: str,
         messages: Sequence[RawStreamMessage],
@@ -622,7 +828,8 @@ class PolymarketEvidenceStore:
         for message in messages:
             raw_row, normalized_rows = self._message_rows(
                 run_id,
-                message.validated(),
+                message,
+                inline_payload=True,
             )
             raw_rows.append(raw_row)
             event_rows.extend(normalized_rows)
@@ -630,7 +837,7 @@ class PolymarketEvidenceStore:
         connection.execute("BEGIN TRANSACTION")
         try:
             connection.execute(
-                _RAW_MESSAGE_INSERT_SQL,
+                _LEGACY_RAW_MESSAGE_INSERT_SQL,
                 _columnar_batch(raw_rows, width=12),
             )
             if event_rows:
@@ -643,10 +850,139 @@ class PolymarketEvidenceStore:
             connection.execute("ROLLBACK")
             raise
 
+    def _append_compact_message_chunk(
+        self,
+        run_id: str,
+        messages: Sequence[RawStreamMessage],
+    ) -> None:
+        if not messages or len(messages) > _WRITER_BATCH_SIZE:
+            raise ValueError("compact evidence chunk has an invalid message count")
+        frame = bytearray()
+        prepared: list[
+            tuple[
+                tuple[object, ...],
+                tuple[tuple[object, ...], ...],
+                int,
+                int,
+            ]
+        ] = []
+        event_rows: list[tuple[object, ...]] = []
+        for message in messages:
+            raw_bytes = message.raw_text.encode("utf-8")
+            raw_offset = len(frame) + 4
+            frame.extend(struct.pack("<I", len(raw_bytes)))
+            frame.extend(raw_bytes)
+            raw_row, normalized_rows = self._message_rows(
+                run_id,
+                message,
+                inline_payload=False,
+            )
+            prepared.append((raw_row, normalized_rows, raw_offset, len(raw_bytes)))
+            event_rows.extend(normalized_rows)
+        if not 1 <= len(frame) <= _MAX_RAW_CHUNK_BYTES:
+            raise ValueError("compact evidence chunk exceeded its bounded size")
+        connection = self.connect()
+        chunk_index = self._next_chunk_index_by_run.get(run_id)
+        if chunk_index is None:
+            chunk_index = int(
+                connection.execute(
+                    """
+                    SELECT coalesce(max(chunk_index), -1) + 1
+                    FROM polymarket_raw_chunk WHERE run_id = ?
+                    """,
+                    [run_id],
+                ).fetchone()[0]
+            )
+        uncompressed = bytes(frame)
+        uncompressed_sha = hashlib.sha256(uncompressed).hexdigest()
+        compressed = zstandard.ZstdCompressor(
+            level=_RAW_CHUNK_COMPRESSION_LEVEL,
+            write_checksum=True,
+            write_content_size=True,
+            threads=0,
+        ).compress(uncompressed)
+        compressed_sha = hashlib.sha256(compressed).hexdigest()
+        raw_rows = [
+            raw_row
+            + (
+                "",
+                message_index,
+                raw_offset,
+                raw_size,
+                len(normalized_rows),
+            )
+            for message_index, (
+                raw_row,
+                normalized_rows,
+                raw_offset,
+                raw_size,
+            ) in enumerate(prepared)
+        ]
+        manifest_xor = 0
+        for raw_row in raw_rows:
+            manifest_xor ^= int(_compact_message_manifest_hash(raw_row), 16)
+        manifest_xor_hex = f"{manifest_xor:064x}"
+        chunk_id = _canonical_sha256(
+            {
+                "run_id": run_id,
+                "schema_version": POLYMARKET_STORAGE_SCHEMA_VERSION,
+                "chunk_index": chunk_index,
+                "message_count": len(prepared),
+                "first_message_id": str(prepared[0][0][0]),
+                "last_message_id": str(prepared[-1][0][0]),
+                "message_manifest_xor": manifest_xor_hex,
+                "uncompressed_sha256": uncompressed_sha,
+            }
+        )
+        raw_rows = [row[:12] + (chunk_id,) + row[13:] for row in raw_rows]
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            connection.execute(
+                """
+                INSERT INTO polymarket_raw_chunk VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                """,
+                [
+                    chunk_id,
+                    run_id,
+                    POLYMARKET_STORAGE_SCHEMA_VERSION,
+                    chunk_index,
+                    _RAW_CHUNK_FRAME_FORMAT,
+                    _RAW_CHUNK_CODEC,
+                    _RAW_CHUNK_COMPRESSION_LEVEL,
+                    len(prepared),
+                    str(prepared[0][0][0]),
+                    str(prepared[-1][0][0]),
+                    manifest_xor_hex,
+                    len(uncompressed),
+                    uncompressed_sha,
+                    len(compressed),
+                    compressed_sha,
+                    compressed,
+                ],
+            )
+            connection.execute(
+                _COMPACT_RAW_MESSAGE_INSERT_SQL,
+                _columnar_batch(raw_rows, width=17),
+            )
+            if event_rows:
+                connection.execute(
+                    _PUBLIC_EVENT_INSERT_SQL,
+                    _columnar_batch(event_rows, width=13),
+                )
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
+        self._next_chunk_index_by_run[run_id] = chunk_index + 1
+
     @staticmethod
     def _message_rows(
         run_id: str,
         message: RawStreamMessage,
+        *,
+        inline_payload: bool,
     ) -> tuple[tuple[object, ...], tuple[tuple[object, ...], ...]]:
         raw_bytes = message.raw_text.encode("utf-8")
         raw_sha = hashlib.sha256(raw_bytes).hexdigest()
@@ -687,7 +1023,7 @@ class PolymarketEvidenceStore:
             message.received_wall_ms,
             message.received_monotonic_ns,
             raw_sha,
-            message.raw_text,
+            message.raw_text if inline_payload else "",
             parse_status,
             parse_error,
         )
@@ -716,11 +1052,309 @@ class PolymarketEvidenceStore:
                     normalized["asset_id"],
                     normalized["source_time_ms"],
                     normalized["publisher_time_ms"],
-                    event_json,
+                    event_json if inline_payload else "",
                     event_sha,
                 )
             )
         return raw_row, tuple(event_rows)
+
+    def _load_compact_frame(self, run_id: str, chunk_id: str) -> bytes:
+        if chunk_id == self._frame_cache_id:
+            return self._frame_cache
+        row = (
+            self._payload_connection()
+            .execute(
+                """
+            SELECT chunk_id, run_id, schema_version, chunk_index, frame_format,
+                   codec, compression_level, message_count, first_message_id,
+                   last_message_id, message_manifest_xor, uncompressed_bytes,
+                   uncompressed_sha256, compressed_bytes, compressed_sha256,
+                   compressed_payload
+            FROM polymarket_raw_chunk
+            WHERE run_id = ? AND chunk_id = ?
+            """,
+                [run_id, chunk_id],
+            )
+            .fetchone()
+        )
+        if row is None:
+            raise ValueError("compact raw message references a missing chunk")
+        (
+            claimed_chunk_id,
+            chunk_run,
+            schema_version,
+            chunk_index,
+            frame_format,
+            codec,
+            compression_level,
+            message_count,
+            first_message_id,
+            last_message_id,
+            message_manifest_xor,
+            uncompressed_bytes,
+            uncompressed_sha256,
+            compressed_bytes,
+            compressed_sha256,
+            compressed_payload,
+        ) = row
+        expected_chunk_id = _canonical_sha256(
+            {
+                "run_id": str(chunk_run),
+                "schema_version": str(schema_version),
+                "chunk_index": int(chunk_index),
+                "message_count": int(message_count),
+                "first_message_id": str(first_message_id),
+                "last_message_id": str(last_message_id),
+                "message_manifest_xor": str(message_manifest_xor),
+                "uncompressed_sha256": str(uncompressed_sha256),
+            }
+        )
+        if (
+            str(chunk_run) != run_id
+            or str(schema_version) != POLYMARKET_STORAGE_SCHEMA_VERSION
+            or str(frame_format) != _RAW_CHUNK_FRAME_FORMAT
+            or str(codec) != _RAW_CHUNK_CODEC
+            or int(compression_level) != _RAW_CHUNK_COMPRESSION_LEVEL
+            or not 1 <= int(message_count) <= _WRITER_BATCH_SIZE
+            or not 1 <= int(uncompressed_bytes) <= _MAX_RAW_CHUNK_BYTES
+            or int(compressed_bytes) < 1
+            or not hmac.compare_digest(str(claimed_chunk_id), expected_chunk_id)
+        ):
+            raise ValueError("compact raw-message chunk metadata is invalid")
+        compressed = bytes(compressed_payload)
+        if len(compressed) != int(compressed_bytes) or hashlib.sha256(
+            compressed
+        ).hexdigest() != str(compressed_sha256):
+            raise ValueError("compact raw-message chunk payload hash mismatch")
+        try:
+            content_size = zstandard.frame_content_size(compressed)
+            if int(content_size) != int(uncompressed_bytes):
+                raise ValueError("compact raw-message frame size header drifted")
+            frame = self._decompressor.decompress(
+                compressed,
+                max_output_size=int(uncompressed_bytes),
+                allow_extra_data=False,
+            )
+        except (MemoryError, zstandard.ZstdError) as exc:
+            raise ValueError("compact raw-message chunk decompression failed") from exc
+        if len(frame) != int(uncompressed_bytes) or hashlib.sha256(
+            frame
+        ).hexdigest() != str(uncompressed_sha256):
+            raise ValueError("compact raw-message frame hash mismatch")
+        self._frame_cache_id = chunk_id
+        self._frame_cache = frame
+        return frame
+
+    def _decode_compact_raw_text(
+        self,
+        *,
+        run_id: str,
+        chunk_id: object,
+        raw_offset: object,
+        raw_size: object,
+        raw_payload_sha256: object,
+    ) -> str:
+        normalized_chunk_id = str(chunk_id or "")
+        offset = int(raw_offset)
+        size = int(raw_size)
+        if (
+            not normalized_chunk_id
+            or offset < 4
+            or not 0 <= size <= _MAX_RAW_MESSAGE_BYTES
+        ):
+            raise ValueError("compact raw-message location is invalid")
+        frame = self._load_compact_frame(run_id, normalized_chunk_id)
+        end = offset + size
+        if end > len(frame) or struct.unpack_from("<I", frame, offset - 4)[0] != size:
+            raise ValueError("compact raw-message frame boundary is invalid")
+        raw_bytes = frame[offset:end]
+        if hashlib.sha256(raw_bytes).hexdigest() != str(raw_payload_sha256):
+            raise ValueError("compact raw-message payload hash mismatch")
+        try:
+            return raw_bytes.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as exc:
+            raise ValueError("compact raw-message payload is not UTF-8") from exc
+
+    def iter_public_events(
+        self,
+        run_id: str,
+        *,
+        streams: Sequence[str] | None = None,
+        condition_ids: Sequence[str] | None = None,
+        ordered: bool = True,
+    ) -> Iterator[DecodedPublicEvent]:
+        """Yield source-reconstructed events in deterministic receive order."""
+
+        if not isinstance(ordered, bool):
+            raise ValueError("public-event ordering flag must be a boolean")
+        selected_streams: tuple[str, ...] | None = None
+        if streams is not None:
+            selected_streams = tuple(sorted({str(value) for value in streams}))
+            if not selected_streams or any(
+                value not in _STREAMS for value in selected_streams
+            ):
+                raise ValueError("public-event stream filter is invalid")
+        selected_conditions: tuple[str, ...] | None = None
+        if condition_ids is not None:
+            selected_conditions = tuple(
+                sorted({str(value or "").strip().lower() for value in condition_ids})
+            )
+            if not selected_conditions or any(
+                not value for value in selected_conditions
+            ):
+                raise ValueError("public-event condition filter is invalid")
+        storage_version = self._storage_schema_version(run_id)
+        filters = ["e.run_id = ?"]
+        parameters: list[object] = [run_id]
+        if selected_streams is not None:
+            placeholders = ", ".join("?" for _ in selected_streams)
+            filters.append(f"e.stream IN ({placeholders})")
+            parameters.extend(selected_streams)
+        if selected_conditions is not None:
+            placeholders = ", ".join("?" for _ in selected_conditions)
+            filters.append(f"e.condition_id IN ({placeholders})")
+            parameters.extend(selected_conditions)
+        compact = storage_version == POLYMARKET_STORAGE_SCHEMA_VERSION
+        compact_columns = (
+            ", r.storage_chunk_id, r.raw_offset, r.raw_size" if compact else ""
+        )
+        order_clause = ""
+        if ordered:
+            order_clause = """
+                ORDER BY r.received_monotonic_ns, r.received_wall_ms,
+                         r.connection_id, r.sequence_number, e.sub_index,
+                         e.event_id
+            """
+        cursor = self.connect().execute(
+            f"""
+            SELECT e.event_id, e.run_id, e.message_id, e.sub_index, e.stream,
+                   e.event_type, e.symbol, e.condition_id, e.asset_id,
+                   e.source_time_ms, e.publisher_time_ms, e.event_json,
+                   e.event_sha256, r.connection_id, r.sequence_number,
+                   r.received_wall_ms, r.received_monotonic_ns,
+                   r.raw_payload_sha256, r.raw_text{compact_columns}
+            FROM polymarket_public_event AS e
+            JOIN polymarket_raw_message AS r
+              ON r.run_id = e.run_id AND r.message_id = e.message_id
+            WHERE {" AND ".join(filters)}
+            {order_clause}
+            """,
+            parameters,
+        )
+        cached_message_id = ""
+        cached_events: tuple[Mapping[str, object], ...] = ()
+        for batch in iter(lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []):
+            for row in batch:
+                (
+                    event_id,
+                    event_run,
+                    message_id,
+                    sub_index,
+                    stream,
+                    event_type,
+                    symbol,
+                    condition_id,
+                    asset_id,
+                    source_time_ms,
+                    publisher_time_ms,
+                    inline_event_json,
+                    event_sha256,
+                    connection_id,
+                    sequence_number,
+                    received_wall_ms,
+                    received_monotonic_ns,
+                    raw_payload_sha256,
+                    inline_raw_text,
+                    *compact_location,
+                ) = row
+                normalized_message_id = str(message_id)
+                if normalized_message_id != cached_message_id:
+                    if compact:
+                        if str(inline_raw_text) or str(inline_event_json):
+                            raise ValueError(
+                                "compact evidence contains an unexpected inline payload"
+                            )
+                        raw_text = self._decode_compact_raw_text(
+                            run_id=run_id,
+                            chunk_id=compact_location[0],
+                            raw_offset=compact_location[1],
+                            raw_size=compact_location[2],
+                            raw_payload_sha256=raw_payload_sha256,
+                        )
+                    else:
+                        raw_text = str(inline_raw_text)
+                        if hashlib.sha256(raw_text.encode("utf-8")).hexdigest() != str(
+                            raw_payload_sha256
+                        ):
+                            raise ValueError("legacy raw-message payload hash mismatch")
+                    try:
+                        parsed = _strict_json_loads(raw_text)
+                    except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+                        raise ValueError(
+                            "normalized event references an invalid raw message"
+                        ) from exc
+                    candidates = parsed if isinstance(parsed, list) else [parsed]
+                    if not all(isinstance(item, Mapping) for item in candidates):
+                        raise ValueError(
+                            "normalized event raw message contains a non-object"
+                        )
+                    cached_events = tuple(
+                        item for item in candidates if isinstance(item, Mapping)
+                    )
+                    cached_message_id = normalized_message_id
+                index = int(sub_index)
+                if not 0 <= index < len(cached_events):
+                    raise ValueError("normalized event sub-index is out of bounds")
+                event = dict(cached_events[index])
+                canonical = _canonical_json(event)
+                actual_event_sha = hashlib.sha256(canonical.encode("ascii")).hexdigest()
+                expected_event_id = _canonical_sha256(
+                    {
+                        "message_id": normalized_message_id,
+                        "sub_index": index,
+                        "event_sha256": actual_event_sha,
+                    }
+                )
+                normalized = _event_index(str(stream), event)
+                expected_source_time = normalized["source_time_ms"]
+                expected_publisher_time = normalized["publisher_time_ms"]
+                if (
+                    str(event_run) != run_id
+                    or actual_event_sha != str(event_sha256)
+                    or not hmac.compare_digest(str(event_id), expected_event_id)
+                    or (compact and str(inline_event_json))
+                    or (not compact and canonical != str(inline_event_json))
+                    or str(normalized["event_type"]) != str(event_type)
+                    or str(normalized["symbol"]) != str(symbol)
+                    or str(normalized["condition_id"]) != str(condition_id)
+                    or str(normalized["asset_id"]) != str(asset_id)
+                    or expected_source_time != source_time_ms
+                    or expected_publisher_time != publisher_time_ms
+                ):
+                    raise ValueError("normalized event disagrees with its raw source")
+                yield DecodedPublicEvent(
+                    event_id=str(event_id),
+                    run_id=run_id,
+                    message_id=normalized_message_id,
+                    sub_index=index,
+                    stream=str(stream),
+                    event_type=str(event_type),
+                    symbol=str(symbol),
+                    condition_id=str(condition_id),
+                    asset_id=str(asset_id),
+                    source_time_ms=(
+                        None if source_time_ms is None else int(source_time_ms)
+                    ),
+                    publisher_time_ms=(
+                        None if publisher_time_ms is None else int(publisher_time_ms)
+                    ),
+                    event_sha256=str(event_sha256),
+                    event=event,
+                    connection_id=str(connection_id),
+                    sequence_number=int(sequence_number),
+                    received_wall_ms=int(received_wall_ms),
+                    received_monotonic_ns=int(received_monotonic_ns),
+                )
 
     def record_gap(self, run_id: str, gap: StreamGap) -> str:
         self._require_running_run(run_id)
@@ -890,9 +1524,7 @@ class PolymarketEvidenceStore:
         connection = self.connect()
         terminal_errors = [str(error) for error in errors]
 
-        def query_rows(
-            label: str, query: str
-        ) -> list[tuple[object, ...]]:
+        def query_rows(label: str, query: str) -> list[tuple[object, ...]]:
             try:
                 return connection.execute(query, [run_id]).fetchall()
             except Exception as exc:
@@ -950,9 +1582,7 @@ class PolymarketEvidenceStore:
             "database": database,
             "started_at_ms": int(started_at_ms),
             "ended_at_ms": int(ended_at_ms),
-            "duration_seconds": max(
-                0.0, (ended_at_ms - started_at_ms) / 1_000.0
-            ),
+            "duration_seconds": max(0.0, (ended_at_ms - started_at_ms) / 1_000.0),
             "market_snapshot_count": market_count,
             "raw_message_count": raw_count,
             "normalized_event_count": event_count,
@@ -1045,7 +1675,9 @@ class PolymarketEvidenceStore:
                 )
             notify("integrity-complete", force=True)
             return result
-        run_schema, run_status, run_started, run_ended, report_json, report_sha = run_row
+        run_schema, run_status, run_started, run_ended, report_json, report_sha = (
+            run_row
+        )
         parsed_report: Mapping[str, object] | None = None
         if str(run_schema) != POLYMARKET_RECORDER_SCHEMA_VERSION:
             errors.append(f"recorder_schema_mismatch:{run_id}")
@@ -1071,74 +1703,261 @@ class PolymarketEvidenceStore:
                     errors.append(f"recorder_report_status_mismatch:{run_id}")
             except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
                 errors.append(f"recorder_report_invalid:{run_id}:{exc}")
-        for batch in _query_batches(
-            connection,
-            """
-            SELECT message_id, run_id, stream, connection_id, sequence_number,
-                   raw_payload_sha256, raw_text
-            FROM polymarket_raw_message WHERE run_id = ?
-            """,
-            [run_id],
-        ):
-            message_count += len(batch)
-            for (
-                message_id,
-                message_run,
-                stream,
-                connection_id,
-                sequence,
-                claimed,
-                raw_text,
-            ) in batch:
-                actual = hashlib.sha256(str(raw_text).encode("utf-8")).hexdigest()
-                if actual != str(claimed):
-                    errors.append(f"raw_message_hash_mismatch:{message_id}")
-                expected_id = _canonical_sha256(
-                    {
-                        "run_id": str(message_run),
-                        "stream": str(stream),
-                        "connection_id": str(connection_id),
-                        "sequence_number": int(sequence),
-                        "raw_payload_sha256": str(claimed),
-                    }
+        compact = (
+            self._storage_schema_version(run_id) == POLYMARKET_STORAGE_SCHEMA_VERSION
+        )
+        if compact:
+            self._frame_cache_id = ""
+            self._frame_cache = b""
+            chunk_rows = connection.execute(
+                """
+                SELECT chunk_id, chunk_index, message_count, first_message_id,
+                       last_message_id, message_manifest_xor
+                FROM polymarket_raw_chunk
+                WHERE run_id = ? ORDER BY chunk_index
+                """,
+                [run_id],
+            ).fetchall()
+            chunks = {str(row[0]): row for row in chunk_rows}
+            if [int(row[1]) for row in chunk_rows] != list(range(len(chunk_rows))):
+                errors.append(f"raw_chunk_index_sequence_invalid:{run_id}")
+            observed_chunks: dict[str, dict[str, object]] = {}
+            expected_event_count = 0
+            invalid_chunks: set[str] = set()
+            for batch in _query_batches(
+                connection,
+                """
+                SELECT message_id, run_id, schema_version, stream,
+                       connection_id, sequence_number, received_wall_ms,
+                       received_monotonic_ns, raw_payload_sha256, raw_text,
+                       parse_status, parse_error, storage_chunk_id,
+                       chunk_message_index, raw_offset, raw_size,
+                       normalized_event_count
+                FROM polymarket_raw_message WHERE run_id = ?
+                """,
+                [run_id],
+            ):
+                message_count += len(batch)
+                for raw_row in batch:
+                    (
+                        message_id,
+                        message_run,
+                        _message_schema,
+                        stream,
+                        connection_id,
+                        sequence,
+                        _received_wall_ms,
+                        _received_monotonic_ns,
+                        claimed,
+                        inline_raw_text,
+                        parse_status,
+                        parse_error,
+                        chunk_id,
+                        chunk_message_index,
+                        raw_offset,
+                        raw_size,
+                        normalized_event_count,
+                    ) = raw_row
+                    normalized_chunk_id = str(chunk_id or "")
+                    if str(inline_raw_text):
+                        errors.append(f"compact_inline_raw_payload:{message_id}")
+                    if normalized_chunk_id not in chunks:
+                        errors.append(f"raw_message_missing_chunk:{message_id}")
+                        continue
+                    try:
+                        normalized_count = int(normalized_event_count)
+                        position = int(chunk_message_index)
+                        manifest_hash = _compact_message_manifest_hash(raw_row)
+                    except (TypeError, ValueError, OverflowError) as exc:
+                        errors.append(
+                            f"raw_message_metadata_invalid:{message_id}:"
+                            f"{exc.__class__.__name__}:{exc}"
+                        )
+                        continue
+                    if normalized_count < 0 or not 0 <= position < _WRITER_BATCH_SIZE:
+                        errors.append(f"raw_message_metadata_invalid:{message_id}")
+                        continue
+                    expected_event_count += normalized_count
+                    observed = observed_chunks.setdefault(
+                        normalized_chunk_id,
+                        {
+                            "count": 0,
+                            "manifest_xor": 0,
+                            "minimum_index": _WRITER_BATCH_SIZE,
+                            "maximum_index": -1,
+                            "first_message_id": "",
+                            "last_message_id": "",
+                        },
+                    )
+                    observed["count"] = int(observed["count"]) + 1
+                    observed["manifest_xor"] = int(observed["manifest_xor"]) ^ int(
+                        manifest_hash, 16
+                    )
+                    observed["minimum_index"] = min(
+                        int(observed["minimum_index"]), position
+                    )
+                    observed["maximum_index"] = max(
+                        int(observed["maximum_index"]), position
+                    )
+                    chunk_message_count = int(chunks[normalized_chunk_id][2])
+                    if position == 0:
+                        observed["first_message_id"] = str(message_id)
+                    if position == chunk_message_count - 1:
+                        observed["last_message_id"] = str(message_id)
+                    expected_id = _canonical_sha256(
+                        {
+                            "run_id": str(message_run),
+                            "stream": str(stream),
+                            "connection_id": str(connection_id),
+                            "sequence_number": int(sequence),
+                            "raw_payload_sha256": str(claimed),
+                        }
+                    )
+                    if not hmac.compare_digest(str(message_id), expected_id):
+                        errors.append(f"raw_message_id_mismatch:{message_id}")
+                    if normalized_chunk_id in invalid_chunks:
+                        continue
+                    try:
+                        raw_text = self._decode_compact_raw_text(
+                            run_id=run_id,
+                            chunk_id=normalized_chunk_id,
+                            raw_offset=raw_offset,
+                            raw_size=raw_size,
+                            raw_payload_sha256=claimed,
+                        )
+                    except (TypeError, ValueError) as exc:
+                        invalid_chunks.add(normalized_chunk_id)
+                        errors.append(
+                            f"raw_chunk_invalid:{normalized_chunk_id}:"
+                            f"{exc.__class__.__name__}:{exc}"
+                        )
+                        continue
+                    expected_status = "ok"
+                    expected_error = ""
+                    expected_events: list[Mapping[str, object]] = []
+                    try:
+                        parsed = _strict_json_loads(raw_text)
+                        candidates = parsed if isinstance(parsed, list) else [parsed]
+                        if not all(isinstance(item, Mapping) for item in candidates):
+                            raise ValueError(
+                                "JSON stream message contains a non-object event"
+                            )
+                        expected_events = [
+                            item for item in candidates if isinstance(item, Mapping)
+                        ]
+                    except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+                        expected_status = (
+                            "control"
+                            if raw_text.strip() in {"", "PING", "PONG"}
+                            else "invalid"
+                        )
+                        expected_error = (
+                            ""
+                            if expected_status == "control"
+                            else f"{exc.__class__.__name__}:{exc}"
+                        )
+                    if (
+                        str(parse_status) != expected_status
+                        or str(parse_error) != expected_error
+                        or normalized_count != len(expected_events)
+                    ):
+                        errors.append(f"raw_message_parse_mismatch:{message_id}")
+                    if expected_status == "invalid":
+                        errors.append(f"invalid_stream_message:{message_id}")
+                notify("integrity-raw-messages")
+            for chunk_id, chunk_row in chunks.items():
+                observed = observed_chunks.get(chunk_id)
+                expected_count = int(chunk_row[2])
+                if (
+                    observed is None
+                    or int(observed["count"]) != expected_count
+                    or int(observed["minimum_index"]) != 0
+                    or int(observed["maximum_index"]) != expected_count - 1
+                    or str(observed["first_message_id"]) != str(chunk_row[3])
+                    or str(observed["last_message_id"]) != str(chunk_row[4])
+                    or f"{int(observed['manifest_xor']):064x}" != str(chunk_row[5])
+                ):
+                    errors.append(f"raw_chunk_manifest_mismatch:{chunk_id}")
+            notify("integrity-public-events", force=True)
+            try:
+                for _event in self.iter_public_events(run_id, ordered=False):
+                    event_count += 1
+                    notify("integrity-public-events")
+            except (TypeError, ValueError) as exc:
+                errors.append(
+                    f"event_source_reconstruction_failed:{exc.__class__.__name__}:{exc}"
                 )
-                if not hmac.compare_digest(str(message_id), expected_id):
-                    errors.append(f"raw_message_id_mismatch:{message_id}")
-            notify("integrity-raw-messages")
-        # The enforced UNIQUE keys reject exact source/event duplication at write
-        # time. Per-row content-address verification above also catches a copied
-        # identifier paired with a different unique key, without an unbounded sort.
-        notify("integrity-public-events", force=True)
-        for batch in _query_batches(
-            connection,
-            """
-            SELECT event_id, message_id, sub_index, event_sha256, event_json
-            FROM polymarket_public_event WHERE run_id = ?
-            """,
-            [run_id],
-        ):
-            event_count += len(batch)
-            for event_id, message_id, sub_index, claimed, event_json in batch:
-                actual = hashlib.sha256(str(event_json).encode("ascii")).hexdigest()
-                if actual != str(claimed):
-                    errors.append(f"event_hash_mismatch:{event_id}")
-                expected_id = _canonical_sha256(
-                    {
-                        "message_id": str(message_id),
-                        "sub_index": int(sub_index),
-                        "event_sha256": str(claimed),
-                    }
+            if event_count != expected_event_count:
+                errors.append(
+                    f"normalized_event_count_mismatch:{run_id}:"
+                    f"{event_count}:{expected_event_count}"
                 )
-                if not hmac.compare_digest(str(event_id), expected_id):
-                    errors.append(f"event_id_mismatch:{event_id}")
-                try:
-                    canonical = _canonical_json(_strict_json_loads(str(event_json)))
-                except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
-                    errors.append(f"event_json_invalid:{event_id}:{exc}")
-                else:
-                    if canonical != str(event_json):
-                        errors.append(f"event_json_not_canonical:{event_id}")
-            notify("integrity-public-events")
+        else:
+            for batch in _query_batches(
+                connection,
+                """
+                SELECT message_id, run_id, stream, connection_id,
+                       sequence_number, raw_payload_sha256, raw_text
+                FROM polymarket_raw_message WHERE run_id = ?
+                """,
+                [run_id],
+            ):
+                message_count += len(batch)
+                for (
+                    message_id,
+                    message_run,
+                    stream,
+                    connection_id,
+                    sequence,
+                    claimed,
+                    raw_text,
+                ) in batch:
+                    actual = hashlib.sha256(str(raw_text).encode("utf-8")).hexdigest()
+                    if actual != str(claimed):
+                        errors.append(f"raw_message_hash_mismatch:{message_id}")
+                    expected_id = _canonical_sha256(
+                        {
+                            "run_id": str(message_run),
+                            "stream": str(stream),
+                            "connection_id": str(connection_id),
+                            "sequence_number": int(sequence),
+                            "raw_payload_sha256": str(claimed),
+                        }
+                    )
+                    if not hmac.compare_digest(str(message_id), expected_id):
+                        errors.append(f"raw_message_id_mismatch:{message_id}")
+                notify("integrity-raw-messages")
+            notify("integrity-public-events", force=True)
+            for batch in _query_batches(
+                connection,
+                """
+                SELECT event_id, message_id, sub_index, event_sha256, event_json
+                FROM polymarket_public_event WHERE run_id = ?
+                """,
+                [run_id],
+            ):
+                event_count += len(batch)
+                for event_id, message_id, sub_index, claimed, event_json in batch:
+                    actual = hashlib.sha256(str(event_json).encode("ascii")).hexdigest()
+                    if actual != str(claimed):
+                        errors.append(f"event_hash_mismatch:{event_id}")
+                    expected_id = _canonical_sha256(
+                        {
+                            "message_id": str(message_id),
+                            "sub_index": int(sub_index),
+                            "event_sha256": str(claimed),
+                        }
+                    )
+                    if not hmac.compare_digest(str(event_id), expected_id):
+                        errors.append(f"event_id_mismatch:{event_id}")
+                    try:
+                        canonical = _canonical_json(_strict_json_loads(str(event_json)))
+                    except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+                        errors.append(f"event_json_invalid:{event_id}:{exc}")
+                    else:
+                        if canonical != str(event_json):
+                            errors.append(f"event_json_not_canonical:{event_id}")
+                    notify("integrity-public-events")
         notify("integrity-relational-checks", force=True)
         orphan_events = connection.execute(
             """
@@ -1153,14 +1972,17 @@ class PolymarketEvidenceStore:
             [run_id],
         ).fetchall()
         errors.extend(f"event_without_message:{row[0]}" for row in orphan_events)
-        invalid_messages = connection.execute(
-            """
-            SELECT message_id FROM polymarket_raw_message
-            WHERE run_id = ? AND parse_status = 'invalid' ORDER BY message_id
-            """,
-            [run_id],
-        ).fetchall()
-        errors.extend(f"invalid_stream_message:{row[0]}" for row in invalid_messages)
+        if not compact:
+            invalid_messages = connection.execute(
+                """
+                SELECT message_id FROM polymarket_raw_message
+                WHERE run_id = ? AND parse_status = 'invalid' ORDER BY message_id
+                """,
+                [run_id],
+            ).fetchall()
+            errors.extend(
+                f"invalid_stream_message:{row[0]}" for row in invalid_messages
+            )
         snapshots = connection.execute(
             """
             SELECT snapshot_id, run_id, observed_wall_ms, observed_monotonic_ns,
@@ -1216,15 +2038,27 @@ class PolymarketEvidenceStore:
             expected_values: tuple[tuple[str, object, object], ...] = (
                 ("started_at_ms", int(run_started), parsed_report.get("started_at_ms")),
                 ("ended_at_ms", int(run_ended or 0), parsed_report.get("ended_at_ms")),
-                ("market_snapshot_count", len(snapshots), parsed_report.get("market_snapshot_count")),
-                ("raw_message_count", message_count, parsed_report.get("raw_message_count")),
+                (
+                    "market_snapshot_count",
+                    len(snapshots),
+                    parsed_report.get("market_snapshot_count"),
+                ),
+                (
+                    "raw_message_count",
+                    message_count,
+                    parsed_report.get("raw_message_count"),
+                ),
                 (
                     "normalized_event_count",
                     event_count,
                     parsed_report.get("normalized_event_count"),
                 ),
                 ("stream_gap_count", len(gaps), parsed_report.get("stream_gap_count")),
-                ("stream_counts", actual_stream_counts, parsed_report.get("stream_counts")),
+                (
+                    "stream_counts",
+                    actual_stream_counts,
+                    parsed_report.get("stream_counts"),
+                ),
                 ("assets", actual_assets, parsed_report.get("assets")),
                 ("conditions", actual_conditions, parsed_report.get("conditions")),
             )
@@ -1478,9 +2312,7 @@ class PolymarketPublicRecorder:
             "run_id": run_id,
             "phase": phase,
             "observed_at_ms": observed_at_ms,
-            "elapsed_seconds": max(
-                0.0, (observed_at_ms - started_at_ms) / 1_000.0
-            ),
+            "elapsed_seconds": max(0.0, (observed_at_ms - started_at_ms) / 1_000.0),
             "duration_seconds": int(duration_seconds),
             "written_message_count": self._written_message_count,
             "written_market_snapshot_count": self._written_market_snapshot_count,
@@ -1667,9 +2499,7 @@ class PolymarketPublicRecorder:
                     progress_interval_seconds=progress_interval,
                 )
             except Exception as exc:
-                self.errors.append(
-                    f"finish_run:{exc.__class__.__name__}:{exc}"
-                )
+                self.errors.append(f"finish_run:{exc.__class__.__name__}:{exc}")
                 report = store.fail_run(
                     run_id,
                     started_at_ms=started,
@@ -2051,9 +2881,7 @@ class PolymarketPublicRecorder:
                             {
                                 "topic": "crypto_prices_chainlink",
                                 "type": "update",
-                                "filters": _canonical_json(
-                                    {"symbol": f"{asset}/usd"}
-                                ),
+                                "filters": _canonical_json({"symbol": f"{asset}/usd"}),
                             }
                         ],
                     }
@@ -2180,9 +3008,7 @@ class PolymarketPublicRecorder:
                     finally:
                         if heartbeat_task is not None:
                             heartbeat_task.cancel()
-                            await asyncio.gather(
-                                heartbeat_task, return_exceptions=True
-                            )
+                            await asyncio.gather(heartbeat_task, return_exceptions=True)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
@@ -2270,7 +3096,9 @@ __all__ = [
     "CLOB_MARKET_WEBSOCKET",
     "POLYMARKET_EVIDENCE_SCHEMA_VERSION",
     "POLYMARKET_RECORDER_SCHEMA_VERSION",
+    "POLYMARKET_STORAGE_SCHEMA_VERSION",
     "POLYMARKET_RTDS_WEBSOCKET",
+    "DecodedPublicEvent",
     "MarketEvidence",
     "PolymarketEvidenceStore",
     "PolymarketPublicRecorder",
