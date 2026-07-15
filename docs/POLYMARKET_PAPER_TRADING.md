@@ -194,7 +194,8 @@ surface:
 
 ```powershell
 simple-ai-trading polymarket-record --duration-seconds 660 `
-  --database data/polymarket-paper.duckdb
+  --database data/polymarket-paper.duckdb `
+  --progress-path data/polymarket-recorder-progress.json
 simple-ai-trading polymarket-resolve `
   --database data/polymarket-paper.duckdb
 simple-ai-trading polymarket-features `
@@ -240,6 +241,21 @@ the start phase, it can end before the next market's post-open feature warm-up.
 The 660-second example can contain one fully anchored interval in the worst start
 phase, but it is still far below the default 30 resolved markets per asset needed
 for training. Long-running prospective capture is required for model work.
+
+The recorder emits an independent progress heartbeat every 30 seconds during
+capture and reports verified raw/event row counts during the terminal integrity
+audit. `--progress-interval-seconds` accepts 5-300 seconds. The optional
+`--progress-path` is atomically replaced for app/status consumption; it never
+reads the active database, calls an API, or participates in evidence hashes, so a
+telemetry failure cannot interrupt capture. Queue growth, a stopped writer, and
+an audit that is still advancing are therefore distinguishable without probing
+the single-writer DuckDB.
+
+The recorder's DuckDB memory ceiling defaults to 4 GiB because a real
+9.17-million-event terminal audit exceeded the former 1 GiB ceiling. This is an
+upper bound, not a reservation; short captures use less. Operators can lower it
+with `--memory-limit`, but a failed full audit remains failed rather than silently
+publishing partially verified evidence.
 
 The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,

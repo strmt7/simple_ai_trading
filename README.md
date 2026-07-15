@@ -136,7 +136,7 @@ simple-ai-trading coordinator
 simple-ai-trading universe
 simple-ai-trading data-sync --symbol BTCUSDC --interval 1m --full-history
 simple-ai-trading api-budget --compact
-simple-ai-trading polymarket-record --duration-seconds 660 --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-record --duration-seconds 660 --database data/polymarket-paper.duckdb --progress-path data/polymarket-recorder-progress.json
 simple-ai-trading polymarket-resolve --database data/polymarket-paper.duckdb
 simple-ai-trading polymarket-features --database data/polymarket-paper.duckdb
 simple-ai-trading polymarket-model --database data/polymarket-paper.duckdb --output data/polymarket-model.json

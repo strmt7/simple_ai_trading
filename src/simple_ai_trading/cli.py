@@ -459,8 +459,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_record.add_argument("--duration-seconds", type=int, default=300)
     parser_polymarket_record.add_argument("--discovery-interval-seconds", type=int, default=60)
     parser_polymarket_record.add_argument("--queue-capacity", type=int, default=20_000)
-    parser_polymarket_record.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_record.add_argument("--memory-limit", default="4GB")
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_record.add_argument(
+        "--progress-interval-seconds",
+        type=int,
+        default=30,
+        help="bounded capture and integrity-audit progress cadence",
+    )
+    parser_polymarket_record.add_argument(
+        "--progress-path",
+        default=None,
+        help="optional atomic JSON sidecar for CLI/app progress",
+    )
     parser_polymarket_record.add_argument("--json", action="store_true")
     parser_polymarket_record.set_defaults(func=command_polymarket_record)
 
@@ -6031,14 +6042,59 @@ def command_api_budget(args: argparse.Namespace) -> int:
 def command_polymarket_record(args: argparse.Namespace) -> int:
     """Capture public, prospective evidence for the Polymarket paper lane."""
     try:
+        database = Path(args.database)
+        progress_path_value = str(getattr(args, "progress_path", None) or "").strip()
+        progress_path = Path(progress_path_value) if progress_path_value else None
+        if progress_path is not None and progress_path.resolve() == database.resolve():
+            raise ValueError("--progress-path must not overwrite the evidence database")
+        progress_write_warning_emitted = False
+
+        def progress(_phase: str, payload: Mapping[str, object]) -> None:
+            nonlocal progress_write_warning_emitted
+            print(
+                "polymarket-record-progress: "
+                f"phase={payload.get('phase')} "
+                f"elapsed={float(payload.get('elapsed_seconds', 0.0)):.1f}s "
+                f"messages={int(payload.get('written_message_count', 0))} "
+                f"queue={int(payload.get('queue_size', 0))} "
+                f"verified_messages="
+                f"{int(payload.get('verified_raw_message_count', 0))} "
+                f"verified_events={int(payload.get('verified_event_count', 0))}",
+                file=sys.stderr,
+                flush=True,
+            )
+            if progress_path is None:
+                return
+            try:
+                write_json_atomic(
+                    progress_path,
+                    dict(payload),
+                    indent=2,
+                    sort_keys=True,
+                )
+            except Exception as exc:
+                if not progress_write_warning_emitted:
+                    print(
+                        "polymarket-record progress sidecar failed: "
+                        f"{exc.__class__.__name__}: {exc}",
+                        file=sys.stderr,
+                    )
+                    progress_write_warning_emitted = True
+
         recorder = PolymarketPublicRecorder(
-            Path(args.database),
+            database,
             queue_capacity=int(args.queue_capacity),
             discovery_interval_seconds=int(args.discovery_interval_seconds),
             memory_limit=str(args.memory_limit),
             database_threads=int(args.database_threads),
         )
-        report = asyncio.run(recorder.run(duration_seconds=int(args.duration_seconds)))
+        report = asyncio.run(
+            recorder.run(
+                duration_seconds=int(args.duration_seconds),
+                progress=progress,
+                progress_interval_seconds=int(args.progress_interval_seconds),
+            )
+        )
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
         print(f"polymarket-record failed: {exc.__class__.__name__}: {exc}", file=sys.stderr)
         return 2
