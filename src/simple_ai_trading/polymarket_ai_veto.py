@@ -587,6 +587,7 @@ def benchmark_polymarket_ai_veto(
     post_json: PostJson = _request_json,
     progress: ProgressCallback | None = None,
     cache_store: PolymarketAIVetoCache | None = None,
+    expected_model_digest: str = "",
 ) -> PolymarketAIVetoReport:
     """Run one local model over immutable label-free cases; failures always veto."""
 
@@ -608,6 +609,16 @@ def benchmark_polymarket_ai_veto(
     ):
         raise ValueError("Polymarket AI veto case identity is invalid")
     model_digest, metadata_sha256 = _model_evidence(cfg, post_json)
+    expected_digest = str(expected_model_digest or "").strip().lower()
+    if expected_digest:
+        if (
+            len(expected_digest) != 64
+            or any(value not in "0123456789abcdef" for value in expected_digest)
+            or model_digest != expected_digest
+        ):
+            raise ValueError(
+                "Polymarket AI model digest differs from benchmark provenance"
+            )
     parameters = estimate_model_parameters_b(cfg.model)
     if parameters is None or parameters < 2.0:
         raise ValueError("Polymarket AI veto model is not multibillion-parameter")

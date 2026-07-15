@@ -1797,6 +1797,7 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
         probability_report,
         execution_config,
     )
+    chat_calls = 0
 
     def approve(
         url: str,
@@ -1804,10 +1805,12 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
         _timeout: float,
         _method: str,
     ) -> object:
+        nonlocal chat_calls
         if url.endswith("/api/tags"):
             return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
         if url.endswith("/api/show"):
             return {"model": "qwen3.5:9b", "parameters": "9B"}
+        chat_calls += 1
         assert payload["think"] is False
         return {
             "message": {
@@ -1829,6 +1832,7 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
         risk_benchmark_evidence_sha256="a" * 64,
         config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
         post_json=approve,  # type: ignore[arg-type]
+        expected_model_digest="f" * 64,
     )
     baseline = evaluate_polymarket_execution_policy(
         split.test,
@@ -1851,6 +1855,18 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
     assert baseline == approved
     assert not ai_report.trading_authority
     assert not ai_report.profitability_claim
+    completed_chat_calls = chat_calls
+    with pytest.raises(ValueError, match="differs from benchmark provenance"):
+        benchmark_polymarket_ai_veto(
+            cases[:1],
+            all_condition_ids=[item.condition_id for item in split.test],
+            selection_sha256=selection.selection_sha256,
+            risk_benchmark_evidence_sha256="a" * 64,
+            config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+            post_json=approve,  # type: ignore[arg-type]
+            expected_model_digest="e" * 64,
+        )
+    assert chat_calls == completed_chat_calls
 
 
 def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
@@ -2094,6 +2110,16 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
             "contract": "finance-risk-review-adversarial-v6",
             "selected_model": "qwen3.5:9b",
             "score": 1.0,
+            "model_provenance": {
+                "path": "docs/ai/risk-review/latest/model-provenance.json",
+                "provenance_sha256": "c" * 64,
+                "benchmark_sha256": "a" * 64,
+                "benchmark_contract": "finance-risk-review-adversarial-v6",
+                "model": "qwen3.5:9b",
+                "ollama_manifest_digest": "f" * 64,
+                "base_blob_sha256": "d" * 64,
+                "size_bytes": 6_000_000_000,
+            },
         },
         "policy_selection": selection.asdict(),
         "prompt_cases": [case.asdict() for case in cases],

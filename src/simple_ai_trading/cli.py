@@ -26,6 +26,7 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .ai_runtime import detect_ai_capabilities, render_ai_capability_report
+from .ai_model_provenance import load_local_ai_model_provenance
 from .advanced_model import (
     AdvancedFeatureConfig,
     advanced_config_from_signature,
@@ -7027,6 +7028,11 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             benchmark_path = Path(str(args.ai_benchmark))
             benchmark_bytes = benchmark_path.read_bytes()
             benchmark_payload = json.loads(benchmark_bytes.decode("utf-8"))
+            model_provenance = load_local_ai_model_provenance(
+                benchmark_path,
+                benchmark_bytes,
+                model=str(args.ai_model),
+            )
             rescored_benchmark = rescore_finance_ai_benchmark_payload(
                 benchmark_payload
             )
@@ -7096,6 +7102,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     ),
                     progress=ai_progress,
                     cache_store=ai_cache_store,
+                    expected_model_digest=(
+                        model_provenance.ollama_manifest_digest
+                    ),
                 )
             ai_decision_delays = {
                 condition_id: 0
@@ -7162,6 +7171,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     "contract": rescored_benchmark.benchmark_contract,
                     "selected_model": rescored_benchmark.selected_model,
                     "score": selected_result.score,
+                    "model_provenance": model_provenance.asdict(),
                 },
                 "policy_selection": policy_selection.asdict(),
                 "prompt_cases": [case.asdict() for case in ai_cases],

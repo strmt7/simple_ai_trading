@@ -1581,6 +1581,17 @@ def _validate_ai_evidence(
     _verify_embedded_digest(veto, "report_sha256", name="AI veto report")
     config = _as_mapping(veto.get("config"), "AI veto config")
     benchmark = _as_mapping(ai["risk_benchmark"], "AI risk benchmark")
+    model_provenance = _as_mapping(
+        benchmark.get("model_provenance"),
+        "AI model provenance",
+    )
+    raw_model_size = model_provenance.get("size_bytes")
+    if isinstance(raw_model_size, bool):
+        raise ValueError("AI model provenance size is invalid")
+    try:
+        model_size = int(raw_model_size)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("AI model provenance size is invalid") from exc
     _require_exact_keys(
         config,
         {
@@ -1635,6 +1646,15 @@ def _validate_ai_evidence(
         or benchmark.get("selected_model") != model_name
         or not str(benchmark.get("contract", ""))
         or not str(benchmark.get("path", ""))
+        or model_provenance.get("model") != model_name
+        or model_provenance.get("benchmark_sha256") != benchmark.get("sha256")
+        or model_provenance.get("benchmark_contract") != benchmark.get("contract")
+        or model_provenance.get("ollama_manifest_digest")
+        != veto.get("model_digest")
+        or not _is_sha256(model_provenance.get("provenance_sha256"))
+        or not _is_sha256(model_provenance.get("base_blob_sha256"))
+        or model_size <= 2_000_000_000
+        or not str(model_provenance.get("path", ""))
     ):
         raise ValueError("AI veto report provenance is inconsistent")
     _finite_float(benchmark.get("score"), "AI risk benchmark score")
