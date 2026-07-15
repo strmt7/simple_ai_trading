@@ -1,23 +1,27 @@
 {
-  "schema_version": "round-056-paired-action-publication-v1",
-  "round": 56,
-  "published_at_utc": "2026-07-14T19:08:41.936905+00:00",
-  "publisher_path": "tools/publish_round56_paired_action.py",
+  "schema_version": "round-057-queue-censored-make-take-publication-v1",
+  "round": 57,
+  "published_at_ms": 1784122363683,
+  "publisher_path": "tools/publish_round57_queue_censored_make_take.py",
   "source": {
-    "report_path": "E:\\SimpleAITradingData\\round56-paired-action-20260714-v1\\report.json",
-    "report_file_sha256": "08fa37b8a5d896786e07cd90262574556531796df48c33373a3057eb2f99b6a7",
-    "report_canonical_sha256": "8fb9cdca77608554e187830d5ff636ea7013a7bce9a4a3a1805afd76e5a8f764",
-    "design_path": "docs/model-research/action-value/round-056-paired-action-distributional-design.json",
-    "design_sha256": "893cbc7e24b1125d16e36affa23329a3e18fc74f08131231619870ab831d99d4",
-    "binding_path": "docs/model-research/action-value/round-056-paired-action-execution-binding.json",
-    "binding_sha256": "ffdcd1226fe55af6edaf331d4908ec0945b5871fa021035fd2702d0795aeaa9a",
-    "implementation_commit": "244902e1604f664c1693db8620a782ab88ca7da7",
-    "dataset_sha256": "13086282510f69862552dfc7d85839d6910bb5cfd3e67b69f6c879ccd1c8837f",
-    "payoff_dataset_sha256": "bdae1a7ebd7140fa63e74a66e43159f884fd39635656fba45f2a3ff11884c519",
-    "ai_ledger_sha256": "bbbc845dd215abc99865f31f413f8f559a05b6dc665e38423926cfdc59938d0e"
+    "report_path": "E:\\SimpleAITradingData\\evidence\\round57-20260715-1509-v2\\round57-report.json",
+    "report_file_sha256": "1e549d21b6aa96f78e5f7e740457af0116e161ce67e9b600a62d28ee2d12e712",
+    "report_canonical_sha256": "c026542c7073496317f02a3f30dbf4274e7c7155a5026d79d8d76883ed924f27",
+    "design_path": "docs/model-research/action-value/round-057-queue-censored-make-take-design.json",
+    "design_sha256": "61165c1150f5349ff1b15f2243e7520ecbd7af44578edda7fc2be8bb56b66cdf",
+    "contract_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-contract.json",
+    "contract_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
+    "binding_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-binding.json",
+    "binding_sha256": "04e3900823bf60d7a93ab8d734aa85375b5a71e1b8d3854db55daddd05f98bb4",
+    "implementation_commit": "57017244837d6c94f03403393253d823e6c62c7a",
+    "source_dataset_fingerprints": {
+      "BTCUSDT": "b06a2b230ab31c164664eb96829500072312c6dd45c301b63c21d29cac98ecc8",
+      "ETHUSDT": "955da3450cdbdd2c4e0a6113f2e33694e6435e94f754b6a2b4a1e6c420cb6b3e",
+      "SOLUSDT": "2af6270b467264a10e9ee7aa339595a5b17f0f81578a9921acb4176df552c55d"
+    }
   },
   "claims": {
-    "status": "rejected",
+    "status": "rejected_policy_predictive",
     "selection_contaminated": true,
     "profitability_claim": false,
     "ai_uplift_claim": false,
@@ -28,96 +32,92 @@
     "post_hoc_threshold_authority": false
   },
   "result": {
-    "treatments": 2,
-    "model_artifacts": 24,
-    "outer_model_fits": 288,
-    "accepted_ai_factor_programs": 2,
-    "passed_treatments": 0,
-    "ai_uplift_gate_passed": false,
-    "forbidden_existing_rows_read": false,
-    "synthetic_rows": 0
+    "queue_fill_seed_members": 3,
+    "payoff_seed_members": 3,
+    "policy_calibration_fill_cells_passed": 6,
+    "policy_calibration_fill_cells_total": 6,
+    "policy_calibration_payoff_cells_passed": 5,
+    "policy_calibration_payoff_cells_total": 12,
+    "evaluation_fill_cells_passed": 6,
+    "evaluation_fill_cells_total": 6,
+    "evaluation_payoff_cells_passed": 3,
+    "evaluation_payoff_cells_total": 12,
+    "positive_evaluation_top_quintile_cells": 0,
+    "policy_selected": false,
+    "economic_replay_performed": false,
+    "ai_ablation_performed": false
   },
   "artifacts": [
     {
-      "path": "ai-factors.csv",
-      "bytes": 2207,
-      "sha256": "a8897dac987b69c5a8b4ac696f6247da990da22b60761638dfa4eb187da6fda6"
+      "path": "action-values.csv",
+      "bytes": 2157,
+      "sha256": "d9dd26055d77b07ed465f67b7d768d556bbdf10931ac6c5570a19642a329b76d"
     },
     {
-      "path": "charts/monthly-rank.svg",
-      "bytes": 4058,
-      "sha256": "c80cea5f92ac004f3e369f899c8161aac978459d62de3009cafdbcca8eaf2471"
+      "path": "charts/expected-action-value.svg",
+      "bytes": 5865,
+      "sha256": "f12cf4d6b78855fd20a48f8cf71e42218e149ae10e6871c73941fd856f5594f4"
     },
     {
-      "path": "charts/payoff-stratification.svg",
-      "bytes": 3696,
-      "sha256": "d4473f7d785620bdf42c6cd73f7a06b970400071bbf9b6b294560b4b22df3ad5"
-    },
-    {
-      "path": "charts/predictive-skill.svg",
-      "bytes": 3593,
-      "sha256": "438d68d1709736b015f4c77554fc8bd2308fc2d87edb173e59d530da91aaebf5"
+      "path": "charts/fill-survival-skill.svg",
+      "bytes": 5779,
+      "sha256": "1fe7843eee8a78a4671256d5bf2faec65d308b15871295133c7f0326158ac378"
     },
     {
       "path": "charts/research-progress.svg",
-      "bytes": 5195,
-      "sha256": "155380b432ec2d8ba3640111ed6af549a60869f8e7f0b13ef9ca862dfda7c960"
+      "bytes": 5292,
+      "sha256": "0ed9652ac2c9b334caa1418a3e606ca9b368f16afcbad2b6dff11bd535693d23"
     },
     {
-      "path": "charts/score-percentiles.svg",
-      "bytes": 4392,
-      "sha256": "5816f560c313e188562a3f62d003bfbfd2e3c89bcb7d204a8616de027e4fac46"
+      "path": "charts/top-quintile-net-payoff.svg",
+      "bytes": 5931,
+      "sha256": "76e6cb6400107d6498d983005805642c2dbe2063dc518b5c3da1403e2477f622"
     },
     {
-      "path": "decomposition.csv",
-      "bytes": 960,
-      "sha256": "8131b008dd501a884caa7bf60accc57932da0598b9e4da2e1266fd2dc44b7623"
+      "path": "conditional-payoff.csv",
+      "bytes": 6427,
+      "sha256": "72b5b6783f40cfad475100d98e5e862fffdf9806c64407287b7861c1b0a18d00"
     },
     {
       "path": "failure-analysis.json",
-      "bytes": 1783,
-      "sha256": "779b01dcbd4b77d97f33b7cfef0586296464999a22ac30fe05c3603bbd596b7e"
+      "bytes": 1671,
+      "sha256": "a53132b6e082aab37afa252c797a2504f8c9a6ccdce53d7d6d56db5cb634bc46"
+    },
+    {
+      "path": "fill-survival.csv",
+      "bytes": 2865,
+      "sha256": "650aa70fc87fa8c24d7dfd099fac551c2d590ee32139285c1c18b463a82c2111"
     },
     {
       "path": "gates.csv",
-      "bytes": 1595,
-      "sha256": "e29f407e430048df12e22e97358c51be45c6934c9a2b5aae0298aaa54a2d7a9b"
+      "bytes": 2433,
+      "sha256": "faaea2cae94cfcb0901ab457051f0e589da8dd84ea7436b8f83f8952b28b5dd0"
     },
     {
-      "path": "model-fold-skill.csv",
-      "bytes": 72354,
-      "sha256": "3b85a83ddab9e3552633624650b48d1935d52db9b65be944f3378831618dd1f0"
-    },
-    {
-      "path": "monthly-rank.csv",
-      "bytes": 1052,
-      "sha256": "64a92073b2b7d53c74bbb0928c6abe62e60bc6c2868c970dcdee338df258deb6"
-    },
-    {
-      "path": "predictive-summary.csv",
-      "bytes": 1228,
-      "sha256": "a8512f3264af0f073b51c4c4d5a415bac8d2689a993183d4f0a8232368a1f38c"
+      "path": "model-artifacts.csv",
+      "bytes": 1257,
+      "sha256": "0ab7fd1916431e52d39375a314aa6c58333922dfd87d4a64d5475d271675d5f1"
     },
     {
       "path": "progress.csv",
-      "bytes": 20633,
-      "sha256": "2997879a612ebed5b605f865d7a6aa93c7b14a9d8edb39b48ef783bd32d4da39"
+      "bytes": 21133,
+      "sha256": "618d410bec7f4cfe94022844835e92484811aaa9ce08fa9e1ace0be6f1dfa94d"
     },
     {
       "path": "README.md",
-      "bytes": 2198,
-      "sha256": "487b5b9f11bf160f43b8d3d3f4343edf94fe3dfc99dcd55dda15de2d5bc201b2"
-    },
-    {
-      "path": "score-percentiles.csv",
-      "bytes": 4073,
-      "sha256": "c1e8fdae13a73ad7b831b77194c24447004d8ba22a632fbdbab9e1e46b6000b1"
+      "bytes": 2521,
+      "sha256": "b0f2e67c3ce1d517647c95b3018e626045ccbcaf9a56cb70f1932b585f714a48"
     },
     {
       "path": "screen.json",
-      "bytes": 54944,
-      "sha256": "08fa37b8a5d896786e07cd90262574556531796df48c33373a3057eb2f99b6a7"
+      "bytes": 232637,
+      "sha256": "1e549d21b6aa96f78e5f7e740457af0116e161ce67e9b600a62d28ee2d12e712"
+    },
+    {
+      "path": "source-coverage.csv",
+      "bytes": 2986,
+      "sha256": "71aef91ff3ceb51fc2c9d835803b4ce4fa9d7d8530e8e77ad6bbab56868057da"
     }
   ],
-  "publication_canonical_sha256": "acf75152138b47529b4e765ed0d9fe139220d72410cf1821d3a5080e86300cde"
+  "publication_canonical_sha256": "7d283c52d0a8178bbab17e5a8f68f32e9b81238c9ee66e50dd1baf294153222a"
 }

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Predicted opportunity-weighted action value was negative</title>
+<desc>9-14 June 2023 UTC consumed evaluation; passive values include zero for ineligible and unfilled opportunities</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Predicted opportunity-weighted action value was negative</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">9-14 June 2023 UTC consumed evaluation; passive values include zero for ineligible and unfilled opportunities</text>
+<line x1="100" y1="575.0" x2="1150" y2="575.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="580.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-15.0</text>
+<line x1="100" y1="487.0" x2="1150" y2="487.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="492.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-11.8</text>
+<line x1="100" y1="399.0" x2="1150" y2="399.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="404.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-8.6</text>
+<line x1="100" y1="311.0" x2="1150" y2="311.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="316.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-5.4</text>
+<line x1="100" y1="223.0" x2="1150" y2="223.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="228.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-2.2</text>
+<line x1="100" y1="135.0" x2="1150" y2="135.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">1.0</text>
+<line x1="100" y1="162.5" x2="1150" y2="162.5" stroke="#94a3b8" stroke-width="2"/>
+<rect x="146.2" y="162.5" width="47.6" height="60.2" rx="3" fill="#14b8a6"/>
+<text x="170.0" y="240.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-2.19</text>
+<rect x="216.2" y="162.5" width="47.6" height="55.8" rx="3" fill="#60a5fa"/>
+<text x="240.0" y="236.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-2.03</text>
+<rect x="286.2" y="162.5" width="47.6" height="350.7" rx="3" fill="#f59e0b"/>
+<text x="310.0" y="531.2" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-12.75</text>
+<rect x="356.2" y="162.5" width="47.6" height="326.2" rx="3" fill="#ef4444"/>
+<text x="380.0" y="506.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-11.86</text>
+<text x="275.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">BTC</text>
+<rect x="496.2" y="162.5" width="47.6" height="52.4" rx="3" fill="#14b8a6"/>
+<text x="520.0" y="232.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-1.91</text>
+<rect x="566.2" y="162.5" width="47.6" height="49.6" rx="3" fill="#60a5fa"/>
+<text x="590.0" y="230.1" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-1.80</text>
+<rect x="636.2" y="162.5" width="47.6" height="353.0" rx="3" fill="#f59e0b"/>
+<text x="660.0" y="533.5" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-12.84</text>
+<rect x="706.2" y="162.5" width="47.6" height="331.4" rx="3" fill="#ef4444"/>
+<text x="730.0" y="511.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-12.05</text>
+<text x="625.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">ETH</text>
+<rect x="846.2" y="162.5" width="47.6" height="2.1" rx="3" fill="#14b8a6"/>
+<text x="870.0" y="182.6" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.08</text>
+<rect x="916.2" y="162.5" width="47.6" height="2.2" rx="3" fill="#60a5fa"/>
+<text x="940.0" y="182.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.08</text>
+<rect x="986.2" y="162.5" width="47.6" height="367.9" rx="3" fill="#f59e0b"/>
+<text x="1010.0" y="548.4" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-13.38</text>
+<rect x="1056.2" y="162.5" width="47.6" height="368.9" rx="3" fill="#ef4444"/>
+<text x="1080.0" y="549.4" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-13.42</text>
+<text x="975.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">SOL</text>
+<text transform="translate(24 355.0) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Mean predicted value per opportunity (bps)</text>
+<rect x="100.0" y="655" width="14" height="14" rx="2" fill="#14b8a6"/>
+<text x="122.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Passive long</text>
+<rect x="362.5" y="655" width="14" height="14" rx="2" fill="#60a5fa"/>
+<text x="384.5" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Passive short</text>
+<rect x="625.0" y="655" width="14" height="14" rx="2" fill="#f59e0b"/>
+<text x="647.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Aggressive long</text>
+<rect x="887.5" y="655" width="14" height="14" rx="2" fill="#ef4444"/>
+<text x="909.5" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Aggressive short</text>
+</svg>
