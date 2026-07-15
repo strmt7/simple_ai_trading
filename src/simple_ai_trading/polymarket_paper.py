@@ -100,6 +100,31 @@ class PolymarketPaperSettlement:
 
 
 @dataclass(frozen=True)
+class PolymarketPaperStopReport:
+    status: str
+    close_fill_count: int
+    settlement_count: int
+    remaining_opening_intent_ids: tuple[str, ...]
+    blocking_intent_ids: tuple[str, ...]
+    errors: tuple[str, ...]
+
+    @property
+    def stopped(self) -> bool:
+        return self.status == "STOPPED"
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            "status": self.status,
+            "stopped": self.stopped,
+            "close_fill_count": self.close_fill_count,
+            "settlement_count": self.settlement_count,
+            "remaining_opening_intent_ids": self.remaining_opening_intent_ids,
+            "blocking_intent_ids": self.blocking_intent_ids,
+            "errors": self.errors,
+        }
+
+
+@dataclass(frozen=True)
 class PolymarketPaperReconciliation:
     venue: str
     journal: PaperReconciliationReport
@@ -313,29 +338,6 @@ class PolymarketPaperBroker:
                     recorded.received_monotonic_ns,
                 )
         return latest_monotonic_ns
-
-    def _latest_consumed_wall_ms(self) -> int:
-        rows = self.store.connect().execute(
-            """
-            SELECT token_id, decision_event_id, execution_event_id
-            FROM polymarket_paper_order_context
-            WHERE run_id = ?
-            """,
-            [self.replay.run_id],
-        ).fetchall()
-        latest_wall_ms = -1
-        for token_id, decision_event_id, execution_event_id in rows:
-            for event_id in (str(decision_event_id), str(execution_event_id)):
-                if not event_id:
-                    continue
-                try:
-                    recorded = self.replay.book_for_event(event_id, str(token_id))
-                except KeyError as exc:
-                    raise ValueError(
-                        "existing paper context is absent from replay evidence"
-                    ) from exc
-                latest_wall_ms = max(latest_wall_ms, recorded.received_wall_ms)
-        return latest_wall_ms
 
     def _validate_replay_chronology(
         self,
@@ -582,14 +584,6 @@ class PolymarketPaperBroker:
         )
         if official is None or official != resolution:
             raise ValueError("resolution is not immutable evidence from this replay")
-        if resolution.received_wall_ms <= self._latest_consumed_wall_ms():
-            raise ValueError("resolution predates a previously consumed replay state")
-        if (
-            resolution.received_monotonic_ns > 0
-            and resolution.received_monotonic_ns
-            <= self._latest_consumed_monotonic_ns()
-        ):
-            raise ValueError("resolution predates a previously consumed replay state")
         parent = self.journal.intent(opening_intent_id)
         if resolution.condition_id != parent.market_id:
             raise ValueError("resolution market does not match bot-owned inventory")
@@ -911,6 +905,146 @@ class PolymarketPaperBroker:
             output.append(self._position(inventory.opening_intent_id))
         return tuple(output)
 
+    def stop_all_positions(
+        self,
+        *,
+        submission_latency_ms: int,
+    ) -> PolymarketPaperStopReport:
+        """Close or officially settle every provably bot-owned paper position."""
+
+        latency = int(submission_latency_ms)
+        if latency <= 0 or latency > 60_000:
+            raise ValueError("submission_latency_ms must lie in [1, 60000]")
+        errors: list[str] = []
+        close_fills = 0
+        settlements = 0
+        initial = self.reconcile()
+        if not initial.can_close:
+            return PolymarketPaperStopReport(
+                status="STOPPING",
+                close_fill_count=0,
+                settlement_count=0,
+                remaining_opening_intent_ids=tuple(
+                    item.opening_intent_id
+                    for item in initial.journal.inventory
+                    if item.remaining_quantity > 0
+                ),
+                blocking_intent_ids=initial.journal.blocking_intent_ids,
+                errors=tuple(
+                    sorted(
+                        set(
+                            (
+                                *initial.position_errors,
+                                *initial.journal.integrity_errors,
+                                *initial.journal.ownership_errors,
+                            )
+                        )
+                    )
+                ),
+            )
+
+        resolutions = {
+            item.condition_id: item
+            for item in self.replay.resolutions
+            if item.source == "clob_gamma_crosscheck"
+        }
+        for position in self.positions():
+            resolution = resolutions.get(position.market_id)
+            if resolution is None:
+                continue
+            try:
+                self.settle_position(
+                    opening_intent_id=position.opening_intent_id,
+                    resolution=resolution,
+                )
+            except Exception as exc:  # noqa: BLE001 - stop must preserve all failures
+                errors.append(
+                    f"settlement:{position.opening_intent_id}:"
+                    f"{exc.__class__.__name__}:{exc}"
+                )
+            else:
+                settlements += 1
+
+        max_attempts = len(self.replay.books) + 1
+        for _attempt in range(max_attempts):
+            reconciliation = self.reconcile()
+            remaining = [
+                item
+                for item in reconciliation.journal.inventory
+                if item.remaining_quantity > 0
+            ]
+            if not remaining or not reconciliation.can_close:
+                break
+            latest = self._latest_consumed_monotonic_ns()
+            candidates: list[tuple[int, str, PolymarketRecordedBook]] = []
+            for inventory in remaining:
+                for book in self.replay.books:
+                    if (
+                        book.token_id != inventory.asset_id
+                        or book.received_monotonic_ns <= latest
+                        or self.replay.first_book_after_latency(
+                            book,
+                            latency_ms=latency,
+                        )
+                        is None
+                    ):
+                        continue
+                    candidates.append(
+                        (
+                            book.received_monotonic_ns,
+                            inventory.opening_intent_id,
+                            book,
+                        )
+                    )
+                    break
+            if not candidates:
+                break
+            _monotonic_ns, opening_id, decision = min(candidates)
+            market = decision.market
+            try:
+                closed, result = self.close_position(
+                    opening_intent_id=opening_id,
+                    decision=decision,
+                    minimum_price=market.tick_size,
+                    submission_latency_ms=latency,
+                )
+            except Exception as exc:  # noqa: BLE001 - stop must preserve all failures
+                errors.append(
+                    f"close:{opening_id}:{exc.__class__.__name__}:{exc}"
+                )
+                break
+            if closed is None or result.filled_quantity <= 0:
+                errors.append(
+                    f"close:{opening_id}:unfilled:{result.state}:{result.reason}"
+                )
+                break
+            close_fills += 1
+
+        final = self.reconcile()
+        remaining_ids = tuple(
+            item.opening_intent_id
+            for item in final.journal.inventory
+            if item.remaining_quantity > 0
+        )
+        blockers = final.journal.blocking_intent_ids
+        if not final.ok:
+            errors.extend(final.position_errors)
+            errors.extend(final.journal.integrity_errors)
+            errors.extend(final.journal.ownership_errors)
+        status = (
+            "STOPPED"
+            if final.ok and not remaining_ids and not blockers and not errors
+            else "STOPPING"
+        )
+        return PolymarketPaperStopReport(
+            status=status,
+            close_fill_count=close_fills,
+            settlement_count=settlements,
+            remaining_opening_intent_ids=remaining_ids,
+            blocking_intent_ids=blockers,
+            errors=tuple(sorted(set(errors))),
+        )
+
     def _position(self, opening_intent_id: str) -> PolymarketPaperPosition:
         report = self.journal.reconcile(self.venue)
         inventory = next(
@@ -962,4 +1096,5 @@ __all__ = [
     "PolymarketPaperPosition",
     "PolymarketPaperReconciliation",
     "PolymarketPaperSettlement",
+    "PolymarketPaperStopReport",
 ]

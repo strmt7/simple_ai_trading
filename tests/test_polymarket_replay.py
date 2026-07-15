@@ -1650,10 +1650,47 @@ def test_polymarket_broker_missing_post_latency_state_becomes_restart_blocking_u
 
     with PolymarketPaperBroker(database, run_id="unknown-run") as restarted:
         restarted_report = restarted.reconcile()
+        stop_report = restarted.stop_all_positions(submission_latency_ms=5)
         assert restarted_report.can_open is False
         assert restarted_report.journal.blocking_intent_ids == (
             report.journal.blocking_intent_ids
         )
+        assert stop_report.status == "STOPPING"
+        assert stop_report.stopped is False
+        assert stop_report.blocking_intent_ids == report.journal.blocking_intent_ids
+
+
+def test_polymarket_broker_stop_settles_only_bot_owned_official_inventory(
+    tmp_path,
+) -> None:
+    database = tmp_path / "stop.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "stop-run")
+
+    with PolymarketPaperBroker(database, run_id="stop-run") as broker:
+        position, opened = broker.open_position(
+            position_id="position-stop",
+            decision=broker.replay.books[0],
+            outcome="Up",
+            quantity="5",
+            maximum_price="0.50",
+            submission_latency_ms=5,
+        )
+        assert position is not None
+        assert opened.state == "FILLED"
+
+        stop_report = broker.stop_all_positions(submission_latency_ms=5)
+        reconciliation = broker.reconcile()
+
+    assert stop_report.status == "STOPPED"
+    assert stop_report.stopped is True
+    assert stop_report.settlement_count == 1
+    assert stop_report.close_fill_count == 0
+    assert stop_report.remaining_opening_intent_ids == ()
+    assert stop_report.blocking_intent_ids == ()
+    assert stop_report.errors == ()
+    assert reconciliation.journal.inventory[0].remaining_quantity == 0
+    assert reconciliation.can_open is True
 
 
 def test_polymarket_broker_settles_only_from_exact_official_resolution(
@@ -1894,6 +1931,28 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     assert open_code == 0
     assert open_payload["operation"]["execution"]["state"] == "FILLED"
     assert len(open_payload["positions"]) == 1
+    stop_code = cli.main(
+        [
+            "polymarket-paper",
+            "--database",
+            str(database),
+            "--run-id",
+            "cli-run",
+            "--action",
+            "stop",
+            "--latency-ms",
+            "5",
+            "--json",
+        ]
+    )
+    stop_payload = json.loads(capsys.readouterr().out)
+    action_option = next(option for option in spec.options if option.dest == "action")
+
+    assert stop_code == 0
+    assert stop_payload["operation"]["stop"]["status"] == "STOPPED"
+    assert stop_payload["operation"]["stop"]["settlement_count"] == 1
+    assert stop_payload["positions"] == []
+    assert set(action_option.choices) == {"status", "open", "close", "settle", "stop"}
     assert {option.dest for option in spec.options} == {
         "database",
         "run_id",

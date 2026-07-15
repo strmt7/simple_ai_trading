@@ -617,7 +617,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--run-id", default=None)
     parser_polymarket_paper.add_argument(
         "--action",
-        choices=["status", "open", "close", "settle"],
+        choices=["status", "open", "close", "settle", "stop"],
         default="status",
     )
     parser_polymarket_paper.add_argument("--event-id", default=None)
@@ -6694,6 +6694,7 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
     """Inspect or execute evidence-bound Polymarket paper lifecycle actions."""
 
     action = str(getattr(args, "action", "status") or "status")
+    stop_succeeded: bool | None = None
 
     def required(name: str) -> str:
         value = str(getattr(args, name, None) or "").strip()
@@ -6775,6 +6776,12 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                         resolution=resolutions[0],
                     )
                 )
+            elif action == "stop":
+                stop_report = broker.stop_all_positions(
+                    submission_latency_ms=int(required("latency_ms")),
+                )
+                operation["stop"] = stop_report.asdict()
+                stop_succeeded = stop_report.stopped
             elif action != "status":
                 raise ValueError(f"unsupported Polymarket paper action: {action}")
 
@@ -6815,6 +6822,8 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
             f"can_open={report['can_open']} can_close={report['can_close']} "
             f"positions={len(payload['positions'])}"
         )
+    if stop_succeeded is not None:
+        return 0 if stop_succeeded else 2
     return 0 if reconciliation.can_open and reconciliation.can_close else 2
 
 
