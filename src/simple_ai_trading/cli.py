@@ -472,7 +472,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_record.add_argument("--database", default="data/polymarket-paper.duckdb")
     parser_polymarket_record.add_argument("--duration-seconds", type=int, default=300)
     parser_polymarket_record.add_argument("--discovery-interval-seconds", type=int, default=60)
-    parser_polymarket_record.add_argument("--queue-capacity", type=int, default=20_000)
+    parser_polymarket_record.add_argument("--queue-capacity", type=int, default=100_000)
     parser_polymarket_record.add_argument("--memory-limit", default="4GB")
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_record.add_argument(
