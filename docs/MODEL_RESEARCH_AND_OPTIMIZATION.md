@@ -569,9 +569,12 @@ simulated trade was `-148.4389` bps. It failed the drawdown, positive-day-ratio,
 and worst-trade criteria. Every conservative, regular, and aggressive candidate
 was rejected, so policy and development targets, predictions, and metrics were
 withheld. The reserved `2024-03-30` terminal date was not ingested, queried,
-labeled, predicted, or evaluated. The verified source tables and charts are in
-[`action-value/latest`](model-research/action-value/latest/README.md); they grant
-no leverage, profitability claim, execution claim, or trading authority.
+labeled, predicted, or evaluated. Its decision remains in the cumulative
+[`progress.csv`](model-research/action-value/latest/progress.csv); the per-round
+bundle was superseded under latest-only retention. The current
+[`action-value/latest`](model-research/action-value/latest/README.md) bundle is
+Round 57. Neither record grants leverage, profitability, execution, or trading
+authority.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

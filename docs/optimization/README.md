@@ -42,13 +42,12 @@ artifacts must not be interpreted as profitability evidence.
 
 Two latest-only research evidence tracks are retained. The predictive
 [`action-value/latest`](../model-research/action-value/latest/README.md) track is
-at Round 30: its three-seed LightGBM hurdle ensemble produced 12 positive
-threshold-selection stress simulations, but each contained only 1 to 12 trades
-and failed the precommitted sample-support gate, so it received no policy
-simulation, leverage, or trading authority. Its correction record marks the
-development window consumed because labels were materialized there, although
-development predictions and profile metrics were not evaluated; the terminal
-day remains untouched. The independent execution-replay
+at Round 57: its fixed three-seed queue-fill ensemble passed all six
+symbol-side proper-score cells in both policy calibration and consumed
+evaluation, but the directional payoff ensemble failed. Every evaluation
+top-score quintile remained negative after the frozen realistic costs, so no
+policy, economic replay, leverage, AI uplift, or trading authority was
+evaluated. The independent execution-replay
 [`tape-depth/latest`](../model-research/tape-depth/latest/README.md) track remains
 at Round 8. It evaluated the frozen BTCUSDT 20-second candidate on three
 untouched UTC dates using real one-second trade/depth features and exact 100 ms

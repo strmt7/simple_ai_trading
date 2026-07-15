@@ -544,24 +544,15 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest predictive-model evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 55 trained `18` OpenCL LightGBM artifacts (`36` long/short models) on
-real BTC, ETH, and SOL one-minute futures paths. Stop-bounded, 60-minute
-payoffs included exact gap-through exits, settled funding, and a `16 bps`
-round-trip stress charge. The baseline produced `27` July-August and `7`
-September trades; the governed 8B-model factor treatment produced `14` and
-`5`. Both failed six frozen activity, concentration, and familywise-bootstrap
-gates. AI improved the July-August point estimate but reduced September return
-by `3.4135` initial-capital bps, so its matched uplift gate failed. The round
-was rejected without reading the untouched future interval and makes no
-profitability, leverage, testnet, live-trading, or execution claim.
-
-A frozen post-hoc diagnostic then reproduced the control exactly and localized
-the sparse activity to cross-view model consensus, not the liquidity or
-volatility gates; those gates removed only `4` of the `31` unanimous baseline
-votes in July-August. Relaxed baseline consensus lost money in both consumed
-periods. A pooled-nine AI diagnostic remained positive, but only over `26` and
-`8` trades, and its score quintiles were not temporally monotonic. It is useful
-mechanism evidence for the next frozen design, not a validated edge.
+Round 57 trained fixed three-seed queue-fill and payoff ensembles on real
+official Binance USD-M BTC, ETH, and SOL event data using AMD OpenCL. All six
+symbol-side queue-fill cells passed proper-score gates in policy calibration
+and again in the consumed evaluation period. The directional payoff model did
+not: only `5/12` calibration and `3/12` evaluation action cells passed, and all
+12 evaluation top-score quintiles had negative realized net payoff after the
+frozen spread, latency, fee, slippage, and path-exit costs. The run stopped
+before policy selection, economic replay, leverage, or AI ablation. It makes no
+profitability, testnet, live-trading, or execution claim.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
