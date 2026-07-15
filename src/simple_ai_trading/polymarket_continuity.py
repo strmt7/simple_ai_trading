@@ -352,19 +352,36 @@ def _continuity_evidence(
     ).fetchall()
     gap_rows = connection.execute(
         """
+        WITH connection_start AS (
+            SELECT stream, connection_id, min(received_wall_ms) AS started_at_ms
+            FROM polymarket_raw_message
+            WHERE run_id = ?
+              AND stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
+            GROUP BY stream, connection_id
+        ), gap_interval AS (
+            SELECT g.gap_id, g.stream, g.opened_at_ms,
+                   min(s.started_at_ms) FILTER (
+                       WHERE s.connection_id <> g.connection_id
+                         AND s.started_at_ms > g.opened_at_ms
+                   ) AS resumed_at_ms
+            FROM polymarket_stream_gap AS g
+            LEFT JOIN connection_start AS s ON s.stream = g.stream
+            WHERE g.run_id = ?
+              AND g.stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
+            GROUP BY g.gap_id, g.stream, g.connection_id, g.opened_at_ms
+        )
         SELECT w.event_start_ms, g.stream, count(*)
         FROM (
             SELECT DISTINCT event_start_ms, window_start_ms, window_end_ms
             FROM continuity_asset_window
         ) AS w
-        JOIN polymarket_stream_gap AS g
-          ON g.run_id = ?
-         AND g.stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
-         AND g.opened_at_ms BETWEEN w.window_start_ms AND w.window_end_ms
+        JOIN gap_interval AS g
+          ON g.opened_at_ms <= w.window_end_ms
+         AND coalesce(g.resumed_at_ms, 9223372036854775807) > w.window_start_ms
         GROUP BY w.event_start_ms, g.stream
         ORDER BY w.event_start_ms, g.stream
         """,
-        [run_id],
+        [run_id, run_id],
     ).fetchall()
     snapshot_rows = connection.execute(
         """
@@ -494,7 +511,7 @@ def evaluate_polymarket_continuity_eligibility(
     cfg = (config or PolymarketContinuityConfig()).validated()
     run = store.connect().execute(
         """
-        SELECT status, error, report_sha256, started_at_ms
+        SELECT status, error, report_sha256, started_at_ms, ended_at_ms
         FROM polymarket_recorder_run WHERE run_id = ?
         """,
         [selected],
@@ -505,7 +522,8 @@ def evaluate_polymarket_continuity_eligibility(
         raise ValueError("Polymarket continuity requires a finished error-free run")
     report_sha256 = str(run[2])
     started_at_ms = int(run[3])
-    if not _is_sha256(report_sha256):
+    ended_at_ms = None if run[4] is None else int(run[4])
+    if not _is_sha256(report_sha256) or ended_at_ms is None:
         raise ValueError("Polymarket continuity run report is invalid")
     integrity = store.integrity_errors(selected)
     if integrity:
@@ -525,13 +543,23 @@ def evaluate_polymarket_continuity_eligibility(
     evaluated: list[PolymarketContinuityGroup] = []
     for event_start_ms, market_group in synchronized.items():
         reasons: list[str] = list(gaps.get(event_start_ms, ()))
-        evidence: dict[str, object] = {"assets": {}}
         window_start = event_start_ms - cfg.chainlink_anchor_allowance_ms
         window_end = (
             market_group[0].end_ms
             - cfg.minimum_remaining_market_time_ms
             + cfg.maximum_execution_confirmation_delay_ms
         )
+        evidence: dict[str, object] = {
+            "run_bounds": {
+                "started_at_ms": started_at_ms,
+                "ended_at_ms": ended_at_ms,
+            },
+            "assets": {},
+        }
+        if started_at_ms > window_start:
+            reasons.append("run_started_after_window_start")
+        if ended_at_ms < window_end:
+            reasons.append("run_ended_before_window_end")
         for market in market_group:
             asset_evidence: dict[str, object] = {}
             observed_wall_ms = snapshots.get(market.condition_id)

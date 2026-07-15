@@ -387,10 +387,24 @@ def _finish_replay_store(
     interleaved_best_transitions: bool = False,
     compact_resolution_event: bool = False,
     finalize_official: bool = True,
+    run_started_at_ms: int = EPOCH * 1_000,
+    run_ended_at_ms: int = EPOCH * 1_000 + 302_000,
+    pre_window_binance_gap: bool = False,
 ) -> None:
-    store.start_run(run_id, EPOCH * 1_000)
+    store.start_run(run_id, run_started_at_ms)
     for asset in ("BTC", "ETH", "SOL"):
         store.record_market_evidence(run_id, _evidence(asset))
+    if pre_window_binance_gap:
+        store.record_gap(
+            run_id,
+            StreamGap(
+                "binance_spot",
+                "retired-binance-connection",
+                EPOCH * 1_000 - 3_000,
+                "fixture_disconnect",
+                0,
+            ),
+        )
     btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
     token = btc.up_token_id
     reported_best_ask = "0.49" if wrong_best else "0.50"
@@ -1057,12 +1071,14 @@ def _finish_replay_store(
     store.append_messages(run_id, [*clob_messages, *auxiliary])
     report = store.finish_run(
         run_id,
-        started_at_ms=EPOCH * 1_000,
-        ended_at_ms=EPOCH * 1_000 + 302_000,
+        started_at_ms=run_started_at_ms,
+        ended_at_ms=run_ended_at_ms,
         database=str(store.path),
         errors=(),
     )
-    assert report.status == "complete"
+    assert report.status == (
+        "degraded" if pre_window_binance_gap else "complete"
+    )
     if finalize_official:
         finalized = PolymarketResolutionFinalizer(
             store,
@@ -1461,9 +1477,36 @@ def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(
     assert first.eligible_group_count == 0
     assert not first.confirmation_eligible
     assert "run_started_before_round9_contract_commit" in first.confirmation_reasons
+    assert "run_started_after_window_start" in first.groups[0].reasons
+    assert first.groups[0].evidence["run_bounds"] == {
+        "started_at_ms": EPOCH * 1_000,
+        "ended_at_ms": EPOCH * 1_000 + 302_000,
+    }
     assert first.groups[0].reasons
     assert first.asdict()["outcomes_consulted"] is False
     assert first.asdict()["labels_consulted"] is False
+
+
+def test_polymarket_continuity_excludes_gap_opened_before_window(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "continuity-gap.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "continuity-gap",
+            feature_evidence=True,
+            finalize_official=False,
+            run_started_at_ms=EPOCH * 1_000 - 10_000,
+            pre_window_binance_gap=True,
+        )
+        report = evaluate_polymarket_continuity_eligibility(
+            store,
+            run_id="continuity-gap",
+        )
+
+    reasons = report.groups[0].reasons
+    assert "stream_gap:binance_spot:1" in reasons
+    assert "run_started_after_window_start" not in reasons
 
 
 def test_polymarket_continuity_cli_and_native_contract_share_controls(
