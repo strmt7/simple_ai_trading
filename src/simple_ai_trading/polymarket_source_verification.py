@@ -340,6 +340,7 @@ def verify_polymarket_model_artifact_source(
     feature_summary = _mapping(payload["feature_dataset"], "feature dataset")
     model_summary = _mapping(payload["model_dataset"], "model dataset")
     split_summary = _mapping(payload["split"], "model split")
+    feature_config = _feature_config(feature_summary["config"])
     notify("feature-reconstruction", run_id=run_id)
     with PolymarketEvidenceStore(
         database_path,
@@ -350,7 +351,7 @@ def verify_polymarket_model_artifact_source(
         feature_dataset = build_polymarket_feature_dataset(
             store,
             run_id=run_id,
-            config=_feature_config(feature_summary["config"]),
+            config=feature_config,
         )
         _require_canonical_match(
             feature_dataset.summary(),
@@ -364,13 +365,18 @@ def verify_polymarket_model_artifact_source(
             """,
             [run_id],
         ).fetchone()
+        recorder_status = "" if recorder_row is None else str(recorder_row[0])
+        recorder_status_allowed = recorder_status == "complete" or (
+            feature_config.allow_segmented_gaps and recorder_status == "degraded"
+        )
         if (
             recorder_row is None
-            or str(recorder_row[0]) != "complete"
+            or not recorder_status_allowed
             or len(str(recorder_row[1])) != 64
         ):
             raise ValueError(
-                "Polymarket source verification requires a complete recorder report"
+                "Polymarket source verification requires a complete report or "
+                "an explicitly segmented degraded report"
             )
         recorder_report_sha256 = str(recorder_row[1])
 
@@ -429,7 +435,7 @@ def verify_polymarket_model_artifact_source(
         replay = PolymarketEvidenceReplay.load(
             store,
             run_id=run_id,
-            allow_segmented_gaps=False,
+            allow_segmented_gaps=feature_config.allow_segmented_gaps,
             book_sample_interval_ms=0,
             condition_ids=test_conditions,
         )

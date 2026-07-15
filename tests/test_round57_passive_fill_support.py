@@ -35,6 +35,13 @@ POLYMARKET_RETRY_CONTRACT = (
     / "polymarket"
     / "round-004-causal-retry-contract.json"
 )
+POLYMARKET_CONTINUITY_CONTRACT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "prospective-continuity-contract-v2.json"
+)
 
 
 def _assert_design_identity(path: Path) -> dict[str, object]:
@@ -109,5 +116,39 @@ def test_polymarket_retry_contract_preserves_binance_paper_safety() -> None:
     assert policy["terminal_zero_fill_states"] == ["CANCELLED", "EXPIRED"]
     assert contract["lifecycle_contract"]["binance_paper_parity_required"] is True
     assert contract["lifecycle_contract"]["external_inventory_may_be_touched"] is False
-    assert contract["promotion_gates"]["control_may_not_be_replaced_if_challenger_only_increases_activity"] is True
-    assert contract["truth_constraints"]["untouched_confirmation_requires_a_later_prospective_capture"] is True
+    assert (
+        contract["promotion_gates"][
+            "control_may_not_be_replaced_if_challenger_only_increases_activity"
+        ]
+        is True
+    )
+    assert (
+        contract["truth_constraints"][
+            "untouched_confirmation_requires_a_later_prospective_capture"
+        ]
+        is True
+    )
+
+
+def test_polymarket_continuity_contract_forbids_cross_gap_state() -> None:
+    contract = _assert_contract_identity(POLYMARKET_CONTINUITY_CONTRACT)
+
+    assert contract["status"] == "frozen_before_replacement_capture_outcomes"
+    common = contract["segmentation_policy"]["common"]
+    assert common["strict_gap_free_mode_remains_default"] is True
+    assert common["silent_drop_forbidden"] is True
+    assert common["named_lane_transition_requires_gap_evidence"] is True
+    assert common["zero_message_failed_attempt_requires_sequence_zero"] is True
+    assert (
+        contract["segmentation_policy"]["clob_market"][
+            "execution_across_connection_segments_forbidden"
+        ]
+        is True
+    )
+    assert (
+        contract["segmentation_policy"]["binance_spot"][
+            "connection_scoped_book_returns_volatility_and_trade_flow"
+        ]
+        is True
+    )
+    assert contract["lifecycle_parity"]["external_inventory_may_be_touched"] is False

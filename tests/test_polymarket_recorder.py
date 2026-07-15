@@ -482,6 +482,14 @@ def test_rtds_uses_independent_json_subscriptions_for_each_crypto_feed(
     assert len(captured) == 6
     assert {call["url"] for call in captured} == {"wss://ws-live-data.polymarket.com"}
     assert {call["stream"] for call in captured} == {"polymarket_rtds"}
+    assert {call["lane"] for call in captured} == {
+        "rtds:binance:btc",
+        "rtds:binance:eth",
+        "rtds:binance:sol",
+        "rtds:chainlink:btc",
+        "rtds:chainlink:eth",
+        "rtds:chainlink:sol",
+    }
     subscription_messages = [call["subscription"] for call in captured]
     assert all(isinstance(message, str) for message in subscription_messages)
     messages = [json.loads(message) for message in subscription_messages]
@@ -501,6 +509,52 @@ def test_rtds_uses_independent_json_subscriptions_for_each_crypto_feed(
     assert all(subscription["type"] == "update" for subscription in subscriptions)
     assert binance_filters == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
     assert chainlink_filters == {"btc/usd", "eth/usd", "sol/usd"}
+
+
+def test_binance_stream_uses_one_named_lane_without_redundant_client_pings(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "binance-lane.duckdb")
+    captured: dict[str, object] = {}
+
+    async def _capture_simple_stream(**options: object) -> None:
+        captured.update(options)
+
+    monkeypatch.setattr(recorder, "_simple_stream", _capture_simple_stream)
+    asyncio.run(recorder._binance_stream(asyncio.Queue(), asyncio.Event()))
+
+    assert captured["stream"] == "binance_spot"
+    assert captured["lane"] == "binance:combined:btc-eth-sol"
+    assert captured["heartbeat"] is None
+    assert "protocol_ping_interval" not in captured
+
+
+def test_every_recorder_output_type_has_a_bounded_queue_deadline(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "bounded-output.duckdb")
+    monkeypatch.setattr(recorder_module, "_OUTPUT_PUT_TIMEOUT_SECONDS", 0.01)
+
+    async def _exercise() -> None:
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue(maxsize=1)
+        )
+        await output.put(_message("polymarket_rtds", "occupied"))
+        with pytest.raises(RuntimeError, match="evidence queue remained full"):
+            await recorder._emit_output(
+                output,
+                StreamGap(
+                    stream="polymarket_rtds",
+                    connection_id="bounded-output",
+                    opened_at_ms=1,
+                    reason="fixture",
+                    last_sequence_number=0,
+                ),
+            )
+
+    asyncio.run(_exercise())
 
 
 def test_periodic_heartbeat_runs_independently_of_busy_message_processing() -> None:
@@ -585,6 +639,50 @@ def test_writer_persistence_does_not_block_the_network_event_loop(
     assert asyncio.run(_exercise()) is True
     assert writer_threads and set(writer_threads).isdisjoint({main_thread})
     assert len(set(writer_threads)) == 1
+
+
+def test_writer_coalesces_sparse_messages_into_one_bounded_batch(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "writer-coalesce.duckdb")
+    batch_sizes: list[int] = []
+
+    class _Store:
+        def __init__(self, path, *, memory_limit: str, threads: int) -> None:
+            self.path = path
+            self.memory_limit = memory_limit
+            self.threads = threads
+
+        def connect(self) -> object:
+            return self
+
+        def append_messages(self, run_id: str, messages: object) -> None:
+            assert run_id == "writer-coalesce"
+            batch_sizes.append(len(messages))
+
+        def close(self) -> None:
+            return None
+
+    source_store = PolymarketEvidenceStore(tmp_path / "writer-coalesce.duckdb")
+    monkeypatch.setattr(recorder_module, "PolymarketEvidenceStore", _Store)
+
+    async def _exercise() -> None:
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
+        writer = asyncio.create_task(
+            recorder._writer("writer-coalesce", source_store, output)
+        )
+        await output.put(_message("clob_market", {"event_type": "book"}))
+        await asyncio.sleep(0.02)
+        await output.put(_message("polymarket_rtds", "PING"))
+        await output.put(None)
+        await asyncio.wait_for(writer, timeout=1.0)
+
+    asyncio.run(_exercise())
+
+    assert batch_sizes == [2]
 
 
 def test_writer_owned_connection_preserves_final_report_cursor(tmp_path) -> None:

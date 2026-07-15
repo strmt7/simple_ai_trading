@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-from simple_ai_trading import cli
+from simple_ai_trading import cli, polymarket_features as feature_module
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_paper import (
@@ -215,13 +215,22 @@ def _finish_segmented_store(
     gap_stream: str = "clob_market",
     gap_last_sequence: int = 3,
     second_segment_has_baseline: bool = True,
+    named_clob_connections: bool = False,
 ) -> None:
     store.start_run(run_id, EPOCH * 1_000)
     for asset in ("BTC", "ETH", "SOL"):
         store.record_market_evidence(run_id, _evidence(asset))
     btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
-    first = "clob-segment-one"
-    second = "clob-segment-two"
+    first = (
+        "clob:11111111111111111111111111111111"
+        if named_clob_connections
+        else "clob-segment-one"
+    )
+    second = (
+        "clob:22222222222222222222222222222222"
+        if named_clob_connections
+        else "clob-segment-two"
+    )
     first_messages = [
         _segmented_message(
             _book_payload(btc.up_token_id, btc.condition_id, 1_000),
@@ -1389,6 +1398,7 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
         "cadence_ms",
         "warmup_ms",
         "minimum_resolved_markets_per_asset",
+        "allow_segmented_gaps",
         "latency_ms",
         "latency_stress_ms",
         "max_execution_observation_delay_ms",
@@ -1546,18 +1556,144 @@ def test_segmented_replay_requires_fresh_baseline_after_reconnect(tmp_path) -> N
 
 
 @pytest.mark.parametrize("gap_stream", ["binance_spot", "polymarket_rtds"])
-def test_segmented_replay_never_permits_non_clob_gaps(
+def test_segmented_replay_validates_independent_feed_connection_gaps(
     tmp_path,
     gap_stream: str,
 ) -> None:
     with PolymarketEvidenceStore(tmp_path / f"{gap_stream}.duckdb") as store:
         _finish_segmented_store(store, "non-clob-gap", gap_stream=gap_stream)
-        with pytest.raises(ValueError, match="only CLOB market gaps"):
-            PolymarketEvidenceReplay.load(
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="non-clob-gap",
+            allow_segmented_gaps=True,
+        )
+
+    assert replay.diagnostics.continuity_mode == "segmented"
+    assert replay.diagnostics.stream_gap_count == 1
+
+
+def test_segmented_replay_rejects_missing_named_lane_transition_gap(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "missing-transition-gap.duckdb") as store:
+        _finish_segmented_store(
+            store,
+            "missing-transition-gap",
+            named_clob_connections=True,
+        )
+        store.connect().execute(
+            "DELETE FROM polymarket_stream_gap WHERE run_id = ?",
+            ["missing-transition-gap"],
+        )
+
+        with pytest.raises(ValueError, match="transition has no gap evidence"):
+            PolymarketEvidenceReplay.validate_stream_gaps(
                 store,
-                run_id="non-clob-gap",
+                "missing-transition-gap",
                 allow_segmented_gaps=True,
             )
+
+
+def test_segmented_replay_accepts_explicit_zero_message_connection_attempt(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "zero-message-attempt.duckdb") as store:
+        store.start_run("zero-message-attempt", EPOCH * 1_000)
+        store.record_gap(
+            "zero-message-attempt",
+            StreamGap(
+                stream="polymarket_rtds",
+                connection_id=(
+                    "rtds:chainlink:btc:33333333333333333333333333333333"
+                ),
+                opened_at_ms=EPOCH * 1_000 + 1_000,
+                reason="fixture_connect_failure",
+                last_sequence_number=0,
+            ),
+        )
+
+        assert (
+            PolymarketEvidenceReplay.validate_stream_gaps(
+                store,
+                "zero-message-attempt",
+                allow_segmented_gaps=True,
+            )
+            == 1
+        )
+
+
+def test_feature_feed_windows_never_cross_connection_segments() -> None:
+    first = feature_module._BinanceBookPoint(
+        asset="BTC",
+        connection_id="binance:first",
+        received_wall_ms=1_000,
+        received_monotonic_ns=1_000_000_000,
+        bid=99.0,
+        bid_quantity=1.0,
+        ask=101.0,
+        ask_quantity=1.0,
+        event_id="first",
+        event_sha256="1" * 64,
+    )
+    second = replace(
+        first,
+        connection_id="binance:second",
+        received_wall_ms=2_000,
+        received_monotonic_ns=2_000_000_000,
+        event_id="second",
+        event_sha256="2" * 64,
+    )
+    new_connection_trade = feature_module._BinanceTradePoint(
+        asset="BTC",
+        connection_id="binance:second",
+        received_monotonic_ns=1_500_000_000,
+        signed_quote=Decimal("1"),
+        gross_quote=Decimal("1"),
+        event_id="new-connection-trade",
+        event_sha256="5" * 64,
+    )
+    connection_cursor = feature_module._ConnectionCursor(
+        (first, new_connection_trade)
+    )
+    assert connection_cursor.advance(1_000_000_000) == "binance:first"
+    assert connection_cursor.advance(1_500_000_000) == "binance:second"
+    with pytest.raises(ValueError, match="crossed connection segments"):
+        feature_module._BookSeries((first, second))
+
+    cursor = feature_module._PriceCursor(
+        (
+            feature_module._PricePoint(
+                asset="BTC",
+                connection_id="chainlink:first",
+                source_time_ms=3_000,
+                received_wall_ms=1_001,
+                received_monotonic_ns=1_001_000_000,
+                price=100.0,
+                event_id="anchor-old",
+                event_sha256="3" * 64,
+            ),
+            feature_module._PricePoint(
+                asset="BTC",
+                connection_id="chainlink:second",
+                source_time_ms=2_000,
+                received_wall_ms=2_001,
+                received_monotonic_ns=2_001_000_000,
+                price=102.0,
+                event_id="current-new",
+                event_sha256="4" * 64,
+            ),
+        )
+    )
+    cursor.advance(3_000_000_000)
+    assert cursor.latest_at_or_before(3_000).connection_id == "chainlink:first"
+    current = cursor.latest_at_or_before(
+        3_000,
+        connection_id=cursor.active_connection_id(),
+    )
+
+    assert current is not None and current.connection_id == "chainlink:second"
+    assert (
+        cursor.latest_at_or_before(1_000, connection_id=current.connection_id)
+        is None
+    )
 
 
 def test_segmented_replay_requires_gap_to_close_final_sequence(tmp_path) -> None:
@@ -1866,6 +2002,7 @@ def _single_trade_model_plan(
         source_verification_sha256="4" * 64,
         recorder_report_sha256=recorder_report_sha256,
         run_id=run_id,
+        allow_segmented_gaps=False,
         policy="model",
         primary_network_latency_ms=5,
         confirmed_for_paper_run=not blocking_reasons,
@@ -2496,6 +2633,7 @@ def test_polymarket_model_paper_cli_uses_artifact_configuration_and_atomic_outpu
         source_verification_sha256="7" * 64,
         recorder_report_sha256=recorder_report_sha256,
         run_id=run_id,
+        allow_segmented_gaps=False,
         policy="model",
         primary_network_latency_ms=250,
         confirmed_for_paper_run=True,

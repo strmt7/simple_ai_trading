@@ -19,7 +19,7 @@ from .polymarket_source_verification import (
 )
 
 
-POLYMARKET_PAPER_PLAN_SCHEMA_VERSION = "polymarket-paper-plan-v1"
+POLYMARKET_PAPER_PLAN_SCHEMA_VERSION = "polymarket-paper-plan-v2"
 POLYMARKET_PAPER_RUN_SCHEMA_VERSION = "polymarket-paper-model-run-v1"
 _MODEL_GATES = (
     "validation_probability_improved",
@@ -78,6 +78,7 @@ class PolymarketPaperPlan:
     source_verification_sha256: str
     recorder_report_sha256: str
     run_id: str
+    allow_segmented_gaps: bool
     policy: str
     primary_network_latency_ms: int
     confirmed_for_paper_run: bool
@@ -99,6 +100,7 @@ class PolymarketPaperPlan:
             "source_verification_sha256": self.source_verification_sha256,
             "recorder_report_sha256": self.recorder_report_sha256,
             "run_id": self.run_id,
+            "allow_segmented_gaps": self.allow_segmented_gaps,
             "policy": self.policy,
             "primary_network_latency_ms": self.primary_network_latency_ms,
             "confirmed_for_paper_run": self.confirmed_for_paper_run,
@@ -204,6 +206,14 @@ def build_polymarket_paper_plan(
     """Build an immutable paper-only plan from verified held-out execution evidence."""
 
     artifact = validate_polymarket_model_artifact(artifact_path)
+    feature_dataset = _mapping(
+        artifact.payload["feature_dataset"],
+        "feature dataset",
+    )
+    feature_config = _mapping(feature_dataset["config"], "feature configuration")
+    allow_segmented_gaps = feature_config.get("allow_segmented_gaps")
+    if not isinstance(allow_segmented_gaps, bool):
+        raise ValueError("artifact feature continuity policy is invalid")
     source = validate_polymarket_source_verification(
         _source_verification_payload(source_verification_path),
         artifact_sha256=artifact.artifact_sha256,
@@ -315,6 +325,7 @@ def build_polymarket_paper_plan(
         source_verification_sha256=str(source["report_sha256"]),
         recorder_report_sha256=str(source["recorder_report_sha256"]),
         run_id=str(artifact.payload["run_id"]),
+        allow_segmented_gaps=allow_segmented_gaps,
         policy=selected,
         primary_network_latency_ms=primary_latency,
         confirmed_for_paper_run=not blocking_reasons,
@@ -396,6 +407,8 @@ def run_polymarket_paper_plan(
         raise ValueError("Polymarket paper plan claims unsupported authority")
     if broker.replay.run_id != plan.run_id:
         raise ValueError("Polymarket paper plan belongs to another recorder run")
+    if broker.allow_segmented_gaps != plan.allow_segmented_gaps:
+        raise ValueError("Polymarket paper broker continuity policy drifted from the plan")
     config = plan.execution_config
     if int(config["submission_latency_ms"]) != plan.primary_network_latency_ms:
         raise ValueError("Polymarket paper plan primary latency drifted from execution")

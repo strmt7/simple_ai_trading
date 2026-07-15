@@ -3,8 +3,8 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,12 +40,6 @@ def test_round_002_publication_is_internally_consistent() -> None:
             "dataset"
         ]["labeled_market_counts"][asset]
 
-    chart = RESEARCH / "latest" / "charts" / "causal-feature-coverage.svg"
-    root = ET.fromstring(chart.read_text(encoding="utf-8"))
-    chart_text = " ".join(root.itertext())
-    for value in ("1,278", "1,158", "1,022", "30"):
-        assert value in chart_text
-    assert "not a profitability chart" in chart_text.lower()
     manifest = {entry["path"]: entry for entry in report["artifact_integrity"]}
     assert set(report["tracked_artifacts"]) - {
         "docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json"
@@ -60,6 +54,83 @@ def test_round_002_publication_is_internally_consistent() -> None:
     ]
     assert market_manifest["row_count"] == len(markets)
     assert market_manifest["columns"] == list(markets[0])
+
+
+def test_latest_round_with_disqualified_capture_publishes_no_stale_chart() -> None:
+    latest = RESEARCH / "latest"
+    readme = (latest / "README.md").read_text(encoding="utf-8").lower()
+
+    assert "run is disqualified" in readme
+    assert "no performance graph is published" in readme
+    assert not (latest / "charts" / "causal-feature-coverage.svg").exists()
+
+
+def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -> None:
+    capture = json.loads(
+        (RESEARCH / "round-003-degraded-capture-diagnostic.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    recorder = capture["capture"]
+    gaps = capture["gap_diagnostic"]
+    assert sum(recorder["stream_counts"].values()) == recorder["raw_message_count"]
+    assert math.isclose(
+        recorder["duration_seconds"],
+        (recorder["ended_at_ms"] - recorder["started_at_ms"]) / 1_000.0,
+    )
+    assert sum(capture["resolution"]["asset_outcome_counts"].values()) == 105
+    assert capture["resolution"]["finalized_condition_count"] == 105
+    assert capture["resolution"]["pending_condition_count"] == 0
+    for stream in ("binance_spot", "clob_market", "polymarket_rtds"):
+        assert sum(gaps[stream]["reasons"].values()) == gaps[stream]["count"]
+    assert sum(
+        gaps[stream]["count"]
+        for stream in ("binance_spot", "clob_market", "polymarket_rtds")
+    ) == gaps["total"] == 54
+    assert capture["model_evidence"]["eligible_for_model_fit"] is False
+    assert capture["model_evidence"]["profitability_result"] is None
+
+    benchmark = json.loads(
+        (RESEARCH / "recorder-v2-liveness-2026-07-15.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert benchmark["comparison_limits"]["profitability_evidence"] is False
+    before = benchmark["measurements"]["before_coalescing"]
+    after = benchmark["measurements"]["coalesced_writer"]
+    for measurement in (before, after):
+        assert measurement["status"] == "complete"
+        assert measurement["stream_gap_count"] == 0
+        assert measurement["integrity_error_count"] == 0
+        assert math.isclose(
+            measurement["average_messages_per_chunk"],
+            measurement["raw_message_count"] / measurement["raw_chunk_count"],
+        )
+        assert math.isclose(
+            measurement["compressed_to_uncompressed_ratio"],
+            measurement["compressed_bytes"] / measurement["uncompressed_bytes"],
+        )
+    observed = benchmark["observed_change"]
+    before_chunks_per_10k = (
+        10_000 * before["raw_chunk_count"] / before["raw_message_count"]
+    )
+    after_chunks_per_10k = (
+        10_000 * after["raw_chunk_count"] / after["raw_message_count"]
+    )
+    assert math.isclose(
+        observed["chunks_per_10000_messages_before"], before_chunks_per_10k
+    )
+    assert math.isclose(
+        observed["chunks_per_10000_messages_after"], after_chunks_per_10k
+    )
+    assert math.isclose(
+        observed["chunks_per_10000_messages_reduction_fraction"],
+        1.0 - (after_chunks_per_10k / before_chunks_per_10k),
+    )
+    assert math.isclose(
+        observed["messages_per_chunk_factor"],
+        after["average_messages_per_chunk"] / before["average_messages_per_chunk"],
+    )
 
 
 def test_round_003_ai_risk_evidence_is_truthfully_scoped() -> None:

@@ -1,0 +1,63 @@
+{
+  "capture": {
+    "condition_count": 105,
+    "duration_seconds": 10008.859,
+    "ended_at_ms": 1784100505210,
+    "market_snapshot_count": 105,
+    "normalized_event_count": 9983793,
+    "raw_message_count": 9983977,
+    "recorder_report_sha256": "776718801882b963e4cf2961a1803d8530f9633974e4c453a16461536c9d1e30",
+    "run_id": "ead21c13093e4b6d8bf72f65c80223b0",
+    "started_at_ms": 1784090496351,
+    "status": "degraded",
+    "stream_counts": {
+      "binance_spot": 2149174,
+      "clob_market": 7782979,
+      "clob_rest_book": 6,
+      "polymarket_rtds": 51818
+    }
+  },
+  "gap_diagnostic": {
+    "binance_spot": {
+      "count": 3,
+      "reasons": {
+        "keepalive_ping_timeout": 3
+      }
+    },
+    "clob_market": {
+      "count": 44,
+      "reasons": {
+        "no_close_frame": 44
+      }
+    },
+    "polymarket_rtds": {
+      "count": 7,
+      "reasons": {
+        "graceful_1001_going_away": 6,
+        "no_close_frame": 1
+      }
+    },
+    "total": 54
+  },
+  "model_evidence": {
+    "eligible_for_model_fit": false,
+    "profitability_result": null,
+    "reason": "Recorded stream gaps violate the strict gap-free replay gate, and this pre-hardening run lacks validated all-stream segmentation. No ROI, drawdown, trade-count, or AI-uplift result was produced."
+  },
+  "resolution": {
+    "asset_outcome_counts": {
+      "BTC_Down": 22,
+      "BTC_Up": 13,
+      "ETH_Down": 20,
+      "ETH_Up": 15,
+      "SOL_Down": 18,
+      "SOL_Up": 17
+    },
+    "finalized_condition_count": 105,
+    "official_cross_check": "CLOB and Gamma",
+    "pending_condition_count": 0
+  },
+  "schema_version": "polymarket-degraded-capture-diagnostic-v1",
+  "storage_schema_version": "polymarket-public-evidence-v1",
+  "truth_status": "recorder_diagnostic_only"
+}

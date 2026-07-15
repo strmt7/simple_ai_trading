@@ -321,11 +321,18 @@ simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
   --action stop --latency-ms 100 --json
 ```
 
-`--allow-segmented-gaps` is an explicit exception on `polymarket-features` and
-`polymarket-paper`; omitting it preserves strict gap-free behavior. Reconciliation
-revalidates the gap evidence and official-resolution set before every paper
-action. Mutation, deletion, an unsupported stream gap, or a missing baseline
-blocks operation.
+`--allow-segmented-gaps` is an explicit exception on `polymarket-features`,
+`polymarket-model`, and manual `polymarket-paper` replay; omitting it preserves
+strict gap-free behavior. CLOB state resets at every connection and cannot resume
+until both token books have full baselines. Direct Binance returns, realized
+volatility, and trade-flow windows stay inside one connection and require a fresh
+five-second lookback. Chainlink current/open points must share one named RTDS
+lane. Historical rows received on reconnect become causal only at receipt.
+Source verification reproduces these rules, and a model paper plan binds the
+same continuity mode automatically. Reconciliation revalidates gaps and official
+resolutions before every paper action. Mutation, deletion, cross-gap execution,
+or a missing baseline blocks operation. The frozen policy is hash-bound in
+[`prospective-continuity-contract-v2.json`](model-research/polymarket/prospective-continuity-contract-v2.json).
 
 `open`, `close`, and `settle` require explicit immutable event IDs. `stop`
 requires an explicit nonzero latency and returns nonzero while inventory or an
