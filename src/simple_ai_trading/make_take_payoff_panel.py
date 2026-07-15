@@ -63,6 +63,7 @@ class MakeTakeConditionalPayoffPanel:
     scenario: str
     symbol: str
     feature_names: tuple[str, ...]
+    source_feature_spec_sha256: str
     source_action_feature_sha256: str
     source_entry_sha256: str
     source_target_sha256: str
@@ -114,6 +115,7 @@ def _panel_payload(panel: MakeTakeConditionalPayoffPanel) -> dict[str, object]:
         "scenario": panel.scenario,
         "symbol": panel.symbol,
         "feature_names": list(panel.feature_names),
+        "source_feature_spec_sha256": panel.source_feature_spec_sha256,
         "source_action_feature_sha256": panel.source_action_feature_sha256,
         "source_entry_sha256": panel.source_entry_sha256,
         "source_target_sha256": panel.source_target_sha256,
@@ -166,6 +168,7 @@ def validate_make_take_conditional_payoff_panel(
         or any(
             not _is_sha256(value)
             for value in (
+                panel.source_feature_spec_sha256,
                 panel.source_action_feature_sha256,
                 panel.source_entry_sha256,
                 panel.source_target_sha256,
@@ -307,6 +310,7 @@ def build_make_take_conditional_payoff_panel(
         scenario="base",
         symbol=normalized_symbol,
         feature_names=action_features.feature_names,
+        source_feature_spec_sha256=action_features.spec_sha256,
         source_action_feature_sha256=action_features.batch_sha256,
         source_entry_sha256=entries.batch_sha256,
         source_target_sha256=targets.target_sha256,
