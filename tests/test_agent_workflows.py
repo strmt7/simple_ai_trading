@@ -55,6 +55,25 @@ def test_agent_workflow_doc_records_exact_tool_versions() -> None:
         assert expected in text
 
 
+def test_root_agent_context_is_compact_without_dropping_hard_routes() -> None:
+    text = _read("AGENTS.md")
+    compact = " ".join(text.split())
+    assert len(text.encode("utf-8")) <= 4600
+    for required in (
+        "docs/AGENT_START.md",
+        "docs/AI_COMMIT_IDENTITY.md",
+        "AI agent <>\u0060 for author and committer",
+        "Work in this session only",
+        "No live-money authority exists",
+        "Never print, prompt, log, serialize, test, document, or commit credentials",
+        "cocoindex-code-search",
+        "generated native-contract parity",
+    ):
+        assert required in compact
+    assert "\u00e2" not in text
+    assert (ROOT / "docs" / "AI_COMMIT_IDENTITY.md").is_file()
+
+
 def test_ci_enforces_financial_terminology_audit() -> None:
     workflow = _read(".github/workflows/ci.yml")
     documentation = _read("docs/AGENT_WORKFLOWS.md")
