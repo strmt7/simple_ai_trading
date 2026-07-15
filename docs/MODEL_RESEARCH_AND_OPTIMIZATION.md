@@ -573,18 +573,19 @@ labeled, predicted, or evaluated. Its decision remains in the cumulative
 [`progress.csv`](model-research/action-value/latest/progress.csv); the per-round
 bundle was superseded under latest-only retention. The current
 [`action-value/latest`](model-research/action-value/latest/README.md) bundle is
-Round 59. It reconstructed every monthly BTCUSDT, ETHUSDT, and SOLUSDT funding
-row from 129 checksum-certified archive streams spanning December 2021 through
-June 2025. Ordinary positive-funding episodes did not clear four-leg cost
-references. The rare `>=2` bps trigger had positive seven-day sample means
-after the 32 bps stress reference, but only `20/20/25` non-overlapping episodes
-existed versus 40 required; BTC and SOL lower confidence bounds crossed zero.
-All 27 symbol cells and nine breadth cells failed, so synchronized spot-history
-ingestion and model training were not authorized. It read no prices, basis,
-P&L, model, or AI rows. Round 58 remains in the cumulative record as the
-value-blind rejection of symmetric touch making, and Round 57 retains only its
-queue-fill infrastructure. None of these records grants leverage,
-profitability, AI uplift, execution, or trading authority.
+Round 60. It kept the complete Round 59 decision protocol unchanged and
+reconstructed every monthly funding row from 226 checksum-certified archive
+streams: January 2020 through June 2026 for BTC and ETH and September 2020
+through June 2026 for SOL. Exactly one breadth cell passed. A settled funding
+rate `>=2` bps followed by a non-overlapping seven-day window produced
+`72/76/62` BTC/ETH/SOL episodes and lower 95% mean references of
+`+18.48/+29.58/+6.30` bps after the pinned 32 bps charge. This funding-only
+gate authorizes a separately frozen synchronized spot-perpetual economic
+replay, not model training or trading. It read no price, basis, P&L, model, or
+AI row. Round 59's smaller-sample rejection remains in the tracked comparison;
+Round 58 remains the value-blind rejection of symmetric touch making, and
+Round 57 retains only its queue-fill infrastructure. None of these records
+grants leverage, profitability, AI uplift, execution, or trading authority.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

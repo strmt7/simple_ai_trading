@@ -1,0 +1,46 @@
+{
+  "schema_version": "round-060-full-history-funding-replication-decision-v1",
+  "round": 60,
+  "source_report_sha256": "a020bd2f26280b82705ffa4bda83b37d439dfa09377eda64ffdfcbf17c9e9ba4",
+  "status": "full_history_support_passed_spot_ingestion_authorized",
+  "selection_contaminated": true,
+  "facts": {
+    "verified_monthly_archives": 226,
+    "funding_rows": {
+      "BTCUSDT": 7119,
+      "ETHUSDT": 7119,
+      "SOLUSDT": 6424
+    },
+    "passing_breadth_cell": {
+      "trigger_id": "at_least_2bp",
+      "horizon_hours": 168
+    },
+    "episode_counts": {
+      "BTCUSDT": 72,
+      "ETHUSDT": 76,
+      "SOLUSDT": 62
+    },
+    "lower_95_mean_after_stress_reference_bps": {
+      "BTCUSDT": 18.478729618054743,
+      "ETHUSDT": 29.580317203946596,
+      "SOLUSDT": 6.302057419354291
+    },
+    "spot_history_ingestion_authorized": true,
+    "price_or_basis_rows_read": false,
+    "model_or_ai_evaluated": false
+  },
+  "decision": [
+    "Proceed only to a separately frozen synchronized spot-perpetual economic replay.",
+    "Require causal two-leg prices, spreads, depth, legging latency, basis change, fees, margin, and liquidation controls before any return claim.",
+    "Do not train a model or AI system until the deterministic economic replay clears its own precommitted gate."
+  ],
+  "prohibited_inferences": [
+    "profitability",
+    "basis neutrality",
+    "AI uplift",
+    "testnet readiness",
+    "live trading readiness",
+    "leverage readiness"
+  ],
+  "analysis_sha256": "c6f444dfd2c52dccaa67e5ac742268412a9fca1a28efc9c9c73725ce50633ae5"
+}

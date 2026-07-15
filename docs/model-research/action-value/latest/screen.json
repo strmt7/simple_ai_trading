@@ -1,20 +1,41 @@
 {
-  "schema_version": "round-059-funding-persistence-feasibility-report-v1",
-  "round": 59,
-  "design_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
-  "implementation_commit": "c263fbd525f85a6cef86c1e8930d09844927a3d6",
-  "status": "rejected_funding_persistence_support",
+  "schema_version": "round-060-full-history-funding-replication-report-v1",
+  "round": 60,
+  "design_sha256": "965609f682595efd07dad719c958fe2086bbd29c5e3c6b2a98ba8b37261806c2",
+  "implementation_commit": "35e10f45a4b4525bd9be3ad4746d43cc8f61de60",
+  "status": "full_history_support_passed_spot_ingestion_authorized",
   "source": {
-    "certificate_file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
-    "certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "certificate_file_sha256": "45262aea2ca244c9b1323370c220cbf7ddc8c2e4956f33eac4278ed5b2d6b373",
+    "certificate_canonical_sha256": "e3fe53ba87d728eed85efdaa93350b3c76ab7adcb7216cac690c5029818a9736",
     "database_file": "market_data.sqlite",
     "symbols": [
       "BTCUSDT",
       "ETHUSDT",
       "SOLUSDT"
     ],
-    "start_period": "2021-12",
-    "end_period": "2025-06"
+    "ranges_by_symbol": {
+      "BTCUSDT": {
+        "start_period": "2020-01",
+        "end_period": "2026-06",
+        "period_count": 78
+      },
+      "ETHUSDT": {
+        "start_period": "2020-01",
+        "end_period": "2026-06",
+        "period_count": 78
+      },
+      "SOLUSDT": {
+        "start_period": "2020-09",
+        "end_period": "2026-06",
+        "period_count": 70
+      }
+    }
+  },
+  "protocol_source": {
+    "round": 59,
+    "design_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
+    "report_file_sha256": "f99843b7998a9bc473f7c8d8c80c52a8e718e7729e5d9896263bdfe01538d14e",
+    "report_canonical_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0"
   },
   "cost_references_bps": {
     "optimistic_futures_maker_only": 4.0,
@@ -26,23 +47,23 @@
       "symbol": "BTCUSDT",
       "source": {
         "symbol": "BTCUSDT",
-        "periods": 43,
-        "rows": 3924,
-        "first_calc_time_ms": 1638316800000,
-        "last_calc_time_ms": 1751299200002,
+        "periods": 78,
+        "rows": 7119,
+        "first_calc_time_ms": 1577836800000,
+        "last_calc_time_ms": 1782835200005,
         "minimum_interval_hours": 8,
         "maximum_interval_hours": 8,
-        "archive_identity_sha256": "56d7fcf6091943e30cc4716b66369c570d08955706447db6c3214e5598503ede",
-        "funding_row_stream_sha256": "6418db353e775fb89c60c9f561be99a303ae7472a88218b08d0e9ed42919ca56",
-        "period_evidence_sha256": "be962f91c9b269eacecec6418f5a05a89ed97fe5ea99e045a08ce24628e99bec"
+        "archive_identity_sha256": "3245995d8e20e574d36bb97e9b184607672ccb519155e46dcad8a8e2d1bcad2b",
+        "funding_row_stream_sha256": "557c571f2ab9552bf6cfbd272303ed95e865d085a696b83d0e98c2599340cce9",
+        "period_evidence_sha256": "9f93e985f522e8918787fb68bdfba6ddbe79aae49251badea4afb2cbab908238"
       },
       "sign_transition": {
-        "positive_to_positive": 3088,
-        "positive_to_nonpositive": 302,
-        "nonpositive_to_positive": 302,
-        "nonpositive_to_nonpositive": 231,
-        "next_positive_given_positive": 0.9109144542772861,
-        "next_positive_given_nonpositive": 0.5666041275797373
+        "positive_to_positive": 5607,
+        "positive_to_nonpositive": 481,
+        "nonpositive_to_positive": 482,
+        "nonpositive_to_nonpositive": 548,
+        "next_positive_given_positive": 0.9209921156373193,
+        "next_positive_given_nonpositive": 0.4679611650485437
       },
       "cells": [
         {
@@ -52,40 +73,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 24,
           "bootstrap_seed": 5901,
-          "episodes": 1117,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1751155200004,
-          "mean_gross_funding_bps": 2.123753625783303,
-          "median_gross_funding_bps": 1.9491999999998733,
-          "p10_gross_funding_bps": 0.16534000000023585,
-          "p90_gross_funding_bps": 3.1190999999998192,
-          "bootstrap_lower_95_mean_gross_bps": 1.8182505908683588,
-          "bootstrap_upper_95_mean_gross_bps": 2.4890876477170485,
-          "mean_future_settlements": 2.7681289167412713,
+          "episodes": 1959,
+          "first_decision_time_ms": 1577923200002,
+          "last_decision_time_ms": 1782691200006,
+          "mean_gross_funding_bps": 3.3542789688615837,
+          "median_gross_funding_bps": 1.9999999999997797,
+          "p10_gross_funding_bps": 0.17520000000015304,
+          "p90_gross_funding_bps": 7.531099999999348,
+          "bootstrap_lower_95_mean_gross_bps": 2.869512163093333,
+          "bootstrap_upper_95_mean_gross_bps": 3.8994494308319743,
+          "mean_future_settlements": 2.738642164369576,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -1.8762463742166968,
-              "median_net_reference_bps": -2.0508000000001267,
-              "positive_net_reference_fraction": 0.07430617726051925,
-              "bootstrap_lower_95_mean_net_reference_bps": -2.181749409131641,
-              "bootstrap_upper_95_mean_net_reference_bps": -1.5109123522829517
+              "mean_net_reference_bps": -0.6457210311384164,
+              "median_net_reference_bps": -2.0000000000002203,
+              "positive_net_reference_fraction": 0.15722307299642674,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.1304878369066669,
+              "bootstrap_upper_95_mean_net_reference_bps": -0.10055056916802589
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -25.8762463742167,
-              "median_net_reference_bps": -26.050800000000127,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -26.181749409131644,
-              "bootstrap_upper_95_mean_net_reference_bps": -25.51091235228295
+              "mean_net_reference_bps": -24.645721031138418,
+              "median_net_reference_bps": -26.00000000000022,
+              "positive_net_reference_fraction": 0.012761613067891782,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.130487836906667,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.100550569168025
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -29.8762463742167,
-              "median_net_reference_bps": -30.050800000000127,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -30.181749409131644,
-              "bootstrap_upper_95_mean_net_reference_bps": -29.51091235228295
+              "mean_net_reference_bps": -28.645721031138418,
+              "median_net_reference_bps": -30.00000000000022,
+              "positive_net_reference_fraction": 0.00816743236345074,
+              "bootstrap_lower_95_mean_net_reference_bps": -29.130487836906667,
+              "bootstrap_upper_95_mean_net_reference_bps": -28.100550569168025
             }
           },
           "symbol_gate_passed": false
@@ -97,40 +118,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 72,
           "bootstrap_seed": 5902,
-          "episodes": 407,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750982400000,
-          "mean_gross_funding_bps": 6.384000737100612,
-          "median_gross_funding_bps": 5.6363000000000945,
-          "p10_gross_funding_bps": 0.8993599999999812,
-          "p90_gross_funding_bps": 9.603779999999231,
-          "bootstrap_lower_95_mean_gross_bps": 5.132766038083436,
-          "bootstrap_upper_95_mean_gross_bps": 7.799803968058792,
-          "mean_future_settlements": 8.744471744471744,
+          "episodes": 731,
+          "first_decision_time_ms": 1577923200002,
+          "last_decision_time_ms": 1782403200000,
+          "mean_gross_funding_bps": 10.17890054719537,
+          "median_gross_funding_bps": 6.328999999999363,
+          "p10_gross_funding_bps": 0.48659999999922654,
+          "p90_gross_funding_bps": 24.659299999999497,
+          "bootstrap_lower_95_mean_gross_bps": 7.96407636114887,
+          "bootstrap_upper_95_mean_gross_bps": 12.841626621066757,
+          "mean_future_settlements": 8.722298221614228,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 2.384000737100613,
-              "median_net_reference_bps": 1.6363000000000945,
-              "positive_net_reference_fraction": 0.6388206388206388,
-              "bootstrap_lower_95_mean_net_reference_bps": 1.1327660380834361,
-              "bootstrap_upper_95_mean_net_reference_bps": 3.7998039680587916
+              "mean_net_reference_bps": 6.17890054719537,
+              "median_net_reference_bps": 2.328999999999363,
+              "positive_net_reference_fraction": 0.6716826265389877,
+              "bootstrap_lower_95_mean_net_reference_bps": 3.9640763611488703,
+              "bootstrap_upper_95_mean_net_reference_bps": 8.841626621066757
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -21.615999262899386,
-              "median_net_reference_bps": -22.363699999999906,
-              "positive_net_reference_fraction": 0.022113022113022112,
-              "bootstrap_lower_95_mean_net_reference_bps": -22.86723396191656,
-              "bootstrap_upper_95_mean_net_reference_bps": -20.20019603194121
+              "mean_net_reference_bps": -17.821099452804628,
+              "median_net_reference_bps": -21.67100000000064,
+              "positive_net_reference_fraction": 0.09575923392612859,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.03592363885113,
+              "bootstrap_upper_95_mean_net_reference_bps": -15.158373378933243
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -25.615999262899386,
-              "median_net_reference_bps": -26.363699999999906,
-              "positive_net_reference_fraction": 0.019656019656019656,
-              "bootstrap_lower_95_mean_net_reference_bps": -26.86723396191656,
-              "bootstrap_upper_95_mean_net_reference_bps": -24.20019603194121
+              "mean_net_reference_bps": -21.821099452804628,
+              "median_net_reference_bps": -25.67100000000064,
+              "positive_net_reference_fraction": 0.07250341997264022,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.03592363885113,
+              "bootstrap_upper_95_mean_net_reference_bps": -19.158373378933245
             }
           },
           "symbol_gate_passed": false
@@ -142,40 +163,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 168,
           "bootstrap_seed": 5903,
-          "episodes": 181,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750233600001,
-          "mean_gross_funding_bps": 14.840630386740056,
-          "median_gross_funding_bps": 11.794200000000421,
-          "p10_gross_funding_bps": 2.79110000000006,
-          "p90_gross_funding_bps": 24.682600000000416,
-          "bootstrap_lower_95_mean_gross_bps": 11.485328991712546,
-          "bootstrap_upper_95_mean_gross_bps": 19.382265193369797,
-          "mean_future_settlements": 20.773480662983424,
+          "episodes": 327,
+          "first_decision_time_ms": 1577923200002,
+          "last_decision_time_ms": 1782115200000,
+          "mean_gross_funding_bps": 23.631346177369434,
+          "median_gross_funding_bps": 13.407699999999911,
+          "p10_gross_funding_bps": 1.8846400000012145,
+          "p90_gross_funding_bps": 56.85079999999946,
+          "bootstrap_lower_95_mean_gross_bps": 16.760608081039102,
+          "bootstrap_upper_95_mean_gross_bps": 32.85017715596268,
+          "mean_future_settlements": 20.74006116207951,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 10.840630386740056,
-              "median_net_reference_bps": 7.794200000000421,
-              "positive_net_reference_fraction": 0.8674033149171271,
-              "bootstrap_lower_95_mean_net_reference_bps": 7.485328991712545,
-              "bootstrap_upper_95_mean_net_reference_bps": 15.382265193369797
+              "mean_net_reference_bps": 19.631346177369434,
+              "median_net_reference_bps": 9.407699999999911,
+              "positive_net_reference_fraction": 0.8470948012232415,
+              "bootstrap_lower_95_mean_net_reference_bps": 12.760608081039102,
+              "bootstrap_upper_95_mean_net_reference_bps": 28.85017715596268
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -13.159369613259944,
-              "median_net_reference_bps": -16.205799999999577,
-              "positive_net_reference_fraction": 0.07734806629834254,
-              "bootstrap_lower_95_mean_net_reference_bps": -16.514671008287454,
-              "bootstrap_upper_95_mean_net_reference_bps": -8.617734806630203
+              "mean_net_reference_bps": -4.368653822630568,
+              "median_net_reference_bps": -14.592300000000089,
+              "positive_net_reference_fraction": 0.1926605504587156,
+              "bootstrap_lower_95_mean_net_reference_bps": -11.239391918960898,
+              "bootstrap_upper_95_mean_net_reference_bps": 4.8501771559626805
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -17.15936961325994,
-              "median_net_reference_bps": -20.205799999999577,
-              "positive_net_reference_fraction": 0.06077348066298342,
-              "bootstrap_lower_95_mean_net_reference_bps": -20.514671008287454,
-              "bootstrap_upper_95_mean_net_reference_bps": -12.617734806630203
+              "mean_net_reference_bps": -8.36865382263057,
+              "median_net_reference_bps": -18.592300000000087,
+              "positive_net_reference_fraction": 0.1620795107033639,
+              "bootstrap_lower_95_mean_net_reference_bps": -15.239391918960898,
+              "bootstrap_upper_95_mean_net_reference_bps": 0.8501771559626807
             }
           },
           "symbol_gate_passed": false
@@ -187,40 +208,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 24,
           "bootstrap_seed": 5911,
-          "episodes": 608,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1751212800001,
-          "mean_gross_funding_bps": 3.157474342105198,
+          "episodes": 1202,
+          "first_decision_time_ms": 1577952000000,
+          "last_decision_time_ms": 1780502400001,
+          "mean_gross_funding_bps": 4.925533777038144,
           "median_gross_funding_bps": 2.9999999999996696,
-          "p10_gross_funding_bps": 1.2773200000000124,
-          "p90_gross_funding_bps": 5.1105500000000195,
-          "bootstrap_lower_95_mean_gross_bps": 2.730218207236801,
-          "bootstrap_upper_95_mean_gross_bps": 3.688364358552589,
-          "mean_future_settlements": 2.7697368421052633,
+          "p10_gross_funding_bps": 1.3727299999998221,
+          "p90_gross_funding_bps": 11.950690000000042,
+          "bootstrap_lower_95_mean_gross_bps": 4.1985719405156905,
+          "bootstrap_upper_95_mean_gross_bps": 5.731525114392602,
+          "mean_future_settlements": 2.7321131447587352,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -0.842525657894802,
+              "mean_net_reference_bps": 0.9255337770381431,
               "median_net_reference_bps": -1.0000000000003304,
-              "positive_net_reference_fraction": 0.13322368421052633,
-              "bootstrap_lower_95_mean_net_reference_bps": -1.2697817927631994,
-              "bootstrap_upper_95_mean_net_reference_bps": -0.31163564144741096
+              "positive_net_reference_fraction": 0.2545757071547421,
+              "bootstrap_lower_95_mean_net_reference_bps": 0.19857194051569035,
+              "bootstrap_upper_95_mean_net_reference_bps": 1.7315251143926014
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -24.842525657894804,
+              "mean_net_reference_bps": -23.074466222961856,
               "median_net_reference_bps": -25.00000000000033,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -25.2697817927632,
-              "bootstrap_upper_95_mean_net_reference_bps": -24.31163564144741
+              "positive_net_reference_fraction": 0.020798668885191347,
+              "bootstrap_lower_95_mean_net_reference_bps": -23.80142805948431,
+              "bootstrap_upper_95_mean_net_reference_bps": -22.268474885607397
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -28.842525657894804,
+              "mean_net_reference_bps": -27.074466222961863,
               "median_net_reference_bps": -29.00000000000033,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -29.2697817927632,
-              "bootstrap_upper_95_mean_net_reference_bps": -28.31163564144741
+              "positive_net_reference_fraction": 0.013311148086522463,
+              "bootstrap_lower_95_mean_net_reference_bps": -27.80142805948431,
+              "bootstrap_upper_95_mean_net_reference_bps": -26.268474885607397
             }
           },
           "symbol_gate_passed": false
@@ -232,40 +253,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 72,
           "bootstrap_seed": 5912,
-          "episodes": 264,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750579200000,
-          "mean_gross_funding_bps": 8.618973863636192,
-          "median_gross_funding_bps": 7.8011999999993975,
-          "p10_gross_funding_bps": 3.2746999999996307,
-          "p90_gross_funding_bps": 13.531220000000062,
-          "bootstrap_lower_95_mean_gross_bps": 7.157331638257504,
-          "bootstrap_upper_95_mean_gross_bps": 10.575793484848244,
-          "mean_future_settlements": 8.761363636363637,
+          "episodes": 502,
+          "first_decision_time_ms": 1577952000000,
+          "last_decision_time_ms": 1780329600000,
+          "mean_gross_funding_bps": 13.906710159362195,
+          "median_gross_funding_bps": 8.700349999999357,
+          "p10_gross_funding_bps": 3.247300000000779,
+          "p90_gross_funding_bps": 32.308510000000695,
+          "bootstrap_lower_95_mean_gross_bps": 11.009409890437869,
+          "bootstrap_upper_95_mean_gross_bps": 17.2532236553782,
+          "mean_future_settlements": 8.721115537848606,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 4.618973863636193,
-              "median_net_reference_bps": 3.8011999999993975,
-              "positive_net_reference_fraction": 0.8446969696969697,
-              "bootstrap_lower_95_mean_net_reference_bps": 3.157331638257504,
-              "bootstrap_upper_95_mean_net_reference_bps": 6.575793484848244
+              "mean_net_reference_bps": 9.906710159362195,
+              "median_net_reference_bps": 4.700349999999357,
+              "positive_net_reference_fraction": 0.8625498007968128,
+              "bootstrap_lower_95_mean_net_reference_bps": 7.009409890437869,
+              "bootstrap_upper_95_mean_net_reference_bps": 13.253223655378198
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -19.381026136363804,
-              "median_net_reference_bps": -20.198800000000602,
-              "positive_net_reference_fraction": 0.03409090909090909,
-              "bootstrap_lower_95_mean_net_reference_bps": -20.842668361742497,
-              "bootstrap_upper_95_mean_net_reference_bps": -17.42420651515176
+              "mean_net_reference_bps": -14.093289840637803,
+              "median_net_reference_bps": -19.299650000000643,
+              "positive_net_reference_fraction": 0.13745019920318724,
+              "bootstrap_lower_95_mean_net_reference_bps": -16.99059010956213,
+              "bootstrap_upper_95_mean_net_reference_bps": -10.746776344621802
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -23.381026136363804,
-              "median_net_reference_bps": -24.198800000000602,
-              "positive_net_reference_fraction": 0.030303030303030304,
-              "bootstrap_lower_95_mean_net_reference_bps": -24.842668361742497,
-              "bootstrap_upper_95_mean_net_reference_bps": -21.42420651515176
+              "mean_net_reference_bps": -18.093289840637805,
+              "median_net_reference_bps": -23.299650000000643,
+              "positive_net_reference_fraction": 0.10159362549800798,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.99059010956213,
+              "bootstrap_upper_95_mean_net_reference_bps": -14.746776344621802
             }
           },
           "symbol_gate_passed": false
@@ -277,40 +298,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 168,
           "bootstrap_seed": 5913,
-          "episodes": 134,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750579200000,
-          "mean_gross_funding_bps": 17.98644029850711,
-          "median_gross_funding_bps": 15.86204999999962,
-          "p10_gross_funding_bps": 6.58573000000055,
-          "p90_gross_funding_bps": 30.093119999999892,
-          "bootstrap_lower_95_mean_gross_bps": 14.036841902984772,
-          "bootstrap_upper_95_mean_gross_bps": 23.412131268656168,
-          "mean_future_settlements": 20.71641791044776,
+          "episodes": 247,
+          "first_decision_time_ms": 1577952000000,
+          "last_decision_time_ms": 1780502400001,
+          "mean_gross_funding_bps": 30.081027530363592,
+          "median_gross_funding_bps": 19.292199999998427,
+          "p10_gross_funding_bps": 6.437639999999911,
+          "p90_gross_funding_bps": 72.64862000000045,
+          "bootstrap_lower_95_mean_gross_bps": 21.983685789472908,
+          "bootstrap_upper_95_mean_gross_bps": 40.26566865384538,
+          "mean_future_settlements": 20.71255060728745,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 13.986440298507112,
-              "median_net_reference_bps": 11.86204999999962,
-              "positive_net_reference_fraction": 0.9477611940298507,
-              "bootstrap_lower_95_mean_net_reference_bps": 10.036841902984772,
-              "bootstrap_upper_95_mean_net_reference_bps": 19.412131268656168
+              "mean_net_reference_bps": 26.081027530363592,
+              "median_net_reference_bps": 15.292199999998427,
+              "positive_net_reference_fraction": 0.9352226720647774,
+              "bootstrap_lower_95_mean_net_reference_bps": 17.983685789472908,
+              "bootstrap_upper_95_mean_net_reference_bps": 36.26566865384538
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -10.01355970149289,
-              "median_net_reference_bps": -12.13795000000038,
-              "positive_net_reference_fraction": 0.11940298507462686,
-              "bootstrap_lower_95_mean_net_reference_bps": -13.963158097015228,
-              "bootstrap_upper_95_mean_net_reference_bps": -4.587868731343834
+              "mean_net_reference_bps": 2.0810275303635897,
+              "median_net_reference_bps": -8.707800000001573,
+              "positive_net_reference_fraction": 0.26720647773279355,
+              "bootstrap_lower_95_mean_net_reference_bps": -6.016314210527092,
+              "bootstrap_upper_95_mean_net_reference_bps": 12.265668653845381
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -14.01355970149289,
-              "median_net_reference_bps": -16.13795000000038,
-              "positive_net_reference_fraction": 0.08955223880597014,
-              "bootstrap_lower_95_mean_net_reference_bps": -17.963158097015228,
-              "bootstrap_upper_95_mean_net_reference_bps": -8.587868731343834
+              "mean_net_reference_bps": -1.91897246963641,
+              "median_net_reference_bps": -12.707800000001573,
+              "positive_net_reference_fraction": 0.22267206477732793,
+              "bootstrap_lower_95_mean_net_reference_bps": -10.016314210527092,
+              "bootstrap_upper_95_mean_net_reference_bps": 8.265668653845381
             }
           },
           "symbol_gate_passed": false
@@ -322,40 +343,40 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 24,
           "bootstrap_seed": 5921,
-          "episodes": 74,
-          "first_decision_time_ms": 1638345600000,
+          "episodes": 303,
+          "first_decision_time_ms": 1578988800000,
           "last_decision_time_ms": 1733702400000,
-          "mean_gross_funding_bps": 8.26004999999996,
-          "median_gross_funding_bps": 7.241649999999849,
-          "p10_gross_funding_bps": 3.1373999999998876,
-          "p90_gross_funding_bps": 14.569569999999894,
-          "bootstrap_lower_95_mean_gross_bps": 6.372615405405329,
-          "bootstrap_upper_95_mean_gross_bps": 10.418041655405364,
-          "mean_future_settlements": 2.8783783783783785,
+          "mean_gross_funding_bps": 12.279386138613845,
+          "median_gross_funding_bps": 9.786700000000703,
+          "p10_gross_funding_bps": 3.126459999999831,
+          "p90_gross_funding_bps": 23.509620000000012,
+          "bootstrap_lower_95_mean_gross_bps": 10.409907780528048,
+          "bootstrap_upper_95_mean_gross_bps": 14.432647615511566,
+          "mean_future_settlements": 2.7557755775577557,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 4.26004999999996,
-              "median_net_reference_bps": 3.2416499999998494,
-              "positive_net_reference_fraction": 0.7837837837837838,
-              "bootstrap_lower_95_mean_net_reference_bps": 2.3726154054053286,
-              "bootstrap_upper_95_mean_net_reference_bps": 6.418041655405363
+              "mean_net_reference_bps": 8.279386138613845,
+              "median_net_reference_bps": 5.786700000000703,
+              "positive_net_reference_fraction": 0.8316831683168316,
+              "bootstrap_lower_95_mean_net_reference_bps": 6.409907780528047,
+              "bootstrap_upper_95_mean_net_reference_bps": 10.432647615511566
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -19.73995000000004,
-              "median_net_reference_bps": -20.75835000000015,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -21.62738459459467,
-              "bootstrap_upper_95_mean_net_reference_bps": -17.58195834459464
+              "mean_net_reference_bps": -15.720613861386155,
+              "median_net_reference_bps": -18.213299999999297,
+              "positive_net_reference_fraction": 0.0858085808580858,
+              "bootstrap_lower_95_mean_net_reference_bps": -17.590092219471952,
+              "bootstrap_upper_95_mean_net_reference_bps": -13.567352384488434
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -23.73995000000004,
-              "median_net_reference_bps": -24.75835000000015,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -25.62738459459467,
-              "bootstrap_upper_95_mean_net_reference_bps": -21.58195834459464
+              "mean_net_reference_bps": -19.720613861386155,
+              "median_net_reference_bps": -22.213299999999297,
+              "positive_net_reference_fraction": 0.04950495049504951,
+              "bootstrap_lower_95_mean_net_reference_bps": -21.590092219471952,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.567352384488434
             }
           },
           "symbol_gate_passed": false
@@ -367,40 +388,40 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 72,
           "bootstrap_seed": 5922,
-          "episodes": 34,
-          "first_decision_time_ms": 1638345600000,
+          "episodes": 135,
+          "first_decision_time_ms": 1578988800000,
           "last_decision_time_ms": 1733702400000,
-          "mean_gross_funding_bps": 21.402747058823365,
-          "median_gross_funding_bps": 18.25259999999995,
-          "p10_gross_funding_bps": 9.475699999999533,
-          "p90_gross_funding_bps": 36.701339999999945,
-          "bootstrap_lower_95_mean_gross_bps": 15.124403235293922,
-          "bootstrap_upper_95_mean_gross_bps": 28.63848647058807,
-          "mean_future_settlements": 8.735294117647058,
+          "mean_gross_funding_bps": 32.58077407407393,
+          "median_gross_funding_bps": 25.869299999999875,
+          "p10_gross_funding_bps": 9.819599999998818,
+          "p90_gross_funding_bps": 65.9743800000009,
+          "bootstrap_lower_95_mean_gross_bps": 25.898447907407235,
+          "bootstrap_upper_95_mean_gross_bps": 40.24940764814808,
+          "mean_future_settlements": 8.696296296296296,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 17.402747058823365,
-              "median_net_reference_bps": 14.252599999999953,
-              "positive_net_reference_fraction": 1.0,
-              "bootstrap_lower_95_mean_net_reference_bps": 11.124403235293922,
-              "bootstrap_upper_95_mean_net_reference_bps": 24.63848647058807
+              "mean_net_reference_bps": 28.58077407407393,
+              "median_net_reference_bps": 21.869299999999875,
+              "positive_net_reference_fraction": 0.9925925925925926,
+              "bootstrap_lower_95_mean_net_reference_bps": 21.898447907407235,
+              "bootstrap_upper_95_mean_net_reference_bps": 36.24940764814808
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -6.5972529411766345,
-              "median_net_reference_bps": -9.747400000000047,
-              "positive_net_reference_fraction": 0.23529411764705882,
-              "bootstrap_lower_95_mean_net_reference_bps": -12.875596764706078,
-              "bootstrap_upper_95_mean_net_reference_bps": 0.6384864705880691
+              "mean_net_reference_bps": 4.580774074073929,
+              "median_net_reference_bps": -2.1307000000001253,
+              "positive_net_reference_fraction": 0.45925925925925926,
+              "bootstrap_lower_95_mean_net_reference_bps": -2.101552092592765,
+              "bootstrap_upper_95_mean_net_reference_bps": 12.249407648148077
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -10.597252941176635,
-              "median_net_reference_bps": -13.747400000000047,
-              "positive_net_reference_fraction": 0.20588235294117646,
-              "bootstrap_lower_95_mean_net_reference_bps": -16.875596764706078,
-              "bootstrap_upper_95_mean_net_reference_bps": -3.361513529411931
+              "mean_net_reference_bps": 0.5807740740739296,
+              "median_net_reference_bps": -6.130700000000125,
+              "positive_net_reference_fraction": 0.4,
+              "bootstrap_lower_95_mean_net_reference_bps": -6.101552092592765,
+              "bootstrap_upper_95_mean_net_reference_bps": 8.249407648148077
             }
           },
           "symbol_gate_passed": false
@@ -412,68 +433,68 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 168,
           "bootstrap_seed": 5923,
-          "episodes": 20,
-          "first_decision_time_ms": 1638345600000,
+          "episodes": 72,
+          "first_decision_time_ms": 1578988800000,
           "last_decision_time_ms": 1733212800000,
-          "mean_gross_funding_bps": 43.437779999999634,
-          "median_gross_funding_bps": 33.56929999999987,
-          "p10_gross_funding_bps": 20.80044000000046,
-          "p90_gross_funding_bps": 78.62635999999925,
-          "bootstrap_lower_95_mean_gross_bps": 30.200316874999537,
-          "bootstrap_upper_95_mean_gross_bps": 58.49722874999945,
-          "mean_future_settlements": 20.8,
+          "mean_gross_funding_bps": 68.02382222222174,
+          "median_gross_funding_bps": 52.133600000000555,
+          "p10_gross_funding_bps": 22.82683999999735,
+          "p90_gross_funding_bps": 143.00636999999963,
+          "bootstrap_lower_95_mean_gross_bps": 50.47872961805474,
+          "bootstrap_upper_95_mean_gross_bps": 89.40109159722189,
+          "mean_future_settlements": 20.63888888888889,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 39.437779999999634,
-              "median_net_reference_bps": 29.56929999999987,
-              "positive_net_reference_fraction": 1.0,
-              "bootstrap_lower_95_mean_net_reference_bps": 26.200316874999537,
-              "bootstrap_upper_95_mean_net_reference_bps": 54.49722874999945
+              "mean_net_reference_bps": 64.02382222222174,
+              "median_net_reference_bps": 48.133600000000555,
+              "positive_net_reference_fraction": 0.9861111111111112,
+              "bootstrap_lower_95_mean_net_reference_bps": 46.47872961805474,
+              "bootstrap_upper_95_mean_net_reference_bps": 85.40109159722189
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": 15.43777999999963,
-              "median_net_reference_bps": 5.5692999999998705,
-              "positive_net_reference_fraction": 0.65,
-              "bootstrap_lower_95_mean_net_reference_bps": 2.2003168749995363,
-              "bootstrap_upper_95_mean_net_reference_bps": 30.49722874999945
+              "mean_net_reference_bps": 40.02382222222174,
+              "median_net_reference_bps": 24.13360000000056,
+              "positive_net_reference_fraction": 0.7777777777777778,
+              "bootstrap_lower_95_mean_net_reference_bps": 22.478729618054743,
+              "bootstrap_upper_95_mean_net_reference_bps": 61.40109159722189
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": 11.437779999999632,
-              "median_net_reference_bps": 1.5692999999998705,
-              "positive_net_reference_fraction": 0.5,
-              "bootstrap_lower_95_mean_net_reference_bps": -1.7996831250004637,
-              "bootstrap_upper_95_mean_net_reference_bps": 26.49722874999945
+              "mean_net_reference_bps": 36.02382222222174,
+              "median_net_reference_bps": 20.13360000000056,
+              "positive_net_reference_fraction": 0.6666666666666666,
+              "bootstrap_lower_95_mean_net_reference_bps": 18.478729618054743,
+              "bootstrap_upper_95_mean_net_reference_bps": 57.40109159722189
             }
           },
-          "symbol_gate_passed": false
+          "symbol_gate_passed": true
         }
       ],
-      "result_sha256": "71bf10020fcfc3de1a50c66908f43c5f6082d96d940cad48cbef412865a650ff"
+      "result_sha256": "0a57fa55ffbb59b819653c5cdc258e059ba34159da97fd91340eab200ecd035e"
     },
     {
       "symbol": "ETHUSDT",
       "source": {
         "symbol": "ETHUSDT",
-        "periods": 43,
-        "rows": 3924,
-        "first_calc_time_ms": 1638316800000,
-        "last_calc_time_ms": 1751299200002,
+        "periods": 78,
+        "rows": 7119,
+        "first_calc_time_ms": 1577836800000,
+        "last_calc_time_ms": 1782835200005,
         "minimum_interval_hours": 8,
         "maximum_interval_hours": 8,
-        "archive_identity_sha256": "c063e85dd220674dfbd6ef7caf13717be6199589c87fe22ffa7ba110b44a8445",
-        "funding_row_stream_sha256": "0f59ac430b4578a972c901f3b39a197526bb0d9de53d8e84ab7a52518c258e5c",
-        "period_evidence_sha256": "943021d76b54b0ba3003c10cfc6768a4518befd70dceaee905a11f564071d127"
+        "archive_identity_sha256": "35366f6ccc528757ae7fc5b8e846e2538d98c9006bb945695040e30e772984dc",
+        "funding_row_stream_sha256": "ebce0dd7d3c891280c00569637e3867589aef1dc773482671bad583ee3539ea8",
+        "period_evidence_sha256": "aea7b0df14983ea728561f7dc53945ff455aef9bbb9a9215f00fd6dd1671de0c"
       },
       "sign_transition": {
-        "positive_to_positive": 2978,
-        "positive_to_nonpositive": 317,
-        "nonpositive_to_positive": 317,
-        "nonpositive_to_nonpositive": 311,
-        "next_positive_given_positive": 0.903793626707132,
-        "next_positive_given_nonpositive": 0.5047770700636943
+        "positive_to_positive": 5634,
+        "positive_to_nonpositive": 486,
+        "nonpositive_to_positive": 486,
+        "nonpositive_to_nonpositive": 512,
+        "next_positive_given_positive": 0.9205882352941176,
+        "next_positive_given_nonpositive": 0.48697394789579157
       },
       "cells": [
         {
@@ -483,40 +504,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 24,
           "bootstrap_seed": 6001,
-          "episodes": 1102,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1751155200004,
-          "mean_gross_funding_bps": 2.177261343012674,
-          "median_gross_funding_bps": 1.9988499999999687,
-          "p10_gross_funding_bps": 0.027399999999795695,
-          "p90_gross_funding_bps": 3.310899999999922,
-          "bootstrap_lower_95_mean_gross_bps": 1.8694820372050585,
-          "bootstrap_upper_95_mean_gross_bps": 2.5648286456442415,
-          "mean_future_settlements": 2.767695099818512,
+          "episodes": 1975,
+          "first_decision_time_ms": 1577836800000,
+          "last_decision_time_ms": 1782720000013,
+          "mean_gross_funding_bps": 3.9282966075948504,
+          "median_gross_funding_bps": 2.118199999999737,
+          "p10_gross_funding_bps": 0.1306399999998487,
+          "p90_gross_funding_bps": 9.479240000000111,
+          "bootstrap_lower_95_mean_gross_bps": 3.2914473012657415,
+          "bootstrap_upper_95_mean_gross_bps": 4.614040026582214,
+          "mean_future_settlements": 2.73620253164557,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -1.822738656987326,
-              "median_net_reference_bps": -2.001150000000031,
-              "positive_net_reference_fraction": 0.07985480943738657,
-              "bootstrap_lower_95_mean_net_reference_bps": -2.1305179627949418,
-              "bootstrap_upper_95_mean_net_reference_bps": -1.4351713543557587
+              "mean_net_reference_bps": -0.07170339240514939,
+              "median_net_reference_bps": -1.881800000000263,
+              "positive_net_reference_fraction": 0.18430379746835443,
+              "bootstrap_lower_95_mean_net_reference_bps": -0.7085526987342586,
+              "bootstrap_upper_95_mean_net_reference_bps": 0.6140400265822139
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -25.822738656987326,
-              "median_net_reference_bps": -26.00115000000003,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -26.13051796279494,
-              "bootstrap_upper_95_mean_net_reference_bps": -25.43517135435576
+              "mean_net_reference_bps": -24.07170339240515,
+              "median_net_reference_bps": -25.88180000000026,
+              "positive_net_reference_fraction": 0.018734177215189874,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.70855269873426,
+              "bootstrap_upper_95_mean_net_reference_bps": -23.385959973417787
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -29.822738656987333,
-              "median_net_reference_bps": -30.00115000000003,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -30.13051796279494,
-              "bootstrap_upper_95_mean_net_reference_bps": -29.43517135435576
+              "mean_net_reference_bps": -28.07170339240515,
+              "median_net_reference_bps": -29.88180000000026,
+              "positive_net_reference_fraction": 0.014177215189873417,
+              "bootstrap_lower_95_mean_net_reference_bps": -28.70855269873426,
+              "bootstrap_upper_95_mean_net_reference_bps": -27.385959973417787
             }
           },
           "symbol_gate_passed": false
@@ -528,40 +549,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 72,
           "bootstrap_seed": 6002,
-          "episodes": 407,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750982400000,
-          "mean_gross_funding_bps": 6.320581326781243,
-          "median_gross_funding_bps": 5.656199999999334,
-          "p10_gross_funding_bps": 0.4800399999997651,
-          "p90_gross_funding_bps": 11.15669999999982,
-          "bootstrap_lower_95_mean_gross_bps": 4.916507659705072,
-          "bootstrap_upper_95_mean_gross_bps": 7.864432530712433,
-          "mean_future_settlements": 8.74938574938575,
+          "episodes": 736,
+          "first_decision_time_ms": 1577836800000,
+          "last_decision_time_ms": 1782288000005,
+          "mean_gross_funding_bps": 11.919865217391033,
+          "median_gross_funding_bps": 6.691399999999015,
+          "p10_gross_funding_bps": 0.5365000000001618,
+          "p90_gross_funding_bps": 29.68184999999984,
+          "bootstrap_lower_95_mean_gross_bps": 9.037607095787719,
+          "bootstrap_upper_95_mean_gross_bps": 15.36709515964646,
+          "mean_future_settlements": 8.735054347826088,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 2.320581326781244,
-              "median_net_reference_bps": 1.656199999999334,
-              "positive_net_reference_fraction": 0.6314496314496314,
-              "bootstrap_lower_95_mean_net_reference_bps": 0.9165076597050718,
-              "bootstrap_upper_95_mean_net_reference_bps": 3.864432530712433
+              "mean_net_reference_bps": 7.919865217391033,
+              "median_net_reference_bps": 2.691399999999015,
+              "positive_net_reference_fraction": 0.6847826086956522,
+              "bootstrap_lower_95_mean_net_reference_bps": 5.037607095787719,
+              "bootstrap_upper_95_mean_net_reference_bps": 11.36709515964646
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -21.67941867321876,
-              "median_net_reference_bps": -22.343800000000666,
-              "positive_net_reference_fraction": 0.02702702702702703,
-              "bootstrap_lower_95_mean_net_reference_bps": -23.083492340294928,
-              "bootstrap_upper_95_mean_net_reference_bps": -20.13556746928757
+              "mean_net_reference_bps": -16.08013478260897,
+              "median_net_reference_bps": -21.308600000000986,
+              "positive_net_reference_fraction": 0.10869565217391304,
+              "bootstrap_lower_95_mean_net_reference_bps": -18.96239290421228,
+              "bootstrap_upper_95_mean_net_reference_bps": -12.63290484035354
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -25.67941867321876,
-              "median_net_reference_bps": -26.343800000000666,
-              "positive_net_reference_fraction": 0.019656019656019656,
-              "bootstrap_lower_95_mean_net_reference_bps": -27.083492340294928,
-              "bootstrap_upper_95_mean_net_reference_bps": -24.13556746928757
+              "mean_net_reference_bps": -20.08013478260897,
+              "median_net_reference_bps": -25.308600000000986,
+              "positive_net_reference_fraction": 0.09239130434782608,
+              "bootstrap_lower_95_mean_net_reference_bps": -22.96239290421228,
+              "bootstrap_upper_95_mean_net_reference_bps": -16.63290484035354
             }
           },
           "symbol_gate_passed": false
@@ -573,40 +594,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 168,
           "bootstrap_seed": 6003,
-          "episodes": 181,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750291200005,
-          "mean_gross_funding_bps": 14.178820994474943,
-          "median_gross_funding_bps": 12.731200000000165,
-          "p10_gross_funding_bps": -0.3272000000000518,
-          "p90_gross_funding_bps": 27.017099999998017,
-          "bootstrap_lower_95_mean_gross_bps": 9.975118632596661,
-          "bootstrap_upper_95_mean_gross_bps": 18.827217182320236,
-          "mean_future_settlements": 20.76243093922652,
+          "episodes": 329,
+          "first_decision_time_ms": 1577836800000,
+          "last_decision_time_ms": 1782115200000,
+          "mean_gross_funding_bps": 27.593465045592097,
+          "median_gross_funding_bps": 14.362800000001785,
+          "p10_gross_funding_bps": -0.4258399999994541,
+          "p90_gross_funding_bps": 65.14387999999921,
+          "bootstrap_lower_95_mean_gross_bps": 18.624201360181722,
+          "bootstrap_upper_95_mean_gross_bps": 38.090155721883846,
+          "mean_future_settlements": 20.72948328267477,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 10.178820994474947,
-              "median_net_reference_bps": 8.731200000000165,
-              "positive_net_reference_fraction": 0.8342541436464088,
-              "bootstrap_lower_95_mean_net_reference_bps": 5.9751186325966605,
-              "bootstrap_upper_95_mean_net_reference_bps": 14.827217182320235
+              "mean_net_reference_bps": 23.593465045592097,
+              "median_net_reference_bps": 10.362800000001785,
+              "positive_net_reference_fraction": 0.8419452887537994,
+              "bootstrap_lower_95_mean_net_reference_bps": 14.62420136018172,
+              "bootstrap_upper_95_mean_net_reference_bps": 34.090155721883846
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -13.821179005525053,
-              "median_net_reference_bps": -15.268799999999835,
-              "positive_net_reference_fraction": 0.08287292817679558,
-              "bootstrap_lower_95_mean_net_reference_bps": -18.02488136740334,
-              "bootstrap_upper_95_mean_net_reference_bps": -9.172782817679765
+              "mean_net_reference_bps": -0.406534954407903,
+              "median_net_reference_bps": -13.637199999998215,
+              "positive_net_reference_fraction": 0.21580547112462006,
+              "bootstrap_lower_95_mean_net_reference_bps": -9.37579863981828,
+              "bootstrap_upper_95_mean_net_reference_bps": 10.09015572188385
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -17.821179005525057,
-              "median_net_reference_bps": -19.268799999999835,
-              "positive_net_reference_fraction": 0.08287292817679558,
-              "bootstrap_lower_95_mean_net_reference_bps": -22.02488136740334,
-              "bootstrap_upper_95_mean_net_reference_bps": -13.172782817679765
+              "mean_net_reference_bps": -4.406534954407903,
+              "median_net_reference_bps": -17.637199999998217,
+              "positive_net_reference_fraction": 0.2066869300911854,
+              "bootstrap_lower_95_mean_net_reference_bps": -13.37579863981828,
+              "bootstrap_upper_95_mean_net_reference_bps": 6.090155721883849
             }
           },
           "symbol_gate_passed": false
@@ -618,40 +639,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 24,
           "bootstrap_seed": 6011,
-          "episodes": 627,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750147200006,
-          "mean_gross_funding_bps": 3.1524972886761953,
-          "median_gross_funding_bps": 2.959699999999996,
-          "p10_gross_funding_bps": 0.9809399999999372,
-          "p90_gross_funding_bps": 5.7116400000001,
-          "bootstrap_lower_95_mean_gross_bps": 2.7059802870813088,
-          "bootstrap_upper_95_mean_gross_bps": 3.6704155422647142,
-          "mean_future_settlements": 2.7607655502392343,
+          "episodes": 1278,
+          "first_decision_time_ms": 1577836800000,
+          "last_decision_time_ms": 1780358400000,
+          "mean_gross_funding_bps": 5.630712676056209,
+          "median_gross_funding_bps": 2.9999999999996696,
+          "p10_gross_funding_bps": 1.3588100000004877,
+          "p90_gross_funding_bps": 13.793609999999703,
+          "bootstrap_lower_95_mean_gross_bps": 4.718404988262811,
+          "bootstrap_upper_95_mean_gross_bps": 6.702489301643111,
+          "mean_future_settlements": 2.736306729264476,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -0.8475027113238051,
-              "median_net_reference_bps": -1.0403000000000042,
-              "positive_net_reference_fraction": 0.14035087719298245,
-              "bootstrap_lower_95_mean_net_reference_bps": -1.294019712918691,
-              "bootstrap_upper_95_mean_net_reference_bps": -0.329584457735286
+              "mean_net_reference_bps": 1.630712676056209,
+              "median_net_reference_bps": -1.0000000000003304,
+              "positive_net_reference_fraction": 0.28482003129890454,
+              "bootstrap_lower_95_mean_net_reference_bps": 0.7184049882628103,
+              "bootstrap_upper_95_mean_net_reference_bps": 2.702489301643111
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -24.847502711323806,
-              "median_net_reference_bps": -25.040300000000006,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -25.294019712918693,
-              "bootstrap_upper_95_mean_net_reference_bps": -24.329584457735287
+              "mean_net_reference_bps": -22.36928732394379,
+              "median_net_reference_bps": -25.00000000000033,
+              "positive_net_reference_fraction": 0.028951486697965573,
+              "bootstrap_lower_95_mean_net_reference_bps": -23.28159501173719,
+              "bootstrap_upper_95_mean_net_reference_bps": -21.297510698356888
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -28.847502711323813,
-              "median_net_reference_bps": -29.040300000000006,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -29.294019712918693,
-              "bootstrap_upper_95_mean_net_reference_bps": -28.329584457735287
+              "mean_net_reference_bps": -26.369287323943794,
+              "median_net_reference_bps": -29.00000000000033,
+              "positive_net_reference_fraction": 0.02190923317683881,
+              "bootstrap_lower_95_mean_net_reference_bps": -27.28159501173719,
+              "bootstrap_upper_95_mean_net_reference_bps": -25.297510698356888
             }
           },
           "symbol_gate_passed": false
@@ -663,40 +684,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 72,
           "bootstrap_seed": 6012,
-          "episodes": 271,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750147200006,
-          "mean_gross_funding_bps": 8.465727306272948,
-          "median_gross_funding_bps": 7.324899999999468,
-          "p10_gross_funding_bps": 2.3422999999999847,
-          "p90_gross_funding_bps": 16.646200000000334,
-          "bootstrap_lower_95_mean_gross_bps": 6.7637664667896376,
-          "bootstrap_upper_95_mean_gross_bps": 10.48636230627294,
-          "mean_future_settlements": 8.793357933579335,
+          "episodes": 527,
+          "first_decision_time_ms": 1577836800000,
+          "last_decision_time_ms": 1780358400000,
+          "mean_gross_funding_bps": 15.902960341555618,
+          "median_gross_funding_bps": 8.85139999999951,
+          "p10_gross_funding_bps": 2.953599999999446,
+          "p90_gross_funding_bps": 40.50896000000016,
+          "bootstrap_lower_95_mean_gross_bps": 12.356124558823174,
+          "bootstrap_upper_95_mean_gross_bps": 20.008394805502487,
+          "mean_future_settlements": 8.74573055028463,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 4.465727306272949,
-              "median_net_reference_bps": 3.3248999999994684,
-              "positive_net_reference_fraction": 0.8118081180811808,
-              "bootstrap_lower_95_mean_net_reference_bps": 2.763766466789638,
-              "bootstrap_upper_95_mean_net_reference_bps": 6.48636230627294
+              "mean_net_reference_bps": 11.902960341555618,
+              "median_net_reference_bps": 4.85139999999951,
+              "positive_net_reference_fraction": 0.8633776091081594,
+              "bootstrap_lower_95_mean_net_reference_bps": 8.356124558823174,
+              "bootstrap_upper_95_mean_net_reference_bps": 16.008394805502487
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -19.534272693727054,
-              "median_net_reference_bps": -20.675100000000533,
-              "positive_net_reference_fraction": 0.03690036900369004,
-              "bootstrap_lower_95_mean_net_reference_bps": -21.236233533210363,
-              "bootstrap_upper_95_mean_net_reference_bps": -17.513637693727063
+              "mean_net_reference_bps": -12.097039658444384,
+              "median_net_reference_bps": -19.148600000000492,
+              "positive_net_reference_fraction": 0.14800759013282733,
+              "bootstrap_lower_95_mean_net_reference_bps": -15.643875441176826,
+              "bootstrap_upper_95_mean_net_reference_bps": -7.991605194497515
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -23.534272693727054,
-              "median_net_reference_bps": -24.675100000000533,
-              "positive_net_reference_fraction": 0.02952029520295203,
-              "bootstrap_lower_95_mean_net_reference_bps": -25.236233533210363,
-              "bootstrap_upper_95_mean_net_reference_bps": -21.513637693727063
+              "mean_net_reference_bps": -16.097039658444384,
+              "median_net_reference_bps": -23.148600000000492,
+              "positive_net_reference_fraction": 0.13282732447817835,
+              "bootstrap_lower_95_mean_net_reference_bps": -19.643875441176824,
+              "bootstrap_upper_95_mean_net_reference_bps": -11.991605194497515
             }
           },
           "symbol_gate_passed": false
@@ -708,40 +729,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 168,
           "bootstrap_seed": 6013,
-          "episodes": 139,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750147200006,
-          "mean_gross_funding_bps": 17.533475539568116,
-          "median_gross_funding_bps": 14.672900000000377,
-          "p10_gross_funding_bps": 4.960840000000022,
-          "p90_gross_funding_bps": 32.31510000000013,
-          "bootstrap_lower_95_mean_gross_bps": 12.64726843525171,
-          "bootstrap_upper_95_mean_gross_bps": 22.97366133093479,
-          "mean_future_settlements": 20.741007194244606,
+          "episodes": 259,
+          "first_decision_time_ms": 1577836800000,
+          "last_decision_time_ms": 1780358400000,
+          "mean_gross_funding_bps": 34.172851737450934,
+          "median_gross_funding_bps": 18.755799999997656,
+          "p10_gross_funding_bps": 5.367340000000942,
+          "p90_gross_funding_bps": 90.38173999999889,
+          "bootstrap_lower_95_mean_gross_bps": 23.774797181466,
+          "bootstrap_upper_95_mean_gross_bps": 48.25371725868646,
+          "mean_future_settlements": 20.752895752895753,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 13.533475539568116,
-              "median_net_reference_bps": 10.672900000000377,
-              "positive_net_reference_fraction": 0.9280575539568345,
-              "bootstrap_lower_95_mean_net_reference_bps": 8.64726843525171,
-              "bootstrap_upper_95_mean_net_reference_bps": 18.97366133093479
+              "mean_net_reference_bps": 30.172851737450934,
+              "median_net_reference_bps": 14.755799999997656,
+              "positive_net_reference_fraction": 0.9227799227799228,
+              "bootstrap_lower_95_mean_net_reference_bps": 19.774797181466,
+              "bootstrap_upper_95_mean_net_reference_bps": 44.25371725868646
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -10.466524460431886,
-              "median_net_reference_bps": -13.327099999999623,
-              "positive_net_reference_fraction": 0.12949640287769784,
-              "bootstrap_lower_95_mean_net_reference_bps": -15.35273156474829,
-              "bootstrap_upper_95_mean_net_reference_bps": -5.02633866906521
+              "mean_net_reference_bps": 6.172851737450935,
+              "median_net_reference_bps": -9.244200000002344,
+              "positive_net_reference_fraction": 0.28185328185328185,
+              "bootstrap_lower_95_mean_net_reference_bps": -4.225202818534,
+              "bootstrap_upper_95_mean_net_reference_bps": 20.25371725868646
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -14.466524460431886,
-              "median_net_reference_bps": -17.327099999999625,
-              "positive_net_reference_fraction": 0.1079136690647482,
-              "bootstrap_lower_95_mean_net_reference_bps": -19.35273156474829,
-              "bootstrap_upper_95_mean_net_reference_bps": -9.026338669065211
+              "mean_net_reference_bps": 2.1728517374509355,
+              "median_net_reference_bps": -13.244200000002344,
+              "positive_net_reference_fraction": 0.25868725868725867,
+              "bootstrap_lower_95_mean_net_reference_bps": -8.225202818534001,
+              "bootstrap_upper_95_mean_net_reference_bps": 16.25371725868646
             }
           },
           "symbol_gate_passed": false
@@ -753,40 +774,40 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 24,
           "bootstrap_seed": 6021,
-          "episodes": 77,
-          "first_decision_time_ms": 1673683200001,
+          "episodes": 349,
+          "first_decision_time_ms": 1579075200000,
           "last_decision_time_ms": 1733644800000,
-          "mean_gross_funding_bps": 8.871180519480507,
-          "median_gross_funding_bps": 8.145400000000025,
-          "p10_gross_funding_bps": 4.338139999999934,
-          "p90_gross_funding_bps": 15.038179999999901,
-          "bootstrap_lower_95_mean_gross_bps": 7.301796525973989,
-          "bootstrap_upper_95_mean_gross_bps": 10.562029935064906,
-          "mean_future_settlements": 2.896103896103896,
+          "mean_gross_funding_bps": 14.021908309455569,
+          "median_gross_funding_bps": 10.418900000000002,
+          "p10_gross_funding_bps": 3.8182600000001843,
+          "p90_gross_funding_bps": 28.365039999999997,
+          "bootstrap_lower_95_mean_gross_bps": 11.872673022922637,
+          "bootstrap_upper_95_mean_gross_bps": 16.314840967048646,
+          "mean_future_settlements": 2.7478510028653296,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 4.871180519480509,
-              "median_net_reference_bps": 4.145400000000025,
-              "positive_net_reference_fraction": 0.922077922077922,
-              "bootstrap_lower_95_mean_net_reference_bps": 3.301796525973989,
-              "bootstrap_upper_95_mean_net_reference_bps": 6.562029935064905
+              "mean_net_reference_bps": 10.02190830945557,
+              "median_net_reference_bps": 6.4189000000000025,
+              "positive_net_reference_fraction": 0.8882521489971347,
+              "bootstrap_lower_95_mean_net_reference_bps": 7.872673022922636,
+              "bootstrap_upper_95_mean_net_reference_bps": 12.314840967048648
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -19.12881948051949,
-              "median_net_reference_bps": -19.854599999999976,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -20.698203474026013,
-              "bootstrap_upper_95_mean_net_reference_bps": -17.437970064935094
+              "mean_net_reference_bps": -13.978091690544431,
+              "median_net_reference_bps": -17.5811,
+              "positive_net_reference_fraction": 0.10601719197707736,
+              "bootstrap_lower_95_mean_net_reference_bps": -16.127326977077363,
+              "bootstrap_upper_95_mean_net_reference_bps": -11.685159032951352
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -23.12881948051949,
-              "median_net_reference_bps": -23.854599999999976,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -24.698203474026013,
-              "bootstrap_upper_95_mean_net_reference_bps": -21.437970064935094
+              "mean_net_reference_bps": -17.97809169054443,
+              "median_net_reference_bps": -21.5811,
+              "positive_net_reference_fraction": 0.0830945558739255,
+              "bootstrap_lower_95_mean_net_reference_bps": -20.127326977077363,
+              "bootstrap_upper_95_mean_net_reference_bps": -15.685159032951352
             }
           },
           "symbol_gate_passed": false
@@ -798,40 +819,40 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 72,
           "bootstrap_seed": 6022,
-          "episodes": 35,
-          "first_decision_time_ms": 1673683200001,
+          "episodes": 152,
+          "first_decision_time_ms": 1579075200000,
           "last_decision_time_ms": 1733472000000,
-          "mean_gross_funding_bps": 23.025314285714234,
-          "median_gross_funding_bps": 20.80660000000012,
-          "p10_gross_funding_bps": 11.383139999999791,
-          "p90_gross_funding_bps": 38.18995999999994,
-          "bootstrap_lower_95_mean_gross_bps": 18.26506899999994,
-          "bootstrap_upper_95_mean_gross_bps": 28.48952021428566,
-          "mean_future_settlements": 8.885714285714286,
+          "mean_gross_funding_bps": 38.70560789473669,
+          "median_gross_funding_bps": 28.45520000000046,
+          "p10_gross_funding_bps": 11.349499999999457,
+          "p90_gross_funding_bps": 85.76429999999958,
+          "bootstrap_lower_95_mean_gross_bps": 30.611675328947268,
+          "bootstrap_upper_95_mean_gross_bps": 48.11587467105242,
+          "mean_future_settlements": 8.756578947368421,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 19.025314285714234,
-              "median_net_reference_bps": 16.80660000000012,
-              "positive_net_reference_fraction": 1.0,
-              "bootstrap_lower_95_mean_net_reference_bps": 14.26506899999994,
-              "bootstrap_upper_95_mean_net_reference_bps": 24.48952021428566
+              "mean_net_reference_bps": 34.705607894736694,
+              "median_net_reference_bps": 24.45520000000046,
+              "positive_net_reference_fraction": 0.9868421052631579,
+              "bootstrap_lower_95_mean_net_reference_bps": 26.611675328947268,
+              "bootstrap_upper_95_mean_net_reference_bps": 44.11587467105242
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -4.974685714285769,
-              "median_net_reference_bps": -7.19339999999988,
-              "positive_net_reference_fraction": 0.34285714285714286,
-              "bootstrap_lower_95_mean_net_reference_bps": -9.73493100000006,
-              "bootstrap_upper_95_mean_net_reference_bps": 0.48952021428565745
+              "mean_net_reference_bps": 10.705607894736689,
+              "median_net_reference_bps": 0.4552000000004597,
+              "positive_net_reference_fraction": 0.506578947368421,
+              "bootstrap_lower_95_mean_net_reference_bps": 2.6116753289472667,
+              "bootstrap_upper_95_mean_net_reference_bps": 20.115874671052417
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -8.974685714285767,
-              "median_net_reference_bps": -11.19339999999988,
-              "positive_net_reference_fraction": 0.17142857142857143,
-              "bootstrap_lower_95_mean_net_reference_bps": -13.73493100000006,
-              "bootstrap_upper_95_mean_net_reference_bps": -3.5104797857143426
+              "mean_net_reference_bps": 6.705607894736689,
+              "median_net_reference_bps": -3.5447999999995403,
+              "positive_net_reference_fraction": 0.4144736842105263,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.388324671052733,
+              "bootstrap_upper_95_mean_net_reference_bps": 16.115874671052417
             }
           },
           "symbol_gate_passed": false
@@ -843,68 +864,68 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 168,
           "bootstrap_seed": 6023,
-          "episodes": 20,
-          "first_decision_time_ms": 1673683200001,
+          "episodes": 76,
+          "first_decision_time_ms": 1579075200000,
           "last_decision_time_ms": 1733126400001,
-          "mean_gross_funding_bps": 46.816819999999765,
-          "median_gross_funding_bps": 36.09010000000009,
-          "p10_gross_funding_bps": 23.027169999998474,
-          "p90_gross_funding_bps": 79.74787999999995,
-          "bootstrap_lower_95_mean_gross_bps": 34.02369462499963,
-          "bootstrap_upper_95_mean_gross_bps": 62.02228087500006,
-          "mean_future_settlements": 20.8,
+          "mean_gross_funding_bps": 83.81761184210477,
+          "median_gross_funding_bps": 66.41584999999908,
+          "p10_gross_funding_bps": 23.935249999998966,
+          "p90_gross_funding_bps": 156.03069999999968,
+          "bootstrap_lower_95_mean_gross_bps": 61.58031720394659,
+          "bootstrap_upper_95_mean_gross_bps": 111.74693855263136,
+          "mean_future_settlements": 20.68421052631579,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 42.816819999999765,
-              "median_net_reference_bps": 32.09010000000009,
+              "mean_net_reference_bps": 79.81761184210477,
+              "median_net_reference_bps": 62.41584999999908,
               "positive_net_reference_fraction": 1.0,
-              "bootstrap_lower_95_mean_net_reference_bps": 30.023694624999628,
-              "bootstrap_upper_95_mean_net_reference_bps": 58.02228087500006
+              "bootstrap_lower_95_mean_net_reference_bps": 57.58031720394659,
+              "bootstrap_upper_95_mean_net_reference_bps": 107.74693855263136
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": 18.816819999999765,
-              "median_net_reference_bps": 8.090100000000096,
-              "positive_net_reference_fraction": 0.75,
-              "bootstrap_lower_95_mean_net_reference_bps": 6.023694624999628,
-              "bootstrap_upper_95_mean_net_reference_bps": 34.02228087500006
+              "mean_net_reference_bps": 55.81761184210476,
+              "median_net_reference_bps": 38.41584999999908,
+              "positive_net_reference_fraction": 0.8289473684210527,
+              "bootstrap_lower_95_mean_net_reference_bps": 33.58031720394659,
+              "bootstrap_upper_95_mean_net_reference_bps": 83.74693855263136
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": 14.816819999999765,
-              "median_net_reference_bps": 4.0901000000000955,
-              "positive_net_reference_fraction": 0.65,
-              "bootstrap_lower_95_mean_net_reference_bps": 2.0236946249996284,
-              "bootstrap_upper_95_mean_net_reference_bps": 30.022280875000057
+              "mean_net_reference_bps": 51.81761184210475,
+              "median_net_reference_bps": 34.41584999999908,
+              "positive_net_reference_fraction": 0.7894736842105263,
+              "bootstrap_lower_95_mean_net_reference_bps": 29.580317203946596,
+              "bootstrap_upper_95_mean_net_reference_bps": 79.74693855263136
             }
           },
-          "symbol_gate_passed": false
+          "symbol_gate_passed": true
         }
       ],
-      "result_sha256": "3cafb18026068434a9bf0f2bf680be5f92da82919dc1f3d39df23081ed9f2933"
+      "result_sha256": "be5309293feb00435e2d5034df014784d59370f0f168c7bfcfec7f089a22729e"
     },
     {
       "symbol": "SOLUSDT",
       "source": {
         "symbol": "SOLUSDT",
-        "periods": 43,
-        "rows": 3999,
-        "first_calc_time_ms": 1638316800000,
-        "last_calc_time_ms": 1751299200002,
+        "periods": 70,
+        "rows": 6424,
+        "first_calc_time_ms": 1600012800004,
+        "last_calc_time_ms": 1782835200005,
         "minimum_interval_hours": 2,
         "maximum_interval_hours": 8,
-        "archive_identity_sha256": "dcaceecc5b5544c9dbce7abc7f0a09b87ea19475b2f8910c4edde3ea259b7aa6",
-        "funding_row_stream_sha256": "3686fafbb913a0eacbbc50c6b6cfc30dfe3de9cbc7811c05caabebee12a67013",
-        "period_evidence_sha256": "1cea03fdb970de5d7e09580bceb5c7290481e1c7fdc6264d3e9aacd6b32e9e05"
+        "archive_identity_sha256": "0335069505b3236003ea7ccb7b25e7615e6c73e004e92d1c34741565b691ef3c",
+        "funding_row_stream_sha256": "751007865204601742bc22553798d6aa88416a29a596a6ef2cf711202983dd6d",
+        "period_evidence_sha256": "43eddb6e92184404a03d7def2cebe11188af592ec999bc8284e3090c387c8496"
       },
       "sign_transition": {
-        "positive_to_positive": 2390,
-        "positive_to_nonpositive": 398,
-        "nonpositive_to_positive": 398,
-        "nonpositive_to_nonpositive": 812,
-        "next_positive_given_positive": 0.857245337159254,
-        "next_positive_given_nonpositive": 0.32892561983471075
+        "positive_to_positive": 3995,
+        "positive_to_nonpositive": 590,
+        "nonpositive_to_positive": 590,
+        "nonpositive_to_nonpositive": 1248,
+        "next_positive_given_positive": 0.871319520174482,
+        "next_positive_given_nonpositive": 0.32100108813928185
       },
       "cells": [
         {
@@ -914,40 +935,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 24,
           "bootstrap_seed": 6101,
-          "episodes": 975,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1751155200004,
-          "mean_gross_funding_bps": 1.9240833846152918,
-          "median_gross_funding_bps": 1.9999999999997797,
-          "p10_gross_funding_bps": -0.9325199999999437,
-          "p90_gross_funding_bps": 4.93413999999992,
-          "bootstrap_lower_95_mean_gross_bps": 1.1518908692306737,
-          "bootstrap_upper_95_mean_gross_bps": 2.665556261538363,
-          "mean_future_settlements": 2.790769230769231,
+          "episodes": 1553,
+          "first_decision_time_ms": 1600012800004,
+          "last_decision_time_ms": 1782720000013,
+          "mean_gross_funding_bps": 2.9871635544107527,
+          "median_gross_funding_bps": 1.999999999999988,
+          "p10_gross_funding_bps": -0.9160999999999957,
+          "p90_gross_funding_bps": 7.949959999999922,
+          "bootstrap_lower_95_mean_gross_bps": 2.202895040244634,
+          "bootstrap_upper_95_mean_gross_bps": 3.830235301030217,
+          "mean_future_settlements": 2.7385705086928525,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -2.075916615384709,
-              "median_net_reference_bps": -2.0000000000002203,
-              "positive_net_reference_fraction": 0.11384615384615385,
-              "bootstrap_lower_95_mean_net_reference_bps": -2.848109130769326,
-              "bootstrap_upper_95_mean_net_reference_bps": -1.334443738461637
+              "mean_net_reference_bps": -1.0128364455892476,
+              "median_net_reference_bps": -2.000000000000012,
+              "positive_net_reference_fraction": 0.1706374758531874,
+              "bootstrap_lower_95_mean_net_reference_bps": -1.797104959755366,
+              "bootstrap_upper_95_mean_net_reference_bps": -0.1697646989697832
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -26.075916615384713,
-              "median_net_reference_bps": -26.00000000000022,
-              "positive_net_reference_fraction": 0.0010256410256410256,
-              "bootstrap_lower_95_mean_net_reference_bps": -26.848109130769327,
-              "bootstrap_upper_95_mean_net_reference_bps": -25.334443738461637
+              "mean_net_reference_bps": -25.012836445589247,
+              "median_net_reference_bps": -26.00000000000001,
+              "positive_net_reference_fraction": 0.01674179008370895,
+              "bootstrap_lower_95_mean_net_reference_bps": -25.797104959755366,
+              "bootstrap_upper_95_mean_net_reference_bps": -24.169764698969786
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -30.07591661538471,
-              "median_net_reference_bps": -30.00000000000022,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -30.848109130769327,
-              "bootstrap_upper_95_mean_net_reference_bps": -29.334443738461637
+              "mean_net_reference_bps": -29.012836445589247,
+              "median_net_reference_bps": -30.00000000000001,
+              "positive_net_reference_fraction": 0.0128783000643915,
+              "bootstrap_lower_95_mean_net_reference_bps": -29.797104959755366,
+              "bootstrap_upper_95_mean_net_reference_bps": -28.169764698969786
             }
           },
           "symbol_gate_passed": false
@@ -959,40 +980,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 72,
           "bootstrap_seed": 6102,
-          "episodes": 381,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750896000000,
-          "mean_gross_funding_bps": 4.050617060367175,
-          "median_gross_funding_bps": 4.988499999999951,
-          "p10_gross_funding_bps": -3.5996999999999937,
-          "p90_gross_funding_bps": 13.027499999999081,
-          "bootstrap_lower_95_mean_gross_bps": 0.27568008530157034,
-          "bootstrap_upper_95_mean_gross_bps": 7.323783576115209,
-          "mean_future_settlements": 8.855643044619423,
+          "episodes": 614,
+          "first_decision_time_ms": 1600012800004,
+          "last_decision_time_ms": 1782432000010,
+          "mean_gross_funding_bps": 7.448950814332052,
+          "median_gross_funding_bps": 5.7889000000000035,
+          "p10_gross_funding_bps": -3.6497299999997312,
+          "p90_gross_funding_bps": 20.878349999999998,
+          "bootstrap_lower_95_mean_gross_bps": 3.8490786644949395,
+          "bootstrap_upper_95_mean_gross_bps": 11.356044006514454,
+          "mean_future_settlements": 8.77198697068404,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 0.05061706036717552,
-              "median_net_reference_bps": 0.9884999999999513,
-              "positive_net_reference_fraction": 0.5406824146981627,
-              "bootstrap_lower_95_mean_net_reference_bps": -3.72431991469843,
-              "bootstrap_upper_95_mean_net_reference_bps": 3.323783576115208
+              "mean_net_reference_bps": 3.448950814332053,
+              "median_net_reference_bps": 1.788900000000003,
+              "positive_net_reference_fraction": 0.5781758957654723,
+              "bootstrap_lower_95_mean_net_reference_bps": -0.15092133550506037,
+              "bootstrap_upper_95_mean_net_reference_bps": 7.356044006514455
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -23.949382939632827,
-              "median_net_reference_bps": -23.011500000000048,
-              "positive_net_reference_fraction": 0.031496062992125984,
-              "bootstrap_lower_95_mean_net_reference_bps": -27.72431991469843,
-              "bootstrap_upper_95_mean_net_reference_bps": -20.676216423884792
+              "mean_net_reference_bps": -20.551049185667946,
+              "median_net_reference_bps": -22.211099999999995,
+              "positive_net_reference_fraction": 0.0781758957654723,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.15092133550506,
+              "bootstrap_upper_95_mean_net_reference_bps": -16.643955993485548
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -27.949382939632827,
-              "median_net_reference_bps": -27.011500000000048,
-              "positive_net_reference_fraction": 0.028871391076115485,
-              "bootstrap_lower_95_mean_net_reference_bps": -31.72431991469843,
-              "bootstrap_upper_95_mean_net_reference_bps": -24.676216423884792
+              "mean_net_reference_bps": -24.551049185667946,
+              "median_net_reference_bps": -26.211099999999995,
+              "positive_net_reference_fraction": 0.07166123778501629,
+              "bootstrap_lower_95_mean_net_reference_bps": -28.15092133550506,
+              "bootstrap_upper_95_mean_net_reference_bps": -20.643955993485548
             }
           },
           "symbol_gate_passed": false
@@ -1004,40 +1025,40 @@
           "trigger_value_bps": 0.0,
           "horizon_hours": 168,
           "bootstrap_seed": 6103,
-          "episodes": 172,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750521600000,
-          "mean_gross_funding_bps": -5.970615697675038,
-          "median_gross_funding_bps": 9.844299999998974,
-          "p10_gross_funding_bps": -10.6254499999992,
-          "p90_gross_funding_bps": 32.268989999998446,
-          "bootstrap_lower_95_mean_gross_bps": -46.84033383720977,
-          "bootstrap_upper_95_mean_gross_bps": 17.161482965115628,
-          "mean_future_settlements": 21.11046511627907,
+          "episodes": 280,
+          "first_decision_time_ms": 1600012800004,
+          "last_decision_time_ms": 1781827200005,
+          "mean_gross_funding_bps": 4.70514571428527,
+          "median_gross_funding_bps": 11.392799999998989,
+          "p10_gross_funding_bps": -11.703139999999737,
+          "p90_gross_funding_bps": 50.41380999999901,
+          "bootstrap_lower_95_mean_gross_bps": -23.88322484821478,
+          "bootstrap_upper_95_mean_gross_bps": 24.250507232142404,
+          "mean_future_settlements": 20.932142857142857,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -9.970615697675038,
-              "median_net_reference_bps": 5.844299999998973,
-              "positive_net_reference_fraction": 0.6686046511627907,
-              "bootstrap_lower_95_mean_net_reference_bps": -50.84033383720977,
-              "bootstrap_upper_95_mean_net_reference_bps": 13.161482965115628
+              "mean_net_reference_bps": 0.7051457142852716,
+              "median_net_reference_bps": 7.392799999998989,
+              "positive_net_reference_fraction": 0.6607142857142857,
+              "bootstrap_lower_95_mean_net_reference_bps": -27.88322484821478,
+              "bootstrap_upper_95_mean_net_reference_bps": 20.250507232142404
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -33.970615697675036,
-              "median_net_reference_bps": -18.155700000001026,
-              "positive_net_reference_fraction": 0.12209302325581395,
-              "bootstrap_lower_95_mean_net_reference_bps": -74.84033383720976,
-              "bootstrap_upper_95_mean_net_reference_bps": -10.838517034884372
+              "mean_net_reference_bps": -23.294854285714727,
+              "median_net_reference_bps": -16.60720000000101,
+              "positive_net_reference_fraction": 0.18928571428571428,
+              "bootstrap_lower_95_mean_net_reference_bps": -51.88322484821478,
+              "bootstrap_upper_95_mean_net_reference_bps": -3.749492767857595
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -37.970615697675036,
-              "median_net_reference_bps": -22.155700000001026,
-              "positive_net_reference_fraction": 0.10465116279069768,
-              "bootstrap_lower_95_mean_net_reference_bps": -78.84033383720976,
-              "bootstrap_upper_95_mean_net_reference_bps": -14.838517034884372
+              "mean_net_reference_bps": -27.29485428571473,
+              "median_net_reference_bps": -20.60720000000101,
+              "positive_net_reference_fraction": 0.16785714285714284,
+              "bootstrap_lower_95_mean_net_reference_bps": -55.88322484821478,
+              "bootstrap_upper_95_mean_net_reference_bps": -7.749492767857595
             }
           },
           "symbol_gate_passed": false
@@ -1049,40 +1070,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 24,
           "bootstrap_seed": 6111,
-          "episodes": 653,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1751097600002,
-          "mean_gross_funding_bps": 3.2044598774883926,
-          "median_gross_funding_bps": 2.7164999999995665,
-          "p10_gross_funding_bps": 0.5341599999996172,
-          "p90_gross_funding_bps": 6.814039999999978,
-          "bootstrap_lower_95_mean_gross_bps": 2.63318957120968,
-          "bootstrap_upper_95_mean_gross_bps": 3.9178826186829077,
-          "mean_future_settlements": 2.753445635528331,
+          "episodes": 1092,
+          "first_decision_time_ms": 1600012800004,
+          "last_decision_time_ms": 1782518400000,
+          "mean_gross_funding_bps": 4.52708745421237,
+          "median_gross_funding_bps": 2.9999999999996696,
+          "p10_gross_funding_bps": 0.6088999999999956,
+          "p90_gross_funding_bps": 11.43623999999997,
+          "bootstrap_lower_95_mean_gross_bps": 3.666361609432161,
+          "bootstrap_upper_95_mean_gross_bps": 5.547229851190427,
+          "mean_future_settlements": 2.7051282051282053,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -0.7955401225116072,
-              "median_net_reference_bps": -1.2835000000004335,
-              "positive_net_reference_fraction": 0.17151607963246554,
-              "bootstrap_lower_95_mean_net_reference_bps": -1.36681042879032,
-              "bootstrap_upper_95_mean_net_reference_bps": -0.08211738131709245
+              "mean_net_reference_bps": 0.5270874542123704,
+              "median_net_reference_bps": -1.0000000000003304,
+              "positive_net_reference_fraction": 0.24358974358974358,
+              "bootstrap_lower_95_mean_net_reference_bps": -0.333638390567839,
+              "bootstrap_upper_95_mean_net_reference_bps": 1.5472298511904272
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -24.79554012251161,
-              "median_net_reference_bps": -25.283500000000434,
-              "positive_net_reference_fraction": 0.0015313935681470138,
-              "bootstrap_lower_95_mean_net_reference_bps": -25.36681042879032,
-              "bootstrap_upper_95_mean_net_reference_bps": -24.08211738131709
+              "mean_net_reference_bps": -23.472912545787633,
+              "median_net_reference_bps": -25.00000000000033,
+              "positive_net_reference_fraction": 0.023809523809523808,
+              "bootstrap_lower_95_mean_net_reference_bps": -24.333638390567838,
+              "bootstrap_upper_95_mean_net_reference_bps": -22.452770148809574
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -28.795540122511603,
-              "median_net_reference_bps": -29.283500000000434,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -29.36681042879032,
-              "bootstrap_upper_95_mean_net_reference_bps": -28.08211738131709
+              "mean_net_reference_bps": -27.47291254578763,
+              "median_net_reference_bps": -29.00000000000033,
+              "positive_net_reference_fraction": 0.018315018315018316,
+              "bootstrap_lower_95_mean_net_reference_bps": -28.333638390567838,
+              "bootstrap_upper_95_mean_net_reference_bps": -26.452770148809574
             }
           },
           "symbol_gate_passed": false
@@ -1094,40 +1115,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 72,
           "bootstrap_seed": 6112,
-          "episodes": 282,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750838400000,
-          "mean_gross_funding_bps": 1.3183730496450479,
-          "median_gross_funding_bps": 7.434649999999788,
-          "p10_gross_funding_bps": -1.07992999999984,
-          "p90_gross_funding_bps": 17.356900000000063,
-          "bootstrap_lower_95_mean_gross_bps": -13.47770677305001,
-          "bootstrap_upper_95_mean_gross_bps": 9.942772535460646,
-          "mean_future_settlements": 8.787234042553191,
+          "episodes": 469,
+          "first_decision_time_ms": 1600012800004,
+          "last_decision_time_ms": 1782518400000,
+          "mean_gross_funding_bps": 7.587848400852639,
+          "median_gross_funding_bps": 7.999999999999119,
+          "p10_gross_funding_bps": -1.2289199999999387,
+          "p90_gross_funding_bps": 29.78144000000027,
+          "bootstrap_lower_95_mean_gross_bps": -2.177178267590807,
+          "bootstrap_upper_95_mean_gross_bps": 14.969113619402748,
+          "mean_future_settlements": 8.733475479744136,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -2.6816269503549512,
-              "median_net_reference_bps": 3.4346499999997877,
-              "positive_net_reference_fraction": 0.6985815602836879,
-              "bootstrap_lower_95_mean_net_reference_bps": -17.47770677305001,
-              "bootstrap_upper_95_mean_net_reference_bps": 5.942772535460645
+              "mean_net_reference_bps": 3.5878484008526397,
+              "median_net_reference_bps": 3.999999999999119,
+              "positive_net_reference_fraction": 0.7270788912579957,
+              "bootstrap_lower_95_mean_net_reference_bps": -6.177178267590808,
+              "bootstrap_upper_95_mean_net_reference_bps": 10.969113619402748
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -26.68162695035495,
-              "median_net_reference_bps": -20.565350000000212,
-              "positive_net_reference_fraction": 0.0425531914893617,
-              "bootstrap_lower_95_mean_net_reference_bps": -41.47770677305001,
-              "bootstrap_upper_95_mean_net_reference_bps": -18.057227464539356
+              "mean_net_reference_bps": -20.41215159914736,
+              "median_net_reference_bps": -20.00000000000088,
+              "positive_net_reference_fraction": 0.11087420042643924,
+              "bootstrap_lower_95_mean_net_reference_bps": -30.177178267590804,
+              "bootstrap_upper_95_mean_net_reference_bps": -13.030886380597252
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -30.681626950354953,
-              "median_net_reference_bps": -24.565350000000212,
-              "positive_net_reference_fraction": 0.03900709219858156,
-              "bootstrap_lower_95_mean_net_reference_bps": -45.47770677305001,
-              "bootstrap_upper_95_mean_net_reference_bps": -22.057227464539356
+              "mean_net_reference_bps": -24.41215159914736,
+              "median_net_reference_bps": -24.00000000000088,
+              "positive_net_reference_fraction": 0.09381663113006397,
+              "bootstrap_lower_95_mean_net_reference_bps": -34.177178267590804,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.030886380597252
             }
           },
           "symbol_gate_passed": false
@@ -1139,40 +1160,40 @@
           "trigger_value_bps": 1.0,
           "horizon_hours": 168,
           "bootstrap_seed": 6113,
-          "episodes": 143,
-          "first_decision_time_ms": 1638316800000,
-          "last_decision_time_ms": 1750032000000,
-          "mean_gross_funding_bps": -3.3127608391615415,
-          "median_gross_funding_bps": 12.705099999998914,
-          "p10_gross_funding_bps": -5.8223199999998485,
-          "p90_gross_funding_bps": 35.79755999999883,
-          "bootstrap_lower_95_mean_gross_bps": -44.377638111888764,
-          "bootstrap_upper_95_mean_gross_bps": 20.315995996502746,
-          "mean_future_settlements": 20.83916083916084,
+          "episodes": 237,
+          "first_decision_time_ms": 1600012800004,
+          "last_decision_time_ms": 1781827200005,
+          "mean_gross_funding_bps": 8.990748945147173,
+          "median_gross_funding_bps": 14.15039999999994,
+          "p10_gross_funding_bps": -7.453079999999577,
+          "p90_gross_funding_bps": 59.254040000000096,
+          "bootstrap_lower_95_mean_gross_bps": -18.032478459916344,
+          "bootstrap_upper_95_mean_gross_bps": 29.95607292194052,
+          "mean_future_settlements": 20.80168776371308,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": -7.312760839161542,
-              "median_net_reference_bps": 8.705099999998914,
-              "positive_net_reference_fraction": 0.7482517482517482,
-              "bootstrap_lower_95_mean_net_reference_bps": -48.377638111888764,
-              "bootstrap_upper_95_mean_net_reference_bps": 16.315995996502746
+              "mean_net_reference_bps": 4.990748945147174,
+              "median_net_reference_bps": 10.15039999999994,
+              "positive_net_reference_fraction": 0.7468354430379747,
+              "bootstrap_lower_95_mean_net_reference_bps": -22.032478459916344,
+              "bootstrap_upper_95_mean_net_reference_bps": 25.95607292194052
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -31.312760839161538,
-              "median_net_reference_bps": -15.294900000001086,
-              "positive_net_reference_fraction": 0.15384615384615385,
-              "bootstrap_lower_95_mean_net_reference_bps": -72.37763811188877,
-              "bootstrap_upper_95_mean_net_reference_bps": -7.684004003497256
+              "mean_net_reference_bps": -19.009251054852825,
+              "median_net_reference_bps": -13.84960000000006,
+              "positive_net_reference_fraction": 0.22362869198312235,
+              "bootstrap_lower_95_mean_net_reference_bps": -46.03247845991635,
+              "bootstrap_upper_95_mean_net_reference_bps": 1.956072921940522
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -35.31276083916154,
-              "median_net_reference_bps": -19.294900000001086,
-              "positive_net_reference_fraction": 0.11888111888111888,
-              "bootstrap_lower_95_mean_net_reference_bps": -76.37763811188877,
-              "bootstrap_upper_95_mean_net_reference_bps": -11.684004003497256
+              "mean_net_reference_bps": -23.009251054852825,
+              "median_net_reference_bps": -17.84960000000006,
+              "positive_net_reference_fraction": 0.1940928270042194,
+              "bootstrap_lower_95_mean_net_reference_bps": -50.03247845991635,
+              "bootstrap_upper_95_mean_net_reference_bps": -2.043927078059478
             }
           },
           "symbol_gate_passed": false
@@ -1184,40 +1205,40 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 24,
           "bootstrap_seed": 6121,
-          "episodes": 100,
-          "first_decision_time_ms": 1673683200001,
-          "last_decision_time_ms": 1733702400000,
-          "mean_gross_funding_bps": 9.070620999999957,
-          "median_gross_funding_bps": 7.533549999999833,
-          "p10_gross_funding_bps": 3.224199999999733,
-          "p90_gross_funding_bps": 17.142440000000093,
-          "bootstrap_lower_95_mean_gross_bps": 7.141847824999974,
-          "bootstrap_upper_95_mean_gross_bps": 11.434026774999964,
-          "mean_future_settlements": 2.85,
+          "episodes": 263,
+          "first_decision_time_ms": 1602316800000,
+          "last_decision_time_ms": 1755158400003,
+          "mean_gross_funding_bps": 12.10090950570339,
+          "median_gross_funding_bps": 8.161499999999878,
+          "p10_gross_funding_bps": 2.999999999999982,
+          "p90_gross_funding_bps": 27.658339999999836,
+          "bootstrap_lower_95_mean_gross_bps": 9.516422680608326,
+          "bootstrap_upper_95_mean_gross_bps": 14.947114173003772,
+          "mean_future_settlements": 2.7072243346007605,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 5.0706209999999565,
-              "median_net_reference_bps": 3.5335499999998334,
-              "positive_net_reference_fraction": 0.82,
-              "bootstrap_lower_95_mean_net_reference_bps": 3.141847824999974,
-              "bootstrap_upper_95_mean_net_reference_bps": 7.434026774999964
+              "mean_net_reference_bps": 8.100909505703388,
+              "median_net_reference_bps": 4.161499999999878,
+              "positive_net_reference_fraction": 0.779467680608365,
+              "bootstrap_lower_95_mean_net_reference_bps": 5.516422680608325,
+              "bootstrap_upper_95_mean_net_reference_bps": 10.947114173003772
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -18.929379000000043,
-              "median_net_reference_bps": -20.466450000000165,
-              "positive_net_reference_fraction": 0.01,
-              "bootstrap_lower_95_mean_net_reference_bps": -20.858152175000026,
-              "bootstrap_upper_95_mean_net_reference_bps": -16.565973225000036
+              "mean_net_reference_bps": -15.899090494296615,
+              "median_net_reference_bps": -19.838500000000124,
+              "positive_net_reference_fraction": 0.09885931558935361,
+              "bootstrap_lower_95_mean_net_reference_bps": -18.483577319391674,
+              "bootstrap_upper_95_mean_net_reference_bps": -13.052885826996228
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -22.929379000000043,
-              "median_net_reference_bps": -24.466450000000165,
-              "positive_net_reference_fraction": 0.0,
-              "bootstrap_lower_95_mean_net_reference_bps": -24.858152175000026,
-              "bootstrap_upper_95_mean_net_reference_bps": -20.565973225000036
+              "mean_net_reference_bps": -19.899090494296612,
+              "median_net_reference_bps": -23.838500000000124,
+              "positive_net_reference_fraction": 0.07224334600760456,
+              "bootstrap_lower_95_mean_net_reference_bps": -22.483577319391674,
+              "bootstrap_upper_95_mean_net_reference_bps": -17.05288582699623
             }
           },
           "symbol_gate_passed": false
@@ -1229,40 +1250,40 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 72,
           "bootstrap_seed": 6122,
-          "episodes": 45,
-          "first_decision_time_ms": 1673683200001,
-          "last_decision_time_ms": 1733587200000,
-          "mean_gross_funding_bps": 24.48414444444419,
-          "median_gross_funding_bps": 19.51889999999984,
-          "p10_gross_funding_bps": 9.316479999998961,
-          "p90_gross_funding_bps": 47.42193999999989,
-          "bootstrap_lower_95_mean_gross_bps": 17.659597277777337,
-          "bootstrap_upper_95_mean_gross_bps": 32.44874038888877,
-          "mean_future_settlements": 8.844444444444445,
+          "episodes": 117,
+          "first_decision_time_ms": 1602316800000,
+          "last_decision_time_ms": 1755158400003,
+          "mean_gross_funding_bps": 33.351245299145155,
+          "median_gross_funding_bps": 24.224899999999923,
+          "p10_gross_funding_bps": 8.999999999999009,
+          "p90_gross_funding_bps": 70.80291999999997,
+          "bootstrap_lower_95_mean_gross_bps": 24.48879623931593,
+          "bootstrap_upper_95_mean_gross_bps": 44.42894606837591,
+          "mean_future_settlements": 8.735042735042734,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 20.48414444444419,
-              "median_net_reference_bps": 15.518899999999839,
-              "positive_net_reference_fraction": 1.0,
-              "bootstrap_lower_95_mean_net_reference_bps": 13.659597277777337,
-              "bootstrap_upper_95_mean_net_reference_bps": 28.448740388888776
+              "mean_net_reference_bps": 29.35124529914516,
+              "median_net_reference_bps": 20.224899999999923,
+              "positive_net_reference_fraction": 0.9658119658119658,
+              "bootstrap_lower_95_mean_net_reference_bps": 20.48879623931593,
+              "bootstrap_upper_95_mean_net_reference_bps": 40.42894606837591
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": -3.5158555555558104,
-              "median_net_reference_bps": -8.481100000000161,
-              "positive_net_reference_fraction": 0.26666666666666666,
-              "bootstrap_lower_95_mean_net_reference_bps": -10.340402722222663,
-              "bootstrap_upper_95_mean_net_reference_bps": 4.448740388888775
+              "mean_net_reference_bps": 5.351245299145157,
+              "median_net_reference_bps": -3.7751000000000765,
+              "positive_net_reference_fraction": 0.42735042735042733,
+              "bootstrap_lower_95_mean_net_reference_bps": -3.51120376068407,
+              "bootstrap_upper_95_mean_net_reference_bps": 16.428946068375907
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": -7.515855555555811,
-              "median_net_reference_bps": -12.481100000000161,
-              "positive_net_reference_fraction": 0.26666666666666666,
-              "bootstrap_lower_95_mean_net_reference_bps": -14.340402722222663,
-              "bootstrap_upper_95_mean_net_reference_bps": 0.4487403888887751
+              "mean_net_reference_bps": 1.3512452991451576,
+              "median_net_reference_bps": -7.7751000000000765,
+              "positive_net_reference_fraction": 0.37606837606837606,
+              "bootstrap_lower_95_mean_net_reference_bps": -7.51120376068407,
+              "bootstrap_upper_95_mean_net_reference_bps": 12.428946068375907
             }
           },
           "symbol_gate_passed": false
@@ -1274,46 +1295,46 @@
           "trigger_value_bps": 2.0,
           "horizon_hours": 168,
           "bootstrap_seed": 6123,
-          "episodes": 25,
-          "first_decision_time_ms": 1673683200001,
-          "last_decision_time_ms": 1733702400000,
-          "mean_gross_funding_bps": 48.484775999999144,
-          "median_gross_funding_bps": 40.09569999999935,
-          "p10_gross_funding_bps": 18.07261999999832,
-          "p90_gross_funding_bps": 99.17864000000033,
-          "bootstrap_lower_95_mean_gross_bps": 30.744221399998764,
-          "bootstrap_upper_95_mean_gross_bps": 68.28497519999975,
-          "mean_future_settlements": 20.72,
+          "episodes": 62,
+          "first_decision_time_ms": 1602316800000,
+          "last_decision_time_ms": 1755158400003,
+          "mean_gross_funding_bps": 64.48033064516086,
+          "median_gross_funding_bps": 45.51859999999978,
+          "p10_gross_funding_bps": 17.393029999998674,
+          "p90_gross_funding_bps": 152.69128999999964,
+          "bootstrap_lower_95_mean_gross_bps": 38.30205741935429,
+          "bootstrap_upper_95_mean_gross_bps": 94.60709693548341,
+          "mean_future_settlements": 20.677419354838708,
           "cost_comparisons": {
             "optimistic_futures_maker_only": {
               "cost_reference_bps": 4.0,
-              "mean_net_reference_bps": 44.484775999999144,
-              "median_net_reference_bps": 36.09569999999935,
-              "positive_net_reference_fraction": 1.0,
-              "bootstrap_lower_95_mean_net_reference_bps": 26.744221399998764,
-              "bootstrap_upper_95_mean_net_reference_bps": 64.28497519999975
+              "mean_net_reference_bps": 60.480330645160855,
+              "median_net_reference_bps": 41.51859999999978,
+              "positive_net_reference_fraction": 0.9516129032258065,
+              "bootstrap_lower_95_mean_net_reference_bps": 34.30205741935429,
+              "bootstrap_upper_95_mean_net_reference_bps": 90.60709693548341
             },
             "repo_offline_four_leg_taker": {
               "cost_reference_bps": 28.0,
-              "mean_net_reference_bps": 20.48477599999915,
-              "median_net_reference_bps": 12.095699999999347,
-              "positive_net_reference_fraction": 0.68,
-              "bootstrap_lower_95_mean_net_reference_bps": 2.744221399998765,
-              "bootstrap_upper_95_mean_net_reference_bps": 40.28497519999976
+              "mean_net_reference_bps": 36.48033064516086,
+              "median_net_reference_bps": 17.51859999999978,
+              "positive_net_reference_fraction": 0.7741935483870968,
+              "bootstrap_lower_95_mean_net_reference_bps": 10.302057419354291,
+              "bootstrap_upper_95_mean_net_reference_bps": 66.60709693548341
             },
             "stress_four_leg": {
               "cost_reference_bps": 32.0,
-              "mean_net_reference_bps": 16.48477599999915,
-              "median_net_reference_bps": 8.095699999999347,
-              "positive_net_reference_fraction": 0.64,
-              "bootstrap_lower_95_mean_net_reference_bps": -1.2557786000012354,
-              "bootstrap_upper_95_mean_net_reference_bps": 36.28497519999976
+              "mean_net_reference_bps": 32.48033064516086,
+              "median_net_reference_bps": 13.518599999999779,
+              "positive_net_reference_fraction": 0.7419354838709677,
+              "bootstrap_lower_95_mean_net_reference_bps": 6.302057419354291,
+              "bootstrap_upper_95_mean_net_reference_bps": 62.607096935483405
             }
           },
-          "symbol_gate_passed": false
+          "symbol_gate_passed": true
         }
       ],
-      "result_sha256": "8d6fd785fa79591b34eba4d38a5b42767853a89de7c51b2b969c7bd3ac1c084a"
+      "result_sha256": "a637eb2d8803ecc46d2d1069228390a1c7569378225e07bd8509d57659217fec"
     }
   ],
   "breadth_gates": [
@@ -1408,16 +1429,20 @@
     {
       "trigger_id": "at_least_2bp",
       "horizon_hours": 168,
-      "passed_symbols": [],
+      "passed_symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT"
+      ],
       "required_symbols": [
         "BTCUSDT",
         "ETHUSDT",
         "SOLUSDT"
       ],
-      "passed": false
+      "passed": true
     }
   ],
-  "spot_history_ingestion_authorized": false,
+  "spot_history_ingestion_authorized": true,
   "selection_contaminated": true,
   "price_rows_read": false,
   "premium_index_rows_read": false,
@@ -1431,8 +1456,8 @@
   "result": {
     "symbol_cells": 27,
     "breadth_cells": 9,
-    "passing_breadth_cells": 0,
-    "spot_history_ingestion_authorized": false
+    "passing_breadth_cells": 1,
+    "spot_history_ingestion_authorized": true
   },
-  "report_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0"
+  "report_sha256": "a020bd2f26280b82705ffa4bda83b37d439dfa09377eda64ffdfcbf17c9e9ba4"
 }

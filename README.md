@@ -544,18 +544,18 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 59 re-hashed 129 official Binance BTC, ETH, and SOL funding archives from
-December 2021 through June 2025 before deciding whether a synchronized spot
-history build was justified. Ordinary positive-funding episodes did not clear
-the pinned four-leg cost references. A rare `>=2` bps trigger had positive
-seven-day sample means after the 32 bps stress reference, but only `20/20/25`
-non-overlapping BTC/ETH/SOL episodes existed versus 40 required, and BTC/SOL
-lower confidence bounds crossed zero. All 27 symbol cells and nine breadth
-cells failed, so no spot build or model training was authorized. The screen
-read no prices, basis, P&L, model, or AI rows and makes no profitability,
-testnet, live-trading, leverage, AI-uplift, or execution claim. Rounds 57 and 58
-remain in the rolling progress record as rejected payoff and symmetric-maker
-mechanisms.
+Round 60 re-hashed every row from 226 checksum-verified official Binance
+funding archives: January 2020 through June 2026 for BTC and ETH and September
+2020 through June 2026 for SOL. It changed none of Round 59's triggers,
+horizons, costs, bootstrap seeds, or breadth gates. Exactly one precommitted
+cell passed across all symbols: settled funding `>=2` bps followed by a
+non-overlapping seven-day window. BTC/ETH/SOL contributed `72/76/62` episodes;
+their lower 95% mean references after the pinned 32 bps charge were
+`+18.48/+29.58/+6.30` bps. This consumed funding-only result authorizes only a
+separately frozen synchronized spot-perpetual economic replay. It read no
+prices, basis, P&L, model, or AI rows and makes no profitability, testnet,
+live-trading, leverage, AI-uplift, or execution claim. Round 59's smaller-sample
+rejection and Rounds 57-58 remain in the rolling progress and comparison data.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
