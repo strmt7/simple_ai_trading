@@ -21,7 +21,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 ## Current Scope
 
 - Major-asset day trading on Binance testnet or Demo Trading endpoints, limited to BTC, ETH, and SOL.
-- Polymarket BTC/ETH/SOL 5-minute markets have a [paper-only parity design](docs/POLYMARKET_PAPER_TRADING.md), a prospective public-data recorder, strict level-2 replay, evidence-bound paper open/close/official-resolution settlement, and the same ownership journal used by Binance paper mode. Continuous strategy coordination remains incomplete; there is no authenticated or live-money authority.
+- Polymarket BTC/ETH/SOL 5-minute markets have a [paper-only parity design](docs/POLYMARKET_PAPER_TRADING.md), a prospective public-data recorder, strict level-2 replay, causal feature materialization, evidence-bound open/close/official-resolution settlement, and the same ownership journal used by Binance paper mode. Continuous strategy coordination remains incomplete; there is no authenticated or live-money authority.
 - Default symbols: `BTCUSDC`, `ETHUSDC`, `SOLUSDC`; USD-M futures workflows use the matching `BTCUSDT`, `ETHUSDT`, and `SOLUSDT` contracts.
 - Unsupported bases, low-liquidity assets, leveraged-token patterns, and lookalike symbols are rejected before data sync, archive ingestion, universe ranking, or optimization.
 - Conservative risk profile by default, with `conservative`, `regular`, and `aggressive` profiles.

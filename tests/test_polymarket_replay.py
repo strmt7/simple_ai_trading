@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
 from decimal import Decimal
 import hashlib
@@ -23,6 +24,7 @@ from simple_ai_trading.polymarket_recorder import (
     RawStreamMessage,
     StreamGap,
 )
+from simple_ai_trading.polymarket_resolution import PolymarketResolutionFinalizer
 from simple_ai_trading.polymarket_replay import PolymarketEvidenceReplay
 
 
@@ -86,6 +88,57 @@ def _evidence(asset: str) -> MarketEvidence:
         taker_order_delay_enabled=False,
         minimum_order_age_seconds=0,
     )
+
+
+def _official_payloads(asset: str) -> tuple[dict[str, object], dict[str, object]]:
+    gamma = deepcopy(_market_payload(asset))
+    market = parse_polymarket_five_minute_market(gamma)
+    gamma.update(
+        {
+            "closed": True,
+            "active": False,
+            "acceptingOrders": False,
+            "outcomePrices": '["1", "0"]',
+        }
+    )
+    clob = {
+        "condition_id": market.condition_id,
+        "market_slug": market.slug,
+        "closed": True,
+        "active": False,
+        "accepting_orders": False,
+        "tokens": [
+            {
+                "token_id": market.up_token_id,
+                "outcome": "Up",
+                "price": 1,
+                "winner": True,
+            },
+            {
+                "token_id": market.down_token_id,
+                "outcome": "Down",
+                "price": 0,
+                "winner": False,
+            },
+        ],
+    }
+    return clob, gamma
+
+
+class _OfficialClient:
+    def __init__(self) -> None:
+        self.by_condition: dict[str, dict[str, object]] = {}
+        self.by_market: dict[str, dict[str, object]] = {}
+        for asset in ("BTC", "ETH", "SOL"):
+            clob, gamma = _official_payloads(asset)
+            self.by_condition[str(clob["condition_id"])] = clob
+            self.by_market[str(gamma["id"])] = gamma
+
+    def clob_market(self, condition_id: str) -> dict[str, object]:
+        return deepcopy(self.by_condition[condition_id])
+
+    def gamma_market(self, market_id: str) -> dict[str, object]:
+        return deepcopy(self.by_market[market_id])
 
 
 def _message(
@@ -286,6 +339,11 @@ def _finish_replay_store(
     trade_resync_lag_ms: int = 1,
     feature_evidence: bool = False,
     pre_window_trade_quantity: str = "0.1",
+    duplicate_tick_transition: bool = False,
+    terminal_clear_burst: bool = False,
+    interleaved_best_transitions: bool = False,
+    compact_resolution_event: bool = False,
+    finalize_official: bool = True,
 ) -> None:
     store.start_run(run_id, EPOCH * 1_000)
     for asset in ("BTC", "ETH", "SOL"):
@@ -293,6 +351,21 @@ def _finish_replay_store(
     btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
     token = btc.up_token_id
     reported_best_ask = "0.49" if wrong_best else "0.50"
+    resolution_payload: dict[str, object] = {
+        "event_type": "market_resolved",
+        "id": btc.market_id,
+        "question": btc.question,
+        "market": btc.condition_id,
+        "slug": btc.slug,
+        "assets_ids": list(btc.token_ids),
+        "outcomes": ["Up", "Down"],
+        "winning_asset_id": btc.up_token_id,
+        "winning_outcome": "Up",
+        "timestamp": str(btc.end_ms + 1_000),
+    }
+    if compact_resolution_event:
+        for optional_field in ("id", "question", "slug", "outcomes"):
+            resolution_payload.pop(optional_field)
     clob_messages = [
         _message(
             "clob_market",
@@ -437,23 +510,226 @@ def _finish_replay_store(
         ),
         _message(
             "clob_market",
-            {
-                "event_type": "market_resolved",
-                "id": btc.market_id,
-                "question": btc.question,
-                "market": btc.condition_id,
-                "slug": btc.slug,
-                "assets_ids": list(btc.token_ids),
-                "outcomes": ["Up", "Down"],
-                "winning_asset_id": btc.up_token_id,
-                "winning_outcome": "Up",
-                "timestamp": str(btc.end_ms + 1_000),
-            },
+            resolution_payload,
             sequence=8,
             wall_offset_ms=301_000,
             monotonic_ns=301_000_000_000,
         ),
     ]
+    if duplicate_tick_transition:
+        clob_messages.insert(
+            5,
+            _message(
+                "clob_market",
+                {
+                    "event_type": "tick_size_change",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "old_tick_size": "0.01",
+                    "new_tick_size": "0.001",
+                    "timestamp": str(EPOCH * 1_000 + 1_012),
+                },
+                sequence=50,
+                wall_offset_ms=1_014,
+                monotonic_ns=1_013_000_000,
+            ),
+        )
+    if terminal_clear_burst:
+        terminal_source_ms = EPOCH * 1_000 + 2_000
+        clob_messages[-1:-1] = [
+            _message(
+                "clob_market",
+                {
+                    "event_type": "best_bid_ask",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "best_bid": "0",
+                    "best_ask": "1",
+                    "spread": "1",
+                    "timestamp": str(terminal_source_ms),
+                },
+                sequence=60,
+                wall_offset_ms=2_001,
+                monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(terminal_source_ms),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.498",
+                            "size": "0",
+                            "side": "BUY",
+                            "hash": "terminal-up-hash",
+                            "best_bid": "0",
+                            "best_ask": "1",
+                        }
+                    ],
+                },
+                sequence=61,
+                wall_offset_ms=2_002,
+                monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "best_bid_ask",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "best_bid": "0",
+                    "best_ask": "1",
+                    "spread": "1",
+                    "timestamp": str(terminal_source_ms + 1),
+                },
+                sequence=62,
+                wall_offset_ms=2_003,
+                monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(terminal_source_ms),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.50",
+                            "size": "0",
+                            "side": "SELL",
+                            "hash": "terminal-up-hash",
+                            "best_bid": "0",
+                            "best_ask": "1",
+                        },
+                        {
+                            "asset_id": token,
+                            "price": "0.51",
+                            "size": "0",
+                            "side": "SELL",
+                            "hash": "terminal-up-hash",
+                            "best_bid": "0",
+                            "best_ask": "1",
+                        },
+                    ],
+                },
+                sequence=63,
+                wall_offset_ms=2_004,
+                monotonic_ns=2_015_000_000,
+            ),
+        ]
+    if interleaved_best_transitions:
+        transition_source_ms = EPOCH * 1_000 + 2_000
+        clob_messages[-1:-1] = [
+            _message(
+                "clob_market",
+                {
+                    "event_type": "best_bid_ask",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "best_bid": "0",
+                    "best_ask": "0.51",
+                    "spread": "0.51",
+                    "timestamp": str(transition_source_ms),
+                },
+                sequence=70,
+                wall_offset_ms=2_001,
+                monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(transition_source_ms),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.498",
+                            "size": "0",
+                            "side": "BUY",
+                            "hash": "evolving-shared-hash",
+                            "best_bid": "0",
+                            "best_ask": "0.51",
+                        },
+                        {
+                            "asset_id": token,
+                            "price": "0.50",
+                            "size": "0",
+                            "side": "SELL",
+                            "hash": "evolving-shared-hash",
+                            "best_bid": "0",
+                            "best_ask": "0.51",
+                        },
+                    ],
+                },
+                sequence=71,
+                wall_offset_ms=2_002,
+                monotonic_ns=2_001_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(transition_source_ms),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.20",
+                            "size": "3",
+                            "side": "BUY",
+                            "hash": "evolving-shared-hash",
+                            "best_bid": "0.20",
+                            "best_ask": "0.51",
+                        }
+                    ],
+                },
+                sequence=72,
+                wall_offset_ms=2_003,
+                monotonic_ns=2_002_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "best_bid_ask",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "best_bid": "0.49",
+                    "best_ask": "0.51",
+                    "spread": "0.02",
+                    "timestamp": str(transition_source_ms + 4),
+                },
+                sequence=73,
+                wall_offset_ms=2_004,
+                monotonic_ns=2_003_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(transition_source_ms + 4),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.49",
+                            "size": "4",
+                            "side": "BUY",
+                            "hash": "evolving-shared-hash",
+                            "best_bid": "0.49",
+                            "best_ask": "0.51",
+                        }
+                    ],
+                },
+                sequence=74,
+                wall_offset_ms=2_005,
+                monotonic_ns=2_004_000_000,
+            ),
+        ]
     if trade_resync:
         clob_messages.insert(
             4,
@@ -744,6 +1020,14 @@ def _finish_replay_store(
         errors=(),
     )
     assert report.status == "complete"
+    if finalize_official:
+        finalized = PolymarketResolutionFinalizer(
+            store,
+            client=_OfficialClient(),  # type: ignore[arg-type]
+            wall_clock_ms=lambda: EPOCH * 1_000 + 302_001,
+            monotonic_clock_ns=lambda: 302_001_000_000,
+        ).finalize(run_id=run_id)
+        assert finalized.status == "complete"
 
 
 def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
@@ -767,6 +1051,60 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     assert replay.first_book_after_latency(close_book, latency_ms=1) is None
     assert replay.book_for_event(changed.event_id, changed.token_id) == changed
     assert replay.resolutions[0].winning_outcome == "Up"
+    assert replay.resolutions[0].source == "clob_gamma_crosscheck"
+
+
+def test_websocket_resolution_is_validated_but_cannot_authorize_settlement(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "observed-resolution.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "observed-resolution",
+            compact_resolution_event=True,
+            finalize_official=False,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="observed-resolution")
+
+    assert replay.resolutions == ()
+
+
+def test_replay_applies_interleaved_terminal_book_clear_as_one_atomic_batch(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "terminal-clear.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "terminal-clear",
+            terminal_clear_burst=True,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="terminal-clear")
+
+    terminal = replay.books[-1]
+    assert terminal.snapshot.bids == ()
+    assert terminal.snapshot.asks == ()
+    assert terminal.snapshot.source_time_ms == EPOCH * 1_000 + 2_000
+    assert replay.diagnostics.late_event_count >= 1
+    assert replay.diagnostics.maximum_source_regression_ms == 1
+    assert replay.diagnostics.deferred_event_count >= 1
+    assert replay.diagnostics.maximum_availability_delay_ns >= 2_000_000
+
+
+def test_replay_matches_interleaved_best_prices_to_ordered_checksum_transitions(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "ordered-hashes.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "ordered-hashes",
+            interleaved_best_transitions=True,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="ordered-hashes")
+
+    final = replay.books[-1]
+    assert final.snapshot.bids[0].price == Decimal("0.49")
+    assert final.snapshot.asks[0].price == Decimal("0.51")
+    assert final.snapshot.source_time_ms == EPOCH * 1_000 + 2_004
 
 
 def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
@@ -797,6 +1135,18 @@ def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
     assert replay.diagnostics.maximum_source_regression_ms == 1
     assert replay.diagnostics.deferred_event_count == 0
     assert replay.diagnostics.maximum_availability_delay_ns == 0
+
+
+def test_replay_binds_exact_duplicate_tick_transition_idempotently(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "duplicate-tick.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "duplicate-tick",
+            duplicate_tick_transition=True,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="duplicate-tick")
+
+    assert replay.books[2].tick_size == Decimal("0.001")
 
 
 def test_replay_rejects_events_outside_bounded_causal_reorder_window(
@@ -853,7 +1203,7 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert created.row_count == existing.row_count == len(first.rows)
     assert len(first.rows) >= 1
     row = first.rows[0]
-    assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 49
+    assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 46
     assert row.official_up is True
     assert row.resolution_event_id
     assert row.feature_map()["ask_pair_cost"] == pytest.approx(1.02)
