@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from simple_ai_trading import cli
+from simple_ai_trading import cli, polymarket_mlp as polymarket_mlp_module
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket_action_value import (
     POLYMARKET_ACTION_FEATURE_NAMES,
@@ -317,12 +317,24 @@ def test_round9_mlp_refuses_insufficient_group_breadth_before_training() -> None
         fit_and_evaluate_polymarket_mlp(dataset, parent, compute_backend="cpu")
 
 
+def test_round9_mlp_refuses_short_test_partition_before_runtime(monkeypatch) -> None:
+    dataset = _dataset(90)
+    parent = fit_and_evaluate_polymarket_ridge(dataset)
+
+    def unexpected_runtime(*_args, **_kwargs):
+        raise AssertionError("MLP runtime must stay closed for an undersized test")
+
+    monkeypatch.setattr(polymarket_mlp_module, "_torch_runtime", unexpected_runtime)
+    with pytest.raises(ValueError, match="insufficient untouched test groups:18/30"):
+        fit_and_evaluate_polymarket_mlp(dataset, parent, compute_backend="cpu")
+
+
 def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
     tmp_path,
     monkeypatch,
     capsys,
 ) -> None:
-    dataset = _dataset(90)
+    dataset = _dataset(150)
     parent = fit_and_evaluate_polymarket_ridge(dataset)
     progress: list[tuple[str, dict[str, object]]] = []
 
@@ -347,7 +359,10 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
     assert "validation_stress_utility_not_above_ridge" in (
         report.validation_admission_reasons
     )
-    assert "untouched_test_group_count:18/30" in (report.validation_admission_reasons)
+    assert not any(
+        reason.startswith("untouched_test_group_count:")
+        for reason in report.validation_admission_reasons
+    )
     assert report.test_gate_reasons == ()
     assert report.asdict()["foundation_ai_authorized"] is False
     assert report.asdict()["profitability_claim"] is False
