@@ -48,6 +48,7 @@ from simple_ai_trading.polymarket_model_execution import (
     PolymarketExecutionResearchConfig,
     build_polymarket_policy_selection,
     evaluate_polymarket_execution_policy,
+    evaluate_polymarket_retry_execution_policy,
 )
 from simple_ai_trading.polymarket_publication import (
     _ai_case_rows,
@@ -690,6 +691,71 @@ def test_execution_policy_never_credits_insufficient_displayed_depth() -> None:
     assert report.net_realized_pnl_quote == 0
     assert report.reason_counts["insufficient_displayed_depth_for_fok"] == (
         report.attempted_order_count
+    )
+
+
+def test_retry_policy_retries_only_after_terminal_zero_fill() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    condition = split.test[0].condition_id
+    samples = tuple(
+        sorted(
+            (item for item in split.test if item.condition_id == condition),
+            key=lambda item: item.decision_received_monotonic_ns,
+        )[:3]
+    )
+    replay = _replay_fixture(samples, markets)
+    first_execution_ns = samples[0].decision_received_monotonic_ns + 100_000_000
+    replay.books = tuple(
+        replace(
+            book,
+            snapshot=replace(
+                book.snapshot,
+                asks=(BookLevel(book.snapshot.asks[0].price, Decimal("1")),),
+            ),
+        )
+        if book.outcome == "Up"
+        and book.received_monotonic_ns == first_execution_ns
+        else book
+        for book in replay.books
+    )
+    probabilities = np.asarray([0.9] * len(samples), dtype=np.float64)
+
+    control = evaluate_polymarket_execution_policy(samples, probabilities, replay)
+    retry = evaluate_polymarket_retry_execution_policy(
+        samples,
+        probabilities,
+        replay,
+    )
+
+    assert control.attempted_order_count == 1
+    assert control.filled_order_count == 0
+    assert control.trades[0].execution_state == "CANCELLED"
+    assert retry.signal_market_count == 1
+    assert retry.attempted_order_count == 2
+    assert retry.filled_order_count == 1
+    assert [item.execution_state for item in retry.trades] == [
+        "CANCELLED",
+        "FILLED",
+    ]
+    assert retry.reason_counts["retry_suppressed_after_fill"] == 1
+
+    delayed_replay = _replay_fixture(samples, markets, execution_latency_ms=700)
+    unknown = evaluate_polymarket_retry_execution_policy(
+        samples,
+        probabilities,
+        delayed_replay,
+        config=PolymarketExecutionResearchConfig(
+            submission_latency_ms=100,
+            maximum_execution_observation_delay_ms=500,
+        ),
+    )
+    assert unknown.attempted_order_count == 1
+    assert unknown.trades[0].execution_state == "UNKNOWN"
+    assert (
+        unknown.reason_counts["retry_blocked_by_nonterminal_or_invalid_state"]
+        == 2
     )
 
 
