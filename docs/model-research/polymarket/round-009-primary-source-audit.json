@@ -42,6 +42,52 @@
       "status": "implemented_close_window_exclusion"
     },
     {
+      "title": "PMXT Polymarket Orderbook Archive v2",
+      "url": "https://archive.pmxt.dev/docs/v2-data-overview",
+      "finding": "The public archive stores native Polymarket market-channel book, price-change, last-trade-price, and tick-size-change events in hourly ZSTD Parquet from 2026-04-13T19Z, including source and collector-receipt timestamps.",
+      "round_9_application": "This is the preferred historical tick-source candidate after the prospective baseline. It is not Round 9 evidence: every selected hourly object still needs a local SHA-256 inventory, BTC/ETH/SOL market mapping, gap certificate, snapshot-consistency replay, official outcome join, and exact fee/execution-metadata join. Its side field is never an aggressor label.",
+      "status": "historical_candidate_not_yet_admitted"
+    },
+    {
+      "title": "Polymarket 5-Minute Crypto Up/Down Markets",
+      "url": "https://huggingface.co/datasets/kachoio/polymarket-5-minute-crypto-up-down-markets",
+      "finding": "The CC0 release contains 26,858,579 one-second top-of-book samples across about 89,000 markets from March to May 2026. Outcomes are inferred, ask depth beyond the touch is absent, and there are no underlying-price, local receipt-clock, fee, or execution-parameter records.",
+      "round_9_application": "It may support bounded market-state or data-shape development only after the six BTC/ETH/SOL Parquet files match the preregistered sizes and LFS SHA-256 values below and outcomes are independently resolved. It cannot support fill, latency, after-cost PnL, confirmation, or trading-authority claims.",
+      "artifact_manifest": [
+        {
+          "path": "btc_markets.parquet",
+          "size_bytes": 3921352,
+          "sha256": "8e0ed78021bd98d3dba18829266103ebd9b46a77f6ba872a1c7f98be77b506bd"
+        },
+        {
+          "path": "btc_ticks.parquet",
+          "size_bytes": 182475803,
+          "sha256": "173760b951ac0a2c795e1c3873a506e2fd4372db356dd3515f06582820ff975e"
+        },
+        {
+          "path": "eth_markets.parquet",
+          "size_bytes": 3042915,
+          "sha256": "c933f18b7d3f712c8091e5c10c59811769a741a082408c12eb99312fe92dc67c"
+        },
+        {
+          "path": "eth_ticks.parquet",
+          "size_bytes": 109211078,
+          "sha256": "381ab9177bbaaa6ef6739793e2bb99e45e1c59792d137c9c2664a9c320f85cc8"
+        },
+        {
+          "path": "sol_markets.parquet",
+          "size_bytes": 3002018,
+          "sha256": "4cd0112dd1a9f12f0d6ad96f9ec5789086f4f6e76ff4ccaaeb454c1c21cf1980"
+        },
+        {
+          "path": "sol_ticks.parquet",
+          "size_bytes": 92356363,
+          "sha256": "adc6146a858215822d78d7302f92129d440b5d337e89957e34b66cad45e0ed16"
+        }
+      ],
+      "status": "screening_only_not_downloaded"
+    },
+    {
       "title": "Polymarket Crypto 5-Minute and 15-Minute Market Data",
       "url": "https://huggingface.co/datasets/obadiaha/polymarket-crypto-5m-15m",
       "finding": "The third-party dataset reports ten-second order books and one-minute Binance candles, without the recorder's local receipt clocks or exact execution-parameter snapshots.",
