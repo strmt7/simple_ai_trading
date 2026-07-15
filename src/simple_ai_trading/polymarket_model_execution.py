@@ -26,9 +26,9 @@ from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 
 POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION = "polymarket-execution-config-v2"
 POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION = "polymarket-execution-trade-v2"
-POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v2"
+POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v3"
 POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION = (
-    "polymarket-causal-retry-execution-report-v1"
+    "polymarket-causal-retry-execution-report-v2"
 )
 
 
@@ -328,8 +328,10 @@ class PolymarketPolicySelection:
 class _ReplayBookIndex:
     def __init__(self, replay: PolymarketEvidenceReplay) -> None:
         books: dict[str, list[PolymarketRecordedBook]] = {}
+        events: dict[str, list[PolymarketRecordedBook]] = {}
         for book in replay.books:
             books.setdefault(book.token_id, []).append(book)
+            events.setdefault(book.event_id, []).append(book)
         self.books = {
             token: tuple(
                 sorted(
@@ -349,6 +351,26 @@ class _ReplayBookIndex:
             token: tuple(item.received_monotonic_ns for item in values)
             for token, values in self.books.items()
         }
+        self.events = {key: tuple(value) for key, value in events.items()}
+
+    def decision_segment(
+        self,
+        event_id: str,
+        *,
+        condition_id: str,
+        decision_wall_ms: int,
+        decision_monotonic_ns: int,
+    ) -> str | None:
+        segments = {
+            item.segment_id
+            for item in self.events.get(str(event_id), ())
+            if item.market.condition_id == condition_id
+            and item.received_wall_ms == int(decision_wall_ms)
+            and item.received_monotonic_ns == int(decision_monotonic_ns)
+        }
+        if len(segments) > 1:
+            raise ValueError("Polymarket decision event spans connection segments")
+        return None if not segments else next(iter(segments))
 
     def decision_book(
         self,
@@ -356,13 +378,17 @@ class _ReplayBookIndex:
         *,
         condition_id: str,
         decision_monotonic_ns: int,
+        segment_id: str,
     ) -> PolymarketRecordedBook | None:
         values = self.books.get(token_id, ())
         timestamps = self.timestamps.get(token_id, ())
         index = bisect_right(timestamps, int(decision_monotonic_ns)) - 1
         while index >= 0:
             candidate = values[index]
-            if candidate.market.condition_id == condition_id:
+            if (
+                candidate.market.condition_id == condition_id
+                and candidate.segment_id == segment_id
+            ):
                 return candidate
             index -= 1
         return None
@@ -786,13 +812,16 @@ def _evaluate_polymarket_execution_policy(
             "decision_delay_ms_by_condition": dict(sorted(decision_delays.items())),
         }
     )
+    continuity_mode = replay.diagnostics.continuity_mode
+    stream_gap_count = replay.diagnostics.stream_gap_count
     if (
-        replay.diagnostics.continuity_mode != "strict"
-        or replay.diagnostics.stream_gap_count != 0
+        continuity_mode not in {"strict", "segmented"}
+        or (continuity_mode == "strict" and stream_gap_count != 0)
+        or (continuity_mode == "segmented" and stream_gap_count < 1)
         or replay.diagnostics.book_sample_interval_ms != 0
     ):
         raise ValueError(
-            "Polymarket execution evaluation requires strict unsampled gap-free replay"
+            "Polymarket execution evaluation requires validated unsampled replay"
         )
     if any(item.source_run_id != replay.run_id for item in samples):
         raise ValueError("Polymarket execution samples belong to another recorder run")
@@ -859,6 +888,7 @@ def _evaluate_polymarket_execution_policy(
     group_end_by_start: dict[int, int] = {}
     filled_conditions: set[str] = set()
     retry_blocked_conditions: set[str] = set()
+    portfolio_unknown = False
     for sample in samples:
         existing_end = group_end_by_start.setdefault(
             sample.event_start_ms,
@@ -869,11 +899,12 @@ def _evaluate_polymarket_execution_policy(
 
     for group_start, expected_group_end in sorted(group_end_by_start.items()):
         group_equity_start = equity
+        risk_capital = min(group_equity_start, cfg.initial_capital_quote)
         market_risk_limit = (
-            group_equity_start * cfg.maximum_loss_fraction_per_market
+            risk_capital * cfg.maximum_loss_fraction_per_market
         )
         group_risk_limit = (
-            group_equity_start * cfg.maximum_loss_fraction_per_time_group
+            risk_capital * cfg.maximum_loss_fraction_per_time_group
         )
         deployed_group_risk = Decimal("0")
         group_pnl = Decimal("0")
@@ -887,6 +918,9 @@ def _evaluate_polymarket_execution_policy(
             ),
         ):
             sample = candidate.sample
+            if portfolio_unknown:
+                reasons["portfolio_blocked_by_unknown_state"] += 1
+                continue
             if retry_terminal_zero_fill:
                 if sample.condition_id in filled_conditions:
                     reasons["retry_suppressed_after_fill"] += 1
@@ -913,10 +947,20 @@ def _evaluate_polymarket_execution_policy(
                 if candidate.outcome == "Up"
                 else market.down_token_id
             )
+            decision_segment = book_index.decision_segment(
+                sample.decision_event_id,
+                condition_id=sample.condition_id,
+                decision_wall_ms=sample.decision_received_wall_ms,
+                decision_monotonic_ns=sample.decision_received_monotonic_ns,
+            )
+            if decision_segment is None:
+                reasons["missing_causal_decision_event"] += 1
+                continue
             decision_book = book_index.decision_book(
                 token_id,
                 condition_id=sample.condition_id,
                 decision_monotonic_ns=sample.decision_received_monotonic_ns,
+                segment_id=decision_segment,
             )
             if decision_book is None:
                 reasons["missing_causal_decision_book"] += 1
@@ -1048,6 +1092,7 @@ def _evaluate_polymarket_execution_policy(
                     losing += 1
             elif execution_state == "UNKNOWN":
                 deployed_group_risk += worst_cost
+                portfolio_unknown = True
             if retry_terminal_zero_fill:
                 if execution_state == "FILLED":
                     filled_conditions.add(sample.condition_id)

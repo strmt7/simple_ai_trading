@@ -118,10 +118,11 @@ coordinator can abstain for an entire market or day. There is no trade quota.
 The future authenticated lane must use Polymarket's server-side heartbeat, which
 cancels open orders when expected heartbeats stop, in addition to local liveness
 supervision. It is not present in the paper-only lane.
-Current replay refuses an execution without a later gap-free recorded state and
-persists the resulting `UNKNOWN` intent as restart-blocking. Full reconnect
-refresh, loss-budget checks, clean-observation recovery, and cooldown handling
-remain coordinator work.
+Current model replay refuses execution without a later state in the same
+connection segment; `UNKNOWN` reserves worst-case risk and blocks all subsequent
+portfolio exposure in that replay. The paper broker persists an `UNKNOWN` intent
+as restart-blocking. Full reconnect refresh, clean-observation recovery, and
+cooldown handling remain coordinator work.
 
 The future market-data, model, AI, risk, execution, reconciliation, and
 settlement loops must have independent deadlines. That coordinator is not yet
