@@ -115,6 +115,10 @@ from .polymarket_ai_veto import (
     benchmark_polymarket_ai_veto,
     build_polymarket_ai_veto_cases,
 )
+from .polymarket_action_pipeline import (
+    PolymarketActionPipelineConfig,
+    materialize_polymarket_action_value_batches,
+)
 from .polymarket_coverage import inspect_polymarket_feed_coverage
 from .polymarket_features import (
     PolymarketFeatureConfig,
@@ -539,6 +543,32 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_features.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_features.add_argument("--json", action="store_true")
     parser_polymarket_features.set_defaults(func=command_polymarket_features)
+
+    parser_polymarket_action_value = subparsers.add_parser(
+        "polymarket-action-value",
+        help="materialize bounded causal Polymarket execution labels",
+        description=(
+            "Build the frozen Round 9 BTC/ETH/SOL action-value dataset in "
+            "resumable synchronized market batches. This command accepts only a "
+            "complete gap-free run; segmented evidence requires a separately "
+            "audited eligibility artifact and is not accepted by this surface."
+        ),
+    )
+    parser_polymarket_action_value.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_action_value.add_argument("--run-id", required=True)
+    parser_polymarket_action_value.add_argument(
+        "--market-groups-per-batch", type=int, default=1
+    )
+    parser_polymarket_action_value.add_argument("--memory-limit", default="4GB")
+    parser_polymarket_action_value.add_argument(
+        "--database-threads", type=int, default=1
+    )
+    parser_polymarket_action_value.add_argument("--json", action="store_true")
+    parser_polymarket_action_value.set_defaults(
+        func=command_polymarket_action_value
+    )
 
     parser_polymarket_model = subparsers.add_parser(
         "polymarket-model",
@@ -6241,6 +6271,64 @@ def command_polymarket_features(args: argparse.Namespace) -> int:
         )
         print(f"dataset_sha256: {dataset.dataset_sha256}")
     return 0 if dataset.shadow_ready else 2
+
+
+def command_polymarket_action_value(args: argparse.Namespace) -> int:
+    """Materialize the frozen Round 9 labels in resumable condition batches."""
+
+    started = time.monotonic()
+
+    def progress(phase: str, payload: Mapping[str, object]) -> None:
+        if getattr(args, "json", False):
+            return
+        details = " ".join(
+            f"{key}={value}" for key, value in sorted(payload.items())
+        )
+        print(
+            "polymarket-action-value-progress: "
+            f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
+            + (f" {details}" if details else ""),
+            file=sys.stderr,
+            flush=True,
+        )
+
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            report = materialize_polymarket_action_value_batches(
+                store,
+                run_id=str(args.run_id),
+                config=PolymarketActionPipelineConfig(
+                    market_groups_per_batch=int(args.market_groups_per_batch),
+                ),
+                progress=progress,
+            )
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-action-value failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    payload["batch_materialization_status"] = [
+        item.status for item in report.batches
+    ]
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        created = sum(item.status == "created" for item in report.batches)
+        print(
+            "polymarket-action-value: "
+            f"run={report.run_id} batches={len(report.batches)} "
+            f"created={created} actions={report.action_count} "
+            f"classifier_eligible={report.classifier_eligible_count} "
+            f"positive_complete={report.positive_complete_count}"
+        )
+        print(f"report_sha256: {report.report_sha256}")
+    return 0
 
 
 def _polymarket_execution_uplift_metrics(
