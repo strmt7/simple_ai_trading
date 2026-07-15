@@ -4,8 +4,9 @@
 causal feature materializer, shared paper execution contract, manual
 evidence-bound open/close actions, cross-checked official resolution settlement,
 durable operator Pause/Resume, fail-closed Stop, and independent source
-reconstruction before CLI/app result publication are implemented. Continuous
-strategy coordination remains incomplete.
+reconstruction before CLI/app result publication are implemented. A frozen,
+source-verified held-out model or AI policy can now run once through that same
+owned paper lifecycle. Continuous strategy coordination remains incomplete.
 No authenticated order placement, wallet, private key, live-money claim, or
 profitability claim is implemented or authorized.
 
@@ -17,10 +18,10 @@ may not fork ownership, reconciliation, outage recovery, or stop semantics.
 The lifecycle, risk, and outage sections below are the required parity contract.
 The current executable subset is the public recorder, strict replay by default,
 explicit segmented reconnect replay, manual aggressive FAK/FOK paper open/close,
-journal reconciliation, official-resolution settlement, and a reconciled Stop
-operation. Passive queue replay, empirical latency calibration, automated
-strategy/AI decisions, and independent live liveness loops remain incomplete and
-must not be represented as available.
+journal reconciliation, official-resolution settlement, a reconciled Stop
+operation, and promotion-gated historical model replay. Passive queue replay,
+empirical latency calibration, continuous strategy/AI decisions, and independent
+live liveness loops remain incomplete and must not be represented as available.
 
 ```mermaid
 flowchart LR
@@ -114,7 +115,9 @@ coordinator can abstain for an entire market or day. There is no trade quota.
 
 ## Outages and liveness
 
-The future live CLOB heartbeat must cancel resting orders after missed liveness.
+The future authenticated lane must use Polymarket's server-side heartbeat, which
+cancels open orders when expected heartbeats stop, in addition to local liveness
+supervision. It is not present in the paper-only lane.
 Current replay refuses an execution without a later gap-free recorded state and
 persists the resulting `UNKNOWN` intent as restart-blocking. Full reconnect
 refresh, loss-budget checks, clean-observation recovery, and cooldown handling
@@ -206,7 +209,31 @@ simple-ai-trading polymarket-verify `
 simple-ai-trading polymarket-publish `
   --artifact data/polymarket-model.json `
   --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-paper `
+  --database data/polymarket-paper.duckdb `
+  --action run-model `
+  --artifact data/polymarket-model.json `
+  --source-verification data/polymarket-source-verification.json `
+  --output data/polymarket-paper-model-run.json --json
 ```
+
+`run-model` is a one-shot historical paper diagnostic, not a live or shadow
+market loop. By default, `auto` selects AI only when its independently verified
+uplift gate passes; otherwise it selects the verified model. The selected policy
+must pass probability, confirmatory sample, after-cost execution, terminal-order,
+official-settlement, and every declared latency-stress gate. It must also have
+positive after-cost PnL at every declared latency. `--allow-unconfirmed-research`
+admits failed gates only for an explicitly labeled paper diagnostic; it never
+creates trading authority or a profitability claim.
+
+The plan binds the model artifact, source-reconstruction report, sealed recorder
+report, execution report, latency configuration, and every held-out trade by
+SHA-256. It requires a clean flat journal, executes chronologically through the
+same broker and operator state used by manual paper actions, settles only against
+the recorded dual-source official outcome, and pauses flat after completion. A
+fill, fee, source-event, latency, payout, or PnL mismatch invokes the fail-closed
+Stop path. An ambiguous order remains visible as `STOPPING`; it is never reported
+as flat or successful.
 
 A 300-second run is a connectivity smoke test, not model evidence: depending on
 the start phase, it can end before the next market's post-open feature warm-up.
@@ -276,6 +303,7 @@ Stop remain available while paused.
 
 Primary references: [authentication](https://docs.polymarket.com/api-reference/authentication),
 [market WebSocket](https://docs.polymarket.com/market-data/websocket/market-channel),
+[server-side heartbeat](https://docs.polymarket.com/api-reference/trade/send-heartbeat),
 [RTDS](https://docs.polymarket.com/market-data/websocket/rtds),
 [official RTDS client](https://github.com/Polymarket/real-time-data-client),
 [orders](https://docs.polymarket.com/trading/orders/create),
