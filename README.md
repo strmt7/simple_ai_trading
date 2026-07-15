@@ -136,7 +136,9 @@ simple-ai-trading coordinator
 simple-ai-trading universe
 simple-ai-trading data-sync --symbol BTCUSDC --interval 1m --full-history
 simple-ai-trading api-budget --compact
-simple-ai-trading polymarket-record --duration-seconds 300 --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-record --duration-seconds 660 --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-resolve --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-features --database data/polymarket-paper.duckdb
 simple-ai-trading archive-sync --symbol BTCUSDC --interval 1s --cadence monthly
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --plan-only --require-checksum --json
 simple-ai-trading archive-sync --symbols BTCUSDT,ETHUSDT,SOLUSDT --market futures --interval 1s --cadence daily --start-period 2024-01-01 --end-period 2024-01-31 --require-checksum

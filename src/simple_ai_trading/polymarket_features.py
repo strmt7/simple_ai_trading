@@ -20,8 +20,8 @@ from .polymarket_replay import (
 )
 
 
-POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v1"
-POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v1"
+POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v2"
+POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v2"
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 POLYMARKET_FEATURE_NAMES = (
     "elapsed_fraction",
@@ -145,6 +145,7 @@ class PolymarketFeatureConfig:
     maximum_rtds_binance_source_age_ms: int = 120_000
     maximum_chainlink_anchor_gap_ms: int = 2_000
     minimum_resolved_markets_per_asset: int = 30
+    allow_segmented_gaps: bool = False
 
     def validated(self) -> "PolymarketFeatureConfig":
         bounds = {
@@ -162,10 +163,14 @@ class PolymarketFeatureConfig:
             value = int(getattr(self, name))
             if value < minimum or value > maximum:
                 raise ValueError(f"{name} must lie in [{minimum}, {maximum}]")
+        if not isinstance(self.allow_segmented_gaps, bool):
+            raise ValueError("allow_segmented_gaps must be a boolean")
         return self
 
-    def asdict(self) -> dict[str, int]:
-        return {key: int(value) for key, value in asdict(self).items()}
+    def asdict(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload["allow_segmented_gaps"] = bool(self.allow_segmented_gaps)
+        return payload
 
 
 @dataclass(frozen=True)
@@ -737,12 +742,18 @@ def build_polymarket_feature_dataset(
     """Build causal features; official outcomes are attached only as future labels."""
 
     cfg = (config or PolymarketFeatureConfig()).validated()
-    replay = PolymarketEvidenceReplay.load(store, run_id=run_id)
+    replay = PolymarketEvidenceReplay.load(
+        store,
+        run_id=run_id,
+        allow_segmented_gaps=cfg.allow_segmented_gaps,
+        book_sample_interval_ms=cfg.cadence_ms,
+    )
     selected = replay.run_id
     coverage = inspect_polymarket_feed_coverage(
         store,
         run_id=selected,
         minimum_resolved_markets_per_asset=cfg.minimum_resolved_markets_per_asset,
+        allow_segmented_gaps=cfg.allow_segmented_gaps,
     )
     chainlink, rtds_binance, direct_books, direct_trades = _parse_feed_points(
         store, selected
@@ -767,6 +778,7 @@ def build_polymarket_feature_dataset(
         item.condition_id: item for item in replay.resolutions
     }
     states: dict[str, dict[str, PolymarketRecordedBook]] = {}
+    active_segments: dict[str, str] = {}
     last_emitted_ns: dict[str, int] = {}
     skipped: dict[str, int] = {}
     rows: list[PolymarketFeatureRow] = []
@@ -775,6 +787,9 @@ def build_polymarket_feature_dataset(
     for trigger in replay.books:
         market = trigger.market
         condition = market.condition_id
+        if active_segments.get(condition) != trigger.segment_id:
+            states[condition] = {}
+            active_segments[condition] = trigger.segment_id
         states.setdefault(condition, {})[trigger.outcome] = trigger
         candidate_count += 1
         pair = states[condition]
@@ -805,6 +820,8 @@ def build_polymarket_feature_dataset(
 
         up = pair["Up"]
         down = pair["Down"]
+        if up.segment_id != trigger.segment_id or down.segment_id != trigger.segment_id:
+            raise ValueError("Polymarket feature books crossed continuity segments")
         up_age_ms = (decision_ns - up.received_monotonic_ns) / 1_000_000.0
         down_age_ms = (decision_ns - down.received_monotonic_ns) / 1_000_000.0
         if (
@@ -951,6 +968,8 @@ def build_polymarket_feature_dataset(
                 },
                 "up_book": {
                     "event_id": up.event_id,
+                    "connection_id": up.connection_id,
+                    "segment_id": up.segment_id,
                     "source_time_ms": up.snapshot.source_time_ms,
                     "received_wall_ms": up.received_wall_ms,
                     "received_monotonic_ns": up.received_monotonic_ns,
@@ -958,6 +977,8 @@ def build_polymarket_feature_dataset(
                 },
                 "down_book": {
                     "event_id": down.event_id,
+                    "connection_id": down.connection_id,
+                    "segment_id": down.segment_id,
                     "source_time_ms": down.snapshot.source_time_ms,
                     "received_wall_ms": down.received_wall_ms,
                     "received_monotonic_ns": down.received_monotonic_ns,

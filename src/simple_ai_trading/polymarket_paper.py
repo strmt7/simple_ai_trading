@@ -23,6 +23,7 @@ from .polymarket_replay import (
     PolymarketRecordedBook,
     PolymarketResolutionEvidence,
 )
+from .polymarket_resolution import load_official_resolutions
 
 
 POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION = "polymarket-paper-context-v1"
@@ -163,6 +164,7 @@ class PolymarketPaperBroker:
         run_id: str | None = None,
         maximum_book_age_ms: int = 2_000,
         order_ttl_ms: int = 30_000,
+        allow_segmented_gaps: bool = False,
         memory_limit: str = "1GB",
         threads: int = 2,
     ) -> None:
@@ -174,7 +176,12 @@ class PolymarketPaperBroker:
         self.store.connect()
         self._closed = False
         try:
-            self.replay = PolymarketEvidenceReplay.load(self.store, run_id=run_id)
+            self.allow_segmented_gaps = bool(allow_segmented_gaps)
+            self.replay = PolymarketEvidenceReplay.load(
+                self.store,
+                run_id=run_id,
+                allow_segmented_gaps=self.allow_segmented_gaps,
+            )
             self._replay_cache = {self.replay.run_id: self.replay}
             if self.store.paper_journal is None:
                 raise RuntimeError("shared paper journal is unavailable")
@@ -306,6 +313,29 @@ class PolymarketPaperBroker:
                     recorded.received_monotonic_ns,
                 )
         return latest_monotonic_ns
+
+    def _latest_consumed_wall_ms(self) -> int:
+        rows = self.store.connect().execute(
+            """
+            SELECT token_id, decision_event_id, execution_event_id
+            FROM polymarket_paper_order_context
+            WHERE run_id = ?
+            """,
+            [self.replay.run_id],
+        ).fetchall()
+        latest_wall_ms = -1
+        for token_id, decision_event_id, execution_event_id in rows:
+            for event_id in (str(decision_event_id), str(execution_event_id)):
+                if not event_id:
+                    continue
+                try:
+                    recorded = self.replay.book_for_event(event_id, str(token_id))
+                except KeyError as exc:
+                    raise ValueError(
+                        "existing paper context is absent from replay evidence"
+                    ) from exc
+                latest_wall_ms = max(latest_wall_ms, recorded.received_wall_ms)
+        return latest_wall_ms
 
     def _validate_replay_chronology(
         self,
@@ -552,7 +582,13 @@ class PolymarketPaperBroker:
         )
         if official is None or official != resolution:
             raise ValueError("resolution is not immutable evidence from this replay")
-        if resolution.received_monotonic_ns <= self._latest_consumed_monotonic_ns():
+        if resolution.received_wall_ms <= self._latest_consumed_wall_ms():
+            raise ValueError("resolution predates a previously consumed replay state")
+        if (
+            resolution.received_monotonic_ns > 0
+            and resolution.received_monotonic_ns
+            <= self._latest_consumed_monotonic_ns()
+        ):
             raise ValueError("resolution predates a previously consumed replay state")
         parent = self.journal.intent(opening_intent_id)
         if resolution.condition_id != parent.market_id:
@@ -603,7 +639,11 @@ class PolymarketPaperBroker:
         selected = str(run_id or "").strip()
         replay = self._replay_cache.get(selected)
         if replay is None:
-            replay = PolymarketEvidenceReplay.load(self.store, run_id=selected)
+            replay = PolymarketEvidenceReplay.load(
+                self.store,
+                run_id=selected,
+                allow_segmented_gaps=self.allow_segmented_gaps,
+            )
             self._replay_cache[selected] = replay
         return replay
 
@@ -808,8 +848,49 @@ class PolymarketPaperBroker:
             """,
             [self.replay.run_id],
         ).fetchone()
-        if run is None or str(run[0]) != "complete":
+        run_status = "" if run is None else str(run[0])
+        status_allowed = run_status == "complete" or (
+            self.allow_segmented_gaps and run_status == "degraded"
+        )
+        if not status_allowed:
             evidence_errors.append("paper_replay_run_not_complete")
+        try:
+            PolymarketEvidenceReplay.validate_stream_gaps(
+                self.store,
+                self.replay.run_id,
+                allow_segmented_gaps=self.allow_segmented_gaps,
+            )
+        except ValueError as exc:
+            evidence_errors.append(
+                f"paper_replay_gap_invalid:{exc.__class__.__name__}:{exc}"
+            )
+        try:
+            stored_resolutions = load_official_resolutions(
+                self.store,
+                run_id=self.replay.run_id,
+            )
+            replay_by_condition = {
+                item.condition_id: item
+                for item in self.replay.resolutions
+            }
+            expected_external_ids = {
+                item.event_id
+                for item in self.replay.resolutions
+                if item.source == "clob_gamma_crosscheck"
+            }
+            stored_ids = {item.resolution_id for item in stored_resolutions}
+            source_mismatch = any(
+                item.condition_id not in replay_by_condition
+                or replay_by_condition[item.condition_id].winning_asset_id
+                != item.winning_asset_id
+                for item in stored_resolutions
+            )
+            if not expected_external_ids.issubset(stored_ids) or source_mismatch:
+                evidence_errors.append("paper_replay_resolution_set_mismatch")
+        except ValueError as exc:
+            evidence_errors.append(
+                f"paper_replay_resolution_invalid:{exc.__class__.__name__}:{exc}"
+            )
         return PolymarketPaperReconciliation(
             venue=self.venue,
             journal=journal_report,
