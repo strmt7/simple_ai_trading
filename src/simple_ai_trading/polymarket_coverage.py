@@ -9,9 +9,11 @@ from typing import Mapping
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_recorder import PolymarketEvidenceStore
+from .polymarket_replay import PolymarketEvidenceReplay
+from .polymarket_resolution import load_official_resolutions
 
 
-POLYMARKET_COVERAGE_SCHEMA_VERSION = "polymarket-feed-coverage-v1"
+POLYMARKET_COVERAGE_SCHEMA_VERSION = "polymarket-feed-coverage-v2"
 DEFAULT_MINIMUM_RESOLVED_MARKETS_PER_ASSET = 30
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 _COUNT_KEYS = (
@@ -30,6 +32,8 @@ class PolymarketFeedCoverage:
     schema_version: str
     run_id: str
     run_status: str
+    allow_segmented_gaps: bool
+    stream_gap_count: int
     minimum_resolved_markets_per_asset: int
     counts: dict[str, dict[str, int]]
     integrity_errors: tuple[str, ...]
@@ -123,6 +127,7 @@ def inspect_polymarket_feed_coverage(
     minimum_resolved_markets_per_asset: int = (
         DEFAULT_MINIMUM_RESOLVED_MARKETS_PER_ASSET
     ),
+    allow_segmented_gaps: bool = False,
 ) -> PolymarketFeedCoverage:
     """Audit whether one immutable run can support shadowing or model fitting."""
 
@@ -141,6 +146,21 @@ def inspect_polymarket_feed_coverage(
         raise ValueError(f"unknown Polymarket recorder run: {selected}")
     run_status = str(run[0])
     integrity_errors = store.integrity_errors(selected)
+    try:
+        stream_gap_count = PolymarketEvidenceReplay.validate_stream_gaps(
+            store,
+            selected,
+            allow_segmented_gaps=bool(allow_segmented_gaps),
+        )
+        gap_validation_error = ""
+    except ValueError as exc:
+        stream_gap_count = int(
+            connection.execute(
+                "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
+                [selected],
+            ).fetchone()[0]
+        )
+        gap_validation_error = str(exc)
     counts = {asset: {key: 0 for key in _COUNT_KEYS} for asset in _ASSETS}
 
     market_rows = connection.execute(
@@ -169,6 +189,8 @@ def inspect_polymarket_feed_coverage(
     observed_tokens: dict[str, set[str]] = {asset: set() for asset in _ASSETS}
     resolved_conditions: dict[str, set[str]] = {asset: set() for asset in _ASSETS}
     data_errors: list[str] = []
+    if gap_validation_error:
+        data_errors.append(f"stream_gap_invalid:{gap_validation_error}")
     event_rows = connection.execute(
         """
         SELECT event_id, stream, event_type, symbol, condition_id,
@@ -225,10 +247,22 @@ def inspect_polymarket_feed_coverage(
 
     for asset in _ASSETS:
         counts[asset]["clob_token_baselines"] = len(observed_tokens[asset])
+    try:
+        for resolution in load_official_resolutions(store, run_id=selected):
+            asset = condition_asset.get(resolution.condition_id, "")
+            if not asset:
+                raise ValueError("official resolution references an unknown condition")
+            resolved_conditions[asset].add(resolution.condition_id)
+    except ValueError as exc:
+        data_errors.append(
+            f"official_resolution_invalid:{exc.__class__.__name__}:{exc}"
+        )
+    for asset in _ASSETS:
         counts[asset]["official_resolutions"] = len(resolved_conditions[asset])
 
     shadow_errors: list[str] = []
-    if run_status != "complete":
+    segmented_status_allowed = bool(allow_segmented_gaps) and run_status == "degraded"
+    if run_status != "complete" and not segmented_status_allowed:
         shadow_errors.append(f"run_not_complete:{run_status}")
     if integrity_errors:
         shadow_errors.append("recorder_integrity_failed")
@@ -263,6 +297,8 @@ def inspect_polymarket_feed_coverage(
         schema_version=POLYMARKET_COVERAGE_SCHEMA_VERSION,
         run_id=selected,
         run_status=run_status,
+        allow_segmented_gaps=bool(allow_segmented_gaps),
+        stream_gap_count=stream_gap_count,
         minimum_resolved_markets_per_asset=minimum_resolved,
         counts=counts,
         integrity_errors=tuple(integrity_errors),

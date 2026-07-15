@@ -465,8 +465,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="build leakage-safe BTC/ETH/SOL 5-minute model features",
         description=(
             "Build and materialize hash-bound decision-time features from one "
-            "complete prospective Polymarket recorder run. Official outcomes are "
-            "attached only as future labels; unresolved rows remain shadow-only."
+            "validated prospective Polymarket recorder run. Strict gap-free replay "
+            "is the default. Official outcomes are attached only as future labels; "
+            "unresolved rows remain shadow-only."
         ),
     )
     parser_polymarket_features.add_argument(
@@ -478,6 +479,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_features.add_argument(
         "--minimum-resolved-markets-per-asset", type=int, default=30
     )
+    parser_polymarket_features.add_argument(
+        "--allow-segmented-gaps",
+        action="store_true",
+        help="explicitly admit validated CLOB-only continuity segments",
+    )
     parser_polymarket_features.add_argument("--memory-limit", default="1GB")
     parser_polymarket_features.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_features.add_argument("--json", action="store_true")
@@ -488,8 +494,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="inspect or execute BTC/ETH/SOL 5-minute paper orders on recorded evidence",
         description=(
             "Use the same durable ownership and reconciliation lifecycle as Binance "
-            "paper trading against a complete prospective Polymarket recorder run. "
-            "This command has no authenticated or live-money order path."
+            "paper trading against a validated prospective Polymarket recorder run. "
+            "Strict gap-free replay is the default. This command has no authenticated "
+            "or live-money order path."
         ),
     )
     parser_polymarket_paper.add_argument("--database", default="data/polymarket-paper.duckdb")
@@ -506,6 +513,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--quantity", default=None)
     parser_polymarket_paper.add_argument("--limit-price", default=None)
     parser_polymarket_paper.add_argument("--latency-ms", type=int, default=None)
+    parser_polymarket_paper.add_argument(
+        "--allow-segmented-gaps",
+        action="store_true",
+        help="explicitly admit validated CLOB-only continuity segments",
+    )
     parser_polymarket_paper.add_argument("--memory-limit", default="1GB")
     parser_polymarket_paper.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_paper.add_argument("--json", action="store_true")
@@ -5901,6 +5913,9 @@ def command_polymarket_features(args: argparse.Namespace) -> int:
                     minimum_resolved_markets_per_asset=int(
                         args.minimum_resolved_markets_per_asset
                     ),
+                    allow_segmented_gaps=bool(
+                        getattr(args, "allow_segmented_gaps", False)
+                    ),
                 ),
             )
             materialization = materialize_polymarket_feature_dataset(store, dataset)
@@ -5942,6 +5957,9 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
         with PolymarketPaperBroker(
             Path(args.database),
             run_id=getattr(args, "run_id", None),
+            allow_segmented_gaps=bool(
+                getattr(args, "allow_segmented_gaps", False)
+            ),
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as broker:
@@ -6026,6 +6044,9 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                 "feed_coverage": inspect_polymarket_feed_coverage(
                     broker.store,
                     run_id=broker.replay.run_id,
+                    allow_segmented_gaps=bool(
+                        getattr(args, "allow_segmented_gaps", False)
+                    ),
                 ).asdict(),
                 "positions": positions,
             }

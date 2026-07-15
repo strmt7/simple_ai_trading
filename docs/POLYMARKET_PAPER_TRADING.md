@@ -1,22 +1,23 @@
 # Polymarket 5-minute paper trading
 
-**Status:** the prospective public-data recorder, strict level-2 replay, shared
-paper execution contract, manual evidence-bound open/close actions, and official
-resolution settlement are implemented. Continuous strategy coordination remains
-incomplete. No authenticated order placement, wallet, private key, live-money
-claim, or profitability claim is implemented or authorized.
+**Status:** the prospective public-data recorder, fail-closed level-2 replay,
+shared paper execution contract, manual evidence-bound open/close actions, and
+cross-checked official resolution settlement are implemented. Continuous strategy
+coordination remains incomplete. No authenticated order placement, wallet,
+private key, live-money claim, or profitability claim is implemented or authorized.
 
 The Polymarket lane targets only BTC, ETH, and SOL 5-minute Up/Down markets.
 It reuses the Binance paper-trading lifecycle and risk core. Venue-specific
 code may translate market data, binary tokens, fees, fills, and settlement; it
 may not fork ownership, reconciliation, outage recovery, or stop semantics.
 
-The lifecycle, risk, and outage sections below are the required parity
-contract. The current executable subset is the public recorder, strict replay,
-manual aggressive FAK paper open/close, journal reconciliation, and recorded
-official-resolution settlement. Stop/Pause coordination, passive queue replay,
-empirical latency calibration, automated strategy/AI decisions, and independent
-live liveness loops remain incomplete and must not be represented as available.
+The lifecycle, risk, and outage sections below are the required parity contract.
+The current executable subset is the public recorder, strict replay by default,
+explicit segmented reconnect replay, manual aggressive FAK paper open/close,
+journal reconciliation, and official-resolution settlement. Stop/Pause
+coordination, passive queue replay, empirical latency calibration, automated
+strategy/AI decisions, and independent live liveness loops remain incomplete and
+must not be represented as available.
 
 ```mermaid
 flowchart LR
@@ -44,8 +45,8 @@ flowchart LR
   must be measured prospectively from source timestamps and local monotonic
   arrival clocks; it is never assumed.
 - The official market outcome, not a Binance price inference, settles paper
-  positions. The market rules use Chainlink and treat end price greater than or
-  equal to start price as Up.
+  positions. Finalization requires exact agreement between independently fetched
+  closed CLOB and Gamma market records; disagreement remains pending.
 - Taker fees are read from each market's current fee schedule and calculated at
   match time. No hard-coded fee curve is allowed.
 
@@ -115,18 +116,32 @@ implemented for Polymarket.
 
 Public price history is minute-fidelity and cannot validate second-level fills
 or latency. The first deliverable is therefore a prospective BTC/ETH/SOL CLOB +
-RTDS + direct-Binance recorder and paper shadow engine. Only complete windows
-with gap-free books, source timestamps, fees, and official outcomes may enter
-training. AI is a matched optional treatment and must beat the same ML baseline
-after spread, fees, depth, latency, partial fills, and settlement failures.
+RTDS + direct-Binance recorder and paper shadow engine. Strict training admits
+only complete gap-free windows with source timestamps, fees, and official
+outcomes. An explicit segmented mode can admit validated CLOB reconnect segments
+only: every connection change clears reconstructed state, requires fresh token
+baselines, and forbids features or simulated latency from crossing the gap. RTDS
+or Binance stream gaps are never admitted. AI is a matched optional treatment
+and must beat the same ML baseline after spread, fees, depth, latency, partial
+fills, and settlement failures.
 
 Run the public recorder from either the CLI or the generated Windows command
 surface:
 
 ```powershell
-simple-ai-trading polymarket-record --duration-seconds 300 `
+simple-ai-trading polymarket-record --duration-seconds 660 `
+  --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-resolve `
+  --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-features `
   --database data/polymarket-paper.duckdb
 ```
+
+A 300-second run is a connectivity smoke test, not model evidence: depending on
+the start phase, it can end before the next market's post-open feature warm-up.
+The 660-second example can contain one fully anchored interval in the worst start
+phase, but it is still far below the default 30 resolved markets per asset needed
+for training. Long-running prospective capture is required for model work.
 
 The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,
@@ -145,14 +160,20 @@ source transition, and executes only against the first proven state after
 nonzero latency. Custom top-of-book events are corroboration rather than the
 depth-ordering clock because prospective evidence shows they can precede their
 matching depth update. Reusing depth or moving backward in replay time is
-blocked. Partial-close dust remains owned until a later executable book or an
-exact recorded `market_resolved` event pays the winning token at `1` and the
-losing token at `0`; settlement never masquerades as a CLOB sale.
+blocked. Partial-close dust remains owned until a later executable book or a
+hash-bound CLOB/Gamma finalization pays the winning token at `1` and the losing
+token at `0`; settlement never masquerades as a CLOB sale.
 
 ```powershell
 simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
   --action status --json
 ```
+
+`--allow-segmented-gaps` is an explicit exception on `polymarket-features` and
+`polymarket-paper`; omitting it preserves strict gap-free behavior. Reconciliation
+revalidates the gap evidence and official-resolution set before every paper
+action. Mutation, deletion, an unsupported stream gap, or a missing baseline
+blocks operation.
 
 `open`, `close`, and `settle` require explicit immutable event IDs. The command
 is generated into the Windows command contract from the same parser, so the CLI

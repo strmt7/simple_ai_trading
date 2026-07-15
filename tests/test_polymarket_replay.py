@@ -21,6 +21,7 @@ from simple_ai_trading.polymarket_recorder import (
     MarketEvidence,
     PolymarketEvidenceStore,
     RawStreamMessage,
+    StreamGap,
 )
 from simple_ai_trading.polymarket_replay import PolymarketEvidenceReplay
 
@@ -103,6 +104,177 @@ def _message(
         received_monotonic_ns=monotonic_ns,
         raw_text=_canonical(payload),
     )
+
+
+def _segmented_message(
+    payload: object,
+    *,
+    stream: str = "clob_market",
+    connection_id: str,
+    sequence: int,
+    wall_offset_ms: int,
+    monotonic_ns: int,
+) -> RawStreamMessage:
+    return RawStreamMessage(
+        stream=stream,
+        connection_id=connection_id,
+        sequence_number=sequence,
+        received_wall_ms=EPOCH * 1_000 + wall_offset_ms,
+        received_monotonic_ns=monotonic_ns,
+        raw_text=_canonical(payload),
+    )
+
+
+def _book_payload(token: str, condition: str, source_offset_ms: int) -> dict[str, object]:
+    return {
+        "event_type": "book",
+        "market": condition,
+        "asset_id": token,
+        "timestamp": str(EPOCH * 1_000 + source_offset_ms),
+        "hash": f"book-{token[-4:]}-{source_offset_ms}",
+        "bids": [{"price": "0.49", "size": "10"}],
+        "asks": [{"price": "0.51", "size": "10"}],
+    }
+
+
+def _finish_segmented_store(
+    store: PolymarketEvidenceStore,
+    run_id: str,
+    *,
+    gap_stream: str = "clob_market",
+    gap_last_sequence: int = 3,
+    second_segment_has_baseline: bool = True,
+) -> None:
+    store.start_run(run_id, EPOCH * 1_000)
+    for asset in ("BTC", "ETH", "SOL"):
+        store.record_market_evidence(run_id, _evidence(asset))
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    first = "clob-segment-one"
+    second = "clob-segment-two"
+    first_messages = [
+        _segmented_message(
+            _book_payload(btc.up_token_id, btc.condition_id, 1_000),
+            connection_id=first,
+            sequence=1,
+            wall_offset_ms=1_001,
+            monotonic_ns=1_001_000_000,
+        ),
+        _segmented_message(
+            _book_payload(btc.down_token_id, btc.condition_id, 1_000),
+            connection_id=first,
+            sequence=2,
+            wall_offset_ms=1_002,
+            monotonic_ns=1_002_000_000,
+        ),
+        _segmented_message(
+            _book_payload(btc.up_token_id, btc.condition_id, 2_000),
+            connection_id=first,
+            sequence=3,
+            wall_offset_ms=2_001,
+            monotonic_ns=2_001_000_000,
+        ),
+    ]
+    store.append_messages(run_id, first_messages)
+    if gap_stream == "clob_market":
+        gap_connection = first
+        last_sequence = gap_last_sequence
+    else:
+        gap_connection = "binance-connection"
+        last_sequence = 1
+        store.append_messages(
+            run_id,
+            [
+                _segmented_message(
+                    {"fixture": True},
+                    stream=gap_stream,
+                    connection_id=gap_connection,
+                    sequence=1,
+                    wall_offset_ms=2_100,
+                    monotonic_ns=2_100_000_000,
+                )
+            ],
+        )
+    store.record_gap(
+        run_id,
+        StreamGap(
+            stream=gap_stream,
+            connection_id=gap_connection,
+            opened_at_ms=EPOCH * 1_000 + 2_500,
+            reason="fixture_disconnect",
+            last_sequence_number=last_sequence,
+        ),
+    )
+    if second_segment_has_baseline:
+        second_messages = [
+            _segmented_message(
+                _book_payload(btc.up_token_id, btc.condition_id, 3_000),
+                connection_id=second,
+                sequence=1,
+                wall_offset_ms=3_001,
+                monotonic_ns=3_001_000_000,
+            ),
+            _segmented_message(
+                _book_payload(btc.down_token_id, btc.condition_id, 3_000),
+                connection_id=second,
+                sequence=2,
+                wall_offset_ms=3_002,
+                monotonic_ns=3_002_000_000,
+            ),
+        ]
+    else:
+        second_messages = [
+            _segmented_message(
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(EPOCH * 1_000 + 3_000),
+                    "price_changes": [
+                        {
+                            "asset_id": btc.up_token_id,
+                            "price": "0.49",
+                            "size": "0",
+                            "side": "BUY",
+                            "hash": "missing-baseline",
+                            "best_bid": "0",
+                            "best_ask": "0.51",
+                        }
+                    ],
+                },
+                connection_id=second,
+                sequence=1,
+                wall_offset_ms=3_001,
+                monotonic_ns=3_001_000_000,
+            )
+        ]
+    store.append_messages(run_id, second_messages)
+    existing_streams = {gap_stream} if gap_stream != "clob_market" else set()
+    for stream, connection_id in (
+        ("polymarket_rtds", "rtds-connection"),
+        ("binance_spot", "binance-connection"),
+    ):
+        if stream in existing_streams:
+            continue
+        store.append_messages(
+            run_id,
+            [
+                _segmented_message(
+                    {"fixture": True},
+                    stream=stream,
+                    connection_id=connection_id,
+                    sequence=1,
+                    wall_offset_ms=4_000,
+                    monotonic_ns=4_000_000_000,
+                )
+            ],
+        )
+    report = store.finish_run(
+        run_id,
+        started_at_ms=EPOCH * 1_000,
+        ended_at_ms=EPOCH * 1_000 + 5_000,
+        database=":memory:",
+        errors=(),
+    )
+    assert report.status == "degraded"
 
 
 def _finish_replay_store(
@@ -604,20 +776,27 @@ def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
         _finish_replay_store(store, "trade-resync", trade_resync=True)
         replay = PolymarketEvidenceReplay.load(store, run_id="trade-resync")
 
-    resynchronized = replay.books[1].snapshot
-    post_resync = replay.books[2].snapshot
+    resync_index = next(
+        index
+        for index, book in enumerate(replay.books)
+        if book.event_type == "book"
+        and [level.price for level in book.snapshot.asks]
+        == [Decimal("0.50"), Decimal("0.52")]
+    )
+    resynchronized = replay.books[resync_index].snapshot
+    post_resync = replay.books[resync_index + 1].snapshot
     assert resynchronized.bids == ()
     assert resynchronized.asks[0].price == Decimal("0.50")
     assert resynchronized.asks[0].quantity == Decimal("8")
     assert resynchronized.asks[1].price == Decimal("0.52")
     assert resynchronized.asks[1].quantity == Decimal("7")
-    assert post_resync.asks[2].price == Decimal("0.53")
-    assert post_resync.asks[2].quantity == Decimal("6")
+    assert post_resync.asks[1].price == Decimal("0.52")
+    assert post_resync.bids[0].price == Decimal("0.499")
     assert post_resync.received_monotonic_ns > resynchronized.received_monotonic_ns
     assert replay.diagnostics.late_event_count >= 1
     assert replay.diagnostics.maximum_source_regression_ms == 1
-    assert replay.diagnostics.deferred_event_count >= 1
-    assert replay.diagnostics.maximum_availability_delay_ns > 0
+    assert replay.diagnostics.deferred_event_count == 0
+    assert replay.diagnostics.maximum_availability_delay_ns == 0
 
 
 def test_replay_rejects_events_outside_bounded_causal_reorder_window(
@@ -788,6 +967,7 @@ def test_polymarket_feature_cli_and_generated_windows_contract_share_options(
         "cadence_ms",
         "warmup_ms",
         "minimum_resolved_markets_per_asset",
+        "allow_segmented_gaps",
         "memory_limit",
         "database_threads",
         "json",
@@ -808,6 +988,146 @@ def test_replay_refuses_noncomplete_run(tmp_path) -> None:
         store.start_run("still-running", EPOCH * 1_000)
         with pytest.raises(ValueError, match="complete gap-free"):
             PolymarketEvidenceReplay.load(store, run_id="still-running")
+
+
+def test_segmented_replay_resets_books_and_never_executes_across_gap(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "segmented.duckdb") as store:
+        _finish_segmented_store(store, "segmented-run")
+        with pytest.raises(ValueError, match="complete gap-free"):
+            PolymarketEvidenceReplay.load(store, run_id="segmented-run")
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="segmented-run",
+            allow_segmented_gaps=True,
+        )
+
+    assert replay.diagnostics.continuity_mode == "segmented"
+    assert replay.diagnostics.stream_gap_count == 1
+    assert replay.diagnostics.clob_connection_segment_count == 2
+    assert replay.diagnostics.state_reset_count == 1
+    segment_ids = {book.segment_id for book in replay.books}
+    assert len(segment_ids) == 2
+    first_segment = replay.books[0].segment_id
+    old_up = [
+        book
+        for book in replay.books
+        if book.segment_id == first_segment and book.outcome == "Up"
+    ][-1]
+    assert replay.first_book_after_latency(old_up, latency_ms=2_000) is None
+    for segment_id in segment_ids:
+        assert {book.outcome for book in replay.books if book.segment_id == segment_id} == {
+            "Up",
+            "Down",
+        }
+
+
+def test_sampled_replay_hashes_all_transitions_and_keeps_segment_baselines(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "sampled-segments.duckdb") as store:
+        _finish_segmented_store(store, "sampled-segments")
+        full = PolymarketEvidenceReplay.load(
+            store,
+            run_id="sampled-segments",
+            allow_segmented_gaps=True,
+        )
+        sampled = PolymarketEvidenceReplay.load(
+            store,
+            run_id="sampled-segments",
+            allow_segmented_gaps=True,
+            book_sample_interval_ms=5_000,
+        )
+
+    assert sampled.diagnostics.book_state_transition_count == len(full.books)
+    assert sampled.diagnostics.materialized_book_count == len(sampled.books)
+    assert sampled.diagnostics.suppressed_book_count == len(full.books) - len(
+        sampled.books
+    )
+    assert len(sampled.books) < len(full.books)
+    for segment_id in {book.segment_id for book in sampled.books}:
+        assert {
+            book.outcome for book in sampled.books if book.segment_id == segment_id
+        } == {"Up", "Down"}
+
+
+def test_segmented_replay_requires_fresh_baseline_after_reconnect(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "missing-baseline.duckdb") as store:
+        _finish_segmented_store(
+            store,
+            "missing-baseline",
+            second_segment_has_baseline=False,
+        )
+        with pytest.raises(ValueError, match="without a proven token baseline"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="missing-baseline",
+                allow_segmented_gaps=True,
+            )
+
+
+@pytest.mark.parametrize("gap_stream", ["binance_spot", "polymarket_rtds"])
+def test_segmented_replay_never_permits_non_clob_gaps(
+    tmp_path,
+    gap_stream: str,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / f"{gap_stream}.duckdb") as store:
+        _finish_segmented_store(store, "non-clob-gap", gap_stream=gap_stream)
+        with pytest.raises(ValueError, match="only CLOB market gaps"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="non-clob-gap",
+                allow_segmented_gaps=True,
+            )
+
+
+def test_segmented_replay_requires_gap_to_close_final_sequence(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "bad-gap-sequence.duckdb") as store:
+        _finish_segmented_store(
+            store,
+            "bad-gap-sequence",
+            gap_last_sequence=2,
+        )
+        with pytest.raises(ValueError, match="final sequence"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="bad-gap-sequence",
+                allow_segmented_gaps=True,
+            )
+
+
+def test_segmented_polymarket_paper_uses_shared_owned_journal(tmp_path) -> None:
+    database = tmp_path / "segmented-paper.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_segmented_store(store, "segmented-paper")
+
+    with pytest.raises(ValueError, match="complete gap-free"):
+        PolymarketPaperBroker(database, run_id="segmented-paper")
+
+    with PolymarketPaperBroker(
+        database,
+        run_id="segmented-paper",
+        allow_segmented_gaps=True,
+    ) as broker:
+        first_segment = broker.replay.books[0].segment_id
+        decision = next(
+            book
+            for book in broker.replay.books
+            if book.segment_id == first_segment and book.outcome == "Up"
+        )
+        position, result = broker.open_position(
+            position_id="segmented-owned-position",
+            decision=decision,
+            outcome="Up",
+            quantity="5",
+            maximum_price="0.52",
+            submission_latency_ms=500,
+        )
+        reconciliation = broker.reconcile()
+
+    assert position is not None
+    assert result.state == "FILLED"
+    assert reconciliation.ok is True
+    assert reconciliation.journal.inventory[0].venue == "polymarket"
 
 
 def test_polymarket_broker_opens_and_closes_on_post_latency_depth_with_fees(
@@ -1100,7 +1420,7 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     assert status_payload["reconciliation"]["can_open"] is True
     assert (
         status_payload["replay_diagnostics"]["schema_version"]
-        == "polymarket-replay-diagnostics-v1"
+        == "polymarket-replay-diagnostics-v2"
     )
     assert status_payload["feed_coverage"]["shadow_ready"] is False
     assert status_payload["feed_coverage"]["training_ready"] is False
@@ -1170,6 +1490,7 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
         "quantity",
         "limit_price",
         "latency_ms",
+        "allow_segmented_gaps",
         "memory_limit",
         "database_threads",
         "json",

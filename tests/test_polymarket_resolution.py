@@ -18,6 +18,7 @@ from simple_ai_trading.polymarket_resolution import (
     load_official_resolutions,
     validate_official_resolution,
 )
+from simple_ai_trading.polymarket_replay import PolymarketEvidenceReplay
 
 
 EPOCH = 1_784_058_600
@@ -130,6 +131,19 @@ def _complete_store(path: Path, run_id: str = "resolution-run") -> PolymarketEvi
     for sequence, stream in enumerate(
         ("clob_market", "polymarket_rtds", "binance_spot"), start=1
     ):
+        if stream == "clob_market":
+            btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+            payload: object = {
+                "event_type": "book",
+                "market": btc.condition_id,
+                "asset_id": btc.up_token_id,
+                "timestamp": str(EPOCH * 1_000 + 1_000),
+                "hash": "resolution-fixture-book",
+                "bids": [{"price": "0.49", "size": "10"}],
+                "asks": [{"price": "0.51", "size": "10"}],
+            }
+        else:
+            payload = {"event_type": "fixture"}
         store.append_messages(
             run_id,
             [
@@ -139,7 +153,7 @@ def _complete_store(path: Path, run_id: str = "resolution-run") -> PolymarketEvi
                     sequence_number=sequence,
                     received_wall_ms=EPOCH * 1_000 + 1_000 + sequence,
                     received_monotonic_ns=1_000_000_000 + sequence,
-                    raw_text=_canonical({"event_type": "fixture"}),
+                    raw_text=_canonical(payload),
                 )
             ],
         )
@@ -246,6 +260,11 @@ def test_finalizer_is_immutable_idempotent_and_detects_tampering(tmp_path: Path)
         resolutions = load_official_resolutions(store, run_id="resolution-run")
         assert {item.asset for item in resolutions} == {"BTC", "ETH", "SOL"}
         assert all(item.winning_outcome == "Up" for item in resolutions)
+        replay = PolymarketEvidenceReplay.load(store, run_id="resolution-run")
+        assert len(replay.resolutions) == 3
+        assert {item.source for item in replay.resolutions} == {
+            "clob_gamma_crosscheck"
+        }
 
         store.connect().execute(
             """
