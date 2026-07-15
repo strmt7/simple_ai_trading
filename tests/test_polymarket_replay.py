@@ -12,6 +12,10 @@ import pytest
 from simple_ai_trading import cli, polymarket_features as feature_module
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
+from simple_ai_trading.polymarket_action_value import (
+    build_polymarket_action_value_dataset,
+    materialize_polymarket_action_value_dataset,
+)
 from simple_ai_trading.polymarket_paper import (
     PolymarketPaperBroker,
     PolymarketPaperCoordinator,
@@ -25,6 +29,7 @@ from simple_ai_trading.polymarket_features import (
     POLYMARKET_FEATURE_NAMES,
     PolymarketFeatureConfig,
     build_polymarket_feature_dataset,
+    load_polymarket_feature_source_context,
     materialize_polymarket_feature_dataset,
 )
 from simple_ai_trading.polymarket_model import (
@@ -44,6 +49,9 @@ from simple_ai_trading.polymarket_recorder import (
 )
 from simple_ai_trading.polymarket_resolution import PolymarketResolutionFinalizer
 from simple_ai_trading.polymarket_replay import PolymarketEvidenceReplay
+from simple_ai_trading.polymarket_repricing import (
+    PolymarketRepricingExecutionContext,
+)
 
 
 EPOCH = 1_784_058_600
@@ -1238,10 +1246,19 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
             run_id="features",
             config=config,
         )
+        source_context = load_polymarket_feature_source_context(
+            store,
+            run_id="features",
+            config=config,
+        )
         second = build_polymarket_feature_dataset(
             store,
             run_id="features",
             config=config,
+            condition_ids=tuple(
+                sorted({row.condition_id for row in first.rows})
+            ),
+            source_context=source_context,
         )
         created = materialize_polymarket_feature_dataset(store, first)
         existing = materialize_polymarket_feature_dataset(store, second)
@@ -1300,6 +1317,50 @@ def test_polymarket_feature_materialization_accepts_a_truthful_empty_dataset(
     assert created.status == "created"
     assert existing.status == "existing"
     assert created.row_count == existing.row_count == 0
+
+
+def test_polymarket_action_materialization_is_idempotent_and_tamper_evident(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "action-values.duckdb") as store:
+        _finish_replay_store(store, "action-values", feature_evidence=True)
+        features = build_polymarket_feature_dataset(
+            store,
+            run_id="action-values",
+            config=PolymarketFeatureConfig(
+                cadence_ms=250,
+                warmup_ms=0,
+                minimum_resolved_markets_per_asset=1,
+            ),
+        )
+        materialize_polymarket_feature_dataset(store, features)
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="action-values",
+            book_sample_interval_ms=0,
+        )
+        dataset = build_polymarket_action_value_dataset(
+            features,
+            PolymarketRepricingExecutionContext(replay),
+        )
+
+        created = materialize_polymarket_action_value_dataset(store, dataset)
+        existing = materialize_polymarket_action_value_dataset(store, dataset)
+        store.connect().execute(
+            """
+            UPDATE polymarket_action_value_row
+            SET stress_utility_quote = '999'
+            WHERE dataset_sha256 = ? AND action_index = 0
+            """,
+            [dataset.dataset_sha256],
+        )
+        with pytest.raises(ValueError, match="action rows are inconsistent"):
+            materialize_polymarket_action_value_dataset(store, dataset)
+
+    assert created.status == "created"
+    assert existing.status == "existing"
+    assert created.action_count == existing.action_count == len(dataset.features)
+    assert dataset.features
 
 
 def test_polymarket_feature_provenance_binds_pre_window_causal_events(
