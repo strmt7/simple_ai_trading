@@ -406,6 +406,15 @@ inline constexpr CommandOptionSpec kOptions_polymarket_features[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_mlp[] = {
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
+    {L"--ridge-report-sha256", L"ridge_report_sha256", L"", L"", L"immutable development-passed report digest from polymarket-ridge", L"1", true, true, false},
+    {L"--compute-backend", L"compute_backend", L"cpu, cuda, rocm, directml, mps, auto", L"auto", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"4GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"1", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_polymarket_model[] = {
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
     {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
@@ -934,6 +943,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-action-value", L"Build the frozen Round 9 BTC/ETH/SOL action-value dataset in resumable synchronized market batches. Segmented evidence is accepted only after the built-in label-free continuity audit retains at least 30 post-contract synchronized groups.", kOptions_polymarket_action_value, 7},
     {L"polymarket-continuity", L"Evaluate recorder errors, stream gaps, connection segments, market snapshot timing, and fresh CLOB baselines without consulting outcomes, labels, utilities, or model scores.", kOptions_polymarket_continuity, 5},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
+    {L"polymarket-mlp", L"Load one fully materialized, development-passed Round 9 ridge report; fit the preregistered condition-balanced MLP ensemble; open its test partition only after the validation gates pass; and persist weights, traces, predictions, actions, equity, and market PnL. This command grants no foundation-AI, trading, or profitability authority.", kOptions_polymarket_mlp, 6},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 24},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},
     {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 8},

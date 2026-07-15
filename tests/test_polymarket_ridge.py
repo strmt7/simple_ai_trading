@@ -11,6 +11,12 @@ from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket_action_value import (
     POLYMARKET_ACTION_FEATURE_NAMES,
 )
+from simple_ai_trading.polymarket_mlp import (
+    POLYMARKET_MLP_CONTRACT_SHA256,
+    POLYMARKET_MLP_SEEDS,
+    fit_and_evaluate_polymarket_mlp,
+    materialize_polymarket_mlp_report,
+)
 from simple_ai_trading.polymarket_ridge import (
     POLYMARKET_RIDGE_CONTRACT_SHA256,
     POLYMARKET_RIDGE_L2_GRID,
@@ -18,6 +24,7 @@ from simple_ai_trading.polymarket_ridge import (
     PolymarketRidgeObservation,
     build_polymarket_ridge_dataset,
     fit_and_evaluate_polymarket_ridge,
+    load_polymarket_ridge_report,
     materialize_polymarket_ridge_report,
     split_polymarket_ridge_dataset,
 )
@@ -163,6 +170,10 @@ def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(
     with PolymarketEvidenceStore(tmp_path / "ridge.duckdb") as store:
         created = materialize_polymarket_ridge_report(store, dataset, report)
         existing = materialize_polymarket_ridge_report(store, dataset, report)
+        loaded = load_polymarket_ridge_report(
+            store,
+            report_sha256=report.report_sha256,
+        )
         store.connect().execute(
             """
             UPDATE polymarket_ridge_selected_action
@@ -176,6 +187,7 @@ def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(
 
     assert created.status == "created"
     assert existing.status == "existing"
+    assert loaded == report
     assert created.selected_test_action_count >= 30
 
 
@@ -212,6 +224,121 @@ def test_round9_ridge_cli_and_native_contract_share_the_frozen_input(
     assert {option.dest for option in spec.options} == {
         "database",
         "pipeline_report_sha256",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
+
+
+def test_round9_mlp_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-009-causal-mlp-challenger-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_MLP_CONTRACT_SHA256
+    assert sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert contract["fit"]["architecture"].startswith("One fixed 39 -> 64")
+    assert contract["status"].startswith("frozen_before_any_round_9_neural")
+
+
+def test_round9_mlp_refuses_insufficient_group_breadth_before_training() -> None:
+    dataset = _dataset(59)
+    parent = fit_and_evaluate_polymarket_ridge(dataset)
+
+    with pytest.raises(ValueError, match="insufficient synchronized groups:59/60"):
+        fit_and_evaluate_polymarket_mlp(dataset, parent, compute_backend="cpu")
+
+
+def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    dataset = _dataset(90)
+    parent = fit_and_evaluate_polymarket_ridge(dataset)
+
+    report = fit_and_evaluate_polymarket_mlp(
+        dataset,
+        parent,
+        compute_backend="cpu",
+    )
+
+    assert tuple(item.seed for item in report.ensemble.members) == POLYMARKET_MLP_SEEDS
+    assert report.ensemble.backend.kind == "cpu"
+    assert report.ensemble.reproducibility_max_probability_drift <= 0.00001
+    assert report.validation_log_loss < report.ridge_validation_log_loss
+    assert report.test_evaluated
+    assert not report.development_passed
+    assert "test_stress_utility_not_above_ridge" in report.test_gate_reasons
+    assert report.asdict()["foundation_ai_authorized"] is False
+    assert report.asdict()["profitability_claim"] is False
+    assert report.asdict()["trading_authority"] is False
+    with PolymarketEvidenceStore(tmp_path / "mlp.duckdb") as store:
+        created = materialize_polymarket_mlp_report(store, dataset, parent, report)
+        existing = materialize_polymarket_mlp_report(store, dataset, parent, report)
+        store.connect().execute(
+            """
+            UPDATE polymarket_mlp_prediction SET probability = 0.123
+            WHERE report_sha256 = ? AND partition = 'test' AND sequence = 0
+            """,
+            [report.report_sha256],
+        )
+        with pytest.raises(ValueError, match="prediction rows are inconsistent"):
+            materialize_polymarket_mlp_report(store, dataset, parent, report)
+
+    assert created.status == "created"
+    assert existing.status == "existing"
+    assert created.validation_prediction_count > 0
+    assert created.test_prediction_count > 0
+    monkeypatch.setattr(
+        cli,
+        "load_polymarket_ridge_evidence",
+        lambda *_args, **_kwargs: (dataset, parent),
+    )
+    monkeypatch.setattr(
+        cli,
+        "fit_and_evaluate_polymarket_mlp",
+        lambda *_args, **_kwargs: report,
+    )
+    status = cli.main(
+        [
+            "polymarket-mlp",
+            "--database",
+            str(tmp_path / "mlp-cli.duckdb"),
+            "--ridge-report-sha256",
+            parent.report_sha256,
+            "--compute-backend",
+            "cpu",
+            "--memory-limit",
+            "512MB",
+            "--database-threads",
+            "1",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    spec = next(item for item in command_specs() if item.name == "polymarket-mlp")
+
+    assert status == 2
+    assert payload["development_passed"] is False
+    assert payload["materialization"]["status"] == "created"
+    assert {option.dest for option in spec.options} == {
+        "database",
+        "ridge_report_sha256",
+        "compute_backend",
         "memory_limit",
         "database_threads",
         "json",
