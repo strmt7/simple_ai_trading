@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import pytest
 
 from tools.run_round61_carry_economic_replay import (
+    _archive_checksum_verified,
     _capacity_check,
     _risk_metrics,
     _score_episode,
@@ -46,6 +47,18 @@ def _contracts() -> tuple[dict[str, object], dict[str, object], dict[str, object
             "additional_operational_slippage_bps_per_fill": 1.0,
         },
     )
+
+
+def test_archive_checksum_validation_uses_certificate_field_names() -> None:
+    row = {
+        "archive_sha256": "a" * 64,
+        "checksum_sha256": "a" * 64,
+        "checksum_status": "verified",
+    }
+
+    assert _archive_checksum_verified(row) is True
+    row["checksum_sha256"] = "b" * 64
+    assert _archive_checksum_verified(row) is False
 
 
 def test_capacity_check_handles_zero_flow_and_exact_boundary() -> None:
