@@ -1316,6 +1316,23 @@ def test_round9_action_value_contract_code_and_document_are_identical() -> None:
     assert contract["truth_constraints"]["profitability_claim"] is False
 
 
+def test_round9_primary_source_audit_is_bound_to_action_contract() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-009-primary-source-audit.json"
+    )
+    audit = json.loads(path.read_text(encoding="utf-8"))
+
+    assert audit["round_9_action_contract_sha256"] == (
+        POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
+    )
+    assert audit["profitability_claim"] is False
+    assert audit["trading_authority"] is False
+
+
 def test_repricing_contract_code_and_document_are_identical() -> None:
     path = (
         Path(__file__).resolve().parents[1]
