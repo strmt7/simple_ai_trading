@@ -6332,12 +6332,21 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 ),
                 progress=ai_progress,
             )
+            ai_decision_delays = {
+                condition_id: 0
+                for condition_id in {item.condition_id for item in split.test}
+            }
+            for result in ai_report.results:
+                ai_decision_delays[result.condition_id] = int(
+                    math.ceil(max(0.0, result.latency_seconds) * 1_000.0)
+                )
             ai_execution = evaluate_polymarket_execution_policy(
                 split.test,
                 model_probabilities,
                 execution_replay,
                 config=execution_config,
                 market_permissions=ai_report.market_permissions,
+                decision_delay_ms_by_condition=ai_decision_delays,
             )
             ai_uplift = assess_ai_uplift(
                 _polymarket_execution_uplift_metrics(
@@ -6371,6 +6380,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 "execution": ai_execution.asdict(),
                 "uplift": ai_uplift.asdict(),
             }
+        execution_reports = [baseline_execution, model_execution]
+        if ai_execution is not None:
+            execution_reports.append(ai_execution)
         evidence_gates = {
             "validation_probability_improved": (
                 probability_report.validation_log_loss_delta < 0.0
@@ -6384,9 +6396,22 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 > baseline_execution.net_realized_pnl_quote
             ),
             "all_positions_officially_settled": (
-                model_execution.filled_order_count
-                == model_execution.winning_order_count
-                + model_execution.losing_order_count
+                all(
+                    report.filled_order_count
+                    == report.winning_order_count + report.losing_order_count
+                    and all(
+                        not trade.filled or trade.official_resolution_event_id
+                        for trade in report.trades
+                    )
+                    for report in execution_reports
+                )
+            ),
+            "all_order_outcomes_terminal": (
+                all(
+                    trade.execution_state != "UNKNOWN"
+                    for report in execution_reports
+                    for trade in report.trades
+                )
             ),
             "ai_enabled": bool(ai_payload.get("enabled")),
             "ai_uplift_accepted": bool(

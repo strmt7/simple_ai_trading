@@ -226,6 +226,8 @@ def _replay_fixture(
     markets: tuple[PolymarketFiveMinuteMarket, ...],
     *,
     displayed_quantity: Decimal = Decimal("100"),
+    execution_latency_ms: int = 100,
+    execution_ask_offset: Decimal = Decimal("0"),
 ) -> PolymarketEvidenceReplay:
     selected_conditions = {item.condition_id for item in samples}
     selected_markets = tuple(
@@ -252,15 +254,23 @@ def _replay_fixture(
                 Decimal(str(sample.down_best_ask)),
             ),
         ):
-            for phase, latency_ms in (("decision", 0), ("execution", 200)):
+            for phase, latency_ms in (
+                ("decision", 0),
+                ("execution", execution_latency_ms),
+            ):
                 sequence += 1
                 wall_ms = sample.decision_received_wall_ms + latency_ms
+                phase_ask = (
+                    ask + execution_ask_offset
+                    if phase == "execution"
+                    else ask
+                )
                 snapshot = PaperBookSnapshot(
                     venue="polymarket",
                     market_id=market.market_id,
                     asset_id=token_id,
                     bids=(BookLevel(bid, displayed_quantity),),
-                    asks=(BookLevel(ask, displayed_quantity),),
+                    asks=(BookLevel(phase_ask, displayed_quantity),),
                     source_time_ms=wall_ms,
                     received_wall_ms=wall_ms,
                     received_monotonic_ns=(
@@ -487,9 +497,75 @@ def test_execution_policy_abstains_for_market_baseline_without_edge() -> None:
     assert report.attempted_order_count == 0
     assert report.filled_order_count == 0
     assert report.net_realized_pnl_quote == 0
+    assert len(report.equity_curve) == len(split.test_group_starts_ms)
+    assert all(point.group_realized_pnl_quote == 0 for point in report.equity_curve)
     assert report.reason_counts == {
         "no_positive_after_cost_edge": report.evaluated_market_count
     }
+
+
+def test_execution_uses_only_the_latest_book_available_at_arrival() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, _ = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(
+        split.test,
+        markets,
+        execution_latency_ms=200,
+        execution_ask_offset=Decimal("0.45"),
+    )
+
+    report = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+        config=PolymarketExecutionResearchConfig(submission_latency_ms=100),
+    )
+
+    assert report.filled_order_count == report.evaluated_market_count
+    assert all(trade.effective_latency_ms == 100 for trade in report.trades)
+    assert all("execution" not in trade.execution_book_event_id for trade in report.trades)
+
+
+def test_execution_charges_ai_decision_delay_before_network_latency() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, _ = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(
+        split.test,
+        markets,
+        execution_latency_ms=200,
+        execution_ask_offset=Decimal("0.45"),
+    )
+    conditions = {item.condition_id for item in split.test}
+    delays = {condition: 100 for condition in conditions}
+
+    delayed = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+        config=PolymarketExecutionResearchConfig(submission_latency_ms=100),
+        decision_delay_ms_by_condition=delays,
+    )
+
+    assert delayed.signal_market_count == delayed.evaluated_market_count
+    assert delayed.filled_order_count == 0
+    assert delayed.attempted_order_count == delayed.evaluated_market_count
+    assert all(trade.decision_delay_ms == 100 for trade in delayed.trades)
+    assert all(trade.submission_latency_ms == 100 for trade in delayed.trades)
+    assert all(trade.effective_latency_ms == 200 for trade in delayed.trades)
+    assert all("execution" in trade.execution_book_event_id for trade in delayed.trades)
+    with pytest.raises(ValueError, match="decision delays must bind every"):
+        evaluate_polymarket_execution_policy(
+            split.test,
+            predictions,
+            replay,
+            decision_delay_ms_by_condition={},
+        )
 
 
 def test_execution_policy_refuses_unresolved_or_mismatched_labels() -> None:
@@ -553,6 +629,7 @@ def test_execution_policy_binds_external_fail_closed_permissions() -> None:
     assert report.reason_counts == {
         "external_fail_closed_veto": report.evaluated_market_count
     }
+    assert len(report.equity_curve) == len(split.test_group_starts_ms)
     assert len(report.market_permission_sha256) == 64
     with pytest.raises(ValueError, match="permissions must bind every"):
         evaluate_polymarket_execution_policy(

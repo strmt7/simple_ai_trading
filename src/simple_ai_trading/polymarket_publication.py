@@ -321,6 +321,45 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         equity = report.get("equity_curve")
         if not isinstance(trades, list) or not isinstance(equity, list):
             raise ValueError(f"{policy} execution ledger is malformed")
+        permissions = _as_mapping(
+            report.get("market_permissions"),
+            f"{policy} market permissions",
+        )
+        delays = _as_mapping(
+            report.get("decision_delay_ms_by_condition"),
+            f"{policy} decision delays",
+        )
+        if (
+            set(permissions) != conditions
+            or any(not isinstance(value, bool) for value in permissions.values())
+            or set(delays) != conditions
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 0 <= value <= 300_000
+                for value in delays.values()
+            )
+            or report.get("market_permission_sha256")
+            != _canonical_sha256(
+                {
+                    "schema_version": "polymarket-market-permission-v1",
+                    "permissions": dict(sorted(permissions.items())),
+                }
+            )
+            or report.get("decision_delay_input_sha256")
+            != _canonical_sha256(
+                {
+                    "schema_version": "polymarket-decision-delay-input-v1",
+                    "decision_delay_ms_by_condition": dict(sorted(delays.items())),
+                }
+            )
+        ):
+            raise ValueError(f"{policy} execution permission or latency map is invalid")
+        submission_latency = int(
+            _as_mapping(report.get("config"), f"{policy} execution config")[
+                "submission_latency_ms"
+            ]
+        )
         filled = [row for row in trades if row.get("execution_state") == "FILLED"]
         settled = [row for row in filled if str(row.get("official_resolution_event_id", ""))]
         if (
@@ -332,8 +371,20 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         ):
             raise ValueError(f"{policy} execution contains unsettled filled trades")
         for trade in trades:
-            if str(trade.get("asset", "")) not in _ASSETS:
-                raise ValueError(f"{policy} execution contains an unsupported asset")
+            condition_id = str(trade.get("condition_id", ""))
+            decision_delay = int(trade.get("decision_delay_ms", -1))
+            if (
+                str(trade.get("asset", "")) not in _ASSETS
+                or condition_id not in conditions
+                or decision_delay != delays[condition_id]
+                or int(trade.get("submission_latency_ms", -1))
+                != submission_latency
+                or int(trade.get("effective_latency_ms", -1))
+                != decision_delay + submission_latency
+            ):
+                raise ValueError(
+                    f"{policy} execution trade asset or latency binding is invalid"
+                )
             for key in (
                 "quantity",
                 "filled_quantity",
