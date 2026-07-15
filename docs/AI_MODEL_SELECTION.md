@@ -83,25 +83,23 @@ are useful for manual analysis, but they can consume the response budget and
 leave empty `message.content`; benchmark decisions must be parseable JSON, not
 hidden reasoning.
 
-Latest committed local benchmark summary:
-`docs/ai_model_benchmark_latest.json`.
+Historical four-case provider telemetry:
+`docs/ai_model_benchmark_legacy_20260710.json`.
 
-The 2026-07-10 host run loaded `qwen3:8b` at 11 GB with Ollama reporting 100%
-GPU processing on the AMD host. It matched all four synthetic governance cases
-with valid JSON, score `0.9925`, and average latency `5.53525` seconds. This is
-provider/risk-review evidence only, not AI trading uplift.
+The 2026-07-10 four-case host run is retained as historical provider telemetry
+only. It is superseded by the leak-free v7 gate below and has no model-selection
+or AI trading authority.
 
-The newer 11-case Polymarket governance run is stored under
-`docs/model-research/polymarket/latest`. It retained `qwen3:8b` with score
-`0.983409` and average latency `2.91336` seconds. `qwen3.5:9b` was rejected at
-score `0.939045` and `Fin-R1 8B` was rejected at score `0.979545`; lower latency
-or finance tuning did not override a failed case. `Fino1 8B` is installed on
-the measured host but has no accepted repository benchmark. These are still
-synthetic governance results, not market-edge evidence.
+The earlier 11-case v6 result is revoked. Its prompt included descriptive case
+IDs such as `veto_*` and `approve_*`, leaking the expected action. The fresh v7
+run excludes case names and expected actions from model input and stores an exact
+SHA-256 for every prompt. Qwen3 8B reached `9/11` actions (score `0.886818`, mean
+latency `2.95173s`). Fin-R1 8B, Qwen3.5 9B, and Fino1 8B each reached `8/11` and
+also failed semantic or risk-range checks. No local model is selected.
 
-Current local priority therefore keeps `qwen3:8b` as the structured risk-review
-baseline. Rejected or unevaluated models remain research candidates. No LLM
-enters the 250 ms action scorer. The veto evaluator caches only valid responses
+AI therefore remains enabled-but-unavailable and fail-closed until a fresh model
+passes the unchanged gate. No LLM enters the 250 ms action scorer. The veto
+evaluator caches only valid responses
 in the evidence DuckDB. Its key binds the causal case, exact request, prompt and
 response-schema contracts, endpoint policy, decision thresholds, and current
 Ollama model digest and metadata. Cache hits retain the original measured model
@@ -111,7 +109,9 @@ must remain veto-only and pass the separate 90-day matched-period uplift contrac
 Before any veto prompt, Polymarket also requires the selected benchmark's sibling
 provenance file to bind its exact SHA-256, Ollama manifest, verified multibillion
 weight blob, and current installed digest. A changed tag or manifest fails before
-generation instead of silently reusing stale governance evidence.
+generation instead of silently reusing stale governance evidence. Even a future
+governance pass would not establish market edge; the separate 90-day paired
+after-cost uplift gate remains mandatory.
 
 ### Kronos Forecast Evidence (Rejected)
 

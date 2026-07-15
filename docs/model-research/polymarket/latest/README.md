@@ -27,6 +27,11 @@ untouched neural test closed unless it contains at least 30 synchronized time
 groups. No Round 9 model score, AI edge, profitability, drawdown claim, paper
 authority, or trading authority exists.
 
+The former v6 local-AI selection is revoked because its prompt leaked expected
+actions through case IDs. Fresh label-free v7 inference rejected all four
+priority 8B/9B models; `ai-risk-models-rejected.json` is negative governance
+evidence only and grants no AI or trading authority.
+
 Capture attempt `eae374e2662c440fb93970d5710937b1` is development-only. Its
 queue reached `100000/100000` and the interrupted run has no terminal report,
 so it cannot confirm a model. A real-message writer replay selected a bounded

@@ -18,7 +18,7 @@ from .ai_runtime import estimate_model_parameters_b
 from .storage import write_json_atomic
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v6"
+AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v7"
 PostJson = Callable[[str, Mapping[str, object], float], object]
 BenchmarkProgress = Callable[[str, Mapping[str, object]], None]
 
@@ -148,6 +148,7 @@ class AIModelBenchmarkReport:
     source_evidence: tuple[dict[str, object], ...] = ()
     limitations: tuple[str, ...] = (
         "synthetic safety and structured-reasoning cases are not market-edge evidence",
+        "case labels and expected actions are excluded from every model prompt",
         "model selection requires a separate paired after-cost AI-vs-ML uplift benchmark",
         "no language model receives direct order authority",
     )
@@ -621,7 +622,7 @@ def _concept_present(concept: str, text: str) -> bool:
 
 def _prompt(case: FinanceAITestCase) -> str:
     payload = json.dumps(
-        {"case_name": case.name, "evidence": case.prompt_payload},
+        {"evidence": case.prompt_payload},
         sort_keys=True,
         separators=(",", ":"),
     )
@@ -642,12 +643,17 @@ def _prompt(case: FinanceAITestCase) -> str:
     )
 
 
+def _prompt_sha256(case: FinanceAITestCase) -> str:
+    return hashlib.sha256(_prompt(case).encode("utf-8")).hexdigest()
+
+
 def _case_score(
     case: FinanceAITestCase, parsed: Mapping[str, object] | None, latency_seconds: float
 ) -> dict[str, object]:
     if parsed is None:
         return {
             "name": case.name,
+            "model_input_sha256": _prompt_sha256(case),
             "score": 0.0,
             "valid_json": False,
             "action_match": False,
@@ -717,6 +723,7 @@ def _case_score(
     ).hexdigest()
     return {
         "name": case.name,
+        "model_input_sha256": _prompt_sha256(case),
         "score": float(max(0.0, min(1.0, score))),
         "valid_json": True,
         "action": action,
@@ -816,8 +823,10 @@ def rescore_finance_ai_benchmark_payload(
     """Re-evaluate persisted normalized responses when only scoring semantics change."""
 
     source_contract = str(payload.get("benchmark_contract") or "")
-    if not source_contract.startswith("finance-risk-review-adversarial-v"):
-        raise ValueError("AI benchmark source contract is unsupported")
+    if source_contract != AI_MODEL_BENCHMARK_CONTRACT:
+        raise ValueError(
+            "AI benchmark source prompt contract changed; fresh inference is required"
+        )
     if (
         payload.get("financial_edge_tested") is not False
         or payload.get("trading_authority") is not False
@@ -876,8 +885,9 @@ def rescore_finance_ai_benchmark_payload(
             if (
                 not isinstance(old_case, Mapping)
                 or old_case.get("name") != current.name
+                or old_case.get("model_input_sha256") != _prompt_sha256(current)
             ):
-                raise ValueError("AI benchmark source case ordering changed")
+                raise ValueError("AI benchmark source model input changed")
             parsed = None
             if old_case.get("valid_json") is True:
                 parsed = {

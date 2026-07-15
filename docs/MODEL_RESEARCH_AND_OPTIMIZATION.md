@@ -1254,27 +1254,24 @@ Missing or failed uplift evidence leaves AI in advisory/review-only mode.
 
 ### Local AI Risk-Review Benchmark
 
-The 2026-07-10 local `finance-risk-review-adversarial-v6` comparison evaluated
-Qwen3 8B Q4_K_M and the finance-specialized Fino1 8B Q6_K conversion on 11
-schema-constrained adversarial cases. Both returned valid JSON and the expected
-action for all 11 cases. Qwen passed every semantic/risk-range gate with score
-`0.983409` and mean latency `3.19s`. Fino scored `0.990455` but was rejected by
-the all-cases rule because its liquidation rationale did not identify the
-explicit `15x` leverage exposure. A higher average score cannot override a
-single missed critical-risk concept.
+The prior `finance-risk-review-adversarial-v6` comparison is invalidated because
+its model prompt exposed descriptive case IDs containing the expected action.
+No v6 score is admissible evidence. Contract v7 removes those labels, hash-binds
+every exact model input, and prohibits rescoring any pre-v7 response.
 
-The final v6 scores are deterministic rescores of the persisted v4 normalized
-responses. Only scorer aliases and the rational risk range for a flat,
-non-urgent provenance conflict changed; model prompts and response hashes did
-not. The source payload hashes are embedded in
+Fresh local inference under v7 produced no winner. Qwen3 8B returned valid JSON
+for all cases but matched `9/11` actions (score `0.886818`, mean latency
+`2.95173s`). Fin-R1 8B, Qwen3.5 9B, and Fino1 8B each matched `8/11` and failed
+additional semantic or calibrated-risk requirements. The source payload hashes
+are embedded in
 [`docs/ai/risk-review/latest/comparison.json`](ai/risk-review/latest/comparison.json),
 and exact Ollama manifest/base-blob identities are in
 [`docs/ai/risk-review/latest/model-provenance.json`](ai/risk-review/latest/model-provenance.json).
-Fino is explicitly recorded as a third-party GGUF conversion, not an official
-quantization. The report sets `financial_edge_tested=false` and
-`trading_authority=false`; it selects a risk reviewer only. A paired,
-post-cost, no-lookahead AI-vs-ML uplift benchmark is still required before AI
-can be credited with market edge.
+Fin-R1 and Fino are explicitly recorded as third-party GGUF conversions. The
+report sets `selected_model=null`, `financial_edge_tested=false`, and
+`trading_authority=false`. A future governance pass and a separate paired,
+post-cost, no-lookahead AI-vs-ML uplift benchmark are both required before AI
+can affect a paper proposal or be credited with market edge.
 
 After a candidate survives development selection, the suite trains a compact
 meta-label policy from the accepted model's development-only simulated trade

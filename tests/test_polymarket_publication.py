@@ -207,36 +207,26 @@ def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -
     )
 
 
-def test_round_003_ai_risk_evidence_is_truthfully_scoped() -> None:
+def test_current_ai_risk_evidence_is_truthfully_scoped() -> None:
     latest = RESEARCH / "latest"
-    selected = json.loads(
-        (latest / "ai-risk-selected.json").read_text(encoding="utf-8")
-    )
     rejected = json.loads(
-        (latest / "ai-risk-challengers-rejected.json").read_text(
-            encoding="utf-8"
-        )
+        (latest / "ai-risk-models-rejected.json").read_text(encoding="utf-8")
     )
     contract = (RESEARCH / "round-003-market-anchored-model-contract.md").read_text(
         encoding="utf-8"
     )
 
-    assert selected["benchmark_contract"] == "finance-risk-review-adversarial-v6"
-    assert selected["selected_model"] == "qwen3:8b"
-    assert selected["financial_edge_tested"] is False
-    assert selected["trading_authority"] is False
-    selected_result = selected["results"][0]
-    assert selected_result["passed"] is True
-    assert selected_result["action_match_cases"] == len(selected["tests"]) == 11
-    assert selected_result["valid_json_cases"] == 11
-
-    assert rejected["benchmark_contract"] == selected["benchmark_contract"]
+    assert rejected["benchmark_contract"] == "finance-risk-review-adversarial-v7"
     assert rejected["selected_model"] is None
     assert rejected["financial_edge_tested"] is False
+    assert rejected["trading_authority"] is False
     assert {item["model"] for item in rejected["results"]} == {
+        "qwen3:8b",
         "qwen3.5:9b",
         "fin-r1:8b",
+        "fino1:8b",
     }
     assert all(item["passed"] is False for item in rejected["results"])
+    assert all(item["valid_json_cases"] == 11 for item in rejected["results"])
     assert "prospective profitability is not established" in contract.lower()
     assert "not market-edge evidence" in contract.lower()
