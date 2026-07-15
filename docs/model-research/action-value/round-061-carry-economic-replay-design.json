@@ -1,0 +1,220 @@
+{
+  "schema_version": "round-061-carry-economic-replay-design-v1",
+  "round": 61,
+  "design_sha256": "b242d0c7f81a60c13b4cdb33aba213c5869d7a28f193baa81eaa437417274a50",
+  "phase": "synchronized_spot_perpetual_minute_stress_economic_replay",
+  "predecessor": {
+    "round": 60,
+    "decision": "full_history_support_passed_spot_ingestion_authorized",
+    "report_file_sha256": "0bf9dc26b6bc53a9bfebedba9f6ae43cca879f14ced85bc7b4b64de70f388b5d",
+    "report_canonical_sha256": "a020bd2f26280b82705ffa4bda83b37d439dfa09377eda64ffdfcbf17c9e9ba4",
+    "publication_canonical_sha256": "f07b576a414bafc4b7b01e404595b200fb0d8055ebd67ea822938994a0ef02cc"
+  },
+  "governance": {
+    "freeze_before_spot_or_mark_price_value_access": true,
+    "source_data_partially_previously_consumed": true,
+    "selection_contaminated": true,
+    "promotion_permitted": false,
+    "profitability_claim_permitted": false,
+    "trading_authority_permitted": false,
+    "testnet_or_live_authority_permitted": false,
+    "leverage_permitted": false,
+    "model_training_permitted": false,
+    "ai_evaluation_permitted": false,
+    "tick_execution_replay_permitted_only_after_gate": true,
+    "posthoc_parameter_gate_or_episode_selection_permitted": false
+  },
+  "economic_question": "After matched-base spot and perpetual basis movement, dynamic settled funding cash flows, four taker fees, intraminute adverse execution bounds, and a capacity gate, does the single precommitted Round 60 funding cell retain positive and diversified support?",
+  "event_contract": {
+    "manifest_path": "docs/model-research/action-value/round-061-carry-event-manifest.json",
+    "manifest_file_sha256": "8b57bf7704c286c31fad057393aea0fcf283c67a17e71d98b37a225f965a102c",
+    "manifest_canonical_sha256": "3f85653c254e5f31b6f19d324cd81179fef8fb4c540fae1a1e829edd7cc9b8a5",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "trigger_operator": "greater_or_equal",
+    "trigger_value_bps": 2.0,
+    "horizon_hours": 168,
+    "episodes_by_symbol": {"BTCUSDT": 72, "ETHUSDT": 76, "SOLUSDT": 62},
+    "episodes_non_overlapping_per_symbol": true,
+    "current_triggering_settlement_excluded": true,
+    "future_window": "decision_time < calc_time <= decision_time + 168 hours",
+    "additional_episode_search_permitted": false
+  },
+  "source_contract": {
+    "provider": "Binance public data archives",
+    "database_argument": "data/market_data.sqlite",
+    "spot_execution": {
+      "market_type": "spot",
+      "data_type": "klines",
+      "interval": "1m",
+      "cadence": "monthly",
+      "required_open_times": "manifest.required_spot_open_times_ms",
+      "ingest_only_required_rows": true,
+      "required_archive_checksum_status": "verified",
+      "full_archive_row_stream_hash_required": true,
+      "selected_row_stream_hash_required": true
+    },
+    "perpetual_execution": {
+      "market_type": "USD-M perpetual futures",
+      "data_type": "klines",
+      "interval": "1m",
+      "required_open_times": "manifest.required_futures_execution_open_times_ms",
+      "existing_archive_metadata_checksum_required": true,
+      "existing_row_source_required": "binance_public_archive"
+    },
+    "funding_notional": {
+      "market_type": "USD-M perpetual futures",
+      "data_type": "markPriceKlines",
+      "interval": "1m",
+      "cadence": "monthly",
+      "required_open_times": "manifest.required_mark_open_times_ms",
+      "ingest_only_required_rows": true,
+      "required_archive_checksum_status": "verified",
+      "full_archive_row_stream_hash_required": true,
+      "selected_row_stream_hash_required": true
+    },
+    "settled_funding": {
+      "source_certificate_file_sha256": "45262aea2ca244c9b1323370c220cbf7ddc8c2e4956f33eac4278ed5b2d6b373",
+      "source_certificate_canonical_sha256": "e3fe53ba87d728eed85efdaa93350b3c76ab7adcb7216cac690c5029818a9736",
+      "funding_interval_hours_range": [1, 8]
+    },
+    "persistent_zip_archive_permitted": false,
+    "missing_or_duplicate_required_row_is_fatal": true,
+    "synthetic_interpolation_permitted": false,
+    "forward_or_backward_fill_permitted": false,
+    "REST_historical_trade_fallback_permitted": false
+  },
+  "position_contract": {
+    "direction": "long spot and short USD-M perpetual",
+    "base_quantity_matched_between_legs": true,
+    "target_spot_entry_notional_usdt": 10000.0,
+    "futures_leverage": 1.0,
+    "committed_capital_denominator": "spot entry notional plus equal futures margin reserve",
+    "committed_capital_usdt": 20000.0,
+    "reinvestment": false,
+    "collateral_yield_included": false,
+    "spot_borrow_included": false,
+    "tax_or_transfer_cost_included": false
+  },
+  "execution_contract": {
+    "nominal_submission_latency_ms": 750,
+    "latency_is_bounded_by_whole_event_minute": true,
+    "entry_spot_buy_price": "event-minute spot high",
+    "entry_perpetual_sell_price": "event-minute perpetual low",
+    "exit_spot_sell_price": "event-minute spot low",
+    "exit_perpetual_buy_price": "event-minute perpetual high",
+    "minute_extremes_are_jointly_adverse_not_claimed_realized_fills": true,
+    "base_quantity": "target_spot_entry_notional_usdt / entry_spot_buy_price",
+    "spot_pnl_usdt": "base_quantity * (exit_spot_sell_price - entry_spot_buy_price)",
+    "perpetual_pnl_usdt": "base_quantity * (entry_perpetual_sell_price - exit_perpetual_buy_price)",
+    "funding_mark_price_for_positive_rate": "settlement-minute mark-price low",
+    "funding_mark_price_for_negative_rate": "settlement-minute mark-price high",
+    "short_funding_pnl_usdt": "sum(base_quantity * adverse_mark_price * settled_funding_rate)",
+    "gross_pnl_usdt": "spot_pnl_usdt + perpetual_pnl_usdt + short_funding_pnl_usdt",
+    "price_center_reference_reported": true,
+    "center_reference_prices": "event-minute closes and settlement-minute mark-price closes",
+    "center_reference_cannot_pass_gate": true
+  },
+  "cost_contract": {
+    "references_are_not_account_specific_fee_claims": true,
+    "authenticated_commission_queries_required_before_execution": true,
+    "spot_taker_fee_bps_per_fill": 10.0,
+    "futures_taker_fee_bps_per_fill": 4.0,
+    "fee_notional_is_each_actual_fill_notional": true,
+    "additional_operational_slippage_bps_per_fill": 1.0,
+    "stress_net_pnl_usdt": "gross_pnl_usdt minus four actual-notional taker fees minus 1 bps of each actual fill notional",
+    "leg_notional_return_bps": "10000 * stress_net_pnl_usdt / target_spot_entry_notional_usdt",
+    "committed_capital_return_bps": "10000 * stress_net_pnl_usdt / committed_capital_usdt"
+  },
+  "capacity_contract": {
+    "target_notional_usdt": 10000.0,
+    "maximum_same_side_one_minute_taker_participation": 0.01,
+    "spot_entry_available_quote": "taker_buy_quote_volume",
+    "spot_exit_available_quote": "quote_volume - taker_buy_quote_volume",
+    "perpetual_entry_available_quote": "quote_volume - taker_buy_quote_volume",
+    "perpetual_exit_available_quote": "taker_buy_quote_volume",
+    "all_four_fills_must_pass": true,
+    "capacity_is_a_trade-flow_proxy_not_historical_order-book_depth": true,
+    "capacity_ineligible_episodes_are_not_economically_scored": true,
+    "minimum_capacity_eligible_fraction": 0.9,
+    "minimum_capacity_eligible_episodes_per_symbol": 40
+  },
+  "uncertainty_contract": {
+    "bootstrap": "stationary circular episode-block bootstrap",
+    "bootstrap_samples": 5000,
+    "mean_block_length_episodes": 4.0,
+    "confidence_lower_quantile": 0.025,
+    "confidence_upper_quantile": 0.975,
+    "seed": 6101,
+    "serial_order_preserved": true
+  },
+  "risk_and_authorization_gate": {
+    "all_source_rows_and_archive_hashes_must_reconcile": true,
+    "minimum_capacity_eligible_fraction": 0.9,
+    "minimum_capacity_eligible_episodes_per_symbol": 40,
+    "minimum_stress_net_positive_fraction": 0.55,
+    "median_stress_net_committed_capital_bps_strictly_above": 0.0,
+    "bootstrap_lower_95_mean_stress_net_committed_capital_bps_strictly_above": 0.0,
+    "maximum_sequential_drawdown_committed_capital_bps": 200.0,
+    "minimum_worst_episode_committed_capital_bps": -200.0,
+    "minimum_expected_shortfall_10pct_committed_capital_bps": -100.0,
+    "minimum_distinct_calendar_years": 3,
+    "minimum_positive_calendar_year_fraction": 0.6,
+    "maximum_single_year_episode_fraction": 0.5,
+    "maximum_single_episode_share_of_positive_pnl": 0.35,
+    "same_frozen_contract_must_pass_all_symbols": true,
+    "passing_result_authorizes_only": "a separately frozen event-level aggregate-trade or book replay with account-aware costs",
+    "failing_result": "reject the elevated-funding carry family before model or AI work"
+  },
+  "report_contract": {
+    "required_tables": [
+      "archive and selected-row reconciliation",
+      "episode component PnL",
+      "capacity eligibility",
+      "yearly stability",
+      "basis and funding decomposition",
+      "risk and uncertainty gates",
+      "symbol breadth decision"
+    ],
+    "forbidden_claims": [
+      "realized profitability",
+      "tick-level execution realism",
+      "order-book capacity",
+      "testnet readiness",
+      "live readiness",
+      "AI uplift"
+    ]
+  },
+  "stopping_rule": {
+    "if_gate_passes": "Proceed only to frozen tick-level execution confirmation; do not train or trade.",
+    "if_gate_fails": "Reject this carry family and return model research to a materially different causal mechanism.",
+    "threshold_relaxation_after_result_permitted": false
+  },
+  "research_basis": [
+    {
+      "title": "Binance public data archive specification",
+      "url": "https://github.com/binance/binance-public-data",
+      "design_use": "Spot, futures, and mark-price archives are official, monthly, and SHA-256 sidecar verifiable."
+    },
+    {
+      "title": "Binance Spot REST API general information",
+      "url": "https://developers.binance.com/en/docs/products/spot/rest-api",
+      "design_use": "Public request weights are IP-based and historical REST aggregate-trade fallback is not assumed."
+    },
+    {
+      "title": "Binance basis trading overview",
+      "url": "https://academy.binance.com/en/articles/what-is-basis-trading-and-how-does-it-work",
+      "design_use": "Basis risk, liquidity constraints, and funding-rate volatility remain explicit risks."
+    },
+    {
+      "title": "Fundamentals of Perpetual Futures",
+      "url": "https://arxiv.org/abs/2212.06888",
+      "design_use": "Trading frictions create no-arbitrage bounds; funding carry is not frictionless arbitrage."
+    }
+  ],
+  "limitations": [
+    "One-minute adverse bounds are deliberately conservative but cannot reproduce a historical order book or exact 750 ms fills.",
+    "Same-side taker flow is a capacity proxy, not displayed or latent depth.",
+    "The source period and event rule are consumed development evidence, not untouched confirmation.",
+    "A seven-day carry sleeve is not evidence for the platform's separate intraday directional day-trading objective."
+  ]
+}
