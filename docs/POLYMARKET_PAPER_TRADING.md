@@ -150,6 +150,12 @@ verification automatically, writes `latest/source-verification.json`, and binds
 that report into the publication integrity manifest. The CLI and generated
 Windows command surface provide no source-verification bypass.
 
+CI also sends the same evidence state, FOK intent, model/AI delay, network
+latency, quantity, and limit through the research evaluator and the bot-owned
+paper broker, then requires exact fill state, quantity, price, fee, source hash,
+effective latency, official payout, and realized PnL equality. This is the
+executable venue-parity guard; changing either path alone fails the suite.
+
 ### Verified prospective run
 
 Research round 2 used one real, gap-free 553.008-second capture from

@@ -22,6 +22,15 @@ from simple_ai_trading.polymarket_features import (
     build_polymarket_feature_dataset,
     materialize_polymarket_feature_dataset,
 )
+from simple_ai_trading.polymarket_model import (
+    POLYMARKET_MODEL_FEATURE_NAMES,
+    POLYMARKET_MODEL_RISK_CONTEXT_NAMES,
+    PolymarketModelSample,
+)
+from simple_ai_trading.polymarket_model_execution import (
+    PolymarketExecutionResearchConfig,
+    evaluate_polymarket_execution_policy,
+)
 from simple_ai_trading.polymarket_recorder import (
     MarketEvidence,
     PolymarketEvidenceStore,
@@ -1672,6 +1681,106 @@ def test_polymarket_broker_binds_fok_ai_delay_and_submission_latency(
     assert context is not None
     assert context[0] == 10
     assert context[1] >= context[0]
+
+
+def test_model_research_and_owned_paper_broker_have_exact_execution_parity(
+    tmp_path,
+) -> None:
+    database = tmp_path / "model-paper-parity.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "model-paper-parity-run")
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="model-paper-parity-run",
+            book_sample_interval_ms=0,
+        )
+    decision = replay.books[0]
+    market = decision.market
+    resolution = next(
+        item for item in replay.resolutions if item.condition_id == market.condition_id
+    )
+    sample = PolymarketModelSample(
+        sample_id="a" * 64,
+        source_run_id=replay.run_id,
+        source_feature_id="b" * 64,
+        condition_id=market.condition_id,
+        market_id=market.market_id,
+        asset=market.asset,
+        event_start_ms=market.event_start_ms,
+        end_ms=market.end_ms,
+        decision_received_wall_ms=decision.received_wall_ms,
+        decision_received_monotonic_ns=decision.received_monotonic_ns,
+        decision_event_id=decision.event_id,
+        horizon_seconds=240,
+        feature_values=tuple(0.0 for _ in POLYMARKET_MODEL_FEATURE_NAMES),
+        risk_context_values=tuple(
+            0.0 for _ in POLYMARKET_MODEL_RISK_CONTEXT_NAMES
+        ),
+        baseline_up_probability=0.9,
+        up_best_bid=0.49,
+        up_best_ask=0.51,
+        down_best_bid=0.49,
+        down_best_ask=0.51,
+        official_up=True,
+        resolution_event_id=resolution.event_id,
+        market_weight=1.0,
+        input_provenance_sha256="c" * 64,
+        sample_sha256="d" * 64,
+    )
+    config = PolymarketExecutionResearchConfig(submission_latency_ms=5)
+    research = evaluate_polymarket_execution_policy(
+        (sample,),
+        (0.9,),
+        replay,
+        config=config,
+    )
+    assert len(research.trades) == 1
+    expected = research.trades[0]
+
+    with PolymarketPaperBroker(database, run_id=replay.run_id) as broker:
+        coordinator = PolymarketPaperCoordinator(
+            broker,
+            control_path=tmp_path / "model-paper-parity.control.json",
+        )
+        assert coordinator.resume()["state"] == "RUNNING"
+        coordinator.require_open_allowed()
+        position, execution = broker.open_position(
+            position_id=expected.sample_id,
+            decision=decision,
+            outcome=expected.outcome,
+            quantity=expected.quantity,
+            maximum_price=expected.limit_price,
+            submission_latency_ms=expected.submission_latency_ms,
+            decision_delay_ms=expected.decision_delay_ms,
+            order_type="FOK",
+        )
+        assert position is not None
+        context = broker.store.connect().execute(
+            """
+            SELECT decision_event_id, execution_event_id, effective_latency_ms
+            FROM polymarket_paper_order_context WHERE intent_id = ?
+            """,
+            [position.opening_intent_id],
+        ).fetchone()
+        settlement = broker.settle_position(
+            opening_intent_id=position.opening_intent_id,
+            resolution=resolution,
+        )
+        assert coordinator.pause()["state"] == "PAUSED"
+        assert broker.positions() == ()
+
+    assert execution.state == expected.execution_state == "FILLED"
+    assert execution.filled_quantity == expected.filled_quantity
+    assert execution.average_fill_price == expected.average_fill_price
+    assert execution.fee_quote == expected.fee_quote
+    assert execution.source_payload_sha256 == expected.source_payload_sha256
+    assert context == (
+        expected.decision_book_event_id,
+        expected.execution_book_event_id,
+        expected.effective_latency_ms,
+    )
+    assert settlement.gross_payout_quote == expected.gross_payout_quote
+    assert settlement.realized_pnl_quote == expected.realized_pnl_quote
 
 
 def test_polymarket_broker_fails_closed_after_execution_observation_timeout(
