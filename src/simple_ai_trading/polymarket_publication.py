@@ -18,6 +18,7 @@ import shutil
 from typing import Any
 
 from .ai_uplift import assess_ai_uplift
+from .polymarket_model_execution import POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION
 from .polymarket_source_verification import (
     validate_polymarket_source_verification,
 )
@@ -451,7 +452,7 @@ def _validate_execution_report(
     expected_time_group_count: int,
     name: str,
 ) -> None:
-    if report.get("schema_version") != "polymarket-execution-report-v2":
+    if report.get("schema_version") != POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION:
         raise ValueError(f"{name} uses an unsupported execution schema")
     _verify_claims(report, name=name)
     _verify_embedded_digest(report, "report_sha256", name=name)

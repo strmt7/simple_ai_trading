@@ -301,7 +301,9 @@ def _replay_fixture(
                     PolymarketRecordedBook(
                         run_id="fixture-run",
                         event_id=(
-                            f"book-{sample.sample_id[:12]}-{outcome.lower()}-{phase}"
+                            sample.decision_event_id
+                            if phase == "decision"
+                            else f"book-{sample.sample_id[:12]}-{outcome.lower()}-{phase}"
                         ),
                         event_type="book",
                         connection_id=f"connection-{market.condition_id[-8:]}",
@@ -610,11 +612,52 @@ def test_execution_fails_closed_when_confirmation_arrives_after_bound() -> None:
         ),
     )
 
-    assert report.attempted_order_count == report.evaluated_market_count
+    assert report.attempted_order_count == 1
     assert report.filled_order_count == 0
     assert all(trade.execution_state == "UNKNOWN" for trade in report.trades)
     assert all(not trade.execution_book_event_id for trade in report.trades)
     assert all(trade.effective_latency_ms == 100 for trade in report.trades)
+    assert report.reason_counts["portfolio_blocked_by_unknown_state"] == (
+        report.signal_market_count - 1
+    )
+
+
+def test_segmented_execution_never_crosses_a_reconnect_boundary() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, _ = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(split.test, markets)
+    replay.diagnostics = replace(
+        replay.diagnostics,
+        continuity_mode="segmented",
+        stream_gap_count=1,
+    )
+
+    admitted = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+    )
+    replay.books = tuple(
+        replace(book, segment_id=f"reconnected-{book.segment_id}")
+        if "execution" in book.event_id
+        else book
+        for book in replay.books
+    )
+    blocked = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+    )
+
+    assert admitted.filled_order_count == admitted.evaluated_market_count
+    assert blocked.filled_order_count == 0
+    assert all(trade.execution_state == "UNKNOWN" for trade in blocked.trades)
+    assert blocked.reason_counts["no_gap_free_causal_execution_book_at_latency"] == (
+        blocked.attempted_order_count
+    )
 
 
 def test_execution_charges_ai_decision_delay_before_network_latency() -> None:
@@ -753,10 +796,7 @@ def test_retry_policy_retries_only_after_terminal_zero_fill() -> None:
     )
     assert unknown.attempted_order_count == 1
     assert unknown.trades[0].execution_state == "UNKNOWN"
-    assert (
-        unknown.reason_counts["retry_blocked_by_nonterminal_or_invalid_state"]
-        == 2
-    )
+    assert unknown.reason_counts["portfolio_blocked_by_unknown_state"] == 2
 
 
 def test_execution_policy_binds_external_fail_closed_permissions() -> None:
