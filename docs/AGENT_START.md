@@ -62,6 +62,9 @@ agents to canonical evidence without replacing that evidence.
   also failed the causal random-walk benchmark. Any future AI treatment must
   first pass governance, then beat the same-period non-AI path after costs
   without worsening tail risk.
+- Qwen3 14B is the next one-shot v7 candidate, frozen before inference in
+  `docs/ai/risk-review/qwen3-14b-v7-preregistration.json`. Run it only after
+  the active recorder finalizes; do not alter prompts or cases first.
 
 ## Efficient workflow
 
