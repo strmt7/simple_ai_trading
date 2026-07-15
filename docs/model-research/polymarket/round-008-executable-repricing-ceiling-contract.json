@@ -1,0 +1,120 @@
+{
+  "ai_boundary": {
+    "event_loop_ai_permitted": false,
+    "reason": "The locally measured multibillion-model latency is seconds, while this screen measures subsecond repricing. AI may later supply an asynchronous market-level veto only after matched after-cost uplift evidence.",
+    "training_or_prompt_calls_in_this_round": false
+  },
+  "contract_sha256": "54a4101f2d9e1ae7bc8825fa023d88ee999282b9681d2e09350c0624db2fc9c7",
+  "economic_contract": {
+    "active_tick_contract": "Create each order with the latest locally known same-segment tick, then reject the simulated fill if that exact limit is invalid under the first post-target execution-confirmation book's active tick. Tick changes are never backfilled from initial market metadata.",
+    "entry": "Buy one outcome with a FOK order against the first same-segment book locally observed after one per-leg submission latency plus the recorded venue taker delay; require that confirmation within 500 ms and walk all displayed asks up to the valid market price ceiling.",
+    "execution_confirmation_semantics": "A post-target book is a deliberately conservative execution-confirmation state, not a claim that it was the exact hidden exchange state at arrival. Its receipt time starts the holding clock, matching the shared replay and paper-execution convention.",
+    "exit": "Sell the exact bot-owned quantity with a FOK order against the first same-segment book locally observed after the confirmed entry, fixed holding interval, second per-leg submission latency, and recorded venue taker delay; require confirmation within 500 ms and walk displayed bids down to the valid market price floor.",
+    "fee_source": "Use each market's recorded fee schedule independently at every walked price level on both legs.",
+    "fee_precision": "Round each simulated displayed-level fee upward to five USDC decimals. This is conservative because official documentation specifies five-decimal precision but does not specify tie direction or hidden maker-order decomposition.",
+    "legacy_fee_rate_endpoint": "Record and hash both token fee-rate payloads, but do not add their V1 base_fee value to V2 feeSchedule charges. Polymarket's March 31, 2026 changelog designates the market feeSchedule as the V2 calculation source.",
+    "maker_rebate_credit": false,
+    "market_end_crossing_permitted": false,
+    "midpoint_or_last_trade_fill_credit": false,
+    "minimum_order_quantity": "The recorded market minimum order size; no subminimum notional is invented.",
+    "order_construction": "Use the official V2 share-sized limit-order builder and post the signed order as FOK. Do not reinterpret BUY quantity through the quote-amount createMarketOrder convenience API.",
+    "prepositioned_inventory_upper_bound": "The exit assumes equivalent bot-owned outcome inventory is already available, so onchain buy-confirmation delay cannot block the sale. This is deliberately optimistic and cannot be reported as a realizable strategy return.",
+    "partial_fill_credit": false,
+    "same_clob_connection_segment_required": true
+  },
+  "execution_parameter_contract": {
+    "base_fees": "Record and hash maker_base_fee and taker_base_fee but do not add them to V2 feeSchedule charges. The official V2 client omits fee_rate_bps from V2 signed orders, and the March 31, 2026 changelog designates feeSchedule as the calculation source.",
+    "enabled_taker_delay_ms": 250,
+    "evidence_required": "Every replay market must have integrity-verified CLOB market snapshots observed no later than the simulated server arrival. Missing parameters reject that decision.",
+    "minimum_order_age_seconds": "Recorded and hash-bound for audit, but not reinterpreted as taker latency because official documentation defines it separately. A nonzero value rejects the decision until exact FOK semantics are documented and modeled.",
+    "parameter_set_hash_required": true,
+    "taker_delay_semantics": "When the latest recorded itode flag at simulated server arrival is true, add the officially documented 250 ms taker delay independently to each marketable leg; otherwise add zero. Unknown never means zero."
+  },
+  "fixed_grid": {
+    "minimum_decision_spacing_ms": 250,
+    "holding_periods_ms": [
+      250,
+      500,
+      1000,
+      2000,
+      5000
+    ],
+    "minimum_remaining_market_time_ms": 30000,
+    "maximum_order_creation_book_age_ms": 500,
+    "maximum_post_target_execution_observation_delay_ms": 500,
+    "per_leg_submission_latencies_ms": [
+      100,
+      250,
+      500,
+      1000
+    ]
+  },
+  "hypothesis": {
+    "alternative": "At least one fixed latency/holding cell has broad, depth-executable, positive after-fee market-level opportunity support across BTC, ETH, and SOL.",
+    "null": "Observable short-horizon Polymarket repricing is too small or too fast to survive two taker spreads, two fee charges, displayed-depth capacity, and realistic latency.",
+    "purpose": "Reject an economically impossible fast-taker family before fitting ML or invoking AI. Future books are used only for an explicitly noncausal opportunity ceiling."
+  },
+  "promotion_gate": {
+    "minimum_complete_markets_per_asset": 30,
+    "minimum_positive_market_fraction_per_asset": 0.1,
+    "minimum_positive_markets_per_asset": 10,
+    "primary_holding_period_ms": 1000,
+    "primary_per_leg_submission_latency_ms": 500,
+    "positive_margin": "Best complete round-trip net proceeds for a market must exceed zero after exact depth and both fees; one best opportunity per market and outcome is retained.",
+    "required_outcome_breadth": "Each asset must contain at least five positive Up and five positive Down market opportunities in the primary cell.",
+    "training_authority_if_passed": false,
+    "trading_authority_if_passed": false
+  },
+  "reporting_contract": {
+    "all_scenario_cells_reported": true,
+    "best_future_timing_is_oracle_upper_bound": true,
+    "confirmation_eligible_only_if_strict_gap_free_source": true,
+    "confirmation_requires_unsampled_reconstructed_books": true,
+    "market_level_not_overlapping_tick_inference": true,
+    "no_profitability_roi_or_drawdown_claim": true,
+    "source_replay_book_and_market_identity_hash_required": true,
+    "terminal_reason_counts_required_for_every_decision": true
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/trading/orderbook",
+    "https://docs.polymarket.com/trading/orders/overview",
+    "https://docs.polymarket.com/api-reference/markets/get-clob-market-info",
+    "https://docs.polymarket.com/trading/fees",
+    "https://docs.polymarket.com/changelog",
+    "https://github.com/Polymarket/py-clob-client-v2/blob/fdb2590dc85e600ad98f1f668ea62a0627554d73/py_clob_client_v2/client.py",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6863546",
+    "https://arxiv.org/abs/2606.31675",
+    "https://arxiv.org/abs/2403.09267",
+    "https://arxiv.org/abs/1111.7103"
+  ],
+  "risk_boundary": {
+    "final_30_seconds_excluded": "Both entry and exit venue-arrival targets must remain at least 30 seconds before market end; filtering only the initial decision is insufficient.",
+    "reason": "Settlement-window flow, binary payoff convexity, and insufficient reaction time make the final interval a distinct manipulation and close-risk regime; this first mechanism screen does not optimize against it.",
+    "unknown_or_missing_book_action": "Exclude the opportunity and record the reason; never synthesize a fill or carry a book across a gap or connection segment. A bounded post-target book may confirm execution but is never described as the exact exchange state at arrival."
+  },
+  "round": 8,
+  "schema_version": "polymarket-executable-repricing-ceiling-preregistration-v1",
+  "source_contract": {
+    "allowed_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "development_use_of_segmented_capture": "Permitted only as a mechanism diagnostic with confirmation_eligible=false.",
+    "future_book_use": "Only the oracle ceiling and realized execution label may read future books. No future state is a model feature.",
+    "local_monotonic_arrival_is_execution_clock": true,
+    "receive_clock_contract": "Use local monotonic arrival for causal ordering, elapsed latency, holding duration, freshness, and post-target bounds. Persist local wall and monotonic receive values plus all derived targets in each signed opportunity. Wall time anchors UTC market start/end and is not allowed to reorder events because operating-system wall-clock corrections can move independently of monotonic time.",
+    "prospective_public_clob_required": true,
+    "recorded_market_execution_parameters_required": true,
+    "strict_gap_free_capture_required_for_confirmation": true
+  },
+  "status": "implementation_corrected_for_v2_fee_source_and_monotonic_receive_clock_before_any_valid_corrected_round_8_outcome_was_available; economic_grid_and_promotion_gate_unchanged",
+  "truth_constraints": {
+    "current_capture_is_confirmatory": false,
+    "current_capture_queue_saturation_already_disqualifies_confirmation": true,
+    "model_or_parameter_training_authorized": false,
+    "profitability_claim": false,
+    "testnet_live_or_leverage_authority": false
+  }
+}

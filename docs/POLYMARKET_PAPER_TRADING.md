@@ -183,6 +183,21 @@ implement the continuous coordinator or grant execution authority. The frozen
 contract is
 [`round-007-label-free-inference-contract.json`](model-research/polymarket/round-007-label-free-inference-contract.json).
 
+Round 8 is an executable mechanism screen, not another fitted classifier. It
+asks whether any short-horizon repricing remains after two FOK spreads, recorded
+fee curves, displayed depth, per-leg submission latency, and each market's
+recorded 250 ms taker-delay flag. It posts share-sized signed limit orders as
+FOK, matching the official V2 client path; it does not reinterpret BUY quantity
+through the quote-amount market-order helper. Dynamic ticks are checked when
+each order is created and again on the post-target execution-confirmation book.
+Both legs must remain outside the final 30 seconds and inside one connection
+segment. Every rejected decision has a terminal reason, and source books,
+markets, and execution parameters are streamed into independent SHA-256 roots.
+The evaluator is deliberately noncausal because it retains each market's best
+future timing; even a pass grants no training, paper, live, ROI, or profitability
+authority. The preregistration is
+[`round-008-executable-repricing-ceiling-contract.json`](model-research/polymarket/round-008-executable-repricing-ceiling-contract.json).
+
 `polymarket-verify` goes beyond artifact-internal accounting. It rebuilds the
 causal feature dataset, model dataset, purged chronological split, deterministic
 model fit, held-out prediction rows, and every baseline/model/model-retry/AI

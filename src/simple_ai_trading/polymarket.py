@@ -18,6 +18,7 @@ from .paper_execution import BookLevel, PaperBookSnapshot, PolymarketFeeModel
 
 
 POLYMARKET_MARKET_SCHEMA_VERSION = "polymarket-crypto-5m-market-v1"
+POLYMARKET_TAKER_ORDER_DELAY_MS = 250
 SUPPORTED_POLYMARKET_ASSETS = ("BTC", "ETH", "SOL")
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
 CLOB_BASE_URL = "https://clob.polymarket.com"
@@ -530,6 +531,7 @@ __all__ = [
     "CLOB_BASE_URL",
     "GAMMA_MARKETS_URL",
     "POLYMARKET_MARKET_SCHEMA_VERSION",
+    "POLYMARKET_TAKER_ORDER_DELAY_MS",
     "SUPPORTED_POLYMARKET_ASSETS",
     "PolymarketFeeSchedule",
     "PolymarketFiveMinuteMarket",

@@ -23,6 +23,7 @@ from simple_ai_trading.cli import (
 )
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
 from simple_ai_trading.polymarket import (
+    POLYMARKET_TAKER_ORDER_DELAY_MS,
     PolymarketFeeSchedule,
     PolymarketFiveMinuteMarket,
 )
@@ -72,9 +73,15 @@ from simple_ai_trading.polymarket_publication import (
 )
 from simple_ai_trading.polymarket_replay import (
     PolymarketEvidenceReplay,
+    PolymarketMarketExecutionEvidence,
     PolymarketRecordedBook,
     PolymarketReplayDiagnostics,
     PolymarketResolutionEvidence,
+)
+from simple_ai_trading.polymarket_repricing import (
+    POLYMARKET_REPRICING_CONTRACT_SHA256,
+    PolymarketRepricingConfig,
+    evaluate_polymarket_repricing_ceiling,
 )
 from simple_ai_trading.polymarket_source_verification import (
     POLYMARKET_SOURCE_VERIFICATION_CHECKS,
@@ -268,6 +275,7 @@ def _replay_fixture(
     execution_latency_ms: int = 100,
     execution_ask_offset: Decimal = Decimal("0"),
     resolution_delay_ms: int = 1_000,
+    taker_order_delay_enabled: bool = False,
 ) -> PolymarketEvidenceReplay:
     selected_conditions = {item.condition_id for item in samples}
     selected_markets = tuple(
@@ -396,6 +404,31 @@ def _replay_fixture(
             maximum_late_arrival_delay_ns=0,
             deferred_event_count=0,
             maximum_availability_delay_ns=0,
+        ),
+        market_execution_evidence=tuple(
+            PolymarketMarketExecutionEvidence(
+                run_id="fixture-run",
+                condition_id=market.condition_id,
+                observed_wall_ms=max(0, market.event_start_ms - 1_000),
+                observed_monotonic_ns=0,
+                maker_base_fee=0,
+                taker_base_fee=0,
+                taker_order_delay_enabled=taker_order_delay_enabled,
+                minimum_order_age_seconds=0,
+                clob_info_sha256=hashlib.sha256(
+                    f"clob:{market.condition_id}".encode("ascii")
+                ).hexdigest(),
+                up_fee_rate_sha256=hashlib.sha256(
+                    f"up-fee:{market.condition_id}".encode("ascii")
+                ).hexdigest(),
+                down_fee_rate_sha256=hashlib.sha256(
+                    f"down-fee:{market.condition_id}".encode("ascii")
+                ).hexdigest(),
+                snapshot_sha256=hashlib.sha256(
+                    f"snapshot:{market.condition_id}".encode("ascii")
+                ).hexdigest(),
+            )
+            for market in selected_markets
         ),
     )
 
@@ -640,6 +673,141 @@ def test_split_requires_both_outcome_classes_for_each_asset() -> None:
         split_polymarket_model_dataset(dataset)
 
 
+def _repricing_replay_fixture(
+    *,
+    cross_segment_exit: bool = False,
+    taker_order_delay_enabled: bool = False,
+    entry_tick_drift: bool = False,
+    shifted_wall_clock: bool = False,
+):
+    source, markets = _source_fixture()
+    dataset = build_polymarket_model_dataset(source, markets)
+    sample = next(item for item in dataset.samples if item.asset == "BTC")
+    replay = _replay_fixture(
+        (sample,),
+        markets,
+        execution_latency_ms=500,
+        taker_order_delay_enabled=taker_order_delay_enabled,
+    )
+    base_entry = next(
+        item
+        for item in replay.books
+        if item.outcome == "Up"
+        and item.received_wall_ms == sample.decision_received_wall_ms + 500
+    )
+    books = list(replay.books)
+    if entry_tick_drift:
+        books = [
+            replace(item, tick_size=Decimal("0.001"))
+            if item.outcome == "Up"
+            and item.received_wall_ms == sample.decision_received_wall_ms
+            else item
+            for item in books
+        ]
+    venue_delay_ms = 250 if taker_order_delay_enabled else 0
+    entry = base_entry
+    sequence = max(item.sequence_number for item in books)
+    if venue_delay_ms:
+        sequence += 1
+        entry_wall_ms = sample.decision_received_wall_ms + 500 + venue_delay_ms
+        entry = replace(
+            base_entry,
+            event_id="repricing-delayed-entry",
+            sequence_number=sequence,
+            snapshot=replace(
+                base_entry.snapshot,
+                source_time_ms=entry_wall_ms,
+                received_wall_ms=entry_wall_ms,
+                received_monotonic_ns=(
+                    sample.decision_received_monotonic_ns
+                    + (500 + venue_delay_ms) * 1_000_000
+                ),
+                source_payload_sha256="d" * 64,
+            ),
+        )
+        books.append(entry)
+    sequence += 1
+    exit_decision_wall_ms = entry.received_wall_ms + 1_000
+    exit_decision_monotonic_ns = entry.received_monotonic_ns + 1_000_000_000
+    if shifted_wall_clock:
+        exit_decision_wall_ms += 1
+        exit_decision_monotonic_ns -= 2_000_000
+    exit_decision_book = replace(
+        entry,
+        event_id="repricing-exit-decision",
+        sequence_number=sequence,
+        snapshot=replace(
+            entry.snapshot,
+            source_time_ms=exit_decision_wall_ms,
+            received_wall_ms=exit_decision_wall_ms,
+            received_monotonic_ns=exit_decision_monotonic_ns,
+            source_payload_sha256="c" * 64,
+        ),
+    )
+    books.append(exit_decision_book)
+    exit_bid = min(
+        Decimal("0.95"),
+        entry.snapshot.asks[0].price + Decimal("0.20"),
+    )
+    wall_ms = entry.received_wall_ms + 1_000 + 500 + venue_delay_ms
+    snapshot = PaperBookSnapshot(
+        venue="polymarket",
+        market_id=entry.market.condition_id,
+        asset_id=entry.token_id,
+        bids=(BookLevel(exit_bid, Decimal("100")),),
+        asks=(BookLevel(exit_bid + Decimal("0.01"), Decimal("100")),),
+        source_time_ms=wall_ms,
+        received_wall_ms=wall_ms,
+        received_monotonic_ns=(
+            entry.received_monotonic_ns
+            + (1_000 + 500 + venue_delay_ms) * 1_000_000
+        ),
+        source_payload_sha256="f" * 64,
+    )
+    exit_book = PolymarketRecordedBook(
+        run_id=replay.run_id,
+        event_id="repricing-exit",
+        event_type="book",
+        connection_id=entry.connection_id,
+        segment_id=("different-segment" if cross_segment_exit else entry.segment_id),
+        sequence_number=sequence + 1,
+        sub_index=0,
+        market=entry.market,
+        outcome="Up",
+        tick_size=entry.tick_size,
+        snapshot=snapshot,
+    )
+    books = tuple(
+        sorted(
+            (*books, exit_book),
+            key=lambda item: (
+                item.received_monotonic_ns,
+                item.sequence_number,
+                item.event_id,
+            ),
+        )
+    )
+    diagnostics = replace(
+        replay.diagnostics,
+        book_state_transition_count=len(books),
+        materialized_book_count=len(books),
+        total_event_count=len(books),
+        causally_ordered_event_count=len(books),
+    )
+    return (
+        PolymarketEvidenceReplay(
+            run_id=replay.run_id,
+            markets=replay.markets,
+            books=books,
+            resolutions=replay.resolutions,
+            diagnostics=diagnostics,
+            market_execution_evidence=replay.market_execution_evidence,
+        ),
+        entry,
+        exit_bid,
+    )
+
+
 def test_profile_challenger_falls_back_without_validation_evidence() -> None:
     source, markets = _source_fixture(predictive=False)
     feature_indexes = {
@@ -745,6 +913,213 @@ def test_live_inference_contract_code_and_document_are_identical() -> None:
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
     assert contract["inference_contract"]["feature_row_must_be_unresolved"] is True
     assert "official_up" in contract["forbidden_live_fields"]
+    assert contract["truth_constraints"]["profitability_claim"] is False
+
+
+def test_repricing_ceiling_walks_both_taker_legs_without_granting_authority() -> None:
+    replay, entry, exit_bid = _repricing_replay_fixture()
+
+    report = evaluate_polymarket_repricing_ceiling(replay)
+    opportunity = next(
+        item
+        for item in report.opportunities
+        if item.asset == "BTC"
+        and item.outcome == "Up"
+        and item.per_leg_submission_latency_ms == 500
+        and item.holding_period_ms == 1_000
+    )
+    entry_ask = entry.snapshot.asks[0].price
+    gross_without_fees = (exit_bid - entry_ask) * entry.market.minimum_order_size
+
+    assert opportunity.complete_round_trip_count >= 1
+    assert opportunity.best_net_quote is not None
+    assert Decimal("0") < opportunity.best_net_quote < gross_without_fees
+    assert opportunity.best_exit_received_wall_ms == (
+        opportunity.best_entry_received_wall_ms + 1_500
+    )
+    assert opportunity.best_entry_execution_target_wall_ms == (
+        opportunity.best_decision_received_wall_ms + 500
+    )
+    assert opportunity.best_exit_decision_target_wall_ms == (
+        opportunity.best_entry_execution_target_wall_ms + 1_000
+    )
+    assert opportunity.best_exit_execution_target_wall_ms == (
+        opportunity.best_exit_decision_target_wall_ms + 500
+    )
+    assert opportunity.best_entry_venue_taker_delay_ms == 0
+    assert opportunity.best_exit_venue_taker_delay_ms == 0
+    assert opportunity.terminal_reason_counts["complete_round_trip"] == (
+        opportunity.complete_round_trip_count
+    )
+    assert report.status == "insufficient_market_support"
+    assert report.confirmation_eligible
+    assert report.noncausal_oracle_upper_bound
+    assert report.prepositioned_inventory_assumption
+    assert not report.training_authority
+    assert not report.trading_authority
+    assert not report.profitability_claim
+    with pytest.raises(ValueError, match="repricing report is invalid"):
+        replace(report, profitability_claim=True).validated()
+    with pytest.raises(ValueError, match="repricing report is invalid"):
+        replace(report, cells=()).validated()
+
+
+def test_repricing_ceiling_never_carries_execution_across_segments() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture(cross_segment_exit=True)
+
+    report = evaluate_polymarket_repricing_ceiling(replay)
+    opportunity = next(
+        item
+        for item in report.opportunities
+        if item.asset == "BTC"
+        and item.outcome == "Up"
+        and item.per_leg_submission_latency_ms == 500
+        and item.holding_period_ms == 1_000
+    )
+
+    assert opportunity.complete_round_trip_count == 0
+    assert opportunity.best_net_quote is None
+    assert not opportunity.positive
+
+
+def test_repricing_ceiling_applies_recorded_taker_delay_to_each_leg() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture(
+        taker_order_delay_enabled=True
+    )
+
+    report = evaluate_polymarket_repricing_ceiling(replay)
+    opportunity = next(
+        item
+        for item in report.opportunities
+        if item.asset == "BTC"
+        and item.outcome == "Up"
+        and item.per_leg_submission_latency_ms == 500
+        and item.holding_period_ms == 1_000
+    )
+
+    assert opportunity.complete_round_trip_count >= 1
+    assert opportunity.best_entry_venue_taker_delay_ms == 250
+    assert opportunity.best_exit_venue_taker_delay_ms == 250
+    assert opportunity.best_entry_received_wall_ms == (
+        opportunity.best_decision_received_wall_ms + 750
+    )
+    assert opportunity.best_exit_received_wall_ms == (
+        opportunity.best_entry_received_wall_ms + 1_750
+    )
+    assert opportunity.best_entry_execution_target_wall_ms == (
+        opportunity.best_decision_received_wall_ms + 750
+    )
+    assert opportunity.best_exit_execution_target_wall_ms == (
+        opportunity.best_exit_decision_target_wall_ms + 750
+    )
+
+
+def test_repricing_ceiling_uses_monotonic_clock_for_causal_elapsed_time() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture(shifted_wall_clock=True)
+
+    report = evaluate_polymarket_repricing_ceiling(replay)
+    opportunity = next(
+        item
+        for item in report.opportunities
+        if item.asset == "BTC"
+        and item.outcome == "Up"
+        and item.per_leg_submission_latency_ms == 500
+        and item.holding_period_ms == 1_000
+    )
+
+    assert opportunity.complete_round_trip_count >= 1
+    assert opportunity.best_exit_decision_received_wall_ms > (
+        opportunity.best_exit_decision_target_wall_ms
+    )
+    assert opportunity.best_exit_decision_received_monotonic_ns < (
+        opportunity.best_exit_decision_target_monotonic_ns
+    )
+    assert opportunity.best_exit_received_monotonic_ns >= (
+        opportunity.best_exit_execution_target_monotonic_ns
+    )
+
+
+def test_repricing_ceiling_never_defaults_missing_execution_parameters_to_zero() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture()
+    missing = PolymarketEvidenceReplay(
+        run_id=replay.run_id,
+        markets=replay.markets,
+        books=replay.books,
+        resolutions=replay.resolutions,
+        diagnostics=replay.diagnostics,
+    )
+
+    with pytest.raises(ValueError, match="requires recorded execution parameters"):
+        evaluate_polymarket_repricing_ceiling(missing)
+
+
+def test_repricing_ceiling_rejects_limit_invalidated_by_tick_change() -> None:
+    baseline, _entry, _exit_bid = _repricing_replay_fixture()
+    replay, _entry, _exit_bid = _repricing_replay_fixture(entry_tick_drift=True)
+
+    baseline_report = evaluate_polymarket_repricing_ceiling(baseline)
+    report = evaluate_polymarket_repricing_ceiling(replay)
+    baseline_opportunity = next(
+        item
+        for item in baseline_report.opportunities
+        if item.asset == "BTC"
+        and item.outcome == "Up"
+        and item.per_leg_submission_latency_ms == 500
+        and item.holding_period_ms == 1_000
+    )
+    opportunity = next(
+        item
+        for item in report.opportunities
+        if item.asset == "BTC"
+        and item.outcome == "Up"
+        and item.per_leg_submission_latency_ms == 500
+        and item.holding_period_ms == 1_000
+    )
+
+    assert opportunity.complete_round_trip_count == (
+        baseline_opportunity.complete_round_trip_count - 1
+    )
+    assert opportunity.terminal_reason_counts["entry_tick_drift"] == 1
+    assert sum(opportunity.terminal_reason_counts.values()) == (
+        opportunity.decision_count
+    )
+
+
+def test_repricing_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-008-executable-repricing-ceiling-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_REPRICING_CONTRACT_SHA256
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert (
+        contract["execution_parameter_contract"]["enabled_taker_delay_ms"]
+        == POLYMARKET_TAKER_ORDER_DELAY_MS
+    )
+    assert (
+        contract["fixed_grid"]["maximum_order_creation_book_age_ms"]
+        == PolymarketRepricingConfig().maximum_order_creation_book_age_ms
+    )
+    assert (
+        contract["fixed_grid"][
+            "maximum_post_target_execution_observation_delay_ms"
+        ]
+        == PolymarketRepricingConfig().maximum_post_target_execution_observation_delay_ms
+    )
+    assert contract["economic_contract"]["midpoint_or_last_trade_fill_credit"] is False
     assert contract["truth_constraints"]["profitability_claim"] is False
 
 
