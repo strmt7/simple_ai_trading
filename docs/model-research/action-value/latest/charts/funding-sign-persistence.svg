@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
-<title>Positive funding was persistent but usually too small</title>
-<desc>December 2021-June 2025 settled funding transitions; the screen does not assume a fixed settlement interval</desc>
+<title>Funding-sign persistence across the complete frozen range</title>
+<desc>Observed settled-funding transitions; stored 1-8 hour intervals are read rather than assumed</desc>
 <rect width="1200" height="700" fill="#0b1220"/>
-<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Positive funding was persistent but usually too small</text>
-<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">December 2021-June 2025 settled funding transitions; the screen does not assume a fixed settlement interval</text>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Funding-sign persistence across the complete frozen range</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Observed settled-funding transitions; stored 1-8 hour intervals are read rather than assumed</text>
 <line x1="100" y1="575.0" x2="1150" y2="575.0" stroke="#334155" stroke-width="1"/>
 <text x="86" y="580.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0</text>
 <line x1="100" y1="487.0" x2="1150" y2="487.0" stroke="#334155" stroke-width="1"/>
@@ -16,20 +16,20 @@
 <text x="86" y="228.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">80</text>
 <line x1="100" y1="135.0" x2="1150" y2="135.0" stroke="#334155" stroke-width="1"/>
 <text x="86" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">100</text>
-<rect x="177.0" y="174.2" width="79.3" height="400.8" rx="3" fill="#14b8a6"/>
-<text x="216.7" y="166.2" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">91.09</text>
-<rect x="293.7" y="325.7" width="79.3" height="249.3" rx="3" fill="#60a5fa"/>
-<text x="333.3" y="317.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">56.66</text>
+<rect x="177.0" y="169.8" width="79.3" height="405.2" rx="3" fill="#14b8a6"/>
+<text x="216.7" y="161.8" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">92.10</text>
+<rect x="293.7" y="369.1" width="79.3" height="205.9" rx="3" fill="#60a5fa"/>
+<text x="333.3" y="361.1" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">46.80</text>
 <text x="275.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">BTC</text>
-<rect x="527.0" y="177.3" width="79.3" height="397.7" rx="3" fill="#14b8a6"/>
-<text x="566.7" y="169.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">90.38</text>
-<rect x="643.7" y="352.9" width="79.3" height="222.1" rx="3" fill="#60a5fa"/>
-<text x="683.3" y="344.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">50.48</text>
+<rect x="527.0" y="169.9" width="79.3" height="405.1" rx="3" fill="#14b8a6"/>
+<text x="566.7" y="161.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">92.06</text>
+<rect x="643.7" y="360.7" width="79.3" height="214.3" rx="3" fill="#60a5fa"/>
+<text x="683.3" y="352.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">48.70</text>
 <text x="625.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">ETH</text>
-<rect x="877.0" y="197.8" width="79.3" height="377.2" rx="3" fill="#14b8a6"/>
-<text x="916.7" y="189.8" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">85.72</text>
-<rect x="993.7" y="430.3" width="79.3" height="144.7" rx="3" fill="#60a5fa"/>
-<text x="1033.3" y="422.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">32.89</text>
+<rect x="877.0" y="191.6" width="79.3" height="383.4" rx="3" fill="#14b8a6"/>
+<text x="916.7" y="183.6" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">87.13</text>
+<rect x="993.7" y="433.8" width="79.3" height="141.2" rx="3" fill="#60a5fa"/>
+<text x="1033.3" y="425.8" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">32.10</text>
 <text x="975.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">SOL</text>
 <text transform="translate(24 355.0) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Conditional probability (%)</text>
 <rect x="100.0" y="655" width="14" height="14" rx="2" fill="#14b8a6"/>

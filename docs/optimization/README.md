@@ -42,16 +42,18 @@ artifacts must not be interpreted as profitability evidence.
 
 Two latest-only research evidence tracks are retained. The predictive
 [`action-value/latest`](../model-research/action-value/latest/README.md) track is
-at Round 59. Its read-only runner reconstructed all 129 checksum-certified
-funding archive streams from December 2021 through June 2025. Ordinary positive
-funding did not clear four-leg cost references. A rare `>=2` bps trigger had
-positive seven-day sample means after the 32 bps stress reference, but only
-`20/20/25` BTC/ETH/SOL episodes existed versus 40 required, and BTC/SOL lower
-confidence bounds crossed zero. All 27 symbol and nine breadth cells failed,
-so no synchronized spot build or model training was authorized. It read no
-prices, basis, P&L, model, or AI rows. Rounds 57 and 58 remain rejected
-payoff and symmetric-maker evidence in the rolling record. No policy, economic
-replay, leverage, AI uplift, or trading authority was evaluated. The
+at Round 60. Its read-only runner preserved every Round 59 trigger, horizon,
+cost, bootstrap seed, and breadth gate while expanding to 226 verified monthly
+funding archives: January 2020 through June 2026 for BTC/ETH and September 2020
+through June 2026 for SOL. Exactly one breadth cell passed: the `>=2` bps
+settled-funding trigger with a seven-day non-overlapping horizon. The
+`72/76/62` BTC/ETH/SOL episodes had lower 95% mean references of
+`+18.48/+29.58/+6.30` bps after the 32 bps charge. This authorizes only a
+separately frozen synchronized spot-perpetual economic replay. It read no
+prices, basis, P&L, model, or AI rows and provides no profitability or trading
+claim. Round 59's smaller-sample rejection and Rounds 57-58 remain in the
+rolling comparison record. No policy, economic replay, leverage, AI uplift,
+or trading authority was evaluated. The
 independent execution-replay
 [`tape-depth/latest`](../model-research/tape-depth/latest/README.md) track remains
 at Round 8. It evaluated the frozen BTCUSDT 20-second candidate on three

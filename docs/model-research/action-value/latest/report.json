@@ -1,23 +1,26 @@
 {
-  "schema_version": "round-059-funding-persistence-feasibility-publication-v1",
-  "round": 59,
-  "publisher_path": "tools/publish_round59_funding_persistence_feasibility.py",
+  "schema_version": "round-060-full-history-funding-replication-publication-v1",
+  "round": 60,
+  "publisher_path": "tools/publish_round60_full_history_funding_replication.py",
   "source": {
-    "report_file": "round59-funding-persistence-20260715-v1.json",
-    "report_file_sha256": "f99843b7998a9bc473f7c8d8c80c52a8e718e7729e5d9896263bdfe01538d14e",
-    "report_canonical_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0",
-    "design_path": "docs/model-research/action-value/round-059-funding-persistence-feasibility-design.json",
-    "design_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
-    "source_certificate_file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
-    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
-    "implementation_commit": "c263fbd525f85a6cef86c1e8930d09844927a3d6",
-    "runner_path": "tools/run_round59_funding_persistence_feasibility.py",
-    "runner_git_blob_oid": "78a8dde241e6c6568de75e3d46a6f99cceff4263"
+    "report_file": "round60-full-history-funding-replication-20260715-v1.json",
+    "report_file_sha256": "0bf9dc26b6bc53a9bfebedba9f6ae43cca879f14ced85bc7b4b64de70f388b5d",
+    "report_canonical_sha256": "a020bd2f26280b82705ffa4bda83b37d439dfa09377eda64ffdfcbf17c9e9ba4",
+    "design_path": "docs/model-research/action-value/round-060-full-history-funding-replication-design.json",
+    "design_file_sha256": "47b651d98c83f78215ca2e8a080120d9dec9b331b5d1894c296cb968a5d6302f",
+    "design_sha256": "965609f682595efd07dad719c958fe2086bbd29c5e3c6b2a98ba8b37261806c2",
+    "source_certificate_file_sha256": "45262aea2ca244c9b1323370c220cbf7ddc8c2e4956f33eac4278ed5b2d6b373",
+    "source_certificate_canonical_sha256": "e3fe53ba87d728eed85efdaa93350b3c76ab7adcb7216cac690c5029818a9736",
+    "implementation_commit": "35e10f45a4b4525bd9be3ad4746d43cc8f61de60",
+    "runner_path": "tools/run_round60_full_history_funding_replication.py",
+    "runner_git_blob_oid": "c8a7dbafadb22a467b323a2238b6c7cf5366e12b",
+    "ingest_path": "tools/ingest_round60_full_funding_archives.py",
+    "ingest_git_blob_oid": "5c8128b6a10a385d6b0c2e98f8d28b61c8705f99"
   },
   "claims": {
-    "status": "rejected_funding_persistence_support",
+    "status": "full_history_support_passed_spot_ingestion_authorized",
     "selection_contaminated": true,
-    "spot_history_ingestion_authorized": false,
+    "spot_history_ingestion_authorized": true,
     "profitability_claim": false,
     "ai_uplift_claim": false,
     "trading_authority": false,
@@ -29,75 +32,85 @@
   "result": {
     "symbol_cells": 27,
     "breadth_cells": 9,
-    "passing_breadth_cells": 0,
-    "spot_history_ingestion_authorized": false
+    "passing_breadth_cells": 1,
+    "spot_history_ingestion_authorized": true
   },
   "artifacts": [
     {
       "path": "breadth-gates.csv",
-      "bytes": 683,
-      "sha256": "40eb32940d14d112c1f0cbc18ef9243e9cf8f5fb0858806a0dff9e00aa57a0bc"
+      "bytes": 719,
+      "sha256": "edecfa0e67011f110948fbdf3628ab9a617903a3214f8acee5addf0887414e12"
     },
     {
       "path": "charts/elevated-funding-support.svg",
-      "bytes": 5065,
-      "sha256": "193757f8ba61a3da14bf344201950efd7a21de70024af200a6eddb7ad1732706"
+      "bytes": 4997,
+      "sha256": "5cad4c00d34e7ebb5daaf17d8c27d89ddd1e578e9c8e08227082395be3764592"
     },
     {
       "path": "charts/funding-sign-persistence.svg",
-      "bytes": 4153,
-      "sha256": "7f74a767e48104bdd057e7fcd38394b992947463b63fc46cac9b298994067502"
+      "bytes": 4131,
+      "sha256": "48e8267c78798664a2ed87d7aab9700359554f7f6d8eaa84b01120df4c84474a"
+    },
+    {
+      "path": "charts/replication-comparison.svg",
+      "bytes": 4112,
+      "sha256": "4ee0d3fe359709f35af4426c2a1bf8239881a2d6915a1e5d96123291fd171225"
     },
     {
       "path": "charts/research-progress.svg",
-      "bytes": 5280,
-      "sha256": "3311e1436d14dfc43d5adf5ce586bfc90cd5d0cbd6e58352ea8c59efabfe9e2d"
+      "bytes": 5254,
+      "sha256": "8c10534c3b34c015dec08522c9c46b703648364f6bb64f9ca37facc75af14c89"
     },
     {
       "path": "charts/seven-day-gross-carry.svg",
-      "bytes": 6699,
-      "sha256": "bd1c156977b906fb435e89fe3b08a68aacbc1bd269bbb3d3f1a41b4e15d26688"
+      "bytes": 6611,
+      "sha256": "2d0907fd2aa2a8f46fdfe7cf95d03b63485df0f9e2e79038a2d24ee655ade1d1"
     },
     {
-      "path": "failure-analysis.json",
-      "bytes": 1927,
-      "sha256": "b9e3c895cc372b00c40cd1295f8069941db30ca17b179b4029b459faa1a4bdac"
+      "path": "decision-analysis.json",
+      "bytes": 1563,
+      "sha256": "e6b5b197cb419b032c8e053d2c5bcfe472e4ab9879a7630bad04c1a6c0145cff"
     },
     {
       "path": "funding-cells.csv",
-      "bytes": 14838,
-      "sha256": "09c896bae7c30a8ed5dd395f983e8ed31fdfaaa77efed68dbe3aec84df14416e"
+      "bytes": 15222,
+      "sha256": "9cd19e5ed7362cc6d7eaf584980980b65c2cd8d7c3fd9538a6689c9b913d71e8"
     },
     {
       "path": "progress.csv",
-      "bytes": 22082,
-      "sha256": "edcfb2f115968a24552d0aa11d6d4f0ea27e8cb69e35ec7c6b4b5b078e8a7d58"
+      "bytes": 22563,
+      "sha256": "c00db9ce6db12cc44dde15a2f3c0c9b3880108e968581e32b4305ac785a678da"
     },
     {
       "path": "README.md",
-      "bytes": 3238,
-      "sha256": "8b3dff4ed38c2432dd40b9afcbf62a2f40bcd06b8bd45c9f467ad0e9a86ef6df"
+      "bytes": 3204,
+      "sha256": "28ccf73916809532caeb3b163e2716dfcc7a915150d6bb9fb1f2e839fc01c3ac"
+    },
+    {
+      "path": "round59-comparison.csv",
+      "bytes": 1270,
+      "sha256": "f663143825ce79d09515d98fc0b47d7c68ffb263cc6e332de99269da64e2db5a"
     },
     {
       "path": "screen.json",
-      "bytes": 65671,
-      "sha256": "f99843b7998a9bc473f7c8d8c80c52a8e718e7729e5d9896263bdfe01538d14e"
+      "bytes": 66803,
+      "sha256": "0bf9dc26b6bc53a9bfebedba9f6ae43cca879f14ced85bc7b4b64de70f388b5d"
     },
     {
       "path": "sign-persistence.csv",
-      "bytes": 371,
-      "sha256": "3d34fe225e5bc925a135f4f0a8665fe343c1cb7c8e356fd51d20f8dcfa9879f2"
+      "bytes": 374,
+      "sha256": "5f591f5e1a40f2f032e9cfe0965d802fea2feb7cfe0ea594dc82742b9d5e0371"
     },
     {
       "path": "source-certificate.json",
-      "bytes": 4575,
-      "sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7"
+      "bytes": 2570,
+      "sha256": "45262aea2ca244c9b1323370c220cbf7ddc8c2e4956f33eac4278ed5b2d6b373"
     },
     {
       "path": "source-coverage.csv",
       "bytes": 924,
-      "sha256": "43411e1369ddd6cbc9d56f17f98b5a25449d8506b5bb363b4efe6ac33dc074fc"
+      "sha256": "5394c7a7150a9cc493bc715c7bc6c1a268f81031eaa1f414c16c342617dc18e5"
     }
   ],
-  "publication_canonical_sha256": "2b0e3a12134ba181e2663b5df8a8ddede787d116aa2b32e81545fa2ab41b7798"
+  "publication_canonical_sha256": "f07b576a414bafc4b7b01e404595b200fb0d8055ebd67ea822938994a0ef02cc"
 }

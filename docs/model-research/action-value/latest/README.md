@@ -1,29 +1,30 @@
-# Round 59: Funding-Persistence Feasibility
+# Round 60: Full-History Funding Replication
 
-> **Rejected consumed structural evidence.** No profitability, basis-neutrality, AI-uplift, leverage, testnet, live-trading, or execution claim is made.
+> **Structural gate passed; no profitability claim.** This consumed funding-only study authorizes one separately frozen spot-perpetual replay. It does not authorize a model, AI, leverage, testnet, or live trading.
 
-Round 59 tested whether causally observed positive BTCUSDT, ETHUSDT, and SOLUSDT funding persisted strongly enough to justify downloading the missing synchronized spot history. The runner reconstructed and re-hashed every monthly funding row against 129 checksum-certified Binance archive streams from **December 2021 through June 2025**. It read no price, premium-index, spot, basis, P&L, model, or AI rows.
+Round 60 kept every Round 59 trigger, horizon, cost reference, bootstrap seed, and breadth threshold unchanged, then expanded to every frozen complete official monthly funding archive: **January 2020-June 2026** for BTC and ETH and **September 2020-June 2026** for SOL. All 226 archives passed Binance SHA-256 sidecar checks, and every database month was re-hashed against its certified row stream.
 
-Positive funding usually remained positive at the next settlement, but ordinary positive-funding episodes did not clear four-leg costs. The rare `>=2` bps trigger produced positive mean seven-day carry after the 32 bps stress reference, yet only 20 BTC, 20 ETH, and 25 SOL non-overlapping episodes existed versus 40 required. BTC and SOL lower 95% mean bounds remained below zero. All 27 symbol cells and all nine BTC/ETH/SOL breadth cells failed, so spot-history ingestion is not authorized.
+Exactly one of nine breadth cells passed: a causally observed settled funding rate of at least `2` bps followed by a non-overlapping seven-day window. All three symbols exceeded the precommitted 40-episode, 55% positive, positive-median, and positive lower-95%-mean gates after the 32 bps research reference.
 
-| Seven-day evidence | P(next positive \| positive) | Ordinary trigger gross mean (bps) | `>=2` bps episodes | `>=2` mean after 32 bps | Median after 32 bps | Lower 95% mean after 32 bps |
-|---|---:|---:|---:|---:|---:|---:|
-| BTCUSDT | 91.09% | +14.84 | 20 | +11.44 | +1.57 | -1.80 |
-| ETHUSDT | 90.38% | +14.18 | 20 | +14.82 | +4.09 | +2.02 |
-| SOLUSDT | 85.72% | -5.97 | 25 | +16.48 | +8.10 | -1.26 |
+| Seven-day `>=2` bps evidence | Funding rows | P(next positive \| positive) | Episodes | Mean after 32 bps | Median after 32 bps | Positive after 32 bps | Lower 95% mean after 32 bps |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BTCUSDT | 7,119 | 92.10% | 72 | +36.02 | +20.13 | 66.67% | +18.48 |
+| ETHUSDT | 7,119 | 92.06% | 76 | +51.82 | +34.42 | 78.95% | +29.58 |
+| SOLUSDT | 6,424 | 87.13% | 62 | +32.48 | +13.52 | 74.19% | +6.30 |
 
-The 4/28/32 bps values are pinned research references, not account-specific realized fees. The 28 bps reference is two spot fills at 10 bps plus two futures fills at 4 bps; the 32 bps stress reference adds 1 bps to each of four fills. A production path must query both signed commission endpoints and still model synchronized spreads, depth, legging latency, basis change, margin, and liquidation.
+These are funding-carry references, not trade returns. The replay still has to price both legs and model spot-perpetual basis change, synchronized spread and depth, queueing, market impact, legging latency, account-specific commissions, margin, liquidation, outages, and unwind behavior. No price, basis, P&L, model, or AI row was read in this round.
 
 ## Evidence
 
 | View | Graph | Tracked source |
 |---|---|---|
-| Seven-day gross carry versus references | [SVG](charts/seven-day-gross-carry.svg) | [CSV](funding-cells.csv) |
-| Elevated-funding confidence and support | [SVG](charts/elevated-funding-support.svg) | [CSV](funding-cells.csv) |
+| Seven-day gross funding versus references | [SVG](charts/seven-day-gross-carry.svg) | [CSV](funding-cells.csv) |
+| Passing cell confidence and support | [SVG](charts/elevated-funding-support.svg) | [CSV](funding-cells.csv) |
+| Round 59-to-60 sample comparison | [SVG](charts/replication-comparison.svg) | [CSV](round59-comparison.csv) |
 | Funding-sign persistence | [SVG](charts/funding-sign-persistence.svg) | [CSV](sign-persistence.csv) |
 | Research progression | [SVG](charts/research-progress.svg) | [CSV](progress.csv) |
 
-`source-coverage.csv`, `breadth-gates.csv`, `source-certificate.json`, `failure-analysis.json`, and the exact `screen.json` preserve the remaining source-bound evidence. Every chart is regenerated from a tracked CSV.
+`source-coverage.csv`, `breadth-gates.csv`, `source-certificate.json`, `decision-analysis.json`, and the exact `screen.json` preserve the remaining source-bound evidence. Every graph is regenerated from a tracked table.
 
 ## Research basis
 
