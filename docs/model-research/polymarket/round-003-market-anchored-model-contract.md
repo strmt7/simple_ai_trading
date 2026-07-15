@@ -13,8 +13,10 @@ logit(P(Up)) = logit(normalized CLOB midpoint) + clip(beta0 + beta' x, -2, 2)
 
 `x` contains causal direct-Binance movement and order flow, live Chainlink basis,
 volatility, spread, and paired Polymarket book state. Training-only robust scaling
-and winsorization are hash-bound. If no regularized candidate improves validation
-log loss by the precommitted margin, the correction is exactly zero.
+and winsorization are hash-bound. L2 regularization is selected only through three
+purged rolling folds inside the training span. The outer validation tail then acts
+only as a promotion gate. If the frozen candidate does not improve validation log
+loss by the precommitted margin, the correction is exactly zero.
 
 ## Evidence split
 
