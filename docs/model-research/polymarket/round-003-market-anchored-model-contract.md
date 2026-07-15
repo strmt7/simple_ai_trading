@@ -11,9 +11,10 @@ a bounded correction:
 logit(P(Up)) = logit(normalized CLOB midpoint) + clip(beta0 + beta' x, -2, 2)
 ```
 
-`x` contains causal direct-Binance movement and order flow, live Chainlink basis,
-volatility, spread, and paired Polymarket book state. It also contains two bounded
-driftless-diffusion disagreement proxies:
+`x` contains causal direct-Binance movement, realized variation, and trade
+imbalance at 100 ms through 5 s, plus live Chainlink basis, spread, and paired
+Polymarket book state. It also contains two bounded driftless-diffusion
+disagreement proxies:
 
 ```text
 scale = max(realized_volatility_5s_bps, 1e-6) * sqrt(seconds_left / 5)

@@ -5,6 +5,7 @@ from dataclasses import replace
 from decimal import Decimal
 import hashlib
 import json
+import math
 
 import pytest
 
@@ -1225,11 +1226,16 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert created.row_count == existing.row_count == len(first.rows)
     assert len(first.rows) >= 1
     row = first.rows[0]
-    assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 46
+    assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 49
     assert row.official_up is True
     assert row.resolution_event_id
     assert row.feature_map()["ask_pair_cost"] == pytest.approx(1.02)
     assert row.feature_map()["chainlink_anchor_gap_ms"] == 0.0
+    assert math.isfinite(row.feature_map()["binance_return_100ms_bps"])
+    assert math.isfinite(
+        row.feature_map()["binance_realized_volatility_100ms_bps"]
+    )
+    assert math.isfinite(row.feature_map()["binance_trade_imbalance_100ms"])
     assert first.labeled_market_counts["BTC"] == 1
     assert first.training_ready is False
     assert "insufficient_featured_resolved_markets:ETH:0/1" in first.training_errors

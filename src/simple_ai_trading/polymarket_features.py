@@ -20,8 +20,8 @@ from .polymarket_replay import (
 )
 
 
-POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v3"
-POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v3"
+POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v4"
+POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v4"
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 POLYMARKET_FEATURE_NAMES = (
     "elapsed_fraction",
@@ -53,11 +53,14 @@ POLYMARKET_FEATURE_NAMES = (
     "binance_best_ask",
     "binance_spread_bps",
     "binance_top_imbalance",
+    "binance_return_100ms_bps",
     "binance_return_250ms_bps",
     "binance_return_1000ms_bps",
     "binance_return_5000ms_bps",
+    "binance_realized_volatility_100ms_bps",
     "binance_realized_volatility_1000ms_bps",
     "binance_realized_volatility_5000ms_bps",
+    "binance_trade_imbalance_100ms",
     "binance_trade_imbalance_250ms",
     "binance_trade_imbalance_1000ms",
     "binance_trade_imbalance_5000ms",
@@ -883,6 +886,7 @@ def build_polymarket_feature_dataset(
             decision_wall_ms - market.event_start_ms
         ) / market_duration_ms
         remaining_seconds = (market.end_ms - decision_wall_ms) / 1_000.0
+        trade_100, _gross_100 = trade_series[asset].stats(decision_ns, 100)
         trade_250, gross_250 = trade_series[asset].stats(decision_ns, 250)
         trade_1000, gross_1000 = trade_series[asset].stats(decision_ns, 1_000)
         trade_5000, gross_5000 = trade_series[asset].stats(decision_ns, 5_000)
@@ -910,11 +914,14 @@ def build_polymarket_feature_dataset(
             direct_book.ask,
             10_000.0 * (direct_book.ask - direct_book.bid) / direct_book.midpoint,
             _ratio_imbalance(direct_book.bid_quantity, direct_book.ask_quantity),
+            book_series[asset].return_bps(decision_ns, 100),
             book_series[asset].return_bps(decision_ns, 250),
             book_series[asset].return_bps(decision_ns, 1_000),
             book_series[asset].return_bps(decision_ns, 5_000),
+            book_series[asset].realized_volatility_bps(decision_ns, 100),
             book_series[asset].realized_volatility_bps(decision_ns, 1_000),
             book_series[asset].realized_volatility_bps(decision_ns, 5_000),
+            trade_100,
             trade_250,
             trade_1000,
             trade_5000,
