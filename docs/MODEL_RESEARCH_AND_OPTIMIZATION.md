@@ -552,7 +552,7 @@ Round 12 rejected that feature/model/execution family as a viable trading
 baseline and did not justify a full-history scale-up or an AI overlay. Its
 decision remains in the cumulative
 [`progress.csv`](model-research/action-value/latest/progress.csv); latest-only
-source tables, hashes, and charts now describe Round 31.
+source tables, hashes, and charts describe only the newest retained round.
 
 ### Round 31 frozen chronological confirmation
 
@@ -573,7 +573,15 @@ labeled, predicted, or evaluated. Its decision remains in the cumulative
 [`progress.csv`](model-research/action-value/latest/progress.csv); the per-round
 bundle was superseded under latest-only retention. The current
 [`action-value/latest`](model-research/action-value/latest/README.md) bundle is
-Round 57. Neither record grants leverage, profitability, execution, or trading
+Round 58. Its value-blind support probe used official BTCUSDT, ETHUSDT, and
+SOLUSDT events from 2023-06-01 and rejected symmetric touch making before
+training: two-sided fills were only `2.36-3.18%`, one-sided fills were
+`28.03-47.19%`, and every two-fill spread p99 was below `1` bps against the
+prior frozen `4` bps fee and `6` bps fee-plus-slippage references. The probe
+read no returns, costs, P&L, outcomes, or policy thresholds. Round 57 remains
+in the cumulative record: queue-fill survival generalized, but all 12
+evaluation payoff top quintiles were negative after its frozen costs. None of
+these records grants leverage, profitability, AI uplift, execution, or trading
 authority.
 
 The v8 backend opts this model family into reproducible training. CPU uses

@@ -1,27 +1,19 @@
 {
-  "schema_version": "round-057-queue-censored-make-take-publication-v1",
-  "round": 57,
-  "published_at_ms": 1784122363683,
-  "publisher_path": "tools/publish_round57_queue_censored_make_take.py",
+  "schema_version": "round-058-two-sided-maker-feasibility-publication-v1",
+  "round": 58,
+  "publisher_path": "tools/publish_round58_two_sided_maker_feasibility.py",
   "source": {
-    "report_path": "E:\\SimpleAITradingData\\evidence\\round57-20260715-1509-v2\\round57-report.json",
-    "report_file_sha256": "1e549d21b6aa96f78e5f7e740457af0116e161ce67e9b600a62d28ee2d12e712",
-    "report_canonical_sha256": "c026542c7073496317f02a3f30dbf4274e7c7155a5026d79d8d76883ed924f27",
-    "design_path": "docs/model-research/action-value/round-057-queue-censored-make-take-design.json",
-    "design_sha256": "61165c1150f5349ff1b15f2243e7520ecbd7af44578edda7fc2be8bb56b66cdf",
-    "contract_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-contract.json",
-    "contract_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
-    "binding_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-binding.json",
-    "binding_sha256": "04e3900823bf60d7a93ab8d734aa85375b5a71e1b8d3854db55daddd05f98bb4",
-    "implementation_commit": "57017244837d6c94f03403393253d823e6c62c7a",
-    "source_dataset_fingerprints": {
-      "BTCUSDT": "b06a2b230ab31c164664eb96829500072312c6dd45c301b63c21d29cac98ecc8",
-      "ETHUSDT": "955da3450cdbdd2c4e0a6113f2e33694e6435e94f754b6a2b4a1e6c420cb6b3e",
-      "SOLUSDT": "2af6270b467264a10e9ee7aa339595a5b17f0f81578a9921acb4176df552c55d"
-    }
+    "report_file": "round58-two-sided-support-20260715.json",
+    "report_file_sha256": "0471f049129ba58556c50412c0681f425faaf25696657ac45f92afd94810d18e",
+    "report_canonical_sha256": "46da40b3ddd8818ebfd45ea0d8a1cec260e88354d6b952fbdc9b2e0d1a2c2bdd",
+    "cost_reference_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-contract.json",
+    "cost_reference_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
+    "implementation_commit": "58aa5a52b8fd8bde2a329fbf8d49841d96405a0a",
+    "probe_path": "tools/probe_round58_two_sided_maker_support.py",
+    "probe_git_blob_oid": "adef23780ae6a682a4434e30f21b8e82ab55857c"
   },
   "claims": {
-    "status": "rejected_policy_predictive",
+    "status": "rejected_posthoc_feasibility",
     "selection_contaminated": true,
     "profitability_claim": false,
     "ai_uplift_claim": false,
@@ -29,95 +21,88 @@
     "testnet_authority": false,
     "live_authority": false,
     "leverage_applied": false,
-    "post_hoc_threshold_authority": false
+    "performance_claim": false
   },
   "result": {
-    "queue_fill_seed_members": 3,
-    "payoff_seed_members": 3,
-    "policy_calibration_fill_cells_passed": 6,
-    "policy_calibration_fill_cells_total": 6,
-    "policy_calibration_payoff_cells_passed": 5,
-    "policy_calibration_payoff_cells_total": 12,
-    "evaluation_fill_cells_passed": 6,
-    "evaluation_fill_cells_total": 6,
-    "evaluation_payoff_cells_passed": 3,
-    "evaluation_payoff_cells_total": 12,
-    "positive_evaluation_top_quintile_cells": 0,
+    "observed_utc_days": 1,
+    "eligible_decisions": 25709,
+    "both_fill_rows": 737,
+    "singleton_rows": 10481,
+    "symbols_with_p99_spread_above_prior_fee_reference": 0,
+    "symbols_with_p99_spread_above_prior_base_cost_reference": 0,
+    "prior_frozen_fee_reference_bps": 4.0,
+    "prior_frozen_base_cost_reference_bps": 6.0,
+    "model_trained": false,
     "policy_selected": false,
     "economic_replay_performed": false,
     "ai_ablation_performed": false
   },
   "artifacts": [
     {
-      "path": "action-values.csv",
-      "bytes": 2157,
-      "sha256": "d9dd26055d77b07ed465f67b7d768d556bbdf10931ac6c5570a19642a329b76d"
+      "path": "charts/inventory-exposure.svg",
+      "bytes": 6567,
+      "sha256": "31add07e8ccdffee2a9eaa8cfe8db75a10bde6e10409cc426c696b8d7fa3b788"
     },
     {
-      "path": "charts/expected-action-value.svg",
-      "bytes": 5865,
-      "sha256": "f12cf4d6b78855fd20a48f8cf71e42218e149ae10e6871c73941fd856f5594f4"
-    },
-    {
-      "path": "charts/fill-survival-skill.svg",
-      "bytes": 5779,
-      "sha256": "1fe7843eee8a78a4671256d5bf2faec65d308b15871295133c7f0326158ac378"
+      "path": "charts/joint-fill-support.svg",
+      "bytes": 4906,
+      "sha256": "3d3fb47b814e660d04538ba0cbad7432fd536b92a6a1d930d346a50dd360de26"
     },
     {
       "path": "charts/research-progress.svg",
-      "bytes": 5292,
-      "sha256": "0ed9652ac2c9b334caa1418a3e606ca9b368f16afcbad2b6dff11bd535693d23"
+      "bytes": 5302,
+      "sha256": "1947597a0bc0f6875c8dbacbb3145ccd8edf0ef0a2228193846734a36fdb1064"
     },
     {
-      "path": "charts/top-quintile-net-payoff.svg",
-      "bytes": 5931,
-      "sha256": "76e6cb6400107d6498d983005805642c2dbe2063dc518b5c3da1403e2477f622"
-    },
-    {
-      "path": "conditional-payoff.csv",
-      "bytes": 6427,
-      "sha256": "72b5b6783f40cfad475100d98e5e862fffdf9806c64407287b7861c1b0a18d00"
+      "path": "charts/spread-feasibility.svg",
+      "bytes": 6580,
+      "sha256": "95b32cbe1d5501fd65bf658504fe241a85fe37dc00a2c9bffec7e7760ecd9301"
     },
     {
       "path": "failure-analysis.json",
-      "bytes": 1671,
-      "sha256": "a53132b6e082aab37afa252c797a2504f8c9a6ccdce53d7d6d56db5cb634bc46"
+      "bytes": 1632,
+      "sha256": "b6eb36ad28b447c0ab181ec7434355423caa47f4f282132daeda3a825091b983"
     },
     {
-      "path": "fill-survival.csv",
-      "bytes": 2865,
-      "sha256": "650aa70fc87fa8c24d7dfd099fac551c2d590ee32139285c1c18b463a82c2111"
+      "path": "fill-bucket-cross.csv",
+      "bytes": 3086,
+      "sha256": "236009722f341a71a513460f065adeb3f57f3b2f6b710d0fd931861c4b86171e"
     },
     {
-      "path": "gates.csv",
-      "bytes": 2433,
-      "sha256": "faaea2cae94cfcb0901ab457051f0e589da8dd84ea7436b8f83f8952b28b5dd0"
+      "path": "inventory-exposure.csv",
+      "bytes": 497,
+      "sha256": "f8488ef8c1b06a3494c74605754223e6cf1f270c9359becc6447fafa4a2f81ac"
     },
     {
-      "path": "model-artifacts.csv",
-      "bytes": 1257,
-      "sha256": "0ab7fd1916431e52d39375a314aa6c58333922dfd87d4a64d5475d271675d5f1"
+      "path": "joint-fill-support.csv",
+      "bytes": 619,
+      "sha256": "3523a0ba823fa04b7d23f547050f4136ac6397bf7be14ce7b3a219ae95c76c4a"
     },
     {
       "path": "progress.csv",
-      "bytes": 21133,
-      "sha256": "618d410bec7f4cfe94022844835e92484811aaa9ce08fa9e1ace0be6f1dfa94d"
+      "bytes": 21602,
+      "sha256": "67fd6d109189ffc600f16e29b2761be5f8e1a9b66888b6e3d9e815e88efa002f"
     },
     {
       "path": "README.md",
-      "bytes": 2521,
-      "sha256": "b0f2e67c3ce1d517647c95b3018e626045ccbcaf9a56cb70f1932b585f714a48"
+      "bytes": 3124,
+      "sha256": "5ce88189fb532945d2391bdc56bafae139a379d8f7486922016cf35a3b2258fc"
     },
     {
       "path": "screen.json",
-      "bytes": 232637,
-      "sha256": "1e549d21b6aa96f78e5f7e740457af0116e161ce67e9b600a62d28ee2d12e712"
+      "bytes": 23604,
+      "sha256": "0471f049129ba58556c50412c0681f425faaf25696657ac45f92afd94810d18e"
     },
     {
       "path": "source-coverage.csv",
-      "bytes": 2986,
-      "sha256": "71aef91ff3ceb51fc2c9d835803b4ce4fa9d7d8530e8e77ad6bbab56868057da"
+      "bytes": 1733,
+      "sha256": "50b637f0bdb3375637813f0cb66e5b11fae36328f8cdd62e93e2d8318fd4b775"
+    },
+    {
+      "path": "spread-feasibility.csv",
+      "bytes": 648,
+      "sha256": "8172721125c338402b3dcd74dadbfb3ebd5ab3bd76b049693034ee75955ebd09"
     }
   ],
-  "publication_canonical_sha256": "7d283c52d0a8178bbab17e5a8f68f32e9b81238c9ee66e50dd1baf294153222a"
+  "publication_canonical_sha256": "34ddf6199703e6769e184772da4638906a036df1aac667628fa172c1ba675cc4"
 }

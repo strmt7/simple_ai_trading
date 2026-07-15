@@ -42,12 +42,15 @@ artifacts must not be interpreted as profitability evidence.
 
 Two latest-only research evidence tracks are retained. The predictive
 [`action-value/latest`](../model-research/action-value/latest/README.md) track is
-at Round 57: its fixed three-seed queue-fill ensemble passed all six
-symbol-side proper-score cells in both policy calibration and consumed
-evaluation, but the directional payoff ensemble failed. Every evaluation
-top-score quintile remained negative after the frozen realistic costs, so no
-policy, economic replay, leverage, AI uplift, or trading authority was
-evaluated. The independent execution-replay
+at Round 58. A value-blind official-event probe rejected symmetric touch making
+before training: only `2.36-3.18%` of eligible decisions filled both sides,
+`28.03-47.19%` filled one side, and every two-fill spread p99 was below `1` bps
+against the prior frozen `4` bps fee reference. It read no returns, P&L, costs,
+strategy outcomes, or policy thresholds. Round 57 remains in the rolling
+record: its queue-fill model generalized, but all 12 evaluation payoff top
+quintiles were negative after realistic frozen costs. No policy, economic
+replay, leverage, AI uplift, or trading authority was evaluated. The
+independent execution-replay
 [`tape-depth/latest`](../model-research/tape-depth/latest/README.md) track remains
 at Round 8. It evaluated the frozen BTCUSDT 20-second candidate on three
 untouched UTC dates using real one-second trade/depth features and exact 100 ms

@@ -1,0 +1,4 @@
+round,day_utc,symbol,both_fill_rows,spread_p50_bps,spread_p90_bps,spread_p99_bps,spread_max_bps,prior_frozen_fee_reference_bps,prior_frozen_base_cost_reference_bps,p99_clears_fee_reference,p99_clears_base_cost_reference,max_clears_base_cost_reference
+58,2023-06-01,BTCUSDT,265,0.037228973077674254,0.037375129736449964,0.037526540579868595,1.5717621699296025,4.0,6.0,false,false,false
+58,2023-06-01,ETHUSDT,204,0.053720262681578035,0.05395340908975754,0.15887904218419002,0.7059462394787275,4.0,6.0,false,false,false
+58,2023-06-01,SOLUSDT,268,0.48348885558269217,0.4880739141568391,0.9713646607136138,7.320644216690653,4.0,6.0,false,false,true

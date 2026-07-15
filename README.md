@@ -542,17 +542,19 @@ Round-level implementation notes live under `docs/optimization/`. This repo no
 longer publishes ROI, P&L, drawdown, or chart claims unless they come from
 exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
-The latest predictive-model evidence is
+The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
-Round 57 trained fixed three-seed queue-fill and payoff ensembles on real
-official Binance USD-M BTC, ETH, and SOL event data using AMD OpenCL. All six
-symbol-side queue-fill cells passed proper-score gates in policy calibration
-and again in the consumed evaluation period. The directional payoff model did
-not: only `5/12` calibration and `3/12` evaluation action cells passed, and all
-12 evaluation top-score quintiles had negative realized net payoff after the
-frozen spread, latency, fee, slippage, and path-exit costs. The run stopped
-before policy selection, economic replay, leverage, or AI ablation. It makes no
-profitability, testnet, live-trading, or execution claim.
+Round 58 used a value-blind, checksum-bound support probe on official Binance
+USD-M BTC, ETH, and SOL events from 2023-06-01 before spending more GPU time on
+a symmetric touch-making model. Two-sided fills occurred in only `2.36-3.18%`
+of eligible decisions, versus `28.03-47.19%` one-sided fills. Every symbol's
+99th-percentile two-fill placement spread was below `1` bps, compared with the
+prior frozen `4` bps round-trip fee reference and `6` bps fee-plus-slippage
+reference. The mechanism was rejected before model training. The probe read no
+returns, costs, P&L, strategy outcomes, or policy thresholds and makes no
+profitability, testnet, live-trading, leverage, AI-uplift, or execution claim.
+Round 57 remains in the rolling progress record: its queue-fill model
+generalized, but its directional payoff model did not clear realistic costs.
 
 The latest independent execution-replay confirmation remains
 [`tape-depth/latest`](docs/model-research/tape-depth/latest/README.md): Round 8
