@@ -223,6 +223,46 @@ class MakeTakePayoffPredictionBatch:
             raise ValueError("make/take payoff prediction batch is invalid")
 
 
+@dataclass(frozen=True)
+class MakeTakeConditionalPayoffPredictionBatch:
+    source_panel_sha256: str
+    model_sha256: str
+    symbol: str
+    action_code: np.ndarray
+    action_side: np.ndarray
+    conditional_mean_bps: np.ndarray
+    conditional_q20_bps: np.ndarray
+
+    @property
+    def rows(self) -> int:
+        return int(self.action_code.size)
+
+    def __post_init__(self) -> None:
+        rows = self.rows
+        vectors = (
+            self.action_code,
+            self.action_side,
+            self.conditional_mean_bps,
+            self.conditional_q20_bps,
+        )
+        if (
+            rows <= 0
+            or self.symbol not in MAKE_TAKE_PAYOFF_SYMBOLS
+            or not _is_sha256(self.source_panel_sha256)
+            or not _is_sha256(self.model_sha256)
+            or any(np.asarray(value).shape != (rows,) for value in vectors)
+            or not np.all(np.isin(self.action_code, _ACTION_CODES))
+            or not np.array_equal(
+                self.action_side,
+                np.where(np.isin(self.action_code, (0, 2)), 1, -1),
+            )
+            or not np.isfinite(self.conditional_mean_bps).all()
+            or not np.isfinite(self.conditional_q20_bps).all()
+            or np.any(self.conditional_q20_bps > self.conditional_mean_bps + 1e-12)
+        ):
+            raise ValueError("make/take conditional payoff prediction batch is invalid")
+
+
 def _canonical_json(value: object) -> str:
     return json.dumps(
         value,
@@ -575,6 +615,16 @@ def _validate_model(
             raise ValueError("make/take payoff booster payload cannot be reloaded") from exc
 
 
+def validate_make_take_payoff_lightgbm_model(
+    model: TrainedMakeTakePayoffLightGBMModel,
+    *,
+    reload: bool = False,
+) -> None:
+    """Public artifact validator used by downstream evidence gates."""
+
+    _validate_model(model, reload=reload)
+
+
 def _train_head(
     *,
     x_train: np.ndarray,
@@ -827,6 +877,45 @@ def train_make_take_payoff_lightgbm_model(
     return model
 
 
+def _predict_calibrated_arrays(
+    model: TrainedMakeTakePayoffLightGBMModel,
+    features: np.ndarray,
+    action_code: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    _validate_model(model, reload=False)
+    values = np.asarray(features, dtype=np.float32)
+    actions = np.asarray(action_code, dtype=np.uint8)
+    if (
+        values.ndim != 2
+        or values.shape[0] == 0
+        or values.shape[1] != len(model.feature_names)
+        or actions.shape != (values.shape[0],)
+        or not np.all(np.isin(actions, _ACTION_CODES))
+        or not np.isfinite(values).all()
+    ):
+        raise ValueError("make/take payoff prediction matrix is invalid")
+    predictions: list[np.ndarray] = []
+    try:
+        for model_string, iteration in zip(
+            model.model_strings, model.best_iterations, strict=True
+        ):
+            booster = lgb.Booster(model_str=model_string)
+            prediction = np.asarray(
+                booster.predict(values, num_iteration=iteration),
+                dtype=np.float64,
+            )
+            if prediction.shape != (values.shape[0],) or not np.isfinite(
+                prediction
+            ).all():
+                raise ValueError("make/take payoff booster prediction is invalid")
+            predictions.append(prediction)
+    except lgb.basic.LightGBMError as exc:
+        raise ValueError("make/take payoff booster payload cannot be reloaded") from exc
+    mean = predictions[0] + np.asarray(model.mean_calibration_offset_bps)[actions]
+    q20 = predictions[1] + np.asarray(model.q20_calibration_offset_bps)[actions]
+    return mean, np.minimum(q20, mean)
+
+
 def predict_make_take_payoff_lightgbm_model(
     model: TrainedMakeTakePayoffLightGBMModel,
     *,
@@ -869,28 +958,13 @@ def predict_make_take_payoff_lightgbm_model(
         or not np.isfinite(action_features.features).all()
     ):
         raise ValueError("make/take payoff prediction feature contract drifted")
-    predictions: list[np.ndarray] = []
-    try:
-        for model_string, iteration in zip(
-            model.model_strings, model.best_iterations, strict=True
-        ):
-            booster = lgb.Booster(model_str=model_string)
-            prediction = np.asarray(
-                booster.predict(action_features.features, num_iteration=iteration),
-                dtype=np.float64,
-            )
-            if prediction.shape != (action_features.action_rows,) or not np.isfinite(
-                prediction
-            ).all():
-                raise ValueError("make/take payoff booster prediction is invalid")
-            predictions.append(prediction)
-    except lgb.basic.LightGBMError as exc:
-        raise ValueError("make/take payoff booster payload cannot be reloaded") from exc
     action_code = np.array(action_features.action_code, dtype=np.uint8, copy=True)
     action_side = np.array(action_features.action_side, dtype=np.int8, copy=True)
-    mean = predictions[0] + np.asarray(model.mean_calibration_offset_bps)[action_code]
-    q20 = predictions[1] + np.asarray(model.q20_calibration_offset_bps)[action_code]
-    q20 = np.minimum(q20, mean)
+    mean, q20 = _predict_calibrated_arrays(
+        model,
+        action_features.features,
+        action_code,
+    )
     event_index = np.repeat(action_features.event_indexes, 4).astype(np.int64, copy=False)
     decision_time = np.repeat(action_features.decision_time_ms, 4).astype(
         np.int64, copy=False
@@ -904,6 +978,38 @@ def predict_make_take_payoff_lightgbm_model(
         symbol=normalized_symbol,
         event_index=event_index,
         decision_time_ms=decision_time,
+        action_code=action_code,
+        action_side=action_side,
+        conditional_mean_bps=mean,
+        conditional_q20_bps=q20,
+    )
+
+
+def predict_make_take_conditional_payoff_panel(
+    model: TrainedMakeTakePayoffLightGBMModel,
+    panel: MakeTakeConditionalPayoffPanel,
+) -> MakeTakeConditionalPayoffPredictionBatch:
+    """Predict a conditional-payoff panel without requiring unfilled action rows."""
+
+    _validate_model(model, reload=False)
+    validate_make_take_conditional_payoff_panel(panel)
+    source = dict(model.source_dataset_sha256_by_symbol)
+    if (
+        panel.symbol not in source
+        or panel.source_dataset_sha256 != source[panel.symbol]
+        or panel.source_feature_spec_sha256 != model.source_feature_spec_sha256
+        or panel.feature_names != model.feature_names
+    ):
+        raise ValueError("make/take conditional payoff panel drifted")
+    action_code = np.array(panel.action_code, dtype=np.uint8, copy=True)
+    action_side = np.array(panel.action_side, dtype=np.int8, copy=True)
+    mean, q20 = _predict_calibrated_arrays(model, panel.features, action_code)
+    for array in (action_code, action_side, mean, q20):
+        array.setflags(write=False)
+    return MakeTakeConditionalPayoffPredictionBatch(
+        source_panel_sha256=panel.panel_sha256,
+        model_sha256=model.model_sha256,
+        symbol=panel.symbol,
         action_code=action_code,
         action_side=action_side,
         conditional_mean_bps=mean,
@@ -1002,13 +1108,16 @@ __all__ = [
     "MAKE_TAKE_PAYOFF_LIGHTGBM_SCHEMA_VERSION",
     "MAKE_TAKE_PAYOFF_MODEL_FAMILY",
     "MAKE_TAKE_PAYOFF_SEEDS",
+    "MakeTakeConditionalPayoffPredictionBatch",
     "MakeTakePayoffLightGBMSpec",
     "MakeTakePayoffPredictionBatch",
     "PayoffQualityDiagnostics",
     "SymbolActionPayoffSupport",
     "TrainedMakeTakePayoffLightGBMModel",
     "load_make_take_payoff_lightgbm_model",
+    "predict_make_take_conditional_payoff_panel",
     "predict_make_take_payoff_lightgbm_model",
     "save_make_take_payoff_lightgbm_model",
     "train_make_take_payoff_lightgbm_model",
+    "validate_make_take_payoff_lightgbm_model",
 ]

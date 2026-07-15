@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pytest
 
 import simple_ai_trading.queue_fill_lightgbm as module
+import simple_ai_trading.queue_fill_survival as survival_module
 from simple_ai_trading.queue_fill_lightgbm import (
     QUEUE_FILL_SYMBOLS,
     QueueFillLightGBMSpec,
@@ -48,7 +51,7 @@ def _panel(symbol: str, *, start_ms: int, source_sha: str) -> PassiveFillSurviva
             fill_bucket,
         )
     ).astype(np.float32)
-    return PassiveFillSurvivalPanel(
+    provisional = PassiveFillSurvivalPanel(
         schema_version=PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION,
         symbol=symbol,
         feature_names=("feature_a", "feature_b", "feature_c"),
@@ -62,8 +65,13 @@ def _panel(symbol: str, *, start_ms: int, source_sha: str) -> PassiveFillSurviva
         action_side=action_side,
         features=features,
         fill_bucket=fill_bucket,
-        panel_sha256=("3" if start_ms == 0 else "4" if start_ms < 2_000_000 else "5")
-        * 64,
+        panel_sha256="",
+    )
+    return replace(
+        provisional,
+        panel_sha256=survival_module._sha256(
+            survival_module._panel_payload(provisional)
+        ),
     )
 
 
