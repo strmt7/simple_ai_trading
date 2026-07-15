@@ -49,7 +49,11 @@ agents to canonical evidence without replacing that evidence.
   pending, so no profitability or execution authority exists.
 - Capture `eae374e2662c440fb93970d5710937b1` is development-only: its evidence
   queue saturated and interruption left no terminal report. Never use it for a
-  confirmation claim. The next capture must use the measured writer fix.
+  confirmation claim. Corrected confirmation capture
+  `3a67757c7f174df4b62f2722ea9211cb` is currently running with the measured
+  writer fix. Inspect its progress file and process only; do not open its
+  DuckDB while the recorder owns it, and do not treat it as evidence until its
+  terminal report and integrity/continuity audits pass.
 - Round 9 MLP report v2 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
