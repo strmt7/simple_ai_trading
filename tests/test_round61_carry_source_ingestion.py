@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import io
+import json
 from pathlib import Path
 import zipfile
 
 import pytest
 
 from tools.ingest_round61_carry_event_sources import (
+    LEGACY_CHECKPOINT_DESIGN_SHA256,
+    LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT,
     _certificate_payload,
+    _load_checkpoint,
     _parse_filtered_archive,
 )
 from tools.run_round59_funding_persistence_feasibility import _canonical_sha256
@@ -70,6 +74,61 @@ def test_filtered_archive_fails_when_a_required_minute_is_absent(
             required_times=[JANUARY_2024_MS + 60000],
             mark_price=True,
         )
+
+
+def test_filtered_archive_certifies_missing_minute_without_filling(
+    tmp_path: Path,
+) -> None:
+    path = _archive(
+        tmp_path,
+        f"{JANUARY_2024_MS},100,102,99,101,10,{JANUARY_2024_MS + 59999}\n",
+    )
+
+    selected, evidence = _parse_filtered_archive(
+        path,
+        period="2024-01",
+        required_times=[JANUARY_2024_MS, JANUARY_2024_MS + 60000],
+        mark_price=True,
+        allow_missing_required=True,
+    )
+
+    assert [row.open_time for row in selected] == [JANUARY_2024_MS]
+    assert evidence["selected_rows"] == 1
+    assert evidence["missing_required_rows"] == 1
+    assert evidence["missing_required_open_times_ms"] == [JANUARY_2024_MS + 60000]
+
+
+def test_legacy_complete_checkpoint_is_normalized_during_migration(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "certificate.json"
+    payload = _certificate_payload(
+        implementation_commit="c" * 40,
+        database_file="market_data.sqlite",
+        complete=False,
+        archive_evidence=[
+            {
+                "kind": "spot",
+                "symbol": "BTCUSDT",
+                "period": "2024-01",
+                "required_rows": 2,
+                "selected_rows": 2,
+            }
+        ],
+        futures_evidence=[],
+        series_evidence=[],
+    )
+    payload["design_sha256"] = LEGACY_CHECKPOINT_DESIGN_SHA256
+    payload["implementation_commit"] = LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT
+    canonical = dict(payload)
+    canonical.pop("source_certificate_sha256")
+    payload["source_certificate_sha256"] = _canonical_sha256(canonical)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    evidence = _load_checkpoint(path, implementation_commit="c" * 40)
+
+    assert evidence[0]["missing_required_rows"] == 0
+    assert evidence[0]["missing_required_open_times_ms"] == []
 
 
 def test_source_certificate_hash_covers_completion_and_evidence() -> None:
