@@ -6488,6 +6488,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 probability_report.test_log_loss_delta < 0.0
                 and probability_report.test_brier_delta < 0.0
             ),
+            "minimum_confirmatory_test_time_groups_met": (
+                len(split.test_group_starts_ms) >= 30
+            ),
             "after_cost_execution_improved": (
                 model_execution.net_realized_pnl_quote
                 > baseline_execution.net_realized_pnl_quote
@@ -6536,6 +6539,17 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "model_execution": model_execution.asdict(),
             "execution_latency_sensitivity": latency_sensitivity_payload,
             "ai": ai_payload,
+            "confirmatory_evidence_contract": {
+                "independent_unit": "shared_btc_eth_sol_five_minute_time_group",
+                "minimum_untouched_test_time_groups": 30,
+                "observed_untouched_test_time_groups": len(
+                    split.test_group_starts_ms
+                ),
+                "minimum_markets_per_asset": minimum_markets,
+                "confirmatory_ready": len(split.test_group_starts_ms) >= 30,
+                "trading_authority": False,
+                "profitability_claim": False,
+            },
             "evidence_gates": evidence_gates,
             "trading_authority": False,
             "execution_claim": False,
