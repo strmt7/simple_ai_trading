@@ -1,0 +1,240 @@
+{
+  "schema_version": "round-057-queue-censored-make-take-execution-binding-v1",
+  "round": 57,
+  "design_sha256": "61165c1150f5349ff1b15f2243e7520ecbd7af44578edda7fc2be8bb56b66cdf",
+  "contract_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
+  "implementation_commit": "be90dd3681000fcdec64cdded7567550fd79670c",
+  "blobs": [
+    {
+      "path": "docs/model-research/action-value/round-057-queue-censored-make-take-design.json",
+      "git_blob_oid": "a8d48d7b8572f53fbd1d339f98598176d85621cf"
+    },
+    {
+      "path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-contract.json",
+      "git_blob_oid": "4634f73355c0ecc7ca72f5072da4ac9074b9ae34"
+    },
+    {
+      "path": "src/simple_ai_trading/assets.py",
+      "git_blob_oid": "9826d5aad817d6e9ed087ca431d3fa4d4c63edb8"
+    },
+    {
+      "path": "src/simple_ai_trading/binance_archive.py",
+      "git_blob_oid": "ea3285f78b1657f0b8e2d0619bb69093fe63d5da"
+    },
+    {
+      "path": "src/simple_ai_trading/compute.py",
+      "git_blob_oid": "bde295ca773e31f3c40d237a9da9f792b2328945"
+    },
+    {
+      "path": "src/simple_ai_trading/lightgbm_backend.py",
+      "git_blob_oid": "d772911678e45fc5188cf4ebf52a505db459618c"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_action_features.py",
+      "git_blob_oid": "daffbd96d6473f170ee5e44014395c9a9f1824ef"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_action_values.py",
+      "git_blob_oid": "168944bdcda1005faa8daeaf6db31f5ba2a6d75c"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_evaluation.py",
+      "git_blob_oid": "dc506718a7d56933ab6b822905366dc222a2eb94"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_historical_source.py",
+      "git_blob_oid": "628d814abd9027998262c32b808480ad860d976f"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_path_payoffs.py",
+      "git_blob_oid": "780a208b2e8bfa8f0908b12fb6736ce174c1fbcc"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_payoff_lightgbm.py",
+      "git_blob_oid": "a8eeea07d4808541ad3128426892d3efd9d438f2"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_payoff_panel.py",
+      "git_blob_oid": "c8f380cf1dee452991b83b9efc7d7f36e220235d"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_policy.py",
+      "git_blob_oid": "a25b49981f50b1225a4b022de1dc5228d6cf5b92"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_predictive_evaluation.py",
+      "git_blob_oid": "f03773859660ffe78221a25ff815338c2fc22b71"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_replay.py",
+      "git_blob_oid": "08a62c66df8fe25a7e3297a707a5775a2c099d14"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_scenario_entries.py",
+      "git_blob_oid": "10e0d7bc92a57f164a67d834199dddad9db86473"
+    },
+    {
+      "path": "src/simple_ai_trading/make_take_targets.py",
+      "git_blob_oid": "7ae3228c6e012f29ead531805811749a958d14c5"
+    },
+    {
+      "path": "src/simple_ai_trading/microstructure_action_features.py",
+      "git_blob_oid": "17ec0e330ca7031691869643872f9ad60d02da2d"
+    },
+    {
+      "path": "src/simple_ai_trading/microstructure_barriers.py",
+      "git_blob_oid": "cb9d333735045b85d8a5f656c27598a7b968c409"
+    },
+    {
+      "path": "src/simple_ai_trading/microstructure_cache.py",
+      "git_blob_oid": "158ae8a90c5d4c590d077862987f81618184a748"
+    },
+    {
+      "path": "src/simple_ai_trading/microstructure_features.py",
+      "git_blob_oid": "b7a039d946afe1ae8ec15aa2f15e38dc496d58cb"
+    },
+    {
+      "path": "src/simple_ai_trading/microstructure_warehouse.py",
+      "git_blob_oid": "367c8059d7ec5f86acca26d60ad641c9a61dc1bc"
+    },
+    {
+      "path": "src/simple_ai_trading/probability_calibration.py",
+      "git_blob_oid": "6a6fd2cc1015efe33b4702681931b371343cad0c"
+    },
+    {
+      "path": "src/simple_ai_trading/progress_heartbeat.py",
+      "git_blob_oid": "5f97ee75d94b71ac36744b57d0f232838d3232fb"
+    },
+    {
+      "path": "src/simple_ai_trading/queue_censored_actions.py",
+      "git_blob_oid": "dd07cb9da4e3dca68562248d55587f29d1a5c07d"
+    },
+    {
+      "path": "src/simple_ai_trading/queue_fill_lightgbm.py",
+      "git_blob_oid": "6f994dc7a09128d26066844f6d411516f42926bd"
+    },
+    {
+      "path": "src/simple_ai_trading/queue_fill_survival.py",
+      "git_blob_oid": "20501c472cd90c1c8e1d665f74ae06df13bb0572"
+    },
+    {
+      "path": "src/simple_ai_trading/storage.py",
+      "git_blob_oid": "e693805c6e5ebac369413e3335e36071fb2a603f"
+    },
+    {
+      "path": "tests/test_make_take_action_features.py",
+      "git_blob_oid": "70a8cf728bd7a3ea8f65ba3fe169560f42ea3cec"
+    },
+    {
+      "path": "tests/test_make_take_action_values.py",
+      "git_blob_oid": "9cc701f749db439bb99fcf5dd9a7795a1883bcc1"
+    },
+    {
+      "path": "tests/test_make_take_evaluation.py",
+      "git_blob_oid": "f55f85d52ff5fa624b0ce97311f45f33be0b2c7a"
+    },
+    {
+      "path": "tests/test_make_take_historical_source.py",
+      "git_blob_oid": "61a44e8062bfd3bf1d80ca3a685c547de33cc4fc"
+    },
+    {
+      "path": "tests/test_make_take_path_payoffs.py",
+      "git_blob_oid": "ca74db1eb0a2e6ba5d37d4611fdd3d7136804f4d"
+    },
+    {
+      "path": "tests/test_make_take_payoff_lightgbm.py",
+      "git_blob_oid": "a6dc3c28a79070be340cd1f52a525698fb508fff"
+    },
+    {
+      "path": "tests/test_make_take_payoff_panel.py",
+      "git_blob_oid": "dd0f99d19c541692d3f7d8260d6c48010db86923"
+    },
+    {
+      "path": "tests/test_make_take_policy.py",
+      "git_blob_oid": "bff3e92dd279441cad2de61a7bc6159f66c8bdfc"
+    },
+    {
+      "path": "tests/test_make_take_predictive_evaluation.py",
+      "git_blob_oid": "f7d9999717ca7a999971183edc58422cba748d58"
+    },
+    {
+      "path": "tests/test_make_take_replay.py",
+      "git_blob_oid": "70db610db87da286d4a332016929ac81fde72e06"
+    },
+    {
+      "path": "tests/test_make_take_scenario_entries.py",
+      "git_blob_oid": "4116876e6329544e07ad0040e2d79118bb31257b"
+    },
+    {
+      "path": "tests/test_make_take_targets.py",
+      "git_blob_oid": "b1cf538a56fa402f71cc6e91d3024663b21090a1"
+    },
+    {
+      "path": "tests/test_probability_calibration.py",
+      "git_blob_oid": "c6480545fe100ef765037b39109a18edfbf639f0"
+    },
+    {
+      "path": "tests/test_queue_censored_actions.py",
+      "git_blob_oid": "6f088f57818d0822448be9b30ee0f27b0763296e"
+    },
+    {
+      "path": "tests/test_queue_fill_lightgbm.py",
+      "git_blob_oid": "6c0a5f586c0492365182260c7433c4ad01a96d39"
+    },
+    {
+      "path": "tests/test_queue_fill_survival.py",
+      "git_blob_oid": "c0f969061c862836fe383510f12272fd184d155b"
+    },
+    {
+      "path": "tests/test_round57_model_contract.py",
+      "git_blob_oid": "6f198eca28aaa7ca10c0b1608b4005a7b9c08adc"
+    },
+    {
+      "path": "tools/create_round57_queue_censored_make_take_binding.py",
+      "git_blob_oid": "bd389661f385acebc902d4a9fec4b8ba52979725"
+    },
+    {
+      "path": "tools/run_round57_queue_censored_make_take.py",
+      "git_blob_oid": "23e93d01aa5c35dfb9f69d61824be4c1ed648c2e"
+    }
+  ],
+  "source_cache": [
+    {
+      "symbol": "BTCUSDT",
+      "cache_key": "26ac0a3c53052ee44be1ce0bc997ce539b5bf72f865417630329aa72bb8ad180",
+      "dataset_fingerprint": "b06a2b230ab31c164664eb96829500072312c6dd45c301b63c21d29cac98ecc8",
+      "rows": 249333,
+      "first_decision_time_ms": 1684241150000,
+      "last_decision_time_ms": 1686786900000,
+      "source_evidence_sha256": "93b185b5d3798ad5e4b8418fdd528164385cd305dbba6020d1eee4a256c8b454",
+      "corpus_certificate_sha256": "10f920c09fea0776905cd9662299875b34f547100893a85584d76d4a2b463f75"
+    },
+    {
+      "symbol": "ETHUSDT",
+      "cache_key": "ac13e27461ae2569a888162966879b4e5940baafbe1758362d0861036ef43f09",
+      "dataset_fingerprint": "955da3450cdbdd2c4e0a6113f2e33694e6435e94f754b6a2b4a1e6c420cb6b3e",
+      "rows": 249291,
+      "first_decision_time_ms": 1684241150000,
+      "last_decision_time_ms": 1686786900000,
+      "source_evidence_sha256": "cd202d5df45360cc39b590543a1a89bcc4dbc4a63c17184f89ef1b9097586a3f",
+      "corpus_certificate_sha256": "6b4ca26af538040ce687eaed5029d39e5d7ad7f0d3a1e7dce990ecb320264d91"
+    },
+    {
+      "symbol": "SOLUSDT",
+      "cache_key": "37af5acb9fb5d09a01e576b60f41c810db6b6626e8421c96b5dc8d06ef2dd633",
+      "dataset_fingerprint": "2af6270b467264a10e9ee7aa339595a5b17f0f81578a9921acb4176df552c55d",
+      "rows": 137025,
+      "first_decision_time_ms": 1684241170000,
+      "last_decision_time_ms": 1686786890000,
+      "source_evidence_sha256": "c606af7f5c49d10437d1402eba981d92c399d3a8e05cce346246016204a089a2",
+      "corpus_certificate_sha256": "3f919c173e307c20550d91f9a718a81159ae9e3174d3b67c17294578895d5b9d"
+    }
+  ],
+  "command": ".venv311\\Scripts\\python.exe tools\\run_round57_queue_censored_make_take.py --warehouse <external-tick-warehouse.duckdb> --evidence-root <new-external-evidence-directory> --compute-backend auto",
+  "trading_authority": false,
+  "execution_claim": false,
+  "profitability_claim": false,
+  "portfolio_claim": false,
+  "leverage_applied": false,
+  "binding_sha256": "ea701be4fcbeaa727bac22b6b6a3564755c1761634712996dac8a811e6c682bc"
+}
