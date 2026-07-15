@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bisect import bisect_left, bisect_right
+from bisect import bisect_right
 from collections import Counter
 from dataclasses import dataclass, replace
 from decimal import Decimal, ROUND_FLOOR
@@ -25,8 +25,8 @@ from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 
 
 POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION = "polymarket-execution-config-v1"
-POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION = "polymarket-execution-trade-v1"
-POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v1"
+POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION = "polymarket-execution-trade-v2"
+POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v2"
 
 
 def _canonical_json(value: object) -> str:
@@ -139,6 +139,9 @@ class PolymarketExecutionTrade:
     end_ms: int
     decision_received_wall_ms: int
     decision_received_monotonic_ns: int
+    decision_delay_ms: int
+    submission_latency_ms: int
+    effective_latency_ms: int
     outcome: str
     predicted_probability: float
     expected_edge_per_contract: Decimal
@@ -191,6 +194,9 @@ class PolymarketExecutionReport:
     replay_run_id: str
     probability_input_sha256: str
     market_permission_sha256: str
+    market_permissions: Mapping[str, bool]
+    decision_delay_input_sha256: str
+    decision_delay_ms_by_condition: Mapping[str, int]
     config: PolymarketExecutionResearchConfig
     evaluated_market_count: int
     signal_market_count: int
@@ -225,6 +231,11 @@ class PolymarketExecutionReport:
             "replay_run_id": self.replay_run_id,
             "probability_input_sha256": self.probability_input_sha256,
             "market_permission_sha256": self.market_permission_sha256,
+            "market_permissions": dict(sorted(self.market_permissions.items())),
+            "decision_delay_input_sha256": self.decision_delay_input_sha256,
+            "decision_delay_ms_by_condition": dict(
+                sorted(self.decision_delay_ms_by_condition.items())
+            ),
             "config": self.config.asdict(),
             "evaluated_market_count": self.evaluated_market_count,
             "signal_market_count": self.signal_market_count,
@@ -361,11 +372,11 @@ class _ReplayBookIndex:
         values = self.books.get(token_id, ())
         timestamps = self.timestamps.get(token_id, ())
         target = int(decision_monotonic_ns) + int(latency_ms) * 1_000_000
-        index = bisect_left(timestamps, target)
-        while index < len(values):
+        index = bisect_right(timestamps, target) - 1
+        while index >= 0:
             candidate = values[index]
             if candidate.market.condition_id != condition_id:
-                index += 1
+                index -= 1
                 continue
             if candidate.segment_id != segment_id:
                 return None
@@ -572,6 +583,9 @@ def _trade_payload(trade: PolymarketExecutionTrade) -> dict[str, object]:
         "end_ms": trade.end_ms,
         "decision_received_wall_ms": trade.decision_received_wall_ms,
         "decision_received_monotonic_ns": trade.decision_received_monotonic_ns,
+        "decision_delay_ms": trade.decision_delay_ms,
+        "submission_latency_ms": trade.submission_latency_ms,
+        "effective_latency_ms": trade.effective_latency_ms,
         "outcome": trade.outcome,
         "predicted_probability": format(trade.predicted_probability, ".17g"),
         "expected_edge_per_contract": _decimal_text(
@@ -607,6 +621,7 @@ def evaluate_polymarket_execution_policy(
     *,
     config: PolymarketExecutionResearchConfig | None = None,
     market_permissions: Mapping[str, bool] | None = None,
+    decision_delay_ms_by_condition: Mapping[str, int] | None = None,
 ) -> PolymarketExecutionReport:
     """Replay one causal FOK entry per market and settle only from official evidence."""
 
@@ -629,10 +644,37 @@ def evaluate_polymarket_execution_policy(
             raise ValueError(
                 "Polymarket market permissions must bind every evaluated market"
             )
+    if decision_delay_ms_by_condition is None:
+        decision_delays = {condition: 0 for condition in sample_conditions}
+    else:
+        raw_delays = dict(decision_delay_ms_by_condition)
+        try:
+            decision_delays = {
+                condition: int(value) for condition, value in raw_delays.items()
+            }
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(
+                "Polymarket decision delays must bind every evaluated market"
+            ) from exc
+        if (
+            set(decision_delays) != sample_conditions
+            or any(isinstance(value, bool) for value in raw_delays.values())
+            or any(raw_delays[key] != value for key, value in decision_delays.items())
+            or any(not 0 <= value <= 300_000 for value in decision_delays.values())
+        ):
+            raise ValueError(
+                "Polymarket decision delays must bind every evaluated market"
+            )
     market_permission_sha256 = _canonical_sha256(
         {
             "schema_version": "polymarket-market-permission-v1",
             "permissions": dict(sorted(permissions.items())),
+        }
+    )
+    decision_delay_input_sha256 = _canonical_sha256(
+        {
+            "schema_version": "polymarket-decision-delay-input-v1",
+            "decision_delay_ms_by_condition": dict(sorted(decision_delays.items())),
         }
     )
     if (
@@ -651,6 +693,7 @@ def evaluate_polymarket_execution_policy(
             "sample_ids": [item.sample_id for item in samples],
             "probabilities": [format(float(value), ".17g") for value in predicted],
             "market_permission_sha256": market_permission_sha256,
+            "decision_delay_input_sha256": decision_delay_input_sha256,
         }
     )
     market_by_condition = {market.condition_id: market for market in replay.markets}
@@ -704,8 +747,16 @@ def evaluate_polymarket_execution_policy(
     total_fees = Decimal("0")
     winning = 0
     losing = 0
+    group_end_by_start: dict[int, int] = {}
+    for sample in samples:
+        existing_end = group_end_by_start.setdefault(
+            sample.event_start_ms,
+            sample.end_ms,
+        )
+        if existing_end != sample.end_ms:
+            raise ValueError("Polymarket time group has inconsistent market ends")
 
-    for group_start in sorted(candidates_by_group):
+    for group_start, expected_group_end in sorted(group_end_by_start.items()):
         group_equity_start = equity
         market_risk_limit = (
             group_equity_start * cfg.maximum_loss_fraction_per_market
@@ -715,9 +766,9 @@ def evaluate_polymarket_execution_policy(
         )
         deployed_group_risk = Decimal("0")
         group_pnl = Decimal("0")
-        group_end = 0
+        group_end = expected_group_end
         for candidate in sorted(
-            candidates_by_group[group_start],
+            candidates_by_group.get(group_start, ()),
             key=lambda item: (
                 item.sample.decision_received_monotonic_ns,
                 item.sample.asset,
@@ -764,53 +815,67 @@ def evaluate_polymarket_execution_policy(
                 or float(decision_book.snapshot.asks[0].price) != expected_ask
             ):
                 raise ValueError("Polymarket model quote disagrees with replay book state")
-            execution_book = book_index.execution_book(
-                token_id,
-                condition_id=sample.condition_id,
-                decision_monotonic_ns=sample.decision_received_monotonic_ns,
-                latency_ms=cfg.submission_latency_ms,
-                segment_id=decision_book.segment_id,
-                market_end_ms=market.end_ms,
+            decision_delay_ms = decision_delays[sample.condition_id]
+            effective_latency_ms = decision_delay_ms + cfg.submission_latency_ms
+            order_created_wall_ms = (
+                sample.decision_received_wall_ms + decision_delay_ms
             )
-            intent_id = paper_intent_id(
-                "polymarket",
-                sample.sample_id,
-                "open",
+            execution_wall_ms = (
+                sample.decision_received_wall_ms + effective_latency_ms
             )
-            intent = PaperOrderIntent(
-                intent_id=intent_id,
-                venue="polymarket",
-                market_id=market.market_id,
-                asset_id=token_id,
-                symbol=market.asset,
-                outcome=candidate.outcome,
-                side="BUY",
-                order_type="FOK",
-                limit_price=candidate.limit_price,
-                quantity=quantity,
-                created_at_ms=sample.decision_received_wall_ms,
-                expires_at_ms=min(
-                    market.end_ms,
-                    sample.decision_received_wall_ms + cfg.order_ttl_ms,
-                ),
-            ).validated()
-            if execution_book is None:
+            execution_book = None
+            if execution_wall_ms < market.end_ms:
+                execution_book = book_index.execution_book(
+                    token_id,
+                    condition_id=sample.condition_id,
+                    decision_monotonic_ns=sample.decision_received_monotonic_ns,
+                    latency_ms=effective_latency_ms,
+                    segment_id=decision_book.segment_id,
+                    market_end_ms=market.end_ms,
+                )
+            if order_created_wall_ms >= market.end_ms or execution_wall_ms >= market.end_ms:
+                execution_state = "EXPIRED"
+                execution_reason = "decision_or_submission_completed_after_market_end"
+                filled_quantity = Decimal("0")
+                average_fill_price = Decimal("0")
+                fee_quote = Decimal("0")
+                source_payload_sha256 = decision_book.snapshot.source_payload_sha256
+                execution_event_id = ""
+            elif execution_book is None:
                 execution_state = "UNKNOWN"
-                execution_reason = "no_gap_free_execution_book_after_latency"
+                execution_reason = "no_gap_free_causal_execution_book_at_latency"
                 filled_quantity = Decimal("0")
                 average_fill_price = Decimal("0")
                 fee_quote = Decimal("0")
                 source_payload_sha256 = decision_book.snapshot.source_payload_sha256
                 execution_event_id = ""
             else:
+                intent_id = paper_intent_id(
+                    "polymarket",
+                    sample.sample_id,
+                    "open",
+                )
+                intent = PaperOrderIntent(
+                    intent_id=intent_id,
+                    venue="polymarket",
+                    market_id=market.market_id,
+                    asset_id=token_id,
+                    symbol=market.asset,
+                    outcome=candidate.outcome,
+                    side="BUY",
+                    order_type="FOK",
+                    limit_price=candidate.limit_price,
+                    quantity=quantity,
+                    created_at_ms=order_created_wall_ms,
+                    expires_at_ms=min(
+                        market.end_ms,
+                        order_created_wall_ms + cfg.order_ttl_ms,
+                    ),
+                ).validated()
                 result = simulate_aggressive_order(
                     intent,
                     execution_book.snapshot,
-                    execution_time_ms=max(
-                        sample.decision_received_wall_ms
-                        + cfg.submission_latency_ms,
-                        execution_book.received_wall_ms,
-                    ),
+                    execution_time_ms=execution_wall_ms,
                     submission_latency_ms=cfg.submission_latency_ms,
                     maximum_book_age_ms=cfg.maximum_book_age_ms,
                     fee=fee,
@@ -841,12 +906,15 @@ def evaluate_polymarket_execution_policy(
                     winning += 1
                 else:
                     losing += 1
+            elif execution_state == "UNKNOWN":
+                deployed_group_risk += worst_cost
             reasons[execution_reason] += 1
             trade_id = _canonical_sha256(
                 {
                     "replay_run_id": replay.run_id,
                     "sample_id": sample.sample_id,
                     "config": cfg.asdict(),
+                    "decision_delay_ms": decision_delay_ms,
                 }
             )
             trade = PolymarketExecutionTrade(
@@ -859,6 +927,9 @@ def evaluate_polymarket_execution_policy(
                 end_ms=sample.end_ms,
                 decision_received_wall_ms=sample.decision_received_wall_ms,
                 decision_received_monotonic_ns=sample.decision_received_monotonic_ns,
+                decision_delay_ms=decision_delay_ms,
+                submission_latency_ms=cfg.submission_latency_ms,
+                effective_latency_ms=effective_latency_ms,
                 outcome=candidate.outcome,
                 predicted_probability=candidate.predicted_probability,
                 expected_edge_per_contract=candidate.expected_edge_per_contract,
@@ -914,6 +985,9 @@ def evaluate_polymarket_execution_policy(
         replay_run_id=replay.run_id,
         probability_input_sha256=probability_input_sha256,
         market_permission_sha256=market_permission_sha256,
+        market_permissions=dict(sorted(permissions.items())),
+        decision_delay_input_sha256=decision_delay_input_sha256,
+        decision_delay_ms_by_condition=dict(sorted(decision_delays.items())),
         config=cfg,
         evaluated_market_count=evaluated_markets,
         signal_market_count=signal_markets,
