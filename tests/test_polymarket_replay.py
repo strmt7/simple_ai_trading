@@ -1401,10 +1401,12 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
                 config=segmented,
             )
 
+        progress_events: list[str] = []
         first = materialize_polymarket_action_value_batches(
             store,
             run_id="action-pipeline",
             config=config,
+            progress=lambda phase, _payload: progress_events.append(phase),
         )
         second = materialize_polymarket_action_value_batches(
             store,
@@ -1418,6 +1420,9 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
     assert second.batches[0].status == "existing"
     assert first.batches[0].batch_sha256 == second.batches[0].batch_sha256
     assert not first.asdict()["profitability_claim"]
+    assert {"integrity-started", "integrity-cache-hit"} & set(progress_events)
+    assert "feature-source-scan" in progress_events
+    assert "feature-source-series" in progress_events
 
 
 def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(

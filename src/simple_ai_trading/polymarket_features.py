@@ -8,7 +8,8 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import math
-from typing import Mapping, Sequence
+import time
+from typing import Callable, Mapping, Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_coverage import PolymarketFeedCoverage, inspect_polymarket_feed_coverage
@@ -614,6 +615,8 @@ class _TradeSeries:
 def _parse_feed_points(
     store: PolymarketEvidenceStore,
     run_id: str,
+    *,
+    progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[
     dict[str, tuple[_PricePoint, ...]],
     dict[str, tuple[_BinanceBookPoint, ...]],
@@ -622,10 +625,40 @@ def _parse_feed_points(
     chainlink: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
     direct_books: dict[str, list[_BinanceBookPoint]] = {key: [] for key in _ASSETS}
     direct_trades: dict[str, list[_BinanceTradePoint]] = {key: [] for key in _ASSETS}
+    scan_started = time.monotonic()
+    last_progress = scan_started
+    parsed_count = 0
+
+    def notify(*, force: bool = False) -> None:
+        nonlocal last_progress
+        if progress is None:
+            return
+        now = time.monotonic()
+        if not force and now - last_progress < 30.0:
+            return
+        last_progress = now
+        try:
+            progress(
+                "feature-source-scan",
+                {
+                    "elapsed_seconds": round(now - scan_started, 3),
+                    "parsed_public_event_count": parsed_count,
+                    "chainlink_point_count": sum(map(len, chainlink.values())),
+                    "direct_book_point_count": sum(map(len, direct_books.values())),
+                    "direct_trade_point_count": sum(map(len, direct_trades.values())),
+                },
+            )
+        except Exception:
+            return
+
+    notify(force=True)
     for decoded in store.iter_public_events(
         run_id,
         streams=("binance_spot", "polymarket_rtds"),
     ):
+        parsed_count += 1
+        if parsed_count % 4_096 == 0:
+            notify()
         event_id = decoded.event_id
         event_sha256 = decoded.event_sha256
         stream = decoded.stream
@@ -729,6 +762,7 @@ def _parse_feed_points(
                     event_sha256=str(event_sha256),
                 )
             )
+    notify(force=True)
     return (
         {key: tuple(value) for key, value in chainlink.items()},
         {key: tuple(value) for key, value in direct_books.items()},
@@ -777,6 +811,7 @@ def load_polymarket_feature_source_context(
     *,
     run_id: str,
     config: PolymarketFeatureConfig | None = None,
+    progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> PolymarketFeatureSourceContext:
     """Parse immutable Binance/RTDS evidence once for bounded market batches."""
 
@@ -790,10 +825,24 @@ def load_polymarket_feature_source_context(
         minimum_resolved_markets_per_asset=cfg.minimum_resolved_markets_per_asset,
         allow_segmented_gaps=cfg.allow_segmented_gaps,
     )
-    chainlink, direct_books, direct_trades = _parse_feed_points(store, selected)
+    chainlink, direct_books, direct_trades = _parse_feed_points(
+        store,
+        selected,
+        progress=progress,
+    )
     book_series: dict[str, dict[str, _BookSeries]] = {}
     trade_series: dict[str, dict[str, _TradeSeries]] = {}
     for asset, points in direct_books.items():
+        if progress is not None:
+            progress(
+                "feature-source-series",
+                {
+                    "asset": asset,
+                    "kind": "book",
+                    "point_count": len(points),
+                    "status": "started",
+                },
+            )
         grouped: dict[str, list[_BinanceBookPoint]] = {}
         for point in points:
             grouped.setdefault(point.connection_id, []).append(point)
@@ -801,7 +850,28 @@ def load_polymarket_feature_source_context(
             connection_id: _BookSeries(segment)
             for connection_id, segment in grouped.items()
         }
+        if progress is not None:
+            progress(
+                "feature-source-series",
+                {
+                    "asset": asset,
+                    "kind": "book",
+                    "point_count": len(points),
+                    "segment_count": len(grouped),
+                    "status": "complete",
+                },
+            )
     for asset, points in direct_trades.items():
+        if progress is not None:
+            progress(
+                "feature-source-series",
+                {
+                    "asset": asset,
+                    "kind": "trade",
+                    "point_count": len(points),
+                    "status": "started",
+                },
+            )
         grouped: dict[str, list[_BinanceTradePoint]] = {}
         for point in points:
             grouped.setdefault(point.connection_id, []).append(point)
@@ -809,6 +879,17 @@ def load_polymarket_feature_source_context(
             connection_id: _TradeSeries(segment)
             for connection_id, segment in grouped.items()
         }
+        if progress is not None:
+            progress(
+                "feature-source-series",
+                {
+                    "asset": asset,
+                    "kind": "trade",
+                    "point_count": len(points),
+                    "segment_count": len(grouped),
+                    "status": "complete",
+                },
+            )
     return PolymarketFeatureSourceContext(
         run_id=selected,
         config=cfg,
