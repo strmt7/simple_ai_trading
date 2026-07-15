@@ -6282,12 +6282,12 @@ def _polymarket_matched_uplift_periods(
     baseline: object,
     ai: object,
 ) -> list[dict[str, object]]:
-    baseline_by_end = {
-        item.settled_at_ms: float(item.group_realized_pnl_quote)
+    baseline_by_start = {
+        item.event_start_ms: float(item.group_realized_pnl_quote)
         for item in getattr(baseline, "equity_curve")
     }
-    ai_by_end = {
-        item.settled_at_ms: float(item.group_realized_pnl_quote)
+    ai_by_start = {
+        item.event_start_ms: float(item.group_realized_pnl_quote)
         for item in getattr(ai, "equity_curve")
     }
     return [
@@ -6295,8 +6295,8 @@ def _polymarket_matched_uplift_periods(
             "scope": "polymarket_btc_eth_sol_five_minute_test",
             "period_start_ms": int(start_ms),
             "period_end_ms": int(start_ms) + 300_000,
-            "baseline_return": baseline_by_end.get(int(start_ms) + 300_000, 0.0),
-            "ai_return": ai_by_end.get(int(start_ms) + 300_000, 0.0),
+            "baseline_return": baseline_by_start.get(int(start_ms), 0.0),
+            "ai_return": ai_by_start.get(int(start_ms), 0.0),
         }
         for start_ms in getattr(split, "test_group_starts_ms")
     ]

@@ -1,0 +1,56 @@
+{
+  "contract_sha256": "9e9a139cc28d988a5f45ed160a00cc3ac363657c41e3394d1169031164fc2eb3",
+  "equivalence_contract": {
+    "historical_and_live_feature_derivation_identical": true,
+    "historical_and_live_probability_must_match_exactly_for_identical_causal_inputs": true,
+    "market_prior": "Normalized paired-outcome CLOB midpoint available at the decision event.",
+    "model_config_digest_required": true,
+    "source_feature_row_digest_required": true
+  },
+  "forbidden_live_fields": [
+    "official_up",
+    "resolution_event_id",
+    "realized_pnl_quote",
+    "gross_payout_quote",
+    "future_fill_state"
+  ],
+  "inference_contract": {
+    "accepted_horizons_seconds": [
+      240,
+      180,
+      120,
+      60,
+      30
+    ],
+    "ambiguous_horizon_match_fails_closed": true,
+    "feature_row_must_be_unresolved": true,
+    "hash_chain": "source row -> model config -> label-free input -> trained model -> probability",
+    "input_schema": "polymarket-inference-input-v1",
+    "mutated_or_stale_source_digest_fails_closed": true
+  },
+  "promotion_gates": {
+    "continuous_shadow_coordinator_required_before_paper_authority": true,
+    "economic_execution_gates_unchanged": true,
+    "label_free_inference_reconstruction_required": true,
+    "paper_or_live_authority_granted": false,
+    "probability_quality_gates_unchanged": true,
+    "source_freshness_and_continuity_gates_unchanged": true
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/market-data/websocket/overview",
+    "https://docs.polymarket.com/trading/orderbook",
+    "https://arxiv.org/abs/2403.09267"
+  ],
+  "round": 7,
+  "schema_version": "polymarket-label-free-inference-preregistration-v1",
+  "status": "frozen_before_current_capture_labels_or_model_outcomes_were_inspected",
+  "truth_constraints": {
+    "ai_may_create_or_reverse_a_trade": false,
+    "current_capture_is_confirmatory": false,
+    "profitability_claim": false,
+    "test_labels_may_select_or_mutate_inference_code": false,
+    "training_authorized_on_queue_saturated_capture": false,
+    "unresolved_live_input_contains_future_state": false
+  }
+}

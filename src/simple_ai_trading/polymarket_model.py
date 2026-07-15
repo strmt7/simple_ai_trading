@@ -20,6 +20,7 @@ from .polymarket_features import (
 
 
 POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v4"
+POLYMARKET_INFERENCE_INPUT_SCHEMA_VERSION = "polymarket-inference-input-v1"
 POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v4"
 POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v4"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
@@ -35,6 +36,9 @@ POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION = (
 )
 POLYMARKET_PROFILE_CONTRACT_SHA256 = (
     "ae983f4f0cfbcaa130cc5a7d4ec0d3b08cb240ee631e44921b869e69508974ec"
+)
+POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256 = (
+    "9e9a139cc28d988a5f45ed160a00cc3ac363657c41e3394d1169031164fc2eb3"
 )
 POLYMARKET_PROFILE_L2_CANDIDATES = (0.001, 0.01, 0.1, 1.0, 10.0)
 
@@ -315,6 +319,98 @@ class PolymarketModelSample:
         ):
             raise ValueError("Polymarket model sample identity is invalid")
         return self
+
+
+@dataclass(frozen=True)
+class PolymarketInferenceInput:
+    """Hash-bound causal model input that cannot carry a future label."""
+
+    input_id: str
+    source_run_id: str
+    source_feature_id: str
+    source_row_sha256: str
+    model_config_sha256: str
+    live_inference_contract_sha256: str
+    condition_id: str
+    market_id: str
+    asset: str
+    event_start_ms: int
+    end_ms: int
+    decision_received_wall_ms: int
+    decision_received_monotonic_ns: int
+    decision_event_id: str
+    horizon_seconds: int
+    feature_values: tuple[float, ...]
+    risk_context_values: tuple[float, ...]
+    baseline_up_probability: float
+    up_best_bid: float
+    up_best_ask: float
+    down_best_bid: float
+    down_best_ask: float
+    input_provenance_sha256: str
+    input_sha256: str
+
+    def feature_map(self) -> dict[str, float]:
+        return dict(zip(POLYMARKET_MODEL_FEATURE_NAMES, self.feature_values, strict=True))
+
+    def risk_context_map(self) -> dict[str, float]:
+        return dict(
+            zip(
+                POLYMARKET_MODEL_RISK_CONTEXT_NAMES,
+                self.risk_context_values,
+                strict=True,
+            )
+        )
+
+    def identity_payload(self) -> dict[str, object]:
+        return _inference_input_payload(self)
+
+    def asdict(self) -> dict[str, object]:
+        return {**self.identity_payload(), "input_sha256": self.input_sha256}
+
+    def validated(self) -> "PolymarketInferenceInput":
+        if (
+            len(self.input_id) != 64
+            or len(self.source_row_sha256) != 64
+            or len(self.model_config_sha256) != 64
+            or self.live_inference_contract_sha256
+            != POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256
+            or len(self.input_provenance_sha256) != 64
+            or self.asset not in _ASSETS
+            or self.end_ms <= self.event_start_ms
+            or not (
+                self.event_start_ms
+                <= self.decision_received_wall_ms
+                < self.end_ms
+            )
+            or len(self.feature_values) != len(POLYMARKET_MODEL_FEATURE_NAMES)
+            or len(self.risk_context_values)
+            != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES)
+            or not all(math.isfinite(value) for value in self.feature_values)
+            or not all(
+                math.isfinite(value) and value >= 0.0
+                for value in self.risk_context_values
+            )
+            or not 0.0 < self.baseline_up_probability < 1.0
+            or self.input_id
+            != _canonical_sha256(
+                {
+                    "schema_version": POLYMARKET_INFERENCE_INPUT_SCHEMA_VERSION,
+                    "source_row_sha256": self.source_row_sha256,
+                    "horizon_seconds": self.horizon_seconds,
+                    "model_config_sha256": self.model_config_sha256,
+                    "live_inference_contract_sha256": (
+                        self.live_inference_contract_sha256
+                    ),
+                }
+            )
+            or self.input_sha256 != _canonical_sha256(_inference_input_payload(self))
+        ):
+            raise ValueError("Polymarket inference input identity is invalid")
+        return self
+
+
+PolymarketPredictable = PolymarketModelSample | PolymarketInferenceInput
 
 
 @dataclass(frozen=True)
@@ -753,6 +849,149 @@ def _sample_payload(sample: PolymarketModelSample) -> dict[str, object]:
     }
 
 
+def _inference_input_payload(
+    model_input: PolymarketInferenceInput,
+) -> dict[str, object]:
+    return {
+        "schema_version": POLYMARKET_INFERENCE_INPUT_SCHEMA_VERSION,
+        "input_id": model_input.input_id,
+        "source_run_id": model_input.source_run_id,
+        "source_feature_id": model_input.source_feature_id,
+        "source_row_sha256": model_input.source_row_sha256,
+        "model_config_sha256": model_input.model_config_sha256,
+        "live_inference_contract_sha256": (
+            model_input.live_inference_contract_sha256
+        ),
+        "condition_id": model_input.condition_id,
+        "market_id": model_input.market_id,
+        "asset": model_input.asset,
+        "event_start_ms": model_input.event_start_ms,
+        "end_ms": model_input.end_ms,
+        "decision_received_wall_ms": model_input.decision_received_wall_ms,
+        "decision_received_monotonic_ns": (
+            model_input.decision_received_monotonic_ns
+        ),
+        "decision_event_id": model_input.decision_event_id,
+        "horizon_seconds": model_input.horizon_seconds,
+        "feature_names": list(POLYMARKET_MODEL_FEATURE_NAMES),
+        "feature_values": _format_floats(model_input.feature_values),
+        "risk_context_names": list(POLYMARKET_MODEL_RISK_CONTEXT_NAMES),
+        "risk_context_values": _format_floats(model_input.risk_context_values),
+        "baseline_up_probability": format(
+            model_input.baseline_up_probability,
+            ".17g",
+        ),
+        "up_best_bid": format(model_input.up_best_bid, ".17g"),
+        "up_best_ask": format(model_input.up_best_ask, ".17g"),
+        "down_best_bid": format(model_input.down_best_bid, ".17g"),
+        "down_best_ask": format(model_input.down_best_ask, ".17g"),
+        "input_provenance_sha256": model_input.input_provenance_sha256,
+    }
+
+
+def build_polymarket_inference_input(
+    row: PolymarketFeatureRow,
+    market: PolymarketFiveMinuteMarket,
+    *,
+    config: PolymarketModelConfig | None = None,
+) -> PolymarketInferenceInput:
+    """Build one fixed-horizon scoring input without accepting future state."""
+
+    cfg = (config or PolymarketModelConfig()).validated()
+    row.validated()
+    condition = row.condition_id.lower()
+    if row.official_up is not None or row.resolution_event_id:
+        raise ValueError("Polymarket live inference input must be label-free")
+    if (
+        market.condition_id.lower() != condition
+        or market.market_id != row.market_id
+        or market.asset != row.asset
+    ):
+        raise ValueError("Polymarket inference feature and market metadata disagree")
+    if not (
+        market.event_start_ms
+        <= row.decision_received_wall_ms
+        < market.end_ms
+    ):
+        raise ValueError("Polymarket inference row lies outside its market window")
+    values = row.feature_map()
+    remaining_ms = market.end_ms - row.decision_received_wall_ms
+    if abs(values["remaining_seconds"] * 1_000.0 - remaining_ms) > 2.0:
+        raise ValueError("Polymarket inference row has inconsistent remaining time")
+    eligible_horizons = sorted(
+        (
+            abs(remaining_ms - horizon * 1_000),
+            horizon,
+        )
+        for horizon in cfg.decision_horizons_seconds
+        if abs(remaining_ms - horizon * 1_000) <= cfg.maximum_horizon_error_ms
+    )
+    if not eligible_horizons or (
+        len(eligible_horizons) > 1
+        and eligible_horizons[0][0] == eligible_horizons[1][0]
+    ):
+        raise ValueError("Polymarket inference row does not match one fixed horizon")
+    horizon = eligible_horizons[0][1]
+    midpoint_total = values["up_midpoint"] + values["down_midpoint"]
+    if (
+        midpoint_total <= 0.0
+        or not 0.0 < values["up_best_bid"] < values["up_best_ask"] < 1.0
+        or not 0.0 < values["down_best_bid"] < values["down_best_ask"] < 1.0
+    ):
+        raise ValueError("Polymarket inference row has non-executable outcome quotes")
+    baseline = values["up_midpoint"] / midpoint_total
+    if not 0.0 < baseline < 1.0:
+        raise ValueError("Polymarket inference market probability is invalid")
+    model_config_sha256 = _canonical_sha256(cfg.asdict())
+    input_id = _canonical_sha256(
+        {
+            "schema_version": POLYMARKET_INFERENCE_INPUT_SCHEMA_VERSION,
+            "source_row_sha256": row.row_sha256,
+            "horizon_seconds": horizon,
+            "model_config_sha256": model_config_sha256,
+            "live_inference_contract_sha256": (
+                POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256
+            ),
+        }
+    )
+    provisional = PolymarketInferenceInput(
+        input_id=input_id,
+        source_run_id=row.run_id,
+        source_feature_id=row.feature_id,
+        source_row_sha256=row.row_sha256,
+        model_config_sha256=model_config_sha256,
+        live_inference_contract_sha256=(
+            POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256
+        ),
+        condition_id=condition,
+        market_id=market.market_id,
+        asset=market.asset,
+        event_start_ms=market.event_start_ms,
+        end_ms=market.end_ms,
+        decision_received_wall_ms=row.decision_received_wall_ms,
+        decision_received_monotonic_ns=row.decision_received_monotonic_ns,
+        decision_event_id=row.decision_event_id,
+        horizon_seconds=horizon,
+        feature_values=_model_features(
+            values,
+            market.asset,
+            baseline_up_probability=baseline,
+        ),
+        risk_context_values=_risk_context(values),
+        baseline_up_probability=baseline,
+        up_best_bid=values["up_best_bid"],
+        up_best_ask=values["up_best_ask"],
+        down_best_bid=values["down_best_bid"],
+        down_best_ask=values["down_best_ask"],
+        input_provenance_sha256=row.input_provenance_sha256,
+        input_sha256="",
+    )
+    return replace(
+        provisional,
+        input_sha256=_canonical_sha256(_inference_input_payload(provisional)),
+    ).validated()
+
+
 def _increment(values: dict[str, int], key: str) -> None:
     values[key] = values.get(key, 0) + 1
 
@@ -1020,6 +1259,13 @@ def _market_outcome_counts(
     }
 
 
+def _asset_market_outcome_counts(
+    samples: Sequence[PolymarketModelSample],
+    asset: str,
+) -> dict[bool, int]:
+    return _market_outcome_counts(tuple(item for item in samples if item.asset == asset))
+
+
 def split_polymarket_model_dataset(
     dataset: PolymarketModelDataset,
 ) -> PolymarketModelSplit:
@@ -1090,8 +1336,12 @@ def split_polymarket_model_dataset(
                 f"Polymarket {role} split lacks both official outcome classes"
             )
         for asset in _ASSETS:
-            if not any(item.asset == asset for item in role_samples):
-                raise ValueError(f"Polymarket {role} split has no {asset} markets")
+            asset_counts = _asset_market_outcome_counts(role_samples, asset)
+            if min(asset_counts.values()) < cfg.minimum_outcome_markets_per_split:
+                raise ValueError(
+                    f"Polymarket {role} split lacks both official outcome classes "
+                    f"for {asset}"
+                )
     provisional = PolymarketModelSplit(
         schema_version=POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION,
         source_dataset_sha256=dataset.dataset_sha256,
@@ -1110,7 +1360,7 @@ def split_polymarket_model_dataset(
     )
 
 
-def _raw_matrix(samples: Sequence[PolymarketModelSample]) -> np.ndarray:
+def _raw_matrix(samples: Sequence[PolymarketPredictable]) -> np.ndarray:
     for sample in samples:
         sample.validated()
     matrix = np.asarray([item.feature_values for item in samples], dtype=np.float64)
@@ -1139,7 +1389,7 @@ def _fit_transform(
 
 
 def _apply_transform(
-    samples: Sequence[PolymarketModelSample],
+    samples: Sequence[PolymarketPredictable],
     lower: np.ndarray,
     upper: np.ndarray,
     center: np.ndarray,
@@ -1150,18 +1400,25 @@ def _apply_transform(
     return np.clip(transformed, -8.0, 8.0)
 
 
+def _baseline_offsets(samples: Sequence[PolymarketPredictable]) -> np.ndarray:
+    probabilities = np.clip(
+        np.asarray(
+            [item.baseline_up_probability for item in samples],
+            dtype=np.float64,
+        ),
+        1e-6,
+        1.0 - 1e-6,
+    )
+    if len(samples) == 0 or not np.all(np.isfinite(probabilities)):
+        raise ValueError("Polymarket model priors are invalid")
+    return np.log(probabilities / (1.0 - probabilities))
+
+
 def _targets_weights_offsets(
     samples: Sequence[PolymarketModelSample],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     labels = np.asarray([float(item.official_up) for item in samples], dtype=np.float64)
     weights = np.asarray([item.market_weight for item in samples], dtype=np.float64)
-    probabilities = np.clip(
-        np.asarray(
-            [item.baseline_up_probability for item in samples], dtype=np.float64
-        ),
-        1e-6,
-        1.0 - 1e-6,
-    )
     if (
         len(samples) == 0
         or not np.all(np.isin(labels, (0.0, 1.0)))
@@ -1169,7 +1426,7 @@ def _targets_weights_offsets(
         or np.any(weights <= 0.0)
     ):
         raise ValueError("Polymarket model labels or market weights are invalid")
-    return labels, weights, np.log(probabilities / (1.0 - probabilities))
+    return labels, weights, _baseline_offsets(samples)
 
 
 def _weighted_log_loss_arrays(
@@ -1244,7 +1501,7 @@ def _fit_offset_coefficients(
 
 
 def _predict_arrays(
-    samples: Sequence[PolymarketModelSample],
+    samples: Sequence[PolymarketPredictable],
     *,
     lower: np.ndarray,
     upper: np.ndarray,
@@ -1254,7 +1511,7 @@ def _predict_arrays(
     maximum_absolute_correction: float,
 ) -> np.ndarray:
     design = _apply_transform(samples, lower, upper, center, scale)
-    _, _, offsets = _targets_weights_offsets(samples)
+    offsets = _baseline_offsets(samples)
     correction = coefficients[0] + design @ coefficients[1:]
     correction = np.clip(
         correction,
@@ -1265,9 +1522,22 @@ def _predict_arrays(
     return np.exp(-np.logaddexp(0.0, -linear))
 
 
+def _validate_inference_config(
+    samples: Sequence[PolymarketPredictable],
+    config: PolymarketModelConfig,
+) -> None:
+    expected = _canonical_sha256(config.asdict())
+    if any(
+        isinstance(item, PolymarketInferenceInput)
+        and item.model_config_sha256 != expected
+        for item in samples
+    ):
+        raise ValueError("Polymarket inference input uses another model configuration")
+
+
 def predict_polymarket_probabilities(
     model: TrainedPolymarketOffsetModel,
-    samples: Sequence[PolymarketModelSample],
+    samples: Sequence[PolymarketPredictable],
 ) -> np.ndarray:
     """Apply a validated, bounded correction to each market-implied prior."""
 
@@ -1286,6 +1556,7 @@ def predict_polymarket_probabilities(
     )
     if any(len(value) != width for value in arrays) or len(model.coefficients) != width + 1:
         raise ValueError("Polymarket offset model parameter width is invalid")
+    _validate_inference_config(samples, model.config)
     return _predict_arrays(
         samples,
         lower=np.asarray(model.winsor_lower, dtype=np.float64),
@@ -1299,7 +1570,7 @@ def predict_polymarket_probabilities(
 
 def predict_polymarket_profile_probabilities(
     model: TrainedPolymarketProfileModel,
-    samples: Sequence[PolymarketModelSample],
+    samples: Sequence[PolymarketPredictable],
 ) -> np.ndarray:
     """Apply a hash-bound frozen-profile challenger with no execution authority."""
 
@@ -1334,6 +1605,7 @@ def predict_polymarket_profile_probabilities(
         or len(model.control_model_sha256) != 64
     ):
         raise ValueError("Polymarket profile model parameter width is invalid")
+    _validate_inference_config(samples, model.config)
     if model.selected_candidate == "market_baseline":
         if (
             model.selected_profile is not None
@@ -2113,6 +2385,8 @@ def fit_polymarket_profile_challenger(
 
 
 __all__ = [
+    "POLYMARKET_INFERENCE_INPUT_SCHEMA_VERSION",
+    "POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256",
     "POLYMARKET_MODEL_DATASET_SCHEMA_VERSION",
     "POLYMARKET_MODEL_FEATURE_NAMES",
     "POLYMARKET_MODEL_RISK_CONTEXT_NAMES",
@@ -2128,6 +2402,7 @@ __all__ = [
     "POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION",
     "PolymarketModelConfig",
     "PolymarketModelDataset",
+    "PolymarketInferenceInput",
     "PolymarketModelReport",
     "PolymarketModelSample",
     "PolymarketModelSplit",
@@ -2135,6 +2410,7 @@ __all__ = [
     "PolymarketProfileModelReport",
     "TrainedPolymarketOffsetModel",
     "TrainedPolymarketProfileModel",
+    "build_polymarket_inference_input",
     "build_polymarket_model_dataset",
     "evaluate_polymarket_probabilities",
     "fit_polymarket_offset_model",

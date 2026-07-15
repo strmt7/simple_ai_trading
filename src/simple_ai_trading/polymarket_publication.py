@@ -28,6 +28,7 @@ from .polymarket_model import (
     POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION,
 )
 from .polymarket_model_execution import (
+    POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256,
     POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION,
     POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
     POLYMARKET_RETRY_CONTRACT_SHA256,
@@ -695,6 +696,11 @@ def _validate_execution_report(
 ) -> None:
     if report.get("schema_version") != expected_schema:
         raise ValueError(f"{name} uses an unsupported execution schema")
+    if (
+        report.get("causal_settlement_contract_sha256")
+        != POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256
+    ):
+        raise ValueError(f"{name} does not bind the causal settlement contract")
     _verify_claims(report, name=name)
     _verify_embedded_digest(report, "report_sha256", name=name)
     trades_value = report.get("trades")
@@ -808,6 +814,7 @@ def _validate_execution_report(
     fees = Decimal("0")
     realized = Decimal("0")
     trade_ids: set[str] = set()
+    trade_pnl_by_group: dict[int, Decimal] = {}
     for trade in trades:
         condition_id = str(trade.get("condition_id", ""))
         trade_id = str(trade.get("trade_id", ""))
@@ -861,6 +868,10 @@ def _validate_execution_report(
             payouts += payout
             fees += fee
             realized += pnl
+            event_start = int(trade.get("event_start_ms", -1))
+            trade_pnl_by_group[event_start] = (
+                trade_pnl_by_group.get(event_start, Decimal("0")) + pnl
+            )
         elif any(value != 0 for value in (filled_quantity, average, fee, payout, pnl)):
             raise ValueError(f"{name} non-fill carries economic credit")
 
@@ -881,8 +892,10 @@ def _validate_execution_report(
     peak = initial
     maximum_drawdown = Decimal("0")
     maximum_drawdown_fraction = Decimal("0")
-    settled_times: list[int] = []
+    chronology: list[tuple[int, int]] = []
+    event_starts: list[int] = []
     for point in equity:
+        event_start = int(point.get("event_start_ms", -1))
         settled_at = int(point.get("settled_at_ms", -1))
         group_pnl = _decimal(point.get("group_realized_pnl_quote"), "group PnL")
         running += group_pnl
@@ -890,7 +903,9 @@ def _validate_execution_report(
         drawdown = peak - running
         drawdown_fraction = drawdown / peak if peak > 0 else Decimal("0")
         if (
-            settled_at < 0
+            event_start < 0
+            or settled_at < event_start
+            or group_pnl != trade_pnl_by_group.get(event_start, Decimal("0"))
             or running != _decimal(point.get("equity_quote"), "equity")
             or peak != _decimal(point.get("peak_equity_quote"), "peak equity")
             or drawdown != _decimal(point.get("drawdown_quote"), "drawdown")
@@ -903,9 +918,12 @@ def _validate_execution_report(
             maximum_drawdown_fraction,
             drawdown_fraction,
         )
-        settled_times.append(settled_at)
+        chronology.append((settled_at, event_start))
+        event_starts.append(event_start)
     if (
-        settled_times != sorted(set(settled_times))
+        chronology != sorted(chronology)
+        or len(event_starts) != len(set(event_starts))
+        or len(event_starts) != expected_time_group_count
         or running != final
         or maximum_drawdown
         != _decimal(report.get("maximum_drawdown_quote"), "maximum drawdown")
@@ -1151,16 +1169,16 @@ def _matched_ai_uplift_periods(
     baseline: Mapping[str, Any],
     ai: Mapping[str, Any],
 ) -> list[dict[str, object]]:
-    baseline_by_end = {
-        int(item["settled_at_ms"]): _finite_float(
+    baseline_by_start = {
+        int(item["event_start_ms"]): _finite_float(
             item["group_realized_pnl_quote"],
             "baseline group PnL",
         )
         for item in baseline.get("equity_curve", ())
         if isinstance(item, Mapping)
     }
-    ai_by_end = {
-        int(item["settled_at_ms"]): _finite_float(
+    ai_by_start = {
+        int(item["event_start_ms"]): _finite_float(
             item["group_realized_pnl_quote"],
             "AI group PnL",
         )
@@ -1172,8 +1190,8 @@ def _matched_ai_uplift_periods(
             "scope": "polymarket_btc_eth_sol_five_minute_test",
             "period_start_ms": start_ms,
             "period_end_ms": start_ms + 300_000,
-            "baseline_return": baseline_by_end.get(start_ms + 300_000, 0.0),
-            "ai_return": ai_by_end.get(start_ms + 300_000, 0.0),
+            "baseline_return": baseline_by_start.get(start_ms, 0.0),
+            "ai_return": ai_by_start.get(start_ms, 0.0),
         }
         for start_ms in sorted({int(row["event_start_ms"]) for row in predictions})
     ]
@@ -3238,6 +3256,8 @@ def _equity_rows(
             rows.append(
                 {
                     "policy": policy,
+                    "event_start_ms": point["event_start_ms"],
+                    "event_start_utc": _utc(point["event_start_ms"]),
                     "settled_at_ms": point["settled_at_ms"],
                     "settled_at_utc": _utc(point["settled_at_ms"]),
                     "group_realized_pnl_quote": point["group_realized_pnl_quote"],

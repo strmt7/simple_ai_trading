@@ -37,7 +37,8 @@ loss by the precommitted margin, the correction is exactly zero.
 - Contemporaneous BTC, ETH, and SOL markets share one time-group assignment.
 - Train, validation, and untouched test groups are chronological and separated by
   purged five-minute groups.
-- Both official outcomes and all three assets are required in every split.
+- BTC, ETH, and SOL must each independently meet the minimum count for both
+  official outcomes in train, validation, and untouched test splits.
 - Training fails closed below 30 complete officially resolved markets per asset.
 - Rows and markets are not treated as independent observations. Confirmatory
   status additionally requires at least 30 untouched shared five-minute test
@@ -59,7 +60,15 @@ Probability scores alone cannot establish an edge. The paired economic diagnosti
 - records every abstaining time group and reserves worst-case risk for any
   indeterminate order state;
 - caps worst-case loss at 0.5% per market and 1.5% per five-minute group;
-- settles only from official CLOB/Gamma cross-checked evidence.
+- also caps aggregate entry cost across every unresolved market at 1.5%;
+- locks cash until official CLOB/Gamma cross-checked resolution is locally
+  available; scheduled market end is never treated as settlement.
+
+Equity points retain market-start identity but are ordered by official resolution
+availability. Their drawdown is realized settlement-equity drawdown, not an
+intraperiod mark-to-market claim. Mark-to-market drawdown is required before any
+paper or live authority. The superseding economic chronology is frozen in
+[`round-006-causal-settlement-contract.json`](round-006-causal-settlement-contract.json).
 
 Polymarket documents that the midpoint is not executable, buyers pay the ask, FOK
 pricing must walk displayed depth, and fees are market-specific at match time. The
@@ -130,3 +139,12 @@ added only after causal `OrderFilled` capture and independent reconciliation exi
 
 No fixture result, benchmark safety score, raw classifier score, or unfilled quote
 is a profitability claim or live trading authority.
+
+## Live inference
+
+Training samples retain future labels for research scoring, but prediction no
+longer reads them. Unresolved feature rows are converted into a distinct
+hash-bound input that omits outcome, resolution, fill, payout, and PnL fields.
+Its source-row and model-config digests must reconstruct, and an identical causal
+historical/live input must produce the exact same probability. The contract is
+[`round-007-label-free-inference-contract.json`](round-007-label-free-inference-contract.json).

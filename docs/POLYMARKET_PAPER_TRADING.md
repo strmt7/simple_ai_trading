@@ -7,7 +7,11 @@ durable operator Pause/Resume, fail-closed Stop, and independent source
 reconstruction before CLI/app result publication are implemented. A frozen,
 source-verified held-out model or AI policy can now run once through that same
 owned paper lifecycle. A preregistered causal FOK retry challenger is executable
-and source-verifiable as research, but has no paper-policy authority. Continuous
+and source-verifiable as research. Its causal-settlement contract locks entry
+capital until official resolution is locally available and caps aggregate open
+risk across unresolved markets. Hash-bound label-free scoring inputs are also
+implemented, so unresolved feature rows can be scored without outcome or
+settlement fields. Neither challenger has paper-policy authority. Continuous
 strategy coordination remains incomplete.
 No authenticated order placement, wallet, private key, live-money claim, or
 profitability claim is implemented or authorized.
@@ -118,6 +122,16 @@ and Polymarket leverage is disabled. Hedging means purchasing the opposing
 outcome and must include both spreads and fees; naked outcome-token shorting is
 not simulated.
 
+Market end is not settlement. Entry cost remains unavailable until the official
+resolution event is both effective and locally observed. The same 1.5% budget
+that limits one shared five-minute group also caps total entry cost at risk across
+all unresolved groups, so delayed resolution cannot recycle capital. Equity rows
+are keyed by market start and actual resolution availability. Reported drawdown
+is realized settlement-equity drawdown only; mark-to-market drawdown remains a
+mandatory promotion gate, so these reports grant no paper or live authority. The
+hash-bound contract is
+[`round-006-causal-settlement-contract.json`](model-research/polymarket/round-006-causal-settlement-contract.json).
+
 The future coordinator must require fresh CLOB, Chainlink, and direct Binance
 feeds; synchronized clocks; known fees; sufficient displayed depth; no market
 gap; adequate API reserve; and enough time before event close. A strategy that
@@ -145,7 +159,9 @@ Public price history is minute-fidelity and cannot validate second-level fills
 or latency. The first deliverable is therefore a prospective BTC/ETH/SOL CLOB +
 RTDS + direct-Binance recorder and paper shadow engine. Strict training admits
 only complete gap-free windows with source timestamps, fees, and official
-outcomes. An explicit segmented mode can admit validated CLOB reconnect segments
+outcomes. BTC, ETH, and SOL must each independently contain both official
+outcome classes in train, validation, and untouched test roles. An explicit
+segmented mode can admit validated CLOB reconnect segments
 plus independently validated direct-Binance and RTDS reconnect segments. Every
 CLOB connection change clears reconstructed state and requires fresh token-book
 baselines. Direct-Binance rolling features and Chainlink open/current anchors
@@ -157,6 +173,15 @@ failures.
 Each AI treatment retains its exact label-free prompt and raw local-model
 response. The publisher reconstructs candidate, permission, decision-delay, and
 uplift chains instead of trusting aggregate AI claims.
+
+Live model scoring uses a separate unresolved-input schema. It binds the source
+feature-row digest, model-config digest, fixed horizon, causal feature vector,
+and market prior; it structurally has no outcome, resolution, fill, payout, or
+PnL fields. An identical historical causal input must produce the exact same
+probability. This closes the prior offline-only label dependency but does not
+implement the continuous coordinator or grant execution authority. The frozen
+contract is
+[`round-007-label-free-inference-contract.json`](model-research/polymarket/round-007-label-free-inference-contract.json).
 
 `polymarket-verify` goes beyond artifact-internal accounting. It rebuilds the
 causal feature dataset, model dataset, purged chronological split, deterministic
