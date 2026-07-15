@@ -1,0 +1,93 @@
+{
+  "schema_version": "round-060-full-history-funding-replication-design-v1",
+  "round": 60,
+  "design_sha256": "965609f682595efd07dad719c958fe2086bbd29c5e3c6b2a98ba8b37261806c2",
+  "phase": "unchanged_full_available_history_funding_replication",
+  "predecessor": {
+    "round": 59,
+    "decision": "rejected_funding_persistence_support",
+    "report_file": "external://evidence/round59-funding-persistence-20260715-v1.json",
+    "report_file_sha256": "f99843b7998a9bc473f7c8d8c80c52a8e718e7729e5d9896263bdfe01538d14e",
+    "report_canonical_sha256": "268e0a4734ae10ad2f413ca77e75de3cdc55ae98a0ae07bd5c3a944499be03d0"
+  },
+  "governance": {
+    "freeze_before_new_funding_value_access": true,
+    "source_data_partially_previously_consumed": true,
+    "selection_contaminated": true,
+    "protocol_change_permitted": false,
+    "promotion_permitted": false,
+    "profitability_claim_permitted": false,
+    "trading_authority_permitted": false,
+    "testnet_or_live_authority_permitted": false,
+    "leverage_permitted": false,
+    "model_training_permitted": false,
+    "ai_evaluation_permitted": false,
+    "spot_history_ingestion_permitted_only_after_gate": true,
+    "posthoc_trigger_horizon_cost_or_gate_selection_permitted": false
+  },
+  "replication_question": "Does the precommitted Round 59 funding-persistence gate pass on every available complete Binance monthly funding archive for BTCUSDT, ETHUSDT, and SOLUSDT without changing any trigger, horizon, cost, uncertainty, or breadth rule?",
+  "protocol_reuse_contract": {
+    "source_design_path": "docs/model-research/action-value/round-059-funding-persistence-feasibility-design.json",
+    "source_design_file_sha256": "dda4dc3730efa088c2161b14f1ea1799c4425c9b57ec164494f6d2febb567dfd",
+    "source_design_canonical_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
+    "reused_sections": {
+      "causal_trigger_contract": "691b2574a6226b76124834376125193de697311c2ef52cb61904a7bb423085fb",
+      "episode_contract": "87559c61d2f171ce18f299d254fd541109a1aa6a9d77aeccfcff90a676307f26",
+      "cost_reference_contract": "d33bbb718208a2ae6bb4df82f04c4c066dc66daa64c0661897a366b88021c0a2",
+      "uncertainty_contract": "80ed325dcf62eb088927f3785fefee2d9925ec1f462673c33cf2312e431c9769",
+      "authorization_gate": "59daa2caa8b53d24c5d05c8cdf517da89ee8bbbd098d0cd00e02022b0f61cb30"
+    },
+    "runner_must_load_sections_from_source_design": true,
+    "runner_must_reject_any_section_hash_drift": true,
+    "bootstrap_seed_schedule_unchanged": true
+  },
+  "source_contract": {
+    "provider": "Binance public data archives",
+    "market_type": "USD-M perpetual futures",
+    "database_argument": "data/market_data.sqlite",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "data_type": "fundingRate",
+    "ranges_by_symbol": {
+      "BTCUSDT": {"start_period": "2020-01", "end_period": "2026-06", "period_count": 78},
+      "ETHUSDT": {"start_period": "2020-01", "end_period": "2026-06", "period_count": 78},
+      "SOLUSDT": {"start_period": "2020-09", "end_period": "2026-06", "period_count": 70}
+    },
+    "listing_observed_utc_date": "2026-07-12",
+    "latest_complete_month_frozen": "2026-06",
+    "missing_frozen_archive_is_fatal": true,
+    "required_archive_status": "complete",
+    "required_checksum_status": "verified",
+    "archive_sha256_must_equal_sidecar_sha256": true,
+    "monthly_row_stream_sha256_reconstruction_required": true,
+    "funding_interval_hours_range": [1, 8],
+    "funding_only_ingestion": true,
+    "skip_existing_complete_archives": true,
+    "persistent_zip_archive_permitted": false,
+    "price_rows_permitted": false,
+    "premium_index_rows_permitted": false,
+    "spot_rows_permitted": false
+  },
+  "stopping_rule": {
+    "if_gate_passes": "Authorize only a separately frozen synchronized spot-perpetual economic replay; do not claim profitability or trading readiness.",
+    "if_gate_fails": "Reject the funding-carry family and do not spend further data, compute, model, AI, or agent tokens on it without materially new exogenous evidence.",
+    "additional_unfrozen_search_after_result_permitted": false
+  },
+  "report_contract": {
+    "required_tables": [
+      "source archive reconciliation",
+      "sign-transition counts",
+      "non-overlapping episode metrics by symbol trigger and horizon",
+      "cost-reference comparisons",
+      "breadth gates",
+      "Round 59 comparison"
+    ],
+    "forbidden_metrics": ["ROI", "drawdown", "profit factor", "trade win rate", "portfolio return", "leverage return", "AI uplift"],
+    "forbidden_claims": ["profitability", "execution realism", "basis neutrality", "testnet readiness", "live readiness"]
+  },
+  "limitations": [
+    "This is a funding-rate persistence replication, not a trade or portfolio backtest.",
+    "The expanded sample overlaps the consumed Round 59 period and is not untouched confirmation.",
+    "Funding alone excludes basis change, spot and perpetual prices, depth, spread, impact, legging latency, margin, liquidation, borrow, transfer, outage, tax, and operational risk.",
+    "Passing can justify only a separately frozen two-leg replay; failing terminates this research family under the stopping rule."
+  ]
+}
