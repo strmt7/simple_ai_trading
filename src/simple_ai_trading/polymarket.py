@@ -65,6 +65,13 @@ def _positive_integer(value: object, *, name: str) -> int:
     return int(parsed)
 
 
+def _nonnegative_integer(value: object, *, name: str) -> int:
+    parsed = _decimal(value, name=name, minimum=Decimal("0"))
+    if parsed != parsed.to_integral_value():
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return int(parsed)
+
+
 def _json_list(value: object, *, name: str) -> list[object]:
     parsed = value
     if isinstance(value, str):
@@ -315,10 +322,19 @@ def validate_clob_market_info(
     return {
         "payload_json": _canonical_json(raw),
         "payload_sha256": _canonical_sha256(raw),
-        "maker_base_fee": int(raw.get("mbf") or 0),
-        "taker_base_fee": int(raw.get("tbf") or 0),
+        "maker_base_fee": _nonnegative_integer(
+            0 if raw.get("mbf") is None else raw["mbf"],
+            name="CLOB maker base fee",
+        ),
+        "taker_base_fee": _nonnegative_integer(
+            0 if raw.get("tbf") is None else raw["tbf"],
+            name="CLOB taker base fee",
+        ),
         "taker_order_delay_enabled": raw.get("itode") is True,
-        "minimum_order_age_seconds": int(raw.get("oas") or 0),
+        "minimum_order_age_seconds": _nonnegative_integer(
+            0 if raw.get("oas") is None else raw["oas"],
+            name="CLOB minimum order age",
+        ),
     }
 
 
