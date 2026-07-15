@@ -126,9 +126,12 @@ provenance are documented in `docs/AGENT_WORKFLOWS.md`.
 
 ## Verification minimum
 
-- run `python3 -m pytest -q` after any behavior change.
-- run focused regression tests matching the touched file(s) first.
-- run `python3 -m coverage run --source=src/simple_ai_trading -m pytest -q` before closing significant feature work, then inspect misses.
+- run focused regression tests matching the touched behavior during iteration.
+- run the complete affected-domain suite once at the behavior checkpoint.
+- run `python3 -m pytest -q` for shared-core or cross-domain changes and before a
+  release or significant final handoff; do not repeat it after each local edit.
+- run `python3 -m coverage run --source=src/simple_ai_trading -m pytest -q`
+  before closing significant feature work, then inspect misses.
 - run `python3 tools/update_readme_badges.py --check` after README badge edits.
 - for CLI behavior changes, run `python3 -m pytest -q tests/test_cli.py tests/test_cli_coverage.py`.
 - for model or backtest changes, include both unit and coverage tests for that domain.
