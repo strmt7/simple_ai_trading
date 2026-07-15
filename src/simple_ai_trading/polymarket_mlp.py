@@ -533,7 +533,25 @@ def _matrix(
     return features, labels
 
 
-def _validate_breadth(
+def _validate_partition_label_breadth(
+    dataset: PolymarketRidgeDataset,
+    *,
+    name: str,
+    groups: Sequence[int],
+) -> None:
+    indices = _partition_indices(dataset, groups)
+    positive = sum(
+        dataset.observations[int(index)].positive_complete for index in indices
+    )
+    negative = len(indices) - positive
+    if positive < 100 or negative < 100:
+        raise ValueError(
+            f"Polymarket MLP {name} label breadth is insufficient:"
+            f"positive={positive}/100 negative={negative}/100"
+        )
+
+
+def _validate_development_breadth(
     dataset: PolymarketRidgeDataset,
     split: PolymarketRidgeSplit,
 ) -> None:
@@ -544,18 +562,8 @@ def _validate_breadth(
     for name, groups in (
         ("train", split.train_groups),
         ("validation", split.validation_groups),
-        ("test", split.test_groups),
     ):
-        indices = _partition_indices(dataset, groups)
-        positive = sum(
-            dataset.observations[int(index)].positive_complete for index in indices
-        )
-        negative = len(indices) - positive
-        if positive < 100 or negative < 100:
-            raise ValueError(
-                f"Polymarket MLP {name} label breadth is insufficient:"
-                f"positive={positive}/100 negative={negative}/100"
-            )
+        _validate_partition_label_breadth(dataset, name=name, groups=groups)
 
 
 def _condition_weights(
@@ -1037,13 +1045,17 @@ def fit_and_evaluate_polymarket_mlp(
         or not parent.development_passed
     ):
         raise ValueError("Polymarket MLP parent ridge authority is insufficient")
-    _validate_breadth(dataset, expected_split)
+    _validate_development_breadth(dataset, expected_split)
+    if len(expected_split.test_groups) < POLYMARKET_MLP_MIN_TEST_GROUPS:
+        raise ValueError(
+            "insufficient untouched test groups:"
+            f"{len(expected_split.test_groups)}/{POLYMARKET_MLP_MIN_TEST_GROUPS}"
+        )
     train_indices = _partition_indices(dataset, expected_split.train_groups)
     validation_indices = _partition_indices(
         dataset,
         expected_split.validation_groups,
     )
-    test_indices = _partition_indices(dataset, expected_split.test_groups)
     training_x, training_y = _matrix(dataset, train_indices)
     validation_x, validation_y = _matrix(dataset, validation_indices)
     mean = np.mean(training_x, axis=0, dtype=np.float64)
@@ -1233,11 +1245,6 @@ def fit_and_evaluate_polymarket_mlp(
         admission_reasons.append("validation_log_loss_uplift_lower_not_positive")
     if validation_utility_uplift is None or validation_utility_uplift <= 0.0:
         admission_reasons.append("validation_stress_utility_not_above_ridge")
-    if len(expected_split.test_groups) < POLYMARKET_MLP_MIN_TEST_GROUPS:
-        admission_reasons.append(
-            "untouched_test_group_count:"
-            f"{len(expected_split.test_groups)}/{POLYMARKET_MLP_MIN_TEST_GROUPS}"
-        )
     frozen_admission_reasons = tuple(sorted(set(admission_reasons)))
     admitted = not frozen_admission_reasons
     if progress is not None:
@@ -1268,6 +1275,12 @@ def fit_and_evaluate_polymarket_mlp(
     test_uplift: PolymarketMLPBootstrap | None = None
     test_reasons: list[str] = []
     if admitted:
+        _validate_partition_label_breadth(
+            dataset,
+            name="test",
+            groups=expected_split.test_groups,
+        )
+        test_indices = _partition_indices(dataset, expected_split.test_groups)
         test_x, test_y = _matrix(dataset, test_indices)
         test_probability = ensemble.predict(test_x)
         test_loss = _binary_log_loss(test_probability, test_y)
