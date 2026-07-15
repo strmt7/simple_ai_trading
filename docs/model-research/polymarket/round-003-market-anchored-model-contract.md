@@ -25,6 +25,10 @@ log loss by the precommitted margin, the correction is exactly zero.
   purged five-minute groups.
 - Both official outcomes and all three assets are required in every split.
 - Training fails closed below 30 complete officially resolved markets per asset.
+- Rows and markets are not treated as independent observations. Confirmatory
+  status additionally requires at least 30 untouched shared five-minute test
+  groups and a deterministic moving-block 95% interval wholly below zero for
+  residual-model minus market-prior log loss.
 
 ## Economic test
 

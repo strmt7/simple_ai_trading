@@ -13,6 +13,7 @@ import io
 import json
 import math
 from pathlib import Path
+import random
 import shutil
 from typing import Any
 
@@ -482,6 +483,20 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         or int(test_metrics.get("time_group_count", -1)) != len(time_groups)
     ):
         raise ValueError("held-out predictions do not match the frozen split")
+    confirmation = _as_mapping(
+        payload.get("confirmatory_evidence_contract"),
+        "confirmatory evidence contract",
+    )
+    _verify_claims(confirmation, name="confirmatory evidence contract")
+    if (
+        confirmation.get("independent_unit")
+        != "shared_btc_eth_sol_five_minute_time_group"
+        or int(confirmation.get("minimum_untouched_test_time_groups", -1)) != 30
+        or int(confirmation.get("observed_untouched_test_time_groups", -1))
+        != len(time_groups)
+        or confirmation.get("confirmatory_ready") is not (len(time_groups) >= 30)
+    ):
+        raise ValueError("confirmatory evidence contract is inconsistent")
 
     executions: dict[str, Mapping[str, Any]] = {}
     for policy, key in (("baseline", "baseline_execution"), ("model", "model_execution")):
@@ -613,6 +628,148 @@ def _prediction_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, object
             ),
         )
     ]
+
+
+def _held_out_group_score_rows(
+    predictions: Sequence[Mapping[str, Any]],
+) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for scope in ("ALL", *_ASSETS):
+        selected = [
+            row for row in predictions if scope == "ALL" or row["asset"] == scope
+        ]
+        for event_start in sorted({int(row["event_start_ms"]) for row in selected}):
+            group = [
+                row for row in selected if int(row["event_start_ms"]) == event_start
+            ]
+            weight = sum(
+                _finite_float(row["market_weight"], "market weight")
+                for row in group
+            )
+            if weight <= 0:
+                raise ValueError("held-out group has no effective weight")
+            baseline_log_loss = 0.0
+            model_log_loss = 0.0
+            baseline_brier = 0.0
+            model_brier = 0.0
+            for row in group:
+                label = 1.0 if row["official_up"] else 0.0
+                row_weight = _finite_float(row["market_weight"], "market weight")
+                baseline = _finite_float(
+                    row["baseline_up_probability"],
+                    "baseline probability",
+                )
+                model = _finite_float(
+                    row["model_up_probability"],
+                    "model probability",
+                )
+                baseline_log_loss += row_weight * -(
+                    label * math.log(baseline)
+                    + (1.0 - label) * math.log1p(-baseline)
+                )
+                model_log_loss += row_weight * -(
+                    label * math.log(model)
+                    + (1.0 - label) * math.log1p(-model)
+                )
+                baseline_brier += row_weight * (baseline - label) ** 2
+                model_brier += row_weight * (model - label) ** 2
+            baseline_log_loss /= weight
+            model_log_loss /= weight
+            baseline_brier /= weight
+            model_brier /= weight
+            end_ms = max(int(row["end_ms"]) for row in group)
+            rows.append(
+                {
+                    "scope": scope,
+                    "event_start_ms": event_start,
+                    "event_start_utc": _utc(event_start),
+                    "end_ms": end_ms,
+                    "end_utc": _utc(end_ms),
+                    "rows": len(group),
+                    "markets": len({str(row["condition_id"]) for row in group}),
+                    "effective_market_weight": weight,
+                    "baseline_log_loss": baseline_log_loss,
+                    "model_log_loss": model_log_loss,
+                    "log_loss_delta": model_log_loss - baseline_log_loss,
+                    "baseline_brier_score": baseline_brier,
+                    "model_brier_score": model_brier,
+                    "brier_delta": model_brier - baseline_brier,
+                }
+            )
+    return rows
+
+
+def _quantile(values: Sequence[float], probability: float) -> float:
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        raise ValueError("quantile requires values")
+    position = (len(ordered) - 1) * probability
+    lower = int(math.floor(position))
+    upper = int(math.ceil(position))
+    if lower == upper:
+        return ordered[lower]
+    fraction = position - lower
+    return ordered[lower] * (1.0 - fraction) + ordered[upper] * fraction
+
+
+def _group_score_summary(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    artifact_sha256: str,
+) -> dict[str, object]:
+    summaries: dict[str, object] = {}
+    for scope in ("ALL", *_ASSETS):
+        deltas = [
+            _finite_float(row["log_loss_delta"], "group log-loss delta")
+            for row in rows
+            if row["scope"] == scope
+        ]
+        if not deltas:
+            raise ValueError(f"held-out group scores have no {scope} rows")
+        block_length = max(2, int(math.ceil(math.sqrt(len(deltas)))))
+        circular_blocks = [
+            [deltas[(start + offset) % len(deltas)] for offset in range(block_length)]
+            for start in range(len(deltas))
+        ]
+        seed = int(
+            hashlib.sha256(f"{artifact_sha256}:{scope}".encode("ascii")).hexdigest()[:16],
+            16,
+        )
+        generator = random.Random(seed)
+        bootstrap_means: list[float] = []
+        for _ in range(10_000):
+            sample: list[float] = []
+            while len(sample) < len(deltas):
+                sample.extend(circular_blocks[generator.randrange(len(circular_blocks))])
+            bootstrap_means.append(sum(sample[: len(deltas)]) / len(deltas))
+        lower = _quantile(bootstrap_means, 0.025)
+        upper = _quantile(bootstrap_means, 0.975)
+        summaries[scope] = {
+            "time_group_count": len(deltas),
+            "mean_log_loss_delta": sum(deltas) / len(deltas),
+            "median_log_loss_delta": _quantile(deltas, 0.5),
+            "minimum_log_loss_delta": min(deltas),
+            "maximum_log_loss_delta": max(deltas),
+            "improved_time_groups": sum(value < 0.0 for value in deltas),
+            "unchanged_time_groups": sum(value == 0.0 for value in deltas),
+            "degraded_time_groups": sum(value > 0.0 for value in deltas),
+            "moving_block_bootstrap_95pct_lower": lower,
+            "moving_block_bootstrap_95pct_upper": upper,
+            "block_length_time_groups": block_length,
+            "bootstrap_resamples": 10_000,
+            "minimum_confirmatory_time_groups": 30,
+            "confirmatory_ready": len(deltas) >= 30 and upper < 0.0,
+        }
+    body = {
+        "schema_version": "polymarket-held-out-group-score-summary-v1",
+        "independent_unit": "shared_btc_eth_sol_five_minute_time_group",
+        "method": "deterministic_circular_moving_block_bootstrap",
+        "artifact_sha256": artifact_sha256,
+        "scopes": summaries,
+        "trading_authority": False,
+        "profitability_claim": False,
+    }
+    return {**body, "summary_sha256": _canonical_sha256(body)}
 
 
 def _execution_summary_rows(
@@ -891,6 +1048,61 @@ def _probability_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: s
     return "\n".join(lines) + "\n"
 
 
+def _group_score_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    start: str,
+    end: str,
+) -> str:
+    selected = sorted(
+        (row for row in rows if row["scope"] == "ALL"),
+        key=lambda row: int(row["event_start_ms"]),
+    )
+    values = [
+        _finite_float(row["log_loss_delta"], "group log-loss delta")
+        for row in selected
+    ]
+    extent = max(max((abs(value) for value in values), default=0.0) * 1.2, 0.01)
+    left, top, bottom, width = 120.0, 150.0, 570.0, 1010.0
+    zero = (top + bottom) / 2
+    lines = _svg_base(
+        "Untouched-test log-loss delta by time group",
+        f"Shared BTC/ETH/SOL five-minute groups; {start} to {end}; lower is better",
+        "Market-equal weighted residual-model minus market-prior log loss from held-out-group-scores.csv. Negative bars improve on the prior.",
+    )
+    for value in (-extent, -extent / 2, 0.0, extent / 2, extent):
+        y = zero - (bottom - top) * 0.5 * value / extent
+        lines.append(f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{left + width:.1f}" y2="{y:.1f}" stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>')
+        lines.append(f'<text x="{left - 14:.1f}" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{value:.4f}</text>')
+    slot = width / max(1, len(selected))
+    bar_width = max(3.0, min(70.0, slot * 0.72))
+    for index, (row, value) in enumerate(zip(selected, values, strict=True)):
+        center = left + slot * (index + 0.5)
+        y_value = zero - (bottom - top) * 0.5 * value / extent
+        y = min(zero, y_value)
+        height = max(abs(y_value - zero), 1.0)
+        color = _COLORS["model"] if value < 0.0 else _COLORS["negative"]
+        lines.append(f'<rect x="{center - bar_width / 2:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="2" fill="{color}"/>')
+        if len(selected) <= 12:
+            label_y = y + height + 16 if value < 0.0 else y - 8
+            lines.append(f'<text x="{center:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="11">{value:+.4f}</text>')
+    tick_indexes = sorted(
+        {
+            round(index * (len(selected) - 1) / min(5, len(selected) - 1))
+            for index in range(min(5, len(selected) - 1) + 1)
+        }
+    ) if len(selected) > 1 else [0]
+    for index in tick_indexes:
+        center = left + slot * (index + 0.5)
+        timestamp = int(selected[index]["event_start_ms"])
+        label = datetime.fromtimestamp(timestamp / 1_000.0, tz=timezone.utc).strftime("%H:%MZ")
+        lines.append(f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>')
+    lines.append(f'<text x="120" y="660" fill="{_COLORS["model"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Negative: residual model improved</text>')
+    lines.append(f'<text x="880" y="660" fill="{_COLORS["negative"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Positive: residual model degraded</text>')
+    lines.append("</svg>")
+    return "\n".join(lines) + "\n"
+
+
 def _equity_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -> str:
     by_policy: dict[str, list[tuple[int, float]]] = {}
     for row in rows:
@@ -1127,6 +1339,7 @@ def _results_markdown(
     round_number: int,
     start: str,
     end: str,
+    group_score_summary: Mapping[str, object],
 ) -> str:
     payload = artifact.payload
     report = _as_mapping(payload["probability_report"], "probability report")
@@ -1143,6 +1356,10 @@ def _results_markdown(
             f"uplift gate was **{'accepted' if uplift.get('accepted') else 'not accepted'}**."
         )
     gates = _as_mapping(payload["evidence_gates"], "evidence gates")
+    all_groups = _as_mapping(
+        _as_mapping(group_score_summary["scopes"], "score scopes")["ALL"],
+        "combined group score summary",
+    )
     gate_rows = "\n".join(
         f"| `{key}` | `{str(value).lower()}` |"
         for key, value in gates.items()
@@ -1163,6 +1380,17 @@ and untouched-test log-loss changed by
 `{_finite_float(report['test_log_loss_delta'], 'test delta'):.8f}`. Lower is
 better; the test Brier-score change was
 `{_finite_float(report['test_brier_delta'], 'Brier delta'):.8f}`.
+
+![Time-group score deltas](latest/charts/held-out-group-scores.svg)
+
+The untouched tail contains `{all_groups['time_group_count']}` shared five-minute
+time groups. Its deterministic moving-block bootstrap interval for mean log-loss
+delta is
+`[{_finite_float(all_groups['moving_block_bootstrap_95pct_lower'], 'lower interval'):.8f},
+{_finite_float(all_groups['moving_block_bootstrap_95pct_upper'], 'upper interval'):.8f}]`.
+Confirmatory status is **{'ready' if all_groups['confirmatory_ready'] else 'not ready'}**;
+the frozen minimum is 30 untouched groups and the entire interval must be below
+zero. This interval is an exploratory dependence-aware diagnostic, not a p-value.
 
 ![Held-out settled equity](latest/charts/held-out-equity.svg)
 
@@ -1188,6 +1416,8 @@ durable edge. {ai_line}
 - [Experiment artifact](round-{round_number:03d}-prospective-model-experiment.json)
 - [Held-out prediction rows](latest/tables/held-out-predictions.csv)
 - [Probability metrics](latest/tables/probability-metrics.csv)
+- [Held-out time-group scores](latest/tables/held-out-group-scores.csv)
+- [Time-group uncertainty summary](latest/held-out-group-score-summary.json)
 - [Execution summary](latest/tables/execution-summary.csv)
 - [Settled equity curves](latest/tables/equity-curves.csv)
 - [Execution ledger](latest/tables/trades.csv)
@@ -1217,6 +1447,11 @@ def publish_polymarket_model_artifact(
     start = _utc(min(int(row["event_start_ms"]) for row in validated.predictions))
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
     probability_rows = _probability_rows(validated.payload)
+    group_score_rows = _held_out_group_score_rows(validated.predictions)
+    group_score_summary = _group_score_summary(
+        group_score_rows,
+        artifact_sha256=validated.artifact_sha256,
+    )
     summary_rows = _execution_summary_rows(validated.executions)
     latency_rows = _latency_rows(validated.payload)
     equity_rows = _equity_rows(validated.executions)
@@ -1233,6 +1468,7 @@ def publish_polymarket_model_artifact(
     tables.mkdir(parents=True, exist_ok=True)
     current_chart_names = {
         "probability-quality.svg",
+        "held-out-group-scores.svg",
         "held-out-equity.svg",
         "per-asset-execution.svg",
         "latency-sensitivity.svg",
@@ -1253,6 +1489,7 @@ def publish_polymarket_model_artifact(
     table_payloads = {
         "held-out-predictions.csv": predictions,
         "probability-metrics.csv": probability_rows,
+        "held-out-group-scores.csv": group_score_rows,
         "execution-summary.csv": summary_rows,
         "equity-curves.csv": equity_rows,
         "trades.csv": trade_rows,
@@ -1263,7 +1500,12 @@ def publish_polymarket_model_artifact(
     }
     for name, rows in table_payloads.items():
         _write_csv(tables / name, rows)
+    _write_json(latest / "held-out-group-score-summary.json", group_score_summary)
     _write_text(charts / "probability-quality.svg", _probability_svg(probability_rows, start=start, end=end))
+    _write_text(
+        charts / "held-out-group-scores.svg",
+        _group_score_svg(group_score_rows, start=start, end=end),
+    )
     _write_text(charts / "held-out-equity.svg", _equity_svg(equity_rows, start=start, end=end))
     _write_text(charts / "per-asset-execution.svg", _asset_svg(per_asset_rows, start=start, end=end))
     _write_text(
@@ -1273,7 +1515,13 @@ def publish_polymarket_model_artifact(
     _write_text(charts / "research-progress.svg", _progress_svg(progress_rows))
 
     results_name = f"round-{round_number:03d}-prospective-model-results.md"
-    results = _results_markdown(validated, round_number, start, end)
+    results = _results_markdown(
+        validated,
+        round_number,
+        start,
+        end,
+        group_score_summary,
+    )
     _write_text(root / results_name, results)
     latest_readme = f"""# Polymarket research round {round_number}
 
@@ -1295,6 +1543,7 @@ profitability claim is made.
         source_target,
         root / results_name,
         latest / "README.md",
+        latest / "held-out-group-score-summary.json",
         *(tables / name for name in sorted(table_payloads)),
         *(charts / name for name in sorted(current_chart_names)),
     ]

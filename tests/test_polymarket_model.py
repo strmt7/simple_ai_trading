@@ -941,6 +941,17 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
             "trading_authority": False,
             "profitability_claim": False,
         },
+        "confirmatory_evidence_contract": {
+            "independent_unit": "shared_btc_eth_sol_five_minute_time_group",
+            "minimum_untouched_test_time_groups": 30,
+            "observed_untouched_test_time_groups": len(
+                split.test_group_starts_ms
+            ),
+            "minimum_markets_per_asset": 30,
+            "confirmatory_ready": len(split.test_group_starts_ms) >= 30,
+            "trading_authority": False,
+            "profitability_claim": False,
+        },
         "evidence_gates": {
             "validation_probability_improved": (
                 probability_report.validation_log_loss_delta < 0.0
@@ -988,6 +999,12 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         round_number=3,
     )
     assert result.artifact_sha256 == payload["artifact_sha256"]
+    repeated = publish_polymarket_model_artifact(
+        artifact_path,
+        research_root,
+        round_number=3,
+    )
+    assert repeated.manifest_sha256 == result.manifest_sha256
     manifest = json.loads(
         (research_root / "latest" / "publication-integrity.json").read_text(
             encoding="utf-8"
@@ -995,6 +1012,18 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     )
     assert manifest["claims"]["profitability_claim"] is False
     assert manifest["source_artifact_sha256"] == payload["artifact_sha256"]
+    score_summary = json.loads(
+        (
+            research_root
+            / "latest"
+            / "held-out-group-score-summary.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert score_summary["scopes"]["ALL"]["time_group_count"] == len(
+        split.test_group_starts_ms
+    )
+    assert score_summary["scopes"]["ALL"]["confirmatory_ready"] is False
+    assert score_summary["profitability_claim"] is False
     for entry in manifest["generated_artifacts"]:
         output = research_root / entry["path"]
         assert output.stat().st_size == entry["bytes"]
