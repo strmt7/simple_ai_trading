@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from .paper_execution import BookLevel, PaperBookSnapshot
 from .polymarket import (
@@ -226,10 +226,19 @@ class PolymarketEvidenceReplay:
         run_id: str | None = None,
         allow_segmented_gaps: bool = False,
         book_sample_interval_ms: int = 0,
+        condition_ids: Sequence[str] | None = None,
     ) -> "PolymarketEvidenceReplay":
         sample_interval_ms = int(book_sample_interval_ms)
         if sample_interval_ms < 0 or sample_interval_ms > 5_000:
             raise ValueError("book_sample_interval_ms must lie in [0, 5000]")
+        selected_conditions: tuple[str, ...] | None = None
+        if condition_ids is not None:
+            normalized = tuple(
+                sorted({str(value or "").strip().lower() for value in condition_ids})
+            )
+            if not normalized or any(not value for value in normalized):
+                raise ValueError("condition_ids must contain unique non-empty values")
+            selected_conditions = normalized
         connection = store.connect()
         selected = str(run_id or "").strip()
         if not selected:
@@ -279,7 +288,11 @@ class PolymarketEvidenceReplay:
             allow_segmented_gaps=allow_segmented_gaps,
         )
 
-        markets = cls._load_markets(store, selected)
+        markets = cls._load_markets(
+            store,
+            selected,
+            condition_ids=selected_conditions,
+        )
         continuity_mode = "segmented" if gap_count else "strict"
         causal_metrics = _CausalReplayMetrics()
         events = cls._iter_causal_events(
@@ -305,6 +318,7 @@ class PolymarketEvidenceReplay:
             store,
             selected,
             resolutions,
+            condition_ids=selected_conditions,
         )
         diagnostics = PolymarketReplayDiagnostics(
             schema_version=POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION,
@@ -401,14 +415,21 @@ class PolymarketEvidenceReplay:
         store: PolymarketEvidenceStore,
         run_id: str,
         recorded: tuple[PolymarketResolutionEvidence, ...],
+        *,
+        condition_ids: Sequence[str] | None = None,
     ) -> tuple[PolymarketResolutionEvidence, ...]:
+        allowed = None if condition_ids is None else set(condition_ids)
         recorded_by_condition: dict[str, PolymarketResolutionEvidence] = {}
         for item in recorded:
+            if allowed is not None and item.condition_id not in allowed:
+                continue
             if item.condition_id in recorded_by_condition:
                 raise ValueError("Polymarket replay has duplicate resolution events")
             recorded_by_condition[item.condition_id] = item
         official_by_condition: dict[str, PolymarketResolutionEvidence] = {}
         for item in load_official_resolutions(store, run_id=run_id):
+            if allowed is not None and item.condition_id not in allowed:
+                continue
             external = PolymarketResolutionEvidence(
                 run_id=item.run_id,
                 event_id=item.resolution_id,
@@ -445,17 +466,49 @@ class PolymarketEvidenceReplay:
         )
 
     @staticmethod
+    def load_markets(
+        store: PolymarketEvidenceStore,
+        *,
+        run_id: str,
+        condition_ids: Sequence[str] | None = None,
+    ) -> tuple[PolymarketFiveMinuteMarket, ...]:
+        """Load validated immutable market metadata without reconstructing books."""
+
+        selected_conditions: tuple[str, ...] | None = None
+        if condition_ids is not None:
+            normalized = tuple(
+                sorted({str(value or "").strip().lower() for value in condition_ids})
+            )
+            if not normalized or any(not value for value in normalized):
+                raise ValueError("condition_ids must contain unique non-empty values")
+            selected_conditions = normalized
+        return PolymarketEvidenceReplay._load_markets(
+            store,
+            str(run_id),
+            condition_ids=selected_conditions,
+        )
+
+    @staticmethod
     def _load_markets(
         store: PolymarketEvidenceStore,
         run_id: str,
+        *,
+        condition_ids: Sequence[str] | None = None,
     ) -> tuple[PolymarketFiveMinuteMarket, ...]:
+        parameters: list[object] = [run_id]
+        condition_filter = ""
+        if condition_ids is not None:
+            placeholders = ", ".join("?" for _ in condition_ids)
+            condition_filter = f" AND condition_id IN ({placeholders})"
+            parameters.extend(condition_ids)
         rows = store.connect().execute(
-            """
+            f"""
             SELECT condition_id, gamma_payload_json
             FROM polymarket_market_snapshot
-            WHERE run_id = ? ORDER BY event_start_ms, asset
+            WHERE run_id = ?{condition_filter}
+            ORDER BY event_start_ms, asset
             """,
-            [run_id],
+            parameters,
         ).fetchall()
         markets: list[PolymarketFiveMinuteMarket] = []
         for condition_id, payload_json in rows:
@@ -484,10 +537,12 @@ class PolymarketEvidenceReplay:
         metrics: _CausalReplayMetrics,
     ) -> Iterator[_EventRow]:
         market_by_condition = {market.condition_id: market for market in markets}
+        conditions = tuple(sorted(market_by_condition))
+        placeholders = ", ".join("?" for _ in conditions)
         source_watermarks: dict[tuple[str, str], tuple[int, int]] = {}
         availability: dict[str, tuple[int, int]] = {}
         cursor = store.connect().execute(
-            """
+            f"""
             SELECT e.event_id, e.event_type, e.condition_id, e.asset_id,
                    e.event_json, e.event_sha256, r.connection_id,
                    r.sequence_number, r.received_wall_ms,
@@ -497,10 +552,11 @@ class PolymarketEvidenceReplay:
               ON r.run_id = e.run_id AND r.message_id = e.message_id
             WHERE e.run_id = ?
               AND e.stream IN ('clob_market', 'clob_rest_book')
+              AND e.condition_id IN ({placeholders})
             ORDER BY r.received_monotonic_ns, r.received_wall_ms,
                      r.connection_id, r.sequence_number, e.sub_index
             """,
-            [run_id],
+            [run_id, *conditions],
         )
         raw_group: list[tuple[object, ...]] = []
         group_monotonic_ns: int | None = None

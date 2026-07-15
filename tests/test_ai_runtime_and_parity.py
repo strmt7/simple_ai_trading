@@ -184,6 +184,8 @@ def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() 
     candidates = {candidate.model: candidate for candidate in finance_ai_candidates()}
 
     assert candidates["qwen3:8b"].reasoning_or_risk_review is True
+    assert candidates["qwen3.5:9b"].reasoning_or_risk_review is True
+    assert candidates["qwen3.5:9b"].model_parameters_b == 9.0
     assert candidates["fin-r1:8b"].finance_specialized is True
     assert candidates["fin-r1:8b"].reasoning_or_risk_review is True
     assert candidates["fin-r1:8b"].model_parameters_b == 8.0

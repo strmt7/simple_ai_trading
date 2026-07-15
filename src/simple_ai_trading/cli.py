@@ -106,13 +106,31 @@ from .positions import (
     new_position_id,
 )
 from .polymarket_paper import PolymarketPaperBroker
+from .polymarket_ai_veto import (
+    PolymarketAIVetoConfig,
+    benchmark_polymarket_ai_veto,
+    build_polymarket_ai_veto_cases,
+)
 from .polymarket_coverage import inspect_polymarket_feed_coverage
 from .polymarket_features import (
     PolymarketFeatureConfig,
     build_polymarket_feature_dataset,
     materialize_polymarket_feature_dataset,
 )
+from .polymarket_model import (
+    PolymarketModelConfig,
+    build_polymarket_model_dataset,
+    fit_polymarket_offset_model,
+    predict_polymarket_probabilities,
+    split_polymarket_model_dataset,
+)
+from .polymarket_model_execution import (
+    PolymarketExecutionResearchConfig,
+    build_polymarket_policy_selection,
+    evaluate_polymarket_execution_policy,
+)
 from .polymarket_recorder import PolymarketEvidenceStore, PolymarketPublicRecorder
+from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_resolution import PolymarketResolutionFinalizer
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
@@ -488,6 +506,74 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_features.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_features.add_argument("--json", action="store_true")
     parser_polymarket_features.set_defaults(func=command_polymarket_features)
+
+    parser_polymarket_model = subparsers.add_parser(
+        "polymarket-model",
+        help="run leakage-safe probability and execution research on prospective evidence",
+        description=(
+            "Fit a bounded residual around the Polymarket-implied probability with "
+            "purged chronological BTC/ETH/SOL market groups, then compare it with "
+            "the unchanged market baseline using full-resolution FOK paper replay. "
+            "The resulting artifact has no live trading or profitability authority."
+        ),
+    )
+    parser_polymarket_model.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_model.add_argument("--run-id", default=None)
+    parser_polymarket_model.add_argument("--cadence-ms", type=int, default=250)
+    parser_polymarket_model.add_argument("--warmup-ms", type=int, default=5_000)
+    parser_polymarket_model.add_argument(
+        "--minimum-resolved-markets-per-asset", type=int, default=30
+    )
+    parser_polymarket_model.add_argument(
+        "--latency-ms",
+        type=int,
+        default=100,
+        help="measured decision-to-execution delay used by full-depth paper replay",
+    )
+    parser_polymarket_model.add_argument(
+        "--minimum-edge",
+        default="0.02",
+        help="minimum expected net payout per outcome contract after taker fees",
+    )
+    parser_polymarket_model.add_argument("--initial-capital", default="1000")
+    parser_polymarket_model.add_argument(
+        "--maximum-loss-fraction-per-market", default="0.005"
+    )
+    parser_polymarket_model.add_argument(
+        "--maximum-loss-fraction-per-time-group", default="0.015"
+    )
+    parser_polymarket_model.add_argument(
+        "--disable-ai",
+        action="store_true",
+        help="skip the default local multibillion-parameter veto ablation",
+    )
+    parser_polymarket_model.add_argument("--ai-model", default="qwen3:8b")
+    parser_polymarket_model.add_argument(
+        "--ai-benchmark",
+        default="docs/ai/risk-review/latest/comparison.json",
+        help="frozen adversarial risk benchmark that must select the requested model",
+    )
+    parser_polymarket_model.add_argument(
+        "--ai-url", default="http://127.0.0.1:11434"
+    )
+    parser_polymarket_model.add_argument("--ai-timeout", type=float, default=30.0)
+    parser_polymarket_model.add_argument(
+        "--ai-min-confidence", type=float, default=0.65
+    )
+    parser_polymarket_model.add_argument(
+        "--ai-max-latency-seconds", type=float, default=15.0
+    )
+    parser_polymarket_model.add_argument(
+        "--output",
+        default=None,
+        help="optional deterministic JSON artifact path",
+    )
+    parser_polymarket_model.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_model.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_model.add_argument("--json", action="store_true")
+    parser_polymarket_model.set_defaults(func=command_polymarket_model)
 
     parser_polymarket_paper = subparsers.add_parser(
         "polymarket-paper",
@@ -5940,6 +6026,354 @@ def command_polymarket_features(args: argparse.Namespace) -> int:
         )
         print(f"dataset_sha256: {dataset.dataset_sha256}")
     return 0 if dataset.shadow_ready else 2
+
+
+def _polymarket_execution_uplift_metrics(
+    report: object,
+    *,
+    dataset_fingerprint: str,
+) -> dict[str, object]:
+    trades = [item for item in getattr(report, "trades") if item.filled]
+    values = [float(item.realized_pnl_quote) for item in trades]
+    gains = sum(value for value in values if value > 0.0)
+    losses = abs(sum(value for value in values if value < 0.0))
+    loss_streak = 0
+    maximum_loss_streak = 0
+    for value in values:
+        loss_streak = loss_streak + 1 if value < 0.0 else 0
+        maximum_loss_streak = max(maximum_loss_streak, loss_streak)
+    drawdown = float(getattr(report, "maximum_drawdown_fraction"))
+    net = float(getattr(report, "net_realized_pnl_quote"))
+    return {
+        "realized_pnl": net,
+        "roi_pct": 100.0 * float(getattr(report, "return_on_initial_capital")),
+        "max_drawdown": drawdown,
+        "expectancy": net / len(values) if values else 0.0,
+        "profit_factor": gains / losses if losses > 0.0 else (gains if gains > 0.0 else 0.0),
+        "closed_trades": len(values),
+        "win_rate": (
+            sum(value > 0.0 for value in values) / len(values) if values else 0.0
+        ),
+        "liquidation_events": 0,
+        "max_consecutive_losses": maximum_loss_streak,
+        "downside_return_risk_ratio": net / drawdown if drawdown > 0.0 else 0.0,
+        "dataset_fingerprint": dataset_fingerprint,
+        "evidence_sha256": str(getattr(report, "report_sha256")),
+    }
+
+
+def _polymarket_matched_uplift_periods(
+    split: object,
+    baseline: object,
+    ai: object,
+) -> list[dict[str, object]]:
+    baseline_by_end = {
+        item.settled_at_ms: float(item.group_realized_pnl_quote)
+        for item in getattr(baseline, "equity_curve")
+    }
+    ai_by_end = {
+        item.settled_at_ms: float(item.group_realized_pnl_quote)
+        for item in getattr(ai, "equity_curve")
+    }
+    return [
+        {
+            "scope": "polymarket_btc_eth_sol_five_minute_test",
+            "period_start_ms": int(start_ms),
+            "period_end_ms": int(start_ms) + 300_000,
+            "baseline_return": baseline_by_end.get(int(start_ms) + 300_000, 0.0),
+            "ai_return": ai_by_end.get(int(start_ms) + 300_000, 0.0),
+        }
+        for start_ms in getattr(split, "test_group_starts_ms")
+    ]
+
+
+def command_polymarket_model(args: argparse.Namespace) -> int:
+    """Run one hash-bound probability and full-depth execution experiment."""
+
+    try:
+        minimum_markets = int(args.minimum_resolved_markets_per_asset)
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            feature_dataset = build_polymarket_feature_dataset(
+                store,
+                run_id=getattr(args, "run_id", None),
+                config=PolymarketFeatureConfig(
+                    cadence_ms=int(args.cadence_ms),
+                    warmup_ms=int(args.warmup_ms),
+                    minimum_resolved_markets_per_asset=minimum_markets,
+                    allow_segmented_gaps=False,
+                ),
+            )
+            feature_materialization = materialize_polymarket_feature_dataset(
+                store,
+                feature_dataset,
+            )
+            markets = PolymarketEvidenceReplay.load_markets(
+                store,
+                run_id=feature_dataset.run_id,
+            )
+            model_dataset = build_polymarket_model_dataset(
+                feature_dataset,
+                markets,
+                config=PolymarketModelConfig(
+                    minimum_markets_per_asset=minimum_markets,
+                    minimum_time_groups=minimum_markets,
+                ),
+            )
+            split = split_polymarket_model_dataset(model_dataset)
+            model, probability_report = fit_polymarket_offset_model(
+                model_dataset,
+                split,
+            )
+            test_conditions = tuple(
+                sorted({item.condition_id for item in split.test})
+            )
+            execution_replay = PolymarketEvidenceReplay.load(
+                store,
+                run_id=feature_dataset.run_id,
+                allow_segmented_gaps=False,
+                book_sample_interval_ms=0,
+                condition_ids=test_conditions,
+            )
+            baseline_probabilities = [
+                item.baseline_up_probability for item in split.test
+            ]
+            model_probabilities = predict_polymarket_probabilities(
+                model,
+                split.test,
+            )
+            execution_config = PolymarketExecutionResearchConfig(
+                submission_latency_ms=int(args.latency_ms),
+                minimum_expected_edge_per_contract=str(args.minimum_edge),
+                initial_capital_quote=str(args.initial_capital),
+                maximum_loss_fraction_per_market=str(
+                    args.maximum_loss_fraction_per_market
+                ),
+                maximum_loss_fraction_per_time_group=str(
+                    args.maximum_loss_fraction_per_time_group
+                ),
+            ).validated()
+            baseline_execution = evaluate_polymarket_execution_policy(
+                split.test,
+                baseline_probabilities,
+                execution_replay,
+                config=execution_config,
+            )
+            model_execution = evaluate_polymarket_execution_policy(
+                split.test,
+                model_probabilities,
+                execution_replay,
+                config=execution_config,
+            )
+        ai_payload: dict[str, object]
+        ai_execution = None
+        ai_uplift = None
+        if bool(getattr(args, "disable_ai", False)):
+            ai_payload = {
+                "enabled": False,
+                "reason": "operator_disabled",
+                "trading_authority": False,
+                "profitability_claim": False,
+            }
+        else:
+            from .ai_model_benchmark import (
+                AI_MODEL_BENCHMARK_CONTRACT,
+                rescore_finance_ai_benchmark_payload,
+            )
+            from .ai_uplift import assess_ai_uplift
+
+            benchmark_path = Path(str(args.ai_benchmark))
+            benchmark_bytes = benchmark_path.read_bytes()
+            benchmark_payload = json.loads(benchmark_bytes.decode("utf-8"))
+            rescored_benchmark = rescore_finance_ai_benchmark_payload(
+                benchmark_payload
+            )
+            ai_model = str(args.ai_model)
+            selected_result = next(
+                (
+                    item
+                    for item in rescored_benchmark.results
+                    if item.model == ai_model and item.passed
+                ),
+                None,
+            )
+            if (
+                rescored_benchmark.benchmark_contract
+                != AI_MODEL_BENCHMARK_CONTRACT
+                or rescored_benchmark.selected_model != ai_model
+                or selected_result is None
+            ):
+                raise ValueError(
+                    "the frozen adversarial risk benchmark does not select "
+                    f"the requested AI model: {ai_model}"
+                )
+            benchmark_sha256 = hashlib.sha256(benchmark_bytes).hexdigest()
+            policy_selection = build_polymarket_policy_selection(
+                split.test,
+                model_probabilities,
+                execution_replay.markets,
+                config=execution_config,
+            )
+            ai_cases = build_polymarket_ai_veto_cases(
+                policy_selection,
+                probability_report,
+                execution_config,
+            )
+
+            def ai_progress(_event: str, item: Mapping[str, object]) -> None:
+                if not getattr(args, "json", False):
+                    print(
+                        "polymarket-ai: "
+                        f"case={item.get('case')}/{item.get('case_count')} "
+                        f"action={item.get('action')} "
+                        f"valid={item.get('valid')} "
+                        f"latency={item.get('latency_seconds')}s",
+                        file=sys.stderr,
+                    )
+
+            ai_report = benchmark_polymarket_ai_veto(
+                ai_cases,
+                all_condition_ids=[item.condition_id for item in split.test],
+                selection_sha256=policy_selection.selection_sha256,
+                risk_benchmark_evidence_sha256=benchmark_sha256,
+                config=PolymarketAIVetoConfig(
+                    model=ai_model,
+                    base_url=str(args.ai_url),
+                    timeout_seconds=float(args.ai_timeout),
+                    minimum_approval_confidence=float(args.ai_min_confidence),
+                    maximum_advisory_latency_seconds=float(
+                        args.ai_max_latency_seconds
+                    ),
+                ),
+                progress=ai_progress,
+            )
+            ai_execution = evaluate_polymarket_execution_policy(
+                split.test,
+                model_probabilities,
+                execution_replay,
+                config=execution_config,
+                market_permissions=ai_report.market_permissions,
+            )
+            ai_uplift = assess_ai_uplift(
+                _polymarket_execution_uplift_metrics(
+                    model_execution,
+                    dataset_fingerprint=model_dataset.dataset_sha256,
+                ),
+                _polymarket_execution_uplift_metrics(
+                    ai_execution,
+                    dataset_fingerprint=model_dataset.dataset_sha256,
+                ),
+                model_name=ai_model,
+                model_parameters_b=ai_report.model_parameters_b,
+                model_artifact_sha256=ai_report.report_sha256,
+                matched_periods=_polymarket_matched_uplift_periods(
+                    split,
+                    model_execution,
+                    ai_execution,
+                ),
+            )
+            ai_payload = {
+                "enabled": True,
+                "risk_benchmark": {
+                    "path": str(benchmark_path),
+                    "sha256": benchmark_sha256,
+                    "contract": rescored_benchmark.benchmark_contract,
+                    "selected_model": rescored_benchmark.selected_model,
+                    "score": selected_result.score,
+                },
+                "policy_selection": policy_selection.asdict(),
+                "veto_report": ai_report.asdict(),
+                "execution": ai_execution.asdict(),
+                "uplift": ai_uplift.asdict(),
+            }
+        evidence_gates = {
+            "validation_probability_improved": (
+                probability_report.validation_log_loss_delta < 0.0
+            ),
+            "untouched_test_probability_improved": (
+                probability_report.test_log_loss_delta < 0.0
+                and probability_report.test_brier_delta < 0.0
+            ),
+            "after_cost_execution_improved": (
+                model_execution.net_realized_pnl_quote
+                > baseline_execution.net_realized_pnl_quote
+            ),
+            "all_positions_officially_settled": (
+                model_execution.filled_order_count
+                == model_execution.winning_order_count
+                + model_execution.losing_order_count
+            ),
+            "ai_enabled": bool(ai_payload.get("enabled")),
+            "ai_uplift_accepted": bool(
+                ai_uplift is not None and ai_uplift.accepted
+            ),
+            "live_trading_authority": False,
+            "profitability_claim": False,
+        }
+        payload: dict[str, object] = {
+            "schema_version": "polymarket-prospective-model-experiment-v1",
+            "run_id": feature_dataset.run_id,
+            "feature_dataset": feature_dataset.summary(),
+            "feature_materialization": feature_materialization.asdict(),
+            "model_dataset": model_dataset.summary(),
+            "split": split.summary(),
+            "model": model.asdict(),
+            "probability_report": probability_report.asdict(),
+            "baseline_execution": baseline_execution.asdict(),
+            "model_execution": model_execution.asdict(),
+            "ai": ai_payload,
+            "evidence_gates": evidence_gates,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
+        artifact_sha256 = hashlib.sha256(
+            json.dumps(
+                payload,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest()
+        payload["artifact_sha256"] = artifact_sha256
+        output = str(getattr(args, "output", None) or "").strip()
+        if output:
+            write_json_atomic(Path(output), payload, sort_keys=True)
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-model failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-model: "
+            f"run={feature_dataset.run_id} "
+            f"candidate={model.selected_candidate} "
+            f"test_log_loss_delta={probability_report.test_log_loss_delta:.8f} "
+            f"baseline_net={baseline_execution.net_realized_pnl_quote} "
+            f"model_net={model_execution.net_realized_pnl_quote} "
+            f"model_fills={model_execution.filled_order_count}"
+        )
+        if ai_execution is not None and ai_uplift is not None:
+            print(
+                "polymarket-ai: "
+                f"net={ai_execution.net_realized_pnl_quote} "
+                f"fills={ai_execution.filled_order_count} "
+                f"uplift_accepted={ai_uplift.accepted}"
+            )
+        print(f"artifact_sha256: {artifact_sha256}")
+        if output:
+            print(f"artifact: {output}")
+    return 0
 
 
 def command_polymarket_paper(args: argparse.Namespace) -> int:
