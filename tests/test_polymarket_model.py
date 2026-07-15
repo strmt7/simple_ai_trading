@@ -1498,6 +1498,41 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     with pytest.raises(ValueError, match="model test metrics .* does not reconcile"):
         validate_polymarket_model_artifact(metric_tampered_path)
 
+    probability_input_tampered = json.loads(
+        artifact_path.read_text(encoding="utf-8")
+    )
+    bound_execution = probability_input_tampered["model_execution"]
+    bound_execution["probability_input_sha256"] = "f" * 64
+    bound_execution_identity = dict(bound_execution)
+    bound_execution_identity.pop("report_sha256")
+    bound_execution["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            bound_execution_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    probability_input_identity = dict(probability_input_tampered)
+    probability_input_identity.pop("artifact_sha256")
+    probability_input_tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            probability_input_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    probability_input_path = tmp_path / "probability-input-tampered.json"
+    probability_input_path.write_text(
+        json.dumps(probability_input_tampered),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="probability input does not reconstruct"):
+        validate_polymarket_model_artifact(probability_input_path)
+
     accounting_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
 
     def falsify_report(report: dict[str, object]) -> None:

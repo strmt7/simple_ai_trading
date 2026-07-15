@@ -627,6 +627,32 @@ def _validate_execution_report(
         raise ValueError(f"{name} equity path summary does not reconcile")
 
 
+def _validate_execution_probability_binding(
+    report: Mapping[str, Any],
+    predictions: Sequence[Mapping[str, Any]],
+    *,
+    probability_key: str,
+    name: str,
+) -> None:
+    expected = _canonical_sha256(
+        {
+            "schema_version": "polymarket-probability-input-v1",
+            "sample_ids": [str(row["sample_id"]) for row in predictions],
+            "probabilities": [
+                format(
+                    _finite_float(row[probability_key], f"{name} probability"),
+                    ".17g",
+                )
+                for row in predictions
+            ],
+            "market_permission_sha256": report["market_permission_sha256"],
+            "decision_delay_input_sha256": report["decision_delay_input_sha256"],
+        }
+    )
+    if report.get("probability_input_sha256") != expected:
+        raise ValueError(f"{name} probability input does not reconstruct")
+
+
 def _is_sha256(value: object) -> bool:
     text = str(value or "")
     return len(text) == 64 and all(
@@ -1027,6 +1053,27 @@ def _validate_ai_evidence(
             raise ValueError("AI policy candidate economics are invalid")
         candidate_by_sample[sample_id] = candidate
         candidate_conditions.add(condition_id)
+    expected_selection_sha256 = _canonical_sha256(
+        {
+            "schema_version": "polymarket-policy-selection-v1",
+            "config": model_execution["config"],
+            "sample_ids": [str(row["sample_id"]) for row in predictions],
+            "probabilities": [
+                format(
+                    _finite_float(
+                        row["model_up_probability"],
+                        "held-out model probability",
+                    ),
+                    ".17g",
+                )
+                for row in predictions
+            ],
+            "candidates": [dict(candidate) for candidate in candidates],
+            "reason_counts": dict(sorted(reason_counts.items())),
+        }
+    )
+    if selection.get("selection_sha256") != expected_selection_sha256:
+        raise ValueError("AI policy selection does not reconstruct")
     raw_cases = ai.get("prompt_cases")
     if not isinstance(raw_cases, list):
         raise ValueError("AI prompt cases must be an array")
@@ -1870,6 +1917,16 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             expected_time_group_count=len(time_groups),
             name=f"{policy} primary execution",
         )
+        _validate_execution_probability_binding(
+            report,
+            predictions,
+            probability_key=(
+                "baseline_up_probability"
+                if policy == "baseline"
+                else "model_up_probability"
+            ),
+            name=f"{policy} primary execution",
+        )
 
     sensitivity = _as_mapping(
         payload.get("execution_latency_sensitivity"),
@@ -1921,6 +1978,16 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
                 scenario,
                 conditions=conditions,
                 expected_time_group_count=len(time_groups),
+                name=f"{policy} {latency}ms execution",
+            )
+            _validate_execution_probability_binding(
+                scenario,
+                predictions,
+                probability_key=(
+                    "baseline_up_probability"
+                    if policy == "baseline"
+                    else "model_up_probability"
+                ),
                 name=f"{policy} {latency}ms execution",
             )
             if (
