@@ -19,7 +19,7 @@ from .polymarket_model_execution import (
 
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
-POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v1"
+POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v2"
 SUPPORTED_POLYMARKET_AI_MODELS = ("qwen3:8b", "qwen3.5:9b", "fin-r1:8b")
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
@@ -163,6 +163,7 @@ class PolymarketAIVetoResult:
     model: str
     latency_seconds: float
     response_sha256: str
+    response_payload: object
     decision: PolymarketAIVetoDecision
 
     def asdict(self) -> dict[str, object]:
@@ -172,6 +173,7 @@ class PolymarketAIVetoResult:
             "model": self.model,
             "latency_seconds": self.latency_seconds,
             "response_sha256": self.response_sha256,
+            "response_payload": self.response_payload,
             "decision": self.decision.asdict(),
         }
 
@@ -609,6 +611,7 @@ def benchmark_polymarket_ai_veto(
             model=cfg.model,
             latency_seconds=latency,
             response_sha256=_canonical_sha256(raw),
+            response_payload=raw,
             decision=decision,
         )
         results.append(result)
