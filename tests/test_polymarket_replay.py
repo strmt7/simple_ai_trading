@@ -16,6 +16,11 @@ from simple_ai_trading.polymarket_paper import (
     PolymarketPaperBroker,
     PolymarketPaperCoordinator,
 )
+from simple_ai_trading.polymarket_paper_plan import (
+    POLYMARKET_PAPER_PLAN_SCHEMA_VERSION,
+    PolymarketPaperPlan,
+    run_polymarket_paper_plan,
+)
 from simple_ai_trading.polymarket_features import (
     POLYMARKET_FEATURE_NAMES,
     PolymarketFeatureConfig,
@@ -1783,6 +1788,183 @@ def test_model_research_and_owned_paper_broker_have_exact_execution_parity(
     assert settlement.realized_pnl_quote == expected.realized_pnl_quote
 
 
+def _single_trade_model_plan(
+    database,
+    *,
+    run_id: str,
+    maximum_execution_observation_delay_ms: int = 500,
+):
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, run_id)
+        recorder_report_sha256 = str(
+            store.connect()
+            .execute(
+                "SELECT report_sha256 FROM polymarket_recorder_run WHERE run_id = ?",
+                [run_id],
+            )
+            .fetchone()[0]
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id=run_id,
+            book_sample_interval_ms=0,
+        )
+    decision = replay.books[0]
+    market = decision.market
+    resolution = next(
+        item for item in replay.resolutions if item.condition_id == market.condition_id
+    )
+    sample = PolymarketModelSample(
+        sample_id="e" * 64,
+        source_run_id=run_id,
+        source_feature_id="f" * 64,
+        condition_id=market.condition_id,
+        market_id=market.market_id,
+        asset=market.asset,
+        event_start_ms=market.event_start_ms,
+        end_ms=market.end_ms,
+        decision_received_wall_ms=decision.received_wall_ms,
+        decision_received_monotonic_ns=decision.received_monotonic_ns,
+        decision_event_id=decision.event_id,
+        horizon_seconds=240,
+        feature_values=tuple(0.0 for _ in POLYMARKET_MODEL_FEATURE_NAMES),
+        risk_context_values=tuple(
+            0.0 for _ in POLYMARKET_MODEL_RISK_CONTEXT_NAMES
+        ),
+        baseline_up_probability=0.9,
+        up_best_bid=0.49,
+        up_best_ask=0.51,
+        down_best_bid=0.49,
+        down_best_ask=0.51,
+        official_up=True,
+        resolution_event_id=resolution.event_id,
+        market_weight=1.0,
+        input_provenance_sha256="1" * 64,
+        sample_sha256="2" * 64,
+    )
+    config = PolymarketExecutionResearchConfig(
+        submission_latency_ms=5,
+        maximum_execution_observation_delay_ms=(
+            maximum_execution_observation_delay_ms
+        ),
+    )
+    research = evaluate_polymarket_execution_policy(
+        (sample,),
+        (0.9,),
+        replay,
+        config=config,
+    )
+    research_payload = research.asdict()
+    blocking_reasons = (
+        ("all_order_outcomes_terminal",)
+        if any(item.execution_state == "UNKNOWN" for item in research.trades)
+        else ()
+    )
+    provisional = PolymarketPaperPlan(
+        schema_version=POLYMARKET_PAPER_PLAN_SCHEMA_VERSION,
+        artifact_sha256="3" * 64,
+        source_verification_sha256="4" * 64,
+        recorder_report_sha256=recorder_report_sha256,
+        run_id=run_id,
+        policy="model",
+        primary_network_latency_ms=5,
+        confirmed_for_paper_run=not blocking_reasons,
+        research_override=bool(blocking_reasons),
+        blocking_reasons=blocking_reasons,
+        execution_report_sha256=research.report_sha256,
+        execution_config=research_payload["config"],
+        trades=tuple(research_payload["trades"]),
+        plan_sha256="",
+    )
+    plan_identity = provisional.asdict()
+    plan_identity.pop("plan_sha256")
+    plan = replace(
+        provisional,
+        plan_sha256=_sha(_canonical(plan_identity)),
+    )
+    return plan, research
+
+
+def test_verified_model_plan_uses_owned_paper_lifecycle_and_recorder_identity(
+    tmp_path,
+) -> None:
+    database = tmp_path / "verified-model-plan.duckdb"
+    run_id = "verified-model-plan-run"
+    plan, research = _single_trade_model_plan(database, run_id=run_id)
+    wrong_recorder = replace(plan, recorder_report_sha256="5" * 64, plan_sha256="")
+    wrong_identity = wrong_recorder.asdict()
+    wrong_identity.pop("plan_sha256")
+    wrong_recorder = replace(
+        wrong_recorder,
+        plan_sha256=_sha(_canonical(wrong_identity)),
+    )
+
+    with PolymarketPaperBroker(database, run_id=run_id) as broker:
+        coordinator = PolymarketPaperCoordinator(
+            broker,
+            control_path=tmp_path / "wrong-recorder.control.json",
+        )
+        with pytest.raises(ValueError, match="recorder report identity drifted"):
+            run_polymarket_paper_plan(broker, coordinator, wrong_recorder)
+        assert (
+            broker.store.connect()
+            .execute(
+                "SELECT count(*) FROM paper_order_intent WHERE venue = 'polymarket'"
+            )
+            .fetchone()[0]
+            == 0
+        )
+
+    with PolymarketPaperBroker(database, run_id=run_id) as broker:
+        coordinator = PolymarketPaperCoordinator(
+            broker,
+            control_path=tmp_path / "verified-model.control.json",
+        )
+        report = run_polymarket_paper_plan(broker, coordinator, plan)
+        positions = broker.positions()
+
+    assert report.successful is True
+    assert report.status == "COMPLETED"
+    assert report.matched_execution_count == report.planned_trade_count == 1
+    assert report.filled_order_count == report.settled_position_count == 1
+    assert report.realized_pnl_quote == research.net_realized_pnl_quote
+    assert report.final_control_state == "PAUSED"
+    assert positions == ()
+
+
+def test_model_plan_unknown_execution_remains_visible_and_stopping(tmp_path) -> None:
+    database = tmp_path / "unknown-model-plan.duckdb"
+    run_id = "unknown-model-plan-run"
+    plan, research = _single_trade_model_plan(
+        database,
+        run_id=run_id,
+        maximum_execution_observation_delay_ms=1,
+    )
+    assert research.trades[0].execution_state == "UNKNOWN"
+    assert plan.research_override is True
+
+    with PolymarketPaperBroker(
+        database,
+        run_id=run_id,
+        maximum_execution_observation_delay_ms=1,
+    ) as broker:
+        coordinator = PolymarketPaperCoordinator(
+            broker,
+            control_path=tmp_path / "unknown-model.control.json",
+        )
+        report = run_polymarket_paper_plan(broker, coordinator, plan)
+        reconciliation = broker.reconcile()
+
+    assert report.successful is False
+    assert report.status == "STOPPING"
+    assert report.matched_execution_count == report.planned_trade_count == 1
+    assert report.filled_order_count == report.settled_position_count == 0
+    assert report.final_control_state == "STOPPING"
+    assert any(error.startswith("blocking_intent:") for error in report.errors)
+    assert reconciliation.can_open is False
+    assert reconciliation.journal.blocking_intent_ids
+
+
 def test_polymarket_broker_fails_closed_after_execution_observation_timeout(
     tmp_path,
 ) -> None:
@@ -2262,6 +2444,7 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
         "close",
         "settle",
         "stop",
+        "run-model",
     }
     assert {option.dest for option in spec.options} == {
         "database",
@@ -2275,6 +2458,11 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
         "quantity",
         "limit_price",
         "latency_ms",
+        "artifact",
+        "source_verification",
+        "policy",
+        "allow_unconfirmed_research",
+        "output",
         "max_execution_observation_delay_ms",
         "decision_delay_ms",
         "order_type",
@@ -2283,3 +2471,108 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
         "database_threads",
         "json",
     }
+
+
+def test_polymarket_model_paper_cli_uses_artifact_configuration_and_atomic_output(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    database = tmp_path / "model-cli.duckdb"
+    run_id = "model-cli-run"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, run_id)
+        recorder_report_sha256 = str(
+            store.connect()
+            .execute(
+                "SELECT report_sha256 FROM polymarket_recorder_run WHERE run_id = ?",
+                [run_id],
+            )
+            .fetchone()[0]
+        )
+    provisional = PolymarketPaperPlan(
+        schema_version=POLYMARKET_PAPER_PLAN_SCHEMA_VERSION,
+        artifact_sha256="6" * 64,
+        source_verification_sha256="7" * 64,
+        recorder_report_sha256=recorder_report_sha256,
+        run_id=run_id,
+        policy="model",
+        primary_network_latency_ms=250,
+        confirmed_for_paper_run=True,
+        research_override=False,
+        blocking_reasons=(),
+        execution_report_sha256="8" * 64,
+        execution_config={
+            "submission_latency_ms": 250,
+            "maximum_execution_observation_delay_ms": 750,
+            "maximum_book_age_ms": 1_500,
+            "order_ttl_ms": 20_000,
+        },
+        trades=(),
+        plan_sha256="",
+    )
+    identity = provisional.asdict()
+    identity.pop("plan_sha256")
+    plan = replace(provisional, plan_sha256=_sha(_canonical(identity)))
+
+    class SuccessfulRun:
+        successful = True
+
+        @staticmethod
+        def asdict() -> dict[str, object]:
+            return {
+                "status": "COMPLETED",
+                "policy": "model",
+                "planned_trade_count": 0,
+                "matched_execution_count": 0,
+                "realized_pnl_quote": "0",
+                "report_sha256": "9" * 64,
+            }
+
+    def build_plan(*_args, **kwargs):
+        assert kwargs == {
+            "policy": "model",
+            "allow_unconfirmed_research": False,
+        }
+        return plan
+
+    def run_plan(broker, coordinator, supplied_plan):
+        assert supplied_plan == plan
+        assert broker.maximum_execution_observation_delay_ms == 750
+        assert broker.maximum_book_age_ms == 1_500
+        assert broker.order_ttl_ms == 20_000
+        coordinator.resume()
+        coordinator.pause()
+        return SuccessfulRun()
+
+    monkeypatch.setattr(cli, "build_polymarket_paper_plan", build_plan)
+    monkeypatch.setattr(cli, "run_polymarket_paper_plan", run_plan)
+    output = tmp_path / "model-paper-report.json"
+    code = cli.main(
+        [
+            "polymarket-paper",
+            "--database",
+            str(database),
+            "--action",
+            "run-model",
+            "--artifact",
+            str(tmp_path / "artifact.json"),
+            "--source-verification",
+            str(tmp_path / "verification.json"),
+            "--policy",
+            "model",
+            "--control-path",
+            str(tmp_path / "model-cli.control.json"),
+            "--output",
+            str(output),
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    persisted = json.loads(output.read_text(encoding="utf-8"))
+
+    assert code == 0
+    assert payload["operation"]["model_run"]["status"] == "COMPLETED"
+    assert payload["control"]["state"] == "PAUSED"
+    assert persisted["plan"]["primary_network_latency_ms"] == 250
+    assert persisted["model_run"]["report_sha256"] == "9" * 64

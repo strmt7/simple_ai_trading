@@ -106,6 +106,10 @@ from .positions import (
     new_position_id,
 )
 from .polymarket_paper import PolymarketPaperBroker, PolymarketPaperCoordinator
+from .polymarket_paper_plan import (
+    build_polymarket_paper_plan,
+    run_polymarket_paper_plan,
+)
 from .polymarket_ai_veto import (
     PolymarketAIVetoConfig,
     benchmark_polymarket_ai_veto,
@@ -660,7 +664,16 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--run-id", default=None)
     parser_polymarket_paper.add_argument(
         "--action",
-        choices=["status", "resume", "pause", "open", "close", "settle", "stop"],
+        choices=[
+            "status",
+            "resume",
+            "pause",
+            "open",
+            "close",
+            "settle",
+            "stop",
+            "run-model",
+        ],
         default="status",
     )
     parser_polymarket_paper.add_argument(
@@ -675,6 +688,35 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--quantity", default=None)
     parser_polymarket_paper.add_argument("--limit-price", default=None)
     parser_polymarket_paper.add_argument("--latency-ms", type=int, default=None)
+    parser_polymarket_paper.add_argument(
+        "--artifact",
+        default=None,
+        help="source-verified model artifact required by --action run-model",
+    )
+    parser_polymarket_paper.add_argument(
+        "--source-verification",
+        default=None,
+        help="independent source-reconstruction report required by --action run-model",
+    )
+    parser_polymarket_paper.add_argument(
+        "--policy",
+        choices=["auto", "baseline", "model", "ai"],
+        default="auto",
+        help="verified held-out policy used by --action run-model",
+    )
+    parser_polymarket_paper.add_argument(
+        "--allow-unconfirmed-research",
+        action="store_true",
+        help=(
+            "paper diagnostics only: admit an unconfirmed held-out policy while "
+            "retaining all execution and stop safeguards"
+        ),
+    )
+    parser_polymarket_paper.add_argument(
+        "--output",
+        default=None,
+        help="optional atomic JSON report path for --action run-model",
+    )
     parser_polymarket_paper.add_argument(
         "--max-execution-observation-delay-ms",
         type=int,
@@ -6845,6 +6887,7 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
 
     action = str(getattr(args, "action", "status") or "status")
     stop_succeeded: bool | None = None
+    model_run_succeeded: bool | None = None
 
     def required(name: str) -> str:
         value = str(getattr(args, name, None) or "").strip()
@@ -6853,15 +6896,76 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
         return value
 
     try:
+        model_plan = None
+        broker_run_id = getattr(args, "run_id", None)
+        maximum_observation_delay_ms = int(
+            args.max_execution_observation_delay_ms
+        )
+        maximum_book_age_ms = 2_000
+        order_ttl_ms = 30_000
+        allow_segmented_gaps = bool(
+            getattr(args, "allow_segmented_gaps", False)
+        )
+        if action == "run-model":
+            if allow_segmented_gaps:
+                raise ValueError(
+                    "--action run-model requires strict gap-free source verification"
+                )
+            artifact_path = Path(required("artifact"))
+            source_verification_path = Path(required("source_verification"))
+            model_plan = build_polymarket_paper_plan(
+                artifact_path,
+                source_verification_path,
+                policy=str(getattr(args, "policy", "auto")),
+                allow_unconfirmed_research=bool(
+                    getattr(args, "allow_unconfirmed_research", False)
+                ),
+            )
+            supplied_run_id = str(broker_run_id or "").strip()
+            if supplied_run_id and supplied_run_id != model_plan.run_id:
+                raise ValueError("--run-id disagrees with the verified model artifact")
+            broker_run_id = model_plan.run_id
+            maximum_observation_delay_ms = int(
+                model_plan.execution_config[
+                    "maximum_execution_observation_delay_ms"
+                ]
+            )
+            maximum_book_age_ms = int(
+                model_plan.execution_config["maximum_book_age_ms"]
+            )
+            order_ttl_ms = int(model_plan.execution_config["order_ttl_ms"])
+            output_value = str(getattr(args, "output", None) or "").strip()
+            if output_value:
+                output_path = Path(output_value).resolve()
+                protected_paths = {
+                    Path(args.database).resolve(),
+                    artifact_path.resolve(),
+                    source_verification_path.resolve(),
+                }
+                if output_path in protected_paths:
+                    raise ValueError(
+                        "--output must not overwrite the database or source evidence"
+                    )
+        elif any(
+            (
+                getattr(args, "artifact", None),
+                getattr(args, "source_verification", None),
+                getattr(args, "allow_unconfirmed_research", False),
+                getattr(args, "output", None),
+            )
+        ):
+            raise ValueError(
+                "--artifact, --source-verification, --allow-unconfirmed-research, "
+                "and --output require --action run-model"
+            )
+
         with PolymarketPaperBroker(
             Path(args.database),
-            run_id=getattr(args, "run_id", None),
-            maximum_execution_observation_delay_ms=int(
-                args.max_execution_observation_delay_ms
-            ),
-            allow_segmented_gaps=bool(
-                getattr(args, "allow_segmented_gaps", False)
-            ),
+            run_id=broker_run_id,
+            maximum_execution_observation_delay_ms=maximum_observation_delay_ms,
+            maximum_book_age_ms=maximum_book_age_ms,
+            order_ttl_ms=order_ttl_ms,
+            allow_segmented_gaps=allow_segmented_gaps,
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as broker:
@@ -6870,7 +6974,31 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                 control_path=getattr(args, "control_path", None),
             )
             operation: dict[str, object] = {"action": action}
-            if action == "open":
+            if action == "run-model":
+                if model_plan is None:
+                    raise RuntimeError("Polymarket paper model plan is unavailable")
+                model_run = run_polymarket_paper_plan(
+                    broker,
+                    coordinator,
+                    model_plan,
+                )
+                plan_summary = model_plan.asdict()
+                plan_summary.pop("trades")
+                operation["plan"] = plan_summary
+                operation["model_run"] = model_run.asdict()
+                model_run_succeeded = model_run.successful
+                output_value = str(getattr(args, "output", None) or "").strip()
+                if output_value:
+                    write_json_atomic(
+                        Path(output_value),
+                        {
+                            "plan": plan_summary,
+                            "model_run": model_run.asdict(),
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    )
+            elif action == "open":
                 coordinator.require_open_allowed()
                 event_id = required("event_id")
                 outcome = required("outcome")
@@ -6983,12 +7111,25 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
         print(json.dumps(payload, indent=2, sort_keys=True, default=str))
     else:
         report = payload["reconciliation"]
-        print(
-            "polymarket-paper: "
-            f"action={action} run={payload['run_id']} "
-            f"can_open={report['can_open']} can_close={report['can_close']} "
-            f"positions={len(payload['positions'])}"
-        )
+        model_run = payload["operation"].get("model_run")
+        if isinstance(model_run, Mapping):
+            print(
+                "polymarket-paper: "
+                f"action={action} run={payload['run_id']} "
+                f"status={model_run['status']} policy={model_run['policy']} "
+                f"matched={model_run['matched_execution_count']}/"
+                f"{model_run['planned_trade_count']} "
+                f"pnl={model_run['realized_pnl_quote']}"
+            )
+        else:
+            print(
+                "polymarket-paper: "
+                f"action={action} run={payload['run_id']} "
+                f"can_open={report['can_open']} can_close={report['can_close']} "
+                f"positions={len(payload['positions'])}"
+            )
+    if model_run_succeeded is not None:
+        return 0 if model_run_succeeded else 2
     if stop_succeeded is not None:
         return 0 if stop_succeeded else 2
     return 0 if reconciliation.can_open and reconciliation.can_close else 2
