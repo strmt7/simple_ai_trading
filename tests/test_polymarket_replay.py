@@ -36,6 +36,9 @@ from simple_ai_trading.polymarket_features import (
     load_polymarket_feature_source_context,
     materialize_polymarket_feature_dataset,
 )
+from simple_ai_trading.polymarket_continuity import (
+    evaluate_polymarket_continuity_eligibility,
+)
 from simple_ai_trading.polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
     POLYMARKET_MODEL_RISK_CONTEXT_NAMES,
@@ -1415,6 +1418,88 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
     assert second.batches[0].status == "existing"
     assert first.batches[0].batch_sha256 == second.batches[0].batch_sha256
     assert not first.asdict()["profitability_claim"]
+
+
+def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "continuity.duckdb") as store:
+        _finish_replay_store(store, "continuity", feature_evidence=True)
+
+        first = evaluate_polymarket_continuity_eligibility(
+            store,
+            run_id="continuity",
+        )
+        second = evaluate_polymarket_continuity_eligibility(
+            store,
+            run_id="continuity",
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_continuity_eligibility_group
+            SET reasons_json = '[]'
+            WHERE report_sha256 = ?
+            """,
+            [first.report_sha256],
+        )
+        with pytest.raises(ValueError, match="continuity report is inconsistent"):
+            evaluate_polymarket_continuity_eligibility(
+                store,
+                run_id="continuity",
+            )
+
+    assert first.report_sha256 == second.report_sha256
+    assert first.eligible_group_count == 0
+    assert not first.confirmation_eligible
+    assert "run_started_before_round9_contract_commit" in first.confirmation_reasons
+    assert first.groups[0].reasons
+    assert first.asdict()["outcomes_consulted"] is False
+    assert first.asdict()["labels_consulted"] is False
+
+
+def test_polymarket_continuity_cli_and_native_contract_share_controls(
+    tmp_path,
+    capsys,
+) -> None:
+    database = tmp_path / "continuity-cli.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "continuity-cli", feature_evidence=True)
+
+    status = cli.main(
+        [
+            "polymarket-continuity",
+            "--database",
+            str(database),
+            "--run-id",
+            "continuity-cli",
+            "--memory-limit",
+            "512MB",
+            "--database-threads",
+            "1",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    continuity_spec = next(
+        spec for spec in command_specs() if spec.name == "polymarket-continuity"
+    )
+    action_spec = next(
+        spec for spec in command_specs() if spec.name == "polymarket-action-value"
+    )
+
+    assert status == 2
+    assert payload["outcomes_consulted"] is False
+    assert payload["confirmation_eligible"] is False
+    assert {option.dest for option in continuity_spec.options} >= {
+        "database",
+        "run_id",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
+    assert "allow_segmented_gaps" in {
+        option.dest for option in action_spec.options
+    }
 
 
 def test_polymarket_feature_provenance_binds_pre_window_causal_events(

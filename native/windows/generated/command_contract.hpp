@@ -382,6 +382,15 @@ inline constexpr CommandOptionSpec kOptions_polymarket_action_value[] = {
     {L"--market-groups-per-batch", L"market_groups_per_batch", L"", L"1", L"", L"1", false, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"4GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"1", L"", L"1", false, true, false},
+    {L"--allow-segmented-gaps", L"allow_segmented_gaps", L"", L"false", L"automatically audit local market windows and use only hash-bound eligible synchronized groups", L"0", false, false, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_continuity[] = {
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"4GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"1", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -914,7 +923,8 @@ inline constexpr CommandSpec kCommands[] = {
     {L"model-blueprint", L"usage: simple-ai-trading model-blueprint [-h]                                          [--risk-level {conservative,regular,aggressive,default,balanced,risky}]                                          [--implemented-only] [--json]", kOptions_model_blueprint, 3},
     {L"model-lab", L"usage: simple-ai-trading model-lab [-h] [--output-dir OUTPUT_DIR]                                    [--starting-cash STARTING_CASH]                                    [--objective OBJECTIVE]                                    [--max-symbols MAX_SYMBOLS]                                    [--max-scan MAX_SCAN] [--limit LIMIT]                                    [--quote-asset QUOTE_ASSET]                                    [--interval INTERVAL] [--full-history]                                    [--market-db MARKET_DB] [--require-db-data]                                    [--market {spot,futures}]                                    [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                    [--batch-size BATCH_SIZE]                                    [--score-batch-size SCORE_BATCH_SIZE]                                    [--max-candidates MAX_CANDIDATES]                                    [--learning-feedback LEARNING_FEEDBACK]", kOptions_model_lab, 17},
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
-    {L"polymarket-action-value", L"Build the frozen Round 9 BTC/ETH/SOL action-value dataset in resumable synchronized market batches. This command accepts only a complete gap-free run; segmented evidence requires a separately audited eligibility artifact and is not accepted by this surface.", kOptions_polymarket_action_value, 6},
+    {L"polymarket-action-value", L"Build the frozen Round 9 BTC/ETH/SOL action-value dataset in resumable synchronized market batches. Segmented evidence is accepted only after the built-in label-free continuity audit retains at least 30 post-contract synchronized groups.", kOptions_polymarket_action_value, 7},
+    {L"polymarket-continuity", L"Evaluate recorder errors, stream gaps, connection segments, market snapshot timing, and fresh CLOB baselines without consulting outcomes, labels, utilities, or model scores.", kOptions_polymarket_continuity, 5},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 24},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},
