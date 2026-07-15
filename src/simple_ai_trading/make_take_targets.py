@@ -119,6 +119,118 @@ class MakeTakeTargetBatch:
         }
 
 
+def _target_payload(target: MakeTakeTargetBatch) -> dict[str, object]:
+    arrays = {
+        "action_code": target.action_code,
+        "action_side": target.action_side,
+        "eligible": target.eligible,
+        "filled": target.filled,
+        "fill_bucket": target.fill_bucket,
+        "conditional_payoff_valid": target.conditional_payoff_valid,
+        "realized_valid": target.realized_valid,
+        "conditional_net_bps": target.conditional_net_bps,
+        "realized_net_bps": target.realized_net_bps,
+        "terminal_time_ms": target.terminal_time_ms,
+        "outcome": target.outcome,
+        "markout_5s_bps": target.markout_5s_bps,
+        "markout_15s_bps": target.markout_15s_bps,
+        "stop_bps": target.stop_bps,
+        "take_bps": target.take_bps,
+    }
+    return {
+        "schema_version": target.schema_version,
+        "scenario": target.scenario,
+        "symbol": target.symbol,
+        "source_dataset_sha256": target.source_dataset_sha256,
+        "source_entry_sha256": target.source_entry_sha256,
+        "day_path_sha256": dict(target.day_path_sha256),
+        "action_names": list(MAKE_TAKE_ACTION_NAMES),
+        "arrays": {name: _array_sha256(value) for name, value in arrays.items()},
+    }
+
+
+def validate_make_take_target_batch(target: MakeTakeTargetBatch) -> None:
+    """Validate complete order outcomes and independently recompute identity."""
+
+    rows = target.action_rows
+    vectors = (
+        target.action_code,
+        target.action_side,
+        target.eligible,
+        target.filled,
+        target.fill_bucket,
+        target.conditional_payoff_valid,
+        target.realized_valid,
+        target.conditional_net_bps,
+        target.realized_net_bps,
+        target.terminal_time_ms,
+        target.outcome,
+        target.markout_5s_bps,
+        target.markout_15s_bps,
+        target.stop_bps,
+        target.take_bps,
+    )
+    passive = target.action_code < 2
+    unfilled = target.eligible & passive & ~target.filled
+    expected_realized = target.conditional_payoff_valid | unfilled
+    conditional = target.conditional_payoff_valid
+    invalid = ~target.realized_valid
+    expected_code = np.tile(np.arange(4, dtype=np.uint8), target.event_rows)
+    expected_side = np.tile(
+        np.asarray([1, -1, 1, -1], dtype=np.int8), target.event_rows
+    )
+    if (
+        target.schema_version != MAKE_TAKE_TARGET_SCHEMA_VERSION
+        or target.scenario not in {"base", "stress"}
+        or target.symbol not in {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
+        or target.event_rows <= 0
+        or rows != target.event_rows * 4
+        or not _is_sha256(target.source_dataset_sha256)
+        or not _is_sha256(target.source_entry_sha256)
+        or not _is_sha256(target.target_sha256)
+        or any(not _is_sha256(value) for value in target.day_path_sha256.values())
+        or any(np.asarray(value).shape != (rows,) for value in vectors)
+        or np.asarray(target.eligible).dtype != np.dtype(np.bool_)
+        or np.asarray(target.filled).dtype != np.dtype(np.bool_)
+        or np.asarray(target.conditional_payoff_valid).dtype != np.dtype(np.bool_)
+        or np.asarray(target.realized_valid).dtype != np.dtype(np.bool_)
+        or not np.array_equal(target.action_code, expected_code)
+        or not np.array_equal(target.action_side, expected_side)
+        or not np.all(np.isin(target.fill_bucket, (0, 1, 2, 3)))
+        or np.any(conditional & (~target.eligible | ~target.filled))
+        or not np.array_equal(target.realized_valid, expected_realized)
+        or not np.isfinite(target.conditional_net_bps[conditional]).all()
+        or not np.isfinite(target.realized_net_bps[target.realized_valid]).all()
+        or not np.allclose(
+            target.conditional_net_bps[conditional],
+            target.realized_net_bps[conditional],
+            atol=0.0,
+            rtol=0.0,
+        )
+        or np.any(target.realized_net_bps[unfilled] != 0.0)
+        or not np.isnan(target.conditional_net_bps[~conditional]).all()
+        or not np.isnan(target.realized_net_bps[invalid]).all()
+        or not np.isfinite(target.markout_5s_bps[conditional]).all()
+        or not np.isfinite(target.markout_15s_bps[conditional]).all()
+        or not np.isnan(target.markout_5s_bps[~conditional]).all()
+        or not np.isnan(target.markout_15s_bps[~conditional]).all()
+        or np.any(target.terminal_time_ms[target.realized_valid] < 0)
+        or np.any(target.terminal_time_ms[invalid] != -1)
+        or np.any(target.outcome[unfilled] != MAKE_TAKE_UNFILLED_OUTCOME)
+        or np.any(~np.isin(target.outcome[conditional], (0, 1, 2, 3, 4)))
+        or np.any(target.outcome[invalid] != -1)
+        or not np.isfinite(target.stop_bps).all()
+        or not np.isfinite(target.take_bps).all()
+        or np.any(target.stop_bps < 18.0)
+        or np.any(target.stop_bps > 80.0)
+        or np.any(target.take_bps < 30.0)
+        or np.any(target.take_bps > 120.0)
+        or np.any(target.take_bps <= target.stop_bps)
+        or target.target_sha256 != _sha256(_target_payload(target))
+    ):
+        raise ValueError("make/take target batch is invalid")
+
+
 def build_make_take_targets(
     *,
     symbol: str,
@@ -224,34 +336,6 @@ def build_make_take_targets(
             if progress is not None:
                 progress(day_offset, len(unique_days), int(np.count_nonzero(realized_valid)))
 
-    arrays = {
-        "action_code": np.asarray(entries.action_code),
-        "action_side": np.asarray(entries.action_side),
-        "eligible": np.asarray(entries.eligible),
-        "filled": np.asarray(entries.filled),
-        "fill_bucket": np.asarray(entries.fill_bucket),
-        "conditional_payoff_valid": conditional_valid,
-        "realized_valid": realized_valid,
-        "conditional_net_bps": conditional_net,
-        "realized_net_bps": realized_net,
-        "terminal_time_ms": terminal_time,
-        "outcome": outcome,
-        "markout_5s_bps": markout_5s,
-        "markout_15s_bps": markout_15s,
-        "stop_bps": stops,
-        "take_bps": takes,
-    }
-    payload = {
-        "schema_version": MAKE_TAKE_TARGET_SCHEMA_VERSION,
-        "scenario": entries.scenario,
-        "symbol": normalized_symbol,
-        "source_dataset_sha256": str(source_dataset_sha256),
-        "source_entry_sha256": entries.batch_sha256,
-        "day_path_sha256": day_path_sha256,
-        "action_names": list(MAKE_TAKE_ACTION_NAMES),
-        "arrays": {name: _array_sha256(value) for name, value in arrays.items()},
-    }
-    target_sha256 = _sha256(payload)
     retained = (
         conditional_valid,
         realized_valid,
@@ -266,7 +350,7 @@ def build_make_take_targets(
     )
     for array in retained:
         array.setflags(write=False)
-    return MakeTakeTargetBatch(
+    provisional = MakeTakeTargetBatch(
         schema_version=MAKE_TAKE_TARGET_SCHEMA_VERSION,
         scenario=entries.scenario,
         symbol=normalized_symbol,
@@ -289,8 +373,13 @@ def build_make_take_targets(
         markout_15s_bps=markout_15s,
         stop_bps=stops,
         take_bps=takes,
-        target_sha256=target_sha256,
+        target_sha256="",
     )
+    target = MakeTakeTargetBatch(
+        **{**provisional.__dict__, "target_sha256": _sha256(_target_payload(provisional))}
+    )
+    validate_make_take_target_batch(target)
+    return target
 
 
 __all__ = [
@@ -299,4 +388,5 @@ __all__ = [
     "DayPathLoader",
     "MakeTakeTargetBatch",
     "build_make_take_targets",
+    "validate_make_take_target_batch",
 ]
