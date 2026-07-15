@@ -6,6 +6,12 @@ import json
 import math
 from pathlib import Path
 
+import pytest
+
+from simple_ai_trading.polymarket_repricing_publication import (
+    publish_polymarket_repricing_report,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RESEARCH = ROOT / "docs" / "model-research" / "polymarket"
@@ -56,13 +62,81 @@ def test_round_002_publication_is_internally_consistent() -> None:
     assert market_manifest["columns"] == list(markets[0])
 
 
-def test_latest_round_with_disqualified_capture_publishes_no_stale_chart() -> None:
+def test_latest_round_publishes_only_noncausal_round_8_ceiling() -> None:
     latest = RESEARCH / "latest"
     readme = (latest / "README.md").read_text(encoding="utf-8").lower()
+    chart = (latest / "charts" / "repricing-ceiling.svg").read_text(
+        encoding="utf-8"
+    )
 
-    assert "run is disqualified" in readme
-    assert "no performance graph is published" in readme
+    assert "noncausal mechanism ceiling" in readme
+    assert "not roi or a trading strategy" in readme
+    assert "not roi, not a causal strategy" in chart.lower()
+    assert "2026-07-15t00:46:38.779z" in chart.lower()
+    assert "2026-07-15t00:55:51.787z" in chart.lower()
     assert not (latest / "charts" / "causal-feature-coverage.svg").exists()
+
+
+def test_round_008_committed_manifest_reconstructs_every_artifact() -> None:
+    manifest = json.loads(
+        (RESEARCH / "latest" / "publication-integrity.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    claimed = manifest.pop("manifest_sha256")
+    canonical = json.dumps(
+        manifest,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert manifest["claims"]["noncausal_oracle_upper_bound"] is True
+    assert manifest["claims"]["profitability_claim"] is False
+    assert manifest["claims"]["ai_edge_evaluated"] is False
+    for entry in manifest["generated_artifacts"]:
+        path = RESEARCH / entry["path"]
+        payload = path.read_bytes()
+        assert len(payload) == entry["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
+        if path.suffix == ".csv":
+            with path.open(encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            assert len(rows) == entry["row_count"]
+            assert list(rows[0]) == entry["columns"]
+
+
+def test_round_008_publication_is_deterministic_and_refuses_tampering(
+    tmp_path: Path,
+) -> None:
+    report = RESEARCH / "round-008-executable-repricing-ceiling-report.json"
+    capture = RESEARCH / "round-002-prospective-pipeline-evidence.json"
+    local_capture = tmp_path / capture.name
+    local_capture.write_bytes(capture.read_bytes())
+    first = publish_polymarket_repricing_report(report, local_capture, tmp_path)
+    second = publish_polymarket_repricing_report(report, local_capture, tmp_path)
+
+    assert first == second
+    manifest = json.loads(
+        (tmp_path / "latest" / "publication-integrity.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["claims"]["noncausal_oracle_upper_bound"] is True
+    assert manifest["claims"]["profitability_claim"] is False
+    assert manifest["claims"]["trading_authority"] is False
+    assert manifest["source_report_sha256"] == first.report_sha256
+
+    tampered = tmp_path / "tampered.json"
+    payload = json.loads(report.read_text(encoding="utf-8"))
+    payload["profitability_claim"] = True
+    tampered.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="publication validation"):
+        publish_polymarket_repricing_report(
+            tampered, local_capture, tmp_path / "bad"
+        )
 
 
 def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -> None:

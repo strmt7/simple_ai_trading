@@ -1,0 +1,97 @@
+{
+  "artifact_class": "exchange_sourced_noncausal_mechanism_ceiling",
+  "capture_end_utc": "2026-07-15T00:55:51.787Z",
+  "capture_start_utc": "2026-07-15T00:46:38.779Z",
+  "claims": {
+    "ai_edge_evaluated": false,
+    "drawdown_claim": false,
+    "noncausal_oracle_upper_bound": true,
+    "profitability_claim": false,
+    "roi_claim": false,
+    "trading_authority": false,
+    "training_authority": false
+  },
+  "generated_artifacts": [
+    {
+      "bytes": 1310344,
+      "path": "round-008-executable-repricing-ceiling-report.json",
+      "sha256": "94a9afb1f180338c0ce344c393aceeb2e80e5091f96746a47ee09c316afbb916"
+    },
+    {
+      "bytes": 1025,
+      "path": "latest/README.md",
+      "sha256": "c57b4ad8a0db78c65026150e4564d4d26af0b6d88c828136501a586e6697520f"
+    },
+    {
+      "bytes": 14469,
+      "path": "latest/charts/repricing-ceiling.svg",
+      "sha256": "d77e5b12fefbe68a385cc9e88f68e765f1fb6b2ee83da248ee2d7f03ca9a66f3"
+    },
+    {
+      "bytes": 8746,
+      "columns": [
+        "capture_start_utc",
+        "capture_end_utc",
+        "asset",
+        "per_leg_submission_latency_ms",
+        "holding_period_ms",
+        "source_market_count",
+        "complete_market_count",
+        "positive_market_count",
+        "positive_market_fraction",
+        "median_market_outcome_best_net_bps",
+        "maximum_market_outcome_best_net_bps",
+        "confirmation_eligible",
+        "noncausal_oracle_upper_bound"
+      ],
+      "path": "latest/tables/repricing-cells.csv",
+      "row_count": 60,
+      "sha256": "f01a954206c727658f0e6c6676f6e82589593d1306fd5f690e60812a1e73ade2"
+    },
+    {
+      "bytes": 6596,
+      "columns": [
+        "capture_start_utc",
+        "capture_end_utc",
+        "condition_id",
+        "market_id",
+        "asset",
+        "outcome",
+        "per_leg_submission_latency_ms",
+        "holding_period_ms",
+        "decision_count",
+        "complete_round_trip_count",
+        "quantity",
+        "best_entry_cost_quote",
+        "best_exit_proceeds_quote",
+        "best_net_quote",
+        "best_net_bps_on_entry_cost",
+        "positive",
+        "opportunity_sha256"
+      ],
+      "path": "latest/tables/repricing-primary-markets.csv",
+      "row_count": 24,
+      "sha256": "720d790d1bc6a015e54b59547fc601a8cbf4b538f393486d9b2834a95cd0744e"
+    },
+    {
+      "bytes": 750,
+      "columns": [
+        "terminal_reason",
+        "decision_count",
+        "decision_fraction"
+      ],
+      "path": "latest/tables/repricing-terminal-reasons.csv",
+      "row_count": 14,
+      "sha256": "bf9bdac8e73d224504cbc625d27000cba0f88e27275ecd76467378f1d7f7817e"
+    }
+  ],
+  "manifest_sha256": "8a2dd589ebd118145331e6a00d8769c22b4a13f62274239bc02bd187a481f762",
+  "reproduction_command": "python -m simple_ai_trading.polymarket_repricing_publication --report docs/model-research/polymarket/round-008-executable-repricing-ceiling-report.json --capture-evidence docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json --research-root docs/model-research/polymarket",
+  "round": 8,
+  "schema_version": "polymarket-repricing-publication-v1",
+  "source_capture_evidence": "round-002-prospective-pipeline-evidence.json",
+  "source_capture_evidence_file_sha256": "81c7786f8303bcd7f547abc3563cbd7641bc1680a5b583d440bf3282fd741424",
+  "source_report": "round-008-executable-repricing-ceiling-report.json",
+  "source_report_sha256": "d971c0fdcec370f290fc267d5616764a05653175f26c8fcc0b6b1ede8501c7f7",
+  "source_run_id": "0184b6a4bc0846a9b241aadc0491f016"
+}

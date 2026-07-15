@@ -11,6 +11,7 @@ from typing import Mapping, Sequence
 
 from .paper_execution import BookLevel, PaperBookSnapshot
 from .polymarket import (
+    POLYMARKET_TAKER_ORDER_DELAY_MS,
     PolymarketFiveMinuteMarket,
     parse_polymarket_five_minute_market,
     validate_clob_order_book,
@@ -134,6 +135,74 @@ class PolymarketRecordedBook:
 
 
 @dataclass(frozen=True)
+class PolymarketMarketExecutionEvidence:
+    """Integrity-bound venue parameters observed for one market."""
+
+    run_id: str
+    condition_id: str
+    observed_wall_ms: int
+    observed_monotonic_ns: int
+    maker_base_fee: int
+    taker_base_fee: int
+    taker_order_delay_enabled: bool
+    minimum_order_age_seconds: int
+    clob_info_sha256: str
+    up_fee_rate_sha256: str
+    down_fee_rate_sha256: str
+    snapshot_sha256: str
+
+    @property
+    def taker_order_delay_ms(self) -> int:
+        return POLYMARKET_TAKER_ORDER_DELAY_MS if self.taker_order_delay_enabled else 0
+
+    def asdict(self) -> dict[str, object]:
+        item = self.validated()
+        return {
+            "run_id": item.run_id,
+            "condition_id": item.condition_id,
+            "observed_wall_ms": item.observed_wall_ms,
+            "observed_monotonic_ns": item.observed_monotonic_ns,
+            "maker_base_fee": item.maker_base_fee,
+            "taker_base_fee": item.taker_base_fee,
+            "taker_order_delay_enabled": item.taker_order_delay_enabled,
+            "taker_order_delay_ms": item.taker_order_delay_ms,
+            "minimum_order_age_seconds": item.minimum_order_age_seconds,
+            "clob_info_sha256": item.clob_info_sha256,
+            "up_fee_rate_sha256": item.up_fee_rate_sha256,
+            "down_fee_rate_sha256": item.down_fee_rate_sha256,
+            "snapshot_sha256": item.snapshot_sha256,
+        }
+
+    def validated(self) -> "PolymarketMarketExecutionEvidence":
+        if (
+            not self.run_id
+            or not self.condition_id
+            or self.observed_wall_ms < 0
+            or self.observed_monotonic_ns < 0
+            or self.maker_base_fee < 0
+            or self.taker_base_fee < 0
+            or not isinstance(self.taker_order_delay_enabled, bool)
+            or self.minimum_order_age_seconds < 0
+            or len(self.clob_info_sha256) != 64
+            or len(self.up_fee_rate_sha256) != 64
+            or len(self.down_fee_rate_sha256) != 64
+            or len(self.snapshot_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for digest in (
+                    self.clob_info_sha256,
+                    self.up_fee_rate_sha256,
+                    self.down_fee_rate_sha256,
+                    self.snapshot_sha256,
+                )
+                for character in digest
+            )
+        ):
+            raise ValueError("Polymarket market execution evidence is invalid")
+        return self
+
+
+@dataclass(frozen=True)
 class PolymarketResolutionEvidence:
     run_id: str
     event_id: str
@@ -227,12 +296,30 @@ class PolymarketEvidenceReplay:
         books: tuple[PolymarketRecordedBook, ...],
         resolutions: tuple[PolymarketResolutionEvidence, ...],
         diagnostics: PolymarketReplayDiagnostics,
+        market_execution_evidence: tuple[PolymarketMarketExecutionEvidence, ...] = (),
     ) -> None:
         self.run_id = run_id
         self.markets = markets
         self.books = books
         self.resolutions = resolutions
         self.diagnostics = diagnostics
+        validated_execution_evidence = tuple(
+            item.validated() for item in market_execution_evidence
+        )
+        if any(item.run_id != run_id for item in validated_execution_evidence):
+            raise ValueError("market execution evidence belongs to another replay run")
+        if len(
+            {
+                (
+                    item.condition_id,
+                    item.observed_monotonic_ns,
+                    item.snapshot_sha256,
+                )
+                for item in validated_execution_evidence
+            }
+        ) != len(validated_execution_evidence):
+            raise ValueError("market execution evidence identities are duplicated")
+        self.market_execution_evidence = validated_execution_evidence
         self._books_by_token: dict[str, tuple[PolymarketRecordedBook, ...]] = {}
         for token in sorted({book.token_id for book in books}):
             self._books_by_token[token] = tuple(
@@ -317,6 +404,15 @@ class PolymarketEvidenceReplay:
             selected,
             condition_ids=selected_conditions,
         )
+        market_execution_evidence = cls._load_market_execution_evidence(
+            store,
+            selected,
+            condition_ids=selected_conditions,
+        )
+        if {item.condition_id for item in market_execution_evidence} != {
+            market.condition_id for market in markets
+        }:
+            raise ValueError("Polymarket execution evidence does not cover every market")
         continuity_mode = "segmented" if gap_count else "strict"
         causal_metrics = _CausalReplayMetrics()
         events = cls._iter_causal_events(
@@ -375,6 +471,7 @@ class PolymarketEvidenceReplay:
             books=books,
             resolutions=resolutions,
             diagnostics=diagnostics,
+            market_execution_evidence=market_execution_evidence,
         )
 
     @staticmethod
@@ -603,6 +700,57 @@ class PolymarketEvidenceReplay:
         if len({market.condition_id for market in markets}) != len(markets):
             raise ValueError("Polymarket replay market identities are duplicated")
         return tuple(markets)
+
+    @staticmethod
+    def _load_market_execution_evidence(
+        store: PolymarketEvidenceStore,
+        run_id: str,
+        *,
+        condition_ids: Sequence[str] | None = None,
+    ) -> tuple[PolymarketMarketExecutionEvidence, ...]:
+        parameters: list[object] = [run_id]
+        condition_filter = ""
+        if condition_ids is not None:
+            placeholders = ", ".join("?" for _ in condition_ids)
+            condition_filter = f" AND condition_id IN ({placeholders})"
+            parameters.extend(condition_ids)
+        rows = (
+            store.connect()
+            .execute(
+                f"""
+                SELECT condition_id, observed_wall_ms, observed_monotonic_ns,
+                       maker_base_fee, taker_base_fee,
+                       taker_order_delay_enabled, minimum_order_age_seconds,
+                       clob_info_sha256, up_fee_rate_sha256,
+                       down_fee_rate_sha256, snapshot_sha256
+                FROM polymarket_market_snapshot
+                WHERE run_id = ?{condition_filter}
+                ORDER BY observed_monotonic_ns, condition_id, snapshot_id
+                """,
+                parameters,
+            )
+            .fetchall()
+        )
+        evidence = tuple(
+            PolymarketMarketExecutionEvidence(
+                run_id=run_id,
+                condition_id=str(row[0]),
+                observed_wall_ms=int(row[1]),
+                observed_monotonic_ns=int(row[2]),
+                maker_base_fee=int(row[3]),
+                taker_base_fee=int(row[4]),
+                taker_order_delay_enabled=bool(row[5]),
+                minimum_order_age_seconds=int(row[6]),
+                clob_info_sha256=str(row[7]),
+                up_fee_rate_sha256=str(row[8]),
+                down_fee_rate_sha256=str(row[9]),
+                snapshot_sha256=str(row[10]),
+            ).validated()
+            for row in rows
+        )
+        if not evidence:
+            raise ValueError("Polymarket replay contains no market execution evidence")
+        return evidence
 
     @classmethod
     def _iter_causal_events(
@@ -1752,6 +1900,7 @@ class PolymarketEvidenceReplay:
 __all__ = [
     "POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION",
     "PolymarketEvidenceReplay",
+    "PolymarketMarketExecutionEvidence",
     "PolymarketRecordedBook",
     "PolymarketReplayDiagnostics",
     "PolymarketResolutionEvidence",
