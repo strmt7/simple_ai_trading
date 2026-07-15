@@ -18,7 +18,7 @@ from .polymarket_model_execution import (
 )
 
 
-POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v1"
+POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = ("qwen3:8b", "qwen3.5:9b", "fin-r1:8b")
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
@@ -243,8 +243,9 @@ def build_polymarket_ai_veto_cases(
     validation_model = probability_report.model_metrics["validation"]
     cases: list[PolymarketAIVetoCase] = []
     for candidate in selection.candidates:
-        sample = candidate.sample
+        sample = candidate.sample.validated()
         feature = sample.feature_map()
+        risk_context = sample.risk_context_map()
         outcome_prior = (
             sample.baseline_up_probability
             if candidate.outcome == "Up"
@@ -283,11 +284,16 @@ def build_polymarket_ai_veto_cases(
                 for name in (
                     "direct_distance_from_chainlink_open_bps",
                     "direct_chainlink_basis_bps",
+                    "direct_return_100ms_bps",
                     "direct_return_250ms_bps",
                     "direct_return_1000ms_bps",
                     "direct_return_5000ms_bps",
+                    "direct_realized_volatility_100ms_bps",
                     "direct_realized_volatility_1000ms_bps",
                     "direct_realized_volatility_5000ms_bps",
+                    "direct_diffusion_market_logit_gap",
+                    "chainlink_diffusion_market_logit_gap",
+                    "direct_trade_imbalance_100ms",
                     "direct_trade_imbalance_250ms",
                     "direct_trade_imbalance_1000ms",
                     "direct_trade_imbalance_5000ms",
@@ -301,6 +307,37 @@ def build_polymarket_ai_veto_cases(
                     "executable_ask_pair_premium_bps",
                     "executable_bid_pair_discount_bps",
                 )
+            },
+            "source_freshness_ms": {
+                name: round(float(risk_context[name]), 3)
+                for name in (
+                    "up_book_age_ms",
+                    "down_book_age_ms",
+                    "direct_binance_age_ms",
+                    "chainlink_source_age_ms",
+                    "chainlink_arrival_age_ms",
+                    "chainlink_anchor_gap_ms",
+                )
+            },
+            "liquidity_context": {
+                "proposed_outcome_ask_depth_3_contracts": round(
+                    float(
+                        risk_context[
+                            "up_ask_depth_3_contracts"
+                            if candidate.outcome == "Up"
+                            else "down_ask_depth_3_contracts"
+                        ]
+                    ),
+                    8,
+                ),
+                "market_liquidity_quote": round(
+                    math.expm1(risk_context["log1p_market_liquidity_quote"]),
+                    2,
+                ),
+                "market_volume_quote": round(
+                    math.expm1(risk_context["log1p_market_volume_quote"]),
+                    2,
+                ),
             },
             "validation_only_model_evidence": {
                 "market_baseline_log_loss": round(

@@ -19,8 +19,8 @@ from .polymarket_features import (
 )
 
 
-POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v3"
-POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v3"
+POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v4"
+POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v4"
 POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v4"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
 POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v2"
@@ -53,6 +53,20 @@ POLYMARKET_MODEL_FEATURE_NAMES = (
     "executable_bid_pair_discount_bps",
     "asset_is_eth",
     "asset_is_sol",
+)
+POLYMARKET_MODEL_RISK_CONTEXT_NAMES = (
+    "up_book_age_ms",
+    "down_book_age_ms",
+    "direct_binance_age_ms",
+    "chainlink_source_age_ms",
+    "chainlink_arrival_age_ms",
+    "chainlink_anchor_gap_ms",
+    "up_bid_depth_3_contracts",
+    "up_ask_depth_3_contracts",
+    "down_bid_depth_3_contracts",
+    "down_ask_depth_3_contracts",
+    "log1p_market_liquidity_quote",
+    "log1p_market_volume_quote",
 )
 
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
@@ -178,6 +192,7 @@ class PolymarketModelSample:
     decision_event_id: str
     horizon_seconds: int
     feature_values: tuple[float, ...]
+    risk_context_values: tuple[float, ...]
     baseline_up_probability: float
     up_best_bid: float
     up_best_ask: float
@@ -191,6 +206,32 @@ class PolymarketModelSample:
 
     def feature_map(self) -> dict[str, float]:
         return dict(zip(POLYMARKET_MODEL_FEATURE_NAMES, self.feature_values, strict=True))
+
+    def risk_context_map(self) -> dict[str, float]:
+        return dict(
+            zip(
+                POLYMARKET_MODEL_RISK_CONTEXT_NAMES,
+                self.risk_context_values,
+                strict=True,
+            )
+        )
+
+    def validated(self) -> "PolymarketModelSample":
+        if (
+            len(self.feature_values) != len(POLYMARKET_MODEL_FEATURE_NAMES)
+            or len(self.risk_context_values)
+            != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES)
+            or not all(math.isfinite(value) for value in self.feature_values)
+            or not all(
+                math.isfinite(value) and value >= 0.0
+                for value in self.risk_context_values
+            )
+            or not 0.0 < self.baseline_up_probability < 1.0
+            or len(self.sample_sha256) != 64
+            or self.sample_sha256 != _canonical_sha256(_sample_payload(self))
+        ):
+            raise ValueError("Polymarket model sample identity is invalid")
+        return self
 
 
 @dataclass(frozen=True)
@@ -219,6 +260,7 @@ class PolymarketModelDataset:
             "source_run_id": self.source_run_id,
             "config": self.config.asdict(),
             "model_feature_names": list(POLYMARKET_MODEL_FEATURE_NAMES),
+            "risk_context_names": list(POLYMARKET_MODEL_RISK_CONTEXT_NAMES),
             "sample_count": len(self.samples),
             "market_counts": dict(self.market_counts),
             "time_group_count": self.time_group_count,
@@ -478,6 +520,28 @@ def _model_features(
     return tuple(float(value) for value in derived)
 
 
+def _risk_context(values: Mapping[str, float]) -> tuple[float, ...]:
+    context = (
+        values["up_book_age_ms"],
+        values["down_book_age_ms"],
+        values["direct_binance_age_ms"],
+        values["chainlink_source_age_ms"],
+        values["chainlink_arrival_age_ms"],
+        values["chainlink_anchor_gap_ms"],
+        values["up_bid_depth_3"],
+        values["up_ask_depth_3"],
+        values["down_bid_depth_3"],
+        values["down_ask_depth_3"],
+        values["log1p_market_liquidity_quote"],
+        values["log1p_market_volume_quote"],
+    )
+    if len(context) != len(POLYMARKET_MODEL_RISK_CONTEXT_NAMES) or not all(
+        math.isfinite(value) and value >= 0.0 for value in context
+    ):
+        raise ValueError("Polymarket model risk context is invalid")
+    return tuple(float(value) for value in context)
+
+
 def _sample_payload(sample: PolymarketModelSample) -> dict[str, object]:
     return {
         "schema_version": POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION,
@@ -495,6 +559,8 @@ def _sample_payload(sample: PolymarketModelSample) -> dict[str, object]:
         "horizon_seconds": sample.horizon_seconds,
         "feature_names": list(POLYMARKET_MODEL_FEATURE_NAMES),
         "feature_values": _format_floats(sample.feature_values),
+        "risk_context_names": list(POLYMARKET_MODEL_RISK_CONTEXT_NAMES),
+        "risk_context_values": _format_floats(sample.risk_context_values),
         "baseline_up_probability": format(sample.baseline_up_probability, ".17g"),
         "up_best_bid": format(sample.up_best_bid, ".17g"),
         "up_best_ask": format(sample.up_best_ask, ".17g"),
@@ -635,6 +701,7 @@ def build_polymarket_model_dataset(
                     market.asset,
                     baseline_up_probability=baseline,
                 ),
+                risk_context_values=_risk_context(values),
                 baseline_up_probability=baseline,
                 up_best_bid=values["up_best_bid"],
                 up_best_ask=values["up_best_ask"],
@@ -688,6 +755,7 @@ def build_polymarket_model_dataset(
         "source_run_id": source.run_id,
         "config": cfg.asdict(),
         "model_feature_names": list(POLYMARKET_MODEL_FEATURE_NAMES),
+        "risk_context_names": list(POLYMARKET_MODEL_RISK_CONTEXT_NAMES),
         "sample_sha256": [item.sample_sha256 for item in samples],
         "market_counts": market_counts,
         "time_group_count": time_group_count,
@@ -828,6 +896,8 @@ def split_polymarket_model_dataset(
 
 
 def _raw_matrix(samples: Sequence[PolymarketModelSample]) -> np.ndarray:
+    for sample in samples:
+        sample.validated()
     matrix = np.asarray([item.feature_values for item in samples], dtype=np.float64)
     if matrix.shape != (len(samples), len(POLYMARKET_MODEL_FEATURE_NAMES)) or not np.all(
         np.isfinite(matrix)
@@ -1375,6 +1445,7 @@ def fit_polymarket_offset_model(
 __all__ = [
     "POLYMARKET_MODEL_DATASET_SCHEMA_VERSION",
     "POLYMARKET_MODEL_FEATURE_NAMES",
+    "POLYMARKET_MODEL_RISK_CONTEXT_NAMES",
     "POLYMARKET_MODEL_REPORT_SCHEMA_VERSION",
     "POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION",
     "POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION",
