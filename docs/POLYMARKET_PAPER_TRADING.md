@@ -228,7 +228,10 @@ requires an explicit nonzero latency and returns nonzero while inventory or an
 ambiguous order remains. The command
 is generated into the Windows command contract from the same parser, so the CLI
 and app cannot acquire separate option sets. `open` and `close` also require an
-explicit `--latency-ms`; no unmeasured optimistic default is supplied.
+explicit `--latency-ms`; no unmeasured optimistic default is supplied. `open`
+can reproduce either FAK or FOK research with `--order-type` and binds measured
+model/AI review time separately through `--decision-delay-ms` before network
+submission latency.
 
 Primary references: [authentication](https://docs.polymarket.com/api-reference/authentication),
 [market WebSocket](https://docs.polymarket.com/market-data/websocket/market-channel),

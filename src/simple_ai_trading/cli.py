@@ -628,6 +628,18 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--limit-price", default=None)
     parser_polymarket_paper.add_argument("--latency-ms", type=int, default=None)
     parser_polymarket_paper.add_argument(
+        "--decision-delay-ms",
+        type=int,
+        default=0,
+        help="measured model or AI review delay before order submission",
+    )
+    parser_polymarket_paper.add_argument(
+        "--order-type",
+        choices=["FAK", "FOK"],
+        default="FAK",
+        help="aggressive paper order fill policy",
+    )
+    parser_polymarket_paper.add_argument(
         "--allow-segmented-gaps",
         action="store_true",
         help="explicitly admit validated CLOB-only continuity segments",
@@ -6730,6 +6742,10 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                     quantity=required("quantity"),
                     maximum_price=required("limit_price"),
                     submission_latency_ms=int(required("latency_ms")),
+                    decision_delay_ms=int(
+                        getattr(args, "decision_delay_ms", 0)
+                    ),
+                    order_type=str(getattr(args, "order_type", "FAK")),
                 )
                 operation["position"] = None if position is None else asdict(position)
                 operation["execution"] = asdict(result)

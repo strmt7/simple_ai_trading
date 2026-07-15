@@ -1586,6 +1586,43 @@ def test_polymarket_broker_opens_and_closes_on_post_latency_depth_with_fees(
         assert broker.reconcile().can_open is True
 
 
+def test_polymarket_broker_binds_fok_ai_delay_and_submission_latency(
+    tmp_path,
+) -> None:
+    database = tmp_path / "fok-delay.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "fok-delay-run")
+
+    with PolymarketPaperBroker(database, run_id="fok-delay-run") as broker:
+        decision = broker.replay.books[0]
+        position, execution = broker.open_position(
+            position_id="fok-delay-position",
+            decision=decision,
+            outcome="Up",
+            quantity="5",
+            maximum_price="0.50",
+            decision_delay_ms=5,
+            submission_latency_ms=5,
+            order_type="FOK",
+        )
+        assert position is not None
+        intent = broker.journal.intent(position.opening_intent_id)
+        context = broker.store.connect().execute(
+            """
+            SELECT requested_latency_ms, effective_latency_ms
+            FROM polymarket_paper_order_context WHERE intent_id = ?
+            """,
+            [position.opening_intent_id],
+        ).fetchone()
+
+    assert execution.state == "FILLED"
+    assert intent.order_type == "FOK"
+    assert intent.created_at_ms == decision.received_wall_ms + 5
+    assert context is not None
+    assert context[0] == 10
+    assert context[1] >= context[0]
+
+
 def test_polymarket_broker_blocks_time_travel_and_context_tampering(tmp_path) -> None:
     database = tmp_path / "chronology.duckdb"
     with PolymarketEvidenceStore(database) as store:
@@ -1964,6 +2001,8 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
         "quantity",
         "limit_price",
         "latency_ms",
+        "decision_delay_ms",
+        "order_type",
         "allow_segmented_gaps",
         "memory_limit",
         "database_threads",
