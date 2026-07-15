@@ -119,6 +119,11 @@ from .polymarket_action_pipeline import (
     PolymarketActionPipelineConfig,
     materialize_polymarket_action_value_batches,
 )
+from .polymarket_ridge import (
+    fit_and_evaluate_polymarket_ridge,
+    load_polymarket_ridge_dataset,
+    materialize_polymarket_ridge_report,
+)
 from .polymarket_coverage import inspect_polymarket_feed_coverage
 from .polymarket_continuity import evaluate_polymarket_continuity_eligibility
 from .polymarket_features import (
@@ -598,6 +603,30 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_polymarket_continuity.add_argument("--json", action="store_true")
     parser_polymarket_continuity.set_defaults(func=command_polymarket_continuity)
+
+    parser_polymarket_ridge = subparsers.add_parser(
+        "polymarket-ridge",
+        help="fit and audit the frozen Round 9 causal ridge baseline",
+        description=(
+            "Reconstruct hash-bound causal actions from one confirmation-eligible "
+            "Round 9 pipeline, select the frozen ridge and threshold candidates on "
+            "validation, evaluate the untouched test partition exactly once, and "
+            "persist the complete audit trail. This command grants no trading or "
+            "profitability authority."
+        ),
+    )
+    parser_polymarket_ridge.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_ridge.add_argument(
+        "--pipeline-report-sha256",
+        required=True,
+        help="immutable report digest from polymarket-action-value",
+    )
+    parser_polymarket_ridge.add_argument("--memory-limit", default="4GB")
+    parser_polymarket_ridge.add_argument("--database-threads", type=int, default=1)
+    parser_polymarket_ridge.add_argument("--json", action="store_true")
+    parser_polymarket_ridge.set_defaults(func=command_polymarket_ridge)
 
     parser_polymarket_model = subparsers.add_parser(
         "polymarket-model",
@@ -6417,6 +6446,52 @@ def command_polymarket_continuity(args: argparse.Namespace) -> int:
             print(f"reason: {reason}")
         print(f"report_sha256: {report.report_sha256}")
     return 0 if report.confirmation_eligible else 2
+
+
+def command_polymarket_ridge(args: argparse.Namespace) -> int:
+    """Fit and persist the frozen causal ridge baseline from approved evidence."""
+
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            dataset = load_polymarket_ridge_dataset(
+                store,
+                pipeline_report_sha256=str(args.pipeline_report_sha256),
+            )
+            report = fit_and_evaluate_polymarket_ridge(dataset)
+            materialization = materialize_polymarket_ridge_report(
+                store,
+                dataset,
+                report,
+            )
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-ridge failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    payload["materialization"] = materialization.asdict()
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-ridge: "
+            f"policy={report.selected_policy} "
+            f"threshold={report.selected_threshold} "
+            f"test_completed={report.test_metrics.completed_trade_count} "
+            f"test_stress_utility_quote="
+            f"{report.test_metrics.aggregate_stress_utility_quote:.8f} "
+            f"development_passed={report.development_passed} "
+            f"materialization={materialization.status}"
+        )
+        for reason in report.test_metrics.gate_reasons:
+            print(f"reason: {reason}")
+        print(f"report_sha256: {report.report_sha256}")
+    return 0 if report.development_passed else 2
 
 
 def _polymarket_execution_uplift_metrics(

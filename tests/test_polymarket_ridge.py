@@ -1,0 +1,218 @@
+from __future__ import annotations
+
+from hashlib import sha256
+import json
+from pathlib import Path
+
+import pytest
+
+from simple_ai_trading import cli
+from simple_ai_trading.command_contract import command_specs
+from simple_ai_trading.polymarket_action_value import (
+    POLYMARKET_ACTION_FEATURE_NAMES,
+)
+from simple_ai_trading.polymarket_ridge import (
+    POLYMARKET_RIDGE_CONTRACT_SHA256,
+    POLYMARKET_RIDGE_L2_GRID,
+    POLYMARKET_RIDGE_THRESHOLD_GRID,
+    PolymarketRidgeObservation,
+    build_polymarket_ridge_dataset,
+    fit_and_evaluate_polymarket_ridge,
+    materialize_polymarket_ridge_report,
+    split_polymarket_ridge_dataset,
+)
+from simple_ai_trading.polymarket_recorder import PolymarketEvidenceStore
+
+
+_ASSETS = ("BTC", "ETH", "SOL")
+
+
+def _digest(*values: object) -> str:
+    return sha256("|".join(map(str, values)).encode("ascii")).hexdigest()
+
+
+def _synthetic_observations(
+    group_count: int = 30,
+) -> tuple[PolymarketRidgeObservation, ...]:
+    observations: list[PolymarketRidgeObservation] = []
+    start = 1_800_000_000_000
+    for group in range(group_count):
+        event_start_ms = start + group * 300_000
+        for asset_index, asset in enumerate(_ASSETS):
+            condition_id = _digest("condition", group, asset)
+            official_up = (group + asset_index) % 2 == 0
+            source_sha = _digest("source", group, asset)
+            for decision in range(2):
+                decision_ns = (group * 10_000 + asset_index * 2_000 + decision * 800) * 1_000_000
+                positive_outcome = (
+                    "Up" if (group + asset_index + decision) % 2 == 0 else "Down"
+                )
+                for outcome in ("Up", "Down"):
+                    positive = outcome == positive_outcome
+                    signal = 3.0 if positive else -3.0
+                    values = [0.0] * len(POLYMARKET_ACTION_FEATURE_NAMES)
+                    values[0] = signal
+                    values[1] = float(asset_index)
+                    values[2] = float(decision)
+                    observations.append(
+                        PolymarketRidgeObservation(
+                            action_feature_sha256=_digest(
+                                "feature", group, asset, decision, outcome
+                            ),
+                            action_label_sha256=_digest(
+                                "label", group, asset, decision, outcome
+                            ),
+                            source_feature_row_sha256=source_sha,
+                            condition_id=condition_id,
+                            asset=asset,
+                            outcome=outcome,
+                            event_start_ms=event_start_ms,
+                            decision_received_monotonic_ns=decision_ns,
+                            release_monotonic_ns=decision_ns + 400_000_000,
+                            feature_values=tuple(values),
+                            official_up=official_up,
+                            classifier_eligible=True,
+                            positive_complete=positive,
+                            category="successful_round_trip",
+                            condition_blocked=False,
+                            stress_utility_quote=0.05 if positive else -0.05,
+                        )
+                    )
+    return tuple(observations)
+
+
+def _dataset(group_count: int = 30):
+    return build_polymarket_ridge_dataset(
+        pipeline_report_sha256="a" * 64,
+        eligibility_sha256="b" * 64,
+        observations=_synthetic_observations(group_count),
+    )
+
+
+def test_round9_ridge_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-009-ridge-implementation-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_RIDGE_CONTRACT_SHA256
+    assert sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert tuple(contract["candidate_grid"]["l2"]) == POLYMARKET_RIDGE_L2_GRID
+    assert (
+        tuple(contract["candidate_grid"]["thresholds"])
+        == POLYMARKET_RIDGE_THRESHOLD_GRID
+    )
+    assert contract["truth_constraints"]["profitability_claim"] is False
+
+
+def test_round9_ridge_split_is_purged_grouped_and_broad() -> None:
+    split = split_polymarket_ridge_dataset(_dataset())
+
+    assert len(split.train_groups) == 16
+    assert len(split.validation_groups) == 6
+    assert len(split.test_groups) == 6
+    assert len(split.purged_groups) == 2
+    assert max(split.train_groups) < split.purged_groups[0]
+    assert split.purged_groups[0] < min(split.validation_groups)
+    assert max(split.validation_groups) < split.purged_groups[1]
+    assert split.purged_groups[1] < min(split.test_groups)
+
+
+def test_round9_ridge_selects_only_from_validation_and_is_deterministic() -> None:
+    dataset = _dataset()
+
+    first = fit_and_evaluate_polymarket_ridge(dataset)
+    second = fit_and_evaluate_polymarket_ridge(dataset)
+
+    assert first.report_sha256 == second.report_sha256
+    assert first.selected_policy == "ridge_logit"
+    assert first.selected_threshold in POLYMARKET_RIDGE_THRESHOLD_GRID
+    assert not first.neural_challenger_authorized
+    assert first.development_passed
+    assert first.test_metrics.gate_passed
+    assert first.test_metrics.completed_trade_count >= 30
+    assert first.test_metrics.failed_exit_count == 0
+    assert first.test_metrics.aggregate_stress_utility_quote > 0.0
+    assert all(value > 0.0 for value in first.test_metrics.pnl_by_asset.values())
+    assert not first.asdict()["profitability_claim"]
+    assert not first.asdict()["trading_authority"]
+
+
+def test_round9_ridge_refuses_fewer_than_30_synchronized_groups() -> None:
+    with pytest.raises(ValueError, match="insufficient synchronized groups:29/30"):
+        split_polymarket_ridge_dataset(_dataset(29))
+
+
+def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(
+    tmp_path,
+) -> None:
+    dataset = _dataset()
+    report = fit_and_evaluate_polymarket_ridge(dataset)
+    with PolymarketEvidenceStore(tmp_path / "ridge.duckdb") as store:
+        created = materialize_polymarket_ridge_report(store, dataset, report)
+        existing = materialize_polymarket_ridge_report(store, dataset, report)
+        store.connect().execute(
+            """
+            UPDATE polymarket_ridge_selected_action
+            SET stress_utility_quote = '999'
+            WHERE report_sha256 = ? AND partition = 'test' AND sequence = 0
+            """,
+            [report.report_sha256],
+        )
+        with pytest.raises(ValueError, match="selected_action rows are inconsistent"):
+            materialize_polymarket_ridge_report(store, dataset, report)
+
+    assert created.status == "created"
+    assert existing.status == "existing"
+    assert created.selected_test_action_count >= 30
+
+
+def test_round9_ridge_cli_and_native_contract_share_the_frozen_input(
+    tmp_path,
+    monkeypatch,
+    capsys,
+) -> None:
+    dataset = _dataset()
+    monkeypatch.setattr(cli, "load_polymarket_ridge_dataset", lambda *_a, **_k: dataset)
+
+    status = cli.main(
+        [
+            "polymarket-ridge",
+            "--database",
+            str(tmp_path / "ridge-cli.duckdb"),
+            "--pipeline-report-sha256",
+            dataset.pipeline_report_sha256,
+            "--memory-limit",
+            "512MB",
+            "--database-threads",
+            "1",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    spec = next(item for item in command_specs() if item.name == "polymarket-ridge")
+
+    assert status == 0
+    assert payload["development_passed"] is True
+    assert payload["profitability_claim"] is False
+    assert payload["trading_authority"] is False
+    assert payload["materialization"]["status"] == "created"
+    assert {option.dest for option in spec.options} == {
+        "database",
+        "pipeline_report_sha256",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
