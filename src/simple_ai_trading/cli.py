@@ -120,6 +120,7 @@ from .polymarket_action_pipeline import (
     materialize_polymarket_action_value_batches,
 )
 from .polymarket_coverage import inspect_polymarket_feed_coverage
+from .polymarket_continuity import evaluate_polymarket_continuity_eligibility
 from .polymarket_features import (
     PolymarketFeatureConfig,
     build_polymarket_feature_dataset,
@@ -549,9 +550,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="materialize bounded causal Polymarket execution labels",
         description=(
             "Build the frozen Round 9 BTC/ETH/SOL action-value dataset in "
-            "resumable synchronized market batches. This command accepts only a "
-            "complete gap-free run; segmented evidence requires a separately "
-            "audited eligibility artifact and is not accepted by this surface."
+            "resumable synchronized market batches. Segmented evidence is accepted "
+            "only after the built-in label-free continuity audit retains at least "
+            "30 post-contract synchronized groups."
         ),
     )
     parser_polymarket_action_value.add_argument(
@@ -565,10 +566,38 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_action_value.add_argument(
         "--database-threads", type=int, default=1
     )
+    parser_polymarket_action_value.add_argument(
+        "--allow-segmented-gaps",
+        action="store_true",
+        help=(
+            "automatically audit local market windows and use only hash-bound "
+            "eligible synchronized groups"
+        ),
+    )
     parser_polymarket_action_value.add_argument("--json", action="store_true")
     parser_polymarket_action_value.set_defaults(
         func=command_polymarket_action_value
     )
+
+    parser_polymarket_continuity = subparsers.add_parser(
+        "polymarket-continuity",
+        help="audit label-free Round 9 synchronized market continuity",
+        description=(
+            "Evaluate recorder errors, stream gaps, connection segments, market "
+            "snapshot timing, and fresh CLOB baselines without consulting outcomes, "
+            "labels, utilities, or model scores."
+        ),
+    )
+    parser_polymarket_continuity.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_continuity.add_argument("--run-id", required=True)
+    parser_polymarket_continuity.add_argument("--memory-limit", default="4GB")
+    parser_polymarket_continuity.add_argument(
+        "--database-threads", type=int, default=1
+    )
+    parser_polymarket_continuity.add_argument("--json", action="store_true")
+    parser_polymarket_continuity.set_defaults(func=command_polymarket_continuity)
 
     parser_polymarket_model = subparsers.add_parser(
         "polymarket-model",
@@ -6298,12 +6327,36 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as store:
+            pipeline_config = PolymarketActionPipelineConfig(
+                market_groups_per_batch=int(args.market_groups_per_batch),
+            )
+            eligible_condition_ids = None
+            eligibility_sha256 = ""
+            if bool(getattr(args, "allow_segmented_gaps", False)):
+                continuity = evaluate_polymarket_continuity_eligibility(
+                    store,
+                    run_id=str(args.run_id),
+                )
+                if not continuity.confirmation_eligible:
+                    raise ValueError(
+                        "segmented continuity is insufficient: "
+                        + "; ".join(continuity.confirmation_reasons)
+                    )
+                eligible_condition_ids = continuity.eligible_condition_ids
+                eligibility_sha256 = continuity.report_sha256
+                pipeline_config = replace(
+                    pipeline_config,
+                    feature=replace(
+                        pipeline_config.feature,
+                        allow_segmented_gaps=True,
+                    ),
+                )
             report = materialize_polymarket_action_value_batches(
                 store,
                 run_id=str(args.run_id),
-                config=PolymarketActionPipelineConfig(
-                    market_groups_per_batch=int(args.market_groups_per_batch),
-                ),
+                config=pipeline_config,
+                eligible_condition_ids=eligible_condition_ids,
+                eligibility_sha256=eligibility_sha256,
                 progress=progress,
             )
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
@@ -6329,6 +6382,41 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
         )
         print(f"report_sha256: {report.report_sha256}")
     return 0
+
+
+def command_polymarket_continuity(args: argparse.Namespace) -> int:
+    """Audit synchronized evidence windows without target-derived information."""
+
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            report = evaluate_polymarket_continuity_eligibility(
+                store,
+                run_id=str(args.run_id),
+            )
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-continuity failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-continuity: "
+            f"run={report.run_id} eligible_groups={report.eligible_group_count}/"
+            f"{len(report.groups)} confirmation_eligible="
+            f"{report.confirmation_eligible}"
+        )
+        for reason in report.confirmation_reasons:
+            print(f"reason: {reason}")
+        print(f"report_sha256: {report.report_sha256}")
+    return 0 if report.confirmation_eligible else 2
 
 
 def _polymarket_execution_uplift_metrics(

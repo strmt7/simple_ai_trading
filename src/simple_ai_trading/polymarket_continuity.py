@@ -1,0 +1,646 @@
+"""Label-free synchronized continuity eligibility for Polymarket Round 9."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, replace
+import hashlib
+import json
+from typing import Mapping
+
+from .assets import SUPPORTED_MAJOR_BASE_ASSETS
+from .polymarket_action_value import POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
+from .polymarket_recorder import PolymarketEvidenceStore
+from .polymarket_replay import PolymarketEvidenceReplay
+
+
+POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION = (
+    "polymarket-round9-continuity-eligibility-v1"
+)
+POLYMARKET_ACTION_CONTRACT_COMMIT = "3dee7424ebb8740767f05c3ea9e64b10d1c59851"
+POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS = 1_784_143_695_000
+_ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+
+def _sha256(value: object) -> str:
+    return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _is_sha256(value: object) -> bool:
+    text = str(value)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
+
+
+@dataclass(frozen=True)
+class PolymarketContinuityConfig:
+    chainlink_anchor_allowance_ms: int = 2_000
+    feature_warmup_ms: int = 5_000
+    minimum_remaining_market_time_ms: int = 30_000
+    maximum_execution_confirmation_delay_ms: int = 500
+    minimum_eligible_groups: int = 30
+
+    def validated(self) -> PolymarketContinuityConfig:
+        if asdict(self) != {
+            "chainlink_anchor_allowance_ms": 2_000,
+            "feature_warmup_ms": 5_000,
+            "minimum_remaining_market_time_ms": 30_000,
+            "maximum_execution_confirmation_delay_ms": 500,
+            "minimum_eligible_groups": 30,
+        }:
+            raise ValueError("Polymarket continuity config drifted from Round 9")
+        return self
+
+    def asdict(self) -> dict[str, int]:
+        self.validated()
+        return {key: int(value) for key, value in asdict(self).items()}
+
+
+@dataclass(frozen=True)
+class PolymarketContinuityGroup:
+    event_start_ms: int
+    window_start_ms: int
+    window_end_ms: int
+    condition_ids: tuple[str, ...]
+    eligible: bool
+    reasons: tuple[str, ...]
+    evidence: dict[str, object]
+    group_sha256: str
+
+    def identity_payload(self) -> dict[str, object]:
+        return {
+            "schema_version": "polymarket-round9-continuity-group-v1",
+            "contract_sha256": POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+            "event_start_ms": self.event_start_ms,
+            "window_start_ms": self.window_start_ms,
+            "window_end_ms": self.window_end_ms,
+            "condition_ids": list(self.condition_ids),
+            "eligible": self.eligible,
+            "reasons": list(self.reasons),
+            "evidence": self.evidence,
+        }
+
+    def asdict(self) -> dict[str, object]:
+        return {**self.identity_payload(), "group_sha256": self.group_sha256}
+
+    def validated(self) -> PolymarketContinuityGroup:
+        if (
+            self.event_start_ms <= 0
+            or self.window_start_ms >= self.event_start_ms
+            or self.window_end_ms <= self.event_start_ms
+            or len(self.condition_ids) != len(_ASSETS)
+            or len(set(self.condition_ids)) != len(_ASSETS)
+            or self.eligible == bool(self.reasons)
+            or tuple(sorted(set(self.reasons))) != self.reasons
+            or not _is_sha256(self.group_sha256)
+            or self.group_sha256 != _sha256(self.identity_payload())
+        ):
+            raise ValueError("Polymarket continuity group is invalid")
+        return self
+
+
+@dataclass(frozen=True)
+class PolymarketContinuityReport:
+    run_id: str
+    run_report_sha256: str
+    run_started_at_ms: int
+    config: PolymarketContinuityConfig
+    groups: tuple[PolymarketContinuityGroup, ...]
+    eligible_group_count: int
+    confirmation_eligible: bool
+    confirmation_reasons: tuple[str, ...]
+    report_sha256: str
+
+    @property
+    def eligible_condition_ids(self) -> tuple[str, ...]:
+        return tuple(
+            condition
+            for group in self.groups
+            if group.eligible
+            for condition in group.condition_ids
+        )
+
+    def identity_payload(self) -> dict[str, object]:
+        return {
+            "schema_version": POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION,
+            "contract_sha256": POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+            "contract_commit": POLYMARKET_ACTION_CONTRACT_COMMIT,
+            "contract_committed_at_ms": POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS,
+            "run_id": self.run_id,
+            "run_report_sha256": self.run_report_sha256,
+            "run_started_at_ms": self.run_started_at_ms,
+            "config": self.config.asdict(),
+            "groups": [group.asdict() for group in self.groups],
+            "eligible_group_count": self.eligible_group_count,
+            "eligible_condition_ids": list(self.eligible_condition_ids),
+            "confirmation_eligible": self.confirmation_eligible,
+            "confirmation_reasons": list(self.confirmation_reasons),
+            "outcomes_consulted": False,
+            "labels_consulted": False,
+            "model_scores_consulted": False,
+            "training_authority": False,
+            "trading_authority": False,
+            "profitability_claim": False,
+        }
+
+    def asdict(self) -> dict[str, object]:
+        return {**self.identity_payload(), "report_sha256": self.report_sha256}
+
+    def validated(self) -> PolymarketContinuityReport:
+        for group in self.groups:
+            group.validated()
+        if (
+            not self.run_id
+            or not _is_sha256(self.run_report_sha256)
+            or self.run_started_at_ms <= 0
+            or not self.groups
+            or self.eligible_group_count
+            != sum(group.eligible for group in self.groups)
+            or self.confirmation_eligible == bool(self.confirmation_reasons)
+            or tuple(sorted(set(self.confirmation_reasons)))
+            != self.confirmation_reasons
+            or self.report_sha256 != _sha256(self.identity_payload())
+        ):
+            raise ValueError("Polymarket continuity report is invalid")
+        return self
+
+
+def _create_window_tables(
+    store: PolymarketEvidenceStore,
+    groups: Mapping[int, tuple[object, ...]],
+    config: PolymarketContinuityConfig,
+) -> tuple[dict[str, int], list[tuple[object, ...]], list[tuple[object, ...]]]:
+    connection = store.connect()
+    connection.execute(
+        """
+        DROP TABLE IF EXISTS continuity_market_window;
+        DROP TABLE IF EXISTS continuity_token_window;
+        DROP TABLE IF EXISTS continuity_asset_window;
+        CREATE TEMP TABLE continuity_market_window (
+            event_start_ms BIGINT, asset VARCHAR, condition_id VARCHAR,
+            window_start_ms BIGINT, window_end_ms BIGINT,
+            baseline_deadline_ms BIGINT
+        );
+        CREATE TEMP TABLE continuity_token_window (
+            event_start_ms BIGINT, asset VARCHAR, condition_id VARCHAR,
+            token_id VARCHAR, window_start_ms BIGINT, window_end_ms BIGINT,
+            baseline_deadline_ms BIGINT
+        );
+        CREATE TEMP TABLE continuity_asset_window (
+            event_start_ms BIGINT, asset VARCHAR,
+            window_start_ms BIGINT, window_end_ms BIGINT
+        );
+        """
+    )
+    condition_start: dict[str, int] = {}
+    market_rows: list[tuple[object, ...]] = []
+    token_rows: list[tuple[object, ...]] = []
+    asset_rows: list[tuple[object, ...]] = []
+    for event_start_ms, markets in sorted(groups.items()):
+        window_start = event_start_ms - config.chainlink_anchor_allowance_ms
+        window_end = (
+            markets[0].end_ms
+            - config.minimum_remaining_market_time_ms
+            + config.maximum_execution_confirmation_delay_ms
+        )
+        baseline_deadline = event_start_ms + config.feature_warmup_ms
+        for market in markets:
+            condition_start[market.condition_id] = event_start_ms
+            market_rows.append(
+                (
+                    event_start_ms,
+                    market.asset,
+                    market.condition_id,
+                    window_start,
+                    window_end,
+                    baseline_deadline,
+                )
+            )
+            for token_id in market.token_ids:
+                token_rows.append(
+                    (
+                        event_start_ms,
+                        market.asset,
+                        market.condition_id,
+                        token_id,
+                        window_start,
+                        window_end,
+                        baseline_deadline,
+                    )
+                )
+            asset_rows.append(
+                (event_start_ms, market.asset, window_start, window_end)
+            )
+    connection.executemany(
+        "INSERT INTO continuity_market_window VALUES (?, ?, ?, ?, ?, ?)",
+        market_rows,
+    )
+    connection.executemany(
+        "INSERT INTO continuity_token_window VALUES (?, ?, ?, ?, ?, ?, ?)",
+        token_rows,
+    )
+    connection.executemany(
+        "INSERT INTO continuity_asset_window VALUES (?, ?, ?, ?)",
+        asset_rows,
+    )
+    return condition_start, market_rows, token_rows
+
+
+def _continuity_evidence(
+    store: PolymarketEvidenceStore,
+    run_id: str,
+) -> tuple[
+    dict[tuple[int, str, str], tuple[object, ...]],
+    dict[tuple[int, str], tuple[object, ...]],
+    dict[tuple[int, str], tuple[object, ...]],
+    dict[int, tuple[str, ...]],
+    dict[str, int],
+]:
+    connection = store.connect()
+    clob_rows = connection.execute(
+        """
+        WITH clob AS (
+            SELECT e.condition_id, e.asset_id, lower(e.event_type) AS event_type,
+                   r.connection_id, r.received_wall_ms
+            FROM polymarket_public_event AS e
+            JOIN polymarket_raw_message AS r
+              ON r.run_id = e.run_id AND r.message_id = e.message_id
+            WHERE e.run_id = ? AND e.stream = 'clob_market'
+        )
+        SELECT w.event_start_ms, w.asset, w.token_id,
+               count(c.event_type) FILTER (
+                   WHERE c.received_wall_ms BETWEEN w.window_start_ms
+                                                AND w.window_end_ms
+               ) AS window_events,
+               count(DISTINCT c.connection_id) FILTER (
+                   WHERE c.received_wall_ms BETWEEN w.window_start_ms
+                                                AND w.window_end_ms
+               ) AS window_connections,
+               min(c.connection_id) FILTER (
+                   WHERE c.received_wall_ms BETWEEN w.window_start_ms
+                                                AND w.window_end_ms
+               ) AS window_connection,
+               arg_max(c.connection_id, c.received_wall_ms) FILTER (
+                   WHERE c.event_type = 'book'
+                     AND c.received_wall_ms <= w.baseline_deadline_ms
+               ) AS baseline_connection,
+               max(c.received_wall_ms) FILTER (
+                   WHERE c.event_type = 'book'
+                     AND c.received_wall_ms <= w.baseline_deadline_ms
+               ) AS baseline_received_wall_ms
+        FROM continuity_token_window AS w
+        LEFT JOIN clob AS c
+          ON c.condition_id = w.condition_id AND c.asset_id = w.token_id
+         AND c.received_wall_ms <= w.window_end_ms
+        GROUP BY w.event_start_ms, w.asset, w.token_id
+        ORDER BY w.event_start_ms, w.asset, w.token_id
+        """,
+        [run_id],
+    ).fetchall()
+    binance_rows = connection.execute(
+        """
+        WITH source AS (
+            SELECT upper(e.symbol) AS asset, lower(e.event_type) AS event_type,
+                   r.connection_id, r.received_wall_ms
+            FROM polymarket_public_event AS e
+            JOIN polymarket_raw_message AS r
+              ON r.run_id = e.run_id AND r.message_id = e.message_id
+            WHERE e.run_id = ? AND e.stream = 'binance_spot'
+        )
+        SELECT w.event_start_ms, w.asset,
+               count(s.event_type) FILTER (WHERE s.event_type = 'bookticker'),
+               count(s.event_type) FILTER (WHERE s.event_type = 'trade'),
+               count(DISTINCT s.connection_id), min(s.connection_id)
+        FROM continuity_asset_window AS w
+        LEFT JOIN source AS s ON s.asset = w.asset
+          AND s.received_wall_ms BETWEEN w.window_start_ms AND w.window_end_ms
+        GROUP BY w.event_start_ms, w.asset
+        ORDER BY w.event_start_ms, w.asset
+        """,
+        [run_id],
+    ).fetchall()
+    rtds_rows = connection.execute(
+        """
+        WITH source AS (
+            SELECT upper(e.symbol) AS asset, lower(e.event_type) AS event_type,
+                   r.connection_id, r.received_wall_ms
+            FROM polymarket_public_event AS e
+            JOIN polymarket_raw_message AS r
+              ON r.run_id = e.run_id AND r.message_id = e.message_id
+            WHERE e.run_id = ? AND e.stream = 'polymarket_rtds'
+              AND lower(e.event_type) LIKE 'crypto_prices_chainlink:%'
+        )
+        SELECT w.event_start_ms, w.asset, count(s.event_type),
+               count(DISTINCT s.connection_id), min(s.connection_id)
+        FROM continuity_asset_window AS w
+        LEFT JOIN source AS s ON s.asset = w.asset
+          AND s.received_wall_ms BETWEEN w.window_start_ms AND w.window_end_ms
+        GROUP BY w.event_start_ms, w.asset
+        ORDER BY w.event_start_ms, w.asset
+        """,
+        [run_id],
+    ).fetchall()
+    gap_rows = connection.execute(
+        """
+        SELECT w.event_start_ms, g.stream, count(*)
+        FROM (
+            SELECT DISTINCT event_start_ms, window_start_ms, window_end_ms
+            FROM continuity_asset_window
+        ) AS w
+        JOIN polymarket_stream_gap AS g
+          ON g.run_id = ?
+         AND g.stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
+         AND g.opened_at_ms BETWEEN w.window_start_ms AND w.window_end_ms
+        GROUP BY w.event_start_ms, g.stream
+        ORDER BY w.event_start_ms, g.stream
+        """,
+        [run_id],
+    ).fetchall()
+    snapshot_rows = connection.execute(
+        """
+        SELECT condition_id, observed_wall_ms
+        FROM polymarket_market_snapshot WHERE run_id = ?
+        ORDER BY condition_id
+        """,
+        [run_id],
+    ).fetchall()
+    return (
+        {
+            (int(row[0]), str(row[1]), str(row[2])): tuple(row[3:])
+            for row in clob_rows
+        },
+        {(int(row[0]), str(row[1])): tuple(row[2:]) for row in binance_rows},
+        {(int(row[0]), str(row[1])): tuple(row[2:]) for row in rtds_rows},
+        {
+            int(start): tuple(
+                sorted(
+                    f"stream_gap:{stream}:{count}"
+                    for candidate, stream, count in gap_rows
+                    if int(candidate) == int(start)
+                )
+            )
+            for start in {int(row[0]) for row in gap_rows}
+        },
+        {str(condition): int(wall_ms) for condition, wall_ms in snapshot_rows},
+    )
+
+
+def _persist_report(
+    store: PolymarketEvidenceStore,
+    report: PolymarketContinuityReport,
+) -> None:
+    connection = store.connect()
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS polymarket_continuity_eligibility_report (
+            report_sha256 VARCHAR PRIMARY KEY,
+            schema_version VARCHAR NOT NULL,
+            contract_sha256 VARCHAR NOT NULL,
+            run_id VARCHAR NOT NULL,
+            run_report_sha256 VARCHAR NOT NULL,
+            report_json VARCHAR NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS polymarket_continuity_eligibility_group (
+            report_sha256 VARCHAR NOT NULL,
+            event_start_ms BIGINT NOT NULL,
+            eligible BOOLEAN NOT NULL,
+            condition_ids_json VARCHAR NOT NULL,
+            reasons_json VARCHAR NOT NULL,
+            evidence_json VARCHAR NOT NULL,
+            group_sha256 VARCHAR NOT NULL,
+            PRIMARY KEY(report_sha256, event_start_ms)
+        );
+        """
+    )
+    report_row = (
+        report.report_sha256,
+        POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION,
+        POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+        report.run_id,
+        report.run_report_sha256,
+        _canonical_json(report.asdict()),
+    )
+    group_rows = [
+        (
+            report.report_sha256,
+            group.event_start_ms,
+            group.eligible,
+            _canonical_json(list(group.condition_ids)),
+            _canonical_json(list(group.reasons)),
+            _canonical_json(group.evidence),
+            group.group_sha256,
+        )
+        for group in report.groups
+    ]
+    existing = connection.execute(
+        """
+        SELECT report_sha256, schema_version, contract_sha256, run_id,
+               run_report_sha256, report_json
+        FROM polymarket_continuity_eligibility_report
+        WHERE report_sha256 = ?
+        """,
+        [report.report_sha256],
+    ).fetchone()
+    if existing is not None:
+        stored_groups = connection.execute(
+            """
+            SELECT report_sha256, event_start_ms, eligible,
+                   condition_ids_json, reasons_json, evidence_json, group_sha256
+            FROM polymarket_continuity_eligibility_group
+            WHERE report_sha256 = ? ORDER BY event_start_ms
+            """,
+            [report.report_sha256],
+        ).fetchall()
+        if tuple(existing) != report_row or [tuple(row) for row in stored_groups] != group_rows:
+            raise ValueError("stored Polymarket continuity report is inconsistent")
+        return
+    connection.execute("BEGIN TRANSACTION")
+    try:
+        connection.execute(
+            "INSERT INTO polymarket_continuity_eligibility_report VALUES (?, ?, ?, ?, ?, ?)",
+            report_row,
+        )
+        connection.executemany(
+            "INSERT INTO polymarket_continuity_eligibility_group VALUES (?, ?, ?, ?, ?, ?, ?)",
+            group_rows,
+        )
+        connection.execute("COMMIT")
+    except Exception:
+        connection.execute("ROLLBACK")
+        raise
+
+
+def evaluate_polymarket_continuity_eligibility(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    config: PolymarketContinuityConfig | None = None,
+) -> PolymarketContinuityReport:
+    """Persist deterministic gap/segment eligibility without consulting outcomes."""
+
+    selected = str(run_id or "").strip()
+    if not selected:
+        raise ValueError("Polymarket continuity eligibility requires a run ID")
+    cfg = (config or PolymarketContinuityConfig()).validated()
+    run = store.connect().execute(
+        """
+        SELECT status, error, report_sha256, started_at_ms
+        FROM polymarket_recorder_run WHERE run_id = ?
+        """,
+        [selected],
+    ).fetchone()
+    if run is None:
+        raise ValueError("unknown Polymarket continuity run")
+    if str(run[0]) not in {"complete", "degraded"} or str(run[1] or "").strip():
+        raise ValueError("Polymarket continuity requires a finished error-free run")
+    report_sha256 = str(run[2])
+    started_at_ms = int(run[3])
+    if not _is_sha256(report_sha256):
+        raise ValueError("Polymarket continuity run report is invalid")
+    integrity = store.integrity_errors(selected)
+    if integrity:
+        raise ValueError("Polymarket continuity integrity failed: " + "; ".join(integrity))
+    markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
+    groups: dict[int, list[object]] = {}
+    for market in markets:
+        groups.setdefault(int(market.event_start_ms), []).append(market)
+    synchronized: dict[int, tuple[object, ...]] = {}
+    for event_start_ms, values in sorted(groups.items()):
+        ordered = tuple(sorted(values, key=lambda item: _ASSETS.index(item.asset)))
+        if tuple(item.asset for item in ordered) != _ASSETS:
+            raise ValueError("Polymarket continuity requires complete synchronized groups")
+        synchronized[event_start_ms] = ordered
+    _create_window_tables(store, synchronized, cfg)
+    clob, binance, rtds, gaps, snapshots = _continuity_evidence(store, selected)
+    evaluated: list[PolymarketContinuityGroup] = []
+    for event_start_ms, market_group in synchronized.items():
+        reasons: list[str] = list(gaps.get(event_start_ms, ()))
+        evidence: dict[str, object] = {"assets": {}}
+        window_start = event_start_ms - cfg.chainlink_anchor_allowance_ms
+        window_end = (
+            market_group[0].end_ms
+            - cfg.minimum_remaining_market_time_ms
+            + cfg.maximum_execution_confirmation_delay_ms
+        )
+        for market in market_group:
+            asset_evidence: dict[str, object] = {}
+            observed_wall_ms = snapshots.get(market.condition_id)
+            asset_evidence["market_snapshot_received_wall_ms"] = observed_wall_ms
+            if observed_wall_ms is None or observed_wall_ms > (
+                event_start_ms + cfg.feature_warmup_ms
+            ):
+                reasons.append(f"late_or_missing_market_snapshot:{market.asset}")
+            token_evidence: dict[str, object] = {}
+            for outcome, token_id in zip(("Up", "Down"), market.token_ids, strict=True):
+                values = clob.get((event_start_ms, market.asset, token_id))
+                if values is None:
+                    values = (0, 0, None, None, None)
+                window_events = int(values[0] or 0)
+                window_connections = int(values[1] or 0)
+                window_connection = str(values[2] or "")
+                baseline_connection = str(values[3] or "")
+                baseline_wall_ms = None if values[4] is None else int(values[4])
+                token_evidence[outcome] = {
+                    "window_event_count": window_events,
+                    "window_connection_count": window_connections,
+                    "window_connection_id": window_connection,
+                    "baseline_connection_id": baseline_connection,
+                    "baseline_received_wall_ms": baseline_wall_ms,
+                }
+                if not baseline_connection:
+                    reasons.append(f"missing_clob_baseline:{market.asset}:{outcome}")
+                if window_events == 0:
+                    reasons.append(f"missing_clob_window:{market.asset}:{outcome}")
+                if window_connections != 1:
+                    reasons.append(f"clob_segment_count:{market.asset}:{outcome}:{window_connections}")
+                if baseline_connection and window_connection != baseline_connection:
+                    reasons.append(f"clob_baseline_segment_mismatch:{market.asset}:{outcome}")
+            asset_evidence["clob"] = token_evidence
+            binance_values = binance.get((event_start_ms, market.asset), (0, 0, 0, None))
+            asset_evidence["binance"] = {
+                "book_event_count": int(binance_values[0] or 0),
+                "trade_event_count": int(binance_values[1] or 0),
+                "connection_count": int(binance_values[2] or 0),
+                "connection_id": str(binance_values[3] or ""),
+            }
+            if int(binance_values[0] or 0) == 0:
+                reasons.append(f"missing_binance_book:{market.asset}")
+            if int(binance_values[1] or 0) == 0:
+                reasons.append(f"missing_binance_trade:{market.asset}")
+            if int(binance_values[2] or 0) != 1:
+                reasons.append(f"binance_segment_count:{market.asset}:{int(binance_values[2] or 0)}")
+            rtds_values = rtds.get((event_start_ms, market.asset), (0, 0, None))
+            asset_evidence["rtds_chainlink"] = {
+                "event_count": int(rtds_values[0] or 0),
+                "connection_count": int(rtds_values[1] or 0),
+                "connection_id": str(rtds_values[2] or ""),
+            }
+            if int(rtds_values[0] or 0) == 0:
+                reasons.append(f"missing_rtds_chainlink:{market.asset}")
+            if int(rtds_values[1] or 0) != 1:
+                reasons.append(f"rtds_segment_count:{market.asset}:{int(rtds_values[1] or 0)}")
+            evidence["assets"][market.asset] = asset_evidence
+        frozen_reasons = tuple(sorted(set(reasons)))
+        provisional_group = PolymarketContinuityGroup(
+            event_start_ms=event_start_ms,
+            window_start_ms=window_start,
+            window_end_ms=window_end,
+            condition_ids=tuple(market.condition_id for market in market_group),
+            eligible=not frozen_reasons,
+            reasons=frozen_reasons,
+            evidence=evidence,
+            group_sha256="",
+        )
+        evaluated.append(
+            replace(
+                provisional_group,
+                group_sha256=_sha256(provisional_group.identity_payload()),
+            ).validated()
+        )
+    eligible_count = sum(group.eligible for group in evaluated)
+    confirmation_reasons: list[str] = []
+    if started_at_ms <= POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS:
+        confirmation_reasons.append("run_started_before_round9_contract_commit")
+    if eligible_count < cfg.minimum_eligible_groups:
+        confirmation_reasons.append(
+            f"eligible_group_count:{eligible_count}/{cfg.minimum_eligible_groups}"
+        )
+    frozen_confirmation_reasons = tuple(sorted(confirmation_reasons))
+    provisional = PolymarketContinuityReport(
+        run_id=selected,
+        run_report_sha256=report_sha256,
+        run_started_at_ms=started_at_ms,
+        config=cfg,
+        groups=tuple(evaluated),
+        eligible_group_count=eligible_count,
+        confirmation_eligible=not frozen_confirmation_reasons,
+        confirmation_reasons=frozen_confirmation_reasons,
+        report_sha256="",
+    )
+    report = replace(
+        provisional,
+        report_sha256=_sha256(provisional.identity_payload()),
+    ).validated()
+    _persist_report(store, report)
+    return report
+
+
+__all__ = [
+    "POLYMARKET_ACTION_CONTRACT_COMMIT",
+    "POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS",
+    "POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION",
+    "PolymarketContinuityConfig",
+    "PolymarketContinuityGroup",
+    "PolymarketContinuityReport",
+    "evaluate_polymarket_continuity_eligibility",
+]
