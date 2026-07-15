@@ -483,6 +483,28 @@ class PolymarketPublicClient:
             raise ValueError("CLOB market-info response must be an object")
         return response
 
+    def clob_market(self, condition_id: str) -> Mapping[str, object]:
+        """Fetch the official full CLOB market state by condition ID."""
+
+        condition = str(condition_id or "").strip().lower()
+        if not _CONDITION_ID.fullmatch(condition):
+            raise ValueError("condition_id is invalid")
+        response = self._get_json(f"{CLOB_BASE_URL}/markets/{condition}")
+        if not isinstance(response, Mapping):
+            raise ValueError("CLOB market response must be an object")
+        return response
+
+    def gamma_market(self, market_id: str) -> Mapping[str, object]:
+        """Fetch one official Gamma market using its numeric market ID."""
+
+        normalized = str(market_id or "").strip()
+        if not normalized.isdigit() or len(normalized) > 20:
+            raise ValueError("market_id is invalid")
+        response = self._get_json(f"{GAMMA_MARKETS_URL}/{normalized}")
+        if not isinstance(response, Mapping):
+            raise ValueError("Gamma market response must be an object")
+        return response
+
     def fee_rate(self, token_id: str) -> Mapping[str, object]:
         token = str(token_id or "").strip()
         if not _TOKEN_ID.fullmatch(token):
