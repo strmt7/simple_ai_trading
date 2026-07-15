@@ -373,7 +373,17 @@ def test_market_grouping_equal_weights_and_purged_split() -> None:
     assert len(dataset.samples) == 30 * 3 * 5
     assert dataset.market_counts == {"BTC": 30, "ETH": 30, "SOL": 30}
     assert dataset.time_group_count == 30
-    assert len(POLYMARKET_MODEL_FEATURE_NAMES) == 22
+    assert len(POLYMARKET_MODEL_FEATURE_NAMES) == 24
+    up_features = next(item for item in dataset.samples if item.official_up).feature_map()
+    down_features = next(
+        item for item in dataset.samples if not item.official_up
+    ).feature_map()
+    for name in (
+        "direct_diffusion_market_logit_gap",
+        "chainlink_diffusion_market_logit_gap",
+    ):
+        assert up_features[name] > 0.0
+        assert down_features[name] < 0.0
     for condition in {item.condition_id for item in dataset.samples}:
         assert sum(
             item.market_weight

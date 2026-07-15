@@ -12,8 +12,19 @@ logit(P(Up)) = logit(normalized CLOB midpoint) + clip(beta0 + beta' x, -2, 2)
 ```
 
 `x` contains causal direct-Binance movement and order flow, live Chainlink basis,
-volatility, spread, and paired Polymarket book state. Training-only robust scaling
-and winsorization are hash-bound. L2 regularization is selected only through three
+volatility, spread, and paired Polymarket book state. It also contains two bounded
+driftless-diffusion disagreement proxies:
+
+```text
+scale = max(realized_volatility_5s_bps, 1e-6) * sqrt(seconds_left / 5)
+z = clip(distance_from_open_bps / scale, -8, 8)
+gap = clip(logit(Phi(z)) - logit(normalized CLOB midpoint), -12, 12)
+```
+
+One distance uses the direct Binance midpoint and the other removes the live
+Binance/Chainlink basis. These are interaction features, not calibrated forecasts;
+their coefficients can shrink to zero. Training-only robust scaling and
+winsorization are hash-bound. L2 regularization is selected only through three
 purged rolling folds inside the training span. The outer validation tail then acts
 only as a promotion gate. If the frozen candidate does not improve validation log
 loss by the precommitted margin, the correction is exactly zero.
@@ -98,6 +109,15 @@ deliberately lower capacity than DeepLOB-style sequence models until prospective
 sample size supports them. Finance-specific foundation models such as Kronos are
 retained as challengers, not assumed improvements
 ([Kronos](https://arxiv.org/abs/2508.02739)).
+
+Recent returns, transaction imbalance, book imbalance, and timeliness are retained
+because broad high-frequency evidence identifies them as recurring short-horizon
+predictors, while also showing that their value decays rapidly with latency
+([Ait-Sahalia et al.](https://www.nber.org/papers/w30366)). Polymarket trade-side
+inference is deliberately excluded: current venue-specific evidence finds that
+public-feed inference often disagrees with authoritative on-chain fills
+([Dubach](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6658364)). It may be
+added only after causal `OrderFilled` capture and independent reconciliation exist.
 
 No fixture result, benchmark safety score, raw classifier score, or unfilled quote
 is a profitability claim or live trading authority.
