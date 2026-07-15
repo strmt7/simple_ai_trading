@@ -264,8 +264,9 @@ def test_close_usage_and_hit_and_miss_and_all(tmp_path):
         qty=1.0, entry_price=10.0, leverage=1.0, opened_at_ms=1, notional=10.0,
     ))
     recorder.lines.clear()
-    assert shell.dispatch("/close pos1") == 0
-    assert any("closed paper position pos1" in line for line in recorder.lines)
+    assert shell.dispatch("/close pos1") == 2
+    assert any("refusing local-ledger erasure" in line for line in recorder.lines)
+    assert store.find_open("pos1") is not None
 
     recorder.lines.clear()
     assert shell.dispatch("/close ghost") == 1
@@ -276,8 +277,10 @@ def test_close_usage_and_hit_and_miss_and_all(tmp_path):
         qty=1.0, entry_price=20.0, leverage=1.0, opened_at_ms=2, notional=20.0,
     ))
     recorder.lines.clear()
-    assert shell.dispatch("/close all") == 0
-    assert any("closed 1 paper positions" in line for line in recorder.lines)
+    assert shell.dispatch("/close all") == 2
+    assert any("refusing local-ledger erasure" in line for line in recorder.lines)
+    assert store.find_open("pos1") is not None
+    assert store.find_open("pos2") is not None
 
 
 def test_close_refuses_live_local_ledger_erasure(tmp_path):
@@ -290,12 +293,12 @@ def test_close_refuses_live_local_ledger_erasure(tmp_path):
     ))
 
     assert shell.dispatch("/close live1") == 2
-    assert any("refusing local-only close" in line for line in recorder.lines)
+    assert any("refusing local-ledger erasure" in line for line in recorder.lines)
     assert store.find_open("live1") is not None
 
     recorder.lines.clear()
     assert shell.dispatch("/close all") == 2
-    assert any("refusing local-only close" in line for line in recorder.lines)
+    assert any("refusing local-ledger erasure" in line for line in recorder.lines)
     assert store.find_open("live1") is not None
 
 

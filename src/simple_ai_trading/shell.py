@@ -37,7 +37,6 @@ from .backtest_panel import describe_supported_intervals, list_reports
 from .objective import describe_objectives, get_objective
 from .positions import (
     PositionsStore,
-    bot_ownership_rejection_reason,
     compute_stats,
     render_positions_table,
     render_stats_lines,
@@ -384,38 +383,32 @@ def _cmd_close(shell: Shell, args: list[str]) -> int:
     target = args[0]
     if target.lower() == "all":
         opens = store.load_open()
-        live = [position for position in opens if not position.dry_run]
-        if live:
-            shell.println(bad(
-                "refusing local-only close for live positions; use /auto stop or CLI autonomous stop",
+        if not opens:
+            shell.println(muted(
+                "(no open positions)",
                 enabled=shell.state.color_enabled,
                 palette=shell.palette,
             ))
-            return 2
-        for position in opens:
-            store.remove_open(position.id)
-        shell.println(ok(f"closed {len(opens)} paper positions (local ledger only)",
-                         enabled=shell.state.color_enabled, palette=shell.palette))
-        return 0
+            return 0
+        shell.println(bad(
+            "refusing local-ledger erasure; use /auto stop or CLI autonomous "
+            "stop so venue closure and reconciliation remain atomic",
+            enabled=shell.state.color_enabled,
+            palette=shell.palette,
+        ))
+        return 2
     position = store.find_open(target)
     if position is None:
         shell.println(warn(f"no open position with id {target!r}",
                            enabled=shell.state.color_enabled, palette=shell.palette))
         return 1
-    if not position.dry_run:
-        ownership_rejection = bot_ownership_rejection_reason(position)
-        ownership = "verified" if ownership_rejection is None else f"unverified ({ownership_rejection})"
-        shell.println(bad(
-            f"refusing local-only close for live {ownership} position {target}; use /auto stop or CLI autonomous stop",
-            enabled=shell.state.color_enabled,
-            palette=shell.palette,
-        ))
-        return 2
-    if store.remove_open(target):
-        shell.println(ok(f"closed paper position {target} (local ledger only)",
-                         enabled=shell.state.color_enabled, palette=shell.palette))
-        return 0
-    return 1
+    shell.println(bad(
+        f"refusing local-ledger erasure for position {target}; use /auto stop "
+        "or CLI autonomous stop",
+        enabled=shell.state.color_enabled,
+        palette=shell.palette,
+    ))
+    return 2
 
 
 def _cmd_auto(shell: Shell, args: list[str]) -> int:
@@ -503,7 +496,7 @@ def _default_commands() -> list[SlashCommand]:
         SlashCommand("objectives", "list registered training objectives", _cmd_objectives),
         SlashCommand("positions", "list open autonomous positions", _cmd_positions),
         SlashCommand("stats", "summarize realized + unrealized P&L", _cmd_stats),
-        SlashCommand("close", "close an autonomous position locally", _cmd_close),
+        SlashCommand("close", "guard against unsafe ledger-only closure", _cmd_close),
         SlashCommand("auto", "control the autonomous loop", _cmd_auto),
         SlashCommand("backtests", "list saved backtest reports", _cmd_backtests),
     ]

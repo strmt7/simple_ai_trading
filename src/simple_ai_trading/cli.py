@@ -1867,7 +1867,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_positions.set_defaults(func=command_positions)
 
     parser_close = subparsers.add_parser(
-        "close", help="close an autonomous position locally (ledger only, no exchange order)",
+        "close",
+        help="refuse unsafe ledger-only closure and direct users to autonomous stop",
     )
     parser_close.add_argument("position_id", help="position id or 'all'")
     parser_close.set_defaults(func=command_close)
@@ -12347,39 +12348,31 @@ def command_positions(args: argparse.Namespace) -> int:
 
 
 def command_close(args: argparse.Namespace) -> int:
-    from .positions import PositionsStore, bot_ownership_rejection_reason
+    from .positions import PositionsStore
 
     store = PositionsStore()
     target = args.position_id
     if target.lower() == "all":
         opens = store.load_open()
-        live = [position for position in opens if not position.dry_run]
-        if live:
-            print(
-                "refusing local-only close for live positions; use autonomous stop",
-                file=sys.stderr,
-            )
-            return 2
-        for position in opens:
-            store.remove_open(position.id)
-        print(f"closed {len(opens)} paper positions (local ledger only)")
-        return 0
+        if not opens:
+            print("no open positions")
+            return 0
+        print(
+            "refusing local-ledger erasure; use autonomous stop so every "
+            "bot-owned position is closed and reconciled through its venue",
+            file=sys.stderr,
+        )
+        return 2
     position = store.find_open(target)
     if position is None:
         print(f"no open position with id {target!r}", file=sys.stderr)
         return 1
-    if not position.dry_run:
-        ownership_rejection = bot_ownership_rejection_reason(position)
-        ownership = "verified" if ownership_rejection is None else f"unverified ({ownership_rejection})"
-        print(
-            f"refusing local-only close for live {ownership} position {target}; use autonomous stop",
-            file=sys.stderr,
-        )
-        return 2
-    if store.remove_open(target):
-        print(f"closed paper position {target} (local ledger only)")
-        return 0
-    return 1
+    print(
+        f"refusing local-ledger erasure for position {target}; use autonomous "
+        "stop so the venue close and ownership reconciliation remain atomic",
+        file=sys.stderr,
+    )
+    return 2
 
 
 def main(argv: list[str] | None = None) -> int:

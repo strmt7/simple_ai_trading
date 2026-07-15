@@ -728,6 +728,7 @@ def test_run_loop_operator_stop_closes_open_positions(tmp_path: Path) -> None:
     )
 
     assert result.exit_reason == "operator-stop"
+    assert result.final_state == STATE_STOPPED
     assert result.closed_trades == 1
     assert store.load_open() == []
     ledger = store.load_ledger()
@@ -981,9 +982,10 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Pat
     )
 
     assert result.exit_reason == "iteration-cap"
+    assert result.final_state == STATE_STOPPING
     assert result.opened_trades == 1
     assert attempts["n"] == 3
-    assert reconciliations == ["BTCUSDC", "BTCUSDC", "BTCUSDC"]
+    assert reconciliations == ["BTCUSDC"] * 4
 
 
 def test_run_loop_recovery_cooldown_observes_before_entry(tmp_path: Path) -> None:
@@ -1236,6 +1238,10 @@ def test_run_loop_paper_close_book_outage_preserves_retryable_position(
 
     store = PositionsStore(root=cfg.positions_root)
     assert result.exit_reason == "close-order-failed"
+    assert result.final_state == STATE_STOPPING
+    control = AutonomousControl(path=cfg.control_path).read()
+    assert control["state"] == STATE_STOPPING
+    assert "tracked-open-positions=1" in str(control["note"])
     assert store.load_open() == [opened]
     assert store.load_ledger() == []
     with BinancePaperBroker(

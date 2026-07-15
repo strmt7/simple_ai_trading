@@ -222,8 +222,11 @@ exchange order ID is present, because the close is sent reduce-only. Pending,
 local, canceled, rejected, expired, or hand-edited live ledger entries are
 preserved and reported with a concrete rejection reason. Manual or external
 exchange exposure is reported by reconciliation and is not touched by the bot.
-CLI and shell local-close commands refuse to erase live ledger entries because
-that would make exchange exposure stale or untracked.
+CLI and shell local-close commands refuse to erase paper or live ledger entries
+because that would make journal or exchange exposure stale and untracked. The
+autonomous worker reports `STOPPED` only when terminal reconciliation proves no
+local, paper-journal, or signed-account exposure remains; otherwise it stays
+visibly `STOPPING` for a later close/reconciliation attempt.
 
 Model-lab acceptance adds stress and temporal robustness gates before a symbol
 is marked accepted. Each saved objective model is replayed with the selected
