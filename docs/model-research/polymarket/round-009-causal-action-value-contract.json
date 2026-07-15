@@ -1,0 +1,158 @@
+{
+  "ai_boundary": {
+    "event_loop_llm_permitted": false,
+    "future_challenger": "A multibillion-parameter local model may later issue an asynchronous market-level risk veto. Its prompt must be label-free, its response applies only after local receipt, and it must improve paired held-out stress utility or drawdown versus the frozen fast model.",
+    "round_9_ai_calls_permitted": false,
+    "reason": "The measured local qwen3:8b response latency is seconds, while the decision loop and execution delays are subsecond. Calling an LLM in the execution loop would create stale decisions."
+  },
+  "candidate_models": {
+    "challenger_gate": "Do not fit a neural challenger unless ridge_logit passes every validation viability gate. A challenger cannot be selected from test results.",
+    "control": "no_trade with zero exposure, zero PnL, and zero drawdown",
+    "fast_baseline": {
+      "class_weighting": false,
+      "features": "Frozen chosen-outcome orientation of the existing causal Polymarket feature-v5 row; no target-derived, settlement, or future-book value.",
+      "l2_grid": [
+        0.01,
+        0.1,
+        1.0
+      ],
+      "model": "ridge_logit",
+      "optimization_metric": "validation log loss; ties select stronger regularization",
+      "probability_threshold_grid": [
+        0.5,
+        0.6,
+        0.7,
+        0.8,
+        0.9
+      ]
+    },
+    "neural_challenger_if_authorized": {
+      "architecture": "Two-layer MLP with widths 64 and 32, GELU activations, and one sigmoid output. No transformer or recurrence in this round.",
+      "device_contract": "Training may use a verified compatible GPU backend, but must produce the same frozen split and bounded prediction tolerance as CPU. Export accepted inference to ONNX; Windows ML is preferred for vendor-neutral Windows inference because DirectML is now in maintenance mode.",
+      "selection": "Must beat ridge_logit on validation log loss and validation sequential stress utility, then be evaluated exactly once on the untouched test groups."
+    },
+    "threshold_selection": "Among validation thresholds with at least 30 sequential completed trades overall and five per asset, positive aggregate stress utility, positive median market PnL, and no filled-entry/failed-exit event, select the highest Wilson lower bound for positive-complete precision; ties select the higher threshold. If none pass, select no_trade."
+  },
+  "contract_sha256": "af9c70ca1283748e4ee5f379bf2b179925f37ac4c757c4982487fdbc6bc504de",
+  "data_contract": {
+    "allowed_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "confirmation_capture": "A run must start after this contract hash is committed, finish strict and gap-free, have no queue saturation or recorder error, and pass the complete integrity audit.",
+    "development_only_runs": "Any run captured before this contract, any segmented run, and the active queue-saturated long capture may diagnose plumbing or reject a model family but cannot confirm an edge.",
+    "minimum_featured_markets_per_asset": 30,
+    "prospective_public_sources": "Polymarket public level-2 market channel, direct Binance spot bookTicker and aggTrade streams, RTDS Chainlink settlement-reference stream, immutable Gamma/CLOB market metadata, and recorded execution parameters.",
+    "replay_memory": "Process immutable market-condition batches after one full-run integrity audit. Repeating the full audit per batch or materializing the entire long run in RAM is prohibited.",
+    "source_time_rule": "Local monotonic receipt time controls causal availability and elapsed duration. Exchange/source timestamps are provenance and lag features, never permission to use data before local receipt."
+  },
+  "decision_contract": {
+    "action_set": [
+      "abstain",
+      "buy_up_then_sell",
+      "buy_down_then_sell"
+    ],
+    "cadence_ms": 250,
+    "conflict_resolution": "Score Up and Down from the same causal feature row. If both pass, choose the higher probability; ties abstain.",
+    "position_limit": "At most one bot-owned open position per condition. No overlapping action labels are credited in sequential validation or test PnL.",
+    "reentry": "A failed entry may release the condition only when its execution-confirmation time is locally known. A completed exit may release it only at exit receipt. A failed exit blocks the condition for the rest of the market.",
+    "risk_priority": "Abstention is always valid. No minimum trade count overrides execution, freshness, liquidity, cooldown, or risk gates."
+  },
+  "execution_contract": {
+    "entry": "Share-sized V2 FOK buy of the recorded minimum order quantity against the first same-segment book received after 500 ms local submission latency plus the latest recorded venue taker delay; confirmation must arrive within 500 ms.",
+    "exit": "FOK sell of exactly the filled bot-owned quantity after 1000 ms from confirmed entry receipt, another 500 ms local latency, and the independently recorded venue taker delay; confirmation must arrive within 500 ms.",
+    "fees": "Walk displayed depth and charge the recorded V2 feeSchedule at every matched level on both legs, rounded conservatively to five USDC decimals. No rebate, midpoint, hidden depth, partial-fill, or last-trade credit.",
+    "final_window": "Both entry and exit targets must be at least 30 seconds before market end.",
+    "inventory": "Unlike the Round 8 ceiling, no prepositioned-inventory assumption may turn an unowned outcome into a sellable position.",
+    "parameters": "Recorded tick size, minimum size, itode taker delay, minimum order age, and V2 fee schedule are required at simulated arrival. Unknown never means zero.",
+    "primary_holding_period_ms": 1000,
+    "primary_local_submission_latency_ms": 500
+  },
+  "feature_contract": {
+    "chosen_outcome_orientation": "For Down actions, sign-reverse directional Binance/Chainlink distance, return, flow, diffusion-gap, and microprice-deviation features and swap chosen/opposite outcome book fields. Volatility, spread, age, depth magnitude, liquidity, volume, and remaining time remain unsigned.",
+    "current_feature_family": [
+      "time remaining",
+      "distance from Chainlink opening anchor",
+      "Binance-Chainlink basis",
+      "100/250/1000/5000 ms Binance returns and trade imbalance",
+      "100/1000/5000 ms realized volatility",
+      "Binance top imbalance and spread",
+      "diffusion fair-probability versus market-logit gaps",
+      "chosen and opposite outcome microprice deviations and top imbalance",
+      "paired-outcome executable consistency",
+      "book/source ages and anchor gap",
+      "displayed depth, market liquidity, and market volume",
+      "asset indicators"
+    ],
+    "forbidden": [
+      "official outcome or resolution",
+      "future CLOB or Binance state",
+      "execution result, terminal reason, fill price, or action label",
+      "future-smoothed return or class-balancing threshold",
+      "LLM output produced after the decision timestamp"
+    ],
+    "sequence_challenger": "Temporal MLP/TLOB/TCN inputs are deferred. They require a separately frozen sequence and normalization contract after the point-in-time baseline establishes viability."
+  },
+  "label_contract": {
+    "action_unavailable": "Missing/stale execution parameters, continuity failure, invalid active tick, excluded close window, or other information known to block order creation. Count and report; exclude from classifier fitting and never reinterpret as a negative market prediction.",
+    "entry_no_fill": "An admissible entry FOK that does not fill receives positive_complete=false and stress_utility_quote=0 because no inventory or PnL was created.",
+    "filled_entry_failed_exit": "positive_complete=false; stress_utility_quote equals negative full entry cost, zero recovery is assumed, and the condition is blocked. This deliberately penalizes stale-position risk rather than hiding it.",
+    "positive_complete": "Both exact FOK legs fill and net exit proceeds minus entry cost is strictly positive after both fees.",
+    "successful_round_trip": "Both exact FOK legs fill; stress_utility_quote equals net exit proceeds minus entry cost, including negative values.",
+    "unit": "One causal feature row, one chosen outcome, one fixed execution path. Every label is hash-bound to feature row, source books, execution-parameter snapshots, and this contract."
+  },
+  "promotion_gate": {
+    "development_pass": "On untouched chronological test groups: positive aggregate sequential stress utility; positive median market PnL; no filled-entry/failed-exit event; positive PnL for every asset; at least 30 completed trades overall and five per asset; and selected model exceeds no_trade and ridge_logit where applicable.",
+    "independent_confirmation_required": true,
+    "market_group_bootstrap": "Report a market-time-group block-bootstrap confidence interval for mean PnL only when at least 30 untouched time groups exist. Fewer groups must be labeled insufficient, never padded with overlapping ticks.",
+    "multiple_testing": "Record every fitted L2, threshold, and challenger. Apply deflated-Sharpe/PBO diagnostics only when their sample and strategy-count assumptions are met; otherwise report them unavailable.",
+    "paper_authority_if_passed": false,
+    "profitability_claim_if_passed": false,
+    "trading_authority_if_passed": false
+  },
+  "reporting_contract": {
+    "latest_only_graphs": true,
+    "required_machine_tables": [
+      "split market groups",
+      "candidate and threshold trials",
+      "decision labels and terminal reasons",
+      "sequential trades and condition blocks",
+      "per-market and per-asset PnL",
+      "equity and realized drawdown"
+    ],
+    "required_truth_labels": "Every graph must show exact UTC span, run ID, assets, market counts, decision cadence, latency, hold, fee/depth semantics, causal versus diagnostic status, and whether drawdown is realized-only or mark-to-market.",
+    "round_8_oracle_not_a_baseline": "Round 8 best-future timing is an upper-bound mechanism screen and must never be plotted as a causal model benchmark."
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/trading/orderbook",
+    "https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams",
+    "https://arxiv.org/abs/2403.09267",
+    "https://arxiv.org/abs/2409.14157",
+    "https://arxiv.org/abs/2411.13594",
+    "https://arxiv.org/abs/2502.15757",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551",
+    "https://scholarworks.wmich.edu/math_pubs/42/",
+    "https://learn.microsoft.com/windows/ai/new-windows-ml/overview",
+    "https://github.com/microsoft/DirectML"
+  ],
+  "round": 9,
+  "schema_version": "polymarket-causal-action-value-preregistration-v1",
+  "split_contract": {
+    "group": "Synchronized five-minute event-start timestamp across BTC, ETH, and SOL. All rows and both outcomes from one group stay together.",
+    "minimum_outcome_breadth": "Every train, validation, and test partition must contain both official Up and Down market outcomes for every asset. Outcomes validate market diversity only and are never action features.",
+    "purge_groups": 1,
+    "selection": "Chronological train, one purged group, validation, one purged group, and untouched test. Fit preprocessing on train only. L2 and probability threshold use validation only. Test is evaluated once.",
+    "test_fraction": 0.2,
+    "validation_fraction": 0.2
+  },
+  "status": "frozen_before_any_round_9_decision_label_model_fit_or_model_score_was_computed",
+  "truth_constraints": {
+    "current_edge_established": false,
+    "current_long_capture_confirmatory": false,
+    "profitability_claim": false,
+    "round_9_training_authorized_before_label_integrity": false,
+    "trading_authority": false
+  }
+}
