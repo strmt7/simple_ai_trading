@@ -36,6 +36,8 @@ MCP_PYTHON_COMMAND = sys.executable
 MCP_LAUNCHER_NAME = "cocoindex-code-mcp.py"
 MCP_JSONRPC_VERSION = "2.0"
 MCP_SEARCH_TOOL_NAME = "search"
+DEFAULT_SEARCH_LIMIT = 5
+MAX_SEARCH_LIMIT = 10
 ARTIFACT_ROOT_ENV = "AGENT_COCOINDEX_HOME"
 REPO_ROOT_ENV = "AGENT_COCOINDEX_REPO"
 TIMEOUT_ENV_PREFIX = "AGENT_COCOINDEX_TIMEOUT_"
@@ -213,12 +215,14 @@ class BenchmarkResult:
     rg_ms: float
     rg_returncode: int
     rg_chars: int
+    rg_bytes: int
     rg_line_count: int
     rg_unique_files: int
     rg_first_files: list[str]
     rg_expected_rank: int | None
     coco_ms: float
     coco_chars: int
+    coco_bytes: int
     coco_line_count: int
     coco_unique_files: int
     coco_first_files: list[str]
@@ -226,9 +230,11 @@ class BenchmarkResult:
     focused_rg_ms: float
     focused_rg_returncode: int
     focused_rg_chars: int
+    focused_rg_bytes: int
     focused_rg_line_count: int
     focused_rg_unique_files: int
     hybrid_chars: int
+    hybrid_bytes: int
 
     def as_payload(self) -> dict[str, object]:
         """Return a JSON-serializable benchmark record.
@@ -240,12 +246,14 @@ class BenchmarkResult:
             "rg_ms": self.rg_ms,
             "rg_returncode": self.rg_returncode,
             "rg_chars": self.rg_chars,
+            "rg_bytes": self.rg_bytes,
             "rg_line_count": self.rg_line_count,
             "rg_unique_files": self.rg_unique_files,
             "rg_first_files": self.rg_first_files,
             "rg_expected_rank": self.rg_expected_rank,
             "coco_ms": self.coco_ms,
             "coco_chars": self.coco_chars,
+            "coco_bytes": self.coco_bytes,
             "coco_line_count": self.coco_line_count,
             "coco_unique_files": self.coco_unique_files,
             "coco_first_files": self.coco_first_files,
@@ -253,9 +261,11 @@ class BenchmarkResult:
             "focused_rg_ms": self.focused_rg_ms,
             "focused_rg_returncode": self.focused_rg_returncode,
             "focused_rg_chars": self.focused_rg_chars,
+            "focused_rg_bytes": self.focused_rg_bytes,
             "focused_rg_line_count": self.focused_rg_line_count,
             "focused_rg_unique_files": self.focused_rg_unique_files,
             "hybrid_chars": self.hybrid_chars,
+            "hybrid_bytes": self.hybrid_bytes,
         }
 
 
@@ -1594,17 +1604,22 @@ def benchmark_case(
     focused_rg_result, focused_rg_ms, focused_rg_files = run_focused_rg(
         context, rg_bin, case, coco_files
     )
+    rg_bytes = len(rg_result.stdout.encode("utf-8"))
+    coco_bytes = len(coco_result.stdout.encode("utf-8"))
+    focused_rg_bytes = len(focused_rg_result.stdout.encode("utf-8"))
     return BenchmarkResult(
         case=case.name,
         rg_ms=round(rg_ms, 1),
         rg_returncode=rg_result.returncode,
         rg_chars=len(rg_result.stdout),
+        rg_bytes=rg_bytes,
         rg_line_count=rg_result.stdout.count("\n"),
         rg_unique_files=len(rg_files),
         rg_first_files=rg_files[:5],
         rg_expected_rank=hit_rank(rg_files, list(case.expected)),
         coco_ms=round(coco_ms, 1),
         coco_chars=len(coco_result.stdout),
+        coco_bytes=coco_bytes,
         coco_line_count=coco_result.stdout.count("\n"),
         coco_unique_files=len(coco_files),
         coco_first_files=coco_files[:5],
@@ -1612,9 +1627,11 @@ def benchmark_case(
         focused_rg_ms=round(focused_rg_ms, 1),
         focused_rg_returncode=focused_rg_result.returncode,
         focused_rg_chars=len(focused_rg_result.stdout),
+        focused_rg_bytes=focused_rg_bytes,
         focused_rg_line_count=focused_rg_result.stdout.count("\n"),
         focused_rg_unique_files=len(focused_rg_files),
         hybrid_chars=len(coco_result.stdout) + len(focused_rg_result.stdout),
+        hybrid_bytes=coco_bytes + focused_rg_bytes,
     )
 
 
@@ -1623,6 +1640,8 @@ def benchmark_summary(results: list[BenchmarkResult]) -> dict[str, object]:
 
     Inputs: `results`. Output: `dict[str, object]`.
     """
+    rg_total_bytes = sum(result.rg_bytes for result in results)
+    hybrid_total_bytes = sum(result.hybrid_bytes for result in results)
     return {
         "cases": len(results),
         "rg_top5_hits": sum(
@@ -1634,9 +1653,21 @@ def benchmark_summary(results: list[BenchmarkResult]) -> dict[str, object]:
             for result in results
         ),
         "rg_total_chars": sum(result.rg_chars for result in results),
+        "rg_total_bytes": rg_total_bytes,
         "coco_total_chars": sum(result.coco_chars for result in results),
+        "coco_total_bytes": sum(result.coco_bytes for result in results),
         "focused_rg_total_chars": sum(result.focused_rg_chars for result in results),
+        "focused_rg_total_bytes": sum(
+            result.focused_rg_bytes for result in results
+        ),
         "hybrid_total_chars": sum(result.hybrid_chars for result in results),
+        "hybrid_total_bytes": hybrid_total_bytes,
+        "hybrid_minus_rg_bytes": hybrid_total_bytes - rg_total_bytes,
+        "hybrid_to_rg_output_ratio": (
+            round(hybrid_total_bytes / rg_total_bytes, 6)
+            if rg_total_bytes
+            else None
+        ),
         "rg_avg_ms": round(sum(result.rg_ms for result in results) / len(results), 1),
         "coco_avg_ms": round(
             sum(result.coco_ms for result in results) / len(results), 1
@@ -1689,7 +1720,7 @@ def run_benchmark(
         ]
 
     payload = {
-        "benchmark_schema": 1,
+        "benchmark_schema": 2,
         "package": PACKAGE_REQUIREMENT,
         "repo_head": checked_git_command(
             context.repo_root,
@@ -1793,6 +1824,8 @@ def run_search(
     `allow_dirty` (bool). Output: `str`. Raises: IndexRequiredError when validation or
     external operations fail.
     """
+    if isinstance(limit, bool) or not 1 <= limit <= MAX_SEARCH_LIMIT:
+        raise ValueError(f"limit must lie in [1, {MAX_SEARCH_LIMIT}]")
     if refresh:
         run_index(context, allow_dirty=allow_dirty)
     elif not target_sqlite_db(context).exists():
@@ -1841,7 +1874,8 @@ def mcp_search_tool_definition() -> dict[str, object]:
                 "limit": {
                     "type": "integer",
                     "minimum": 1,
-                    "default": 5,
+                    "maximum": MAX_SEARCH_LIMIT,
+                    "default": DEFAULT_SEARCH_LIMIT,
                     "description": "Maximum number of search results.",
                 },
                 "path": {
@@ -1933,9 +1967,14 @@ def mcp_search_arguments(arguments: object) -> dict[str, object]:
             -32602,
             "refresh_index is not supported by MCP; run the CLI index command explicitly.",
         )
+    limit = mcp_positive_int(
+        arguments.get("limit"), "limit", DEFAULT_SEARCH_LIMIT
+    )
+    if limit > MAX_SEARCH_LIMIT:
+        raise JsonRpcError(-32602, f"limit must not exceed {MAX_SEARCH_LIMIT}.")
     return {
         "query": query,
-        "limit": mcp_positive_int(arguments.get("limit"), "limit", 5),
+        "limit": limit,
         "path": mcp_optional_string(arguments.get("path"), "path"),
         "langs": mcp_string_list(arguments.get("lang"), "lang"),
     }
@@ -3131,7 +3170,12 @@ def build_parser() -> argparse.ArgumentParser:
     index.set_defaults(func=command_index)
 
     search = subparsers.add_parser("search", help="Search the semantic index.")
-    search.add_argument("--limit", type=int, default=5)
+    search.add_argument(
+        "--limit",
+        type=int,
+        choices=range(1, MAX_SEARCH_LIMIT + 1),
+        default=DEFAULT_SEARCH_LIMIT,
+    )
     search.add_argument("--path", help="Optional CocoIndex file path glob.")
     search.add_argument("--lang", action="append", default=[])
     search.add_argument(

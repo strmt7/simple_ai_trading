@@ -1,3 +1,8 @@
+---
+name: context-budget
+description: Bound repository context reads and semantic-search output without weakening source, test, or evidence verification.
+---
+
 # Context Budget
 
 ## Goal
@@ -17,6 +22,10 @@ Limit reads to the minimum high-signal surface required to implement the task co
 - Avoid bulk reading unrelated directories and generated artifacts.
 - Avoid opening entire modules for tangential concerns.
 - Prefer `rg` for symbol search over opening large files.
+- Keep semantic routing at the five-result default; ten results is the hard
+  maximum. Refine the query or use path/language filters before widening.
+- Treat measured UTF-8 output bytes as a context-volume proxy only. Do not
+  infer or publish token savings without a tokenizer-specific measurement.
 
 ## Exit condition
 

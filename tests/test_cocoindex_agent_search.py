@@ -1390,6 +1390,25 @@ def test_lightweight_mcp_search_tool_defers_cocoindex_work_until_call(
     )
 
 
+def test_mcp_search_limit_is_bounded() -> None:
+    """Reject semantic result sets large enough to inflate agent context."""
+    definition = cocoindex_agent_search.mcp_search_tool_definition()
+    limit_schema = definition["inputSchema"]["properties"]["limit"]
+    assert limit_schema["default"] == cocoindex_agent_search.DEFAULT_SEARCH_LIMIT
+    assert limit_schema["maximum"] == cocoindex_agent_search.MAX_SEARCH_LIMIT
+
+    with pytest.raises(
+        cocoindex_agent_search.JsonRpcError,
+        match=f"limit must not exceed {cocoindex_agent_search.MAX_SEARCH_LIMIT}",
+    ):
+        cocoindex_agent_search.mcp_search_arguments(
+            {
+                "query": "semantic routing",
+                "limit": cocoindex_agent_search.MAX_SEARCH_LIMIT + 1,
+            }
+        )
+
+
 def test_lightweight_mcp_rejects_refresh_index(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1928,12 +1947,14 @@ def test_run_benchmark_reuses_one_daemon_for_cocoindex_cases(
             rg_ms=1.0,
             rg_returncode=0,
             rg_chars=10,
+            rg_bytes=10,
             rg_line_count=1,
             rg_unique_files=1,
             rg_first_files=[case.expected[0]],
             rg_expected_rank=1,
             coco_ms=1.0,
             coco_chars=5,
+            coco_bytes=5,
             coco_line_count=1,
             coco_unique_files=1,
             coco_first_files=[case.expected[0]],
@@ -1941,9 +1962,11 @@ def test_run_benchmark_reuses_one_daemon_for_cocoindex_cases(
             focused_rg_ms=1.0,
             focused_rg_returncode=0,
             focused_rg_chars=3,
+            focused_rg_bytes=3,
             focused_rg_line_count=1,
             focused_rg_unique_files=1,
             hybrid_chars=8,
+            hybrid_bytes=8,
         )
 
     context.db_dir.mkdir(parents=True)
@@ -1988,8 +2011,101 @@ def test_run_benchmark_reuses_one_daemon_for_cocoindex_cases(
     )
 
     assert session_events == ["enter", "exit"]
+    assert payload["benchmark_schema"] == 2
     assert payload["summary"]["cases"] == 2
+    assert payload["summary"]["rg_total_bytes"] == 20
+    assert payload["summary"]["hybrid_total_bytes"] == 16
+    assert payload["summary"]["hybrid_minus_rg_bytes"] == -4
+    assert payload["summary"]["hybrid_to_rg_output_ratio"] == 0.8
     assert cocoindex_agent_search.benchmark_case.call_count == 2
+
+
+def test_benchmark_case_records_exact_utf8_output_bytes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Measure encoded context volume without pretending it is a token count."""
+    context = cocoindex_agent_search.CocoIndexContext(
+        repo_root=tmp_path,
+        artifact_root=tmp_path / "artifacts",
+        mirror_repo=tmp_path / "artifacts" / "mirrors" / "abc" / "repo",
+        mirror_digest="abc",
+    )
+    case = cocoindex_agent_search.BenchmarkCase(
+        name="unicode", query="risk", rg="risk", expected=("risk.py",)
+    )
+    rg_stdout = "risk.py:1:caf\u00e9\n"
+    coco_stdout = "File: risk.py:1 r\u00e9sum\u00e9\n"
+    focused_stdout = "risk.py:1:na\u00efve\n"
+    monkeypatch.setattr(
+        cocoindex_agent_search,
+        "run_rg_baseline",
+        mock.Mock(
+            return_value=(
+                subprocess.CompletedProcess([], 0, rg_stdout, ""),
+                1.0,
+                ["risk.py"],
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        cocoindex_agent_search,
+        "run_coco_search",
+        mock.Mock(
+            return_value=(
+                subprocess.CompletedProcess([], 0, coco_stdout, ""),
+                2.0,
+                ["risk.py"],
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        cocoindex_agent_search,
+        "run_focused_rg",
+        mock.Mock(
+            return_value=(
+                subprocess.CompletedProcess([], 0, focused_stdout, ""),
+                3.0,
+                ["risk.py"],
+            )
+        ),
+    )
+
+    result = cocoindex_agent_search.benchmark_case(
+        context, "rg", case, [], manage_daemon=False
+    )
+
+    assert result.rg_bytes == len(rg_stdout.encode("utf-8"))
+    assert result.coco_bytes == len(coco_stdout.encode("utf-8"))
+    assert result.focused_rg_bytes == len(focused_stdout.encode("utf-8"))
+    assert result.hybrid_bytes == result.coco_bytes + result.focused_rg_bytes
+
+
+def test_run_search_rejects_unbounded_context_before_side_effects(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Reject oversized direct calls before indexing or daemon interaction."""
+    context = cocoindex_agent_search.CocoIndexContext(
+        repo_root=tmp_path,
+        artifact_root=tmp_path / "artifacts",
+        mirror_repo=tmp_path / "artifacts" / "mirrors" / "abc" / "repo",
+        mirror_digest="abc",
+    )
+    monkeypatch.setattr(
+        cocoindex_agent_search,
+        "run_ccc_existing",
+        mock.Mock(side_effect=AssertionError("search side effect must not run")),
+    )
+
+    with pytest.raises(ValueError, match="limit must lie"):
+        cocoindex_agent_search.run_search(
+            context,
+            query=["semantic routing"],
+            limit=cocoindex_agent_search.MAX_SEARCH_LIMIT + 1,
+            path=None,
+            langs=[],
+            refresh=False,
+            allow_index=False,
+        )
 
 
 def test_run_index_preserves_excluded_paths(

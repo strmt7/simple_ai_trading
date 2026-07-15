@@ -7,7 +7,7 @@ result: a full cold index was intentionally not created during the transfer.
 ## Package Evidence
 
 - Package: `cocoindex-code[full]==0.2.37`
-- PyPI version checked: 2026-07-11
+- PyPI version checked: 2026-07-15 (`0.2.37` remained latest)
 - Wheel: `cocoindex_code-0.2.37-py3-none-any.whl`
 - Wheel SHA256:
   `9510e2810fcec5cfe9c9fb42e42acb9910155d5b5de0d7514bfa42daeb21b9ba`
@@ -42,6 +42,11 @@ Any future benchmark publication must include the repository commit, mirror
 digest, package version, case-level expected-path ranks, timings, output volume,
 database size, and the raw JSON result. Missing runs remain explicitly marked
 as not run; they must never be reconstructed or inferred.
+
+Benchmark schema 2 records characters and exact UTF-8 output bytes for each
+route, plus the hybrid-to-broad-output ratio. The wrapper defaults to five
+semantic candidates and rejects more than ten. Output bytes are a deterministic
+context-volume proxy; they are not tokenizer-specific token counts.
 
 ## Live Host Result
 
