@@ -38,10 +38,15 @@ from simple_ai_trading.polymarket_features import (
 )
 from simple_ai_trading.polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
+    POLYMARKET_PROFILE_CONTRACT_SHA256,
+    POLYMARKET_PROFILE_FEATURES,
+    POLYMARKET_PROFILE_L2_CANDIDATES,
     PolymarketModelConfig,
     build_polymarket_model_dataset,
     fit_polymarket_offset_model,
+    fit_polymarket_profile_challenger,
     predict_polymarket_probabilities,
+    predict_polymarket_profile_probabilities,
     split_polymarket_model_dataset,
 )
 from simple_ai_trading.polymarket_model_execution import (
@@ -505,6 +510,126 @@ def test_unjustified_correction_falls_back_to_market_probability() -> None:
     assert set(model.coefficients) == {0.0}
     assert report.validation_log_loss_delta == pytest.approx(0.0)
     assert report.test_log_loss_delta == pytest.approx(0.0)
+
+
+def test_profile_challenger_is_frozen_deterministic_and_zero_expanded() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    control, _ = fit_polymarket_offset_model(dataset, split)
+
+    first_model, first_report = fit_polymarket_profile_challenger(
+        dataset,
+        split,
+        control,
+    )
+    second_model, second_report = fit_polymarket_profile_challenger(
+        dataset,
+        split,
+        control,
+    )
+
+    assert first_model == second_model
+    assert first_report == second_report
+    assert first_model.contract_sha256 == POLYMARKET_PROFILE_CONTRACT_SHA256
+    assert first_model.control_model_sha256 == control.model_sha256
+    assert len(first_model.candidate_inner_log_losses) == 21
+    assert first_model.candidate_inner_log_losses[0][0] == "market_baseline"
+    assert first_model.inner_selected_candidate.startswith("offset_profile_")
+    assert first_model.selected_candidate != "market_baseline"
+    assert first_model.selected_profile is not None
+    profiles = dict(POLYMARKET_PROFILE_FEATURES)
+    assert first_model.selected_feature_names == profiles[first_model.selected_profile]
+    active = set(first_model.selected_feature_names)
+    for index, name in enumerate(POLYMARKET_MODEL_FEATURE_NAMES):
+        if name not in active:
+            assert first_model.coefficients[index + 1] == 0.0
+    predictions = predict_polymarket_profile_probabilities(
+        first_model,
+        split.test,
+    )
+    assert predictions.shape == (len(split.test),)
+    assert np.all((predictions > 0.0) & (predictions < 1.0))
+    assert first_report.control_model_sha256 == control.model_sha256
+    assert first_report.challenger_model_sha256 == first_model.model_sha256
+    assert not first_model.trading_authority
+    assert not first_model.execution_claim
+    assert not first_model.profitability_claim
+    assert not first_report.trading_authority
+    assert not first_report.execution_claim
+    assert not first_report.profitability_claim
+
+
+def test_profile_challenger_falls_back_without_validation_evidence() -> None:
+    source, markets = _source_fixture(predictive=False)
+    feature_indexes = {
+        name: index for index, name in enumerate(POLYMARKET_FEATURE_NAMES)
+    }
+    neutral_rows = []
+    for row in source.rows:
+        values = list(row.feature_values)
+        for name in ("up_midpoint", "down_midpoint"):
+            values[feature_indexes[name]] = 0.5
+        neutral_rows.append(replace(row, feature_values=tuple(values)))
+    source = replace(source, rows=tuple(neutral_rows))
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    control, _ = fit_polymarket_offset_model(dataset, split)
+
+    model, report = fit_polymarket_profile_challenger(dataset, split, control)
+
+    assert model.selected_candidate == "market_baseline"
+    assert model.selected_profile is None
+    assert model.selected_feature_names == ()
+    assert model.selected_l2 is None
+    assert set(model.coefficients) == {0.0}
+    assert report.validation_log_loss_delta_vs_control == pytest.approx(0.0)
+    assert report.test_log_loss_delta_vs_control == pytest.approx(0.0)
+    assert report.test_brier_delta_vs_control == pytest.approx(0.0)
+
+
+def test_profile_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-005-profile-challenger-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_PROFILE_CONTRACT_SHA256
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    documented_profiles = contract["candidate_profiles"]
+    code_profiles = dict(POLYMARKET_PROFILE_FEATURES)
+    assert documented_profiles["full"] == "POLYMARKET_MODEL_FEATURE_NAMES"
+    assert tuple(documented_profiles) == tuple(code_profiles)
+    for profile, feature_names in code_profiles.items():
+        if profile != "full":
+            assert tuple(documented_profiles[profile]) == feature_names
+    assert POLYMARKET_PROFILE_L2_CANDIDATES == (0.001, 0.01, 0.1, 1.0, 10.0)
+
+
+def test_model_fit_rejects_substituted_split_sample() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    substituted = replace(
+        split.train[0],
+        feature_values=tuple(value + 1.0 for value in split.train[0].feature_values),
+    )
+    tampered = replace(split, train=(substituted, *split.train[1:]))
+
+    with pytest.raises(ValueError, match="substituted"):
+        fit_polymarket_offset_model(dataset, tampered)
 
 
 def test_execution_policy_uses_depth_latency_fees_risk_and_official_settlement() -> (
