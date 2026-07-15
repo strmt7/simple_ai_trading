@@ -1,0 +1,179 @@
+{
+  "authority": {
+    "ai_uplift_claim": false,
+    "execution_claim": false,
+    "leverage_applied": false,
+    "portfolio_claim": false,
+    "profitability_claim": false,
+    "testnet_or_live_authority": false,
+    "trading_authority": false
+  },
+  "barrier_spec": {
+    "base_protection_delay_ms": 750,
+    "horizon_seconds": 300,
+    "maximum_stop_bps": 80.0,
+    "maximum_take_bps": 120.0,
+    "minimum_stop_bps": 18.0,
+    "minimum_take_bps": 30.0,
+    "path_resolution_ms": 100,
+    "same_utc_day_exit": true,
+    "stop_volatility_multiple": 1.5,
+    "stress_protection_delay_ms": 1500,
+    "take_volatility_multiple": 2.25,
+    "trigger_execution_slippage_bps": 1.0,
+    "volatility_feature_name": "realized_volatility_60s_bps"
+  },
+  "contract_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
+  "design_sha256": "61165c1150f5349ff1b15f2243e7520ecbd7af44578edda7fc2be8bb56b66cdf",
+  "economic_gate_spec": {
+    "maximum_drawdown_bps": 100.0,
+    "maximum_single_symbol_positive_pnl_share": 0.7,
+    "minimum_closed_trades": 30,
+    "minimum_positive_symbols": 2,
+    "minimum_profit_factor": 1.0
+  },
+  "feature_spec": {
+    "additional_slippage_bps_per_side": 1.0,
+    "maker_entry_fee_bps": 2.0,
+    "max_l1_participation": 0.1,
+    "order_notional_quote": 1000.0,
+    "placement_latency_ms": 750,
+    "taker_entry_fee_bps": 5.0,
+    "taker_exit_fee_bps": 5.0
+  },
+  "lifecycle": {
+    "decision_cadence_ms": 10000,
+    "feature_warmup_ms": 3601000,
+    "maximum_model_label_horizon_ms": 315750,
+    "maximum_stress_lifecycle_ms": 316500,
+    "role_end_exclusive": true,
+    "same_utc_day_required": true,
+    "trade_observation_delay_ms": 1000
+  },
+  "model_aggregation": {
+    "member_selection_by_outcome_forbidden": true,
+    "payoff_conditional_mean": "arithmetic_mean_of_calibrated_members",
+    "payoff_conditional_q20": "arithmetic_mean_of_calibrated_members_clamped_not_above_mean",
+    "queue_fill": "arithmetic_mean_of_calibrated_unconditional_fill_bucket_probabilities",
+    "seeds": [
+      5701,
+      5702,
+      5703
+    ]
+  },
+  "payoff_model_spec": {
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "candidate_id": "queue_censored_make_take_lightgbm",
+    "early_stopping_rounds": 50,
+    "family": "shared_four_action_conditional_mean_q20",
+    "feature_fraction": 0.8,
+    "gpu_use_dp_required": true,
+    "lambda_l1": 0.1,
+    "lambda_l2": 1.0,
+    "learning_rate": 0.03,
+    "lower_quantile": 0.2,
+    "max_bin": 127,
+    "max_depth": 8,
+    "min_data_in_leaf": 256,
+    "minimum_calibration_rows_per_action_symbol": 32,
+    "minimum_early_stop_rows_per_action_symbol": 32,
+    "minimum_relative_quality_improvement": 0.0025,
+    "minimum_training_rows_per_action_symbol": 128,
+    "num_boost_round": 1000,
+    "num_leaves": 31
+  },
+  "policy_spec": {
+    "conditional_q20_floor_bps": 0.0,
+    "coverage_quantiles": [
+      0.0,
+      0.5,
+      0.65,
+      0.8
+    ],
+    "drawdown_penalty": 1.0,
+    "maximum_drawdown_bps": 100.0,
+    "maximum_single_symbol_positive_pnl_share": 0.7,
+    "minimum_calibration_closed_trades": 4,
+    "minimum_positive_symbols": 2,
+    "minimum_profit_factor": 1.0
+  },
+  "predictive_gates": {
+    "fill_integrated_brier_skill_strictly_above": 0.0,
+    "fill_log_loss_skill_strictly_above": 0.0,
+    "payoff_mean_mse_skill_strictly_above": 0.0,
+    "payoff_minimum_spearman": 0.02,
+    "payoff_q20_pinball_skill_strictly_above": 0.0
+  },
+  "queue_fill_model_spec": {
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "candidate_id": "queue_censored_make_take_lightgbm",
+    "early_stopping_rounds": 50,
+    "family": "shared_three_interval_passive_fill_hazard",
+    "feature_fraction": 0.8,
+    "gpu_use_dp_required": true,
+    "lambda_l1": 0.1,
+    "lambda_l2": 1.0,
+    "learning_rate": 0.03,
+    "max_bin": 127,
+    "max_depth": 8,
+    "min_data_in_leaf": 256,
+    "minimum_calibration_class_rows_per_symbol": 32,
+    "minimum_early_stop_class_rows_per_symbol": 32,
+    "minimum_training_class_rows_per_symbol": 128,
+    "num_boost_round": 1000,
+    "num_leaves": 31
+  },
+  "roles": {
+    "early_stop": {
+      "end_ms_exclusive": 1685923200000,
+      "start_ms": 1685577600000
+    },
+    "evaluation": {
+      "end_ms_exclusive": 1686787200000,
+      "start_ms": 1686268800000
+    },
+    "policy_calibration": {
+      "end_ms_exclusive": 1686268800000,
+      "start_ms": 1686096000000
+    },
+    "probability_calibration": {
+      "end_ms_exclusive": 1686096000000,
+      "start_ms": 1685923200000
+    },
+    "training": {
+      "end_ms_exclusive": 1685577600000,
+      "start_ms": 1684195200000
+    }
+  },
+  "round": 57,
+  "schema_version": "round-057-queue-censored-make-take-execution-contract-v1",
+  "source": {
+    "additional_slippage_bps_per_side": 1.0,
+    "decision_cadence_seconds": 10,
+    "feature_version": "l1-tape-aggregate-depth-causal-v9",
+    "horizon_seconds": 300,
+    "max_l1_participation": 0.1,
+    "max_quote_age_ms": 1000,
+    "reference_order_notional_quote": 1000.0,
+    "requested_end_ms": 1686787199999,
+    "requested_start_ms": 1684195200000,
+    "require_full_history_inventory": false,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "taker_fee_bps": 5.0,
+    "total_latency_ms": 750
+  },
+  "status": "frozen",
+  "streaming": {
+    "cache_miss_policy": "fail",
+    "path_source": "current_book_ticker_100ms",
+    "raw_trade_chunk": "one_utc_day",
+    "raw_trade_passes_per_symbol_role": 1,
+    "trade_source": "current_trade_raw"
+  }
+}
