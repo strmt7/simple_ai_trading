@@ -79,6 +79,8 @@ def test_round61_gate_uses_committed_capital_and_cannot_authorize_trading() -> N
     governance = design["governance"]
     position = design["position_contract"]
     source = design["source_contract"]
+    capacity = design["capacity_contract"]
+    metrics = design["risk_metric_contract"]
     gate = design["risk_and_authorization_gate"]
 
     assert position["futures_leverage"] == 1.0
@@ -93,6 +95,15 @@ def test_round61_gate_uses_committed_capital_and_cannot_authorize_trading() -> N
     assert gate["same_frozen_contract_must_pass_all_symbols"] is True
     assert source["missing_required_row_is_never_interpolated_or_filled"] is True
     assert source["source_ineligible_episodes_are_not_economically_scored"] is True
+    assert source["source_eligible_fraction_denominator"].startswith("all manifest")
+    assert capacity["capacity_eligible_fraction_denominator"].startswith(
+        "source-eligible"
+    )
+    assert metrics["calendar_year_assignment"] == "UTC year of decision_time_ms"
+    assert (
+        "ceil(0.10 * episode_count)"
+        in metrics["expected_shortfall_10pct_committed_capital_bps"]
+    )
     assert governance["model_training_permitted"] is False
     assert governance["ai_evaluation_permitted"] is False
     assert governance["trading_authority_permitted"] is False

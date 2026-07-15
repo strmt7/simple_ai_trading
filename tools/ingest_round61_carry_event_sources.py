@@ -48,10 +48,10 @@ from tools.run_round59_funding_persistence_feasibility import (  # noqa: E402
 
 
 ROUND = 61
-DESIGN_SCHEMA = "round-061-carry-economic-replay-design-v3"
+DESIGN_SCHEMA = "round-061-carry-economic-replay-design-v4"
 MANIFEST_SCHEMA = "round-061-carry-event-manifest-v2"
 CERTIFICATE_SCHEMA = "round-061-carry-event-source-certificate-v1"
-DESIGN_SHA256 = "544faedcb31348e08e24212980a6660a79d9e0459b9517dc3f457864ecaf777c"
+DESIGN_SHA256 = "eadab11fea709aa562f11557e08887a155a8d446cefa09c77153c2b1967159cc"
 MANIFEST_SHA256 = "8b5a8037176c5e37af2c261c0ab79dd9f43f6e0d9024e78f6306694293126594"
 MANIFEST_FILE_SHA256 = (
     "65a5c20b2ad8a85add95d49f5ea94260d36062c8fed004dfd5ee7e310814700f"
@@ -63,6 +63,10 @@ LEGACY_CHECKPOINT_DESIGN_SHA256 = (
     "6ee379609c42e480122cff49d9fa3deaa73952857e99ceb8af2175b7c2e4d8f3"
 )
 LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT = "80d96fa507b69f38e1869a08a1db6c9f93ca1534"
+LEGACY_V3_CHECKPOINT_DESIGN_SHA256 = (
+    "544faedcb31348e08e24212980a6660a79d9e0459b9517dc3f457864ecaf777c"
+)
+LEGACY_V3_CHECKPOINT_IMPLEMENTATION_COMMIT = "620454334f1c8b05593b0db75bba5e776e40c6c5"
 
 
 def _git(*arguments: str) -> str:
@@ -104,6 +108,14 @@ def _validate_design(path: Path) -> dict[str, object]:
         is not True
         or source.get("minimum_source_eligible_fraction_per_symbol") != 0.9
         or source.get("minimum_source_eligible_episodes_per_symbol") != 40
+        or source.get("source_eligible_fraction_denominator")
+        != "all manifest episodes for that symbol"
+        or design.get("capacity_contract", {}).get(
+            "capacity_eligible_fraction_denominator"
+        )
+        != "source-eligible episodes for that symbol"
+        or design.get("risk_metric_contract", {}).get("calendar_year_assignment")
+        != "UTC year of decision_time_ms"
     ):
         raise ValueError("Round 61 source design drifted")
     return design
@@ -387,9 +399,10 @@ def _load_checkpoint(
     )
     allowed_identities = {
         (DESIGN_SHA256, implementation_commit),
+        (LEGACY_CHECKPOINT_DESIGN_SHA256, LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT),
         (
-            LEGACY_CHECKPOINT_DESIGN_SHA256,
-            LEGACY_CHECKPOINT_IMPLEMENTATION_COMMIT,
+            LEGACY_V3_CHECKPOINT_DESIGN_SHA256,
+            LEGACY_V3_CHECKPOINT_IMPLEMENTATION_COMMIT,
         ),
     }
     if (
