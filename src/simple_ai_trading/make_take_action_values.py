@@ -55,6 +55,7 @@ def _is_sha256(value: object) -> bool:
 class MakeTakeActionValueBatch:
     schema_version: str
     symbol: str
+    source_dataset_sha256: str
     source_action_feature_sha256: str
     source_fill_panel_sha256: str
     fill_model_sha256: str
@@ -106,6 +107,7 @@ def _batch_payload(batch: MakeTakeActionValueBatch) -> dict[str, object]:
     return {
         "schema_version": batch.schema_version,
         "symbol": batch.symbol,
+        "source_dataset_sha256": batch.source_dataset_sha256,
         "source_action_feature_sha256": batch.source_action_feature_sha256,
         "source_fill_panel_sha256": batch.source_fill_panel_sha256,
         "fill_model_sha256": batch.fill_model_sha256,
@@ -147,6 +149,7 @@ def validate_make_take_action_value_batch(batch: MakeTakeActionValueBatch) -> No
         or any(
             not _is_sha256(value)
             for value in (
+                batch.source_dataset_sha256,
                 batch.source_action_feature_sha256,
                 batch.source_fill_panel_sha256,
                 batch.fill_model_sha256,
@@ -278,6 +281,7 @@ def build_make_take_action_values(
     provisional = MakeTakeActionValueBatch(
         schema_version=MAKE_TAKE_ACTION_VALUE_SCHEMA_VERSION,
         symbol=normalized_symbol,
+        source_dataset_sha256=action_features.source_dataset_sha256,
         source_action_feature_sha256=action_features.batch_sha256,
         source_fill_panel_sha256=fill_predictions.source_panel_sha256,
         fill_model_sha256=fill_predictions.model_sha256,
