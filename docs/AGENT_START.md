@@ -47,9 +47,15 @@ agents to canonical evidence without replacing that evidence.
   nonlinear challenger. No Round 9 model has been fitted or scored.
   Post-contract continuity-qualified outcomes and prospective results are still
   pending, so no profitability or execution authority exists.
+- Capture `eae374e2662c440fb93970d5710937b1` is development-only: its evidence
+  queue saturated and interruption left no terminal report. Never use it for a
+  confirmation claim. The next capture must use the measured writer fix.
 - Round 9 MLP report v2 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
+- Run the Round 9 ridge only through `polymarket-ridge`. It writes a durable fit
+  claim before test evaluation; completed claims load the signed report, while
+  interrupted or failed claims block silent retries.
 - Generic finance-LLM benchmark scores are not alpha evidence. Kronos failed
   the repository's causal random-walk benchmark. Any future AI treatment must
   beat the same-period non-AI path after costs without worsening tail risk.

@@ -125,9 +125,13 @@ from .polymarket_mlp import (
     materialize_polymarket_mlp_report,
 )
 from .polymarket_ridge import (
+    begin_polymarket_ridge_fit,
+    complete_polymarket_ridge_fit,
+    fail_polymarket_ridge_fit,
     fit_and_evaluate_polymarket_ridge,
     load_polymarket_ridge_dataset,
     load_polymarket_ridge_evidence,
+    load_polymarket_ridge_report,
     materialize_polymarket_ridge_report,
 )
 from .polymarket_coverage import inspect_polymarket_feed_coverage
@@ -488,7 +492,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_record.add_argument("--database", default="data/polymarket-paper.duckdb")
     parser_polymarket_record.add_argument("--duration-seconds", type=int, default=300)
     parser_polymarket_record.add_argument("--discovery-interval-seconds", type=int, default=60)
-    parser_polymarket_record.add_argument("--queue-capacity", type=int, default=100_000)
+    parser_polymarket_record.add_argument("--queue-capacity", type=int, default=200_000)
     parser_polymarket_record.add_argument("--memory-limit", default="4GB")
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_record.add_argument(
@@ -6496,12 +6500,29 @@ def command_polymarket_ridge(args: argparse.Namespace) -> int:
                 store,
                 pipeline_report_sha256=str(args.pipeline_report_sha256),
             )
-            report = fit_and_evaluate_polymarket_ridge(dataset)
-            materialization = materialize_polymarket_ridge_report(
-                store,
-                dataset,
-                report,
-            )
+            claim = begin_polymarket_ridge_fit(store, dataset)
+            if claim.status == "existing":
+                report = load_polymarket_ridge_report(
+                    store,
+                    report_sha256=claim.report_sha256,
+                )
+                materialization = materialize_polymarket_ridge_report(
+                    store,
+                    dataset,
+                    report,
+                )
+            else:
+                try:
+                    report = fit_and_evaluate_polymarket_ridge(dataset)
+                    materialization = materialize_polymarket_ridge_report(
+                        store,
+                        dataset,
+                        report,
+                    )
+                    complete_polymarket_ridge_fit(store, dataset, report)
+                except Exception as exc:
+                    fail_polymarket_ridge_fit(store, dataset, exc)
+                    raise
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
         print(
             f"polymarket-ridge failed: {exc.__class__.__name__}: {exc}",

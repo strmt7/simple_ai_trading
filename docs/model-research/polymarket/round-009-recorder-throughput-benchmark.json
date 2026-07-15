@@ -1,0 +1,69 @@
+{
+  "benchmark": {
+    "message_count": 10000,
+    "replay_kind": "real_messages_at_recorded_monotonic_interarrival_times",
+    "source_end_monotonic_ns": 564502812000000,
+    "source_end_wall_ms": 1784152958837,
+    "source_start_monotonic_ns": 564497578000000,
+    "source_start_wall_ms": 1784152953595,
+    "source_stream_counts": {
+      "binance_spot": 3986,
+      "clob_market": 5984,
+      "polymarket_rtds": 30
+    },
+    "trials": [
+      {
+        "coalesce_seconds": 0.1,
+        "database_bytes": 7090176,
+        "maximum_messages_per_chunk": 1024,
+        "mean_messages_per_chunk": 294.11764705882354,
+        "minimum_messages_per_chunk": 1,
+        "replay_seconds": 5.342999999993481,
+        "written_chunk_count": 34
+      },
+      {
+        "coalesce_seconds": 0.5,
+        "database_bytes": 7352320,
+        "maximum_messages_per_chunk": 1024,
+        "mean_messages_per_chunk": 769.2307692307693,
+        "minimum_messages_per_chunk": 9,
+        "replay_seconds": 5.405999999959022,
+        "written_chunk_count": 13
+      }
+    ]
+  },
+  "decision": {
+    "default_queue_capacity_after": 200000,
+    "default_queue_capacity_before": 100000,
+    "payload_hash_or_order_change": false,
+    "selected_coalesce_seconds": 0.5,
+    "storage_schema_change": false
+  },
+  "report_sha256": "1b62097bf4cb390bd3bcc9a271a74776625c4905e0e2698f80f70e087225e529",
+  "schema_version": "polymarket-recorder-throughput-benchmark-v1",
+  "source_evidence": {
+    "confirmation_eligible": false,
+    "database_bytes": 6125268992,
+    "persisted_chunk_count": 46532,
+    "persisted_message_count": 10449680,
+    "progress_elapsed_seconds": 9302.802,
+    "progress_observed_at_ms": 1784153052405,
+    "progress_queue_capacity": 100000,
+    "progress_queue_high_watermark": 100000,
+    "progress_queue_size": 92011,
+    "progress_received_message_count": 10536544,
+    "progress_written_gap_count": 66,
+    "progress_written_message_count": 10443536,
+    "raw_compressed_bytes": 550648134,
+    "raw_compression_ratio": 0.1037570600008032,
+    "raw_uncompressed_bytes": 5307090756,
+    "recorder_row_status": "running_without_terminal_report_after_interruption",
+    "run_id": "eae374e2662c440fb93970d5710937b1"
+  },
+  "truth_constraints": {
+    "financial_edge_claim": false,
+    "model_evidence": false,
+    "synthetic_market_data": false,
+    "trading_authority": false
+  }
+}

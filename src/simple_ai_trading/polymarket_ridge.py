@@ -7,6 +7,7 @@ from decimal import Decimal
 import hashlib
 import json
 import math
+import time
 from typing import Mapping, Sequence
 
 import numpy as np
@@ -30,6 +31,9 @@ POLYMARKET_RIDGE_CONTRACT_SHA256 = (
 )
 POLYMARKET_RIDGE_MODEL_SCHEMA_VERSION = "polymarket-round9-ridge-model-v1"
 POLYMARKET_RIDGE_REPORT_SCHEMA_VERSION = "polymarket-round9-ridge-report-v1"
+POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION = (
+    "polymarket-round9-ridge-fit-claim-v1"
+)
 POLYMARKET_RIDGE_L2_GRID = (0.01, 0.1, 1.0)
 POLYMARKET_RIDGE_THRESHOLD_GRID = (0.5, 0.6, 0.7, 0.8, 0.9)
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
@@ -359,6 +363,236 @@ class PolymarketRidgeMaterialization:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class PolymarketRidgeFitClaim:
+    status: str
+    pipeline_report_sha256: str
+    dataset_sha256: str
+    report_sha256: str
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+def _ensure_polymarket_ridge_fit_claim_table(
+    store: PolymarketEvidenceStore,
+) -> None:
+    store.connect().execute(
+        """
+        CREATE TABLE IF NOT EXISTS polymarket_ridge_fit_claim (
+            pipeline_report_sha256 VARCHAR PRIMARY KEY,
+            schema_version VARCHAR NOT NULL,
+            contract_sha256 VARCHAR NOT NULL,
+            dataset_sha256 VARCHAR NOT NULL,
+            state VARCHAR NOT NULL CHECK(state IN ('started', 'failed', 'completed')),
+            report_sha256 VARCHAR,
+            failure_sha256 VARCHAR,
+            started_at_ms UBIGINT NOT NULL,
+            completed_at_ms UBIGINT
+        )
+        """
+    )
+
+
+def begin_polymarket_ridge_fit(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketRidgeDataset,
+) -> PolymarketRidgeFitClaim:
+    """Claim one parent dataset before any test evaluation."""
+
+    dataset.validated()
+    _ensure_polymarket_ridge_fit_claim_table(store)
+    connection = store.connect()
+    connection.execute("BEGIN TRANSACTION")
+    try:
+        claim = connection.execute(
+            """
+            SELECT schema_version, contract_sha256, dataset_sha256, state,
+                   report_sha256
+            FROM polymarket_ridge_fit_claim
+            WHERE pipeline_report_sha256 = ?
+            """,
+            [dataset.pipeline_report_sha256],
+        ).fetchone()
+        report_table_exists = bool(
+            connection.execute(
+                """
+                SELECT count(*) FROM information_schema.tables
+                WHERE table_schema = current_schema()
+                  AND table_name = 'polymarket_ridge_report'
+                """
+            ).fetchone()[0]
+        )
+        persisted = []
+        if report_table_exists:
+            persisted = connection.execute(
+                """
+                SELECT report_sha256, contract_sha256, dataset_sha256
+                FROM polymarket_ridge_report
+                WHERE pipeline_report_sha256 = ?
+                """,
+                [dataset.pipeline_report_sha256],
+            ).fetchall()
+        if len(persisted) > 1:
+            raise ValueError("multiple ridge reports exist for one pipeline")
+        if claim is not None and (
+            str(claim[0]) != POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION
+            or str(claim[1]) != POLYMARKET_RIDGE_CONTRACT_SHA256
+            or str(claim[2]) != dataset.dataset_sha256
+        ):
+            raise ValueError("Polymarket ridge fit claim identity is inconsistent")
+        if persisted:
+            report_sha256, contract_sha256, dataset_sha256 = map(str, persisted[0])
+            if (
+                contract_sha256 != POLYMARKET_RIDGE_CONTRACT_SHA256
+                or dataset_sha256 != dataset.dataset_sha256
+                or not _is_sha256(report_sha256)
+            ):
+                raise ValueError("persisted Polymarket ridge report identity is invalid")
+            now_ms = time.time_ns() // 1_000_000
+            if claim is None:
+                connection.execute(
+                    """
+                    INSERT INTO polymarket_ridge_fit_claim VALUES (
+                        ?, ?, ?, ?, 'completed', ?, NULL, ?, ?
+                    )
+                    """,
+                    [
+                        dataset.pipeline_report_sha256,
+                        POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION,
+                        POLYMARKET_RIDGE_CONTRACT_SHA256,
+                        dataset.dataset_sha256,
+                        report_sha256,
+                        now_ms,
+                        now_ms,
+                    ],
+                )
+            elif str(claim[3]) != "completed" or str(claim[4] or "") != report_sha256:
+                connection.execute(
+                    """
+                    UPDATE polymarket_ridge_fit_claim
+                    SET state = 'completed', report_sha256 = ?,
+                        failure_sha256 = NULL, completed_at_ms = ?
+                    WHERE pipeline_report_sha256 = ?
+                    """,
+                    [report_sha256, now_ms, dataset.pipeline_report_sha256],
+                )
+            connection.execute("COMMIT")
+            return PolymarketRidgeFitClaim(
+                status="existing",
+                pipeline_report_sha256=dataset.pipeline_report_sha256,
+                dataset_sha256=dataset.dataset_sha256,
+                report_sha256=report_sha256,
+            )
+        if claim is not None:
+            raise ValueError(
+                "Polymarket ridge test is already claimed:"
+                f"state={claim[3]}"
+            )
+        connection.execute(
+            """
+            INSERT INTO polymarket_ridge_fit_claim VALUES (
+                ?, ?, ?, ?, 'started', NULL, NULL, ?, NULL
+            )
+            """,
+            [
+                dataset.pipeline_report_sha256,
+                POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION,
+                POLYMARKET_RIDGE_CONTRACT_SHA256,
+                dataset.dataset_sha256,
+                time.time_ns() // 1_000_000,
+            ],
+        )
+        connection.execute("COMMIT")
+    except Exception:
+        connection.execute("ROLLBACK")
+        raise
+    return PolymarketRidgeFitClaim(
+        status="claimed",
+        pipeline_report_sha256=dataset.pipeline_report_sha256,
+        dataset_sha256=dataset.dataset_sha256,
+        report_sha256="",
+    )
+
+
+def complete_polymarket_ridge_fit(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketRidgeDataset,
+    report: PolymarketRidgeReport,
+) -> None:
+    """Bind a materialized report to its durable fit claim."""
+
+    dataset.validated()
+    report.validated()
+    if report.dataset_sha256 != dataset.dataset_sha256:
+        raise ValueError("Polymarket ridge completion dataset is inconsistent")
+    connection = store.connect()
+    persisted = connection.execute(
+        """
+        SELECT pipeline_report_sha256, contract_sha256, dataset_sha256
+        FROM polymarket_ridge_report WHERE report_sha256 = ?
+        """,
+        [report.report_sha256],
+    ).fetchone()
+    claim = connection.execute(
+        """
+        SELECT contract_sha256, dataset_sha256, state, report_sha256
+        FROM polymarket_ridge_fit_claim WHERE pipeline_report_sha256 = ?
+        """,
+        [dataset.pipeline_report_sha256],
+    ).fetchone()
+    if (
+        persisted is None
+        or str(persisted[0]) != dataset.pipeline_report_sha256
+        or str(persisted[1]) != POLYMARKET_RIDGE_CONTRACT_SHA256
+        or str(persisted[2]) != dataset.dataset_sha256
+        or claim is None
+        or str(claim[0]) != POLYMARKET_RIDGE_CONTRACT_SHA256
+        or str(claim[1]) != dataset.dataset_sha256
+        or str(claim[2]) not in {"started", "completed"}
+        or str(claim[3] or report.report_sha256) != report.report_sha256
+    ):
+        raise ValueError("Polymarket ridge completion claim is invalid")
+    connection.execute(
+        """
+        UPDATE polymarket_ridge_fit_claim
+        SET state = 'completed', report_sha256 = ?, failure_sha256 = NULL,
+            completed_at_ms = ?
+        WHERE pipeline_report_sha256 = ?
+        """,
+        [
+            report.report_sha256,
+            time.time_ns() // 1_000_000,
+            dataset.pipeline_report_sha256,
+        ],
+    )
+
+
+def fail_polymarket_ridge_fit(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketRidgeDataset,
+    error: BaseException,
+) -> None:
+    """Persist a failed claim so a retry cannot silently reopen test."""
+
+    failure_sha256 = _sha256(
+        {"error_type": type(error).__name__, "error_message": str(error)}
+    )
+    connection = store.connect()
+    connection.execute(
+        """
+        UPDATE polymarket_ridge_fit_claim
+        SET state = 'failed', failure_sha256 = ?, completed_at_ms = ?
+        WHERE pipeline_report_sha256 = ? AND state = 'started'
+        """,
+        [
+            failure_sha256,
+            time.time_ns() // 1_000_000,
+            dataset.pipeline_report_sha256,
+        ],
+    )
 
 
 def build_polymarket_ridge_dataset(
@@ -1614,6 +1848,7 @@ def materialize_polymarket_ridge_report(
 
 __all__ = [
     "POLYMARKET_RIDGE_CONTRACT_SHA256",
+    "POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION",
     "POLYMARKET_RIDGE_L2_GRID",
     "POLYMARKET_RIDGE_MODEL_SCHEMA_VERSION",
     "POLYMARKET_RIDGE_REPORT_SCHEMA_VERSION",
@@ -1622,14 +1857,18 @@ __all__ = [
     "PolymarketPolicyEvaluation",
     "PolymarketRidgeCandidate",
     "PolymarketRidgeDataset",
+    "PolymarketRidgeFitClaim",
     "PolymarketRidgeModel",
     "PolymarketRidgeMaterialization",
     "PolymarketRidgeObservation",
     "PolymarketRidgeReport",
     "PolymarketRidgeSplit",
     "build_polymarket_ridge_dataset",
+    "begin_polymarket_ridge_fit",
+    "complete_polymarket_ridge_fit",
     "evaluate_polymarket_policy",
     "fit_and_evaluate_polymarket_ridge",
+    "fail_polymarket_ridge_fit",
     "fit_polymarket_ridge_model",
     "load_polymarket_ridge_dataset",
     "load_polymarket_ridge_evidence",
