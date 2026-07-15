@@ -640,7 +640,7 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
     assert any(error.startswith("event_id_mismatch:") for error in errors)
 
 
-def test_finished_report_binds_evidence_counts_against_valid_late_append(
+def test_terminal_recorder_evidence_rejects_late_append(
     tmp_path,
 ) -> None:
     with PolymarketEvidenceStore(tmp_path / "closed-run.duckdb") as store:
@@ -653,32 +653,29 @@ def test_finished_report_binds_evidence_counts_against_valid_late_append(
             errors=(),
         )
         assert report.status == "complete"
-        store.append_messages(
-            "closed-run",
-            [
-                _message(
-                    "polymarket_rtds",
-                    {
-                        "topic": "crypto_prices",
-                        "type": "update",
-                        "timestamp": EPOCH * 1_000 + 3,
-                        "payload": {
-                            "symbol": "ethusdt",
-                            "timestamp": EPOCH * 1_000 + 2,
-                            "value": "2500",
+        with pytest.raises(ValueError, match="evidence is immutable"):
+            store.append_messages(
+                "closed-run",
+                [
+                    _message(
+                        "polymarket_rtds",
+                        {
+                            "topic": "crypto_prices",
+                            "type": "update",
+                            "timestamp": EPOCH * 1_000 + 3,
+                            "payload": {
+                                "symbol": "ethusdt",
+                                "timestamp": EPOCH * 1_000 + 2,
+                                "value": "2500",
+                            },
                         },
-                    },
-                    sequence=3,
-                )
-            ],
-        )
+                        sequence=3,
+                    )
+                ],
+            )
         errors = store.integrity_errors("closed-run")
 
-    assert "recorder_report_evidence_mismatch:closed-run:raw_message_count" in errors
-    assert (
-        "recorder_report_evidence_mismatch:closed-run:normalized_event_count"
-        in errors
-    )
+    assert errors == ()
 
 
 def test_invalid_stream_payload_fails_run_and_gap_validation_is_fail_closed(
