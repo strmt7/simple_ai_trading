@@ -19,6 +19,7 @@ from simple_ai_trading.cli import (
     _polymarket_held_out_prediction_evidence,
     _polymarket_latency_scenarios,
     _polymarket_matched_uplift_periods,
+    _polymarket_profile_prediction_evidence,
 )
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
 from simple_ai_trading.polymarket import (
@@ -38,6 +39,7 @@ from simple_ai_trading.polymarket_features import (
 )
 from simple_ai_trading.polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
+    POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION,
     POLYMARKET_PROFILE_CONTRACT_SHA256,
     POLYMARKET_PROFILE_FEATURES,
     POLYMARKET_PROFILE_L2_CANDIDATES,
@@ -1471,8 +1473,15 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     dataset = build_polymarket_model_dataset(source, markets)
     split = split_polymarket_model_dataset(dataset)
     model, probability_report = fit_polymarket_offset_model(dataset, split)
+    profile_model, profile_probability_report = (
+        fit_polymarket_profile_challenger(dataset, split, model)
+    )
     baseline_probabilities = [item.baseline_up_probability for item in split.test]
     model_probabilities = predict_polymarket_probabilities(model, split.test)
+    profile_probabilities = predict_polymarket_profile_probabilities(
+        profile_model,
+        split.test,
+    )
     replay = _replay_fixture(split.test, markets)
     config = PolymarketExecutionResearchConfig()
     baseline_execution = evaluate_polymarket_execution_policy(
@@ -1484,6 +1493,12 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     model_execution = evaluate_polymarket_execution_policy(
         split.test,
         model_probabilities,
+        replay,
+        config=config,
+    )
+    profile_model_execution = evaluate_polymarket_execution_policy(
+        split.test,
+        profile_probabilities,
         replay,
         config=config,
     )
@@ -1527,6 +1542,45 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         baseline_probabilities,
         model_probabilities,
     )
+    profile_prediction_evidence = _polymarket_profile_prediction_evidence(
+        split.test,
+        profile_probabilities,
+        control_rows_sha256=str(prediction_evidence["rows_sha256"]),
+    )
+    profile_gates = {
+        "validation_log_loss_not_worse_than_control": (
+            profile_probability_report.validation_log_loss_delta_vs_control <= 0.0
+        ),
+        "test_log_loss_strictly_better_than_control": (
+            profile_probability_report.test_log_loss_delta_vs_control < 0.0
+        ),
+        "test_brier_score_strictly_better_than_control": (
+            profile_probability_report.test_brier_delta_vs_control < 0.0
+        ),
+        "minimum_untouched_test_time_groups_met": (
+            len(split.test_group_starts_ms) >= 30
+        ),
+        "positive_after_cost_at_every_latency": (
+            profile_model_execution.net_realized_pnl_quote > 0
+        ),
+        "improved_after_cost_at_every_latency": (
+            profile_model_execution.net_realized_pnl_quote
+            > model_execution.net_realized_pnl_quote
+        ),
+        "return_on_deployed_not_worse_at_every_latency": (
+            profile_model_execution.return_on_deployed_capital
+            >= model_execution.return_on_deployed_capital
+        ),
+        "maximum_drawdown_not_worse_at_every_latency": (
+            profile_model_execution.maximum_drawdown_fraction
+            <= model_execution.maximum_drawdown_fraction
+        ),
+        "all_order_outcomes_terminal": all(
+            trade.execution_state != "UNKNOWN"
+            for trade in profile_model_execution.trades
+        ),
+    }
+    profile_promotion_gates_passed = all(profile_gates.values())
     payload: dict[str, object] = {
         "schema_version": POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
         "run_id": source.run_id,
@@ -1542,9 +1596,13 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         "split": split.summary(),
         "model": model.asdict(),
         "probability_report": probability_report.asdict(),
+        "profile_model": profile_model.asdict(),
+        "profile_probability_report": profile_probability_report.asdict(),
         "held_out_prediction_evidence": prediction_evidence,
+        "profile_held_out_prediction_evidence": profile_prediction_evidence,
         "baseline_execution": baseline_execution.asdict(),
         "model_execution": model_execution.asdict(),
+        "profile_model_execution": profile_model_execution.asdict(),
         "model_retry_execution": model_retry_execution.asdict(),
         "retry_challenger": {
             "schema_version": POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
@@ -1559,6 +1617,26 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
             "portfolio_claim": False,
             "leverage_applied": False,
         },
+        "profile_challenger": {
+            "schema_version": POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION,
+            "contract_sha256": POLYMARKET_PROFILE_CONTRACT_SHA256,
+            "control_policy": "model",
+            "challenger_policy": "profile_model",
+            "gates": profile_gates,
+            "promotion_gates_passed": profile_promotion_gates_passed,
+            "accepted": False,
+            "status": (
+                "awaiting_later_prospective_confirmation"
+                if profile_promotion_gates_passed
+                else "exploratory_gates_failed"
+            ),
+            "requires_later_prospective_confirmation": True,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        },
         "execution_latency_sensitivity": {
             "schema_version": "polymarket-execution-latency-sensitivity-v1",
             "primary_network_latency_ms": 100,
@@ -1566,6 +1644,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
             "policies": {
                 "baseline": {"100": baseline_execution.asdict()},
                 "model": {"100": model_execution.asdict()},
+                "profile_model": {"100": profile_model_execution.asdict()},
                 "model_retry": {"100": model_retry_execution.asdict()},
             },
             "trading_authority": False,
@@ -1609,6 +1688,9 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
                 > baseline_execution.net_realized_pnl_quote
             ),
             "retry_challenger_accepted": all(retry_gates.values()),
+            "profile_challenger_promotion_gates_passed": (
+                profile_promotion_gates_passed
+            ),
             "all_positions_officially_settled": True,
             "all_order_outcomes_terminal": True,
             "ai_enabled": False,
@@ -1649,24 +1731,34 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         split_sha256=split.split_sha256,
         model_sha256=model.model_sha256,
         probability_report_sha256=probability_report.report_sha256,
+        profile_model_sha256=profile_model.model_sha256,
+        profile_probability_report_sha256=(
+            profile_probability_report.report_sha256
+        ),
         held_out_rows_sha256=str(prediction_evidence["rows_sha256"]),
+        profile_held_out_rows_sha256=str(
+            profile_prediction_evidence["rows_sha256"]
+        ),
         execution_report_sha256_by_policy_and_latency={
             "baseline": {"100": baseline_execution.report_sha256},
             "model": {"100": model_execution.report_sha256},
+            "profile_model": {"100": profile_model_execution.report_sha256},
             "model_retry": {"100": model_retry_execution.report_sha256},
         },
         verified_feature_row_count=len(source.rows),
         verified_model_sample_count=len(dataset.samples),
         verified_held_out_sample_count=len(split.test),
-        verified_execution_scenario_count=3,
+        verified_execution_scenario_count=4,
         verified_execution_trade_count=(
             len(baseline_execution.trades)
             + len(model_execution.trades)
+            + len(profile_model_execution.trades)
             + len(model_retry_execution.trades)
         ),
         verified_filled_order_count=(
             baseline_execution.filled_order_count
             + model_execution.filled_order_count
+            + profile_model_execution.filled_order_count
             + model_retry_execution.filled_order_count
         ),
         checks={name: True for name in POLYMARKET_SOURCE_VERIFICATION_CHECKS},
@@ -1710,7 +1802,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     incomplete_source_verification[
         "execution_report_sha256_by_policy_and_latency"
     ].pop("model_retry")
-    incomplete_source_verification["verified_execution_scenario_count"] = 2
+    incomplete_source_verification["verified_execution_scenario_count"] = 3
     incomplete_source_verification["verified_execution_trade_count"] -= len(
         model_retry_execution.trades
     )
@@ -1782,6 +1874,33 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     selection_text = " ".join(selection_chart.itertext())
     assert "INNER TRAINING FOLDS" in selection_text
     assert "OUTER VALIDATION GATE" in selection_text
+    with (
+        research_root / "latest" / "tables" / "profile-model-selection.csv"
+    ).open(encoding="utf-8", newline="") as handle:
+        profile_selection_rows = list(csv.DictReader(handle))
+    assert len(profile_selection_rows) == 23
+    assert sum(
+        row["stage"] == "inner_selection" for row in profile_selection_rows
+    ) == 21
+    assert {
+        row["profile"] for row in profile_selection_rows if row["profile"]
+    } == {
+        "diffusion_core",
+        "fast_cross_venue_flow",
+        "full",
+        "prediction_book_state",
+    }
+    profile_selection_chart = ET.fromstring(
+        (
+            research_root
+            / "latest"
+            / "charts"
+            / "profile-model-selection.svg"
+        ).read_text(encoding="utf-8")
+    )
+    profile_selection_text = " ".join(profile_selection_chart.itertext())
+    assert "FROZEN PROFILE CHALLENGER GRID" in profile_selection_text.upper()
+    assert "OUTER VALIDATION GATE" in profile_selection_text
 
     gate_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
     gate_tampered["evidence_gates"]["after_cost_execution_improved"] = not bool(

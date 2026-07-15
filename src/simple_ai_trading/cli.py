@@ -122,10 +122,14 @@ from .polymarket_features import (
     materialize_polymarket_feature_dataset,
 )
 from .polymarket_model import (
+    POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION,
+    POLYMARKET_PROFILE_CONTRACT_SHA256,
     PolymarketModelConfig,
     build_polymarket_model_dataset,
     fit_polymarket_offset_model,
+    fit_polymarket_profile_challenger,
     predict_polymarket_probabilities,
+    predict_polymarket_profile_probabilities,
     split_polymarket_model_dataset,
 )
 from .polymarket_model_execution import (
@@ -6346,6 +6350,52 @@ def _polymarket_held_out_prediction_evidence(
     }
 
 
+def _polymarket_profile_prediction_evidence(
+    samples: Sequence[Any],
+    profile_probabilities: Iterable[float],
+    *,
+    control_rows_sha256: str,
+) -> dict[str, object]:
+    sample_rows = tuple(samples)
+    probabilities = tuple(float(value) for value in profile_probabilities)
+    if (
+        not sample_rows
+        or len(sample_rows) != len(probabilities)
+        or len(control_rows_sha256) != 64
+        or any(not 0.0 < value < 1.0 for value in probabilities)
+    ):
+        raise ValueError("held-out Polymarket profile evidence is incomplete")
+    rows = [
+        {
+            "sample_id": sample.sample_id,
+            "profile_model_up_probability": format(probability, ".17g"),
+        }
+        for sample, probability in zip(
+            sample_rows,
+            probabilities,
+            strict=True,
+        )
+    ]
+    canonical = json.dumps(
+        rows,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return {
+        "schema_version": "polymarket-profile-held-out-predictions-v1",
+        "role": "untouched_chronological_test",
+        "control_rows_sha256": control_rows_sha256,
+        "row_count": len(rows),
+        "rows_sha256": hashlib.sha256(canonical).hexdigest(),
+        "rows": rows,
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+    }
+
+
 def _polymarket_latency_scenarios(
     value: object,
     *,
@@ -6455,6 +6505,14 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 model_dataset,
                 split,
             )
+            progress("profile-challenger-fit")
+            profile_model, profile_probability_report = (
+                fit_polymarket_profile_challenger(
+                    model_dataset,
+                    split,
+                    model,
+                )
+            )
             test_conditions = tuple(
                 sorted({item.condition_id for item in split.test})
             )
@@ -6476,6 +6534,10 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 model,
                 split.test,
             )
+            profile_probabilities = predict_polymarket_profile_probabilities(
+                profile_model,
+                split.test,
+            )
             progress(
                 "held-out-evidence",
                 selected_candidate=model.selected_candidate,
@@ -6485,6 +6547,11 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 split.test,
                 baseline_probabilities,
                 model_probabilities,
+            )
+            profile_prediction_evidence = _polymarket_profile_prediction_evidence(
+                split.test,
+                profile_probabilities,
+                control_rows_sha256=str(prediction_evidence["rows_sha256"]),
             )
             execution_config = PolymarketExecutionResearchConfig(
                 submission_latency_ms=int(args.latency_ms),
@@ -6515,6 +6582,16 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 config=execution_config,
             )
             progress(
+                "execution-profile-model",
+                latency_ms=execution_config.submission_latency_ms,
+            )
+            profile_model_execution = evaluate_polymarket_execution_policy(
+                split.test,
+                profile_probabilities,
+                execution_replay,
+                config=execution_config,
+            )
+            progress(
                 "execution-model-retry",
                 latency_ms=execution_config.submission_latency_ms,
             )
@@ -6527,6 +6604,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             latency_sensitivity: dict[str, dict[int, Any]] = {
                 "baseline": {},
                 "model": {},
+                "profile_model": {},
                 "model_retry": {},
             }
             for latency_ms in latency_scenarios:
@@ -6551,6 +6629,16 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     else evaluate_polymarket_execution_policy(
                         split.test,
                         model_probabilities,
+                        execution_replay,
+                        config=scenario_config,
+                    )
+                )
+                latency_sensitivity["profile_model"][latency_ms] = (
+                    profile_model_execution
+                    if latency_ms == execution_config.submission_latency_ms
+                    else evaluate_polymarket_execution_policy(
+                        split.test,
+                        profile_probabilities,
                         execution_replay,
                         config=scenario_config,
                     )
@@ -6777,6 +6865,68 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "portfolio_claim": False,
             "leverage_applied": False,
         }
+        profile_latency_reports = latency_sensitivity["profile_model"]
+        profile_control_reports = latency_sensitivity["model"]
+        profile_gates = {
+            "validation_log_loss_not_worse_than_control": (
+                profile_probability_report.validation_log_loss_delta_vs_control
+                <= 0.0
+            ),
+            "test_log_loss_strictly_better_than_control": (
+                profile_probability_report.test_log_loss_delta_vs_control < 0.0
+            ),
+            "test_brier_score_strictly_better_than_control": (
+                profile_probability_report.test_brier_delta_vs_control < 0.0
+            ),
+            "minimum_untouched_test_time_groups_met": (
+                len(split.test_group_starts_ms) >= 30
+            ),
+            "positive_after_cost_at_every_latency": all(
+                profile_latency_reports[latency].net_realized_pnl_quote > 0
+                for latency in latency_scenarios
+            ),
+            "improved_after_cost_at_every_latency": all(
+                profile_latency_reports[latency].net_realized_pnl_quote
+                > profile_control_reports[latency].net_realized_pnl_quote
+                for latency in latency_scenarios
+            ),
+            "return_on_deployed_not_worse_at_every_latency": all(
+                profile_latency_reports[latency].return_on_deployed_capital
+                >= profile_control_reports[latency].return_on_deployed_capital
+                for latency in latency_scenarios
+            ),
+            "maximum_drawdown_not_worse_at_every_latency": all(
+                profile_latency_reports[latency].maximum_drawdown_fraction
+                <= profile_control_reports[latency].maximum_drawdown_fraction
+                for latency in latency_scenarios
+            ),
+            "all_order_outcomes_terminal": all(
+                trade.execution_state != "UNKNOWN"
+                for report in profile_latency_reports.values()
+                for trade in report.trades
+            ),
+        }
+        profile_promotion_gates_passed = all(profile_gates.values())
+        profile_challenger = {
+            "schema_version": POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION,
+            "contract_sha256": POLYMARKET_PROFILE_CONTRACT_SHA256,
+            "control_policy": "model",
+            "challenger_policy": "profile_model",
+            "gates": profile_gates,
+            "promotion_gates_passed": profile_promotion_gates_passed,
+            "accepted": False,
+            "status": (
+                "awaiting_later_prospective_confirmation"
+                if profile_promotion_gates_passed
+                else "exploratory_gates_failed"
+            ),
+            "requires_later_prospective_confirmation": True,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
         latency_sensitivity_payload = {
             "schema_version": "polymarket-execution-latency-sensitivity-v1",
             "primary_network_latency_ms": execution_config.submission_latency_ms,
@@ -6815,6 +6965,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 for latency in latency_scenarios
             ),
             "retry_challenger_accepted": retry_accepted,
+            "profile_challenger_promotion_gates_passed": (
+                profile_promotion_gates_passed
+            ),
             "all_positions_officially_settled": (
                 all(
                     report.filled_order_count
@@ -6849,11 +7002,18 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "split": split.summary(),
             "model": model.asdict(),
             "probability_report": probability_report.asdict(),
+            "profile_model": profile_model.asdict(),
+            "profile_probability_report": profile_probability_report.asdict(),
             "held_out_prediction_evidence": prediction_evidence,
+            "profile_held_out_prediction_evidence": (
+                profile_prediction_evidence
+            ),
             "baseline_execution": baseline_execution.asdict(),
             "model_execution": model_execution.asdict(),
+            "profile_model_execution": profile_model_execution.asdict(),
             "model_retry_execution": model_retry_execution.asdict(),
             "retry_challenger": retry_challenger,
+            "profile_challenger": profile_challenger,
             "execution_latency_sensitivity": latency_sensitivity_payload,
             "ai": ai_payload,
             "confirmatory_evidence_contract": {
@@ -6905,6 +7065,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             f"baseline_net={baseline_execution.net_realized_pnl_quote} "
             f"model_net={model_execution.net_realized_pnl_quote} "
             f"model_fills={model_execution.filled_order_count} "
+            f"profile_net={profile_model_execution.net_realized_pnl_quote} "
+            f"profile_fills={profile_model_execution.filled_order_count} "
+            f"profile_gates={profile_promotion_gates_passed} "
             f"retry_net={model_retry_execution.net_realized_pnl_quote} "
             f"retry_fills={model_retry_execution.filled_order_count} "
             f"retry_accepted={retry_accepted}"

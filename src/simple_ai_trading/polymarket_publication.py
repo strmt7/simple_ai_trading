@@ -18,6 +18,15 @@ import shutil
 from typing import Any
 
 from .ai_uplift import assess_ai_uplift
+from .polymarket_model import (
+    POLYMARKET_MODEL_FEATURE_NAMES,
+    POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION,
+    POLYMARKET_PROFILE_CONTRACT_SHA256,
+    POLYMARKET_PROFILE_FEATURES,
+    POLYMARKET_PROFILE_L2_CANDIDATES,
+    POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION,
+    POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION,
+)
 from .polymarket_model_execution import (
     POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION,
     POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
@@ -30,9 +39,10 @@ from .polymarket_source_verification import (
 
 
 POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION = (
-    "polymarket-prospective-model-experiment-v2"
+    "polymarket-prospective-model-experiment-v3"
 )
 _PREDICTION_SCHEMA = "polymarket-held-out-predictions-v2"
+_PROFILE_PREDICTION_SCHEMA = "polymarket-profile-held-out-predictions-v1"
 _MODEL_SAMPLE_SCHEMA = "polymarket-model-sample-v4"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
@@ -40,7 +50,7 @@ _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
 _AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v2"
 _ASSETS = ("BTC", "ETH", "SOL")
-_POLICIES = ("baseline", "model", "model_retry", "ai")
+_POLICIES = ("baseline", "model", "profile_model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
     "direct_distance_from_chainlink_open_bps",
     "direct_chainlink_basis_bps",
@@ -96,12 +106,20 @@ _COLORS = {
     "muted": "#a9b8cc",
     "baseline": "#94a3b8",
     "model": "#22c55e",
+    "profile_model": "#f97316",
     "model_retry": "#eab308",
     "ai": "#38bdf8",
     "BTC": "#f59e0b",
     "ETH": "#8b5cf6",
     "SOL": "#14b8a6",
     "negative": "#fb7185",
+}
+_POLICY_DASH = {
+    "baseline": "",
+    "model": "12 5",
+    "profile_model": "7 4",
+    "model_retry": "3 5",
+    "ai": "14 4 3 4",
 }
 
 
@@ -424,11 +442,225 @@ def _validate_nested_model_selection(
         raise ValueError("nested model fold boundaries are not chronological")
 
 
+def _profile_candidate_details(name: str) -> tuple[str, tuple[str, ...], float]:
+    for profile, feature_names in POLYMARKET_PROFILE_FEATURES:
+        for l2 in POLYMARKET_PROFILE_L2_CANDIDATES:
+            candidate = f"offset_profile_{profile}_l2_{format(l2, '.17g')}"
+            if name == candidate:
+                return profile, feature_names, l2
+    raise ValueError("unknown frozen Polymarket profile candidate")
+
+
+def _validate_profile_model_selection(
+    profile_model: Mapping[str, Any],
+    profile_probability: Mapping[str, Any],
+    control_model: Mapping[str, Any],
+    control_probability: Mapping[str, Any],
+) -> None:
+    _verify_claims(profile_model, name="profile model")
+    _verify_claims(profile_probability, name="profile probability report")
+    _verify_embedded_digest(profile_model, "model_sha256", name="profile model")
+    _verify_embedded_digest(
+        profile_probability,
+        "report_sha256",
+        name="profile probability report",
+    )
+    if (
+        profile_model.get("schema_version")
+        != POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION
+        or profile_probability.get("schema_version")
+        != POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION
+        or profile_model.get("contract_sha256")
+        != POLYMARKET_PROFILE_CONTRACT_SHA256
+        or profile_probability.get("contract_sha256")
+        != POLYMARKET_PROFILE_CONTRACT_SHA256
+        or profile_model.get("control_model_sha256")
+        != control_model.get("model_sha256")
+        or profile_probability.get("control_model_sha256")
+        != control_model.get("model_sha256")
+        or profile_probability.get("challenger_model_sha256")
+        != profile_model.get("model_sha256")
+        or profile_probability.get("selected_candidate")
+        != profile_model.get("selected_candidate")
+        or _canonical_json(profile_model.get("config"))
+        != _canonical_json(control_model.get("config"))
+        or tuple(profile_model.get("feature_names", ()))
+        != POLYMARKET_MODEL_FEATURE_NAMES
+        or profile_model.get("inner_fold_boundaries_ms")
+        != control_model.get("inner_fold_boundaries_ms")
+    ):
+        raise ValueError("Polymarket profile model provenance is inconsistent")
+    if (
+        _canonical_json(profile_probability.get("baseline_metrics"))
+        != _canonical_json(control_probability.get("baseline_metrics"))
+        or _canonical_json(profile_probability.get("control_metrics"))
+        != _canonical_json(control_probability.get("model_metrics"))
+    ):
+        raise ValueError("Polymarket profile control metrics drifted")
+
+    candidate_names = tuple(
+        f"offset_profile_{profile}_l2_{format(l2, '.17g')}"
+        for profile, _feature_names in POLYMARKET_PROFILE_FEATURES
+        for l2 in POLYMARKET_PROFILE_L2_CANDIDATES
+    )
+    inner_losses = _named_losses(
+        profile_model.get("candidate_inner_log_losses"),
+        "profile inner model losses",
+    )
+    if tuple(name for name, _loss in inner_losses) != (
+        "market_baseline",
+        *candidate_names,
+    ):
+        raise ValueError("Polymarket profile candidate grid drifted")
+
+    def selection_key(item: tuple[str, float]) -> tuple[float, int, float, str]:
+        profile, feature_names, l2 = _profile_candidate_details(item[0])
+        return item[1], len(feature_names), -l2, profile
+
+    inner_selected, _inner_loss = min(inner_losses[1:], key=selection_key)
+    if profile_model.get("inner_selected_candidate") != inner_selected:
+        raise ValueError("Polymarket profile inner selection is inconsistent")
+    validation_losses = _named_losses(
+        profile_model.get("validation_gate_log_losses"),
+        "profile validation gate losses",
+    )
+    if tuple(name for name, _loss in validation_losses) != (
+        "market_baseline",
+        inner_selected,
+    ):
+        raise ValueError("Polymarket profile validation gate drifted")
+    config = _as_mapping(profile_model.get("config"), "profile model config")
+    required = _finite_float(
+        config.get("minimum_validation_log_loss_improvement"),
+        "profile minimum validation improvement",
+    )
+    if (
+        tuple(_finite_float(value, "profile L2") for value in config["l2_candidates"])
+        != POLYMARKET_PROFILE_L2_CANDIDATES
+        or int(config.get("inner_fold_count", -1)) != 3
+        or not math.isclose(required, 0.0001, rel_tol=0.0, abs_tol=1e-15)
+    ):
+        raise ValueError("Polymarket profile frozen grid is inconsistent")
+    gate_passed = validation_losses[1][1] <= validation_losses[0][1] - required
+    expected_selected = inner_selected if gate_passed else "market_baseline"
+    selected = str(profile_model.get("selected_candidate", ""))
+    coefficients = tuple(
+        _finite_float(value, "profile coefficient")
+        for value in profile_model.get("coefficients", ())
+    )
+    width = len(POLYMARKET_MODEL_FEATURE_NAMES)
+    parameter_arrays = tuple(
+        tuple(
+            _finite_float(value, f"profile {name}")
+            for value in profile_model.get(name, ())
+        )
+        for name in (
+            "winsor_lower",
+            "winsor_upper",
+            "robust_center",
+            "robust_scale",
+        )
+    )
+    if (
+        selected != expected_selected
+        or len(coefficients) != width + 1
+        or any(len(values) != width for values in parameter_arrays)
+    ):
+        raise ValueError("Polymarket profile selected parameters are inconsistent")
+    if selected == "market_baseline":
+        if (
+            profile_model.get("selected_profile") is not None
+            or profile_model.get("selected_feature_names") != []
+            or profile_model.get("selected_l2") is not None
+            or any(value != 0.0 for value in coefficients)
+        ):
+            raise ValueError("Polymarket profile fallback is inconsistent")
+    else:
+        profile, feature_names, l2 = _profile_candidate_details(selected)
+        selected_names = tuple(profile_model.get("selected_feature_names", ()))
+        if (
+            profile_model.get("selected_profile") != profile
+            or selected_names != feature_names
+            or _finite_float(profile_model.get("selected_l2"), "profile selected L2")
+            != l2
+        ):
+            raise ValueError("Polymarket profile accepted candidate is inconsistent")
+        active = set(feature_names)
+        if any(
+            coefficients[index + 1] != 0.0
+            for index, name in enumerate(POLYMARKET_MODEL_FEATURE_NAMES)
+            if name not in active
+        ):
+            raise ValueError("Polymarket excluded profile coefficients are not zero")
+
+    baseline_roles = _as_mapping(
+        profile_probability.get("baseline_metrics"),
+        "profile baseline metrics",
+    )
+    control_roles = _as_mapping(
+        profile_probability.get("control_metrics"),
+        "profile control metrics",
+    )
+    challenger_roles = _as_mapping(
+        profile_probability.get("challenger_metrics"),
+        "profile challenger metrics",
+    )
+    if set(baseline_roles) != {"train", "validation", "test"} or set(
+        challenger_roles
+    ) != {"train", "validation", "test"}:
+        raise ValueError("Polymarket profile probability roles are incomplete")
+    selected_validation_loss = (
+        validation_losses[1][1] if gate_passed else validation_losses[0][1]
+    )
+    comparisons = (
+        (
+            _finite_float(
+                _as_mapping(
+                    baseline_roles["validation"],
+                    "profile baseline validation metrics",
+                )["weighted_log_loss"],
+                "profile baseline validation log loss",
+            ),
+            validation_losses[0][1],
+        ),
+        (
+            _finite_float(
+                _as_mapping(
+                    challenger_roles["validation"],
+                    "profile challenger validation metrics",
+                )["weighted_log_loss"],
+                "profile challenger validation log loss",
+            ),
+            selected_validation_loss,
+        ),
+        (
+            _finite_float(
+                profile_probability.get("validation_log_loss_delta_vs_control"),
+                "profile validation delta",
+            ),
+            selected_validation_loss
+            - _finite_float(
+                _as_mapping(
+                    control_roles["validation"],
+                    "profile control validation metrics",
+                )["weighted_log_loss"],
+                "profile control validation log loss",
+            ),
+        ),
+    )
+    if any(
+        not math.isclose(actual, expected, rel_tol=1e-12, abs_tol=1e-12)
+        for actual, expected in comparisons
+    ):
+        raise ValueError("Polymarket profile validation scores do not reconcile")
+
+
 @dataclass(frozen=True)
 class ValidatedPolymarketArtifact:
     payload: Mapping[str, Any]
     artifact_sha256: str
     predictions: tuple[Mapping[str, Any], ...]
+    profile_predictions: tuple[Mapping[str, Any], ...]
     executions: Mapping[str, Mapping[str, Any]]
 
 
@@ -1604,6 +1836,11 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
 
     model = _as_mapping(payload.get("model"), "model")
     probability = _as_mapping(payload.get("probability_report"), "probability report")
+    profile_model = _as_mapping(payload.get("profile_model"), "profile model")
+    profile_probability = _as_mapping(
+        payload.get("profile_probability_report"),
+        "profile probability report",
+    )
     split = _as_mapping(payload.get("split"), "split")
     model_dataset = _as_mapping(payload.get("model_dataset"), "model dataset")
     feature_dataset = _as_mapping(payload.get("feature_dataset"), "feature dataset")
@@ -1619,12 +1856,25 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         and probability.get("source_dataset_sha256")
         == model_dataset.get("dataset_sha256")
         and probability.get("source_split_sha256") == split.get("split_sha256")
+        and profile_model.get("source_dataset_sha256")
+        == model_dataset.get("dataset_sha256")
+        and profile_model.get("source_split_sha256") == split.get("split_sha256")
+        and profile_probability.get("source_dataset_sha256")
+        == model_dataset.get("dataset_sha256")
+        and profile_probability.get("source_split_sha256")
+        == split.get("split_sha256")
         and model_dataset.get("source_dataset_sha256")
         == feature_dataset.get("dataset_sha256")
         and payload.get("run_id") == feature_dataset.get("run_id")
     ):
         raise ValueError("Polymarket model provenance chain is inconsistent")
     _validate_nested_model_selection(model, probability, split)
+    _validate_profile_model_selection(
+        profile_model,
+        profile_probability,
+        model,
+        probability,
+    )
     if model_dataset.get("training_ready") is not True:
         raise ValueError("Polymarket model dataset was not training-ready")
 
@@ -1864,6 +2114,105 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         name="model test metrics",
     )
 
+    profile_evidence = _as_mapping(
+        payload.get("profile_held_out_prediction_evidence"),
+        "profile held-out prediction evidence",
+    )
+    _verify_claims(profile_evidence, name="profile held-out prediction evidence")
+    _require_exact_keys(
+        profile_evidence,
+        {
+            "schema_version",
+            "role",
+            "control_rows_sha256",
+            "row_count",
+            "rows_sha256",
+            "rows",
+            "trading_authority",
+            "execution_claim",
+            "profitability_claim",
+        },
+        name="profile held-out prediction evidence",
+    )
+    profile_rows = _as_rows(
+        profile_evidence.get("rows"),
+        "profile held-out prediction rows",
+    )
+    if (
+        profile_evidence.get("schema_version") != _PROFILE_PREDICTION_SCHEMA
+        or profile_evidence.get("role") != "untouched_chronological_test"
+        or profile_evidence.get("control_rows_sha256")
+        != evidence.get("rows_sha256")
+        or int(profile_evidence.get("row_count", -1)) != len(predictions)
+        or len(profile_rows) != len(predictions)
+        or profile_evidence.get("rows_sha256")
+        != _canonical_sha256(profile_rows)
+    ):
+        raise ValueError("profile held-out prediction evidence is invalid")
+    profile_predictions: list[Mapping[str, Any]] = []
+    for control_row, profile_row in zip(predictions, profile_rows, strict=True):
+        _require_exact_keys(
+            profile_row,
+            {"sample_id", "profile_model_up_probability"},
+            name="profile held-out prediction row",
+        )
+        profile_value = _finite_float(
+            profile_row.get("profile_model_up_probability"),
+            "profile model probability",
+        )
+        if (
+            profile_row.get("sample_id") != control_row.get("sample_id")
+            or not 0.0 < profile_value < 1.0
+            or str(profile_row.get("profile_model_up_probability"))
+            != format(profile_value, ".17g")
+        ):
+            raise ValueError("profile held-out prediction row is malformed")
+        profile_predictions.append(
+            {
+                **dict(control_row),
+                "profile_model_up_probability": profile_row[
+                    "profile_model_up_probability"
+                ],
+            }
+        )
+    profile_test_metrics = _as_mapping(
+        _as_mapping(
+            profile_probability.get("challenger_metrics"),
+            "profile challenger metrics",
+        ).get("test"),
+        "profile challenger test metrics",
+    )
+    expected_profile_test = _probability_metrics_from_rows(
+        profile_predictions,
+        "profile_model_up_probability",
+    )
+    _validate_probability_metrics(
+        profile_test_metrics,
+        expected_profile_test,
+        name="profile challenger test metrics",
+    )
+    for reported, expected, name in (
+        (
+            profile_probability.get("test_log_loss_delta_vs_control"),
+            float(expected_profile_test["weighted_log_loss"])
+            - float(expected_model_test["weighted_log_loss"]),
+            "profile test log-loss delta",
+        ),
+        (
+            profile_probability.get("test_brier_delta_vs_control"),
+            float(expected_profile_test["weighted_brier_score"])
+            - float(expected_model_test["weighted_brier_score"]),
+            "profile test Brier delta",
+        ),
+    ):
+        if not math.isclose(
+            _finite_float(reported, name),
+            expected,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(f"{name} does not reconcile")
+
     validation_losses = _named_losses(
         model["validation_gate_log_losses"],
         "outer validation gate losses",
@@ -1952,6 +2301,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
     for policy, key in (
         ("baseline", "baseline_execution"),
         ("model", "model_execution"),
+        ("profile_model", "profile_model_execution"),
         ("model_retry", "model_retry_execution"),
     ):
         report = _as_mapping(payload.get(key), f"{policy} execution")
@@ -1971,6 +2321,9 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         executions["ai"] = ai_execution
 
     for policy, report in executions.items():
+        probability_rows = (
+            profile_predictions if policy == "profile_model" else predictions
+        )
         _validate_execution_report(
             report,
             conditions=conditions,
@@ -1984,11 +2337,15 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         )
         _validate_execution_probability_binding(
             report,
-            predictions,
+            probability_rows,
             probability_key=(
                 "baseline_up_probability"
                 if policy == "baseline"
-                else "model_up_probability"
+                else (
+                    "profile_model_up_probability"
+                    if policy == "profile_model"
+                    else "model_up_probability"
+                )
             ),
             name=f"{policy} primary execution",
         )
@@ -2052,11 +2409,19 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             )
             _validate_execution_probability_binding(
                 scenario,
-                predictions,
+                (
+                    profile_predictions
+                    if policy == "profile_model"
+                    else predictions
+                ),
                 probability_key=(
                     "baseline_up_probability"
                     if policy == "baseline"
-                    else "model_up_probability"
+                    else (
+                        "profile_model_up_probability"
+                        if policy == "profile_model"
+                        else "model_up_probability"
+                    )
                 ),
                 name=f"{policy} {latency}ms execution",
             )
@@ -2217,6 +2582,152 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         )
     ):
         raise ValueError("model retry challenger does not reconstruct")
+    profile_latency_reports = _as_mapping(
+        sensitivity_policies["profile_model"],
+        "profile model latency reports",
+    )
+    profile_validation_delta = _finite_float(
+        profile_probability["validation_log_loss_delta_vs_control"],
+        "profile validation log-loss delta",
+    )
+    profile_test_log_loss_delta = _finite_float(
+        profile_probability["test_log_loss_delta_vs_control"],
+        "profile test log-loss delta",
+    )
+    profile_test_brier_delta = _finite_float(
+        profile_probability["test_brier_delta_vs_control"],
+        "profile test Brier delta",
+    )
+    expected_profile_gates = {
+        "validation_log_loss_not_worse_than_control": (
+            profile_validation_delta <= 0.0
+        ),
+        "test_log_loss_strictly_better_than_control": (
+            profile_test_log_loss_delta < 0.0
+        ),
+        "test_brier_score_strictly_better_than_control": (
+            profile_test_brier_delta < 0.0
+        ),
+        "minimum_untouched_test_time_groups_met": len(time_groups) >= 30,
+        "positive_after_cost_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    profile_latency_reports[str(latency)],
+                    "profile latency report",
+                )["net_realized_pnl_quote"],
+                "profile latency PnL",
+            )
+            > 0
+            for latency in latency_values
+        ),
+        "improved_after_cost_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    profile_latency_reports[str(latency)],
+                    "profile latency report",
+                )["net_realized_pnl_quote"],
+                "profile latency PnL",
+            )
+            > _decimal(
+                _as_mapping(
+                    model_latency_reports[str(latency)],
+                    "model latency report",
+                )["net_realized_pnl_quote"],
+                "model latency PnL",
+            )
+            for latency in latency_values
+        ),
+        "return_on_deployed_not_worse_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    profile_latency_reports[str(latency)],
+                    "profile latency report",
+                )["return_on_deployed_capital"],
+                "profile deployed-capital return",
+            )
+            >= _decimal(
+                _as_mapping(
+                    model_latency_reports[str(latency)],
+                    "model latency report",
+                )["return_on_deployed_capital"],
+                "model deployed-capital return",
+            )
+            for latency in latency_values
+        ),
+        "maximum_drawdown_not_worse_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    profile_latency_reports[str(latency)],
+                    "profile latency report",
+                )["maximum_drawdown_fraction"],
+                "profile drawdown",
+            )
+            <= _decimal(
+                _as_mapping(
+                    model_latency_reports[str(latency)],
+                    "model latency report",
+                )["maximum_drawdown_fraction"],
+                "model drawdown",
+            )
+            for latency in latency_values
+        ),
+        "all_order_outcomes_terminal": all(
+            trade.get("execution_state") != "UNKNOWN"
+            for raw_report in profile_latency_reports.values()
+            for trade in _as_mapping(
+                raw_report,
+                "profile latency report",
+            )["trades"]
+        ),
+    }
+    profile_challenger = _as_mapping(
+        payload.get("profile_challenger"),
+        "profile model challenger",
+    )
+    _require_exact_keys(
+        profile_challenger,
+        {
+            "schema_version",
+            "contract_sha256",
+            "control_policy",
+            "challenger_policy",
+            "gates",
+            "promotion_gates_passed",
+            "accepted",
+            "status",
+            "requires_later_prospective_confirmation",
+            "trading_authority",
+            "execution_claim",
+            "profitability_claim",
+            "portfolio_claim",
+            "leverage_applied",
+        },
+        name="profile model challenger",
+    )
+    _verify_claims(profile_challenger, name="profile model challenger")
+    profile_promotion_gates_passed = all(expected_profile_gates.values())
+    expected_profile_status = (
+        "awaiting_later_prospective_confirmation"
+        if profile_promotion_gates_passed
+        else "exploratory_gates_failed"
+    )
+    if (
+        profile_challenger.get("schema_version")
+        != POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION
+        or profile_challenger.get("contract_sha256")
+        != POLYMARKET_PROFILE_CONTRACT_SHA256
+        or profile_challenger.get("control_policy") != "model"
+        or profile_challenger.get("challenger_policy") != "profile_model"
+        or dict(_as_mapping(profile_challenger["gates"], "profile gates"))
+        != expected_profile_gates
+        or profile_challenger.get("promotion_gates_passed")
+        is not profile_promotion_gates_passed
+        or profile_challenger.get("accepted") is not False
+        or profile_challenger.get("status") != expected_profile_status
+        or profile_challenger.get("requires_later_prospective_confirmation")
+        is not True
+    ):
+        raise ValueError("profile model challenger does not reconstruct")
     expected_gates = {
         "validation_probability_improved": (
             _finite_float(
@@ -2272,6 +2783,9 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             for latency in latency_values
         ),
         "retry_challenger_accepted": all(expected_retry_gates.values()),
+        "profile_challenger_promotion_gates_passed": (
+            profile_promotion_gates_passed
+        ),
         "all_positions_officially_settled": all(
             int(report["filled_order_count"])
             == int(report["winning_order_count"])
@@ -2303,18 +2817,24 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         payload=payload,
         artifact_sha256=claimed_artifact_sha256,
         predictions=tuple(predictions),
+        profile_predictions=tuple(profile_predictions),
         executions=executions,
     )
 
 
 def _probability_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
     report = _as_mapping(payload["probability_report"], "probability report")
+    profile_report = _as_mapping(
+        payload["profile_probability_report"],
+        "profile probability report",
+    )
     rows: list[dict[str, object]] = []
-    for treatment, key in (
-        ("market_implied", "baseline_metrics"),
-        ("residual_model", "model_metrics"),
+    for treatment, source, key in (
+        ("market_implied", report, "baseline_metrics"),
+        ("residual_model", report, "model_metrics"),
+        ("profile_challenger", profile_report, "challenger_metrics"),
     ):
-        roles = _as_mapping(report[key], f"{treatment} probability metrics")
+        roles = _as_mapping(source[key], f"{treatment} probability metrics")
         for role in ("train", "validation", "test"):
             metric = _as_mapping(roles[role], f"{treatment} {role} metrics")
             rows.append(
@@ -2391,6 +2911,66 @@ def _model_selection_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]
     return rows
 
 
+def _profile_model_selection_rows(
+    payload: Mapping[str, Any],
+) -> list[dict[str, object]]:
+    model = _as_mapping(payload["profile_model"], "profile model")
+    inner = _named_losses(
+        model["candidate_inner_log_losses"],
+        "profile inner model losses",
+    )
+    validation = _named_losses(
+        model["validation_gate_log_losses"],
+        "profile outer validation losses",
+    )
+    inner_baseline = inner[0][1]
+    validation_baseline = validation[0][1]
+    selected_inner = str(model["inner_selected_candidate"])
+    accepted = str(model["selected_candidate"])
+    rows: list[dict[str, object]] = []
+    for stage, evidence_unit, values, baseline, fold_count in (
+        (
+            "inner_selection",
+            "purged_rolling_fold_weighted_mean",
+            inner,
+            inner_baseline,
+            int(model["inner_fold_count"]),
+        ),
+        (
+            "outer_promotion_gate",
+            "chronological_validation_tail",
+            validation,
+            validation_baseline,
+            1,
+        ),
+    ):
+        for candidate, loss in values:
+            if candidate == "market_baseline":
+                profile = ""
+                active_feature_count: int | str = ""
+                l2: float | str = ""
+            else:
+                profile, feature_names, l2 = _profile_candidate_details(candidate)
+                active_feature_count = len(feature_names)
+            rows.append(
+                {
+                    "stage": stage,
+                    "evidence_unit": evidence_unit,
+                    "candidate": candidate,
+                    "profile": profile,
+                    "active_feature_count": active_feature_count,
+                    "l2": l2,
+                    "weighted_log_loss": loss,
+                    "baseline_log_loss": baseline,
+                    "delta_vs_stage_baseline": loss - baseline,
+                    "selected_for_outer_gate": candidate == selected_inner,
+                    "accepted_after_outer_gate": candidate == accepted,
+                    "fold_count": fold_count,
+                }
+            )
+    return rows
+
+
 def _prediction_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, object]]:
     return [
         {
@@ -2433,8 +3013,10 @@ def _held_out_group_score_rows(
                 raise ValueError("held-out group has no effective weight")
             baseline_log_loss = 0.0
             model_log_loss = 0.0
+            profile_log_loss = 0.0
             baseline_brier = 0.0
             model_brier = 0.0
+            profile_brier = 0.0
             for row in group:
                 label = 1.0 if row["official_up"] else 0.0
                 row_weight = _finite_float(row["market_weight"], "market weight")
@@ -2446,18 +3028,29 @@ def _held_out_group_score_rows(
                     row["model_up_probability"],
                     "model probability",
                 )
+                profile = _finite_float(
+                    row["profile_model_up_probability"],
+                    "profile model probability",
+                )
                 baseline_log_loss += row_weight * -(
                     label * math.log(baseline) + (1.0 - label) * math.log1p(-baseline)
                 )
                 model_log_loss += row_weight * -(
                     label * math.log(model) + (1.0 - label) * math.log1p(-model)
                 )
+                profile_log_loss += row_weight * -(
+                    label * math.log(profile)
+                    + (1.0 - label) * math.log1p(-profile)
+                )
                 baseline_brier += row_weight * (baseline - label) ** 2
                 model_brier += row_weight * (model - label) ** 2
+                profile_brier += row_weight * (profile - label) ** 2
             baseline_log_loss /= weight
             model_log_loss /= weight
+            profile_log_loss /= weight
             baseline_brier /= weight
             model_brier /= weight
+            profile_brier /= weight
             end_ms = max(int(row["end_ms"]) for row in group)
             rows.append(
                 {
@@ -2471,10 +3064,16 @@ def _held_out_group_score_rows(
                     "effective_market_weight": weight,
                     "baseline_log_loss": baseline_log_loss,
                     "model_log_loss": model_log_loss,
+                    "profile_model_log_loss": profile_log_loss,
                     "log_loss_delta": model_log_loss - baseline_log_loss,
+                    "profile_vs_model_log_loss_delta": (
+                        profile_log_loss - model_log_loss
+                    ),
                     "baseline_brier_score": baseline_brier,
                     "model_brier_score": model_brier,
+                    "profile_model_brier_score": profile_brier,
                     "brier_delta": model_brier - baseline_brier,
+                    "profile_vs_model_brier_delta": profile_brier - model_brier,
                 }
             )
     return rows
@@ -2846,7 +3445,11 @@ def _probability_svg(
     values = [
         _finite_float(selected[(role, treatment)][metric], metric)
         for _label, role, metric in categories
-        for treatment in ("market_implied", "residual_model")
+        for treatment in (
+            "market_implied",
+            "residual_model",
+            "profile_challenger",
+        )
     ]
     maximum = max(values) * 1.15 if max(values) > 0 else 1.0
     lines = _svg_base(
@@ -2867,25 +3470,36 @@ def _probability_svg(
     group_width = width / len(categories)
     for index, (label, role, metric) in enumerate(categories):
         center = left + group_width * (index + 0.5)
-        for offset, treatment in ((-48.0, "market_implied"), (48.0, "residual_model")):
+        for offset, treatment in (
+            (-72.0, "market_implied"),
+            (0.0, "residual_model"),
+            (72.0, "profile_challenger"),
+        ):
             value = _finite_float(selected[(role, treatment)][metric], metric)
             height = (bottom - top) * value / maximum
-            x = center + offset - 38.0
+            x = center + offset - 27.0
             y = bottom - height
-            color = _COLORS["baseline" if treatment == "market_implied" else "model"]
+            color = _COLORS[
+                "baseline"
+                if treatment == "market_implied"
+                else "profile_model"
+                if treatment == "profile_challenger"
+                else "model"
+            ]
             lines.append(
-                f'<rect x="{x:.1f}" y="{y:.1f}" width="76" height="{height:.1f}" rx="3" fill="{color}"/>'
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="54" height="{height:.1f}" rx="3" fill="{color}"/>'
             )
             lines.append(
-                f'<text x="{x + 38:.1f}" y="{y - 10:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700">{value:.4f}</text>'
+                f'<text x="{x + 27:.1f}" y="{y - 10:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="700">{value:.4f}</text>'
             )
         lines.append(
             f'<text x="{center:.1f}" y="608" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="15">{escape(label)}</text>'
         )
     lines.extend(
         (
-            f'<rect x="390" y="645" width="18" height="18" rx="2" fill="{_COLORS["baseline"]}"/><text x="418" y="659" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Market-implied prior</text>',
-            f'<rect x="625" y="645" width="18" height="18" rx="2" fill="{_COLORS["model"]}"/><text x="653" y="659" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Bounded residual model</text>',
+            f'<rect x="235" y="645" width="18" height="18" rx="2" fill="{_COLORS["baseline"]}"/><text x="263" y="659" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Market-implied prior</text>',
+            f'<rect x="500" y="645" width="18" height="18" rx="2" fill="{_COLORS["model"]}"/><text x="528" y="659" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Round-3 control</text>',
+            f'<rect x="750" y="645" width="18" height="18" rx="2" fill="{_COLORS["profile_model"]}"/><text x="778" y="659" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Profile challenger</text>',
             "</svg>",
         )
     )
@@ -3013,26 +3627,156 @@ def _model_selection_svg(
     return "\n".join(lines) + "\n"
 
 
+def _profile_model_selection_svg(
+    rows: Sequence[Mapping[str, object]],
+    *,
+    start: str,
+    end: str,
+) -> str:
+    inner = [
+        row
+        for row in rows
+        if row["stage"] == "inner_selection"
+        and row["candidate"] != "market_baseline"
+    ]
+    outer = [
+        row
+        for row in rows
+        if row["stage"] == "outer_promotion_gate"
+        and row["candidate"] != "market_baseline"
+    ]
+    ordered = [*inner, *outer]
+    deltas = [
+        _finite_float(row["delta_vs_stage_baseline"], "profile selection delta")
+        for row in ordered
+    ]
+    extent = max(max((abs(value) for value in deltas), default=0.0) * 1.15, 0.0001)
+    outer_spacing = 18.0
+    height = int(180 + 43 * len(ordered) + outer_spacing + 90)
+    top = 150.0
+    plot_center = 720.0
+    half_width = 205.0
+    lines = _svg_base(
+        "Frozen profile challenger grid",
+        f"Four declared feature profiles by five L2 values; {start} to {end}",
+        "Training-fold weighted log-loss deltas from profile-model-selection.csv. Lower is better; test outcomes are excluded from selection.",
+        height=height,
+    )
+    bottom = top + 43.0 * len(ordered) + outer_spacing
+    for value, x in (
+        (-extent, plot_center - half_width),
+        (0.0, plot_center),
+        (extent, plot_center + half_width),
+    ):
+        lines.append(
+            f'<line x1="{x:.1f}" y1="125" x2="{x:.1f}" y2="{bottom:.1f}" stroke="{_COLORS["grid"]}" stroke-width="{2 if value == 0 else 1}"/>'
+        )
+        lines.append(
+            f'<text x="{x:.1f}" y="116" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:+.6f}</text>'
+        )
+    prior_profile = ""
+    for index, (row, delta) in enumerate(zip(ordered, deltas, strict=True)):
+        y = top + index * 43.0 + (outer_spacing if index >= len(inner) else 0.0)
+        if index == len(inner):
+            lines.append(
+                f'<line x1="64" y1="{y - 24:.1f}" x2="1136" y2="{y - 24:.1f}" stroke="{_COLORS["grid"]}"/>'
+            )
+            lines.append(
+                f'<text x="64" y="{y - 7:.1f}" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="11" font-weight="700">OUTER VALIDATION GATE</text>'
+            )
+            prior_profile = ""
+        profile = str(row["profile"])
+        if profile != prior_profile:
+            lines.append(
+                f'<text x="64" y="{y + 5:.1f}" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="700">{escape(profile.upper() or "OUTER GATE")}</text>'
+            )
+            prior_profile = profile
+        label = (
+            f"L2 {_finite_float(row['l2'], 'profile L2'):.6g} / "
+            f"{row['active_feature_count']} features"
+        )
+        value_x = plot_center + half_width * delta / extent
+        x = min(plot_center, value_x)
+        width = max(abs(value_x - plot_center), 2.0)
+        outer_gate = row["stage"] == "outer_promotion_gate"
+        accepted = bool(row["accepted_after_outer_gate"]) and outer_gate
+        winner = bool(row["selected_for_outer_gate"])
+        rejected = outer_gate and winner and not accepted
+        color = _COLORS["profile_model"] if delta < 0.0 else _COLORS["negative"]
+        stroke = (
+            _COLORS["text"]
+            if accepted
+            else _COLORS["negative"]
+            if rejected
+            else _COLORS["ai"]
+            if winner
+            else color
+        )
+        lines.append(
+            f'<text x="478" y="{y + 5:.1f}" text-anchor="end" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{escape(label)}</text>'
+        )
+        lines.append(
+            f'<rect x="{x:.1f}" y="{y - 11:.1f}" width="{width:.1f}" height="22" rx="2" fill="{color}" stroke="{stroke}" stroke-width="{3 if accepted else 2 if winner else 0}"/>'
+        )
+        lines.append(
+            f'<text x="950" y="{y + 5:.1f}" fill="{_COLORS["text"]}" font-family="Consolas,monospace" font-size="12">{delta:+.7f}</text>'
+        )
+        status = (
+            "ACCEPTED"
+            if accepted
+            else "REJECTED"
+            if rejected
+            else "INNER WINNER"
+            if winner
+            else ""
+        )
+        if status:
+            lines.append(
+                f'<text x="1080" y="{y + 5:.1f}" fill="{stroke}" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="700">{status}</text>'
+            )
+    lines.append(
+        f'<text x="64" y="{height - 35}" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">A later prospective capture is required even if every exploratory promotion gate passes.</text>'
+    )
+    lines.append("</svg>")
+    return "\n".join(lines) + "\n"
+
+
+def _policy_label(policy: str) -> str:
+    return {
+        "baseline": "Market prior",
+        "model": "Round-3 control",
+        "profile_model": "Profile challenger",
+        "model_retry": "Control retry",
+        "ai": "AI veto",
+    }.get(policy, policy.replace("_", " ").title())
+
+
 def _group_score_svg(
     rows: Sequence[Mapping[str, object]],
     *,
     start: str,
     end: str,
+    value_key: str = "log_loss_delta",
+    title: str = "Untouched-test log-loss delta by time group",
+    comparison: str = "residual-model minus market-prior",
+    negative_label: str = "Negative: residual model improved",
+    positive_label: str = "Positive: residual model degraded",
+    negative_color: str | None = None,
 ) -> str:
     selected = sorted(
         (row for row in rows if row["scope"] == "ALL"),
         key=lambda row: int(row["event_start_ms"]),
     )
     values = [
-        _finite_float(row["log_loss_delta"], "group log-loss delta") for row in selected
+        _finite_float(row[value_key], "group log-loss delta") for row in selected
     ]
     extent = max(max((abs(value) for value in values), default=0.0) * 1.2, 0.01)
     left, top, bottom, width = 120.0, 150.0, 570.0, 1010.0
     zero = (top + bottom) / 2
     lines = _svg_base(
-        "Untouched-test log-loss delta by time group",
+        title,
         f"Shared BTC/ETH/SOL five-minute groups; {start} to {end}; lower is better",
-        "Market-equal weighted residual-model minus market-prior log loss from held-out-group-scores.csv. Negative bars improve on the prior.",
+        f"Market-equal weighted {comparison} log loss from held-out-group-scores.csv. Negative bars improve on the comparator.",
     )
     for value in (-extent, -extent / 2, 0.0, extent / 2, extent):
         y = zero - (bottom - top) * 0.5 * value / extent
@@ -3049,7 +3793,13 @@ def _group_score_svg(
         y_value = zero - (bottom - top) * 0.5 * value / extent
         y = min(zero, y_value)
         height = max(abs(y_value - zero), 1.0)
-        color = _COLORS["model"] if value < 0.0 else _COLORS["negative"]
+        color = (
+            negative_color or _COLORS["model"]
+            if value < 0.0
+            else _COLORS["negative"]
+            if value > 0.0
+            else _COLORS["baseline"]
+        )
         lines.append(
             f'<rect x="{center - bar_width / 2:.1f}" y="{y:.1f}" width="{bar_width:.1f}" height="{height:.1f}" rx="2" fill="{color}"/>'
         )
@@ -3078,10 +3828,10 @@ def _group_score_svg(
             f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>'
         )
     lines.append(
-        f'<text x="120" y="660" fill="{_COLORS["model"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Negative: residual model improved</text>'
+        f'<text x="120" y="660" fill="{negative_color or _COLORS["model"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{escape(negative_label)}</text>'
     )
     lines.append(
-        f'<text x="880" y="660" fill="{_COLORS["negative"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Positive: residual model degraded</text>'
+        f'<text x="880" y="660" fill="{_COLORS["negative"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{escape(positive_label)}</text>'
     )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
@@ -3127,7 +3877,7 @@ def _equity_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -
             y = bottom - (bottom - top) * (equity - low) / (high - low)
             points.append(f"{x:.2f},{y:.2f}")
         lines.append(
-            f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-dasharray="{_POLICY_DASH[policy]}" stroke-linejoin="round" stroke-linecap="round"/>'
         )
     tick_count = 5
     for index in range(tick_count):
@@ -3139,12 +3889,13 @@ def _equity_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -
         lines.append(
             f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{label}</text>'
         )
-    legend_x = 350
-    for index, policy in enumerate(name for name in _POLICIES if name in by_policy):
-        x = legend_x + index * 190
-        label = "Model retry" if policy == "model_retry" else policy.title()
+    present_policies = tuple(name for name in _POLICIES if name in by_policy)
+    legend_slot = 1080.0 / len(present_policies)
+    for index, policy in enumerate(present_policies):
+        x = 60.0 + index * legend_slot
+        label = _policy_label(policy)
         lines.append(
-            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{label}</text>'
+            f'<line x1="{x:.1f}" y1="652" x2="{x + 24:.1f}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 32:.1f}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{escape(label)}</text>'
         )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
@@ -3194,16 +3945,16 @@ def _asset_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) ->
             )
             label_y = y - 9 if value >= 0 else y + height + 19
             lines.append(
-                f'<text x="{x + bar_width / 2:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f} / {row["fills"]} fills</text>'
+                f'<text x="{x + bar_width / 2:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="{10 if len(policies) > 4 else 12}">{value:.2f} / {row["fills"]}</text>'
             )
         lines.append(
             f'<text x="{center:.1f}" y="610" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">{asset}</text>'
         )
-    legend_x = 350
+    legend_slot = 1080.0 / len(policies)
     for index, policy in enumerate(policies):
-        x = legend_x + index * 190
+        x = 60.0 + index * legend_slot
         lines.append(
-            f'<rect x="{x}" y="642" width="18" height="18" rx="2" fill="{_COLORS[policy]}"/><text x="{x + 28}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>'
+            f'<rect x="{x:.1f}" y="642" width="16" height="16" rx="2" fill="{_COLORS[policy]}"/><text x="{x + 24:.1f}" y="655" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{escape(_policy_label(policy))}</text>'
         )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
@@ -3248,7 +3999,7 @@ def _latency_svg(
         lines.append(
             f'<text x="{x:.1f}" y="608" text-anchor="middle" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="13">{latency} ms</text>'
         )
-    for policy in policies:
+    for policy_index, policy in enumerate(policies):
         policy_rows = {
             int(row["network_latency_ms"]): row
             for row in rows
@@ -3266,18 +4017,21 @@ def _latency_svg(
             points.append(f"{x:.2f},{y:.2f}")
             coordinates.append((x, y, value))
         lines.append(
-            f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>'
+            f'<polyline points="{" ".join(points)}" fill="none" stroke="{_COLORS[policy]}" stroke-width="3" stroke-dasharray="{_POLICY_DASH[policy]}" stroke-linejoin="round" stroke-linecap="round"/>'
         )
         for x, y, value in coordinates:
+            direction = 1.0 if x < 600.0 else -1.0
+            label_x = x + direction * (12.0 + policy_index * 48.0)
+            anchor = "start" if direction > 0.0 else "end"
             lines.append(
-                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{_COLORS[policy]}"/><text x="{x:.1f}" y="{y - 11:.1f}" text-anchor="middle" fill="{_COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{value:.2f}</text>'
+                f'<line x1="{x:.1f}" y1="{y:.1f}" x2="{label_x:.1f}" y2="{y - 10:.1f}" stroke="{_COLORS[policy]}" stroke-width="1"/><circle cx="{x:.1f}" cy="{y:.1f}" r="5" fill="{_COLORS[policy]}"/><text x="{label_x:.1f}" y="{y - 12:.1f}" text-anchor="{anchor}" fill="{_COLORS[policy]}" font-family="Segoe UI,Arial,sans-serif" font-size="11" font-weight="700">{value:.2f}</text>'
             )
-    legend_x = 350
+    legend_slot = 1080.0 / len(policies)
     for index, policy in enumerate(policies):
-        x = legend_x + index * 190
-        label = "Model retry" if policy == "model_retry" else policy.title()
+        x = 60.0 + index * legend_slot
+        label = _policy_label(policy)
         lines.append(
-            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{label}</text>'
+            f'<line x1="{x:.1f}" y1="652" x2="{x + 24:.1f}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 32:.1f}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{escape(label)}</text>'
         )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
@@ -3397,12 +4151,22 @@ def _results_markdown(
     payload = artifact.payload
     report = _as_mapping(payload["probability_report"], "probability report")
     trained_model = _as_mapping(payload["model"], "model")
+    profile_report = _as_mapping(
+        payload["profile_probability_report"],
+        "profile probability report",
+    )
+    profile_model = _as_mapping(payload["profile_model"], "profile model")
     baseline = artifact.executions["baseline"]
     model = artifact.executions["model"]
+    profile_execution = artifact.executions["profile_model"]
     model_retry = artifact.executions["model_retry"]
     retry_challenger = _as_mapping(
         payload["retry_challenger"],
         "model retry challenger",
+    )
+    profile_challenger = _as_mapping(
+        payload["profile_challenger"],
+        "profile model challenger",
     )
     ai = _as_mapping(payload["ai"], "AI evidence")
     ai_line = "AI was disabled for this experiment."
@@ -3446,7 +4210,21 @@ and untouched-test log-loss changed by
 better; the test Brier-score change was
 `{_finite_float(report["test_brier_delta"], "Brier delta"):.8f}`.
 
+![Frozen profile grid](latest/charts/profile-model-selection.svg)
+
+The preregistered reduced-profile grid selected
+`{profile_model["inner_selected_candidate"]}` inside the same purged training
+folds. Its outer gate selected `{profile_model["selected_candidate"]}`. Against
+the unchanged round-3 control, untouched-test log loss changed by
+`{_finite_float(profile_report["test_log_loss_delta_vs_control"], "profile test delta"):.8f}`
+and test Brier score changed by
+`{_finite_float(profile_report["test_brier_delta_vs_control"], "profile Brier delta"):.8f}`.
+Even if all exploratory gates pass, this challenger remains non-selectable until
+a later prospective capture confirms it.
+
 ![Time-group score deltas](latest/charts/held-out-group-scores.svg)
+
+![Profile-vs-control time-group deltas](latest/charts/profile-held-out-group-scores.svg)
 
 The untouched tail contains `{all_groups["time_group_count"]}` shared five-minute
 time groups. Its deterministic moving-block bootstrap interval for mean log-loss
@@ -3467,7 +4245,11 @@ challenger filled `{model_retry["filled_order_count"]}` orders, settled
 `{model_retry["net_realized_pnl_quote"]}` quote PnL, and was
 **{"accepted" if retry_challenger["accepted"] else "not accepted"}** by its
 precommitted gates. These are short prospective diagnostics after modeled
-dynamic fees and recorded depth, not evidence of a durable edge. {ai_line}
+dynamic fees and recorded depth, not evidence of a durable edge. The profile
+challenger filled `{profile_execution["filled_order_count"]}` orders, settled
+`{profile_execution["net_realized_pnl_quote"]}` quote PnL, and its exploratory
+gates **{"passed" if profile_challenger["promotion_gates_passed"] else "did not pass"}**.
+It was not accepted for paper trading. {ai_line}
 
 ![After-fee PnL by asset](latest/charts/per-asset-execution.svg)
 
@@ -3484,6 +4266,7 @@ dynamic fees and recorded depth, not evidence of a durable edge. {ai_line}
 - [Experiment artifact](round-{round_number:03d}-prospective-model-experiment.json)
 - [Held-out prediction rows](latest/tables/held-out-predictions.csv)
 - [Nested model selection](latest/tables/model-selection.csv)
+- [Frozen profile selection](latest/tables/profile-model-selection.csv)
 - [Probability metrics](latest/tables/probability-metrics.csv)
 - [Held-out time-group scores](latest/tables/held-out-group-scores.csv)
 - [Time-group uncertainty summary](latest/held-out-group-score-summary.json)
@@ -3544,7 +4327,50 @@ def publish_polymarket_model_artifact(
         }
         for policy, reports in sensitivity_policies.items()
     }
+    expected_source_identities = {
+        "feature_dataset_sha256": _as_mapping(
+            validated.payload["feature_dataset"],
+            "feature dataset",
+        )["dataset_sha256"],
+        "model_dataset_sha256": _as_mapping(
+            validated.payload["model_dataset"],
+            "model dataset",
+        )["dataset_sha256"],
+        "split_sha256": _as_mapping(
+            validated.payload["split"],
+            "model split",
+        )["split_sha256"],
+        "model_sha256": _as_mapping(
+            validated.payload["model"],
+            "model",
+        )["model_sha256"],
+        "probability_report_sha256": _as_mapping(
+            validated.payload["probability_report"],
+            "probability report",
+        )["report_sha256"],
+        "profile_model_sha256": _as_mapping(
+            validated.payload["profile_model"],
+            "profile model",
+        )["model_sha256"],
+        "profile_probability_report_sha256": _as_mapping(
+            validated.payload["profile_probability_report"],
+            "profile probability report",
+        )["report_sha256"],
+        "held_out_rows_sha256": _as_mapping(
+            validated.payload["held_out_prediction_evidence"],
+            "held-out prediction evidence",
+        )["rows_sha256"],
+        "profile_held_out_rows_sha256": _as_mapping(
+            validated.payload["profile_held_out_prediction_evidence"],
+            "profile held-out prediction evidence",
+        )["rows_sha256"],
+    }
     if (
+        any(
+            validated_source_verification.get(name) != value
+            for name, value in expected_source_identities.items()
+        )
+        or
         validated_source_verification[
             "execution_report_sha256_by_policy_and_latency"
         ]
@@ -3554,12 +4380,15 @@ def publish_polymarket_model_artifact(
             "Polymarket source verification does not reconstruct every "
             "artifact execution scenario"
         )
-    predictions = _prediction_rows(validated.predictions)
+    predictions = _prediction_rows(validated.profile_predictions)
     start = _utc(min(int(row["event_start_ms"]) for row in validated.predictions))
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
     probability_rows = _probability_rows(validated.payload)
     model_selection_rows = _model_selection_rows(validated.payload)
-    group_score_rows = _held_out_group_score_rows(validated.predictions)
+    profile_model_selection_rows = _profile_model_selection_rows(
+        validated.payload
+    )
+    group_score_rows = _held_out_group_score_rows(validated.profile_predictions)
     group_score_summary = _group_score_summary(
         group_score_rows,
         artifact_sha256=validated.artifact_sha256,
@@ -3581,8 +4410,10 @@ def publish_polymarket_model_artifact(
     tables.mkdir(parents=True, exist_ok=True)
     current_chart_names = {
         "model-selection.svg",
+        "profile-model-selection.svg",
         "probability-quality.svg",
         "held-out-group-scores.svg",
+        "profile-held-out-group-scores.svg",
         "held-out-equity.svg",
         "per-asset-execution.svg",
         "latency-sensitivity.svg",
@@ -3603,6 +4434,7 @@ def publish_polymarket_model_artifact(
     table_payloads = {
         "held-out-predictions.csv": predictions,
         "model-selection.csv": model_selection_rows,
+        "profile-model-selection.csv": profile_model_selection_rows,
         "probability-metrics.csv": probability_rows,
         "held-out-group-scores.csv": group_score_rows,
         "execution-summary.csv": summary_rows,
@@ -3624,12 +4456,34 @@ def publish_polymarket_model_artifact(
         _model_selection_svg(model_selection_rows, start=start, end=end),
     )
     _write_text(
+        charts / "profile-model-selection.svg",
+        _profile_model_selection_svg(
+            profile_model_selection_rows,
+            start=start,
+            end=end,
+        ),
+    )
+    _write_text(
         charts / "probability-quality.svg",
         _probability_svg(probability_rows, start=start, end=end),
     )
     _write_text(
         charts / "held-out-group-scores.svg",
         _group_score_svg(group_score_rows, start=start, end=end),
+    )
+    _write_text(
+        charts / "profile-held-out-group-scores.svg",
+        _group_score_svg(
+            group_score_rows,
+            start=start,
+            end=end,
+            value_key="profile_vs_model_log_loss_delta",
+            title="Profile-vs-control log-loss delta by time group",
+            comparison="profile-challenger minus round-3-control",
+            negative_label="Negative: profile challenger improved",
+            positive_label="Positive: profile challenger degraded",
+            negative_color=_COLORS["profile_model"],
+        ),
     )
     _write_text(
         charts / "held-out-equity.svg", _equity_svg(equity_rows, start=start, end=end)
@@ -3663,8 +4517,10 @@ def publish_polymarket_model_artifact(
 ![Held-out settled equity](charts/held-out-equity.svg)
 
 The current publication is generated from prospective BTC/ETH/SOL evidence for
-`{start}` through `{end}`. It includes market-implied, bounded residual-model,
-and governed AI-veto diagnostics where available. No live-trading or durable
+`{start}` through `{end}`. It includes the market prior, unchanged round-3
+control, frozen reduced-profile challenger, retry challenger, and governed
+AI-veto diagnostics where available. The profile challenger cannot be selected
+for paper trading from this exploratory capture. No live-trading or durable
 profitability claim is made.
 
 {source_verification_note}
