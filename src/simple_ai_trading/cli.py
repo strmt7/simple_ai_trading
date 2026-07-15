@@ -6454,6 +6454,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     "score": selected_result.score,
                 },
                 "policy_selection": policy_selection.asdict(),
+                "prompt_cases": [case.asdict() for case in ai_cases],
                 "veto_report": ai_report.asdict(),
                 "execution": ai_execution.asdict(),
                 "uplift": ai_uplift.asdict(),
