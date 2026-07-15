@@ -23,6 +23,7 @@ from .polymarket_replay import (
     PolymarketMarketExecutionEvidence,
     PolymarketRecordedBook,
 )
+from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_repricing import (
     PolymarketRepricingDecisionExecution,
     PolymarketRepricingExecutionContext,
@@ -454,6 +455,18 @@ class PolymarketActionValueDataset:
         return self
 
 
+@dataclass(frozen=True)
+class PolymarketActionValueMaterialization:
+    dataset_sha256: str
+    status: str
+    action_count: int
+    classifier_eligible_count: int
+    positive_complete_count: int
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
 def _source_label_free_payload(row: PolymarketFeatureRow) -> dict[str, object]:
     return {
         "schema_version": "polymarket-label-free-feature-source-v1",
@@ -874,6 +887,267 @@ def build_polymarket_action_value_dataset(
     ).validated()
 
 
+def materialize_polymarket_action_value_dataset(
+    store: PolymarketEvidenceStore,
+    dataset: PolymarketActionValueDataset,
+) -> PolymarketActionValueMaterialization:
+    """Persist one immutable action batch with exact source-feature linkage."""
+
+    dataset.validated()
+    connection = store.connect()
+    source_manifest = connection.execute(
+        """
+        SELECT run_id, dataset_sha256
+        FROM polymarket_feature_dataset
+        WHERE dataset_id = ?
+        """,
+        [dataset.source_feature_dataset_sha256],
+    ).fetchone()
+    if source_manifest is None:
+        raise ValueError("Polymarket action source feature dataset is not materialized")
+    if tuple(map(str, source_manifest)) != (
+        dataset.source_run_id,
+        dataset.source_feature_dataset_sha256,
+    ):
+        raise ValueError("Polymarket action source feature manifest is inconsistent")
+    stored_sources = {
+        str(row[0]): tuple(row[1:])
+        for row in connection.execute(
+            """
+            SELECT feature_id, run_id, condition_id, market_id, asset,
+                   decision_event_id, decision_received_wall_ms,
+                   decision_received_monotonic_ns, feature_values_json,
+                   input_provenance_sha256
+            FROM polymarket_feature_row
+            WHERE dataset_id = ?
+            """,
+            [dataset.source_feature_dataset_sha256],
+        ).fetchall()
+    }
+    for feature in dataset.features:
+        source = stored_sources.get(feature.source_feature_id)
+        if source is None:
+            raise ValueError("Polymarket action source feature linkage is invalid")
+        try:
+            source_values = json.loads(str(source[7]))
+        except json.JSONDecodeError as exc:
+            raise ValueError("stored Polymarket source feature JSON is invalid") from exc
+        expected_source = (
+            feature.source_run_id,
+            feature.condition_id,
+            feature.market_id,
+            feature.asset,
+            feature.decision_event_id,
+            feature.decision_received_wall_ms,
+            feature.decision_received_monotonic_ns,
+            source[7],
+            feature.source_input_provenance_sha256,
+        )
+        source_label_free_sha256 = _sha256(
+            {
+                "schema_version": "polymarket-label-free-feature-source-v1",
+                "source_run_id": str(source[0]),
+                "source_feature_id": feature.source_feature_id,
+                "condition_id": str(source[1]),
+                "market_id": str(source[2]),
+                "asset": str(source[3]),
+                "decision_event_id": str(source[4]),
+                "decision_received_wall_ms": int(source[5]),
+                "decision_received_monotonic_ns": int(source[6]),
+                "feature_values": source_values,
+                "input_provenance_sha256": str(source[8]),
+            }
+        )
+        if source != expected_source or (
+            source_label_free_sha256 != feature.source_label_free_sha256
+        ):
+            raise ValueError("Polymarket action source feature linkage is invalid")
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS polymarket_action_value_dataset (
+            dataset_sha256 VARCHAR PRIMARY KEY,
+            schema_version VARCHAR NOT NULL,
+            contract_sha256 VARCHAR NOT NULL,
+            source_feature_dataset_sha256 VARCHAR NOT NULL,
+            source_run_id VARCHAR NOT NULL,
+            config_json VARCHAR NOT NULL,
+            feature_names_json VARCHAR NOT NULL,
+            action_count UBIGINT NOT NULL,
+            classifier_eligible_count UBIGINT NOT NULL,
+            positive_complete_count UBIGINT NOT NULL,
+            category_counts_json VARCHAR NOT NULL,
+            terminal_reason_counts_json VARCHAR NOT NULL,
+            manifest_sha256 VARCHAR NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS polymarket_action_value_row (
+            dataset_sha256 VARCHAR NOT NULL,
+            action_index UBIGINT NOT NULL,
+            action_feature_sha256 VARCHAR NOT NULL,
+            action_label_sha256 VARCHAR NOT NULL,
+            source_feature_id VARCHAR NOT NULL,
+            source_input_provenance_sha256 VARCHAR NOT NULL,
+            source_label_free_sha256 VARCHAR NOT NULL,
+            condition_id VARCHAR NOT NULL,
+            market_id VARCHAR NOT NULL,
+            asset VARCHAR NOT NULL,
+            outcome VARCHAR NOT NULL,
+            token_id VARCHAR NOT NULL,
+            decision_event_id VARCHAR NOT NULL,
+            decision_received_wall_ms BIGINT NOT NULL,
+            decision_received_monotonic_ns UBIGINT NOT NULL,
+            feature_values_json VARCHAR NOT NULL,
+            terminal_reason VARCHAR NOT NULL,
+            category VARCHAR NOT NULL,
+            classifier_eligible BOOLEAN NOT NULL,
+            positive_complete BOOLEAN NOT NULL,
+            condition_blocked BOOLEAN NOT NULL,
+            entry_filled BOOLEAN NOT NULL,
+            exit_filled BOOLEAN NOT NULL,
+            stress_utility_quote VARCHAR NOT NULL,
+            entry_cost_quote VARCHAR,
+            exit_proceeds_quote VARCHAR,
+            net_quote VARCHAR,
+            creation_book_event_id VARCHAR NOT NULL,
+            entry_book_event_id VARCHAR NOT NULL,
+            exit_decision_book_event_id VARCHAR NOT NULL,
+            exit_book_event_id VARCHAR NOT NULL,
+            entry_execution_parameter_sha256 VARCHAR NOT NULL,
+            exit_execution_parameter_sha256 VARCHAR NOT NULL,
+            execution_evidence_sha256 VARCHAR NOT NULL,
+            PRIMARY KEY(dataset_sha256, action_index),
+            UNIQUE(dataset_sha256, action_feature_sha256)
+        );
+        """
+    )
+    eligible_count = sum(label.classifier_eligible for label in dataset.labels)
+    positive_count = sum(label.positive_complete for label in dataset.labels)
+    manifest_values = (
+        dataset.dataset_sha256,
+        POLYMARKET_ACTION_DATASET_SCHEMA_VERSION,
+        POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+        dataset.source_feature_dataset_sha256,
+        dataset.source_run_id,
+        _canonical_json(dataset.config.asdict()),
+        _canonical_json(list(POLYMARKET_ACTION_FEATURE_NAMES)),
+        len(dataset.features),
+        eligible_count,
+        positive_count,
+        _canonical_json(dict(sorted(dataset.category_counts.items()))),
+        _canonical_json(dict(sorted(dataset.terminal_reason_counts.items()))),
+        dataset.dataset_sha256,
+    )
+    expected_rows = [
+        (
+            dataset.dataset_sha256,
+            index,
+            feature.action_feature_sha256,
+            label.action_label_sha256,
+            feature.source_feature_id,
+            feature.source_input_provenance_sha256,
+            feature.source_label_free_sha256,
+            feature.condition_id,
+            feature.market_id,
+            feature.asset,
+            feature.outcome,
+            feature.token_id,
+            feature.decision_event_id,
+            feature.decision_received_wall_ms,
+            feature.decision_received_monotonic_ns,
+            _canonical_json(_float_text(feature.feature_values)),
+            label.terminal_reason,
+            label.category,
+            label.classifier_eligible,
+            label.positive_complete,
+            label.condition_blocked,
+            label.entry_filled,
+            label.exit_filled,
+            _decimal_text(label.stress_utility_quote),
+            _decimal_text(label.entry_cost_quote),
+            _decimal_text(label.exit_proceeds_quote),
+            _decimal_text(label.net_quote),
+            label.creation_book_event_id,
+            label.entry_book_event_id,
+            label.exit_decision_book_event_id,
+            label.exit_book_event_id,
+            label.entry_execution_parameter_sha256,
+            label.exit_execution_parameter_sha256,
+            label.execution_evidence_sha256,
+        )
+        for index, (feature, label) in enumerate(
+            zip(dataset.features, dataset.labels, strict=True)
+        )
+    ]
+    existing = connection.execute(
+        """
+        SELECT dataset_sha256, schema_version, contract_sha256,
+               source_feature_dataset_sha256, source_run_id, config_json,
+               feature_names_json, action_count, classifier_eligible_count,
+               positive_complete_count, category_counts_json,
+               terminal_reason_counts_json, manifest_sha256
+        FROM polymarket_action_value_dataset
+        WHERE dataset_sha256 = ?
+        """,
+        [dataset.dataset_sha256],
+    ).fetchone()
+    if existing is not None:
+        if tuple(existing) != manifest_values:
+            raise ValueError("stored Polymarket action manifest is inconsistent")
+        stored_rows = connection.execute(
+            """
+            SELECT dataset_sha256, action_index, action_feature_sha256,
+                   action_label_sha256, source_feature_id,
+                   source_input_provenance_sha256, source_label_free_sha256,
+                   condition_id, market_id, asset, outcome, token_id,
+                   decision_event_id, decision_received_wall_ms,
+                   decision_received_monotonic_ns, feature_values_json,
+                   terminal_reason, category, classifier_eligible,
+                   positive_complete, condition_blocked, entry_filled,
+                   exit_filled, stress_utility_quote, entry_cost_quote,
+                   exit_proceeds_quote, net_quote, creation_book_event_id,
+                   entry_book_event_id, exit_decision_book_event_id,
+                   exit_book_event_id, entry_execution_parameter_sha256,
+                   exit_execution_parameter_sha256, execution_evidence_sha256
+            FROM polymarket_action_value_row
+            WHERE dataset_sha256 = ? ORDER BY action_index
+            """,
+            [dataset.dataset_sha256],
+        ).fetchall()
+        if [tuple(row) for row in stored_rows] != expected_rows:
+            raise ValueError("stored Polymarket action rows are inconsistent")
+        status = "existing"
+    else:
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            connection.execute(
+                """
+                INSERT INTO polymarket_action_value_dataset VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                """,
+                manifest_values,
+            )
+            if expected_rows:
+                placeholders = ", ".join("?" for _ in expected_rows[0])
+                connection.executemany(
+                    f"INSERT INTO polymarket_action_value_row VALUES ({placeholders})",
+                    expected_rows,
+                )
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
+        status = "created"
+    return PolymarketActionValueMaterialization(
+        dataset_sha256=dataset.dataset_sha256,
+        status=status,
+        action_count=len(dataset.features),
+        classifier_eligible_count=eligible_count,
+        positive_complete_count=positive_count,
+    )
+
+
 __all__ = [
     "POLYMARKET_ACTION_DATASET_SCHEMA_VERSION",
     "POLYMARKET_ACTION_FEATURE_NAMES",
@@ -884,7 +1158,9 @@ __all__ = [
     "PolymarketActionLabel",
     "PolymarketActionValueConfig",
     "PolymarketActionValueDataset",
+    "PolymarketActionValueMaterialization",
     "build_polymarket_action_feature",
     "build_polymarket_action_label",
     "build_polymarket_action_value_dataset",
+    "materialize_polymarket_action_value_dataset",
 ]

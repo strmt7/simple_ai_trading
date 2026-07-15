@@ -11,7 +11,7 @@ import math
 from typing import Mapping, Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
-from .polymarket_coverage import inspect_polymarket_feed_coverage
+from .polymarket_coverage import PolymarketFeedCoverage, inspect_polymarket_feed_coverage
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import (
     PolymarketEvidenceReplay,
@@ -343,6 +343,21 @@ class _BinanceTradePoint:
     gross_quote: Decimal
     event_id: str
     event_sha256: str
+
+
+@dataclass(frozen=True)
+class PolymarketFeatureSourceContext:
+    """Audited cross-feed state shared by bounded CLOB reconstruction batches."""
+
+    run_id: str
+    config: PolymarketFeatureConfig
+    coverage: PolymarketFeedCoverage
+    chainlink: Mapping[str, tuple[_PricePoint, ...]]
+    direct_books: Mapping[str, tuple[_BinanceBookPoint, ...]]
+    direct_trades: Mapping[str, tuple[_BinanceTradePoint, ...]]
+    market_snapshots: Mapping[str, _MarketSnapshotPoint]
+    book_series: Mapping[str, Mapping[str, _BookSeries]]
+    trade_series: Mapping[str, Mapping[str, _TradeSeries]]
 
 
 class _ConnectionCursor:
@@ -757,6 +772,56 @@ def _load_market_snapshot_points(
     return snapshots
 
 
+def load_polymarket_feature_source_context(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    config: PolymarketFeatureConfig | None = None,
+) -> PolymarketFeatureSourceContext:
+    """Parse immutable Binance/RTDS evidence once for bounded market batches."""
+
+    selected = str(run_id or "").strip()
+    if not selected:
+        raise ValueError("Polymarket feature source context requires a run ID")
+    cfg = (config or PolymarketFeatureConfig()).validated()
+    coverage = inspect_polymarket_feed_coverage(
+        store,
+        run_id=selected,
+        minimum_resolved_markets_per_asset=cfg.minimum_resolved_markets_per_asset,
+        allow_segmented_gaps=cfg.allow_segmented_gaps,
+    )
+    chainlink, direct_books, direct_trades = _parse_feed_points(store, selected)
+    book_series: dict[str, dict[str, _BookSeries]] = {}
+    trade_series: dict[str, dict[str, _TradeSeries]] = {}
+    for asset, points in direct_books.items():
+        grouped: dict[str, list[_BinanceBookPoint]] = {}
+        for point in points:
+            grouped.setdefault(point.connection_id, []).append(point)
+        book_series[asset] = {
+            connection_id: _BookSeries(segment)
+            for connection_id, segment in grouped.items()
+        }
+    for asset, points in direct_trades.items():
+        grouped: dict[str, list[_BinanceTradePoint]] = {}
+        for point in points:
+            grouped.setdefault(point.connection_id, []).append(point)
+        trade_series[asset] = {
+            connection_id: _TradeSeries(segment)
+            for connection_id, segment in grouped.items()
+        }
+    return PolymarketFeatureSourceContext(
+        run_id=selected,
+        config=cfg,
+        coverage=coverage,
+        chainlink=chainlink,
+        direct_books=direct_books,
+        direct_trades=direct_trades,
+        market_snapshots=_load_market_snapshot_points(store, selected),
+        book_series=book_series,
+        trade_series=trade_series,
+    )
+
+
 def _clob_features(book: PolymarketRecordedBook) -> tuple[float, ...]:
     bids = book.snapshot.bids
     asks = book.snapshot.asks
@@ -818,6 +883,8 @@ def build_polymarket_feature_dataset(
     *,
     run_id: str | None = None,
     config: PolymarketFeatureConfig | None = None,
+    condition_ids: Sequence[str] | None = None,
+    source_context: PolymarketFeatureSourceContext | None = None,
 ) -> PolymarketFeatureDataset:
     """Build causal features; official outcomes are attached only as future labels."""
 
@@ -827,16 +894,21 @@ def build_polymarket_feature_dataset(
         run_id=run_id,
         allow_segmented_gaps=cfg.allow_segmented_gaps,
         book_sample_interval_ms=cfg.cadence_ms,
+        condition_ids=condition_ids,
     )
     selected = replay.run_id
-    coverage = inspect_polymarket_feed_coverage(
+    context = source_context or load_polymarket_feature_source_context(
         store,
         run_id=selected,
-        minimum_resolved_markets_per_asset=cfg.minimum_resolved_markets_per_asset,
-        allow_segmented_gaps=cfg.allow_segmented_gaps,
+        config=cfg,
     )
-    chainlink, direct_books, direct_trades = _parse_feed_points(store, selected)
-    market_snapshots = _load_market_snapshot_points(store, selected)
+    if context.run_id != selected or context.config.asdict() != cfg.asdict():
+        raise ValueError("Polymarket feature source context contract differs")
+    coverage = context.coverage
+    chainlink = context.chainlink
+    direct_books = context.direct_books
+    direct_trades = context.direct_trades
+    market_snapshots = context.market_snapshots
     chainlink_cursors = {
         asset: _PriceCursor(points) for asset, points in chainlink.items()
     }
@@ -847,24 +919,8 @@ def build_polymarket_feature_dataset(
         asset: _ConnectionCursor((*direct_books[asset], *direct_trades[asset]))
         for asset in _ASSETS
     }
-    book_series: dict[str, dict[str, _BookSeries]] = {}
-    trade_series: dict[str, dict[str, _TradeSeries]] = {}
-    for asset, points in direct_books.items():
-        grouped: dict[str, list[_BinanceBookPoint]] = {}
-        for point in points:
-            grouped.setdefault(point.connection_id, []).append(point)
-        book_series[asset] = {
-            connection_id: _BookSeries(segment)
-            for connection_id, segment in grouped.items()
-        }
-    for asset, points in direct_trades.items():
-        grouped_trades: dict[str, list[_BinanceTradePoint]] = {}
-        for point in points:
-            grouped_trades.setdefault(point.connection_id, []).append(point)
-        trade_series[asset] = {
-            connection_id: _TradeSeries(segment)
-            for connection_id, segment in grouped_trades.items()
-        }
+    book_series = context.book_series
+    trade_series = context.trade_series
     resolution_by_condition: dict[str, PolymarketResolutionEvidence] = {
         item.condition_id: item for item in replay.resolutions
     }
@@ -1398,7 +1454,9 @@ __all__ = [
     "PolymarketFeatureDataset",
     "PolymarketFeatureMaterialization",
     "PolymarketFeatureRow",
+    "PolymarketFeatureSourceContext",
     "build_polymarket_feature_dataset",
+    "load_polymarket_feature_source_context",
     "materialize_polymarket_feature_dataset",
     "polymarket_feature_row_sha256",
 ]
