@@ -30,7 +30,7 @@ from .storage import write_json_atomic
 MAKE_TAKE_PAYOFF_LIGHTGBM_SCHEMA_VERSION = "make-take-conditional-payoff-lightgbm-v1"
 MAKE_TAKE_PAYOFF_MODEL_FAMILY = "shared_four_action_conditional_mean_q20"
 MAKE_TAKE_PAYOFF_HEADS = ("conditional_mean", "conditional_q20")
-MAKE_TAKE_PAYOFF_SEEDS = (5711, 5712, 5713)
+MAKE_TAKE_PAYOFF_SEEDS = (5701, 5702, 5703)
 _ACTION_CODES = np.arange(4, dtype=np.uint8)
 _MAX_ARTIFACT_BYTES = 1024 * 1024 * 1024
 
