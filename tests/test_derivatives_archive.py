@@ -69,8 +69,7 @@ def test_derivatives_archive_urls_and_month_sequence_are_exact() -> None:
         interval="1m",
         period="2024-01",
     ).endswith(
-        "/futures/um/monthly/premiumIndexKlines/BTCUSDT/1m/"
-        "BTCUSDT-1m-2024-01.zip"
+        "/futures/um/monthly/premiumIndexKlines/BTCUSDT/1m/BTCUSDT-1m-2024-01.zip"
     )
     assert derivatives_archive_file_url(
         symbol="ethusdt",
@@ -78,9 +77,14 @@ def test_derivatives_archive_urls_and_month_sequence_are_exact() -> None:
         interval="",
         period="2024-01",
     ).endswith(
-        "/futures/um/monthly/fundingRate/ETHUSDT/"
-        "ETHUSDT-fundingRate-2024-01.zip"
+        "/futures/um/monthly/fundingRate/ETHUSDT/ETHUSDT-fundingRate-2024-01.zip"
     )
+    assert derivatives_archive_file_url(
+        symbol="solusdt",
+        data_type="markPriceKlines",
+        interval="1m",
+        period="2024-01",
+    ).endswith("/futures/um/monthly/markPriceKlines/SOLUSDT/1m/SOLUSDT-1m-2024-01.zip")
 
 
 def test_verified_premium_archive_is_stored_separately_from_price_candles(
@@ -162,6 +166,38 @@ def test_verified_funding_archive_preserves_actual_historical_cadence(
     assert result.rows_read == 2
     assert [item.funding_interval_hours for item in funding] == [8, 4]
     assert [item.funding_rate for item in funding] == [0.0001, -0.0002]
+
+
+def test_verified_mark_price_archive_is_stored_as_reference_data(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    url = derivatives_archive_file_url(
+        symbol="ETHUSDT",
+        data_type="markPriceKlines",
+        period="2024-01",
+    )
+    payload = _zip_bytes(
+        "ETHUSDT-1m-2024-01.csv",
+        "open_time,open,high,low,close,volume,close_time\n"
+        "0,2000,2002,1999,2001,0,59999\n"
+        "60000,2001,2003,2000,2002,0,119999\n",
+    )
+    _mock_archive(monkeypatch, url, payload)
+    with MarketDataStore(tmp_path / "market.sqlite") as store:
+        result = ingest_derivatives_archive_url(
+            store,
+            url=url,
+            symbol="ETHUSDT",
+            data_type="markPriceKlines",
+            period="2024-01",
+        )
+        bars = store.fetch_futures_reference_bars("ETHUSDT", kind="mark_price")
+        premium = store.fetch_futures_reference_bars("ETHUSDT", kind="premium_index")
+
+    assert result.status == "complete"
+    assert result.checksum_status == "verified"
+    assert [item.close for item in bars] == [2001.0, 2002.0]
+    assert premium == []
 
 
 def test_invalid_archive_is_fail_closed_without_partial_market_rows(

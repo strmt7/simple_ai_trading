@@ -28,6 +28,12 @@ from .market_store import (
 
 
 DERIVATIVES_DATA_TYPES = ("premiumIndexKlines", "fundingRate")
+SUPPORTED_DERIVATIVES_DATA_TYPES = (
+    "premiumIndexKlines",
+    "markPriceKlines",
+    "fundingRate",
+)
+_REFERENCE_DATA_TYPES = ("premiumIndexKlines", "markPriceKlines")
 _SOURCE = "binance_public_archive"
 _MAX_MEMBER_BYTES = 64 * 1024 * 1024
 _MAX_COMPRESSION_RATIO = 250.0
@@ -65,12 +71,12 @@ def derivatives_archive_file_url(
     """Build an official monthly USD-M derivatives archive URL."""
 
     symbol = str(symbol).upper()
-    if data_type not in DERIVATIVES_DATA_TYPES:
+    if data_type not in SUPPORTED_DERIVATIVES_DATA_TYPES:
         raise ValueError(f"unsupported derivatives data type: {data_type}")
     root = f"{base_url.rstrip('/')}/futures/um/monthly/{data_type}/{symbol}"
-    if data_type == "premiumIndexKlines":
+    if data_type in _REFERENCE_DATA_TYPES:
         if interval != "1m":
-            raise ValueError("Round 38 premiumIndexKlines interval must be 1m")
+            raise ValueError(f"{data_type} interval must be 1m")
         return f"{root}/{interval}/{symbol}-{interval}-{period}.zip"
     if interval:
         raise ValueError("fundingRate archives do not use an interval")
@@ -115,7 +121,9 @@ def _validated_csv_member(archive: zipfile.ZipFile) -> zipfile.ZipInfo:
     return member
 
 
-def _canonical_row_digest_update(digest: hashlib._Hash, values: Sequence[object]) -> None:
+def _canonical_row_digest_update(
+    digest: hashlib._Hash, values: Sequence[object]
+) -> None:
     encoded = json.dumps(
         list(values),
         ensure_ascii=True,
@@ -136,11 +144,15 @@ def _is_header(row: Sequence[str]) -> bool:
     return False
 
 
-def _parse_premium_archive(
+def _parse_reference_archive(
     zip_path: Path,
     *,
     symbol: str,
+    data_type: str,
 ) -> tuple[list[FuturesReferenceBar], str]:
+    if data_type not in _REFERENCE_DATA_TYPES:
+        raise ValueError(f"unsupported reference data type: {data_type}")
+    kind = "premium_index" if data_type == "premiumIndexKlines" else "mark_price"
     records: list[FuturesReferenceBar] = []
     digest = hashlib.sha256()
     previous_time: int | None = None
@@ -157,18 +169,22 @@ def _parse_premium_archive(
                 close_time = _normalize_archive_timestamp(row[6])
                 values = tuple(float(row[index]) for index in range(1, 5))
                 if not all(math.isfinite(value) for value in values):
-                    raise ValueError("premium-index row contains a non-finite value")
+                    raise ValueError("reference-price row contains a non-finite value")
                 open_value, high, low, close = values
+                if kind == "mark_price" and any(value <= 0.0 for value in values):
+                    raise ValueError("mark-price row contains a nonpositive value")
                 if high < max(open_value, low, close) or low > min(
                     open_value, high, close
                 ):
-                    raise ValueError("premium-index OHLC bounds are invalid")
+                    raise ValueError("reference-price OHLC bounds are invalid")
                 if previous_time is not None and open_time <= previous_time:
-                    raise ValueError("premium-index timestamps are not strictly increasing")
+                    raise ValueError(
+                        "reference-price timestamps are not strictly increasing"
+                    )
                 record = FuturesReferenceBar(
                     symbol=symbol,
                     market_type="futures",
-                    kind="premium_index",
+                    kind=kind,
                     interval="1m",
                     open_time=open_time,
                     open=open_value,
@@ -184,7 +200,7 @@ def _parse_premium_archive(
                 )
                 previous_time = open_time
     if not records:
-        raise ValueError("premium-index archive contains no data rows")
+        raise ValueError("reference-price archive contains no data rows")
     return records, digest.hexdigest()
 
 
@@ -209,9 +225,13 @@ def _parse_funding_archive(
                 interval_hours = int(row[1])
                 rate = float(row[2])
                 if not math.isfinite(rate) or abs(rate) > 0.1:
-                    raise ValueError("funding rate is non-finite or outside sanity bounds")
+                    raise ValueError(
+                        "funding rate is non-finite or outside sanity bounds"
+                    )
                 if not 1 <= interval_hours <= 8:
-                    raise ValueError("funding interval is outside the frozen 1..8h range")
+                    raise ValueError(
+                        "funding interval is outside the frozen 1..8h range"
+                    )
                 if previous_time is not None and calc_time <= previous_time:
                     raise ValueError("funding timestamps are not strictly increasing")
                 record = FundingRateRecord(
@@ -222,9 +242,7 @@ def _parse_funding_archive(
                     funding_rate=rate,
                 )
                 records.append(record)
-                _canonical_row_digest_update(
-                    digest, (calc_time, interval_hours, rate)
-                )
+                _canonical_row_digest_update(digest, (calc_time, interval_hours, rate))
                 previous_time = calc_time
     if not records:
         raise ValueError("funding archive contains no data rows")
@@ -245,9 +263,9 @@ def ingest_derivatives_archive_url(
     """Verify, parse, and atomically store one official derivatives archive."""
 
     symbol = symbol.upper()
-    if data_type not in DERIVATIVES_DATA_TYPES:
+    if data_type not in SUPPORTED_DERIVATIVES_DATA_TYPES:
         raise ValueError(f"unsupported derivatives data type: {data_type}")
-    stored_interval = interval if data_type == "premiumIndexKlines" else ""
+    stored_interval = interval if data_type in _REFERENCE_DATA_TYPES else ""
     if not force and store.derivatives_archive_file_status(url) == "complete":
         return DerivativesArchiveIngestResult(
             url=url,
@@ -281,12 +299,10 @@ def ingest_derivatives_archive_url(
     checksum_status = "unverified"
     row_stream_sha256 = ""
     try:
-        zip_path, bytes_downloaded, zip_sha256 = _download_to_temp(
-            url, timeout=timeout
+        zip_path, bytes_downloaded, zip_sha256 = _download_to_temp(url, timeout=timeout)
+        checksum_sha256 = (
+            _fetch_archive_checksum(url, timeout=max(1, min(timeout, 30))) or ""
         )
-        checksum_sha256 = _fetch_archive_checksum(
-            url, timeout=max(1, min(timeout, 30))
-        ) or ""
         if not checksum_sha256:
             checksum_status = "missing"
             raise ValueError("required archive checksum sidecar is unavailable")
@@ -298,20 +314,18 @@ def ingest_derivatives_archive_url(
             )
         checksum_status = "verified"
         ingested_at_ms = int(time.time() * 1000)
-        if data_type == "premiumIndexKlines":
-            premium, row_stream_sha256 = _parse_premium_archive(
-                zip_path, symbol=symbol
+        if data_type in _REFERENCE_DATA_TYPES:
+            reference, row_stream_sha256 = _parse_reference_archive(
+                zip_path, symbol=symbol, data_type=data_type
             )
-            rows_read = len(premium)
+            rows_read = len(reference)
             rows_inserted = store.upsert_futures_reference_bars(
-                premium,
-                source=f"{_SOURCE}_premiumIndexKlines",
+                reference,
+                source=f"{_SOURCE}_{data_type}",
                 ingested_at_ms=ingested_at_ms,
             )
         else:
-            funding, row_stream_sha256 = _parse_funding_archive(
-                zip_path, symbol=symbol
-            )
+            funding, row_stream_sha256 = _parse_funding_archive(zip_path, symbol=symbol)
             rows_read = len(funding)
             rows_inserted = store.upsert_funding_rates(
                 funding,
@@ -428,6 +442,7 @@ def ingest_derivatives_archive_range(
 
 __all__ = [
     "DERIVATIVES_DATA_TYPES",
+    "SUPPORTED_DERIVATIVES_DATA_TYPES",
     "DerivativesArchiveIngestResult",
     "derivatives_archive_file_url",
     "ingest_derivatives_archive_range",
