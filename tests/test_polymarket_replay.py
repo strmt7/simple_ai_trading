@@ -1404,6 +1404,35 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
     ).default == 30
 
 
+def test_polymarket_source_verification_is_in_the_shared_command_contract() -> None:
+    verify = next(
+        spec for spec in command_specs() if spec.name == "polymarket-verify"
+    )
+    publish = next(
+        spec for spec in command_specs() if spec.name == "polymarket-publish"
+    )
+
+    assert {option.dest for option in verify.options} == {
+        "artifact",
+        "database",
+        "output",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
+    assert next(
+        option for option in verify.options if option.dest == "artifact"
+    ).required
+    assert {option.dest for option in publish.options} == {
+        "artifact",
+        "database",
+        "research_root",
+        "round",
+        "prior_round",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
 def test_replay_rejects_semantically_inconsistent_published_best_price(
     tmp_path,
 ) -> None:

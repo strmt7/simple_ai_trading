@@ -18,6 +18,9 @@ import shutil
 from typing import Any
 
 from .ai_uplift import assess_ai_uplift
+from .polymarket_source_verification import (
+    validate_polymarket_source_verification,
+)
 
 
 _ARTIFACT_SCHEMA = "polymarket-prospective-model-experiment-v1"
@@ -3334,16 +3337,24 @@ def publish_polymarket_model_artifact(
     artifact_path: str | Path,
     research_root: str | Path,
     *,
+    source_verification: Mapping[str, Any],
     round_number: int = 3,
     prior_round_path: str | Path | None = None,
 ) -> PolymarketPublicationResult:
-    """Publish current charts and their exact source tables from one artifact."""
+    """Publish charts only after independent source reconstruction succeeds."""
 
     if round_number < 1:
         raise ValueError("publication round must be positive")
     source = Path(artifact_path).resolve()
     root = Path(research_root).resolve()
     validated = validate_polymarket_model_artifact(source)
+    validated_source_verification = dict(
+        validate_polymarket_source_verification(
+            source_verification,
+            artifact_sha256=validated.artifact_sha256,
+            run_id=str(validated.payload["run_id"]),
+        )
+    )
     predictions = _prediction_rows(validated.predictions)
     start = _utc(min(int(row["event_start_ms"]) for row in validated.predictions))
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
@@ -3407,6 +3418,8 @@ def publish_polymarket_model_artifact(
     for name, rows in table_payloads.items():
         _write_csv(tables / name, rows)
     _write_json(latest / "held-out-group-score-summary.json", group_score_summary)
+    source_verification_path = latest / "source-verification.json"
+    _write_json(source_verification_path, validated_source_verification)
     _write_text(
         charts / "model-selection.svg",
         _model_selection_svg(model_selection_rows, start=start, end=end),
@@ -3441,6 +3454,11 @@ def publish_polymarket_model_artifact(
         group_score_summary,
     )
     _write_text(root / results_name, results)
+    source_verification_note = (
+        "The complete source database was independently reconstructed before "
+        "publication. Inspect the [source-verification report]"
+        "(source-verification.json).\n\n"
+    )
     latest_readme = f"""# Polymarket research round {round_number}
 
 ![Held-out settled equity](charts/held-out-equity.svg)
@@ -3450,6 +3468,7 @@ The current publication is generated from prospective BTC/ETH/SOL evidence for
 and governed AI-veto diagnostics where available. No live-trading or durable
 profitability claim is made.
 
+{source_verification_note}
 [Read the measured results](../{results_name}) or inspect the
 [integrity manifest](publication-integrity.json) and [source tables](tables/).
 
@@ -3462,6 +3481,7 @@ profitability claim is made.
         root / results_name,
         latest / "README.md",
         latest / "held-out-group-score-summary.json",
+        source_verification_path,
         *(tables / name for name in sorted(table_payloads)),
         *(charts / name for name in sorted(current_chart_names)),
     ]
@@ -3485,6 +3505,10 @@ profitability claim is made.
         "held_out_start_utc": start,
         "held_out_end_utc": end,
         "assets": list(_ASSETS),
+        "source_reconstruction_verified": True,
+        "source_verification_report_sha256": validated_source_verification[
+            "report_sha256"
+        ],
         "generated_artifacts": entries,
         "claims": {
             "trading_authority": False,
