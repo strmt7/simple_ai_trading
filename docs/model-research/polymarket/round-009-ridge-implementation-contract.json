@@ -1,0 +1,52 @@
+{
+  "candidate_grid": {
+    "class_weighting": false,
+    "l2": [
+      0.01,
+      0.1,
+      1.0
+    ],
+    "selection": "Minimum validation binary log loss; an exact tie selects the larger L2 value.",
+    "thresholds": [
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9
+    ]
+  },
+  "contract_sha256": "4b192e7f30af3e3d6e7dfb1b2b3342518e23de6d750b6b1cfd2334d87f2f5a12",
+  "evaluation": {
+    "conflict_resolution": "At one condition decision, choose the passing Up or Down action with the larger probability. Exact probability ties abstain.",
+    "failed_exit": "Charge the full entry cost, record a failed-exit event, and block the condition permanently.",
+    "no_fill_release": "Release the condition only at the recorded entry execution-confirmation receipt.",
+    "position_state": "At most one bot-owned position or unresolved entry attempt per condition.",
+    "realized_pnl_clock": "Recognize complete round-trip PnL at exit receipt and conservative failed-exit loss at the latest locally known execution event. Report realized-only drawdown explicitly.",
+    "threshold_gate": "Validation requires at least 30 completed round trips overall and five per asset, positive aggregate stress utility, positive median selected-market PnL, and zero filled-entry/failed-exit events. Select the greatest Wilson 95% lower bound for positive-complete precision; an exact tie selects the higher threshold. Otherwise select no_trade.",
+    "test_once": "After L2 and threshold selection are frozen from validation, evaluate the untouched test partition exactly once. Test results cannot alter the model or threshold."
+  },
+  "fit": {
+    "convergence": "A non-finite objective, non-finite parameter, optimizer failure, or iteration-limit termination invalidates that candidate; it is never silently accepted.",
+    "initialization": "All standardized feature weights and the intercept start at zero.",
+    "objective": "Mean binary log loss plus 0.5 * L2 * squared L2 norm of standardized feature weights. The intercept is not regularized.",
+    "optimizer": "SciPy L-BFGS-B with an analytic gradient, maxiter=500, ftol=1e-12, and gtol=1e-8.",
+    "preprocessing": "For each feature, subtract the training-only arithmetic mean and divide by the training-only population standard deviation. Replace a non-finite or <=1e-12 standard deviation with 1. Validation and test never refit preprocessing.",
+    "probability": "Stable logistic sigmoid clipped only for log-loss evaluation to [1e-12, 1-1e-12]."
+  },
+  "parent_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
+  "schema_version": "polymarket-round9-ridge-implementation-contract-v1",
+  "split": {
+    "allocation": "For N sorted eligible synchronized groups, validation_count=floor(0.2*N), test_count=floor(0.2*N), one group is purged before validation and one before test, and every earlier group is training. N must be at least 30 and every retained partition must be nonempty.",
+    "group": "Exact five-minute event_start_ms shared by BTC, ETH, and SOL; all conditions, decisions, and both action orientations remain together.",
+    "outcome_breadth": "After the split is frozen, each retained partition must contain official Up and Down market outcomes for every asset. Outcomes validate breadth only and are never features.",
+    "training_label": "positive_complete for classifier-eligible action paths. action_unavailable rows are excluded; entry_no_fill and filled_entry_failed_exit remain eligible negatives.",
+    "training_preconditions": "At least 30 hash-bound continuity-eligible groups, both target classes in training, finite 39-wide features, exact source/action hashes, and complete official outcomes. Failure selects insufficient_evidence without fitting."
+  },
+  "status": "frozen_before_any_round_9_evidence_model_fit_or_model_score",
+  "truth_constraints": {
+    "ai_challenger_authorized": false,
+    "profitability_claim": false,
+    "test_selection_permitted": false,
+    "trading_authority": false
+  }
+}
