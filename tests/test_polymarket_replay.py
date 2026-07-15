@@ -35,6 +35,7 @@ from simple_ai_trading.polymarket_features import (
     build_polymarket_feature_dataset,
     load_polymarket_feature_source_context,
     materialize_polymarket_feature_dataset,
+    polymarket_feature_row_sha256,
 )
 from simple_ai_trading.polymarket_continuity import (
     evaluate_polymarket_continuity_eligibility,
@@ -1287,6 +1288,9 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert created.row_count == existing.row_count == len(first.rows)
     assert len(first.rows) >= 1
     row = first.rows[0]
+    assert polymarket_feature_row_sha256(row) == (
+        "554913ace70a9643f9afee3951c8136c266eb4023470ccf4f505720086385a7a"
+    )
     assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 49
     assert row.official_up is True
     assert row.resolution_event_id
@@ -1856,10 +1860,17 @@ def test_feature_feed_windows_never_cross_connection_segments() -> None:
         event_sha256="5" * 64,
     )
     connection_cursor = feature_module._ConnectionCursor(
-        (first, new_connection_trade)
+        (first,), (new_connection_trade,)
     )
     assert connection_cursor.advance(1_000_000_000) == "binance:first"
     assert connection_cursor.advance(1_500_000_000) == "binance:second"
+    tied_trade = replace(
+        new_connection_trade,
+        received_monotonic_ns=first.received_monotonic_ns,
+        event_id=first.event_id,
+    )
+    tie_cursor = feature_module._ConnectionCursor((first,), (tied_trade,))
+    assert tie_cursor.advance(first.received_monotonic_ns) == "binance:second"
     with pytest.raises(ValueError, match="crossed connection segments"):
         feature_module._BookSeries((first, second))
 
@@ -1898,6 +1909,83 @@ def test_feature_feed_windows_never_cross_connection_segments() -> None:
     assert (
         cursor.latest_at_or_before(1_000, connection_id=current.connection_id)
         is None
+    )
+
+
+def test_feature_series_compact_storage_preserves_frozen_prefixes_and_math() -> None:
+    first_book = feature_module._BinanceBookPoint(
+        asset="BTC",
+        connection_id="binance:first",
+        received_wall_ms=1_000,
+        received_monotonic_ns=1_000_000_000,
+        bid=99.0,
+        bid_quantity=1.0,
+        ask=101.0,
+        ask_quantity=1.0,
+        event_id="first",
+        event_sha256="1" * 64,
+    )
+    second_book = replace(
+        first_book,
+        received_wall_ms=2_000,
+        received_monotonic_ns=2_000_000_000,
+        bid=100.0,
+        ask=102.0,
+        event_id="second",
+        event_sha256="2" * 64,
+    )
+    first_trade = feature_module._BinanceTradePoint(
+        asset="BTC",
+        connection_id="binance:first",
+        received_monotonic_ns=1_100_000_000,
+        signed_quote=Decimal("1.25"),
+        gross_quote=Decimal("2.5"),
+        event_id="trade-a",
+        event_sha256="3" * 64,
+    )
+    second_trade = replace(
+        first_trade,
+        received_monotonic_ns=1_900_000_000,
+        signed_quote=Decimal("-0.75"),
+        gross_quote=Decimal("0.75"),
+        event_id="trade-b",
+        event_sha256="4" * 64,
+    )
+
+    books = feature_module._BookSeries((second_book, first_book))
+    trades = feature_module._TradeSeries((second_trade, first_trade))
+
+    assert isinstance(books.prefix_digests[0], bytes)
+    assert isinstance(trades.prefix_digests[0], bytes)
+    assert books.causal_prefix(0) == (
+        0,
+        "ac9e19825f7af1fc33fa59f496408a2a12c3983a0896dcd230a83c62e70eb5db",
+    )
+    assert books.causal_prefix(1_000_000_000) == (
+        1,
+        "c8074e644b0e9c0d8afc50d40ae1cb3b0dc5c73488932fa8c3af7d00361d3ce4",
+    )
+    assert books.causal_prefix(2_000_000_000) == (
+        2,
+        "70080248adc3ad4daf7ec0dfbf32f03c37f6ab7e4caf76514c4a61d4550257a1",
+    )
+    assert trades.causal_prefix(0) == (
+        0,
+        "a3d96f8e1af2af6d6123dedeae66f2147e6ce74fa565e0608fbff39a73c68354",
+    )
+    assert trades.causal_prefix(1_100_000_000) == (
+        1,
+        "d904b48be9fbf068982dc3b1dd7cb9aff260bedefdc621f1473a81d1f9262088",
+    )
+    assert trades.causal_prefix(1_900_000_000) == (
+        2,
+        "16d4514f546f7028571a9418eb4310030c46a46e4cda871c2622d94b616694dc",
+    )
+    assert books.return_bps(2_000_000_000, 1_000) == 99.50330853168091
+    assert books.realized_volatility_bps(2_000_000_000, 1_000) == (99.50330853168091)
+    assert trades.stats(2_000_000_000, 1_000) == (
+        0.15384615384615385,
+        3.25,
     )
 
 

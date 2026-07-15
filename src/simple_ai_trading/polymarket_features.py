@@ -9,7 +9,7 @@ import hashlib
 import json
 import math
 import time
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Sequence, TypeVar
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_coverage import PolymarketFeedCoverage, inspect_polymarket_feed_coverage
@@ -297,7 +297,7 @@ class PolymarketFeatureMaterialization:
         return asdict(self)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _MarketSnapshotPoint:
     condition_id: str
     observed_wall_ms: int
@@ -305,7 +305,7 @@ class _MarketSnapshotPoint:
     snapshot_sha256: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _PricePoint:
     asset: str
     connection_id: str
@@ -317,7 +317,7 @@ class _PricePoint:
     event_sha256: str
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _BinanceBookPoint:
     asset: str
     connection_id: str
@@ -335,7 +335,7 @@ class _BinanceBookPoint:
         return (self.bid + self.ask) / 2.0
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class _BinanceTradePoint:
     asset: str
     connection_id: str
@@ -361,31 +361,91 @@ class PolymarketFeatureSourceContext:
     trade_series: Mapping[str, Mapping[str, _TradeSeries]]
 
 
+_ReceivedPoint = TypeVar("_ReceivedPoint", _BinanceBookPoint, _BinanceTradePoint)
+
+
+def _received_order_key(
+    item: _BinanceBookPoint | _BinanceTradePoint,
+) -> tuple[int, str]:
+    return item.received_monotonic_ns, item.event_id
+
+
+def _stable_received_order(
+    points: Sequence[_ReceivedPoint],
+) -> tuple[_ReceivedPoint, ...]:
+    ordered = points if isinstance(points, tuple) else tuple(points)
+    if any(
+        _received_order_key(previous) > _received_order_key(current)
+        for previous, current in zip(ordered, ordered[1:])
+    ):
+        return tuple(sorted(ordered, key=_received_order_key))
+    return ordered
+
+
 class _ConnectionCursor:
+    __slots__ = (
+        "book_index",
+        "book_points",
+        "latest_connection_id",
+        "latest_key",
+        "trade_index",
+        "trade_points",
+    )
+
     def __init__(
         self,
-        points: Sequence[_BinanceBookPoint | _BinanceTradePoint],
+        book_points: Sequence[_BinanceBookPoint],
+        trade_points: Sequence[_BinanceTradePoint],
     ) -> None:
-        self.points = tuple(
-            sorted(
-                points,
-                key=lambda item: (item.received_monotonic_ns, item.event_id),
-            )
-        )
-        self.index = 0
+        self.book_points = _stable_received_order(book_points)
+        self.trade_points = _stable_received_order(trade_points)
+        self.book_index = 0
+        self.trade_index = 0
         self.latest_connection_id = ""
+        self.latest_key: tuple[int, str, int, int] | None = None
 
     def advance(self, received_monotonic_ns: int) -> str:
+        previous_book_index = self.book_index
         while (
-            self.index < len(self.points)
-            and self.points[self.index].received_monotonic_ns <= received_monotonic_ns
+            self.book_index < len(self.book_points)
+            and self.book_points[self.book_index].received_monotonic_ns
+            <= received_monotonic_ns
         ):
-            self.latest_connection_id = self.points[self.index].connection_id
-            self.index += 1
+            self.book_index += 1
+        if self.book_index > previous_book_index:
+            position = self.book_index - 1
+            point = self.book_points[position]
+            key = (point.received_monotonic_ns, point.event_id, 0, position)
+            if self.latest_key is None or key > self.latest_key:
+                self.latest_key = key
+                self.latest_connection_id = point.connection_id
+
+        previous_trade_index = self.trade_index
+        while (
+            self.trade_index < len(self.trade_points)
+            and self.trade_points[self.trade_index].received_monotonic_ns
+            <= received_monotonic_ns
+        ):
+            self.trade_index += 1
+        if self.trade_index > previous_trade_index:
+            position = self.trade_index - 1
+            point = self.trade_points[position]
+            key = (point.received_monotonic_ns, point.event_id, 1, position)
+            if self.latest_key is None or key > self.latest_key:
+                self.latest_key = key
+                self.latest_connection_id = point.connection_id
         return self.latest_connection_id
 
 
 class _PriceCursor:
+    __slots__ = (
+        "available",
+        "available_by_connection",
+        "index",
+        "latest_received",
+        "points",
+    )
+
     def __init__(self, points: Sequence[_PricePoint]) -> None:
         self.points = tuple(
             sorted(
@@ -456,13 +516,10 @@ class _PriceCursor:
 
 
 class _BookCursor:
+    __slots__ = ("index", "latest", "points")
+
     def __init__(self, points: Sequence[_BinanceBookPoint]) -> None:
-        self.points = tuple(
-            sorted(
-                points,
-                key=lambda item: (item.received_monotonic_ns, item.event_id),
-            )
-        )
+        self.points = _stable_received_order(points)
         self.index = 0
         self.latest: _BinanceBookPoint | None = None
 
@@ -477,39 +534,40 @@ class _BookCursor:
 
 
 class _BookSeries:
+    __slots__ = (
+        "connection_id",
+        "points",
+        "prefix_digests",
+        "squared_returns",
+        "times",
+    )
+
     def __init__(self, points: Sequence[_BinanceBookPoint]) -> None:
-        self.points = tuple(
-            sorted(
-                points,
-                key=lambda item: (item.received_monotonic_ns, item.event_id),
-            )
-        )
+        self.points = _stable_received_order(points)
         connections = {item.connection_id for item in self.points}
         if len(connections) != 1:
             raise ValueError("Binance book series crossed connection segments")
         self.connection_id = next(iter(connections))
         self.times = tuple(item.received_monotonic_ns for item in self.points)
-        prefix_digests = [
-            _canonical_sha256(
+        previous_sha256 = _canonical_sha256(
+            {
+                "schema_version": "binance-book-causal-prefix-v2",
+                "stream": "binance_spot",
+                "connection_id": self.connection_id,
+            }
+        )
+        prefix_digests = [bytes.fromhex(previous_sha256)]
+        for item in self.points:
+            previous_sha256 = _canonical_sha256(
                 {
                     "schema_version": "binance-book-causal-prefix-v2",
-                    "stream": "binance_spot",
-                    "connection_id": self.connection_id,
+                    "previous_sha256": previous_sha256,
+                    "event_id": item.event_id,
+                    "event_sha256": item.event_sha256,
+                    "received_monotonic_ns": item.received_monotonic_ns,
                 }
             )
-        ]
-        for item in self.points:
-            prefix_digests.append(
-                _canonical_sha256(
-                    {
-                        "schema_version": "binance-book-causal-prefix-v2",
-                        "previous_sha256": prefix_digests[-1],
-                        "event_id": item.event_id,
-                        "event_sha256": item.event_sha256,
-                        "received_monotonic_ns": item.received_monotonic_ns,
-                    }
-                )
-            )
+            prefix_digests.append(bytes.fromhex(previous_sha256))
         self.prefix_digests = tuple(prefix_digests)
         squared_returns = [0.0]
         for previous, current in zip(self.points, self.points[1:]):
@@ -527,7 +585,7 @@ class _BookSeries:
 
     def causal_prefix(self, received_monotonic_ns: int) -> tuple[int, str]:
         count = bisect_right(self.times, int(received_monotonic_ns))
-        return count, self.prefix_digests[count]
+        return count, self.prefix_digests[count].hex()
 
     def return_bps(self, received_monotonic_ns: int, window_ms: int) -> float:
         current = self._index_at_or_before(received_monotonic_ns)
@@ -556,50 +614,52 @@ class _BookSeries:
 
 
 class _TradeSeries:
+    __slots__ = (
+        "connection_id",
+        "gross_prefix",
+        "points",
+        "prefix_digests",
+        "signed_prefix",
+        "times",
+    )
+
     def __init__(self, points: Sequence[_BinanceTradePoint]) -> None:
-        self.points = tuple(
-            sorted(
-                points,
-                key=lambda item: (item.received_monotonic_ns, item.event_id),
-            )
-        )
+        self.points = _stable_received_order(points)
         connections = {item.connection_id for item in self.points}
         if len(connections) != 1:
             raise ValueError("Binance trade series crossed connection segments")
         self.connection_id = next(iter(connections))
         self.times = tuple(item.received_monotonic_ns for item in self.points)
-        prefix_digests = [
-            _canonical_sha256(
-                {
-                    "schema_version": "binance-trade-causal-prefix-v2",
-                    "stream": "binance_spot",
-                    "connection_id": self.connection_id,
-                }
-            )
-        ]
+        previous_sha256 = _canonical_sha256(
+            {
+                "schema_version": "binance-trade-causal-prefix-v2",
+                "stream": "binance_spot",
+                "connection_id": self.connection_id,
+            }
+        )
+        prefix_digests = [bytes.fromhex(previous_sha256)]
         signed_prefix = [Decimal(0)]
         gross_prefix = [Decimal(0)]
         for item in self.points:
             signed_prefix.append(signed_prefix[-1] + item.signed_quote)
             gross_prefix.append(gross_prefix[-1] + item.gross_quote)
-            prefix_digests.append(
-                _canonical_sha256(
-                    {
-                        "schema_version": "binance-trade-causal-prefix-v2",
-                        "previous_sha256": prefix_digests[-1],
-                        "event_id": item.event_id,
-                        "event_sha256": item.event_sha256,
-                        "received_monotonic_ns": item.received_monotonic_ns,
-                    }
-                )
+            previous_sha256 = _canonical_sha256(
+                {
+                    "schema_version": "binance-trade-causal-prefix-v2",
+                    "previous_sha256": previous_sha256,
+                    "event_id": item.event_id,
+                    "event_sha256": item.event_sha256,
+                    "received_monotonic_ns": item.received_monotonic_ns,
+                }
             )
+            prefix_digests.append(bytes.fromhex(previous_sha256))
         self.signed_prefix = tuple(signed_prefix)
         self.gross_prefix = tuple(gross_prefix)
         self.prefix_digests = tuple(prefix_digests)
 
     def causal_prefix(self, received_monotonic_ns: int) -> tuple[int, str]:
         count = bisect_right(self.times, int(received_monotonic_ns))
-        return count, self.prefix_digests[count]
+        return count, self.prefix_digests[count].hex()
 
     def stats(self, received_monotonic_ns: int, window_ms: int) -> tuple[float, float]:
         high = bisect_right(self.times, int(received_monotonic_ns))
@@ -997,7 +1057,7 @@ def build_polymarket_feature_dataset(
         asset: _BookCursor(points) for asset, points in direct_books.items()
     }
     direct_connection_cursors = {
-        asset: _ConnectionCursor((*direct_books[asset], *direct_trades[asset]))
+        asset: _ConnectionCursor(direct_books[asset], direct_trades[asset])
         for asset in _ASSETS
     }
     book_series = context.book_series
