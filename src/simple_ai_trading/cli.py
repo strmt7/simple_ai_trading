@@ -159,6 +159,10 @@ from .style import supports_ansi_terminal
 from .types import RuntimeConfig, StrategyConfig
 
 _JITTER_RANDOM = random.SystemRandom()
+_SEGMENTED_GAPS_HELP = (
+    "admit only continuity segments that reset CLOB, direct Binance, and RTDS "
+    "state after a hash-audited reconnect"
+)
 
 
 _TRAINING_PRESETS: dict[str, dict[str, object]] = {
@@ -519,7 +523,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_features.add_argument(
         "--allow-segmented-gaps",
         action="store_true",
-        help="explicitly admit validated CLOB-only continuity segments",
+        help=_SEGMENTED_GAPS_HELP,
     )
     parser_polymarket_features.add_argument("--memory-limit", default="1GB")
     parser_polymarket_features.add_argument("--database-threads", type=int, default=2)
@@ -548,10 +552,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_model.add_argument(
         "--allow-segmented-gaps",
         action="store_true",
-        help=(
-            "admit only continuity segments that reset CLOB, direct Binance, and "
-            "RTDS state after a hash-audited reconnect"
-        ),
+        help=_SEGMENTED_GAPS_HELP,
     )
     parser_polymarket_model.add_argument(
         "--latency-ms",
@@ -760,7 +761,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument(
         "--allow-segmented-gaps",
         action="store_true",
-        help="explicitly admit validated CLOB-only continuity segments",
+        help=_SEGMENTED_GAPS_HELP,
     )
     parser_polymarket_paper.add_argument("--memory-limit", default="1GB")
     parser_polymarket_paper.add_argument("--database-threads", type=int, default=2)
