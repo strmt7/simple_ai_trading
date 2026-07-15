@@ -27,6 +27,9 @@ from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION = "polymarket-execution-config-v2"
 POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION = "polymarket-execution-trade-v2"
 POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v2"
+POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION = (
+    "polymarket-causal-retry-execution-report-v1"
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -580,6 +583,95 @@ def build_polymarket_policy_selection(
     )
 
 
+def build_polymarket_retry_policy_selection(
+    samples: Sequence[PolymarketModelSample],
+    probabilities: Sequence[float] | np.ndarray,
+    markets: Sequence[PolymarketFiveMinuteMarket],
+    *,
+    config: PolymarketExecutionResearchConfig | None = None,
+) -> PolymarketPolicySelection:
+    """Freeze every positive fixed-horizon proposal before causal execution."""
+
+    cfg = (config or PolymarketExecutionResearchConfig()).validated()
+    if not samples:
+        raise ValueError("Polymarket retry policy selection requires model samples")
+    predicted = np.asarray(probabilities, dtype=np.float64)
+    if predicted.shape != (len(samples),) or not np.all(np.isfinite(predicted)):
+        raise ValueError("Polymarket retry policy probability array is invalid")
+    if len({item.sample_id for item in samples}) != len(samples):
+        raise ValueError("Polymarket retry policy samples are duplicated")
+    market_by_condition = {market.condition_id: market for market in markets}
+    if len(market_by_condition) != len(markets):
+        raise ValueError("Polymarket retry policy market metadata is duplicated")
+    probability_by_sample = {
+        sample.sample_id: float(probability)
+        for sample, probability in zip(samples, predicted, strict=True)
+    }
+    samples_by_condition: dict[str, list[PolymarketModelSample]] = {}
+    for sample in samples:
+        market = market_by_condition.get(sample.condition_id)
+        if (
+            market is None
+            or market.market_id != sample.market_id
+            or market.asset != sample.asset
+            or market.event_start_ms != sample.event_start_ms
+            or market.end_ms != sample.end_ms
+        ):
+            raise ValueError(
+                "Polymarket retry policy sample and market metadata disagree"
+            )
+        samples_by_condition.setdefault(sample.condition_id, []).append(sample)
+    reasons: Counter[str] = Counter()
+    candidates: list[PolymarketPolicyCandidate] = []
+    for condition in sorted(samples_by_condition):
+        market = market_by_condition[condition]
+        market_candidates: list[PolymarketPolicyCandidate] = []
+        for sample in sorted(
+            samples_by_condition[condition],
+            key=lambda item: (
+                item.decision_received_monotonic_ns,
+                item.decision_received_wall_ms,
+                item.sample_id,
+            ),
+        ):
+            candidate = _policy_candidate(
+                sample,
+                probability_by_sample[sample.sample_id],
+                minimum_edge_per_contract=cfg.minimum_expected_edge_per_contract,
+                fee=market.fee_schedule.fee_model(),
+                quantity=market.minimum_order_size,
+                tick_size=market.tick_size,
+            )
+            if candidate is not None:
+                market_candidates.append(candidate)
+        if not market_candidates:
+            reasons["no_positive_after_cost_edge"] += 1
+            continue
+        candidates.extend(market_candidates)
+    candidates.sort(
+        key=lambda item: (
+            item.sample.decision_received_monotonic_ns,
+            item.sample.asset,
+            item.sample.condition_id,
+            item.sample.sample_id,
+        )
+    )
+    payload = {
+        "schema_version": "polymarket-causal-retry-policy-selection-v1",
+        "config": cfg.asdict(),
+        "sample_ids": [item.sample_id for item in samples],
+        "probabilities": [format(float(value), ".17g") for value in predicted],
+        "candidates": [item.asdict() for item in candidates],
+        "reason_counts": dict(sorted(reasons.items())),
+    }
+    return PolymarketPolicySelection(
+        evaluated_market_count=len(samples_by_condition),
+        candidates=tuple(candidates),
+        reason_counts=dict(sorted(reasons.items())),
+        selection_sha256=_canonical_sha256(payload),
+    )
+
+
 def _trade_identity_payload(trade: PolymarketExecutionTrade) -> dict[str, object]:
     return {
         "schema_version": POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION,
@@ -630,7 +722,7 @@ def _report_payload(report: PolymarketExecutionReport) -> dict[str, object]:
     return payload
 
 
-def evaluate_polymarket_execution_policy(
+def _evaluate_polymarket_execution_policy(
     samples: Sequence[PolymarketModelSample],
     probabilities: Sequence[float] | np.ndarray,
     replay: PolymarketEvidenceReplay,
@@ -638,8 +730,9 @@ def evaluate_polymarket_execution_policy(
     config: PolymarketExecutionResearchConfig | None = None,
     market_permissions: Mapping[str, bool] | None = None,
     decision_delay_ms_by_condition: Mapping[str, int] | None = None,
+    retry_terminal_zero_fill: bool,
 ) -> PolymarketExecutionReport:
-    """Replay one causal FOK entry per market and settle only from official evidence."""
+    """Replay a frozen causal FOK policy and settle from official evidence."""
 
     cfg = (config or PolymarketExecutionResearchConfig()).validated()
     if not samples:
@@ -735,12 +828,12 @@ def evaluate_polymarket_execution_policy(
         ):
             raise ValueError("Polymarket execution evidence disagrees with model labels")
 
-    selection = build_polymarket_policy_selection(
-        samples,
-        predicted,
-        replay.markets,
-        config=cfg,
+    selection_builder = (
+        build_polymarket_retry_policy_selection
+        if retry_terminal_zero_fill
+        else build_polymarket_policy_selection
     )
+    selection = selection_builder(samples, predicted, replay.markets, config=cfg)
     candidates_by_group: dict[int, list[PolymarketPolicyCandidate]] = {}
     reasons: Counter[str] = Counter(selection.reason_counts)
     for candidate in selection.candidates:
@@ -764,6 +857,8 @@ def evaluate_polymarket_execution_policy(
     winning = 0
     losing = 0
     group_end_by_start: dict[int, int] = {}
+    filled_conditions: set[str] = set()
+    retry_blocked_conditions: set[str] = set()
     for sample in samples:
         existing_end = group_end_by_start.setdefault(
             sample.event_start_ms,
@@ -792,6 +887,13 @@ def evaluate_polymarket_execution_policy(
             ),
         ):
             sample = candidate.sample
+            if retry_terminal_zero_fill:
+                if sample.condition_id in filled_conditions:
+                    reasons["retry_suppressed_after_fill"] += 1
+                    continue
+                if sample.condition_id in retry_blocked_conditions:
+                    reasons["retry_blocked_by_nonterminal_or_invalid_state"] += 1
+                    continue
             market = market_by_condition[sample.condition_id]
             resolution = resolution_by_condition[sample.condition_id]
             fee = market.fee_schedule.fee_model()
@@ -946,6 +1048,11 @@ def evaluate_polymarket_execution_policy(
                     losing += 1
             elif execution_state == "UNKNOWN":
                 deployed_group_risk += worst_cost
+            if retry_terminal_zero_fill:
+                if execution_state == "FILLED":
+                    filled_conditions.add(sample.condition_id)
+                elif execution_state not in {"CANCELLED", "EXPIRED"}:
+                    retry_blocked_conditions.add(sample.condition_id)
             reasons[execution_reason] += 1
             trade_id = _canonical_sha256(
                 {
@@ -1018,11 +1125,21 @@ def evaluate_polymarket_execution_policy(
             )
 
     evaluated_markets = selection.evaluated_market_count
-    signal_markets = sum(len(values) for values in candidates_by_group.values())
+    signal_markets = len(
+        {
+            candidate.sample.condition_id
+            for values in candidates_by_group.values()
+            for candidate in values
+        }
+    )
     filled_count = sum(item.filled for item in trades)
     net_pnl = equity - cfg.initial_capital_quote
     provisional = PolymarketExecutionReport(
-        schema_version=POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION,
+        schema_version=(
+            POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION
+            if retry_terminal_zero_fill
+            else POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION
+        ),
         replay_run_id=replay.run_id,
         probability_input_sha256=probability_input_sha256,
         market_permission_sha256=market_permission_sha256,
@@ -1060,10 +1177,55 @@ def evaluate_polymarket_execution_policy(
     )
 
 
+def evaluate_polymarket_execution_policy(
+    samples: Sequence[PolymarketModelSample],
+    probabilities: Sequence[float] | np.ndarray,
+    replay: PolymarketEvidenceReplay,
+    *,
+    config: PolymarketExecutionResearchConfig | None = None,
+    market_permissions: Mapping[str, bool] | None = None,
+    decision_delay_ms_by_condition: Mapping[str, int] | None = None,
+) -> PolymarketExecutionReport:
+    """Replay the frozen first-positive FOK policy from research round 3."""
+
+    return _evaluate_polymarket_execution_policy(
+        samples,
+        probabilities,
+        replay,
+        config=config,
+        market_permissions=market_permissions,
+        decision_delay_ms_by_condition=decision_delay_ms_by_condition,
+        retry_terminal_zero_fill=False,
+    )
+
+
+def evaluate_polymarket_retry_execution_policy(
+    samples: Sequence[PolymarketModelSample],
+    probabilities: Sequence[float] | np.ndarray,
+    replay: PolymarketEvidenceReplay,
+    *,
+    config: PolymarketExecutionResearchConfig | None = None,
+    market_permissions: Mapping[str, bool] | None = None,
+    decision_delay_ms_by_condition: Mapping[str, int] | None = None,
+) -> PolymarketExecutionReport:
+    """Retry only after a causally proven terminal zero-fill FOK attempt."""
+
+    return _evaluate_polymarket_execution_policy(
+        samples,
+        probabilities,
+        replay,
+        config=config,
+        market_permissions=market_permissions,
+        decision_delay_ms_by_condition=decision_delay_ms_by_condition,
+        retry_terminal_zero_fill=True,
+    )
+
+
 __all__ = [
     "POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION",
     "POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION",
     "POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION",
+    "POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION",
     "PolymarketEquityPoint",
     "PolymarketExecutionReport",
     "PolymarketExecutionResearchConfig",
@@ -1071,5 +1233,7 @@ __all__ = [
     "PolymarketPolicyCandidate",
     "PolymarketPolicySelection",
     "build_polymarket_policy_selection",
+    "build_polymarket_retry_policy_selection",
     "evaluate_polymarket_execution_policy",
+    "evaluate_polymarket_retry_execution_policy",
 ]
