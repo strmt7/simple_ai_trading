@@ -184,6 +184,7 @@ class MakeTakeActionFeatureBatch:
     source_flow_sha256: str
     feature_names: tuple[str, ...]
     event_indexes: np.ndarray
+    decision_time_ms: np.ndarray
     action_code: np.ndarray
     action_side: np.ndarray
     eligible: np.ndarray
@@ -411,6 +412,9 @@ def build_make_take_action_features(
     action_code = np.tile(_ACTION_CODE_PATTERN, event_rows)
     action_side = np.tile(_ACTION_SIDE_PATTERN, event_rows)
     eligible = participation <= float(spec.max_l1_participation)
+    selected_decisions = np.array(
+        decisions[selected], dtype=np.int64, order="C", copy=True
+    )
     payload = {
         "schema_version": MAKE_TAKE_ACTION_FEATURE_SCHEMA_VERSION,
         "spec_sha256": spec.spec_sha256,
@@ -420,6 +424,7 @@ def build_make_take_action_features(
         "feature_names": list(feature_names),
         "arrays": {
             "event_indexes": _array_sha256(selected),
+            "decision_time_ms": _array_sha256(selected_decisions),
             "action_code": _array_sha256(action_code),
             "action_side": _array_sha256(action_side),
             "eligible": _array_sha256(eligible),
@@ -427,7 +432,14 @@ def build_make_take_action_features(
         },
     }
     batch_sha256 = _sha256(payload)
-    for array in (selected, action_code, action_side, eligible, features):
+    for array in (
+        selected,
+        selected_decisions,
+        action_code,
+        action_side,
+        eligible,
+        features,
+    ):
         array.setflags(write=False)
     return MakeTakeActionFeatureBatch(
         schema_version=MAKE_TAKE_ACTION_FEATURE_SCHEMA_VERSION,
@@ -437,6 +449,7 @@ def build_make_take_action_features(
         source_flow_sha256=flow.batch_sha256,
         feature_names=feature_names,
         event_indexes=selected,
+        decision_time_ms=selected_decisions,
         action_code=action_code,
         action_side=action_side,
         eligible=eligible,

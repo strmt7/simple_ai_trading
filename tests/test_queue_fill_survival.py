@@ -77,13 +77,15 @@ def _panel():
         flow=flow,
         source_dataset_sha256="a" * 64,
     )
-    return build_passive_fill_survival_panel(features, entries)
+    return build_passive_fill_survival_panel(features, entries, symbol="BTCUSDT")
 
 
 def test_survival_panel_and_hazard_risk_sets_preserve_censoring() -> None:
     panel = _panel()
 
     assert panel.action_side.tolist() == [1, -1, 1, -1]
+    assert panel.symbol == "BTCUSDT"
+    assert panel.decision_time_ms.tolist() == [10_000, 10_000, 30_000, 30_000]
     assert panel.fill_bucket.tolist() == [1, 0, 0, 2]
     first = build_hazard_risk_set(panel, 0)
     second = build_hazard_risk_set(panel, 1)

@@ -48,11 +48,13 @@ def _array_sha256(value: np.ndarray) -> str:
 @dataclass(frozen=True)
 class PassiveFillSurvivalPanel:
     schema_version: str
+    symbol: str
     feature_names: tuple[str, ...]
     source_action_feature_sha256: str
     source_entry_sha256: str
     source_dataset_sha256: str
     event_index: np.ndarray
+    decision_time_ms: np.ndarray
     action_side: np.ndarray
     features: np.ndarray
     fill_bucket: np.ndarray
@@ -65,6 +67,7 @@ class PassiveFillSurvivalPanel:
     def summary(self) -> dict[str, object]:
         return {
             "schema_version": self.schema_version,
+            "symbol": self.symbol,
             "rows": self.rows,
             "feature_count": len(self.feature_names),
             "long_rows": int(np.count_nonzero(self.action_side == 1)),
@@ -94,11 +97,16 @@ class HazardRiskSet:
 def build_passive_fill_survival_panel(
     action_features: MakeTakeActionFeatureBatch,
     entries: MakeTakeScenarioEntryBatch,
+    *,
+    symbol: str,
 ) -> PassiveFillSurvivalPanel:
     """Bind eligible passive action rows to exact right-censored fill buckets."""
 
+    normalized_symbol = str(symbol).strip().upper()
     if (
-        entries.scenario != "base"
+        normalized_symbol not in {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
+        or action_features.decision_time_ms.shape != (action_features.event_rows,)
+        or entries.scenario != "base"
         or action_features.spec.placement_latency_ms != entries.placement_latency_ms
         or action_features.spec.order_notional_quote != entries.order_notional_quote
         or action_features.spec.max_l1_participation != entries.max_l1_participation
@@ -146,6 +154,7 @@ def build_passive_fill_survival_panel(
     selected_local = local_passive[keep]
     selected_source = source_passive[keep]
     repeated_event_indexes = np.repeat(event_indexes, 2)[keep]
+    repeated_decision_times = np.repeat(action_features.decision_time_ms, 2)[keep]
     action_side = np.array(
         entries.action_side[selected_source], dtype=np.int8, order="C", copy=True
     )
@@ -163,28 +172,38 @@ def build_passive_fill_survival_panel(
         raise ValueError("passive-fill survival labels or features are invalid")
     payload = {
         "schema_version": PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION,
+        "symbol": normalized_symbol,
         "feature_names": list(action_features.feature_names),
         "source_action_feature_sha256": action_features.batch_sha256,
         "source_entry_sha256": entries.batch_sha256,
         "source_dataset_sha256": action_features.source_dataset_sha256,
         "arrays": {
             "event_index": _array_sha256(repeated_event_indexes),
+            "decision_time_ms": _array_sha256(repeated_decision_times),
             "action_side": _array_sha256(action_side),
             "features": _array_sha256(features),
             "fill_bucket": _array_sha256(fill_bucket),
         },
     }
     panel_sha256 = _sha256(payload)
-    retained = (repeated_event_indexes, action_side, features, fill_bucket)
+    retained = (
+        repeated_event_indexes,
+        repeated_decision_times,
+        action_side,
+        features,
+        fill_bucket,
+    )
     for array in retained:
         array.setflags(write=False)
     return PassiveFillSurvivalPanel(
         schema_version=PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION,
+        symbol=normalized_symbol,
         feature_names=action_features.feature_names,
         source_action_feature_sha256=action_features.batch_sha256,
         source_entry_sha256=entries.batch_sha256,
         source_dataset_sha256=action_features.source_dataset_sha256,
         event_index=repeated_event_indexes,
+        decision_time_ms=repeated_decision_times,
         action_side=action_side,
         features=features,
         fill_bucket=fill_bucket,
