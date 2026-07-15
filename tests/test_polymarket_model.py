@@ -414,6 +414,19 @@ def test_fit_is_deterministic_bounded_and_has_no_trading_authority() -> None:
     assert first_model == second_model
     assert first_report == second_report
     assert first_model.selected_candidate != "market_baseline"
+    assert first_model.selected_candidate == first_model.inner_selected_candidate
+    assert first_model.inner_fold_count == 3
+    assert len(first_model.candidate_inner_log_losses) == 6
+    assert [name for name, _loss in first_model.validation_gate_log_losses] == [
+        "market_baseline",
+        first_model.inner_selected_candidate,
+    ]
+    for train_start, train_end, validation_start, validation_end in (
+        first_model.inner_fold_boundaries_ms
+    ):
+        assert train_start <= train_end < validation_start <= validation_end
+        assert validation_end <= max(split.train_group_starts_ms)
+        assert validation_end < min(split.validation_group_starts_ms)
     assert first_report.validation_log_loss_delta < 0.0
     assert first_report.test_log_loss_delta < 0.0
     assert not first_model.trading_authority
@@ -445,6 +458,7 @@ def test_unjustified_correction_falls_back_to_market_probability() -> None:
 
     assert model.selected_candidate == "market_baseline"
     assert model.selected_l2 is None
+    assert model.inner_selected_candidate.startswith("offset_l2_")
     assert set(model.coefficients) == {0.0}
     assert report.validation_log_loss_delta == pytest.approx(0.0)
     assert report.test_log_loss_delta == pytest.approx(0.0)
@@ -834,7 +848,7 @@ def test_incomplete_market_is_excluded_and_training_fails_closed() -> None:
     config = PolymarketModelConfig(
         minimum_markets_per_asset=10,
         minimum_time_groups=10,
-        minimum_train_time_groups=5,
+        minimum_train_time_groups=15,
         minimum_validation_time_groups=2,
         minimum_test_time_groups=2,
         minimum_outcome_markets_per_split=1,

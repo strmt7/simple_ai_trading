@@ -21,9 +21,9 @@ from .polymarket_features import (
 
 POLYMARKET_MODEL_SAMPLE_SCHEMA_VERSION = "polymarket-model-sample-v1"
 POLYMARKET_MODEL_DATASET_SCHEMA_VERSION = "polymarket-model-dataset-v1"
-POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v1"
+POLYMARKET_OFFSET_MODEL_SCHEMA_VERSION = "polymarket-market-anchored-logit-v2"
 POLYMARKET_MODEL_SPLIT_SCHEMA_VERSION = "polymarket-purged-time-split-v1"
-POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v1"
+POLYMARKET_MODEL_REPORT_SCHEMA_VERSION = "polymarket-probability-report-v2"
 
 POLYMARKET_MODEL_FEATURE_NAMES = (
     "remaining_seconds",
@@ -99,6 +99,10 @@ class PolymarketModelConfig:
     minimum_validation_time_groups: int = 5
     minimum_test_time_groups: int = 5
     minimum_outcome_markets_per_split: int = 2
+    inner_fold_count: int = 3
+    inner_validation_time_groups: int = 2
+    inner_purge_time_groups: int = 1
+    minimum_inner_train_time_groups: int = 8
     l2_candidates: tuple[float, ...] = (0.001, 0.01, 0.1, 1.0, 10.0)
     minimum_validation_log_loss_improvement: float = 0.0001
     maximum_absolute_logit_correction: float = 2.0
@@ -123,6 +127,14 @@ class PolymarketModelConfig:
             or not 2 <= int(self.minimum_validation_time_groups) <= 100_000
             or not 2 <= int(self.minimum_test_time_groups) <= 100_000
             or not 1 <= int(self.minimum_outcome_markets_per_split) <= 100_000
+            or not 2 <= int(self.inner_fold_count) <= 8
+            or not 1 <= int(self.inner_validation_time_groups) <= 20
+            or not 1 <= int(self.inner_purge_time_groups) <= 20
+            or not 5 <= int(self.minimum_inner_train_time_groups) <= 100_000
+            or int(self.minimum_train_time_groups)
+            < int(self.minimum_inner_train_time_groups)
+            + int(self.inner_fold_count) * int(self.inner_validation_time_groups)
+            + int(self.inner_purge_time_groups)
             or not l2_values
             or l2_values != tuple(sorted(set(l2_values)))
             or any(not math.isfinite(value) or value <= 0.0 for value in l2_values)
@@ -289,7 +301,11 @@ class TrainedPolymarketOffsetModel:
     coefficients: tuple[float, ...]
     selected_candidate: str
     selected_l2: float | None
-    candidate_validation_log_losses: tuple[tuple[str, float], ...]
+    inner_selected_candidate: str
+    candidate_inner_log_losses: tuple[tuple[str, float], ...]
+    validation_gate_log_losses: tuple[tuple[str, float], ...]
+    inner_fold_count: int
+    inner_fold_boundaries_ms: tuple[tuple[int, int, int, int], ...]
     training_sample_count: int
     training_market_count: int
     training_time_group_count: int
@@ -988,9 +1004,18 @@ def _model_payload(model: TrainedPolymarketOffsetModel) -> dict[str, object]:
         "selected_l2": (
             None if model.selected_l2 is None else format(model.selected_l2, ".17g")
         ),
-        "candidate_validation_log_losses": [
+        "inner_selected_candidate": model.inner_selected_candidate,
+        "candidate_inner_log_losses": [
             [name, format(value, ".17g")]
-            for name, value in model.candidate_validation_log_losses
+            for name, value in model.candidate_inner_log_losses
+        ],
+        "validation_gate_log_losses": [
+            [name, format(value, ".17g")]
+            for name, value in model.validation_gate_log_losses
+        ],
+        "inner_fold_count": model.inner_fold_count,
+        "inner_fold_boundaries_ms": [
+            list(value) for value in model.inner_fold_boundaries_ms
         ],
         "training_sample_count": model.training_sample_count,
         "training_market_count": model.training_market_count,
@@ -1011,20 +1036,147 @@ def _baseline_probabilities(
     )
 
 
+def _inner_rolling_folds(
+    samples: Sequence[PolymarketModelSample],
+    config: PolymarketModelConfig,
+) -> tuple[
+    tuple[tuple[PolymarketModelSample, ...], tuple[PolymarketModelSample, ...]],
+    ...,
+]:
+    groups = tuple(sorted({item.event_start_ms for item in samples}))
+    validation_size = int(config.inner_validation_time_groups)
+    first_validation = len(groups) - int(config.inner_fold_count) * validation_size
+    folds: list[
+        tuple[
+            tuple[PolymarketModelSample, ...],
+            tuple[PolymarketModelSample, ...],
+        ]
+    ] = []
+    for fold_index in range(int(config.inner_fold_count)):
+        validation_start = first_validation + fold_index * validation_size
+        train_end = validation_start - int(config.inner_purge_time_groups)
+        train_groups = groups[:train_end]
+        validation_groups = groups[
+            validation_start : validation_start + validation_size
+        ]
+        if (
+            len(train_groups) < int(config.minimum_inner_train_time_groups)
+            or len(validation_groups) != validation_size
+            or not max(train_groups) < min(validation_groups)
+        ):
+            raise ValueError("insufficient groups for inner rolling model selection")
+        train_allowed = set(train_groups)
+        validation_allowed = set(validation_groups)
+        train_rows = tuple(
+            item for item in samples if item.event_start_ms in train_allowed
+        )
+        validation_rows = tuple(
+            item for item in samples if item.event_start_ms in validation_allowed
+        )
+        if not train_rows or not validation_rows:
+            raise ValueError("inner rolling model fold is empty")
+        folds.append((train_rows, validation_rows))
+    return tuple(folds)
+
+
 def fit_polymarket_offset_model(
     dataset: PolymarketModelDataset,
     split: PolymarketModelSplit,
 ) -> tuple[TrainedPolymarketOffsetModel, PolymarketModelReport]:
-    """Select regularization on validation only and score the untouched test tail."""
+    """Select inside training, gate on validation, and score untouched test data."""
 
     if split.source_dataset_sha256 != dataset.dataset_sha256:
         raise ValueError("Polymarket model split belongs to another dataset")
     if split.split_sha256 != _canonical_sha256(_split_payload(split)):
         raise ValueError("Polymarket model split identity is invalid")
     cfg = dataset.config.validated()
+    inner_folds = _inner_rolling_folds(split.train, cfg)
+    inner_weight = 0.0
+    baseline_inner_sum = 0.0
+    candidate_inner_sums = {float(l2): 0.0 for l2 in cfg.l2_candidates}
+    for inner_train, inner_validation in inner_folds:
+        inner_lower, inner_upper, inner_center, inner_scale = _fit_transform(
+            inner_train
+        )
+        inner_design = _apply_transform(
+            inner_train,
+            inner_lower,
+            inner_upper,
+            inner_center,
+            inner_scale,
+        )
+        inner_labels, inner_weights, inner_offsets = _targets_weights_offsets(
+            inner_train
+        )
+        fold_labels, fold_weights, _ = _targets_weights_offsets(inner_validation)
+        fold_weight = float(np.sum(fold_weights))
+        inner_weight += fold_weight
+        baseline_inner_sum += fold_weight * _weighted_log_loss_arrays(
+            fold_labels,
+            _baseline_probabilities(inner_validation),
+            fold_weights,
+        )
+        for l2 in cfg.l2_candidates:
+            coefficients = _fit_offset_coefficients(
+                inner_design,
+                inner_labels,
+                inner_weights,
+                inner_offsets,
+                l2=l2,
+                maximum_iterations=cfg.maximum_iterations,
+                tolerance=cfg.convergence_tolerance,
+            )
+            predictions = _predict_arrays(
+                inner_validation,
+                lower=inner_lower,
+                upper=inner_upper,
+                center=inner_center,
+                scale=inner_scale,
+                coefficients=coefficients,
+                maximum_absolute_correction=cfg.maximum_absolute_logit_correction,
+            )
+            candidate_inner_sums[float(l2)] += (
+                fold_weight
+                * _weighted_log_loss_arrays(
+                    fold_labels,
+                    predictions,
+                    fold_weights,
+                )
+            )
+    if inner_weight <= 0.0:
+        raise ValueError("inner rolling model selection has no effective weight")
+    candidate_inner_losses = [
+        ("market_baseline", baseline_inner_sum / inner_weight),
+        *[
+            (
+                f"offset_l2_{format(l2, '.17g')}",
+                candidate_inner_sums[float(l2)] / inner_weight,
+            )
+            for l2 in cfg.l2_candidates
+        ],
+    ]
+    inner_name, _inner_loss = min(
+        candidate_inner_losses[1:],
+        key=lambda item: (
+            item[1],
+            -float(item[0].removeprefix("offset_l2_")),
+            item[0],
+        ),
+    )
+    inner_l2 = float(inner_name.removeprefix("offset_l2_"))
+
     lower, upper, center, scale = _fit_transform(split.train)
     train_design = _apply_transform(split.train, lower, upper, center, scale)
     train_labels, train_weights, train_offsets = _targets_weights_offsets(split.train)
+    candidate_coefficients = _fit_offset_coefficients(
+        train_design,
+        train_labels,
+        train_weights,
+        train_offsets,
+        l2=inner_l2,
+        maximum_iterations=cfg.maximum_iterations,
+        tolerance=cfg.convergence_tolerance,
+    )
     validation_labels, validation_weights, _ = _targets_weights_offsets(split.validation)
     baseline_validation = _baseline_probabilities(split.validation)
     baseline_validation_loss = _weighted_log_loss_arrays(
@@ -1032,51 +1184,29 @@ def fit_polymarket_offset_model(
         baseline_validation,
         validation_weights,
     )
-    candidate_losses: list[tuple[str, float]] = [
-        ("market_baseline", baseline_validation_loss)
-    ]
-    fitted: dict[str, tuple[float, np.ndarray]] = {}
-    for l2 in cfg.l2_candidates:
-        candidate_name = f"offset_l2_{format(l2, '.17g')}"
-        coefficients = _fit_offset_coefficients(
-            train_design,
-            train_labels,
-            train_weights,
-            train_offsets,
-            l2=l2,
-            maximum_iterations=cfg.maximum_iterations,
-            tolerance=cfg.convergence_tolerance,
-        )
-        predictions = _predict_arrays(
-            split.validation,
-            lower=lower,
-            upper=upper,
-            center=center,
-            scale=scale,
-            coefficients=coefficients,
-            maximum_absolute_correction=cfg.maximum_absolute_logit_correction,
-        )
-        loss = _weighted_log_loss_arrays(
-            validation_labels,
-            predictions,
-            validation_weights,
-        )
-        candidate_losses.append((candidate_name, loss))
-        fitted[candidate_name] = (l2, coefficients)
-
-    learned_candidates = candidate_losses[1:]
-    best_name, best_loss = min(
-        learned_candidates,
-        key=lambda item: (
-            item[1],
-            -fitted[item[0]][0],
-            item[0],
-        ),
+    candidate_validation_predictions = _predict_arrays(
+        split.validation,
+        lower=lower,
+        upper=upper,
+        center=center,
+        scale=scale,
+        coefficients=candidate_coefficients,
+        maximum_absolute_correction=cfg.maximum_absolute_logit_correction,
+    )
+    candidate_validation_loss = _weighted_log_loss_arrays(
+        validation_labels,
+        candidate_validation_predictions,
+        validation_weights,
+    )
+    validation_gate_losses = (
+        ("market_baseline", baseline_validation_loss),
+        (inner_name, candidate_validation_loss),
     )
     required = cfg.minimum_validation_log_loss_improvement
-    if best_loss <= baseline_validation_loss - required:
-        selected_name = best_name
-        selected_l2, selected_coefficients = fitted[best_name]
+    if candidate_validation_loss <= baseline_validation_loss - required:
+        selected_name = inner_name
+        selected_l2 = inner_l2
+        selected_coefficients = candidate_coefficients
     else:
         selected_name = "market_baseline"
         selected_l2 = None
@@ -1097,7 +1227,19 @@ def fit_polymarket_offset_model(
         coefficients=tuple(float(value) for value in selected_coefficients),
         selected_candidate=selected_name,
         selected_l2=selected_l2,
-        candidate_validation_log_losses=tuple(candidate_losses),
+        inner_selected_candidate=inner_name,
+        candidate_inner_log_losses=tuple(candidate_inner_losses),
+        validation_gate_log_losses=validation_gate_losses,
+        inner_fold_count=len(inner_folds),
+        inner_fold_boundaries_ms=tuple(
+            (
+                min(item.event_start_ms for item in inner_train),
+                max(item.event_start_ms for item in inner_train),
+                min(item.event_start_ms for item in inner_validation),
+                max(item.event_start_ms for item in inner_validation),
+            )
+            for inner_train, inner_validation in inner_folds
+        ),
         training_sample_count=len(split.train),
         training_market_count=len({item.condition_id for item in split.train}),
         training_time_group_count=len(split.train_group_starts_ms),
