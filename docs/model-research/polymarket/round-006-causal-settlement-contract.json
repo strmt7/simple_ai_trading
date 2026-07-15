@@ -1,0 +1,55 @@
+{
+  "capital_contract": {
+    "cash_reuse_before_official_resolution_available_forbidden": true,
+    "entry_cost_remains_locked_until_resolution": true,
+    "open_portfolio_worst_case_loss_cap": "The configured time-group loss budget is also the maximum aggregate entry cost at risk across every unresolved market.",
+    "profit_reinvestment": false,
+    "risk_capital": "The lower of settled equity and initial capital; unresolved payouts and profits never increase sizing authority."
+  },
+  "contract_sha256": "3200c4e338fd1b1972f8c7702b3e86b8a43c8320327fdd8df356c41e9aa252c2",
+  "economic_chronology": {
+    "candidate_order": "Local monotonic decision arrival, then local wall time, asset, condition ID, and sample ID.",
+    "market_end_is_settlement": false,
+    "resolution_available_at_ms": "max(official resolved_at_ms, local received_wall_ms)",
+    "same_group_accounting": "One PnL point per shared BTC/ETH/SOL market-start group, recognized no earlier than the latest official resolution used by a filled position in that group.",
+    "unknown_execution": "Blocks all later portfolio exposure until reconciliation and grants no economic credit."
+  },
+  "model_admission": {
+    "aggregate_two_class_support_is_sufficient": false,
+    "minimum_per_asset_outcomes": "Each of BTC, ETH, and SOL must independently meet minimum_outcome_markets_per_split for both Up and Down in train, validation, and untouched test roles.",
+    "outcome_inspection_before_freeze": false
+  },
+  "promotion_gates": {
+    "all_execution_reports_use_causal_settlement_schema": true,
+    "all_latency_scenarios_positive_after_cost": true,
+    "all_order_outcomes_terminal": true,
+    "capital_and_open_risk_reconcile_exactly": true,
+    "mark_to_market_drawdown_required_before_paper_or_live_authority": true,
+    "minimum_untouched_test_time_groups": 30,
+    "paper_or_live_authority_granted": false,
+    "settlement_times_bound_to_source_evidence": true
+  },
+  "reporting_contract": {
+    "drawdown_basis": "Official-resolution realized equity only; this is not intraperiod mark-to-market drawdown.",
+    "equity_point_identity": "event_start_ms plus settled_at_ms",
+    "matched_model_ai_comparison_key": "event_start_ms",
+    "market_end_timestamp_may_not_be_substituted_for_settlement": true
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/concepts/resolution",
+    "https://docs.polymarket.com/trading/ctf/redeem",
+    "https://docs.polymarket.com/concepts/positions-tokens",
+    "https://docs.polymarket.com/market-data/websocket/market-channel"
+  ],
+  "round": 6,
+  "schema_version": "polymarket-causal-settlement-preregistration-v1",
+  "status": "frozen_before_current_capture_labels_or_model_outcomes_were_inspected",
+  "truth_constraints": {
+    "current_capture_is_confirmatory": false,
+    "current_capture_queue_saturation_already_disqualifies_model_training": true,
+    "drawdown_claim_is_mark_to_market": false,
+    "profitability_claim": false,
+    "training_or_parameter_search_authorized": false,
+    "untouched_confirmation_requires_a_later_gap_free_prospective_capture": true
+  }
+}

@@ -36,14 +36,17 @@ from simple_ai_trading.polymarket_features import (
     PolymarketFeatureConfig,
     PolymarketFeatureDataset,
     PolymarketFeatureRow,
+    polymarket_feature_row_sha256,
 )
 from simple_ai_trading.polymarket_model import (
+    POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256,
     POLYMARKET_MODEL_FEATURE_NAMES,
     POLYMARKET_PROFILE_CHALLENGER_SCHEMA_VERSION,
     POLYMARKET_PROFILE_CONTRACT_SHA256,
     POLYMARKET_PROFILE_FEATURES,
     POLYMARKET_PROFILE_L2_CANDIDATES,
     PolymarketModelConfig,
+    build_polymarket_inference_input,
     build_polymarket_model_dataset,
     fit_polymarket_offset_model,
     fit_polymarket_profile_challenger,
@@ -52,6 +55,7 @@ from simple_ai_trading.polymarket_model import (
     split_polymarket_model_dataset,
 )
 from simple_ai_trading.polymarket_model_execution import (
+    POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256,
     POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
     POLYMARKET_RETRY_CONTRACT_SHA256,
     PolymarketExecutionResearchConfig,
@@ -263,6 +267,7 @@ def _replay_fixture(
     displayed_quantity: Decimal = Decimal("100"),
     execution_latency_ms: int = 100,
     execution_ask_offset: Decimal = Decimal("0"),
+    resolution_delay_ms: int = 1_000,
 ) -> PolymarketEvidenceReplay:
     selected_conditions = {item.condition_id for item in samples}
     selected_markets = tuple(
@@ -360,9 +365,9 @@ def _replay_fixture(
                 )
                 else "Down"
             ),
-            resolved_at_ms=market.end_ms + 1_000,
-            received_wall_ms=market.end_ms + 1_000,
-            received_monotonic_ns=(market.end_ms + 1_000) * 1_000_000,
+            resolved_at_ms=market.end_ms + resolution_delay_ms,
+            received_wall_ms=market.end_ms + resolution_delay_ms,
+            received_monotonic_ns=(market.end_ms + resolution_delay_ms) * 1_000_000,
             event_sha256="e" * 64,
             source="official_fixture",
         )
@@ -496,6 +501,64 @@ def test_fit_is_deterministic_bounded_and_has_no_trading_authority() -> None:
         predict_polymarket_probabilities(first_model, (tampered_context,))
 
 
+def test_live_inference_is_label_free_hash_bound_and_prediction_equivalent() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, _ = fit_polymarket_offset_model(dataset, split)
+    sample = split.test[0]
+    row = next(
+        item for item in source.rows if item.feature_id == sample.source_feature_id
+    )
+    market = next(
+        item for item in markets if item.condition_id == sample.condition_id
+    )
+    unlabeled = replace(
+        row,
+        official_up=None,
+        resolution_event_id="",
+        row_sha256="",
+    )
+    unlabeled = replace(
+        unlabeled,
+        row_sha256=polymarket_feature_row_sha256(unlabeled),
+    )
+
+    model_input = build_polymarket_inference_input(
+        unlabeled,
+        market,
+        config=dataset.config,
+    )
+    live_probability = predict_polymarket_probabilities(model, (model_input,))[0]
+    historical_probability = predict_polymarket_probabilities(model, (sample,))[0]
+    payload = model_input.asdict()
+
+    assert live_probability == pytest.approx(historical_probability, abs=0.0)
+    assert model_input.feature_values == sample.feature_values
+    assert model_input.risk_context_values == sample.risk_context_values
+    assert {
+        "official_up",
+        "resolution_event_id",
+        "realized_pnl_quote",
+        "gross_payout_quote",
+    }.isdisjoint(payload)
+    tampered = replace(
+        unlabeled,
+        feature_values=(unlabeled.feature_values[0] + 1.0, *unlabeled.feature_values[1:]),
+    )
+    with pytest.raises(ValueError, match="feature row identity is invalid"):
+        build_polymarket_inference_input(tampered, market, config=dataset.config)
+
+    alternate_config = replace(dataset.config, maximum_horizon_error_ms=500)
+    mismatched_input = build_polymarket_inference_input(
+        unlabeled,
+        market,
+        config=alternate_config,
+    )
+    with pytest.raises(ValueError, match="another model configuration"):
+        predict_polymarket_probabilities(model, (mismatched_input,))
+
+
 def test_unjustified_correction_falls_back_to_market_probability() -> None:
     source, markets = _source_fixture(predictive=False)
     config = PolymarketModelConfig(
@@ -562,6 +625,21 @@ def test_profile_challenger_is_frozen_deterministic_and_zero_expanded() -> None:
     assert not first_report.profitability_claim
 
 
+def test_split_requires_both_outcome_classes_for_each_asset() -> None:
+    source, markets = _source_fixture()
+    source = replace(
+        source,
+        rows=tuple(
+            replace(row, official_up=True) if row.asset == "SOL" else row
+            for row in source.rows
+        ),
+    )
+    dataset = build_polymarket_model_dataset(source, markets)
+
+    with pytest.raises(ValueError, match="official outcome classes for SOL"):
+        split_polymarket_model_dataset(dataset)
+
+
 def test_profile_challenger_falls_back_without_validation_evidence() -> None:
     source, markets = _source_fixture(predictive=False)
     feature_indexes = {
@@ -620,6 +698,56 @@ def test_profile_contract_code_and_document_are_identical() -> None:
     assert POLYMARKET_PROFILE_L2_CANDIDATES == (0.001, 0.01, 0.1, 1.0, 10.0)
 
 
+def test_causal_settlement_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-006-causal-settlement-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert contract["economic_chronology"]["market_end_is_settlement"] is False
+    assert contract["capital_contract"]["profit_reinvestment"] is False
+    assert contract["truth_constraints"]["profitability_claim"] is False
+
+
+def test_live_inference_contract_code_and_document_are_identical() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "round-007-label-free-inference-contract.json"
+    )
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+    canonical = json.dumps(
+        contract,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert claimed == POLYMARKET_LIVE_INFERENCE_CONTRACT_SHA256
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert contract["inference_contract"]["feature_row_must_be_unresolved"] is True
+    assert "official_up" in contract["forbidden_live_fields"]
+    assert contract["truth_constraints"]["profitability_claim"] is False
+
+
 def test_model_fit_rejects_substituted_split_sample() -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
@@ -662,12 +790,46 @@ def test_execution_policy_uses_depth_latency_fees_risk_and_official_settlement()
     assert first.net_realized_pnl_quote > 0
     assert first.total_fees_quote > 0
     assert first.maximum_drawdown_quote == 0
+    assert (
+        first.causal_settlement_contract_sha256
+        == POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256
+    )
     assert len({trade.condition_id for trade in first.trades}) == len(first.trades)
     assert all(trade.official_resolution_event_id for trade in first.trades)
     assert all(trade.execution_book_event_id for trade in first.trades)
     assert not first.trading_authority
     assert not first.execution_claim
     assert not first.profitability_claim
+
+
+def test_execution_locks_capital_until_official_resolution_is_available() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, _ = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    resolution_delay_ms = 600_000
+    replay = _replay_fixture(
+        split.test,
+        markets,
+        resolution_delay_ms=resolution_delay_ms,
+    )
+
+    report = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+    )
+
+    assert report.reason_counts["open_portfolio_risk_budget_exhausted"] > 0
+    assert report.filled_order_count < report.signal_market_count
+    assert {point.event_start_ms for point in report.equity_curve} == set(
+        split.test_group_starts_ms
+    )
+    assert all(
+        point.settled_at_ms == point.event_start_ms + 300_000 + resolution_delay_ms
+        for point in report.equity_curve
+    )
 
 
 def test_execution_policy_abstains_for_market_baseline_without_edge() -> None:

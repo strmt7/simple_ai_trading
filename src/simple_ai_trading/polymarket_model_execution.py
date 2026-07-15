@@ -6,6 +6,7 @@ from bisect import bisect_left, bisect_right
 from collections import Counter
 from dataclasses import dataclass, replace
 from decimal import Decimal, ROUND_FLOOR
+import heapq
 import hashlib
 import json
 import math
@@ -26,15 +27,18 @@ from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 
 POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION = "polymarket-execution-config-v2"
 POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION = "polymarket-execution-trade-v2"
-POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v3"
+POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v4"
 POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION = (
-    "polymarket-causal-retry-execution-report-v2"
+    "polymarket-causal-retry-execution-report-v3"
 )
 POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION = (
     "polymarket-causal-retry-challenger-evidence-v1"
 )
 POLYMARKET_RETRY_CONTRACT_SHA256 = (
     "6d768a32192a4d1d2dbbf6a8fa513e7d60bf96d6be992ff97b70dfb73cfca043"
+)
+POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256 = (
+    "3200c4e338fd1b1972f8c7702b3e86b8a43c8320327fdd8df356c41e9aa252c2"
 )
 
 
@@ -182,6 +186,7 @@ class PolymarketExecutionTrade:
 
 @dataclass(frozen=True)
 class PolymarketEquityPoint:
+    event_start_ms: int
     settled_at_ms: int
     group_realized_pnl_quote: Decimal
     equity_quote: Decimal
@@ -191,6 +196,7 @@ class PolymarketEquityPoint:
 
     def asdict(self) -> dict[str, object]:
         return {
+            "event_start_ms": self.event_start_ms,
             "settled_at_ms": self.settled_at_ms,
             "group_realized_pnl_quote": _decimal_text(
                 self.group_realized_pnl_quote
@@ -212,6 +218,7 @@ class PolymarketExecutionReport:
     decision_delay_input_sha256: str
     decision_delay_ms_by_condition: Mapping[str, int]
     config: PolymarketExecutionResearchConfig
+    causal_settlement_contract_sha256: str
     evaluated_market_count: int
     signal_market_count: int
     attempted_order_count: int
@@ -251,6 +258,9 @@ class PolymarketExecutionReport:
                 sorted(self.decision_delay_ms_by_condition.items())
             ),
             "config": self.config.asdict(),
+            "causal_settlement_contract_sha256": (
+                self.causal_settlement_contract_sha256
+            ),
             "evaluated_market_count": self.evaluated_market_count,
             "signal_market_count": self.signal_market_count,
             "attempted_order_count": self.attempted_order_count,
@@ -329,6 +339,16 @@ class PolymarketPolicySelection:
             "reason_counts": dict(self.reason_counts),
             "selection_sha256": self.selection_sha256,
         }
+
+
+@dataclass(frozen=True)
+class _PendingSettlement:
+    available_at_ms: int
+    condition_id: str
+    event_start_ms: int
+    entry_cost_quote: Decimal
+    payout_quote: Decimal
+    realized_pnl_quote: Decimal
 
 
 class _ReplayBookIndex:
@@ -880,8 +900,11 @@ def _evaluate_polymarket_execution_policy(
         )
 
     book_index = _ReplayBookIndex(replay)
-    equity = cfg.initial_capital_quote
-    peak_equity = equity
+    realized_equity = cfg.initial_capital_quote
+    cash_available = cfg.initial_capital_quote
+    outstanding_open_risk = Decimal("0")
+    pending_settlements: list[tuple[int, str, _PendingSettlement]] = []
+    peak_equity = realized_equity
     maximum_drawdown = Decimal("0")
     maximum_drawdown_fraction = Decimal("0")
     trades: list[PolymarketExecutionTrade] = []
@@ -892,9 +915,29 @@ def _evaluate_polymarket_execution_policy(
     winning = 0
     losing = 0
     group_end_by_start: dict[int, int] = {}
+    group_conditions: dict[int, set[str]] = {}
+    group_risk_limits: dict[int, tuple[Decimal, Decimal]] = {}
+    deployed_risk_by_group: dict[int, Decimal] = {}
     filled_conditions: set[str] = set()
     retry_blocked_conditions: set[str] = set()
     portfolio_unknown = False
+    resolution_available_at = {
+        condition: max(resolution.resolved_at_ms, resolution.received_wall_ms)
+        for condition, resolution in resolution_by_condition.items()
+    }
+
+    def settle_available(cutoff_ms: int) -> None:
+        nonlocal cash_available, outstanding_open_risk, realized_equity
+        while pending_settlements and pending_settlements[0][0] <= cutoff_ms:
+            _available_at, _condition, settlement = heapq.heappop(
+                pending_settlements
+            )
+            cash_available += settlement.payout_quote
+            outstanding_open_risk -= settlement.entry_cost_quote
+            realized_equity += settlement.realized_pnl_quote
+        if outstanding_open_risk < 0:
+            raise ValueError("Polymarket open-risk accounting became negative")
+
     for sample in samples:
         existing_end = group_end_by_start.setdefault(
             sample.event_start_ms,
@@ -902,52 +945,92 @@ def _evaluate_polymarket_execution_policy(
         )
         if existing_end != sample.end_ms:
             raise ValueError("Polymarket time group has inconsistent market ends")
+        group_conditions.setdefault(sample.event_start_ms, set()).add(
+            sample.condition_id
+        )
 
-    for group_start, expected_group_end in sorted(group_end_by_start.items()):
-        group_equity_start = equity
-        risk_capital = min(group_equity_start, cfg.initial_capital_quote)
-        market_risk_limit = (
+    ordered_candidates = sorted(
+        (
+            candidate
+            for values in candidates_by_group.values()
+            for candidate in values
+        ),
+        key=lambda item: (
+            item.sample.decision_received_monotonic_ns,
+            item.sample.decision_received_wall_ms,
+            item.sample.asset,
+            item.sample.condition_id,
+            item.sample.sample_id,
+        ),
+    )
+    for candidate in ordered_candidates:
+        sample = candidate.sample
+        if portfolio_unknown:
+            reasons["portfolio_blocked_by_unknown_state"] += 1
+            continue
+        if retry_terminal_zero_fill:
+            if sample.condition_id in filled_conditions:
+                reasons["retry_suppressed_after_fill"] += 1
+                continue
+            if sample.condition_id in retry_blocked_conditions:
+                reasons["retry_blocked_by_nonterminal_or_invalid_state"] += 1
+                continue
+        market = market_by_condition[sample.condition_id]
+        resolution = resolution_by_condition[sample.condition_id]
+        fee = market.fee_schedule.fee_model()
+        quantity = market.minimum_order_size
+        decision_delay_ms = decision_delays[sample.condition_id]
+        order_created_wall_ms = sample.decision_received_wall_ms + decision_delay_ms
+        settle_available(order_created_wall_ms)
+        risk_capital = min(realized_equity, cfg.initial_capital_quote)
+        if risk_capital <= 0:
+            reasons["nonpositive_settled_risk_capital"] += 1
+            continue
+        current_market_risk_limit = (
             risk_capital * cfg.maximum_loss_fraction_per_market
         )
-        group_risk_limit = (
+        current_group_risk_limit = (
             risk_capital * cfg.maximum_loss_fraction_per_time_group
         )
-        deployed_group_risk = Decimal("0")
-        group_pnl = Decimal("0")
-        group_end = expected_group_end
-        for candidate in sorted(
-            candidates_by_group.get(group_start, ()),
-            key=lambda item: (
-                item.sample.decision_received_monotonic_ns,
-                item.sample.asset,
-                item.sample.sample_id,
-            ),
-        ):
-            sample = candidate.sample
-            if portfolio_unknown:
-                reasons["portfolio_blocked_by_unknown_state"] += 1
-                continue
-            if retry_terminal_zero_fill:
-                if sample.condition_id in filled_conditions:
-                    reasons["retry_suppressed_after_fill"] += 1
-                    continue
-                if sample.condition_id in retry_blocked_conditions:
-                    reasons["retry_blocked_by_nonterminal_or_invalid_state"] += 1
-                    continue
-            market = market_by_condition[sample.condition_id]
-            resolution = resolution_by_condition[sample.condition_id]
-            fee = market.fee_schedule.fee_model()
-            quantity = market.minimum_order_size
-            worst_cost = (
-                candidate.limit_price * quantity
-                + fee(candidate.limit_price, quantity, "taker")
+        prior_limits = group_risk_limits.get(sample.event_start_ms)
+        market_risk_limit, group_risk_limit = (
+            (
+                current_market_risk_limit,
+                current_group_risk_limit,
             )
-            if worst_cost > market_risk_limit:
-                reasons["minimum_order_exceeds_market_risk_budget"] += 1
-                continue
-            if deployed_group_risk + worst_cost > group_risk_limit:
-                reasons["time_group_risk_budget_exhausted"] += 1
-                continue
+            if prior_limits is None
+            else (
+                min(prior_limits[0], current_market_risk_limit),
+                min(prior_limits[1], current_group_risk_limit),
+            )
+        )
+        group_risk_limits[sample.event_start_ms] = (
+            market_risk_limit,
+            group_risk_limit,
+        )
+        deployed_group_risk = deployed_risk_by_group.get(
+            sample.event_start_ms,
+            Decimal("0"),
+        )
+        open_portfolio_risk_limit = (
+            risk_capital * cfg.maximum_loss_fraction_per_time_group
+        )
+        worst_cost = (
+            candidate.limit_price * quantity
+            + fee(candidate.limit_price, quantity, "taker")
+        )
+        if worst_cost > market_risk_limit:
+            reasons["minimum_order_exceeds_market_risk_budget"] += 1
+            continue
+        if deployed_group_risk + worst_cost > group_risk_limit:
+            reasons["time_group_risk_budget_exhausted"] += 1
+            continue
+        if outstanding_open_risk + worst_cost > open_portfolio_risk_limit:
+            reasons["open_portfolio_risk_budget_exhausted"] += 1
+            continue
+        if worst_cost > cash_available:
+            reasons["insufficient_settled_cash"] += 1
+        else:
             token_id = (
                 market.up_token_id
                 if candidate.outcome == "Up"
@@ -983,11 +1066,7 @@ def _evaluate_polymarket_execution_policy(
                 or float(decision_book.snapshot.asks[0].price) != expected_ask
             ):
                 raise ValueError("Polymarket model quote disagrees with replay book state")
-            decision_delay_ms = decision_delays[sample.condition_id]
             requested_latency_ms = decision_delay_ms + cfg.submission_latency_ms
-            order_created_wall_ms = (
-                sample.decision_received_wall_ms + decision_delay_ms
-            )
             requested_execution_wall_ms = (
                 sample.decision_received_wall_ms + requested_latency_ms
             )
@@ -1087,17 +1166,38 @@ def _evaluate_polymarket_execution_policy(
                     else Decimal("0")
                 )
                 realized = payout - entry_cost
-                deployed_group_risk += entry_cost
+                cash_available -= entry_cost
+                outstanding_open_risk += entry_cost
+                deployed_risk_by_group[sample.event_start_ms] = (
+                    deployed_group_risk + entry_cost
+                )
+                settlement = _PendingSettlement(
+                    available_at_ms=resolution_available_at[sample.condition_id],
+                    condition_id=sample.condition_id,
+                    event_start_ms=sample.event_start_ms,
+                    entry_cost_quote=entry_cost,
+                    payout_quote=payout,
+                    realized_pnl_quote=realized,
+                )
+                heapq.heappush(
+                    pending_settlements,
+                    (
+                        settlement.available_at_ms,
+                        settlement.condition_id,
+                        settlement,
+                    ),
+                )
                 gross_deployed += entry_cost
                 gross_payout += payout
                 total_fees += fee_quote
-                group_pnl += realized
                 if realized > 0:
                     winning += 1
                 else:
                     losing += 1
             elif execution_state == "UNKNOWN":
-                deployed_group_risk += worst_cost
+                deployed_risk_by_group[sample.event_start_ms] = (
+                    deployed_group_risk + worst_cost
+                )
                 portfolio_unknown = True
             if retry_terminal_zero_fill:
                 if execution_state == "FILLED":
@@ -1151,8 +1251,33 @@ def _evaluate_polymarket_execution_policy(
                     trade_sha256=_canonical_sha256(_trade_identity_payload(trade)),
                 )
             )
-            group_end = max(group_end, market.end_ms)
-        equity += group_pnl
+    settle_available(max(resolution_available_at.values(), default=0))
+    if pending_settlements or outstanding_open_risk != 0:
+        raise ValueError("Polymarket settlement accounting did not fully reconcile")
+    if cash_available != realized_equity:
+        raise ValueError("Polymarket settled cash and realized equity disagree")
+
+    group_pnl: dict[int, Decimal] = {
+        group_start: Decimal("0") for group_start in group_end_by_start
+    }
+    filled_conditions_by_group: dict[int, set[str]] = {}
+    for trade in trades:
+        if not trade.filled:
+            continue
+        group_pnl[trade.event_start_ms] += trade.realized_pnl_quote
+        filled_conditions_by_group.setdefault(trade.event_start_ms, set()).add(
+            trade.condition_id
+        )
+    settlement_rows: list[tuple[int, int, Decimal]] = []
+    for group_start in group_end_by_start:
+        economically_relevant = filled_conditions_by_group.get(group_start)
+        conditions = economically_relevant or group_conditions[group_start]
+        settled_at = max(resolution_available_at[condition] for condition in conditions)
+        settlement_rows.append((settled_at, group_start, group_pnl[group_start]))
+
+    equity = cfg.initial_capital_quote
+    for settled_at, group_start, realized_group_pnl in sorted(settlement_rows):
+        equity += realized_group_pnl
         peak_equity = max(peak_equity, equity)
         drawdown = peak_equity - equity
         drawdown_fraction = (
@@ -1163,17 +1288,20 @@ def _evaluate_polymarket_execution_policy(
             maximum_drawdown_fraction,
             drawdown_fraction,
         )
-        if group_end:
-            equity_curve.append(
-                PolymarketEquityPoint(
-                    settled_at_ms=group_end,
-                    group_realized_pnl_quote=group_pnl,
-                    equity_quote=equity,
-                    peak_equity_quote=peak_equity,
-                    drawdown_quote=drawdown,
-                    drawdown_fraction=drawdown_fraction,
-                )
+        equity_curve.append(
+            PolymarketEquityPoint(
+                event_start_ms=group_start,
+                settled_at_ms=settled_at,
+                group_realized_pnl_quote=realized_group_pnl,
+                equity_quote=equity,
+                peak_equity_quote=peak_equity,
+                drawdown_quote=drawdown,
+                drawdown_fraction=drawdown_fraction,
             )
+        )
+
+    if equity != realized_equity:
+        raise ValueError("Polymarket equity chronology does not reconcile")
 
     evaluated_markets = selection.evaluated_market_count
     signal_markets = len(
@@ -1198,6 +1326,9 @@ def _evaluate_polymarket_execution_policy(
         decision_delay_input_sha256=decision_delay_input_sha256,
         decision_delay_ms_by_condition=dict(sorted(decision_delays.items())),
         config=cfg,
+        causal_settlement_contract_sha256=(
+            POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256
+        ),
         evaluated_market_count=evaluated_markets,
         signal_market_count=signal_markets,
         attempted_order_count=len(trades),
@@ -1273,6 +1404,7 @@ def evaluate_polymarket_retry_execution_policy(
 
 
 __all__ = [
+    "POLYMARKET_CAUSAL_SETTLEMENT_CONTRACT_SHA256",
     "POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION",
     "POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION",
     "POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION",

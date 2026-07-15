@@ -208,6 +208,31 @@ class PolymarketFeatureRow:
             "row_sha256": self.row_sha256,
         }
 
+    def validated(self) -> "PolymarketFeatureRow":
+        if (
+            len(self.feature_id) != 64
+            or len(self.row_sha256) != 64
+            or len(self.input_provenance_sha256) != 64
+            or not self.run_id
+            or not self.condition_id
+            or not self.market_id
+            or self.asset not in _ASSETS
+            or not self.decision_event_id
+            or self.decision_received_wall_ms < 0
+            or self.decision_received_monotonic_ns < 0
+            or len(self.feature_values) != len(POLYMARKET_FEATURE_NAMES)
+            or not all(math.isfinite(value) for value in self.feature_values)
+            or not (
+                self.official_up is None
+                or isinstance(self.official_up, bool)
+            )
+            or (self.official_up is None and bool(self.resolution_event_id))
+            or (self.official_up is not None and not self.resolution_event_id)
+            or self.row_sha256 != _canonical_sha256(_feature_row_payload(self))
+        ):
+            raise ValueError("Polymarket feature row identity is invalid")
+        return self
+
 
 @dataclass(frozen=True)
 class PolymarketFeatureDataset:
@@ -780,6 +805,12 @@ def _feature_row_payload(row: PolymarketFeatureRow) -> dict[str, object]:
         "resolution_event_id": row.resolution_event_id,
         "input_provenance_sha256": row.input_provenance_sha256,
     }
+
+
+def polymarket_feature_row_sha256(row: PolymarketFeatureRow) -> str:
+    """Return the canonical digest for one immutable feature row."""
+
+    return _canonical_sha256(_feature_row_payload(row))
 
 
 def build_polymarket_feature_dataset(
@@ -1369,4 +1400,5 @@ __all__ = [
     "PolymarketFeatureRow",
     "build_polymarket_feature_dataset",
     "materialize_polymarket_feature_dataset",
+    "polymarket_feature_row_sha256",
 ]
