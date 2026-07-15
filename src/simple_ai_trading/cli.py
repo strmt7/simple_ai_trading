@@ -133,6 +133,9 @@ from .polymarket_publication import publish_polymarket_model_artifact
 from .polymarket_recorder import PolymarketEvidenceStore, PolymarketPublicRecorder
 from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_resolution import PolymarketResolutionFinalizer
+from .polymarket_source_verification import (
+    verify_polymarket_model_artifact_source,
+)
 from .reconciliation import reconcile_account_positions
 from .risk_controls import (
     EntryRiskDecision,
@@ -590,6 +593,30 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_model.add_argument("--json", action="store_true")
     parser_polymarket_model.set_defaults(func=command_polymarket_model)
 
+    parser_polymarket_verify = subparsers.add_parser(
+        "polymarket-verify",
+        help="reconstruct a Polymarket model artifact from its source database",
+        description=(
+            "Independently rebuild features, the chronological split, deterministic "
+            "model fit, held-out predictions, and every execution-latency scenario "
+            "from the immutable recorder database. This command has no trading "
+            "authority."
+        ),
+    )
+    parser_polymarket_verify.add_argument("--artifact", required=True)
+    parser_polymarket_verify.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_verify.add_argument(
+        "--output",
+        default=None,
+        help="optional deterministic source-verification JSON path",
+    )
+    parser_polymarket_verify.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_verify.add_argument("--database-threads", type=int, default=2)
+    parser_polymarket_verify.add_argument("--json", action="store_true")
+    parser_polymarket_verify.set_defaults(func=command_polymarket_verify)
+
     parser_polymarket_publish = subparsers.add_parser(
         "polymarket-publish",
         help="publish hash-verified Polymarket model tables and charts",
@@ -601,6 +628,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_polymarket_publish.add_argument("--artifact", required=True)
     parser_polymarket_publish.add_argument(
+        "--database",
+        default="data/polymarket-paper.duckdb",
+        help="immutable recorder database independently reconstructed before publication",
+    )
+    parser_polymarket_publish.add_argument(
         "--research-root",
         default="docs/model-research/polymarket",
     )
@@ -609,6 +641,8 @@ def _build_parser() -> argparse.ArgumentParser:
         "--prior-round",
         default="docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json",
     )
+    parser_polymarket_publish.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_publish.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_publish.add_argument("--json", action="store_true")
     parser_polymarket_publish.set_defaults(func=command_polymarket_publish)
 
@@ -6694,10 +6728,86 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
     return 0
 
 
-def command_polymarket_publish(args: argparse.Namespace) -> int:
-    """Derive current documentation only from a validated model artifact."""
+def command_polymarket_verify(args: argparse.Namespace) -> int:
+    """Independently reconstruct a model artifact from its recorder database."""
+
+    started = time.monotonic()
+
+    def progress(phase: str, details: Mapping[str, object]) -> None:
+        if getattr(args, "json", False):
+            return
+        suffix = " ".join(
+            f"{key}={value}" for key, value in sorted(details.items())
+        )
+        print(
+            "polymarket-verify-progress: "
+            f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
+            + (f" {suffix}" if suffix else ""),
+            file=sys.stderr,
+            flush=True,
+        )
 
     try:
+        report = verify_polymarket_model_artifact_source(
+            args.artifact,
+            args.database,
+            memory_limit=str(args.memory_limit),
+            database_threads=int(args.database_threads),
+            progress=progress,
+        )
+        output = str(getattr(args, "output", None) or "").strip()
+        if output:
+            write_json_atomic(Path(output), report.asdict(), sort_keys=True)
+    except Exception as exc:  # Verification is an explicit fail-closed boundary.
+        print(
+            f"polymarket-verify failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-verify: "
+            f"status={report.status} run={report.run_id} "
+            f"scenarios={report.verified_execution_scenario_count} "
+            f"trades={report.verified_execution_trade_count} "
+            f"report_sha256={report.report_sha256}"
+        )
+        if output:
+            print(f"verification: {output}")
+    return 0
+
+
+def command_polymarket_publish(args: argparse.Namespace) -> int:
+    """Source-verify an artifact, then derive its current documentation."""
+
+    started = time.monotonic()
+
+    def progress(phase: str, details: Mapping[str, object]) -> None:
+        if getattr(args, "json", False):
+            return
+        suffix = " ".join(
+            f"{key}={value}" for key, value in sorted(details.items())
+        )
+        print(
+            "polymarket-publish-progress: "
+            f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
+            + (f" {suffix}" if suffix else ""),
+            file=sys.stderr,
+            flush=True,
+        )
+
+    try:
+        verification = verify_polymarket_model_artifact_source(
+            args.artifact,
+            args.database,
+            memory_limit=str(args.memory_limit),
+            database_threads=int(args.database_threads),
+            progress=progress,
+        )
+        progress("documentation-publication", {"round": int(args.round)})
         result = publish_polymarket_model_artifact(
             args.artifact,
             args.research_root,
@@ -6707,6 +6817,7 @@ def command_polymarket_publish(args: argparse.Namespace) -> int:
                 if str(getattr(args, "prior_round", "") or "").strip()
                 else None
             ),
+            source_verification=verification.asdict(),
         )
     except Exception as exc:  # Publication is an explicit fail-closed boundary.
         print(
@@ -6722,6 +6833,7 @@ def command_polymarket_publish(args: argparse.Namespace) -> int:
             "polymarket-publish: "
             f"round={result.round_number} files={len(result.generated_files)} "
             f"artifact_sha256={result.artifact_sha256} "
+            f"source_verification_sha256={verification.report_sha256} "
             f"manifest_sha256={result.manifest_sha256}"
         )
         print(f"research_root: {result.research_root}")

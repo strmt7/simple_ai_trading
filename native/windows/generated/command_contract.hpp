@@ -437,9 +437,12 @@ inline constexpr CommandOptionSpec kOptions_polymarket_paper[] = {
 
 inline constexpr CommandOptionSpec kOptions_polymarket_publish[] = {
     {L"--artifact", L"artifact", L"", L"", L"", L"1", true, true, false},
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"immutable recorder database independently reconstructed before publication", L"1", false, true, false},
     {L"--research-root", L"research_root", L"", L"docs/model-research/polymarket", L"", L"1", false, true, false},
     {L"--round", L"round", L"", L"3", L"", L"1", false, true, false},
     {L"--prior-round", L"prior_round", L"", L"docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -458,6 +461,15 @@ inline constexpr CommandOptionSpec kOptions_polymarket_resolve[] = {
     {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
     {L"--wait-seconds", L"wait_seconds", L"", L"0", L"", L"1", false, true, false},
     {L"--poll-interval-seconds", L"poll_interval_seconds", L"", L"15", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_verify[] = {
+    {L"--artifact", L"artifact", L"", L"", L"", L"1", true, true, false},
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
+    {L"--output", L"output", L"", L"", L"optional deterministic source-verification JSON path", L"1", false, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
@@ -888,9 +900,10 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
     {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 23},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 18},
-    {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 5},
+    {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 8},
     {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 7},
     {L"polymarket-resolve", L"Persist an outcome only after the official CLOB and Gamma APIs are both terminal and agree exactly. This command never authenticates or places an order.", kOptions_polymarket_resolve, 7},
+    {L"polymarket-verify", L"Independently rebuild features, the chronological split, deterministic model fit, held-out predictions, and every execution-latency scenario from the immutable recorder database. This command has no trading authority.", kOptions_polymarket_verify, 6},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL]                                  [--model MODEL] [--limit LIMIT]                                  [--batch-size BATCH_SIZE]                                  [--preset {balanced,custom,quick,thorough}]                                  [--epochs EPOCHS]                                  [--learning-rate LEARNING_RATE]                                  [--l2-penalty L2_PENALTY] [--seed SEED]                                  [--start-cash START_CASH] [--walk-forward]                                  [--no-walk-forward]                                  [--walk-forward-train WALK_FORWARD_TRAIN]                                  [--walk-forward-test WALK_FORWARD_TEST]                                  [--walk-forward-step WALK_FORWARD_STEP]                                  [--calibrate-threshold]                                  [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
     {L"reconcile", L"usage: simple-ai-trading reconcile [-h] [--json] [--output OUTPUT]                                    [--quantity-tolerance QUANTITY_TOLERANCE]", kOptions_reconcile, 3},

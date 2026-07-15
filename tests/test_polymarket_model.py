@@ -61,6 +61,12 @@ from simple_ai_trading.polymarket_replay import (
     PolymarketReplayDiagnostics,
     PolymarketResolutionEvidence,
 )
+from simple_ai_trading.polymarket_source_verification import (
+    POLYMARKET_SOURCE_VERIFICATION_CHECKS,
+    POLYMARKET_SOURCE_VERIFICATION_SCHEMA_VERSION,
+    PolymarketSourceVerificationReport,
+    validate_polymarket_source_verification,
+)
 
 _ASSETS = ("BTC", "ETH", "SOL")
 _SOURCE_SHA256 = "a" * 64
@@ -1347,17 +1353,68 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
 
     validated = validate_polymarket_model_artifact(artifact_path)
     assert validated.artifact_sha256 == payload["artifact_sha256"]
+    verification_provisional = PolymarketSourceVerificationReport(
+        schema_version=POLYMARKET_SOURCE_VERIFICATION_SCHEMA_VERSION,
+        status="verified",
+        artifact_sha256=str(payload["artifact_sha256"]),
+        run_id=source.run_id,
+        recorder_report_sha256="1" * 64,
+        feature_dataset_sha256=source.dataset_sha256,
+        model_dataset_sha256=dataset.dataset_sha256,
+        split_sha256=split.split_sha256,
+        model_sha256=model.model_sha256,
+        probability_report_sha256=probability_report.report_sha256,
+        held_out_rows_sha256=str(prediction_evidence["rows_sha256"]),
+        execution_report_sha256_by_policy_and_latency={
+            "baseline": {"100": baseline_execution.report_sha256},
+            "model": {"100": model_execution.report_sha256},
+        },
+        verified_feature_row_count=len(source.rows),
+        verified_model_sample_count=len(dataset.samples),
+        verified_held_out_sample_count=len(split.test),
+        verified_execution_scenario_count=2,
+        verified_execution_trade_count=(
+            len(baseline_execution.trades) + len(model_execution.trades)
+        ),
+        verified_filled_order_count=(
+            baseline_execution.filled_order_count
+            + model_execution.filled_order_count
+        ),
+        checks={name: True for name in POLYMARKET_SOURCE_VERIFICATION_CHECKS},
+        report_sha256="",
+    )
+    verification_identity = verification_provisional.asdict()
+    verification_identity.pop("report_sha256")
+    verification = replace(
+        verification_provisional,
+        report_sha256=hashlib.sha256(
+            json.dumps(
+                verification_identity,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest(),
+    )
+    validate_polymarket_source_verification(
+        verification.asdict(),
+        artifact_sha256=str(payload["artifact_sha256"]),
+        run_id=source.run_id,
+    )
     research_root = tmp_path / "publication"
     result = publish_polymarket_model_artifact(
         artifact_path,
         research_root,
         round_number=3,
+        source_verification=verification.asdict(),
     )
     assert result.artifact_sha256 == payload["artifact_sha256"]
     repeated = publish_polymarket_model_artifact(
         artifact_path,
         research_root,
         round_number=3,
+        source_verification=verification.asdict(),
     )
     assert repeated.manifest_sha256 == result.manifest_sha256
     manifest = json.loads(
@@ -1367,6 +1424,16 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     )
     assert manifest["claims"]["profitability_claim"] is False
     assert manifest["source_artifact_sha256"] == payload["artifact_sha256"]
+    assert manifest["source_reconstruction_verified"] is True
+    assert (
+        manifest["source_verification_report_sha256"]
+        == verification.report_sha256
+    )
+    assert json.loads(
+        (research_root / "latest" / "source-verification.json").read_text(
+            encoding="utf-8"
+        )
+    ) == verification.asdict()
     score_summary = json.loads(
         (research_root / "latest" / "held-out-group-score-summary.json").read_text(
             encoding="utf-8"

@@ -265,6 +265,7 @@ class PolymarketEvidenceStore:
         *,
         memory_limit: str = "1GB",
         threads: int = 2,
+        read_only: bool = False,
     ) -> None:
         self.path = Path(path)
         self.memory_limit = str(memory_limit).upper()
@@ -273,20 +274,36 @@ class PolymarketEvidenceStore:
         self.threads = int(threads)
         if self.threads < 1 or self.threads > 8:
             raise ValueError("threads must lie in [1, 8]")
+        if not isinstance(read_only, bool):
+            raise ValueError("read_only must be a boolean")
+        self.read_only = read_only
         self.connection: duckdb.DuckDBPyConnection | None = None
         self.paper_journal: PaperOrderJournal | None = None
+        # A read-only DuckDB connection observes one immutable file state. Cache
+        # its full row-hash audit so feature and execution replay do not rescan it.
+        self._read_only_integrity_cache: dict[str, tuple[str, ...]] = {}
 
     def connect(self) -> duckdb.DuckDBPyConnection:
         if self.connection is None:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.connection = duckdb.connect(str(self.path))
+            if self.read_only:
+                if not self.path.is_file():
+                    raise ValueError(
+                        "read-only Polymarket evidence database does not exist"
+                    )
+            else:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.connection = duckdb.connect(
+                str(self.path),
+                read_only=self.read_only,
+            )
             self.connection.execute(f"SET memory_limit='{self.memory_limit}'")
             self.connection.execute(f"SET threads={self.threads}")
             self.connection.execute("SET TimeZone='UTC'")
             self.connection.execute("SET preserve_insertion_order=false")
-            self.connection.execute("PRAGMA enable_checkpoint_on_shutdown")
-            self._init_schema()
-            self.paper_journal = PaperOrderJournal(self.connection)
+            if not self.read_only:
+                self.connection.execute("PRAGMA enable_checkpoint_on_shutdown")
+                self._init_schema()
+                self.paper_journal = PaperOrderJournal(self.connection)
         return self.connection
 
     def close(self) -> None:
@@ -294,6 +311,7 @@ class PolymarketEvidenceStore:
             self.connection.close()
             self.connection = None
             self.paper_journal = None
+            self._read_only_integrity_cache.clear()
 
     def __enter__(self) -> "PolymarketEvidenceStore":
         self.connect()
@@ -922,6 +940,8 @@ class PolymarketEvidenceStore:
         return report
 
     def integrity_errors(self, run_id: str) -> tuple[str, ...]:
+        if self.read_only and run_id in self._read_only_integrity_cache:
+            return self._read_only_integrity_cache[run_id]
         connection = self.connect()
         errors: list[str] = []
         run_row = connection.execute(
@@ -933,7 +953,10 @@ class PolymarketEvidenceStore:
             [run_id],
         ).fetchone()
         if run_row is None:
-            return (f"missing_recorder_run:{run_id}",)
+            result = (f"missing_recorder_run:{run_id}",)
+            if self.read_only:
+                self._read_only_integrity_cache[run_id] = result
+            return result
         run_schema, run_status, run_started, run_ended, report_json, report_sha = run_row
         parsed_report: Mapping[str, object] | None = None
         if str(run_schema) != POLYMARKET_RECORDER_SCHEMA_VERSION:
@@ -1151,7 +1174,10 @@ class PolymarketEvidenceStore:
                     )
         if self.paper_journal is not None:
             errors.extend(self.paper_journal.integrity_errors())
-        return tuple(errors)
+        result = tuple(errors)
+        if self.read_only:
+            self._read_only_integrity_cache[run_id] = result
+        return result
 
 
 def _snapshot_integrity_errors(row: Sequence[object]) -> tuple[str, ...]:

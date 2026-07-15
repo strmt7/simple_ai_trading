@@ -825,3 +825,24 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         "database_threads",
         "json",
     }
+
+
+def test_read_only_evidence_store_never_creates_or_initializes_a_database(
+    tmp_path,
+) -> None:
+    missing = tmp_path / "missing.duckdb"
+    with pytest.raises(ValueError, match="does not exist"):
+        PolymarketEvidenceStore(missing, read_only=True).connect()
+    assert not missing.exists()
+
+    database = tmp_path / "existing.duckdb"
+    with PolymarketEvidenceStore(database) as writable:
+        writable.start_run("read-only-run", 1)
+    before = database.stat().st_size
+    with PolymarketEvidenceStore(database, read_only=True) as read_only:
+        assert read_only.paper_journal is None
+        assert read_only.connect().execute(
+            "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
+            ["read-only-run"],
+        ).fetchone() == ("running",)
+    assert database.stat().st_size == before

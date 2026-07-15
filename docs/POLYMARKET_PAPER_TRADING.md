@@ -3,7 +3,8 @@
 **Status:** the prospective public-data recorder, fail-closed level-2 replay,
 causal feature materializer, shared paper execution contract, manual
 evidence-bound open/close actions, cross-checked official resolution settlement,
-durable operator Pause/Resume, and fail-closed Stop are implemented. Continuous
+durable operator Pause/Resume, fail-closed Stop, and independent source
+reconstruction before CLI/app result publication are implemented. Continuous
 strategy coordination remains incomplete.
 No authenticated order placement, wallet, private key, live-money claim, or
 profitability claim is implemented or authorized.
@@ -140,6 +141,15 @@ Each AI treatment retains its exact label-free prompt and raw local-model
 response. The publisher reconstructs candidate, permission, decision-delay, and
 uplift chains instead of trusting aggregate AI claims.
 
+`polymarket-verify` goes beyond artifact-internal accounting. It rebuilds the
+causal feature dataset, model dataset, purged chronological split, deterministic
+model fit, held-out prediction rows, and every baseline/model/AI latency scenario
+from the complete recorder database. It reruns the shared full-depth execution
+engine and requires canonical report equality. `polymarket-publish` performs this
+verification automatically, writes `latest/source-verification.json`, and binds
+that report into the publication integrity manifest. The CLI and generated
+Windows command surface provide no source-verification bypass.
+
 ### Verified prospective run
 
 Research round 2 used one real, gap-free 553.008-second capture from
@@ -179,6 +189,16 @@ simple-ai-trading polymarket-record --duration-seconds 660 `
 simple-ai-trading polymarket-resolve `
   --database data/polymarket-paper.duckdb
 simple-ai-trading polymarket-features `
+  --database data/polymarket-paper.duckdb
+simple-ai-trading polymarket-model `
+  --database data/polymarket-paper.duckdb `
+  --output data/polymarket-model.json
+simple-ai-trading polymarket-verify `
+  --artifact data/polymarket-model.json `
+  --database data/polymarket-paper.duckdb `
+  --output data/polymarket-source-verification.json
+simple-ai-trading polymarket-publish `
+  --artifact data/polymarket-model.json `
   --database data/polymarket-paper.duckdb
 ```
 
