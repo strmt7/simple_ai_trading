@@ -62,7 +62,9 @@ flowchart LR
   positions. Finalization requires exact agreement between independently fetched
   closed CLOB and Gamma market records; disagreement remains pending.
 - Taker fees are read from each market's current fee schedule and calculated at
-  match time. No hard-coded fee curve is allowed.
+  every matched level as `quantity * rate * (price * (1 - price)) ^ exponent`,
+  then rounded against the strategy at five-decimal quote precision. Both the
+  rate and positive-integer exponent are recorded inputs; neither is hard-coded.
 
 ## Required lifecycle parity
 
@@ -425,6 +427,7 @@ Primary references: [authentication](https://docs.polymarket.com/api-reference/a
 [server-side heartbeat](https://docs.polymarket.com/api-reference/trade/send-heartbeat),
 [RTDS](https://docs.polymarket.com/market-data/websocket/rtds),
 [official RTDS client](https://github.com/Polymarket/real-time-data-client),
+[official V2 Python client](https://github.com/Polymarket/py-clob-client-v2),
 [orders](https://docs.polymarket.com/trading/orders/create),
 [order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle),
 [fees](https://docs.polymarket.com/trading/fees), and

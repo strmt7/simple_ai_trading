@@ -63,6 +63,30 @@ def test_market_parser_requires_exact_five_minute_chainlink_contract() -> None:
     ) == Decimal("1.75000")
 
 
+def test_market_parser_applies_recorded_v2_fee_exponent_exactly() -> None:
+    payload = _market()
+    payload["feeSchedule"] = {
+        "exponent": 2,
+        "rate": 0.25,
+        "takerOnly": True,
+        "rebateRate": 0.2,
+    }
+    market = parse_polymarket_five_minute_market(payload)
+    fee = market.fee_schedule.fee_model()
+
+    assert fee(Decimal("0.5"), Decimal("100"), "taker") == Decimal("1.56250")
+    assert fee(Decimal("0.3"), Decimal("100"), "taker") == Decimal("1.10250")
+
+
+def test_market_parser_rejects_fractional_fee_exponents() -> None:
+    payload = _market()
+    assert isinstance(payload["feeSchedule"], dict)
+    payload["feeSchedule"]["exponent"] = 1.5
+
+    with pytest.raises(ValueError, match="positive integer"):
+        parse_polymarket_five_minute_market(payload)
+
+
 @pytest.mark.parametrize(
     ("field", "value", "message"),
     [

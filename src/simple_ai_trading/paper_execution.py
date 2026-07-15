@@ -1301,7 +1301,7 @@ class BinanceBpsFeeModel:
 
 @dataclass(frozen=True)
 class PolymarketFeeModel:
-    """Current documented Polymarket fee curve with conservative precision."""
+    """Recorded Polymarket V2 fee curve with conservative precision."""
 
     enabled: bool
     rate: Decimal
@@ -1314,13 +1314,18 @@ class PolymarketFeeModel:
         rate = _decimal(self.rate, name="Polymarket fee rate")
         if rate < 0 or rate > 1:
             raise ValueError("Polymarket fee rate is outside [0, 1]")
-        if int(self.exponent) != 1:
-            raise ValueError(
-                "unsupported Polymarket fee exponent; no documented simulator formula"
-            )
+        exponent_value = _decimal(
+            self.exponent,
+            name="Polymarket fee exponent",
+            positive=True,
+        )
+        if exponent_value != exponent_value.to_integral_value():
+            raise ValueError("Polymarket fee exponent must be a positive integer")
+        exponent = int(exponent_value)
         if price <= 0 or price >= 1:
             raise ValueError("Polymarket match price must lie strictly between 0 and 1")
-        raw = quantity * rate * price * (Decimal("1") - price)
+        curve = (price * (Decimal("1") - price)) ** exponent
+        raw = quantity * rate * curve
         if raw < Decimal("0.00001"):
             return Decimal("0")
         return raw.quantize(Decimal("0.00001"), rounding=ROUND_CEILING)

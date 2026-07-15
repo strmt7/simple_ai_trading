@@ -58,6 +58,13 @@ def _decimal(value: object, *, name: str, minimum: Decimal | None = None) -> Dec
     return parsed
 
 
+def _positive_integer(value: object, *, name: str) -> int:
+    parsed = _decimal(value, name=name, minimum=Decimal("1"))
+    if parsed != parsed.to_integral_value():
+        raise ValueError(f"{name} must be a positive integer")
+    return int(parsed)
+
+
 def _json_list(value: object, *, name: str) -> list[object]:
     parsed = value
     if isinstance(value, str):
@@ -213,10 +220,10 @@ def parse_polymarket_five_minute_market(
         name="feeSchedule.rebateRate",
         minimum=Decimal("0"),
     )
-    try:
-        exponent = int(fee_payload.get("exponent"))
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("feeSchedule.exponent is invalid") from exc
+    exponent = _positive_integer(
+        fee_payload.get("exponent"),
+        name="feeSchedule.exponent",
+    )
     taker_only = fee_payload.get("takerOnly") is True
     if exponent <= 0 or fee_rate > 1 or rebate_rate > 1:
         raise ValueError("fee schedule is outside supported bounds")
@@ -298,10 +305,7 @@ def validate_clob_market_info(
     fee_rate = _decimal(
         fee_details.get("r"), name="CLOB fee rate", minimum=Decimal("0")
     )
-    try:
-        exponent = int(fee_details.get("e"))
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("CLOB fee exponent is invalid") from exc
+    exponent = _positive_integer(fee_details.get("e"), name="CLOB fee exponent")
     if (
         fee_rate != market.fee_schedule.rate
         or exponent != market.fee_schedule.exponent
