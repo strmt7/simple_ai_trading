@@ -69,6 +69,14 @@ _DEFAULT_AUTONOMOUS_DIR = Path("data/autonomous")
 _API_BUDGET_LIVE_START_MAX_USED_RATIO = 0.80
 
 
+def default_paper_journal_path(
+    positions_root: Path = _DEFAULT_AUTONOMOUS_DIR,
+) -> Path:
+    """Return the one journal path shared by worker and operator controls."""
+
+    return Path(positions_root) / "paper_execution.duckdb"
+
+
 @dataclass
 class AutonomousControl:
     """Thin filesystem-backed state machine used to pause / resume / stop."""
@@ -956,7 +964,7 @@ def run_loop(
         journal_path = (
             Path(cfg.paper_journal_path)
             if cfg.paper_journal_path is not None
-            else Path(cfg.positions_root) / "paper_execution.duckdb"
+            else default_paper_journal_path(cfg.positions_root)
         )
         paper_broker = BinancePaperBroker(
             journal_path,
@@ -1007,6 +1015,7 @@ def run_loop(
     opened = 0
     skipped = 0
     exit_reason = "requested-stop"
+    final_state = STATE_STOPPING
     last_mark_price: float | None = None
     network_errors = 0
     recovery_pending = False
@@ -1505,13 +1514,66 @@ def run_loop(
                 break
             sleep(poll)
     finally:
-        control.write(STATE_STOPPED, note=exit_reason)
+        terminal_reasons: list[str] = []
+        ledger_errors = store.open_integrity_errors()
+        if ledger_errors:
+            terminal_reasons.append(
+                f"open-ledger-integrity-errors={len(ledger_errors)}"
+            )
+        else:
+            local_open_count = len(store.load_open())
+            if local_open_count:
+                terminal_reasons.append(
+                    f"tracked-open-positions={local_open_count}"
+                )
+        if paper_broker is not None:
+            try:
+                paper_terminal = paper_broker.reconcile_positions(store)
+            except Exception as exc:  # noqa: BLE001 - terminal state must fail closed
+                terminal_reasons.append(
+                    f"paper-terminal-reconciliation={exc.__class__.__name__}"
+                )
+            else:
+                remaining_inventory = sum(
+                    item.remaining_quantity > 0
+                    for item in paper_terminal.journal.inventory
+                )
+                if not paper_terminal.ok or remaining_inventory:
+                    terminal_reasons.append(
+                        "paper-terminal-exposure="
+                        f"inventory:{remaining_inventory},"
+                        f"errors:{len(paper_terminal.position_errors)},"
+                        f"blocking:{len(paper_terminal.journal.blocking_intent_ids)}"
+                    )
+        elif not cfg.dry_run:
+            try:
+                live_terminal = reconcile(client, runtime, store)
+            except Exception as exc:  # noqa: BLE001 - terminal state must fail closed
+                terminal_reasons.append(
+                    f"live-terminal-reconciliation={exc.__class__.__name__}"
+                )
+            else:
+                if not live_terminal.ok or live_terminal.exchange_exposure_count:
+                    terminal_reasons.append(
+                        "live-terminal-exposure="
+                        f"exchange:{live_terminal.exchange_exposure_count},"
+                        f"mismatches:{len(live_terminal.mismatches)}"
+                    )
+        final_state = STATE_STOPPING if terminal_reasons else STATE_STOPPED
+        note = exit_reason
+        if terminal_reasons:
+            note += "; " + "; ".join(terminal_reasons)
+            logger.error(
+                "autonomous exit remains STOPPING until exposure is reconciled: %s",
+                "; ".join(terminal_reasons),
+            )
+        control.write(final_state, note=note)
         if paper_broker is not None:
             paper_broker.close()
 
     return LoopResult(
         iterations=iteration,
-        final_state=STATE_STOPPED,
+        final_state=final_state,
         heartbeats_written=heartbeats,
         closed_trades=closed,
         opened_trades=opened,

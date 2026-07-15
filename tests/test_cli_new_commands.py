@@ -868,9 +868,10 @@ def test_command_close_all_and_hit_and_miss(tmp_path, monkeypatch, capsys):
         qty=1.0, entry_price=10.0, leverage=1.0, opened_at_ms=0, notional=10.0,
     ))
     args_hit = argparse.Namespace(position_id="c1")
-    assert cli.command_close(args_hit) == 0
-    out = capsys.readouterr().out
-    assert "closed paper position c1" in out
+    assert cli.command_close(args_hit) == 2
+    err = capsys.readouterr().err
+    assert "refusing local-ledger erasure" in err
+    assert store.find_open("c1") is not None
 
     args_miss = argparse.Namespace(position_id="missing")
     assert cli.command_close(args_miss) == 1
@@ -882,9 +883,11 @@ def test_command_close_all_and_hit_and_miss(tmp_path, monkeypatch, capsys):
         qty=1.0, entry_price=10.0, leverage=1.0, opened_at_ms=0, notional=10.0,
     ))
     args_all = argparse.Namespace(position_id="all")
-    assert cli.command_close(args_all) == 0
-    out = capsys.readouterr().out
-    assert "closed 1 paper positions" in out
+    assert cli.command_close(args_all) == 2
+    err = capsys.readouterr().err
+    assert "refusing local-ledger erasure" in err
+    assert store.find_open("c1") is not None
+    assert store.find_open("c2") is not None
 
 
 def test_command_close_refuses_live_local_ledger_erasure(tmp_path, monkeypatch, capsys):
@@ -897,9 +900,9 @@ def test_command_close_refuses_live_local_ledger_erasure(tmp_path, monkeypatch, 
     ))
 
     assert cli.command_close(argparse.Namespace(position_id="liveclose")) == 2
-    assert "refusing local-only close" in capsys.readouterr().err
+    assert "refusing local-ledger erasure" in capsys.readouterr().err
     assert PositionsStore().find_open("liveclose") is not None
 
     assert cli.command_close(argparse.Namespace(position_id="all")) == 2
-    assert "refusing local-only close" in capsys.readouterr().err
+    assert "refusing local-ledger erasure" in capsys.readouterr().err
     assert PositionsStore().find_open("liveclose") is not None
