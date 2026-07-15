@@ -573,19 +573,17 @@ labeled, predicted, or evaluated. Its decision remains in the cumulative
 [`progress.csv`](model-research/action-value/latest/progress.csv); the per-round
 bundle was superseded under latest-only retention. The current
 [`action-value/latest`](model-research/action-value/latest/README.md) bundle is
-Round 60. It kept the complete Round 59 decision protocol unchanged and
-reconstructed every monthly funding row from 226 checksum-certified archive
-streams: January 2020 through June 2026 for BTC and ETH and September 2020
-through June 2026 for SOL. Exactly one breadth cell passed. A settled funding
-rate `>=2` bps followed by a non-overlapping seven-day window produced
-`72/76/62` BTC/ETH/SOL episodes and lower 95% mean references of
-`+18.48/+29.58/+6.30` bps after the pinned 32 bps charge. This funding-only
-gate authorizes a separately frozen synchronized spot-perpetual economic
-replay, not model training or trading. It read no price, basis, P&L, model, or
-AI row. Round 59's smaller-sample rejection remains in the tracked comparison;
-Round 58 remains the value-blind rejection of symmetric touch making, and
-Round 57 retains only its queue-fill infrastructure. None of these records
-grants leverage, profitability, AI uplift, execution, or trading authority.
+Round 61. It converted Round 60's funding-only support into a synchronized,
+matched-base spot-perpetual replay with adverse minute execution, dynamic
+settled funding, actual-notional costs, and a 1% same-side taker-flow cap.
+Source eligibility was `72/72`, `76/76`, and `61/62` for BTC, ETH, and SOL,
+but executable-capacity support fell to `30/20/0`. On the admitted BTC and ETH
+subsets, medians were `-6.70/-5.56` committed-capital bps and bootstrap lower
+means were `-7.43/-11.13` bps. The elevated-funding carry family failed its
+precommitted capacity, distribution, uncertainty, year-stability, and breadth
+criteria. It is rejected without tick replay, model training, AI evaluation,
+leverage, profitability, execution, or trading authority. Earlier decisions
+remain in the tracked 61-round progress table.
 
 The v8 backend opts this model family into reproducible training. CPU uses
 LightGBM's `deterministic=true` with forced column-wise histograms. OpenCL uses

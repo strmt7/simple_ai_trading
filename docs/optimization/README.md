@@ -40,20 +40,16 @@ after-cost opportunity scans, and `round-highconv-btc-pruned-v27` was stopped
 after threshold calibration again proved too slow on a single candidate. These
 artifacts must not be interpreted as profitability evidence.
 
-Two latest-only research evidence tracks are retained. The predictive
+Two latest-only research evidence tracks are retained. The
 [`action-value/latest`](../model-research/action-value/latest/README.md) track is
-at Round 60. Its read-only runner preserved every Round 59 trigger, horizon,
-cost, bootstrap seed, and breadth gate while expanding to 226 verified monthly
-funding archives: January 2020 through June 2026 for BTC/ETH and September 2020
-through June 2026 for SOL. Exactly one breadth cell passed: the `>=2` bps
-settled-funding trigger with a seven-day non-overlapping horizon. The
-`72/76/62` BTC/ETH/SOL episodes had lower 95% mean references of
-`+18.48/+29.58/+6.30` bps after the 32 bps charge. This authorizes only a
-separately frozen synchronized spot-perpetual economic replay. It read no
-prices, basis, P&L, model, or AI rows and provides no profitability or trading
-claim. Round 59's smaller-sample rejection and Rounds 57-58 remain in the
-rolling comparison record. No policy, economic replay, leverage, AI uplift,
-or trading authority was evaluated. The
+at Round 61. Its matched-base spot-perpetual replay applied adverse minute
+execution, settled funding, actual-notional fees, and a 1% same-side taker-flow
+cap to Round 60's precommitted seven-day events. Source eligibility was
+`72/72`, `76/76`, and `61/62` for BTC, ETH, and SOL; only `30/20/0`
+episodes passed all four capacity checks. BTC and ETH then failed median and
+bootstrap-lower-mean after-cost criteria. The carry family is rejected without
+tick replay, model training, AI evaluation, leverage, profitability, or trading
+authority. Earlier rounds remain in the 61-row progress table. The
 independent execution-replay
 [`tape-depth/latest`](../model-research/tape-depth/latest/README.md) track remains
 at Round 8. It evaluated the frozen BTCUSDT 20-second candidate on three
