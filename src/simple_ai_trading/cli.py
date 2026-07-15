@@ -129,11 +129,17 @@ from .polymarket_model import (
     split_polymarket_model_dataset,
 )
 from .polymarket_model_execution import (
+    POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
+    POLYMARKET_RETRY_CONTRACT_SHA256,
     PolymarketExecutionResearchConfig,
     build_polymarket_policy_selection,
     evaluate_polymarket_execution_policy,
+    evaluate_polymarket_retry_execution_policy,
 )
-from .polymarket_publication import publish_polymarket_model_artifact
+from .polymarket_publication import (
+    POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
+    publish_polymarket_model_artifact,
+)
 from .polymarket_recorder import PolymarketEvidenceStore, PolymarketPublicRecorder
 from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_resolution import PolymarketResolutionFinalizer
@@ -6508,9 +6514,20 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 execution_replay,
                 config=execution_config,
             )
+            progress(
+                "execution-model-retry",
+                latency_ms=execution_config.submission_latency_ms,
+            )
+            model_retry_execution = evaluate_polymarket_retry_execution_policy(
+                split.test,
+                model_probabilities,
+                execution_replay,
+                config=execution_config,
+            )
             latency_sensitivity: dict[str, dict[int, Any]] = {
                 "baseline": {},
                 "model": {},
+                "model_retry": {},
             }
             for latency_ms in latency_scenarios:
                 progress("latency-sensitivity", latency_ms=latency_ms)
@@ -6532,6 +6549,16 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     model_execution
                     if latency_ms == execution_config.submission_latency_ms
                     else evaluate_polymarket_execution_policy(
+                        split.test,
+                        model_probabilities,
+                        execution_replay,
+                        config=scenario_config,
+                    )
+                )
+                latency_sensitivity["model_retry"][latency_ms] = (
+                    model_retry_execution
+                    if latency_ms == execution_config.submission_latency_ms
+                    else evaluate_polymarket_retry_execution_policy(
                         split.test,
                         model_probabilities,
                         execution_replay,
@@ -6699,6 +6726,57 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             for policy_reports in latency_sensitivity.values()
             for report in policy_reports.values()
         ]
+        probability_gates_passed = (
+            probability_report.validation_log_loss_delta < 0.0
+            and probability_report.test_log_loss_delta < 0.0
+            and probability_report.test_brier_delta < 0.0
+        )
+        retry_latency_reports = latency_sensitivity["model_retry"]
+        retry_control_reports = latency_sensitivity["model"]
+        retry_gates = {
+            "probability_model_gates_passed": probability_gates_passed,
+            "minimum_confirmatory_test_time_groups_met": (
+                len(split.test_group_starts_ms) >= 30
+            ),
+            "positive_after_cost_at_every_latency": all(
+                retry_latency_reports[latency].net_realized_pnl_quote > 0
+                for latency in latency_scenarios
+            ),
+            "improved_after_cost_at_every_latency": all(
+                retry_latency_reports[latency].net_realized_pnl_quote
+                > retry_control_reports[latency].net_realized_pnl_quote
+                for latency in latency_scenarios
+            ),
+            "return_on_deployed_not_worse_at_every_latency": all(
+                retry_latency_reports[latency].return_on_deployed_capital
+                >= retry_control_reports[latency].return_on_deployed_capital
+                for latency in latency_scenarios
+            ),
+            "maximum_drawdown_not_worse_at_every_latency": all(
+                retry_latency_reports[latency].maximum_drawdown_fraction
+                <= retry_control_reports[latency].maximum_drawdown_fraction
+                for latency in latency_scenarios
+            ),
+            "all_order_outcomes_terminal": all(
+                trade.execution_state != "UNKNOWN"
+                for report in retry_latency_reports.values()
+                for trade in report.trades
+            ),
+        }
+        retry_accepted = all(retry_gates.values())
+        retry_challenger = {
+            "schema_version": POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
+            "contract_sha256": POLYMARKET_RETRY_CONTRACT_SHA256,
+            "control_policy": "model",
+            "challenger_policy": "model_retry",
+            "gates": retry_gates,
+            "accepted": retry_accepted,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
         latency_sensitivity_payload = {
             "schema_version": "polymarket-execution-latency-sensitivity-v1",
             "primary_network_latency_ms": execution_config.submission_latency_ms,
@@ -6736,6 +6814,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 > latency_sensitivity["baseline"][latency].net_realized_pnl_quote
                 for latency in latency_scenarios
             ),
+            "retry_challenger_accepted": retry_accepted,
             "all_positions_officially_settled": (
                 all(
                     report.filled_order_count
@@ -6762,7 +6841,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "profitability_claim": False,
         }
         payload: dict[str, object] = {
-            "schema_version": "polymarket-prospective-model-experiment-v1",
+            "schema_version": POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
             "run_id": feature_dataset.run_id,
             "feature_dataset": feature_dataset.summary(),
             "feature_materialization": feature_materialization.asdict(),
@@ -6773,6 +6852,8 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "held_out_prediction_evidence": prediction_evidence,
             "baseline_execution": baseline_execution.asdict(),
             "model_execution": model_execution.asdict(),
+            "model_retry_execution": model_retry_execution.asdict(),
+            "retry_challenger": retry_challenger,
             "execution_latency_sensitivity": latency_sensitivity_payload,
             "ai": ai_payload,
             "confirmatory_evidence_contract": {
@@ -6823,7 +6904,10 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             f"test_log_loss_delta={probability_report.test_log_loss_delta:.8f} "
             f"baseline_net={baseline_execution.net_realized_pnl_quote} "
             f"model_net={model_execution.net_realized_pnl_quote} "
-            f"model_fills={model_execution.filled_order_count}"
+            f"model_fills={model_execution.filled_order_count} "
+            f"retry_net={model_retry_execution.net_realized_pnl_quote} "
+            f"retry_fills={model_retry_execution.filled_order_count} "
+            f"retry_accepted={retry_accepted}"
         )
         if ai_execution is not None and ai_uplift is not None:
             print(

@@ -18,13 +18,20 @@ import shutil
 from typing import Any
 
 from .ai_uplift import assess_ai_uplift
-from .polymarket_model_execution import POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION
+from .polymarket_model_execution import (
+    POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION,
+    POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION,
+    POLYMARKET_RETRY_CONTRACT_SHA256,
+    POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION,
+)
 from .polymarket_source_verification import (
     validate_polymarket_source_verification,
 )
 
 
-_ARTIFACT_SCHEMA = "polymarket-prospective-model-experiment-v1"
+POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION = (
+    "polymarket-prospective-model-experiment-v2"
+)
 _PREDICTION_SCHEMA = "polymarket-held-out-predictions-v2"
 _MODEL_SAMPLE_SCHEMA = "polymarket-model-sample-v4"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
@@ -33,7 +40,7 @@ _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
 _AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v2"
 _ASSETS = ("BTC", "ETH", "SOL")
-_POLICIES = ("baseline", "model", "ai")
+_POLICIES = ("baseline", "model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
     "direct_distance_from_chainlink_open_bps",
     "direct_chainlink_basis_bps",
@@ -89,6 +96,7 @@ _COLORS = {
     "muted": "#a9b8cc",
     "baseline": "#94a3b8",
     "model": "#22c55e",
+    "model_retry": "#eab308",
     "ai": "#38bdf8",
     "BTC": "#f59e0b",
     "ETH": "#8b5cf6",
@@ -451,8 +459,9 @@ def _validate_execution_report(
     conditions: set[str],
     expected_time_group_count: int,
     name: str,
+    expected_schema: str = POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION,
 ) -> None:
-    if report.get("schema_version") != POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION:
+    if report.get("schema_version") != expected_schema:
         raise ValueError(f"{name} uses an unsupported execution schema")
     _verify_claims(report, name=name)
     _verify_embedded_digest(report, "report_sha256", name=name)
@@ -1583,7 +1592,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         payload = _as_mapping(json.loads(raw.decode("utf-8")), "model artifact")
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError("Polymarket model artifact is not valid UTF-8 JSON") from exc
-    if payload.get("schema_version") != _ARTIFACT_SCHEMA:
+    if payload.get("schema_version") != POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION:
         raise ValueError("unsupported Polymarket model artifact schema")
     canonical = dict(payload)
     claimed_artifact_sha256 = str(canonical.pop("artifact_sha256", ""))
@@ -1943,6 +1952,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
     for policy, key in (
         ("baseline", "baseline_execution"),
         ("model", "model_execution"),
+        ("model_retry", "model_retry_execution"),
     ):
         report = _as_mapping(payload.get(key), f"{policy} execution")
         _verify_claims(report, name=f"{policy} execution")
@@ -1966,6 +1976,11 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             conditions=conditions,
             expected_time_group_count=len(time_groups),
             name=f"{policy} primary execution",
+            expected_schema=(
+                POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION
+                if policy == "model_retry"
+                else POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION
+            ),
         )
         _validate_execution_probability_binding(
             report,
@@ -2029,6 +2044,11 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
                 conditions=conditions,
                 expected_time_group_count=len(time_groups),
                 name=f"{policy} {latency}ms execution",
+                expected_schema=(
+                    POLYMARKET_RETRY_EXECUTION_REPORT_SCHEMA_VERSION
+                    if policy == "model_retry"
+                    else POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION
+                ),
             )
             _validate_execution_probability_binding(
                 scenario,
@@ -2063,6 +2083,140 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             "latency policy reports",
         ).items()
     ]
+    model_latency_reports = _as_mapping(
+        sensitivity_policies["model"],
+        "model latency reports",
+    )
+    retry_latency_reports = _as_mapping(
+        sensitivity_policies["model_retry"],
+        "model retry latency reports",
+    )
+    expected_retry_gates = {
+        "probability_model_gates_passed": (
+            _finite_float(
+                probability["validation_log_loss_delta"],
+                "validation log-loss delta",
+            )
+            < 0.0
+            and _finite_float(
+                probability["test_log_loss_delta"],
+                "test log-loss delta",
+            )
+            < 0.0
+            and _finite_float(
+                probability["test_brier_delta"],
+                "test Brier delta",
+            )
+            < 0.0
+        ),
+        "minimum_confirmatory_test_time_groups_met": len(time_groups) >= 30,
+        "positive_after_cost_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    retry_latency_reports[str(latency)],
+                    "model retry latency report",
+                )["net_realized_pnl_quote"],
+                "model retry latency PnL",
+            )
+            > 0
+            for latency in latency_values
+        ),
+        "improved_after_cost_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    retry_latency_reports[str(latency)],
+                    "model retry latency report",
+                )["net_realized_pnl_quote"],
+                "model retry latency PnL",
+            )
+            > _decimal(
+                _as_mapping(
+                    model_latency_reports[str(latency)],
+                    "model latency report",
+                )["net_realized_pnl_quote"],
+                "model latency PnL",
+            )
+            for latency in latency_values
+        ),
+        "return_on_deployed_not_worse_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    retry_latency_reports[str(latency)],
+                    "model retry latency report",
+                )["return_on_deployed_capital"],
+                "model retry deployed-capital return",
+            )
+            >= _decimal(
+                _as_mapping(
+                    model_latency_reports[str(latency)],
+                    "model latency report",
+                )["return_on_deployed_capital"],
+                "model deployed-capital return",
+            )
+            for latency in latency_values
+        ),
+        "maximum_drawdown_not_worse_at_every_latency": all(
+            _decimal(
+                _as_mapping(
+                    retry_latency_reports[str(latency)],
+                    "model retry latency report",
+                )["maximum_drawdown_fraction"],
+                "model retry drawdown",
+            )
+            <= _decimal(
+                _as_mapping(
+                    model_latency_reports[str(latency)],
+                    "model latency report",
+                )["maximum_drawdown_fraction"],
+                "model drawdown",
+            )
+            for latency in latency_values
+        ),
+        "all_order_outcomes_terminal": all(
+            trade.get("execution_state") != "UNKNOWN"
+            for report in retry_latency_reports.values()
+            for trade in _as_rows(
+                _as_mapping(report, "model retry latency report")["trades"],
+                "model retry latency trades",
+            )
+        ),
+    }
+    retry_challenger = _as_mapping(
+        payload.get("retry_challenger"),
+        "model retry challenger",
+    )
+    _require_exact_keys(
+        retry_challenger,
+        {
+            "schema_version",
+            "contract_sha256",
+            "control_policy",
+            "challenger_policy",
+            "gates",
+            "accepted",
+            "trading_authority",
+            "execution_claim",
+            "profitability_claim",
+            "portfolio_claim",
+            "leverage_applied",
+        },
+        name="model retry challenger",
+    )
+    _verify_claims(retry_challenger, name="model retry challenger")
+    retry_gates = _as_mapping(retry_challenger["gates"], "model retry gates")
+    if (
+        retry_challenger.get("schema_version")
+        != POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION
+        or retry_challenger.get("contract_sha256")
+        != POLYMARKET_RETRY_CONTRACT_SHA256
+        or retry_challenger.get("control_policy") != "model"
+        or retry_challenger.get("challenger_policy") != "model_retry"
+        or dict(retry_gates) != expected_retry_gates
+        or retry_challenger.get("accepted") is not all(
+            expected_retry_gates.values()
+        )
+    ):
+        raise ValueError("model retry challenger does not reconstruct")
     expected_gates = {
         "validation_probability_improved": (
             _finite_float(
@@ -2117,6 +2271,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             )
             for latency in latency_values
         ),
+        "retry_challenger_accepted": all(expected_retry_gates.values()),
         "all_positions_officially_settled": all(
             int(report["filled_order_count"])
             == int(report["winning_order_count"])
@@ -2987,8 +3142,9 @@ def _equity_svg(rows: Sequence[Mapping[str, object]], *, start: str, end: str) -
     legend_x = 350
     for index, policy in enumerate(name for name in _POLICIES if name in by_policy):
         x = legend_x + index * 190
+        label = "Model retry" if policy == "model_retry" else policy.title()
         lines.append(
-            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>'
+            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{label}</text>'
         )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
@@ -3119,8 +3275,9 @@ def _latency_svg(
     legend_x = 350
     for index, policy in enumerate(policies):
         x = legend_x + index * 190
+        label = "Model retry" if policy == "model_retry" else policy.title()
         lines.append(
-            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{policy.title()}</text>'
+            f'<line x1="{x}" y1="652" x2="{x + 28}" y2="652" stroke="{_COLORS[policy]}" stroke-width="4"/><text x="{x + 38}" y="657" fill="{_COLORS["muted"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">{label}</text>'
         )
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
@@ -3242,6 +3399,11 @@ def _results_markdown(
     trained_model = _as_mapping(payload["model"], "model")
     baseline = artifact.executions["baseline"]
     model = artifact.executions["model"]
+    model_retry = artifact.executions["model_retry"]
+    retry_challenger = _as_mapping(
+        payload["retry_challenger"],
+        "model retry challenger",
+    )
     ai = _as_mapping(payload["ai"], "AI evidence")
     ai_line = "AI was disabled for this experiment."
     if ai.get("enabled") is True:
@@ -3300,9 +3462,12 @@ zero. This interval is an exploratory dependence-aware diagnostic, not a p-value
 The baseline replay filled `{baseline["filled_order_count"]}` orders and settled
 `{baseline["net_realized_pnl_quote"]}` quote PnL. The residual-model replay filled
 `{model["filled_order_count"]}` orders and settled
-`{model["net_realized_pnl_quote"]}` quote PnL. These are short prospective
-diagnostics after modeled dynamic fees and recorded depth, not evidence of a
-durable edge. {ai_line}
+`{model["net_realized_pnl_quote"]}` quote PnL. The terminal-zero-fill retry
+challenger filled `{model_retry["filled_order_count"]}` orders, settled
+`{model_retry["net_realized_pnl_quote"]}` quote PnL, and was
+**{"accepted" if retry_challenger["accepted"] else "not accepted"}** by its
+precommitted gates. These are short prospective diagnostics after modeled
+dynamic fees and recorded depth, not evidence of a durable edge. {ai_line}
 
 ![After-fee PnL by asset](latest/charts/per-asset-execution.svg)
 
@@ -3356,6 +3521,39 @@ def publish_polymarket_model_artifact(
             run_id=str(validated.payload["run_id"]),
         )
     )
+    sensitivity = _as_mapping(
+        validated.payload["execution_latency_sensitivity"],
+        "execution latency sensitivity",
+    )
+    sensitivity_policies = _as_mapping(
+        sensitivity["policies"],
+        "execution latency policies",
+    )
+    expected_source_hashes = {
+        str(policy): {
+            str(latency): str(
+                _as_mapping(
+                    report,
+                    f"{policy} {latency}ms execution",
+                )["report_sha256"]
+            )
+            for latency, report in _as_mapping(
+                reports,
+                f"{policy} latency reports",
+            ).items()
+        }
+        for policy, reports in sensitivity_policies.items()
+    }
+    if (
+        validated_source_verification[
+            "execution_report_sha256_by_policy_and_latency"
+        ]
+        != expected_source_hashes
+    ):
+        raise ValueError(
+            "Polymarket source verification does not reconstruct every "
+            "artifact execution scenario"
+        )
     predictions = _prediction_rows(validated.predictions)
     start = _utc(min(int(row["event_start_ms"]) for row in validated.predictions))
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
@@ -3533,6 +3731,7 @@ profitability claim is made.
 
 
 __all__ = [
+    "POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION",
     "PolymarketPublicationResult",
     "ValidatedPolymarketArtifact",
     "publish_polymarket_model_artifact",

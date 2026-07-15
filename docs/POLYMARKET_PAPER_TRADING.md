@@ -6,7 +6,9 @@ evidence-bound open/close actions, cross-checked official resolution settlement,
 durable operator Pause/Resume, fail-closed Stop, and independent source
 reconstruction before CLI/app result publication are implemented. A frozen,
 source-verified held-out model or AI policy can now run once through that same
-owned paper lifecycle. Continuous strategy coordination remains incomplete.
+owned paper lifecycle. A preregistered causal FOK retry challenger is executable
+and source-verifiable as research, but has no paper-policy authority. Continuous
+strategy coordination remains incomplete.
 No authenticated order placement, wallet, private key, live-money claim, or
 profitability claim is implemented or authorized.
 
@@ -19,9 +21,10 @@ The lifecycle, risk, and outage sections below are the required parity contract.
 The current executable subset is the public recorder, strict replay by default,
 explicit segmented reconnect replay, manual aggressive FAK/FOK paper open/close,
 journal reconciliation, official-resolution settlement, a reconciled Stop
-operation, and promotion-gated historical model replay. Passive queue replay,
-empirical latency calibration, continuous strategy/AI decisions, and independent
-live liveness loops remain incomplete and must not be represented as available.
+operation, promotion-gated historical model replay, and a causal terminal-zero-fill
+retry research treatment. Passive queue replay, empirical latency calibration,
+continuous strategy/AI decisions, and independent live liveness loops remain
+incomplete and must not be represented as available.
 
 ```mermaid
 flowchart LR
@@ -97,6 +100,14 @@ opened positions are never adopted, netted, sold, or settled by the bot. The
   prohibited.
 - Implemented: no synthetic liquidity, midpoint fill, last-price fill, or inferred hidden
   fill is permitted.
+- Implemented for research only: the retry challenger may submit at a later frozen
+  decision horizon only after the earlier FOK is causally proven `CANCELLED` or
+  `EXPIRED` with zero fill. It stops after one fill per market. `UNKNOWN` reserves
+  worst-case risk and latches the entire portfolio closed to new exposure. The
+  challenger must beat the model control after cost at every declared latency
+  without worse drawdown or deployed-capital return; passing does not grant paper
+  or live authority. The frozen contract is
+  [`round-004-causal-retry-contract.json`](model-research/polymarket/round-004-causal-retry-contract.json).
 
 ## Binary-market risk
 
@@ -149,12 +160,15 @@ uplift chains instead of trusting aggregate AI claims.
 
 `polymarket-verify` goes beyond artifact-internal accounting. It rebuilds the
 causal feature dataset, model dataset, purged chronological split, deterministic
-model fit, held-out prediction rows, and every baseline/model/AI latency scenario
-from the complete recorder database. It reruns the shared full-depth execution
-engine and requires canonical report equality. `polymarket-publish` performs this
-verification automatically, writes `latest/source-verification.json`, and binds
-that report into the publication integrity manifest. The CLI and generated
-Windows command surface provide no source-verification bypass.
+model fit, held-out prediction rows, and every baseline/model/model-retry/AI
+latency scenario from the complete recorder database. It reruns the shared
+full-depth execution engine and requires canonical report equality.
+`polymarket-publish` performs this verification automatically, rejects a report
+that omits or substitutes any artifact scenario, writes
+`latest/source-verification.json`, and binds that report into the publication
+integrity manifest. Model artifact schema v2 makes the retry evidence mandatory.
+The CLI and generated Windows command surface provide no source-verification
+bypass.
 
 CI also sends the same evidence state, FOK intent, model/AI delay, network
 latency, quantity, and limit through the research evaluator and the bot-owned
@@ -229,6 +243,11 @@ official-settlement, and every declared latency-stress gate. It must also have
 positive after-cost PnL at every declared latency. `--allow-unconfirmed-research`
 admits failed gates only for an explicitly labeled paper diagnostic; it never
 creates trading authority or a profitability claim.
+
+The causal retry challenger is compared with that model across every declared
+latency and appears in the source-verified tables and charts. It is deliberately
+not selected by `auto`, even when its research gates pass; promotion into the
+owned paper lifecycle requires a separate reviewed policy-version change.
 
 The plan binds the model artifact, source-reconstruction report, sealed recorder
 report, execution report, latency configuration, and every held-out trade by
