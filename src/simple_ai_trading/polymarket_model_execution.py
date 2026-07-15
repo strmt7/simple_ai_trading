@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bisect import bisect_right
+from bisect import bisect_left, bisect_right
 from collections import Counter
 from dataclasses import dataclass, replace
 from decimal import Decimal, ROUND_FLOOR
@@ -372,11 +372,11 @@ class _ReplayBookIndex:
         values = self.books.get(token_id, ())
         timestamps = self.timestamps.get(token_id, ())
         target = int(decision_monotonic_ns) + int(latency_ms) * 1_000_000
-        index = bisect_right(timestamps, target) - 1
-        while index >= 0:
+        index = bisect_left(timestamps, target)
+        while index < len(values):
             candidate = values[index]
             if candidate.market.condition_id != condition_id:
-                index -= 1
+                index += 1
                 continue
             if candidate.segment_id != segment_id:
                 return None
@@ -823,22 +823,41 @@ def evaluate_polymarket_execution_policy(
             ):
                 raise ValueError("Polymarket model quote disagrees with replay book state")
             decision_delay_ms = decision_delays[sample.condition_id]
-            effective_latency_ms = decision_delay_ms + cfg.submission_latency_ms
+            requested_latency_ms = decision_delay_ms + cfg.submission_latency_ms
             order_created_wall_ms = (
                 sample.decision_received_wall_ms + decision_delay_ms
             )
-            execution_wall_ms = (
-                sample.decision_received_wall_ms + effective_latency_ms
+            requested_execution_wall_ms = (
+                sample.decision_received_wall_ms + requested_latency_ms
             )
             execution_book = None
-            if execution_wall_ms < market.end_ms:
+            if requested_execution_wall_ms < market.end_ms:
                 execution_book = book_index.execution_book(
                     token_id,
                     condition_id=sample.condition_id,
                     decision_monotonic_ns=sample.decision_received_monotonic_ns,
-                    latency_ms=effective_latency_ms,
+                    latency_ms=requested_latency_ms,
                     segment_id=decision_book.segment_id,
                     market_end_ms=market.end_ms,
+                )
+            effective_latency_ms = requested_latency_ms
+            execution_wall_ms = requested_execution_wall_ms
+            if execution_book is not None:
+                observed_latency_ms = math.ceil(
+                    max(
+                        0,
+                        execution_book.received_monotonic_ns
+                        - sample.decision_received_monotonic_ns,
+                    )
+                    / 1_000_000
+                )
+                effective_latency_ms = max(
+                    requested_latency_ms,
+                    observed_latency_ms,
+                )
+                execution_wall_ms = max(
+                    requested_execution_wall_ms,
+                    execution_book.received_wall_ms,
                 )
             if order_created_wall_ms >= market.end_ms or execution_wall_ms >= market.end_ms:
                 execution_state = "EXPIRED"
@@ -865,7 +884,7 @@ def evaluate_polymarket_execution_policy(
                 intent = PaperOrderIntent(
                     intent_id=intent_id,
                     venue="polymarket",
-                    market_id=market.market_id,
+                    market_id=market.condition_id,
                     asset_id=token_id,
                     symbol=market.asset,
                     outcome=candidate.outcome,

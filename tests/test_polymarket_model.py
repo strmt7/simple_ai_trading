@@ -279,7 +279,7 @@ def _replay_fixture(
                 phase_ask = ask + execution_ask_offset if phase == "execution" else ask
                 snapshot = PaperBookSnapshot(
                     venue="polymarket",
-                    market_id=market.market_id,
+                    market_id=market.condition_id,
                     asset_id=token_id,
                     bids=(BookLevel(bid, displayed_quantity),),
                     asks=(BookLevel(phase_ask, displayed_quantity),),
@@ -554,7 +554,7 @@ def test_execution_policy_abstains_for_market_baseline_without_edge() -> None:
     }
 
 
-def test_execution_uses_only_the_latest_book_available_at_arrival() -> None:
+def test_execution_waits_for_the_first_proven_book_after_arrival() -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
     split = split_polymarket_model_dataset(dataset)
@@ -574,10 +574,10 @@ def test_execution_uses_only_the_latest_book_available_at_arrival() -> None:
         config=PolymarketExecutionResearchConfig(submission_latency_ms=100),
     )
 
-    assert report.filled_order_count == report.evaluated_market_count
-    assert all(trade.effective_latency_ms == 100 for trade in report.trades)
+    assert report.filled_order_count == 0
+    assert all(trade.effective_latency_ms == 200 for trade in report.trades)
     assert all(
-        "execution" not in trade.execution_book_event_id for trade in report.trades
+        "execution" in trade.execution_book_event_id for trade in report.trades
     )
 
 
