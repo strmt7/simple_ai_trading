@@ -9,6 +9,7 @@ import numpy as np
 from simple_ai_trading.polymarket_model_execution import (
     POLYMARKET_RETRY_CONTRACT_SHA256,
 )
+from simple_ai_trading.polymarket_model import POLYMARKET_MODEL_FEATURE_NAMES
 from tools.probe_round57_passive_fill_support import (
     _canonical_json,
     _fill_counts,
@@ -44,6 +45,13 @@ POLYMARKET_CONTINUITY_CONTRACT = (
     / "model-research"
     / "polymarket"
     / "prospective-continuity-contract-v2.json"
+)
+POLYMARKET_PROFILE_CHALLENGER_CONTRACT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-005-profile-challenger-contract.json"
 )
 
 
@@ -157,3 +165,31 @@ def test_polymarket_continuity_contract_forbids_cross_gap_state() -> None:
         is True
     )
     assert contract["lifecycle_parity"]["external_inventory_may_be_touched"] is False
+
+
+def test_polymarket_profile_challenger_was_frozen_without_feature_search() -> None:
+    contract = _assert_contract_identity(POLYMARKET_PROFILE_CHALLENGER_CONTRACT)
+
+    assert contract["status"] == (
+        "frozen_after_capture_start_before_any_run_labels_or_model_outcomes_were_inspected"
+    )
+    profiles = contract["candidate_profiles"]
+    assert profiles["full"] == "POLYMARKET_MODEL_FEATURE_NAMES"
+    feature_contract = set(POLYMARKET_MODEL_FEATURE_NAMES)
+    assert set(profiles) == {
+        "diffusion_core",
+        "fast_cross_venue_flow",
+        "full",
+        "prediction_book_state",
+    }
+    assert all(
+        set(features) <= feature_contract
+        for name, features in profiles.items()
+        if name != "full"
+    )
+    assert (
+        contract["implementation"][
+            "feature_search_outside_declared_profiles_forbidden"
+        ]
+        is True
+    )

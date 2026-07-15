@@ -1,0 +1,101 @@
+{
+  "candidate_profiles": {
+    "diffusion_core": [
+      "remaining_seconds",
+      "direct_distance_from_chainlink_open_bps",
+      "direct_chainlink_basis_bps",
+      "direct_realized_volatility_100ms_bps",
+      "direct_realized_volatility_1000ms_bps",
+      "direct_realized_volatility_5000ms_bps",
+      "direct_diffusion_market_logit_gap",
+      "chainlink_diffusion_market_logit_gap",
+      "direct_spread_bps",
+      "asset_is_eth",
+      "asset_is_sol"
+    ],
+    "fast_cross_venue_flow": [
+      "remaining_seconds",
+      "direct_distance_from_chainlink_open_bps",
+      "direct_chainlink_basis_bps",
+      "direct_return_100ms_bps",
+      "direct_return_250ms_bps",
+      "direct_return_1000ms_bps",
+      "direct_return_5000ms_bps",
+      "direct_realized_volatility_100ms_bps",
+      "direct_realized_volatility_1000ms_bps",
+      "direct_realized_volatility_5000ms_bps",
+      "direct_trade_imbalance_100ms",
+      "direct_trade_imbalance_250ms",
+      "direct_trade_imbalance_1000ms",
+      "direct_trade_imbalance_5000ms",
+      "direct_top_imbalance",
+      "direct_spread_bps",
+      "asset_is_eth",
+      "asset_is_sol"
+    ],
+    "full": "POLYMARKET_MODEL_FEATURE_NAMES",
+    "prediction_book_state": [
+      "remaining_seconds",
+      "direct_distance_from_chainlink_open_bps",
+      "direct_chainlink_basis_bps",
+      "direct_diffusion_market_logit_gap",
+      "chainlink_diffusion_market_logit_gap",
+      "up_microprice_deviation_bps",
+      "down_microprice_deviation_bps",
+      "up_top_imbalance",
+      "down_top_imbalance",
+      "outcome_midpoint_sum_error_bps",
+      "executable_ask_pair_premium_bps",
+      "executable_bid_pair_discount_bps",
+      "asset_is_eth",
+      "asset_is_sol"
+    ]
+  },
+  "comparison": {
+    "challenger": "nested_reduced_profile_market_anchored_logit",
+    "control": "round_003_market_anchored_logit",
+    "same_execution_contract_required": true,
+    "same_feature_rows_labels_split_and_market_weights_required": true,
+    "same_latency_fees_depth_and_risk_budgets_required": true
+  },
+  "contract_sha256": "ae983f4f0cfbcaa130cc5a7d4ec0d3b08cb240ee631e44921b869e69508974ec",
+  "implementation": {
+    "baseline_offset": "normalized executable Polymarket midpoint logit",
+    "candidate_name": "offset_profile_{profile}_l2_{l2}",
+    "coefficient_expansion": "Fit only the named profile columns, then expand excluded full-contract coefficients to exact zero.",
+    "feature_search_outside_declared_profiles_forbidden": true,
+    "inner_selection": "Evaluate every declared profile crossed with L2 values 0.001, 0.01, 0.1, 1, and 10 on the existing three purged rolling training folds.",
+    "outer_validation_gate": "The inner winner must beat the unchanged market prior by at least 0.0001 weighted log loss on the existing chronological validation tail or fall back to the exact market prior.",
+    "prediction_risk_context_excluded": true,
+    "selection_tie_break": "Lowest weighted log loss, then fewer active features, then larger L2, then lexicographic profile name.",
+    "test_labels_may_not_select_profile_l2_or_threshold": true
+  },
+  "promotion_gates": {
+    "all_declared_latency_scenarios_positive_after_cost": true,
+    "all_order_outcomes_terminal": true,
+    "challenger_after_cost_pnl_strictly_better_than_round_003_at_every_latency": true,
+    "challenger_deployed_capital_return_not_worse_at_every_latency": true,
+    "challenger_maximum_drawdown_not_worse_at_every_latency": true,
+    "minimum_untouched_test_time_groups": 30,
+    "paper_or_live_authority_granted": false,
+    "test_brier_score_strictly_better_than_round_003": true,
+    "test_log_loss_strictly_better_than_round_003": true,
+    "validation_log_loss_not_worse_than_round_003": true
+  },
+  "research_basis": [
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6863546",
+    "https://arxiv.org/abs/2604.24366",
+    "https://www.nber.org/papers/w30366",
+    "https://arxiv.org/abs/2211.13777",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=565324"
+  ],
+  "round": 5,
+  "schema_version": "polymarket-profile-challenger-preregistration-v1",
+  "status": "frozen_after_capture_start_before_any_run_labels_or_model_outcomes_were_inspected",
+  "truth_constraints": {
+    "current_capture_is_exploratory_for_this_challenger": true,
+    "current_round_003_control_remains_unchanged": true,
+    "profitability_claim": false,
+    "untouched_confirmation_requires_a_later_prospective_capture": true
+  }
+}
