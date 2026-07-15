@@ -98,6 +98,45 @@ def _message(stream: str, raw: object | str, *, sequence: int = 1) -> RawStreamM
     )
 
 
+def test_ai_veto_cache_is_immutable_and_tamper_evident(tmp_path) -> None:
+    identity = {
+        "schema_version": "polymarket-ai-veto-cache-v1",
+        "case_sha256": "a" * 64,
+        "model_digest": "b" * 64,
+    }
+    cache_key = _sha(_canonical(identity))
+    response = {"message": {"content": "valid-first-response"}}
+
+    with PolymarketEvidenceStore(tmp_path / "ai-cache.duckdb") as store:
+        store.put_polymarket_ai_veto_cache(
+            cache_key,
+            identity=identity,
+            response_payload=response,
+            latency_seconds=2.5,
+        )
+        store.put_polymarket_ai_veto_cache(
+            cache_key,
+            identity=identity,
+            response_payload={"message": {"content": "replacement"}},
+            latency_seconds=1.0,
+        )
+        cached = store.get_polymarket_ai_veto_cache(cache_key)
+        assert cached is not None
+        assert cached["response_payload"] == response
+        assert cached["latency_seconds"] == 2.5
+
+        store.connect().execute(
+            """
+            UPDATE polymarket_ai_veto_cache
+            SET response_json = '{"message":{"content":"tampered"}}'
+            WHERE cache_key_sha256 = ?
+            """,
+            [cache_key],
+        )
+        with pytest.raises(ValueError, match="payload hash mismatch"):
+            store.get_polymarket_ai_veto_cache(cache_key)
+
+
 def _complete_store(store: PolymarketEvidenceStore, run_id: str) -> None:
     store.start_run(run_id, EPOCH * 1_000)
     for asset in ("BTC", "ETH", "SOL"):

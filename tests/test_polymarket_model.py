@@ -90,6 +90,7 @@ from simple_ai_trading.polymarket_repricing import (
     PolymarketRepricingExecutionContext,
     evaluate_polymarket_repricing_ceiling,
 )
+from simple_ai_trading.polymarket_recorder import PolymarketEvidenceStore
 from simple_ai_trading.polymarket_source_verification import (
     POLYMARKET_SOURCE_VERIFICATION_CHECKS,
     POLYMARKET_SOURCE_VERIFICATION_SCHEMA_VERSION,
@@ -1850,6 +1851,145 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
     assert baseline == approved
     assert not ai_report.trading_authority
     assert not ai_report.profitability_claim
+
+
+def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, probability_report = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(split.test, markets)
+    execution_config = PolymarketExecutionResearchConfig().validated()
+    selection = build_polymarket_policy_selection(
+        split.test,
+        predictions,
+        replay.markets,
+        config=execution_config,
+    )
+    cases = build_polymarket_ai_veto_cases(
+        selection,
+        probability_report,
+        execution_config,
+    )[:1]
+    assert cases
+    chat_calls = 0
+    digest = ["f" * 64]
+
+    def approve(
+        url: str,
+        _payload: dict[str, object],
+        _timeout: float,
+        _method: str,
+    ) -> object:
+        nonlocal chat_calls
+        if url.endswith("/api/tags"):
+            return {"models": [{"name": "qwen3.5:9b", "digest": digest[0]}]}
+        if url.endswith("/api/show"):
+            return {"model": "qwen3.5:9b", "parameters": "9B"}
+        chat_calls += 1
+        return {
+            "message": {
+                "content": json.dumps(
+                    {
+                        "action": "approve",
+                        "confidence": 0.9,
+                        "reason_codes": ["edge_after_fees"],
+                        "summary": "Causal after-fee evidence passes review.",
+                    }
+                )
+            }
+        }
+
+    clock = iter((100.0, 102.25, 200.0, 201.5))
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_ai_veto.time.perf_counter",
+        lambda: next(clock),
+    )
+    progress_rows: list[dict[str, object]] = []
+
+    def run(store: PolymarketEvidenceStore):
+        return benchmark_polymarket_ai_veto(
+            cases,
+            all_condition_ids=[item.condition_id for item in split.test],
+            selection_sha256=selection.selection_sha256,
+            risk_benchmark_evidence_sha256="a" * 64,
+            config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+            post_json=approve,  # type: ignore[arg-type]
+            progress=lambda _event, item: progress_rows.append(dict(item)),
+            cache_store=store,
+        )
+
+    with PolymarketEvidenceStore(tmp_path / "ai-cache.duckdb") as store:
+        first = run(store)
+        second = run(store)
+        digest[0] = "e" * 64
+        third = run(store)
+
+    assert first == second
+    assert first.results[0].latency_seconds == 2.25
+    assert third.results[0].latency_seconds == 1.5
+    assert third.model_digest == "e" * 64
+    assert chat_calls == 2
+    assert [row["cache_hit"] for row in progress_rows] == [False, True, False]
+
+
+def test_ai_veto_cache_never_persists_invalid_responses(tmp_path: Path) -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, probability_report = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(split.test, markets)
+    execution_config = PolymarketExecutionResearchConfig().validated()
+    selection = build_polymarket_policy_selection(
+        split.test,
+        predictions,
+        replay.markets,
+        config=execution_config,
+    )
+    cases = build_polymarket_ai_veto_cases(
+        selection,
+        probability_report,
+        execution_config,
+    )[:1]
+    chat_calls = 0
+
+    def malformed(
+        url: str,
+        _payload: dict[str, object],
+        _timeout: float,
+        _method: str,
+    ) -> object:
+        nonlocal chat_calls
+        if url.endswith("/api/tags"):
+            return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
+        if url.endswith("/api/show"):
+            return {"model": "qwen3.5:9b", "parameters": "9B"}
+        chat_calls += 1
+        return {"message": {"content": "not-json"}}
+
+    with PolymarketEvidenceStore(tmp_path / "invalid-cache.duckdb") as store:
+        for _ in range(2):
+            report = benchmark_polymarket_ai_veto(
+                cases,
+                all_condition_ids=[item.condition_id for item in split.test],
+                selection_sha256=selection.selection_sha256,
+                risk_benchmark_evidence_sha256="a" * 64,
+                config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+                post_json=malformed,  # type: ignore[arg-type]
+                cache_store=store,
+            )
+            assert report.provider_failure_count == 1
+        cached_rows = store.connect().execute(
+            "SELECT count(*) FROM polymarket_ai_veto_cache"
+        ).fetchone()[0]
+
+    assert chat_calls == 2
+    assert cached_rows == 0
 
 
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:

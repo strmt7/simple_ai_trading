@@ -7,7 +7,7 @@ import hashlib
 import json
 import math
 import time
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Mapping, Protocol, Sequence
 from urllib.request import Request, urlopen
 
 from .ai_runtime import estimate_model_parameters_b
@@ -20,6 +20,8 @@ from .polymarket_model_execution import (
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v2"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v1"
+POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = ("qwen3:8b", "qwen3.5:9b", "fin-r1:8b")
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
@@ -236,6 +238,62 @@ class PolymarketAIVetoReport:
 
 PostJson = Callable[[str, Mapping[str, object], float, str], object]
 ProgressCallback = Callable[[str, Mapping[str, object]], None]
+
+
+class PolymarketAIVetoCache(Protocol):
+    """Integrity-checked cache boundary; implementations retain original latency."""
+
+    def get_polymarket_ai_veto_cache(
+        self,
+        cache_key_sha256: str,
+    ) -> Mapping[str, object] | None: ...
+
+    def put_polymarket_ai_veto_cache(
+        self,
+        cache_key_sha256: str,
+        *,
+        identity: Mapping[str, object],
+        response_payload: object,
+        latency_seconds: float,
+    ) -> None: ...
+
+
+def _cache_identity(
+    case: PolymarketAIVetoCase,
+    config: PolymarketAIVetoConfig,
+    *,
+    model_digest: str,
+    model_metadata_sha256: str,
+    request: Mapping[str, object],
+) -> dict[str, object]:
+    options = request.get("options")
+    if not isinstance(options, Mapping):
+        raise ValueError("Polymarket AI request options are invalid")
+    return {
+        "schema_version": POLYMARKET_AI_CACHE_SCHEMA_VERSION,
+        "case_sha256": case.case_sha256,
+        "model": config.model,
+        "model_digest": model_digest,
+        "model_metadata_sha256": model_metadata_sha256,
+        "prompt_contract": POLYMARKET_AI_PROMPT_CONTRACT,
+        "response_schema_sha256": _canonical_sha256(_RESPONSE_SCHEMA),
+        "request_sha256": _canonical_sha256(request),
+        "request_options_sha256": _canonical_sha256(dict(options)),
+        "endpoint_policy": {
+            "base_url": config.base_url,
+            "path": "/api/chat",
+            "method": "POST",
+            "timeout_seconds": float(config.timeout_seconds),
+        },
+        "decision_policy": {
+            "minimum_approval_confidence": float(
+                config.minimum_approval_confidence
+            ),
+            "maximum_advisory_latency_seconds": float(
+                config.maximum_advisory_latency_seconds
+            ),
+        },
+    }
 
 
 def build_polymarket_ai_veto_cases(
@@ -528,6 +586,7 @@ def benchmark_polymarket_ai_veto(
     config: PolymarketAIVetoConfig | None = None,
     post_json: PostJson = _request_json,
     progress: ProgressCallback | None = None,
+    cache_store: PolymarketAIVetoCache | None = None,
 ) -> PolymarketAIVetoReport:
     """Run one local model over immutable label-free cases; failures always veto."""
 
@@ -584,19 +643,51 @@ def benchmark_polymarket_ai_veto(
                 "seed": cfg.seed,
             },
         }
-        started = time.perf_counter()
+        cache_identity = _cache_identity(
+            case,
+            cfg,
+            model_digest=model_digest,
+            model_metadata_sha256=metadata_sha256,
+            request=request,
+        )
+        cache_key_sha256 = _canonical_sha256(cache_identity)
+        cached = (
+            cache_store.get_polymarket_ai_veto_cache(cache_key_sha256)
+            if cache_store is not None
+            else None
+        )
+        cache_hit = cached is not None
         raw: object = {}
-        try:
-            raw = post_json(
-                f"{cfg.base_url}/api/chat",
-                request,
-                cfg.timeout_seconds,
-                "POST",
-            )
+        if cached is not None:
+            cached_identity = cached.get("identity")
+            if (
+                not isinstance(cached_identity, Mapping)
+                or dict(cached_identity) != cache_identity
+            ):
+                raise ValueError("Polymarket AI cache identity is invalid")
+            raw = cached.get("response_payload")
+            latency = float(cached.get("latency_seconds", math.nan))
+            if (
+                not math.isfinite(latency)
+                or latency < 0.0
+                or str(cached.get("response_sha256") or "")
+                != _canonical_sha256(raw)
+            ):
+                raise ValueError("Polymarket AI cache payload is invalid")
             decision = _parse_decision(raw)
-        except Exception as exc:  # noqa: BLE001 - evidence records provider failures
-            decision = _failed_decision(f"{type(exc).__name__}: {exc}")
-        latency = time.perf_counter() - started
+        else:
+            started = time.perf_counter()
+            try:
+                raw = post_json(
+                    f"{cfg.base_url}/api/chat",
+                    request,
+                    cfg.timeout_seconds,
+                    "POST",
+                )
+                decision = _parse_decision(raw)
+            except Exception as exc:  # noqa: BLE001 - evidence records failures
+                decision = _failed_decision(f"{type(exc).__name__}: {exc}")
+            latency = time.perf_counter() - started
         if (
             decision.valid
             and decision.action == "approve"
@@ -605,6 +696,13 @@ def benchmark_polymarket_ai_veto(
             decision = _failed_decision("approval confidence below configured floor")
         if latency > cfg.maximum_advisory_latency_seconds:
             decision = _failed_decision("advisory latency exceeded configured ceiling")
+        if decision.valid and cache_store is not None and not cache_hit:
+            cache_store.put_polymarket_ai_veto_cache(
+                cache_key_sha256,
+                identity=cache_identity,
+                response_payload=raw,
+                latency_seconds=latency,
+            )
         result = PolymarketAIVetoResult(
             case_id=case.case_id,
             condition_id=case.condition_id,
@@ -624,6 +722,7 @@ def benchmark_polymarket_ai_veto(
                     "case_count": len(cases),
                     "action": decision.action,
                     "valid": decision.valid,
+                    "cache_hit": cache_hit,
                     "latency_seconds": round(latency, 3),
                 },
             )
@@ -667,10 +766,13 @@ def benchmark_polymarket_ai_veto(
 
 __all__ = [
     "DEFAULT_OLLAMA_URL",
+    "POLYMARKET_AI_CACHE_SCHEMA_VERSION",
     "POLYMARKET_AI_CASE_SCHEMA_VERSION",
+    "POLYMARKET_AI_PROMPT_CONTRACT",
     "POLYMARKET_AI_REPORT_SCHEMA_VERSION",
     "SUPPORTED_POLYMARKET_AI_MODELS",
     "PolymarketAIVetoCase",
+    "PolymarketAIVetoCache",
     "PolymarketAIVetoConfig",
     "PolymarketAIVetoDecision",
     "PolymarketAIVetoReport",

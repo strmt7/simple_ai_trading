@@ -10,6 +10,7 @@ from functools import partial
 import hashlib
 import hmac
 import json
+import math
 from pathlib import Path
 import re
 import struct
@@ -572,6 +573,17 @@ class PolymarketEvidenceStore:
                 evidence_sha256 VARCHAR NOT NULL,
                 UNIQUE(run_id, condition_id)
             );
+
+            CREATE TABLE IF NOT EXISTS polymarket_ai_veto_cache (
+                cache_key_sha256 VARCHAR PRIMARY KEY,
+                schema_version VARCHAR NOT NULL,
+                identity_json VARCHAR NOT NULL,
+                response_json VARCHAR NOT NULL,
+                response_sha256 VARCHAR NOT NULL,
+                latency_seconds DOUBLE NOT NULL,
+                created_at_ms BIGINT NOT NULL,
+                CHECK(latency_seconds >= 0.0 AND latency_seconds <= 60.0)
+            );
             """
         )
         connection.execute(
@@ -593,6 +605,96 @@ class PolymarketEvidenceStore:
             SET storage_schema_version = 'polymarket-public-evidence-v1'
             WHERE storage_schema_version IS NULL OR storage_schema_version = '';
             """
+        )
+
+    def get_polymarket_ai_veto_cache(
+        self,
+        cache_key_sha256: str,
+    ) -> Mapping[str, object] | None:
+        key = str(cache_key_sha256 or "").strip().lower()
+        if len(key) != 64 or any(
+            value not in "0123456789abcdef" for value in key
+        ):
+            raise ValueError("Polymarket AI cache key is invalid")
+        row = self.connect().execute(
+            """
+            SELECT schema_version, identity_json, response_json,
+                   response_sha256, latency_seconds
+            FROM polymarket_ai_veto_cache
+            WHERE cache_key_sha256 = ?
+            """,
+            [key],
+        ).fetchone()
+        if row is None:
+            return None
+        identity = _strict_json_loads(str(row[1]))
+        if (
+            not isinstance(identity, Mapping)
+            or str(identity.get("schema_version") or "") != str(row[0])
+            or _canonical_json(identity) != str(row[1])
+            or not hmac.compare_digest(_canonical_sha256(identity), key)
+        ):
+            raise ValueError("Polymarket AI cache identity is corrupt")
+        response = _validated_canonical_payload(
+            "Polymarket AI cache response",
+            str(row[2]),
+            str(row[3]),
+        )
+        latency = float(row[4])
+        if not math.isfinite(latency) or not 0.0 <= latency <= 60.0:
+            raise ValueError("Polymarket AI cache latency is corrupt")
+        return {
+            "identity": dict(identity),
+            "response_payload": response,
+            "response_sha256": str(row[3]),
+            "latency_seconds": latency,
+        }
+
+    def put_polymarket_ai_veto_cache(
+        self,
+        cache_key_sha256: str,
+        *,
+        identity: Mapping[str, object],
+        response_payload: object,
+        latency_seconds: float,
+    ) -> None:
+        if self.read_only:
+            raise ValueError(
+                "read-only Polymarket evidence cannot store AI cache rows"
+            )
+        key = str(cache_key_sha256 or "").strip().lower()
+        identity_payload = dict(identity)
+        identity_json = _canonical_json(identity_payload)
+        schema_version = str(identity_payload.get("schema_version") or "").strip()
+        latency = float(latency_seconds)
+        if (
+            len(key) != 64
+            or any(value not in "0123456789abcdef" for value in key)
+            or not schema_version
+            or not hmac.compare_digest(_canonical_sha256(identity_payload), key)
+            or not math.isfinite(latency)
+            or not 0.0 <= latency <= 60.0
+        ):
+            raise ValueError("Polymarket AI cache entry is invalid")
+        response_json = _canonical_json(response_payload)
+        response_sha256 = hashlib.sha256(response_json.encode("ascii")).hexdigest()
+        self.connect().execute(
+            """
+            INSERT INTO polymarket_ai_veto_cache (
+                cache_key_sha256, schema_version, identity_json, response_json,
+                response_sha256, latency_seconds, created_at_ms
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (cache_key_sha256) DO NOTHING
+            """,
+            [
+                key,
+                schema_version,
+                identity_json,
+                response_json,
+                response_sha256,
+                latency,
+                _wall_ms(),
+            ],
         )
 
     def start_run(self, run_id: str, started_at_ms: int) -> None:
