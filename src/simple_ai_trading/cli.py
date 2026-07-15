@@ -7070,26 +7070,33 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                         f"case={item.get('case')}/{item.get('case_count')} "
                         f"action={item.get('action')} "
                         f"valid={item.get('valid')} "
+                        f"cache_hit={item.get('cache_hit')} "
                         f"latency={item.get('latency_seconds')}s",
                         file=sys.stderr,
                     )
 
-            ai_report = benchmark_polymarket_ai_veto(
-                ai_cases,
-                all_condition_ids=[item.condition_id for item in split.test],
-                selection_sha256=policy_selection.selection_sha256,
-                risk_benchmark_evidence_sha256=benchmark_sha256,
-                config=PolymarketAIVetoConfig(
-                    model=ai_model,
-                    base_url=str(args.ai_url),
-                    timeout_seconds=float(args.ai_timeout),
-                    minimum_approval_confidence=float(args.ai_min_confidence),
-                    maximum_advisory_latency_seconds=float(
-                        args.ai_max_latency_seconds
+            with PolymarketEvidenceStore(
+                Path(args.database),
+                memory_limit=str(args.memory_limit),
+                threads=int(args.database_threads),
+            ) as ai_cache_store:
+                ai_report = benchmark_polymarket_ai_veto(
+                    ai_cases,
+                    all_condition_ids=[item.condition_id for item in split.test],
+                    selection_sha256=policy_selection.selection_sha256,
+                    risk_benchmark_evidence_sha256=benchmark_sha256,
+                    config=PolymarketAIVetoConfig(
+                        model=ai_model,
+                        base_url=str(args.ai_url),
+                        timeout_seconds=float(args.ai_timeout),
+                        minimum_approval_confidence=float(args.ai_min_confidence),
+                        maximum_advisory_latency_seconds=float(
+                            args.ai_max_latency_seconds
+                        ),
                     ),
-                ),
-                progress=ai_progress,
-            )
+                    progress=ai_progress,
+                    cache_store=ai_cache_store,
+                )
             ai_decision_delays = {
                 condition_id: 0
                 for condition_id in {item.condition_id for item in split.test}

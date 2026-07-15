@@ -101,10 +101,13 @@ synthetic governance results, not market-edge evidence.
 
 Current local priority therefore keeps `qwen3:8b` as the structured risk-review
 baseline. Rejected or unevaluated models remain research candidates. No LLM
-enters the 250 ms action scorer: a later experiment must be veto-only, cache
-canonical case hashes, record its actual response delay, replay that delay
-against the recorded order book, and pass the separate 90-day matched-period
-uplift contract.
+enters the 250 ms action scorer. The veto evaluator caches only valid responses
+in the evidence DuckDB. Its key binds the causal case, exact request, prompt and
+response-schema contracts, endpoint policy, decision thresholds, and current
+Ollama model digest and metadata. Cache hits retain the original measured model
+latency for order-book replay; failures, malformed output, low-confidence
+approvals, and over-latency responses are never cached. A later action experiment
+must remain veto-only and pass the separate 90-day matched-period uplift contract.
 
 ### Kronos Forecast Evidence (Rejected)
 

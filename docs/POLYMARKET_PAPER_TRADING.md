@@ -172,7 +172,11 @@ failures.
 
 Each AI treatment retains its exact label-free prompt and raw local-model
 response. The publisher reconstructs candidate, permission, decision-delay, and
-uplift chains instead of trusting aggregate AI claims.
+uplift chains instead of trusting aggregate AI claims. Repeated evaluation of an
+identical valid case can reuse the integrity-checked response in the same DuckDB,
+but replay still uses the first measured model latency. The cache is invalidated
+by any case, request, prompt/schema, endpoint-policy, threshold, model-digest, or
+model-metadata change. Invalid or late responses remain fail-closed and uncached.
 
 Live model scoring uses a separate unresolved-input schema. It binds the source
 feature-row digest, model-config digest, fixed horizon, causal feature vector,
