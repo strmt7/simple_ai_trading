@@ -1,0 +1,170 @@
+{
+  "schema_version": "round-059-funding-persistence-feasibility-design-v1",
+  "round": 59,
+  "design_sha256": "cf5d17873d9b269adc3aebcb9f1237d8854dbc80b9ef098a8d8e6e1f5d1d6f95",
+  "phase": "consumed_funding_persistence_feasibility_before_spot_history_ingestion",
+  "predecessor": {
+    "round": 58,
+    "decision": "reject_symmetric_touch_making_before_training",
+    "publication_canonical_sha256": "34ddf6199703e6769e184772da4638906a036df1aac667628fa172c1ba675cc4"
+  },
+  "governance": {
+    "source_data_previously_consumed": true,
+    "selection_contaminated": true,
+    "freeze_before_funding_rate_value_access_in_round59": true,
+    "promotion_permitted": false,
+    "profitability_claim_permitted": false,
+    "trading_authority_permitted": false,
+    "testnet_or_live_authority_permitted": false,
+    "leverage_permitted": false,
+    "model_training_permitted": false,
+    "ai_evaluation_permitted": false,
+    "spot_history_ingestion_permitted_only_after_gate": true,
+    "posthoc_trigger_or_horizon_selection_permitted": false
+  },
+  "structural_question": "Does causally observed positive BTCUSDT, ETHUSDT, and SOLUSDT funding persist long enough to support a later fully priced delta-neutral spot-perpetual feasibility study after four-leg costs?",
+  "source_contract": {
+    "provider": "Binance public data archives",
+    "market_type": "USD-M perpetual futures",
+    "database_argument": "data/market_data.sqlite",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "start_period": "2021-12",
+    "end_period": "2025-06",
+    "periods_per_symbol": 43,
+    "data_type": "fundingRate",
+    "required_archive_status": "complete",
+    "required_checksum_status": "verified",
+    "monthly_row_stream_sha256_reconstruction_required": true,
+    "source_certificate_file": "round38-derivatives-source-20260712-v2/certificate.json",
+    "source_certificate_file_sha256": "e2fe434d7c290f09913160506c52fce30849a6bd319465390c4b4d22dad482a7",
+    "source_certificate_canonical_sha256": "8bf4c9404edbdb80285bbd472a856430873c77de97b5c7fbf24f6c8f86eaab39",
+    "expected_rows": {
+      "BTCUSDT": 3924,
+      "ETHUSDT": 3924,
+      "SOLUSDT": 3999
+    },
+    "funding_interval_hours_range": [1, 8],
+    "price_rows_permitted": false,
+    "premium_index_rows_permitted": false,
+    "spot_rows_permitted": false
+  },
+  "causal_trigger_contract": {
+    "decision_time": "immediately after a settled funding observation",
+    "current_settlement_not_counted_as_future_carry": true,
+    "triggers_bps": [
+      {"id": "positive", "operator": "strictly_greater", "value": 0.0},
+      {"id": "at_least_1bp", "operator": "greater_or_equal", "value": 1.0},
+      {"id": "at_least_2bp", "operator": "greater_or_equal", "value": 2.0}
+    ],
+    "trigger_grid_reported_without_selection": true
+  },
+  "episode_contract": {
+    "holding_horizons_hours": [24, 72, 168],
+    "future_funding_window": "decision_time < calc_time <= decision_time + horizon",
+    "gross_short_perpetual_carry_bps": "10000 * sum(future settled funding rates)",
+    "long_spot_short_perpetual_direction_only": true,
+    "negative_funding_reverse_carry_excluded": true,
+    "exclusion_reason": "Reverse carry requires verified spot borrow availability, borrow rate, and short-sale execution that are absent from this source.",
+    "constant_matched_leg_notional_for_rate_accounting": true,
+    "episodes_non_overlapping_per_symbol_trigger_horizon": true,
+    "complete_horizon_required": true,
+    "funding_interval_inferred_from_rows": false,
+    "stored_funding_interval_hours_used": true
+  },
+  "cost_reference_contract": {
+    "references_are_not_account_specific_fee_claims": true,
+    "authenticated_spot_and_futures_commission_queries_required_before_execution": true,
+    "optimistic_futures_maker_only_bps": 4.0,
+    "optimistic_reference_excludes": ["spot fees", "all slippage", "leg risk", "basis risk"],
+    "repo_offline_four_leg_taker_bps": 28.0,
+    "repo_offline_components_bps_per_fill": {
+      "spot_taker": 10.0,
+      "futures_taker": 4.0,
+      "spot_fills": 2,
+      "futures_fills": 2
+    },
+    "stress_four_leg_bps": 32.0,
+    "stress_additional_slippage_bps_per_fill": 1.0,
+    "types_git_blob_oid": "5f222890236011c94705a1839498c0320023f3d3",
+    "round57_cost_contract_path": "docs/model-research/action-value/round-057-queue-censored-make-take-execution-contract.json",
+    "round57_cost_contract_sha256": "ef42dcd1fcf003838a34c78a3d87a49b45d78f16b7be47b596fc9eece9841dd6",
+    "round57_cost_contract_git_blob_oid": "4634f73355c0ecc7ca72f5072da4ac9074b9ae34"
+  },
+  "uncertainty_contract": {
+    "bootstrap": "stationary circular episode-block bootstrap",
+    "bootstrap_samples": 2000,
+    "mean_block_length_episodes": 4.0,
+    "confidence_lower_quantile": 0.025,
+    "confidence_upper_quantile": 0.975,
+    "seed": 5901,
+    "serial_order_preserved": true
+  },
+  "authorization_gate": {
+    "minimum_nonoverlapping_episodes_per_symbol": 40,
+    "minimum_stress_net_positive_fraction": 0.55,
+    "median_stress_net_bps_strictly_above": 0.0,
+    "bootstrap_lower_95_mean_stress_net_bps_strictly_above": 0.0,
+    "same_trigger_and_horizon_must_pass_all_symbols": true,
+    "passing_cell_count_required": 1,
+    "passing_result_authorizes_only": "checksum-bound synchronized spot price ingestion and a separately frozen two-leg economic replay",
+    "failing_result": "reject funding persistence as sufficient support for the data build"
+  },
+  "report_contract": {
+    "required_tables": [
+      "source archive reconciliation",
+      "sign-transition counts",
+      "non-overlapping episode metrics by symbol trigger and horizon",
+      "cost-reference comparisons",
+      "breadth gates"
+    ],
+    "forbidden_metrics": [
+      "ROI",
+      "drawdown",
+      "profit factor",
+      "trade win rate",
+      "portfolio return",
+      "leverage return",
+      "AI uplift"
+    ],
+    "forbidden_claims": [
+      "profitability",
+      "execution realism",
+      "basis neutrality",
+      "testnet readiness",
+      "live readiness"
+    ]
+  },
+  "research_basis": [
+    {
+      "title": "Binance USD-M funding-rate history and funding-interval metadata",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#get-funding-rate-history",
+      "design_use": "Historical settlements are timestamped; interval changes must be read rather than assumed."
+    },
+    {
+      "title": "Binance spot account commission endpoint",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/account#query-commission-rates-user_data",
+      "design_use": "Deployment requires account- and symbol-specific signed fee verification."
+    },
+    {
+      "title": "Binance USD-M user commission endpoint",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/account#user-commission-rate",
+      "design_use": "Deployment requires account- and symbol-specific signed fee verification."
+    },
+    {
+      "title": "Fundamentals of Perpetual Futures",
+      "url": "https://arxiv.org/abs/2212.06888",
+      "design_use": "Trading costs create no-arbitrage bounds and funding carry is not frictionless arbitrage."
+    },
+    {
+      "title": "Optimal Control of the Ethena Yield-Bearing Stablecoin",
+      "url": "https://arxiv.org/abs/2605.11263",
+      "design_use": "Delta-neutral carry still bears temporary and permanent impact and liquidation-control costs."
+    }
+  ],
+  "limitations": [
+    "Funding persistence is only one component of cash-and-carry economics.",
+    "The screen excludes spot-perpetual basis change, legging latency, spreads, depth, impact, margin, liquidation, collateral yield, transfers, taxes, and operational failures.",
+    "Passing cannot establish an edge; failing can prevent an unjustified large spot-data build.",
+    "The source period is previously consumed development data and cannot be reused as untouched confirmation."
+  ]
+}
