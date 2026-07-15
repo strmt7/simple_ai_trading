@@ -28,6 +28,13 @@ POLYMARKET_DESIGN = (
     / "polymarket"
     / "round-001-paper-parity-design.json"
 )
+POLYMARKET_RETRY_CONTRACT = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-004-causal-retry-contract.json"
+)
 
 
 def _assert_design_identity(path: Path) -> dict[str, object]:
@@ -36,6 +43,14 @@ def _assert_design_identity(path: Path) -> dict[str, object]:
     actual = hashlib.sha256(_canonical_json(design).encode("ascii")).hexdigest()
     assert claimed == actual
     return design
+
+
+def _assert_contract_identity(path: Path) -> dict[str, object]:
+    contract = json.loads(path.read_text(encoding="utf-8"))
+    claimed = str(contract.pop("contract_sha256"))
+    actual = hashlib.sha256(_canonical_json(contract).encode("ascii")).hexdigest()
+    assert claimed == actual
+    return contract
 
 
 def test_passive_fill_requires_queue_and_own_quantity_after_arrival() -> None:
@@ -80,3 +95,19 @@ def test_frozen_designs_have_valid_identities_and_shared_lifecycle() -> None:
         "api_budget",
         "coordinator_deadlines",
     }
+
+
+def test_polymarket_retry_contract_preserves_binance_paper_safety() -> None:
+    contract = _assert_contract_identity(POLYMARKET_RETRY_CONTRACT)
+
+    assert contract["status"] == "frozen_before_round_003_outcomes"
+    policy = contract["execution_policy"]
+    assert policy["venue_order_type"] == "FOK"
+    assert policy["stop_after_fill"] is True
+    assert policy["future_book_selection_forbidden"] is True
+    assert policy["future_outcome_selection_forbidden"] is True
+    assert policy["terminal_zero_fill_states"] == ["CANCELLED", "EXPIRED"]
+    assert contract["lifecycle_contract"]["binance_paper_parity_required"] is True
+    assert contract["lifecycle_contract"]["external_inventory_may_be_touched"] is False
+    assert contract["promotion_gates"]["control_may_not_be_replaced_if_challenger_only_increases_activity"] is True
+    assert contract["truth_constraints"]["untouched_confirmation_requires_a_later_prospective_capture"] is True
