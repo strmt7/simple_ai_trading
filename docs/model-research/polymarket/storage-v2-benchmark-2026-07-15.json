@@ -1,0 +1,58 @@
+{
+  "schema_version": "polymarket-storage-benchmark-v1",
+  "benchmark_id": "storage-v2-closed-real-feed-160k-20260715",
+  "recorded_at_utc": "2026-07-15T06:51:00Z",
+  "environment": {
+    "duckdb_version": "1.5.4",
+    "python_zstandard_version": "0.25.0",
+    "platform": "Windows"
+  },
+  "source": {
+    "recorder_run_id": "ed8d56df4d664e7ea6fe4ac0beba5ed0",
+    "recorder_status": "failed",
+    "failure_scope": "terminal v1 integrity audit exceeded its former 1 GiB memory ceiling",
+    "sample_selection": {
+      "clob_market_messages": 135000,
+      "binance_spot_messages": 24000,
+      "polymarket_rtds_messages": 1000
+    },
+    "raw_message_count": 160000,
+    "normalized_event_count": 159993,
+    "raw_payload_bytes": 92160412,
+    "canonical_event_payload_bytes": 89623803
+  },
+  "legacy_v1": {
+    "database_bytes": 362295296,
+    "write_seconds": 14.879858800035436,
+    "integrity_seconds": 3.156407799979206,
+    "integrity_errors": []
+  },
+  "compact_v2": {
+    "database_bytes": 110112768,
+    "write_seconds": 13.440967000031378,
+    "integrity_seconds": 7.367148799996357,
+    "chunk_count": 157,
+    "framed_uncompressed_bytes": 92800412,
+    "compressed_frame_bytes": 9789942,
+    "inline_raw_payload_count": 0,
+    "inline_event_payload_count": 0,
+    "integrity_errors": []
+  },
+  "comparison": {
+    "compact_to_legacy_size_ratio": 0.303930990039683,
+    "database_reduction_fraction": 0.6960690099603171,
+    "raw_hash_multiset_differences": [0, 0],
+    "event_hash_multiset_differences": [0, 0]
+  },
+  "claims": {
+    "trading_authority": false,
+    "model_performance": false,
+    "execution_performance": false,
+    "profitability": false
+  },
+  "limitations": [
+    "The source recorder run failed its legacy terminal audit and is not promotion evidence.",
+    "The source database is local evidence and is not committed to GitHub.",
+    "The benchmark measures storage, reconstruction integrity, and elapsed host time only."
+  ]
+}

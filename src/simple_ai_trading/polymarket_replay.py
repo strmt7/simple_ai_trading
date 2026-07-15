@@ -258,9 +258,7 @@ class PolymarketEvidenceReplay:
             row = connection.execute(latest_query).fetchone()
             if row is None:
                 qualifier = "finished" if allow_segmented_gaps else "complete"
-                raise ValueError(
-                    f"no {qualifier} Polymarket recorder run is available"
-                )
+                raise ValueError(f"no {qualifier} Polymarket recorder run is available")
             selected = str(row[0])
         run = connection.execute(
             """
@@ -332,13 +330,9 @@ class PolymarketEvidenceReplay:
             materialized_book_count=len(books),
             suppressed_book_count=transition_count - len(books),
             total_event_count=causal_metrics.total_event_count,
-            causally_ordered_event_count=(
-                causal_metrics.causally_ordered_event_count
-            ),
+            causally_ordered_event_count=(causal_metrics.causally_ordered_event_count),
             late_event_count=causal_metrics.late_event_count,
-            maximum_source_regression_ms=(
-                causal_metrics.maximum_source_regression_ms
-            ),
+            maximum_source_regression_ms=(causal_metrics.maximum_source_regression_ms),
             maximum_late_arrival_delay_ns=(
                 causal_metrics.maximum_late_arrival_delay_ns
             ),
@@ -501,15 +495,19 @@ class PolymarketEvidenceReplay:
             placeholders = ", ".join("?" for _ in condition_ids)
             condition_filter = f" AND condition_id IN ({placeholders})"
             parameters.extend(condition_ids)
-        rows = store.connect().execute(
-            f"""
+        rows = (
+            store.connect()
+            .execute(
+                f"""
             SELECT condition_id, gamma_payload_json
             FROM polymarket_market_snapshot
             WHERE run_id = ?{condition_filter}
             ORDER BY event_start_ms, asset
             """,
-            parameters,
-        ).fetchall()
+                parameters,
+            )
+            .fetchall()
+        )
         markets: list[PolymarketFiveMinuteMarket] = []
         for condition_id, payload_json in rows:
             try:
@@ -538,26 +536,8 @@ class PolymarketEvidenceReplay:
     ) -> Iterator[_EventRow]:
         market_by_condition = {market.condition_id: market for market in markets}
         conditions = tuple(sorted(market_by_condition))
-        placeholders = ", ".join("?" for _ in conditions)
         source_watermarks: dict[tuple[str, str], tuple[int, int]] = {}
         availability: dict[str, tuple[int, int]] = {}
-        cursor = store.connect().execute(
-            f"""
-            SELECT e.event_id, e.event_type, e.condition_id, e.asset_id,
-                   e.event_json, e.event_sha256, r.connection_id,
-                   r.sequence_number, r.received_wall_ms,
-                   r.received_monotonic_ns, e.sub_index
-            FROM polymarket_public_event AS e
-            JOIN polymarket_raw_message AS r
-              ON r.run_id = e.run_id AND r.message_id = e.message_id
-            WHERE e.run_id = ?
-              AND e.stream IN ('clob_market', 'clob_rest_book')
-              AND e.condition_id IN ({placeholders})
-            ORDER BY r.received_monotonic_ns, r.received_wall_ms,
-                     r.connection_id, r.sequence_number, e.sub_index
-            """,
-            [run_id, *conditions],
-        )
         raw_group: list[tuple[object, ...]] = []
         group_monotonic_ns: int | None = None
 
@@ -569,10 +549,7 @@ class PolymarketEvidenceReplay:
             reorder_epoch: dict[tuple[str, str], int] = {}
             release_wall_by_condition: dict[str, int] = {}
             for raw_row in grouped:
-                try:
-                    payload = json.loads(str(raw_row[4]))
-                except json.JSONDecodeError as exc:
-                    raise ValueError("stored CLOB event is invalid JSON") from exc
+                payload = raw_row[4]
                 if not isinstance(payload, Mapping):
                     raise ValueError("stored CLOB event must be an object")
                 row = _EventRow(
@@ -591,9 +568,7 @@ class PolymarketEvidenceReplay:
                     sub_index=int(raw_row[10]),
                 )
                 metrics.total_event_count += 1
-                condition = str(
-                    row.event.get("market") or row.condition_id
-                ).lower()
+                condition = str(row.event.get("market") or row.condition_id).lower()
                 if (
                     row.event_type not in _CAUSALLY_ORDERED_EVENTS
                     or condition not in market_by_condition
@@ -607,8 +582,8 @@ class PolymarketEvidenceReplay:
                     name=f"{row.event_type} timestamp",
                 )
                 segment_key = (condition, row.connection_id)
-                maximum_source_time, maximum_source_arrival_ns = (
-                    source_watermarks.get(segment_key, (-1, 0))
+                maximum_source_time, maximum_source_arrival_ns = source_watermarks.get(
+                    segment_key, (-1, 0)
                 )
                 if source_time < maximum_source_time:
                     source_skew = maximum_source_time - source_time
@@ -626,9 +601,7 @@ class PolymarketEvidenceReplay:
                     )
                     if (
                         source_skew > _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
-                        or not 0
-                        <= arrival_delay
-                        <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
+                        or not 0 <= arrival_delay <= _CAUSAL_REORDER_MAX_ARRIVAL_NS
                     ):
                         raise ValueError(
                             "CLOB event exceeded the bounded causal reorder window"
@@ -643,9 +616,7 @@ class PolymarketEvidenceReplay:
                     epoch = reorder_epoch.get(segment_key, 0)
                     reorder_slots.setdefault((*segment_key, epoch), []).append(index)
                 else:
-                    reorder_epoch[segment_key] = (
-                        reorder_epoch.get(segment_key, 0) + 1
-                    )
+                    reorder_epoch[segment_key] = reorder_epoch.get(segment_key, 0) + 1
                 release_wall_by_condition[condition] = max(
                     release_wall_by_condition.get(condition, 0),
                     row.received_wall_ms,
@@ -669,10 +640,13 @@ class PolymarketEvidenceReplay:
                     output.append(row)
                     continue
                 release_wall_ms = release_wall_by_condition[condition]
-                wall_delay_ns = max(
-                    0,
-                    release_wall_ms - row.received_wall_ms,
-                ) * 1_000_000
+                wall_delay_ns = (
+                    max(
+                        0,
+                        release_wall_ms - row.received_wall_ms,
+                    )
+                    * 1_000_000
+                )
                 available_monotonic_ns, available_wall_ms = availability.get(
                     condition,
                     (0, 0),
@@ -695,9 +669,7 @@ class PolymarketEvidenceReplay:
                     available_monotonic_ns,
                     available_wall_ms,
                 )
-                availability_delay = (
-                    available_monotonic_ns - row.received_monotonic_ns
-                )
+                availability_delay = available_monotonic_ns - row.received_monotonic_ns
                 if availability_delay > 0:
                     metrics.deferred_event_count += 1
                     metrics.maximum_availability_delay_ns = max(
@@ -709,17 +681,33 @@ class PolymarketEvidenceReplay:
                 output.append(row)
             return tuple(output)
 
-        while rows := cursor.fetchmany(_REPLAY_FETCH_SIZE):
-            for raw_row in rows:
-                received_monotonic_ns = int(raw_row[9])
-                if (
-                    group_monotonic_ns is not None
-                    and received_monotonic_ns != group_monotonic_ns
-                ):
-                    yield from release_group(raw_group)
-                    raw_group = []
-                group_monotonic_ns = received_monotonic_ns
-                raw_group.append(tuple(raw_row))
+        for decoded in store.iter_public_events(
+            run_id,
+            streams=("clob_market", "clob_rest_book"),
+            condition_ids=conditions,
+        ):
+            raw_row = (
+                decoded.event_id,
+                decoded.event_type,
+                decoded.condition_id,
+                decoded.asset_id,
+                decoded.event,
+                decoded.event_sha256,
+                decoded.connection_id,
+                decoded.sequence_number,
+                decoded.received_wall_ms,
+                decoded.received_monotonic_ns,
+                decoded.sub_index,
+            )
+            received_monotonic_ns = decoded.received_monotonic_ns
+            if (
+                group_monotonic_ns is not None
+                and received_monotonic_ns != group_monotonic_ns
+            ):
+                yield from release_group(raw_group)
+                raw_group = []
+            group_monotonic_ns = received_monotonic_ns
+            raw_group.append(raw_row)
         if raw_group:
             yield from release_group(raw_group)
 
@@ -783,9 +771,7 @@ class PolymarketEvidenceReplay:
             }:
                 market = market_by_condition.get(condition)
                 if market is None:
-                    raise ValueError(
-                        f"{event_type} event references an unknown market"
-                    )
+                    raise ValueError(f"{event_type} event references an unknown market")
                 prior_connection = active_connection.get(condition)
                 if prior_connection != row.connection_id:
                     flush(condition)
@@ -799,9 +785,7 @@ class PolymarketEvidenceReplay:
                     segments.add((condition, row.connection_id))
             if event_type in _BOOK_DEPTH_EVENTS:
                 if row.condition_id and row.condition_id.lower() != condition:
-                    raise ValueError(
-                        f"{event_type} event condition identity drifted"
-                    )
+                    raise ValueError(f"{event_type} event condition identity drifted")
                 source_time = _timestamp(
                     row.event.get("timestamp"),
                     name=f"{event_type} timestamp",
@@ -841,9 +825,7 @@ class PolymarketEvidenceReplay:
                 cls._apply_tick_size_change(row, market_by_token, state)
             elif event_type == "market_resolved":
                 flush(condition)
-                resolutions.append(
-                    cls._resolution(run_id, row, market_by_condition)
-                )
+                resolutions.append(cls._resolution(run_id, row, market_by_condition))
             elif event_type not in _KNOWN_NO_BOOK_CHANGE_EVENTS:
                 raise ValueError(f"unsupported CLOB replay event type: {event_type}")
         for condition in tuple(pending):
@@ -979,7 +961,9 @@ class PolymarketEvidenceReplay:
                     received_monotonic_ns=row.received_monotonic_ns,
                 )
                 if snapshot.source_time_ms != batch.source_time_ms:
-                    raise ValueError("full book timestamp differs from its atomic batch")
+                    raise ValueError(
+                        "full book timestamp differs from its atomic batch"
+                    )
                 operations.setdefault(token, []).append(("book", row, snapshot))
             elif row.event_type == "price_change":
                 changes = row.event.get("price_changes")
@@ -1014,9 +998,7 @@ class PolymarketEvidenceReplay:
                         "best_bid_ask timestamp differs from its atomic batch"
                     )
                 cls._best_bid_ask_values(row)
-                operations.setdefault(token, []).append(
-                    ("best", row, dict(row.event))
-                )
+                operations.setdefault(token, []).append(("best", row, dict(row.event)))
 
         output: list[PolymarketRecordedBook] = []
         transition_count = 0
@@ -1035,9 +1017,7 @@ class PolymarketEvidenceReplay:
                 if not pending_changes:
                     return
                 if current is None:
-                    event_ids = [
-                        item.event_id for item, _change in pending_changes
-                    ]
+                    event_ids = [item.event_id for item, _change in pending_changes]
                     raise ValueError(
                         "price_change arrived without a proven token baseline: "
                         f"condition={batch.condition_id} token={token} "
@@ -1150,11 +1130,7 @@ class PolymarketEvidenceReplay:
                         and pending_hash == book_hash
                         and pending_checksum == change_checksum
                     )
-                    if (
-                        pending_changes
-                        and not same_message
-                        and not same_fragment
-                    ):
+                    if pending_changes and not same_message and not same_fragment:
                         flush_changes()
                     if pending_checksum is None:
                         pending_checksum = change_checksum
@@ -1203,16 +1179,18 @@ class PolymarketEvidenceReplay:
                     if side not in {"BUY", "SELL"}:
                         raise ValueError("price_change side must be BUY or SELL")
                     level_size = next(
-                        (
-                            level.quantity
-                            for level in levels
-                            if level.price == price
-                        ),
+                        (level.quantity for level in levels if level.price == price),
                         Decimal("0"),
                     )
                     expected_best = (
-                        max((level.price for level in payload.bids), default=Decimal("0")),
-                        min((level.price for level in payload.asks), default=Decimal("1")),
+                        max(
+                            (level.price for level in payload.bids),
+                            default=Decimal("0"),
+                        ),
+                        min(
+                            (level.price for level in payload.asks),
+                            default=Decimal("1"),
+                        ),
                     )
                     reported_best = (
                         _decimal(
@@ -1246,12 +1224,8 @@ class PolymarketEvidenceReplay:
                     for level in (*payload.bids, *payload.asks)
                 ):
                     raise ValueError("full book contains a price off the active tick")
-                payload_bids = {
-                    level.price: level.quantity for level in payload.bids
-                }
-                payload_asks = {
-                    level.price: level.quantity for level in payload.asks
-                }
+                payload_bids = {level.price: level.quantity for level in payload.bids}
+                payload_asks = {level.price: level.quantity for level in payload.asks}
                 if (
                     current is not None
                     and current.book_hash == book_hash
@@ -1296,9 +1270,7 @@ class PolymarketEvidenceReplay:
             state[token] = current
             transition_count += 1
             unique_rows = {row.event_id: row for row in relevant_rows}
-            evidence_rows = sorted(
-                unique_rows.values(), key=cls._event_arrival_key
-            )
+            evidence_rows = sorted(unique_rows.values(), key=cls._event_arrival_key)
             current.provenance_sha256 = _canonical_sha256(
                 {
                     "schema_version": "polymarket-atomic-book-v1",
@@ -1390,11 +1362,9 @@ class PolymarketEvidenceReplay:
                 <= _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS
                 and observed == cls._best_bid_ask_values(first)
             )
-            if (
-                (same_source_batch or repeated_observation)
-                and abs(row.received_monotonic_ns - first.received_monotonic_ns)
-                <= _BEST_CORROBORATION_MAX_ARRIVAL_NS
-            ):
+            if (same_source_batch or repeated_observation) and abs(
+                row.received_monotonic_ns - first.received_monotonic_ns
+            ) <= _BEST_CORROBORATION_MAX_ARRIVAL_NS:
                 existing.append(row)
                 return
             raise ValueError(
@@ -1441,9 +1411,7 @@ class PolymarketEvidenceReplay:
                 raise ValueError(
                     "best_bid_ask was not temporally adjacent to its depth transition"
                 )
-            arrival_delta = (
-                completion.received_monotonic_ns - row.received_monotonic_ns
-            )
+            arrival_delta = completion.received_monotonic_ns - row.received_monotonic_ns
             if abs(arrival_delta) > _BEST_CORROBORATION_MAX_ARRIVAL_NS:
                 raise ValueError(
                     "best_bid_ask was not arrival-adjacent to its depth transition"
@@ -1589,7 +1557,9 @@ class PolymarketEvidenceReplay:
             if observed is not None and str(observed) != expected:
                 raise ValueError(f"market_resolved {field} identity drifted")
         expected_outcome = (
-            "Up" if winner == market.up_token_id else "Down"
+            "Up"
+            if winner == market.up_token_id
+            else "Down"
             if winner == market.down_token_id
             else ""
         )

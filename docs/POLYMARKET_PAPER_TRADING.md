@@ -257,6 +257,33 @@ upper bound, not a reservation; short captures use less. Operators can lower it
 with `--memory-limit`, but a failed full audit remains failed rather than silently
 publishing partially verified evidence.
 
+New recorder runs use `polymarket-evidence-storage-v2`. Exact UTF-8 source
+messages are length-prefixed in bounded frames of at most 1,024 messages and 64
+MiB, then compressed with checksummed Zstandard level 1. Chunk identity binds the
+run, sequence, first and last message IDs, an order-aware row manifest, and the
+uncompressed SHA-256. Message rows retain offsets and source hashes; event rows
+retain normalized indexes and event hashes, but neither table stores a second
+JSON body. Every reader reconstructs the event from the raw frame and rejects a
+boundary, UTF-8, source hash, canonical JSON, normalized index, or event hash
+disagreement. Unmigrated v1 databases remain read-only compatible.
+
+A closed-data engineering benchmark on this host used 160,000 real frames
+(135,000 CLOB, 24,000 direct Binance, and 1,000 RTDS) and 159,993 normalized
+events. The same `PolymarketEvidenceStore`, schema, indexes, parser, and evidence
+sample occupied 362,295,296 bytes in v1 and 110,112,768 bytes in v2, a 69.607%
+reduction. V2 wrote in 13.44 seconds versus 14.88 seconds; its deeper reconstruction
+audit took 7.37 seconds versus 3.16 seconds. All 160,000 raw-hash and 159,993
+event-hash multiset comparisons had zero differences, and both audits returned
+zero errors. This is storage/integrity evidence from a failed short recorder run,
+not model, execution, ROI, or profitability evidence. DuckDB's native format
+supports Zstandard but did not compress these short per-row JSON values; bounded
+application frames were selected only after a same-row benchmark showed explicit
+column Zstandard was larger ([DuckDB storage](https://duckdb.org/docs/stable/internals/storage),
+[DuckDB compression pragmas](https://duckdb.org/docs/current/configuration/pragmas),
+[python-zstandard decompression bounds](https://python-zstandard.readthedocs.io/en/latest/decompressor.html)).
+The exact measured fields are retained in
+[`storage-v2-benchmark-2026-07-15.json`](model-research/polymarket/storage-v2-benchmark-2026-07-15.json).
+
 The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,
 and the shared append-only paper-order journal into one resource-bounded DuckDB

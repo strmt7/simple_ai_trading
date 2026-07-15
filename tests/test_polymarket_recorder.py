@@ -6,6 +6,7 @@ import hashlib
 import json
 import threading
 
+import duckdb
 import pytest
 
 from simple_ai_trading import cli
@@ -196,15 +197,94 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
     ) as store:
         store.start_run("bounded-batch", EPOCH * 1_000)
         store.append_messages("bounded-batch", messages)
-        stats = store.connect().execute(
-            """
+        stats = (
+            store.connect()
+            .execute(
+                """
             SELECT count(*), min(sequence_number), max(sequence_number),
                    count(DISTINCT sequence_number)
             FROM polymarket_raw_message
             """
-        ).fetchone()
+            )
+            .fetchone()
+        )
+        chunk_stats = (
+            store.connect()
+            .execute(
+                """
+            SELECT count(*), sum(message_count), sum(compressed_bytes),
+                   sum(uncompressed_bytes)
+            FROM polymarket_raw_chunk
+            """
+            )
+            .fetchone()
+        )
+        inline_payloads = (
+            store.connect()
+            .execute(
+                """
+            SELECT count(*) FROM polymarket_raw_message WHERE raw_text <> ''
+            """
+            )
+            .fetchone()[0]
+        )
+        storage_schema = (
+            store.connect()
+            .execute(
+                """
+            SELECT storage_schema_version FROM polymarket_recorder_run
+            WHERE run_id = 'bounded-batch'
+            """
+            )
+            .fetchone()[0]
+        )
 
     assert stats == (message_count, 1, message_count, message_count)
+    assert chunk_stats[0:2] == (3, message_count)
+    assert 0 < chunk_stats[2] < chunk_stats[3]
+    assert inline_payloads == 0
+    assert storage_schema == "polymarket-evidence-storage-v2"
+
+
+def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> None:
+    database = tmp_path / "legacy-v1.duckdb"
+    raw_event = {
+        "stream": "btcusdt@trade",
+        "data": {"e": "trade", "E": EPOCH * 1_000, "T": EPOCH * 1_000 - 1},
+    }
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("legacy-v1", EPOCH * 1_000)
+        store.connect().execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = 'polymarket-public-evidence-v1'
+            WHERE run_id = 'legacy-v1'
+            """
+        )
+        store.append_messages("legacy-v1", [_message("binance_spot", raw_event)])
+
+    connection = duckdb.connect(str(database))
+    connection.execute("DROP TABLE polymarket_raw_chunk")
+    for column in (
+        "storage_chunk_id",
+        "chunk_message_index",
+        "raw_offset",
+        "raw_size",
+        "normalized_event_count",
+    ):
+        connection.execute(f"ALTER TABLE polymarket_raw_message DROP COLUMN {column}")
+    connection.execute(
+        "ALTER TABLE polymarket_recorder_run DROP COLUMN storage_schema_version"
+    )
+    connection.close()
+
+    with PolymarketEvidenceStore(database, read_only=True) as store:
+        events = tuple(store.iter_public_events("legacy-v1"))
+        errors = store.integrity_errors("legacy-v1")
+
+    assert len(events) == 1
+    assert events[0].event == raw_event
+    assert errors == ()
 
 
 def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
@@ -372,13 +452,17 @@ def test_rtds_chainlink_bootstrap_topic_is_canonicalized_from_symbol(tmp_path) -
                 )
             ],
         )
-        indexed = store.connect().execute(
-            """
+        indexed = (
+            store.connect()
+            .execute(
+                """
             SELECT event_type, symbol FROM polymarket_public_event
             WHERE run_id = ?
             """,
-            ["chainlink-bootstrap"],
-        ).fetchone()
+                ["chainlink-bootstrap"],
+            )
+            .fetchone()
+        )
 
     assert indexed == ("crypto_prices_chainlink:subscribe", "BTC")
 
@@ -396,9 +480,7 @@ def test_rtds_uses_independent_json_subscriptions_for_each_crypto_feed(
     asyncio.run(recorder._rtds_stream(asyncio.Queue(), asyncio.Event()))
 
     assert len(captured) == 6
-    assert {call["url"] for call in captured} == {
-        "wss://ws-live-data.polymarket.com"
-    }
+    assert {call["url"] for call in captured} == {"wss://ws-live-data.polymarket.com"}
     assert {call["stream"] for call in captured} == {"polymarket_rtds"}
     subscription_messages = [call["subscription"] for call in captured]
     assert all(isinstance(message, str) for message in subscription_messages)
@@ -484,9 +566,9 @@ def test_writer_persistence_does_not_block_the_network_event_loop(
     monkeypatch.setattr(recorder_module, "PolymarketEvidenceStore", _SlowStore)
 
     async def _exercise() -> bool:
-        output: asyncio.Queue[
-            RawStreamMessage | StreamGap | MarketEvidence | None
-        ] = asyncio.Queue()
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
         await output.put(_message("clob_market", {"event_type": "book"}))
         await output.put(None)
         writer = asyncio.create_task(
@@ -510,9 +592,9 @@ def test_writer_owned_connection_preserves_final_report_cursor(tmp_path) -> None
     recorder = PolymarketPublicRecorder(database)
 
     async def _exercise(store: PolymarketEvidenceStore) -> None:
-        output: asyncio.Queue[
-            RawStreamMessage | StreamGap | MarketEvidence | None
-        ] = asyncio.Queue()
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
         await output.put(_message("polymarket_rtds", "PING"))
         await output.put(None)
         await recorder._writer("writer-report", store, output)
@@ -553,13 +635,17 @@ def test_recorder_terminalizes_when_full_finish_audit_fails(
 
     report = asyncio.run(recorder.run(duration_seconds=5))
     with PolymarketEvidenceStore(database) as store:
-        persisted = store.connect().execute(
-            """
+        persisted = (
+            store.connect()
+            .execute(
+                """
             SELECT status, ended_at_ms, report_sha256, error
             FROM polymarket_recorder_run WHERE run_id = ?
             """,
-            [report.run_id],
-        ).fetchone()
+                [report.run_id],
+            )
+            .fetchone()
+        )
 
     assert report.status == "failed"
     assert report.ended_at_ms >= report.started_at_ms
@@ -611,33 +697,43 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
         )
         connection.execute(
             """
-            INSERT INTO polymarket_raw_message
-            SELECT message_id, run_id, schema_version, stream, connection_id,
-                   sequence_number + 10000, received_wall_ms,
-                   received_monotonic_ns, raw_payload_sha256, raw_text,
-                   parse_status, parse_error
-            FROM polymarket_raw_message
+            UPDATE polymarket_raw_message
+            SET sequence_number = sequence_number + 10000
             WHERE message_id = (SELECT min(message_id) FROM polymarket_raw_message)
-            """
-        )
-        connection.execute(
-            """
-            INSERT INTO polymarket_public_event
-            SELECT event_id, run_id, message_id, sub_index + 10000, stream,
-                   event_type, symbol, condition_id, asset_id, source_time_ms,
-                   publisher_time_ms, event_json, event_sha256
-            FROM polymarket_public_event
-            WHERE event_id = (SELECT min(event_id) FROM polymarket_public_event)
             """
         )
         errors = store.integrity_errors("run-tampered")
 
-    assert any(error.startswith("raw_message_hash_mismatch:") for error in errors)
-    assert any(error.startswith("event_hash_mismatch:") for error in errors)
+    assert any(error.startswith("compact_inline_raw_payload:") for error in errors)
+    assert any(
+        error.startswith("event_source_reconstruction_failed:") for error in errors
+    )
     assert any(error.startswith("snapshot_payload_mismatch:") for error in errors)
     assert any(error.startswith("stream_gap_id_mismatch:") for error in errors)
     assert any(error.startswith("raw_message_id_mismatch:") for error in errors)
-    assert any(error.startswith("event_id_mismatch:") for error in errors)
+    assert any(error.startswith("raw_chunk_manifest_mismatch:") for error in errors)
+
+
+def test_compact_frame_corruption_is_fail_closed(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "frame-corruption.duckdb") as store:
+        _complete_store(store, "frame-corruption")
+        connection = store.connect()
+        connection.execute(
+            """
+            UPDATE polymarket_raw_chunk
+            SET compressed_payload = from_hex('00')
+            WHERE run_id = ?
+            """,
+            ["frame-corruption"],
+        )
+        errors = store.integrity_errors("frame-corruption")
+        with pytest.raises(ValueError, match="chunk payload hash mismatch"):
+            tuple(store.iter_public_events("frame-corruption"))
+
+    assert any(error.startswith("raw_chunk_invalid:") for error in errors)
+    assert any(
+        error.startswith("event_source_reconstruction_failed:") for error in errors
+    )
 
 
 def test_terminal_recorder_evidence_rejects_late_append(
@@ -757,9 +853,7 @@ def test_terminal_integrity_audit_emits_bounded_progress(tmp_path) -> None:
             ended_at_ms=EPOCH * 1_000 + 5_000,
             database=str(tmp_path / "progress.duckdb"),
             errors=(),
-            progress=lambda phase, payload: observed.append(
-                (phase, dict(payload))
-            ),
+            progress=lambda phase, payload: observed.append((phase, dict(payload))),
             progress_interval_seconds=5,
         )
 
@@ -872,7 +966,9 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
     }
     assert "phase=capturing" in captured_output.err
     assert progress_output["written_message_count"] == 4
-    memory_option = next(option for option in spec.options if option.dest == "memory_limit")
+    memory_option = next(
+        option for option in spec.options if option.dest == "memory_limit"
+    )
     assert memory_option.default == "4GB"
     assert {option.dest for option in spec.options} == {
         "database",
