@@ -21,8 +21,11 @@ and `a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2`.
 A post-contract capture must pass integrity, continuity, BTC/ETH/SOL
 synchronized-group breadth, and immutable official-resolution checks before
 the ridge may be fitted once. The MLP may run only if the ridge passes its
-preregistered development gate. No Round 9 model score, AI edge, profitability,
-drawdown claim, paper authority, or trading authority exists.
+preregistered development gate. Its report-v2 implementation also requires
+strictly positive validation stress-utility uplift over ridge and keeps the
+untouched neural test closed unless it contains at least 30 synchronized time
+groups. No Round 9 model score, AI edge, profitability, drawdown claim, paper
+authority, or trading authority exists.
 
 Inspect the [full signed report](../round-008-executable-repricing-ceiling-report.json),
 [exact chart data](tables/repricing-cells.csv),

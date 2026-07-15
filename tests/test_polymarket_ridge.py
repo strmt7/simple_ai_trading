@@ -262,7 +262,7 @@ def test_round9_mlp_refuses_insufficient_group_breadth_before_training() -> None
         fit_and_evaluate_polymarket_mlp(dataset, parent, compute_backend="cpu")
 
 
-def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
+def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
     tmp_path,
     monkeypatch,
     capsys,
@@ -286,9 +286,14 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
     assert "training_seconds" not in report.ensemble.identity_payload()["backend"]
     assert report.ensemble.reproducibility_max_probability_drift <= 0.00001
     assert report.validation_log_loss < report.ridge_validation_log_loss
-    assert report.test_evaluated
+    assert not report.test_evaluated
     assert not report.development_passed
-    assert "test_stress_utility_not_above_ridge" in report.test_gate_reasons
+    assert report.validation_stress_utility_uplift_quote == pytest.approx(0.0)
+    assert "validation_stress_utility_not_above_ridge" in (
+        report.validation_admission_reasons
+    )
+    assert "untouched_test_group_count:18/30" in (report.validation_admission_reasons)
+    assert report.test_gate_reasons == ()
     assert report.asdict()["foundation_ai_authorized"] is False
     assert report.asdict()["profitability_claim"] is False
     assert report.asdict()["trading_authority"] is False
@@ -298,8 +303,8 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
         "polymarket_mlp_epoch",
         "polymarket_mlp_reproducibility",
         "polymarket_mlp_validation",
-        "polymarket_mlp_test",
     }
+    assert "polymarket_mlp_test" not in {phase for phase, _payload in progress}
     with PolymarketEvidenceStore(tmp_path / "mlp.duckdb") as store:
         created = materialize_polymarket_mlp_report(store, dataset, parent, report)
         existing = materialize_polymarket_mlp_report(store, dataset, parent, report)
@@ -309,7 +314,7 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
         store.connect().execute(
             """
             UPDATE polymarket_mlp_prediction SET probability = 0.123
-            WHERE report_sha256 = ? AND partition = 'test' AND sequence = 0
+            WHERE report_sha256 = ? AND partition = 'validation' AND sequence = 0
             """,
             [report.report_sha256],
         )
@@ -320,7 +325,7 @@ def test_round9_mlp_is_reproducible_persisted_and_cannot_claim_equal_utility(
     assert existing.status == "existing"
     assert runtime_count == 1
     assert created.validation_prediction_count > 0
-    assert created.test_prediction_count > 0
+    assert created.test_prediction_count == 0
     monkeypatch.setattr(
         cli,
         "load_polymarket_ridge_evidence",

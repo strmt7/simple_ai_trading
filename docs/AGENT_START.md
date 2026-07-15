@@ -47,6 +47,9 @@ agents to canonical evidence without replacing that evidence.
   nonlinear challenger. No Round 9 model has been fitted or scored.
   Post-contract continuity-qualified outcomes and prospective results are still
   pending, so no profitability or execution authority exists.
+- Round 9 MLP report v2 requires positive validation stress-utility uplift over
+  ridge and at least 30 untouched synchronized test groups before reading its
+  test partition. Do not weaken or bypass either admission gate.
 - Generic finance-LLM benchmark scores are not alpha evidence. Kronos failed
   the repository's causal random-walk benchmark. Any future AI treatment must
   beat the same-period non-AI path after costs without worsening tail risk.
