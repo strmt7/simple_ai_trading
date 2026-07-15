@@ -276,8 +276,8 @@ def test_round9_ridge_failed_claim_cannot_silently_retry(
     with PolymarketEvidenceStore(database) as store:
         state, failure_sha256 = store.connect().execute(
             """
-            SELECT state, failure_sha256 FROM polymarket_ridge_fit_claim
-            WHERE pipeline_report_sha256 = ?
+            SELECT state, failure_sha256 FROM polymarket_model_fit_claim
+            WHERE experiment = 'round9_ridge' AND parent_sha256 = ?
             """,
             [dataset.pipeline_report_sha256],
         ).fetchone()
@@ -391,22 +391,21 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
         "fit_and_evaluate_polymarket_mlp",
         lambda *_args, **_kwargs: report,
     )
-    status = cli.main(
-        [
-            "polymarket-mlp",
-            "--database",
-            str(tmp_path / "mlp-cli.duckdb"),
-            "--ridge-report-sha256",
-            parent.report_sha256,
-            "--compute-backend",
-            "cpu",
-            "--memory-limit",
-            "512MB",
-            "--database-threads",
-            "1",
-            "--json",
-        ]
-    )
+    arguments = [
+        "polymarket-mlp",
+        "--database",
+        str(tmp_path / "mlp-cli.duckdb"),
+        "--ridge-report-sha256",
+        parent.report_sha256,
+        "--compute-backend",
+        "cpu",
+        "--memory-limit",
+        "512MB",
+        "--database-threads",
+        "1",
+        "--json",
+    ]
+    status = cli.main(arguments)
     payload = json.loads(capsys.readouterr().out)
     spec = next(item for item in command_specs() if item.name == "polymarket-mlp")
 
@@ -421,3 +420,13 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
         "database_threads",
         "json",
     }
+
+    def unexpected_refit(*_args, **_kwargs):
+        raise AssertionError("a completed MLP claim must never reopen test")
+
+    monkeypatch.setattr(cli, "fit_and_evaluate_polymarket_mlp", unexpected_refit)
+    assert cli.main(arguments) == 2
+    repeated = capsys.readouterr()
+
+    assert repeated.out == ""
+    assert "Polymarket MLP is already complete" in repeated.err

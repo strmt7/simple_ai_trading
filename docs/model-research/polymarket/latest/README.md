@@ -37,7 +37,8 @@ contains the exact source window and measurements.
 The `polymarket-ridge` command claims its pipeline in DuckDB before test
 evaluation. A completed claim reloads the signed report without refitting; an
 interrupted or failed claim remains fail-closed so a retry cannot silently
-reopen the untouched test.
+reopen the untouched test. `polymarket-mlp` uses the same database-backed claim
+before any nonlinear test access.
 
 Inspect the [full signed report](../round-008-executable-repricing-ceiling-report.json),
 [exact chart data](tables/repricing-cells.csv),
