@@ -1,6 +1,6 @@
 {
   "schema_version": "polymarket-round9-primary-source-audit-v1",
-  "observed_at_utc": "2026-07-15T23:48:06Z",
+  "observed_at_utc": "2026-07-15T23:52:51Z",
   "scope": "BTC, ETH, and SOL Polymarket five-minute paper research",
   "round_9_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
   "profitability_claim": false,
@@ -21,8 +21,8 @@
     {
       "title": "Polymarket CLOB V2 Migration and Dynamic Fees",
       "url": "https://docs.polymarket.com/v2-migration",
-      "finding": "CLOB V2 has been the production protocol since 2026-04-28. The production host remains clob.polymarket.com, fees are dynamic per market and applied at match time, and legacy V1-signed orders have no production compatibility.",
-      "round_9_application": "The paper replay queries and hash-binds V2 market info, cross-checks Gamma fee schedules, charges the recorded per-market curve on both taker legs, and grants no order authority. Any future Polymarket order client must use V2 semantics and pass a separate live-readiness review.",
+      "finding": "CLOB V2 has been the production protocol since 2026-04-28. The production host remains clob.polymarket.com, fees are dynamic per market and applied at match time, and legacy V1-signed orders have no production compatibility. Official V2 SDK revision fdb2590dc85e600ad98f1f668ea62a0627554d73 caches fd.r/fd.e for platform-fee balance adjustment, omits feeRateBps from V2 signed orders, and resolves builder fees to zero when no builder code is attached.",
+      "round_9_application": "The paper replay queries and hash-binds V2 market info, cross-checks Gamma fee schedules, charges the recorded fd curve on both taker legs, and grants no order authority or builder attribution. Recorded mbf, tbf, and token base_fee values remain provenance and are not added to the V2 dynamic curve; doing so would double-charge a V1/base-fee field that the official V2 SDK does not add. Any future Polymarket order client must use V2 semantics and pass a separate live-readiness review.",
       "status": "implemented_paper_protocol_boundary"
     },
     {
