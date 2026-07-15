@@ -2,7 +2,7 @@
   "schema_version": "polymarket-round9-primary-source-audit-v1",
   "observed_at_utc": "2026-07-15T23:12:07Z",
   "scope": "BTC, ETH, and SOL Polymarket five-minute paper research",
-  "round_9_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6b1cfd2334d87f2f5a12",
+  "round_9_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
   "profitability_claim": false,
   "trading_authority": false,
   "findings": [
