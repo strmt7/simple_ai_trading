@@ -5,19 +5,17 @@ import hashlib
 import json
 import math
 from pathlib import Path
-import statistics
 import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RESEARCH = ROOT / "docs" / "model-research" / "action-value"
-LATEST = RESEARCH / "latest"
-PUBLISHER = ROOT / "tools" / "publish_round52_executable_support_hurdle.py"
-CANDIDATES = {
-    "executable_direct_mean_lightgbm",
-    "executable_hurdle_lightgbm",
-    "executable_hurdle_lightgbm_fincast",
-}
+LATEST = ROOT / "docs" / "model-research" / "action-value" / "latest"
+PUBLISHER = ROOT / "tools" / "publish_round61_carry_economic_replay.py"
+PUBLICATION_SHA256 = "4e3f697c83ca10df0accf8a9aaa8e37579272ce8148ea4967febeb9542d5c8d4"
+REPORT_FILE_SHA256 = "dc9fa604257db59a1b2d1766c70fa8131aafc5cb132238a2f536f13ad2b08908"
+REPORT_CANONICAL_SHA256 = (
+    "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -31,86 +29,48 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _csv(path: str) -> list[dict[str, str]]:
-    with (LATEST / path).open("r", encoding="utf-8", newline="") as handle:
-        return list(csv.DictReader(handle))
+def _csv(name: str) -> list[dict[str, str]]:
+    with (LATEST / name).open("r", encoding="utf-8", newline="") as stream:
+        return list(csv.DictReader(stream))
 
 
-def _source() -> dict[str, object]:
-    return json.loads((LATEST / "screen.json").read_text(encoding="utf-8"))
+def _json(name: str) -> dict[str, object]:
+    value = json.loads((LATEST / name).read_text(encoding="utf-8"))
+    assert isinstance(value, dict)
+    return value
 
 
-def test_latest_action_value_publication_is_round52_hash_verified() -> None:
-    publication = json.loads((LATEST / "report.json").read_text(encoding="utf-8"))
+def test_latest_action_value_publication_is_round61_hash_verified() -> None:
+    publication = _json("report.json")
     canonical = dict(publication)
     claimed = canonical.pop("publication_canonical_sha256")
 
+    assert claimed == PUBLICATION_SHA256
     assert claimed == _canonical_sha256(canonical)
-    assert claimed == "3f1feb381ff2e2ee6ba711727cf10784c1f7958e7bd8ecd131a0b962e1504cce"
-    assert publication["schema_version"] == "round-052-action-value-publication-v1"
-    assert publication["round"] == 52
+    assert publication["schema_version"] == (
+        "round-061-carry-economic-replay-publication-v1"
+    )
+    assert publication["round"] == 61
     assert publication["publisher_path"] == PUBLISHER.relative_to(ROOT).as_posix()
     assert PUBLISHER.is_file()
-    assert publication["source"] == {
-        "binding_path": (
-            "docs/model-research/action-value/round-052-execution-binding.json"
-        ),
-        "binding_sha256": (
-            "e14f6e4b742e0da6d838621355a16fbc030ae2a941b6eef0ee2dd1ab9344568a"
-        ),
-        "design_path": (
-            "docs/model-research/action-value/"
-            "round-052-executable-support-hurdle-fincast-design.json"
-        ),
-        "design_sha256": (
-            "af95d80a3adc21b72d6809d43afb3f2446213fe0a4e089b10366691465a0c669"
-        ),
-        "implementation_commit": "3cb9500fb1c34eeab77c2b294ed8c1fd282e2247",
-        "report_canonical_sha256": (
-            "ace44ebc33dc0601306841b4c353b43a184b2aa604b49f73d2301257f86d2f7f"
-        ),
-        "report_file_sha256": (
-            "c5b728161535372d934ff9087a24b81c2490246cd17cb56beb3e29a3052d73fa"
-        ),
-        "report_path": (
-            "E:\\SimpleAITradingData\\round52-executable-support-hurdle-"
-            "20260713-v1\\report.json"
-        ),
-    }
     assert publication["claims"] == {
-        "ai_uplift_claim": False,
-        "leverage_applied": False,
-        "live_authority": False,
-        "profitability_claim": False,
+        "status": "rejected_elevated_funding_carry",
         "selection_contaminated": True,
-        "status": "rejected",
-        "testnet_authority": False,
+        "tick_execution_replay_authorized": False,
+        "profitability_claim": False,
+        "ai_uplift_claim": False,
+        "model_training_authorized": False,
         "trading_authority": False,
-        "untouched_data_expansion_authorized": False,
+        "testnet_authority": False,
+        "live_authority": False,
+        "leverage_applied": False,
     }
     assert publication["result"] == {
-        "ai_expected_payoff_spearman_improvement": 0.0003752313719727132,
-        "ai_probability_log_loss_improvement": 0.001463466267459912,
-        "deterministic_hurdle_calibration_base_mean_net_bps": (
-            -1.0577574655257402
-        ),
-        "deterministic_hurdle_calibration_stress_mean_net_bps": (
-            -2.3910907988590737
-        ),
-        "deterministic_hurdle_calibration_trades": 9,
-        "deterministic_hurdle_consumed_evaluation_base_mean_net_bps": (
-            5.162619173795532
-        ),
-        "deterministic_hurdle_consumed_evaluation_stress_mean_net_bps": (
-            3.807621643943038
-        ),
-        "deterministic_hurdle_consumed_evaluation_trades": 15,
-        "formally_selected_policies": 0,
-        "models": 27,
-        "passed_mechanisms": 0,
-        "prediction_artifacts": 54,
+        "passed_symbols": [],
+        "required_symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+        "all_symbols_passed": False,
+        "authorized_next_step": ("none; reject this elevated-funding carry family"),
     }
-
     declared = {item["path"] for item in publication["artifacts"]}
     actual = {
         path.relative_to(LATEST).as_posix()
@@ -125,231 +85,112 @@ def test_latest_action_value_publication_is_round52_hash_verified() -> None:
 
 
 def test_latest_action_value_source_report_is_exact_and_fail_closed() -> None:
-    source = _source()
-    canonical = dict(source)
-    claimed = canonical.pop("report_canonical_sha256")
+    report = _json("screen.json")
+    canonical = dict(report)
+    claimed = canonical.pop("report_sha256")
 
+    assert claimed == REPORT_CANONICAL_SHA256
     assert claimed == _canonical_sha256(canonical)
-    assert claimed == "ace44ebc33dc0601306841b4c353b43a184b2aa604b49f73d2301257f86d2f7f"
     assert hashlib.sha256((LATEST / "screen.json").read_bytes()).hexdigest() == (
-        "c5b728161535372d934ff9087a24b81c2490246cd17cb56beb3e29a3052d73fa"
+        REPORT_FILE_SHA256
     )
-    assert source["schema_version"] == (
-        "round-052-executable-support-hurdle-fincast-report-v1"
-    )
-    assert source["round"] == 52
-    assert source["implementation_commit"] == (
-        "3cb9500fb1c34eeab77c2b294ed8c1fd282e2247"
-    )
-    assert source["round_gate"] == {
-        "passed": False,
-        "reasons": [
-            "selection_contaminated_consumed_development_interval",
-            "no_candidate_passed_predictive_and_economic_gates",
-        ],
+    assert report["schema_version"] == "round-061-carry-economic-replay-report-v1"
+    assert report["round"] == 61
+    assert report["status"] == "rejected_elevated_funding_carry"
+    assert report["tick_execution_replay_authorized"] is False
+    assert report["synthetic_or_filled_source_rows"] is False
+    for field in (
+        "model_training_authorized",
+        "ai_evaluation_authorized",
+        "trading_authority",
+        "testnet_or_live_authority",
+        "profitability_claim",
+        "leverage_applied",
+    ):
+        assert report[field] is False
+    expected = {
+        "BTCUSDT": (72, 72, 30),
+        "ETHUSDT": (76, 76, 20),
+        "SOLUSDT": (62, 61, 0),
     }
-    assert source["claims"] == {
-        "ai_uplift_claim": False,
-        "leverage_applied": False,
-        "live_authority": False,
-        "profitability_claim": False,
-        "selection_contaminated": True,
-        "testnet_authority": False,
-        "trading_authority": False,
-    }
-    assert source["mechanism_screen"] == {
-        "passed_candidates": [],
-        "trading_or_promotion_authorized": False,
-        "untouched_data_expansion_authorized": False,
-    }
-    assert set(source["data"]) == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
-    for evidence in source["data"].values():
-        assert evidence["synthetic_rows"] == 0
-        assert evidence["source_evidence"]["verified"] is True
-        assert evidence["source_evidence"]["source_archive_count"] == 30
-        fincast = evidence["fincast"]
-        assert fincast["source_round"] == 51
-        assert fincast["rerun"] is False
-        assert fincast["feature_count"] == 30
-        assert fincast["rows"] == evidence["microstructure_rows"]
-        assert fincast["artifact"]["bytes"] > 0
-        assert len(fincast["artifact"]["sha256"]) == 64
-    assert source["source_round_51"] == {
-        "report_canonical_sha256": (
-            "b97a12764256680402d526fd17ee56999c7f88335d66570a196aae3d0e9d0201"
-        ),
-        "report_file_sha256": (
-            "d2e6c2e1a8ba0a48293f124d148359e4015f9c25aa61fb11b9dc7578d7975a80"
-        ),
-        "report_path": (
-            "E:\\SimpleAITradingData\\round51-categorical-payoff-fincast-"
-            "20260713-v2\\report.json"
-        ),
-    }
-
-    model_records = [
-        model
-        for symbol_models in source["models"].values()
-        for candidate_models in symbol_models.values()
-        for model in candidate_models.values()
-    ]
-    assert len(model_records) == 27
-    assert all(model["cache_state"] == "trained" for model in model_records)
-    assert all(model["backend_kind"] == "opencl" for model in model_records)
-    assert all(model["backend_device"] == "opencl:auto" for model in model_records)
-
-    prediction_records = [
-        artifact
-        for symbol_predictions in source["prediction_artifacts"].values()
-        for candidate_predictions in symbol_predictions.values()
-        for seed_predictions in candidate_predictions.values()
-        for artifact in seed_predictions.values()
-    ]
-    assert len(prediction_records) == 54
-    assert all(artifact["bytes"] > 0 for artifact in prediction_records)
-    assert all(len(artifact["sha256"]) == 64 for artifact in prediction_records)
-    assert all(
-        gate["passed"] is False for gate in source["predictive_gates"].values()
-    )
-    assert set(source["selected_policy"]) == CANDIDATES
-    assert all(
-        policy["selection_passed"] is False
-        and policy["selected_coverage"] is None
-        for policy in source["selected_policy"].values()
-    )
+    assert [row["symbol"] for row in report["symbol_results"]] == list(expected)
+    for result in report["symbol_results"]:
+        canonical_result = dict(result)
+        result_sha = canonical_result.pop("result_sha256")
+        summary = result["summary"]
+        assert result_sha == _canonical_sha256(canonical_result)
+        assert (
+            summary["manifest_episodes"],
+            summary["source_eligible_episodes"],
+            summary["capacity_eligible_episodes"],
+        ) == expected[result["symbol"]]
+        assert result["gate"]["passed"] is False
 
 
-def test_latest_action_value_tables_reconcile_to_round52_report() -> None:
+def test_latest_action_value_tables_reconcile_to_round61_report() -> None:
     expected_counts = {
-        "support.csv": 3,
-        "forecast.csv": 108,
-        "models.csv": 27,
-        "policy-grid.csv": 18,
-        "gates.csv": 10,
-        "ai-uplift.csv": 1,
-        "daily-policy.csv": 14,
-        "progress.csv": 52,
+        "summary.csv": 3,
+        "episodes.csv": 210,
+        "capacity.csv": 836,
+        "yearly.csv": 7,
+        "gates.csv": 45,
+        "cumulative.csv": 50,
+        "progress.csv": 61,
     }
-    for path, count in expected_counts.items():
-        assert len(_csv(path)) == count
-
-    support = {row["symbol"]: row for row in _csv("support.csv")}
-    assert all(int(row["synthetic_rows"]) == 0 for row in support.values())
+    for name, count in expected_counts.items():
+        assert len(_csv(name)) == count
+    summary = {row["symbol"]: row for row in _csv("summary.csv")}
     assert math.isclose(
-        float(support["BTCUSDT"]["long_executable_ratio"]),
-        0.9280200275298038,
-        rel_tol=0.0,
+        float(summary["BTCUSDT"]["capacity_eligible_fraction"]),
+        30 / 72,
         abs_tol=1e-15,
     )
     assert math.isclose(
-        float(support["ETHUSDT"]["short_executable_ratio"]),
-        0.8722887685462928,
-        rel_tol=0.0,
+        float(summary["ETHUSDT"]["median_stress_net_committed_capital_bps"]),
+        -5.559926832949844,
         abs_tol=1e-15,
     )
-    assert math.isclose(
-        float(support["SOLUSDT"]["long_executable_ratio"]),
-        0.05465952472551863,
-        rel_tol=0.0,
-        abs_tol=1e-15,
-    )
-
-    forecast = _csv("forecast.csv")
-    assert all(int(row["magnitude_floor_count"]) == 0 for row in forecast)
-    evaluation = [row for row in forecast if row["role"] == "evaluation"]
-    expected_averages = {
-        "executable_direct_mean_lightgbm": (
-            -0.00343888215809289,
-            0.0115781570701407,
-        ),
-        "executable_hurdle_lightgbm": (
-            -0.00779840855538155,
-            0.0327730366080526,
-        ),
-        "executable_hurdle_lightgbm_fincast": (
-            -0.00884410602760846,
-            0.0331482679800253,
-        ),
+    assert summary["SOLUSDT"]["economically_scored_episodes"] == "0"
+    assert summary["SOLUSDT"]["mean_stress_net_committed_capital_bps"] == ""
+    episodes = _csv("episodes.csv")
+    assert sum(row["source_eligible"] == "false" for row in episodes) == 1
+    assert sum(row["economically_scored"] == "true" for row in episodes) == 50
+    capacity = _csv("capacity.csv")
+    pass_counts = {
+        (symbol, fill): sum(
+            row["symbol"] == symbol and row["fill"] == fill and row["passed"] == "true"
+            for row in capacity
+        )
+        for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+        for fill in (
+            "spot_entry",
+            "spot_exit",
+            "perpetual_entry",
+            "perpetual_exit",
+        )
     }
-    for candidate, (expected_mse_skill, expected_spearman) in expected_averages.items():
-        rows = [row for row in evaluation if row["candidate"] == candidate]
-        assert len(rows) == 18
-        assert math.isclose(
-            statistics.fmean(float(row["expected_payoff_mse_skill"]) for row in rows),
-            expected_mse_skill,
-            rel_tol=0.0,
-            abs_tol=1e-15,
-        )
-        assert math.isclose(
-            statistics.fmean(float(row["expected_payoff_spearman"]) for row in rows),
-            expected_spearman,
-            rel_tol=0.0,
-            abs_tol=1e-15,
-        )
-
-    policies = _csv("policy-grid.csv")
-    assert all(row["policy_calibration_passed"] == "false" for row in policies)
-    assert all(row["formally_selected"] == "false" for row in policies)
-    hurdle = next(
-        row
-        for row in policies
-        if row["candidate"] == "executable_hurdle_lightgbm"
-        and math.isclose(float(row["coverage"]), 0.0025, abs_tol=1e-12)
-    )
-    assert int(hurdle["policy_calibration_base_trades"]) == 9
-    assert float(hurdle["policy_calibration_base_mean_net_bps"]) == (
-        -1.0577574655257402
-    )
-    assert float(hurdle["policy_calibration_paired_stress_mean_net_bps"]) == (
-        -2.3910907988590737
-    )
-    assert int(hurdle["consumed_evaluation_base_trades"]) == 15
-    assert float(hurdle["consumed_evaluation_base_mean_net_bps"]) == (
-        5.162619173795532
-    )
-    assert float(hurdle["consumed_evaluation_paired_stress_mean_net_bps"]) == (
-        3.807621643943038
-    )
-
-    ai = _csv("ai-uplift.csv")[0]
-    assert float(ai["probability_log_loss_improvement"]) == 0.001463466267459912
-    assert float(ai["expected_payoff_spearman_improvement"]) == (
-        0.0003752313719727132
-    )
-    assert ai["passed"] == "false"
-    assert int(ai["parameter_count"]) == 991_437_160
-
-    daily = _csv("daily-policy.csv")
-    assert all(row["formally_selected"] == "false" for row in daily)
-    assert all(row["selection_contaminated"] == "true" for row in daily)
+    assert pass_counts[("BTCUSDT", "spot_entry")] == 42
+    assert pass_counts[("ETHUSDT", "spot_exit")] == 23
+    assert pass_counts[("SOLUSDT", "perpetual_exit")] == 18
     progress = _csv("progress.csv")
-    assert [int(row["round"]) for row in progress] == list(range(1, 53))
-    latest = progress[-1]
-    assert latest["status"] == "rejected"
-    assert latest["selection_contaminated"] == "True"
-    assert latest["development_consumed"] == "True"
-    assert latest["selected_signals"] == "0"
-    assert latest["executable_trades"] == "0"
-    assert latest["best_policy_trades"] == "15"
-    assert latest["best_model_id"].endswith("consumed_diagnostic_not_selected")
-    assert latest["architecture_gates_passed"] == "0"
-    assert latest["architecture_gate_count"] == "3"
+    assert [int(row["round"]) for row in progress] == list(range(1, 62))
+    assert progress[-1]["status"] == "rejected"
+    assert progress[-1]["best_model_id"] == "elevated_funding_carry_rejected"
 
 
-def test_latest_action_value_charts_are_accessible_and_round52_only() -> None:
-    expected_charts = {
-        "ai-uplift.svg",
-        "daily-equity.svg",
-        "executable-support.svg",
-        "forecast-quality.svg",
-        "policy-economics.svg",
+def test_latest_action_value_charts_are_accessible_and_round61_only() -> None:
+    expected = {
+        "cumulative-stress-net.svg",
+        "pnl-decomposition.svg",
         "research-progress.svg",
+        "source-capacity-eligibility.svg",
+        "stress-net-economics.svg",
     }
     charts = {path.name for path in (LATEST / "charts").glob("*.svg")}
-    assert charts == expected_charts
+    assert charts == expected
+    namespace = "{http://www.w3.org/2000/svg}"
     for chart in (LATEST / "charts").glob("*.svg"):
         document = ET.parse(chart).getroot()
-        namespace = "{http://www.w3.org/2000/svg}"
         assert document.attrib["role"] == "img"
         assert document.find(f"{namespace}title") is not None
         assert document.find(f"{namespace}desc") is not None
@@ -359,11 +200,8 @@ def test_latest_action_value_charts_are_accessible_and_round52_only() -> None:
         assert ">inf<" not in text
         assert '="inf"' not in text
         assert 'height="-' not in text
-
     readme = (LATEST / "README.md").read_text(encoding="utf-8")
-    assert readme.startswith("# Round 52: Executable-Support Hurdle")
-    assert "calibration rejected every policy" in readme
-    assert "cannot be selected" in readme
-    assert "below both frozen `0.005` gates" in readme
-    assert "No profitability" in readme
-    assert "# Round 51:" not in readme
+    assert readme.startswith("# Round 61: Matched Spot-Perpetual Economic Replay")
+    assert "Rejected. No profitability or trading claim." in readme
+    assert "No missing price was interpolated or filled." in readme
+    assert "# Round 60:" not in readme

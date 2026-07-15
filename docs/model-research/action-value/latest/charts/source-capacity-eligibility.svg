@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Round 61 source and executable-capacity support</title>
+<desc>Capacity denominator is source-eligible episodes; every fill must stay within 1% of same-side one-minute taker flow</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Round 61 source and executable-capacity support</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Capacity denominator is source-eligible episodes; every fill must stay within 1% of same-side one-minute taker flow</text>
+<line x1="100" y1="575.0" x2="1150" y2="575.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="580.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0</text>
+<line x1="100" y1="487.0" x2="1150" y2="487.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="492.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">20</text>
+<line x1="100" y1="399.0" x2="1150" y2="399.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="404.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">40</text>
+<line x1="100" y1="311.0" x2="1150" y2="311.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="316.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">60</text>
+<line x1="100" y1="223.0" x2="1150" y2="223.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="228.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">80</text>
+<line x1="100" y1="135.0" x2="1150" y2="135.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">100</text>
+<rect x="157.8" y="135.0" width="59.5" height="440.0" rx="3" fill="#14b8a6"/>
+<text x="187.5" y="127.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">100.00</text>
+<rect x="245.2" y="391.7" width="59.5" height="183.3" rx="3" fill="#ef4444"/>
+<text x="275.0" y="383.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">41.67</text>
+<rect x="332.8" y="179.0" width="59.5" height="396.0" rx="3" fill="#f59e0b"/>
+<text x="362.5" y="171.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">90.00</text>
+<text x="275.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">BTC</text>
+<rect x="507.8" y="135.0" width="59.5" height="440.0" rx="3" fill="#14b8a6"/>
+<text x="537.5" y="127.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">100.00</text>
+<rect x="595.2" y="459.2" width="59.5" height="115.8" rx="3" fill="#ef4444"/>
+<text x="625.0" y="451.2" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">26.32</text>
+<rect x="682.8" y="179.0" width="59.5" height="396.0" rx="3" fill="#f59e0b"/>
+<text x="712.5" y="171.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">90.00</text>
+<text x="625.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">ETH</text>
+<rect x="857.8" y="142.1" width="59.5" height="432.9" rx="3" fill="#14b8a6"/>
+<text x="887.5" y="134.1" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">98.39</text>
+<rect x="945.2" y="575.0" width="59.5" height="1.0" rx="3" fill="#ef4444"/>
+<text x="975.0" y="567.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.00</text>
+<rect x="1032.8" y="179.0" width="59.5" height="396.0" rx="3" fill="#f59e0b"/>
+<text x="1062.5" y="171.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">90.00</text>
+<text x="975.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">SOL</text>
+<text transform="translate(24 355.0) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Eligible episodes (%)</text>
+<rect x="100.0" y="655" width="14" height="14" rx="2" fill="#14b8a6"/>
+<text x="122.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Source eligible</text>
+<rect x="450.0" y="655" width="14" height="14" rx="2" fill="#ef4444"/>
+<text x="472.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Capacity eligible</text>
+<rect x="800.0" y="655" width="14" height="14" rx="2" fill="#f59e0b"/>
+<text x="822.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Required</text>
+</svg>
