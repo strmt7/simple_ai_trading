@@ -1054,6 +1054,28 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     assert replay.resolutions[0].source == "clob_gamma_crosscheck"
 
 
+def test_replay_can_reconstruct_only_selected_conditions(tmp_path) -> None:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    with PolymarketEvidenceStore(tmp_path / "selected-replay.duckdb") as store:
+        _finish_replay_store(store, "selected-run")
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="selected-run",
+            condition_ids=[btc.condition_id, btc.condition_id.upper()],
+        )
+
+    assert replay.markets == (btc,)
+    assert replay.books
+    assert {book.market.condition_id for book in replay.books} == {btc.condition_id}
+    assert {item.condition_id for item in replay.resolutions} == {btc.condition_id}
+
+
+def test_replay_rejects_empty_condition_selection(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "empty-selection.duckdb") as store:
+        with pytest.raises(ValueError, match="condition_ids"):
+            PolymarketEvidenceReplay.load(store, condition_ids=[])
+
+
 def test_websocket_resolution_is_validated_but_cannot_authorize_settlement(
     tmp_path,
 ) -> None:
@@ -1322,6 +1344,42 @@ def test_polymarket_feature_cli_and_generated_windows_contract_share_options(
         "database_threads",
         "json",
     }
+
+
+def test_polymarket_model_generated_windows_contract_exposes_typed_controls() -> None:
+    spec = next(spec for spec in command_specs() if spec.name == "polymarket-model")
+
+    assert {option.dest for option in spec.options} == {
+        "database",
+        "run_id",
+        "cadence_ms",
+        "warmup_ms",
+        "minimum_resolved_markets_per_asset",
+        "latency_ms",
+        "minimum_edge",
+        "initial_capital",
+        "maximum_loss_fraction_per_market",
+        "maximum_loss_fraction_per_time_group",
+        "disable_ai",
+        "ai_model",
+        "ai_benchmark",
+        "ai_url",
+        "ai_timeout",
+        "ai_min_confidence",
+        "ai_max_latency_seconds",
+        "output",
+        "memory_limit",
+        "database_threads",
+        "json",
+    }
+    assert next(
+        option for option in spec.options if option.dest == "latency_ms"
+    ).takes_value
+    assert next(
+        option
+        for option in spec.options
+        if option.dest == "minimum_resolved_markets_per_asset"
+    ).default == 30
 
 
 def test_replay_rejects_semantically_inconsistent_published_best_price(

@@ -175,6 +175,17 @@ def finance_ai_candidates() -> tuple[FinanceAIModelCandidate, ...]:
             notes="strong local structured-output/risk-review baseline; installed on this host",
         ),
         FinanceAIModelCandidate(
+            model="qwen3.5:9b",
+            family="qwen3.5",
+            local_priority=95,
+            finance_specialized=False,
+            reasoning_or_risk_review=True,
+            notes=(
+                "newer 9B local structured-output challenger; must clear the full "
+                "adversarial risk gate and paired uplift before selection"
+            ),
+        ),
+        FinanceAIModelCandidate(
             model="deepseek-r1:8b",
             family="deepseek-r1",
             local_priority=90,
