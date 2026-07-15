@@ -493,9 +493,50 @@ def _validate_execution_report(
     ):
         raise ValueError(f"{name} permission or latency map is invalid")
     config = _as_mapping(report.get("config"), f"{name} execution config")
+    _require_exact_keys(
+        config,
+        {
+            "schema_version",
+            "submission_latency_ms",
+            "maximum_execution_observation_delay_ms",
+            "maximum_book_age_ms",
+            "order_ttl_ms",
+            "minimum_expected_edge_per_contract",
+            "initial_capital_quote",
+            "maximum_loss_fraction_per_market",
+            "maximum_loss_fraction_per_time_group",
+        },
+        name=f"{name} execution config",
+    )
     submission_latency = int(config["submission_latency_ms"])
-    if not 1 <= submission_latency <= 60_000:
-        raise ValueError(f"{name} network latency is invalid")
+    maximum_observation_delay = int(config["maximum_execution_observation_delay_ms"])
+    maximum_book_age = int(config["maximum_book_age_ms"])
+    order_ttl = int(config["order_ttl_ms"])
+    minimum_edge = _decimal(
+        config["minimum_expected_edge_per_contract"],
+        f"{name} minimum edge",
+    )
+    initial_capital = _decimal(config["initial_capital_quote"], f"{name} capital")
+    per_market_risk = _decimal(
+        config["maximum_loss_fraction_per_market"],
+        f"{name} per-market risk",
+    )
+    per_group_risk = _decimal(
+        config["maximum_loss_fraction_per_time_group"],
+        f"{name} per-group risk",
+    )
+    if (
+        config.get("schema_version") != "polymarket-execution-config-v2"
+        or not 1 <= submission_latency <= 60_000
+        or not 0 <= maximum_observation_delay <= 60_000
+        or not 0 <= maximum_book_age <= 60_000
+        or not 1_000 <= order_ttl <= 300_000
+        or not Decimal("0") <= minimum_edge <= Decimal("0.25")
+        or not Decimal("10") <= initial_capital <= Decimal("1000000000")
+        or not Decimal("0") < per_market_risk <= Decimal("0.10")
+        or not per_market_risk <= per_group_risk <= Decimal("0.30")
+    ):
+        raise ValueError(f"{name} execution configuration is invalid")
     if (
         int(report.get("evaluated_market_count", -1)) != len(conditions)
         or int(report.get("attempted_order_count", -1)) != len(trades)
@@ -527,6 +568,8 @@ def _validate_execution_report(
         trade_id = str(trade.get("trade_id", ""))
         trade_sha256 = str(trade.get("trade_sha256", ""))
         decision_delay = int(trade.get("decision_delay_ms", -1))
+        requested_latency = decision_delay + submission_latency
+        effective_latency = int(trade.get("effective_latency_ms", -1))
         trade_identity = dict(trade)
         trade_identity.pop("trade_sha256", None)
         if (
@@ -538,8 +581,11 @@ def _validate_execution_report(
             or trade_sha256 != _canonical_sha256(trade_identity)
             or decision_delay != delays[condition_id]
             or int(trade.get("submission_latency_ms", -1)) != submission_latency
-            or int(trade.get("effective_latency_ms", -1))
-            != decision_delay + submission_latency
+            or not (
+                requested_latency
+                <= effective_latency
+                <= requested_latency + maximum_observation_delay
+            )
         ):
             raise ValueError(f"{name} trade identity or latency binding is invalid")
         trade_ids.add(trade_id)

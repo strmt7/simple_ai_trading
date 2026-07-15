@@ -1674,6 +1674,7 @@ class PolymarketEvidenceReplay:
         decision: PolymarketRecordedBook,
         *,
         latency_ms: int,
+        maximum_observation_delay_ms: int,
     ) -> PolymarketRecordedBook | None:
         if decision.run_id != self.run_id:
             raise ValueError("decision book belongs to a different recorder run")
@@ -1682,10 +1683,16 @@ class PolymarketEvidenceReplay:
         latency = int(latency_ms)
         if latency <= 0 or latency > 60_000:
             raise ValueError("latency_ms must lie in [1, 60000]")
+        maximum_delay = int(maximum_observation_delay_ms)
+        if maximum_delay < 0 or maximum_delay > 60_000:
+            raise ValueError("maximum_observation_delay_ms must lie in [0, 60000]")
         target = decision.received_monotonic_ns + latency * 1_000_000
+        deadline = target + maximum_delay * 1_000_000
         for candidate in self._books_by_token.get(decision.token_id, ()):
             if candidate.received_monotonic_ns < target:
                 continue
+            if candidate.received_monotonic_ns > deadline:
+                return None
             if candidate.segment_id != decision.segment_id:
                 return None
             if candidate.received_wall_ms >= decision.market.end_ms:

@@ -24,7 +24,7 @@ from .polymarket_model import PolymarketModelSample
 from .polymarket_replay import PolymarketEvidenceReplay, PolymarketRecordedBook
 
 
-POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION = "polymarket-execution-config-v1"
+POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION = "polymarket-execution-config-v2"
 POLYMARKET_EXECUTION_TRADE_SCHEMA_VERSION = "polymarket-execution-trade-v2"
 POLYMARKET_EXECUTION_REPORT_SCHEMA_VERSION = "polymarket-execution-report-v2"
 
@@ -64,6 +64,7 @@ class PolymarketExecutionResearchConfig:
     """Conservative fixed contract for prospective execution diagnostics."""
 
     submission_latency_ms: int = 100
+    maximum_execution_observation_delay_ms: int = 500
     maximum_book_age_ms: int = 2_000
     order_ttl_ms: int = 30_000
     minimum_expected_edge_per_contract: Decimal = Decimal("0.02")
@@ -93,6 +94,7 @@ class PolymarketExecutionResearchConfig:
         )
         if (
             not 1 <= int(self.submission_latency_ms) <= 60_000
+            or not 0 <= int(self.maximum_execution_observation_delay_ms) <= 60_000
             or not 0 <= int(self.maximum_book_age_ms) <= 60_000
             or not 1_000 <= int(self.order_ttl_ms) <= 300_000
             or not Decimal("0") <= edge <= Decimal("0.25")
@@ -113,6 +115,9 @@ class PolymarketExecutionResearchConfig:
         return {
             "schema_version": POLYMARKET_EXECUTION_CONFIG_SCHEMA_VERSION,
             "submission_latency_ms": self.submission_latency_ms,
+            "maximum_execution_observation_delay_ms": (
+                self.maximum_execution_observation_delay_ms
+            ),
             "maximum_book_age_ms": self.maximum_book_age_ms,
             "order_ttl_ms": self.order_ttl_ms,
             "minimum_expected_edge_per_contract": _decimal_text(
@@ -366,18 +371,22 @@ class _ReplayBookIndex:
         condition_id: str,
         decision_monotonic_ns: int,
         latency_ms: int,
+        maximum_observation_delay_ms: int,
         segment_id: str,
         market_end_ms: int,
     ) -> PolymarketRecordedBook | None:
         values = self.books.get(token_id, ())
         timestamps = self.timestamps.get(token_id, ())
         target = int(decision_monotonic_ns) + int(latency_ms) * 1_000_000
+        deadline = target + int(maximum_observation_delay_ms) * 1_000_000
         index = bisect_left(timestamps, target)
         while index < len(values):
             candidate = values[index]
             if candidate.market.condition_id != condition_id:
                 index += 1
                 continue
+            if candidate.received_monotonic_ns > deadline:
+                return None
             if candidate.segment_id != segment_id:
                 return None
             if candidate.received_wall_ms >= market_end_ms:
@@ -837,6 +846,9 @@ def evaluate_polymarket_execution_policy(
                     condition_id=sample.condition_id,
                     decision_monotonic_ns=sample.decision_received_monotonic_ns,
                     latency_ms=requested_latency_ms,
+                    maximum_observation_delay_ms=(
+                        cfg.maximum_execution_observation_delay_ms
+                    ),
                     segment_id=decision_book.segment_id,
                     market_end_ms=market.end_ms,
                 )
