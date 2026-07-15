@@ -57,6 +57,10 @@ agents to canonical evidence without replacing that evidence.
 - Round 9 MLP report v2 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
+- Round 9 maps `itode` to the independent 250 ms crypto taker delay and rejects
+  nonzero general `sd`. V2 platform fees use `fd`; recorded base-fee fields are
+  not additive and no builder code is modeled. The primary-source audit binds
+  the official status record and SDK revisions.
 - Run Round 9 fits only through `polymarket-ridge` and `polymarket-mlp`. Both
   write a durable claim before test access; completed ridge claims load the
   signed report, and any interrupted or failed claim blocks silent retries.
