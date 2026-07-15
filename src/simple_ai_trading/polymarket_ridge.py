@@ -7,7 +7,7 @@ from decimal import Decimal
 import hashlib
 import json
 import math
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 from scipy.optimize import minimize
@@ -275,7 +275,7 @@ class PolymarketPolicyMetrics:
 
 
 @dataclass(frozen=True)
-class _PolicyEvaluation:
+class PolymarketPolicyEvaluation:
     metrics: PolymarketPolicyMetrics
     selected_indices: tuple[int, ...]
 
@@ -709,6 +709,196 @@ def load_polymarket_ridge_dataset(
     )
 
 
+def _ridge_metrics_from_payload(raw: object) -> PolymarketPolicyMetrics:
+    if not isinstance(raw, Mapping):
+        raise ValueError("stored Polymarket ridge metrics are invalid")
+    try:
+        threshold_raw = raw["threshold"]
+        return PolymarketPolicyMetrics(
+            threshold=None if threshold_raw is None else float(threshold_raw),
+            attempt_count=int(raw["attempt_count"]),
+            completed_trade_count=int(raw["completed_trade_count"]),
+            completed_by_asset={
+                str(key): int(value)
+                for key, value in dict(raw["completed_by_asset"]).items()
+            },
+            positive_complete_count=int(raw["positive_complete_count"]),
+            failed_exit_count=int(raw["failed_exit_count"]),
+            aggregate_stress_utility_quote=float(
+                raw["aggregate_stress_utility_quote"]
+            ),
+            pnl_by_asset={
+                str(key): float(value)
+                for key, value in dict(raw["pnl_by_asset"]).items()
+            },
+            median_market_pnl_quote=float(raw["median_market_pnl_quote"]),
+            maximum_realized_drawdown_quote=float(
+                raw["maximum_realized_drawdown_quote"]
+            ),
+            positive_complete_precision=float(raw["positive_complete_precision"]),
+            wilson_lower_bound_95=float(raw["wilson_lower_bound_95"]),
+            selected_action_sha256=str(raw["selected_action_sha256"]),
+            gate_passed=bool(raw["gate_passed"]),
+            gate_reasons=tuple(str(value) for value in raw["gate_reasons"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("stored Polymarket ridge metrics are invalid") from exc
+
+
+def load_polymarket_ridge_report(
+    store: PolymarketEvidenceStore,
+    *,
+    report_sha256: str,
+) -> PolymarketRidgeReport:
+    """Reconstruct and validate one persisted ridge report and model."""
+
+    selected = str(report_sha256 or "").strip()
+    if not _is_sha256(selected):
+        raise ValueError("Polymarket ridge report digest is invalid")
+    row = store.connect().execute(
+        """
+        SELECT schema_version, contract_sha256, dataset_sha256,
+               pipeline_report_sha256, eligibility_sha256,
+               selected_model_sha256, selected_policy, selected_threshold,
+               development_passed, model_json, report_json
+        FROM polymarket_ridge_report WHERE report_sha256 = ?
+        """,
+        [selected],
+    ).fetchone()
+    if row is None:
+        raise ValueError("unknown Polymarket ridge report")
+    report_payload = _validated_stored_report(
+        row[10],
+        expected_sha256=selected,
+        label="Polymarket ridge",
+    )
+    try:
+        model_payload = json.loads(str(row[9]))
+        if not isinstance(model_payload, dict):
+            raise TypeError("model payload must be an object")
+        model_sha256 = str(model_payload.pop("model_sha256"))
+        model = PolymarketRidgeModel(
+            l2=float(model_payload["l2"]),
+            feature_mean=tuple(float(value) for value in model_payload["feature_mean"]),
+            feature_scale=tuple(
+                float(value) for value in model_payload["feature_scale"]
+            ),
+            coefficients=tuple(
+                float(value) for value in model_payload["coefficients"]
+            ),
+            intercept=float(model_payload["intercept"]),
+            optimizer_iterations=int(model_payload["optimizer_iterations"]),
+            optimizer_objective=float(model_payload["optimizer_objective"]),
+            model_sha256=model_sha256,
+        ).validated()
+        split_payload = dict(report_payload["split"])
+        split = PolymarketRidgeSplit(
+            train_groups=tuple(int(value) for value in split_payload["train_groups"]),
+            validation_groups=tuple(
+                int(value) for value in split_payload["validation_groups"]
+            ),
+            test_groups=tuple(int(value) for value in split_payload["test_groups"]),
+            purged_groups=tuple(
+                int(value) for value in split_payload["purged_groups"]
+            ),
+        )
+        candidates = tuple(
+            PolymarketRidgeCandidate(
+                l2=float(value["l2"]),
+                validation_log_loss=float(value["validation_log_loss"]),
+                model_sha256=str(value["model_sha256"]),
+                optimizer_iterations=int(value["optimizer_iterations"]),
+                optimizer_objective=float(value["optimizer_objective"]),
+            )
+            for value in report_payload["candidates"]
+        )
+        report = PolymarketRidgeReport(
+            dataset_sha256=str(report_payload["dataset_sha256"]),
+            split=split,
+            candidates=candidates,
+            selected_model=model,
+            prevalence_validation_log_loss=float(
+                report_payload["prevalence_validation_log_loss"]
+            ),
+            selected_validation_log_loss=float(
+                report_payload["selected_validation_log_loss"]
+            ),
+            validation_trials=tuple(
+                _ridge_metrics_from_payload(value)
+                for value in report_payload["validation_trials"]
+            ),
+            selected_policy=str(report_payload["selected_policy"]),
+            selected_threshold=(
+                None
+                if report_payload["selected_threshold"] is None
+                else float(report_payload["selected_threshold"])
+            ),
+            test_log_loss=float(report_payload["test_log_loss"]),
+            test_metrics=_ridge_metrics_from_payload(report_payload["test_metrics"]),
+            neural_challenger_authorized=bool(
+                report_payload["neural_challenger_authorized"]
+            ),
+            development_passed=bool(report_payload["development_passed"]),
+            report_sha256=selected,
+        ).validated()
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("stored Polymarket ridge report structure is invalid") from exc
+    if (
+        str(row[0]) != POLYMARKET_RIDGE_REPORT_SCHEMA_VERSION
+        or str(row[1]) != POLYMARKET_RIDGE_CONTRACT_SHA256
+        or str(row[2]) != report.dataset_sha256
+        or not _is_sha256(row[3])
+        or not _is_sha256(row[4])
+        or str(row[5]) != report.selected_model.model_sha256
+        or str(row[6]) != report.selected_policy
+        or row[7] != report.selected_threshold
+        or bool(row[8]) != report.development_passed
+        or model_payload != model.identity_payload()
+        or report_payload.get("selected_model") != model.identity_payload()
+        or str(report_payload.get("selected_model_sha256")) != model.model_sha256
+        or int(report_payload.get("test_evaluations", 0)) != 1
+        or bool(report_payload.get("profitability_claim"))
+        or bool(report_payload.get("trading_authority"))
+    ):
+        raise ValueError("stored Polymarket ridge report columns are inconsistent")
+    return report
+
+
+def load_polymarket_ridge_evidence(
+    store: PolymarketEvidenceStore,
+    *,
+    report_sha256: str,
+) -> tuple[PolymarketRidgeDataset, PolymarketRidgeReport]:
+    """Load and replay-check the complete parent evidence for a challenger."""
+
+    selected = str(report_sha256 or "").strip()
+    row = store.connect().execute(
+        """
+        SELECT pipeline_report_sha256, eligibility_sha256
+        FROM polymarket_ridge_report
+        WHERE report_sha256 = ?
+        """,
+        [selected],
+    ).fetchone()
+    if row is None:
+        raise ValueError("unknown Polymarket ridge report")
+    dataset = load_polymarket_ridge_dataset(
+        store,
+        pipeline_report_sha256=str(row[0]),
+    )
+    report = load_polymarket_ridge_report(store, report_sha256=selected)
+    if (
+        report.dataset_sha256 != dataset.dataset_sha256
+        or dataset.pipeline_report_sha256 != str(row[0])
+        or dataset.eligibility_sha256 != str(row[1])
+    ):
+        raise ValueError("Polymarket ridge report dataset is inconsistent")
+    materialization = materialize_polymarket_ridge_report(store, dataset, report)
+    if materialization.status != "existing":
+        raise ValueError("Polymarket ridge parent was not previously materialized")
+    return dataset, report
+
+
 def split_polymarket_ridge_dataset(
     dataset: PolymarketRidgeDataset,
 ) -> PolymarketRidgeSplit:
@@ -877,7 +1067,7 @@ def _evaluate_policy(
     threshold: float | None,
     *,
     require_asset_profit: bool,
-) -> _PolicyEvaluation:
+) -> PolymarketPolicyEvaluation:
     if probabilities.shape != indices.shape:
         raise ValueError("Polymarket policy probabilities are misaligned")
     by_decision: dict[tuple[str, int], list[tuple[int, float]]] = {}
@@ -979,7 +1169,29 @@ def _evaluate_policy(
         gate_passed=not reasons,
         gate_reasons=tuple(sorted(reasons)),
     )
-    return _PolicyEvaluation(metrics=metrics, selected_indices=tuple(selected))
+    return PolymarketPolicyEvaluation(
+        metrics=metrics,
+        selected_indices=tuple(selected),
+    )
+
+
+def evaluate_polymarket_policy(
+    dataset: PolymarketRidgeDataset,
+    indices: np.ndarray,
+    probabilities: np.ndarray,
+    threshold: float | None,
+    *,
+    require_asset_profit: bool,
+) -> PolymarketPolicyEvaluation:
+    """Apply the shared causal one-condition action policy."""
+
+    return _evaluate_policy(
+        dataset,
+        indices,
+        probabilities,
+        threshold,
+        require_asset_profit=require_asset_profit,
+    )
 
 
 def fit_and_evaluate_polymarket_ridge(
@@ -1078,7 +1290,7 @@ def fit_and_evaluate_polymarket_ridge(
     ).validated()
 
 
-def _selected_policy_tables(
+def polymarket_selected_policy_tables(
     dataset: PolymarketRidgeDataset,
     *,
     report_sha256: str,
@@ -1088,7 +1300,7 @@ def _selected_policy_tables(
     threshold: float | None,
     require_asset_profit: bool,
 ) -> tuple[
-    _PolicyEvaluation,
+    PolymarketPolicyEvaluation,
     list[tuple[object, ...]],
     list[tuple[object, ...]],
     list[tuple[object, ...]],
@@ -1189,7 +1401,7 @@ def materialize_polymarket_ridge_report(
     validation_probability = report.selected_model.predict(validation_x)
     test_probability = report.selected_model.predict(test_x)
     validation_evaluation, validation_actions, validation_equity, validation_markets = (
-        _selected_policy_tables(
+        polymarket_selected_policy_tables(
             dataset,
             report_sha256=report.report_sha256,
             partition="validation",
@@ -1200,7 +1412,7 @@ def materialize_polymarket_ridge_report(
         )
     )
     test_evaluation, test_actions, test_equity, test_markets = (
-        _selected_policy_tables(
+        polymarket_selected_policy_tables(
             dataset,
             report_sha256=report.report_sha256,
             partition="test",
@@ -1407,6 +1619,7 @@ __all__ = [
     "POLYMARKET_RIDGE_REPORT_SCHEMA_VERSION",
     "POLYMARKET_RIDGE_THRESHOLD_GRID",
     "PolymarketPolicyMetrics",
+    "PolymarketPolicyEvaluation",
     "PolymarketRidgeCandidate",
     "PolymarketRidgeDataset",
     "PolymarketRidgeModel",
@@ -1415,9 +1628,13 @@ __all__ = [
     "PolymarketRidgeReport",
     "PolymarketRidgeSplit",
     "build_polymarket_ridge_dataset",
+    "evaluate_polymarket_policy",
     "fit_and_evaluate_polymarket_ridge",
     "fit_polymarket_ridge_model",
     "load_polymarket_ridge_dataset",
+    "load_polymarket_ridge_evidence",
+    "load_polymarket_ridge_report",
     "materialize_polymarket_ridge_report",
+    "polymarket_selected_policy_tables",
     "split_polymarket_ridge_dataset",
 ]

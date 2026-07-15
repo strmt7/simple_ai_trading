@@ -119,9 +119,14 @@ from .polymarket_action_pipeline import (
     PolymarketActionPipelineConfig,
     materialize_polymarket_action_value_batches,
 )
+from .polymarket_mlp import (
+    fit_and_evaluate_polymarket_mlp,
+    materialize_polymarket_mlp_report,
+)
 from .polymarket_ridge import (
     fit_and_evaluate_polymarket_ridge,
     load_polymarket_ridge_dataset,
+    load_polymarket_ridge_evidence,
     materialize_polymarket_ridge_report,
 )
 from .polymarket_coverage import inspect_polymarket_feed_coverage
@@ -627,6 +632,35 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_ridge.add_argument("--database-threads", type=int, default=1)
     parser_polymarket_ridge.add_argument("--json", action="store_true")
     parser_polymarket_ridge.set_defaults(func=command_polymarket_ridge)
+
+    parser_polymarket_mlp = subparsers.add_parser(
+        "polymarket-mlp",
+        help="fit and audit the frozen Round 9 nonlinear challenger",
+        description=(
+            "Load one fully materialized, development-passed Round 9 ridge report; "
+            "fit the preregistered condition-balanced MLP ensemble; open its test "
+            "partition only after the validation gates pass; and persist weights, "
+            "traces, predictions, actions, equity, and market PnL. This command "
+            "grants no foundation-AI, trading, or profitability authority."
+        ),
+    )
+    parser_polymarket_mlp.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_mlp.add_argument(
+        "--ridge-report-sha256",
+        required=True,
+        help="immutable development-passed report digest from polymarket-ridge",
+    )
+    parser_polymarket_mlp.add_argument(
+        "--compute-backend",
+        choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"),
+        default="auto",
+    )
+    parser_polymarket_mlp.add_argument("--memory-limit", default="4GB")
+    parser_polymarket_mlp.add_argument("--database-threads", type=int, default=1)
+    parser_polymarket_mlp.add_argument("--json", action="store_true")
+    parser_polymarket_mlp.set_defaults(func=command_polymarket_mlp)
 
     parser_polymarket_model = subparsers.add_parser(
         "polymarket-model",
@@ -6489,6 +6523,59 @@ def command_polymarket_ridge(args: argparse.Namespace) -> int:
             f"materialization={materialization.status}"
         )
         for reason in report.test_metrics.gate_reasons:
+            print(f"reason: {reason}")
+        print(f"report_sha256: {report.report_sha256}")
+    return 0 if report.development_passed else 2
+
+
+def command_polymarket_mlp(args: argparse.Namespace) -> int:
+    """Fit and persist the preregistered nonlinear action challenger."""
+
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            dataset, parent = load_polymarket_ridge_evidence(
+                store,
+                report_sha256=str(args.ridge_report_sha256),
+            )
+            report = fit_and_evaluate_polymarket_mlp(
+                dataset,
+                parent,
+                compute_backend=str(args.compute_backend),
+            )
+            materialization = materialize_polymarket_mlp_report(
+                store,
+                dataset,
+                parent,
+                report,
+            )
+    except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
+        print(
+            f"polymarket-mlp failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = report.asdict()
+    payload["materialization"] = materialization.asdict()
+    payload["backend"] = report.ensemble.backend.asdict()
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-mlp: "
+            f"policy={report.selected_policy} "
+            f"threshold={report.selected_threshold} "
+            f"backend={report.ensemble.backend.kind} "
+            f"test_evaluated={report.test_evaluated} "
+            f"development_passed={report.development_passed} "
+            f"materialization={materialization.status}"
+        )
+        if report.ensemble.backend.fallback_reason:
+            print(f"backend_warning: {report.ensemble.backend.fallback_reason}")
+        for reason in report.test_gate_reasons:
             print(f"reason: {reason}")
         print(f"report_sha256: {report.report_sha256}")
     return 0 if report.development_passed else 2
