@@ -416,7 +416,7 @@ inline constexpr CommandOptionSpec kOptions_polymarket_model[] = {
 inline constexpr CommandOptionSpec kOptions_polymarket_paper[] = {
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
     {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
-    {L"--action", L"action", L"status, open, close, settle", L"status", L"", L"1", false, true, false},
+    {L"--action", L"action", L"status, open, close, settle, stop", L"status", L"", L"1", false, true, false},
     {L"--event-id", L"event_id", L"", L"", L"", L"1", false, true, false},
     {L"--position-id", L"position_id", L"", L"", L"", L"1", false, true, false},
     {L"--opening-intent-id", L"opening_intent_id", L"", L"", L"", L"1", false, true, false},

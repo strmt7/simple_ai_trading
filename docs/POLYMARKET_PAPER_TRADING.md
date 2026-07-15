@@ -2,8 +2,9 @@
 
 **Status:** the prospective public-data recorder, fail-closed level-2 replay,
 causal feature materializer, shared paper execution contract, manual
-evidence-bound open/close actions, and cross-checked official resolution
-settlement are implemented. Continuous strategy coordination remains incomplete.
+evidence-bound open/close actions, cross-checked official resolution settlement,
+and fail-closed Stop are implemented. Continuous strategy coordination and
+Pause remain incomplete.
 No authenticated order placement, wallet, private key, live-money claim, or
 profitability claim is implemented or authorized.
 
@@ -15,8 +16,8 @@ may not fork ownership, reconciliation, outage recovery, or stop semantics.
 The lifecycle, risk, and outage sections below are the required parity contract.
 The current executable subset is the public recorder, strict replay by default,
 explicit segmented reconnect replay, manual aggressive FAK paper open/close,
-journal reconciliation, and official-resolution settlement. Stop/Pause
-coordination, passive queue replay, empirical latency calibration, automated
+journal reconciliation, official-resolution settlement, and a reconciled Stop
+operation. Pause coordination, passive queue replay, empirical latency calibration, automated
 strategy/AI decisions, and independent live liveness loops remain incomplete and
 must not be represented as available.
 
@@ -67,11 +68,14 @@ shape: `MATCHED -> MINED -> CONFIRMED | RETRYING -> CONFIRMED | FAILED`.
 Paper execution remains explicitly simulated; it cannot be presented as an
 authenticated `MATCHED`, `MINED`, or `CONFIRMED` user trade.
 
-The future `Stop` action must cancel bot-owned orders and sell only bot-owned outcome inventory by
-walking the observed book. If the book cannot absorb the full position, the
-remainder stays visibly `CLOSE_PENDING`; the software must not report flat.
-Externally opened positions are never adopted, netted, sold, or settled by the
-bot. The future `Pause` action must block new intents but continue data, risk, reconciliation,
+The implemented `Stop` action reconciles first and operates only on journal-proven
+bot inventory. A dual-source official outcome settles a market that has already
+closed; otherwise Stop walks the next causal recorded bid book using an explicit
+nonzero latency. If the book cannot absorb the full position, the remainder stays
+visible and the result remains `STOPPING`; the software does not report flat.
+An unresolved `UNKNOWN` intent also keeps the result at `STOPPING`. Externally
+opened positions are never adopted, netted, sold, or settled by the bot. The
+future `Pause` action must block new intents but continue data, risk, reconciliation,
 settlement, and verified close handling.
 
 ## Required fill simulation
@@ -209,6 +213,8 @@ token at `0`; settlement never masquerades as a CLOB sale.
 ```powershell
 simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
   --action status --json
+simple-ai-trading polymarket-paper --database data/polymarket-paper.duckdb `
+  --action stop --latency-ms 100 --json
 ```
 
 `--allow-segmented-gaps` is an explicit exception on `polymarket-features` and
@@ -217,7 +223,9 @@ revalidates the gap evidence and official-resolution set before every paper
 action. Mutation, deletion, an unsupported stream gap, or a missing baseline
 blocks operation.
 
-`open`, `close`, and `settle` require explicit immutable event IDs. The command
+`open`, `close`, and `settle` require explicit immutable event IDs. `stop`
+requires an explicit nonzero latency and returns nonzero while inventory or an
+ambiguous order remains. The command
 is generated into the Windows command contract from the same parser, so the CLI
 and app cannot acquire separate option sets. `open` and `close` also require an
 explicit `--latency-ms`; no unmeasured optimistic default is supplied.
