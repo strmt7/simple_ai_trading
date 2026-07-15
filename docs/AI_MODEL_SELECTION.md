@@ -91,13 +91,20 @@ GPU processing on the AMD host. It matched all four synthetic governance cases
 with valid JSON, score `0.9925`, and average latency `5.53525` seconds. This is
 provider/risk-review evidence only, not AI trading uplift.
 
-Current local priority order favors `qwen3:8b` as the installed structured
-risk-review baseline, `deepseek-r1:8b` as a reasoning second opinion, and
-smaller models only when they pass the same benchmark. The candidate registry
-also includes local aliases `fin-r1:8b` and `fin-o1:8b` for finance-reasoning
-experiments, plus finance-specialized DragonLLM, FinGPT, and FinMA candidates
-for future local serving tests. They still must pass the same benchmark and
-uplift gates before they can affect autonomous trading.
+The newer 11-case Polymarket governance run is stored under
+`docs/model-research/polymarket/latest`. It retained `qwen3:8b` with score
+`0.983409` and average latency `2.91336` seconds. `qwen3.5:9b` was rejected at
+score `0.939045` and `Fin-R1 8B` was rejected at score `0.979545`; lower latency
+or finance tuning did not override a failed case. `Fino1 8B` is installed on
+the measured host but has no accepted repository benchmark. These are still
+synthetic governance results, not market-edge evidence.
+
+Current local priority therefore keeps `qwen3:8b` as the structured risk-review
+baseline. Rejected or unevaluated models remain research candidates. No LLM
+enters the 250 ms action scorer: a later experiment must be veto-only, cache
+canonical case hashes, record its actual response delay, replay that delay
+against the recorded order book, and pass the separate 90-day matched-period
+uplift contract.
 
 ### Kronos Forecast Evidence (Rejected)
 
@@ -149,14 +156,24 @@ https://github.com/shiyu-coder/Kronos
 
 ## Why AI Stays Gated
 
-DirectML remains the Windows-first acceleration layer because Microsoft
-documents `torch-directml` as the Windows PyTorch path and DirectML supports
-DirectX 12 GPUs across AMD, Intel, NVIDIA, and Qualcomm. The repo still records
-backend/fallback evidence because the DirectML project is in maintenance mode
-and local AI behavior must be reproducible on the operator's host:
+DirectML is not treated as a universal current Windows answer. Microsoft marks
+the project as maintenance mode and recommends Windows ML for ONNX inference
+on Windows 11 24H2 and newer. This repository retains `torch-directml` only for
+training operators that pass a live finite forward/backward/update preflight;
+it captures framework warnings and rejects any hidden DirectML-to-CPU operator
+fallback. Other hosts may resolve to CUDA, ROCm, MPS, or explicit CPU instead.
+
+Local multibillion-parameter review uses Ollama, whose current Windows and GPU
+documentation covers AMD Radeon and additional Vulkan support. Ollama model
+execution and Windows ML/ONNX inference are separate runtime contracts; neither
+proves that training used a GPU or that a model has financial edge.
 
 - https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows
 - https://github.com/microsoft/DirectML
+- https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html
+- https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers
+- https://docs.ollama.com/windows
+- https://docs.ollama.com/gpu
 
 Open-source trading systems also argue for skepticism. LEAN and NautilusTrader
 emphasize research-to-live parity, while Freqtrade warns that backtests can be
