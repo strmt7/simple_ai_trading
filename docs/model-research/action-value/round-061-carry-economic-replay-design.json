@@ -1,7 +1,7 @@
 {
-  "schema_version": "round-061-carry-economic-replay-design-v3",
+  "schema_version": "round-061-carry-economic-replay-design-v4",
   "round": 61,
-  "design_sha256": "544faedcb31348e08e24212980a6660a79d9e0459b9517dc3f457864ecaf777c",
+  "design_sha256": "eadab11fea709aa562f11557e08887a155a8d446cefa09c77153c2b1967159cc",
   "phase": "synchronized_spot_perpetual_minute_stress_economic_replay",
   "predecessor": {
     "round": 60,
@@ -18,6 +18,8 @@
     "v2_aborted_on_verified_multi_hour_spot_archive_gap_before_economic_calculation": true,
     "v3_change_limited_to_treating_unfilled_required_minutes_as_non_executable_without_interpolation": true,
     "v3_frozen_before_any_economic_value_calculation": true,
+    "v4_change_limited_to_explicit_gate_denominators_and_risk_metric_formulas": true,
+    "v4_frozen_before_any_economic_value_calculation": true,
     "source_data_partially_previously_consumed": true,
     "selection_contaminated": true,
     "promotion_permitted": false,
@@ -89,6 +91,13 @@
     "missing_required_row_makes_affected_episode_source_ineligible": true,
     "missing_required_row_is_never_interpolated_or_filled": true,
     "source_ineligible_episodes_are_not_economically_scored": true,
+    "episode_source_eligibility_requires": [
+      "spot entry and exit rows",
+      "perpetual entry and exit rows",
+      "one mark-price row for every future settled funding event",
+      "one exact settled-funding row for every manifest event"
+    ],
+    "source_eligible_fraction_denominator": "all manifest episodes for that symbol",
     "minimum_source_eligible_fraction_per_symbol": 0.9,
     "minimum_source_eligible_episodes_per_symbol": 40,
     "synthetic_interpolation_permitted": false,
@@ -147,6 +156,8 @@
     "all_four_fills_must_pass": true,
     "capacity_is_a_trade-flow_proxy_not_historical_order-book_depth": true,
     "capacity_ineligible_episodes_are_not_economically_scored": true,
+    "fill_notionals_use_adverse_execution_prices": true,
+    "capacity_eligible_fraction_denominator": "source-eligible episodes for that symbol",
     "minimum_capacity_eligible_fraction": 0.9,
     "minimum_capacity_eligible_episodes_per_symbol": 40
   },
@@ -158,6 +169,16 @@
     "confidence_upper_quantile": 0.975,
     "seed": 6101,
     "serial_order_preserved": true
+  },
+  "risk_metric_contract": {
+    "episode_population": "capacity-eligible economically scored episodes only",
+    "sequence_order": "decision_time_ms ascending",
+    "sequential_drawdown_committed_capital_bps": "maximum running peak minus cumulative stress-net committed-capital return, with initial equity at zero",
+    "expected_shortfall_10pct_committed_capital_bps": "arithmetic mean of the worst max(1, ceil(0.10 * episode_count)) episode returns",
+    "calendar_year_assignment": "UTC year of decision_time_ms",
+    "positive_calendar_year": "sum of stress-net committed-capital episode returns is strictly positive",
+    "single_year_episode_fraction": "largest UTC-year episode count divided by scored episode count",
+    "single_episode_share_of_positive_pnl": "largest positive stress-net PnL divided by total positive stress-net PnL; undefined support fails the gate"
   },
   "risk_and_authorization_gate": {
     "all_source_rows_and_archive_hashes_must_reconcile": true,
