@@ -1,0 +1,74 @@
+{
+  "comparison": {
+    "challenger": "causal_terminal_no_fill_retry",
+    "control": "round_003_first_positive_proposal_per_market",
+    "paired_evidence": "Use identical frozen model probabilities, market groups, fees, books, latency scenarios, risk budgets, and official resolutions.",
+    "primary_metrics": [
+      "net_realized_pnl_quote",
+      "return_on_deployed_capital",
+      "maximum_drawdown_fraction",
+      "filled_order_count",
+      "unknown_order_count"
+    ]
+  },
+  "contract_sha256": "6d768a32192a4d1d2dbbf6a8fa513e7d60bf96d6be992ff97b70dfb73cfca043",
+  "execution_policy": {
+    "candidate_clock": "Only the precommitted 240, 180, 120, 60, and 30 second decision horizons are eligible.",
+    "entry_limit": "At most one filled opening position per condition ID.",
+    "first_attempt": "Submit the first positive after-cost proposal that passes every deterministic gate.",
+    "future_book_selection_forbidden": true,
+    "future_outcome_selection_forbidden": true,
+    "retry": "A later eligible horizon may submit a new deterministic intent only after the prior FOK is causally proven terminal with zero fill.",
+    "stop_after_fill": true,
+    "terminal_zero_fill_states": [
+      "CANCELLED",
+      "EXPIRED"
+    ],
+    "unknown_policy": "UNKNOWN reserves worst-case risk, blocks later attempts for the market, and blocks new portfolio exposure until reconciliation.",
+    "venue_order_type": "FOK"
+  },
+  "lifecycle_contract": {
+    "binance_paper_parity_required": true,
+    "deterministic_intent_id_per_attempt": true,
+    "external_inventory_may_be_touched": false,
+    "required_shared_core": [
+      "ownership",
+      "idempotency",
+      "append_only_transitions",
+      "reconciliation",
+      "outage_recovery",
+      "pause",
+      "stop_and_close",
+      "loss_budgets",
+      "data_freshness",
+      "coordinator_deadlines"
+    ],
+    "settlement": "Only hash-bound CLOB/Gamma cross-checked official resolution may settle remaining owned inventory."
+  },
+  "promotion_gates": {
+    "all_declared_latency_scenarios_must_be_positive_after_cost": true,
+    "confirmation_sample_gate_unchanged": true,
+    "control_may_not_be_replaced_if_challenger_only_increases_activity": true,
+    "maximum_drawdown_may_not_worsen": true,
+    "minimum_unknown_order_count": 0,
+    "paper_or_live_authority_granted_by_this_contract": false,
+    "probability_model_gate_unchanged": true
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/trading/orders/create",
+    "https://docs.polymarket.com/concepts/order-lifecycle",
+    "https://docs.polymarket.com/market-data/websocket/user-channel",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4677989",
+    "https://arxiv.org/abs/2403.09267"
+  ],
+  "round": 4,
+  "schema_version": "polymarket-causal-retry-preregistration-v1",
+  "status": "frozen_before_round_003_outcomes",
+  "truth_constraints": {
+    "activity_target_is_not_a_trade_quota": true,
+    "profitability_claim": false,
+    "round_003_outcomes_seen_before_freeze": false,
+    "same_capture_can_be_used_only_as_exploratory_round_004_evidence": true,
+    "untouched_confirmation_requires_a_later_prospective_capture": true
+  }
+}
