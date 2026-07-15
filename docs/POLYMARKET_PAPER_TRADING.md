@@ -134,11 +134,13 @@ or latency. The first deliverable is therefore a prospective BTC/ETH/SOL CLOB +
 RTDS + direct-Binance recorder and paper shadow engine. Strict training admits
 only complete gap-free windows with source timestamps, fees, and official
 outcomes. An explicit segmented mode can admit validated CLOB reconnect segments
-only: every connection change clears reconstructed state, requires fresh token
-baselines, and forbids features or simulated latency from crossing the gap. RTDS
-or Binance stream gaps are never admitted. AI is a matched optional treatment
-and must beat the same ML baseline after spread, fees, depth, latency, partial
-fills, and settlement failures.
+plus independently validated direct-Binance and RTDS reconnect segments. Every
+CLOB connection change clears reconstructed state and requires fresh token-book
+baselines. Direct-Binance rolling features and Chainlink open/current anchors
+must remain inside one named connection lane. Features and simulated execution
+never cross a gap. AI is a matched optional treatment and must beat the same ML
+baseline after spread, fees, depth, latency, partial fills, and settlement
+failures.
 
 Each AI treatment retains its exact label-free prompt and raw local-model
 response. The publisher reconstructs candidate, permission, decision-delay, and
@@ -186,8 +188,8 @@ This run validates the recorder-to-label pipeline only. The diagnostic command
 used a one-market minimum; production model fitting remains blocked by the
 default requirement of at least 30 featured resolved markets per asset. No ROI,
 accuracy, AI-edge, or profitability graph is valid yet. The exact round report,
-market rows, and current coverage chart are in
-[`model-research/polymarket`](model-research/polymarket/latest/README.md).
+market rows, and archived round-2 coverage chart are in
+[`model-research/polymarket`](model-research/polymarket/round-002-prospective-pipeline-evidence.json).
 
 Run the public recorder from either the CLI or the generated Windows command
 surface:
