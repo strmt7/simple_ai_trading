@@ -89,6 +89,20 @@ def test_path_payoff_fails_closed_when_protection_quote_is_stale() -> None:
     assert np.isnan(result.net_bps).all()
 
 
+def test_path_payoff_fails_closed_when_required_markout_quote_is_stale() -> None:
+    path = _path()
+    keep = (path["path_time_ms"] < 5_500) | (path["path_time_ms"] >= 8_000)
+    for key in tuple(path):
+        path[key] = path[key][keep]
+
+    result = _evaluate(path)
+
+    assert result.valid.tolist() == [False, False]
+    assert np.isnan(result.net_bps).all()
+    assert np.isnan(result.markout_5s_bps).all()
+    assert np.isnan(result.markout_15s_bps).all()
+
+
 def test_short_take_uses_ask_path_and_markout_excludes_incomplete_bucket() -> None:
     path = _path()
     take_bucket = 3_000 // 100

@@ -433,12 +433,16 @@ def build_action_path_payoffs(
     fixed_exit = end - 1
     _, protected_quote_valid = _completed_quote_indexes(path_times, protected_time)
     _, exit_quote_valid = _completed_quote_indexes(path_times, lifecycle_end)
+    _, markout_5s_quote_valid = _completed_quote_indexes(path_times, entries + 5_000)
+    _, markout_15s_quote_valid = _completed_quote_indexes(path_times, entries + 15_000)
     valid = (
         (protected < end)
         & (end <= path_rows)
         & (fixed_exit >= 0)
         & protected_quote_valid
         & exit_quote_valid
+        & markout_5s_quote_valid
+        & markout_15s_quote_valid
         & (lifecycle_end <= ((entries // _DAY_MS) + 1) * _DAY_MS)
     )
     tree = _extreme_trees(min_bid, max_bid, min_ask, max_ask)
