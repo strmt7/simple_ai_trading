@@ -493,7 +493,7 @@ def materialize_polymarket_action_value_batches(
     run_report_sha256 = str(run_row[2])
     if not _is_sha256(run_report_sha256):
         raise ValueError("Polymarket action pipeline run report is invalid")
-    integrity = store.integrity_errors(selected)
+    integrity = store.integrity_errors(selected, progress=progress)
     if integrity:
         raise ValueError("Polymarket action pipeline integrity failed: " + "; ".join(integrity))
     _ensure_pipeline_tables(store)
@@ -556,6 +556,7 @@ def materialize_polymarket_action_value_batches(
             store,
             run_id=selected,
             config=cfg.feature,
+            progress=progress,
         )
     for completed, index in enumerate(missing_indexes, start=1):
         identity, _batch_id = batch_specs[index]
