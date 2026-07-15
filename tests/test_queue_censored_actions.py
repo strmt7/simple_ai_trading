@@ -6,6 +6,8 @@ import pytest
 from simple_ai_trading.queue_censored_actions import (
     EXPONENTIAL_FLOW_HALF_LIVES_SECONDS,
     PASSIVE_FILL_BUCKETS_MS,
+    PassiveFillRequest,
+    build_chunked_queue_censored_inputs,
     build_exponential_flow_features,
     build_passive_fill_result,
 )
@@ -214,4 +216,150 @@ def test_queue_censored_boundaries_reject_invalid_inputs() -> None:
             trade_price=[1.0],
             trade_quantity=[1.0],
             trade_buyer_is_maker=[True],
+        )
+
+
+def test_chunked_inputs_match_monolithic_flow_and_fill_results() -> None:
+    decisions = np.asarray([5_000, 10_000, 35_000, 40_000], dtype=np.int64)
+    trade_id = np.arange(1, 13, dtype=np.int64)
+    trade_time_ms = np.asarray(
+        [
+            1_000,
+            6_000,
+            7_000,
+            11_000,
+            12_000,
+            29_000,
+            31_000,
+            36_000,
+            37_000,
+            41_000,
+            42_000,
+            59_000,
+        ],
+        dtype=np.int64,
+    )
+    trade_price = np.asarray(
+        [100.0, 100.0, 101.0, 100.0, 101.0, 102.0] * 2,
+        dtype=np.float64,
+    )
+    trade_quantity = np.asarray(
+        [0.25, 2.0, 2.0, 2.0, 2.0, 0.5] * 2,
+        dtype=np.float64,
+    )
+    trade_side = np.asarray(
+        [True, True, False, True, False, True] * 2,
+        dtype=np.bool_,
+    )
+    requests = (
+        PassiveFillRequest(
+            name="base_long",
+            buyer_is_maker=True,
+            arrival_time_ms=decisions + 750,
+            placement_price=np.full(decisions.size, 100.0),
+            queue_ahead_quantity=np.full(decisions.size, 0.5),
+        ),
+        PassiveFillRequest(
+            name="base_short",
+            buyer_is_maker=False,
+            arrival_time_ms=decisions + 750,
+            placement_price=np.full(decisions.size, 101.0),
+            queue_ahead_quantity=np.full(decisions.size, 0.5),
+        ),
+        PassiveFillRequest(
+            name="stress_long",
+            buyer_is_maker=True,
+            arrival_time_ms=decisions + 1_500,
+            placement_price=np.full(decisions.size, 100.0),
+            queue_ahead_quantity=np.full(decisions.size, 0.5),
+        ),
+        PassiveFillRequest(
+            name="stress_short",
+            buyer_is_maker=False,
+            arrival_time_ms=decisions + 1_500,
+            placement_price=np.full(decisions.size, 101.0),
+            queue_ahead_quantity=np.full(decisions.size, 0.5),
+        ),
+    )
+    loader_calls: list[tuple[int, int]] = []
+
+    def load_chunk(start_ms: int, end_ms: int):
+        loader_calls.append((start_ms, end_ms))
+        selected = (trade_time_ms >= start_ms) & (trade_time_ms < end_ms)
+        return {
+            "trade_id": trade_id[selected],
+            "trade_time_ms": trade_time_ms[selected],
+            "trade_price": trade_price[selected],
+            "trade_quantity": trade_quantity[selected],
+            "trade_buyer_is_maker": trade_side[selected],
+        }
+
+    batch = build_chunked_queue_censored_inputs(
+        decision_time_ms=decisions,
+        fill_requests=requests,
+        source_chunks=((0, 30_000), (30_000, 60_000)),
+        load_trade_chunk=load_chunk,
+        order_notional_quote=100.0,
+    )
+    monolithic_flow = build_exponential_flow_features(
+        decision_time_ms=decisions,
+        trade_time_ms=trade_time_ms,
+        trade_price=trade_price,
+        trade_quantity=trade_quantity,
+        trade_buyer_is_maker=trade_side,
+    )
+
+    assert loader_calls == [(0, 30_000), (30_000, 60_000)]
+    np.testing.assert_array_equal(batch.flow.features, monolithic_flow.features)
+    for request in requests:
+        expected = build_passive_fill_result(
+            arrival_time_ms=request.arrival_time_ms,
+            placement_price=request.placement_price,
+            queue_ahead_quantity=request.queue_ahead_quantity,
+            buyer_is_maker=request.buyer_is_maker,
+            order_notional_quote=100.0,
+            trade_id=trade_id,
+            trade_time_ms=trade_time_ms,
+            trade_price=trade_price,
+            trade_quantity=trade_quantity,
+            trade_buyer_is_maker=trade_side,
+        )
+        actual = batch.fill(request.name)
+        for field in (
+            "filled",
+            "fill_bucket",
+            "fill_time_ms",
+            "first_matching_trade_id",
+            "completion_trade_id",
+            "matching_trade_count",
+            "printed_quantity_through_fill",
+        ):
+            np.testing.assert_array_equal(getattr(actual, field), getattr(expected, field))
+
+
+def test_chunked_inputs_reject_fill_windows_crossing_chunk_boundaries() -> None:
+    request = PassiveFillRequest(
+        name="crossing_long",
+        buyer_is_maker=True,
+        arrival_time_ms=[20_000],
+        placement_price=[100.0],
+        queue_ahead_quantity=[0.0],
+    )
+
+    def load_empty(_start_ms: int, _end_ms: int):
+        return {
+            "trade_id": [],
+            "trade_time_ms": [],
+            "trade_price": [],
+            "trade_quantity": [],
+            "trade_buyer_is_maker": [],
+        }
+
+    with pytest.raises(ValueError, match="cross a chunk"):
+        build_chunked_queue_censored_inputs(
+            decision_time_ms=[19_000],
+            fill_requests=[request],
+            source_chunks=((0, 30_000), (30_000, 60_000)),
+            load_trade_chunk=load_empty,
+            order_notional_quote=100.0,
         )
