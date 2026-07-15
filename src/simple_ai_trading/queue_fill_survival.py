@@ -90,6 +90,69 @@ class PassiveFillSurvivalPanel:
         }
 
 
+def _panel_payload(panel: PassiveFillSurvivalPanel) -> dict[str, object]:
+    return {
+        "schema_version": panel.schema_version,
+        "symbol": panel.symbol,
+        "feature_names": list(panel.feature_names),
+        "source_action_feature_sha256": panel.source_action_feature_sha256,
+        "source_entry_sha256": panel.source_entry_sha256,
+        "source_dataset_sha256": panel.source_dataset_sha256,
+        "source_first_decision_time_ms": panel.source_first_decision_time_ms,
+        "source_last_decision_time_ms": panel.source_last_decision_time_ms,
+        "arrays": {
+            "event_index": _array_sha256(panel.event_index),
+            "decision_time_ms": _array_sha256(panel.decision_time_ms),
+            "action_side": _array_sha256(panel.action_side),
+            "features": _array_sha256(panel.features),
+            "fill_bucket": _array_sha256(panel.fill_bucket),
+        },
+    }
+
+
+def validate_passive_fill_survival_panel(panel: PassiveFillSurvivalPanel) -> None:
+    """Validate panel arrays and independently recompute their identity."""
+
+    rows = panel.rows
+    vectors = (
+        panel.event_index,
+        panel.decision_time_ms,
+        panel.action_side,
+        panel.fill_bucket,
+    )
+    hashes = (
+        panel.source_action_feature_sha256,
+        panel.source_entry_sha256,
+        panel.source_dataset_sha256,
+        panel.panel_sha256,
+    )
+    if (
+        panel.schema_version != PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION
+        or panel.symbol not in {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
+        or rows <= 0
+        or not panel.feature_names
+        or len(set(panel.feature_names)) != len(panel.feature_names)
+        or any(not isinstance(name, str) or not name.strip() for name in panel.feature_names)
+        or any(
+            len(str(value)) != 64
+            or any(character not in "0123456789abcdef" for character in str(value))
+            for value in hashes
+        )
+        or any(np.asarray(value).shape != (rows,) for value in vectors)
+        or np.asarray(panel.features).shape != (rows, len(panel.feature_names))
+        or np.any(panel.event_index < 0)
+        or np.any(np.diff(panel.decision_time_ms) < 0)
+        or not np.all(np.isin(panel.action_side, (-1, 1)))
+        or not np.all(np.isin(panel.fill_bucket, (0, 1, 2, 3)))
+        or not np.isfinite(panel.features).all()
+        or panel.source_first_decision_time_ms > int(np.min(panel.decision_time_ms))
+        or panel.source_last_decision_time_ms < int(np.max(panel.decision_time_ms))
+        or panel.source_first_decision_time_ms > panel.source_last_decision_time_ms
+        or panel.panel_sha256 != _sha256(_panel_payload(panel))
+    ):
+        raise ValueError("passive-fill survival panel is invalid")
+
+
 @dataclass(frozen=True)
 class HazardRiskSet:
     hazard_index: int
@@ -174,24 +237,6 @@ def build_passive_fill_survival_panel(
         or not np.all(np.isin(action_side, (-1, 1)))
     ):
         raise ValueError("passive-fill survival labels or features are invalid")
-    payload = {
-        "schema_version": PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION,
-        "symbol": normalized_symbol,
-        "feature_names": list(action_features.feature_names),
-        "source_action_feature_sha256": action_features.batch_sha256,
-        "source_entry_sha256": entries.batch_sha256,
-        "source_dataset_sha256": action_features.source_dataset_sha256,
-        "source_first_decision_time_ms": int(action_features.decision_time_ms[0]),
-        "source_last_decision_time_ms": int(action_features.decision_time_ms[-1]),
-        "arrays": {
-            "event_index": _array_sha256(repeated_event_indexes),
-            "decision_time_ms": _array_sha256(repeated_decision_times),
-            "action_side": _array_sha256(action_side),
-            "features": _array_sha256(features),
-            "fill_bucket": _array_sha256(fill_bucket),
-        },
-    }
-    panel_sha256 = _sha256(payload)
     retained = (
         repeated_event_indexes,
         repeated_decision_times,
@@ -201,7 +246,7 @@ def build_passive_fill_survival_panel(
     )
     for array in retained:
         array.setflags(write=False)
-    return PassiveFillSurvivalPanel(
+    provisional = PassiveFillSurvivalPanel(
         schema_version=PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION,
         symbol=normalized_symbol,
         feature_names=action_features.feature_names,
@@ -215,8 +260,13 @@ def build_passive_fill_survival_panel(
         action_side=action_side,
         features=features,
         fill_bucket=fill_bucket,
-        panel_sha256=panel_sha256,
+        panel_sha256="",
     )
+    panel = PassiveFillSurvivalPanel(
+        **{**provisional.__dict__, "panel_sha256": _sha256(_panel_payload(provisional))}
+    )
+    validate_passive_fill_survival_panel(panel)
+    return panel
 
 
 def build_hazard_risk_set(
@@ -366,4 +416,5 @@ __all__ = [
     "evaluate_fill_survival_probabilities",
     "fill_bucket_prevalence",
     "hazards_to_bucket_probabilities",
+    "validate_passive_fill_survival_panel",
 ]

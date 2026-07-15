@@ -16,6 +16,7 @@ from simple_ai_trading.make_take_payoff_lightgbm import (
     MAKE_TAKE_PAYOFF_SEEDS,
     MakeTakePayoffLightGBMSpec,
     load_make_take_payoff_lightgbm_model,
+    predict_make_take_conditional_payoff_panel,
     predict_make_take_payoff_lightgbm_model,
     save_make_take_payoff_lightgbm_model,
     train_make_take_payoff_lightgbm_model,
@@ -184,6 +185,10 @@ def test_shared_payoff_training_prediction_and_exact_reload(monkeypatch, tmp_pat
         symbol=calibration[0].symbol,
         action_features=_action_features(calibration[0]),
     )
+    panel_prediction = predict_make_take_conditional_payoff_panel(
+        model,
+        calibration[0],
+    )
     artifact = tmp_path / "make-take-payoff.json"
     save_make_take_payoff_lightgbm_model(artifact, model)
     loaded = load_make_take_payoff_lightgbm_model(artifact)
@@ -191,6 +196,7 @@ def test_shared_payoff_training_prediction_and_exact_reload(monkeypatch, tmp_pat
     assert loaded.model_sha256 == model.model_sha256
     assert model.best_iterations == (3, 3)
     assert prediction.rows == calibration[0].rows
+    assert panel_prediction.source_panel_sha256 == calibration[0].panel_sha256
     assert np.all(prediction.conditional_q20_bps <= prediction.conditional_mean_bps)
     assert len(model.q20_calibration_coverage) == 4
     assert model.early_quality.quality_gate_passed is False

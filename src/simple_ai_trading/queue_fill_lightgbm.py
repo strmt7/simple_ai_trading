@@ -21,6 +21,7 @@ from .queue_fill_survival import (
     build_hazard_risk_set,
     fill_bucket_prevalence,
     hazards_to_bucket_probabilities,
+    validate_passive_fill_survival_panel,
 )
 from .queue_censored_actions import PASSIVE_FILL_BUCKETS_MS
 from .storage import write_json_atomic
@@ -240,6 +241,11 @@ def _ordered_panels(
     role: str,
 ) -> tuple[PassiveFillSurvivalPanel, ...]:
     values = tuple(panels)
+    try:
+        for panel in values:
+            validate_passive_fill_survival_panel(panel)
+    except ValueError as exc:
+        raise ValueError(f"queue-fill {role} panel contract is invalid") from exc
     if (
         len(values) != len(QUEUE_FILL_SYMBOLS)
         or {panel.symbol for panel in values} != set(QUEUE_FILL_SYMBOLS)
@@ -392,6 +398,16 @@ def _validate_model(model: TrainedQueueFillLightGBMModel, *, reload: bool) -> No
                     raise ValueError("queue-fill booster feature count drifted")
         except lgb.basic.LightGBMError as exc:
             raise ValueError("queue-fill booster payload cannot be reloaded") from exc
+
+
+def validate_queue_fill_lightgbm_model(
+    model: TrainedQueueFillLightGBMModel,
+    *,
+    reload: bool = False,
+) -> None:
+    """Public artifact validator used by downstream evidence gates."""
+
+    _validate_model(model, reload=reload)
 
 
 def _train_head(
@@ -596,6 +612,7 @@ def predict_queue_fill_lightgbm_model(
     """Predict calibrated fill-time probabilities for one symbol panel."""
 
     _validate_model(model, reload=False)
+    validate_passive_fill_survival_panel(panel)
     source = dict(model.source_dataset_sha256_by_symbol)
     if (
         panel.symbol not in source
@@ -757,4 +774,5 @@ __all__ = [
     "predict_queue_fill_lightgbm_model",
     "save_queue_fill_lightgbm_model",
     "train_queue_fill_lightgbm_model",
+    "validate_queue_fill_lightgbm_model",
 ]
