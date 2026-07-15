@@ -30,27 +30,43 @@ def apply_platt_scaling(
 def fit_platt_scaling(
     probabilities: np.ndarray,
     labels: np.ndarray,
+    sample_weights: np.ndarray | None = None,
 ) -> tuple[float, float]:
-    """Fit bounded Platt scaling with damped, loss-decreasing Newton steps."""
+    """Fit bounded, optionally weighted Platt scaling with damped Newton steps."""
 
     values = np.clip(np.asarray(probabilities, dtype=np.float64), 1e-6, 1.0 - 1e-6)
     outcomes = np.asarray(labels, dtype=np.float64)
+    if sample_weights is None:
+        observation_weights = np.ones_like(outcomes)
+    else:
+        observation_weights = np.array(sample_weights, dtype=np.float64, copy=True)
     if (
         values.shape != outcomes.shape
+        or observation_weights.shape != outcomes.shape
         or values.ndim != 1
         or not np.all(np.isfinite(values))
         or not np.all(np.isfinite(outcomes))
+        or not np.all(np.isfinite(observation_weights))
         or not np.all(np.isin(outcomes, (0.0, 1.0)))
+        or np.any(observation_weights <= 0.0)
     ):
         raise ValueError("probability calibration arrays are inconsistent")
     if min(int(np.sum(outcomes == 0.0)), int(np.sum(outcomes == 1.0))) < 2:
         raise ValueError("probability calibration requires both outcomes")
+    observation_weights *= len(observation_weights) / np.sum(observation_weights)
     logits = np.log(values / (1.0 - values))
     slope = 1.0
-    base_rate = float(np.clip(np.mean(outcomes), 1e-6, 1.0 - 1e-6))
+    base_rate = float(
+        np.clip(
+            np.average(outcomes, weights=observation_weights),
+            1e-6,
+            1.0 - 1e-6,
+        )
+    )
+    mean_logit = float(np.average(logits, weights=observation_weights))
     intercept = float(
         np.clip(
-            math.log(base_rate / (1.0 - base_rate)) - np.mean(logits),
+            math.log(base_rate / (1.0 - base_rate)) - mean_logit,
             -10.0,
             10.0,
         )
@@ -61,7 +77,10 @@ def fit_platt_scaling(
     def objective(candidate_slope: float, candidate_intercept: float) -> float:
         linear = candidate_slope * logits + candidate_intercept
         return float(
-            np.sum(np.logaddexp(0.0, linear) - outcomes * linear)
+            np.sum(
+                observation_weights
+                * (np.logaddexp(0.0, linear) - outcomes * linear)
+            )
             + 0.5 * regularization * (candidate_slope - 1.0) ** 2
             + 0.5 * intercept_regularization * candidate_intercept**2
         )
@@ -69,8 +88,8 @@ def fit_platt_scaling(
     for _ in range(100):
         linear = slope * logits + intercept
         fitted = np.exp(-np.logaddexp(0.0, -linear))
-        residual = fitted - outcomes
-        weights = np.maximum(fitted * (1.0 - fitted), 1e-8)
+        residual = observation_weights * (fitted - outcomes)
+        weights = observation_weights * np.maximum(fitted * (1.0 - fitted), 1e-8)
         gradient = np.asarray(
             [
                 np.sum(residual * logits) + regularization * (slope - 1.0),
