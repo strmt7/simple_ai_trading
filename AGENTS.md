@@ -93,13 +93,17 @@ Build and maintain a testnet-first BTC/ETH/SOL day-trading CLI and Windows app t
 
 Use this order before broad reads:
 
-1. `README.md`
+1. `docs/AGENT_START.md`
 2. one nearest implementation file in `src/simple_ai_trading/`
 3. the matching test file in `tests/`
 4. the closest repo-local skill in `.agents/skills/`
-5. `docs/SIMILAR_TRADING_REPOS_REVIEW.md` before broad product, architecture, CLI, or workflow redesigns
+5. only the canonical evidence file routed by `docs/AGENT_START.md`
+6. `docs/SIMILAR_TRADING_REPOS_REVIEW.md` before broad product, architecture, CLI, or workflow redesigns
 
 Do not expand to broad directory scans on first pass. Open more files only when the task cannot be completed safely with the above context.
+Do not read the full README, every historical model-round design, generated
+chart markup, or large CSV by default. Query only the needed rows or sections;
+the compact start document identifies the source-of-truth artifacts.
 
 For broad semantic routing, use the mandatory repo-local
 `cocoindex-code-search` workflow and then confirm candidates with exact `rg`
