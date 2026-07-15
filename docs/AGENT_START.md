@@ -42,10 +42,11 @@ agents to canonical evidence without replacing that evidence.
   that family.
 - Polymarket currently has a market-anchored baseline, purged BTC/ETH/SOL
   splits, exact depth/fee/latency replay, causal resolution-time cash locking,
-  hash-bound label-free inference, a frozen causal action-value contract, a
-  persisted ridge baseline, and a preregistered warning-free nonlinear
-  challenger. Post-contract continuity-qualified outcomes and prospective
-  results are still pending, so no profitability or execution authority exists.
+  hash-bound label-free inference, a frozen causal action-value contract, an
+  implemented hash-persistent ridge baseline, and a preregistered warning-free
+  nonlinear challenger. No Round 9 model has been fitted or scored.
+  Post-contract continuity-qualified outcomes and prospective results are still
+  pending, so no profitability or execution authority exists.
 - Generic finance-LLM benchmark scores are not alpha evidence. Kronos failed
   the repository's causal random-walk benchmark. Any future AI treatment must
   beat the same-period non-AI path after costs without worsening tail risk.
