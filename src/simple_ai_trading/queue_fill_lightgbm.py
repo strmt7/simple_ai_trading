@@ -149,8 +149,10 @@ class TrainedQueueFillLightGBMModel:
 
 @dataclass(frozen=True)
 class QueueFillPredictionBatch:
+    source_action_feature_sha256: str
     source_panel_sha256: str
     model_sha256: str
+    symbol: str
     event_index: np.ndarray
     decision_time_ms: np.ndarray
     action_side: np.ndarray
@@ -166,8 +168,10 @@ class QueueFillPredictionBatch:
         rows = self.rows
         if (
             rows <= 0
+            or not _is_sha256(self.source_action_feature_sha256)
             or not _is_sha256(self.source_panel_sha256)
             or not _is_sha256(self.model_sha256)
+            or self.symbol not in QUEUE_FILL_SYMBOLS
             or np.asarray(self.event_index).shape != (rows,)
             or np.asarray(self.decision_time_ms).shape != (rows,)
             or np.asarray(self.action_side).shape != (rows,)
@@ -183,6 +187,12 @@ class QueueFillPredictionBatch:
             or np.any(self.hazard_probabilities > 1.0)
             or np.any(self.bucket_probabilities < 0.0)
             or np.any(self.bucket_probabilities > 1.0)
+            or not np.allclose(
+                self.bucket_probabilities,
+                hazards_to_bucket_probabilities(self.hazard_probabilities),
+                atol=1e-12,
+                rtol=1e-12,
+            )
             or not np.allclose(
                 np.sum(self.bucket_probabilities, axis=1), 1.0, atol=1e-10
             )
@@ -623,8 +633,10 @@ def predict_queue_fill_lightgbm_model(
     for array in retained:
         array.setflags(write=False)
     return QueueFillPredictionBatch(
+        source_action_feature_sha256=panel.source_action_feature_sha256,
         source_panel_sha256=panel.panel_sha256,
         model_sha256=model.model_sha256,
+        symbol=panel.symbol,
         event_index=panel.event_index,
         decision_time_ms=panel.decision_time_ms,
         action_side=panel.action_side,
