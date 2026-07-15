@@ -388,6 +388,30 @@ inline constexpr CommandOptionSpec kOptions_polymarket_features[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_polymarket_model[] = {
+    {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
+    {L"--cadence-ms", L"cadence_ms", L"", L"250", L"", L"1", false, true, false},
+    {L"--warmup-ms", L"warmup_ms", L"", L"5000", L"", L"1", false, true, false},
+    {L"--minimum-resolved-markets-per-asset", L"minimum_resolved_markets_per_asset", L"", L"30", L"", L"1", false, true, false},
+    {L"--latency-ms", L"latency_ms", L"", L"100", L"measured decision-to-execution delay used by full-depth paper replay", L"1", false, true, false},
+    {L"--minimum-edge", L"minimum_edge", L"", L"0.02", L"minimum expected net payout per outcome contract after taker fees", L"1", false, true, false},
+    {L"--initial-capital", L"initial_capital", L"", L"1000", L"", L"1", false, true, false},
+    {L"--maximum-loss-fraction-per-market", L"maximum_loss_fraction_per_market", L"", L"0.005", L"", L"1", false, true, false},
+    {L"--maximum-loss-fraction-per-time-group", L"maximum_loss_fraction_per_time_group", L"", L"0.015", L"", L"1", false, true, false},
+    {L"--disable-ai", L"disable_ai", L"", L"false", L"skip the default local multibillion-parameter veto ablation", L"0", false, false, false},
+    {L"--ai-model", L"ai_model", L"", L"qwen3:8b", L"", L"1", false, true, false},
+    {L"--ai-benchmark", L"ai_benchmark", L"", L"docs/ai/risk-review/latest/comparison.json", L"frozen adversarial risk benchmark that must select the requested model", L"1", false, true, false},
+    {L"--ai-url", L"ai_url", L"", L"http://127.0.0.1:11434", L"", L"1", false, true, false},
+    {L"--ai-timeout", L"ai_timeout", L"", L"30.0", L"", L"1", false, true, false},
+    {L"--ai-min-confidence", L"ai_min_confidence", L"", L"0.65", L"", L"1", false, true, false},
+    {L"--ai-max-latency-seconds", L"ai_max_latency_seconds", L"", L"15.0", L"", L"1", false, true, false},
+    {L"--output", L"output", L"", L"", L"optional deterministic JSON artifact path", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_polymarket_paper[] = {
     {L"--database", L"database", L"", L"data/polymarket-paper.duckdb", L"", L"1", false, true, false},
     {L"--run-id", L"run_id", L"", L"", L"", L"1", false, true, false},
@@ -402,6 +426,14 @@ inline constexpr CommandOptionSpec kOptions_polymarket_paper[] = {
     {L"--allow-segmented-gaps", L"allow_segmented_gaps", L"", L"false", L"explicitly admit validated CLOB-only continuity segments", L"0", false, false, false},
     {L"--memory-limit", L"memory_limit", L"", L"1GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_polymarket_publish[] = {
+    {L"--artifact", L"artifact", L"", L"", L"", L"1", true, true, false},
+    {L"--research-root", L"research_root", L"", L"docs/model-research/polymarket", L"", L"1", false, true, false},
+    {L"--round", L"round", L"", L"3", L"", L"1", false, true, false},
+    {L"--prior-round", L"prior_round", L"", L"docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -848,7 +880,9 @@ inline constexpr CommandSpec kCommands[] = {
     {L"model-lab", L"usage: simple-ai-trading model-lab [-h] [--output-dir OUTPUT_DIR]                                    [--starting-cash STARTING_CASH]                                    [--objective OBJECTIVE]                                    [--max-symbols MAX_SYMBOLS]                                    [--max-scan MAX_SCAN] [--limit LIMIT]                                    [--quote-asset QUOTE_ASSET]                                    [--interval INTERVAL] [--full-history]                                    [--market-db MARKET_DB] [--require-db-data]                                    [--market {spot,futures}]                                    [--compute-backend {cpu,cuda,rocm,directml,mps,auto}]                                    [--batch-size BATCH_SIZE]                                    [--score-batch-size SCORE_BATCH_SIZE]                                    [--max-candidates MAX_CANDIDATES]                                    [--learning-feedback LEARNING_FEEDBACK]", kOptions_model_lab, 17},
     {L"objectives", L"usage: simple-ai-trading objectives [-h]", nullptr, 0},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
+    {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 21},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 14},
+    {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 5},
     {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 7},
     {L"polymarket-resolve", L"Persist an outcome only after the official CLOB and Gamma APIs are both terminal and agree exactly. This command never authenticates or places an order.", kOptions_polymarket_resolve, 7},
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import hashlib
 import json
+from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pytest
@@ -37,12 +40,17 @@ from simple_ai_trading.polymarket_model_execution import (
     build_polymarket_policy_selection,
     evaluate_polymarket_execution_policy,
 )
+from simple_ai_trading.polymarket_publication import (
+    publish_polymarket_model_artifact,
+    validate_polymarket_model_artifact,
+)
 from simple_ai_trading.polymarket_replay import (
     PolymarketEvidenceReplay,
     PolymarketRecordedBook,
     PolymarketReplayDiagnostics,
     PolymarketResolutionEvidence,
 )
+from simple_ai_trading.cli import _polymarket_held_out_prediction_evidence
 
 
 _ASSETS = ("BTC", "ETH", "SOL")
@@ -774,3 +782,137 @@ def test_incomplete_market_is_excluded_and_training_fails_closed() -> None:
 def test_invalid_model_configuration_is_rejected(kwargs: dict[str, object]) -> None:
     with pytest.raises(ValueError, match="configuration is invalid"):
         PolymarketModelConfig(**kwargs).validated()
+
+
+def test_polymarket_publication_is_derived_and_tamper_evident(
+    tmp_path: Path,
+) -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, probability_report = fit_polymarket_offset_model(dataset, split)
+    baseline_probabilities = [item.baseline_up_probability for item in split.test]
+    model_probabilities = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(split.test, markets)
+    config = PolymarketExecutionResearchConfig()
+    baseline_execution = evaluate_polymarket_execution_policy(
+        split.test,
+        baseline_probabilities,
+        replay,
+        config=config,
+    )
+    model_execution = evaluate_polymarket_execution_policy(
+        split.test,
+        model_probabilities,
+        replay,
+        config=config,
+    )
+    prediction_evidence = _polymarket_held_out_prediction_evidence(
+        split.test,
+        baseline_probabilities,
+        model_probabilities,
+    )
+    payload: dict[str, object] = {
+        "schema_version": "polymarket-prospective-model-experiment-v1",
+        "run_id": source.run_id,
+        "feature_dataset": source.summary(),
+        "feature_materialization": {
+            "dataset_id": source.dataset_id,
+            "status": "contract_test_fixture",
+            "row_count": len(source.rows),
+            "labeled_row_count": len(source.rows),
+            "dataset_sha256": source.dataset_sha256,
+        },
+        "model_dataset": dataset.summary(),
+        "split": split.summary(),
+        "model": model.asdict(),
+        "probability_report": probability_report.asdict(),
+        "held_out_prediction_evidence": prediction_evidence,
+        "baseline_execution": baseline_execution.asdict(),
+        "model_execution": model_execution.asdict(),
+        "ai": {
+            "enabled": False,
+            "reason": "contract_test_fixture",
+            "trading_authority": False,
+            "profitability_claim": False,
+        },
+        "evidence_gates": {
+            "validation_probability_improved": (
+                probability_report.validation_log_loss_delta < 0.0
+            ),
+            "untouched_test_probability_improved": (
+                probability_report.test_log_loss_delta < 0.0
+                and probability_report.test_brier_delta < 0.0
+            ),
+            "after_cost_execution_improved": (
+                model_execution.net_realized_pnl_quote
+                > baseline_execution.net_realized_pnl_quote
+            ),
+            "all_positions_officially_settled": True,
+            "ai_enabled": False,
+            "ai_uplift_accepted": False,
+            "live_trading_authority": False,
+            "profitability_claim": False,
+        },
+        "trading_authority": False,
+        "execution_claim": False,
+        "profitability_claim": False,
+        "portfolio_claim": False,
+        "leverage_applied": False,
+    }
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    payload["artifact_sha256"] = hashlib.sha256(canonical).hexdigest()
+    artifact_path = tmp_path / "fixture-artifact.json"
+    artifact_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    validated = validate_polymarket_model_artifact(artifact_path)
+    assert validated.artifact_sha256 == payload["artifact_sha256"]
+    research_root = tmp_path / "publication"
+    result = publish_polymarket_model_artifact(
+        artifact_path,
+        research_root,
+        round_number=3,
+    )
+    assert result.artifact_sha256 == payload["artifact_sha256"]
+    manifest = json.loads(
+        (research_root / "latest" / "publication-integrity.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["claims"]["profitability_claim"] is False
+    assert manifest["source_artifact_sha256"] == payload["artifact_sha256"]
+    for entry in manifest["generated_artifacts"]:
+        output = research_root / entry["path"]
+        assert output.stat().st_size == entry["bytes"]
+        assert hashlib.sha256(output.read_bytes()).hexdigest() == entry["sha256"]
+    for chart in (research_root / "latest" / "charts").glob("*.svg"):
+        ET.fromstring(chart.read_text(encoding="utf-8"))
+
+    tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
+    tampered["held_out_prediction_evidence"]["rows"][0][
+        "model_up_probability"
+    ] = "0.999"
+    canonical_tampered = dict(tampered)
+    canonical_tampered.pop("artifact_sha256")
+    tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            canonical_tampered,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    tampered_path = tmp_path / "tampered.json"
+    tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(ValueError, match="prediction evidence identity"):
+        validate_polymarket_model_artifact(tampered_path)

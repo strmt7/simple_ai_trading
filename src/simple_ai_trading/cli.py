@@ -129,6 +129,7 @@ from .polymarket_model_execution import (
     build_polymarket_policy_selection,
     evaluate_polymarket_execution_policy,
 )
+from .polymarket_publication import publish_polymarket_model_artifact
 from .polymarket_recorder import PolymarketEvidenceStore, PolymarketPublicRecorder
 from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_resolution import PolymarketResolutionFinalizer
@@ -574,6 +575,28 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_model.add_argument("--database-threads", type=int, default=2)
     parser_polymarket_model.add_argument("--json", action="store_true")
     parser_polymarket_model.set_defaults(func=command_polymarket_model)
+
+    parser_polymarket_publish = subparsers.add_parser(
+        "polymarket-publish",
+        help="publish hash-verified Polymarket model tables and charts",
+        description=(
+            "Validate one prospective experiment artifact and derive every current "
+            "result table, chart, report, and integrity hash from it. Publication "
+            "fails closed on provenance drift or unsupported claims."
+        ),
+    )
+    parser_polymarket_publish.add_argument("--artifact", required=True)
+    parser_polymarket_publish.add_argument(
+        "--research-root",
+        default="docs/model-research/polymarket",
+    )
+    parser_polymarket_publish.add_argument("--round", type=int, default=3)
+    parser_polymarket_publish.add_argument(
+        "--prior-round",
+        default="docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json",
+    )
+    parser_polymarket_publish.add_argument("--json", action="store_true")
+    parser_polymarket_publish.set_defaults(func=command_polymarket_publish)
 
     parser_polymarket_paper = subparsers.add_parser(
         "polymarket-paper",
@@ -6087,6 +6110,60 @@ def _polymarket_matched_uplift_periods(
     ]
 
 
+def _polymarket_held_out_prediction_evidence(
+    samples: Sequence[Any],
+    baseline_probabilities: Iterable[float],
+    model_probabilities: Iterable[float],
+) -> dict[str, object]:
+    sample_rows = tuple(samples)
+    baseline_rows = tuple(float(value) for value in baseline_probabilities)
+    model_rows = tuple(float(value) for value in model_probabilities)
+    if not sample_rows or not (
+        len(sample_rows) == len(baseline_rows) == len(model_rows)
+    ):
+        raise ValueError("held-out Polymarket prediction evidence is incomplete")
+    rows = [
+        {
+            "sample_id": item.sample_id,
+            "condition_id": item.condition_id,
+            "market_id": item.market_id,
+            "asset": item.asset,
+            "event_start_ms": int(item.event_start_ms),
+            "end_ms": int(item.end_ms),
+            "decision_received_wall_ms": int(item.decision_received_wall_ms),
+            "horizon_seconds": int(item.horizon_seconds),
+            "official_up": bool(item.official_up),
+            "market_weight": format(float(item.market_weight), ".17g"),
+            "baseline_up_probability": format(baseline, ".17g"),
+            "model_up_probability": format(model, ".17g"),
+            "input_provenance_sha256": item.input_provenance_sha256,
+        }
+        for item, baseline, model in zip(
+            sample_rows,
+            baseline_rows,
+            model_rows,
+            strict=True,
+        )
+    ]
+    canonical = json.dumps(
+        rows,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return {
+        "schema_version": "polymarket-held-out-predictions-v1",
+        "role": "untouched_chronological_test",
+        "row_count": len(rows),
+        "market_count": len({item.condition_id for item in sample_rows}),
+        "time_group_count": len({item.event_start_ms for item in sample_rows}),
+        "assets": sorted({item.asset for item in sample_rows}),
+        "rows_sha256": hashlib.sha256(canonical).hexdigest(),
+        "rows": rows,
+    }
+
+
 def command_polymarket_model(args: argparse.Namespace) -> int:
     """Run one hash-bound probability and full-depth execution experiment."""
 
@@ -6144,6 +6221,11 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             model_probabilities = predict_polymarket_probabilities(
                 model,
                 split.test,
+            )
+            prediction_evidence = _polymarket_held_out_prediction_evidence(
+                split.test,
+                baseline_probabilities,
+                model_probabilities,
             )
             execution_config = PolymarketExecutionResearchConfig(
                 submission_latency_ms=int(args.latency_ms),
@@ -6322,6 +6404,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "split": split.summary(),
             "model": model.asdict(),
             "probability_report": probability_report.asdict(),
+            "held_out_prediction_evidence": prediction_evidence,
             "baseline_execution": baseline_execution.asdict(),
             "model_execution": model_execution.asdict(),
             "ai": ai_payload,
@@ -6373,6 +6456,40 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
         print(f"artifact_sha256: {artifact_sha256}")
         if output:
             print(f"artifact: {output}")
+    return 0
+
+
+def command_polymarket_publish(args: argparse.Namespace) -> int:
+    """Derive current documentation only from a validated model artifact."""
+
+    try:
+        result = publish_polymarket_model_artifact(
+            args.artifact,
+            args.research_root,
+            round_number=int(args.round),
+            prior_round_path=(
+                str(args.prior_round).strip()
+                if str(getattr(args, "prior_round", "") or "").strip()
+                else None
+            ),
+        )
+    except Exception as exc:  # Publication is an explicit fail-closed boundary.
+        print(
+            f"polymarket-publish failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = result.asdict()
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-publish: "
+            f"round={result.round_number} files={len(result.generated_files)} "
+            f"artifact_sha256={result.artifact_sha256} "
+            f"manifest_sha256={result.manifest_sha256}"
+        )
+        print(f"research_root: {result.research_root}")
     return 0
 
 
