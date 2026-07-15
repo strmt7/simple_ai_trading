@@ -21,7 +21,8 @@ from .ai_uplift import assess_ai_uplift
 
 
 _ARTIFACT_SCHEMA = "polymarket-prospective-model-experiment-v1"
-_PREDICTION_SCHEMA = "polymarket-held-out-predictions-v1"
+_PREDICTION_SCHEMA = "polymarket-held-out-predictions-v2"
+_MODEL_SAMPLE_SCHEMA = "polymarket-model-sample-v4"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
@@ -1133,6 +1134,53 @@ def _validate_ai_evidence(
             prompt.get(name) != value for name, value in expected_prompt_values.items()
         ):
             raise ValueError("AI prompt does not reconstruct from frozen evidence")
+        feature_map = {
+            str(name): _finite_float(value, f"AI source feature {name}")
+            for name, value in zip(
+                prediction["feature_names"],
+                prediction["feature_values"],
+                strict=True,
+            )
+        }
+        risk_map = {
+            str(name): _finite_float(value, f"AI source risk context {name}")
+            for name, value in zip(
+                prediction["risk_context_names"],
+                prediction["risk_context_values"],
+                strict=True,
+            )
+        }
+        expected_microstructure = {
+            name: round(feature_map[name], 8)
+            for name in _AI_MICROSTRUCTURE_FIELDS
+        }
+        expected_freshness = {
+            name: round(risk_map[name], 3) for name in _AI_FRESHNESS_FIELDS
+        }
+        expected_liquidity = {
+            "proposed_outcome_ask_depth_3_contracts": round(
+                risk_map[
+                    "up_ask_depth_3_contracts"
+                    if outcome == "Up"
+                    else "down_ask_depth_3_contracts"
+                ],
+                8,
+            ),
+            "market_liquidity_quote": round(
+                math.expm1(risk_map["log1p_market_liquidity_quote"]),
+                2,
+            ),
+            "market_volume_quote": round(
+                math.expm1(risk_map["log1p_market_volume_quote"]),
+                2,
+            ),
+        }
+        if (
+            dict(prompt["microstructure"]) != expected_microstructure
+            or dict(prompt["source_freshness_ms"]) != expected_freshness
+            or dict(prompt["liquidity_context"]) != expected_liquidity
+        ):
+            raise ValueError("AI prompt does not match its causal model sample")
         expected_validation = {
             "market_baseline_log_loss": round(
                 _finite_float(
@@ -1495,7 +1543,49 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
     time_groups: set[int] = set()
     condition_labels: dict[str, bool] = {}
     condition_assets: dict[str, str] = {}
+    expected_feature_names = tuple(model_dataset.get("model_feature_names", ()))
+    expected_risk_names = tuple(model_dataset.get("risk_context_names", ()))
+    if (
+        not expected_feature_names
+        or expected_feature_names != tuple(model.get("feature_names", ()))
+        or not expected_risk_names
+    ):
+        raise ValueError("held-out sample feature contracts are inconsistent")
     for row in predictions:
+        _require_exact_keys(
+            row,
+            {
+                "schema_version",
+                "sample_id",
+                "source_run_id",
+                "source_feature_id",
+                "condition_id",
+                "market_id",
+                "asset",
+                "event_start_ms",
+                "end_ms",
+                "decision_received_wall_ms",
+                "decision_received_monotonic_ns",
+                "decision_event_id",
+                "horizon_seconds",
+                "feature_names",
+                "feature_values",
+                "risk_context_names",
+                "risk_context_values",
+                "baseline_up_probability",
+                "up_best_bid",
+                "up_best_ask",
+                "down_best_bid",
+                "down_best_ask",
+                "official_up",
+                "resolution_event_id",
+                "market_weight",
+                "input_provenance_sha256",
+                "sample_sha256",
+                "model_up_probability",
+            },
+            name="held-out prediction row",
+        )
         sample_id = str(row.get("sample_id", ""))
         condition_id = str(row.get("condition_id", ""))
         asset = str(row.get("asset", ""))
@@ -1504,16 +1594,75 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         decision_ms = int(row.get("decision_received_wall_ms", -1))
         horizon = int(row.get("horizon_seconds", -1))
         label = row.get("official_up")
+        feature_names = tuple(row.get("feature_names", ()))
+        risk_names = tuple(row.get("risk_context_names", ()))
+        feature_values_raw = row.get("feature_values")
+        risk_values_raw = row.get("risk_context_values")
+        if not isinstance(feature_values_raw, list) or not isinstance(
+            risk_values_raw,
+            list,
+        ):
+            raise ValueError("held-out model sample vectors are malformed")
+        feature_values = tuple(
+            _finite_float(value, "held-out model feature")
+            for value in feature_values_raw
+        )
+        risk_values = tuple(
+            _finite_float(value, "held-out risk context")
+            for value in risk_values_raw
+        )
+        sample_identity = dict(row)
+        sample_identity.pop("model_up_probability")
+        claimed_sample_sha256 = str(sample_identity.pop("sample_sha256"))
+        expected_sample_id = _canonical_sha256(
+            {
+                "source_dataset_sha256": model_dataset["source_dataset_sha256"],
+                "source_feature_id": row["source_feature_id"],
+                "horizon_seconds": horizon,
+                "config": model_dataset["config"],
+            }
+        )
         if (
-            len(sample_id) != 64
+            row.get("schema_version") != _MODEL_SAMPLE_SCHEMA
+            or len(sample_id) != 64
             or sample_id in sample_ids
+            or sample_id != expected_sample_id
+            or not _is_sha256(claimed_sample_sha256)
+            or claimed_sample_sha256 != _canonical_sha256(sample_identity)
+            or row.get("source_run_id") != payload.get("run_id")
+            or not _is_sha256(row.get("source_feature_id"))
+            or not str(row.get("decision_event_id", ""))
+            or not str(row.get("resolution_event_id", ""))
+            or int(row.get("decision_received_monotonic_ns", -1)) < 0
             or not condition_id
+            or not str(row.get("market_id", ""))
             or asset not in _ASSETS
             or end_ms != event_start + 300_000
             or decision_ms != end_ms - horizon * 1_000
             or horizon not in {30, 60, 120, 180, 240}
             or not isinstance(label, bool)
-            or len(str(row.get("input_provenance_sha256", ""))) != 64
+            or not _is_sha256(row.get("input_provenance_sha256"))
+            or feature_names != expected_feature_names
+            or risk_names != expected_risk_names
+            or len(feature_values) != len(expected_feature_names)
+            or len(risk_values) != len(expected_risk_names)
+            or any(value < 0.0 for value in risk_values)
+            or any(
+                str(raw) != format(value, ".17g")
+                for raw, value in zip(
+                    feature_values_raw,
+                    feature_values,
+                    strict=True,
+                )
+            )
+            or any(
+                str(raw) != format(value, ".17g")
+                for raw, value in zip(
+                    risk_values_raw,
+                    risk_values,
+                    strict=True,
+                )
+            )
         ):
             raise ValueError("held-out prediction row is malformed")
         baseline = _finite_float(
@@ -1523,8 +1672,25 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             row.get("model_up_probability"), "model probability"
         )
         weight = _finite_float(row.get("market_weight"), "market weight")
+        up_bid = _finite_float(row.get("up_best_bid"), "held-out Up bid")
+        up_ask = _finite_float(row.get("up_best_ask"), "held-out Up ask")
+        down_bid = _finite_float(row.get("down_best_bid"), "held-out Down bid")
+        down_ask = _finite_float(row.get("down_best_ask"), "held-out Down ask")
+        up_midpoint = (up_bid + up_ask) / 2.0
+        down_midpoint = (down_bid + down_ask) / 2.0
+        reconstructed_baseline = up_midpoint / (up_midpoint + down_midpoint)
         if not (
-            0.0 < baseline < 1.0 and 0.0 < model_probability < 1.0 and weight > 0.0
+            0.0 < baseline < 1.0
+            and 0.0 < model_probability < 1.0
+            and weight > 0.0
+            and 0.0 < up_bid < up_ask < 1.0
+            and 0.0 < down_bid < down_ask < 1.0
+            and math.isclose(
+                baseline,
+                reconstructed_baseline,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
         ):
             raise ValueError(
                 "held-out probability or market weight is outside its domain"
@@ -1564,6 +1730,13 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         set(expected_groups) != time_groups
         or evidence.get("market_count") != len(conditions)
         or evidence.get("time_group_count") != len(time_groups)
+        or int(
+            _as_mapping(split.get("sample_counts"), "split sample counts").get(
+                "test",
+                -1,
+            )
+        )
+        != len(predictions)
     ):
         raise ValueError("held-out predictions do not match the frozen split")
     expected_baseline_test = _probability_metrics_from_rows(
@@ -1861,6 +2034,10 @@ def _prediction_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, object
     return [
         {
             **dict(row),
+            "feature_names": _canonical_json(row["feature_names"]),
+            "feature_values": _canonical_json(row["feature_values"]),
+            "risk_context_names": _canonical_json(row["risk_context_names"]),
+            "risk_context_values": _canonical_json(row["risk_context_values"]),
             "event_start_utc": _utc(row["event_start_ms"]),
             "end_utc": _utc(row["end_ms"]),
             "decision_received_utc": _utc(row["decision_received_wall_ms"]),

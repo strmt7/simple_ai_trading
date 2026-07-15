@@ -937,6 +937,23 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     assert len(case_rows) == len(cases)
     assert all("official_up" not in row["prompt_payload_json"] for row in case_rows)
 
+    altered_source_rows = json.loads(json.dumps(prediction_rows))
+    source_row = next(
+        row for row in altered_source_rows if row["sample_id"] == cases[0].sample_id
+    )
+    feature_index = source_row["feature_names"].index("direct_return_100ms_bps")
+    source_row["feature_values"][feature_index] = format(
+        float(source_row["feature_values"][feature_index]) + 1.0,
+        ".17g",
+    )
+    with pytest.raises(ValueError, match="causal model sample"):
+        _validate_ai_evidence(
+            ai_evidence,
+            predictions=altered_source_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+
     forged_uplift = json.loads(json.dumps(ai_evidence))
     forged_uplift["uplift"]["accepted"] = not forged_uplift["uplift"]["accepted"]
     with pytest.raises(ValueError, match="AI uplift evidence"):
@@ -1412,6 +1429,38 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     tampered_path.write_text(json.dumps(tampered), encoding="utf-8")
     with pytest.raises(ValueError, match="prediction evidence identity"):
         validate_polymarket_model_artifact(tampered_path)
+
+    sample_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
+    sample_evidence = sample_tampered["held_out_prediction_evidence"]
+    sample_rows = sample_evidence["rows"]
+    sample_rows[0]["feature_values"][0] = "0.123"
+    sample_evidence["rows_sha256"] = hashlib.sha256(
+        json.dumps(
+            sample_rows,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    sample_identity = dict(sample_tampered)
+    sample_identity.pop("artifact_sha256")
+    sample_tampered["artifact_sha256"] = hashlib.sha256(
+        json.dumps(
+            sample_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    sample_tampered_path = tmp_path / "sample-tampered.json"
+    sample_tampered_path.write_text(
+        json.dumps(sample_tampered),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="held-out prediction row is malformed"):
+        validate_polymarket_model_artifact(sample_tampered_path)
 
     metric_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
     metric_evidence = metric_tampered["held_out_prediction_evidence"]
