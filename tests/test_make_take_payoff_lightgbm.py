@@ -15,6 +15,7 @@ from simple_ai_trading.make_take_action_features import (
 from simple_ai_trading.make_take_payoff_lightgbm import (
     MAKE_TAKE_PAYOFF_SEEDS,
     MakeTakePayoffLightGBMSpec,
+    build_make_take_payoff_lightgbm_ensemble,
     load_make_take_payoff_lightgbm_model,
     predict_make_take_conditional_payoff_panel,
     predict_make_take_payoff_lightgbm_model,
@@ -180,8 +181,31 @@ def test_shared_payoff_training_prediction_and_exact_reload(monkeypatch, tmp_pat
         compute_backend="cpu",
         seed=MAKE_TAKE_PAYOFF_SEEDS[0],
     )
+    members = (
+        model,
+        *(
+            train_make_take_payoff_lightgbm_model(
+                training_panels=training,
+                early_stop_panels=early,
+                calibration_panels=calibration,
+                spec=_test_spec(),
+                compute_backend="cpu",
+                seed=seed,
+            )
+            for seed in MAKE_TAKE_PAYOFF_SEEDS[1:]
+        ),
+    )
+    ensemble = build_make_take_payoff_lightgbm_ensemble(
+        members,
+        early_stop_panels=early,
+    )
     prediction = predict_make_take_payoff_lightgbm_model(
         model,
+        symbol=calibration[0].symbol,
+        action_features=_action_features(calibration[0]),
+    )
+    ensemble_prediction = predict_make_take_payoff_lightgbm_model(
+        ensemble,
         symbol=calibration[0].symbol,
         action_features=_action_features(calibration[0]),
     )
@@ -195,11 +219,30 @@ def test_shared_payoff_training_prediction_and_exact_reload(monkeypatch, tmp_pat
 
     assert loaded.model_sha256 == model.model_sha256
     assert model.best_iterations == (3, 3)
+    assert tuple(member.seed for member in ensemble.members) == MAKE_TAKE_PAYOFF_SEEDS
+    assert ensemble_prediction.model_sha256 == ensemble.model_sha256
     assert prediction.rows == calibration[0].rows
     assert panel_prediction.source_panel_sha256 == calibration[0].panel_sha256
     assert np.all(prediction.conditional_q20_bps <= prediction.conditional_mean_bps)
     assert len(model.q20_calibration_coverage) == 4
     assert model.early_quality.quality_gate_passed is False
+    np.testing.assert_allclose(
+        ensemble_prediction.conditional_mean_bps,
+        np.mean(
+            np.stack(
+                [
+                    predict_make_take_payoff_lightgbm_model(
+                        member,
+                        symbol=calibration[0].symbol,
+                        action_features=_action_features(calibration[0]),
+                    ).conditional_mean_bps
+                    for member in members
+                ],
+                axis=0,
+            ),
+            axis=0,
+        ),
+    )
 
     drifted_side = prediction.action_side.copy()
     drifted_side[0] = -1

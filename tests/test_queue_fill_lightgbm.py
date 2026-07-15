@@ -8,8 +8,10 @@ import pytest
 import simple_ai_trading.queue_fill_lightgbm as module
 import simple_ai_trading.queue_fill_survival as survival_module
 from simple_ai_trading.queue_fill_lightgbm import (
+    QUEUE_FILL_SEEDS,
     QUEUE_FILL_SYMBOLS,
     QueueFillLightGBMSpec,
+    build_queue_fill_lightgbm_ensemble,
     load_queue_fill_lightgbm_model,
     predict_queue_fill_lightgbm_model,
     save_queue_fill_lightgbm_model,
@@ -110,14 +112,23 @@ def test_pooled_hazard_training_prediction_and_exact_reload(monkeypatch, tmp_pat
         minimum_calibration_class_rows_per_symbol=2,
     )
 
-    model = train_queue_fill_lightgbm_model(
-        training_panels=training,
-        early_stop_panels=early,
-        calibration_panels=calibration,
-        spec=spec,
-        compute_backend="cpu",
+    members = tuple(
+        train_queue_fill_lightgbm_model(
+            training_panels=training,
+            early_stop_panels=early,
+            calibration_panels=calibration,
+            spec=spec,
+            compute_backend="cpu",
+            seed=seed,
+        )
+        for seed in QUEUE_FILL_SEEDS
     )
+    model = members[0]
     prediction = predict_queue_fill_lightgbm_model(model, calibration[0])
+    ensemble = build_queue_fill_lightgbm_ensemble(members)
+    ensemble_prediction = predict_queue_fill_lightgbm_model(
+        ensemble, calibration[0]
+    )
     artifact = tmp_path / "queue-fill.json"
     save_queue_fill_lightgbm_model(artifact, model)
     loaded = load_queue_fill_lightgbm_model(artifact)
@@ -125,6 +136,22 @@ def test_pooled_hazard_training_prediction_and_exact_reload(monkeypatch, tmp_pat
     assert model.model_sha256 == loaded.model_sha256
     assert model.best_iterations == (3, 3, 3)
     assert prediction.hazard_probabilities.shape == (calibration[0].rows, 3)
+    assert tuple(member.seed for member in ensemble.members) == QUEUE_FILL_SEEDS
+    assert ensemble_prediction.model_sha256 == ensemble.model_sha256
+    np.testing.assert_allclose(
+        ensemble_prediction.bucket_probabilities,
+        np.mean(
+            np.stack(
+                [
+                    predict_queue_fill_lightgbm_model(member, calibration[0])
+                    .bucket_probabilities
+                    for member in members
+                ],
+                axis=0,
+            ),
+            axis=0,
+        ),
+    )
     np.testing.assert_allclose(np.sum(prediction.bucket_probabilities, axis=1), 1.0)
     assert np.all((prediction.fill_probability_15s > 0.0) & (prediction.fill_probability_15s < 1.0))
 

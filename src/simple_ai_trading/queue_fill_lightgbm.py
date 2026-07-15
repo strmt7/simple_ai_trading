@@ -28,6 +28,7 @@ from .storage import write_json_atomic
 
 
 QUEUE_FILL_LIGHTGBM_SCHEMA_VERSION = "queue-fill-discrete-hazard-lightgbm-v1"
+QUEUE_FILL_ENSEMBLE_SCHEMA_VERSION = "queue-fill-discrete-hazard-ensemble-v1"
 QUEUE_FILL_MODEL_FAMILY = "shared_three_interval_passive_fill_hazard"
 QUEUE_FILL_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 QUEUE_FILL_SEEDS = (5701, 5702, 5703)
@@ -146,6 +147,47 @@ class TrainedQueueFillLightGBMModel:
     profitability_claim: bool = False
     portfolio_claim: bool = False
     leverage_applied: bool = False
+
+
+@dataclass(frozen=True)
+class TrainedQueueFillLightGBMEnsemble:
+    schema_version: str
+    members: tuple[TrainedQueueFillLightGBMModel, ...]
+    model_sha256: str
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    @property
+    def spec(self) -> QueueFillLightGBMSpec:
+        return self.members[0].spec
+
+    @property
+    def feature_names(self) -> tuple[str, ...]:
+        return self.members[0].feature_names
+
+    @property
+    def source_dataset_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].source_dataset_sha256_by_symbol
+
+    @property
+    def training_panel_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].training_panel_sha256_by_symbol
+
+    @property
+    def early_stop_panel_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].early_stop_panel_sha256_by_symbol
+
+    @property
+    def calibration_panel_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].calibration_panel_sha256_by_symbol
+
+
+QueueFillLightGBMArtifact = (
+    TrainedQueueFillLightGBMModel | TrainedQueueFillLightGBMEnsemble
+)
 
 
 @dataclass(frozen=True)
@@ -400,13 +442,105 @@ def _validate_model(model: TrainedQueueFillLightGBMModel, *, reload: bool) -> No
             raise ValueError("queue-fill booster payload cannot be reloaded") from exc
 
 
+def _ensemble_payload(
+    model: TrainedQueueFillLightGBMEnsemble,
+) -> dict[str, object]:
+    return {
+        "schema_version": model.schema_version,
+        "member_model_sha256": [member.model_sha256 for member in model.members],
+        "member_seeds": [member.seed for member in model.members],
+        "trading_authority": model.trading_authority,
+        "execution_claim": model.execution_claim,
+        "profitability_claim": model.profitability_claim,
+        "portfolio_claim": model.portfolio_claim,
+        "leverage_applied": model.leverage_applied,
+    }
+
+
+def _ensemble_sha256(model: TrainedQueueFillLightGBMEnsemble) -> str:
+    return hashlib.sha256(
+        _canonical_json(_ensemble_payload(model)).encode("ascii")
+    ).hexdigest()
+
+
+def _validate_ensemble(
+    model: TrainedQueueFillLightGBMEnsemble,
+    *,
+    reload: bool,
+) -> None:
+    members = tuple(model.members)
+    for member in members:
+        _validate_model(member, reload=reload)
+    shared_fields = (
+        "spec",
+        "feature_names",
+        "source_dataset_sha256_by_symbol",
+        "training_panel_sha256_by_symbol",
+        "early_stop_panel_sha256_by_symbol",
+        "calibration_panel_sha256_by_symbol",
+        "training_end_ms",
+        "early_stop_start_ms",
+        "early_stop_end_ms",
+        "calibration_start_ms",
+        "class_support",
+        "baseline_bucket_probabilities",
+        "backend_requested",
+        "backend_kind",
+        "backend_device",
+        "lightgbm_version",
+    )
+    if (
+        model.schema_version != QUEUE_FILL_ENSEMBLE_SCHEMA_VERSION
+        or len(members) != len(QUEUE_FILL_SEEDS)
+        or tuple(member.seed for member in members) != QUEUE_FILL_SEEDS
+        or any(
+            getattr(member, field) != getattr(members[0], field)
+            for member in members[1:]
+            for field in shared_fields
+        )
+        or len({member.model_sha256 for member in members}) != len(members)
+        or model.trading_authority
+        or model.execution_claim
+        or model.profitability_claim
+        or model.portfolio_claim
+        or model.leverage_applied
+        or not _is_sha256(model.model_sha256)
+        or _ensemble_sha256(model) != model.model_sha256
+    ):
+        raise ValueError("queue-fill LightGBM ensemble contract is invalid")
+
+
+def build_queue_fill_lightgbm_ensemble(
+    members: Sequence[TrainedQueueFillLightGBMModel],
+) -> TrainedQueueFillLightGBMEnsemble:
+    """Bind all frozen seeds without selecting a member on held-forward outcomes."""
+
+    ordered = tuple(sorted(tuple(members), key=lambda member: member.seed))
+    provisional = TrainedQueueFillLightGBMEnsemble(
+        schema_version=QUEUE_FILL_ENSEMBLE_SCHEMA_VERSION,
+        members=ordered,
+        model_sha256="",
+    )
+    model = TrainedQueueFillLightGBMEnsemble(
+        **{
+            **provisional.__dict__,
+            "model_sha256": _ensemble_sha256(provisional),
+        }
+    )
+    _validate_ensemble(model, reload=True)
+    return model
+
+
 def validate_queue_fill_lightgbm_model(
-    model: TrainedQueueFillLightGBMModel,
+    model: QueueFillLightGBMArtifact,
     *,
     reload: bool = False,
 ) -> None:
     """Public artifact validator used by downstream evidence gates."""
 
+    if isinstance(model, TrainedQueueFillLightGBMEnsemble):
+        _validate_ensemble(model, reload=reload)
+        return
     _validate_model(model, reload=reload)
 
 
@@ -606,11 +740,57 @@ def train_queue_fill_lightgbm_model(
 
 
 def predict_queue_fill_lightgbm_model(
-    model: TrainedQueueFillLightGBMModel,
+    model: QueueFillLightGBMArtifact,
     panel: PassiveFillSurvivalPanel,
 ) -> QueueFillPredictionBatch:
     """Predict calibrated fill-time probabilities for one symbol panel."""
 
+    if isinstance(model, TrainedQueueFillLightGBMEnsemble):
+        _validate_ensemble(model, reload=False)
+        predictions = tuple(
+            predict_queue_fill_lightgbm_model(member, panel)
+            for member in model.members
+        )
+        averaged = np.mean(
+            np.stack(
+                [prediction.bucket_probabilities for prediction in predictions],
+                axis=0,
+            ),
+            axis=0,
+        )
+        hazards = np.zeros((panel.rows, 3), dtype=np.float64)
+        hazards[:, 0] = averaged[:, 0]
+        remaining = 1.0 - averaged[:, 0]
+        np.divide(
+            averaged[:, 1],
+            remaining,
+            out=hazards[:, 1],
+            where=remaining > 0.0,
+        )
+        remaining -= averaged[:, 1]
+        np.divide(
+            averaged[:, 2],
+            remaining,
+            out=hazards[:, 2],
+            where=remaining > 0.0,
+        )
+        hazards = np.clip(hazards, 0.0, 1.0)
+        buckets = hazards_to_bucket_probabilities(hazards)
+        fill_probability = np.sum(buckets[:, :3], axis=1)
+        for array in (hazards, buckets, fill_probability):
+            array.setflags(write=False)
+        return QueueFillPredictionBatch(
+            source_action_feature_sha256=panel.source_action_feature_sha256,
+            source_panel_sha256=panel.panel_sha256,
+            model_sha256=model.model_sha256,
+            symbol=panel.symbol,
+            event_index=panel.event_index,
+            decision_time_ms=panel.decision_time_ms,
+            action_side=panel.action_side,
+            hazard_probabilities=hazards,
+            bucket_probabilities=buckets,
+            fill_probability_15s=fill_probability,
+        )
     _validate_model(model, reload=False)
     validate_passive_fill_survival_panel(panel)
     source = dict(model.source_dataset_sha256_by_symbol)
@@ -762,14 +942,18 @@ def load_queue_fill_lightgbm_model(path: str | Path) -> TrainedQueueFillLightGBM
 
 
 __all__ = [
+    "QUEUE_FILL_ENSEMBLE_SCHEMA_VERSION",
     "QUEUE_FILL_LIGHTGBM_SCHEMA_VERSION",
     "QUEUE_FILL_MODEL_FAMILY",
     "QUEUE_FILL_SEEDS",
     "QUEUE_FILL_SYMBOLS",
+    "QueueFillLightGBMArtifact",
     "QueueFillLightGBMSpec",
     "QueueFillPredictionBatch",
     "SymbolHazardSupport",
+    "TrainedQueueFillLightGBMEnsemble",
     "TrainedQueueFillLightGBMModel",
+    "build_queue_fill_lightgbm_ensemble",
     "load_queue_fill_lightgbm_model",
     "predict_queue_fill_lightgbm_model",
     "save_queue_fill_lightgbm_model",

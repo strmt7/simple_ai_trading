@@ -28,6 +28,7 @@ from .storage import write_json_atomic
 
 
 MAKE_TAKE_PAYOFF_LIGHTGBM_SCHEMA_VERSION = "make-take-conditional-payoff-lightgbm-v1"
+MAKE_TAKE_PAYOFF_ENSEMBLE_SCHEMA_VERSION = "make-take-payoff-ensemble-v1"
 MAKE_TAKE_PAYOFF_MODEL_FAMILY = "shared_four_action_conditional_mean_q20"
 MAKE_TAKE_PAYOFF_HEADS = ("conditional_mean", "conditional_q20")
 MAKE_TAKE_PAYOFF_SEEDS = (5701, 5702, 5703)
@@ -174,6 +175,52 @@ class TrainedMakeTakePayoffLightGBMModel:
     profitability_claim: bool = False
     portfolio_claim: bool = False
     leverage_applied: bool = False
+
+
+@dataclass(frozen=True)
+class TrainedMakeTakePayoffLightGBMEnsemble:
+    schema_version: str
+    members: tuple[TrainedMakeTakePayoffLightGBMModel, ...]
+    early_quality: PayoffQualityDiagnostics
+    model_sha256: str
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    @property
+    def spec(self) -> MakeTakePayoffLightGBMSpec:
+        return self.members[0].spec
+
+    @property
+    def feature_names(self) -> tuple[str, ...]:
+        return self.members[0].feature_names
+
+    @property
+    def source_feature_spec_sha256(self) -> str:
+        return self.members[0].source_feature_spec_sha256
+
+    @property
+    def source_dataset_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].source_dataset_sha256_by_symbol
+
+    @property
+    def training_panel_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].training_panel_sha256_by_symbol
+
+    @property
+    def early_stop_panel_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].early_stop_panel_sha256_by_symbol
+
+    @property
+    def calibration_panel_sha256_by_symbol(self) -> tuple[tuple[str, str], ...]:
+        return self.members[0].calibration_panel_sha256_by_symbol
+
+
+MakeTakePayoffLightGBMArtifact = (
+    TrainedMakeTakePayoffLightGBMModel | TrainedMakeTakePayoffLightGBMEnsemble
+)
 
 
 @dataclass(frozen=True)
@@ -615,13 +662,98 @@ def _validate_model(
             raise ValueError("make/take payoff booster payload cannot be reloaded") from exc
 
 
+def _ensemble_payload(
+    model: TrainedMakeTakePayoffLightGBMEnsemble,
+) -> dict[str, object]:
+    return {
+        "schema_version": model.schema_version,
+        "member_model_sha256": [member.model_sha256 for member in model.members],
+        "member_seeds": [member.seed for member in model.members],
+        "early_quality": asdict(model.early_quality),
+        "trading_authority": model.trading_authority,
+        "execution_claim": model.execution_claim,
+        "profitability_claim": model.profitability_claim,
+        "portfolio_claim": model.portfolio_claim,
+        "leverage_applied": model.leverage_applied,
+    }
+
+
+def _ensemble_sha256(model: TrainedMakeTakePayoffLightGBMEnsemble) -> str:
+    return hashlib.sha256(
+        _canonical_json(_ensemble_payload(model)).encode("ascii")
+    ).hexdigest()
+
+
+def _validate_ensemble_members(
+    members: tuple[TrainedMakeTakePayoffLightGBMModel, ...],
+    *,
+    reload: bool,
+) -> None:
+    for member in members:
+        _validate_model(member, reload=reload)
+    shared_fields = (
+        "spec",
+        "feature_names",
+        "source_feature_spec_sha256",
+        "source_dataset_sha256_by_symbol",
+        "training_panel_sha256_by_symbol",
+        "early_stop_panel_sha256_by_symbol",
+        "calibration_panel_sha256_by_symbol",
+        "training_end_ms",
+        "early_stop_start_ms",
+        "early_stop_end_ms",
+        "calibration_start_ms",
+        "action_support",
+        "training_baseline_mean_bps",
+        "training_baseline_q20_bps",
+        "backend_requested",
+        "backend_kind",
+        "backend_device",
+        "lightgbm_version",
+    )
+    if (
+        len(members) != len(MAKE_TAKE_PAYOFF_SEEDS)
+        or tuple(member.seed for member in members) != MAKE_TAKE_PAYOFF_SEEDS
+        or any(
+            getattr(member, field) != getattr(members[0], field)
+            for member in members[1:]
+            for field in shared_fields
+        )
+        or len({member.model_sha256 for member in members}) != len(members)
+    ):
+        raise ValueError("make/take payoff LightGBM ensemble members are invalid")
+
+
+def _validate_ensemble(
+    model: TrainedMakeTakePayoffLightGBMEnsemble,
+    *,
+    reload: bool,
+) -> None:
+    _validate_ensemble_members(tuple(model.members), reload=reload)
+    if (
+        model.schema_version != MAKE_TAKE_PAYOFF_ENSEMBLE_SCHEMA_VERSION
+        or model.trading_authority
+        or model.execution_claim
+        or model.profitability_claim
+        or model.portfolio_claim
+        or model.leverage_applied
+        or not _is_sha256(model.model_sha256)
+        or _ensemble_sha256(model) != model.model_sha256
+    ):
+        raise ValueError("make/take payoff LightGBM ensemble contract is invalid")
+    _validate_quality(model.early_quality)
+
+
 def validate_make_take_payoff_lightgbm_model(
-    model: TrainedMakeTakePayoffLightGBMModel,
+    model: MakeTakePayoffLightGBMArtifact,
     *,
     reload: bool = False,
 ) -> None:
     """Public artifact validator used by downstream evidence gates."""
 
+    if isinstance(model, TrainedMakeTakePayoffLightGBMEnsemble):
+        _validate_ensemble(model, reload=reload)
+        return
     _validate_model(model, reload=reload)
 
 
@@ -877,7 +1009,7 @@ def train_make_take_payoff_lightgbm_model(
     return model
 
 
-def _predict_calibrated_arrays(
+def _predict_raw_arrays(
     model: TrainedMakeTakePayoffLightGBMModel,
     features: np.ndarray,
     action_code: np.ndarray,
@@ -911,19 +1043,150 @@ def _predict_calibrated_arrays(
             predictions.append(prediction)
     except lgb.basic.LightGBMError as exc:
         raise ValueError("make/take payoff booster payload cannot be reloaded") from exc
-    mean = predictions[0] + np.asarray(model.mean_calibration_offset_bps)[actions]
-    q20 = predictions[1] + np.asarray(model.q20_calibration_offset_bps)[actions]
+    return predictions[0], predictions[1]
+
+
+def _predict_calibrated_arrays(
+    model: TrainedMakeTakePayoffLightGBMModel,
+    features: np.ndarray,
+    action_code: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    mean, q20 = _predict_raw_arrays(model, features, action_code)
+    actions = np.asarray(action_code, dtype=np.uint8)
+    mean = mean + np.asarray(model.mean_calibration_offset_bps)[actions]
+    q20 = q20 + np.asarray(model.q20_calibration_offset_bps)[actions]
     return mean, np.minimum(q20, mean)
 
 
+def build_make_take_payoff_lightgbm_ensemble(
+    members: Sequence[TrainedMakeTakePayoffLightGBMModel],
+    *,
+    early_stop_panels: Sequence[MakeTakeConditionalPayoffPanel],
+) -> TrainedMakeTakePayoffLightGBMEnsemble:
+    """Bind and score every frozen seed without outcome-based member selection."""
+
+    ordered_members = tuple(sorted(tuple(members), key=lambda member: member.seed))
+    _validate_ensemble_members(ordered_members, reload=True)
+    early = _ordered_panels(early_stop_panels, role="ensemble early-stop")
+    reference = ordered_members[0]
+    if (
+        tuple((panel.symbol, panel.panel_sha256) for panel in early)
+        != reference.early_stop_panel_sha256_by_symbol
+        or tuple((panel.symbol, panel.source_dataset_sha256) for panel in early)
+        != reference.source_dataset_sha256_by_symbol
+        or any(
+            panel.feature_names != reference.feature_names
+            or panel.source_feature_spec_sha256
+            != reference.source_feature_spec_sha256
+            for panel in early
+        )
+    ):
+        raise ValueError("make/take payoff ensemble early-stop evidence drifted")
+    _features, truth, actions, markout_5s, markout_15s, weights = _pooled_data(early)
+    member_mean: list[np.ndarray] = []
+    member_q20: list[np.ndarray] = []
+    for member in ordered_members:
+        per_symbol = tuple(
+            _predict_raw_arrays(member, panel.features, panel.action_code)
+            for panel in early
+        )
+        member_mean.append(np.concatenate([values[0] for values in per_symbol]))
+        member_q20.append(np.concatenate([values[1] for values in per_symbol]))
+    mean_prediction = np.mean(np.stack(member_mean, axis=0), axis=0)
+    q20_prediction = np.mean(np.stack(member_q20, axis=0), axis=0)
+    baseline_mean = np.asarray(
+        reference.training_baseline_mean_bps, dtype=np.float64
+    )[actions]
+    baseline_q20 = np.asarray(
+        reference.training_baseline_q20_bps, dtype=np.float64
+    )[actions]
+    quality = _quality_diagnostics(
+        truth=truth,
+        mean_prediction=mean_prediction,
+        q20_prediction=q20_prediction,
+        baseline_mean_prediction=baseline_mean,
+        baseline_q20_prediction=baseline_q20,
+        markout_5s_bps=markout_5s,
+        markout_15s_bps=markout_15s,
+        weights=weights,
+        spec=reference.spec,
+    )
+    provisional = TrainedMakeTakePayoffLightGBMEnsemble(
+        schema_version=MAKE_TAKE_PAYOFF_ENSEMBLE_SCHEMA_VERSION,
+        members=ordered_members,
+        early_quality=quality,
+        model_sha256="",
+    )
+    model = TrainedMakeTakePayoffLightGBMEnsemble(
+        **{
+            **provisional.__dict__,
+            "model_sha256": _ensemble_sha256(provisional),
+        }
+    )
+    _validate_ensemble(model, reload=True)
+    return model
+
+
 def predict_make_take_payoff_lightgbm_model(
-    model: TrainedMakeTakePayoffLightGBMModel,
+    model: MakeTakePayoffLightGBMArtifact,
     *,
     symbol: str,
     action_features: MakeTakeActionFeatureBatch,
 ) -> MakeTakePayoffPredictionBatch:
     """Predict calibrated conditional values for all four candidate actions."""
 
+    if isinstance(model, TrainedMakeTakePayoffLightGBMEnsemble):
+        _validate_ensemble(model, reload=False)
+        predictions = tuple(
+            predict_make_take_payoff_lightgbm_model(
+                member,
+                symbol=symbol,
+                action_features=action_features,
+            )
+            for member in model.members
+        )
+        reference = predictions[0]
+        mean = np.mean(
+            np.stack(
+                [prediction.conditional_mean_bps for prediction in predictions],
+                axis=0,
+            ),
+            axis=0,
+        )
+        q20 = np.minimum(
+            np.mean(
+                np.stack(
+                    [prediction.conditional_q20_bps for prediction in predictions],
+                    axis=0,
+                ),
+                axis=0,
+            ),
+            mean,
+        )
+        retained = tuple(
+            np.array(value, copy=True)
+            for value in (
+                reference.event_index,
+                reference.decision_time_ms,
+                reference.action_code,
+                reference.action_side,
+                mean,
+                q20,
+            )
+        )
+        for array in retained:
+            array.setflags(write=False)
+        return MakeTakePayoffPredictionBatch(
+            source_action_feature_sha256=reference.source_action_feature_sha256,
+            model_sha256=model.model_sha256,
+            symbol=reference.symbol,
+            event_index=retained[0],
+            decision_time_ms=retained[1],
+            action_code=retained[2],
+            action_side=retained[3],
+            conditional_mean_bps=retained[4],
+            conditional_q20_bps=retained[5],
+        )
     _validate_model(model, reload=False)
     normalized_symbol = str(symbol).strip().upper()
     source = dict(model.source_dataset_sha256_by_symbol)
@@ -986,11 +1249,47 @@ def predict_make_take_payoff_lightgbm_model(
 
 
 def predict_make_take_conditional_payoff_panel(
-    model: TrainedMakeTakePayoffLightGBMModel,
+    model: MakeTakePayoffLightGBMArtifact,
     panel: MakeTakeConditionalPayoffPanel,
 ) -> MakeTakeConditionalPayoffPredictionBatch:
     """Predict a conditional-payoff panel without requiring unfilled action rows."""
 
+    if isinstance(model, TrainedMakeTakePayoffLightGBMEnsemble):
+        _validate_ensemble(model, reload=False)
+        predictions = tuple(
+            predict_make_take_conditional_payoff_panel(member, panel)
+            for member in model.members
+        )
+        mean = np.mean(
+            np.stack(
+                [prediction.conditional_mean_bps for prediction in predictions],
+                axis=0,
+            ),
+            axis=0,
+        )
+        q20 = np.minimum(
+            np.mean(
+                np.stack(
+                    [prediction.conditional_q20_bps for prediction in predictions],
+                    axis=0,
+                ),
+                axis=0,
+            ),
+            mean,
+        )
+        action_code = np.array(panel.action_code, dtype=np.uint8, copy=True)
+        action_side = np.array(panel.action_side, dtype=np.int8, copy=True)
+        for array in (action_code, action_side, mean, q20):
+            array.setflags(write=False)
+        return MakeTakeConditionalPayoffPredictionBatch(
+            source_panel_sha256=panel.panel_sha256,
+            model_sha256=model.model_sha256,
+            symbol=panel.symbol,
+            action_code=action_code,
+            action_side=action_side,
+            conditional_mean_bps=mean,
+            conditional_q20_bps=q20,
+        )
     _validate_model(model, reload=False)
     validate_make_take_conditional_payoff_panel(panel)
     source = dict(model.source_dataset_sha256_by_symbol)
@@ -1105,15 +1404,19 @@ def load_make_take_payoff_lightgbm_model(
 
 __all__ = [
     "MAKE_TAKE_PAYOFF_HEADS",
+    "MAKE_TAKE_PAYOFF_ENSEMBLE_SCHEMA_VERSION",
     "MAKE_TAKE_PAYOFF_LIGHTGBM_SCHEMA_VERSION",
     "MAKE_TAKE_PAYOFF_MODEL_FAMILY",
     "MAKE_TAKE_PAYOFF_SEEDS",
     "MakeTakeConditionalPayoffPredictionBatch",
+    "MakeTakePayoffLightGBMArtifact",
     "MakeTakePayoffLightGBMSpec",
     "MakeTakePayoffPredictionBatch",
     "PayoffQualityDiagnostics",
     "SymbolActionPayoffSupport",
+    "TrainedMakeTakePayoffLightGBMEnsemble",
     "TrainedMakeTakePayoffLightGBMModel",
+    "build_make_take_payoff_lightgbm_ensemble",
     "load_make_take_payoff_lightgbm_model",
     "predict_make_take_conditional_payoff_panel",
     "predict_make_take_payoff_lightgbm_model",
