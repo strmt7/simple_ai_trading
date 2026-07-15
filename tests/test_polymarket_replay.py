@@ -1047,9 +1047,20 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     assert changed.snapshot.source_payload_sha256 != full.snapshot.source_payload_sha256
     assert post_tick.tick_size == Decimal("0.001")
     assert post_tick.snapshot.bids[0].price == Decimal("0.499")
-    assert replay.first_book_after_latency(full, latency_ms=5) == changed
-    assert replay.first_book_after_latency(post_tick, latency_ms=1) == close_book
-    assert replay.first_book_after_latency(close_book, latency_ms=1) is None
+    assert replay.first_book_after_latency(
+        full, latency_ms=5, maximum_observation_delay_ms=500
+    ) == changed
+    assert replay.first_book_after_latency(
+        post_tick, latency_ms=1, maximum_observation_delay_ms=500
+    ) == close_book
+    assert (
+        replay.first_book_after_latency(
+            close_book,
+            latency_ms=1,
+            maximum_observation_delay_ms=500,
+        )
+        is None
+    )
     assert replay.book_for_event(changed.event_id, changed.token_id) == changed
     assert replay.resolutions[0].winning_outcome == "Up"
     assert replay.resolutions[0].source == "clob_gamma_crosscheck"
@@ -1363,6 +1374,7 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
         "minimum_resolved_markets_per_asset",
         "latency_ms",
         "latency_stress_ms",
+        "max_execution_observation_delay_ms",
         "minimum_edge",
         "initial_capital",
         "maximum_loss_fraction_per_market",
@@ -1428,7 +1440,14 @@ def test_segmented_replay_resets_books_and_never_executes_across_gap(tmp_path) -
         for book in replay.books
         if book.segment_id == first_segment and book.outcome == "Up"
     ][-1]
-    assert replay.first_book_after_latency(old_up, latency_ms=2_000) is None
+    assert (
+        replay.first_book_after_latency(
+            old_up,
+            latency_ms=2_000,
+            maximum_observation_delay_ms=500,
+        )
+        is None
+    )
     for segment_id in segment_ids:
         assert {book.outcome for book in replay.books if book.segment_id == segment_id} == {
             "Up",
@@ -1621,6 +1640,43 @@ def test_polymarket_broker_binds_fok_ai_delay_and_submission_latency(
     assert context is not None
     assert context[0] == 10
     assert context[1] >= context[0]
+
+
+def test_polymarket_broker_fails_closed_after_execution_observation_timeout(
+    tmp_path,
+) -> None:
+    database = tmp_path / "observation-timeout.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "observation-timeout-run")
+
+    with PolymarketPaperBroker(
+        database,
+        run_id="observation-timeout-run",
+        maximum_execution_observation_delay_ms=1,
+    ) as broker:
+        decision = broker.replay.books[0]
+        position, execution = broker.open_position(
+            position_id="observation-timeout-position",
+            decision=decision,
+            outcome="Up",
+            quantity="5",
+            maximum_price="0.50",
+            submission_latency_ms=5,
+            order_type="FOK",
+        )
+        context = broker.store.connect().execute(
+            """
+            SELECT requested_latency_ms, effective_latency_ms,
+                   maximum_execution_observation_delay_ms, execution_event_id
+            FROM polymarket_paper_order_context
+            """
+        ).fetchone()
+        reconciliation = broker.reconcile()
+
+    assert position is None
+    assert execution.state == "UNKNOWN"
+    assert context == (5, 5, 1, "")
+    assert reconciliation.can_open is False
 
 
 def test_polymarket_broker_blocks_time_travel_and_context_tampering(tmp_path) -> None:
@@ -2001,6 +2057,7 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
         "quantity",
         "limit_price",
         "latency_ms",
+        "max_execution_observation_delay_ms",
         "decision_delay_ms",
         "order_type",
         "allow_segmented_gaps",

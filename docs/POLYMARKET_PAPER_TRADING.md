@@ -15,7 +15,7 @@ may not fork ownership, reconciliation, outage recovery, or stop semantics.
 
 The lifecycle, risk, and outage sections below are the required parity contract.
 The current executable subset is the public recorder, strict replay by default,
-explicit segmented reconnect replay, manual aggressive FAK paper open/close,
+explicit segmented reconnect replay, manual aggressive FAK/FOK paper open/close,
 journal reconciliation, official-resolution settlement, and a reconciled Stop
 operation. Pause coordination, passive queue replay, empirical latency calibration, automated
 strategy/AI decisions, and independent live liveness loops remain incomplete and
@@ -80,9 +80,11 @@ settlement, and verified close handling.
 
 ## Required fill simulation
 
-- Implemented: aggressive FAK paper orders walk exact observed depth after an
-  explicit nonzero submission latency and apply recorded fee parameters to each
-  fill level.
+- Implemented: aggressive FAK or FOK paper orders walk exact observed depth
+  after an explicit nonzero submission latency and apply recorded fee parameters
+  to each fill level. The first post-arrival book must be observed within a
+  predeclared window (500 ms by default); a later update produces `UNKNOWN`, no
+  fill credit, and blocks new exposure.
 - Pending: passive orders start behind all displayed quantity at their price. Only
   subsequent opposite aggressive trades at that price consume queue ahead.
   Cancellations receive zero fill credit.
@@ -203,7 +205,9 @@ Replay rebuilds each outcome token's level-2 book from full `book` snapshots and
 `price_change` level replacements/removals, verifies published best bid/ask
 checksums and dynamic tick changes, atomically combines split updates sharing a
 source transition, and executes only against the first proven state after
-nonzero latency. Custom top-of-book events are corroboration rather than the
+nonzero latency when that state arrives inside the predeclared observation
+window. Otherwise execution is `UNKNOWN`, with no economic credit. Custom
+top-of-book events are corroboration rather than the
 depth-ordering clock because prospective evidence shows they can precede their
 matching depth update. Reusing depth or moving backward in replay time is
 blocked. Partial-close dust remains owned until a later executable book or a
@@ -231,7 +235,9 @@ and app cannot acquire separate option sets. `open` and `close` also require an
 explicit `--latency-ms`; no unmeasured optimistic default is supplied. `open`
 can reproduce either FAK or FOK research with `--order-type` and binds measured
 model/AI review time separately through `--decision-delay-ms` before network
-submission latency.
+submission latency. `--max-execution-observation-delay-ms` controls the same
+fail-closed confirmation bound in model research and paper execution; the bound,
+requested latency, effective observed latency, and source events are hash-bound.
 
 Primary references: [authentication](https://docs.polymarket.com/api-reference/authentication),
 [market WebSocket](https://docs.polymarket.com/market-data/websocket/market-channel),

@@ -539,6 +539,15 @@ def _build_parser() -> argparse.ArgumentParser:
         help="predeclared comma-separated network latencies for execution sensitivity",
     )
     parser_polymarket_model.add_argument(
+        "--max-execution-observation-delay-ms",
+        type=int,
+        default=500,
+        help=(
+            "fail closed when no causal book update confirms simulated order arrival "
+            "within this window"
+        ),
+    )
+    parser_polymarket_model.add_argument(
         "--minimum-edge",
         default="0.02",
         help="minimum expected net payout per outcome contract after taker fees",
@@ -627,6 +636,15 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--quantity", default=None)
     parser_polymarket_paper.add_argument("--limit-price", default=None)
     parser_polymarket_paper.add_argument("--latency-ms", type=int, default=None)
+    parser_polymarket_paper.add_argument(
+        "--max-execution-observation-delay-ms",
+        type=int,
+        default=500,
+        help=(
+            "fail closed when no causal book update confirms simulated order arrival "
+            "within this window"
+        ),
+    )
     parser_polymarket_paper.add_argument(
         "--decision-delay-ms",
         type=int,
@@ -6315,6 +6333,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             )
             execution_config = PolymarketExecutionResearchConfig(
                 submission_latency_ms=int(args.latency_ms),
+                maximum_execution_observation_delay_ms=int(
+                    args.max_execution_observation_delay_ms
+                ),
                 minimum_expected_edge_per_contract=str(args.minimum_edge),
                 initial_capital_quote=str(args.initial_capital),
                 maximum_loss_fraction_per_market=str(
@@ -6718,6 +6739,9 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
         with PolymarketPaperBroker(
             Path(args.database),
             run_id=getattr(args, "run_id", None),
+            maximum_execution_observation_delay_ms=int(
+                args.max_execution_observation_delay_ms
+            ),
             allow_segmented_gaps=bool(
                 getattr(args, "allow_segmented_gaps", False)
             ),

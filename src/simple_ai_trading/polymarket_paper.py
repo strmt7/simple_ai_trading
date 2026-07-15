@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
+import math
 from pathlib import Path
 
 from .paper_execution import (
@@ -26,7 +27,7 @@ from .polymarket_replay import (
 from .polymarket_resolution import load_official_resolutions
 
 
-POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION = "polymarket-paper-context-v1"
+POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION = "polymarket-paper-context-v2"
 
 
 def _canonical_json(value: object) -> str:
@@ -173,6 +174,7 @@ class PolymarketPaperReconciliation:
 class _ExecutionSelection:
     book: PolymarketRecordedBook | None
     execution_time_ms: int
+    effective_latency_ms: int
     snapshot_sha256: str
     event_id: str
 
@@ -187,6 +189,7 @@ class PolymarketPaperBroker:
         database: str | Path,
         *,
         run_id: str | None = None,
+        maximum_execution_observation_delay_ms: int = 500,
         maximum_book_age_ms: int = 2_000,
         order_ttl_ms: int = 30_000,
         allow_segmented_gaps: bool = False,
@@ -211,8 +214,18 @@ class PolymarketPaperBroker:
             if self.store.paper_journal is None:
                 raise RuntimeError("shared paper journal is unavailable")
             self.journal: PaperOrderJournal = self.store.paper_journal
+            self.maximum_execution_observation_delay_ms = int(
+                maximum_execution_observation_delay_ms
+            )
             self.maximum_book_age_ms = int(maximum_book_age_ms)
             self.order_ttl_ms = int(order_ttl_ms)
+            if (
+                self.maximum_execution_observation_delay_ms < 0
+                or self.maximum_execution_observation_delay_ms > 60_000
+            ):
+                raise ValueError(
+                    "maximum_execution_observation_delay_ms must lie in [0, 60000]"
+                )
             if self.maximum_book_age_ms < 0 or self.maximum_book_age_ms > 60_000:
                 raise ValueError("maximum_book_age_ms must lie in [0, 60000]")
             if self.order_ttl_ms < 1_000 or self.order_ttl_ms > 300_000:
@@ -234,7 +247,8 @@ class PolymarketPaperBroker:
         self.close()
 
     def _init_context_schema(self) -> None:
-        self.store.connect().execute(
+        connection = self.store.connect()
+        connection.execute(
             """
             CREATE TABLE IF NOT EXISTS polymarket_paper_order_context (
                 intent_id VARCHAR PRIMARY KEY,
@@ -247,11 +261,25 @@ class PolymarketPaperBroker:
                 execution_snapshot_sha256 VARCHAR NOT NULL,
                 requested_latency_ms INTEGER NOT NULL,
                 effective_latency_ms INTEGER NOT NULL,
+                maximum_execution_observation_delay_ms INTEGER NOT NULL,
                 context_json VARCHAR NOT NULL,
                 context_sha256 VARCHAR NOT NULL
             );
             """
         )
+        columns = {
+            str(row[1])
+            for row in connection.execute(
+                "PRAGMA table_info('polymarket_paper_order_context')"
+            ).fetchall()
+        }
+        if "maximum_execution_observation_delay_ms" not in columns:
+            connection.execute(
+                """
+                ALTER TABLE polymarket_paper_order_context
+                ADD COLUMN maximum_execution_observation_delay_ms INTEGER DEFAULT 0
+                """
+            )
 
     @staticmethod
     def _validate_decision(
@@ -297,18 +325,30 @@ class PolymarketPaperBroker:
         execution = self.replay.first_book_after_latency(
             decision,
             latency_ms=latency_ms,
+            maximum_observation_delay_ms=(
+                self.maximum_execution_observation_delay_ms
+            ),
         )
         minimum_time = decision.received_wall_ms + int(latency_ms)
         if execution is None:
             return _ExecutionSelection(
                 book=None,
                 execution_time_ms=minimum_time,
+                effective_latency_ms=int(latency_ms),
                 snapshot_sha256=decision.snapshot.source_payload_sha256,
                 event_id="",
             )
+        observed_latency_ms = math.ceil(
+            max(
+                0,
+                execution.received_monotonic_ns - decision.received_monotonic_ns,
+            )
+            / 1_000_000
+        )
         return _ExecutionSelection(
             book=execution,
             execution_time_ms=max(minimum_time, execution.received_wall_ms),
+            effective_latency_ms=max(int(latency_ms), observed_latency_ms),
             snapshot_sha256=execution.snapshot.source_payload_sha256,
             event_id=execution.event_id,
         )
@@ -676,10 +716,7 @@ class PolymarketPaperBroker:
         selection: _ExecutionSelection,
         latency_ms: int,
     ) -> None:
-        effective_latency = max(
-            0,
-            selection.execution_time_ms - decision.received_wall_ms,
-        )
+        effective_latency = selection.effective_latency_ms
         payload = {
             "schema_version": POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION,
             "intent_id": intent.intent_id,
@@ -691,6 +728,9 @@ class PolymarketPaperBroker:
             "execution_snapshot_sha256": selection.snapshot_sha256,
             "requested_latency_ms": int(latency_ms),
             "effective_latency_ms": effective_latency,
+            "maximum_execution_observation_delay_ms": (
+                self.maximum_execution_observation_delay_ms
+            ),
         }
         payload_json = _canonical_json(payload)
         payload_sha = hashlib.sha256(payload_json.encode("ascii")).hexdigest()
@@ -707,8 +747,15 @@ class PolymarketPaperBroker:
             return
         self.store.connect().execute(
             """
-            INSERT INTO polymarket_paper_order_context VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            INSERT INTO polymarket_paper_order_context (
+                intent_id, schema_version, run_id, token_id,
+                decision_event_id, execution_event_id,
+                decision_snapshot_sha256, execution_snapshot_sha256,
+                requested_latency_ms, effective_latency_ms,
+                maximum_execution_observation_delay_ms,
+                context_json, context_sha256
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             """,
             [
@@ -722,6 +769,7 @@ class PolymarketPaperBroker:
                 selection.snapshot_sha256,
                 int(latency_ms),
                 effective_latency,
+                self.maximum_execution_observation_delay_ms,
                 payload_json,
                 payload_sha,
             ],
@@ -744,6 +792,7 @@ class PolymarketPaperBroker:
                    decision_event_id, execution_event_id,
                    decision_snapshot_sha256, execution_snapshot_sha256,
                    requested_latency_ms, effective_latency_ms,
+                   maximum_execution_observation_delay_ms,
                    context_json, context_sha256
             FROM polymarket_paper_order_context ORDER BY intent_id
             """
@@ -772,13 +821,14 @@ class PolymarketPaperBroker:
                 "execution_snapshot_sha256": str(row[7]),
                 "requested_latency_ms": int(row[8]),
                 "effective_latency_ms": int(row[9]),
+                "maximum_execution_observation_delay_ms": int(row[10]),
             }
             payload_json = _canonical_json(payload)
             if str(row[1]) != POLYMARKET_PAPER_CONTEXT_SCHEMA_VERSION:
                 errors.append(f"paper_context_schema_mismatch:{intent_id}")
-            if payload_json != str(row[10]):
+            if payload_json != str(row[11]):
                 errors.append(f"paper_context_payload_mismatch:{intent_id}")
-            if hashlib.sha256(payload_json.encode("ascii")).hexdigest() != str(row[11]):
+            if hashlib.sha256(payload_json.encode("ascii")).hexdigest() != str(row[12]):
                 errors.append(f"paper_context_hash_mismatch:{intent_id}")
             if intent_assets.get(intent_id) != str(row[3]):
                 errors.append(f"paper_context_token_mismatch:{intent_id}")
@@ -1005,6 +1055,9 @@ class PolymarketPaperBroker:
                         or self.replay.first_book_after_latency(
                             book,
                             latency_ms=latency,
+                            maximum_observation_delay_ms=(
+                                self.maximum_execution_observation_delay_ms
+                            ),
                         )
                         is None
                     ):

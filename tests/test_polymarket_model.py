@@ -581,6 +581,35 @@ def test_execution_waits_for_the_first_proven_book_after_arrival() -> None:
     )
 
 
+def test_execution_fails_closed_when_confirmation_arrives_after_bound() -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, _ = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(
+        split.test,
+        markets,
+        execution_latency_ms=700,
+    )
+
+    report = evaluate_polymarket_execution_policy(
+        split.test,
+        predictions,
+        replay,
+        config=PolymarketExecutionResearchConfig(
+            submission_latency_ms=100,
+            maximum_execution_observation_delay_ms=500,
+        ),
+    )
+
+    assert report.attempted_order_count == report.evaluated_market_count
+    assert report.filled_order_count == 0
+    assert all(trade.execution_state == "UNKNOWN" for trade in report.trades)
+    assert all(not trade.execution_book_event_id for trade in report.trades)
+    assert all(trade.effective_latency_ms == 100 for trade in report.trades)
+
+
 def test_execution_charges_ai_decision_delay_before_network_latency() -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
@@ -1142,6 +1171,10 @@ def test_invalid_execution_risk_contract_is_rejected() -> None:
         PolymarketExecutionResearchConfig(
             maximum_loss_fraction_per_market=Decimal("0.02"),
             maximum_loss_fraction_per_time_group=Decimal("0.01"),
+        ).validated()
+    with pytest.raises(ValueError, match="configuration is invalid"):
+        PolymarketExecutionResearchConfig(
+            maximum_execution_observation_delay_ms=60_001,
         ).validated()
 
 
