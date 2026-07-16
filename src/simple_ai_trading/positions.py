@@ -71,6 +71,9 @@ class OpenPosition:
     exchange_status: str = "local"
     paper_open_intent_id: str = ""
     entry_fees: float = 0.0
+    ai_review_mode: str = ""
+    ai_review_case_id: str = ""
+    ai_review_status: str = ""
 
     def unrealized_pnl(self, mark_price: float) -> float:
         if self.side == "LONG":
@@ -114,6 +117,9 @@ class ClosedTrade:
     exchange_status: str = "local"
     paper_open_intent_id: str = ""
     paper_close_intent_id: str = ""
+    ai_review_mode: str = ""
+    ai_review_case_id: str = ""
+    ai_review_status: str = ""
 
 
 _OPEN_REQUIRED_FIELDS = frozenset({
@@ -151,6 +157,9 @@ _OPEN_OPTIONAL_TEXT_FIELDS = frozenset({
     "open_exchange_order_id",
     "exchange_status",
     "paper_open_intent_id",
+    "ai_review_mode",
+    "ai_review_case_id",
+    "ai_review_status",
 })
 _OPEN_REQUIRED_FINITE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
 _OPEN_OPTIONAL_FINITE_FIELDS = frozenset({"stop_loss_pct", "take_profit_pct", "entry_fees"})

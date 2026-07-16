@@ -218,6 +218,7 @@ class MainWindow {
     std::wstring persisted_ai_model_{L"unselected"};
     std::wstring compute_state_{L"Checking"};
     std::wstring ai_runtime_state_{L"unloaded"};
+    std::wstring ai_assist_state_{L"gated"};
     std::wstring ledger_state_{L"Not checked"};
     std::wstring api_reserve_state_{L"Loading"};
     std::wstring network_state_{L"Not checked"};
@@ -726,6 +727,7 @@ class MainWindow {
         std::wstring bot_state;
         std::wstring compute_state;
         std::wstring ai_runtime_state;
+        std::wstring ai_assist_state;
         std::wstring ai_model_state;
         std::wstring ledger_state;
         std::wstring api_reserve_state;
@@ -738,6 +740,7 @@ class MainWindow {
             bot_state = bot_state_;
             compute_state = compute_state_;
             ai_runtime_state = ai_runtime_state_;
+            ai_assist_state = ai_assist_state_;
             ai_model_state = persisted_ai_model_;
             ledger_state = ledger_state_;
             api_reserve_state = api_reserve_state_;
@@ -748,7 +751,19 @@ class MainWindow {
         const bool ai_gpu_resident = ai_enabled && ai_runtime_state == L"gpu";
         std::wstring ai_state = L"AI off";
         if (ai_enabled) {
-            if (ai_gpu_resident) {
+            if (ai_assist_state == L"shadow_idle") {
+                ai_state = L"AI shadow idle";
+            } else if (ai_assist_state == L"shadow_pending") {
+                ai_state = L"AI shadow pending";
+            } else if (ai_assist_state == L"shadow_approve") {
+                ai_state = L"AI shadow approve";
+            } else if (ai_assist_state == L"shadow_veto") {
+                ai_state = L"AI shadow veto";
+            } else if (ai_assist_state == L"shadow_cooldown") {
+                ai_state = L"AI shadow cooldown";
+            } else if (ai_assist_state == L"shadow_failure") {
+                ai_state = L"AI shadow failed";
+            } else if (ai_gpu_resident) {
                 ai_state = ai_model_state + L" / GPU";
             } else if (ai_runtime_state == L"hybrid") {
                 ai_state = ai_model_state + L" / hybrid blocked";
@@ -1867,6 +1882,7 @@ class MainWindow {
             const std::wstring ai = compact_status_value(line, L"ai");
             const std::wstring ai_model = compact_status_value(line, L"ai_model");
             const std::wstring ai_runtime = compact_status_value(line, L"ai_runtime");
+            const std::wstring ai_assist = compact_status_value(line, L"ai_assist");
             const std::wstring reinvest = compact_status_value(line, L"reinvest");
             const std::wstring execution = compact_status_value(line, L"execution");
             const std::wstring positions = compact_status_value(line, L"positions");
@@ -1883,6 +1899,7 @@ class MainWindow {
                 if (!ai.empty()) persisted_ai_enabled_ = ai == L"enabled";
                 persisted_ai_model_ = ai_model.empty() ? L"unselected" : ai_model;
                 ai_runtime_state_ = ai_runtime.empty() ? L"unavailable" : ai_runtime;
+                ai_assist_state_ = ai_assist.empty() ? L"gated" : ai_assist;
                 if (!reinvest.empty()) persisted_reinvest_ = reinvest == L"on";
                 if (!execution.empty()) persisted_execution_ = execution == L"live" ? L"Testnet live" : L"Paper";
                 if (ledger == L"invalid") {

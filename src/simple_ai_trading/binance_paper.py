@@ -310,6 +310,9 @@ class BinancePaperBroker:
             exchange_status=result.state,
             paper_open_intent_id=opening_intent_id,
             paper_close_intent_id=close_intent_id,
+            ai_review_mode=position.ai_review_mode,
+            ai_review_case_id=position.ai_review_case_id,
+            ai_review_status=position.ai_review_status,
         )
         return trade, result
 
