@@ -622,7 +622,7 @@ def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
         or any(not isinstance(value, str) for value in codes_raw)
     ):
         raise ValueError("AI response values are invalid")
-    action = action_raw.strip().lower()
+    action = action_raw
     confidence = float(confidence_raw)
     summary = summary_raw.strip()
     if (
