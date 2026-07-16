@@ -18,7 +18,7 @@ from .ai_runtime import estimate_model_parameters_b
 from .storage import write_json_atomic
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v7"
+AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v8"
 PostJson = Callable[[str, Mapping[str, object], float], object]
 BenchmarkProgress = Callable[[str, Mapping[str, object]], None]
 
@@ -36,11 +36,15 @@ _RESPONSE_SCHEMA = {
             "description": "Unsafe severity/probability: 0 is safe and 1 is extreme risk.",
         },
         "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-        "rationale": {"type": "string"},
-        "concerns": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
+        "rationale": {"type": "string", "minLength": 1, "maxLength": 2_000},
+        "concerns": {
+            "type": "array",
+            "items": {"type": "string", "maxLength": 500},
+            "maxItems": 8,
+        },
         "required_actions": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {"type": "string", "maxLength": 500},
             "maxItems": 8,
         },
     },
@@ -52,7 +56,10 @@ _RESPONSE_SCHEMA = {
         "concerns",
         "required_actions",
     ],
+    "additionalProperties": False,
 }
+_RESPONSE_KEYS = frozenset(_RESPONSE_SCHEMA["required"])
+_ACTIONS = frozenset({"approve", "veto", "cooldown", "human_review"})
 
 _CONCEPT_ALIASES = {
     "reconcile": ("reconcil", "verify exchange state", "verify open orders"),
@@ -587,32 +594,71 @@ def _response_text(payload: object) -> str:
     return response if isinstance(response, str) else ""
 
 
+def _strict_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    parsed: dict[str, object] = {}
+    for key, value in pairs:
+        if key in parsed:
+            raise ValueError("duplicate AI benchmark response key")
+        parsed[key] = value
+    return parsed
+
+
+def _validated_response_mapping(value: object) -> dict[str, object] | None:
+    if not isinstance(value, Mapping) or set(value) != _RESPONSE_KEYS:
+        return None
+    action = value["action"]
+    risk_score = value["risk_score"]
+    confidence = value["confidence"]
+    rationale = value["rationale"]
+    concerns = value["concerns"]
+    required_actions = value["required_actions"]
+    if (
+        not isinstance(action, str)
+        or action not in _ACTIONS
+        or isinstance(risk_score, bool)
+        or not isinstance(risk_score, (int, float))
+        or isinstance(confidence, bool)
+        or not isinstance(confidence, (int, float))
+        or not isinstance(rationale, str)
+        or not 1 <= len(rationale) <= 2_000
+        or not isinstance(concerns, list)
+        or not isinstance(required_actions, list)
+        or len(concerns) > 8
+        or len(required_actions) > 8
+        or any(not isinstance(item, str) or len(item) > 500 for item in concerns)
+        or any(
+            not isinstance(item, str) or len(item) > 500 for item in required_actions
+        )
+    ):
+        return None
+    normalized_risk = float(risk_score)
+    normalized_confidence = float(confidence)
+    if (
+        not math.isfinite(normalized_risk)
+        or not 0.0 <= normalized_risk <= 1.0
+        or not math.isfinite(normalized_confidence)
+        or not 0.0 <= normalized_confidence <= 1.0
+    ):
+        return None
+    return {
+        "action": action,
+        "risk_score": normalized_risk,
+        "confidence": normalized_confidence,
+        "rationale": rationale,
+        "concerns": list(concerns),
+        "required_actions": list(required_actions),
+    }
+
+
 def _json_mapping_from_text(text: str) -> Mapping[str, object] | None:
     clean = str(text or "").strip()
-    if not clean:
+    if not clean or len(clean) > 16_384:
         return None
     try:
-        parsed = json.loads(clean)
-    except json.JSONDecodeError:
-        start = clean.find("{")
-        end = clean.rfind("}")
-        if start < 0 or end <= start:
-            return None
-        try:
-            parsed = json.loads(clean[start : end + 1])
-        except json.JSONDecodeError:
-            return None
-    return parsed if isinstance(parsed, Mapping) else None
-
-
-def _bounded_float(value: object, default: float = 0.0) -> float:
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError, OverflowError):
-        return default
-    if not math.isfinite(parsed):
-        return default
-    return max(0.0, min(1.0, parsed))
+        parsed = json.loads(clean, object_pairs_hook=_strict_json_object)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return _validated_response_mapping(parsed)
 
 
 def _concept_present(concept: str, text: str) -> bool:
@@ -650,7 +696,8 @@ def _prompt_sha256(case: FinanceAITestCase) -> str:
 def _case_score(
     case: FinanceAITestCase, parsed: Mapping[str, object] | None, latency_seconds: float
 ) -> dict[str, object]:
-    if parsed is None:
+    validated = _validated_response_mapping(parsed)
+    if validated is None:
         return {
             "name": case.name,
             "model_input_sha256": _prompt_sha256(case),
@@ -660,18 +707,12 @@ def _case_score(
             "latency_seconds": float(latency_seconds),
             "failure": "invalid_json",
         }
-    action = str(parsed.get("action") or "").strip().lower()
-    risk_score = _bounded_float(parsed.get("risk_score"))
-    confidence = _bounded_float(parsed.get("confidence"))
-    rationale = str(parsed.get("rationale") or "")
-    concerns = (
-        parsed.get("concerns") if isinstance(parsed.get("concerns"), list) else []
-    )
-    required_actions = (
-        parsed.get("required_actions")
-        if isinstance(parsed.get("required_actions"), list)
-        else []
-    )
+    action = str(validated["action"])
+    risk_score = float(validated["risk_score"])
+    confidence = float(validated["confidence"])
+    rationale = str(validated["rationale"])
+    concerns = list(validated["concerns"])
+    required_actions = list(validated["required_actions"])
     searchable = " ".join(
         [
             rationale,

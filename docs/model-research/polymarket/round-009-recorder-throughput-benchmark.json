@@ -1,11 +1,12 @@
 {
-  "benchmark": {
+  "schema_version": "polymarket-recorder-throughput-benchmark-v2",
+  "observed_at_utc": "2026-07-16T00:35:02.677Z",
+  "prior_report_sha256": "1b62097bf4cb390bd3bcc9a271a74776625c4905e0e2698f80f70e087225e529",
+  "prior_replay_benchmark": {
     "message_count": 10000,
     "replay_kind": "real_messages_at_recorded_monotonic_interarrival_times",
-    "source_end_monotonic_ns": 564502812000000,
-    "source_end_wall_ms": 1784152958837,
-    "source_start_monotonic_ns": 564497578000000,
     "source_start_wall_ms": 1784152953595,
+    "source_end_wall_ms": 1784152958837,
     "source_stream_counts": {
       "binance_spot": 3986,
       "clob_market": 5984,
@@ -14,56 +15,144 @@
     "trials": [
       {
         "coalesce_seconds": 0.1,
-        "database_bytes": 7090176,
-        "maximum_messages_per_chunk": 1024,
-        "mean_messages_per_chunk": 294.11764705882354,
-        "minimum_messages_per_chunk": 1,
         "replay_seconds": 5.342999999993481,
-        "written_chunk_count": 34
+        "written_chunk_count": 34,
+        "mean_messages_per_chunk": 294.11764705882354,
+        "database_bytes": 7090176
       },
       {
         "coalesce_seconds": 0.5,
-        "database_bytes": 7352320,
-        "maximum_messages_per_chunk": 1024,
-        "mean_messages_per_chunk": 769.2307692307693,
-        "minimum_messages_per_chunk": 9,
         "replay_seconds": 5.405999999959022,
-        "written_chunk_count": 13
+        "written_chunk_count": 13,
+        "mean_messages_per_chunk": 769.2307692307693,
+        "database_bytes": 7352320
       }
     ]
   },
-  "decision": {
-    "default_queue_capacity_after": 200000,
-    "default_queue_capacity_before": 100000,
-    "payload_hash_or_order_change": false,
-    "selected_coalesce_seconds": 0.5,
-    "storage_schema_change": false
+  "bounded_identical_payload_write_benchmark": {
+    "message_count_per_trial": 32768,
+    "source_database": "data/polymarket-round9-confirmation-20260715-212908.duckdb",
+    "source_database_bytes": 6125268992,
+    "source_run_id": "eae374e2662c440fb93970d5710937b1",
+    "source_run_confirmation_eligible": false,
+    "measurement_boundary": "source decoding and integrity audit excluded from write_seconds",
+    "samples": [
+      {
+        "name": "initial_persisted_messages",
+        "first_received_wall_ms": 1784143751275,
+        "last_received_wall_ms": 1784143788766,
+        "raw_payload_bytes": 12949933,
+        "stream_counts": {
+          "binance_spot": 17472,
+          "clob_market": 15066,
+          "clob_rest_book": 6,
+          "polymarket_rtds": 224
+        },
+        "speedup": 1.1268449115715786,
+        "trials": [
+          {
+            "name": "prior_cadence",
+            "append_batch_size": 1024,
+            "transaction_count": 32,
+            "write_seconds": 2.245063600013964,
+            "messages_per_second": 14595.57760403589,
+            "database_bytes": 26488832,
+            "integrity_errors": []
+          },
+          {
+            "name": "grouped_cadence",
+            "append_batch_size": 8192,
+            "transaction_count": 4,
+            "write_seconds": 1.9923448000336066,
+            "messages_per_second": 16446.952354555935,
+            "database_bytes": 28323840,
+            "integrity_errors": []
+          }
+        ]
+      },
+      {
+        "name": "terminal_persisted_messages",
+        "first_received_wall_ms": 1784152929220,
+        "last_received_wall_ms": 1784152958837,
+        "raw_payload_bytes": 15890872,
+        "stream_counts": {
+          "binance_spot": 12681,
+          "clob_market": 19967,
+          "polymarket_rtds": 120
+        },
+        "speedup": 1.0979893915494015,
+        "trials": [
+          {
+            "name": "prior_cadence",
+            "append_batch_size": 1024,
+            "transaction_count": 32,
+            "write_seconds": 2.2631450999761,
+            "messages_per_second": 14478.96557774667,
+            "database_bytes": 26488832,
+            "integrity_errors": []
+          },
+          {
+            "name": "grouped_cadence",
+            "append_batch_size": 8192,
+            "transaction_count": 4,
+            "write_seconds": 2.0611721000168473,
+            "messages_per_second": 15897.750604974794,
+            "database_bytes": 27799552,
+            "integrity_errors": []
+          }
+        ]
+      }
+    ],
+    "all_trials_persisted_messages": 32768,
+    "all_trials_persisted_chunks": 32,
+    "minimum_messages_per_chunk": 1024,
+    "maximum_messages_per_chunk": 1024,
+    "all_integrity_audits_passed": true
   },
-  "report_sha256": "1b62097bf4cb390bd3bcc9a271a74776625c4905e0e2698f80f70e087225e529",
-  "schema_version": "polymarket-recorder-throughput-benchmark-v1",
-  "source_evidence": {
-    "confirmation_eligible": false,
-    "database_bytes": 6125268992,
-    "persisted_chunk_count": 46532,
-    "persisted_message_count": 10449680,
-    "progress_elapsed_seconds": 9302.802,
-    "progress_observed_at_ms": 1784153052405,
-    "progress_queue_capacity": 100000,
-    "progress_queue_high_watermark": 100000,
-    "progress_queue_size": 92011,
-    "progress_received_message_count": 10536544,
-    "progress_written_gap_count": 66,
-    "progress_written_message_count": 10443536,
-    "raw_compressed_bytes": 550648134,
-    "raw_compression_ratio": 0.1037570600008032,
-    "raw_uncompressed_bytes": 5307090756,
-    "recorder_row_status": "running_without_terminal_report_after_interruption",
-    "run_id": "eae374e2662c440fb93970d5710937b1"
+  "failed_live_capture_observations": [
+    {
+      "database": "data/polymarket-round9-confirmation-20260715-212908.duckdb",
+      "run_id": "eae374e2662c440fb93970d5710937b1",
+      "reason": "queue_saturated_then_process_interrupted_without_terminal_report",
+      "confirmation_eligible": false
+    },
+    {
+      "database": "data/polymarket-round9-confirmation2-20260715-221648.duckdb",
+      "run_id": "3a67757c7f174df4b62f2722ea9211cb",
+      "elapsed_seconds": 7621.267,
+      "received_message_count": 8991907,
+      "written_message_count": 8793489,
+      "queue_capacity": 200000,
+      "queue_high_watermark": 200000,
+      "queue_size_at_stop": 197421,
+      "written_gap_count": 25,
+      "reason": "queue_saturated_then_process_interrupted_without_terminal_report",
+      "confirmation_eligible": false
+    }
+  ],
+  "decision": {
+    "writer_batch_size_before": 1024,
+    "writer_batch_size_after": 8192,
+    "raw_storage_chunk_limit_before": 1024,
+    "raw_storage_chunk_limit_after": 1024,
+    "default_queue_capacity_before": 200000,
+    "default_queue_capacity_after": 500000,
+    "maximum_configurable_queue_capacity_before": 200000,
+    "maximum_configurable_queue_capacity_after": 1000000,
+    "multi_chunk_commit_atomic": true,
+    "chunk_index_cache_restored_on_rollback": true,
+    "queue_saturation_remains_terminal": true,
+    "payload_hash_or_order_change": false,
+    "storage_schema_change": false,
+    "long_live_validation_required": true
   },
   "truth_constraints": {
     "financial_edge_claim": false,
     "model_evidence": false,
-    "synthetic_market_data": false,
-    "trading_authority": false
-  }
+    "synthetic_market_payloads": false,
+    "trading_authority": false,
+    "bounded_benchmark_proves_long_duration_capture": false,
+    "failed_capture_can_support_confirmation": false
+  },
+  "report_sha256": "164eee073d9e5394b2c7ed5fb97c6ec556cd84bddd1433b7403d9e9e3c2c4f4e"
 }

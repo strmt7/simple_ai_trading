@@ -17,6 +17,7 @@ import random
 import shutil
 from typing import Any
 
+from .ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
 from .ai_uplift import assess_ai_uplift
 from .polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
@@ -1662,7 +1663,7 @@ def _validate_ai_evidence(
         or not _is_sha256(veto.get("risk_benchmark_evidence_sha256"))
         or veto.get("risk_benchmark_evidence_sha256") != benchmark.get("sha256")
         or benchmark.get("selected_model") != model_name
-        or not str(benchmark.get("contract", ""))
+        or benchmark.get("contract") != AI_MODEL_BENCHMARK_CONTRACT
         or not str(benchmark.get("path", ""))
         or model_provenance.get("model") != model_name
         or model_provenance.get("benchmark_sha256") != benchmark.get("sha256")
