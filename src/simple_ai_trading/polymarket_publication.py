@@ -49,7 +49,7 @@ _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
-_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v3"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v4"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "profile_model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
@@ -1224,6 +1224,17 @@ def _strict_ai_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]
     return parsed
 
 
+def _ai_action_reasons_coherent(action: str, codes: Sequence[str]) -> bool:
+    selected = set(codes)
+    if action == "approve":
+        return selected == {"edge_after_fees"}
+    if action == "cooldown":
+        return "cooldown_required" in selected
+    if action == "veto":
+        return bool(selected - {"edge_after_fees"})
+    return False
+
+
 def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
     if not isinstance(response, Mapping):
         return None
@@ -1258,7 +1269,7 @@ def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
         or not 1 <= len(raw_codes) <= 4
     ):
         return None
-    action = raw_action.strip().lower()
+    action = raw_action
     confidence = float(raw_confidence)
     codes = tuple(dict.fromkeys(raw_codes))
     summary = raw_summary.strip()
@@ -1268,6 +1279,7 @@ def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
         or not 0.0 <= confidence <= 1.0
         or len(codes) != len(raw_codes)
         or any(code not in _AI_REASON_CODES for code in codes)
+        or not _ai_action_reasons_coherent(action, codes)
         or not summary
         or len(summary) > 180
     ):
@@ -1770,8 +1782,10 @@ def _validate_ai_evidence(
             or not 0.0 <= confidence <= 1.0
             or not isinstance(reason_codes, list)
             or not 1 <= len(reason_codes) <= 4
+            or any(not isinstance(code, str) for code in reason_codes)
             or len(set(reason_codes)) != len(reason_codes)
             or any(code not in _AI_REASON_CODES for code in reason_codes)
+            or (valid and not _ai_action_reasons_coherent(action, reason_codes))
             or not isinstance(valid, bool)
             or not isinstance(permits, bool)
             or permits is not (valid and action == "approve")
