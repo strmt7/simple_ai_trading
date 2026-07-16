@@ -21,7 +21,11 @@ from simple_ai_trading.ai_runtime import (
     detect_ai_capabilities,
     estimate_model_parameters_b,
 )
-from simple_ai_trading.command_contract import command_names, command_specs
+from simple_ai_trading.command_contract import (
+    command_names,
+    command_specs,
+    workflow_commands,
+)
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading import windows_app
 from simple_ai_trading.windows_app import WINDOWS_APP_COMMANDS
@@ -343,6 +347,26 @@ def test_windows_app_commands_match_cli_contract() -> None:
     assert "model-lab" in WINDOWS_APP_COMMANDS
 
 
+def test_windows_workflow_taxonomy_is_complete_unique_and_model_first() -> None:
+    workflow = workflow_commands()
+    names = tuple(item.name for item in workflow)
+
+    assert len(names) == len(set(names))
+    assert set(names) == set(command_names())
+    assert [item.name for item in workflow if item.group == "Polymarket models"] == [
+        "polymarket-model",
+        "polymarket-ridge",
+        "polymarket-mlp",
+        "polymarket-verify",
+        "polymarket-publish",
+    ]
+    assert [item.name for item in workflow if item.group == "AI validation"] == [
+        "ai-benchmark",
+        "ai-forecast-benchmark",
+        "ai-review",
+    ]
+
+
 def test_windows_launcher_reports_missing_native_executable(
     monkeypatch, capsys
 ) -> None:
@@ -388,6 +412,8 @@ def test_generated_native_contract_matches_cli() -> None:
         / "command_contract.hpp"
     )
     text = header.read_text(encoding="utf-8")
+    for item in workflow_commands():
+        assert f"{{{_wide(item.page)}, {_wide(item.group)}, {_wide(item.name)}}}" in text
     for spec in command_specs():
         option_count = len(spec.options) + len(spec.positionals)
         array_name = (

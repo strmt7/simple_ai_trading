@@ -176,9 +176,19 @@ try {
         if ($count -le 0) { throw "Page $page has no generated command entries" }
     }
 
+    Select-Page $window $pageList 2
+    $researchCombo = Get-Control $window $CommandComboId
+    foreach ($modelCommand in @(
+        "Polymarket models / polymarket-ridge",
+        "Polymarket models / polymarket-mlp",
+        "AI validation / ai-benchmark"
+    )) {
+        Select-Combo $window $researchCombo $CommandComboId $modelCommand
+    }
+
     Select-Page $window $pageList 5
     $commandCombo = Get-Control $window $CommandComboId
-    Select-Combo $window $commandCombo $CommandComboId "System / status"
+    Select-Combo $window $commandCombo $CommandComboId "Runtime health / status"
     Click-Control (Get-Control $window $RunId)
     Assert-OutputContains $output "dry-run: simple-ai-trading status" 5000
 

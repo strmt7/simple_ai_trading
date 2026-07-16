@@ -28,7 +28,7 @@ agents to canonical evidence without replacing that evidence.
 | Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md` or `docs/POLYMARKET_PAPER_TRADING.md` only at the relevant heading |
 | AI provider/model | nearest AI module and test | `docs/ai/risk-review/latest/comparison.json` and its sibling provenance |
 | CLI | command handler, parser definition, and CLI tests | parser-generated help; do not infer parity from docs |
-| Windows app | `src/simple_ai_trading/windows_app.py` and its UI/parity tests | `native/windows/generated/command_contract.hpp` and `tests/test_ai_runtime_and_parity.py` |
+| Windows app | `src/simple_ai_trading/command_contract.py`, `src/simple_ai_trading/windows_app.py`, and the UI/parity tests | `native/windows/generated/command_contract.hpp` and `tests/test_ai_runtime_and_parity.py`; edit the shared taxonomy, never the generated header |
 | CI/release | one workflow and its test/lint config | `docs/AGENT_WORKFLOWS.md` |
 | Broad architecture | `docs/SIMILAR_TRADING_REPOS_REVIEW.md` | source and tests for each affected boundary |
 

@@ -41,6 +41,149 @@ class CommandSpec:
         }
 
 
+@dataclass(frozen=True)
+class WorkflowCommand:
+    """One CLI command's single, deliberate location in the operator workflow."""
+
+    page: str
+    group: str
+    name: str
+
+    def asdict(self) -> dict[str, str]:
+        return asdict(self)
+
+
+# This is the only command taxonomy consumed by the native Windows app. Every
+# CLI command must occur exactly once so additions cannot silently disappear
+# into an alphabetized expert-only menu.
+_WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    (
+        "Trading",
+        "Run and control",
+        ("autonomous", "live", "coordinator"),
+    ),
+    (
+        "Trading",
+        "Connectivity and ownership",
+        ("connect", "positions", "reconcile", "close"),
+    ),
+    (
+        "Trading",
+        "Execution diagnostics",
+        ("spot-roundtrip", "polymarket-paper"),
+    ),
+    (
+        "Research",
+        "Polymarket evidence",
+        (
+            "polymarket-continuity",
+            "polymarket-features",
+            "polymarket-action-value",
+        ),
+    ),
+    (
+        "Research",
+        "Polymarket models",
+        (
+            "polymarket-model",
+            "polymarket-ridge",
+            "polymarket-mlp",
+            "polymarket-verify",
+            "polymarket-publish",
+        ),
+    ),
+    (
+        "Research",
+        "AI validation",
+        ("ai-benchmark", "ai-forecast-benchmark", "ai-review"),
+    ),
+    (
+        "Research",
+        "Microstructure models",
+        (
+            "model-blueprint",
+            "microstructure-train",
+            "microstructure-refit",
+            "microstructure-prequential",
+            "microstructure-promote",
+            "microstructure-shadow",
+        ),
+    ),
+    (
+        "Research",
+        "Tape and depth models",
+        (
+            "tape-depth-design",
+            "tape-depth-study",
+            "tape-depth-train",
+            "tape-depth-prequential",
+            "tape-depth-select",
+            "tape-depth-confirm",
+            "tape-depth-execution-confirm",
+        ),
+    ),
+    (
+        "Research",
+        "Portfolio research",
+        (
+            "model-lab",
+            "prepare",
+            "train",
+            "train-suite",
+            "tune",
+            "evaluate",
+            "backtest",
+            "backtest-panel",
+            "backtest-chart",
+            "objectives",
+            "signals-benchmark",
+        ),
+    ),
+    (
+        "Risk",
+        "Exposure and eligibility",
+        ("risk", "universe"),
+    ),
+    (
+        "Risk",
+        "Evidence and reporting",
+        ("audit", "report", "signals", "source-grades"),
+    ),
+    (
+        "Data",
+        "Market data",
+        (
+            "fetch",
+            "data-sync",
+            "archive-sync",
+            "tick-archive-sync",
+            "microstructure-capture",
+            "polymarket-record",
+        ),
+    ),
+    (
+        "Data",
+        "Integrity and outcomes",
+        ("data-health", "tick-corpus-audit", "polymarket-resolve"),
+    ),
+    (
+        "System",
+        "Runtime health",
+        ("status", "doctor", "compute", "api-budget"),
+    ),
+    (
+        "Settings",
+        "Operator settings",
+        ("configure", "strategy", "ai"),
+    ),
+    (
+        "Settings",
+        "Expert tools",
+        ("menu", "shell"),
+    ),
+)
+
+
 def _is_subparsers(action: argparse.Action) -> bool:
     return isinstance(action, argparse._SubParsersAction)  # noqa: SLF001 - argparse exposes no public marker
 
@@ -105,3 +248,27 @@ def command_specs() -> tuple[CommandSpec, ...]:
 
 def command_names() -> tuple[str, ...]:
     return tuple(spec.name for spec in command_specs())
+
+
+def workflow_commands() -> tuple[WorkflowCommand, ...]:
+    """Return a complete one-to-one CLI/UI taxonomy, failing closed on drift."""
+
+    items = tuple(
+        WorkflowCommand(page=page, group=group, name=name)
+        for page, group, names in _WORKFLOW_GROUPS
+        for name in names
+    )
+    cli_names = command_names()
+    configured_names = tuple(item.name for item in items)
+    counts: dict[str, int] = {}
+    for name in configured_names:
+        counts[name] = counts.get(name, 0) + 1
+    duplicates = sorted(name for name, count in counts.items() if count > 1)
+    missing = sorted(set(cli_names) - set(configured_names))
+    stale = sorted(set(configured_names) - set(cli_names))
+    if duplicates or missing or stale:
+        raise RuntimeError(
+            "CLI/Windows workflow contract drift: "
+            f"duplicates={duplicates}, missing={missing}, stale={stale}"
+        )
+    return items

@@ -21,6 +21,12 @@ struct CommandSpec {
     int option_count;
 };
 
+struct WorkflowCommandSpec {
+    const wchar_t* page;
+    const wchar_t* group;
+    const wchar_t* command;
+};
+
 inline constexpr CommandOptionSpec kOptions_ai[] = {
     {L"--enable", L"enable", L"", L"", L"enable AI decision features", L"0", false, false, false},
     {L"--disable", L"disable", L"", L"", L"disable AI decision features", L"0", false, false, false},
@@ -983,5 +989,77 @@ inline constexpr CommandSpec kCommands[] = {
     {L"universe", L"usage: simple-ai-trading universe [-h] [--symbols SYMBOLS] [--json]", kOptions_universe, 2},
 };
 inline constexpr int kCommandCount = static_cast<int>(sizeof(kCommands) / sizeof(kCommands[0]));
+
+inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
+    {L"Trading", L"Run and control", L"autonomous"},
+    {L"Trading", L"Run and control", L"live"},
+    {L"Trading", L"Run and control", L"coordinator"},
+    {L"Trading", L"Connectivity and ownership", L"connect"},
+    {L"Trading", L"Connectivity and ownership", L"positions"},
+    {L"Trading", L"Connectivity and ownership", L"reconcile"},
+    {L"Trading", L"Connectivity and ownership", L"close"},
+    {L"Trading", L"Execution diagnostics", L"spot-roundtrip"},
+    {L"Trading", L"Execution diagnostics", L"polymarket-paper"},
+    {L"Research", L"Polymarket evidence", L"polymarket-continuity"},
+    {L"Research", L"Polymarket evidence", L"polymarket-features"},
+    {L"Research", L"Polymarket evidence", L"polymarket-action-value"},
+    {L"Research", L"Polymarket models", L"polymarket-model"},
+    {L"Research", L"Polymarket models", L"polymarket-ridge"},
+    {L"Research", L"Polymarket models", L"polymarket-mlp"},
+    {L"Research", L"Polymarket models", L"polymarket-verify"},
+    {L"Research", L"Polymarket models", L"polymarket-publish"},
+    {L"Research", L"AI validation", L"ai-benchmark"},
+    {L"Research", L"AI validation", L"ai-forecast-benchmark"},
+    {L"Research", L"AI validation", L"ai-review"},
+    {L"Research", L"Microstructure models", L"model-blueprint"},
+    {L"Research", L"Microstructure models", L"microstructure-train"},
+    {L"Research", L"Microstructure models", L"microstructure-refit"},
+    {L"Research", L"Microstructure models", L"microstructure-prequential"},
+    {L"Research", L"Microstructure models", L"microstructure-promote"},
+    {L"Research", L"Microstructure models", L"microstructure-shadow"},
+    {L"Research", L"Tape and depth models", L"tape-depth-design"},
+    {L"Research", L"Tape and depth models", L"tape-depth-study"},
+    {L"Research", L"Tape and depth models", L"tape-depth-train"},
+    {L"Research", L"Tape and depth models", L"tape-depth-prequential"},
+    {L"Research", L"Tape and depth models", L"tape-depth-select"},
+    {L"Research", L"Tape and depth models", L"tape-depth-confirm"},
+    {L"Research", L"Tape and depth models", L"tape-depth-execution-confirm"},
+    {L"Research", L"Portfolio research", L"model-lab"},
+    {L"Research", L"Portfolio research", L"prepare"},
+    {L"Research", L"Portfolio research", L"train"},
+    {L"Research", L"Portfolio research", L"train-suite"},
+    {L"Research", L"Portfolio research", L"tune"},
+    {L"Research", L"Portfolio research", L"evaluate"},
+    {L"Research", L"Portfolio research", L"backtest"},
+    {L"Research", L"Portfolio research", L"backtest-panel"},
+    {L"Research", L"Portfolio research", L"backtest-chart"},
+    {L"Research", L"Portfolio research", L"objectives"},
+    {L"Research", L"Portfolio research", L"signals-benchmark"},
+    {L"Risk", L"Exposure and eligibility", L"risk"},
+    {L"Risk", L"Exposure and eligibility", L"universe"},
+    {L"Risk", L"Evidence and reporting", L"audit"},
+    {L"Risk", L"Evidence and reporting", L"report"},
+    {L"Risk", L"Evidence and reporting", L"signals"},
+    {L"Risk", L"Evidence and reporting", L"source-grades"},
+    {L"Data", L"Market data", L"fetch"},
+    {L"Data", L"Market data", L"data-sync"},
+    {L"Data", L"Market data", L"archive-sync"},
+    {L"Data", L"Market data", L"tick-archive-sync"},
+    {L"Data", L"Market data", L"microstructure-capture"},
+    {L"Data", L"Market data", L"polymarket-record"},
+    {L"Data", L"Integrity and outcomes", L"data-health"},
+    {L"Data", L"Integrity and outcomes", L"tick-corpus-audit"},
+    {L"Data", L"Integrity and outcomes", L"polymarket-resolve"},
+    {L"System", L"Runtime health", L"status"},
+    {L"System", L"Runtime health", L"doctor"},
+    {L"System", L"Runtime health", L"compute"},
+    {L"System", L"Runtime health", L"api-budget"},
+    {L"Settings", L"Operator settings", L"configure"},
+    {L"Settings", L"Operator settings", L"strategy"},
+    {L"Settings", L"Operator settings", L"ai"},
+    {L"Settings", L"Expert tools", L"menu"},
+    {L"Settings", L"Expert tools", L"shell"},
+};
+inline constexpr int kWorkflowCommandCount = static_cast<int>(sizeof(kWorkflowCommands) / sizeof(kWorkflowCommands[0]));
 
 } // namespace simple_ai_trading::native_contract
