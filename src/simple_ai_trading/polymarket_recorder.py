@@ -5531,28 +5531,18 @@ class PolymarketPublicRecorder:
                         if heartbeat is not None
                         else None
                     )
+                    receive = asyncio.create_task(websocket.recv())
+                    stopping = asyncio.create_task(stop.wait())
                     try:
                         while not stop.is_set():
-                            receive = asyncio.create_task(websocket.recv())
-                            stopping = asyncio.create_task(stop.wait())
-                            transient = (receive, stopping)
-                            watched: set[asyncio.Task[object]] = set(transient)
+                            watched: set[asyncio.Task[object]] = {receive, stopping}
                             if heartbeat_task is not None:
                                 watched.add(heartbeat_task)
-                            try:
-                                done, _ = await asyncio.wait(
-                                    watched,
-                                    timeout=_STREAM_INACTIVITY_SECONDS,
-                                    return_when=asyncio.FIRST_COMPLETED,
-                                )
-                            finally:
-                                for task in transient:
-                                    if not task.done():
-                                        task.cancel()
-                                await asyncio.gather(
-                                    *transient,
-                                    return_exceptions=True,
-                                )
+                            done, _ = await asyncio.wait(
+                                watched,
+                                timeout=_STREAM_INACTIVITY_SECONDS,
+                                return_when=asyncio.FIRST_COMPLETED,
+                            )
                             if not done:
                                 raise RuntimeError(
                                     f"{stream} exceeded the inactivity bound"
@@ -5581,10 +5571,15 @@ class PolymarketPublicRecorder:
                             sequence = next_sequence
                             if text == "PING":
                                 await websocket.send("PONG")
+                            receive = asyncio.create_task(websocket.recv())
                     finally:
+                        tasks = [receive, stopping]
                         if heartbeat_task is not None:
-                            heartbeat_task.cancel()
-                            await asyncio.gather(heartbeat_task, return_exceptions=True)
+                            tasks.append(heartbeat_task)
+                        for task in tasks:
+                            if not task.done():
+                                task.cancel()
+                        await asyncio.gather(*tasks, return_exceptions=True)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
