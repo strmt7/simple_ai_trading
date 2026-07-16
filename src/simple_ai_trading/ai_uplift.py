@@ -153,7 +153,7 @@ class AIUpliftReport:
     evidence_binding: dict[str, object]
     reasons: tuple[str, ...] = field(default_factory=tuple)
     policy: dict[str, object] = field(default_factory=dict)
-    schema_version: str = "ai-uplift-v3"
+    schema_version: str = "ai-uplift-v4"
     trading_authority: bool = False
     profitability_claim: bool = False
 
@@ -400,6 +400,7 @@ def _moving_block_bootstrap(
     for value in deltas:
         prefix.append(prefix[-1] + value)
     complete_blocks, remainder = divmod(count, block_length)
+    remainder_maximum_start = max(0, count - remainder) if remainder else 0
     means: list[float] = []
     for _ in range(repetitions):
         block_totals: list[float] = []
@@ -407,7 +408,11 @@ def _moving_block_bootstrap(
             start = rng.randint(0, maximum_start) if maximum_start else 0
             block_totals.append(prefix[start + block_length] - prefix[start])
         if remainder:
-            start = rng.randint(0, maximum_start) if maximum_start else 0
+            start = (
+                rng.randint(0, remainder_maximum_start)
+                if remainder_maximum_start
+                else 0
+            )
             block_totals.append(prefix[start + remainder] - prefix[start])
         means.append(math.fsum(block_totals) / count)
     tail = (1.0 - confidence_level) / 2.0
