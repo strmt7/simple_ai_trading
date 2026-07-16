@@ -306,14 +306,48 @@ def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
     probability = max(0.0, min(1.0, float(p)))
     if n <= 0:
         return 1.0
-    total = 0.0
-    for hits in range(k, n + 1):
-        total += (
-            math.comb(n, hits)
-            * (probability**hits)
-            * ((1.0 - probability) ** (n - hits))
+    if k <= 0 or probability >= 1.0:
+        return 1.0
+    if probability <= 0.0:
+        return 0.0
+    if k == n:
+        return probability**n
+
+    def interval_probability(start: int, end: int) -> float:
+        log_probability = math.log(probability)
+        log_complement = math.log1p(-probability)
+        hits = start
+        log_term = (
+            math.lgamma(n + 1)
+            - math.lgamma(hits + 1)
+            - math.lgamma(n - hits + 1)
+            + hits * log_probability
+            + (n - hits) * log_complement
         )
-    return max(0.0, min(1.0, total))
+        log_total = -math.inf
+        while hits <= end:
+            if log_total == -math.inf:
+                log_total = log_term
+            else:
+                upper = max(log_total, log_term)
+                lower = min(log_total, log_term)
+                log_total = upper + math.log1p(math.exp(lower - upper))
+            if hits < end:
+                log_term += (
+                    math.log(n - hits)
+                    - math.log(hits + 1)
+                    + log_probability
+                    - log_complement
+                )
+            hits += 1
+        return math.exp(log_total)
+
+    mode = int(math.floor((n + 1) * probability))
+    if k <= mode:
+        tail = 1.0 - interval_probability(0, k - 1)
+    else:
+        tail = interval_probability(k, n)
+    return max(0.0, min(1.0, tail))
 
 
 def _median(values: tuple[float, ...]) -> float:
@@ -362,13 +396,20 @@ def _moving_block_bootstrap(
     maximum_start = max(0, count - block_length)
     seed = int(hashlib.sha256(seed_material.encode("ascii")).hexdigest()[:16], 16)
     rng = random.Random(seed)
+    prefix = [0.0]
+    for value in deltas:
+        prefix.append(prefix[-1] + value)
+    complete_blocks, remainder = divmod(count, block_length)
     means: list[float] = []
     for _ in range(repetitions):
-        sample: list[float] = []
-        while len(sample) < count:
+        block_totals: list[float] = []
+        for _block in range(complete_blocks):
             start = rng.randint(0, maximum_start) if maximum_start else 0
-            sample.extend(deltas[start : start + block_length])
-        means.append(sum(sample[:count]) / count)
+            block_totals.append(prefix[start + block_length] - prefix[start])
+        if remainder:
+            start = rng.randint(0, maximum_start) if maximum_start else 0
+            block_totals.append(prefix[start + remainder] - prefix[start])
+        means.append(math.fsum(block_totals) / count)
     tail = (1.0 - confidence_level) / 2.0
     return {
         "samples": repetitions,

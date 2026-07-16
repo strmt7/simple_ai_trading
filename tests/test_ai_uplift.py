@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from simple_ai_trading.ai_uplift import AIUpliftPolicy, assess_ai_uplift
+from simple_ai_trading.ai_uplift import (
+    AIUpliftPolicy,
+    _binomial_upper_tail,
+    _moving_block_bootstrap,
+    assess_ai_uplift,
+)
 from simple_ai_trading.ai_runtime import estimate_model_parameters_b
 
 
@@ -54,6 +59,22 @@ def test_estimate_model_parameters_from_local_model_names() -> None:
     assert estimate_model_parameters_b("qwen2.5:7b") == 7.0
     assert estimate_model_parameters_b("tiny-560m") == 0.56
     assert estimate_model_parameters_b("operator-selected-local-llm") is None
+
+
+def test_ai_uplift_statistics_scale_to_ninety_days_of_five_minute_periods() -> None:
+    period_count = 90 * 24 * 12
+    p_value = _binomial_upper_tail(period_count, 14_256)
+    bootstrap = _moving_block_bootstrap(
+        tuple(0.0001 if index % 3 else -0.00005 for index in range(period_count)),
+        samples=2_000,
+        confidence=0.95,
+        seed_material="f" * 64,
+    )
+
+    assert p_value == pytest.approx(1.7712369034957107e-58, rel=1e-9)
+    assert bootstrap["samples"] == 2_000
+    assert bootstrap["block_length"] == 161
+    assert bootstrap["mean_delta_ci_lower"] > 0.0
 
 
 def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
