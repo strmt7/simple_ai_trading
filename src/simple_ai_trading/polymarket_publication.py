@@ -3717,13 +3717,24 @@ def _ai_rows(payload: Mapping[str, Any]) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for result in results:
         decision = _as_mapping(result["decision"], "AI decision")
+        usage = _parsed_ai_provider_usage(
+            result.get("response_payload"),
+            model=str(result["model"]),
+        )
         rows.append(
             {
                 "enabled": True,
                 "case_id": result["case_id"],
                 "condition_id": result["condition_id"],
                 "model": result["model"],
+                "inference_latency_seconds": result["inference_latency_seconds"],
+                "queue_delay_seconds": result["queue_delay_seconds"],
                 "latency_seconds": result["latency_seconds"],
+                "provider_telemetry": usage is not None,
+                "prompt_token_count": (
+                    0 if usage is None else usage["prompt_eval_count"]
+                ),
+                "output_token_count": 0 if usage is None else usage["eval_count"],
                 "action": decision["action"],
                 "confidence": decision["confidence"],
                 "valid": decision["valid"],
