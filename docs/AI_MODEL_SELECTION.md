@@ -250,8 +250,9 @@ The CLI freezes the resolved benchmark candidate set and applies this local
 provider/model/GPU gate to every candidate before opening a confirmation
 database. A failed preflight therefore cannot consume a preregistered one-shot
 claim. The same gate runs immediately before an enabled Polymarket AI veto
-ablation; the native Windows AI-off control emits the CLI's canonical
-`--disable-ai` argument for that workflow.
+ablation. The CLI uses an explicit `--enable-ai` or `--disable-ai` override when
+present and otherwise inherits the saved runtime setting; the native Windows
+control emits its visible state explicitly.
 
 AI review v4 queries Ollama `/api/ps` immediately after inference. It binds the
 requested model to one exact SHA-256 weight digest and records model bytes,

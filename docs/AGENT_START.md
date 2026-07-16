@@ -129,8 +129,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   while Ollama remained unloaded; that is capacity evidence, not residency or
   edge evidence.
 - Enabled Polymarket AI also passes the shared local-GPU preflight immediately
-  before provider inference. The native AI-off toggle appends `--disable-ai` to
-  `polymarket-model`; automated UI smoke verifies the emitted command.
+  before provider inference. `polymarket-model` accepts mutually exclusive
+  `--enable-ai` and `--disable-ai` overrides and otherwise inherits the saved
+  runtime setting. The native toggle emits and smoke-tests both explicit states.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
