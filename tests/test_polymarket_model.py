@@ -80,6 +80,7 @@ from simple_ai_trading.polymarket_model_execution import (
 from simple_ai_trading.polymarket_publication import (
     POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
     _ai_case_rows,
+    _execution_uplift_metrics,
     _parsed_valid_ai_response,
     _validate_ai_evidence,
     publish_polymarket_model_artifact,
@@ -2555,6 +2556,59 @@ def test_ai_uplift_periods_use_initial_capital_returns_and_exact_groups() -> Non
         dataset_fingerprint="e" * 64,
     )
     assert metrics["downside_return_risk_ratio"] == pytest.approx(0.5)
+
+
+@pytest.mark.parametrize(
+    ("values", "expected"),
+    [
+        (("5",), 999.0),
+        (("1000", "-1"), 999.0),
+        (("5", "-2"), 2.5),
+        ((), 0.0),
+    ],
+)
+def test_ai_uplift_profit_factor_is_dimensionless_and_bounded(
+    values: tuple[str, ...],
+    expected: float,
+) -> None:
+    source_report = SimpleNamespace(
+        trades=tuple(
+            SimpleNamespace(filled=True, realized_pnl_quote=Decimal(value))
+            for value in values
+        ),
+        maximum_drawdown_fraction=Decimal("0"),
+        net_realized_pnl_quote=sum(
+            (Decimal(value) for value in values),
+            Decimal("0"),
+        ),
+        return_on_initial_capital=Decimal("0"),
+        report_sha256="f" * 64,
+    )
+    publication_report = {
+        "trades": [
+            {
+                "execution_state": "FILLED",
+                "realized_pnl_quote": value,
+            }
+            for value in values
+        ],
+        "maximum_drawdown_fraction": "0",
+        "net_realized_pnl_quote": str(source_report.net_realized_pnl_quote),
+        "return_on_initial_capital": "0",
+        "report_sha256": "f" * 64,
+    }
+
+    source_metrics = _polymarket_execution_uplift_metrics(
+        source_report,
+        dataset_fingerprint="e" * 64,
+    )
+    reconstructed_metrics = _execution_uplift_metrics(
+        publication_report,
+        dataset_fingerprint="e" * 64,
+    )
+
+    assert source_metrics["profit_factor"] == pytest.approx(expected)
+    assert reconstructed_metrics == source_metrics
 
 
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
