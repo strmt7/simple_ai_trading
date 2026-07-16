@@ -9,6 +9,7 @@ import pytest
 
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
+    AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT,
     _result_from_case_results,
     default_finance_ai_test_cases,
     rescore_finance_ai_benchmark_payload,
@@ -20,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "ai" / "risk-review" / "latest"
 REPORT_PATH = LATEST / "comparison.json"
 QWEN3_14B_PREREGISTRATION = (
-    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v8-preregistration.json"
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v9-preregistration.json"
 )
 
 
@@ -52,7 +53,7 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
 
     assert preregistration["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
     assert preregistration["schema_version"] == (
-        "finance-risk-review-candidate-preregistration-v3"
+        "finance-risk-review-candidate-preregistration-v4"
     )
     assert preregistration["benchmark_source_sha256"] == _sha256(source)
     assert preregistration["test_suite_sha256"] == _canonical_sha256(suite)
@@ -72,6 +73,26 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
     assert (
         preregistration["frozen_run"]["gaps_inside_eligible_windows_allowed"] is False
     )  # type: ignore[index]
+    assert preregistration["frozen_run"]["required_provider_response_contract"] == (  # type: ignore[index]
+        AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
+    )
+    assert preregistration["frozen_run"]["exact_returned_model_required"] is True  # type: ignore[index]
+    assert preregistration["frozen_run"]["terminal_stop_required"] is True  # type: ignore[index]
+    assert (
+        preregistration["frozen_run"][  # type: ignore[index]
+            "positive_prompt_and_output_token_counts_required"
+        ]
+        is True
+    )
+
+
+def test_ai_benchmark_hash_inputs_have_cross_platform_line_endings() -> None:
+    attributes = set(
+        (ROOT / ".gitattributes").read_text(encoding="utf-8").splitlines()
+    )
+
+    assert "docs/ai/risk-review/** text eol=lf" in attributes
+    assert "src/simple_ai_trading/ai_model_benchmark.py text eol=lf" in attributes
 
 
 def test_tracked_v7_ai_benchmark_is_historical_rejected_evidence() -> None:

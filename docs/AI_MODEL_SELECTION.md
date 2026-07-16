@@ -142,10 +142,13 @@ SHA-256 for every prompt. Qwen3 8B reached `9/11` actions (score `0.886818`, mea
 latency `2.95173s`). Fin-R1 8B, Qwen3.5 9B, and Fino1 8B each reached `8/11` and
 also failed semantic or risk-range checks. V7 is historical-only because its
 response parser accepted wrapped JSON, duplicate keys, type coercion, missing
-fields, and clamped out-of-range values. V8 preserves the 11 label-free prompts
-but requires one exact top-level object with exact fields, types, enums, finite
-ranges, and no duplicate keys. Qwen3 14B is preregistered for one v8 run only
-after a post-contract storage-v4 capture spans at least 15 hours and passes the
+fields, and clamped out-of-range values. V8 added an exact top-level response
+parser but did not bind completion and usage telemetry; it was revoked before
+Qwen3 14B was installed or run. V9 preserves the 11 label-free prompts and score
+contract while requiring exact fields, types, enums, finite ranges, no duplicate
+keys, the exact returned model, terminal `stop`, and positive coherent provider
+token and duration telemetry. Qwen3 14B is preregistered for one v9 run only after
+a post-contract storage-v4 capture spans at least 15 hours and passes the
 label-free Round 9 continuity gate with at least 30 synchronized BTC/ETH/SOL
 groups. A terminal status of `degraded` is admissible only when every included
 window is gap-free and segment-pure; gaps remain audited exclusions. No local

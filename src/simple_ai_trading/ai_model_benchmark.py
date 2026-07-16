@@ -18,7 +18,9 @@ from .ai_runtime import estimate_model_parameters_b
 from .storage import write_json_atomic
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v8"
+AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v9"
+AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT = "finance-risk-review-ollama-response-v1"
+_PROVIDER_RESPONSE_MAX_BYTES = 256 * 1024
 PostJson = Callable[[str, Mapping[str, object], float], object]
 BenchmarkProgress = Callable[[str, Mapping[str, object]], None]
 
@@ -132,6 +134,11 @@ class AIModelBenchmarkResult:
     passed: bool
     valid_json_cases: int
     action_match_cases: int
+    provider_telemetry_cases: int
+    total_prompt_token_count: int
+    total_output_token_count: int
+    maximum_prompt_token_count: int
+    maximum_output_token_count: int
     average_latency_seconds: float
     failures: tuple[str, ...]
     case_results: tuple[dict[str, object], ...]
@@ -577,21 +584,94 @@ def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> objec
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
-            return json.loads(response.read().decode("utf-8"))
+            encoded = response.read(_PROVIDER_RESPONSE_MAX_BYTES + 1)
+            if len(encoded) > _PROVIDER_RESPONSE_MAX_BYTES:
+                raise ValueError("AI benchmark provider response exceeds size limit")
+            return json.loads(encoded.decode("utf-8"))
     except urllib.error.URLError as exc:
         raise RuntimeError(str(exc)) from exc
 
 
-def _response_text(payload: object) -> str:
+_PROVIDER_USAGE_FIELDS = (
+    "total_duration",
+    "load_duration",
+    "prompt_eval_count",
+    "prompt_eval_duration",
+    "eval_count",
+    "eval_duration",
+)
+
+
+def _canonical_json_bytes(value: object) -> bytes:
+    try:
+        return json.dumps(
+            value,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    except (TypeError, ValueError, UnicodeError) as exc:
+        raise ValueError(
+            "AI benchmark provider response is not canonical JSON"
+        ) from exc
+
+
+def _validated_provider_usage(value: object) -> dict[str, int]:
+    if not isinstance(value, Mapping) or set(value) != set(_PROVIDER_USAGE_FIELDS):
+        raise ValueError("AI benchmark provider usage evidence is invalid")
+    usage: dict[str, int] = {}
+    for field in _PROVIDER_USAGE_FIELDS:
+        raw = value.get(field)
+        if isinstance(raw, bool) or not isinstance(raw, int):
+            raise ValueError("AI benchmark provider usage evidence is invalid")
+        usage[field] = raw
+    measured_duration = (
+        usage["load_duration"] + usage["prompt_eval_duration"] + usage["eval_duration"]
+    )
+    if (
+        usage["total_duration"] <= 0
+        or usage["load_duration"] < 0
+        or usage["prompt_eval_count"] <= 0
+        or usage["prompt_eval_duration"] <= 0
+        or usage["eval_count"] <= 0
+        or usage["eval_duration"] <= 0
+        or measured_duration > usage["total_duration"]
+    ):
+        raise ValueError("AI benchmark provider usage evidence is invalid")
+    return usage
+
+
+def _validated_provider_response(
+    payload: object,
+    *,
+    model: str,
+) -> tuple[str, dict[str, int]]:
+    """Require one exact terminal Ollama chat response with positive usage."""
+
     if not isinstance(payload, Mapping):
-        return ""
+        raise ValueError("AI benchmark provider response is not an object")
+    encoded = _canonical_json_bytes(payload)
     message = payload.get("message")
-    if isinstance(message, Mapping):
-        content = message.get("content")
-        if isinstance(content, str):
-            return content
-    response = payload.get("response")
-    return response if isinstance(response, str) else ""
+    if (
+        len(encoded) > _PROVIDER_RESPONSE_MAX_BYTES
+        or payload.get("model") != model
+        or payload.get("done") is not True
+        or payload.get("done_reason") != "stop"
+        or not isinstance(message, Mapping)
+        or message.get("role") != "assistant"
+        or not isinstance(message.get("content"), str)
+        or not 1 <= len(str(message.get("content"))) <= 16_384
+    ):
+        raise ValueError("AI benchmark provider completion evidence is invalid")
+    usage = _validated_provider_usage(
+        {field: payload.get(field) for field in _PROVIDER_USAGE_FIELDS}
+    )
+    return str(message["content"]), usage
+
+
+def _provider_error(exc: BaseException) -> str:
+    return f"{exc.__class__.__name__}:{exc}"[:500]
 
 
 def _strict_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -693,9 +773,46 @@ def _prompt_sha256(case: FinanceAITestCase) -> str:
     return hashlib.sha256(_prompt(case).encode("utf-8")).hexdigest()
 
 
-def _case_score(
-    case: FinanceAITestCase, parsed: Mapping[str, object] | None, latency_seconds: float
+def _provider_case_evidence(
+    response: Mapping[str, object] | None,
+    usage: Mapping[str, int] | None,
+    error: str,
 ) -> dict[str, object]:
+    payload = None if response is None else dict(response)
+    response_sha256 = ""
+    if payload is not None:
+        try:
+            encoded = _canonical_json_bytes(payload)
+        except ValueError:
+            payload = None
+        else:
+            if len(encoded) > _PROVIDER_RESPONSE_MAX_BYTES:
+                payload = None
+            else:
+                response_sha256 = hashlib.sha256(encoded).hexdigest()
+    return {
+        "provider_response_contract": AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT,
+        "provider_response_payload": payload,
+        "provider_response_sha256": response_sha256,
+        "provider_usage": None if usage is None else dict(usage),
+        "provider_error": str(error),
+    }
+
+
+def _case_score(
+    case: FinanceAITestCase,
+    parsed: Mapping[str, object] | None,
+    latency_seconds: float,
+    *,
+    provider_response: Mapping[str, object] | None = None,
+    provider_usage: Mapping[str, int] | None = None,
+    provider_error: str = "",
+) -> dict[str, object]:
+    provider_evidence = _provider_case_evidence(
+        provider_response,
+        provider_usage,
+        provider_error,
+    )
     validated = _validated_response_mapping(parsed)
     if validated is None:
         return {
@@ -706,6 +823,7 @@ def _case_score(
             "action_match": False,
             "latency_seconds": float(latency_seconds),
             "failure": "invalid_json",
+            **provider_evidence,
         }
     action = str(validated["action"])
     risk_score = float(validated["risk_score"])
@@ -778,6 +896,7 @@ def _case_score(
         "response_sha256": response_sha256,
         "latency_seconds": float(latency_seconds),
         "failure": "; ".join(failures),
+        **provider_evidence,
     }
 
 
@@ -790,9 +909,38 @@ def _result_from_case_results(
     provider_failures: Sequence[str] = (),
 ) -> AIModelBenchmarkResult:
     failures = list(provider_failures)
+    provider_usage: list[dict[str, int]] = []
     for item in case_results:
         if item.get("failure"):
             failures.append(f"{item.get('name')}: {item['failure']}")
+        if item.get("provider_error"):
+            failures.append(
+                f"{item.get('name')}: provider_error={item['provider_error']}"
+            )
+        try:
+            if (
+                item.get("provider_response_contract")
+                != AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
+            ):
+                raise ValueError("provider response contract is invalid")
+            raw_response = item.get("provider_response_payload")
+            if not isinstance(raw_response, Mapping):
+                raise ValueError("provider response payload is missing")
+            if item.get("provider_response_sha256") != _canonical_payload_sha256(
+                raw_response
+            ):
+                raise ValueError("provider response hash is invalid")
+            _response_text, response_usage = _validated_provider_response(
+                raw_response,
+                model=model,
+            )
+            stored_usage = _validated_provider_usage(item.get("provider_usage"))
+            if response_usage != stored_usage or item.get("provider_error"):
+                raise ValueError("provider response usage is inconsistent")
+        except ValueError as exc:
+            failures.append(f"{item.get('name')}: provider_telemetry_invalid={exc}")
+        else:
+            provider_usage.append(response_usage)
     valid_json_cases = sum(1 for item in case_results if item.get("valid_json") is True)
     action_match_cases = sum(
         1 for item in case_results if item.get("action_match") is True
@@ -813,6 +961,7 @@ def _result_from_case_results(
         score >= float(minimum_score)
         and action_match_cases == len(case_results)
         and valid_json_cases == len(case_results)
+        and len(provider_usage) == len(case_results)
         and not failures
     )
     return AIModelBenchmarkResult(
@@ -823,6 +972,21 @@ def _result_from_case_results(
         passed=bool(passed),
         valid_json_cases=int(valid_json_cases),
         action_match_cases=int(action_match_cases),
+        provider_telemetry_cases=len(provider_usage),
+        total_prompt_token_count=sum(
+            int(item["prompt_eval_count"]) for item in provider_usage
+        ),
+        total_output_token_count=sum(
+            int(item["eval_count"]) for item in provider_usage
+        ),
+        maximum_prompt_token_count=max(
+            (int(item["prompt_eval_count"]) for item in provider_usage),
+            default=0,
+        ),
+        maximum_output_token_count=max(
+            (int(item["eval_count"]) for item in provider_usage),
+            default=0,
+        ),
         average_latency_seconds=float(average_latency),
         failures=tuple(dict.fromkeys(failures)),
         case_results=tuple(dict(item) for item in case_results),
@@ -847,15 +1011,7 @@ def _rank_results(
 
 
 def _canonical_payload_sha256(value: object) -> str:
-    return hashlib.sha256(
-        json.dumps(
-            value,
-            ensure_ascii=True,
-            separators=(",", ":"),
-            sort_keys=True,
-            allow_nan=False,
-        ).encode("ascii")
-    ).hexdigest()
+    return hashlib.sha256(_canonical_json_bytes(value)).hexdigest()
 
 
 def rescore_finance_ai_benchmark_payload(
@@ -929,37 +1085,66 @@ def rescore_finance_ai_benchmark_payload(
                 or old_case.get("model_input_sha256") != _prompt_sha256(current)
             ):
                 raise ValueError("AI benchmark source model input changed")
+            if (
+                old_case.get("provider_response_contract")
+                != AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
+            ):
+                raise ValueError("AI benchmark provider response contract changed")
+            raw_response = old_case.get("provider_response_payload")
+            if raw_response is not None and not isinstance(raw_response, Mapping):
+                raise ValueError("AI benchmark provider response evidence is invalid")
+            stored_provider_error = str(old_case.get("provider_error") or "")
+            provider_usage = None
             parsed = None
-            if old_case.get("valid_json") is True:
-                parsed = {
-                    key: old_case.get(key)
-                    for key in (
-                        "action",
-                        "risk_score",
-                        "confidence",
-                        "rationale",
-                        "concerns",
-                        "required_actions",
+            if isinstance(raw_response, Mapping):
+                if old_case.get("provider_response_sha256") != (
+                    _canonical_payload_sha256(raw_response)
+                ):
+                    raise ValueError("AI benchmark provider response hash changed")
+                try:
+                    response_text, provider_usage = _validated_provider_response(
+                        raw_response,
+                        model=model,
                     )
-                }
+                except ValueError as exc:
+                    expected_provider_error = _provider_error(exc)
+                else:
+                    expected_provider_error = ""
+                    parsed = _json_mapping_from_text(response_text)
+            else:
+                expected_provider_error = stored_provider_error
+                if old_case.get("provider_response_sha256") != "":
+                    raise ValueError("AI benchmark provider response hash changed")
+            if not expected_provider_error and stored_provider_error:
+                raise ValueError("AI benchmark provider response status changed")
+            if expected_provider_error != stored_provider_error:
+                raise ValueError("AI benchmark provider response status changed")
             rescored_case = _case_score(
                 current,
                 parsed,
                 float(old_case.get("latency_seconds") or 0.0),
+                provider_response=(
+                    dict(raw_response) if isinstance(raw_response, Mapping) else None
+                ),
+                provider_usage=provider_usage,
+                provider_error=expected_provider_error,
             )
-            if parsed is not None and rescored_case.get(
-                "response_sha256"
-            ) != old_case.get("response_sha256"):
+            if _canonical_payload_sha256(rescored_case) != _canonical_payload_sha256(
+                old_case
+            ):
                 raise ValueError("AI benchmark normalized response hash changed")
             case_results.append(rescored_case)
-        rescored.append(
-            _result_from_case_results(
-                model=model,
-                installed=bool(raw_result.get("installed")),
-                case_results=case_results,
-                minimum_score=minimum_score,
-            )
+        rescored_result = _result_from_case_results(
+            model=model,
+            installed=bool(raw_result.get("installed")),
+            case_results=case_results,
+            minimum_score=minimum_score,
         )
+        if _canonical_payload_sha256(
+            rescored_result.asdict()
+        ) != _canonical_payload_sha256(raw_result):
+            raise ValueError("AI benchmark aggregate evidence changed")
+        rescored.append(rescored_result)
     ranked = _rank_results(rescored)
     selected = next((item.model for item in ranked if item.passed), None)
     return AIModelBenchmarkReport(
@@ -1065,7 +1250,6 @@ def benchmark_finance_ai_models(
                 },
             )
         case_results: list[dict[str, object]] = []
-        provider_failures: list[str] = []
         for case_index, case in enumerate(tests, start=1):
             request = {
                 "model": model,
@@ -1088,13 +1272,29 @@ def benchmark_finance_ai_models(
             }
             started = time.monotonic()
             parsed: Mapping[str, object] | None = None
+            raw_response: Mapping[str, object] | None = None
+            provider_usage: Mapping[str, int] | None = None
+            provider_error = ""
             try:
                 response = post_json(endpoint, request, timeout_seconds)
-                parsed = _json_mapping_from_text(_response_text(response))
+                if isinstance(response, Mapping):
+                    raw_response = dict(response)
+                response_text, provider_usage = _validated_provider_response(
+                    response,
+                    model=model,
+                )
+                parsed = _json_mapping_from_text(response_text)
             except Exception as exc:  # noqa: BLE001 - benchmark records provider failures
-                provider_failures.append(f"{case.name}: provider_error={exc}")
+                provider_error = _provider_error(exc)
             latency = max(0.0, time.monotonic() - started)
-            result = _case_score(case, parsed, latency)
+            result = _case_score(
+                case,
+                parsed,
+                latency,
+                provider_response=raw_response,
+                provider_usage=provider_usage,
+                provider_error=provider_error,
+            )
             case_results.append(result)
             if progress is not None:
                 progress(
@@ -1108,6 +1308,17 @@ def benchmark_finance_ai_models(
                         "case_count": len(tests),
                         "action_match": bool(result.get("action_match")),
                         "latency_seconds": float(result.get("latency_seconds") or 0.0),
+                        "prompt_tokens": (
+                            0
+                            if provider_usage is None
+                            else provider_usage["prompt_eval_count"]
+                        ),
+                        "output_tokens": (
+                            0
+                            if provider_usage is None
+                            else provider_usage["eval_count"]
+                        ),
+                        "provider_telemetry_valid": provider_usage is not None,
                     },
                 )
         model_result = _result_from_case_results(
@@ -1115,7 +1326,6 @@ def benchmark_finance_ai_models(
             installed=model.lower() in installed_set,
             case_results=case_results,
             minimum_score=minimum_score,
-            provider_failures=provider_failures,
         )
         results.append(model_result)
         if progress is not None:
@@ -1127,6 +1337,8 @@ def benchmark_finance_ai_models(
                     "model_count": len(selected_models),
                     "passed": model_result.passed,
                     "score": model_result.score,
+                    "prompt_tokens": model_result.total_prompt_token_count,
+                    "output_tokens": model_result.total_output_token_count,
                 },
             )
     ranked = _rank_results(results)
@@ -1152,6 +1364,8 @@ def write_benchmark_report(
 
 
 __all__ = [
+    "AI_MODEL_BENCHMARK_CONTRACT",
+    "AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT",
     "AIModelBenchmarkReport",
     "AIModelBenchmarkResult",
     "FinanceAIModelCandidate",

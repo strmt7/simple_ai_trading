@@ -1,5 +1,7 @@
 # Hash-bound evidence must retain the exact bytes recorded in its manifest.
 docs/ai/foundation/latest/* text eol=lf
+docs/ai/risk-review/** text eol=lf
+src/simple_ai_trading/ai_model_benchmark.py text eol=lf
 docs/microstructure/availability.json text eol=lf
 docs/model-research/tape-depth/**/*.json text eol=lf
 docs/model-research/tape-depth/**/*.csv text eol=lf

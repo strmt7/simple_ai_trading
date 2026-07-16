@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 
 from .ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
+    AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT,
     AIModelBenchmarkReport,
     default_finance_ai_test_cases,
     rescore_finance_ai_benchmark_payload,
@@ -32,7 +33,7 @@ from .storage import write_json_atomic
 
 AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v2"
 AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION = (
-    "finance-risk-review-candidate-preregistration-v3"
+    "finance-risk-review-candidate-preregistration-v4"
 )
 AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v2"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -41,7 +42,7 @@ _ADMISSIBLE_CONFIRMATION_STATUSES = ("complete", "degraded")
 _MINIMUM_CONFIRMATION_DURATION_SECONDS = 54_000
 _MINIMUM_CONTINUITY_GROUPS = 30
 _APPROVED_PREREGISTRATION_SHA256 = {
-    "qwen3:14b": "1d4293fcb7e818ade3567e960e95d2f184263158f101beadf1afb07ab33f3ced",
+    "qwen3:14b": "e96d203d9e8a32114fd2192c2cc86ab029d9185923ff9162214d4ff061aee8ec",
 }
 
 
@@ -392,6 +393,11 @@ def _validated_preregistration(
         != _MINIMUM_CONTINUITY_GROUPS
         or frozen.get("global_gap_free_required") is not False
         or frozen.get("gaps_inside_eligible_windows_allowed") is not False
+        or frozen.get("required_provider_response_contract")
+        != AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
+        or frozen.get("exact_returned_model_required") is not True
+        or frozen.get("terminal_stop_required") is not True
+        or frozen.get("positive_prompt_and_output_token_counts_required") is not True
         or frozen.get("prompt_or_case_changes_allowed") is not False
         or frozen.get("temperature") != 0
         or frozen.get("thinking") is not False

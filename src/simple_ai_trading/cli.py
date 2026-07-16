@@ -5825,7 +5825,8 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
             print(
                 f"  case {payload['case_index']}/{payload['case_count']} "
                 f"{payload['case']}: {match} "
-                f"latency={float(payload['latency_seconds']):.2f}s",
+                f"latency={float(payload['latency_seconds']):.2f}s "
+                f"tokens={payload['prompt_tokens']}+{payload['output_tokens']}",
                 flush=True,
             )
 
@@ -5982,7 +5983,10 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                 f"  {status:<4} {result.model:<24} score={result.score:.3f} "
                 f"actions={result.action_match_cases}/{len(report.tests)} "
                 f"json={result.valid_json_cases}/{len(report.tests)} "
-                f"params={params} avg_latency={result.average_latency_seconds:.2f}s"
+                f"telemetry={result.provider_telemetry_cases}/{len(report.tests)} "
+                f"tokens={result.total_prompt_token_count}+"
+                f"{result.total_output_token_count} params={params} "
+                f"avg_latency={result.average_latency_seconds:.2f}s"
             )
             if result.failures:
                 print(f"       first_failure={result.failures[0]}")
