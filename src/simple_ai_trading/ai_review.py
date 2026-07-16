@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import time
@@ -19,6 +20,8 @@ from .types import RuntimeConfig
 
 DEFAULT_AI_REVIEW_MODEL = "qwen3:8b"
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
+AI_REVIEW_REPORT_SCHEMA_VERSION = "ai-risk-review-v2"
+_EMPTY_TEXT_SHA256 = hashlib.sha256(b"").hexdigest()
 _MAX_OUTCOMES = 8
 _MAX_CONCERNS = 8
 _MAX_ACTIONS = 8
@@ -61,27 +64,293 @@ class AIReviewDecision:
     def asdict(self) -> dict[str, object]:
         return asdict(self)
 
+    def validated(self) -> AIReviewDecision:
+        if (
+            not isinstance(self.action, str)
+            or self.action not in {"approve", "veto", "needs_human_review"}
+            or isinstance(self.confidence, bool)
+            or not isinstance(self.confidence, (int, float))
+            or not math.isfinite(self.confidence)
+            or not 0.0 <= self.confidence <= 1.0
+            or isinstance(self.risk_score, bool)
+            or not isinstance(self.risk_score, (int, float))
+            or not math.isfinite(self.risk_score)
+            or not 0.0 <= self.risk_score <= 1.0
+            or not isinstance(self.rationale, str)
+            or not self.rationale
+            or len(self.rationale) > _MAX_REASON_CHARS
+            or not isinstance(self.concerns, list)
+            or not isinstance(self.required_actions, list)
+            or len(self.concerns) > _MAX_CONCERNS
+            or len(self.required_actions) > _MAX_ACTIONS
+            or any(
+                not isinstance(value, str)
+                or not value
+                or len(value) > _MAX_REASON_CHARS
+                for value in (*self.concerns, *self.required_actions)
+            )
+        ):
+            raise ValueError("AI review decision is invalid")
+        return self
+
 
 @dataclass(frozen=True)
 class AIReviewReport:
+    schema_version: str
+    created_at_ms: int
     status: str
     approved: bool
     source_report: str
+    source_report_sha256: str
     provider: str
     model: str
     endpoint: str
     latency_ms: int
+    prompt_sha256: str
+    request_sha256: str | None
+    response_sha256: str | None
     decision: AIReviewDecision
     deterministic_precheck: dict[str, object]
     capability: dict[str, object] | None = None
     prompt_chars: int = 0
     output_path: str | None = None
     error: str | None = None
+    report_sha256: str = ""
+
+    def identity_payload(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload.pop("report_sha256")
+        return payload
 
     def asdict(self) -> dict[str, object]:
-        payload = asdict(self)
-        payload["decision"] = self.decision.asdict()
+        return {**self.identity_payload(), "report_sha256": self.report_sha256}
+
+    def validated(self) -> AIReviewReport:
+        self.decision.validated()
+        status_consistent = (
+            self.status == "ok"
+            and self.approved
+            and self.decision.action == "approve"
+            and self.error is None
+            and self.prompt_chars > 0
+            and self.request_sha256 is not None
+            and self.response_sha256 is not None
+        ) or (
+            self.status == "review_required"
+            and not self.approved
+            and self.decision.action in {"veto", "needs_human_review"}
+            and self.error is None
+            and self.prompt_chars > 0
+            and self.request_sha256 is not None
+            and self.response_sha256 is not None
+        ) or (
+            self.status == "blocked"
+            and not self.approved
+            and self.decision.action == "veto"
+            and bool(self.error)
+        )
+        if (
+            self.schema_version != AI_REVIEW_REPORT_SCHEMA_VERSION
+            or isinstance(self.created_at_ms, bool)
+            or not isinstance(self.created_at_ms, int)
+            or self.created_at_ms <= 0
+            or not isinstance(self.status, str)
+            or not isinstance(self.approved, bool)
+            or not status_consistent
+            or not isinstance(self.source_report, str)
+            or not self.source_report
+            or not _is_sha256(self.source_report_sha256)
+            or self.provider != "ollama"
+            or not isinstance(self.model, str)
+            or not self.model
+            or not isinstance(self.endpoint, str)
+            or not self.endpoint
+            or isinstance(self.latency_ms, bool)
+            or not isinstance(self.latency_ms, int)
+            or self.latency_ms < 0
+            or not _is_sha256(self.prompt_sha256)
+            or (
+                self.request_sha256 is not None
+                and not _is_sha256(self.request_sha256)
+            )
+            or (
+                self.response_sha256 is not None
+                and not _is_sha256(self.response_sha256)
+            )
+            or (
+                self.prompt_chars == 0
+                and self.prompt_sha256 != _EMPTY_TEXT_SHA256
+            )
+            or (self.prompt_chars == 0) != (self.request_sha256 is None)
+            or isinstance(self.prompt_chars, bool)
+            or not isinstance(self.prompt_chars, int)
+            or not 0 <= self.prompt_chars <= _MAX_PROMPT_CHARS
+            or not isinstance(self.deterministic_precheck, dict)
+            or not (
+                self.capability is None or isinstance(self.capability, dict)
+            )
+            or not (
+                self.output_path is None or isinstance(self.output_path, str)
+            )
+            or not (self.error is None or isinstance(self.error, str))
+            or not _is_sha256(self.report_sha256)
+            or self.report_sha256 != _canonical_sha256(self.identity_payload())
+        ):
+            raise ValueError("AI review report is invalid")
+        return self
+
+
+def _canonical_sha256(value: object) -> str:
+    payload = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    return hashlib.sha256(payload.encode("ascii")).hexdigest()
+
+
+def _text_sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _json_mapping(value: Mapping[str, object]) -> dict[str, object]:
+    payload = json.loads(
+        json.dumps(value, ensure_ascii=True, allow_nan=False)
+    )
+    if not isinstance(payload, dict):
+        raise ValueError("AI review mapping is not JSON-compatible")
+    return payload
+
+
+def _is_sha256(value: object) -> bool:
+    return isinstance(value, str) and len(value) == 64 and all(
+        character in "0123456789abcdef" for character in value
+    )
+
+
+def _finalize_report(report: AIReviewReport) -> AIReviewReport:
+    return replace(
+        report,
+        report_sha256=_canonical_sha256(report.identity_payload()),
+    ).validated()
+
+
+def _strict_json_value(text: str, *, label: str) -> object:
+    def reject_duplicate_keys(
+        pairs: list[tuple[str, object]],
+    ) -> dict[str, object]:
+        payload: dict[str, object] = {}
+        for key, value in pairs:
+            if key in payload:
+                raise ValueError(f"{label} contains duplicate key: {key}")
+            payload[key] = value
         return payload
+
+    try:
+        return json.loads(
+            text,
+            object_pairs_hook=reject_duplicate_keys,
+            parse_constant=lambda value: (_ for _ in ()).throw(
+                ValueError(f"{label} contains non-finite constant: {value}")
+            ),
+        )
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{label} was not one exact JSON value") from exc
+
+
+def load_ai_review_report(
+    path: Path,
+    *,
+    expected_source_report: Path | None = None,
+) -> AIReviewReport:
+    """Load a review and verify its report and exact source evidence digests."""
+
+    try:
+        payload = _strict_json_value(
+            Path(path).read_text(encoding="utf-8"),
+            label="AI review artifact",
+        )
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        raise ValueError("AI review artifact is unreadable") from exc
+    expected_fields = {
+        "schema_version",
+        "created_at_ms",
+        "status",
+        "approved",
+        "source_report",
+        "source_report_sha256",
+        "provider",
+        "model",
+        "endpoint",
+        "latency_ms",
+        "prompt_sha256",
+        "request_sha256",
+        "response_sha256",
+        "decision",
+        "deterministic_precheck",
+        "capability",
+        "prompt_chars",
+        "output_path",
+        "error",
+        "report_sha256",
+    }
+    if not isinstance(payload, dict) or set(payload) != expected_fields:
+        raise ValueError("AI review artifact fields are invalid")
+    decision_payload = payload["decision"]
+    if not isinstance(decision_payload, dict) or set(decision_payload) != {
+        "action",
+        "confidence",
+        "risk_score",
+        "rationale",
+        "concerns",
+        "required_actions",
+    }:
+        raise ValueError("AI review artifact decision is invalid")
+    if not isinstance(decision_payload["concerns"], list) or not isinstance(
+        decision_payload["required_actions"],
+        list,
+    ):
+        raise ValueError("AI review artifact decision arrays are invalid")
+    try:
+        report = AIReviewReport(
+            schema_version=payload["schema_version"],
+            created_at_ms=payload["created_at_ms"],
+            status=payload["status"],
+            approved=payload["approved"],
+            source_report=payload["source_report"],
+            source_report_sha256=payload["source_report_sha256"],
+            provider=payload["provider"],
+            model=payload["model"],
+            endpoint=payload["endpoint"],
+            latency_ms=payload["latency_ms"],
+            prompt_sha256=payload["prompt_sha256"],
+            request_sha256=payload["request_sha256"],
+            response_sha256=payload["response_sha256"],
+            decision=AIReviewDecision(**decision_payload),
+            deterministic_precheck=payload["deterministic_precheck"],
+            capability=payload["capability"],
+            prompt_chars=payload["prompt_chars"],
+            output_path=payload["output_path"],
+            error=payload["error"],
+            report_sha256=payload["report_sha256"],
+        ).validated()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("AI review artifact is invalid") from exc
+    source_path = Path(report.source_report)
+    if expected_source_report is not None:
+        expected_path = Path(expected_source_report)
+        if source_path.resolve() != expected_path.resolve():
+            raise ValueError("AI review source report path differs")
+        source_path = expected_path
+    try:
+        source_sha256 = hashlib.sha256(source_path.read_bytes()).hexdigest()
+    except OSError as exc:
+        raise ValueError("AI review source report is unavailable") from exc
+    if source_sha256 != report.source_report_sha256:
+        raise ValueError("AI review source report digest differs")
+    return report
 
 
 def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> object:
@@ -127,14 +396,7 @@ def _bounded_list(values: object, *, limit: int) -> list[str]:
 
 
 def _json_mapping_from_text(text: str) -> Mapping[str, object]:
-    try:
-        payload = json.loads(text)
-    except json.JSONDecodeError:
-        start = text.find("{")
-        end = text.rfind("}")
-        if start < 0 or end <= start:
-            raise
-        payload = json.loads(text[start:end + 1])
+    payload = _strict_json_value(text, label="AI response")
     if not isinstance(payload, Mapping):
         raise ValueError("AI response was not a JSON object")
     return payload
@@ -150,25 +412,63 @@ def _ollama_response_text(payload: Mapping[str, object]) -> str:
 
 
 def _decision_from_mapping(payload: Mapping[str, object]) -> AIReviewDecision:
-    action = str(payload.get("action") or "").strip().lower()
+    expected_fields = set(_AI_REVIEW_SCHEMA["required"])
+    if set(payload) != expected_fields:
+        raise ValueError("AI review response fields are missing or unexpected")
+    action_raw = payload["action"]
+    if not isinstance(action_raw, str):
+        raise ValueError("AI review action must be a string")
+    action = action_raw
     if action not in {"approve", "veto", "needs_human_review"}:
         raise ValueError("AI review action is missing or invalid")
-    rationale = _bounded_text(payload.get("rationale"))
-    if not rationale:
-        raise ValueError("AI review rationale is missing")
+
+    def bounded_string(value: object, *, label: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError(f"AI review {label} must be a string")
+        normalized = " ".join(value.split())
+        if not normalized or len(normalized) > _MAX_REASON_CHARS:
+            raise ValueError(f"AI review {label} is empty or too long")
+        return normalized
+
+    def bounded_strings(value: object, *, label: str, limit: int) -> list[str]:
+        if not isinstance(value, list) or len(value) > limit:
+            raise ValueError(f"AI review {label} must be a bounded array")
+        return [
+            bounded_string(item, label=f"{label} item")
+            for item in value
+        ]
+
+    def probability(value: object, *, label: str) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError(f"AI review {label} must be numeric")
+        parsed = float(value)
+        if not math.isfinite(parsed) or not 0.0 <= parsed <= 1.0:
+            raise ValueError(f"AI review {label} must be finite and within [0,1]")
+        return parsed
+
     return AIReviewDecision(
         action=action,
-        confidence=max(0.0, min(1.0, _finite(payload.get("confidence")))),
-        risk_score=max(0.0, min(1.0, _finite(payload.get("risk_score")))),
-        rationale=rationale,
-        concerns=_bounded_list(payload.get("concerns"), limit=_MAX_CONCERNS),
-        required_actions=_bounded_list(payload.get("required_actions"), limit=_MAX_ACTIONS),
+        confidence=probability(payload["confidence"], label="confidence"),
+        risk_score=probability(payload["risk_score"], label="risk score"),
+        rationale=bounded_string(payload["rationale"], label="rationale"),
+        concerns=bounded_strings(
+            payload["concerns"],
+            label="concerns",
+            limit=_MAX_CONCERNS,
+        ),
+        required_actions=bounded_strings(
+            payload["required_actions"],
+            label="required actions",
+            limit=_MAX_ACTIONS,
+        ),
     )
 
 
 def _blocked_report(
     *,
     source_report: Path,
+    source_report_sha256: str,
+    created_at_ms: int,
     provider: str,
     model: str,
     endpoint: str,
@@ -176,29 +476,46 @@ def _blocked_report(
     deterministic_precheck: dict[str, object],
     capability: AICapabilityReport | None = None,
     output_path: Path | None = None,
+    latency_ms: int = 0,
+    prompt_sha256: str = _EMPTY_TEXT_SHA256,
+    prompt_chars: int = 0,
+    request_sha256: str | None = None,
+    response_sha256: str | None = None,
 ) -> AIReviewReport:
+    bounded_reason = _bounded_text(reason)
     decision = AIReviewDecision(
         action="veto",
         confidence=1.0,
         risk_score=1.0,
-        rationale=reason,
-        concerns=[reason],
+        rationale=bounded_reason,
+        concerns=[bounded_reason],
         required_actions=["resolve deterministic model-lab or AI capability gate before autonomous use"],
     )
-    return AIReviewReport(
+    return _finalize_report(AIReviewReport(
+        schema_version=AI_REVIEW_REPORT_SCHEMA_VERSION,
+        created_at_ms=created_at_ms,
         status="blocked",
         approved=False,
         source_report=str(source_report),
+        source_report_sha256=source_report_sha256,
         provider=provider,
         model=model,
         endpoint=endpoint,
-        latency_ms=0,
+        latency_ms=latency_ms,
+        prompt_sha256=prompt_sha256,
+        request_sha256=request_sha256,
+        response_sha256=response_sha256,
         decision=decision,
         deterministic_precheck=deterministic_precheck,
-        capability=capability.asdict() if capability is not None else None,
+        capability=(
+            _json_mapping(capability.asdict())
+            if capability is not None
+            else None
+        ),
+        prompt_chars=prompt_chars,
         output_path=str(output_path) if output_path is not None else None,
         error=reason,
-    )
+    ))
 
 
 def _compact_model_lab_report(report: Mapping[str, object]) -> dict[str, object]:
@@ -821,10 +1138,8 @@ def _deterministic_precheck(
 
 def _prompt(compact: Mapping[str, object]) -> str:
     payload = json.dumps(compact, sort_keys=True, separators=(",", ":"))
-    if len(payload) > _MAX_PROMPT_CHARS:
-        payload = payload[:_MAX_PROMPT_CHARS] + "...TRUNCATED"
     schema = json.dumps(_AI_REVIEW_SCHEMA, sort_keys=True, separators=(",", ":"))
-    return (
+    prompt = (
         "You are a cautious institutional trading risk reviewer for an autonomous day-trading testnet system. "
         "Review only the provided model-lab artifact. Do not assume missing data is favorable. "
         "Approve only when deterministic gates passed, stress scenarios are coherent, meta-label evidence does not "
@@ -840,6 +1155,12 @@ def _prompt(compact: Mapping[str, object]) -> str:
         f"SCHEMA={schema}\n"
         f"MODEL_LAB_REPORT={payload}"
     )
+    if len(prompt) > _MAX_PROMPT_CHARS:
+        raise ValueError(
+            f"complete prompt exceeds AI prompt bound:"
+            f"{len(prompt)}/{_MAX_PROMPT_CHARS}"
+        )
+    return prompt
 
 
 def run_model_lab_ai_review(
@@ -854,10 +1175,13 @@ def run_model_lab_ai_review(
 ) -> AIReviewReport:
     source_path = Path(report_path)
     output_path = output_path or (source_path.parent / "ai_risk_review.json")
+    created_at_ms = int(time.time() * 1000)
+    source_bytes = source_path.read_bytes()
+    source_report_sha256 = hashlib.sha256(source_bytes).hexdigest()
     provider = "ollama"
     selected_model = str(model or (runtime.ai_model if runtime.ai_model != "auto" else DEFAULT_AI_REVIEW_MODEL))
     endpoint = f"{str(base_url or DEFAULT_OLLAMA_URL).rstrip('/')}/api/chat"
-    report_payload = json.loads(source_path.read_text(encoding="utf-8"))
+    report_payload = json.loads(source_bytes.decode("utf-8"))
     if not isinstance(report_payload, Mapping):
         raise ValueError("model-lab report must be a JSON object")
     compact = _compact_model_lab_report(report_payload)
@@ -889,6 +1213,8 @@ def run_model_lab_ai_review(
             reason = "deterministic gates did not produce an accepted portfolio for AI review"
         result = _blocked_report(
             source_report=source_path,
+            source_report_sha256=source_report_sha256,
+            created_at_ms=created_at_ms,
             provider=provider,
             model=selected_model,
             endpoint=endpoint,
@@ -906,6 +1232,8 @@ def run_model_lab_ai_review(
         reason = "; ".join(capability.messages) or "AI capability preflight failed"
         result = _blocked_report(
             source_report=source_path,
+            source_report_sha256=source_report_sha256,
+            created_at_ms=created_at_ms,
             provider=provider,
             model=selected_model,
             endpoint=endpoint,
@@ -916,7 +1244,23 @@ def run_model_lab_ai_review(
         )
         write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
         return result
-    prompt = _prompt(compact)
+    try:
+        prompt = _prompt(compact)
+    except ValueError as exc:
+        result = _blocked_report(
+            source_report=source_path,
+            source_report_sha256=source_report_sha256,
+            created_at_ms=created_at_ms,
+            provider=provider,
+            model=selected_model,
+            endpoint=endpoint,
+            reason=f"AI review failed: {exc}",
+            deterministic_precheck=precheck,
+            capability=capability,
+            output_path=output_path,
+        )
+        write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
+        return result
     request = {
         "model": selected_model,
         "messages": [
@@ -932,31 +1276,44 @@ def run_model_lab_ai_review(
         "keep_alive": "30m",
         "options": {"temperature": 0, "num_ctx": 4096, "num_predict": 360},
     }
+    prompt_sha256 = _text_sha256(prompt)
+    request_sha256 = _canonical_sha256(request)
+    response_sha256: str | None = None
     started = time.perf_counter()
     try:
         response = post_json(endpoint, request, timeout_seconds)
         latency_ms = int((time.perf_counter() - started) * 1000)
+        response_sha256 = _canonical_sha256(response)
         if not isinstance(response, Mapping):
             raise ValueError("AI provider response was not a JSON object")
         decision = _decision_from_mapping(_json_mapping_from_text(_ollama_response_text(response)))
         status = "ok" if decision.action == "approve" else "review_required"
-        result = AIReviewReport(
+        result = _finalize_report(AIReviewReport(
+            schema_version=AI_REVIEW_REPORT_SCHEMA_VERSION,
+            created_at_ms=created_at_ms,
             status=status,
             approved=decision.approved,
             source_report=str(source_path),
+            source_report_sha256=source_report_sha256,
             provider=provider,
             model=selected_model,
             endpoint=endpoint,
             latency_ms=latency_ms,
+            prompt_sha256=prompt_sha256,
+            request_sha256=request_sha256,
+            response_sha256=response_sha256,
             decision=decision,
             deterministic_precheck=precheck,
-            capability=capability.asdict(),
+            capability=_json_mapping(capability.asdict()),
             prompt_chars=len(prompt),
             output_path=str(output_path),
-        )
+        ))
     except Exception as exc:
+        latency_ms = int((time.perf_counter() - started) * 1000)
         result = _blocked_report(
             source_report=source_path,
+            source_report_sha256=source_report_sha256,
+            created_at_ms=created_at_ms,
             provider=provider,
             model=selected_model,
             endpoint=endpoint,
@@ -964,6 +1321,11 @@ def run_model_lab_ai_review(
             deterministic_precheck=precheck,
             capability=capability,
             output_path=output_path,
+            latency_ms=latency_ms,
+            prompt_sha256=prompt_sha256,
+            prompt_chars=len(prompt),
+            request_sha256=request_sha256,
+            response_sha256=response_sha256,
         )
     write_json_atomic(output_path, result.asdict(), indent=2, sort_keys=True)
     return result

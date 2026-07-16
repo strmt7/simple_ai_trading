@@ -95,6 +95,13 @@ are useful for manual analysis, but they can consume the response budget and
 leave empty `message.content`; benchmark decisions must be parseable JSON, not
 hidden reasoning.
 
+`ai-review` applies the same fail-closed boundary: one exact top-level object,
+exact fields and JSON types, no duplicate keys, finite in-range scores, and no
+wrapped prose. A compact report that exceeds the prompt budget is rejected
+instead of being cut into incomplete or invalid financial evidence. The v2
+artifact hash-binds the exact source report and prompt plus canonical request,
+provider-response, capability, latency, and structured-decision evidence.
+
 Historical four-case provider telemetry:
 `docs/ai_model_benchmark_legacy_20260710.json`.
 
