@@ -483,6 +483,14 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "SIMPLE_AI_TRADING_REPO_ROOT" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS" in source
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND" in source
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND" in source
+    assert "struct CommandResult" in source
+    assert "workflow_generation_.fetch_add(1)" in source
+    assert "Workflow cancelled by a safety control" in source
+    assert "if (result.exit_code != 0)" in source
+    assert "Workflow stopped after failed command" in source
+    assert "remaining safety controls will still be attempted" in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
     assert "runtime_summary()" in source
     assert "repo_root()" in source
@@ -501,6 +509,9 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     )
 
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND" in smoke
+    assert "Failed configuration was followed by autonomous start" in smoke
+    assert "Cancelled configuration was followed by autonomous start" in smoke
     assert "Stop + Close" in smoke
     assert "Testnet live" in smoke
     assert "independent pause/stop" in smoke

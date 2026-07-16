@@ -101,6 +101,8 @@ function Assert-OutputContains([IntPtr]$Output, [string]$Needle, [int]$TimeoutMs
 $oldRepoRoot = $env:SIMPLE_AI_TRADING_REPO_ROOT
 $oldDryRun = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN
 $oldDelay = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS
+$oldDelayCommand = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND
+$oldFailCommand = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND
 $oldSmoke = $env:SIMPLE_AI_TRADING_GUI_SMOKE
 $oldSmokeLog = $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG
 $process = $null
@@ -195,9 +197,48 @@ try {
     Stop-Process -Id $process.Id -Force
     $process = $null
 
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = "0"
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND = "ai --enable"
+    $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
+    Wait-Until { $process.Refresh(); $process.MainWindowHandle -ne [IntPtr]::Zero } "fail-closed app window handle" 10000
+    $window = $process.MainWindowHandle
+    $output = Get-Control $window $OutputEditId
+    Wait-Until { (Get-ControlText (Get-Control $window $ProfileId)) -eq "Conservative" } "fail-closed operator status" 10000
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "simple-ai-trading strategy --profile conservative --leverage 5 --no-reinvest-profits" 5000
+    Assert-OutputContains $output "dry-run: simple-ai-trading ai --enable" 5000
+    Assert-OutputContains $output "Workflow stopped after failed command (exit 2)" 5000
+    Start-Sleep -Milliseconds 500
+    if ((Get-ControlText $output).Contains("> simple-ai-trading autonomous start")) {
+        throw "Failed configuration was followed by autonomous start"
+    }
+    Stop-Process -Id $process.Id -Force
+    $process = $null
+    Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND -ErrorAction SilentlyContinue
+
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = "2000"
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND = "ai --enable"
+    $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
+    Wait-Until { $process.Refresh(); $process.MainWindowHandle -ne [IntPtr]::Zero } "cancellation app window handle" 10000
+    $window = $process.MainWindowHandle
+    $output = Get-Control $window $OutputEditId
+    Wait-Until { (Get-ControlText (Get-Control $window $ProfileId)) -eq "Conservative" } "cancellation operator status" 10000
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "> simple-ai-trading ai --enable" 5000
+    Click-Control (Get-Control $window $StopId)
+    Assert-OutputContains $output "dry-run: simple-ai-trading autonomous stop" 5000
+    Assert-OutputContains $output "Workflow cancelled by a safety control" 5000
+    if ((Get-ControlText $output).Contains("> simple-ai-trading autonomous start")) {
+        throw "Cancelled configuration was followed by autonomous start"
+    }
+    Stop-Process -Id $process.Id -Force
+    $process = $null
+    Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue
+
     if (-not $SkipRealCompute.IsPresent) {
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS -ErrorAction SilentlyContinue
+        Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue
         $log = Join-Path $env:TEMP "SimpleAITradingNativeRealComputeSmoke.log"
         Remove-Item -LiteralPath $log -ErrorAction SilentlyContinue
         $env:SIMPLE_AI_TRADING_GUI_SMOKE = "1"
@@ -218,6 +259,8 @@ try {
     if ($null -eq $oldRepoRoot) { Remove-Item Env:SIMPLE_AI_TRADING_REPO_ROOT -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_REPO_ROOT = $oldRepoRoot }
     if ($null -eq $oldDryRun) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN = $oldDryRun }
     if ($null -eq $oldDelay) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = $oldDelay }
+    if ($null -eq $oldDelayCommand) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND = $oldDelayCommand }
+    if ($null -eq $oldFailCommand) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND = $oldFailCommand }
     if ($null -eq $oldSmoke) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE = $oldSmoke }
     if ($null -eq $oldSmokeLog) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG = $oldSmokeLog }
 }

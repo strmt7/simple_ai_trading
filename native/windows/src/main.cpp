@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cstdint>
 #include <cstdio>
 #include <cwctype>
 #include <exception>
@@ -16,6 +17,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace app {
@@ -71,6 +73,11 @@ struct CommandEntry {
 struct QuickAction {
     std::wstring label;
     std::vector<std::wstring> commands;
+};
+
+struct CommandResult {
+    std::wstring output;
+    int exit_code = 2;
 };
 
 class MainWindow {
@@ -197,6 +204,7 @@ class MainWindow {
     std::atomic_bool control_running_{false};
     std::atomic_bool api_budget_running_{false};
     std::atomic_bool operator_status_running_{false};
+    std::atomic_uint64_t workflow_generation_{0};
     std::wstring environment_state_{L"Environment pending"};
     std::wstring bot_state_{L"State pending"};
     std::wstring persisted_profile_{L"Conservative"};
@@ -1508,12 +1516,25 @@ class MainWindow {
             append_output(L"\r\nA command is already running.\r\n");
             return;
         }
+        const std::uint64_t generation = workflow_generation_.fetch_add(1) + 1;
         EnableWindow(run_selected_, FALSE);
         SetWindowTextW(output_label_, L"Output - running");
-        std::thread([this, commands = std::move(commands)] {
+        std::thread([this, commands = std::move(commands), generation] {
             for (const std::wstring& command : commands) {
+                if (workflow_generation_.load() != generation) {
+                    append_output(
+                        L"\r\nWorkflow cancelled by a safety control. No later command was started.\r\n");
+                    break;
+                }
                 append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
-                append_output(execute_cli(command));
+                CommandResult result = execute_cli(command);
+                append_output(result.output);
+                if (result.exit_code != 0) {
+                    append_output(
+                        L"\r\nWorkflow stopped after failed command (exit " +
+                        std::to_wstring(result.exit_code) + L"). No later command was started.\r\n");
+                    break;
+                }
             }
             running_ = false;
             refresh_api_budget_async(true);
@@ -1529,6 +1550,7 @@ class MainWindow {
     }
 
     void run_control_sequence(std::vector<std::wstring> commands) {
+        workflow_generation_.fetch_add(1);
         if (commands.empty()) {
             return;
         }
@@ -1539,7 +1561,14 @@ class MainWindow {
         std::thread([this, commands = std::move(commands)] {
             for (const std::wstring& command : commands) {
                 append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
-                append_output(execute_cli(command));
+                CommandResult result = execute_cli(command);
+                append_output(result.output);
+                if (result.exit_code != 0) {
+                    append_output(
+                        L"\r\nSafety control failed (exit " +
+                        std::to_wstring(result.exit_code) +
+                        L"); remaining safety controls will still be attempted.\r\n");
+                }
             }
             control_running_ = false;
             refresh_api_budget_async(true);
@@ -1732,9 +1761,13 @@ class MainWindow {
         InvalidateRect(reinvest_toggle_, nullptr, TRUE);
     }
 
-    std::wstring execute_cli(const std::wstring& args) {
+    CommandResult execute_cli(const std::wstring& args) {
         if (dry_run_enabled()) {
-            if (args.rfind(L"autonomous start", 0) == 0) {
+            const std::wstring delay_command =
+                env_string(L"SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND");
+            if (
+                (!delay_command.empty() && args == delay_command) ||
+                (delay_command.empty() && args.rfind(L"autonomous start", 0) == 0)) {
                 const std::wstring delay_text = env_string(L"SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS");
                 if (!delay_text.empty()) {
                     try {
@@ -1745,13 +1778,20 @@ class MainWindow {
                     }
                 }
             }
-            return L"dry-run: simple-ai-trading " + args + L"\r\n\r\n(exit 0)\r\n";
+            const std::wstring failed_command =
+                env_string(L"SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND");
+            const int exit_code = !failed_command.empty() && args == failed_command ? 2 : 0;
+            return {
+                L"dry-run: simple-ai-trading " + args + L"\r\n\r\n(exit " +
+                    std::to_wstring(exit_code) + L")\r\n",
+                exit_code,
+            };
         }
         std::wstring command = shell_command_for_cli(args);
         FILE* pipe = _wpopen(command.c_str(), L"r");
         std::wstring captured;
         if (!pipe) {
-            return L"Failed to launch command.\r\n";
+            return {L"Failed to launch command.\r\n\r\n(exit 2)\r\n", 2};
         }
         std::array<wchar_t, 1024> buffer{};
         while (fgetws(buffer.data(), static_cast<int>(buffer.size()), pipe) != nullptr) {
@@ -1759,7 +1799,7 @@ class MainWindow {
         }
         int exit_code = _pclose(pipe);
         captured += L"\r\n(exit " + std::to_wstring(exit_code) + L")\r\n";
-        return captured;
+        return {std::move(captured), exit_code};
     }
 
     std::wstring execute_cli_first_line(const std::wstring& args) {
