@@ -166,9 +166,7 @@ class PolymarketActionPipelineReport:
             "classifier_eligible_count": self.classifier_eligible_count,
             "positive_complete_count": self.positive_complete_count,
             "category_counts": dict(sorted(self.category_counts.items())),
-            "terminal_reason_counts": dict(
-                sorted(self.terminal_reason_counts.items())
-            ),
+            "terminal_reason_counts": dict(sorted(self.terminal_reason_counts.items())),
             "training_authority": False,
             "trading_authority": False,
             "profitability_claim": False,
@@ -275,8 +273,10 @@ def _load_existing_batch(
     batch_id: str,
     identity: Mapping[str, object],
 ) -> PolymarketActionBatchResult | None:
-    row = store.connect().execute(
-        """
+    row = (
+        store.connect()
+        .execute(
+            """
         SELECT batch_id, schema_version, contract_sha256, run_id,
                run_report_sha256, config_json, eligibility_sha256,
                group_starts_json, condition_ids_json,
@@ -286,8 +286,10 @@ def _load_existing_batch(
                terminal_reason_counts_json, batch_sha256
         FROM polymarket_action_value_batch WHERE batch_id = ?
         """,
-        [batch_id],
-    ).fetchone()
+            [batch_id],
+        )
+        .fetchone()
+    )
     if row is None:
         return None
     expected_prefix = (
@@ -303,18 +305,24 @@ def _load_existing_batch(
     )
     if tuple(row[:9]) != expected_prefix:
         raise ValueError("stored Polymarket action batch identity is inconsistent")
-    feature_manifest = store.connect().execute(
-        """
+    feature_manifest = (
+        store.connect()
+        .execute(
+            """
         SELECT d.row_count, count(r.feature_id)
         FROM polymarket_feature_dataset AS d
         LEFT JOIN polymarket_feature_row AS r
           ON r.dataset_id = d.dataset_id
         WHERE d.dataset_sha256 = ? GROUP BY d.row_count
         """,
-        [row[9]],
-    ).fetchone()
-    action_manifest = store.connect().execute(
-        """
+            [row[9]],
+        )
+        .fetchone()
+    )
+    action_manifest = (
+        store.connect()
+        .execute(
+            """
         SELECT d.action_count, d.classifier_eligible_count,
                d.positive_complete_count, d.category_counts_json,
                d.terminal_reason_counts_json, count(r.action_index),
@@ -328,8 +336,10 @@ def _load_existing_batch(
                  d.positive_complete_count, d.category_counts_json,
                  d.terminal_reason_counts_json
         """,
-        [row[10]],
-    ).fetchone()
+            [row[10]],
+        )
+        .fetchone()
+    )
     if (
         feature_manifest != (row[11], row[11])
         or action_manifest is None
@@ -364,7 +374,8 @@ def _load_existing_batch(
         classifier_eligible_count=int(row[13]),
         positive_complete_count=int(row[14]),
         category_counts={
-            str(key): int(value) for key, value in batch_payload["category_counts"].items()
+            str(key): int(value)
+            for key, value in batch_payload["category_counts"].items()
         },
         terminal_reason_counts={
             str(key): int(value)
@@ -474,19 +485,21 @@ def materialize_polymarket_action_value_batches(
         raise ValueError(
             "segmented action replay requires hash-bound eligible condition IDs"
         )
-    run_row = store.connect().execute(
-        """
+    run_row = (
+        store.connect()
+        .execute(
+            """
         SELECT status, error, report_sha256
         FROM polymarket_recorder_run WHERE run_id = ?
         """,
-        [selected],
-    ).fetchone()
+            [selected],
+        )
+        .fetchone()
+    )
     if run_row is None:
         raise ValueError("unknown Polymarket action pipeline run")
     allowed_statuses = (
-        {"complete", "degraded"}
-        if cfg.feature.allow_segmented_gaps
-        else {"complete"}
+        {"complete", "degraded"} if cfg.feature.allow_segmented_gaps else {"complete"}
     )
     if str(run_row[0]) not in allowed_statuses or str(run_row[1] or "").strip():
         raise ValueError("Polymarket action pipeline run is not admissible")
@@ -495,7 +508,9 @@ def materialize_polymarket_action_value_batches(
         raise ValueError("Polymarket action pipeline run report is invalid")
     integrity = store.integrity_errors(selected, progress=progress)
     if integrity:
-        raise ValueError("Polymarket action pipeline integrity failed: " + "; ".join(integrity))
+        raise ValueError(
+            "Polymarket action pipeline integrity failed: " + "; ".join(integrity)
+        )
     _ensure_pipeline_tables(store)
     markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
     selected_conditions = (
@@ -516,7 +531,9 @@ def materialize_polymarket_action_value_batches(
     for start_ms, values in sorted(groups.items()):
         ordered = tuple(sorted(values, key=lambda item: _ASSETS.index(item.asset)))
         if tuple(item.asset for item in ordered) != _ASSETS:
-            raise ValueError("Polymarket action pipeline requires synchronized BTC/ETH/SOL groups")
+            raise ValueError(
+                "Polymarket action pipeline requires synchronized BTC/ETH/SOL groups"
+            )
         ordered_groups.append((start_ms, ordered))
     batch_specs: list[tuple[dict[str, object], str]] = []
     width = int(cfg.market_groups_per_batch)
@@ -550,6 +567,7 @@ def materialize_polymarket_action_value_batches(
             missing_indexes.append(index)
     source_context = None
     if missing_indexes:
+        store.ensure_condition_message_cache(selected, progress=progress)
         if progress is not None:
             progress("source-context", {"remaining_batches": len(missing_indexes)})
         source_context = load_polymarket_feature_source_context(
@@ -665,8 +683,10 @@ def materialize_polymarket_action_value_batches(
         _canonical_json(report.terminal_reason_counts),
         _canonical_json(report.asdict()),
     )
-    existing_report = store.connect().execute(
-        """
+    existing_report = (
+        store.connect()
+        .execute(
+            """
         SELECT report_sha256, schema_version, contract_sha256, run_id,
                run_report_sha256, config_json, eligibility_sha256,
                batch_ids_json, action_dataset_sha256_json, action_count,
@@ -674,8 +694,10 @@ def materialize_polymarket_action_value_batches(
                category_counts_json, terminal_reason_counts_json, report_json
         FROM polymarket_action_value_pipeline WHERE report_sha256 = ?
         """,
-        [report.report_sha256],
-    ).fetchone()
+            [report.report_sha256],
+        )
+        .fetchone()
+    )
     if existing_report is None:
         store.connect().execute(
             """
