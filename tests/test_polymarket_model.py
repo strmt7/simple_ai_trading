@@ -1386,6 +1386,25 @@ def test_round9_failed_exit_loses_full_entry_cost_and_blocks_condition() -> None
     assert label.condition_blocked
     assert not label.positive_complete
 
+    inconsistent_cost = replace(
+        execution,
+        entry_cost_quote=execution.entry_cost_quote + Decimal("0.01"),
+    )
+    with pytest.raises(ValueError, match="entry cost is inconsistent"):
+        build_polymarket_action_label(feature, inconsistent_cost)
+
+    assert execution.entry_result is not None
+    inconsistent_fill = replace(
+        execution,
+        entry_result=replace(
+            execution.entry_result,
+            fee_quote=execution.entry_result.fee_quote + Decimal("0.01"),
+        ),
+        entry_cost_quote=execution.entry_cost_quote + Decimal("0.01"),
+    )
+    with pytest.raises(ValueError, match="fill accounting is invalid"):
+        build_polymarket_action_label(feature, inconsistent_fill)
+
 
 def test_round9_action_value_contract_code_and_document_are_identical() -> None:
     path = (

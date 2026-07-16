@@ -687,6 +687,84 @@ def _result_payload(value: PaperExecutionResult | None) -> object:
     }
 
 
+def _paper_result_reconciles(value: PaperExecutionResult) -> bool:
+    numeric = (
+        value.filled_quantity,
+        value.remaining_quantity,
+        value.average_fill_price,
+        value.fee_quote,
+    )
+    if any(not item.is_finite() or item < 0 for item in numeric):
+        return False
+    fill_quantity = sum((item.quantity for item in value.fills), Decimal("0"))
+    fill_notional = sum(
+        (item.price * item.quantity for item in value.fills),
+        Decimal("0"),
+    )
+    fill_fees = sum((item.fee_quote for item in value.fills), Decimal("0"))
+    if value.state == "FILLED":
+        return (
+            value.filled_quantity > 0
+            and value.remaining_quantity == 0
+            and bool(value.fills)
+            and all(
+                item.price.is_finite()
+                and item.quantity.is_finite()
+                and item.fee_quote.is_finite()
+                and item.price > 0
+                and item.quantity > 0
+                and item.fee_quote >= 0
+                and item.liquidity_role == "taker"
+                for item in value.fills
+            )
+            and fill_quantity == value.filled_quantity
+            and fill_notional / fill_quantity == value.average_fill_price
+            and fill_fees == value.fee_quote
+        )
+    return (
+        value.filled_quantity == 0
+        and value.average_fill_price == 0
+        and value.fee_quote == 0
+        and not value.fills
+    )
+
+
+def _validate_execution_economics(
+    execution: PolymarketRepricingDecisionExecution,
+) -> None:
+    entry = execution.entry_result
+    exit_result = execution.exit_result
+    if (
+        (entry is not None and not _paper_result_reconciles(entry))
+        or (exit_result is not None and not _paper_result_reconciles(exit_result))
+    ):
+        raise ValueError("Polymarket action execution fill accounting is invalid")
+    if execution.entry_filled:
+        if entry is None:
+            raise ValueError("Polymarket action execution entry result is missing")
+        expected_entry_cost = (
+            entry.average_fill_price * entry.filled_quantity + entry.fee_quote
+        )
+        if execution.entry_cost_quote != expected_entry_cost:
+            raise ValueError("Polymarket action execution entry cost is inconsistent")
+    elif execution.entry_cost_quote is not None:
+        raise ValueError("Polymarket action execution credits an unfilled entry")
+    if execution.exit_filled:
+        if entry is None or exit_result is None:
+            raise ValueError("Polymarket action execution exit result is missing")
+        expected_proceeds = (
+            exit_result.average_fill_price * exit_result.filled_quantity
+            - exit_result.fee_quote
+        )
+        if (
+            execution.exit_proceeds_quote != expected_proceeds
+            or execution.net_quote != expected_proceeds - execution.entry_cost_quote
+        ):
+            raise ValueError("Polymarket action execution exit value is inconsistent")
+    elif execution.exit_proceeds_quote is not None or execution.net_quote is not None:
+        raise ValueError("Polymarket action execution credits an unfilled exit")
+
+
 def _execution_payload(
     feature: PolymarketActionFeature,
     execution: PolymarketRepricingDecisionExecution | None,
@@ -776,6 +854,7 @@ def build_polymarket_action_label(
             != feature.decision_received_monotonic_ns
         ):
             raise ValueError("Polymarket action execution and feature are misaligned")
+        _validate_execution_economics(execution)
         terminal_reason = execution.terminal_reason
         if terminal_reason == "complete_round_trip":
             if execution.net_quote is None:
