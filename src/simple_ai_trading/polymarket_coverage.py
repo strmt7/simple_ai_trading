@@ -197,30 +197,15 @@ def inspect_polymarket_feed_coverage(
     data_errors: list[str] = []
     if gap_validation_error:
         data_errors.append(f"stream_gap_invalid:{gap_validation_error}")
-    for event_type, asset_id, condition_id in connection.execute(
-        """
-        SELECT event_type, asset_id, condition_id
-        FROM polymarket_public_event
-        WHERE run_id = ? AND stream IN ('clob_market', 'clob_rest_book')
-          AND event_type IN ('book', 'market_resolved')
-        """,
-        [selected],
-    ).fetchall():
-        normalized_type = str(event_type).lower()
-        if normalized_type == "book":
-            token = str(asset_id)
-            asset = token_asset.get(token, "")
-            if asset:
-                observed_tokens[asset].add(token)
-        elif normalized_type == "market_resolved":
-            condition = str(condition_id).lower()
-            asset = condition_asset.get(condition, "")
-            if asset:
-                resolved_conditions[asset].add(condition)
     event_iterator = iter(
         store.iter_public_events(
             selected,
-            streams=("binance_spot", "polymarket_rtds"),
+            streams=(
+                "binance_spot",
+                "clob_market",
+                "clob_rest_book",
+                "polymarket_rtds",
+            ),
             verified_source=not integrity_errors,
         )
     )
@@ -242,7 +227,18 @@ def inspect_polymarket_feed_coverage(
             event = decoded.event
             normalized_stream = str(stream)
             normalized_type = str(event_type).lower()
-            if normalized_stream == "binance_spot":
+            if normalized_stream in {"clob_market", "clob_rest_book"}:
+                if normalized_type == "book":
+                    token = str(decoded.asset_id)
+                    asset = token_asset.get(token, "")
+                    if asset:
+                        observed_tokens[asset].add(token)
+                elif normalized_type == "market_resolved":
+                    condition = str(decoded.condition_id).lower()
+                    asset = condition_asset.get(condition, "")
+                    if asset:
+                        resolved_conditions[asset].add(condition)
+            elif normalized_stream == "binance_spot":
                 asset = _asset(symbol)
                 payload = event.get("data")
                 if not asset or not isinstance(payload, Mapping):
