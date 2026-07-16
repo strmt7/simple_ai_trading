@@ -5646,6 +5646,7 @@ def command_status(args: argparse.Namespace) -> int:
         print(
             f"environment={environment} bot_state={state} risk={strategy.risk_level} "
             f"leverage={strategy.leverage:g} ai={'enabled' if runtime.ai_enabled else 'disabled'} "
+            f"ai_model={str(runtime.ai_model or 'unselected').strip() or 'unselected'} "
             f"ai_runtime={ai_runtime} "
             f"reinvest={'on' if strategy.reinvest_profits else 'off'} symbol={runtime.symbol} "
             f"market={runtime.market_type} execution={execution} positions={position_count} "

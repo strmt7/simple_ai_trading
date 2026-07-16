@@ -799,7 +799,8 @@ def test_generated_native_contract_matches_cli() -> None:
         windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp"
     ).read_text(encoding="utf-8")
     assert 'ai_runtime_state == L"hybrid"' in native_source
-    assert 'ai_state = L"AI hybrid blocked"' in native_source
+    assert 'ai_state = ai_model_state + L" / hybrid blocked"' in native_source
+    assert 'ai_state = ai_model_state + L" / GPU"' in native_source
     assert "std::array<std::wstring, 4> states" in native_source
     assert "environment_state, bot_state, command_contract_state, ai_state" in native_source
     confirmation = next(
