@@ -1,0 +1,106 @@
+{
+  "schema_version": "polymarket-rtds-wire-contract-probe-v1",
+  "observed_date_utc": "2026-07-16",
+  "endpoint": "wss://ws-live-data.polymarket.com",
+  "probe": {
+    "duration_seconds": 45.0,
+    "concurrent_variants": 6,
+    "heartbeat_text": "PING",
+    "heartbeat_interval_seconds": 5.0,
+    "transport": "websockets.asyncio.client",
+    "compression": false
+  },
+  "results": [
+    {
+      "name": "binance_official_client_json_upper",
+      "subscription": {
+        "topic": "crypto_prices",
+        "type": "update",
+        "filters": "{\"symbol\":\"BTCUSDT\"}"
+      },
+      "message_count": 46,
+      "non_json_count": 1,
+      "payload_symbols": {"btcusdt": 45},
+      "connection_error": ""
+    },
+    {
+      "name": "binance_web_docs_single_lower",
+      "subscription": {
+        "topic": "crypto_prices",
+        "type": "update",
+        "filters": "btcusdt"
+      },
+      "message_count": 1,
+      "non_json_count": 1,
+      "payload_symbols": {},
+      "connection_error": ""
+    },
+    {
+      "name": "binance_web_docs_combined_lower",
+      "subscription": {
+        "topic": "crypto_prices",
+        "type": "update",
+        "filters": "btcusdt,ethusdt,solusdt"
+      },
+      "message_count": 1,
+      "non_json_count": 1,
+      "payload_symbols": {},
+      "connection_error": ""
+    },
+    {
+      "name": "chainlink_update_json",
+      "subscription": {
+        "topic": "crypto_prices_chainlink",
+        "type": "update",
+        "filters": "{\"symbol\":\"btc/usd\"}"
+      },
+      "message_count": 45,
+      "non_json_count": 1,
+      "payload_symbols": {"btc/usd": 44},
+      "connection_error": ""
+    },
+    {
+      "name": "chainlink_star_json",
+      "subscription": {
+        "topic": "crypto_prices_chainlink",
+        "type": "*",
+        "filters": "{\"symbol\":\"btc/usd\"}"
+      },
+      "message_count": 45,
+      "non_json_count": 1,
+      "payload_symbols": {"btc/usd": 44},
+      "connection_error": ""
+    },
+    {
+      "name": "chainlink_star_three_subscriptions_one_connection",
+      "subscriptions": [
+        {"topic": "crypto_prices_chainlink", "type": "*", "filters": "{\"symbol\":\"btc/usd\"}"},
+        {"topic": "crypto_prices_chainlink", "type": "*", "filters": "{\"symbol\":\"eth/usd\"}"},
+        {"topic": "crypto_prices_chainlink", "type": "*", "filters": "{\"symbol\":\"sol/usd\"}"}
+      ],
+      "message_count": 47,
+      "non_json_count": 1,
+      "payload_symbols": {"btc/usd": 44, "eth/usd": 1, "sol/usd": 1},
+      "connection_error": ""
+    }
+  ],
+  "implementation_decision": {
+    "binance_filter": "one compact JSON uppercase symbol per connection",
+    "chainlink_filter": "one compact JSON lowercase slash symbol per connection",
+    "chainlink_type": "update",
+    "connection_isolation": "one topic and symbol per RTDS connection",
+    "reason": "Only the official-client Binance format delivered price payloads, and a combined Chainlink connection continuously delivered only one of three symbols during the bounded window."
+  },
+  "sources": [
+    "https://docs.polymarket.com/market-data/websocket/rtds",
+    "https://github.com/Polymarket/real-time-data-client"
+  ],
+  "truth_constraints": {
+    "financial_edge_tested": false,
+    "model_quality_tested": false,
+    "long_term_liveness_tested": false,
+    "provider_contract_guaranteed": false,
+    "scope": "bounded live wire-format compatibility only"
+  },
+  "report_sha256": "5fd6026c0a46ee834efa931a317f55e4b3cbc67f321851d4e1e756b58c725c83"
+}
