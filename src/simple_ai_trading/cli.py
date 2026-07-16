@@ -5643,11 +5643,14 @@ def command_status(args: argparse.Namespace) -> int:
         position_count = len(position_store.load_open()) if not ledger_errors else 0
         ledger_state = "invalid" if ledger_errors else ("tracked" if position_count else "clear")
         ai_runtime, _ai_runtime_payload = _ai_provider_runtime_status(runtime)
+        compute = resolve_backend(
+            str(runtime.compute_backend or default_compute_backend())
+        ).kind
         print(
             f"environment={environment} bot_state={state} risk={strategy.risk_level} "
             f"leverage={strategy.leverage:g} ai={'enabled' if runtime.ai_enabled else 'disabled'} "
             f"ai_model={str(runtime.ai_model or 'unselected').strip() or 'unselected'} "
-            f"ai_runtime={ai_runtime} "
+            f"ai_runtime={ai_runtime} compute={compute} "
             f"reinvest={'on' if strategy.reinvest_profits else 'off'} symbol={runtime.symbol} "
             f"market={runtime.market_type} execution={execution} positions={position_count} "
             f"ledger={ledger_state} ui_contract={command_contract_digest()}"

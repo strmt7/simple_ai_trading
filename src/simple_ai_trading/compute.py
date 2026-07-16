@@ -237,5 +237,5 @@ def resolve_backend(requested: str | None) -> BackendInfo:
 
 def describe_backend(info: BackendInfo) -> str:
     """Return a compact one-line description of the resolved backend."""
-    suffix = f" — {info.reason}" if info.reason else ""
+    suffix = f" - {info.reason}" if info.reason else ""
     return f"compute={info.kind} device={info.device} vendor={info.vendor}{suffix}"
