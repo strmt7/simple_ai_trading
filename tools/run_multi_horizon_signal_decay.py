@@ -381,8 +381,9 @@ def load_signal_decay_binding(
     *,
     design_path: str | Path,
     design_sha256: str,
+    require_current_implementation: bool = False,
 ) -> tuple[dict[str, object], str]:
-    """Verify the implementation commit, critical blobs, and clean worktree."""
+    """Verify historical provenance and optionally authorize a current-code run."""
 
     binding = _read_object(Path(path), label="Round 36 execution binding")
     canonical = dict(binding)
@@ -430,19 +431,23 @@ def load_signal_decay_binding(
         )
     for normalized, expected in bound.items():
         historical = _git_bytes("show", f"{commit}:{normalized}")
-        current = _git_bytes("show", f"HEAD:{normalized}")
-        if (
-            hashlib.sha256(historical).hexdigest() != expected
-            or hashlib.sha256(current).hexdigest() != expected
-        ):
-            raise ValueError(f"Round 36 implementation changed: {normalized}")
-    if _git_bytes("status", "--porcelain", "--untracked-files=all").strip():
-        raise ValueError("Round 36 execution requires a clean worktree")
-    relative_design = Path(design_path).resolve().relative_to(ROOT).as_posix()
+        if hashlib.sha256(historical).hexdigest() != expected:
+            raise ValueError(f"Round 36 historical binding changed: {normalized}")
+    if require_current_implementation:
+        for normalized, expected in bound.items():
+            current = _git_bytes("show", f"HEAD:{normalized}")
+            if hashlib.sha256(current).hexdigest() != expected:
+                raise ValueError(f"Round 36 implementation changed: {normalized}")
+        if _git_bytes("status", "--porcelain", "--untracked-files=all").strip():
+            raise ValueError("Round 36 execution requires a clean worktree")
+    resolved_design_path = Path(design_path).resolve()
+    relative_design = resolved_design_path.relative_to(ROOT).as_posix()
     if (
         design.get("path") != relative_design
         or design.get("design_sha256") != design_sha256
         or design.get("file_sha256") != bound.get(relative_design)
+        or hashlib.sha256(resolved_design_path.read_bytes()).hexdigest()
+        != bound.get(relative_design)
     ):
         raise ValueError("Round 36 bound design identity changed")
     return binding, str(claimed)
@@ -741,6 +746,7 @@ def run_diagnostic(
         binding_path,
         design_path=design_path,
         design_sha256=design_sha,
+        require_current_implementation=True,
     )
     source = design["source_contract"]
     access = design["data_access"]

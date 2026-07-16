@@ -587,8 +587,9 @@ def load_round34_execution_binding(
     *,
     design_path: str | Path,
     design_sha256: str,
+    require_current_implementation: bool = False,
 ) -> tuple[dict[str, object], str]:
-    """Verify the bound implementation commit, blobs, and clean worktree."""
+    """Verify historical provenance and optionally authorize a current-code run."""
 
     binding = _read_object(Path(path), label="Round 34 execution binding")
     canonical = dict(binding)
@@ -636,19 +637,23 @@ def load_round34_execution_binding(
         )
     for normalized, expected in bound_files.items():
         historical = _git_bytes("show", f"{commit}:{normalized}")
-        current = _git_bytes("show", f"HEAD:{normalized}")
-        if (
-            hashlib.sha256(historical).hexdigest() != expected
-            or hashlib.sha256(current).hexdigest() != expected
-        ):
-            raise ValueError(f"Round 34 implementation changed: {normalized}")
-    if _git_bytes("status", "--porcelain", "--untracked-files=all").strip():
-        raise ValueError("Round 34 execution requires a clean worktree")
-    relative_design = Path(design_path).resolve().relative_to(ROOT).as_posix()
+        if hashlib.sha256(historical).hexdigest() != expected:
+            raise ValueError(f"Round 34 historical binding changed: {normalized}")
+    if require_current_implementation:
+        for normalized, expected in bound_files.items():
+            current = _git_bytes("show", f"HEAD:{normalized}")
+            if hashlib.sha256(current).hexdigest() != expected:
+                raise ValueError(f"Round 34 implementation changed: {normalized}")
+        if _git_bytes("status", "--porcelain", "--untracked-files=all").strip():
+            raise ValueError("Round 34 execution requires a clean worktree")
+    resolved_design_path = Path(design_path).resolve()
+    relative_design = resolved_design_path.relative_to(ROOT).as_posix()
     if (
         design.get("path") != relative_design
         or design.get("design_sha256") != design_sha256
         or design.get("file_sha256") != bound_files.get(relative_design)
+        or hashlib.sha256(resolved_design_path.read_bytes()).hexdigest()
+        != bound_files.get(relative_design)
     ):
         raise ValueError("Round 34 design binding changed")
     return binding, str(claimed)
@@ -1070,6 +1075,7 @@ def run_three_action_viability(
         binding_path,
         design_path=design_path,
         design_sha256=design_sha,
+        require_current_implementation=True,
     )
     destination = Path(output_dir)
     if destination.exists() and any(destination.iterdir()):

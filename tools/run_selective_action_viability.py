@@ -149,7 +149,9 @@ def _sha256_file(path: Path) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "").lower()
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _is_git_oid(value: object) -> bool:
@@ -258,7 +260,11 @@ def _validate_failure_analysis(
     predecessor: Mapping[str, object],
 ) -> None:
     relative = Path(str(predecessor.get("failure_analysis") or ""))
-    if relative.is_absolute() or ".." in relative.parts or relative.name != str(relative):
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or relative.name != str(relative)
+    ):
         raise ValueError("Round 33 failure-analysis path is unsafe")
     path = design_path.parent / relative
     if _sha256_file(path) != predecessor.get("failure_analysis_file_sha256"):
@@ -538,11 +544,9 @@ def load_round33_design(
         raise ValueError("Round 33 implementation or architecture gates changed")
     previous_gates = previous["acceptance_gates"]
     assert isinstance(previous_gates, Mapping)
-    if (
-        gates.get("distant_confirmation_forecast")
-        != previous_gates.get("distant_confirmation_forecast")
-        or gates.get("economic") != previous_gates.get("economic")
-    ):
+    if gates.get("distant_confirmation_forecast") != previous_gates.get(
+        "distant_confirmation_forecast"
+    ) or gates.get("economic") != previous_gates.get("economic"):
         raise ValueError("Round 33 economic or distant-confirmation gates changed")
     research = payload.get("research_basis")
     limitations = payload.get("limitations")
@@ -581,8 +585,9 @@ def load_round33_execution_binding(
     *,
     design_path: str | Path,
     design_sha256: str,
+    require_current_implementation: bool = False,
 ) -> tuple[dict[str, object], str]:
-    """Verify the frozen implementation commit, current blobs, and clean worktree."""
+    """Verify historical provenance and optionally authorize a current-code run."""
 
     binding = _read_object(Path(path), label="Round 33 execution binding")
     canonical = dict(binding)
@@ -630,19 +635,23 @@ def load_round33_execution_binding(
         )
     for normalized, expected in bound_files.items():
         historical = _git_bytes("show", f"{commit}:{normalized}")
-        current = _git_bytes("show", f"HEAD:{normalized}")
-        if (
-            hashlib.sha256(historical).hexdigest() != expected
-            or hashlib.sha256(current).hexdigest() != expected
-        ):
-            raise ValueError(f"Round 33 implementation changed: {normalized}")
-    if _git_bytes("status", "--porcelain", "--untracked-files=all").strip():
-        raise ValueError("Round 33 execution requires a clean worktree")
-    relative_design = Path(design_path).resolve().relative_to(ROOT).as_posix()
+        if hashlib.sha256(historical).hexdigest() != expected:
+            raise ValueError(f"Round 33 historical binding changed: {normalized}")
+    if require_current_implementation:
+        for normalized, expected in bound_files.items():
+            current = _git_bytes("show", f"HEAD:{normalized}")
+            if hashlib.sha256(current).hexdigest() != expected:
+                raise ValueError(f"Round 33 implementation changed: {normalized}")
+        if _git_bytes("status", "--porcelain", "--untracked-files=all").strip():
+            raise ValueError("Round 33 execution requires a clean worktree")
+    resolved_design_path = Path(design_path).resolve()
+    relative_design = resolved_design_path.relative_to(ROOT).as_posix()
     if (
         design.get("path") != relative_design
         or design.get("design_sha256") != design_sha256
         or design.get("file_sha256") != bound_files.get(relative_design)
+        or hashlib.sha256(resolved_design_path.read_bytes()).hexdigest()
+        != bound_files.get(relative_design)
     ):
         raise ValueError("Round 33 design binding changed")
     return binding, str(claimed)
@@ -709,23 +718,19 @@ def _symmetry_errors(
             ("short_upper_bps", "long_upper_bps"),
         )
     ]
-    if (
-        not np.array_equal(
-            original.action_preference_side,
-            -mirrored.action_preference_side,
-        )
-        or not np.array_equal(
-            original.direction_preference_side,
-            -mirrored.direction_preference_side,
-        )
+    if not np.array_equal(
+        original.action_preference_side,
+        -mirrored.action_preference_side,
+    ) or not np.array_equal(
+        original.direction_preference_side,
+        -mirrored.direction_preference_side,
     ):
         action_errors.append(math.inf)
     return {
         "opportunity_mirror_invariance_max_abs_error": float(
             np.max(
                 np.abs(
-                    original.opportunity_probability
-                    - mirrored.opportunity_probability
+                    original.opportunity_probability - mirrored.opportunity_probability
                 )
             )
         ),
@@ -961,7 +966,9 @@ def _evaluate_frozen_stage(
     progress: Callable[..., None],
 ) -> list[str]:
     output: list[str] = []
-    gate_name = f"{stage}_gates" if stage != "distant_confirmation" else "development_gates"
+    gate_name = (
+        f"{stage}_gates" if stage != "distant_confirmation" else "development_gates"
+    )
     for profile in survivors:
         raw = profiles_by_name[profile]
         calibration = profile_results[profile]["calibration"]
@@ -1025,6 +1032,7 @@ def run_selective_action_viability(
         binding_path,
         design_path=design_path,
         design_sha256=design_sha,
+        require_current_implementation=True,
     )
     destination = Path(output_dir)
     if destination.exists() and any(destination.iterdir()):
@@ -1140,14 +1148,10 @@ def run_selective_action_viability(
         assert isinstance(implementation_gates, Mapping)
         symmetry_limits = {
             "opportunity_mirror_invariance_max_abs_error": float(
-                implementation_gates[
-                    "maximum_opportunity_mirror_invariance_error"
-                ]
+                implementation_gates["maximum_opportunity_mirror_invariance_error"]
             ),
             "direction_mirror_complementarity_max_abs_error": float(
-                implementation_gates[
-                    "maximum_direction_mirror_complementarity_error"
-                ]
+                implementation_gates["maximum_direction_mirror_complementarity_error"]
             ),
             "action_swap_equivariance_max_abs_error": float(
                 implementation_gates["maximum_action_swap_equivariance_error"]
@@ -1176,13 +1180,15 @@ def run_selective_action_viability(
                     seed=seed,
                     train_sample_weights=train_weights,
                     tuning_sample_weights=tuning_weights,
-                    progress=lambda head, step, total, index=member, model_seed=seed: progress(
-                        "model-head-start",
-                        member=index,
-                        seed=model_seed,
-                        head=head,
-                        head_step=step,
-                        head_total=total,
+                    progress=lambda head, step, total, index=member, model_seed=seed: (
+                        progress(
+                            "model-head-start",
+                            member=index,
+                            seed=model_seed,
+                            head=head,
+                            head_step=step,
+                            head_total=total,
+                        )
                     ),
                 )
             if model.backend_kind != "opencl" or model.backend_requested != "directml":
@@ -1272,9 +1278,7 @@ def run_selective_action_viability(
                 direction_complementarity_error=symmetry[
                     "direction_mirror_complementarity_max_abs_error"
                 ],
-                action_swap_error=symmetry[
-                    "action_swap_equivariance_max_abs_error"
-                ],
+                action_swap_error=symmetry["action_swap_equivariance_max_abs_error"],
             )
 
         calibration_prediction = _predict_ensemble(
@@ -1520,9 +1524,7 @@ def run_selective_action_viability(
                 distant_prediction,
                 scenario="stress",
             )
-            forecast_gates = design["acceptance_gates"][
-                "distant_confirmation_forecast"
-            ]
+            forecast_gates = design["acceptance_gates"]["distant_confirmation_forecast"]
             assert isinstance(forecast_gates, Mapping)
             forecast_reasons = shared_runner._forecast_gate_reasons(
                 distant_diagnostics,
@@ -1628,30 +1630,18 @@ def run_selective_action_viability(
             "ensemble_models": model_evidence,
             "implementation_gates": {
                 "maximum_observed_opportunity_mirror_invariance_error": max(
-                    float(
-                        value[
-                            "opportunity_mirror_invariance_max_abs_error"
-                        ]
-                    )
+                    float(value["opportunity_mirror_invariance_max_abs_error"])
                     for value in model_evidence
                 ),
                 "maximum_permitted_opportunity_mirror_invariance_error": (
-                    symmetry_limits[
-                        "opportunity_mirror_invariance_max_abs_error"
-                    ]
+                    symmetry_limits["opportunity_mirror_invariance_max_abs_error"]
                 ),
                 "maximum_observed_direction_mirror_complementarity_error": max(
-                    float(
-                        value[
-                            "direction_mirror_complementarity_max_abs_error"
-                        ]
-                    )
+                    float(value["direction_mirror_complementarity_max_abs_error"])
                     for value in model_evidence
                 ),
                 "maximum_permitted_direction_mirror_complementarity_error": (
-                    symmetry_limits[
-                        "direction_mirror_complementarity_max_abs_error"
-                    ]
+                    symmetry_limits["direction_mirror_complementarity_max_abs_error"]
                 ),
                 "maximum_observed_action_swap_equivariance_error": max(
                     float(value["action_swap_equivariance_max_abs_error"])
@@ -1690,13 +1680,9 @@ def run_selective_action_viability(
                     else "rejected"
                 ),
                 "rejection_reasons": forecast_reasons,
-                "gates": design["acceptance_gates"][
-                    "distant_confirmation_forecast"
-                ],
+                "gates": design["acceptance_gates"]["distant_confirmation_forecast"],
             },
-            "profile_results": [
-                profile_results[profile] for profile in _PROFILE_NAMES
-            ],
+            "profile_results": [profile_results[profile] for profile in _PROFILE_NAMES],
             "stage_survivors": {
                 "calibration_architecture": architecture_passed,
                 "calibration": calibration_survivors,

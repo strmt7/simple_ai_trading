@@ -167,7 +167,9 @@ def _canonical_sha256(value: object) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "").lower()
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _is_git_oid(value: object) -> bool:
@@ -209,14 +211,17 @@ def _utc_day_bounds(first: date, last: date) -> tuple[int, int]:
         datetime.combine(first, datetime.min.time(), tzinfo=timezone.utc).timestamp()
         * 1_000
     )
-    end_ms = int(
-        datetime.combine(
-            last + timedelta(days=1),
-            datetime.min.time(),
-            tzinfo=timezone.utc,
-        ).timestamp()
-        * 1_000
-    ) - 1
+    end_ms = (
+        int(
+            datetime.combine(
+                last + timedelta(days=1),
+                datetime.min.time(),
+                tzinfo=timezone.utc,
+            ).timestamp()
+            * 1_000
+        )
+        - 1
+    )
     return start_ms, end_ms
 
 
@@ -255,7 +260,11 @@ def _risk_profiles_from_source(
     if not isinstance(source, Mapping):
         raise ValueError("Round 32 risk-profile source is missing")
     relative = Path(str(source.get("path") or ""))
-    if relative.is_absolute() or ".." in relative.parts or relative.name != str(relative):
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or relative.name != str(relative)
+    ):
         raise ValueError("Round 32 risk-profile source path is unsafe")
     source_path = design_path.parent / relative
     if _sha256_file(source_path) != source.get("file_sha256"):
@@ -438,18 +447,16 @@ def load_round32_design(
     if evaluated_dates & forbidden_dates:
         raise ValueError("Round 32 roles intersect an untouched target window")
     registry_path = source_path.parent / str(governance.get("consumed_period_registry"))
-    if (
-        _sha256_file(registry_path)
-        != governance.get("consumed_period_registry_file_sha256")
+    if _sha256_file(registry_path) != governance.get(
+        "consumed_period_registry_file_sha256"
     ):
         raise ValueError("Round 32 consumed-period registry file changed")
     registry = _read_object(registry_path, label="consumed-period registry")
     registry_canonical = dict(registry)
     registry_sha = registry_canonical.pop("registry_sha256", None)
-    if (
-        registry_sha != _canonical_sha256(registry_canonical)
-        or registry_sha != governance.get("consumed_period_registry_canonical_sha256")
-    ):
+    if registry_sha != _canonical_sha256(
+        registry_canonical
+    ) or registry_sha != governance.get("consumed_period_registry_canonical_sha256"):
         raise ValueError("Round 32 consumed-period registry hash is invalid")
     consumed_dates: set[str] = set()
     for record in registry.get("records") or ():
@@ -554,8 +561,7 @@ def load_round32_design(
         or not isinstance(economic_gates, Mapping)
         or implementation_gates.get("single_source_certificate_per_dataset_load")
         is not True
-        or implementation_gates.get("artifact_reload_equivalence_required")
-        is not True
+        or implementation_gates.get("artifact_reload_equivalence_required") is not True
         or economic_gates
         != {
             "all_stage_profile_gates_must_pass": True,
@@ -585,8 +591,9 @@ def load_round32_execution_binding(
     *,
     design_path: str | Path,
     design_sha256: str,
+    require_current_implementation: bool = False,
 ) -> tuple[dict[str, object], str]:
-    """Verify historical and current Git blobs plus a clean worktree."""
+    """Verify historical provenance and optionally authorize a current-code run."""
 
     binding = _read_object(Path(path), label="Round 32 execution binding")
     canonical = dict(binding)
@@ -634,21 +641,25 @@ def load_round32_execution_binding(
         )
     for normalized, expected in bound_files.items():
         historical = _git_bytes("show", f"{commit}:{normalized}")
-        current = _git_bytes("show", f"HEAD:{normalized}")
-        if (
-            hashlib.sha256(historical).hexdigest() != expected
-            or hashlib.sha256(current).hexdigest() != expected
-        ):
-            raise ValueError(f"Round 32 implementation changed: {normalized}")
-    status = _git_bytes("status", "--porcelain", "--untracked-files=all")
-    if status.strip():
-        raise ValueError("Round 32 execution requires a clean worktree")
-    relative_design = Path(design_path).resolve().relative_to(ROOT).as_posix()
+        if hashlib.sha256(historical).hexdigest() != expected:
+            raise ValueError(f"Round 32 historical binding changed: {normalized}")
+    if require_current_implementation:
+        for normalized, expected in bound_files.items():
+            current = _git_bytes("show", f"HEAD:{normalized}")
+            if hashlib.sha256(current).hexdigest() != expected:
+                raise ValueError(f"Round 32 implementation changed: {normalized}")
+        status = _git_bytes("status", "--porcelain", "--untracked-files=all")
+        if status.strip():
+            raise ValueError("Round 32 execution requires a clean worktree")
+    resolved_design_path = Path(design_path).resolve()
+    relative_design = resolved_design_path.relative_to(ROOT).as_posix()
     expected_design_file_sha = bound_files.get(relative_design)
     if (
         design.get("path") != relative_design
         or design.get("design_sha256") != design_sha256
         or design.get("file_sha256") != expected_design_file_sha
+        or hashlib.sha256(resolved_design_path.read_bytes()).hexdigest()
+        != expected_design_file_sha
     ):
         raise ValueError("Round 32 design binding changed")
     return binding, str(claimed)
@@ -678,7 +689,9 @@ def _attest_directml() -> dict[str, object]:
         "device": str(device),
         "vendor": backend.vendor,
         "torch_version": str(torch.__version__),
-        "torch_directml_version": str(getattr(torch_directml, "__version__", "unknown")),
+        "torch_directml_version": str(
+            getattr(torch_directml, "__version__", "unknown")
+        ),
         "tensor_identity_sum": observed,
         "status": "pass",
     }
@@ -861,9 +874,7 @@ def _load_corpus(
                         execution["reference_order_notional_quote"]
                     ),
                     max_l1_participation=float(execution["max_l1_participation"]),
-                    decision_cadence_seconds=int(
-                        execution["decision_cadence_seconds"]
-                    ),
+                    decision_cadence_seconds=int(execution["decision_cadence_seconds"]),
                     start_ms=requested_start_ms,
                     end_ms=requested_end_ms,
                     require_full_history_inventory=True,
@@ -910,7 +921,9 @@ def _load_corpus(
         barrier_config = dict(design["barrier_targets"])
         if barrier_config.pop("target_scenario", None) != "stress":
             raise ValueError("barrier target scenario changed")
-        progress("barrier-target-build-start", corpus=name, event_rows=len(event_indexes))
+        progress(
+            "barrier-target-build-start", corpus=name, event_rows=len(event_indexes)
+        )
         with progress_heartbeat(
             progress,
             phase="barrier-target-build-heartbeat",
@@ -1280,7 +1293,11 @@ def _subset_dataset(
     updates: dict[str, object] = {}
     for field in fields(dataset):
         value = getattr(dataset, field.name)
-        if isinstance(value, np.ndarray) and value.ndim >= 1 and value.shape[0] == dataset.rows:
+        if (
+            isinstance(value, np.ndarray)
+            and value.ndim >= 1
+            and value.shape[0] == dataset.rows
+        ):
             updates[field.name] = np.asarray(value[selected]).copy()
     return replace(dataset, **updates)
 
@@ -1302,7 +1319,11 @@ def _prediction_max_abs_difference(
         )
         for name in _PREDICTION_ARRAY_FIELDS
     ]
-    for name in ("action_preference_side", "advantage_preference_side", "side_consensus"):
+    for name in (
+        "action_preference_side",
+        "advantage_preference_side",
+        "side_consensus",
+    ):
         if not np.array_equal(getattr(left, name), getattr(right, name)):
             return math.inf
     return max(differences, default=0.0)
@@ -1338,14 +1359,11 @@ def _equivariance_error(
         ),
         np.max(np.abs(original.signed_advantage_bps + mirrored.signed_advantage_bps)),
     )
-    if (
-        not np.array_equal(
-            original.action_preference_side, -mirrored.action_preference_side
-        )
-        or not np.array_equal(
-            original.advantage_preference_side,
-            -mirrored.advantage_preference_side,
-        )
+    if not np.array_equal(
+        original.action_preference_side, -mirrored.action_preference_side
+    ) or not np.array_equal(
+        original.advantage_preference_side,
+        -mirrored.advantage_preference_side,
     ):
         return math.inf
     return float(max(errors))
@@ -1458,7 +1476,9 @@ def _trace_result(
     }
 
 
-def _corpus_report(bundle: CorpusBundle, role_evidence: Mapping[str, object]) -> dict[str, object]:
+def _corpus_report(
+    bundle: CorpusBundle, role_evidence: Mapping[str, object]
+) -> dict[str, object]:
     return {
         "name": bundle.name,
         "dataset": bundle.dataset.summary(),
@@ -1494,6 +1514,7 @@ def run_shared_action_viability(
         binding_path,
         design_path=design_path,
         design_sha256=design_sha,
+        require_current_implementation=True,
     )
     destination = Path(output_dir)
     if destination.exists() and any(destination.iterdir()):
@@ -1631,13 +1652,15 @@ def run_shared_action_viability(
                     seed=seed,
                     train_sample_weights=train_weights,
                     tuning_sample_weights=tuning_weights,
-                    progress=lambda head, step, total, index=member, model_seed=seed: progress(
-                        "model-head-start",
-                        member=index,
-                        seed=model_seed,
-                        head=head,
-                        head_step=step,
-                        head_total=total,
+                    progress=lambda head, step, total, index=member, model_seed=seed: (
+                        progress(
+                            "model-head-start",
+                            member=index,
+                            seed=model_seed,
+                            head=head,
+                            head_step=step,
+                            head_total=total,
+                        )
                     ),
                 )
             if model.backend_kind != "opencl" or model.backend_requested != "directml":
@@ -1694,9 +1717,7 @@ def run_shared_action_viability(
                     "internal_purged_event_rows": reloaded.internal_purged_event_rows,
                     "class_support": dict(reloaded.class_support),
                     "positive_class_prevalence": reloaded.positive_class_prevalence,
-                    "probability_calibration": list(
-                        reloaded.probability_calibration
-                    ),
+                    "probability_calibration": list(reloaded.probability_calibration),
                     "advantage_validation_directional_loss": (
                         reloaded.advantage_validation_directional_loss
                     ),
@@ -1887,9 +1908,7 @@ def run_shared_action_viability(
                     "withheld_reason": (
                         "development_rejected"
                         if profile in policy_survivors
-                        else profile_results[profile]["development"][
-                            "withheld_reason"
-                        ]
+                        else profile_results[profile]["development"]["withheld_reason"]
                     ),
                 }
 
@@ -1914,9 +1933,7 @@ def run_shared_action_viability(
                 evaluation_first=_parse_date(
                     distant_role["start"], label="distant start"
                 ),
-                evaluation_last=_parse_date(
-                    distant_role["end"], label="distant end"
-                ),
+                evaluation_last=_parse_date(distant_role["end"], label="distant end"),
                 memory_limit=memory_limit,
                 threads=threads,
                 heartbeat_seconds=heartbeat_seconds,
@@ -1949,9 +1966,7 @@ def run_shared_action_viability(
                 distant_prediction,
                 scenario="stress",
             )
-            forecast_gates = design["acceptance_gates"][
-                "distant_confirmation_forecast"
-            ]
+            forecast_gates = design["acceptance_gates"]["distant_confirmation_forecast"]
             assert isinstance(forecast_gates, Mapping)
             forecast_reasons = _forecast_gate_reasons(
                 distant_diagnostics, forecast_gates
@@ -1984,9 +1999,7 @@ def run_shared_action_viability(
                     stress_trades=result["stress_trace"]["metrics"]["trades"],
                 )
 
-        final_profiles = (
-            distant_trace_survivors if not forecast_reasons else []
-        )
+        final_profiles = distant_trace_survivors if not forecast_reasons else []
         for profile in _PROFILE_NAMES:
             profile_results[profile]["final_status"] = (
                 "consumed_data_viability_candidate"
@@ -2088,13 +2101,9 @@ def run_shared_action_viability(
                     else "rejected"
                 ),
                 "rejection_reasons": forecast_reasons,
-                "gates": design["acceptance_gates"][
-                    "distant_confirmation_forecast"
-                ],
+                "gates": design["acceptance_gates"]["distant_confirmation_forecast"],
             },
-            "profile_results": [
-                profile_results[profile] for profile in _PROFILE_NAMES
-            ],
+            "profile_results": [profile_results[profile] for profile in _PROFILE_NAMES],
             "stage_survivors": {
                 "calibration": calibration_survivors,
                 "policy": policy_survivors,
