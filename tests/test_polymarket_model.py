@@ -84,6 +84,7 @@ from simple_ai_trading.polymarket_publication import (
     POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
     _ai_case_rows,
     _execution_uplift_metrics,
+    _parsed_ai_provider_usage,
     _parsed_valid_ai_response,
     _validate_ai_evidence,
     _validate_execution_report,
@@ -2014,6 +2015,61 @@ def _wrong_digest_residency(
     ).validated()
 
 
+def _ollama_chat_response(
+    content: str,
+    *,
+    model: str = "qwen3.5:9b",
+    prompt_tokens: int = 320,
+    output_tokens: int = 24,
+) -> dict[str, object]:
+    return {
+        "model": model,
+        "message": {"role": "assistant", "content": content},
+        "done": True,
+        "done_reason": "stop",
+        "total_duration": 1_000_000_000,
+        "load_duration": 100_000_000,
+        "prompt_eval_count": prompt_tokens,
+        "prompt_eval_duration": 200_000_000,
+        "eval_count": output_tokens,
+        "eval_duration": 500_000_000,
+    }
+
+
+def test_ai_veto_requires_exact_completed_provider_usage() -> None:
+    response = _ollama_chat_response("{}")
+    expected = {
+        "total_duration": 1_000_000_000,
+        "load_duration": 100_000_000,
+        "prompt_eval_count": 320,
+        "prompt_eval_duration": 200_000_000,
+        "eval_count": 24,
+        "eval_duration": 500_000_000,
+    }
+    assert ai_veto_module._validated_provider_usage(
+        response,
+        model="qwen3.5:9b",
+    ) == expected
+    assert _parsed_ai_provider_usage(response, model="qwen3.5:9b") == expected
+
+    for field, value in (
+        ("model", "other:9b"),
+        ("done", False),
+        ("done_reason", "length"),
+        ("prompt_eval_count", True),
+        ("eval_count", 0),
+        ("eval_duration", 1_000_000_001),
+    ):
+        malformed = dict(response)
+        malformed[field] = value
+        with pytest.raises(ValueError, match="provider"):
+            ai_veto_module._validated_provider_usage(
+                malformed,
+                model="qwen3.5:9b",
+            )
+        assert _parsed_ai_provider_usage(malformed, model="qwen3.5:9b") is None
+
+
 def test_ai_veto_permissions_are_fail_closed_and_execution_bound(
     tmp_path: Path,
 ) -> None:
@@ -2050,18 +2106,16 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound(
             return {"model": "qwen3.5:9b", "parameters": "9B"}
         chat_calls += 1
         assert payload["think"] is False
-        return {
-            "message": {
-                "content": json.dumps(
-                    {
-                        "action": "approve",
-                        "confidence": 0.9,
-                        "reason_codes": ["edge_after_fees"],
-                        "summary": "Causal evidence and after-fee edge are coherent.",
-                    }
-                )
-            }
-        }
+        return _ollama_chat_response(
+            json.dumps(
+                {
+                    "action": "approve",
+                    "confidence": 0.9,
+                    "reason_codes": ["edge_after_fees"],
+                    "summary": "Causal evidence and after-fee edge are coherent.",
+                }
+            )
+        )
 
     ai_report = benchmark_polymarket_ai_veto(
         cases,
@@ -2089,6 +2143,11 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound(
 
     assert ai_report.approval_count == len(cases)
     assert ai_report.provider_failure_count == 0
+    assert ai_report.provider_telemetry_count == len(cases)
+    assert ai_report.total_prompt_token_count == 320 * len(cases)
+    assert ai_report.total_output_token_count == 24 * len(cases)
+    assert ai_report.maximum_prompt_token_count == 320
+    assert ai_report.maximum_output_token_count == 24
     assert ai_report.model_parameters_b == 9.0
     assert ai_report.market_permission_sha256 == approved.market_permission_sha256
     assert baseline == approved
@@ -2318,18 +2377,16 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
         if url.endswith("/api/show"):
             return {"model": "qwen3.5:9b", "parameters": "9B"}
         chat_calls += 1
-        return {
-            "message": {
-                "content": json.dumps(
-                    {
-                        "action": "approve",
-                        "confidence": 0.9,
-                        "reason_codes": ["edge_after_fees"],
-                        "summary": "Causal after-fee evidence passes review.",
-                    }
-                )
-            }
-        }
+        return _ollama_chat_response(
+            json.dumps(
+                {
+                    "action": "approve",
+                    "confidence": 0.9,
+                    "reason_codes": ["edge_after_fees"],
+                    "summary": "Causal after-fee evidence passes review.",
+                }
+            )
+        )
 
     clock = iter((100.0, 102.25, 200.0, 201.5))
     monkeypatch.setattr(
@@ -2365,6 +2422,8 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     assert third.model_digest == "e" * 64
     assert chat_calls == 2
     assert [row["cache_hit"] for row in progress_rows] == [False, True, False]
+    assert [row["prompt_tokens"] for row in progress_rows] == [320, 320, 320]
+    assert [row["output_tokens"] for row in progress_rows] == [24, 24, 24]
 
 
 def test_ai_veto_charges_single_gpu_worker_queue_delay(
@@ -2424,18 +2483,16 @@ def test_ai_veto_charges_single_gpu_worker_queue_delay(
             return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
         if url.endswith("/api/show"):
             return {"model": "qwen3.5:9b", "parameters": "9B"}
-        return {
-            "message": {
-                "content": json.dumps(
-                    {
-                        "action": "approve",
-                        "confidence": 0.9,
-                        "reason_codes": ["edge_after_fees"],
-                        "summary": "Causal after-fee evidence passes review.",
-                    }
-                )
-            }
-        }
+        return _ollama_chat_response(
+            json.dumps(
+                {
+                    "action": "approve",
+                    "confidence": 0.9,
+                    "reason_codes": ["edge_after_fees"],
+                    "summary": "Causal after-fee evidence passes review.",
+                }
+            )
+        )
 
     clock = iter((10.0, 12.0, 20.0, 22.0, 30.0, 32.0))
     monkeypatch.setattr(
@@ -2497,7 +2554,7 @@ def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
         if url.endswith("/api/show"):
             return {"model": "qwen3.5:9b", "parameters": "9B"}
         chat_calls += 1
-        return {"message": {"content": "not-json"}}
+        return _ollama_chat_response("not-json")
 
     progress_rows: list[dict[str, object]] = []
     with PolymarketEvidenceStore(tmp_path / "invalid-cache.duckdb") as store:
@@ -2813,18 +2870,16 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
             return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
         if url.endswith("/api/show"):
             return {"model": "qwen3.5:9b", "parameters": "9B"}
-        return {
-            "message": {
-                "content": json.dumps(
-                    {
-                        "action": "approve",
-                        "confidence": 0.9,
-                        "reason_codes": ["edge_after_fees"],
-                        "summary": "The frozen proposal passes the veto-only review.",
-                    }
-                )
-            }
-        }
+        return _ollama_chat_response(
+            json.dumps(
+                {
+                    "action": "approve",
+                    "confidence": 0.9,
+                    "reason_codes": ["edge_after_fees"],
+                    "summary": "The frozen proposal passes the veto-only review.",
+                }
+            )
+        )
 
     ai_report = benchmark_polymarket_ai_veto(
         cases,
@@ -2915,6 +2970,28 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     case_rows = _ai_case_rows({"ai": ai_evidence})
     assert len(case_rows) == len(cases)
     assert all("official_up" not in row["prompt_payload_json"] for row in case_rows)
+
+    forged_tokens = json.loads(json.dumps(ai_evidence))
+    token_report = forged_tokens["veto_report"]
+    token_report["total_prompt_token_count"] += 1
+    token_identity = dict(token_report)
+    token_identity.pop("report_sha256")
+    token_report["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            token_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="aggregate evidence"):
+        _validate_ai_evidence(
+            forged_tokens,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
 
     altered_source_rows = json.loads(json.dumps(prediction_rows))
     source_row = next(
@@ -3131,19 +3208,17 @@ def test_ai_low_confidence_or_malformed_output_vetoes_without_order_authority() 
             return {"model": "qwen3.5:9b", "parameters": "9B"}
         chat_calls += 1
         if chat_calls == 1:
-            return {
-                "message": {
-                    "content": json.dumps(
-                        {
-                            "action": "approve",
-                            "confidence": 0.1,
-                            "reason_codes": ["edge_after_fees"],
-                            "summary": "Uncertain.",
-                        }
-                    )
-                }
-            }
-        return {"message": {"content": "not-json"}}
+            return _ollama_chat_response(
+                json.dumps(
+                    {
+                        "action": "approve",
+                        "confidence": 0.1,
+                        "reason_codes": ["edge_after_fees"],
+                        "summary": "Uncertain.",
+                    }
+                )
+            )
+        return _ollama_chat_response("not-json")
 
     ai_report = benchmark_polymarket_ai_veto(
         cases[:2],
