@@ -246,6 +246,10 @@ registry value and subtracts current WDDM dedicated usage; duplicate identical
 registry views are collapsed, while conflicting totals or malformed counters
 remain unknown and block required-GPU AI. It does not use
 `Win32_VideoController.AdapterRAM`, whose documented type is only `uint32`.
+The CLI freezes the resolved benchmark candidate set and applies this local
+provider/model/GPU gate to every candidate before opening a confirmation
+database. A failed preflight therefore cannot consume a preregistered one-shot
+claim.
 
 AI review v4 queries Ollama `/api/ps` immediately after inference. It binds the
 requested model to one exact SHA-256 weight digest and records model bytes,
