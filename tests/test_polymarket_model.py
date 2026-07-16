@@ -83,6 +83,7 @@ from simple_ai_trading.polymarket_publication import (
     _execution_uplift_metrics,
     _parsed_valid_ai_response,
     _validate_ai_evidence,
+    _validate_execution_report,
     publish_polymarket_model_artifact,
     validate_polymarket_model_artifact,
 )
@@ -3135,6 +3136,43 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         replay,
         config=config,
     )
+    execution_conditions = {item.condition_id for item in split.test}
+
+    def return_tampered_execution(field: str) -> dict[str, object]:
+        report = json.loads(json.dumps(model_execution.asdict()))
+        if field == "configured_capital":
+            execution_config = report["config"]
+            assert isinstance(execution_config, dict)
+            execution_config["initial_capital_quote"] = str(
+                Decimal(execution_config["initial_capital_quote"]) + Decimal("1")
+            )
+        else:
+            report[field] = str(Decimal(report[field]) + Decimal("1"))
+        report_identity = dict(report)
+        report_identity.pop("report_sha256")
+        report["report_sha256"] = hashlib.sha256(
+            json.dumps(
+                report_identity,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest()
+        return report
+
+    for tampered_field in (
+        "configured_capital",
+        "return_on_initial_capital",
+        "return_on_deployed_capital",
+    ):
+        with pytest.raises(ValueError, match="return accounting does not reconcile"):
+            _validate_execution_report(
+                return_tampered_execution(tampered_field),
+                conditions=execution_conditions,
+                expected_time_group_count=len(split.test_group_starts_ms),
+                name="tampered model execution",
+            )
     retry_gates = {
         "probability_model_gates_passed": (
             probability_report.validation_log_loss_delta < 0.0
