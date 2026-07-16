@@ -24,9 +24,12 @@ from .polymarket_model_execution import (
 
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v3"
-POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v5"
-POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v4"
+POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v6"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v5"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
+POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = (
+    "polymarket-ai-veto-ollama-response-v1"
+)
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = (
@@ -231,6 +234,11 @@ class PolymarketAIVetoReport:
     veto_count: int
     cooldown_count: int
     provider_failure_count: int
+    provider_telemetry_count: int
+    total_prompt_token_count: int
+    total_output_token_count: int
+    maximum_prompt_token_count: int
+    maximum_output_token_count: int
     average_inference_latency_seconds: float
     maximum_inference_latency_seconds: float
     average_queue_delay_seconds: float
@@ -261,6 +269,11 @@ class PolymarketAIVetoReport:
             "veto_count": self.veto_count,
             "cooldown_count": self.cooldown_count,
             "provider_failure_count": self.provider_failure_count,
+            "provider_telemetry_count": self.provider_telemetry_count,
+            "total_prompt_token_count": self.total_prompt_token_count,
+            "total_output_token_count": self.total_output_token_count,
+            "maximum_prompt_token_count": self.maximum_prompt_token_count,
+            "maximum_output_token_count": self.maximum_output_token_count,
             "average_inference_latency_seconds": (
                 self.average_inference_latency_seconds
             ),
@@ -322,6 +335,7 @@ def _cache_identity(
         "model_digest": model_digest,
         "model_metadata_sha256": model_metadata_sha256,
         "prompt_contract": POLYMARKET_AI_PROMPT_CONTRACT,
+        "provider_response_contract": POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT,
         "response_schema_sha256": _canonical_sha256(_RESPONSE_SCHEMA),
         "request_sha256": _canonical_sha256(request),
         "request_options_sha256": _canonical_sha256(dict(options)),
@@ -686,6 +700,47 @@ def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
     )
 
 
+def _validated_provider_usage(
+    payload: object,
+    *,
+    model: str,
+) -> dict[str, int]:
+    if not isinstance(payload, Mapping):
+        raise ValueError("Polymarket AI provider response is not an object")
+    if (
+        payload.get("model") != model
+        or payload.get("done") is not True
+        or payload.get("done_reason") != "stop"
+    ):
+        raise ValueError("Polymarket AI provider completion evidence is invalid")
+    usage: dict[str, int] = {}
+    for field in (
+        "total_duration",
+        "load_duration",
+        "prompt_eval_count",
+        "prompt_eval_duration",
+        "eval_count",
+        "eval_duration",
+    ):
+        raw = payload.get(field)
+        if isinstance(raw, bool) or not isinstance(raw, int):
+            raise ValueError("Polymarket AI provider usage evidence is invalid")
+        usage[field] = raw
+    if (
+        usage["total_duration"] <= 0
+        or usage["load_duration"] < 0
+        or usage["prompt_eval_count"] <= 0
+        or usage["prompt_eval_duration"] <= 0
+        or usage["eval_count"] <= 0
+        or usage["eval_duration"] <= 0
+        or usage["load_duration"] > usage["total_duration"]
+        or usage["prompt_eval_duration"] > usage["total_duration"]
+        or usage["eval_duration"] > usage["total_duration"]
+    ):
+        raise ValueError("Polymarket AI provider usage evidence is invalid")
+    return usage
+
+
 def _failed_decision(reason: str) -> PolymarketAIVetoDecision:
     return PolymarketAIVetoDecision(
         action="veto",
@@ -818,6 +873,7 @@ def benchmark_polymarket_ai_veto(
         }
     )
     results: list[PolymarketAIVetoResult] = []
+    provider_usage: list[Mapping[str, int]] = []
     worker_available_ns: int | None = None
     for index, case in enumerate(cases, start=1):
         request = {
@@ -877,6 +933,11 @@ def benchmark_polymarket_ai_veto(
                 raise ValueError("Polymarket AI cache payload is invalid")
             raw, cached_runtime = _decode_cached_response_evidence(cached_evidence)
             decision = _decision_from_cached_payload(raw)
+            usage = (
+                _validated_provider_usage(raw, model=cfg.model)
+                if decision.valid
+                else None
+            )
             provider_runtime = _validated_provider_runtime(
                 cached_runtime,
                 model=cfg.model,
@@ -884,6 +945,7 @@ def benchmark_polymarket_ai_veto(
                 require_gpu=decision.valid,
             )
         else:
+            usage = None
             started = time.perf_counter()
             try:
                 raw = post_json(
@@ -892,6 +954,7 @@ def benchmark_polymarket_ai_veto(
                     cfg.timeout_seconds,
                     "POST",
                 )
+                usage = _validated_provider_usage(raw, model=cfg.model)
                 decision = _parse_decision(raw)
                 residency = residency_inspector(
                     cfg.base_url,
@@ -914,6 +977,7 @@ def benchmark_polymarket_ai_veto(
             except Exception as exc:  # noqa: BLE001 - evidence records failures
                 raw = _failure_envelope(exc)
                 decision = _decision_from_cached_payload(raw)
+                usage = None
             inference_latency = time.perf_counter() - started
         inference_duration_ns = max(0, math.ceil(inference_latency * 1_000_000_000))
         arrival_ns = case.decision_received_monotonic_ns
@@ -951,6 +1015,8 @@ def benchmark_polymarket_ai_veto(
             decision=decision,
         )
         results.append(result)
+        if usage is not None:
+            provider_usage.append(usage)
         if progress is not None:
             progress(
                 "polymarket_ai_veto",
@@ -969,6 +1035,10 @@ def benchmark_polymarket_ai_veto(
                         if provider_runtime is None
                         else str(provider_runtime["status"])
                     ),
+                    "prompt_tokens": (
+                        0 if usage is None else usage["prompt_eval_count"]
+                    ),
+                    "output_tokens": 0 if usage is None else usage["eval_count"],
                 },
             )
     permissions = {condition: False for condition in conditions}
@@ -998,6 +1068,19 @@ def benchmark_polymarket_ai_veto(
         veto_count=sum(item.decision.action == "veto" for item in results),
         cooldown_count=sum(item.decision.action == "cooldown" for item in results),
         provider_failure_count=sum(not item.decision.valid for item in results),
+        provider_telemetry_count=len(provider_usage),
+        total_prompt_token_count=sum(
+            item["prompt_eval_count"] for item in provider_usage
+        ),
+        total_output_token_count=sum(item["eval_count"] for item in provider_usage),
+        maximum_prompt_token_count=max(
+            (item["prompt_eval_count"] for item in provider_usage),
+            default=0,
+        ),
+        maximum_output_token_count=max(
+            (item["eval_count"] for item in provider_usage),
+            default=0,
+        ),
         average_inference_latency_seconds=(
             sum(inference_latencies) / len(inference_latencies)
             if inference_latencies
@@ -1026,6 +1109,7 @@ __all__ = [
     "POLYMARKET_AI_CACHE_SCHEMA_VERSION",
     "POLYMARKET_AI_CASE_SCHEMA_VERSION",
     "POLYMARKET_AI_PROMPT_CONTRACT",
+    "POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT",
     "POLYMARKET_AI_REPORT_SCHEMA_VERSION",
     "SUPPORTED_POLYMARKET_AI_MODELS",
     "PolymarketAIVetoCase",

@@ -49,7 +49,7 @@ _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v3"
-_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v5"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v6"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "profile_model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
@@ -194,6 +194,12 @@ def _finite_float(value: object, name: str) -> float:
     if not math.isfinite(result):
         raise ValueError(f"{name} must be finite")
     return result
+
+
+def _nonnegative_int(value: object, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return value
 
 
 def _decimal(value: object, name: str) -> Decimal:
@@ -1329,6 +1335,46 @@ def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
     }
 
 
+def _parsed_ai_provider_usage(
+    response: object,
+    *,
+    model: str,
+) -> dict[str, int] | None:
+    if (
+        not isinstance(response, Mapping)
+        or response.get("model") != model
+        or response.get("done") is not True
+        or response.get("done_reason") != "stop"
+    ):
+        return None
+    usage: dict[str, int] = {}
+    for field in (
+        "total_duration",
+        "load_duration",
+        "prompt_eval_count",
+        "prompt_eval_duration",
+        "eval_count",
+        "eval_duration",
+    ):
+        raw = response.get(field)
+        if isinstance(raw, bool) or not isinstance(raw, int):
+            return None
+        usage[field] = raw
+    if (
+        usage["total_duration"] <= 0
+        or usage["load_duration"] < 0
+        or usage["prompt_eval_count"] <= 0
+        or usage["prompt_eval_duration"] <= 0
+        or usage["eval_count"] <= 0
+        or usage["eval_duration"] <= 0
+        or usage["load_duration"] > usage["total_duration"]
+        or usage["prompt_eval_duration"] > usage["total_duration"]
+        or usage["eval_duration"] > usage["total_duration"]
+    ):
+        return None
+    return usage
+
+
 def _validate_ai_evidence(
     ai: Mapping[str, Any],
     *,
@@ -1750,6 +1796,7 @@ def _validate_ai_evidence(
     inference_latencies: list[float] = []
     queue_delays: list[float] = []
     latencies: list[float] = []
+    provider_usage: list[Mapping[str, int]] = []
     worker_available_ns: int | None = None
     valid_count = approval_count = veto_count = cooldown_count = failure_count = 0
     for case, result in zip(cases, results, strict=True):
@@ -1811,6 +1858,10 @@ def _validate_ai_evidence(
         permits = decision.get("permits_entry")
         failure_reason = str(decision.get("failure_reason", ""))
         parsed_response = _parsed_valid_ai_response(result.get("response_payload"))
+        usage = _parsed_ai_provider_usage(
+            result.get("response_payload"),
+            model=model_name,
+        )
         runtime_value = result.get("provider_runtime")
         runtime = None
         if runtime_value is not None:
@@ -1872,6 +1923,7 @@ def _validate_ai_evidence(
             or not isinstance(decision.get("summary"), str)
             or len(str(decision["summary"])) > 180
             or (valid and dict(decision) != parsed_response)
+            or (parsed_response is None) != (usage is None)
             or (valid and not gpu_runtime_proved)
             or (
                 not valid
@@ -1896,6 +1948,8 @@ def _validate_ai_evidence(
         veto_count += int(action == "veto")
         cooldown_count += int(action == "cooldown")
         failure_count += int(not valid)
+        if usage is not None:
+            provider_usage.append(usage)
     permissions = _as_mapping(veto.get("market_permissions"), "AI permissions")
     expected_permission_sha256 = _canonical_sha256(
         {
@@ -1939,6 +1993,26 @@ def _validate_ai_evidence(
     expected_maximum_queue = max(queue_delays, default=0.0)
     expected_average = sum(latencies) / len(latencies) if latencies else 0.0
     expected_maximum = max(latencies, default=0.0)
+    reported_telemetry_count = _nonnegative_int(
+        veto.get("provider_telemetry_count"),
+        "AI provider telemetry count",
+    )
+    reported_prompt_tokens = _nonnegative_int(
+        veto.get("total_prompt_token_count"),
+        "AI total prompt token count",
+    )
+    reported_output_tokens = _nonnegative_int(
+        veto.get("total_output_token_count"),
+        "AI total output token count",
+    )
+    reported_maximum_prompt_tokens = _nonnegative_int(
+        veto.get("maximum_prompt_token_count"),
+        "AI maximum prompt token count",
+    )
+    reported_maximum_output_tokens = _nonnegative_int(
+        veto.get("maximum_output_token_count"),
+        "AI maximum output token count",
+    )
     if (
         dict(permissions) != dict(sorted(expected_permissions.items()))
         or veto.get("market_permission_sha256") != expected_permission_sha256
@@ -1947,6 +2021,17 @@ def _validate_ai_evidence(
         or int(veto.get("veto_count", -1)) != veto_count
         or int(veto.get("cooldown_count", -1)) != cooldown_count
         or int(veto.get("provider_failure_count", -1)) != failure_count
+        or reported_telemetry_count != len(provider_usage)
+        or reported_prompt_tokens
+        != sum(item["prompt_eval_count"] for item in provider_usage)
+        or reported_output_tokens != sum(item["eval_count"] for item in provider_usage)
+        or reported_maximum_prompt_tokens
+        != max(
+            (item["prompt_eval_count"] for item in provider_usage),
+            default=0,
+        )
+        or reported_maximum_output_tokens
+        != max((item["eval_count"] for item in provider_usage), default=0)
         or not math.isclose(
             reported_average_inference,
             expected_average_inference,
