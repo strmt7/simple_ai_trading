@@ -136,7 +136,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   once before inference; interrupted and failed claims cannot reopen it. A valid
   output also requires identical Ollama digest/metadata hashes before and after
   inference plus exact post-inference GPU residency. CPU-only or changed weights
-  fail the consumed claim.
+  fail the consumed claim. Candidate resolution and required-GPU capability
+  checks run before the confirmation database opens, so preflight failure must
+  not consume the claim.
 - The exact terminal facts for failed confirmation capture
   `79ac19539d384352b865c21cb0c43627` are in
   `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.
