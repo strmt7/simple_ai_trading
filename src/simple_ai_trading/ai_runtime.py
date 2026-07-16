@@ -99,7 +99,9 @@ class OllamaResidencyReport:
             raise ValueError("Ollama residency report is invalid")
         if self.status == "unloaded":
             if any(value is not None for value in loaded_fields):
-                raise ValueError("Ollama unloaded residency report contains runtime data")
+                raise ValueError(
+                    "Ollama unloaded residency report contains runtime data"
+                )
             return self
         if (
             not isinstance(self.loaded_model, str)
@@ -272,7 +274,9 @@ def estimate_model_parameters_b(model: str) -> float | None:
     text = str(model or "").lower()
     if not text or text in {"auto", "operator-selected-local-llm"}:
         return None
-    matches = list(re.finditer(r"(?<![a-z0-9])e?(\d+(?:\.\d+)?)([bm])(?![a-z0-9])", text))
+    matches = list(
+        re.finditer(r"(?<![a-z0-9])e?(\d+(?:\.\d+)?)([bm])(?![a-z0-9])", text)
+    )
     values: list[float] = []
     for match in matches:
         number = _safe_float(match.group(1))
@@ -352,7 +356,9 @@ def _ollama_inventory() -> dict[str, bool] | None:
         name = columns[0].strip()
         size = columns[2].strip()
         if name:
-            inventory[name] = size not in {"", "-"} and not name.lower().endswith(":cloud")
+            inventory[name] = size not in {"", "-"} and not name.lower().endswith(
+                ":cloud"
+            )
     return inventory
 
 
@@ -360,7 +366,9 @@ def _nvidia_free_vram_gb() -> float | None:
     exe = shutil.which("nvidia-smi")
     if not exe:
         return None
-    output = _run_capture([exe, "--query-gpu=memory.free", "--format=csv,noheader,nounits"])
+    output = _run_capture(
+        [exe, "--query-gpu=memory.free", "--format=csv,noheader,nounits"]
+    )
     values = [_safe_float(line.strip()) for line in output.splitlines() if line.strip()]
     values = [value for value in values if value is not None]
     if not values:
@@ -437,18 +445,24 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
     if free_ram is None:
         messages.append("system RAM headroom could not be measured")
     elif free_ram < cfg.min_free_ram_gb:
-        messages.append(f"free system RAM {free_ram:.1f} GiB is below required {cfg.min_free_ram_gb:.1f} GiB")
+        messages.append(
+            f"free system RAM {free_ram:.1f} GiB is below required {cfg.min_free_ram_gb:.1f} GiB"
+        )
 
     if cfg.require_gpu:
         if backend.kind == "cpu":
             reason = f": {backend.reason}" if backend.reason else ""
-            messages.append(f"AI requires a GPU compute backend; {backend.requested} resolved to CPU{reason}")
+            messages.append(
+                f"AI requires a GPU compute backend; {backend.requested} resolved to CPU{reason}"
+            )
         elif free_vram is None:
             warnings.append(
                 "free VRAM could not be measured through vendor tools; GPU backend functional check passed"
             )
         elif free_vram < cfg.min_free_vram_gb:
-            messages.append(f"free VRAM {free_vram:.1f} GiB is below required {cfg.min_free_vram_gb:.1f} GiB")
+            messages.append(
+                f"free VRAM {free_vram:.1f} GiB is below required {cfg.min_free_vram_gb:.1f} GiB"
+            )
 
     provider = cfg.provider
     if provider in {"auto", "local-gpu"}:
@@ -466,18 +480,26 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
             inventory = _ollama_inventory()
             provider_available = inventory is not None
             if inventory is None:
-                messages.append("Ollama is not installed, not running, or returned no model inventory")
+                messages.append(
+                    "Ollama is not installed, not running, or returned no model inventory"
+                )
             else:
                 candidates = {model, f"{model}:latest"} if ":" not in model else {model}
-                selected = next((name for name in candidates if name in inventory), None)
+                selected = next(
+                    (name for name in candidates if name in inventory), None
+                )
                 model_available = selected is not None
                 model_local = bool(selected is not None and inventory[selected])
                 if not model_available:
                     messages.append(f"AI model {model} is not installed in Ollama")
                 elif not model_local:
-                    messages.append(f"AI model {model} has no local weights and cannot satisfy local GPU AI")
+                    messages.append(
+                        f"AI model {model} has no local weights and cannot satisfy local GPU AI"
+                    )
         else:
-            messages.append(f"AI provider {provider} cannot be verified as a supported local provider")
+            messages.append(
+                f"AI provider {provider} cannot be verified as a supported local provider"
+            )
         minimum_parameters_b = max(0.0, float(cfg.min_model_parameters_b))
         if model_parameters_b is None:
             warnings.append(
