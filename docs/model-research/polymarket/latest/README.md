@@ -49,7 +49,11 @@ or AI evidence until terminal integrity, continuity, and resolution gates pass.
 
 The host [DirectML preflight](../round-009-directml-preflight.json) completed a
 real MLP forward/backward parameter update on `privateuseone:0` with no CPU
-fallback. It is environment evidence only, not model-quality or speed evidence.
+fallback. The complete ensemble fit now also rejects explicit accelerator
+requests that resolve to CPU, captures fallback warnings for every epoch, and
+requires Torch checkpoint probabilities to replay through the persisted
+canonical model within the frozen numerical tolerance. These are implementation
+controls, not model-quality, market-speed, or profitability evidence.
 
 The `polymarket-ridge` command claims its pipeline in DuckDB before test
 evaluation. A completed claim reloads the signed report without refitting; an

@@ -41,8 +41,8 @@ from .polymarket_recorder import PolymarketEvidenceStore
 POLYMARKET_MLP_CONTRACT_SHA256 = (
     "a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2"
 )
-POLYMARKET_MLP_MODEL_SCHEMA_VERSION = "polymarket-round9-causal-mlp-model-v1"
-POLYMARKET_MLP_REPORT_SCHEMA_VERSION = "polymarket-round9-causal-mlp-report-v2"
+POLYMARKET_MLP_MODEL_SCHEMA_VERSION = "polymarket-round9-causal-mlp-model-v2"
+POLYMARKET_MLP_REPORT_SCHEMA_VERSION = "polymarket-round9-causal-mlp-report-v3"
 POLYMARKET_MLP_SEEDS = (4701, 4702, 4703)
 POLYMARKET_MLP_BATCH_SIZE = 4096
 POLYMARKET_MLP_MAX_EPOCHS = 200
@@ -108,6 +108,7 @@ class PolymarketMLPBackendEvidence:
     preflight_parameter_delta: float
     preflight_seconds: float
     training_seconds: float
+    canonical_replay_max_probability_drift: float | None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -274,6 +275,13 @@ class PolymarketMLPEnsemble:
             or self.backend.kind not in {"cpu", "cuda", "rocm", "directml", "mps"}
             or not all(math.isfinite(value) and value >= 0.0 for value in backend_values)
             or self.backend.preflight_parameter_delta <= 0.0
+            or self.backend.canonical_replay_max_probability_drift is None
+            or not math.isfinite(
+                self.backend.canonical_replay_max_probability_drift
+            )
+            or not 0.0
+            <= self.backend.canonical_replay_max_probability_drift
+            <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
             or not math.isfinite(self.reproducibility_max_probability_drift)
             or not 0.0
             <= self.reproducibility_max_probability_drift
@@ -601,7 +609,13 @@ def _torch_runtime(
         import torch
     except Exception as exc:  # pragma: no cover - optional runtime boundary
         raise RuntimeError("Polymarket MLP requires the optional torch runtime") from exc
-    backend = resolve_backend(requested_backend)
+    requested = requested_backend.strip().lower()
+    backend = resolve_backend(requested)
+    if requested != "auto" and backend.kind != requested:
+        detail = f": {backend.reason}" if backend.reason else ""
+        raise RuntimeError(
+            f"requested compute backend {requested} resolved to {backend.kind}{detail}"
+        )
     if backend.kind == "directml":
         try:
             import torch_directml
@@ -637,12 +651,16 @@ def _binary_logit_losses(torch: Any, logits: Any, labels: Any) -> Any:
 
 
 def _fallback_messages(messages: Sequence[str]) -> list[str]:
-    return [
-        value
-        for value in messages
-        if "not currently supported on the DML backend" in value
-        or "fall back to run on the CPU" in value
-    ]
+    fallback: list[str] = []
+    for value in messages:
+        normalized = value.casefold()
+        if (
+            "dml backend" in normalized
+            and "cpu" in normalized
+            and ("fall back" in normalized or "fallback" in normalized)
+        ):
+            fallback.append(value)
+    return fallback
 
 
 class _ExplicitAdamW:
@@ -748,6 +766,7 @@ def _preflight(
         preflight_parameter_delta=parameter_delta,
         preflight_seconds=elapsed,
         training_seconds=0.0,
+        canonical_replay_max_probability_drift=None,
     )
 
 
@@ -811,7 +830,7 @@ def _fit_member(
     validation_labels: np.ndarray,
     progress: ProgressCallback | None = None,
     run_kind: str = "ensemble",
-) -> PolymarketMLPMember:
+) -> tuple[PolymarketMLPMember, float]:
     torch.manual_seed(seed)
     model = _new_torch_model(torch).to(device)
     optimizer = _ExplicitAdamW(torch, tuple(model.parameters()))
@@ -914,12 +933,31 @@ def _fit_member(
     if best_state is None or best_epoch <= 0:
         raise RuntimeError("Polymarket MLP produced no finite validation checkpoint")
     model.load_state_dict(best_state)
-    return _extract_member(
+    torch_probability = _predict_torch(
+        torch,
+        model,
+        device,
+        validation_features,
+    )
+    member = _extract_member(
         model,
         seed=seed,
         best_epoch=best_epoch,
         trace=trace,
     )
+    canonical_probability = member.predict_standardized(validation_features)
+    canonical_replay_drift = float(
+        np.max(np.abs(torch_probability - canonical_probability))
+    )
+    if (
+        not math.isfinite(canonical_replay_drift)
+        or canonical_replay_drift > POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
+    ):
+        raise RuntimeError(
+            "Polymarket MLP canonical replay drift exceeds tolerance:"
+            f"{canonical_replay_drift:.9g}"
+        )
+    return member, canonical_replay_drift
 
 
 def _bootstrap(
@@ -1081,10 +1119,11 @@ def fit_and_evaluate_polymarket_mlp(
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         fitted_members: list[PolymarketMLPMember] = []
+        canonical_replay_drifts: list[float] = []
         for seed in POLYMARKET_MLP_SEEDS:
             if progress is not None:
                 progress("polymarket_mlp_seed", {"seed": seed, "status": "started"})
-            member = _fit_member(
+            member, canonical_replay_drift = _fit_member(
                 torch,
                 device,
                 seed=seed,
@@ -1096,6 +1135,7 @@ def fit_and_evaluate_polymarket_mlp(
                 progress=progress,
             )
             fitted_members.append(member)
+            canonical_replay_drifts.append(canonical_replay_drift)
             if progress is not None:
                 progress(
                     "polymarket_mlp_seed",
@@ -1104,6 +1144,9 @@ def fit_and_evaluate_polymarket_mlp(
                         "status": "complete",
                         "best_epoch": member.best_epoch,
                         "epochs_ran": member.epochs_ran,
+                        "canonical_replay_max_probability_drift": (
+                            canonical_replay_drift
+                        ),
                     },
                 )
         members = tuple(fitted_members)
@@ -1112,7 +1155,7 @@ def fit_and_evaluate_polymarket_mlp(
                 "polymarket_mlp_reproducibility",
                 {"seed": POLYMARKET_MLP_SEEDS[0], "status": "started"},
             )
-        repeated = _fit_member(
+        repeated, repeated_replay_drift = _fit_member(
             torch,
             device,
             seed=POLYMARKET_MLP_SEEDS[0],
@@ -1124,12 +1167,14 @@ def fit_and_evaluate_polymarket_mlp(
             progress=progress,
             run_kind="reproducibility",
         )
+        canonical_replay_drifts.append(repeated_replay_drift)
     fallback = _fallback_messages([str(item.message) for item in caught])
     if fallback:
         raise RuntimeError(f"Polymarket MLP training used CPU fallback: {fallback}")
     backend_evidence = replace(
         backend_evidence,
         training_seconds=time.perf_counter() - training_started,
+        canonical_replay_max_probability_drift=max(canonical_replay_drifts),
     )
     first_probability = members[0].predict_standardized(standardized_validation)
     repeated_probability = repeated.predict_standardized(standardized_validation)

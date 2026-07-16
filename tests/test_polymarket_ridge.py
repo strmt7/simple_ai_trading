@@ -12,6 +12,7 @@ from simple_ai_trading import (
     polymarket_ridge as polymarket_ridge_module,
 )
 from simple_ai_trading.command_contract import command_specs
+from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.polymarket_action_value import (
     POLYMARKET_ACTION_FEATURE_NAMES,
 )
@@ -363,6 +364,26 @@ def test_round9_mlp_refuses_short_test_partition_before_runtime(monkeypatch) -> 
         fit_and_evaluate_polymarket_mlp(dataset, parent, compute_backend="cpu")
 
 
+def test_round9_mlp_refuses_silent_explicit_backend_fallback(monkeypatch) -> None:
+    monkeypatch.setattr(
+        polymarket_mlp_module,
+        "resolve_backend",
+        lambda _requested: BackendInfo(
+            requested="directml",
+            kind="cpu",
+            device="cpu",
+            vendor="Python stdlib",
+            reason="DirectML unavailable",
+        ),
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="requested compute backend directml resolved to cpu",
+    ):
+        polymarket_mlp_module._torch_runtime("directml")
+
+
 def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
     tmp_path,
     monkeypatch,
@@ -381,6 +402,10 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
 
     assert tuple(item.seed for item in report.ensemble.members) == POLYMARKET_MLP_SEEDS
     assert report.ensemble.backend.kind == "cpu"
+    assert (
+        report.ensemble.backend.canonical_replay_max_probability_drift
+        <= 0.00001
+    )
     assert "preflight_seconds" in report.ensemble.backend.asdict()
     assert "training_seconds" in report.ensemble.backend.asdict()
     assert "preflight_seconds" not in report.ensemble.identity_payload()["backend"]
