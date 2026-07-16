@@ -13658,9 +13658,9 @@ def command_autonomous(args: argparse.Namespace) -> int:
         AutonomousConfig,
         STATE_PAUSED,
         STATE_RUNNING,
+        STATE_STOPPED,
         STATE_STOPPING,
         AutonomousControl,
-        close_tracked_open_positions,
         run_loop,
     )
     from .objective import get_objective
@@ -13832,37 +13832,34 @@ def command_autonomous(args: argparse.Namespace) -> int:
         print("autonomous: RUNNING")
         return 0
     if action == "stop":
+        previous_state = str(control.read().get("state") or STATE_STOPPED)
+        store = PositionsStore()
+        ledger_errors = store.open_integrity_errors()
+        positions = [] if ledger_errors else store.load_open()
         control.write(STATE_STOPPING, note="CLI stop")
-        runtime = load_runtime()
-        strategy = load_strategy()
-        mark_price: float | None = None
-        client: BinanceClient | None = None
-        try:
-            client = _build_client(runtime)
-            quote_fn = getattr(client, "get_symbol_price", None)
-            if not callable(quote_fn):
-                raise AttributeError("client does not expose get_symbol_price")
-            price, _ts = quote_fn(runtime.symbol)
-            mark_price = float(price)
-        except (AttributeError, BinanceAPIError, TypeError, ValueError) as exc:
-            print(f"autonomous: stop quote unavailable; local positions will close at entry price if needed ({exc})", file=sys.stderr)
-        close_report = close_tracked_open_positions(
-            PositionsStore(),
-            mark_price,
-            "operator-stop-command",
-            client=client,
-            reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
-        )
-        suffix = f"; closed_positions={close_report.closed}" if close_report.closed else ""
-        if close_report.skipped or close_report.failed:
-            failures = ", ".join(close_report.failures[:5])
+        if ledger_errors:
             print(
-                f"autonomous: STOPPING{suffix}; close_incomplete "
-                f"skipped={close_report.skipped} failed={close_report.failed} {failures}",
+                "autonomous: STOPPING; close_incomplete "
+                f"ledger_errors={len(ledger_errors)} {', '.join(ledger_errors[:5])}",
                 file=sys.stderr,
             )
             return 2
-        print(f"autonomous: STOPPING{suffix}")
+        if previous_state == STATE_STOPPED:
+            if positions:
+                print(
+                    "autonomous: STOPPING; close_incomplete "
+                    f"tracked_positions={len(positions)} no active worker acknowledged the request; "
+                    "positions remain open and require reconciliation",
+                    file=sys.stderr,
+                )
+                return 2
+            control.write(STATE_STOPPED, note="CLI stop; already flat")
+            print("autonomous: STOPPED; tracked_positions=0")
+            return 0
+        print(
+            "autonomous: STOPPING; request accepted by the single execution worker "
+            f"tracked_positions={len(positions)}"
+        )
         return 0
     # status
     payload = control.read()

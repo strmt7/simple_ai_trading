@@ -423,7 +423,12 @@ def new_position_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
-def bot_client_order_id(position_id: str, action: str) -> str:
+def bot_client_order_id(
+    position_id: str,
+    action: str,
+    *,
+    attempt: int = 1,
+) -> str:
     """Return a Binance-safe bot-owned client order id.
 
     Binance accepts a client order id on spot and USD-M futures orders.  The
@@ -431,9 +436,14 @@ def bot_client_order_id(position_id: str, action: str) -> str:
     network failure without ever using a broad account-wide close.
     """
 
+    attempt_number = int(attempt)
+    if attempt_number < 1 or attempt_number > 999_999:
+        raise ValueError("client order attempt must lie in [1, 999999]")
     clean_id = "".join(ch for ch in str(position_id) if ch.isalnum())[:18] or new_position_id()
     clean_action = "o" if str(action).lower().startswith("open") else "c"
-    return f"{BOT_CLIENT_ORDER_PREFIX}-{clean_action}-{clean_id}"[:36]
+    suffix = "" if attempt_number == 1 else f"-{attempt_number}"
+    prefix = f"{BOT_CLIENT_ORDER_PREFIX}-{clean_action}-{clean_id}"
+    return f"{prefix[: 36 - len(suffix)]}{suffix}"
 
 
 def _normalized_exchange_status(status: object) -> str:

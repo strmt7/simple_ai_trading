@@ -504,6 +504,23 @@ def test_apply_open_order_infers_filled_status_from_execution() -> None:
     assert opened.open_exchange_order_id == "42"
 
 
+def test_apply_open_order_rescales_modeled_entry_fee_to_exchange_fill() -> None:
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.entry_fees = 0.01
+
+    opened = _apply_open_order(
+        position,
+        {
+            "executedQty": "0.05",
+            "avgPrice": "110",
+        },
+    )
+
+    assert opened.notional == pytest.approx(5.5)
+    assert opened.entry_fees == pytest.approx(0.0055)
+
+
 def test_apply_open_order_rejects_ack_without_execution() -> None:
     position = _make_position("LONG", entry=100.0)
     position.dry_run = False
@@ -540,6 +557,34 @@ def test_apply_close_order_rejects_ack_without_execution() -> None:
         )
 
 
+def test_apply_close_order_recomputes_after_cost_pnl_from_exchange_fill() -> None:
+    position = _make_position("LONG", entry=100.0)
+    position.entry_fees = 0.01
+    trade = _close_to_trade(
+        position,
+        90.0,
+        "risk-close",
+        clock=lambda: 3.0,
+        fees=position.entry_fees,
+    )
+
+    closed = _apply_close_order(
+        trade,
+        {
+            "executedQty": "0.05",
+            "avgPrice": "110",
+        },
+        bot_client_order_id(position.id, "close"),
+        exit_taker_fee_bps=10.0,
+    )
+
+    assert closed.qty == pytest.approx(0.05)
+    assert closed.exit_price == pytest.approx(110.0)
+    assert closed.fees == pytest.approx(0.0105)
+    assert closed.realized_pnl == pytest.approx(0.4895)
+    assert closed.realized_pnl_pct == pytest.approx(0.0979)
+
+
 # ----- _close_to_trade ------------------------------------------------------
 
 
@@ -547,7 +592,7 @@ def test_close_to_trade_long_profit(tmp_path: Path) -> None:
     pos = _make_position("LONG", entry=100.0)
     trade = _close_to_trade(pos, 200.0, "take-profit", clock=lambda: 3.0, fees=0.5)
     assert trade.realized_pnl > 0
-    assert trade.realized_pnl_pct == pytest.approx(1.0)
+    assert trade.realized_pnl_pct == pytest.approx(0.95)
     assert trade.fees == 0.5
     assert trade.closed_at_ms == 3000
 
@@ -871,6 +916,89 @@ def test_close_tracked_live_partial_fill_preserves_open_remainder(tmp_path: Path
     assert opens[0].qty == pytest.approx(1.0)
     assert opens[0].notional == pytest.approx(100.0)
     assert opens[0].exchange_status == "PARTIALLY_FILLED"
+
+
+def test_close_tracked_live_recovers_lost_response_by_client_order_id(
+    tmp_path: Path,
+) -> None:
+    class LostResponseClient(FakeClient):
+        def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
+            super().place_order(symbol, side, quantity, **kwargs)
+            raise BinanceAPIError("response lost after venue acceptance")
+
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+    client = LostResponseClient(price=111.0)
+
+    report = close_tracked_open_positions(
+        store,
+        90.0,
+        "operator-stop",
+        client=client,
+        reduce_only=True,
+        taker_fee_bps=10.0,
+        clock=lambda: 10.0,
+    )
+
+    assert report.ok is True
+    assert report.closed == 1
+    assert len(client.orders) == 1
+    assert store.load_open() == []
+    trade = store.load_ledger()[0]
+    assert trade.exit_price == pytest.approx(111.0)
+    assert trade.close_client_order_id == bot_client_order_id(position.id, "close")
+
+
+def test_close_tracked_live_partial_retry_uses_new_idempotency_key(
+    tmp_path: Path,
+) -> None:
+    class PartialThenFullClient(FakeClient):
+        def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
+            first_attempt = not self.orders
+            fill_quantity = quantity / 2.0 if first_attempt else quantity
+            order = super().place_order(symbol, side, fill_quantity, **kwargs)
+            order["status"] = "PARTIALLY_FILLED" if first_attempt else "FILLED"
+            return order
+
+    store = PositionsStore(root=tmp_path / "positions")
+    position = _make_position("LONG", entry=100.0)
+    position.dry_run = False
+    position.open_client_order_id = bot_client_order_id(position.id, "open")
+    position.exchange_status = "FILLED"
+    store.record_open(position)
+    client = PartialThenFullClient(price=110.0)
+
+    first = close_tracked_open_positions(
+        store,
+        110.0,
+        "operator-stop",
+        client=client,
+        reduce_only=True,
+    )
+    second = close_tracked_open_positions(
+        store,
+        110.0,
+        "operator-stop-retry",
+        client=client,
+        reduce_only=True,
+    )
+
+    assert first.partial == 1
+    assert second.ok is True
+    assert store.load_open() == []
+    ledger = store.load_ledger()
+    assert sum(trade.qty for trade in ledger) == pytest.approx(position.qty)
+    assert ledger[0].close_client_order_id == bot_client_order_id(position.id, "close")
+    assert ledger[1].close_client_order_id == bot_client_order_id(
+        position.id,
+        "close",
+        attempt=2,
+    )
+    assert ledger[0].close_client_order_id != ledger[1].close_client_order_id
 
 
 def test_close_tracked_live_unverified_position_is_not_touched(tmp_path: Path) -> None:
