@@ -18,6 +18,8 @@ agents to canonical evidence without replacing that evidence.
   and the contiguous 90-day coverage evidence.
 - Profit factor is gross profit divided by gross loss and is capped at `999.0`
   in finite JSON evidence; positive P&L with zero gross loss uses that cap.
+- Return-to-drawdown evidence is bounded to `[-999.0, 999.0]`; positive return
+  with zero drawdown uses `999.0` instead of being misreported as zero quality.
 - Historical labels, future books, resolutions, fills, and PnL must never enter
   a live inference payload. Unknown order state blocks new exposure.
 - Secrets must never enter prompts, logs, artifacts, tests, commits, or docs.
