@@ -744,7 +744,9 @@ def _raw_replay_invariants(
         expected_hash = _canonical_sha256(expected_scenarios)
         observed_hash = _canonical_sha256(observed["scenarios"])
         if observed_hash != expected_hash:
-            raise ValueError(f"Raw policy replay drifted for {candidate}")
+            raise ValueError(
+                f"Raw policy-validation simulation drifted for {candidate}"
+            )
         invariants.append(
             {
                 "candidate_id": candidate,

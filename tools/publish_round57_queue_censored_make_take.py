@@ -352,7 +352,10 @@ def _progress_rows(
                 "causal L1, tape, aggregate depth, queue, exponential flow; "
                 "10-second decisions"
             ),
-            "risk_level": "predictive mechanism screen; unlevered; no policy replay",
+            "risk_level": (
+                "predictive mechanism screen; unlevered; "
+                "no policy-validation simulation"
+            ),
             "spearman_ic": str(mean_spearman),
             "selected_signals": "0",
             "executable_trades": "0",

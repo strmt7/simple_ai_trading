@@ -186,7 +186,7 @@
     "six explicit monthly role schedules and embargo counts",
     "18 primary and 6 meta model artifacts with reload identity",
     "primary and meta class balance and prediction-quality evidence",
-    "216 calibration threshold traces including zero-action months",
+    "216 threshold-selection simulations including zero-action months",
     "monthly and aggregate nonoverlapping exact-net replays",
     "daily capacity usage and rejection counts by symbol",
     "symbol month funding and loss-streak attribution",
