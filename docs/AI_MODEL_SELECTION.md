@@ -79,6 +79,8 @@ The Polymarket model command does not contact the AI benchmark or Ollama
 provider unless the frozen probability model first improves validation log
 loss, untouched-test log loss, and untouched-test Brier score. A failed
 prerequisite records `probability_model_gates_failed` and spends no AI tokens.
+Zero after-fee proposals likewise record `no_positive_after_fee_proposals`
+before benchmark-file, provenance, cache, or provider access.
 
 Uplift evidence uses a common fixed-period return table rather than pairing
 trades by list index. The baseline and AI strategies may enter different
