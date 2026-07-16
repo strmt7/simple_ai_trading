@@ -1773,17 +1773,38 @@ def build_polymarket_feature_dataset(
     config: PolymarketFeatureConfig | None = None,
     condition_ids: Sequence[str] | None = None,
     source_context: PolymarketFeatureSourceContext | None = None,
+    preloaded_replay: PolymarketEvidenceReplay | None = None,
 ) -> PolymarketFeatureDataset:
     """Build causal features; official outcomes are attached only as future labels."""
 
     cfg = (config or PolymarketFeatureConfig()).validated()
-    replay = PolymarketEvidenceReplay.load(
-        store,
-        run_id=run_id,
-        allow_segmented_gaps=cfg.allow_segmented_gaps,
-        book_sample_interval_ms=cfg.cadence_ms,
-        condition_ids=condition_ids,
-    )
+    if preloaded_replay is None:
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id=run_id,
+            allow_segmented_gaps=cfg.allow_segmented_gaps,
+            book_sample_interval_ms=cfg.cadence_ms,
+            condition_ids=condition_ids,
+        )
+    else:
+        replay = preloaded_replay
+        selected_run = str(run_id or replay.run_id).strip()
+        selected_conditions = tuple(
+            sorted({str(value or "").strip().lower() for value in condition_ids or ()})
+        )
+        replay_conditions = tuple(
+            sorted(market.condition_id for market in replay.markets)
+        )
+        expected_continuity = "segmented" if cfg.allow_segmented_gaps else "strict"
+        if (
+            not selected_conditions
+            or any(not value for value in selected_conditions)
+            or replay.run_id != selected_run
+            or replay_conditions != selected_conditions
+            or replay.diagnostics.book_sample_interval_ms != cfg.cadence_ms
+            or replay.diagnostics.continuity_mode != expected_continuity
+        ):
+            raise ValueError("preloaded Polymarket feature replay contract differs")
     selected = replay.run_id
     context = source_context or load_polymarket_feature_source_context(
         store,

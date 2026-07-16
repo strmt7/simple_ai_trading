@@ -43,7 +43,10 @@ Terminal reads now stream one relational query, and clean audited v3 source
 feeds can replay directly from hash-verified raw chunks. The hash-bound
 [writer](../storage-v3-long-tail-benchmark-2026-07-16.json) and
 [reader](../storage-v3-reader-benchmark-2026-07-16.json) benchmarks state their
-real-payload scope and limitations. Capture
+real-payload scope and limitations. Bounded action batches now reconstruct one
+full-resolution CLOB replay and derive the exact 250 ms feature view from it,
+removing the second condition scan without changing feature or action identity.
+Capture
 `79ac19539d384352b865c21cb0c43627` is still running; it grants no Round 9 model
 or AI evidence until terminal integrity, continuity, and resolution gates pass.
 

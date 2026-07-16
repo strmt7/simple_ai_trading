@@ -570,14 +570,6 @@ def materialize_polymarket_action_value_batches(
                     "condition_count": len(conditions),
                 },
             )
-        features = build_polymarket_feature_dataset(
-            store,
-            run_id=selected,
-            config=cfg.feature,
-            condition_ids=conditions,
-            source_context=source_context,
-        )
-        materialize_polymarket_feature_dataset(store, features)
         replay = PolymarketEvidenceReplay.load(
             store,
             run_id=selected,
@@ -585,6 +577,16 @@ def materialize_polymarket_action_value_batches(
             book_sample_interval_ms=0,
             condition_ids=conditions,
         )
+        feature_replay = replay.with_book_sample_interval(cfg.feature.cadence_ms)
+        features = build_polymarket_feature_dataset(
+            store,
+            run_id=selected,
+            config=cfg.feature,
+            condition_ids=conditions,
+            source_context=source_context,
+            preloaded_replay=feature_replay,
+        )
+        materialize_polymarket_feature_dataset(store, features)
         actions = build_polymarket_action_value_dataset(
             features,
             PolymarketRepricingExecutionContext(replay),
@@ -617,7 +619,7 @@ def materialize_polymarket_action_value_batches(
                     "action_count": len(actions.features),
                 },
             )
-        del actions, replay, features
+        del actions, feature_replay, replay, features
         gc.collect()
     batches = tuple(item for item in results if item is not None)
     if len(batches) != len(batch_specs):
