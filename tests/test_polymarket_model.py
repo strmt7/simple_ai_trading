@@ -26,6 +26,7 @@ from simple_ai_trading.cli import (
     _polymarket_held_out_prediction_evidence,
     _polymarket_latency_scenarios,
     _polymarket_matched_uplift_periods,
+    _polymarket_probability_gates_passed,
     _polymarket_profile_prediction_evidence,
 )
 from simple_ai_trading.paper_execution import BookLevel, PaperBookSnapshot
@@ -2653,6 +2654,30 @@ def test_ai_uplift_downside_return_risk_ratio_is_bounded(
 
     assert source_metrics["downside_return_risk_ratio"] == pytest.approx(expected)
     assert reconstructed_metrics == source_metrics
+
+
+@pytest.mark.parametrize(
+    ("validation_delta", "test_log_loss_delta", "test_brier_delta", "expected"),
+    [
+        (-0.01, -0.01, -0.01, True),
+        (0.0, -0.01, -0.01, False),
+        (-0.01, 0.0, -0.01, False),
+        (-0.01, -0.01, 0.0, False),
+    ],
+)
+def test_ai_provider_requires_probability_model_gates(
+    validation_delta: float,
+    test_log_loss_delta: float,
+    test_brier_delta: float,
+    expected: bool,
+) -> None:
+    report = SimpleNamespace(
+        validation_log_loss_delta=validation_delta,
+        test_log_loss_delta=test_log_loss_delta,
+        test_brier_delta=test_brier_delta,
+    )
+
+    assert _polymarket_probability_gates_passed(report) is expected
 
 
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
