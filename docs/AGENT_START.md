@@ -43,6 +43,10 @@ agents to canonical evidence without replacing that evidence.
 | CI/release | one workflow and its test/lint config | `docs/AGENT_WORKFLOWS.md` |
 | Broad architecture | `docs/SIMILAR_TRADING_REPOS_REVIEW.md` | source and tests for each affected boundary |
 
+The native app verifies the backend's `ui_contract` SHA-256 before any ordinary
+workflow. A mismatch blocks Start and expert commands but never Pause or Stop.
+After parser or taxonomy changes, regenerate the header through the native build.
+
 ## Model research state
 
 - The compact cross-round ledger is
