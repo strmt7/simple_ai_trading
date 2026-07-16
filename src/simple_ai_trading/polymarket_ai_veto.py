@@ -24,11 +24,12 @@ from .polymarket_model_execution import (
 
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v3"
-POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v6"
-POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v5"
+POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v7"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v6"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
-POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = "polymarket-ai-veto-ollama-response-v1"
-_FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
+POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = "polymarket-ai-veto-ollama-response-v2"
+_FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v2"
+_LEGACY_FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = (
     "qwen3:8b",
@@ -752,7 +753,12 @@ def _failed_decision(reason: str) -> PolymarketAIVetoDecision:
     )
 
 
-def _failure_envelope(error: BaseException) -> dict[str, str]:
+def _failure_envelope(
+    error: BaseException,
+    *,
+    provider_response_received: bool,
+    provider_response: object,
+) -> dict[str, object]:
     error_type = type(error).__name__[:128]
     error_sha256 = _canonical_sha256(
         {
@@ -760,20 +766,36 @@ def _failure_envelope(error: BaseException) -> dict[str, str]:
             "error_message": str(error),
         }
     )
+    response_sha256 = (
+        _canonical_sha256(provider_response) if provider_response_received else None
+    )
     return {
         "schema_version": _FAILURE_ENVELOPE_SCHEMA_VERSION,
         "error_type": error_type,
         "error_sha256": error_sha256,
+        "provider_response_received": provider_response_received,
+        "provider_response_sha256": response_sha256,
+        "provider_response": provider_response if provider_response_received else None,
     }
 
 
 def _decision_from_cached_payload(payload: object) -> PolymarketAIVetoDecision:
-    if (
-        not isinstance(payload, Mapping)
-        or payload.get("schema_version") != _FAILURE_ENVELOPE_SCHEMA_VERSION
-    ):
+    if not isinstance(payload, Mapping) or payload.get("schema_version") not in {
+        _FAILURE_ENVELOPE_SCHEMA_VERSION,
+        _LEGACY_FAILURE_ENVELOPE_SCHEMA_VERSION,
+    }:
         return _parse_decision(payload)
-    if set(payload) != {"schema_version", "error_type", "error_sha256"}:
+    schema_version = payload.get("schema_version")
+    expected_keys = {"schema_version", "error_type", "error_sha256"}
+    if schema_version == _FAILURE_ENVELOPE_SCHEMA_VERSION:
+        expected_keys.update(
+            {
+                "provider_response_received",
+                "provider_response_sha256",
+                "provider_response",
+            }
+        )
+    if set(payload) != expected_keys:
         raise ValueError("AI failure cache envelope is invalid")
     error_type = payload.get("error_type")
     error_sha256 = payload.get("error_sha256")
@@ -786,6 +808,22 @@ def _decision_from_cached_payload(payload: object) -> PolymarketAIVetoDecision:
         or any(value not in "0123456789abcdef" for value in error_sha256)
     ):
         raise ValueError("AI failure cache envelope is invalid")
+    if schema_version == _FAILURE_ENVELOPE_SCHEMA_VERSION:
+        response_received = payload.get("provider_response_received")
+        response_sha256 = payload.get("provider_response_sha256")
+        provider_response = payload.get("provider_response")
+        if not isinstance(response_received, bool):
+            raise ValueError("AI failure cache envelope is invalid")
+        if response_received:
+            if (
+                not isinstance(response_sha256, str)
+                or len(response_sha256) != 64
+                or any(value not in "0123456789abcdef" for value in response_sha256)
+                or response_sha256 != _canonical_sha256(provider_response)
+            ):
+                raise ValueError("AI failure cache envelope is invalid")
+        elif response_sha256 is not None or provider_response is not None:
+            raise ValueError("AI failure cache envelope is invalid")
     return _failed_decision(f"provider_or_schema_failure:{error_type}:{error_sha256}")
 
 
@@ -913,7 +951,8 @@ def benchmark_polymarket_ai_veto(
             else None
         )
         cache_hit = cached is not None
-        raw: object = {}
+        raw: object = None
+        provider_response_received = False
         provider_runtime: dict[str, object] | None = None
         if cached is not None:
             cached_identity = cached.get("identity")
@@ -954,6 +993,7 @@ def benchmark_polymarket_ai_veto(
                     cfg.timeout_seconds,
                     "POST",
                 )
+                provider_response_received = True
                 usage = _validated_provider_usage(raw, model=cfg.model)
                 decision = _parse_decision(raw)
                 residency = residency_inspector(
@@ -975,7 +1015,11 @@ def benchmark_polymarket_ai_veto(
                     require_gpu=True,
                 )
             except Exception as exc:  # noqa: BLE001 - evidence records failures
-                raw = _failure_envelope(exc)
+                raw = _failure_envelope(
+                    exc,
+                    provider_response_received=provider_response_received,
+                    provider_response=raw,
+                )
                 decision = _decision_from_cached_payload(raw)
                 usage = None
             inference_latency = time.perf_counter() - started

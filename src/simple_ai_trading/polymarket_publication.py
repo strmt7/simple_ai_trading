@@ -49,7 +49,8 @@ _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v3"
-_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v6"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v7"
+_AI_FAILURE_ENVELOPE_SCHEMA = "polymarket-ai-veto-failure-v2"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "profile_model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
@@ -1335,6 +1336,40 @@ def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
     }
 
 
+def _valid_ai_failure_envelope(response: object) -> bool:
+    if not isinstance(response, Mapping) or set(response) != {
+        "schema_version",
+        "error_type",
+        "error_sha256",
+        "provider_response_received",
+        "provider_response_sha256",
+        "provider_response",
+    }:
+        return False
+    error_type = response.get("error_type")
+    error_sha256 = response.get("error_sha256")
+    response_received = response.get("provider_response_received")
+    response_sha256 = response.get("provider_response_sha256")
+    provider_response = response.get("provider_response")
+    if (
+        response.get("schema_version") != _AI_FAILURE_ENVELOPE_SCHEMA
+        or not isinstance(error_type, str)
+        or not 1 <= len(error_type) <= 128
+        or any(not (value.isalnum() or value in "._") for value in error_type)
+        or not _is_sha256(error_sha256)
+        or not isinstance(response_received, bool)
+    ):
+        return False
+    if not response_received:
+        return response_sha256 is None and provider_response is None
+    if not _is_sha256(response_sha256):
+        return False
+    try:
+        return response_sha256 == _canonical_sha256(provider_response)
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
 def _parsed_ai_provider_usage(
     response: object,
     *,
@@ -1858,6 +1893,9 @@ def _validate_ai_evidence(
         permits = decision.get("permits_entry")
         failure_reason = str(decision.get("failure_reason", ""))
         parsed_response = _parsed_valid_ai_response(result.get("response_payload"))
+        failure_envelope_valid = _valid_ai_failure_envelope(
+            result.get("response_payload")
+        )
         usage = _parsed_ai_provider_usage(
             result.get("response_payload"),
             model=model_name,
@@ -1924,6 +1962,7 @@ def _validate_ai_evidence(
             or len(str(decision["summary"])) > 180
             or (valid and dict(decision) != parsed_response)
             or (parsed_response is None) != (usage is None)
+            or (not valid and parsed_response is None and not failure_envelope_valid)
             or (valid and not gpu_runtime_proved)
             or (
                 not valid

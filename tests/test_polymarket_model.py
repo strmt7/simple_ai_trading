@@ -87,6 +87,7 @@ from simple_ai_trading.polymarket_publication import (
     _execution_uplift_metrics,
     _parsed_ai_provider_usage,
     _parsed_valid_ai_response,
+    _valid_ai_failure_envelope,
     _validate_ai_evidence,
     _validate_execution_report,
     publish_polymarket_model_artifact,
@@ -2584,6 +2585,25 @@ def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
     assert chat_calls == 1
     assert cached_rows == 1
     assert [row["cache_hit"] for row in progress_rows] == [False, True]
+    failure = reports[0].results[0].response_payload
+    assert isinstance(failure, dict)
+    assert _valid_ai_failure_envelope(failure)
+    assert failure["provider_response_received"] is True
+    provider_response = failure["provider_response"]
+    assert isinstance(provider_response, dict)
+    assert provider_response["message"]["content"] == "not-json"
+    tampered = json.loads(json.dumps(failure))
+    tampered["provider_response"]["message"]["content"] = "changed"
+    assert not _valid_ai_failure_envelope(tampered)
+    timeout_failure = ai_veto_module._failure_envelope(
+        TimeoutError("provider timeout"),
+        provider_response_received=False,
+        provider_response=None,
+    )
+    assert _valid_ai_failure_envelope(timeout_failure)
+    assert timeout_failure["provider_response_received"] is False
+    assert timeout_failure["provider_response_sha256"] is None
+    assert timeout_failure["provider_response"] is None
 
 
 def test_ai_uplift_periods_use_initial_capital_returns_and_exact_groups() -> None:
