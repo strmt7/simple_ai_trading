@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from simple_ai_trading import ai_uplift as ai_uplift_module
 from simple_ai_trading.ai_uplift import (
     AIUpliftPolicy,
     _binomial_upper_tail,
@@ -77,6 +78,33 @@ def test_ai_uplift_statistics_scale_to_ninety_days_of_five_minute_periods() -> N
     assert bootstrap["mean_delta_ci_lower"] > 0.0
 
 
+def test_moving_block_bootstrap_samples_every_valid_remainder_start(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bounds: list[tuple[int, int]] = []
+
+    class DeterministicRandom:
+        def randint(self, start: int, end: int) -> int:
+            bounds.append((start, end))
+            return start
+
+    monkeypatch.setattr(
+        ai_uplift_module.random,
+        "Random",
+        lambda _seed: DeterministicRandom(),
+    )
+    bootstrap = _moving_block_bootstrap(
+        tuple(float(value) for value in range(10)),
+        samples=200,
+        confidence=0.95,
+        seed_material="a" * 64,
+    )
+
+    assert bootstrap["block_length"] == 3
+    assert bounds[:4] == [(0, 7), (0, 7), (0, 7), (0, 9)]
+    assert len(bounds) == 800
+
+
 def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
     report = assess_ai_uplift(
         _complete(
@@ -116,7 +144,7 @@ def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
     assert report.statistical_evidence["tie_count"] == 0
     assert report.statistical_evidence["mean_delta_ci_lower"] > 0.0
     assert report.evidence_binding["accepted"] is True
-    assert report.schema_version == "ai-uplift-v3"
+    assert report.schema_version == "ai-uplift-v4"
     assert report.trading_authority is False
     assert report.profitability_claim is False
 

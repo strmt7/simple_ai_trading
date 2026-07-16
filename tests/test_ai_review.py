@@ -101,7 +101,7 @@ def _write_report(
     ai_uplift = None
     if include_ai_uplift:
         ai_uplift = {
-            "schema_version": "ai-uplift-v3",
+            "schema_version": "ai-uplift-v4",
             "accepted": not failed_ai_uplift,
             "advisory_only": failed_ai_uplift,
             "trading_authority": False,

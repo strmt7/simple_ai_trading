@@ -533,7 +533,7 @@ def _accepted_ai_uplift() -> dict[str, object]:
     first_period_ms = 1_700_000_000_000
     period_duration_ms = 3 * 86_400_000
     return {
-        "schema_version": "ai-uplift-v3",
+        "schema_version": "ai-uplift-v4",
         "accepted": True,
         "advisory_only": False,
         "trading_authority": False,

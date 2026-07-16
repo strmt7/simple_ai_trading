@@ -1637,7 +1637,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 )
             if ai_uplift_accepted:
                 if (
-                    ai_uplift.get("schema_version") != "ai-uplift-v3"
+                    ai_uplift.get("schema_version") != "ai-uplift-v4"
                     or ai_uplift.get("trading_authority") is not False
                     or ai_uplift.get("profitability_claim") is not False
                 ):
@@ -1648,7 +1648,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             "accepted AI uplift has an unsafe or unsupported authority contract",
                             path=f"{prefix}.ai_uplift.schema_version",
                             metric=ai_uplift.get("schema_version", "missing"),
-                            limit="ai-uplift-v3 with no authority or profitability claim",
+                            limit="ai-uplift-v4 with no authority or profitability claim",
                         )
                     )
                 policy = ai_uplift.get("policy")
