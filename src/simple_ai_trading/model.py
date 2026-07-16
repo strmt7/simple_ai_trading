@@ -2642,9 +2642,15 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
                 backend,
             )
         except Exception as exc:
+            backend_name = {
+                "cuda": "CUDA",
+                "directml": "DirectML",
+                "mps": "MPS",
+                "rocm": "ROCm",
+            }.get(backend.kind, backend.kind)
             backend = _fallback_backend(
                 backend,
-                f"{backend.kind} training failed ({exc.__class__.__name__}); fell back to CPU",
+                f"{backend_name} training failed ({exc.__class__.__name__}); fell back to CPU",
             )
 
     means, stds = _collect_feature_stats(rows)
