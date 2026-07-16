@@ -132,6 +132,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   before provider inference. `polymarket-model` accepts mutually exclusive
   `--enable-ai` and `--disable-ai` overrides and otherwise inherits the saved
   runtime setting. The native toggle emits and smoke-tests both explicit states.
+- Polymarket AI report v6 also requires exact-model terminal Ollama telemetry and
+  independently reconstructs prompt/output token totals. Missing, malformed, or
+  rehashed usage evidence vetoes the response; token counts do not prove edge.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
