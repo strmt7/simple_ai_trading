@@ -1427,6 +1427,11 @@ def test_round9_primary_source_audit_is_bound_to_action_contract() -> None:
     )
     assert audit["profitability_claim"] is False
     assert audit["trading_authority"] is False
+    limitations = [item["limitation"] for item in audit["implementation_limitations"]]
+    assert any("MATCHED-to-CONFIRMED" in item for item in limitations)
+    findings = {item["url"]: item for item in audit["findings"]}
+    assert "https://docs.polymarket.com/concepts/order-lifecycle" in findings
+    assert "https://arxiv.org/abs/2606.16852" in findings
 
 
 def test_repricing_contract_code_and_document_are_identical() -> None:

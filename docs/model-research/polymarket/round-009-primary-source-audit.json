@@ -1,6 +1,6 @@
 {
   "schema_version": "polymarket-round9-primary-source-audit-v1",
-  "observed_at_utc": "2026-07-15T23:52:51Z",
+  "observed_at_utc": "2026-07-16T16:24:01Z",
   "scope": "BTC, ETH, and SOL Polymarket five-minute paper research",
   "round_9_action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
   "profitability_claim": false,
@@ -20,6 +20,11 @@
       "limitation": "A missing post-submission entry execution book or an entry receipt that first appears inside the excluded close window leaves the hypothetical order state unproven.",
       "effect": "Treating either state as a known no-fill or silently excluding it would invent execution evidence or condition model admission on future observability.",
       "handling": "Keep the diagnostic action-unavailable label, but fail the entire ridge admission when either terminal count is nonzero. A definite tick-invalid server rejection remains a classifier-eligible zero-utility no-fill. This safeguard does not change the frozen features, split, thresholds, latency, costs, or utility and grants no profitability or trading claim."
+    },
+    {
+      "limitation": "The one-second Round 9 replay proves two causal CLOB book matches, not an authenticated MATCHED-to-CONFIRMED settlement transition or the availability of newly purchased outcome tokens for the simulated sell.",
+      "effect": "Polymarket creates matches offchain, settles them onchain, and requires conditional-token balance for a SELL. A matched BUY can remain nonterminal or revert, so the replay cannot establish a live-executable round trip or paper-policy edge.",
+      "handling": "Keep every Round 9 report research-only with no paper, trading, ROI, or profitability authority. A future execution contract must separately prove confirmed sellable inventory, explicitly capitalize and reconcile pre-owned inventory, or use a separately validated complement-BUY hedge, while stress-testing settlement failure and unresolved mark-to-market exposure."
     }
   ],
   "findings": [
@@ -29,6 +34,23 @@
       "finding": "CLOB V2 has been the production protocol since 2026-04-28. The production host remains clob.polymarket.com, fees are dynamic per market and applied at match time, and legacy V1-signed orders have no production compatibility. Official V2 SDK revision fdb2590dc85e600ad98f1f668ea62a0627554d73 caches fd.r/fd.e for platform-fee balance adjustment, omits feeRateBps from V2 signed orders, and resolves builder fees to zero when no builder code is attached.",
       "round_9_application": "The paper replay queries and hash-binds V2 market info, cross-checks Gamma fee schedules, charges the recorded fd curve on both taker legs, and grants no order authority or builder attribution. Recorded mbf, tbf, and token base_fee values remain provenance and are not added to the V2 dynamic curve; doing so would double-charge a V1/base-fee field that the official V2 SDK does not add. Any future Polymarket order client must use V2 semantics and pass a separate live-readiness review.",
       "status": "implemented_paper_protocol_boundary"
+    },
+    {
+      "title": "Polymarket Order Lifecycle and Sellable Inventory",
+      "url": "https://docs.polymarket.com/concepts/order-lifecycle",
+      "finding": "Official documentation separates offchain matching from onchain settlement. A MATCHED trade is nonterminal, while SELL submission requires sufficient conditional-token balance and allowance under the venue's available-balance rule.",
+      "source_revisions": {
+        "sell_prerequisites": "https://docs.polymarket.com/trading/orders/create"
+      },
+      "round_9_application": "Round 9 may test whether a causal signal survives two observed-book FOK matches, but it cannot convert that result into authenticated execution authority. No simulated exit is evidence that freshly matched inventory was already confirmed and sellable.",
+      "status": "audited_research_only_execution_boundary"
+    },
+    {
+      "title": "The Ghosts of Polymarket: When Off-Chain Matches Meet On-Chain Reverts",
+      "url": "https://arxiv.org/abs/2606.16852",
+      "finding": "The study reconstructs reverted match-order transactions and documents that an offchain fill indication need not become a successful onchain settlement. Its reported historical rates are not assumed to be current or portable to this capture.",
+      "round_9_application": "A future realistic execution model must treat settlement as a separate uncertain state, preserve worst-case exposure while nonterminal, and calibrate only from source-bound current evidence. Round 9 remains explicitly unable to establish this conversion.",
+      "status": "future_settlement_model_required"
     },
     {
       "title": "Polymarket Crypto Taker Delay Semantics",

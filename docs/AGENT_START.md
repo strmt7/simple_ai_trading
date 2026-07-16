@@ -76,6 +76,11 @@ agents to canonical evidence without replacing that evidence.
   nonzero general `sd`. V2 platform fees use `fd`; recorded base-fee fields are
   not additive and no builder code is modeled. The primary-source audit binds
   the official status record and SDK revisions.
+- Round 9's one-second two-leg replay proves only causal CLOB book matches. It
+  does not prove onchain confirmation or that newly bought tokens are sellable;
+  official SELL prerequisites require confirmed conditional-token inventory.
+  Keep all Round 9 outputs research-only until a separate settlement/inventory
+  contract passes current source-bound failure and mark-to-market stress gates.
 - Ridge admission fails on any unproven post-submission entry state. Never
   censor or relabel it as no-fill; only a definite entry rejection such as an
   invalidated tick is a classifier-eligible zero-utility no-fill.
