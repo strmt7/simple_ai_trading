@@ -9,7 +9,11 @@ import math
 
 import pytest
 
-from simple_ai_trading import cli, polymarket_features as feature_module
+from simple_ai_trading import (
+    cli,
+    polymarket_continuity as continuity_module,
+    polymarket_features as feature_module,
+)
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_action_value import (
@@ -1557,6 +1561,7 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
 
 def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(
     tmp_path,
+    monkeypatch,
 ) -> None:
     with PolymarketEvidenceStore(tmp_path / "continuity.duckdb") as store:
         _finish_replay_store(store, "continuity", feature_evidence=True)
@@ -1564,6 +1569,13 @@ def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(
         first = evaluate_polymarket_continuity_eligibility(
             store,
             run_id="continuity",
+        )
+        monkeypatch.setattr(
+            continuity_module,
+            "_continuity_evidence",
+            lambda *_args, **_kwargs: pytest.fail(
+                "persisted continuity evidence was recomputed"
+            ),
         )
         second = evaluate_polymarket_continuity_eligibility(
             store,
