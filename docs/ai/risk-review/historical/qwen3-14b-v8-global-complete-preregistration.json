@@ -1,0 +1,48 @@
+{
+  "schema_version": "finance-risk-review-candidate-preregistration-v2",
+  "created_at_utc": "2026-07-16T00:20:02Z",
+  "parent_git_commit": "777d294257a36ad4336f6e799bc49190e913ebaa",
+  "benchmark_contract": "finance-risk-review-adversarial-v8",
+  "benchmark_source_sha256": "f0422bc928ed5e96552b1357cb9b2693789c3192c271a0f4e6b19ab3baac9bba",
+  "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+  "prior_comparison_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+  "revoked_predecessor": {
+    "path": "docs/ai/risk-review/historical/qwen3-14b-v7-preregistration.json",
+    "sha256": "5e84127b5efe18f9ad92464467f6a1e7baa45a6049af661efa824d3e26ec5d79",
+    "benchmark_contract": "finance-risk-review-adversarial-v7",
+    "reason": "The v7 scorer accepted prose-wrapped JSON, duplicate keys, type coercion, missing fields, and clamped out-of-range numeric values, so its valid-JSON admission claim was unsound. No qwen3:14b inference occurred under v7."
+  },
+  "candidate": {
+    "model": "qwen3:14b",
+    "source": "https://ollama.com/library/qwen3:14b",
+    "selection_reason": "This is the smallest untested step above the rejected 8B and 9B candidates that remains practical on the host's AMD GPU. It was selected before installation or v8 inference.",
+    "installed_at_preregistration": false
+  },
+  "frozen_run": {
+    "case_count": 11,
+    "minimum_score": 0.78,
+    "timeout_seconds": 60,
+    "temperature": 0,
+    "thinking": false,
+    "prompt_or_case_changes_allowed": false,
+    "run_count": 1,
+    "run_after_valid_confirmation_recorder_finalization": true,
+    "required_recorder_status": "complete"
+  },
+  "admission": {
+    "top_level_json_object_only": true,
+    "duplicate_keys_forbidden": true,
+    "exact_required_fields_and_types": true,
+    "finite_numeric_ranges_required": true,
+    "all_actions_exact": true,
+    "all_risk_ranges_exact": true,
+    "all_required_terms_present": true,
+    "minimum_score_required": 0.78
+  },
+  "interpretation": {
+    "governance_pass_is_trading_edge": false,
+    "governance_pass_grants_order_authority": false,
+    "paired_same_period_after_cost_uplift_still_required": true,
+    "failed_candidate_may_be_tuned_on_v8_cases": false
+  }
+}

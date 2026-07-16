@@ -20,6 +20,10 @@ from simple_ai_trading.ai_model_benchmark import (
     default_finance_ai_test_cases,
 )
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
+from simple_ai_trading.polymarket_continuity import (
+    POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS,
+)
+from simple_ai_trading.polymarket_recorder import POLYMARKET_STORAGE_SCHEMA_VERSION
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,22 +35,40 @@ MODEL_METADATA_SHA256 = "e" * 64
 
 
 class _ClaimStore:
-    def __init__(self, report_sha256: str = "a" * 64) -> None:
+    def __init__(
+        self,
+        report_sha256: str = "a" * 64,
+        *,
+        status: str = "degraded",
+        duration_seconds: int = 54_000,
+    ) -> None:
         self.connection = duckdb.connect(":memory:")
         self.integrity_calls = 0
+        started_at_ms = POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS + 1_000
+        ended_at_ms = started_at_ms + duration_seconds * 1_000
         self.connection.execute(
             """
             CREATE TABLE polymarket_recorder_run (
                 run_id VARCHAR,
                 status VARCHAR,
                 error VARCHAR,
-                report_sha256 VARCHAR
+                report_sha256 VARCHAR,
+                storage_schema_version VARCHAR,
+                started_at_ms BIGINT,
+                ended_at_ms BIGINT
             )
             """
         )
         self.connection.execute(
-            "INSERT INTO polymarket_recorder_run VALUES (?, 'complete', '', ?)",
-            ["confirmation", report_sha256],
+            "INSERT INTO polymarket_recorder_run VALUES (?, ?, '', ?, ?, ?, ?)",
+            [
+                "confirmation",
+                status,
+                report_sha256,
+                POLYMARKET_STORAGE_SCHEMA_VERSION,
+                started_at_ms,
+                ended_at_ms,
+            ],
         )
 
     def connect(self) -> duckdb.DuckDBPyConnection:
@@ -62,6 +84,23 @@ class _ClaimStore:
         assert run_id == "confirmation"
         self.integrity_calls += 1
         return ()
+
+
+@pytest.fixture(autouse=True)
+def _continuity_gate(monkeypatch):
+    def evaluate(_store, *, run_id: str):
+        return SimpleNamespace(
+            run_id=run_id,
+            confirmation_eligible=True,
+            eligible_group_count=30,
+            report_sha256="c" * 64,
+        )
+
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_benchmark_claim."
+        "evaluate_polymarket_continuity_eligibility",
+        evaluate,
+    )
 
 
 def _passing_report():
@@ -141,6 +180,15 @@ def test_preregistered_ai_benchmark_is_durable_and_exactly_once(tmp_path) -> Non
 
     claim = _begin(store, output)
     assert claim.status == "claimed"
+    assert claim.confirmation_recorder_status == "degraded"
+    assert claim.confirmation_storage_schema_version == (
+        POLYMARKET_STORAGE_SCHEMA_VERSION
+    )
+    assert claim.confirmation_ended_at_ms - claim.confirmation_started_at_ms == (
+        54_000_000
+    )
+    assert claim.confirmation_continuity_report_sha256 == "c" * 64
+    assert claim.confirmation_eligible_group_count == 30
     assert store.integrity_calls == 1
     report = _passing_report()
     assert report.passed
@@ -164,6 +212,31 @@ def test_preregistered_ai_benchmark_is_durable_and_exactly_once(tmp_path) -> Non
         assert "output digest differs" in str(exc)
     else:
         raise AssertionError("a tampered one-shot AI benchmark output was accepted")
+
+
+def test_preregistered_ai_benchmark_rejects_short_or_ineligible_confirmation(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    short_store = _ClaimStore(duration_seconds=53_999)
+    with pytest.raises(ValueError, match="storage, timing, or terminal-status"):
+        _begin(short_store, tmp_path / "short.json")
+    assert short_store.integrity_calls == 0
+
+    ineligible_store = _ClaimStore("b" * 64)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_benchmark_claim."
+        "evaluate_polymarket_continuity_eligibility",
+        lambda _store, *, run_id: SimpleNamespace(
+            run_id=run_id,
+            confirmation_eligible=False,
+            eligible_group_count=29,
+            report_sha256="d" * 64,
+        ),
+    )
+    with pytest.raises(ValueError, match="continuity-eligible synchronized groups"):
+        _begin(ineligible_store, tmp_path / "ineligible.json")
+    assert ineligible_store.integrity_calls == 1
 
 
 def test_preregistered_ai_benchmark_rejects_model_drift_and_cpu_execution(
@@ -245,8 +318,18 @@ def test_preregistered_ai_benchmark_is_one_shot_across_confirmation_runs(
     first = _begin(store, tmp_path / "first.json")
     assert first.status == "claimed"
     store.connection.execute(
-        "INSERT INTO polymarket_recorder_run VALUES (?, 'complete', '', ?)",
-        ["second-confirmation", "e" * 64],
+        """
+        INSERT INTO polymarket_recorder_run VALUES (
+            ?, 'degraded', '', ?, ?, ?, ?
+        )
+        """,
+        [
+            "second-confirmation",
+            "e" * 64,
+            POLYMARKET_STORAGE_SCHEMA_VERSION,
+            POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS + 2_000,
+            POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS + 54_002_000,
+        ],
     )
 
     with pytest.raises(ValueError, match="claim identity differs"):

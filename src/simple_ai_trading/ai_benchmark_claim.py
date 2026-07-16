@@ -18,19 +18,30 @@ from .ai_model_benchmark import (
     rescore_finance_ai_benchmark_payload,
 )
 from .ai_runtime import OllamaResidencyReport, ollama_residency_from_mapping
-from .polymarket_recorder import PolymarketEvidenceStore
+from .polymarket_continuity import (
+    POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS,
+    POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION,
+    evaluate_polymarket_continuity_eligibility,
+)
+from .polymarket_recorder import (
+    POLYMARKET_STORAGE_SCHEMA_VERSION,
+    PolymarketEvidenceStore,
+)
 from .storage import write_json_atomic
 
 
-AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v1"
+AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v2"
 AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION = (
-    "finance-risk-review-candidate-preregistration-v2"
+    "finance-risk-review-candidate-preregistration-v3"
 )
-AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v1"
+AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v2"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAX_JSON_BYTES = 32 * 1024 * 1024
+_ADMISSIBLE_CONFIRMATION_STATUSES = ("complete", "degraded")
+_MINIMUM_CONFIRMATION_DURATION_SECONDS = 54_000
+_MINIMUM_CONTINUITY_GROUPS = 30
 _APPROVED_PREREGISTRATION_SHA256 = {
-    "qwen3:14b": "7f872babbe9588c8bfe45a65e146ecdb5e0f0a8e78977500ca5afff92aa87e75",
+    "qwen3:14b": "1d4293fcb7e818ade3567e960e95d2f184263158f101beadf1afb07ab33f3ced",
 }
 
 
@@ -41,6 +52,12 @@ class PreregisteredAIBenchmarkClaim:
     model: str
     confirmation_run_id: str
     confirmation_report_sha256: str
+    confirmation_recorder_status: str
+    confirmation_storage_schema_version: str
+    confirmation_started_at_ms: int
+    confirmation_ended_at_ms: int
+    confirmation_continuity_report_sha256: str
+    confirmation_eligible_group_count: int
     preregistration_sha256: str
     output_path: str
     report_file_sha256: str = ""
@@ -170,6 +187,12 @@ def validate_preregistered_ai_runtime_evidence(
         "claim_sha256",
         "confirmation_run_id",
         "confirmation_report_sha256",
+        "confirmation_recorder_status",
+        "confirmation_storage_schema_version",
+        "confirmation_started_at_ms",
+        "confirmation_ended_at_ms",
+        "confirmation_continuity_report_sha256",
+        "confirmation_eligible_group_count",
         "preregistration_sha256",
     }
     if (
@@ -180,6 +203,27 @@ def validate_preregistered_ai_runtime_evidence(
             str(claim_evidence.get("confirmation_report_sha256") or "")
         )
         is None
+        or claim_evidence.get("confirmation_recorder_status")
+        not in _ADMISSIBLE_CONFIRMATION_STATUSES
+        or claim_evidence.get("confirmation_storage_schema_version")
+        != POLYMARKET_STORAGE_SCHEMA_VERSION
+        or isinstance(claim_evidence.get("confirmation_started_at_ms"), bool)
+        or not isinstance(claim_evidence.get("confirmation_started_at_ms"), int)
+        or isinstance(claim_evidence.get("confirmation_ended_at_ms"), bool)
+        or not isinstance(claim_evidence.get("confirmation_ended_at_ms"), int)
+        or int(claim_evidence.get("confirmation_started_at_ms", 0))
+        < POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS
+        or int(claim_evidence.get("confirmation_ended_at_ms", 0))
+        - int(claim_evidence.get("confirmation_started_at_ms", 0))
+        < _MINIMUM_CONFIRMATION_DURATION_SECONDS * 1_000
+        or _SHA256.fullmatch(
+            str(claim_evidence.get("confirmation_continuity_report_sha256") or "")
+        )
+        is None
+        or isinstance(claim_evidence.get("confirmation_eligible_group_count"), bool)
+        or not isinstance(claim_evidence.get("confirmation_eligible_group_count"), int)
+        or int(claim_evidence.get("confirmation_eligible_group_count", 0))
+        < _MINIMUM_CONTINUITY_GROUPS
         or _SHA256.fullmatch(str(claim_evidence.get("preregistration_sha256") or ""))
         is None
     ):
@@ -188,6 +232,16 @@ def validate_preregistered_ai_runtime_evidence(
         "claim_sha256": claim.claim_sha256,
         "confirmation_run_id": claim.confirmation_run_id,
         "confirmation_report_sha256": claim.confirmation_report_sha256,
+        "confirmation_recorder_status": claim.confirmation_recorder_status,
+        "confirmation_storage_schema_version": (
+            claim.confirmation_storage_schema_version
+        ),
+        "confirmation_started_at_ms": claim.confirmation_started_at_ms,
+        "confirmation_ended_at_ms": claim.confirmation_ended_at_ms,
+        "confirmation_continuity_report_sha256": (
+            claim.confirmation_continuity_report_sha256
+        ),
+        "confirmation_eligible_group_count": (claim.confirmation_eligible_group_count),
         "preregistration_sha256": claim.preregistration_sha256,
     }:
         raise ValueError("AI benchmark runtime evidence differs from its claim")
@@ -239,6 +293,18 @@ def write_preregistered_ai_benchmark_output(
             "claim_sha256": claim.claim_sha256,
             "confirmation_run_id": claim.confirmation_run_id,
             "confirmation_report_sha256": claim.confirmation_report_sha256,
+            "confirmation_recorder_status": claim.confirmation_recorder_status,
+            "confirmation_storage_schema_version": (
+                claim.confirmation_storage_schema_version
+            ),
+            "confirmation_started_at_ms": claim.confirmation_started_at_ms,
+            "confirmation_ended_at_ms": claim.confirmation_ended_at_ms,
+            "confirmation_continuity_report_sha256": (
+                claim.confirmation_continuity_report_sha256
+            ),
+            "confirmation_eligible_group_count": (
+                claim.confirmation_eligible_group_count
+            ),
             "preregistration_sha256": claim.preregistration_sha256,
         },
         "pre_inference": {
@@ -312,7 +378,20 @@ def _validated_preregistration(
         or frozen.get("case_count") != len(suite)
         or frozen.get("run_count") != 1
         or frozen.get("run_after_valid_confirmation_recorder_finalization") is not True
-        or frozen.get("required_recorder_status") != "complete"
+        or frozen.get("admissible_recorder_statuses")
+        != list(_ADMISSIBLE_CONFIRMATION_STATUSES)
+        or frozen.get("minimum_capture_duration_seconds")
+        != _MINIMUM_CONFIRMATION_DURATION_SECONDS
+        or frozen.get("minimum_capture_started_at_ms")
+        != POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS
+        or frozen.get("required_storage_schema_version")
+        != POLYMARKET_STORAGE_SCHEMA_VERSION
+        or frozen.get("required_continuity_schema_version")
+        != POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION
+        or frozen.get("minimum_eligible_synchronized_groups")
+        != _MINIMUM_CONTINUITY_GROUPS
+        or frozen.get("global_gap_free_required") is not False
+        or frozen.get("gaps_inside_eligible_windows_allowed") is not False
         or frozen.get("prompt_or_case_changes_allowed") is not False
         or frozen.get("temperature") != 0
         or frozen.get("thinking") is not False
@@ -379,6 +458,18 @@ def _claim_from_row(
         model=str(identity["model"]),
         confirmation_run_id=str(identity["confirmation_run_id"]),
         confirmation_report_sha256=str(identity["confirmation_report_sha256"]),
+        confirmation_recorder_status=str(identity["confirmation_recorder_status"]),
+        confirmation_storage_schema_version=str(
+            identity["confirmation_storage_schema_version"]
+        ),
+        confirmation_started_at_ms=int(identity["confirmation_started_at_ms"]),
+        confirmation_ended_at_ms=int(identity["confirmation_ended_at_ms"]),
+        confirmation_continuity_report_sha256=str(
+            identity["confirmation_continuity_report_sha256"]
+        ),
+        confirmation_eligible_group_count=int(
+            identity["confirmation_eligible_group_count"]
+        ),
         preregistration_sha256=str(identity["preregistration_sha256"]),
         output_path=str(identity["output_path"]),
         report_file_sha256=str(row[3] or ""),
@@ -448,36 +539,54 @@ def begin_preregistered_ai_benchmark_claim(
         store.connect()
         .execute(
             """
-        SELECT status, error, report_sha256
+        SELECT status, error, report_sha256, storage_schema_version,
+               started_at_ms, ended_at_ms
         FROM polymarket_recorder_run WHERE run_id = ?
         """,
             [selected_run],
         )
         .fetchone()
     )
+    if run is None:
+        raise ValueError("AI benchmark confirmation recorder is unknown")
+    recorder_status = str(run[0])
+    report_sha256 = str(run[2] or "")
+    storage_schema_version = str(run[3] or "")
+    try:
+        started_at_ms = int(run[4])
+        ended_at_ms = int(run[5])
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("AI benchmark confirmation timing is invalid") from exc
     if (
-        run is None
-        or str(run[0]) != "complete"
+        recorder_status not in _ADMISSIBLE_CONFIRMATION_STATUSES
         or str(run[1] or "").strip()
-        or _SHA256.fullmatch(str(run[2] or "")) is None
+        or _SHA256.fullmatch(report_sha256) is None
+        or storage_schema_version != POLYMARKET_STORAGE_SCHEMA_VERSION
+        or started_at_ms < POLYMARKET_ACTION_CONTRACT_COMMITTED_AT_MS
+        or ended_at_ms - started_at_ms < _MINIMUM_CONFIRMATION_DURATION_SECONDS * 1_000
     ):
-        raise ValueError("AI benchmark confirmation recorder is not complete")
+        raise ValueError(
+            "AI benchmark confirmation recorder does not satisfy the frozen "
+            "storage, timing, or terminal-status contract"
+        )
     output = str(output_path.resolve())
-    identity = {
+    base_identity = {
         "schema_version": AI_BENCHMARK_CLAIM_SCHEMA_VERSION,
         "benchmark_contract": AI_MODEL_BENCHMARK_CONTRACT,
         "preregistration_sha256": preregistration_sha256,
         "benchmark_source_sha256": preregistration["benchmark_source_sha256"],
         "test_suite_sha256": preregistration["test_suite_sha256"],
         "confirmation_run_id": selected_run,
-        "confirmation_report_sha256": str(run[2]),
+        "confirmation_report_sha256": report_sha256,
+        "confirmation_recorder_status": recorder_status,
+        "confirmation_storage_schema_version": storage_schema_version,
+        "confirmation_started_at_ms": started_at_ms,
+        "confirmation_ended_at_ms": ended_at_ms,
         "model": selected_model,
         "timeout_seconds": float(timeout_seconds),
         "minimum_score": float(minimum_score),
         "output_path": output,
     }
-    identity_json = _canonical_json(identity)
-    claim_sha256 = hashlib.sha256(identity_json.encode("ascii")).hexdigest()
     _ensure_table(store)
     connection = store.connect()
     query = """
@@ -488,14 +597,55 @@ def begin_preregistered_ai_benchmark_claim(
     """
     parameters = [preregistration_sha256]
 
-    def existing_claim(row: tuple[object, ...]) -> PreregisteredAIBenchmarkClaim:
-        if str(row[0]) != claim_sha256 or str(row[1]) != identity_json:
+    def existing_claim(
+        row: tuple[object, ...],
+        *,
+        expected_identity: Mapping[str, object] | None = None,
+    ) -> PreregisteredAIBenchmarkClaim:
+        try:
+            stored_identity = json.loads(
+                str(row[1]),
+                object_pairs_hook=_strict_object,
+            )
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise ValueError(
+                "preregistered AI benchmark claim identity is invalid"
+            ) from exc
+        if not isinstance(stored_identity, dict):
+            raise ValueError("preregistered AI benchmark claim identity is invalid")
+        continuity_sha256 = str(
+            stored_identity.get("confirmation_continuity_report_sha256") or ""
+        )
+        eligible_group_count = stored_identity.get("confirmation_eligible_group_count")
+        if (
+            set(base_identity).difference(stored_identity)
+            or any(
+                stored_identity.get(key) != value
+                for key, value in base_identity.items()
+            )
+            or set(stored_identity)
+            != {
+                *base_identity,
+                "confirmation_continuity_report_sha256",
+                "confirmation_eligible_group_count",
+            }
+            or _SHA256.fullmatch(continuity_sha256) is None
+            or isinstance(eligible_group_count, bool)
+            or not isinstance(eligible_group_count, int)
+            or eligible_group_count < _MINIMUM_CONTINUITY_GROUPS
+            or str(row[1]) != _canonical_json(stored_identity)
+            or str(row[0]) != _sha256(stored_identity)
+            or (
+                expected_identity is not None
+                and dict(stored_identity) != dict(expected_identity)
+            )
+        ):
             raise ValueError("preregistered AI benchmark claim identity differs")
         if str(row[2]) != "completed":
             raise ValueError(
                 f"preregistered AI benchmark is already claimed:state={row[2]}"
             )
-        claim = _claim_from_row(identity, row, status="existing")
+        claim = _claim_from_row(stored_identity, row, status="existing")
         load_claimed_ai_benchmark_output(claim)
         return claim
 
@@ -507,6 +657,27 @@ def begin_preregistered_ai_benchmark_claim(
         raise ValueError(
             "AI benchmark confirmation integrity failed: " + "; ".join(integrity)
         )
+    continuity = evaluate_polymarket_continuity_eligibility(
+        store,
+        run_id=selected_run,
+    )
+    if (
+        continuity.run_id != selected_run
+        or not continuity.confirmation_eligible
+        or continuity.eligible_group_count < _MINIMUM_CONTINUITY_GROUPS
+        or _SHA256.fullmatch(continuity.report_sha256) is None
+    ):
+        raise ValueError(
+            "AI benchmark confirmation lacks enough hash-bound, label-free "
+            "continuity-eligible synchronized groups"
+        )
+    identity = {
+        **base_identity,
+        "confirmation_continuity_report_sha256": continuity.report_sha256,
+        "confirmation_eligible_group_count": continuity.eligible_group_count,
+    }
+    identity_json = _canonical_json(identity)
+    claim_sha256 = hashlib.sha256(identity_json.encode("ascii")).hexdigest()
     if Path(output).exists():
         raise ValueError("preregistered AI benchmark output already exists")
     _validate_prior_comparison(preregistration_path, preregistration)
@@ -514,7 +685,7 @@ def begin_preregistered_ai_benchmark_claim(
     try:
         row = connection.execute(query, parameters).fetchone()
         if row is not None:
-            claim = existing_claim(row)
+            claim = existing_claim(row, expected_identity=identity)
             connection.execute("COMMIT")
             return claim
         if Path(output).exists():
@@ -530,7 +701,7 @@ def begin_preregistered_ai_benchmark_claim(
                 claim_sha256,
                 AI_BENCHMARK_CLAIM_SCHEMA_VERSION,
                 preregistration_sha256,
-                str(run[2]),
+                report_sha256,
                 identity_json,
                 now_ms,
             ],
@@ -544,7 +715,13 @@ def begin_preregistered_ai_benchmark_claim(
         status="claimed",
         model=selected_model,
         confirmation_run_id=selected_run,
-        confirmation_report_sha256=str(run[2]),
+        confirmation_report_sha256=report_sha256,
+        confirmation_recorder_status=recorder_status,
+        confirmation_storage_schema_version=storage_schema_version,
+        confirmation_started_at_ms=started_at_ms,
+        confirmation_ended_at_ms=ended_at_ms,
+        confirmation_continuity_report_sha256=continuity.report_sha256,
+        confirmation_eligible_group_count=continuity.eligible_group_count,
         preregistration_sha256=preregistration_sha256,
         output_path=output,
     )

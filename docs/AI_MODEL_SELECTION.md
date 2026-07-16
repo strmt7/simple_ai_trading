@@ -145,12 +145,16 @@ response parser accepted wrapped JSON, duplicate keys, type coercion, missing
 fields, and clamped out-of-range values. V8 preserves the 11 label-free prompts
 but requires one exact top-level object with exact fields, types, enums, finite
 ranges, and no duplicate keys. Qwen3 14B is preregistered for one v8 run only
-after a fresh confirmation recorder finishes `complete`. No local model is
-selected.
+after a post-contract storage-v4 capture spans at least 15 hours and passes the
+label-free Round 9 continuity gate with at least 30 synchronized BTC/ETH/SOL
+groups. A terminal status of `degraded` is admissible only when every included
+window is gap-free and segment-pure; gaps remain audited exclusions. No local
+model is selected.
 
 That one-shot rule is executable, not advisory. `ai-benchmark` requires the
 frozen preregistration, confirmation DuckDB, and exact run ID for Qwen3 14B. It
-audits terminal evidence before writing a durable claim. The exact
+audits duration, storage version, terminal integrity, and hash-bound continuity
+before writing a durable claim. The exact
 preregistration digest is code-pinned, and the same preregistration cannot be
 claimed against a second confirmation in that ledger. A completed result is
 digest-verified on reuse, while started or failed claims block another run.
