@@ -8,6 +8,10 @@ component, not as authority to override deterministic risk controls.
 - Ollama's official library publishes the local `qwen3.5:9b` tag used here as
   a structured-output challenger. Availability is not selection evidence:
   https://ollama.com/library/qwen3.5
+- Ollama's official usage contract defines terminal status, model timing, and
+  input/output token counts. The veto evidence validates and reconciles those
+  fields rather than estimating token use from text length:
+  https://docs.ollama.com/api/usage
 - A 2026 prediction-market study found an LLM risk layer reduced loss magnitude
   mainly by filtering statistically plausible but semantically brittle event
   relationships. BTC/ETH/SOL five-minute contracts do not provide that diverse
@@ -158,13 +162,14 @@ including hash-only provider/schema failure envelopes. Its key binds the causal
 case, exact request, prompt and response-schema contracts, endpoint policy,
 decision thresholds, and current Ollama model digest and metadata. Cache hits
 retain the original measured model latency and post-inference `/api/ps` evidence.
-Report v5 permits a valid response only when that evidence binds the exact digest
-to positive VRAM residency. It also rejects contradictory action/reason pairs:
-approval requires only `edge_after_fees`, veto requires an adverse reason, and
-cooldown requires `cooldown_required`. CPU-only, missing, malformed, low-
-confidence, or late output is stored as an immutable veto. A later action
-experiment must remain veto-only and pass the separate 90-day matched-period
-uplift contract.
+Report v6 permits a valid response only when that evidence binds the exact digest
+to positive VRAM residency and the provider response binds the requested model,
+terminal `stop`, positive input/output token counts, and coherent timing. It
+reconciles total and peak token counts independently from the raw responses.
+Contradictory action/reason pairs, CPU-only execution, missing telemetry,
+malformed output, low confidence, or late output become immutable vetoes. A
+later action experiment must remain veto-only and pass the separate 90-day
+matched-period uplift contract.
 
 The report separately binds measured inference time, single-GPU-worker queue
 delay, and effective decision latency. Queue delay is recomputed from monotonic
