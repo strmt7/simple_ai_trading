@@ -1860,7 +1860,6 @@ class MainWindow {
         const std::uint64_t settings_revision = settings_revision_.load();
         launch_worker(operator_status_running_, WM_APP + 3, [this, settings_revision] {
             const std::wstring line = execute_cli_first_line(L"status --compact");
-            const std::wstring compute_line = execute_cli_first_line(L"compute");
             const std::wstring environment = compact_status_value(line, L"environment");
             const std::wstring state = compact_status_value(line, L"bot_state");
             const std::wstring profile = compact_status_value(line, L"risk");
@@ -1873,7 +1872,7 @@ class MainWindow {
             const std::wstring positions = compact_status_value(line, L"positions");
             const std::wstring ledger = compact_status_value(line, L"ledger");
             const std::wstring ui_contract = compact_status_value(line, L"ui_contract");
-            const std::wstring compute = compact_status_value(compute_line, L"compute");
+            const std::wstring compute = compact_status_value(line, L"compute");
             const bool command_contract_synced = ui_contract == kCommandContractSha256;
             {
                 std::lock_guard lock(operator_status_mutex_);
@@ -2028,7 +2027,7 @@ class MainWindow {
         if (dry_run_enabled()) {
             if (args == L"status --compact") {
                 std::wstring status =
-                    L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled ai_model=qwen3:8b ai_runtime=gpu reinvest=off "
+                    L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled ai_model=qwen3:8b ai_runtime=gpu compute=directml reinvest=off "
                     L"symbol=BTCUSDT market=futures execution=paper positions=0 ledger=clear ui_contract=";
                 const std::wstring contract_override =
                     env_string(L"SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256");

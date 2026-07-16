@@ -3606,6 +3606,17 @@ def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_
         "_ai_provider_runtime_status",
         lambda _runtime: ("gpu", {"status": "gpu_resident"}),
     )
+    monkeypatch.setattr(
+        cli,
+        "resolve_backend",
+        lambda requested: cli.BackendInfo(
+            requested=requested,
+            kind="directml",
+            device="privateuseone:0",
+            vendor="DirectML",
+            reason="",
+        ),
+    )
     save_runtime(
         RuntimeConfig(
             testnet=True,
@@ -3624,6 +3635,7 @@ def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_
     assert "execution=paper" in line
     assert "ai_model=qwen3:8b" in line
     assert "ai_runtime=gpu" in line
+    assert "compute=directml" in line
     assert "positions=0 ledger=clear" in line
     assert "ui_contract=" in line
     assert len(line.rsplit("ui_contract=", 1)[1]) == 64
