@@ -136,7 +136,7 @@ def test_storage_v4_live_soak_artifact_is_canonical_and_non_authoritative() -> N
 
 def test_ai_veto_cache_is_immutable_and_tamper_evident(tmp_path) -> None:
     identity = {
-        "schema_version": "polymarket-ai-veto-cache-v3",
+        "schema_version": "polymarket-ai-veto-cache-v4",
         "case_sha256": "a" * 64,
         "model_digest": "b" * 64,
     }

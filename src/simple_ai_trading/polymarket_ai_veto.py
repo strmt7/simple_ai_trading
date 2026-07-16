@@ -23,9 +23,9 @@ from .polymarket_model_execution import (
 )
 
 
-POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
-POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v4"
-POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v3"
+POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v3"
+POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v5"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v4"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
@@ -140,6 +140,7 @@ class PolymarketAIVetoCase:
     asset: str
     event_start_ms: int
     decision_received_wall_ms: int
+    decision_received_monotonic_ns: int
     prompt_payload: Mapping[str, object]
     case_sha256: str
 
@@ -152,6 +153,7 @@ class PolymarketAIVetoCase:
             "asset": self.asset,
             "event_start_ms": self.event_start_ms,
             "decision_received_wall_ms": self.decision_received_wall_ms,
+            "decision_received_monotonic_ns": self.decision_received_monotonic_ns,
             "prompt_payload": dict(self.prompt_payload),
         }
 
@@ -188,6 +190,8 @@ class PolymarketAIVetoResult:
     case_id: str
     condition_id: str
     model: str
+    inference_latency_seconds: float
+    queue_delay_seconds: float
     latency_seconds: float
     response_sha256: str
     response_payload: object
@@ -199,6 +203,8 @@ class PolymarketAIVetoResult:
             "case_id": self.case_id,
             "condition_id": self.condition_id,
             "model": self.model,
+            "inference_latency_seconds": self.inference_latency_seconds,
+            "queue_delay_seconds": self.queue_delay_seconds,
             "latency_seconds": self.latency_seconds,
             "response_sha256": self.response_sha256,
             "response_payload": self.response_payload,
@@ -225,6 +231,10 @@ class PolymarketAIVetoReport:
     veto_count: int
     cooldown_count: int
     provider_failure_count: int
+    average_inference_latency_seconds: float
+    maximum_inference_latency_seconds: float
+    average_queue_delay_seconds: float
+    maximum_queue_delay_seconds: float
     average_latency_seconds: float
     maximum_latency_seconds: float
     market_permissions: Mapping[str, bool]
@@ -251,6 +261,14 @@ class PolymarketAIVetoReport:
             "veto_count": self.veto_count,
             "cooldown_count": self.cooldown_count,
             "provider_failure_count": self.provider_failure_count,
+            "average_inference_latency_seconds": (
+                self.average_inference_latency_seconds
+            ),
+            "maximum_inference_latency_seconds": (
+                self.maximum_inference_latency_seconds
+            ),
+            "average_queue_delay_seconds": self.average_queue_delay_seconds,
+            "maximum_queue_delay_seconds": self.maximum_queue_delay_seconds,
             "average_latency_seconds": self.average_latency_seconds,
             "maximum_latency_seconds": self.maximum_latency_seconds,
             "market_permissions": dict(self.market_permissions),
@@ -518,6 +536,7 @@ def build_polymarket_ai_veto_cases(
             asset=sample.asset,
             event_start_ms=sample.event_start_ms,
             decision_received_wall_ms=sample.decision_received_wall_ms,
+            decision_received_monotonic_ns=sample.decision_received_monotonic_ns,
             prompt_payload=payload,
             case_sha256="",
         )
@@ -526,6 +545,7 @@ def build_polymarket_ai_veto_cases(
         )
     cases.sort(
         key=lambda item: (
+            item.decision_received_monotonic_ns,
             item.decision_received_wall_ms,
             item.asset,
             item.condition_id,
@@ -755,6 +775,21 @@ def benchmark_polymarket_ai_veto(
         raise ValueError(
             "Polymarket AI veto requires exactly one case per market condition"
         )
+    ordered_cases = tuple(
+        sorted(
+            cases,
+            key=lambda item: (
+                item.decision_received_monotonic_ns,
+                item.decision_received_wall_ms,
+                item.asset,
+                item.condition_id,
+            ),
+        )
+    )
+    if tuple(cases) != ordered_cases or any(
+        case.decision_received_monotonic_ns <= 0 for case in cases
+    ):
+        raise ValueError("Polymarket AI veto cases are not monotonic chronological")
     if any(
         case.condition_id not in conditions
         or case.case_sha256 != _canonical_sha256(case.identity_payload())
@@ -783,6 +818,7 @@ def benchmark_polymarket_ai_veto(
         }
     )
     results: list[PolymarketAIVetoResult] = []
+    worker_available_ns: int | None = None
     for index, case in enumerate(cases, start=1):
         request = {
             "model": cfg.model,
@@ -831,10 +867,10 @@ def benchmark_polymarket_ai_veto(
             ):
                 raise ValueError("Polymarket AI cache identity is invalid")
             cached_evidence = cached.get("response_payload")
-            latency = float(cached.get("latency_seconds", math.nan))
+            inference_latency = float(cached.get("latency_seconds", math.nan))
             if (
-                not math.isfinite(latency)
-                or latency < 0.0
+                not math.isfinite(inference_latency)
+                or inference_latency < 0.0
                 or str(cached.get("response_sha256") or "")
                 != _canonical_sha256(cached_evidence)
             ):
@@ -878,7 +914,14 @@ def benchmark_polymarket_ai_veto(
             except Exception as exc:  # noqa: BLE001 - evidence records failures
                 raw = _failure_envelope(exc)
                 decision = _decision_from_cached_payload(raw)
-            latency = time.perf_counter() - started
+            inference_latency = time.perf_counter() - started
+        inference_duration_ns = max(0, math.ceil(inference_latency * 1_000_000_000))
+        arrival_ns = case.decision_received_monotonic_ns
+        service_start_ns = max(arrival_ns, worker_available_ns or arrival_ns)
+        queue_delay_ns = service_start_ns - arrival_ns
+        worker_available_ns = service_start_ns + inference_duration_ns
+        queue_delay = queue_delay_ns / 1_000_000_000.0
+        latency = (queue_delay_ns + inference_duration_ns) / 1_000_000_000.0
         if (
             decision.valid
             and decision.action == "approve"
@@ -893,12 +936,14 @@ def benchmark_polymarket_ai_veto(
                 cache_key_sha256,
                 identity=cache_identity,
                 response_payload=cached_evidence,
-                latency_seconds=latency,
+                latency_seconds=inference_latency,
             )
         result = PolymarketAIVetoResult(
             case_id=case.case_id,
             condition_id=case.condition_id,
             model=cfg.model,
+            inference_latency_seconds=inference_latency,
+            queue_delay_seconds=queue_delay,
             latency_seconds=latency,
             response_sha256=_canonical_sha256(raw),
             response_payload=raw,
@@ -916,6 +961,8 @@ def benchmark_polymarket_ai_veto(
                     "action": decision.action,
                     "valid": decision.valid,
                     "cache_hit": cache_hit,
+                    "inference_latency_seconds": round(inference_latency, 3),
+                    "queue_delay_seconds": round(queue_delay, 3),
                     "latency_seconds": round(latency, 3),
                     "provider_runtime": (
                         "unavailable"
@@ -933,6 +980,8 @@ def benchmark_polymarket_ai_veto(
             "permissions": dict(sorted(permissions.items())),
         }
     )
+    inference_latencies = [item.inference_latency_seconds for item in results]
+    queue_delays = [item.queue_delay_seconds for item in results]
     latencies = [item.latency_seconds for item in results]
     provisional = PolymarketAIVetoReport(
         schema_version=POLYMARKET_AI_REPORT_SCHEMA_VERSION,
@@ -949,6 +998,16 @@ def benchmark_polymarket_ai_veto(
         veto_count=sum(item.decision.action == "veto" for item in results),
         cooldown_count=sum(item.decision.action == "cooldown" for item in results),
         provider_failure_count=sum(not item.decision.valid for item in results),
+        average_inference_latency_seconds=(
+            sum(inference_latencies) / len(inference_latencies)
+            if inference_latencies
+            else 0.0
+        ),
+        maximum_inference_latency_seconds=max(inference_latencies, default=0.0),
+        average_queue_delay_seconds=(
+            sum(queue_delays) / len(queue_delays) if queue_delays else 0.0
+        ),
+        maximum_queue_delay_seconds=max(queue_delays, default=0.0),
         average_latency_seconds=(sum(latencies) / len(latencies) if latencies else 0.0),
         maximum_latency_seconds=max(latencies, default=0.0),
         market_permissions=dict(sorted(permissions.items())),

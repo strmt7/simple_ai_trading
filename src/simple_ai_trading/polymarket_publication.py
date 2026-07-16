@@ -48,8 +48,8 @@ _MODEL_SAMPLE_SCHEMA = "polymarket-model-sample-v4"
 _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
-_AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
-_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v4"
+_AI_CASE_SCHEMA = "polymarket-ai-veto-case-v3"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v5"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "profile_model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
@@ -1462,6 +1462,7 @@ def _validate_ai_evidence(
                 "asset",
                 "event_start_ms",
                 "decision_received_wall_ms",
+                "decision_received_monotonic_ns",
                 "prompt_payload",
                 "case_sha256",
             },
@@ -1486,6 +1487,8 @@ def _validate_ai_evidence(
             or int(case["event_start_ms"]) != int(candidate["event_start_ms"])
             or int(case["decision_received_wall_ms"])
             != int(candidate["decision_received_wall_ms"])
+            or int(case["decision_received_monotonic_ns"])
+            != int(prediction["decision_received_monotonic_ns"])
         ):
             raise ValueError("AI prompt case identity is invalid")
         expected_case_id = _canonical_sha256(
@@ -1615,6 +1618,7 @@ def _validate_ai_evidence(
     expected_case_order = sorted(
         cases,
         key=lambda item: (
+            int(item["decision_received_monotonic_ns"]),
             int(item["decision_received_wall_ms"]),
             str(item["asset"]),
             str(item["condition_id"]),
@@ -1709,7 +1713,10 @@ def _validate_ai_evidence(
         raise ValueError("AI veto result count is inconsistent")
     results = [_as_mapping(item, "AI veto result") for item in results_value]
     expected_permissions = {condition: False for condition in conditions}
+    inference_latencies: list[float] = []
+    queue_delays: list[float] = []
     latencies: list[float] = []
+    worker_available_ns: int | None = None
     valid_count = approval_count = veto_count = cooldown_count = failure_count = 0
     for case, result in zip(cases, results, strict=True):
         _require_exact_keys(
@@ -1718,6 +1725,8 @@ def _validate_ai_evidence(
                 "case_id",
                 "condition_id",
                 "model",
+                "inference_latency_seconds",
+                "queue_delay_seconds",
                 "latency_seconds",
                 "response_sha256",
                 "response_payload",
@@ -1740,7 +1749,27 @@ def _validate_ai_evidence(
             },
             name="AI veto decision",
         )
+        inference_latency = _finite_float(
+            result["inference_latency_seconds"],
+            "AI veto inference latency",
+        )
+        queue_delay = _finite_float(
+            result["queue_delay_seconds"],
+            "AI veto queue delay",
+        )
         latency = _finite_float(result["latency_seconds"], "AI veto latency")
+        arrival_ns = int(case["decision_received_monotonic_ns"])
+        inference_duration_ns = max(
+            0,
+            math.ceil(inference_latency * 1_000_000_000),
+        )
+        service_start_ns = max(arrival_ns, worker_available_ns or arrival_ns)
+        expected_queue_delay_ns = service_start_ns - arrival_ns
+        worker_available_ns = service_start_ns + inference_duration_ns
+        expected_queue_delay = expected_queue_delay_ns / 1_000_000_000.0
+        expected_latency = (
+            expected_queue_delay_ns + inference_duration_ns
+        ) / 1_000_000_000.0
         action = str(decision.get("action", ""))
         confidence = _finite_float(decision.get("confidence"), "AI confidence")
         reason_codes = decision.get("reason_codes")
@@ -1774,7 +1803,24 @@ def _validate_ai_evidence(
             result.get("case_id") != case["case_id"]
             or result.get("condition_id") != case["condition_id"]
             or result.get("model") != model_name
+            or isinstance(result.get("inference_latency_seconds"), bool)
+            or isinstance(result.get("queue_delay_seconds"), bool)
+            or isinstance(result.get("latency_seconds"), bool)
+            or inference_latency < 0.0
+            or queue_delay < 0.0
             or latency < 0.0
+            or not math.isclose(
+                queue_delay,
+                expected_queue_delay,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                latency,
+                expected_latency,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
             or not _is_sha256(result.get("response_sha256"))
             or result.get("response_sha256")
             != _canonical_sha256(result.get("response_payload"))
@@ -1808,6 +1854,8 @@ def _validate_ai_evidence(
         ):
             raise ValueError("AI veto result is malformed or not fail-closed")
         expected_permissions[str(case["condition_id"])] = permits
+        inference_latencies.append(inference_latency)
+        queue_delays.append(queue_delay)
         latencies.append(latency)
         valid_count += int(valid)
         approval_count += int(action == "approve")
@@ -1829,6 +1877,32 @@ def _validate_ai_evidence(
         veto.get("maximum_latency_seconds"),
         "AI maximum latency",
     )
+    reported_average_inference = _finite_float(
+        veto.get("average_inference_latency_seconds"),
+        "AI average inference latency",
+    )
+    reported_maximum_inference = _finite_float(
+        veto.get("maximum_inference_latency_seconds"),
+        "AI maximum inference latency",
+    )
+    reported_average_queue = _finite_float(
+        veto.get("average_queue_delay_seconds"),
+        "AI average queue delay",
+    )
+    reported_maximum_queue = _finite_float(
+        veto.get("maximum_queue_delay_seconds"),
+        "AI maximum queue delay",
+    )
+    expected_average_inference = (
+        sum(inference_latencies) / len(inference_latencies)
+        if inference_latencies
+        else 0.0
+    )
+    expected_maximum_inference = max(inference_latencies, default=0.0)
+    expected_average_queue = (
+        sum(queue_delays) / len(queue_delays) if queue_delays else 0.0
+    )
+    expected_maximum_queue = max(queue_delays, default=0.0)
     expected_average = sum(latencies) / len(latencies) if latencies else 0.0
     expected_maximum = max(latencies, default=0.0)
     if (
@@ -1839,6 +1913,30 @@ def _validate_ai_evidence(
         or int(veto.get("veto_count", -1)) != veto_count
         or int(veto.get("cooldown_count", -1)) != cooldown_count
         or int(veto.get("provider_failure_count", -1)) != failure_count
+        or not math.isclose(
+            reported_average_inference,
+            expected_average_inference,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or not math.isclose(
+            reported_maximum_inference,
+            expected_maximum_inference,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or not math.isclose(
+            reported_average_queue,
+            expected_average_queue,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+        or not math.isclose(
+            reported_maximum_queue,
+            expected_maximum_queue,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
         or not math.isclose(
             reported_average, expected_average, rel_tol=1e-12, abs_tol=1e-12
         )
