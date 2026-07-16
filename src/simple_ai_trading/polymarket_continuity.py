@@ -32,6 +32,15 @@ def _canonical_json(value: object) -> str:
     )
 
 
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
 def _sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
@@ -600,6 +609,207 @@ def _persist_report(
         raise
 
 
+def _report_from_json(encoded: str) -> PolymarketContinuityReport:
+    try:
+        payload = json.loads(encoded, object_pairs_hook=_strict_object)
+        if not isinstance(payload, dict):
+            raise ValueError("report is not an object")
+        expected_report_fields = {
+            "schema_version",
+            "contract_sha256",
+            "contract_commit",
+            "contract_committed_at_ms",
+            "run_id",
+            "run_report_sha256",
+            "run_started_at_ms",
+            "config",
+            "groups",
+            "eligible_group_count",
+            "eligible_condition_ids",
+            "confirmation_eligible",
+            "confirmation_reasons",
+            "outcomes_consulted",
+            "labels_consulted",
+            "model_scores_consulted",
+            "training_authority",
+            "trading_authority",
+            "profitability_claim",
+            "report_sha256",
+        }
+        if set(payload) != expected_report_fields:
+            raise ValueError("report fields differ")
+        config_payload = payload["config"]
+        if not isinstance(config_payload, dict) or set(config_payload) != {
+            "chainlink_anchor_allowance_ms",
+            "feature_warmup_ms",
+            "minimum_remaining_market_time_ms",
+            "maximum_execution_confirmation_delay_ms",
+            "minimum_eligible_groups",
+        }:
+            raise ValueError("config fields differ")
+        config = PolymarketContinuityConfig(
+            chainlink_anchor_allowance_ms=int(
+                config_payload["chainlink_anchor_allowance_ms"]
+            ),
+            feature_warmup_ms=int(config_payload["feature_warmup_ms"]),
+            minimum_remaining_market_time_ms=int(
+                config_payload["minimum_remaining_market_time_ms"]
+            ),
+            maximum_execution_confirmation_delay_ms=int(
+                config_payload["maximum_execution_confirmation_delay_ms"]
+            ),
+            minimum_eligible_groups=int(config_payload["minimum_eligible_groups"]),
+        ).validated()
+        raw_groups = payload["groups"]
+        if not isinstance(raw_groups, list):
+            raise ValueError("groups are not a list")
+        groups: list[PolymarketContinuityGroup] = []
+        expected_group_fields = {
+            "schema_version",
+            "contract_sha256",
+            "event_start_ms",
+            "window_start_ms",
+            "window_end_ms",
+            "condition_ids",
+            "eligible",
+            "reasons",
+            "evidence",
+            "group_sha256",
+        }
+        for item in raw_groups:
+            if not isinstance(item, dict) or set(item) != expected_group_fields:
+                raise ValueError("group fields differ")
+            condition_ids = item["condition_ids"]
+            reasons = item["reasons"]
+            evidence = item["evidence"]
+            if (
+                not isinstance(condition_ids, list)
+                or not all(isinstance(value, str) for value in condition_ids)
+                or not isinstance(reasons, list)
+                or not all(isinstance(value, str) for value in reasons)
+                or not isinstance(evidence, dict)
+                or not isinstance(item["eligible"], bool)
+            ):
+                raise ValueError("group payload types differ")
+            groups.append(
+                PolymarketContinuityGroup(
+                    event_start_ms=int(item["event_start_ms"]),
+                    window_start_ms=int(item["window_start_ms"]),
+                    window_end_ms=int(item["window_end_ms"]),
+                    condition_ids=tuple(condition_ids),
+                    eligible=item["eligible"],
+                    reasons=tuple(reasons),
+                    evidence=evidence,
+                    group_sha256=str(item["group_sha256"]),
+                ).validated()
+            )
+        confirmation_reasons = payload["confirmation_reasons"]
+        if (
+            not isinstance(confirmation_reasons, list)
+            or not all(isinstance(value, str) for value in confirmation_reasons)
+            or not isinstance(payload["confirmation_eligible"], bool)
+        ):
+            raise ValueError("confirmation payload types differ")
+        report = PolymarketContinuityReport(
+            run_id=str(payload["run_id"]),
+            run_report_sha256=str(payload["run_report_sha256"]),
+            run_started_at_ms=int(payload["run_started_at_ms"]),
+            config=config,
+            groups=tuple(groups),
+            eligible_group_count=int(payload["eligible_group_count"]),
+            confirmation_eligible=payload["confirmation_eligible"],
+            confirmation_reasons=tuple(confirmation_reasons),
+            report_sha256=str(payload["report_sha256"]),
+        ).validated()
+    except (json.JSONDecodeError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("stored Polymarket continuity report is inconsistent") from exc
+    if _canonical_json(report.asdict()) != encoded:
+        raise ValueError("stored Polymarket continuity report is inconsistent")
+    return report
+
+
+def _load_persisted_report(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    run_report_sha256: str,
+    config: PolymarketContinuityConfig,
+) -> PolymarketContinuityReport | None:
+    connection = store.connect()
+    tables = {
+        str(row[0])
+        for row in connection.execute(
+            """
+            SELECT table_name FROM information_schema.tables
+            WHERE table_name IN (
+                'polymarket_continuity_eligibility_report',
+                'polymarket_continuity_eligibility_group'
+            )
+            """
+        ).fetchall()
+    }
+    if not tables:
+        return None
+    if tables != {
+        "polymarket_continuity_eligibility_report",
+        "polymarket_continuity_eligibility_group",
+    }:
+        raise ValueError("stored Polymarket continuity report is inconsistent")
+    rows = connection.execute(
+        """
+        SELECT report_sha256, schema_version, contract_sha256, run_id,
+               run_report_sha256, report_json
+        FROM polymarket_continuity_eligibility_report
+        WHERE run_id = ? ORDER BY report_sha256
+        """,
+        [run_id],
+    ).fetchall()
+    if not rows:
+        return None
+    if len(rows) != 1:
+        raise ValueError("stored Polymarket continuity report is inconsistent")
+    row = tuple(rows[0])
+    if (
+        str(row[1]) != POLYMARKET_CONTINUITY_ELIGIBILITY_SCHEMA_VERSION
+        or str(row[2]) != POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
+        or str(row[3]) != run_id
+        or str(row[4]) != run_report_sha256
+    ):
+        raise ValueError("stored Polymarket continuity report is inconsistent")
+    report = _report_from_json(str(row[5]))
+    if (
+        str(row[0]) != report.report_sha256
+        or report.run_id != run_id
+        or report.run_report_sha256 != run_report_sha256
+        or report.config.asdict() != config.asdict()
+    ):
+        raise ValueError("stored Polymarket continuity report is inconsistent")
+    expected_groups = [
+        (
+            report.report_sha256,
+            group.event_start_ms,
+            group.eligible,
+            _canonical_json(list(group.condition_ids)),
+            _canonical_json(list(group.reasons)),
+            _canonical_json(group.evidence),
+            group.group_sha256,
+        )
+        for group in report.groups
+    ]
+    stored_groups = connection.execute(
+        """
+        SELECT report_sha256, event_start_ms, eligible,
+               condition_ids_json, reasons_json, evidence_json, group_sha256
+        FROM polymarket_continuity_eligibility_group
+        WHERE report_sha256 = ? ORDER BY event_start_ms
+        """,
+        [report.report_sha256],
+    ).fetchall()
+    if [tuple(row) for row in stored_groups] != expected_groups:
+        raise ValueError("stored Polymarket continuity report is inconsistent")
+    return report
+
+
 def evaluate_polymarket_continuity_eligibility(
     store: PolymarketEvidenceStore,
     *,
@@ -637,6 +847,14 @@ def evaluate_polymarket_continuity_eligibility(
         raise ValueError(
             "Polymarket continuity integrity failed: " + "; ".join(integrity)
         )
+    persisted = _load_persisted_report(
+        store,
+        run_id=selected,
+        run_report_sha256=report_sha256,
+        config=cfg,
+    )
+    if persisted is not None:
+        return persisted
     markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
     groups: dict[int, list[object]] = {}
     for market in markets:
