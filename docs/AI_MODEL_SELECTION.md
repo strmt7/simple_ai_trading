@@ -19,6 +19,13 @@ component, not as authority to override deterministic risk controls.
   structured risk benchmark and AI-vs-ML uplift proof before any autonomous
   effect:
   https://arxiv.org/abs/2503.16252 and https://arxiv.org/abs/2502.08127
+- Agentar-Fin-R1 provides Qwen3-based 8B and 32B finance-reasoning candidates.
+  Domain tuning is useful candidate evidence, not proof of safe risk decisions:
+  https://arxiv.org/abs/2507.16802
+- FinHarmBench found that finance-specialized LLMs can be less robust than
+  general models on harmful and confusable-benign prompts. Finance tuning never
+  bypasses adversarial safety or matched-uplift gates:
+  https://aclanthology.org/2026.acl-industry.117/
 - The CFA Institute practical LLM guide reports that finance-tuned models such
   as FinMA/FinGPT can be stronger for sentiment and headline classification,
   while broad general models may be stronger for numerical reasoning:
@@ -87,7 +94,7 @@ Historical four-case provider telemetry:
 `docs/ai_model_benchmark_legacy_20260710.json`.
 
 The 2026-07-10 four-case host run is retained as historical provider telemetry
-only. It is superseded by the leak-free v7 gate below and has no model-selection
+only. It is superseded by the current label-free gate and has no model-selection
 or AI trading authority.
 
 The earlier 11-case v6 result is revoked. Its prompt included descriptive case
@@ -95,10 +102,16 @@ IDs such as `veto_*` and `approve_*`, leaking the expected action. The fresh v7
 run excludes case names and expected actions from model input and stores an exact
 SHA-256 for every prompt. Qwen3 8B reached `9/11` actions (score `0.886818`, mean
 latency `2.95173s`). Fin-R1 8B, Qwen3.5 9B, and Fino1 8B each reached `8/11` and
-also failed semantic or risk-range checks. No local model is selected.
+also failed semantic or risk-range checks. V7 is historical-only because its
+response parser accepted wrapped JSON, duplicate keys, type coercion, missing
+fields, and clamped out-of-range values. V8 preserves the 11 label-free prompts
+but requires one exact top-level object with exact fields, types, enums, finite
+ranges, and no duplicate keys. Qwen3 14B is preregistered for one v8 run only
+after a fresh confirmation recorder finishes `complete`. No local model is
+selected.
 
 AI therefore remains enabled-but-unavailable and fail-closed until a fresh model
-passes the unchanged gate. No LLM enters the 250 ms action scorer. The veto
+passes the current gate. No LLM enters the 250 ms action scorer. The veto
 evaluator caches only valid responses
 in the evidence DuckDB. Its key binds the causal case, exact request, prompt and
 response-schema contracts, endpoint policy, decision thresholds, and current

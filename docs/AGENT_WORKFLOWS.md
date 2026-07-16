@@ -81,6 +81,12 @@ python -m pytest -q
 The badges in `README.md` are generated from `.github/readme_badges.json` and
 must not be hand-edited.
 
+After a current AI governance benchmark, use
+`tools/build_ai_model_provenance.py` to rescore the exact reports and verify the
+Ollama manifest, config, and every referenced blob before atomically writing
+`model-provenance.json`. Do not scan or hash model files manually, and do not
+use this tool with historical benchmark contracts.
+
 ## Transfer Verification
 
 The 2026-07-11 Windows-host transfer check passed the six-skill validator,

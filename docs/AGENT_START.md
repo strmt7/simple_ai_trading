@@ -82,6 +82,12 @@ agents to canonical evidence without replacing that evidence.
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
   first.
+- Confirmation capture `b8a270da20fe4116a01a4626607e42da` is the active
+  54,000-second run. Monitor only
+  `.tmp/polymarket-round9-confirmation4-20260716-024629.progress.json` and the
+  process tree; never open its DuckDB while the recorder owns it.
+- Build current AI provenance with `tools/build_ai_model_provenance.py`; never
+  hand-edit the result or infer blob identity from an Ollama tag.
 
 ## Efficient workflow
 
