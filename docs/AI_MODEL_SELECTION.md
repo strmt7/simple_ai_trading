@@ -239,6 +239,14 @@ documentation covers AMD Radeon and additional Vulkan support. Ollama model
 execution and Windows ML/ONNX inference are separate runtime contracts; neither
 proves that training used a GPU or that a model has financial edge.
 
+GPU headroom is also an explicit fail-closed precondition. Legacy ROCm SMI is
+accepted only when exact per-device total and used byte fields reconcile. On
+Windows AMD hosts, the preflight reads the driver's 64-bit dedicated-memory
+registry value and subtracts current WDDM dedicated usage; duplicate identical
+registry views are collapsed, while conflicting totals or malformed counters
+remain unknown and block required-GPU AI. It does not use
+`Win32_VideoController.AdapterRAM`, whose documented type is only `uint32`.
+
 AI review v4 queries Ollama `/api/ps` immediately after inference. It binds the
 requested model to one exact SHA-256 weight digest and records model bytes,
 VRAM-resident bytes, and their ratio. An unloaded model, zero VRAM bytes,
@@ -254,6 +262,8 @@ forecast skill, profitability, or AI uplift.
 - https://docs.ollama.com/windows
 - https://docs.ollama.com/gpu
 - https://docs.ollama.com/api/ps
+- https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-videocontroller
+- https://rocm.docs.amd.com/projects/amdsmi/en/latest/doxygen/docBin/html/group__tagMemoryQuery.html
 
 Open-source trading systems also argue for skepticism. LEAN and NautilusTrader
 emphasize research-to-live parity, while Freqtrade warns that backtests can be

@@ -122,6 +122,12 @@ After parser or taxonomy changes, regenerate the header through the native build
 - AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
   exact weight digest with positive VRAM-resident bytes. DirectML selection is
   separate and does not prove that the review model ran on GPU.
+- Required-GPU AI preflight blocks unknown VRAM. Legacy ROCm output must expose
+  exact total/used byte pairs; Windows AMD uses a deduplicated 64-bit driver
+  total minus WDDM dedicated usage and rejects conflicting totals. The
+  2026-07-16 host audit measured about 12.15 GiB free on the AMD DirectML host
+  while Ollama remained unloaded; that is capacity evidence, not residency or
+  edge evidence.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
