@@ -1,0 +1,171 @@
+{
+  "claims": {
+    "bounded_benchmark_proves_long_duration_capture": false,
+    "financial_edge_tested": false,
+    "model_evidence": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "polymarket_capture_frame_sha256": "f78768f4fd266cd57d366e1f7d60cc806e5ce048b1e250a6a32532414f33839f",
+    "polymarket_recorder_sha256": "72c928c258959403eae526d9b3e27b039c2ae6d0c946ccebf32ea30e86dfdfcc",
+    "repository_commit": "ab69221b135c9aa98d1abb23a7562bce51f50fb8",
+    "storage_schema_version": "polymarket-evidence-storage-v4"
+  },
+  "observed_at_utc": "2026-07-16T15:14:42.159+00:00",
+  "report_sha256": "d32ea83da78e34a132535d511910f564dd577711298d19b9de067abd9ec88de2",
+  "results": {
+    "audit_seconds": 51.42043990001548,
+    "checkpoints": [
+      {
+        "database_bytes": 12288,
+        "elapsed_seconds": 1.950412099948153,
+        "messages_per_second": 67202.20819153257,
+        "written_messages": 131072
+      },
+      {
+        "database_bytes": 12288,
+        "elapsed_seconds": 4.400359399965964,
+        "messages_per_second": 59573.31576189609,
+        "written_messages": 262144
+      },
+      {
+        "database_bytes": 18100224,
+        "elapsed_seconds": 7.031765199964866,
+        "messages_per_second": 55919.955916896186,
+        "written_messages": 393216
+      },
+      {
+        "database_bytes": 18100224,
+        "elapsed_seconds": 9.788085300009698,
+        "messages_per_second": 53563.897731814875,
+        "written_messages": 524288
+      },
+      {
+        "database_bytes": 51130368,
+        "elapsed_seconds": 12.557376999990083,
+        "messages_per_second": 52189.24302428107,
+        "written_messages": 655360
+      },
+      {
+        "database_bytes": 51130368,
+        "elapsed_seconds": 15.321261100005358,
+        "messages_per_second": 51329.456163352304,
+        "written_messages": 786432
+      },
+      {
+        "database_bytes": 51130368,
+        "elapsed_seconds": 17.913244999945164,
+        "messages_per_second": 51219.30727809555,
+        "written_messages": 917504
+      },
+      {
+        "database_bytes": 82587648,
+        "elapsed_seconds": 20.557786699966528,
+        "messages_per_second": 51006.269074759264,
+        "written_messages": 1048576
+      },
+      {
+        "database_bytes": 82587648,
+        "elapsed_seconds": 23.38524289999623,
+        "messages_per_second": 50444.12003948825,
+        "written_messages": 1179648
+      },
+      {
+        "database_bytes": 113782784,
+        "elapsed_seconds": 26.064748300006613,
+        "messages_per_second": 50287.07681783628,
+        "written_messages": 1310720
+      },
+      {
+        "database_bytes": 113782784,
+        "elapsed_seconds": 28.88396989996545,
+        "messages_per_second": 49916.6840636309,
+        "written_messages": 1441792
+      },
+      {
+        "database_bytes": 145240064,
+        "elapsed_seconds": 31.753088199999183,
+        "messages_per_second": 49534.205620983994,
+        "written_messages": 1572864
+      },
+      {
+        "database_bytes": 145240064,
+        "elapsed_seconds": 34.73605149996001,
+        "messages_per_second": 49053.819487858644,
+        "written_messages": 1703936
+      },
+      {
+        "database_bytes": 145240064,
+        "elapsed_seconds": 37.77181079995353,
+        "messages_per_second": 48581.41458238634,
+        "written_messages": 1835008
+      },
+      {
+        "database_bytes": 176697344,
+        "elapsed_seconds": 40.83147330000065,
+        "messages_per_second": 48151.091329833755,
+        "written_messages": 1966080
+      },
+      {
+        "database_bytes": 176697344,
+        "elapsed_seconds": 41.50316799990833,
+        "messages_per_second": 48189.09245685577,
+        "written_messages": 2000000
+      }
+    ],
+    "compressed_frame_bytes": 99171193,
+    "database_bytes": 198717440,
+    "evidence_manifest_sha256": "b1efe6c36a1d9492bef23f7a32644f4b868ff4eee351d87a3bf861bca1e72424",
+    "exact_count_and_ordered_payload_match": true,
+    "expected_payload_stream_sha256": "46b0f65cdba764760e6cc068a484eb8c4268865990e471a6eea3478f63a6f0ee",
+    "frame_compression_ratio": 0.10230801864572107,
+    "integrity_errors": [],
+    "messages_per_second": 48188.81518904473,
+    "payload_stream_sha256": "46b0f65cdba764760e6cc068a484eb8c4268865990e471a6eea3478f63a6f0ee",
+    "persisted_chunks": 1954,
+    "persisted_messages": 2000000,
+    "persisted_public_event_rows": 0,
+    "persisted_raw_message_rows": 0,
+    "read_messages_per_second": 66049.29466247022,
+    "read_seconds": 30.28041420003865,
+    "stream_counts": {
+      "binance_spot": 912865,
+      "clob_market": 1078576,
+      "clob_rest_book": 1470,
+      "polymarket_rtds": 7089
+    },
+    "uncompressed_frame_bytes": 969339396,
+    "write_seconds": 41.50340679998044
+  },
+  "schema_version": "polymarket-storage-v4-benchmark-v1",
+  "source_evidence": {
+    "database": "data\\polymarket-round9-confirmation4-20260716-024629.duckdb",
+    "database_bytes": 5706100736,
+    "permitted_use": "infrastructure_benchmark_only",
+    "public_payloads_real": true,
+    "report_sha256": "1e1ef487914b13d4a7e3a2901fbaa2b9a9ec972d3ae88fd7a7c1a453ae8da673",
+    "run_id": "b8a270da20fe4116a01a4626607e42da",
+    "sample_message_count": 8192,
+    "sample_payload_hashes_verified": true,
+    "sample_payload_stream_sha256": "88c75d287c8205f86a397044bd0b935c319679f5ebcbf7e0dd7efd8d81d4fb83",
+    "sample_raw_bytes": 3539176,
+    "sample_stream_counts": {
+      "binance_spot": 3741,
+      "clob_market": 4416,
+      "clob_rest_book": 6,
+      "polymarket_rtds": 29
+    },
+    "storage_schema_version": "polymarket-evidence-storage-v2",
+    "terminal_status": "failed",
+    "whole_source_run_integrity_audit_performed": false
+  },
+  "workload": {
+    "batch_size": 8192,
+    "checkpoint_messages": 131072,
+    "payload_reuse": "exact source payload sample repeated cyclically",
+    "receipt_metadata_kind": "synthetic monotonic sequence and receipt timestamps",
+    "sample_messages": 8192,
+    "total_messages": 2000000
+  }
+}

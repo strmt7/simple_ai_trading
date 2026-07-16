@@ -328,19 +328,15 @@ upper bound, not a reservation; short captures use less. Operators can lower it
 with `--memory-limit`, but a failed full audit remains failed rather than silently
 publishing partially verified evidence.
 
-New recorder runs use `polymarket-evidence-storage-v3`. Exact UTF-8 source
-messages are length-prefixed in bounded frames of at most 1,024 messages and 64
-MiB, then compressed with checksummed Zstandard level 1. Chunk identity binds the
-run, sequence, first and last message IDs, an order-aware row manifest, and the
-uncompressed SHA-256. Message rows retain offsets and source hashes; event rows
-retain normalized indexes and event hashes, but neither table stores a second
-JSON body. Every reader reconstructs the event from the raw frame and rejects a
-boundary, UTF-8, source hash, canonical JSON, normalized index, or event hash
-disagreement. V3 removes the incrementally maintained uniqueness indexes from
-the two high-volume tables: the single writer rejects non-increasing sequence
-numbers per stream connection before a transaction, and the independent
-terminal count/XOR/sum/hash manifests reject missing, duplicated, reordered, or
-altered rows. V2 compact evidence and unmigrated v1 evidence remain readable.
+New recorder runs use `polymarket-evidence-storage-v4`. Each bounded frame holds
+at most 1,024 exact UTF-8 source messages with stream, connection, sequence, and
+both local receipt clocks, then uses checksummed Zstandard level 1 compression.
+The live write path creates no per-message or per-event hot rows. Readers verify
+the frame boundary, payload and chunk hashes, per-message manifest, stream
+counts, sequence, receipt order, JSON, and normalized event identity before
+reconstructing an event. The terminal report also binds an ordered chunk-
+manifest root, so locally self-consistent chunk replacement invalidates the run
+seal. V3/v2 compact evidence and unmigrated v1 evidence remain readable.
 
 A closed-data engineering benchmark on this host used 160,000 real frames
 (135,000 CLOB, 24,000 direct Binance, and 1,000 RTDS) and 159,993 normalized
@@ -371,6 +367,21 @@ sequences in that infrastructure replay were synthetic, so it is neither live
 capture proof nor financial/model evidence. Exact checkpoints and limitations
 are hash-bound in
 [`storage-v3-long-tail-benchmark-2026-07-16.json`](model-research/polymarket/storage-v3-long-tail-benchmark-2026-07-16.json).
+
+The committed v4 harness then repeated an independently hash-verified 8,192-
+message real-feed sample to 2,000,000 messages. It wrote 1,954 frames in 41.50
+seconds (`48,189` messages/s), completed the full payload/event audit in 51.42
+seconds, and replayed the exact ordered payload stream in 30.28 seconds
+(`66,049` messages/s). Both retired hot tables remained empty. The 198,717,440-
+byte database contained 99,171,193 compressed frame bytes from 969,339,396
+uncompressed bytes. Relative to the earlier v3 benchmark, observed throughput
+was 3.97 times higher and file size was 69.30% lower, but the sampled stream mix
+differed, so this is not a controlled financial comparison. The source run was
+terminally failed, only sampled payload hashes were verified, and synthetic
+receipt metadata was used. The result proves neither long-duration capture nor
+model quality, ROI, profitability, or trading authority. Exact inputs,
+checkpoints, digests, implementation hashes, and limitations are in
+[`storage-v4-long-tail-benchmark-2026-07-16.json`](model-research/polymarket/storage-v4-long-tail-benchmark-2026-07-16.json).
 
 The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,

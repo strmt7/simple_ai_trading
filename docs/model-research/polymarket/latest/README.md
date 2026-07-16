@@ -21,7 +21,7 @@ and `a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2`.
 A post-contract capture must pass integrity, continuity, BTC/ETH/SOL
 synchronized-group breadth, and immutable official-resolution checks before
 the ridge may be fitted once. The MLP may run only if the ridge passes its
-preregistered development gate. Its report-v2 implementation also requires
+preregistered development gate. Its report-v3 implementation also requires
 strictly positive validation stress-utility uplift over ridge and keeps the
 untouched neural test closed unless it contains at least 30 synchronized time
 groups. No Round 9 model score, AI edge, profitability, drawdown claim, paper
@@ -41,23 +41,24 @@ evidence only and grants no AI or trading authority.
 Capture attempts `eae374e2662c440fb93970d5710937b1`,
 `3a67757c7f174df4b62f2722ea9211cb`, and
 `b8a270da20fe4116a01a4626607e42da` are permanently development-only and cannot
-confirm a model. Storage v3 preserves 1,024-message integrity chunks and
-8,192-message atomic commits while removing incremental hot-table indexes.
-Terminal reads now stream one relational query, and clean audited v3 source
-feeds can replay directly from hash-verified raw chunks. The hash-bound
-[writer](../storage-v3-long-tail-benchmark-2026-07-16.json) and
-[reader](../storage-v3-reader-benchmark-2026-07-16.json) benchmarks state their
-real-payload scope and limitations. Bounded action batches now reconstruct one
+confirm a model. Storage v4 persists exact receipt metadata and payload bytes in
+1,024-message compressed frames, leaves the retired message/event hot tables
+empty, reconstructs normalized events at read time, and binds the ordered chunk
+root into the terminal report. The hash-bound
+[v4 long-tail benchmark](../storage-v4-long-tail-benchmark-2026-07-16.json)
+records 2,000,000 exact real sampled payloads at 48,189 writes/s and 66,049
+replays/s with a clean full audit. Synthetic receipt clocks and a failed source
+run make it infrastructure evidence only; a monitored live soak and clean
+15-hour confirmation are still required. Bounded action batches reconstruct one
 full-resolution CLOB replay and derive the exact 250 ms feature view from it,
 removing the second condition scan without changing feature or action identity.
 After a clean terminal audit, action materialization now builds one
 report-hash-bound, zstd-compressed condition-reference cache and verifies every
 frame, manifest, source coordinate, and decoded condition before replay. The
-cache duplicates no market payloads. Fixture replay is exact; a production-scale
-speed and storage benchmark remains pending.
-Capture
-`79ac19539d384352b865c21cb0c43627` is still running; it grants no Round 9 model
-or AI evidence until terminal integrity, continuity, and resolution gates pass.
+cache duplicates no market payloads. Fixture replay is exact.
+Capture `79ac19539d384352b865c21cb0c43627` saturated after 10.1 hours and was
+terminalized `failed`; it permanently grants no Round 9 model or AI evidence.
+No confirmation capture is active.
 
 The host [DirectML preflight](../round-009-directml-preflight.json) completed a
 real MLP forward/backward parameter update on `privateuseone:0` with no CPU
