@@ -1637,7 +1637,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                 )
             if ai_uplift_accepted:
                 if (
-                    ai_uplift.get("schema_version") != "ai-uplift-v2"
+                    ai_uplift.get("schema_version") != "ai-uplift-v3"
                     or ai_uplift.get("trading_authority") is not False
                     or ai_uplift.get("profitability_claim") is not False
                 ):
@@ -1648,7 +1648,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             "accepted AI uplift has an unsafe or unsupported authority contract",
                             path=f"{prefix}.ai_uplift.schema_version",
                             metric=ai_uplift.get("schema_version", "missing"),
-                            limit="ai-uplift-v2 with no authority or profitability claim",
+                            limit="ai-uplift-v3 with no authority or profitability claim",
                         )
                     )
                 policy = ai_uplift.get("policy")
@@ -1824,7 +1824,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             _check(
                                 "block",
                                 "AI uplift statistical evidence",
-                                "accepted AI uplift has too few paired holdout samples",
+                                "accepted AI uplift has too few matched holdout periods",
                                 path=f"{prefix}.ai_uplift.statistical_evidence.sample_count",
                                 metric=sample_count if sample_count is not None else "missing",
                                 limit=f">={min_paired_samples}",
@@ -1846,6 +1846,28 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                 limit="nonnegative integer",
                             )
                         )
+                    effective_count = _finite(statistical.get("effective_sample_count"))
+                    effective_count_is_integer = (
+                        effective_count is not None
+                        and effective_count >= 0.0
+                        and float(effective_count).is_integer()
+                    )
+                    if (
+                        effective_count is None
+                        or effective_count < min_paired_samples
+                        or not effective_count_is_integer
+                        or (sample_count is not None and effective_count > sample_count)
+                    ):
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift has too few non-tied paired outcomes",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.effective_sample_count",
+                                metric=effective_count if effective_count is not None else "missing",
+                                limit=f"integer in [{min_paired_samples},sample_count]",
+                            )
+                        )
                     positive_count = _finite(statistical.get("positive_delta_count"))
                     positive_count_is_integer = (
                         positive_count is not None
@@ -1855,7 +1877,7 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                     if (
                         positive_count is None
                         or positive_count < 0.0
-                        or (sample_count is not None and positive_count > sample_count)
+                        or (effective_count is not None and positive_count > effective_count)
                         or not positive_count_is_integer
                     ):
                         checks.append(
@@ -1865,7 +1887,36 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                                 "accepted AI uplift positive-delta count is inconsistent",
                                 path=f"{prefix}.ai_uplift.statistical_evidence.positive_delta_count",
                                 metric=positive_count if positive_count is not None else "missing",
-                                limit="integer and 0<=positive_delta_count<=sample_count",
+                                limit="integer and 0<=positive_delta_count<=effective_sample_count",
+                            )
+                        )
+                    negative_count = _finite(statistical.get("negative_delta_count"))
+                    tie_count = _finite(statistical.get("tie_count"))
+                    counts_are_consistent = (
+                        sample_count_is_integer
+                        and effective_count_is_integer
+                        and positive_count_is_integer
+                        and negative_count is not None
+                        and negative_count >= 0.0
+                        and float(negative_count).is_integer()
+                        and tie_count is not None
+                        and tie_count >= 0.0
+                        and float(tie_count).is_integer()
+                        and positive_count is not None
+                        and effective_count is not None
+                        and sample_count is not None
+                        and positive_count + negative_count == effective_count
+                        and effective_count + tie_count == sample_count
+                    )
+                    if not counts_are_consistent:
+                        checks.append(
+                            _check(
+                                "block",
+                                "AI uplift statistical evidence",
+                                "accepted AI uplift paired-outcome counts are inconsistent",
+                                path=f"{prefix}.ai_uplift.statistical_evidence.effective_sample_count",
+                                metric=effective_count if effective_count is not None else "missing",
+                                limit="positive+negative=effective and effective+ties=sample_count",
                             )
                         )
                     positive_rate = _finite(statistical.get("positive_delta_rate"))
@@ -1881,15 +1932,15 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             )
                         )
                     if (
-                        sample_count is not None
-                        and sample_count > 0.0
+                        effective_count is not None
+                        and effective_count > 0.0
                         and positive_count is not None
-                        and sample_count_is_integer
+                        and effective_count_is_integer
                         and positive_count_is_integer
-                        and positive_count <= sample_count
+                        and positive_count <= effective_count
                         and positive_rate is not None
                     ):
-                        expected_rate = positive_count / sample_count
+                        expected_rate = positive_count / effective_count
                         if abs(positive_rate - expected_rate) > 1e-6:
                             checks.append(
                                 _check(
@@ -1914,14 +1965,14 @@ def build_model_lab_financial_sanity_report(payload: Mapping[str, Any], *, sourc
                             )
                         )
                     if (
-                        sample_count is not None
+                        effective_count is not None
                         and positive_count is not None
-                        and sample_count_is_integer
+                        and effective_count_is_integer
                         and positive_count_is_integer
-                        and positive_count <= sample_count
+                        and positive_count <= effective_count
                         and sign_p is not None
                     ):
-                        expected_sign_p = _binomial_upper_tail(int(sample_count), int(positive_count))
+                        expected_sign_p = _binomial_upper_tail(int(effective_count), int(positive_count))
                         if abs(sign_p - expected_sign_p) > 1e-9:
                             checks.append(
                                 _check(

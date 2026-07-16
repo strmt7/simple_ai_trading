@@ -533,7 +533,7 @@ def _accepted_ai_uplift() -> dict[str, object]:
     first_period_ms = 1_700_000_000_000
     period_duration_ms = 3 * 86_400_000
     return {
-        "schema_version": "ai-uplift-v2",
+        "schema_version": "ai-uplift-v3",
         "accepted": True,
         "advisory_only": False,
         "trading_authority": False,
@@ -558,8 +558,11 @@ def _accepted_ai_uplift() -> dict[str, object]:
             "evidence_unit": "matched_fixed_period_return_delta",
             "scope": "BTCUSDT",
             "sample_count": 30,
-            "min_sample_count": 30,
+            "effective_sample_count": 30,
+            "min_effective_sample_count": 30,
             "positive_delta_count": 30,
+            "negative_delta_count": 0,
+            "tie_count": 0,
             "positive_delta_rate": 1.0,
             "min_positive_delta_rate": 0.55,
             "sign_test_p_value": 2**-30,
@@ -1050,6 +1053,24 @@ def test_model_lab_financial_sanity_blocks_accepted_ai_uplift_with_inconsistent_
         in blocked_paths
     )
     assert "outcomes[0].ai_uplift.statistical_evidence.sign_test_p_value" in blocked_paths
+
+
+def test_model_lab_financial_sanity_blocks_forged_ai_uplift_tie_counts() -> None:
+    payload = _model_lab_payload_with_symbols(["BTCUSDT"])
+    uplift = _accepted_ai_uplift()
+    statistical = uplift["statistical_evidence"]  # type: ignore[index]
+    statistical["effective_sample_count"] = 29  # type: ignore[index]
+    statistical["tie_count"] = 1  # type: ignore[index]
+    payload["outcomes"][0]["ai_uplift"] = uplift  # type: ignore[index]
+
+    report = build_model_lab_financial_sanity_report(payload)
+
+    assert report.allowed is False
+    assert any(
+        check.status == "block"
+        and check.path.endswith(".statistical_evidence.effective_sample_count")
+        for check in report.checks
+    )
 
 
 def test_model_lab_financial_sanity_blocks_impossible_accepted_report() -> None:

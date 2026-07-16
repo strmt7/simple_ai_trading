@@ -101,7 +101,7 @@ def _write_report(
     ai_uplift = None
     if include_ai_uplift:
         ai_uplift = {
-            "schema_version": "ai-uplift-v2",
+            "schema_version": "ai-uplift-v3",
             "accepted": not failed_ai_uplift,
             "advisory_only": failed_ai_uplift,
             "trading_authority": False,
@@ -161,8 +161,11 @@ def _write_report(
                 "evidence_unit": "matched_fixed_period_return_delta",
                 "scope": "BTCUSDT",
                 "sample_count": 30,
-                "min_sample_count": 30,
+                "effective_sample_count": 30,
+                "min_effective_sample_count": 30,
                 "positive_delta_count": 30 if not failed_ai_uplift else 12,
+                "negative_delta_count": 0 if not failed_ai_uplift else 18,
+                "tie_count": 0,
                 "positive_delta_rate": 1.0 if not failed_ai_uplift else 0.4,
                 "min_positive_delta_rate": 0.55,
                 "sign_test_p_value": 2**-30 if not failed_ai_uplift else 0.899755,
