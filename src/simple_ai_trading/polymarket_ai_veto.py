@@ -22,6 +22,7 @@ POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v2"
 POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v1"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v1"
+_FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = (
     "qwen3:8b",
     "qwen3:14b",
@@ -218,9 +219,7 @@ class PolymarketAIVetoReport:
             "model_digest": self.model_digest,
             "model_metadata_sha256": self.model_metadata_sha256,
             "model_parameters_b": self.model_parameters_b,
-            "risk_benchmark_evidence_sha256": (
-                self.risk_benchmark_evidence_sha256
-            ),
+            "risk_benchmark_evidence_sha256": (self.risk_benchmark_evidence_sha256),
             "selection_sha256": self.selection_sha256,
             "case_set_sha256": self.case_set_sha256,
             "case_count": self.case_count,
@@ -291,9 +290,7 @@ def _cache_identity(
             "timeout_seconds": float(config.timeout_seconds),
         },
         "decision_policy": {
-            "minimum_approval_confidence": float(
-                config.minimum_approval_confidence
-            ),
+            "minimum_approval_confidence": float(config.minimum_approval_confidence),
             "maximum_advisory_latency_seconds": float(
                 config.maximum_advisory_latency_seconds
             ),
@@ -576,7 +573,9 @@ def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
     ):
         raise ValueError("AI response values are invalid")
     codes = tuple(dict.fromkeys(codes_raw))
-    if len(codes) != len(codes_raw) or any(value not in _REASON_CODES for value in codes):
+    if len(codes) != len(codes_raw) or any(
+        value not in _REASON_CODES for value in codes
+    ):
         raise ValueError("AI response reason codes are invalid")
     return PolymarketAIVetoDecision(
         action=action,
@@ -597,6 +596,43 @@ def _failed_decision(reason: str) -> PolymarketAIVetoDecision:
         valid=False,
         failure_reason=str(reason)[:240],
     )
+
+
+def _failure_envelope(error: BaseException) -> dict[str, str]:
+    error_type = type(error).__name__[:128]
+    error_sha256 = _canonical_sha256(
+        {
+            "error_type": error_type,
+            "error_message": str(error),
+        }
+    )
+    return {
+        "schema_version": _FAILURE_ENVELOPE_SCHEMA_VERSION,
+        "error_type": error_type,
+        "error_sha256": error_sha256,
+    }
+
+
+def _decision_from_cached_payload(payload: object) -> PolymarketAIVetoDecision:
+    if (
+        not isinstance(payload, Mapping)
+        or payload.get("schema_version") != _FAILURE_ENVELOPE_SCHEMA_VERSION
+    ):
+        return _parse_decision(payload)
+    if set(payload) != {"schema_version", "error_type", "error_sha256"}:
+        raise ValueError("AI failure cache envelope is invalid")
+    error_type = payload.get("error_type")
+    error_sha256 = payload.get("error_sha256")
+    if (
+        not isinstance(error_type, str)
+        or not 1 <= len(error_type) <= 128
+        or any(not (value.isalnum() or value in "._") for value in error_type)
+        or not isinstance(error_sha256, str)
+        or len(error_sha256) != 64
+        or any(value not in "0123456789abcdef" for value in error_sha256)
+    ):
+        raise ValueError("AI failure cache envelope is invalid")
+    return _failed_decision(f"provider_or_schema_failure:{error_type}:{error_sha256}")
 
 
 def _report_payload(report: PolymarketAIVetoReport) -> dict[str, object]:
@@ -718,11 +754,10 @@ def benchmark_polymarket_ai_veto(
             if (
                 not math.isfinite(latency)
                 or latency < 0.0
-                or str(cached.get("response_sha256") or "")
-                != _canonical_sha256(raw)
+                or str(cached.get("response_sha256") or "") != _canonical_sha256(raw)
             ):
                 raise ValueError("Polymarket AI cache payload is invalid")
-            decision = _parse_decision(raw)
+            decision = _decision_from_cached_payload(raw)
         else:
             started = time.perf_counter()
             try:
@@ -734,7 +769,8 @@ def benchmark_polymarket_ai_veto(
                 )
                 decision = _parse_decision(raw)
             except Exception as exc:  # noqa: BLE001 - evidence records failures
-                decision = _failed_decision(f"{type(exc).__name__}: {exc}")
+                raw = _failure_envelope(exc)
+                decision = _decision_from_cached_payload(raw)
             latency = time.perf_counter() - started
         if (
             decision.valid
@@ -744,7 +780,7 @@ def benchmark_polymarket_ai_veto(
             decision = _failed_decision("approval confidence below configured floor")
         if latency > cfg.maximum_advisory_latency_seconds:
             decision = _failed_decision("advisory latency exceeded configured ceiling")
-        if decision.valid and cache_store is not None and not cache_hit:
+        if cache_store is not None and not cache_hit:
             cache_store.put_polymarket_ai_veto_cache(
                 cache_key_sha256,
                 identity=cache_identity,

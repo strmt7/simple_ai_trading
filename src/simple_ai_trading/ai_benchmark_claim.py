@@ -24,6 +24,9 @@ AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION = (
 )
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAX_JSON_BYTES = 32 * 1024 * 1024
+_APPROVED_PREREGISTRATION_SHA256 = {
+    "qwen3:14b": "7f872babbe9588c8bfe45a65e146ecdb5e0f0a8e78977500ca5afff92aa87e75",
+}
 
 
 @dataclass(frozen=True)
@@ -100,6 +103,7 @@ def _validated_preregistration(
     minimum_score: float,
 ) -> tuple[dict[str, object], str]:
     payload, encoded = _read_json(path)
+    preregistration_sha256 = hashlib.sha256(encoded).hexdigest()
     candidate = _mapping(payload.get("candidate"), "AI benchmark candidate")
     frozen = _mapping(payload.get("frozen_run"), "AI benchmark frozen run")
     admission = _mapping(payload.get("admission"), "AI benchmark admission")
@@ -112,7 +116,8 @@ def _validated_preregistration(
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError("AI benchmark frozen numeric settings are invalid") from exc
     if (
-        payload.get("schema_version") != AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION
+        _APPROVED_PREREGISTRATION_SHA256.get(model) != preregistration_sha256
+        or payload.get("schema_version") != AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION
         or payload.get("benchmark_contract") != AI_MODEL_BENCHMARK_CONTRACT
         or candidate.get("model") != model
         or payload.get("benchmark_source_sha256") != source_sha256
@@ -141,7 +146,7 @@ def _validated_preregistration(
         )
     ):
         raise ValueError("AI benchmark preregistration differs from frozen code or run")
-    return payload, hashlib.sha256(encoded).hexdigest()
+    return payload, preregistration_sha256
 
 
 def _validate_prior_comparison(
@@ -285,9 +290,9 @@ def begin_preregistered_ai_benchmark_claim(
         SELECT claim_sha256, identity_json, state, report_file_sha256,
                benchmark_passed
         FROM preregistered_ai_benchmark_claim
-        WHERE preregistration_sha256 = ? AND confirmation_report_sha256 = ?
+        WHERE preregistration_sha256 = ?
     """
-    parameters = [preregistration_sha256, str(run[2])]
+    parameters = [preregistration_sha256]
 
     def existing_claim(row: tuple[object, ...]) -> PreregisteredAIBenchmarkClaim:
         if str(row[0]) != claim_sha256 or str(row[1]) != identity_json:

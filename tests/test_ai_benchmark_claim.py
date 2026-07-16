@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import duckdb
+import pytest
 
 from simple_ai_trading import cli
 from simple_ai_trading.ai_benchmark_claim import (
@@ -144,6 +145,50 @@ def test_failed_preregistered_ai_benchmark_cannot_reopen_cases(tmp_path) -> None
         assert "already claimed:state=failed" in str(exc)
     else:
         raise AssertionError("a failed one-shot AI benchmark reopened its cases")
+
+
+def test_preregistered_ai_benchmark_rejects_semantically_irrelevant_file_drift(
+    tmp_path,
+) -> None:
+    store = _ClaimStore("c" * 64)
+    modified = tmp_path / "modified-preregistration.json"
+    payload = json.loads(PREREGISTRATION.read_text(encoding="utf-8"))
+    payload["candidate"]["selection_reason"] = "Edited after preregistration."
+    modified.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="differs from frozen code or run"):
+        begin_preregistered_ai_benchmark_claim(
+            store,  # type: ignore[arg-type]
+            preregistration_path=modified,
+            confirmation_run_id="confirmation",
+            model="qwen3:14b",
+            timeout_seconds=60.0,
+            minimum_score=0.78,
+            output_path=tmp_path / "forbidden.json",
+        )
+
+
+def test_preregistered_ai_benchmark_is_one_shot_across_confirmation_runs(
+    tmp_path,
+) -> None:
+    store = _ClaimStore("d" * 64)
+    first = _begin(store, tmp_path / "first.json")
+    assert first.status == "claimed"
+    store.connection.execute(
+        "INSERT INTO polymarket_recorder_run VALUES (?, 'complete', '', ?)",
+        ["second-confirmation", "e" * 64],
+    )
+
+    with pytest.raises(ValueError, match="claim identity differs"):
+        begin_preregistered_ai_benchmark_claim(
+            store,  # type: ignore[arg-type]
+            preregistration_path=PREREGISTRATION,
+            confirmation_run_id="second-confirmation",
+            model="qwen3:14b",
+            timeout_seconds=60.0,
+            minimum_score=0.78,
+            output_path=tmp_path / "second.json",
+        )
 
 
 def test_qwen3_14b_cli_requires_preregistration(monkeypatch, tmp_path, capsys) -> None:
