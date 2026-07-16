@@ -81,7 +81,9 @@ agents to canonical evidence without replacing that evidence.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
-  first.
+  first. The `ai-benchmark` CLI rejects this model without that preregistration,
+  the confirmation database, and its run ID. Its DuckDB claim consumes the test
+  once before inference; interrupted and failed claims cannot reopen it.
 - Confirmation capture `b8a270da20fe4116a01a4626607e42da` is the active
   54,000-second run. Monitor only
   `.tmp/polymarket-round9-confirmation4-20260716-024629.progress.json` and the

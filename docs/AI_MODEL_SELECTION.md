@@ -110,6 +110,11 @@ ranges, and no duplicate keys. Qwen3 14B is preregistered for one v8 run only
 after a fresh confirmation recorder finishes `complete`. No local model is
 selected.
 
+That one-shot rule is executable, not advisory. `ai-benchmark` requires the
+frozen preregistration, confirmation DuckDB, and exact run ID for Qwen3 14B. It
+audits terminal evidence before writing a durable claim; a completed result is
+digest-verified on reuse, while started or failed claims block another run.
+
 AI therefore remains enabled-but-unavailable and fail-closed until a fresh model
 passes the current gate. No LLM enters the 250 ms action scorer. The veto
 evaluator caches only valid responses
