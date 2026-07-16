@@ -2173,6 +2173,25 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound(
         )
 
 
+@pytest.mark.parametrize("action", ("APPROVE", " approve ", "VETO"))
+def test_ai_veto_rejects_noncanonical_action_enums(action: str) -> None:
+    payload = {
+        "message": {
+            "content": json.dumps(
+                {
+                    "action": action,
+                    "confidence": 0.9,
+                    "reason_codes": ["edge_after_fees"],
+                    "summary": "Causal evidence and after-fee edge are coherent.",
+                }
+            )
+        }
+    }
+
+    with pytest.raises(ValueError, match="AI response values are invalid"):
+        ai_veto_module._parse_decision(payload)
+
+
 def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
