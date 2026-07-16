@@ -2611,6 +2611,49 @@ def test_ai_uplift_profit_factor_is_dimensionless_and_bounded(
     assert reconstructed_metrics == source_metrics
 
 
+@pytest.mark.parametrize(
+    ("return_fraction", "drawdown", "expected"),
+    [
+        ("0.01", "0", 999.0),
+        ("20", "0.001", 999.0),
+        ("-0.01", "0.02", -0.5),
+        ("-0.01", "0", -999.0),
+        ("0", "0", 0.0),
+    ],
+)
+def test_ai_uplift_downside_return_risk_ratio_is_bounded(
+    return_fraction: str,
+    drawdown: str,
+    expected: float,
+) -> None:
+    source_report = SimpleNamespace(
+        trades=(),
+        maximum_drawdown_fraction=Decimal(drawdown),
+        net_realized_pnl_quote=Decimal("0"),
+        return_on_initial_capital=Decimal(return_fraction),
+        report_sha256="f" * 64,
+    )
+    publication_report = {
+        "trades": [],
+        "maximum_drawdown_fraction": drawdown,
+        "net_realized_pnl_quote": "0",
+        "return_on_initial_capital": return_fraction,
+        "report_sha256": "f" * 64,
+    }
+
+    source_metrics = _polymarket_execution_uplift_metrics(
+        source_report,
+        dataset_fingerprint="e" * 64,
+    )
+    reconstructed_metrics = _execution_uplift_metrics(
+        publication_report,
+        dataset_fingerprint="e" * 64,
+    )
+
+    assert source_metrics["downside_return_risk_ratio"] == pytest.approx(expected)
+    assert reconstructed_metrics == source_metrics
+
+
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
