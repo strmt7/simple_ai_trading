@@ -212,7 +212,9 @@ def _segmented_message(
     )
 
 
-def _book_payload(token: str, condition: str, source_offset_ms: int) -> dict[str, object]:
+def _book_payload(
+    token: str, condition: str, source_offset_ms: int
+) -> dict[str, object]:
     return {
         "event_type": "book",
         "market": condition,
@@ -796,9 +798,7 @@ def _finish_replay_store(
                     "event_type": "book",
                     "market": btc.condition_id,
                     "asset_id": token,
-                    "timestamp": str(
-                        EPOCH * 1_000 + 1_011 - trade_resync_lag_ms
-                    ),
+                    "timestamp": str(EPOCH * 1_000 + 1_011 - trade_resync_lag_ms),
                     "hash": "atomic-replacement",
                     "bids": [],
                     "asks": [
@@ -1076,9 +1076,7 @@ def _finish_replay_store(
         database=str(store.path),
         errors=(),
     )
-    assert report.status == (
-        "degraded" if pre_window_binance_gap else "complete"
-    )
+    assert report.status == ("degraded" if pre_window_binance_gap else "complete")
     if finalize_official:
         finalized = PolymarketResolutionFinalizer(
             store,
@@ -1105,12 +1103,18 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     assert changed.snapshot.source_payload_sha256 != full.snapshot.source_payload_sha256
     assert post_tick.tick_size == Decimal("0.001")
     assert post_tick.snapshot.bids[0].price == Decimal("0.499")
-    assert replay.first_book_after_latency(
-        full, latency_ms=5, maximum_observation_delay_ms=500
-    ) == changed
-    assert replay.first_book_after_latency(
-        post_tick, latency_ms=1, maximum_observation_delay_ms=500
-    ) == close_book
+    assert (
+        replay.first_book_after_latency(
+            full, latency_ms=5, maximum_observation_delay_ms=500
+        )
+        == changed
+    )
+    assert (
+        replay.first_book_after_latency(
+            post_tick, latency_ms=1, maximum_observation_delay_ms=500
+        )
+        == close_book
+    )
     assert (
         replay.first_book_after_latency(
             close_book,
@@ -1279,9 +1283,7 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
             store,
             run_id="features",
             config=config,
-            condition_ids=tuple(
-                sorted({row.condition_id for row in first.rows})
-            ),
+            condition_ids=tuple(sorted({row.condition_id for row in first.rows})),
             source_context=source_context,
         )
         created = materialize_polymarket_feature_dataset(store, first)
@@ -1313,9 +1315,7 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert row.feature_map()["ask_pair_cost"] == pytest.approx(1.02)
     assert row.feature_map()["chainlink_anchor_gap_ms"] == 0.0
     assert math.isfinite(row.feature_map()["binance_return_100ms_bps"])
-    assert math.isfinite(
-        row.feature_map()["binance_realized_volatility_100ms_bps"]
-    )
+    assert math.isfinite(row.feature_map()["binance_realized_volatility_100ms_bps"])
     assert math.isfinite(row.feature_map()["binance_trade_imbalance_100ms"])
     assert first.labeled_market_counts["BTC"] == 1
     assert first.training_ready is False
@@ -1399,9 +1399,7 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
             "SELECT current_setting('preserve_insertion_order')"
         ).fetchone() == (False,)
         with pytest.raises(ValueError, match="bounded-memory policy"):
-            PolymarketActionPipelineConfig(
-                market_groups_per_batch=2
-            ).validated()
+            PolymarketActionPipelineConfig(market_groups_per_batch=2).validated()
         config = PolymarketActionPipelineConfig(
             market_groups_per_batch=1,
             feature=PolymarketFeatureConfig(
@@ -1551,9 +1549,7 @@ def test_polymarket_continuity_cli_and_native_contract_share_controls(
         "database_threads",
         "json",
     }
-    assert "allow_segmented_gaps" in {
-        option.dest for option in action_spec.options
-    }
+    assert "allow_segmented_gaps" in {option.dest for option in action_spec.options}
 
 
 def test_polymarket_feature_provenance_binds_pre_window_causal_events(
@@ -1591,8 +1587,7 @@ def test_polymarket_feature_provenance_binds_pre_window_causal_events(
 
     assert first.rows[0].feature_values == second.rows[0].feature_values
     assert (
-        first.rows[0].input_provenance_sha256
-        != second.rows[0].input_provenance_sha256
+        first.rows[0].input_provenance_sha256 != second.rows[0].input_provenance_sha256
     )
     assert first.rows[0].row_sha256 != second.rows[0].row_sha256
 
@@ -1675,17 +1670,18 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
     assert next(
         option for option in spec.options if option.dest == "latency_ms"
     ).takes_value
-    assert next(
-        option
-        for option in spec.options
-        if option.dest == "minimum_resolved_markets_per_asset"
-    ).default == 30
+    assert (
+        next(
+            option
+            for option in spec.options
+            if option.dest == "minimum_resolved_markets_per_asset"
+        ).default
+        == 30
+    )
 
 
 def test_polymarket_source_verification_is_in_the_shared_command_contract() -> None:
-    verify = next(
-        spec for spec in command_specs() if spec.name == "polymarket-verify"
-    )
+    verify = next(spec for spec in command_specs() if spec.name == "polymarket-verify")
     publish = next(
         spec for spec in command_specs() if spec.name == "polymarket-publish"
     )
@@ -1711,6 +1707,8 @@ def test_polymarket_source_verification_is_in_the_shared_command_contract() -> N
         "database_threads",
         "json",
     }
+
+
 def test_replay_rejects_semantically_inconsistent_published_best_price(
     tmp_path,
 ) -> None:
@@ -1759,7 +1757,9 @@ def test_segmented_replay_resets_books_and_never_executes_across_gap(tmp_path) -
         is None
     )
     for segment_id in segment_ids:
-        assert {book.outcome for book in replay.books if book.segment_id == segment_id} == {
+        assert {
+            book.outcome for book in replay.books if book.segment_id == segment_id
+        } == {
             "Up",
             "Down",
         }
@@ -1855,9 +1855,7 @@ def test_segmented_replay_accepts_explicit_zero_message_connection_attempt(
             "zero-message-attempt",
             StreamGap(
                 stream="polymarket_rtds",
-                connection_id=(
-                    "rtds:chainlink:btc:33333333333333333333333333333333"
-                ),
+                connection_id=("rtds:chainlink:btc:33333333333333333333333333333333"),
                 opened_at_ms=EPOCH * 1_000 + 1_000,
                 reason="fixture_connect_failure",
                 last_sequence_number=0,
@@ -1952,8 +1950,7 @@ def test_feature_feed_windows_never_cross_connection_segments() -> None:
 
     assert current is not None and current.connection_id == "chainlink:second"
     assert (
-        cursor.latest_at_or_before(1_000, connection_id=current.connection_id)
-        is None
+        cursor.latest_at_or_before(1_000, connection_id=current.connection_id) is None
     )
 
 
@@ -2032,6 +2029,140 @@ def test_feature_series_compact_storage_preserves_frozen_prefixes_and_math() -> 
         0.15384615384615385,
         3.25,
     )
+
+
+def test_compact_binance_books_preserve_point_cursor_and_series_semantics() -> None:
+    first = feature_module._BinanceBookPoint(
+        asset="BTC",
+        connection_id="binance:first",
+        received_wall_ms=1_000,
+        received_monotonic_ns=1_000_000_000,
+        bid=99.0,
+        bid_quantity=1.25,
+        ask=101.0,
+        ask_quantity=1.5,
+        event_id="b" * 64,
+        event_sha256="1" * 64,
+    )
+    tied = replace(
+        first,
+        bid=98.0,
+        ask=100.0,
+        event_id="a" * 64,
+        event_sha256="2" * 64,
+    )
+    second = replace(
+        first,
+        received_wall_ms=2_000,
+        received_monotonic_ns=2_000_000_000,
+        bid=100.0,
+        ask=102.0,
+        event_id="c" * 64,
+        event_sha256="3" * 64,
+    )
+    compact = feature_module._CompactBinanceBooks("BTC")
+    compact.append(first)
+    compact.append(tied)
+    compact.append(second)
+    compact.finish()
+
+    expected = tuple(
+        sorted((first, tied, second), key=feature_module._received_order_key)
+    )
+    assert tuple(compact) == expected
+    assert compact.finish() is compact
+    assert compact.connection_views()["binance:first"].connection_id == (
+        "binance:first"
+    )
+
+    compact_series = feature_module._BookSeries(
+        compact.connection_views()["binance:first"]
+    )
+    tuple_series = feature_module._BookSeries(expected)
+    for received_ns in (0, 1_000_000_000, 2_000_000_000):
+        assert compact_series.causal_prefix(received_ns) == tuple_series.causal_prefix(
+            received_ns
+        )
+    assert compact_series.return_bps(2_000_000_000, 1_000) == (
+        tuple_series.return_bps(2_000_000_000, 1_000)
+    )
+    assert compact_series.realized_volatility_bps(2_000_000_000, 1_000) == (
+        tuple_series.realized_volatility_bps(2_000_000_000, 1_000)
+    )
+
+    cursor = feature_module._BookCursor(compact)
+    assert cursor.advance(999_999_999) is None
+    assert cursor.advance(1_000_000_000) == expected[1]
+    assert cursor.advance(2_000_000_000) == expected[2]
+
+
+def test_compact_binance_trades_preserve_point_cursor_and_series_semantics() -> None:
+    first = feature_module._BinanceTradePoint(
+        asset="BTC",
+        connection_id="binance:first",
+        received_monotonic_ns=1_000_000_000,
+        signed_quote=Decimal("-12.3400"),
+        gross_quote=Decimal("12.3400"),
+        event_id="b" * 64,
+        event_sha256="1" * 64,
+    )
+    tied = replace(
+        first,
+        signed_quote=Decimal("2.50"),
+        gross_quote=Decimal("2.50"),
+        event_id="a" * 64,
+        event_sha256="2" * 64,
+    )
+    second = replace(
+        first,
+        received_monotonic_ns=2_000_000_000,
+        signed_quote=Decimal("5.125"),
+        gross_quote=Decimal("5.125"),
+        event_id="c" * 64,
+        event_sha256="3" * 64,
+    )
+    compact = feature_module._CompactBinanceTrades("BTC")
+    compact.append(first)
+    compact.append(tied)
+    compact.append(second)
+    compact.finish()
+
+    expected = tuple(
+        sorted((first, tied, second), key=feature_module._received_order_key)
+    )
+    assert tuple(compact) == expected
+    assert compact.finish() is compact
+    view = compact.connection_views()["binance:first"]
+    compact_series = feature_module._TradeSeries(view)
+    tuple_series = feature_module._TradeSeries(expected)
+    for received_ns in (0, 1_000_000_000, 2_000_000_000):
+        assert compact_series.causal_prefix(received_ns) == tuple_series.causal_prefix(
+            received_ns
+        )
+        assert compact_series.stats(received_ns, 1_000) == tuple_series.stats(
+            received_ns,
+            1_000,
+        )
+
+    books = feature_module._CompactBinanceBooks("BTC")
+    books.append(
+        feature_module._BinanceBookPoint(
+            asset="BTC",
+            connection_id="binance:first",
+            received_wall_ms=1_000,
+            received_monotonic_ns=500_000_000,
+            bid=99.0,
+            bid_quantity=1.0,
+            ask=101.0,
+            ask_quantity=1.0,
+            event_id="d" * 64,
+            event_sha256="4" * 64,
+        )
+    )
+    books.finish()
+    cursor = feature_module._ConnectionCursor(books, compact)
+    assert cursor.advance(500_000_000) == "binance:first"
+    assert cursor.advance(2_000_000_000) == "binance:first"
 
 
 def test_segmented_replay_requires_gap_to_close_final_sequence(tmp_path) -> None:
@@ -2146,13 +2277,17 @@ def test_polymarket_broker_binds_fok_ai_delay_and_submission_latency(
         )
         assert position is not None
         intent = broker.journal.intent(position.opening_intent_id)
-        context = broker.store.connect().execute(
-            """
+        context = (
+            broker.store.connect()
+            .execute(
+                """
             SELECT requested_latency_ms, effective_latency_ms
             FROM polymarket_paper_order_context WHERE intent_id = ?
             """,
-            [position.opening_intent_id],
-        ).fetchone()
+                [position.opening_intent_id],
+            )
+            .fetchone()
+        )
 
     assert execution.state == "FILLED"
     assert intent.order_type == "FOK"
@@ -2192,9 +2327,7 @@ def test_model_research_and_owned_paper_broker_have_exact_execution_parity(
         decision_event_id=decision.event_id,
         horizon_seconds=240,
         feature_values=tuple(0.0 for _ in POLYMARKET_MODEL_FEATURE_NAMES),
-        risk_context_values=tuple(
-            0.0 for _ in POLYMARKET_MODEL_RISK_CONTEXT_NAMES
-        ),
+        risk_context_values=tuple(0.0 for _ in POLYMARKET_MODEL_RISK_CONTEXT_NAMES),
         baseline_up_probability=0.9,
         up_best_bid=0.49,
         up_best_ask=0.51,
@@ -2234,13 +2367,17 @@ def test_model_research_and_owned_paper_broker_have_exact_execution_parity(
             order_type="FOK",
         )
         assert position is not None
-        context = broker.store.connect().execute(
-            """
+        context = (
+            broker.store.connect()
+            .execute(
+                """
             SELECT decision_event_id, execution_event_id, effective_latency_ms
             FROM polymarket_paper_order_context WHERE intent_id = ?
             """,
-            [position.opening_intent_id],
-        ).fetchone()
+                [position.opening_intent_id],
+            )
+            .fetchone()
+        )
         settlement = broker.settle_position(
             opening_intent_id=position.opening_intent_id,
             resolution=resolution,
@@ -2302,9 +2439,7 @@ def _single_trade_model_plan(
         decision_event_id=decision.event_id,
         horizon_seconds=240,
         feature_values=tuple(0.0 for _ in POLYMARKET_MODEL_FEATURE_NAMES),
-        risk_context_values=tuple(
-            0.0 for _ in POLYMARKET_MODEL_RISK_CONTEXT_NAMES
-        ),
+        risk_context_values=tuple(0.0 for _ in POLYMARKET_MODEL_RISK_CONTEXT_NAMES),
         baseline_up_probability=0.9,
         up_best_bid=0.49,
         up_best_ask=0.51,
@@ -2318,9 +2453,7 @@ def _single_trade_model_plan(
     )
     config = PolymarketExecutionResearchConfig(
         submission_latency_ms=5,
-        maximum_execution_observation_delay_ms=(
-            maximum_execution_observation_delay_ms
-        ),
+        maximum_execution_observation_delay_ms=(maximum_execution_observation_delay_ms),
     )
     research = evaluate_polymarket_execution_policy(
         (sample,),
@@ -2468,13 +2601,17 @@ def test_polymarket_broker_fails_closed_after_execution_observation_timeout(
             submission_latency_ms=5,
             order_type="FOK",
         )
-        context = broker.store.connect().execute(
-            """
+        context = (
+            broker.store.connect()
+            .execute(
+                """
             SELECT requested_latency_ms, effective_latency_ms,
                    maximum_execution_observation_delay_ms, execution_event_id
             FROM polymarket_paper_order_context
             """
-        ).fetchone()
+            )
+            .fetchone()
+        )
         reconciliation = broker.reconcile()
         stop_report = coordinator.stop_all_positions(submission_latency_ms=5)
         control = coordinator.status()
@@ -2810,29 +2947,35 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     pause_payload = json.loads(capsys.readouterr().out)
     assert pause_code == 0
     assert pause_payload["control"]["state"] == "PAUSED"
-    assert cli.main(
-        [
-            "polymarket-paper",
-            "--database",
-            str(database),
-            "--run-id",
-            "cli-run",
-            "--action",
-            "open",
-        ]
-    ) == 2
+    assert (
+        cli.main(
+            [
+                "polymarket-paper",
+                "--database",
+                str(database),
+                "--run-id",
+                "cli-run",
+                "--action",
+                "open",
+            ]
+        )
+        == 2
+    )
     assert "control blocks open while PAUSED" in capsys.readouterr().err
-    assert cli.main(
-        [
-            "polymarket-paper",
-            "--database",
-            str(database),
-            "--run-id",
-            "cli-run",
-            "--action",
-            "resume",
-        ]
-    ) == 0
+    assert (
+        cli.main(
+            [
+                "polymarket-paper",
+                "--database",
+                str(database),
+                "--run-id",
+                "cli-run",
+                "--action",
+                "resume",
+            ]
+        )
+        == 0
+    )
     capsys.readouterr()
 
     missing_latency_code = cli.main(

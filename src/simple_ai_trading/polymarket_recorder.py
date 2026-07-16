@@ -165,6 +165,42 @@ def _compact_message_manifest_hash(row: Sequence[object]) -> str:
     )
 
 
+def _public_event_manifest_hash(
+    *,
+    event_id: object,
+    run_id: object,
+    message_id: object,
+    sub_index: object,
+    stream: object,
+    event_type: object,
+    symbol: object,
+    condition_id: object,
+    asset_id: object,
+    source_time_ms: object,
+    publisher_time_ms: object,
+    event_sha256: object,
+) -> str:
+    return _canonical_sha256(
+        {
+            "schema_version": "polymarket-public-event-manifest-v1",
+            "event_id": str(event_id),
+            "run_id": str(run_id),
+            "message_id": str(message_id),
+            "sub_index": int(sub_index),
+            "stream": str(stream),
+            "event_type": str(event_type),
+            "symbol": str(symbol),
+            "condition_id": str(condition_id),
+            "asset_id": str(asset_id),
+            "source_time_ms": None if source_time_ms is None else int(source_time_ms),
+            "publisher_time_ms": (
+                None if publisher_time_ms is None else int(publisher_time_ms)
+            ),
+            "event_sha256": str(event_sha256),
+        }
+    )
+
+
 def _wall_ms() -> int:
     return time.time_ns() // 1_000_000
 
@@ -613,19 +649,21 @@ class PolymarketEvidenceStore:
         cache_key_sha256: str,
     ) -> Mapping[str, object] | None:
         key = str(cache_key_sha256 or "").strip().lower()
-        if len(key) != 64 or any(
-            value not in "0123456789abcdef" for value in key
-        ):
+        if len(key) != 64 or any(value not in "0123456789abcdef" for value in key):
             raise ValueError("Polymarket AI cache key is invalid")
-        row = self.connect().execute(
-            """
+        row = (
+            self.connect()
+            .execute(
+                """
             SELECT schema_version, identity_json, response_json,
                    response_sha256, latency_seconds
             FROM polymarket_ai_veto_cache
             WHERE cache_key_sha256 = ?
             """,
-            [key],
-        ).fetchone()
+                [key],
+            )
+            .fetchone()
+        )
         if row is None:
             return None
         identity = _strict_json_loads(str(row[1]))
@@ -660,9 +698,7 @@ class PolymarketEvidenceStore:
         latency_seconds: float,
     ) -> None:
         if self.read_only:
-            raise ValueError(
-                "read-only Polymarket evidence cannot store AI cache rows"
-            )
+            raise ValueError("read-only Polymarket evidence cannot store AI cache rows")
         key = str(cache_key_sha256 or "").strip().lower()
         identity_payload = dict(identity)
         identity_json = _canonical_json(identity_payload)
@@ -781,9 +817,36 @@ class PolymarketEvidenceStore:
             )
             .fetchone()
         )
+        file_state: list[dict[str, object]] = []
+        if self.read_only:
+            for label, path in (
+                ("database", self.path),
+                ("write_ahead_log", Path(f"{self.path}.wal")),
+            ):
+                try:
+                    stat = path.stat()
+                    file_state.append(
+                        {
+                            "label": label,
+                            "exists": True,
+                            "size": int(stat.st_size),
+                            "mtime_ns": int(stat.st_mtime_ns),
+                        }
+                    )
+                except FileNotFoundError:
+                    file_state.append({"label": label, "exists": False})
+                except OSError as exc:
+                    file_state.append(
+                        {
+                            "label": label,
+                            "exists": None,
+                            "stat_error": exc.__class__.__name__,
+                        }
+                    )
         return _canonical_sha256(
             {
                 "run_id": run_id,
+                "database_file_state": file_state,
                 "terminal_metadata_and_counts": None
                 if row is None
                 else [None if value is None else str(value) for value in row],
@@ -1278,6 +1341,7 @@ class PolymarketEvidenceStore:
         raw_offset: object,
         raw_size: object,
         raw_payload_sha256: object,
+        verify_payload_hash: bool = True,
     ) -> str:
         normalized_chunk_id = str(chunk_id or "")
         offset = int(raw_offset)
@@ -1293,7 +1357,9 @@ class PolymarketEvidenceStore:
         if end > len(frame) or struct.unpack_from("<I", frame, offset - 4)[0] != size:
             raise ValueError("compact raw-message frame boundary is invalid")
         raw_bytes = frame[offset:end]
-        if hashlib.sha256(raw_bytes).hexdigest() != str(raw_payload_sha256):
+        if verify_payload_hash and hashlib.sha256(raw_bytes).hexdigest() != str(
+            raw_payload_sha256
+        ):
             raise ValueError("compact raw-message payload hash mismatch")
         try:
             return raw_bytes.decode("utf-8", errors="strict")
@@ -1307,11 +1373,23 @@ class PolymarketEvidenceStore:
         streams: Sequence[str] | None = None,
         condition_ids: Sequence[str] | None = None,
         ordered: bool = True,
+        verified_source: bool = False,
     ) -> Iterator[DecodedPublicEvent]:
         """Yield source-reconstructed events in deterministic receive order."""
 
-        if not isinstance(ordered, bool):
-            raise ValueError("public-event ordering flag must be a boolean")
+        if not isinstance(ordered, bool) or not isinstance(verified_source, bool):
+            raise ValueError("public-event control flags must be boolean")
+        if verified_source:
+            cached = self._terminal_evidence_integrity_cache.get(run_id)
+            if (
+                cached is None
+                or cached[0] != self._terminal_evidence_fingerprint(run_id)
+                or cached[1]
+            ):
+                raise ValueError(
+                    "verified public-event iteration requires a clean current "
+                    "terminal integrity audit"
+                )
         selected_streams: tuple[str, ...] | None = None
         if streams is not None:
             selected_streams = tuple(sorted({str(value) for value in streams}))
@@ -1329,47 +1407,134 @@ class PolymarketEvidenceStore:
             ):
                 raise ValueError("public-event condition filter is invalid")
         storage_version = self._storage_schema_version(run_id)
-        filters = ["e.run_id = ?"]
-        parameters: list[object] = [run_id]
-        if selected_streams is not None:
-            placeholders = ", ".join("?" for _ in selected_streams)
-            filters.append(f"e.stream IN ({placeholders})")
-            parameters.extend(selected_streams)
-        if selected_conditions is not None:
-            placeholders = ", ".join("?" for _ in selected_conditions)
-            filters.append(f"e.condition_id IN ({placeholders})")
-            parameters.extend(selected_conditions)
         compact = storage_version == POLYMARKET_STORAGE_SCHEMA_VERSION
         compact_columns = (
             ", r.storage_chunk_id, r.raw_offset, r.raw_size" if compact else ""
         )
-        order_clause = ""
-        if ordered:
-            order_clause = """
-                ORDER BY r.received_monotonic_ns, r.received_wall_ms,
-                         r.connection_id, r.sequence_number, e.sub_index,
-                         e.event_id
-            """
-        cursor = self.connect().execute(
-            f"""
-            SELECT e.event_id, e.run_id, e.message_id, e.sub_index, e.stream,
-                   e.event_type, e.symbol, e.condition_id, e.asset_id,
-                   e.source_time_ms, e.publisher_time_ms, e.event_json,
-                   e.event_sha256, r.connection_id, r.sequence_number,
-                   r.received_wall_ms, r.received_monotonic_ns,
-                   r.raw_payload_sha256, r.raw_text{compact_columns}
+        wide_select = f"""
+            SELECT e.event_id, e.run_id, e.message_id, e.sub_index,
+                   e.stream, e.event_type, e.symbol, e.condition_id,
+                   e.asset_id, e.source_time_ms, e.publisher_time_ms,
+                   e.event_json, e.event_sha256, r.connection_id,
+                   r.sequence_number, r.received_wall_ms,
+                   r.received_monotonic_ns, r.raw_payload_sha256,
+                   r.raw_text{compact_columns}
             FROM polymarket_public_event AS e
             JOIN polymarket_raw_message AS r
               ON r.run_id = e.run_id AND r.message_id = e.message_id
-            WHERE {" AND ".join(filters)}
-            {order_clause}
-            """,
-            parameters,
-        )
+        """
+
+        def ordered_row_batches() -> Iterator[list[tuple[object, ...]]]:
+            if selected_conditions is None:
+                filters = ["r.run_id = ?"]
+                parameters: list[object] = [run_id]
+                if selected_streams is not None:
+                    stream_placeholders = ", ".join("?" for _ in selected_streams)
+                    filters.append(f"r.stream IN ({stream_placeholders})")
+                    parameters.extend(selected_streams)
+                order_clause = ""
+                if ordered:
+                    order_clause = """
+                        ORDER BY r.received_monotonic_ns, r.received_wall_ms,
+                                 r.connection_id, r.sequence_number
+                    """
+                cursor = self.connect().execute(
+                    f"""
+                    SELECT unhex(r.message_id) AS message_id_bytes
+                    FROM polymarket_raw_message AS r
+                    WHERE {" AND ".join(filters)}
+                    {order_clause}
+                    """,
+                    parameters,
+                )
+                for key_batch in iter(
+                    lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []
+                ):
+                    message_ids = tuple(bytes(row[0]).hex() for row in key_batch)
+                    placeholders = ", ".join("?" for _ in message_ids)
+                    rows = (
+                        self._payload_connection()
+                        .execute(
+                            wide_select
+                            + f" WHERE e.run_id = ? AND e.message_id IN ({placeholders})",
+                            [run_id, *message_ids],
+                        )
+                        .fetchall()
+                    )
+                    rows_by_message: dict[str, list[tuple[object, ...]]] = {}
+                    seen_event_ids: set[str] = set()
+                    for row in rows:
+                        event_id = str(row[0])
+                        if event_id in seen_event_ids:
+                            raise ValueError("normalized event identity is duplicated")
+                        seen_event_ids.add(event_id)
+                        rows_by_message.setdefault(str(row[2]), []).append(row)
+                    ordered_rows: list[tuple[object, ...]] = []
+                    for message_id in message_ids:
+                        ordered_rows.extend(
+                            sorted(
+                                rows_by_message.get(message_id, ()),
+                                key=lambda row: (int(row[3]), str(row[0])),
+                            )
+                        )
+                    yield ordered_rows
+                return
+
+            filters = ["e.run_id = ?"]
+            parameters = [run_id]
+            if selected_streams is not None:
+                stream_placeholders = ", ".join("?" for _ in selected_streams)
+                filters.append(f"e.stream IN ({stream_placeholders})")
+                parameters.extend(selected_streams)
+            condition_placeholders = ", ".join("?" for _ in selected_conditions)
+            filters.append(f"e.condition_id IN ({condition_placeholders})")
+            parameters.extend(selected_conditions)
+            order_clause = ""
+            if ordered:
+                order_clause = """
+                    ORDER BY r.received_monotonic_ns, r.received_wall_ms,
+                             r.connection_id, r.sequence_number, e.sub_index,
+                             e.event_id
+                """
+            cursor = self.connect().execute(
+                f"""
+                SELECT unhex(e.event_id) AS event_id_bytes
+                FROM polymarket_public_event AS e
+                JOIN polymarket_raw_message AS r
+                  ON r.run_id = e.run_id AND r.message_id = e.message_id
+                WHERE {" AND ".join(filters)}
+                {order_clause}
+                """,
+                parameters,
+            )
+            for key_batch in iter(lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []):
+                event_ids = tuple(bytes(row[0]).hex() for row in key_batch)
+                placeholders = ", ".join("?" for _ in event_ids)
+                rows = (
+                    self._payload_connection()
+                    .execute(
+                        wide_select
+                        + f" WHERE e.run_id = ? AND e.event_id IN ({placeholders})",
+                        [run_id, *event_ids],
+                    )
+                    .fetchall()
+                )
+                rows_by_id: dict[str, tuple[object, ...]] = {}
+                for row in rows:
+                    row_event_id = str(row[0])
+                    if row_event_id in rows_by_id:
+                        raise ValueError("normalized event identity is duplicated")
+                    rows_by_id[row_event_id] = row
+                if len(rows_by_id) != len(event_ids) or any(
+                    event_id not in rows_by_id for event_id in event_ids
+                ):
+                    raise ValueError("normalized event batch lookup is incomplete")
+                yield [rows_by_id[event_id] for event_id in event_ids]
+
         cached_message_id = ""
         cached_events: tuple[Mapping[str, object], ...] = ()
-        for batch in iter(lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []):
-            for row in batch:
+        for rows in ordered_row_batches():
+            for row in rows:
                 (
                     event_id,
                     event_run,
@@ -1405,6 +1570,7 @@ class PolymarketEvidenceStore:
                             raw_offset=compact_location[1],
                             raw_size=compact_location[2],
                             raw_payload_sha256=raw_payload_sha256,
+                            verify_payload_hash=not verified_source,
                         )
                     else:
                         raw_text = str(inline_raw_text)
@@ -1431,6 +1597,33 @@ class PolymarketEvidenceStore:
                 if not 0 <= index < len(cached_events):
                     raise ValueError("normalized event sub-index is out of bounds")
                 event = dict(cached_events[index])
+                if verified_source:
+                    yield DecodedPublicEvent(
+                        event_id=str(event_id),
+                        run_id=run_id,
+                        message_id=normalized_message_id,
+                        sub_index=index,
+                        stream=str(stream),
+                        event_type=str(event_type),
+                        symbol=str(symbol),
+                        condition_id=str(condition_id),
+                        asset_id=str(asset_id),
+                        source_time_ms=(
+                            None if source_time_ms is None else int(source_time_ms)
+                        ),
+                        publisher_time_ms=(
+                            None
+                            if publisher_time_ms is None
+                            else int(publisher_time_ms)
+                        ),
+                        event_sha256=str(event_sha256),
+                        event=event,
+                        connection_id=str(connection_id),
+                        sequence_number=int(sequence_number),
+                        received_wall_ms=int(received_wall_ms),
+                        received_monotonic_ns=int(received_monotonic_ns),
+                    )
+                    continue
                 canonical = _canonical_json(event)
                 actual_event_sha = hashlib.sha256(canonical.encode("ascii")).hexdigest()
                 expected_event_id = _canonical_sha256(
@@ -1887,6 +2080,8 @@ class PolymarketEvidenceStore:
                 errors.append(f"raw_chunk_index_sequence_invalid:{run_id}")
             observed_chunks: dict[str, dict[str, object]] = {}
             expected_event_count = 0
+            expected_event_manifest_xor = 0
+            expected_event_manifest_sum = 0
             invalid_chunks: set[str] = set()
             for batch in _query_batches(
                 connection,
@@ -2031,6 +2226,40 @@ class PolymarketEvidenceStore:
                         errors.append(f"raw_message_parse_mismatch:{message_id}")
                     if expected_status == "invalid":
                         errors.append(f"invalid_stream_message:{message_id}")
+                    for sub_index, event in enumerate(expected_events):
+                        event_json = _canonical_json(dict(event))
+                        event_sha256 = hashlib.sha256(
+                            event_json.encode("ascii")
+                        ).hexdigest()
+                        event_id = _canonical_sha256(
+                            {
+                                "message_id": str(message_id),
+                                "sub_index": sub_index,
+                                "event_sha256": event_sha256,
+                            }
+                        )
+                        normalized = _event_index(str(stream), event)
+                        manifest_value = int(
+                            _public_event_manifest_hash(
+                                event_id=event_id,
+                                run_id=message_run,
+                                message_id=message_id,
+                                sub_index=sub_index,
+                                stream=stream,
+                                event_type=normalized["event_type"],
+                                symbol=normalized["symbol"],
+                                condition_id=normalized["condition_id"],
+                                asset_id=normalized["asset_id"],
+                                source_time_ms=normalized["source_time_ms"],
+                                publisher_time_ms=normalized["publisher_time_ms"],
+                                event_sha256=event_sha256,
+                            ),
+                            16,
+                        )
+                        expected_event_manifest_xor ^= manifest_value
+                        expected_event_manifest_sum = (
+                            expected_event_manifest_sum + manifest_value
+                        ) % (1 << 256)
                 notify("integrity-raw-messages")
             for chunk_id, chunk_row in chunks.items():
                 observed = observed_chunks.get(chunk_id)
@@ -2046,19 +2275,59 @@ class PolymarketEvidenceStore:
                 ):
                     errors.append(f"raw_chunk_manifest_mismatch:{chunk_id}")
             notify("integrity-public-events", force=True)
+            observed_event_manifest_xor = 0
+            observed_event_manifest_sum = 0
             try:
-                for _event in self.iter_public_events(run_id, ordered=False):
-                    event_count += 1
+                for batch in _query_batches(
+                    connection,
+                    """
+                    SELECT event_id, run_id, message_id, sub_index, stream,
+                           event_type, symbol, condition_id, asset_id,
+                           source_time_ms, publisher_time_ms, event_json,
+                           event_sha256
+                    FROM polymarket_public_event WHERE run_id = ?
+                    """,
+                    [run_id],
+                ):
+                    event_count += len(batch)
+                    for row in batch:
+                        if str(row[11]):
+                            errors.append(f"compact_inline_event_payload:{row[0]}")
+                        manifest_value = int(
+                            _public_event_manifest_hash(
+                                event_id=row[0],
+                                run_id=row[1],
+                                message_id=row[2],
+                                sub_index=row[3],
+                                stream=row[4],
+                                event_type=row[5],
+                                symbol=row[6],
+                                condition_id=row[7],
+                                asset_id=row[8],
+                                source_time_ms=row[9],
+                                publisher_time_ms=row[10],
+                                event_sha256=row[12],
+                            ),
+                            16,
+                        )
+                        observed_event_manifest_xor ^= manifest_value
+                        observed_event_manifest_sum = (
+                            observed_event_manifest_sum + manifest_value
+                        ) % (1 << 256)
                     notify("integrity-public-events")
             except (TypeError, ValueError) as exc:
                 errors.append(
-                    f"event_source_reconstruction_failed:{exc.__class__.__name__}:{exc}"
+                    f"event_manifest_validation_failed:{exc.__class__.__name__}:{exc}"
                 )
             if event_count != expected_event_count:
                 errors.append(
                     f"normalized_event_count_mismatch:{run_id}:"
                     f"{event_count}:{expected_event_count}"
                 )
+            if observed_event_manifest_xor != expected_event_manifest_xor:
+                errors.append(f"normalized_event_manifest_xor_mismatch:{run_id}")
+            if observed_event_manifest_sum != expected_event_manifest_sum:
+                errors.append(f"normalized_event_manifest_sum_mismatch:{run_id}")
         else:
             expected_event_count = int(
                 connection.execute(
@@ -3098,7 +3367,7 @@ class PolymarketPublicRecorder:
                         _wall_ms(),
                         f"{exc.__class__.__name__}:{exc}",
                         sequence,
-                    )
+                    ),
                 )
                 if (
                     connected_at > 0.0
@@ -3301,7 +3570,7 @@ class PolymarketPublicRecorder:
                         _wall_ms(),
                         f"{exc.__class__.__name__}:{exc}",
                         sequence,
-                    )
+                    ),
                 )
                 if (
                     connected_at > 0.0
