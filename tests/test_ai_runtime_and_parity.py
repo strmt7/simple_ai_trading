@@ -9,6 +9,7 @@ import pytest
 from simple_ai_trading import cli
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
+    _json_mapping_from_text,
     _prompt,
     benchmark_finance_ai_models,
     default_finance_ai_test_cases,
@@ -165,6 +166,23 @@ def test_finance_ai_model_prompt_excludes_case_labels() -> None:
         prompt = _prompt(case)
         assert case.name not in prompt
         assert '"case_name"' not in prompt
+
+
+def test_finance_ai_benchmark_requires_exact_typed_json() -> None:
+    valid = _benchmark_response("veto", 0.9)["message"]["content"]
+    assert isinstance(valid, str)
+    assert _json_mapping_from_text(valid) is not None
+    malformed = (
+        f"prefix {valid}",
+        valid.replace('"risk_score":0.9', '"risk_score":"0.9"'),
+        valid.replace('"risk_score":0.9', '"risk_score":true'),
+        valid.replace('"confidence":0.82', '"confidence":2.0'),
+        valid.replace('"action":"veto"', '"action":"VETO"'),
+        valid.replace('"action":"veto",', '"action":"veto","extra":1,'),
+        valid.replace('"action":"veto",', '"action":"approve","action":"veto",'),
+        valid.replace(',"required_actions":["keep risk controls active"]', ''),
+    )
+    assert all(_json_mapping_from_text(value) is None for value in malformed)
 
 
 def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() -> None:

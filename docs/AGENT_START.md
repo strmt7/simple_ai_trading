@@ -47,13 +47,14 @@ agents to canonical evidence without replacing that evidence.
   nonlinear challenger. No Round 9 model has been fitted or scored.
   Post-contract continuity-qualified outcomes and prospective results are still
   pending, so no profitability or execution authority exists.
-- Capture `eae374e2662c440fb93970d5710937b1` is development-only: its evidence
-  queue saturated and interruption left no terminal report. Never use it for a
-  confirmation claim. Corrected confirmation capture
-  `3a67757c7f174df4b62f2722ea9211cb` is currently running with the measured
-  writer fix. Inspect its progress file and process only; do not open its
-  DuckDB while the recorder owns it, and do not treat it as evidence until its
-  terminal report and integrity/continuity audits pass.
+- Captures `eae374e2662c440fb93970d5710937b1` and
+  `3a67757c7f174df4b62f2722ea9211cb` are permanently development-only: both
+  evidence queues saturated and both were interrupted without terminal reports.
+  Never use either capture for model, confirmation, or profitability claims.
+- Recorder v2 throughput changes preserve the 1,024-message storage chunks but
+  atomically commit up to 8,192 messages and default to a 500,000-message burst
+  buffer. The bounded real-message benchmark passed integrity checks, but only a
+  fresh long live capture can validate sustained throughput.
 - Round 9 MLP report v2 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
@@ -67,18 +68,20 @@ agents to canonical evidence without replacing that evidence.
 - Run Round 9 fits only through `polymarket-ridge` and `polymarket-mlp`. Both
   write a durable claim before test access; completed ridge claims load the
   signed report, and any interrupted or failed claim blocks silent retries.
-- The v6 finance-LLM benchmark is revoked because case IDs leaked expected
-  actions. Fresh label-free v7 inference rejected Qwen3 8B (`9/11`) and three
-  other priority 8B/9B models (`8/11` each); no AI model is selected. Kronos
-  also failed the causal random-walk benchmark. Any future AI treatment must
-  first pass governance, then beat the same-period non-AI path after costs
-  without worsening tail risk.
+- Finance-LLM v6 is revoked for case-ID label leakage. V7 recorded Qwen3 8B at
+  `9/11` and three 8B/9B models at `8/11`, but its permissive response parser
+  invalidates the valid-JSON admission contract; keep those results as rejected
+  historical evidence only. V8 preserves the 11 label-free cases and requires
+  exact typed JSON. No AI model is selected. Kronos also failed its causal
+  random-walk benchmark. Any AI treatment must pass current governance, then
+  beat same-period non-AI execution after costs without worsening tail risk.
 - AI permission maps are default-deny. Only a valid, timely approval for the
   exact hash-bound condition may permit that proposal; missing cases, malformed
   types, duplicate JSON keys, low confidence, and latency failures remain vetoes.
-- Qwen3 14B is the next one-shot v7 candidate, frozen before inference in
-  `docs/ai/risk-review/qwen3-14b-v7-preregistration.json`. Run it only after
-  the active recorder finalizes; do not alter prompts or cases first.
+- Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
+  `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
+  a fresh confirmation recorder ends `complete`; do not alter prompts or cases
+  first.
 
 ## Efficient workflow
 

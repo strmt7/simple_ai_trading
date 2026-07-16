@@ -285,6 +285,32 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
     assert storage_schema == "polymarket-evidence-storage-v2"
 
 
+def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
+    database = tmp_path / "atomic-batch.duckdb"
+    messages = [
+        _message("polymarket_rtds", "PING", sequence=sequence)
+        for sequence in range(1, 1_026)
+    ]
+    messages[-1] = messages[0]
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("atomic-batch", EPOCH * 1_000)
+        with pytest.raises(duckdb.ConstraintException):
+            store.append_messages("atomic-batch", messages)
+        connection = store.connect()
+        assert connection.execute(
+            "SELECT count(*) FROM polymarket_raw_message"
+        ).fetchone()[0] == 0
+        assert connection.execute(
+            "SELECT count(*) FROM polymarket_raw_chunk"
+        ).fetchone()[0] == 0
+        assert "atomic-batch" not in store._next_chunk_index_by_run
+
+        store.append_messages("atomic-batch", messages[:1])
+        assert connection.execute(
+            "SELECT chunk_index FROM polymarket_raw_chunk"
+        ).fetchone()[0] == 0
+
+
 def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> None:
     database = tmp_path / "legacy-v1.duckdb"
     raw_event = {
@@ -1180,7 +1206,7 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         option for option in spec.options if option.dest == "queue_capacity"
     )
     assert memory_option.default == "4GB"
-    assert queue_option.default == 200_000
+    assert queue_option.default == 500_000
     assert {option.dest for option in spec.options} == {
         "database",
         "duration_seconds",
@@ -1197,12 +1223,12 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
 def test_recorder_saturation_is_a_terminal_operational_failure(tmp_path) -> None:
     recorder = PolymarketPublicRecorder(tmp_path / "saturation.duckdb")
 
-    assert recorder.queue_capacity == 200_000
+    assert recorder.queue_capacity == 500_000
     recorder._queue_high_watermark = recorder.queue_capacity
     recorder._record_queue_saturation()
     recorder._record_queue_saturation()
 
-    assert recorder.errors == ["evidence_queue_saturated:200000/200000"]
+    assert recorder.errors == ["evidence_queue_saturated:500000/500000"]
 
 
 def test_read_only_evidence_store_never_creates_or_initializes_a_database(

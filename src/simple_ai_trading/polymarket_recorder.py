@@ -61,7 +61,8 @@ _RAW_CHUNK_FRAME_FORMAT = "length-prefixed-utf8-v1"
 _RAW_CHUNK_CODEC = "zstd"
 _RAW_CHUNK_COMPRESSION_LEVEL = 1
 _DUCKDB_MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
-_WRITER_BATCH_SIZE = 1_024
+_RAW_CHUNK_MESSAGE_LIMIT = 1_024
+_WRITER_BATCH_SIZE = 8_192
 _WRITER_COALESCE_SECONDS = 0.5
 _WRITER_MIN_DRAIN_SECONDS = 60.0
 _WRITER_MAX_DRAIN_SECONDS = 600.0
@@ -907,27 +908,46 @@ class PolymarketEvidenceStore:
         self._require_running_run(run_id)
         validated = tuple(message.validated() for message in messages)
         if self._storage_schema_version(run_id) == _LEGACY_STORAGE_SCHEMA_VERSION:
-            for start in range(0, len(validated), _WRITER_BATCH_SIZE):
+            for start in range(0, len(validated), _RAW_CHUNK_MESSAGE_LIMIT):
                 self._append_legacy_message_batch(
                     run_id,
-                    validated[start : start + _WRITER_BATCH_SIZE],
+                    validated[start : start + _RAW_CHUNK_MESSAGE_LIMIT],
                 )
             return
+        chunks: list[tuple[RawStreamMessage, ...]] = []
         pending: list[RawStreamMessage] = []
         pending_bytes = 0
         for message in validated:
             framed_size = 4 + len(message.raw_text.encode("utf-8"))
             if pending and (
-                len(pending) >= _WRITER_BATCH_SIZE
+                len(pending) >= _RAW_CHUNK_MESSAGE_LIMIT
                 or pending_bytes + framed_size > _MAX_RAW_CHUNK_BYTES
             ):
-                self._append_compact_message_chunk(run_id, pending)
+                chunks.append(tuple(pending))
                 pending = []
                 pending_bytes = 0
             pending.append(message)
             pending_bytes += framed_size
         if pending:
-            self._append_compact_message_chunk(run_id, pending)
+            chunks.append(tuple(pending))
+        connection = self.connect()
+        cached_chunk_index_present = run_id in self._next_chunk_index_by_run
+        cached_chunk_index = self._next_chunk_index_by_run.get(run_id)
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            for chunk in chunks:
+                self._append_compact_message_chunk(run_id, chunk, connection)
+            connection.execute("COMMIT")
+        except Exception:
+            try:
+                connection.execute("ROLLBACK")
+            finally:
+                if cached_chunk_index_present:
+                    assert cached_chunk_index is not None
+                    self._next_chunk_index_by_run[run_id] = cached_chunk_index
+                else:
+                    self._next_chunk_index_by_run.pop(run_id, None)
+            raise
 
     def _append_legacy_message_batch(
         self,
@@ -965,8 +985,9 @@ class PolymarketEvidenceStore:
         self,
         run_id: str,
         messages: Sequence[RawStreamMessage],
+        connection: duckdb.DuckDBPyConnection,
     ) -> None:
-        if not messages or len(messages) > _WRITER_BATCH_SIZE:
+        if not messages or len(messages) > _RAW_CHUNK_MESSAGE_LIMIT:
             raise ValueError("compact evidence chunk has an invalid message count")
         frame = bytearray()
         prepared: list[
@@ -992,7 +1013,6 @@ class PolymarketEvidenceStore:
             event_rows.extend(normalized_rows)
         if not 1 <= len(frame) <= _MAX_RAW_CHUNK_BYTES:
             raise ValueError("compact evidence chunk exceeded its bounded size")
-        connection = self.connect()
         chunk_index = self._next_chunk_index_by_run.get(run_id)
         if chunk_index is None:
             chunk_index = int(
@@ -1046,46 +1066,40 @@ class PolymarketEvidenceStore:
             }
         )
         raw_rows = [row[:12] + (chunk_id,) + row[13:] for row in raw_rows]
-        connection.execute("BEGIN TRANSACTION")
-        try:
-            connection.execute(
-                """
-                INSERT INTO polymarket_raw_chunk VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                )
-                """,
-                [
-                    chunk_id,
-                    run_id,
-                    POLYMARKET_STORAGE_SCHEMA_VERSION,
-                    chunk_index,
-                    _RAW_CHUNK_FRAME_FORMAT,
-                    _RAW_CHUNK_CODEC,
-                    _RAW_CHUNK_COMPRESSION_LEVEL,
-                    len(prepared),
-                    str(prepared[0][0][0]),
-                    str(prepared[-1][0][0]),
-                    manifest_xor_hex,
-                    len(uncompressed),
-                    uncompressed_sha,
-                    len(compressed),
-                    compressed_sha,
-                    compressed,
-                ],
+        connection.execute(
+            """
+            INSERT INTO polymarket_raw_chunk VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
+            """,
+            [
+                chunk_id,
+                run_id,
+                POLYMARKET_STORAGE_SCHEMA_VERSION,
+                chunk_index,
+                _RAW_CHUNK_FRAME_FORMAT,
+                _RAW_CHUNK_CODEC,
+                _RAW_CHUNK_COMPRESSION_LEVEL,
+                len(prepared),
+                str(prepared[0][0][0]),
+                str(prepared[-1][0][0]),
+                manifest_xor_hex,
+                len(uncompressed),
+                uncompressed_sha,
+                len(compressed),
+                compressed_sha,
+                compressed,
+            ],
+        )
+        connection.execute(
+            _COMPACT_RAW_MESSAGE_INSERT_SQL,
+            _columnar_batch(raw_rows, width=17),
+        )
+        if event_rows:
             connection.execute(
-                _COMPACT_RAW_MESSAGE_INSERT_SQL,
-                _columnar_batch(raw_rows, width=17),
+                _PUBLIC_EVENT_INSERT_SQL,
+                _columnar_batch(event_rows, width=13),
             )
-            if event_rows:
-                connection.execute(
-                    _PUBLIC_EVENT_INSERT_SQL,
-                    _columnar_batch(event_rows, width=13),
-                )
-            connection.execute("COMMIT")
-        except Exception:
-            connection.execute("ROLLBACK")
-            raise
         self._next_chunk_index_by_run[run_id] = chunk_index + 1
 
     @staticmethod
@@ -1226,7 +1240,7 @@ class PolymarketEvidenceStore:
             or str(frame_format) != _RAW_CHUNK_FRAME_FORMAT
             or str(codec) != _RAW_CHUNK_CODEC
             or int(compression_level) != _RAW_CHUNK_COMPRESSION_LEVEL
-            or not 1 <= int(message_count) <= _WRITER_BATCH_SIZE
+            or not 1 <= int(message_count) <= _RAW_CHUNK_MESSAGE_LIMIT
             or not 1 <= int(uncompressed_bytes) <= _MAX_RAW_CHUNK_BYTES
             or int(compressed_bytes) < 1
             or not hmac.compare_digest(str(claimed_chunk_id), expected_chunk_id)
@@ -1924,7 +1938,10 @@ class PolymarketEvidenceStore:
                             f"{exc.__class__.__name__}:{exc}"
                         )
                         continue
-                    if normalized_count < 0 or not 0 <= position < _WRITER_BATCH_SIZE:
+                    if (
+                        normalized_count < 0
+                        or not 0 <= position < _RAW_CHUNK_MESSAGE_LIMIT
+                    ):
                         errors.append(f"raw_message_metadata_invalid:{message_id}")
                         continue
                     expected_event_count += normalized_count
@@ -1933,7 +1950,7 @@ class PolymarketEvidenceStore:
                         {
                             "count": 0,
                             "manifest_xor": 0,
-                            "minimum_index": _WRITER_BATCH_SIZE,
+                            "minimum_index": _RAW_CHUNK_MESSAGE_LIMIT,
                             "maximum_index": -1,
                             "first_message_id": "",
                             "last_message_id": "",
@@ -2413,7 +2430,7 @@ class PolymarketPublicRecorder:
         database: str | Path,
         *,
         client: PolymarketPublicClient | None = None,
-        queue_capacity: int = 200_000,
+        queue_capacity: int = 500_000,
         discovery_interval_seconds: int = 60,
         memory_limit: str = "4GB",
         database_threads: int = 2,
@@ -2421,8 +2438,8 @@ class PolymarketPublicRecorder:
         self.database = Path(database)
         self.client = client or PolymarketPublicClient()
         self.queue_capacity = int(queue_capacity)
-        if self.queue_capacity < 1_000 or self.queue_capacity > 200_000:
-            raise ValueError("queue_capacity must lie in [1000, 200000]")
+        if self.queue_capacity < 1_000 or self.queue_capacity > 1_000_000:
+            raise ValueError("queue_capacity must lie in [1000, 1000000]")
         self.discovery_interval_seconds = int(discovery_interval_seconds)
         if (
             self.discovery_interval_seconds < 30

@@ -11,7 +11,7 @@ from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
     _result_from_case_results,
     default_finance_ai_test_cases,
-    merge_finance_ai_benchmark_payloads,
+    rescore_finance_ai_benchmark_payload,
 )
 from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
 
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "ai" / "risk-review" / "latest"
 REPORT_PATH = LATEST / "comparison.json"
 QWEN3_14B_PREREGISTRATION = (
-    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v7-preregistration.json"
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v8-preregistration.json"
 )
 
 
@@ -53,26 +53,26 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
     assert preregistration["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
     assert preregistration["benchmark_source_sha256"] == _sha256(source)
     assert preregistration["test_suite_sha256"] == _canonical_sha256(suite)
+    assert preregistration["prior_comparison_sha256"] == _sha256(REPORT_PATH)
+    predecessor = ROOT / preregistration["revoked_predecessor"]["path"]  # type: ignore[index]
+    assert preregistration["revoked_predecessor"]["sha256"] == (  # type: ignore[index]
+        _sha256(predecessor)
+    )
     assert preregistration["frozen_run"]["run_count"] == 1  # type: ignore[index]
     assert preregistration["frozen_run"]["prompt_or_case_changes_allowed"] is False  # type: ignore[index]
 
 
-def test_tracked_ai_benchmark_rebuilds_from_hash_bound_source_responses() -> None:
+def test_tracked_v7_ai_benchmark_is_historical_rejected_evidence() -> None:
     source_paths = (
         LATEST / "qwen3-8b-source-v7.json",
         LATEST / "fin-r1-8b-source-v7.json",
         LATEST / "qwen35-9b-source-v7.json",
         LATEST / "fino1-8b-source-v7.json",
     )
-    sources = [_json(path) for path in source_paths]
     tracked = _json(REPORT_PATH)
-    rebuilt = json.loads(
-        json.dumps(merge_finance_ai_benchmark_payloads(sources).asdict())
-    )
-    rebuilt["generated_at_ms"] = tracked["generated_at_ms"]
 
-    assert rebuilt == tracked
-    assert tracked["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
+    assert tracked["benchmark_contract"] == "finance-risk-review-adversarial-v7"
+    assert tracked["benchmark_contract"] != AI_MODEL_BENCHMARK_CONTRACT
     assert tracked["financial_edge_tested"] is False
     assert tracked["trading_authority"] is False
     assert tracked["selected_model"] is None
@@ -89,6 +89,11 @@ def test_tracked_ai_benchmark_rebuilds_from_hash_bound_source_responses() -> Non
         for result in results.values()
         for case in result["case_results"]
     )
+    for path in source_paths:
+        source = _json(path)
+        assert source["benchmark_contract"] == "finance-risk-review-adversarial-v7"
+        with pytest.raises(ValueError, match="fresh inference"):
+            rescore_finance_ai_benchmark_payload(source)
 
 
 def test_aggregate_score_is_stable_across_python_float_sum_changes() -> None:

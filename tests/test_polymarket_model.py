@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 
 from simple_ai_trading import polymarket_ai_veto as ai_veto_module
+from simple_ai_trading.ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
 from simple_ai_trading.ai_uplift import assess_ai_uplift
 from simple_ai_trading.cli import (
     _polymarket_execution_uplift_metrics,
@@ -2274,14 +2275,14 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
         "risk_benchmark": {
             "path": "docs/ai/risk-review/latest/comparison.json",
             "sha256": "a" * 64,
-            "contract": "finance-risk-review-adversarial-v7",
+            "contract": AI_MODEL_BENCHMARK_CONTRACT,
             "selected_model": "qwen3.5:9b",
             "score": 1.0,
             "model_provenance": {
                 "path": "docs/ai/risk-review/latest/model-provenance.json",
                 "provenance_sha256": "c" * 64,
                 "benchmark_sha256": "a" * 64,
-                "benchmark_contract": "finance-risk-review-adversarial-v7",
+                "benchmark_contract": AI_MODEL_BENCHMARK_CONTRACT,
                 "model": "qwen3.5:9b",
                 "ollama_manifest_digest": "f" * 64,
                 "base_blob_sha256": "d" * 64,
