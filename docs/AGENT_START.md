@@ -57,14 +57,15 @@ agents to canonical evidence without replacing that evidence.
   queue reached `500000/500000` after 10.1 hours, it was deliberately stopped,
   fully drained, and terminalized `failed`. Never use any of these runs for
   model, confirmation, or profitability claims.
-- Recorder storage v3 retains exact compressed payloads and terminal manifests
-  while replacing the two incremental high-volume uniqueness indexes with
-  strict per-connection sequence admission. A 2,000,000-message replay of exact
-  real payloads sustained 12,149 messages/s overall, its slowest measured
-  interval sustained 9,795 messages/s, and its full audit had zero errors. The
-  10.1-hour live run nevertheless saturated, so that short offline benchmark is
-  not evidence that storage v3 can sustain the live feed. Redesign and validate
-  the writer at long-tail scale before starting another confirmation capture.
+- Recorder storage v4 writes only bounded, checksummed frames containing exact
+  payload bytes and receipt metadata; normalized events are reconstructed and
+  the terminal report binds the ordered chunk-manifest root. Its 2,000,000-
+  message infrastructure benchmark sustained 48,189 messages/s, replayed at
+  66,049 messages/s, passed the full audit, and used 198,717,440 bytes. The
+  repeated payload sample was real and hash-verified, but receipt metadata was
+  synthetic and the source run failed, so this is not live-capture, model, or
+  profitability evidence. Run a monitored live soak before a new 15-hour
+  confirmation capture.
 - Round 9 MLP report v3 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
