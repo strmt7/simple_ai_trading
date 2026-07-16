@@ -22,6 +22,7 @@ from simple_ai_trading.ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.ai_uplift import assess_ai_uplift
 from simple_ai_trading.cli import (
+    _polymarket_ai_latency_stress_passed,
     _polymarket_ai_skip_reason,
     _polymarket_execution_uplift_metrics,
     _polymarket_held_out_prediction_evidence,
@@ -2725,6 +2726,63 @@ def test_ai_skip_reason_prevents_unusable_provider_calls(
     )
 
 
+def test_ai_latency_stress_gate_requires_non_degrading_economics_at_every_latency() -> None:
+    def report(
+        *,
+        net: str,
+        deployed_return: str,
+        drawdown: str,
+        state: str = "FILLED",
+    ) -> SimpleNamespace:
+        return SimpleNamespace(
+            net_realized_pnl_quote=Decimal(net),
+            return_on_deployed_capital=Decimal(deployed_return),
+            maximum_drawdown_fraction=Decimal(drawdown),
+            trades=(SimpleNamespace(execution_state=state),),
+        )
+
+    latencies = (100, 500)
+    model = {
+        latency: report(net="1", deployed_return="0.10", drawdown="0.05")
+        for latency in latencies
+    }
+    passing_ai = {
+        latency: report(net="2", deployed_return="0.11", drawdown="0.04")
+        for latency in latencies
+    }
+    assert _polymarket_ai_latency_stress_passed(
+        {"model": model, "ai": passing_ai},
+        latencies,
+        ai_enabled=True,
+    )
+    assert not _polymarket_ai_latency_stress_passed(
+        {"model": model, "ai": passing_ai},
+        latencies,
+        ai_enabled=False,
+    )
+
+    failures = (
+        report(net="0", deployed_return="0.11", drawdown="0.04"),
+        report(net="1", deployed_return="0.11", drawdown="0.04"),
+        report(net="2", deployed_return="0.09", drawdown="0.04"),
+        report(net="2", deployed_return="0.11", drawdown="0.06"),
+        report(
+            net="2",
+            deployed_return="0.11",
+            drawdown="0.04",
+            state="UNKNOWN",
+        ),
+    )
+    for failed_report in failures:
+        stressed_ai = dict(passing_ai)
+        stressed_ai[500] = failed_report
+        assert not _polymarket_ai_latency_stress_passed(
+            {"model": model, "ai": stressed_ai},
+            latencies,
+            ai_enabled=True,
+        )
+
+
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
@@ -3428,6 +3486,8 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
             "all_positions_officially_settled": True,
             "all_order_outcomes_terminal": True,
             "ai_enabled": False,
+            "ai_primary_uplift_accepted": False,
+            "ai_latency_stress_accepted": False,
             "ai_uplift_accepted": False,
             "live_trading_authority": False,
             "profitability_claim": False,

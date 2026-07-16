@@ -2950,6 +2950,65 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         or profile_challenger.get("requires_later_prospective_confirmation") is not True
     ):
         raise ValueError("profile model challenger does not reconstruct")
+    ai_enabled = ai.get("enabled") is True
+    ai_primary_uplift_accepted = bool(
+        ai_enabled
+        and _as_mapping(ai["uplift"], "AI uplift").get("accepted") is True
+    )
+    ai_latency_stress_accepted = ai_enabled
+    if ai_enabled:
+        ai_latency_reports = _as_mapping(
+            sensitivity_policies["ai"],
+            "AI latency reports",
+        )
+        for latency in latency_values:
+            ai_latency_report = _as_mapping(
+                ai_latency_reports[str(latency)],
+                "AI latency report",
+            )
+            model_latency_report = _as_mapping(
+                model_latency_reports[str(latency)],
+                "model latency report",
+            )
+            ai_latency_stress_accepted = bool(
+                ai_latency_stress_accepted
+                and _decimal(
+                    ai_latency_report["net_realized_pnl_quote"],
+                    "AI latency PnL",
+                )
+                > 0
+                and _decimal(
+                    ai_latency_report["net_realized_pnl_quote"],
+                    "AI latency PnL",
+                )
+                > _decimal(
+                    model_latency_report["net_realized_pnl_quote"],
+                    "model latency PnL",
+                )
+                and _decimal(
+                    ai_latency_report["return_on_deployed_capital"],
+                    "AI deployed-capital return",
+                )
+                >= _decimal(
+                    model_latency_report["return_on_deployed_capital"],
+                    "model deployed-capital return",
+                )
+                and _decimal(
+                    ai_latency_report["maximum_drawdown_fraction"],
+                    "AI latency drawdown",
+                )
+                <= _decimal(
+                    model_latency_report["maximum_drawdown_fraction"],
+                    "model latency drawdown",
+                )
+                and all(
+                    trade.get("execution_state") != "UNKNOWN"
+                    for trade in _as_rows(
+                        ai_latency_report["trades"],
+                        "AI latency trades",
+                    )
+                )
+            )
     expected_gates = {
         "validation_probability_improved": (
             _finite_float(
@@ -3021,14 +3080,16 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             for report in all_latency_reports
             for trade in report["trades"]
         ),
-        "ai_enabled": ai.get("enabled") is True,
-        "ai_uplift_accepted": bool(
-            ai.get("enabled") is True
-            and _as_mapping(ai["uplift"], "AI uplift").get("accepted") is True
-        ),
+        "ai_enabled": ai_enabled,
+        "ai_primary_uplift_accepted": ai_primary_uplift_accepted,
+        "ai_latency_stress_accepted": ai_latency_stress_accepted,
         "live_trading_authority": False,
         "profitability_claim": False,
     }
+    expected_gates["ai_uplift_accepted"] = bool(
+        expected_gates["ai_primary_uplift_accepted"]
+        and expected_gates["ai_latency_stress_accepted"]
+    )
     gates = _as_mapping(payload.get("evidence_gates"), "evidence gates")
     if dict(gates) != expected_gates:
         raise ValueError("Polymarket evidence gates do not reconstruct")
@@ -4386,16 +4447,16 @@ def _results_markdown(
         "profile model challenger",
     )
     ai = _as_mapping(payload["ai"], "AI evidence")
+    gates = _as_mapping(payload["evidence_gates"], "evidence gates")
     ai_line = "AI was disabled for this experiment."
     if ai.get("enabled") is True:
         ai_execution = artifact.executions["ai"]
-        uplift = _as_mapping(ai["uplift"], "AI uplift")
         ai_line = (
             f"The veto-only AI path filled {ai_execution['filled_order_count']} orders, "
             f"settled {ai_execution['net_realized_pnl_quote']} quote PnL, and its governed "
-            f"uplift gate was **{'accepted' if uplift.get('accepted') else 'not accepted'}**."
+            f"uplift gate across all latency stresses was "
+            f"**{'accepted' if gates.get('ai_uplift_accepted') else 'not accepted'}**."
         )
-    gates = _as_mapping(payload["evidence_gates"], "evidence gates")
     all_groups = _as_mapping(
         _as_mapping(group_score_summary["scopes"], "score scopes")["ALL"],
         "combined group score summary",
