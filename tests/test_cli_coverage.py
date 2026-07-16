@@ -8839,7 +8839,7 @@ def test_build_autonomous_decision_fn_returns_flat_without_training_rows(tmp_pat
 
 
 def test_command_autonomous_start_success_error_and_client_failure(tmp_path, monkeypatch, capsys) -> None:
-    from simple_ai_trading import autonomous
+    from simple_ai_trading import ai_start_gate, autonomous
 
     base_args = {
         "action": "start",
@@ -8888,3 +8888,24 @@ def test_command_autonomous_start_success_error_and_client_failure(tmp_path, mon
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: (_ for _ in ()).throw(BinanceAPIError("startup down")))
     assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
     assert "Autonomous startup blocked: commission-rate verification failed: startup down" in capsys.readouterr().err
+
+    monkeypatch.setattr(
+        cli,
+        "_build_client",
+        lambda _runtime: (_ for _ in ()).throw(
+            AssertionError("AI governance must block before exchange setup")
+        ),
+    )
+    monkeypatch.setattr(
+        ai_start_gate,
+        "evaluate_ai_start_gate",
+        lambda *_args, **_kwargs: ai_start_gate.AIStartGateReport(
+            status="blocked",
+            allowed=False,
+            active=False,
+            reason="review model differs",
+            review_path="review.json",
+        ),
+    )
+    assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
+    assert "blocked by AI governance: review model differs" in capsys.readouterr().err

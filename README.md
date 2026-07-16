@@ -117,6 +117,7 @@ Startup behavior:
 - The app resolves the repo-local `.venv311` Python and sets `PYTHONPATH` before launching CLI commands, so dev builds do not depend on a globally installed package.
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
+- `AI on (gated)` means AI is requested, not presumed ready. Testnet startup requires an approved review bound to the exact model-lab source, runtime model fingerprint, and current Ollama weight digest; paper mode labels any configured fallback as AI inactive.
 - The app has direct buttons for Stop + Close, Pause, Reconcile, Positions, and Risk Review. Normal workflow cards are distinct paper, research, graph, data, and settings tasks so the UI does not present multiple similar buttons for the same action.
 - The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
 - `tools\smoke_native_windows_ui.ps1` launches the app in dry-run mode, walks every workflow page, clicks the dashboard cards and safety buttons, and then performs a real Compute smoke unless `-SkipRealCompute` is passed.

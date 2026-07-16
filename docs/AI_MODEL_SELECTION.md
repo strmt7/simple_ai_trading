@@ -98,9 +98,15 @@ hidden reasoning.
 `ai-review` applies the same fail-closed boundary: one exact top-level object,
 exact fields and JSON types, no duplicate keys, finite in-range scores, and no
 wrapped prose. A compact report that exceeds the prompt budget is rejected
-instead of being cut into incomplete or invalid financial evidence. The v2
+instead of being cut into incomplete or invalid financial evidence. The v3
 artifact hash-binds the exact source report and prompt plus canonical request,
-provider-response, capability, latency, and structured-decision evidence.
+provider-response, capability, latency, and structured-decision evidence. An
+approval also binds the installed Ollama weight digest from `/api/tags` and the
+canonical `/api/show` metadata; missing or ambiguous provenance blocks the chat
+request. These fields follow Ollama's official
+[model-list](https://docs.ollama.com/api/tags) and
+[model-details](https://docs.ollama.com/api-reference/show-model-details)
+contracts.
 
 Historical four-case provider telemetry:
 `docs/ai_model_benchmark_legacy_20260710.json`.

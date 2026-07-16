@@ -484,7 +484,7 @@ class MainWindow {
             kModeComboId);
         ai_toggle_ = create_control(
             L"BUTTON",
-            L"AI enabled",
+            L"AI on (gated)",
             BS_AUTOCHECKBOX | BS_OWNERDRAW | WS_TABSTOP,
             kAiToggleId);
         reinvest_toggle_ = create_control(
@@ -721,7 +721,7 @@ class MainWindow {
         const bool ai_enabled = ai_enabled_;
         const std::array<std::wstring, 6> states{
             environment_state, bot_state, execution_state, profile_state,
-            ai_enabled ? L"AI enabled" : L"AI disabled", leverage_state};
+            ai_enabled ? L"AI on (gated)" : L"AI off", leverage_state};
         const int state_width = std::max(scale(84), static_cast<int>(state_band.right - state_band.left) / 6);
         for (int index = 0; index < static_cast<int>(states.size()); ++index) {
             RECT cell{state_band.left + index * state_width, state_band.top, state_band.left + (index + 1) * state_width, state_band.bottom};
@@ -1163,7 +1163,7 @@ class MainWindow {
         if (id == kAiToggleId) {
             ai_enabled_ = !ai_enabled_;
             SendMessageW(ai_toggle_, BM_SETCHECK, ai_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
-            SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI enabled" : L"AI disabled");
+            SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI on (gated)" : L"AI off");
             InvalidateRect(ai_toggle_, nullptr, TRUE);
             InvalidateRect(hwnd_, nullptr, FALSE);
             return;
@@ -1752,7 +1752,7 @@ class MainWindow {
             if (execution_index >= 0) SendMessageW(mode_combo_, CB_SETCURSEL, execution_index, 0);
             ai_enabled_ = ai;
             reinvest_enabled_ = reinvest;
-            SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI enabled" : L"AI disabled");
+            SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI on (gated)" : L"AI off");
             SetWindowTextW(reinvest_toggle_, reinvest_enabled_ ? L"Reinvest on" : L"Reinvest off");
             operator_status_initialized_ = true;
         }
