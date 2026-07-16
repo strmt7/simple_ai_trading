@@ -75,6 +75,11 @@ selects an LLM risk-assessment candidate. Actual AI use remains blocked unless
 model-lab deterministic gates pass and accepted symbols include positive
 AI-vs-ML uplift evidence.
 
+The Polymarket model command does not contact the AI benchmark or Ollama
+provider unless the frozen probability model first improves validation log
+loss, untouched-test log loss, and untouched-test Brier score. A failed
+prerequisite records `probability_model_gates_failed` and spends no AI tokens.
+
 Uplift evidence uses a common fixed-period return table rather than pairing
 trades by list index. The baseline and AI strategies may enter different
 trades, but every statistical observation covers the same contiguous market
