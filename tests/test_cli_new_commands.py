@@ -835,7 +835,7 @@ def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_p
             review_sha256="a" * 64,
             source_report_sha256="b" * 64,
             model="test-model",
-            model_digest="sha256:" + "c" * 64,
+            model_digest="c" * 64,
             terminal_model_fingerprint="d" * 64,
         ),
     )

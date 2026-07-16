@@ -199,6 +199,27 @@ generation instead of silently reusing stale governance evidence. Even a future
 governance pass would not establish market edge; the separate 90-day paired
 after-cost uplift gate remains mandatory.
 
+### Live Autonomous AI Boundary
+
+An approved model-level review now enables a latest-wins background review of
+each directional Binance ML proposal. The prompt contains only bounded causal
+numbers and enums; Ollama must return exact structured JSON. Provider work is
+off the execution thread, never delays closes, and cannot create, reverse,
+resize, or cancel an order. `status --compact` and the Windows dashboard expose
+`shadow_idle`, `shadow_pending`, `shadow_approve`, `shadow_veto`,
+`shadow_cooldown`, or `shadow_failure` without implying order authority.
+
+Completed reviews are stored locally in
+`data/autonomous/ai-entry-reviews.jsonl` as a flushed, append-only SHA-256 hash
+chain. The exact case ID is carried into any resulting position and closed
+trade so prospective outcomes can be joined without date, symbol, or result
+guessing. Promotion beyond shadow mode requires a separately frozen,
+prospective, matched-period after-cost uplift test. This follows the current
+agentic-trading evidence review, which found execution semantics, cost models,
+time-consistent splits, and reproducibility missing from most published LLM
+trading studies: https://arxiv.org/abs/2605.19337. Ollama's structured-output
+contract is documented at https://docs.ollama.com/capabilities/structured-outputs.
+
 ### Kronos Forecast Evidence (Rejected)
 
 `simple-ai-trading ai-forecast-benchmark` evaluates a separately gated

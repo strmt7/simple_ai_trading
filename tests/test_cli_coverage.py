@@ -3636,6 +3636,7 @@ def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_
     assert "execution=paper" in line
     assert "ai_model=qwen3:8b" in line
     assert "ai_runtime=gpu" in line
+    assert "ai_assist=gated" in line
     assert "compute=directml" in line
     assert "positions=0 ledger=clear" in line
     assert "ui_contract=" in line

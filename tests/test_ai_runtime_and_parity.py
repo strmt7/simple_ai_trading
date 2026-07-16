@@ -861,6 +861,9 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "settings_revision_.fetch_add(1)" in source
     assert "status_revision > controls_reconciled_revision_" in source
     assert 'compact_status_value(line, L"compute")' in source
+    assert 'compact_status_value(line, L"ai_assist")' in source
+    assert 'ai_state = L"AI shadow pending"' in source
+    assert 'ai_state = L"AI shadow failed"' in source
     assert 'execute_cli_first_line(L"compute")' not in source
     assert "Pause and Stop remain available" in source
     assert "remaining safety controls will still be attempted" in source

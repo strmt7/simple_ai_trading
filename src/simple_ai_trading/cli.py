@@ -5622,6 +5622,7 @@ def _ai_provider_runtime_status(runtime: RuntimeConfig) -> tuple[str, dict[str, 
 
 def command_status(args: argparse.Namespace) -> int:
     from .autonomous import (
+        AutonomousConfig,
         STATE_PAUSED,
         STATE_RUNNING,
         STATE_STOPPING,
@@ -5655,6 +5656,31 @@ def command_status(args: argparse.Namespace) -> int:
         position_count = len(position_store.load_open()) if not ledger_errors else 0
         ledger_state = "invalid" if ledger_errors else ("tracked" if position_count else "clear")
         ai_runtime, _ai_runtime_payload = _ai_provider_runtime_status(runtime)
+        ai_assist = "disabled" if not runtime.ai_enabled else "gated"
+        if runtime.ai_enabled and state.upper() in {
+            STATE_RUNNING,
+            STATE_PAUSED,
+            STATE_STOPPING,
+        }:
+            try:
+                heartbeat_payload = json.loads(
+                    AutonomousConfig().heartbeat_path.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError):
+                heartbeat_payload = {}
+            if isinstance(heartbeat_payload, Mapping):
+                candidate_ai_status = str(
+                    heartbeat_payload.get("ai_assist_status") or ""
+                )
+                if candidate_ai_status in {
+                    "shadow_idle",
+                    "shadow_pending",
+                    "shadow_approve",
+                    "shadow_veto",
+                    "shadow_cooldown",
+                    "shadow_failure",
+                }:
+                    ai_assist = candidate_ai_status
         compute = resolve_backend(
             str(runtime.compute_backend or default_compute_backend())
         ).kind
@@ -5662,7 +5688,7 @@ def command_status(args: argparse.Namespace) -> int:
             f"environment={environment} bot_state={state} risk={strategy.risk_level} "
             f"leverage={strategy.leverage:g} ai={'enabled' if runtime.ai_enabled else 'disabled'} "
             f"ai_model={str(runtime.ai_model or 'unselected').strip() or 'unselected'} "
-            f"ai_runtime={ai_runtime} compute={compute} "
+            f"ai_runtime={ai_runtime} ai_assist={ai_assist} compute={compute} "
             f"reinvest={'on' if strategy.reinvest_profits else 'off'} symbol={runtime.symbol} "
             f"market={runtime.market_type} execution={execution} positions={position_count} "
             f"ledger={ledger_state} ui_contract={command_contract_digest()}"
@@ -13570,6 +13596,10 @@ def _build_autonomous_decision_fn(
         threshold = model_decision_threshold(current_model, current_strategy.signal_threshold)
         score = confidence_adjusted_probability(raw_score, current_strategy.confidence_beta)
         decision_strategy = current_strategy
+        external_ai_evidence: dict[str, object] = {
+            "enabled": bool(current_strategy.external_signals_enabled),
+            "applied_adjustment": 0.0,
+        }
         if current_strategy.external_signals_enabled:
             external_report = collect_external_signals(
                 symbol=runtime.symbol,
@@ -13591,7 +13621,17 @@ def _build_autonomous_decision_fn(
                 telemetry_path=current_strategy.telemetry_db_path if current_strategy.telemetry_enabled else None,
                 source_grade_max_age_hours=current_strategy.source_grade_max_age_hours,
             )
-            score, decision_strategy, _applied_adjustment = _apply_external_signal_to_score(score, current_strategy, external_report)
+            score, decision_strategy, applied_adjustment = _apply_external_signal_to_score(
+                score,
+                current_strategy,
+                external_report,
+            )
+            external_ai_evidence = {
+                "enabled": True,
+                "provider_count": int(getattr(external_report, "provider_count", 0)),
+                "fresh_count": int(getattr(external_report, "fresh_count", 0)),
+                "applied_adjustment": float(applied_adjustment),
+            }
         regime_window_size = max(8, min(len(rows), int(decision_strategy.liquidity_lookback_bars)))
         regime_evidence = classify_market_regime(rows[-regime_window_size:])
         regime_score = market_regime_unpredictability(
@@ -13658,6 +13698,9 @@ def _build_autonomous_decision_fn(
             side = "SHORT"
         else:
             side = "FLAT"
+        feature_names = tuple(current_strategy.enabled_features)
+        feature_values = tuple(float(value) for value in latest.features)
+        core_feature_count = min(len(feature_names), len(feature_values))
         return Decision(
             side=side,
             confidence=float(score),
@@ -13670,6 +13713,53 @@ def _build_autonomous_decision_fn(
             regime_notes=tuple(regime_evidence.notes),
             regime_unpredictability_score=float(regime_score),
             observed_at_ms=int(latest.timestamp),
+            ai_evidence={
+                "model_signal": {
+                    "raw_probability": float(raw_score),
+                    "adjusted_probability": float(score),
+                    "base_long_threshold": float(base_long_threshold),
+                    "base_short_threshold": (
+                        float(base_short_threshold)
+                        if base_short_threshold is not None
+                        else None
+                    ),
+                    "effective_long_threshold": float(effective_long_threshold),
+                    "effective_short_threshold": (
+                        float(effective_short_threshold)
+                        if effective_short_threshold is not None
+                        else None
+                    ),
+                },
+                "core_features": {
+                    feature_names[index]: feature_values[index]
+                    for index in range(core_feature_count)
+                },
+                "market_activity": {
+                    "mark_price": float(latest.close),
+                    "volume": float(getattr(latest, "volume", 0.0) or 0.0),
+                    "quote_volume": float(
+                        getattr(latest, "quote_volume", 0.0) or 0.0
+                    ),
+                    "trade_count": int(getattr(latest, "trade_count", 0) or 0),
+                    "trailing_quote_volume_24h_estimate": float(
+                        getattr(latest, "trailing_quote_volume_24h_estimate", 0.0)
+                        or 0.0
+                    ),
+                    "trailing_trade_count_24h_estimate": int(
+                        getattr(latest, "trailing_trade_count_24h_estimate", 0)
+                        or 0
+                    ),
+                },
+                "liquidity": {
+                    "low_liquidity": bool(liquidity_adjustment.low_liquidity),
+                    "low_dynamic_session": bool(
+                        liquidity_adjustment.low_dynamic_session
+                    ),
+                    "size_multiplier": float(liquidity_adjustment.size_multiplier),
+                    "reasons": list(liquidity_adjustment.reasons),
+                },
+                "external_signals": external_ai_evidence,
+            },
         )
 
     # Carry the model's tested execution contract into the coordinator without
@@ -13689,6 +13779,11 @@ def command_autonomous(args: argparse.Namespace) -> int:
         STATE_STOPPING,
         AutonomousControl,
         run_loop,
+    )
+    from .live_ai_assist import (
+        AIAssistedDecisionFunction,
+        AsyncLiveAIEntryReviewer,
+        OllamaLiveAIEntryProvider,
     )
     from .objective import get_objective
     from .positions import PositionsStore
@@ -13740,6 +13835,13 @@ def command_autonomous(args: argparse.Namespace) -> int:
         if model_error is not None or decision_fn is None:
             print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)
             return 2
+        ai_base_url = str(
+            getattr(args, "ai_url", None) or "http://127.0.0.1:11434"
+        )
+        ai_timeout_seconds = max(
+            0.1,
+            float(getattr(args, "ai_timeout", 10.0)),
+        )
         ai_gate = evaluate_ai_start_gate(
             runtime,
             objective=objective.name,
@@ -13752,13 +13854,8 @@ def command_autonomous(args: argparse.Namespace) -> int:
                     "data/model_lab/ai_risk_review.json",
                 )
             ),
-            base_url=str(
-                getattr(args, "ai_url", None) or "http://127.0.0.1:11434"
-            ),
-            timeout_seconds=max(
-                0.1,
-                float(getattr(args, "ai_timeout", 10.0)),
-            ),
+            base_url=ai_base_url,
+            timeout_seconds=ai_timeout_seconds,
         )
         if not ai_gate.allowed:
             print(
@@ -13768,7 +13865,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
             return 2
         if ai_gate.active:
             print(
-                "AI assist: active veto-only governance "
+                "AI assist: active shadow-only per-entry review "
                 f"review={ai_gate.review_sha256} model_digest={ai_gate.model_digest}"
             )
         elif runtime.ai_enabled:
@@ -13778,6 +13875,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
             )
         else:
             print("AI assist: disabled")
+        decision_fn_rebuilt = False
         try:
             client = _build_client(runtime)
             if not effective_dry_run:
@@ -13811,6 +13909,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
                             file=sys.stderr,
                         )
                         return 2
+                    decision_fn_rebuilt = True
                 strategy = verified_strategy
                 commission_assumption = verified_assumption
         except (BinanceAPIError, ValueError) as exc:
@@ -13819,11 +13918,56 @@ def command_autonomous(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 2
+        if decision_fn_rebuilt:
+            ai_gate = evaluate_ai_start_gate(
+                runtime,
+                objective=objective.name,
+                model_artifact=getattr(decision_fn, "_model_artifact", None),
+                paper_mode=effective_dry_run,
+                review_path=Path(
+                    getattr(
+                        args,
+                        "ai_review",
+                        "data/model_lab/ai_risk_review.json",
+                    )
+                ),
+                base_url=ai_base_url,
+                timeout_seconds=ai_timeout_seconds,
+            )
+            if not ai_gate.allowed:
+                print(
+                    "Autonomous startup blocked by final AI governance recheck: "
+                    f"{ai_gate.reason}",
+                    file=sys.stderr,
+                )
+                return 2
         if model_notice is not None:
             print(model_notice, file=sys.stderr)
         model_strategy = getattr(decision_fn, "_effective_strategy", None)
         if isinstance(model_strategy, StrategyConfig):
             strategy = model_strategy
+        if ai_gate.active:
+            try:
+                ai_provider = OllamaLiveAIEntryProvider(
+                    model=str(ai_gate.model or runtime.ai_model),
+                    base_url=ai_base_url,
+                    timeout_seconds=ai_timeout_seconds,
+                )
+                ai_reviewer = AsyncLiveAIEntryReviewer(ai_provider)
+                decision_fn = AIAssistedDecisionFunction(
+                    decision_fn,
+                    ai_reviewer,
+                    model_digest=str(ai_gate.model_digest or ""),
+                    terminal_model_fingerprint=str(
+                        ai_gate.terminal_model_fingerprint or ""
+                    ),
+                )
+            except (OSError, TypeError, ValueError) as exc:
+                print(
+                    f"Autonomous startup blocked: AI shadow reviewer failed: {exc}",
+                    file=sys.stderr,
+                )
+                return 2
         cfg = AutonomousConfig(
             objective=objective.name,
             poll_seconds=max(0.0, float(getattr(args, "poll_seconds", 30.0))),

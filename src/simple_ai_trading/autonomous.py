@@ -144,6 +144,8 @@ class Heartbeat:
     objective: str
     updated_at_ms: int
     message: str = ""
+    ai_assist_status: str = ""
+    ai_assist_case_id: str = ""
 
     def write(self, path: Path) -> None:
         write_json_atomic(path, asdict(self), indent=2, sort_keys=True)
@@ -229,6 +231,13 @@ class Decision:
     regime_notes: tuple[str, ...] = ()
     regime_unpredictability_score: float | None = None
     observed_at_ms: int = 0
+    ai_evidence: Mapping[str, object] = field(default_factory=dict)
+    ai_assist_mode: str = ""
+    ai_assist_status: str = ""
+    ai_assist_case_id: str = ""
+    ai_assist_action: str = ""
+    ai_assist_risk_multiplier: float = 0.0
+    ai_assist_reason: str = ""
 
 
 DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
@@ -408,6 +417,9 @@ def _open_position_from_decision(
         open_client_order_id=bot_client_order_id(position_id, "open"),
         exchange_status="paper" if cfg.dry_run else "pending_open",
         entry_fees=notional * max(0.0, float(strategy.taker_fee_bps)) / 10_000.0,
+        ai_review_mode=decision.ai_assist_mode,
+        ai_review_case_id=decision.ai_assist_case_id,
+        ai_review_status=decision.ai_assist_status,
     )
 
 
@@ -444,6 +456,9 @@ def _close_to_trade(
         open_client_order_id=position.open_client_order_id,
         open_exchange_order_id=position.open_exchange_order_id,
         paper_open_intent_id=position.paper_open_intent_id,
+        ai_review_mode=position.ai_review_mode,
+        ai_review_case_id=position.ai_review_case_id,
+        ai_review_status=position.ai_review_status,
     )
 
 
@@ -1210,8 +1225,12 @@ def run_loop(
                 break
 
             logger.info(
-                "autonomous iter=%d side=%s conf=%.4f mark=%.2f",
-                iteration, decision.side, decision.confidence, decision.mark_price,
+                "autonomous iter=%d side=%s conf=%.4f mark=%.2f ai=%s",
+                iteration,
+                decision.side,
+                decision.confidence,
+                decision.mark_price,
+                decision.ai_assist_status or "inactive",
             )
             last_mark_price = float(decision.mark_price) if decision.mark_price > 0 else last_mark_price
             if recovery_pending:
@@ -1302,6 +1321,8 @@ def run_loop(
                     objective=objective.name,
                     updated_at_ms=int(clock() * 1000),
                     message=f"recovery-clean; cooldown={cooldown}s; no-entry-observation",
+                    ai_assist_status=decision.ai_assist_status,
+                    ai_assist_case_id=decision.ai_assist_case_id,
                 ).write(cfg.heartbeat_path)
                 heartbeats += 1
                 sleep(max(poll, float(cooldown)))
@@ -1605,7 +1626,19 @@ def run_loop(
                     unrealized_pnl=stats.unrealized_pnl,
                     objective=objective.name,
                     updated_at_ms=int(clock() * 1000),
-                    message="" if gate.allowed or decision.side == "FLAT" else gate.reason,
+                    message=(
+                        f"ai:{decision.ai_assist_status}:{decision.ai_assist_reason}"
+                        if decision.ai_assist_status
+                        and decision.ai_assist_status
+                        not in {"shadow_idle", "shadow_approve"}
+                        else (
+                            ""
+                            if gate.allowed or decision.side == "FLAT"
+                            else gate.reason
+                        )
+                    ),
+                    ai_assist_status=decision.ai_assist_status,
+                    ai_assist_case_id=decision.ai_assist_case_id,
                 )
                 heartbeat.write(cfg.heartbeat_path)
                 heartbeats += 1
@@ -1616,6 +1649,18 @@ def run_loop(
             sleep(poll)
     finally:
         terminal_reasons: list[str] = []
+        close_decision_fn = getattr(decision_fn, "close", None)
+        if callable(close_decision_fn):
+            try:
+                ai_worker_stopped = bool(close_decision_fn(0.25))
+            except Exception as exc:  # noqa: BLE001 - shadow AI cannot block shutdown
+                logger.warning("autonomous AI shadow reviewer shutdown failed: %s", exc)
+            else:
+                if not ai_worker_stopped:
+                    logger.warning(
+                        "autonomous AI shadow reviewer exceeded bounded shutdown; "
+                        "daemon worker detached"
+                    )
         ledger_errors = store.open_integrity_errors()
         if ledger_errors:
             terminal_reasons.append(

@@ -690,6 +690,33 @@ def test_run_loop_normal_flow_three_iterations(tmp_path: Path) -> None:
     assert all(d >= 1.0 for d in sleeps)
 
 
+def test_run_loop_closes_optional_ai_decision_worker_with_bounded_wait(
+    tmp_path: Path,
+) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=1)
+    close_timeouts: list[float] = []
+
+    class ClosableDecision:
+        def __call__(self, *_args):
+            return Decision(side="FLAT", confidence=0.5, mark_price=100.0)
+
+        def close(self, timeout_seconds: float) -> bool:
+            close_timeouts.append(timeout_seconds)
+            return True
+
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=ClosableDecision(),
+        sleep=lambda _duration: None,
+        clock=_tick_clock(),
+    )
+    assert result.exit_reason == "iteration-cap"
+    assert close_timeouts == [0.25]
+
+
 def test_run_loop_paused_and_resumed_and_stopped(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=None)
     control_path = tmp_path / "state.json"
