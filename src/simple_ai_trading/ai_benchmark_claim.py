@@ -2,26 +2,31 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 import re
 import time
 from typing import Mapping
+from urllib.parse import urlparse
 
 from .ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
+    AIModelBenchmarkReport,
     default_finance_ai_test_cases,
     rescore_finance_ai_benchmark_payload,
 )
+from .ai_runtime import OllamaResidencyReport, ollama_residency_from_mapping
 from .polymarket_recorder import PolymarketEvidenceStore
+from .storage import write_json_atomic
 
 
 AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v1"
 AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION = (
     "finance-risk-review-candidate-preregistration-v2"
 )
+AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v1"
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAX_JSON_BYTES = 32 * 1024 * 1024
 _APPROVED_PREREGISTRATION_SHA256 = {
@@ -40,6 +45,12 @@ class PreregisteredAIBenchmarkClaim:
     output_path: str
     report_file_sha256: str = ""
     benchmark_passed: bool | None = None
+
+
+def requires_preregistered_ai_benchmark(model: str) -> bool:
+    """Return whether a model is protected by a frozen one-shot benchmark."""
+
+    return str(model or "").strip().lower() in _APPROVED_PREREGISTRATION_SHA256
 
 
 def _canonical_json(value: object) -> str:
@@ -85,6 +96,182 @@ def _mapping(value: object, name: str) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{name} is not an object")
     return value
+
+
+def _local_ollama_base_url(value: object) -> str:
+    base_url = str(value or "").rstrip("/")
+    parsed = urlparse(base_url)
+    try:
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("AI benchmark Ollama endpoint is invalid") from exc
+    if (
+        parsed.scheme != "http"
+        or parsed.hostname not in {"127.0.0.1", "localhost"}
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in {"", "/"}
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+        or (port is not None and not 1 <= port <= 65_535)
+    ):
+        raise ValueError("AI benchmark requires a local Ollama HTTP endpoint")
+    return base_url
+
+
+def _runtime_model_provenance(value: object, name: str) -> Mapping[str, object]:
+    provenance = _mapping(value, name)
+    if set(provenance) != {"model_digest", "model_metadata_sha256"} or any(
+        _SHA256.fullmatch(str(provenance.get(field) or "")) is None
+        for field in provenance
+    ):
+        raise ValueError(f"{name} is invalid")
+    return provenance
+
+
+def validate_preregistered_ai_runtime_evidence(
+    value: object,
+    *,
+    model: str,
+    case_count: int,
+    base_url: str,
+    claim: PreregisteredAIBenchmarkClaim | None = None,
+) -> dict[str, object]:
+    """Validate exact inference weights, endpoint, claim, and GPU residency."""
+
+    evidence = _mapping(value, "AI benchmark inference runtime evidence")
+    expected_fields = {
+        "schema_version",
+        "provider",
+        "model",
+        "benchmark_contract",
+        "base_url",
+        "case_count",
+        "claim",
+        "pre_inference",
+        "post_inference",
+        "residency",
+    }
+    if (
+        set(evidence) != expected_fields
+        or evidence.get("schema_version")
+        != AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION
+        or evidence.get("provider") != "ollama"
+        or evidence.get("model") != model
+        or evidence.get("benchmark_contract") != AI_MODEL_BENCHMARK_CONTRACT
+        or evidence.get("base_url") != _local_ollama_base_url(base_url)
+        or isinstance(evidence.get("case_count"), bool)
+        or evidence.get("case_count") != case_count
+    ):
+        raise ValueError("AI benchmark inference runtime evidence is inconsistent")
+    claim_evidence = _mapping(evidence.get("claim"), "AI benchmark claim evidence")
+    claim_fields = {
+        "claim_sha256",
+        "confirmation_run_id",
+        "confirmation_report_sha256",
+        "preregistration_sha256",
+    }
+    if (
+        set(claim_evidence) != claim_fields
+        or _SHA256.fullmatch(str(claim_evidence.get("claim_sha256") or "")) is None
+        or not str(claim_evidence.get("confirmation_run_id") or "")
+        or _SHA256.fullmatch(
+            str(claim_evidence.get("confirmation_report_sha256") or "")
+        )
+        is None
+        or _SHA256.fullmatch(str(claim_evidence.get("preregistration_sha256") or ""))
+        is None
+    ):
+        raise ValueError("AI benchmark claim evidence is invalid")
+    if claim is not None and dict(claim_evidence) != {
+        "claim_sha256": claim.claim_sha256,
+        "confirmation_run_id": claim.confirmation_run_id,
+        "confirmation_report_sha256": claim.confirmation_report_sha256,
+        "preregistration_sha256": claim.preregistration_sha256,
+    }:
+        raise ValueError("AI benchmark runtime evidence differs from its claim")
+    pre = _runtime_model_provenance(
+        evidence.get("pre_inference"), "AI benchmark pre-inference provenance"
+    )
+    post = _runtime_model_provenance(
+        evidence.get("post_inference"), "AI benchmark post-inference provenance"
+    )
+    if dict(pre) != dict(post):
+        raise ValueError("Ollama model identity changed during AI benchmark inference")
+    residency = ollama_residency_from_mapping(evidence.get("residency"))
+    if (
+        residency.requested_model != model
+        or residency.status != "gpu_resident"
+        or residency.digest != pre["model_digest"]
+        or not residency.gpu_resident
+        or residency.size_vram_bytes is None
+        or residency.size_vram_bytes <= 0
+    ):
+        raise ValueError(
+            "AI benchmark inference was not bound to exact GPU-resident weights"
+        )
+    return dict(evidence)
+
+
+def write_preregistered_ai_benchmark_output(
+    report: AIModelBenchmarkReport,
+    output_path: str | Path,
+    *,
+    claim: PreregisteredAIBenchmarkClaim,
+    pre_model_digest: str,
+    pre_model_metadata_sha256: str,
+    post_model_digest: str,
+    post_model_metadata_sha256: str,
+    residency: OllamaResidencyReport,
+) -> Path:
+    """Atomically persist a one-shot report with exact inference-time evidence."""
+
+    payload = report.asdict()
+    evidence: dict[str, object] = {
+        "schema_version": AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION,
+        "provider": "ollama",
+        "model": claim.model,
+        "benchmark_contract": AI_MODEL_BENCHMARK_CONTRACT,
+        "base_url": _local_ollama_base_url(report.base_url),
+        "case_count": len(report.tests),
+        "claim": {
+            "claim_sha256": claim.claim_sha256,
+            "confirmation_run_id": claim.confirmation_run_id,
+            "confirmation_report_sha256": claim.confirmation_report_sha256,
+            "preregistration_sha256": claim.preregistration_sha256,
+        },
+        "pre_inference": {
+            "model_digest": pre_model_digest,
+            "model_metadata_sha256": pre_model_metadata_sha256,
+        },
+        "post_inference": {
+            "model_digest": post_model_digest,
+            "model_metadata_sha256": post_model_metadata_sha256,
+        },
+        "residency": residency.asdict(),
+    }
+    payload["inference_runtime_evidence"] = evidence
+    rescored = rescore_finance_ai_benchmark_payload(payload)
+    if (
+        rescored.benchmark_contract != AI_MODEL_BENCHMARK_CONTRACT
+        or len(rescored.results) != 1
+        or rescored.results[0].model != claim.model
+        or not rescored.results[0].installed
+        or payload.get("selected_model") != rescored.selected_model
+        or payload.get("passed") is not rescored.passed
+    ):
+        raise ValueError("preregistered AI benchmark report is inconsistent")
+    validate_preregistered_ai_runtime_evidence(
+        evidence,
+        model=claim.model,
+        case_count=len(report.tests),
+        base_url=report.base_url,
+        claim=claim,
+    )
+    path = Path(output_path)
+    write_json_atomic(path, payload, indent=2, sort_keys=True)
+    return path
 
 
 def _file_sha256(path: Path) -> str:
@@ -225,6 +412,13 @@ def load_claimed_ai_benchmark_output(
         )
     ):
         raise ValueError("claimed AI benchmark output is inconsistent")
+    validate_preregistered_ai_runtime_evidence(
+        payload.get("inference_runtime_evidence"),
+        model=claim.model,
+        case_count=len(report.tests),
+        base_url=report.base_url,
+        claim=claim,
+    )
     return payload
 
 
@@ -423,9 +617,13 @@ def fail_preregistered_ai_benchmark_claim(
 
 __all__ = [
     "AI_BENCHMARK_CLAIM_SCHEMA_VERSION",
+    "AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION",
     "PreregisteredAIBenchmarkClaim",
     "begin_preregistered_ai_benchmark_claim",
     "complete_preregistered_ai_benchmark_claim",
     "fail_preregistered_ai_benchmark_claim",
     "load_claimed_ai_benchmark_output",
+    "requires_preregistered_ai_benchmark",
+    "validate_preregistered_ai_runtime_evidence",
+    "write_preregistered_ai_benchmark_output",
 ]

@@ -12,6 +12,7 @@ from simple_ai_trading.ai_model_benchmark import (
     benchmark_finance_ai_models,
     default_finance_ai_test_cases,
 )
+from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
 from tools import build_ai_model_provenance as builder
 
 
@@ -94,6 +95,54 @@ def _write_model_root(root: Path) -> tuple[dict[str, object], dict[Path, str]]:
     return show, {config_path: config_sha, model_path: model_sha}
 
 
+def _runtime_evidence(
+    payload: dict[str, object],
+    *,
+    manifest_digest: str,
+    show: dict[str, object],
+) -> dict[str, object]:
+    metadata_sha256 = hashlib.sha256(
+        json.dumps(
+            show,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    model_provenance = {
+        "model_digest": manifest_digest,
+        "model_metadata_sha256": metadata_sha256,
+    }
+    return {
+        "schema_version": "preregistered-ai-benchmark-runtime-v1",
+        "provider": "ollama",
+        "model": "qwen3:8b",
+        "benchmark_contract": payload["benchmark_contract"],
+        "base_url": payload["base_url"],
+        "case_count": len(payload["tests"]),  # type: ignore[arg-type]
+        "claim": {
+            "claim_sha256": "1" * 64,
+            "confirmation_run_id": "confirmation",
+            "confirmation_report_sha256": "2" * 64,
+            "preregistration_sha256": "3" * 64,
+        },
+        "pre_inference": model_provenance,
+        "post_inference": dict(model_provenance),
+        "residency": {
+            "requested_model": "qwen3:8b",
+            "status": "gpu_resident",
+            "loaded_model": "qwen3:8b",
+            "digest": manifest_digest,
+            "size_bytes": 19,
+            "size_vram_bytes": 19,
+            "vram_to_model_ratio": 1.0,
+            "loaded": True,
+            "gpu_resident": True,
+        },
+    }
+
+
 def test_builder_hash_binds_reports_manifest_and_every_blob(tmp_path: Path) -> None:
     payload = _benchmark_payload()
     benchmark = tmp_path / "comparison.json"
@@ -127,6 +176,60 @@ def test_builder_hash_binds_reports_manifest_and_every_blob(tmp_path: Path) -> N
     assert model["base_blob_sha256"] == hashlib.sha256(b"model-weights").hexdigest()
     assert model["verified_blob_count"] == 2
     assert model["locally_verified"] is True
+    assert model["inference_runtime_evidence"] is None
+
+
+def test_builder_rejects_model_manifest_changed_after_inference(tmp_path: Path) -> None:
+    payload = _benchmark_payload()
+    benchmark = tmp_path / "comparison.json"
+    source = tmp_path / "qwen3-8b-source-v8.json"
+    output = tmp_path / "model-provenance.json"
+    model_root = tmp_path / "ollama-models"
+    show, _blobs = _write_model_root(model_root)
+    manifest = model_root / "manifests/registry.ollama.ai/library/qwen3/8b"
+    manifest_digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    payload["inference_runtime_evidence"] = _runtime_evidence(
+        payload,
+        manifest_digest=manifest_digest,
+        show=show,
+    )
+    serialized = json.dumps(payload, indent=2) + "\n"
+    benchmark.write_text(serialized, encoding="utf-8")
+    source.write_text(serialized, encoding="utf-8")
+
+    result = builder.build_provenance(
+        benchmark_path=benchmark,
+        source_report_paths=(source,),
+        output_path=output,
+        repository_root=tmp_path,
+        model_root=model_root,
+        show_model=lambda _model: show,
+        minimum_model_bytes=0,
+    )
+    model = result["models"][0]  # type: ignore[index]
+    assert model["inference_runtime_evidence"] == payload["inference_runtime_evidence"]
+    model["size_bytes"] = 3_000_000_000
+    output.write_text(json.dumps(result), encoding="utf-8")
+    loaded = load_local_ai_model_provenance(
+        benchmark,
+        benchmark.read_bytes(),
+        model="qwen3:8b",
+    )
+    assert loaded.ollama_manifest_digest == manifest_digest
+    assert loaded.inference_runtime_evidence_sha256 is not None
+    assert loaded.inference_model_metadata_sha256 is not None
+
+    manifest.write_bytes(manifest.read_bytes() + b"\n")
+    with pytest.raises(ValueError, match="differ from inference-time evidence"):
+        builder.build_provenance(
+            benchmark_path=benchmark,
+            source_report_paths=(source,),
+            output_path=output,
+            repository_root=tmp_path,
+            model_root=model_root,
+            show_model=lambda _model: show,
+            minimum_model_bytes=0,
+        )
 
 
 def test_builder_rejects_any_tampered_ollama_blob(tmp_path: Path) -> None:

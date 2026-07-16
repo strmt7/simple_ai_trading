@@ -8,13 +8,20 @@ import json
 from pathlib import Path
 from typing import Mapping, Sequence
 
+from .ai_benchmark_claim import (
+    requires_preregistered_ai_benchmark,
+    validate_preregistered_ai_runtime_evidence,
+)
 
-_SCHEMA_VERSION = "ollama-local-model-provenance-v1"
+_SCHEMA_VERSION = "ollama-local-model-provenance-v2"
+_LEGACY_SCHEMA_VERSION = "ollama-local-model-provenance-v1"
 
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "").lower()
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _mapping(value: object, name: str) -> Mapping[str, object]:
@@ -33,6 +40,8 @@ class LocalAIModelProvenance:
     ollama_manifest_digest: str
     base_blob_sha256: str
     size_bytes: int
+    inference_runtime_evidence_sha256: str | None = None
+    inference_model_metadata_sha256: str | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -60,7 +69,8 @@ def load_local_ai_model_provenance(
     expected_benchmark_sha256 = hashlib.sha256(benchmark_bytes).hexdigest()
     models_raw = provenance.get("models")
     if (
-        provenance.get("schema_version") != _SCHEMA_VERSION
+        provenance.get("schema_version")
+        not in {_SCHEMA_VERSION, _LEGACY_SCHEMA_VERSION}
         or binding.get("sha256") != expected_benchmark_sha256
         or binding.get("contract") != benchmark.get("benchmark_contract")
         or not isinstance(models_raw, Sequence)
@@ -90,6 +100,50 @@ def load_local_ai_model_provenance(
         or size_bytes <= 2_000_000_000
     ):
         raise ValueError("local AI model provenance weight evidence is invalid")
+    schema_version = str(provenance["schema_version"])
+    runtime_evidence_sha256 = None
+    inference_model_metadata_sha256 = None
+    runtime_evidence = selected.get("inference_runtime_evidence")
+    if schema_version == _LEGACY_SCHEMA_VERSION:
+        if requires_preregistered_ai_benchmark(model):
+            raise ValueError(
+                "legacy local AI provenance cannot authorize a preregistered model"
+            )
+    elif runtime_evidence is None:
+        if "inference_runtime_evidence" not in selected:
+            raise ValueError("local AI model provenance lacks runtime evidence status")
+        if requires_preregistered_ai_benchmark(model):
+            raise ValueError(
+                "local AI model provenance lacks required inference-time evidence"
+            )
+    else:
+        tests = benchmark.get("tests")
+        if not isinstance(tests, Sequence) or isinstance(tests, (str, bytes)):
+            raise ValueError("AI benchmark test inventory is invalid")
+        validated_runtime = validate_preregistered_ai_runtime_evidence(
+            runtime_evidence,
+            model=model,
+            case_count=len(tests),
+            base_url=str(benchmark.get("base_url") or ""),
+        )
+        pre_inference = _mapping(
+            validated_runtime.get("pre_inference"),
+            "AI benchmark pre-inference provenance",
+        )
+        if pre_inference.get("model_digest") != manifest_digest:
+            raise ValueError(
+                "local AI model manifest differs from inference-time evidence"
+            )
+        inference_model_metadata_sha256 = str(pre_inference["model_metadata_sha256"])
+        runtime_evidence_sha256 = hashlib.sha256(
+            json.dumps(
+                validated_runtime,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+                allow_nan=False,
+            ).encode("ascii")
+        ).hexdigest()
     return LocalAIModelProvenance(
         path=provenance_path.as_posix(),
         provenance_sha256=hashlib.sha256(provenance_bytes).hexdigest(),
@@ -99,6 +153,8 @@ def load_local_ai_model_provenance(
         ollama_manifest_digest=manifest_digest,
         base_blob_sha256=base_blob_sha256,
         size_bytes=size_bytes,
+        inference_runtime_evidence_sha256=runtime_evidence_sha256,
+        inference_model_metadata_sha256=inference_model_metadata_sha256,
     )
 
 
