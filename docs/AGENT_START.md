@@ -89,10 +89,10 @@ agents to canonical evidence without replacing that evidence.
   first. The `ai-benchmark` CLI rejects this model without that preregistration,
   the confirmation database, and its run ID. Its DuckDB claim consumes the test
   once before inference; interrupted and failed claims cannot reopen it.
-- No confirmation capture is active. Start the next 54,000-second run only
-  from a fresh storage-v3 database after the v3 implementation commit, then
-  monitor only its progress sidecar and verified process tree. Never open a
-  DuckDB while its recorder owns it.
+- Confirmation capture `79ac19539d384352b865c21cb0c43627` is the active
+  54,000-second storage-v3 run started from commit `8e3c43e`. Monitor only
+  `.tmp/polymarket-round9-confirmation5-20260716-051217.progress.json` and its
+  verified process tree; never open its DuckDB while the recorder owns it.
 - Build current AI provenance with `tools/build_ai_model_provenance.py`; never
   hand-edit the result or infer blob identity from an Ollama tag.
 
