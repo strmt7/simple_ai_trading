@@ -34,7 +34,7 @@ jobs:
       - name: Ruff check
         run: ruff check .
 
-      - name: Ruff format changed Python files
+      - name: Ruff format new Python files
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         shell: bash
@@ -44,10 +44,13 @@ jobs:
           if [[ -z "${base}" || "${base}" =~ ^0+$ ]] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
             base="$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)"
           fi
+          # Existing modules predate Ruff formatting. Keep repository-wide linting
+          # above, and require every newly introduced Python file to be formatted
+          # without forcing unrelated legacy rewrites into feature commits.
           changed="${RUNNER_TEMP}/ruff-python-files"
-          git diff --name-only --diff-filter=ACMR -z "${base}" HEAD -- '*.py' > "${changed}"
+          git diff --name-only --diff-filter=A -z "${base}" HEAD -- '*.py' > "${changed}"
           if [[ -s "${changed}" ]]; then
             xargs -0 ruff format --check -- < "${changed}"
           else
-            echo "No changed Python files."
+            echo "No new Python files."
           fi
