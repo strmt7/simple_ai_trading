@@ -873,15 +873,15 @@ class PolymarketEvidenceStore:
                 UNIQUE(run_id, condition_id)
             );
 
-            CREATE TABLE IF NOT EXISTS polymarket_ai_veto_cache (
+            CREATE TABLE IF NOT EXISTS polymarket_ai_veto_cache_v2 (
                 cache_key_sha256 VARCHAR PRIMARY KEY,
                 schema_version VARCHAR NOT NULL,
                 identity_json VARCHAR NOT NULL,
                 response_json VARCHAR NOT NULL,
-                response_sha256 VARCHAR NOT NULL,
+                evidence_sha256 VARCHAR NOT NULL,
                 latency_seconds DOUBLE NOT NULL,
                 created_at_ms BIGINT NOT NULL,
-                CHECK(latency_seconds >= 0.0 AND latency_seconds <= 60.0)
+                CHECK(latency_seconds >= 0.0 AND latency_seconds <= 600.0)
             );
             """
         )
@@ -920,8 +920,8 @@ class PolymarketEvidenceStore:
             .execute(
                 """
             SELECT schema_version, identity_json, response_json,
-                   response_sha256, latency_seconds
-            FROM polymarket_ai_veto_cache
+                   evidence_sha256, latency_seconds
+            FROM polymarket_ai_veto_cache_v2
             WHERE cache_key_sha256 = ?
             """,
                 [key],
@@ -938,21 +938,28 @@ class PolymarketEvidenceStore:
             or not hmac.compare_digest(_canonical_sha256(identity), key)
         ):
             raise ValueError("Polymarket AI cache identity is corrupt")
-        response = _validated_canonical_payload(
-            "Polymarket AI cache response",
-            str(row[2]),
-            str(row[3]),
-        )
+        response_json = str(row[2])
+        response = _strict_json_loads(response_json)
+        if _canonical_json(response) != response_json:
+            raise ValueError("Polymarket AI cache response is not canonical")
         latency = float(row[4])
         if (
             not math.isfinite(latency)
             or not 0.0 <= latency <= _MAX_AI_CACHE_LATENCY_SECONDS
         ):
             raise ValueError("Polymarket AI cache latency is corrupt")
+        evidence_sha256 = _canonical_sha256(
+            {
+                "latency_seconds": latency,
+                "response_payload": response,
+            }
+        )
+        if not hmac.compare_digest(evidence_sha256, str(row[3])):
+            raise ValueError("Polymarket AI cache payload hash mismatch")
         return {
             "identity": dict(identity),
             "response_payload": response,
-            "response_sha256": str(row[3]),
+            "evidence_sha256": evidence_sha256,
             "latency_seconds": latency,
         }
 
@@ -981,12 +988,17 @@ class PolymarketEvidenceStore:
         ):
             raise ValueError("Polymarket AI cache entry is invalid")
         response_json = _canonical_json(response_payload)
-        response_sha256 = hashlib.sha256(response_json.encode("ascii")).hexdigest()
+        evidence_sha256 = _canonical_sha256(
+            {
+                "latency_seconds": latency,
+                "response_payload": response_payload,
+            }
+        )
         self.connect().execute(
             """
-            INSERT INTO polymarket_ai_veto_cache (
+            INSERT INTO polymarket_ai_veto_cache_v2 (
                 cache_key_sha256, schema_version, identity_json, response_json,
-                response_sha256, latency_seconds, created_at_ms
+                evidence_sha256, latency_seconds, created_at_ms
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (cache_key_sha256) DO NOTHING
             """,
@@ -995,7 +1007,7 @@ class PolymarketEvidenceStore:
                 schema_version,
                 identity_json,
                 response_json,
-                response_sha256,
+                evidence_sha256,
                 latency,
                 _wall_ms(),
             ],

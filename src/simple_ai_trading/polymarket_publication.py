@@ -1962,6 +1962,11 @@ def _validate_ai_evidence(
             or len(str(decision["summary"])) > 180
             or (valid and dict(decision) != parsed_response)
             or (parsed_response is None) != (usage is None)
+            or (
+                usage is not None
+                and int(usage["total_duration"]) / 1_000_000_000.0
+                > inference_latency + 0.001
+            )
             or (not valid and parsed_response is None and not failure_envelope_valid)
             or (valid and not gpu_runtime_proved)
             or (

@@ -136,7 +136,7 @@ def test_storage_v4_live_soak_artifact_is_canonical_and_non_authoritative() -> N
 
 def test_ai_veto_cache_is_immutable_and_tamper_evident(tmp_path) -> None:
     identity = {
-        "schema_version": "polymarket-ai-veto-cache-v6",
+        "schema_version": "polymarket-ai-veto-cache-v7",
         "case_sha256": "a" * 64,
         "model_digest": "b" * 64,
     }
@@ -163,7 +163,25 @@ def test_ai_veto_cache_is_immutable_and_tamper_evident(tmp_path) -> None:
 
         store.connect().execute(
             """
-            UPDATE polymarket_ai_veto_cache
+            UPDATE polymarket_ai_veto_cache_v2
+            SET latency_seconds = 1.0
+            WHERE cache_key_sha256 = ?
+            """,
+            [cache_key],
+        )
+        with pytest.raises(ValueError, match="payload hash mismatch"):
+            store.get_polymarket_ai_veto_cache(cache_key)
+        store.connect().execute(
+            """
+            UPDATE polymarket_ai_veto_cache_v2
+            SET latency_seconds = 2.5
+            WHERE cache_key_sha256 = ?
+            """,
+            [cache_key],
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_ai_veto_cache_v2
             SET response_json = '{"message":{"content":"tampered"}}'
             WHERE cache_key_sha256 = ?
             """,
