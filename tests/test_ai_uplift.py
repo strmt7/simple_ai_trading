@@ -89,10 +89,13 @@ def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
     assert report.deltas["realized_pnl"] == 6.0
     assert report.statistical_evidence["accepted"] is True
     assert report.statistical_evidence["sample_count"] == 30
+    assert report.statistical_evidence["effective_sample_count"] == 30
     assert report.statistical_evidence["positive_delta_count"] == 30
+    assert report.statistical_evidence["negative_delta_count"] == 0
+    assert report.statistical_evidence["tie_count"] == 0
     assert report.statistical_evidence["mean_delta_ci_lower"] > 0.0
     assert report.evidence_binding["accepted"] is True
-    assert report.schema_version == "ai-uplift-v2"
+    assert report.schema_version == "ai-uplift-v3"
     assert report.trading_authority is False
     assert report.profitability_claim is False
 
@@ -120,7 +123,7 @@ def test_ai_uplift_rejects_small_or_non_improving_models() -> None:
     assert "ai_pnl_not_above_baseline" in report.reasons
     assert "ai_drawdown_worse_than_baseline" in report.reasons
     assert "ai_closed_trades<5" in report.reasons
-    assert "ai_uplift_paired_samples<30" in report.reasons
+    assert "ai_uplift_non_tied_pairs<30" in report.reasons
 
 
 def test_ai_uplift_rejects_statistically_weak_paired_samples() -> None:
@@ -152,9 +155,76 @@ def test_ai_uplift_rejects_statistically_weak_paired_samples() -> None:
 
     assert report.accepted is False
     assert report.statistical_evidence["sample_count"] == 30
+    assert report.statistical_evidence["effective_sample_count"] == 30
     assert report.statistical_evidence["positive_delta_count"] == 15
+    assert report.statistical_evidence["negative_delta_count"] == 15
     assert "ai_uplift_positive_delta_rate<0.55" in report.reasons
     assert "ai_uplift_sign_test_p_value>0.0500" in report.reasons
+
+
+def test_ai_uplift_sign_test_excludes_unchanged_periods() -> None:
+    report = assess_ai_uplift(
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 18.0,
+                "max_drawdown": 0.035,
+                "expectancy": 1.2,
+                "closed_trades": 12,
+            },
+            _AI_SHA256,
+        ),
+        model_name="qwen2.5:7b",
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=_matched_periods((0.0, 0.0, 0.002) * 30),
+    )
+
+    assert report.accepted is True
+    assert report.statistical_evidence["sample_count"] == 90
+    assert report.statistical_evidence["effective_sample_count"] == 30
+    assert report.statistical_evidence["tie_count"] == 60
+    assert report.statistical_evidence["positive_delta_rate"] == 1.0
+    assert report.statistical_evidence["sign_test_p_value"] == 2**-30
+
+
+def test_ai_uplift_requires_thirty_non_tied_periods() -> None:
+    report = assess_ai_uplift(
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 18.0,
+                "max_drawdown": 0.035,
+                "expectancy": 1.2,
+                "closed_trades": 12,
+            },
+            _AI_SHA256,
+        ),
+        model_name="qwen2.5:7b",
+        model_artifact_sha256=_MODEL_SHA256,
+        matched_periods=_matched_periods((0.0, 0.002) * 29 + (0.0, 0.0)),
+    )
+
+    assert report.accepted is False
+    assert report.statistical_evidence["sample_count"] == 60
+    assert report.statistical_evidence["effective_sample_count"] == 29
+    assert report.statistical_evidence["tie_count"] == 31
+    assert "ai_uplift_non_tied_pairs<30" in report.reasons
 
 
 def test_ai_uplift_rejects_noncontiguous_matched_periods() -> None:

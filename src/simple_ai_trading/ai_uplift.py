@@ -153,7 +153,7 @@ class AIUpliftReport:
     evidence_binding: dict[str, object]
     reasons: tuple[str, ...] = field(default_factory=tuple)
     policy: dict[str, object] = field(default_factory=dict)
-    schema_version: str = "ai-uplift-v2"
+    schema_version: str = "ai-uplift-v3"
     trading_authority: bool = False
     profitability_claim: bool = False
 
@@ -389,9 +389,14 @@ def _statistical_evidence(
     deltas, period_binding, period_reasons = _matched_period_deltas(matched_periods)
     sample_count = len(deltas)
     positive_count = sum(1 for value in deltas if value > 0.0)
-    sign_p_value = _binomial_upper_tail(sample_count, positive_count)
+    negative_count = sum(1 for value in deltas if value < 0.0)
+    effective_sample_count = positive_count + negative_count
+    tie_count = sample_count - effective_sample_count
+    sign_p_value = _binomial_upper_tail(effective_sample_count, positive_count)
     mean_delta = sum(deltas) / sample_count if sample_count else 0.0
-    positive_rate = positive_count / sample_count if sample_count else 0.0
+    positive_rate = (
+        positive_count / effective_sample_count if effective_sample_count else 0.0
+    )
     bootstrap = _moving_block_bootstrap(
         deltas,
         samples=policy.block_bootstrap_samples,
@@ -416,8 +421,8 @@ def _statistical_evidence(
         for key in _LEGACY_UNBOUND_SAMPLE_KEYS
     ):
         reasons.append("ai_uplift_unbound_trade_sequence_rejected")
-    if sample_count < max(0, int(policy.min_paired_samples)):
-        reasons.append(f"ai_uplift_paired_samples<{int(policy.min_paired_samples)}")
+    if effective_sample_count < max(0, int(policy.min_paired_samples)):
+        reasons.append(f"ai_uplift_non_tied_pairs<{int(policy.min_paired_samples)}")
     if positive_rate < max(0.0, min(1.0, float(policy.min_positive_delta_rate))):
         reasons.append(
             f"ai_uplift_positive_delta_rate<{float(policy.min_positive_delta_rate):.2f}"
@@ -442,8 +447,11 @@ def _statistical_evidence(
         **period_binding,
         "paired_sample_length_mismatch": False,
         "sample_count": sample_count,
-        "min_sample_count": max(0, int(policy.min_paired_samples)),
+        "effective_sample_count": effective_sample_count,
+        "min_effective_sample_count": max(0, int(policy.min_paired_samples)),
         "positive_delta_count": positive_count,
+        "negative_delta_count": negative_count,
+        "tie_count": tie_count,
         "positive_delta_rate": positive_rate,
         "min_positive_delta_rate": max(
             0.0, min(1.0, float(policy.min_positive_delta_rate))
