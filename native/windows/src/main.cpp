@@ -23,6 +23,7 @@
 namespace app {
 using simple_ai_trading::native_contract::CommandSpec;
 using simple_ai_trading::native_contract::kCommandCount;
+using simple_ai_trading::native_contract::kCommandContractSha256;
 using simple_ai_trading::native_contract::kCommands;
 using simple_ai_trading::native_contract::kWorkflowCommandCount;
 using simple_ai_trading::native_contract::kWorkflowCommands;
@@ -204,6 +205,7 @@ class MainWindow {
     std::atomic_bool control_running_{false};
     std::atomic_bool api_budget_running_{false};
     std::atomic_bool operator_status_running_{false};
+    std::atomic_bool command_contract_synced_{false};
     std::atomic_uint64_t workflow_generation_{0};
     std::wstring environment_state_{L"Environment pending"};
     std::wstring bot_state_{L"State pending"};
@@ -215,6 +217,7 @@ class MainWindow {
     std::wstring ledger_state_{L"Not checked"};
     std::wstring api_reserve_state_{L"Loading"};
     std::wstring network_state_{L"Not checked"};
+    std::wstring command_contract_state_{L"Contract checking"};
     bool persisted_ai_enabled_ = true;
     bool persisted_reinvest_ = false;
     bool operator_status_initialized_ = false;
@@ -711,6 +714,7 @@ class MainWindow {
         std::wstring ledger_state;
         std::wstring api_reserve_state;
         std::wstring network_state;
+        std::wstring command_contract_state;
         {
             std::lock_guard lock(operator_status_mutex_);
             environment_state = environment_state_;
@@ -720,6 +724,7 @@ class MainWindow {
             ledger_state = ledger_state_;
             api_reserve_state = api_reserve_state_;
             network_state = network_state_;
+            command_contract_state = command_contract_state_;
         }
         const bool ai_enabled = ai_enabled_;
         const bool ai_gpu_resident = ai_enabled && ai_runtime_state == L"gpu";
@@ -735,10 +740,10 @@ class MainWindow {
                 ai_state = L"AI on (gated)";
             }
         }
-        const std::array<std::wstring, 6> states{
+        const std::array<std::wstring, 7> states{
             environment_state, bot_state, execution_state, profile_state,
-            ai_state, leverage_state};
-        const int state_width = std::max(scale(84), static_cast<int>(state_band.right - state_band.left) / 6);
+            ai_state, leverage_state, command_contract_state};
+        const int state_width = std::max(scale(76), static_cast<int>(state_band.right - state_band.left) / 7);
         for (int index = 0; index < static_cast<int>(states.size()); ++index) {
             RECT cell{state_band.left + index * state_width, state_band.top, state_band.left + (index + 1) * state_width, state_band.bottom};
             if (index > 0) {
@@ -1528,6 +1533,12 @@ class MainWindow {
             run_selected_help();
             return;
         }
+        if (!smoke_ && !command_contract_synced_.load()) {
+            append_output(
+                L"\r\nWorkflow blocked: the native app and Python backend command contracts "
+                L"are not verified as identical. Pause and Stop remain available.\r\n");
+            return;
+        }
         if (running_.exchange(true)) {
             append_output(L"\r\nA command is already running.\r\n");
             return;
@@ -1703,7 +1714,9 @@ class MainWindow {
             const std::wstring execution = compact_status_value(line, L"execution");
             const std::wstring positions = compact_status_value(line, L"positions");
             const std::wstring ledger = compact_status_value(line, L"ledger");
+            const std::wstring ui_contract = compact_status_value(line, L"ui_contract");
             const std::wstring compute = compact_status_value(compute_line, L"compute");
+            const bool command_contract_synced = ui_contract == kCommandContractSha256;
             {
                 std::lock_guard lock(operator_status_mutex_);
                 environment_state_ = environment.empty() ? L"Environment unavailable" : display_token(environment);
@@ -1738,7 +1751,15 @@ class MainWindow {
                 } else {
                     compute_state_ = display_token(compute) + L" GPU";
                 }
+                if (ui_contract.empty()) {
+                    command_contract_state_ = L"Contract unavailable";
+                } else if (command_contract_synced) {
+                    command_contract_state_ = L"Contract synced";
+                } else {
+                    command_contract_state_ = L"Contract mismatch";
+                }
             }
+            command_contract_synced_.store(command_contract_synced);
             operator_status_running_ = false;
             PostMessageW(hwnd_, WM_APP + 3, 0, 0);
         }).detach();
@@ -1823,8 +1844,13 @@ class MainWindow {
     std::wstring execute_cli_first_line(const std::wstring& args) {
         if (dry_run_enabled()) {
             if (args == L"status --compact") {
-                return L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled ai_runtime=gpu reinvest=off "
-                       L"symbol=BTCUSDT market=futures execution=paper positions=0 ledger=clear";
+                std::wstring status =
+                    L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled ai_runtime=gpu reinvest=off "
+                    L"symbol=BTCUSDT market=futures execution=paper positions=0 ledger=clear ui_contract=";
+                const std::wstring contract_override =
+                    env_string(L"SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256");
+                status += contract_override.empty() ? kCommandContractSha256 : contract_override;
+                return status;
             }
             return L"API budget: dry-run";
         }

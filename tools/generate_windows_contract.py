@@ -38,6 +38,7 @@ def main() -> int:
     root = _repo_root()
     sys.path.insert(0, str(root / "src"))
     from simple_ai_trading.command_contract import (  # noqa: PLC0415
+        command_contract_digest,
         command_specs,
         workflow_commands,
     )
@@ -48,6 +49,9 @@ def main() -> int:
         "#pragma once",
         "",
         "namespace simple_ai_trading::native_contract {",
+        "",
+        "inline constexpr const wchar_t* kCommandContractSha256 = "
+        f"{_escape_wide(command_contract_digest())};",
         "",
         "struct CommandOptionSpec {",
         "    const wchar_t* flags;",

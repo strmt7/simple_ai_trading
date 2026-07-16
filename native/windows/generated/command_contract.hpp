@@ -2,6 +2,8 @@
 
 namespace simple_ai_trading::native_contract {
 
+inline constexpr const wchar_t* kCommandContractSha256 = L"48c38ddbe1d73152da70acd1024184a939cead59c3b5325b96447ce9707a4d56";
+
 struct CommandOptionSpec {
     const wchar_t* flags;
     const wchar_t* dest;

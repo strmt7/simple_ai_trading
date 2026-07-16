@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict, dataclass
+from functools import lru_cache
+import hashlib
+import json
 from typing import Any
 
 from .cli import _build_parser
@@ -218,6 +221,7 @@ def _option_from_action(action: argparse.Action) -> CommandOption | None:
     )
 
 
+@lru_cache(maxsize=1)
 def command_specs() -> tuple[CommandSpec, ...]:
     parser = _build_parser()
     specs: list[CommandSpec] = []
@@ -250,6 +254,7 @@ def command_names() -> tuple[str, ...]:
     return tuple(spec.name for spec in command_specs())
 
 
+@lru_cache(maxsize=1)
 def workflow_commands() -> tuple[WorkflowCommand, ...]:
     """Return a complete one-to-one CLI/UI taxonomy, failing closed on drift."""
 
@@ -272,3 +277,21 @@ def workflow_commands() -> tuple[WorkflowCommand, ...]:
             f"duplicates={duplicates}, missing={missing}, stale={stale}"
         )
     return items
+
+
+@lru_cache(maxsize=1)
+def command_contract_digest() -> str:
+    """Return the exact CLI/workflow contract fingerprint used by Windows."""
+
+    payload = {
+        "schema_version": "cli-windows-command-contract-v1",
+        "commands": [spec.asdict() for spec in command_specs()],
+        "workflow": [item.asdict() for item in workflow_commands()],
+    }
+    canonical = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("ascii")
+    return hashlib.sha256(canonical).hexdigest()

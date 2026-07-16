@@ -24,6 +24,7 @@ from simple_ai_trading.ai_runtime import (
     ollama_residency_from_mapping,
 )
 from simple_ai_trading.command_contract import (
+    command_contract_digest,
     command_names,
     command_specs,
     workflow_commands,
@@ -499,6 +500,10 @@ def test_generated_native_contract_matches_cli() -> None:
         / "command_contract.hpp"
     )
     text = header.read_text(encoding="utf-8")
+    assert (
+        f'inline constexpr const wchar_t* kCommandContractSha256 = '
+        f'L"{command_contract_digest()}";'
+    ) in text
     for item in workflow_commands():
         assert (
             f"{{{_wide(item.page)}, {_wide(item.group)}, {_wide(item.name)}}}" in text
@@ -574,11 +579,15 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND" in source
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND" in source
+    assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256" in source
     assert "struct CommandResult" in source
     assert "workflow_generation_.fetch_add(1)" in source
     assert "Workflow cancelled by a safety control" in source
     assert "if (result.exit_code != 0)" in source
     assert "Workflow stopped after failed command" in source
+    assert "kCommandContractSha256" in source
+    assert "command_contract_synced_.load()" in source
+    assert "Pause and Stop remain available" in source
     assert "remaining safety controls will still be attempted" in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
     assert "runtime_summary()" in source
@@ -600,6 +609,8 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN" in smoke
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND" in smoke
     assert "Failed configuration was followed by autonomous start" in smoke
+    assert "Contract mismatch was followed by strategy mutation" in smoke
+    assert "dry-run: simple-ai-trading autonomous stop" in smoke
     assert "Cancelled configuration was followed by autonomous start" in smoke
     assert "Stop + Close" in smoke
     assert "Testnet live" in smoke
