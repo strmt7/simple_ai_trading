@@ -13533,11 +13533,6 @@ def _build_autonomous_decision_fn(
         current_model = cast(TrainedModel | None, state["model"])
         candles = client.get_klines(runtime.symbol, runtime.interval, limit=max(current_strategy.model_lookback, 300))
         rows = _live_rows_for_model(candles, current_strategy, current_model, compute_backend=runtime.compute_backend)
-        training_rows = (
-            _readiness_model_rows(candles, current_strategy, current_model, compute_backend=runtime.compute_backend)
-            if current_model is not None
-            else _build_model_rows(candles, current_strategy, compute_backend=runtime.compute_backend)
-        )
         if not rows:
             price, observed_at_ms = client.get_symbol_price(runtime.symbol)
             return Decision(
@@ -13549,6 +13544,11 @@ def _build_autonomous_decision_fn(
         if current_model is None:
             if not effective_dry_run:  # pragma: no cover - rejected before the decision function is returned
                 raise RuntimeError(f"Autonomous live mode requires a compatible model: {model_path}")
+            training_rows = _build_model_rows(
+                candles,
+                current_strategy,
+                compute_backend=runtime.compute_backend,
+            )
             if not training_rows:
                 price, observed_at_ms = client.get_symbol_price(runtime.symbol)
                 return Decision(
