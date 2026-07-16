@@ -1,0 +1,65 @@
+{
+  "schema_version": "polymarket-storage-v3-reader-benchmark-v1",
+  "observed_date_utc": "2026-07-16",
+  "implementation": {
+    "polymarket_recorder_sha256": "8639ac659f444708e9a1fcbacabf89fd3a1253c9fb3b7232f8ded97a68a86d56",
+    "polymarket_replay_sha256": "e028a44dd76f601c584641773d685620b14b1948661085a1d2f7cba9dcc27a70",
+    "storage_schema_version": "polymarket-evidence-storage-v3"
+  },
+  "source_evidence": {
+    "run_id": "b8a270da20fe4116a01a4626607e42da",
+    "source_storage_schema_version": "polymarket-evidence-storage-v2",
+    "terminal_status": "failed",
+    "source_database_bytes": 5706100736,
+    "public_payloads_real": true,
+    "receipt_metadata_preserved": true,
+    "permitted_use": "infrastructure_benchmark_only",
+    "model_evidence": false
+  },
+  "v3_equivalence": {
+    "method": "extract every RTDS raw payload and receipt row into a fresh v3 store, complete the integrity audit, then compare ordered strict-relational and verified-raw replay",
+    "source_message_count": 42724,
+    "normalized_event_count": 42710,
+    "integrity_error_count": 0,
+    "extracted_terminal_status": "failed_due_to_intentionally_incomplete_market_and_stream_coverage",
+    "temporary_database_deleted": true,
+    "strict_relational": {
+      "seconds": 0.704601899953559,
+      "events_per_second": 60615.78886292395,
+      "event_id_stream_sha256": "feaf8149db90e7c335040f28e709fec72ae09af81603a10a51767f89cda941e8"
+    },
+    "verified_raw_v3": {
+      "seconds": 0.55115149996709,
+      "events_per_second": 77492.30475205132,
+      "event_id_stream_sha256": "feaf8149db90e7c335040f28e709fec72ae09af81603a10a51767f89cda941e8"
+    },
+    "exact_event_count_and_ordered_identity_match": true
+  },
+  "condition_filtered_relational_read": {
+    "method": "one streaming join and sort after removing repeated 4096-ID full-table lookups",
+    "source_storage_schema_version": "polymarket-evidence-storage-v2",
+    "event_start_ms": 1784162700000,
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "condition_ids": [
+      "0x1e52f944e4d757a32d728c62704c3adeff95f81ec5b310962bdc792dab78f773",
+      "0xa49990901054f4431f71da98f4295e87693695247c00d5b98457071c6d3b8ab3",
+      "0xbaecf0b097c3ca3787dac9221c2807a8684d7e3f2821c04ac46d70d0f9cd6ded"
+    ],
+    "event_count": 162840,
+    "seconds": 4.444850000087172,
+    "events_per_second": 36635.6569955806,
+    "event_id_stream_sha256": "247a53c0281efcf66ec7b1cfc614db5f0bf0de75547f01a8fee1d16ca61ad317"
+  },
+  "claims": {
+    "reader_equivalence_demonstrated_for_extracted_rtds_corpus": true,
+    "full_v3_capture_demonstrated": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_tested": false,
+    "trading_authority": false
+  }
+}

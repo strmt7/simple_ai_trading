@@ -1068,7 +1068,15 @@ def _finish_replay_store(
                 monotonic_ns=5_900_000_000,
             ),
         ]
-    store.append_messages(run_id, [*clob_messages, *auxiliary])
+    fixture_messages = [*clob_messages, *auxiliary]
+    next_sequence: dict[tuple[str, str], int] = {}
+    normalized_messages: list[RawStreamMessage] = []
+    for message in fixture_messages:
+        lane = (message.stream, message.connection_id)
+        sequence = next_sequence.get(lane, 0) + 1
+        next_sequence[lane] = sequence
+        normalized_messages.append(replace(message, sequence_number=sequence))
+    store.append_messages(run_id, normalized_messages)
     report = store.finish_run(
         run_id,
         started_at_ms=run_started_at_ms,
@@ -1307,7 +1315,7 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert len(first.rows) >= 1
     row = first.rows[0]
     assert polymarket_feature_row_sha256(row) == (
-        "554913ace70a9643f9afee3951c8136c266eb4023470ccf4f505720086385a7a"
+        "d970d123f454b57026e2e482a4e85112be9c22163f79a752b66f4da2e85036e5"
     )
     assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 49
     assert row.official_up is True
