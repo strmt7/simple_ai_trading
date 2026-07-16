@@ -22,6 +22,8 @@ agents to canonical evidence without replacing that evidence.
   with zero drawdown uses `999.0` instead of being misreported as zero quality.
 - Publication independently reconciles configured and reported capital, filled
   trade P&L, equity, drawdown, and both initial- and deployed-capital returns.
+- Round 9 action labels independently reconcile fill quantities, weighted fill
+  prices, per-fill fees, entry cost, exit proceeds, and net value before storage.
 - Historical labels, future books, resolutions, fills, and PnL must never enter
   a live inference payload. Unknown order state blocks new exposure.
 - Secrets must never enter prompts, logs, artifacts, tests, commits, or docs.
