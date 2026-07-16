@@ -16,7 +16,7 @@ from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
 from tools import build_ai_model_provenance as builder
 
 
-def _benchmark_payload() -> dict[str, object]:
+def _benchmark_payload(model: str = "qwen3:8b") -> dict[str, object]:
     test_cases = default_finance_ai_test_cases()
     cases = iter(test_cases)
     rationale = " ".join(
@@ -43,11 +43,11 @@ def _benchmark_payload() -> dict[str, object]:
         }
 
     report = benchmark_finance_ai_models(
-        models=("qwen3:8b",),
-        installed_models=("qwen3:8b",),
+        models=(model,),
+        installed_models=(model,),
         post_json=post,
     )
-    assert report.selected_model == "qwen3:8b"
+    assert report.selected_model == model
     return report.asdict()
 
 
@@ -229,6 +229,57 @@ def test_builder_rejects_model_manifest_changed_after_inference(tmp_path: Path) 
             model_root=model_root,
             show_model=lambda _model: show,
             minimum_model_bytes=0,
+        )
+
+
+def test_protected_model_requires_runtime_bound_source_and_nonlegacy_provenance(
+    tmp_path: Path,
+) -> None:
+    payload = _benchmark_payload("qwen3:14b")
+    benchmark = tmp_path / "comparison.json"
+    source = tmp_path / "qwen3-14b-source-v8.json"
+    serialized = json.dumps(payload) + "\n"
+    benchmark.write_text(serialized, encoding="utf-8")
+    source.write_text(serialized, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="lacks required inference-time evidence"):
+        builder.build_provenance(
+            benchmark_path=benchmark,
+            source_report_paths=(source,),
+            output_path=tmp_path / "model-provenance.json",
+            repository_root=tmp_path,
+            model_root=tmp_path / "missing-models",
+            show_model=lambda _model: {},
+            minimum_model_bytes=0,
+        )
+
+    legacy = {
+        "schema_version": "ollama-local-model-provenance-v1",
+        "benchmark": {
+            "contract": payload["benchmark_contract"],
+            "path": benchmark.name,
+            "sha256": hashlib.sha256(benchmark.read_bytes()).hexdigest(),
+        },
+        "source_reports": [],
+        "models": [
+            {
+                "model": "qwen3:14b",
+                "ollama_manifest_digest": "4" * 64,
+                "base_blob_sha256": "5" * 64,
+                "size_bytes": 3_000_000_000,
+                "locally_verified": True,
+            }
+        ],
+    }
+    (tmp_path / "model-provenance.json").write_text(
+        json.dumps(legacy),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="legacy local AI provenance cannot authorize"):
+        load_local_ai_model_provenance(
+            benchmark,
+            benchmark.read_bytes(),
+            model="qwen3:14b",
         )
 
 
