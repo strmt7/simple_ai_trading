@@ -74,6 +74,7 @@ from simple_ai_trading.polymarket_model_execution import (
 from simple_ai_trading.polymarket_publication import (
     POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
     _ai_case_rows,
+    _parsed_valid_ai_response,
     _validate_ai_evidence,
     publish_polymarket_model_artifact,
     validate_polymarket_model_artifact,
@@ -1886,6 +1887,28 @@ def test_ai_veto_cases_are_pre_execution_label_free_and_hash_bound() -> None:
     assert all(len(case.case_sha256) == 64 for case in first)
 
 
+def test_ai_veto_parser_rejects_type_coercion_and_duplicate_json_keys() -> None:
+    malformed = (
+        '{"action":"approve","confidence":"0.9","reason_codes":'
+        '["edge_after_fees"],"summary":"typed string"}',
+        '{"action":"approve","confidence":true,"reason_codes":'
+        '["edge_after_fees"],"summary":"typed boolean"}',
+        '{"action":"approve","confidence":0.9,"reason_codes":'
+        '["edge_after_fees"],"summary":7}',
+        '{"action":"veto","action":"approve","confidence":0.9,'
+        '"reason_codes":["edge_after_fees"],"summary":"duplicate"}',
+    )
+
+    for content in malformed:
+        with pytest.raises(ValueError, match="AI response"):
+            ai_veto_module._parse_decision({"message": {"content": content}})
+        assert _parsed_valid_ai_response({"message": {"content": content}}) is None
+
+
+def test_ai_veto_supports_preregistered_qwen3_14b_candidate() -> None:
+    assert PolymarketAIVetoConfig(model="qwen3:14b").validated().model == "qwen3:14b"
+
+
 def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
@@ -1991,6 +2014,15 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
     def unexpected_provider(*_args: object, **_kwargs: object) -> object:
         raise AssertionError("duplicate conditions must fail before provider access")
 
+    with pytest.raises(ValueError, match="selection identity is invalid"):
+        benchmark_polymarket_ai_veto(
+            cases[:1],
+            all_condition_ids=[cases[0].condition_id],
+            selection_sha256="not-a-digest",
+            risk_benchmark_evidence_sha256="a" * 64,
+            config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+            post_json=unexpected_provider,  # type: ignore[arg-type]
+        )
     with pytest.raises(ValueError, match="exactly one case per market condition"):
         benchmark_polymarket_ai_veto(
             (cases[0], duplicate_condition),
@@ -2080,6 +2112,8 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
 
     assert first == second
     assert first.results[0].latency_seconds == 2.25
+    assert first.market_permissions[cases[0].condition_id]
+    assert sum(first.market_permissions.values()) == 1
     assert third.results[0].latency_seconds == 1.5
     assert third.model_digest == "e" * 64
     assert chat_calls == 2
@@ -2470,6 +2504,7 @@ def test_ai_low_confidence_or_malformed_output_vetoes_without_order_authority() 
     assert all(
         not ai_report.market_permissions[case.condition_id] for case in cases[:2]
     )
+    assert not any(ai_report.market_permissions.values())
     assert all(not result.decision.valid for result in ai_report.results)
 
 
