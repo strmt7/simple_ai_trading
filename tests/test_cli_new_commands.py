@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from simple_ai_trading import cli
 from simple_ai_trading.ai_start_gate import AIStartGateReport
 from simple_ai_trading.api import CommissionRates
@@ -881,6 +883,13 @@ def test_build_autonomous_decision_fn_scores_model_and_external_signals(monkeypa
     row = type("Row", (), {"features": (0.2,), "close": 101.5, "timestamp": 1})()
     monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (_Model(), None, None))
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
+    monkeypatch.setattr(
+        cli,
+        "_readiness_model_rows",
+        lambda *_args, **_kwargs: pytest.fail(
+            "loaded autonomous models must not rebuild discarded training rows"
+        ),
+    )
     monkeypatch.setattr(cli, "model_decision_threshold", lambda _model, _threshold: 0.55)
     monkeypatch.setattr(cli, "confidence_adjusted_probability", lambda score, _beta: score)
     monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: _Report())
