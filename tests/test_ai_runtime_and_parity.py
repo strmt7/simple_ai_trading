@@ -18,6 +18,9 @@ from simple_ai_trading.ai_model_benchmark import (
 )
 from simple_ai_trading.ai_runtime import (
     AIRuntimeConfig,
+    _rocm_smi_free_vram_gb,
+    _single_distinct_positive_int,
+    _windows_free_vram_gb,
     detect_ai_capabilities,
     estimate_model_parameters_b,
     inspect_ollama_model_residency,
@@ -54,6 +57,93 @@ def test_ai_runtime_blocks_when_required_gpu_backend_resolves_to_cpu(
 
     assert report.ok is False
     assert any("GPU compute backend" in message for message in report.messages)
+
+
+def test_rocm_smi_vram_parser_requires_exact_total_and_used_bytes() -> None:
+    output = """
+    ROCm System Management Interface
+    GPU[0]: VRAM Total Memory (B): 17179869184
+    GPU[0]: VRAM Total Used Memory (B): 4294967296
+    GPU[1] : VRAM Total Memory (B): 8589934592
+    GPU[1] : VRAM Total Used Memory (B): 2147483648
+    """
+
+    assert _rocm_smi_free_vram_gb(output) == 12.0
+    assert _rocm_smi_free_vram_gb(output.replace("(B)", "(MiB)", 1)) is None
+    assert _rocm_smi_free_vram_gb(output.replace("4294967296", "20000000000")) is None
+
+
+def test_windows_vram_measurement_deduplicates_and_clamps(monkeypatch) -> None:
+    assert _single_distinct_positive_int([16, 16, 16]) == 16
+    assert _single_distinct_positive_int([8, 16]) is None
+    assert _single_distinct_positive_int([0, -1, True, "16"]) is None
+
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._windows_dedicated_vram_total_bytes",
+        lambda: 16 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._windows_dedicated_vram_usage_bytes",
+        lambda: 4 * 1024**3,
+    )
+    assert _windows_free_vram_gb() == 12.0
+
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._windows_dedicated_vram_usage_bytes",
+        lambda: 20 * 1024**3,
+    )
+    assert _windows_free_vram_gb() == 0.0
+
+
+def test_ai_runtime_blocks_unmeasured_required_vram(monkeypatch) -> None:
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: None
+    )
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: None)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._windows_gpu_names",
+        lambda: ("AMD Radeon",),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime.resolve_backend",
+        lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._ollama_inventory",
+        lambda: {"qwen3:8b": True},
+    )
+
+    report = detect_ai_capabilities(AIRuntimeConfig(enabled=True, require_gpu=True))
+
+    assert report.ok is False
+    assert any("could not be measured reliably" in message for message in report.messages)
+
+
+def test_ai_runtime_blocks_low_measured_amd_vram(monkeypatch) -> None:
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._memory_status_gb", lambda: 32.0)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._nvidia_free_vram_gb", lambda: None
+    )
+    monkeypatch.setattr("simple_ai_trading.ai_runtime._amd_free_vram_gb", lambda: 7.5)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._windows_gpu_names",
+        lambda: ("AMD Radeon",),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime.resolve_backend",
+        lambda _requested: BackendInfo("directml", "directml", "GPU", "DirectML", ""),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_runtime._ollama_inventory",
+        lambda: {"qwen3:8b": True},
+    )
+
+    report = detect_ai_capabilities(AIRuntimeConfig(enabled=True, require_gpu=True))
+
+    assert report.ok is False
+    assert report.gpu_vendor == "amd"
+    assert any("7.5 GiB is below required 8.0 GiB" in message for message in report.messages)
 
 
 def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
