@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from simple_ai_trading import cli
+from simple_ai_trading.ai_start_gate import AIStartGateReport
 from simple_ai_trading.api import CommissionRates
 from simple_ai_trading.config import save_runtime
 from simple_ai_trading.positions import OpenPosition, PositionsStore
@@ -751,6 +752,21 @@ def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_p
         cli,
         "_build_autonomous_decision_fn",
         lambda **_kwargs: (lambda *_args: None, None, None),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_start_gate.evaluate_ai_start_gate",
+        lambda *_args, **_kwargs: AIStartGateReport(
+            status="approved",
+            allowed=True,
+            active=True,
+            reason="signed test review",
+            review_path="test-ai-review.json",
+            review_sha256="a" * 64,
+            source_report_sha256="b" * 64,
+            model="test-model",
+            model_digest="sha256:" + "c" * 64,
+            terminal_model_fingerprint="d" * 64,
+        ),
     )
     monkeypatch.setattr("simple_ai_trading.autonomous.run_loop", fake_run_loop)
 
