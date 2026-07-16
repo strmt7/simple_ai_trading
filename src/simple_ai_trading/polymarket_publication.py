@@ -1111,6 +1111,12 @@ def _validate_ai_prompt_shape(prompt: Mapping[str, Any]) -> None:
         raise ValueError("AI validation market count is invalid")
 
 
+def _bounded_profit_factor(gains: float, losses: float) -> float:
+    if losses > 0.0:
+        return min(999.0, max(0.0, gains / losses))
+    return 999.0 if gains > 0.0 else 0.0
+
+
 def _execution_uplift_metrics(
     report: Mapping[str, Any],
     *,
@@ -1146,9 +1152,7 @@ def _execution_uplift_metrics(
         "roi_pct": 100.0 * return_fraction,
         "max_drawdown": drawdown,
         "expectancy": net / len(values) if values else 0.0,
-        "profit_factor": (
-            gains / losses if losses > 0.0 else (gains if gains > 0.0 else 0.0)
-        ),
+        "profit_factor": _bounded_profit_factor(gains, losses),
         "closed_trades": len(values),
         "win_rate": (
             sum(value > 0.0 for value in values) / len(values) if values else 0.0

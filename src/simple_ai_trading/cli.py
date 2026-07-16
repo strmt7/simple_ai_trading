@@ -6865,6 +6865,12 @@ def command_polymarket_mlp(args: argparse.Namespace) -> int:
     return 0 if report.development_passed else 2
 
 
+def _bounded_profit_factor(gains: float, losses: float) -> float:
+    if losses > 0.0:
+        return min(999.0, max(0.0, gains / losses))
+    return 999.0 if gains > 0.0 else 0.0
+
+
 def _polymarket_execution_uplift_metrics(
     report: object,
     *,
@@ -6887,7 +6893,7 @@ def _polymarket_execution_uplift_metrics(
         "roi_pct": 100.0 * return_fraction,
         "max_drawdown": drawdown,
         "expectancy": net / len(values) if values else 0.0,
-        "profit_factor": gains / losses if losses > 0.0 else (gains if gains > 0.0 else 0.0),
+        "profit_factor": _bounded_profit_factor(gains, losses),
         "closed_trades": len(values),
         "win_rate": (
             sum(value > 0.0 for value in values) / len(values) if values else 0.0
