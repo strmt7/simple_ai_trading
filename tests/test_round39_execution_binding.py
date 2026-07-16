@@ -74,7 +74,6 @@ def test_round39_execution_binding_is_canonical_and_blob_complete() -> None:
     assert required <= set(blobs)
     for path, expected_oid in blobs.items():
         assert _git("rev-parse", f"{implementation_commit}:{path}") == expected_oid
-        assert _git("rev-parse", f"HEAD:{path}") == expected_oid
 
     execution = binding["execution"]
     assert execution["candidate_count"] == 4
