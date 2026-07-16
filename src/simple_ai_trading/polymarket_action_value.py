@@ -39,6 +39,16 @@ POLYMARKET_ACTION_DATASET_SCHEMA_VERSION = "polymarket-causal-action-dataset-v1"
 
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 _OUTCOMES = ("Up", "Down")
+_ENTRY_NO_FILL_TERMINALS = frozenset({"entry_not_filled", "entry_tick_drift"})
+_ACTION_UNAVAILABLE_TERMINALS = frozenset(
+    {
+        "entry_confirmation_enters_excluded_close_window",
+        "entry_enters_excluded_close_window",
+        "missing_entry_execution_book",
+        "missing_entry_execution_parameters",
+        "unsupported_entry_minimum_order_age",
+    }
+)
 _SIGNED_MODEL_FEATURES = frozenset(
     {
         "direct_distance_from_chainlink_open_bps",
@@ -735,13 +745,17 @@ def build_polymarket_action_label(
             positive_complete = False
             condition_blocked = True
             stress_utility = -execution.entry_cost_quote
-        elif terminal_reason == "entry_not_filled":
+        elif terminal_reason in _ENTRY_NO_FILL_TERMINALS:
             category = "entry_no_fill"
             classifier_eligible = True
             positive_complete = False
             condition_blocked = False
             stress_utility = Decimal("0")
         else:
+            if terminal_reason not in _ACTION_UNAVAILABLE_TERMINALS:
+                raise ValueError(
+                    "Polymarket pre-fill terminal has no frozen label category"
+                )
             category = "action_unavailable"
             classifier_eligible = False
             positive_complete = False
