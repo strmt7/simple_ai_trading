@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
@@ -338,6 +338,56 @@ class PolymarketEvidenceReplay:
         }
         if len(self._book_by_event_token) != len(books):
             raise ValueError("Polymarket replay book event identities are duplicated")
+
+    def with_book_sample_interval(
+        self,
+        book_sample_interval_ms: int,
+    ) -> "PolymarketEvidenceReplay":
+        """Derive the exact sampled view from one full-resolution reconstruction."""
+
+        if isinstance(book_sample_interval_ms, bool):
+            raise ValueError("book_sample_interval_ms must lie in [0, 5000]")
+        interval_ms = int(book_sample_interval_ms)
+        if interval_ms < 0 or interval_ms > 5_000:
+            raise ValueError("book_sample_interval_ms must lie in [0, 5000]")
+        current_interval_ms = int(self.diagnostics.book_sample_interval_ms)
+        if interval_ms == current_interval_ms:
+            return self
+        if current_interval_ms != 0:
+            raise ValueError(
+                "Polymarket replay can only derive a sampled view from full resolution"
+            )
+        if self.diagnostics.materialized_book_count != len(self.books):
+            raise ValueError("Polymarket full-resolution replay diagnostics disagree")
+
+        selected: list[PolymarketRecordedBook] = []
+        last_selected_ns: dict[str, int] = {}
+        minimum_delta_ns = interval_ms * 1_000_000
+        for book in self.books:
+            previous = last_selected_ns.get(book.token_id)
+            if (
+                previous is not None
+                and book.received_monotonic_ns - previous < minimum_delta_ns
+            ):
+                continue
+            selected.append(book)
+            last_selected_ns[book.token_id] = book.received_monotonic_ns
+        diagnostics = replace(
+            self.diagnostics,
+            book_sample_interval_ms=interval_ms,
+            materialized_book_count=len(selected),
+            suppressed_book_count=(
+                self.diagnostics.book_state_transition_count - len(selected)
+            ),
+        )
+        return PolymarketEvidenceReplay(
+            run_id=self.run_id,
+            markets=self.markets,
+            books=tuple(selected),
+            resolutions=self.resolutions,
+            diagnostics=diagnostics,
+            market_execution_evidence=self.market_execution_evidence,
+        )
 
     @classmethod
     def load(

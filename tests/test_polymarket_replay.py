@@ -1287,12 +1287,27 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
             run_id="features",
             config=config,
         )
+        conditions = tuple(sorted({row.condition_id for row in first.rows}))
+        full_replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="features",
+            book_sample_interval_ms=0,
+            condition_ids=conditions,
+        )
+        sampled_replay = full_replay.with_book_sample_interval(config.cadence_ms)
+        direct_sampled_replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="features",
+            book_sample_interval_ms=config.cadence_ms,
+            condition_ids=conditions,
+        )
         second = build_polymarket_feature_dataset(
             store,
             run_id="features",
             config=config,
-            condition_ids=tuple(sorted({row.condition_id for row in first.rows})),
+            condition_ids=conditions,
             source_context=source_context,
+            preloaded_replay=sampled_replay,
         )
         created = materialize_polymarket_feature_dataset(store, first)
         existing = materialize_polymarket_feature_dataset(store, second)
@@ -1309,6 +1324,8 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert first.dataset_id == second.dataset_id
     assert first.dataset_sha256 == second.dataset_sha256
     assert first.rows == second.rows
+    assert sampled_replay.books == direct_sampled_replay.books
+    assert sampled_replay.diagnostics == direct_sampled_replay.diagnostics
     assert created.status == "created"
     assert existing.status == "existing"
     assert created.row_count == existing.row_count == len(first.rows)
