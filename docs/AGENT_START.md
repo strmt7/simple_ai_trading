@@ -84,6 +84,12 @@ After parser or taxonomy changes, regenerate the header through the native build
   integrity errors, and exact reopen verification. One audited CLOB disconnect
   made it `degraded`; it validates writer liveness only. A 15-hour confirmation
   is still required.
+- For a finished segmented Round 9 run, invoke `polymarket-action-value
+  --allow-segmented-gaps` directly after official resolution. It performs and
+  persists the label-free continuity audit before materialization, then reuses
+  the same store's terminal integrity cache. Run standalone
+  `polymarket-continuity` only when an audit-only report is needed; running both
+  commands needlessly rereads the full evidence corpus.
 - Round 9 MLP report v3 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
@@ -137,15 +143,17 @@ After parser or taxonomy changes, regenerate the header through the native build
   rehashed usage evidence vetoes the response; token counts do not prove edge.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
-  a fresh confirmation recorder ends `complete`; do not alter prompts or cases
-  first. The `ai-benchmark` CLI rejects this model without that preregistration,
-  the confirmation database, and its run ID. Its DuckDB claim consumes the test
-  once before inference; interrupted and failed claims cannot reopen it. A valid
-  output also requires identical Ollama digest/metadata hashes before and after
-  inference plus exact post-inference GPU residency. CPU-only or changed weights
-  fail the consumed claim. Candidate resolution and required-GPU capability
-  checks run before the confirmation database opens, so preflight failure must
-  not consume the claim.
+  a post-contract storage-v4 capture spans at least 15 hours and its label-free
+  continuity report retains at least 30 synchronized BTC/ETH/SOL groups. A
+  `degraded` run is admissible only when every retained window is gap-free and
+  segment-pure. Do not alter prompts or cases first. The `ai-benchmark` CLI
+  rejects this model without that preregistration, the confirmation database,
+  and its run ID. Its DuckDB claim consumes the test once before inference;
+  interrupted and failed claims cannot reopen it. A valid output also requires
+  identical Ollama digest/metadata hashes before and after inference plus exact
+  post-inference GPU residency. CPU-only or changed weights fail the consumed
+  claim. Candidate resolution and required-GPU capability checks run before the
+  confirmation database opens, so preflight failure must not consume the claim.
 - The exact terminal facts for failed confirmation capture
   `79ac19539d384352b865c21cb0c43627` are in
   `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.

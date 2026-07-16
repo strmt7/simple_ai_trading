@@ -1,16 +1,16 @@
 {
-  "schema_version": "finance-risk-review-candidate-preregistration-v3",
-  "created_at_utc": "2026-07-16T19:17:35Z",
-  "parent_git_commit": "6064a4cfb01edf5ebf1e453fe4204469367ef53d",
+  "schema_version": "finance-risk-review-candidate-preregistration-v2",
+  "created_at_utc": "2026-07-16T00:20:02Z",
+  "parent_git_commit": "777d294257a36ad4336f6e799bc49190e913ebaa",
   "benchmark_contract": "finance-risk-review-adversarial-v8",
   "benchmark_source_sha256": "f0422bc928ed5e96552b1357cb9b2693789c3192c271a0f4e6b19ab3baac9bba",
   "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
   "prior_comparison_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
   "revoked_predecessor": {
-    "path": "docs/ai/risk-review/historical/qwen3-14b-v8-global-complete-preregistration.json",
-    "sha256": "7f872babbe9588c8bfe45a65e146ecdb5e0f0a8e78977500ca5afff92aa87e75",
-    "benchmark_contract": "finance-risk-review-adversarial-v8",
-    "reason": "The prior gate required the word complete but did not enforce its stated 15-hour duration. It also conflated global websocket continuity with the frozen label-free local-window rule used by Round 9. No qwen3:14b installation or inference occurred under that preregistration."
+    "path": "docs/ai/risk-review/historical/qwen3-14b-v7-preregistration.json",
+    "sha256": "5e84127b5efe18f9ad92464467f6a1e7baa45a6049af661efa824d3e26ec5d79",
+    "benchmark_contract": "finance-risk-review-adversarial-v7",
+    "reason": "The v7 scorer accepted prose-wrapped JSON, duplicate keys, type coercion, missing fields, and clamped out-of-range numeric values, so its valid-JSON admission claim was unsound. No qwen3:14b inference occurred under v7."
   },
   "candidate": {
     "model": "qwen3:14b",
@@ -27,17 +27,7 @@
     "prompt_or_case_changes_allowed": false,
     "run_count": 1,
     "run_after_valid_confirmation_recorder_finalization": true,
-    "admissible_recorder_statuses": [
-      "complete",
-      "degraded"
-    ],
-    "minimum_capture_duration_seconds": 54000,
-    "minimum_capture_started_at_ms": 1784143695000,
-    "required_storage_schema_version": "polymarket-evidence-storage-v4",
-    "required_continuity_schema_version": "polymarket-round9-continuity-eligibility-v1",
-    "minimum_eligible_synchronized_groups": 30,
-    "global_gap_free_required": false,
-    "gaps_inside_eligible_windows_allowed": false
+    "required_recorder_status": "complete"
   },
   "admission": {
     "top_level_json_object_only": true,

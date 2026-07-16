@@ -51,6 +51,9 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
     suite = [asdict(case) for case in default_finance_ai_test_cases()]
 
     assert preregistration["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
+    assert preregistration["schema_version"] == (
+        "finance-risk-review-candidate-preregistration-v3"
+    )
     assert preregistration["benchmark_source_sha256"] == _sha256(source)
     assert preregistration["test_suite_sha256"] == _canonical_sha256(suite)
     assert preregistration["prior_comparison_sha256"] == _sha256(REPORT_PATH)
@@ -60,6 +63,15 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
     )
     assert preregistration["frozen_run"]["run_count"] == 1  # type: ignore[index]
     assert preregistration["frozen_run"]["prompt_or_case_changes_allowed"] is False  # type: ignore[index]
+    assert preregistration["frozen_run"]["minimum_capture_duration_seconds"] == 54_000  # type: ignore[index]
+    assert preregistration["frozen_run"]["admissible_recorder_statuses"] == [  # type: ignore[index]
+        "complete",
+        "degraded",
+    ]
+    assert preregistration["frozen_run"]["global_gap_free_required"] is False  # type: ignore[index]
+    assert (
+        preregistration["frozen_run"]["gaps_inside_eligible_windows_allowed"] is False
+    )  # type: ignore[index]
 
 
 def test_tracked_v7_ai_benchmark_is_historical_rejected_evidence() -> None:
@@ -156,9 +168,9 @@ def test_tracked_ai_model_provenance_binds_reports_and_weight_blobs() -> None:
         model="qwen3:8b",
     )
     assert selected.benchmark_sha256 == _sha256(REPORT_PATH)
-    assert selected.ollama_manifest_digest == models["qwen3:8b"][
-        "ollama_manifest_digest"
-    ]
+    assert (
+        selected.ollama_manifest_digest == models["qwen3:8b"]["ollama_manifest_digest"]
+    )
 
 
 def test_local_ai_model_provenance_rejects_unbound_benchmark_bytes() -> None:

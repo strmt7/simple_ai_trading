@@ -115,7 +115,7 @@ def _runtime_evidence(
         "model_metadata_sha256": metadata_sha256,
     }
     return {
-        "schema_version": "preregistered-ai-benchmark-runtime-v1",
+        "schema_version": "preregistered-ai-benchmark-runtime-v2",
         "provider": "ollama",
         "model": "qwen3:8b",
         "benchmark_contract": payload["benchmark_contract"],
@@ -125,6 +125,12 @@ def _runtime_evidence(
             "claim_sha256": "1" * 64,
             "confirmation_run_id": "confirmation",
             "confirmation_report_sha256": "2" * 64,
+            "confirmation_recorder_status": "degraded",
+            "confirmation_storage_schema_version": "polymarket-evidence-storage-v4",
+            "confirmation_started_at_ms": 1784143695000,
+            "confirmation_ended_at_ms": 1784197695000,
+            "confirmation_continuity_report_sha256": "4" * 64,
+            "confirmation_eligible_group_count": 30,
             "preregistration_sha256": "3" * 64,
         },
         "pre_inference": model_provenance,
