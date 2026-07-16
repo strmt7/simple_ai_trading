@@ -884,6 +884,24 @@ def _validate_execution_report(
         or final != initial + reported_net
     ):
         raise ValueError(f"{name} aggregate accounting does not reconcile")
+    expected_initial_return = reported_net / initial
+    expected_deployed_return = (
+        reported_net / deployed if deployed > 0 else Decimal("0")
+    )
+    if (
+        initial != initial_capital
+        or _decimal(
+            report.get("return_on_initial_capital"),
+            f"{name} return on initial capital",
+        )
+        != expected_initial_return
+        or _decimal(
+            report.get("return_on_deployed_capital"),
+            f"{name} return on deployed capital",
+        )
+        != expected_deployed_return
+    ):
+        raise ValueError(f"{name} return accounting does not reconcile")
 
     running = initial
     peak = initial
