@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,13 +11,26 @@ RESEARCH = ROOT / "docs" / "model-research" / "action-value"
 FAILURE = RESEARCH / "round-035-failure-analysis.json"
 REGISTRY34 = RESEARCH / "consumed-periods-through-round-034.json"
 REGISTRY35 = RESEARCH / "consumed-periods-through-round-035.json"
-SCREEN = RESEARCH / "latest" / "screen.json"
+ROUND35_PUBLICATION_COMMIT = "b5a2d1c369a237f2dc36fbfb52901454b30b045c"
+ROUND35_SCREEN_PATH = "docs/model-research/action-value/latest/screen.json"
 
 
 def _read(path: Path) -> dict[str, object]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(payload, dict)
     return payload
+
+
+def _read_git_json(commit: str, path: str) -> tuple[bytes, dict[str, object]]:
+    raw = subprocess.run(
+        ["git", "show", f"{commit}:{path}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    ).stdout
+    payload = json.loads(raw)
+    assert isinstance(payload, dict)
+    return raw, payload
 
 
 def _canonical_sha256(payload: dict[str, object], field: str) -> str:
@@ -56,7 +70,13 @@ def test_round35_failure_analysis_is_hash_bound_and_fail_closed() -> None:
 
 def test_round35_failure_metrics_equal_the_validated_source_report() -> None:
     failure = _read(FAILURE)
-    screen = _read(SCREEN)
+    raw, screen = _read_git_json(ROUND35_PUBLICATION_COMMIT, ROUND35_SCREEN_PATH)
+    source_evidence = failure["source_evidence"]
+
+    assert hashlib.sha256(raw).hexdigest() == source_evidence["report_file_sha256"]
+    assert (
+        screen["report_canonical_sha256"] == source_evidence["report_canonical_sha256"]
+    )
     source = {item["variant"]: item for item in screen["variant_results"]}
     direct_fields = {
         "pooled_direction_auc": "pooled_direction_auc",
