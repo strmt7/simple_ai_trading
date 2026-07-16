@@ -44,9 +44,21 @@ _ACTION_UNAVAILABLE_TERMINALS = frozenset(
     {
         "entry_confirmation_enters_excluded_close_window",
         "entry_enters_excluded_close_window",
+        "missing_entry_creation_book",
         "missing_entry_execution_book",
         "missing_entry_execution_parameters",
         "unsupported_entry_minimum_order_age",
+    }
+)
+_FILLED_ENTRY_FAILED_EXIT_TERMINALS = frozenset(
+    {
+        "exit_enters_excluded_close_window",
+        "exit_not_filled",
+        "exit_tick_drift",
+        "missing_exit_decision_book",
+        "missing_exit_execution_book",
+        "missing_exit_execution_parameters",
+        "unsupported_exit_minimum_order_age",
     }
 )
 _SIGNED_MODEL_FEATURES = frozenset(
@@ -135,7 +147,9 @@ def _sha256(value: object) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value)
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _decimal_text(value: Decimal | None) -> str | None:
@@ -294,12 +308,8 @@ class PolymarketActionLabel:
             "entry_book_event_id": self.entry_book_event_id,
             "exit_decision_book_event_id": self.exit_decision_book_event_id,
             "exit_book_event_id": self.exit_book_event_id,
-            "entry_execution_parameter_sha256": (
-                self.entry_execution_parameter_sha256
-            ),
-            "exit_execution_parameter_sha256": (
-                self.exit_execution_parameter_sha256
-            ),
+            "entry_execution_parameter_sha256": (self.entry_execution_parameter_sha256),
+            "exit_execution_parameter_sha256": (self.exit_execution_parameter_sha256),
             "execution_evidence_sha256": self.execution_evidence_sha256,
         }
 
@@ -344,7 +354,8 @@ class PolymarketActionLabel:
             )
         )
         unavailable_invalid = self.category == "action_unavailable" and (
-            self.classifier_eligible
+            self.terminal_reason not in _ACTION_UNAVAILABLE_TERMINALS
+            or self.classifier_eligible
             or self.positive_complete
             or self.condition_blocked
             or self.entry_filled
@@ -353,9 +364,13 @@ class PolymarketActionLabel:
             or self.entry_cost_quote is not None
             or self.exit_proceeds_quote is not None
             or self.net_quote is not None
+            or self.exit_decision_book_event_id
+            or self.exit_book_event_id
+            or self.exit_execution_parameter_sha256
         )
         no_fill_invalid = self.category == "entry_no_fill" and (
-            not self.classifier_eligible
+            self.terminal_reason not in _ENTRY_NO_FILL_TERMINALS
+            or not self.classifier_eligible
             or self.positive_complete
             or self.condition_blocked
             or self.entry_filled
@@ -364,9 +379,16 @@ class PolymarketActionLabel:
             or self.entry_cost_quote is not None
             or self.exit_proceeds_quote is not None
             or self.net_quote is not None
+            or not self.creation_book_event_id
+            or not self.entry_book_event_id
+            or not self.entry_execution_parameter_sha256
+            or self.exit_decision_book_event_id
+            or self.exit_book_event_id
+            or self.exit_execution_parameter_sha256
         )
         failed_exit_invalid = self.category == "filled_entry_failed_exit" and (
-            not self.classifier_eligible
+            self.terminal_reason not in _FILLED_ENTRY_FAILED_EXIT_TERMINALS
+            or not self.classifier_eligible
             or self.positive_complete
             or not self.condition_blocked
             or not self.entry_filled
@@ -376,6 +398,9 @@ class PolymarketActionLabel:
             or self.stress_utility_quote != -self.entry_cost_quote
             or self.exit_proceeds_quote is not None
             or self.net_quote is not None
+            or not self.creation_book_event_id
+            or not self.entry_book_event_id
+            or not self.entry_execution_parameter_sha256
         )
         complete_invalid = self.category == "successful_round_trip" and (
             self.terminal_reason != "complete_round_trip"
@@ -384,12 +409,27 @@ class PolymarketActionLabel:
             or not self.entry_filled
             or not self.exit_filled
             or self.entry_cost_quote is None
+            or self.entry_cost_quote <= 0
             or self.exit_proceeds_quote is None
+            or self.exit_proceeds_quote < 0
             or self.net_quote is None
+            or self.net_quote != self.exit_proceeds_quote - self.entry_cost_quote
             or self.stress_utility_quote != self.net_quote
             or self.positive_complete != (self.net_quote > 0)
+            or not self.creation_book_event_id
+            or not self.entry_book_event_id
+            or not self.exit_decision_book_event_id
+            or not self.exit_book_event_id
+            or not self.entry_execution_parameter_sha256
+            or not self.exit_execution_parameter_sha256
         )
-        if basic_invalid or unavailable_invalid or no_fill_invalid or failed_exit_invalid or complete_invalid:
+        if (
+            basic_invalid
+            or unavailable_invalid
+            or no_fill_invalid
+            or failed_exit_invalid
+            or complete_invalid
+        ):
             raise ValueError("Polymarket action label identity is invalid")
         return self
 
@@ -417,9 +457,7 @@ class PolymarketActionValueDataset:
             ],
             "action_label_sha256": [item.action_label_sha256 for item in self.labels],
             "category_counts": dict(sorted(self.category_counts.items())),
-            "terminal_reason_counts": dict(
-                sorted(self.terminal_reason_counts.items())
-            ),
+            "terminal_reason_counts": dict(sorted(self.terminal_reason_counts.items())),
         }
 
     def summary(self) -> dict[str, object]:
@@ -443,18 +481,26 @@ class PolymarketActionValueDataset:
         expected_reasons: dict[str, int] = {}
         for label in self.labels:
             label.validated()
-            expected_categories[label.category] = expected_categories.get(label.category, 0) + 1
-            expected_reasons[label.terminal_reason] = expected_reasons.get(label.terminal_reason, 0) + 1
+            expected_categories[label.category] = (
+                expected_categories.get(label.category, 0) + 1
+            )
+            expected_reasons[label.terminal_reason] = (
+                expected_reasons.get(label.terminal_reason, 0) + 1
+            )
         if (
             not _is_sha256(self.source_feature_dataset_sha256)
             or not self.source_run_id
             or len(self.features) != len(self.labels)
-            or any(item.validated().source_run_id != self.source_run_id for item in self.features)
+            or any(
+                item.validated().source_run_id != self.source_run_id
+                for item in self.features
+            )
             or any(
                 feature.action_feature_sha256 != label.action_feature_sha256
                 for feature, label in zip(self.features, self.labels, strict=True)
             )
-            or len({item.action_feature_sha256 for item in self.features}) != len(self.features)
+            or len({item.action_feature_sha256 for item in self.features})
+            != len(self.features)
             or dict(self.category_counts) != expected_categories
             or dict(self.terminal_reason_counts) != expected_reasons
             or not _is_sha256(self.dataset_sha256)
@@ -528,7 +574,10 @@ def _oriented_feature_values(
                 model_values[left],
             )
         for left, right in _RISK_SWAP_PAIRS:
-            risk_values[left], risk_values[right] = risk_values[right], risk_values[left]
+            risk_values[left], risk_values[right] = (
+                risk_values[right],
+                risk_values[left],
+            )
     return tuple(model_values.values()) + tuple(risk_values.values())
 
 
@@ -722,8 +771,7 @@ def build_polymarket_action_label(
             or execution.decision.token_id != feature.token_id
             or execution.decision.outcome != feature.outcome
             or execution.decision.event_id != feature.decision_event_id
-            or execution.decision.received_wall_ms
-            != feature.decision_received_wall_ms
+            or execution.decision.received_wall_ms != feature.decision_received_wall_ms
             or execution.decision.received_monotonic_ns
             != feature.decision_received_monotonic_ns
         ):
@@ -788,7 +836,9 @@ def build_polymarket_action_label(
             "" if execution is None else execution.decision.creation_book.event_id
         ),
         entry_book_event_id=(
-            "" if execution is None or execution.entry_book is None else execution.entry_book.event_id
+            ""
+            if execution is None or execution.entry_book is None
+            else execution.entry_book.event_id
         ),
         exit_decision_book_event_id=(
             ""
@@ -796,7 +846,9 @@ def build_polymarket_action_label(
             else execution.exit_decision_book.event_id
         ),
         exit_book_event_id=(
-            "" if execution is None or execution.exit_book is None else execution.exit_book.event_id
+            ""
+            if execution is None or execution.exit_book is None
+            else execution.exit_book.event_id
         ),
         entry_execution_parameter_sha256=(
             ""
@@ -854,9 +906,7 @@ def build_polymarket_action_value_dataset(
                 received_wall_ms=row.decision_received_wall_ms,
                 received_monotonic_ns=row.decision_received_monotonic_ns,
                 outcome=outcome,
-                maximum_creation_book_age_ms=(
-                    cfg.maximum_order_creation_book_age_ms
-                ),
+                maximum_creation_book_age_ms=(cfg.maximum_order_creation_book_age_ms),
             )
             execution = (
                 None
@@ -944,7 +994,9 @@ def materialize_polymarket_action_value_dataset(
         try:
             source_values = json.loads(str(source[7]))
         except json.JSONDecodeError as exc:
-            raise ValueError("stored Polymarket source feature JSON is invalid") from exc
+            raise ValueError(
+                "stored Polymarket source feature JSON is invalid"
+            ) from exc
         expected_source = (
             feature.source_run_id,
             feature.condition_id,

@@ -81,7 +81,9 @@ def _binary_log_loss(probability: np.ndarray, target: np.ndarray) -> float:
     labels = np.asarray(target, dtype=np.float64)
     if clipped.shape != labels.shape or clipped.size == 0:
         raise ValueError("binary log loss requires aligned nonempty vectors")
-    return float(-np.mean(labels * np.log(clipped) + (1.0 - labels) * np.log1p(-clipped)))
+    return float(
+        -np.mean(labels * np.log(clipped) + (1.0 - labels) * np.log1p(-clipped))
+    )
 
 
 @dataclass(frozen=True)
@@ -116,9 +118,7 @@ class PolymarketRidgeObservation:
             or self.release_monotonic_ns < self.decision_received_monotonic_ns
             or len(self.feature_values) != _FEATURE_COUNT
             or not all(math.isfinite(value) for value in self.feature_values)
-            or not (
-                self.official_up is None or isinstance(self.official_up, bool)
-            )
+            or not (self.official_up is None or isinstance(self.official_up, bool))
             or self.category
             not in {
                 "action_unavailable",
@@ -129,10 +129,7 @@ class PolymarketRidgeObservation:
             or not math.isfinite(self.stress_utility_quote)
             or (self.classifier_eligible == (self.category == "action_unavailable"))
             or (self.positive_complete and self.category != "successful_round_trip")
-            or (
-                self.condition_blocked
-                != (self.category == "filled_entry_failed_exit")
-            )
+            or (self.condition_blocked != (self.category == "filled_entry_failed_exit"))
         ):
             raise ValueError("Polymarket ridge observation is invalid")
         return self
@@ -190,9 +187,43 @@ class PolymarketRidgeSplit:
     purged_groups: tuple[int, ...]
 
     def asdict(self) -> dict[str, object]:
-        return {
-            key: list(value) for key, value in asdict(self).items()
-        }
+        return {key: list(value) for key, value in asdict(self).items()}
+
+    def validated(self) -> PolymarketRidgeSplit:
+        partitions = (
+            self.train_groups,
+            self.validation_groups,
+            self.test_groups,
+            self.purged_groups,
+        )
+        values = tuple(value for partition in partitions for value in partition)
+        total_groups = len(values)
+        validation_count = math.floor(0.2 * total_groups)
+        test_count = math.floor(0.2 * total_groups)
+        train_count = total_groups - validation_count - test_count - 2
+        chronological = (
+            *self.train_groups,
+            self.purged_groups[0] if len(self.purged_groups) == 2 else -1,
+            *self.validation_groups,
+            self.purged_groups[1] if len(self.purged_groups) == 2 else -1,
+            *self.test_groups,
+        )
+        if (
+            total_groups < 30
+            or len(self.purged_groups) != 2
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in values
+            )
+            or len(set(values)) != total_groups
+            or chronological != tuple(sorted(chronological))
+            or len(self.train_groups) != train_count
+            or len(self.validation_groups) != validation_count
+            or len(self.test_groups) != test_count
+            or min(train_count, validation_count, test_count) <= 0
+        ):
+            raise ValueError("Polymarket ridge split is invalid")
+        return self
 
 
 @dataclass(frozen=True)
@@ -262,6 +293,21 @@ class PolymarketRidgeCandidate:
     def asdict(self) -> dict[str, object]:
         return asdict(self)
 
+    def validated(self) -> PolymarketRidgeCandidate:
+        if (
+            self.l2 not in POLYMARKET_RIDGE_L2_GRID
+            or not math.isfinite(self.validation_log_loss)
+            or self.validation_log_loss < 0.0
+            or not _is_sha256(self.model_sha256)
+            or isinstance(self.optimizer_iterations, bool)
+            or not isinstance(self.optimizer_iterations, int)
+            or self.optimizer_iterations < 0
+            or not math.isfinite(self.optimizer_objective)
+            or self.optimizer_objective < 0.0
+        ):
+            raise ValueError("Polymarket ridge candidate is invalid")
+        return self
+
 
 @dataclass(frozen=True)
 class PolymarketPolicyMetrics:
@@ -287,6 +333,90 @@ class PolymarketPolicyMetrics:
         payload["pnl_by_asset"] = dict(sorted(self.pnl_by_asset.items()))
         payload["gate_reasons"] = list(self.gate_reasons)
         return payload
+
+    def validated(self, *, require_asset_profit: bool) -> PolymarketPolicyMetrics:
+        count_values = (
+            self.attempt_count,
+            self.completed_trade_count,
+            self.positive_complete_count,
+            self.failed_exit_count,
+            *self.completed_by_asset.values(),
+        )
+        expected_precision = (
+            self.positive_complete_count / self.attempt_count
+            if self.attempt_count
+            else 0.0
+        )
+        reasons: list[str] = []
+        if self.completed_trade_count < 30:
+            reasons.append(f"completed_trade_count:{self.completed_trade_count}/30")
+        for asset in _ASSETS:
+            completed = self.completed_by_asset.get(asset, -1)
+            if completed < 5:
+                reasons.append(f"completed_trade_count:{asset}:{completed}/5")
+        if self.aggregate_stress_utility_quote <= 0.0:
+            reasons.append("aggregate_stress_utility_not_positive")
+        if self.median_market_pnl_quote <= 0.0:
+            reasons.append("median_market_pnl_not_positive")
+        if self.failed_exit_count:
+            reasons.append(f"filled_entry_failed_exit_count:{self.failed_exit_count}")
+        if require_asset_profit:
+            for asset in _ASSETS:
+                if self.pnl_by_asset.get(asset, 0.0) <= 0.0:
+                    reasons.append(f"asset_pnl_not_positive:{asset}")
+        expected_reasons = tuple(sorted(reasons))
+        if (
+            self.threshold is not None
+            and self.threshold not in POLYMARKET_RIDGE_THRESHOLD_GRID
+            or set(self.completed_by_asset) != set(_ASSETS)
+            or set(self.pnl_by_asset) != set(_ASSETS)
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in count_values
+            )
+            or sum(self.completed_by_asset.values()) != self.completed_trade_count
+            or self.positive_complete_count > self.completed_trade_count
+            or self.completed_trade_count + self.failed_exit_count > self.attempt_count
+            or not all(
+                math.isfinite(value)
+                for value in (
+                    self.aggregate_stress_utility_quote,
+                    *self.pnl_by_asset.values(),
+                    self.median_market_pnl_quote,
+                    self.maximum_realized_drawdown_quote,
+                    self.positive_complete_precision,
+                    self.wilson_lower_bound_95,
+                )
+            )
+            or self.maximum_realized_drawdown_quote < 0.0
+            or not math.isclose(
+                self.aggregate_stress_utility_quote,
+                math.fsum(self.pnl_by_asset.values()),
+                rel_tol=0.0,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                self.positive_complete_precision,
+                expected_precision,
+                rel_tol=0.0,
+                abs_tol=1e-15,
+            )
+            or not math.isclose(
+                self.wilson_lower_bound_95,
+                _wilson_lower_bound(
+                    self.positive_complete_count,
+                    self.attempt_count,
+                ),
+                rel_tol=0.0,
+                abs_tol=1e-15,
+            )
+            or not _is_sha256(self.selected_action_sha256)
+            or not isinstance(self.gate_passed, bool)
+            or self.gate_reasons != expected_reasons
+            or self.gate_passed != (not expected_reasons)
+        ):
+            raise ValueError("Polymarket policy metrics are invalid")
+        return self
 
 
 @dataclass(frozen=True)
@@ -339,25 +469,58 @@ class PolymarketRidgeReport:
         return {**self.identity_payload(), "report_sha256": self.report_sha256}
 
     def validated(self) -> PolymarketRidgeReport:
+        self.split.validated()
         self.selected_model.validated()
+        for candidate in self.candidates:
+            candidate.validated()
+        for metrics in self.validation_trials:
+            metrics.validated(require_asset_profit=False)
+        self.test_metrics.validated(require_asset_profit=True)
+        selected_candidate = min(
+            self.candidates,
+            key=lambda item: (item.validation_log_loss, -item.l2),
+        )
+        passing_trials = [item for item in self.validation_trials if item.gate_passed]
+        expected_trial = (
+            max(
+                passing_trials,
+                key=lambda item: (
+                    item.wilson_lower_bound_95,
+                    float(item.threshold or 0.0),
+                ),
+            )
+            if passing_trials
+            else None
+        )
+        expected_policy = "ridge_logit" if expected_trial is not None else "no_trade"
+        expected_threshold = (
+            None if expected_trial is None else expected_trial.threshold
+        )
         if (
             not _is_sha256(self.dataset_sha256)
             or len(self.candidates) != len(POLYMARKET_RIDGE_L2_GRID)
-            or tuple(item.l2 for item in self.candidates)
-            != POLYMARKET_RIDGE_L2_GRID
+            or tuple(item.l2 for item in self.candidates) != POLYMARKET_RIDGE_L2_GRID
             or len(self.validation_trials) != len(POLYMARKET_RIDGE_THRESHOLD_GRID)
             or tuple(item.threshold for item in self.validation_trials)
             != POLYMARKET_RIDGE_THRESHOLD_GRID
             or self.selected_policy not in {"ridge_logit", "no_trade"}
-            or (self.selected_policy == "no_trade")
-            != (self.selected_threshold is None)
+            or (self.selected_policy == "no_trade") != (self.selected_threshold is None)
+            or self.selected_policy != expected_policy
+            or self.selected_threshold != expected_threshold
+            or self.test_metrics.threshold != self.selected_threshold
+            or self.selected_model.l2 != selected_candidate.l2
+            or self.selected_model.model_sha256 != selected_candidate.model_sha256
+            or self.selected_validation_log_loss
+            != selected_candidate.validation_log_loss
             or self.neural_challenger_authorized
             or self.development_passed
-            != (
-                self.selected_policy == "ridge_logit"
-                and self.test_metrics.gate_passed
-            )
+            != (self.selected_policy == "ridge_logit" and self.test_metrics.gate_passed)
+            or not math.isfinite(self.prevalence_validation_log_loss)
+            or self.prevalence_validation_log_loss < 0.0
+            or not math.isfinite(self.selected_validation_log_loss)
+            or self.selected_validation_log_loss < 0.0
             or not math.isfinite(self.test_log_loss)
+            or self.test_log_loss < 0.0
             or not _is_sha256(self.report_sha256)
             or self.report_sha256 != _sha256(self.identity_payload())
         ):
@@ -569,8 +732,7 @@ def load_polymarket_ridge_dataset(
             str(value) for value in json.loads(str(pipeline_row[5]))
         )
         report_action_datasets = tuple(
-            str(batch["action_dataset_sha256"])
-            for batch in pipeline["batches"]
+            str(batch["action_dataset_sha256"]) for batch in pipeline["batches"]
         )
     except (KeyError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError("stored Polymarket action dataset list is invalid") from exc
@@ -686,7 +848,9 @@ def load_polymarket_ridge_dataset(
                 for key, value in json.loads(str(manifest[4])).items()
             }
         except (TypeError, json.JSONDecodeError) as exc:
-            raise ValueError("Polymarket ridge action manifest JSON is invalid") from exc
+            raise ValueError(
+                "Polymarket ridge action manifest JSON is invalid"
+            ) from exc
         features: list[PolymarketActionFeature] = []
         labels: list[PolymarketActionLabel] = []
         source_rows: list[tuple[str, bool | None, int, int]] = []
@@ -743,10 +907,14 @@ def load_polymarket_ridge_dataset(
                 if event_id:
                     observed = event_time.get(event_id)
                     if observed is None:
-                        raise ValueError("Polymarket ridge execution event time is missing")
+                        raise ValueError(
+                            "Polymarket ridge execution event time is missing"
+                        )
                     known_times.append(observed)
             if label.category == "successful_round_trip" and not str(row[30]):
-                raise ValueError("Polymarket ridge completed action has no exit receipt")
+                raise ValueError(
+                    "Polymarket ridge completed action has no exit receipt"
+                )
             if label.category == "entry_no_fill" and not str(row[28]):
                 raise ValueError("Polymarket ridge no-fill action has no receipt")
             features.append(feature)
@@ -812,36 +980,91 @@ def load_polymarket_ridge_dataset(
 def _ridge_metrics_from_payload(raw: object) -> PolymarketPolicyMetrics:
     if not isinstance(raw, Mapping):
         raise ValueError("stored Polymarket ridge metrics are invalid")
+
+    def count(name: str) -> int:
+        value = raw[name]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise TypeError(f"{name} must be a nonnegative integer")
+        return value
+
+    def number(name: str) -> float:
+        value = raw[name]
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise TypeError(f"{name} must be numeric")
+        result = float(value)
+        if not math.isfinite(result):
+            raise TypeError(f"{name} must be finite")
+        return result
+
+    def count_map(name: str) -> dict[str, int]:
+        value = raw[name]
+        if not isinstance(value, Mapping):
+            raise TypeError(f"{name} must be an object")
+        result: dict[str, int] = {}
+        for key, item in value.items():
+            if (
+                not isinstance(key, str)
+                or isinstance(item, bool)
+                or not isinstance(item, int)
+                or item < 0
+            ):
+                raise TypeError(f"{name} contains an invalid count")
+            result[key] = item
+        return result
+
+    def number_map(name: str) -> dict[str, float]:
+        value = raw[name]
+        if not isinstance(value, Mapping):
+            raise TypeError(f"{name} must be an object")
+        result: dict[str, float] = {}
+        for key, item in value.items():
+            if (
+                not isinstance(key, str)
+                or isinstance(item, bool)
+                or not isinstance(item, (int, float))
+                or not math.isfinite(float(item))
+            ):
+                raise TypeError(f"{name} contains an invalid value")
+            result[key] = float(item)
+        return result
+
     try:
         threshold_raw = raw["threshold"]
+        if threshold_raw is not None and (
+            isinstance(threshold_raw, bool)
+            or not isinstance(threshold_raw, (int, float))
+        ):
+            raise TypeError("threshold must be numeric or null")
+        gate_passed = raw["gate_passed"]
+        gate_reasons = raw["gate_reasons"]
+        if not isinstance(gate_passed, bool) or not isinstance(
+            gate_reasons,
+            (list, tuple),
+        ):
+            raise TypeError("gate fields are invalid")
+        if any(not isinstance(value, str) for value in gate_reasons):
+            raise TypeError("gate reasons must be strings")
+        selected_action_sha256 = raw["selected_action_sha256"]
+        if not isinstance(selected_action_sha256, str):
+            raise TypeError("selected action digest must be a string")
         return PolymarketPolicyMetrics(
             threshold=None if threshold_raw is None else float(threshold_raw),
-            attempt_count=int(raw["attempt_count"]),
-            completed_trade_count=int(raw["completed_trade_count"]),
-            completed_by_asset={
-                str(key): int(value)
-                for key, value in dict(raw["completed_by_asset"]).items()
-            },
-            positive_complete_count=int(raw["positive_complete_count"]),
-            failed_exit_count=int(raw["failed_exit_count"]),
-            aggregate_stress_utility_quote=float(
-                raw["aggregate_stress_utility_quote"]
-            ),
-            pnl_by_asset={
-                str(key): float(value)
-                for key, value in dict(raw["pnl_by_asset"]).items()
-            },
-            median_market_pnl_quote=float(raw["median_market_pnl_quote"]),
-            maximum_realized_drawdown_quote=float(
-                raw["maximum_realized_drawdown_quote"]
-            ),
-            positive_complete_precision=float(raw["positive_complete_precision"]),
-            wilson_lower_bound_95=float(raw["wilson_lower_bound_95"]),
-            selected_action_sha256=str(raw["selected_action_sha256"]),
-            gate_passed=bool(raw["gate_passed"]),
-            gate_reasons=tuple(str(value) for value in raw["gate_reasons"]),
+            attempt_count=count("attempt_count"),
+            completed_trade_count=count("completed_trade_count"),
+            completed_by_asset=count_map("completed_by_asset"),
+            positive_complete_count=count("positive_complete_count"),
+            failed_exit_count=count("failed_exit_count"),
+            aggregate_stress_utility_quote=number("aggregate_stress_utility_quote"),
+            pnl_by_asset=number_map("pnl_by_asset"),
+            median_market_pnl_quote=number("median_market_pnl_quote"),
+            maximum_realized_drawdown_quote=number("maximum_realized_drawdown_quote"),
+            positive_complete_precision=number("positive_complete_precision"),
+            wilson_lower_bound_95=number("wilson_lower_bound_95"),
+            selected_action_sha256=selected_action_sha256,
+            gate_passed=gate_passed,
+            gate_reasons=tuple(gate_reasons),
         )
-    except (KeyError, TypeError, ValueError) as exc:
+    except (KeyError, OverflowError, TypeError, ValueError) as exc:
         raise ValueError("stored Polymarket ridge metrics are invalid") from exc
 
 
@@ -855,16 +1078,20 @@ def load_polymarket_ridge_report(
     selected = str(report_sha256 or "").strip()
     if not _is_sha256(selected):
         raise ValueError("Polymarket ridge report digest is invalid")
-    row = store.connect().execute(
-        """
+    row = (
+        store.connect()
+        .execute(
+            """
         SELECT schema_version, contract_sha256, dataset_sha256,
                pipeline_report_sha256, eligibility_sha256,
                selected_model_sha256, selected_policy, selected_threshold,
                development_passed, model_json, report_json
         FROM polymarket_ridge_report WHERE report_sha256 = ?
         """,
-        [selected],
-    ).fetchone()
+            [selected],
+        )
+        .fetchone()
+    )
     if row is None:
         raise ValueError("unknown Polymarket ridge report")
     report_payload = _validated_stored_report(
@@ -883,9 +1110,7 @@ def load_polymarket_ridge_report(
             feature_scale=tuple(
                 float(value) for value in model_payload["feature_scale"]
             ),
-            coefficients=tuple(
-                float(value) for value in model_payload["coefficients"]
-            ),
+            coefficients=tuple(float(value) for value in model_payload["coefficients"]),
             intercept=float(model_payload["intercept"]),
             optimizer_iterations=int(model_payload["optimizer_iterations"]),
             optimizer_objective=float(model_payload["optimizer_objective"]),
@@ -898,9 +1123,7 @@ def load_polymarket_ridge_report(
                 int(value) for value in split_payload["validation_groups"]
             ),
             test_groups=tuple(int(value) for value in split_payload["test_groups"]),
-            purged_groups=tuple(
-                int(value) for value in split_payload["purged_groups"]
-            ),
+            purged_groups=tuple(int(value) for value in split_payload["purged_groups"]),
         )
         candidates = tuple(
             PolymarketRidgeCandidate(
@@ -972,14 +1195,18 @@ def load_polymarket_ridge_evidence(
     """Load and replay-check the complete parent evidence for a challenger."""
 
     selected = str(report_sha256 or "").strip()
-    row = store.connect().execute(
-        """
+    row = (
+        store.connect()
+        .execute(
+            """
         SELECT pipeline_report_sha256, eligibility_sha256
         FROM polymarket_ridge_report
         WHERE report_sha256 = ?
         """,
-        [selected],
-    ).fetchone()
+            [selected],
+        )
+        .fetchone()
+    )
     if row is None:
         raise ValueError("unknown Polymarket ridge report")
     dataset = load_polymarket_ridge_dataset(
@@ -1154,8 +1381,7 @@ def _wilson_lower_bound(successes: int, trials: int) -> float:
     denominator = 1.0 + z * z / trials
     center = probability + z * z / (2.0 * trials)
     margin = z * math.sqrt(
-        probability * (1.0 - probability) / trials
-        + z * z / (4.0 * trials * trials)
+        probability * (1.0 - probability) / trials + z * z / (4.0 * trials * trials)
     )
     return max(0.0, (center - margin) / denominator)
 
@@ -1681,7 +1907,9 @@ def materialize_polymarket_ridge_report(
             ).fetchall()
             if [tuple(row) for row in rows] != sorted(
                 expected,
-                key=lambda row: tuple(row[index] for index in range(1, min(3, len(row)))),
+                key=lambda row: tuple(
+                    row[index] for index in range(1, min(3, len(row)))
+                ),
             ):
                 raise ValueError(f"stored {table} rows are inconsistent")
         status = "existing"
