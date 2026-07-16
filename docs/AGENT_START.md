@@ -20,6 +20,8 @@ agents to canonical evidence without replacing that evidence.
   in finite JSON evidence; positive P&L with zero gross loss uses that cap.
 - Return-to-drawdown evidence is bounded to `[-999.0, 999.0]`; positive return
   with zero drawdown uses `999.0` instead of being misreported as zero quality.
+- Publication independently reconciles configured and reported capital, filled
+  trade P&L, equity, drawdown, and both initial- and deployed-capital returns.
 - Historical labels, future books, resolutions, fills, and PnL must never enter
   a live inference payload. Unknown order state blocks new exposure.
 - Secrets must never enter prompts, logs, artifacts, tests, commits, or docs.
