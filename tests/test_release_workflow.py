@@ -60,5 +60,6 @@ def test_beta_release_workflow_is_manual_prerelease_with_replacement_guard() -> 
     assert "tools\\build_native_windows.ps1" in action
     assert "tools\\smoke_native_windows_ui.ps1" in action
     assert "tools\\validate_native_windows_layout.ps1" in action
-    assert "coverage report --fail-under=83" in action
+    assert "python -m coverage report" in action
+    assert "coverage report --fail-under" not in action
     assert "SimpleAITrading.exe" in action
