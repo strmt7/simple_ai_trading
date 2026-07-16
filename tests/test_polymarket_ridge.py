@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -55,7 +56,9 @@ def _synthetic_observations(
             official_up = (group + asset_index) % 2 == 0
             source_sha = _digest("source", group, asset)
             for decision in range(2):
-                decision_ns = (group * 10_000 + asset_index * 2_000 + decision * 800) * 1_000_000
+                decision_ns = (
+                    group * 10_000 + asset_index * 2_000 + decision * 800
+                ) * 1_000_000
                 positive_outcome = (
                     "Up" if (group + asset_index + decision) % 2 == 0 else "Down"
                 )
@@ -162,19 +165,52 @@ def test_round9_ridge_selects_only_from_validation_and_is_deterministic() -> Non
     assert not first.asdict()["trading_authority"]
 
 
+def test_round9_ridge_report_rejects_rehashed_financial_inconsistency() -> None:
+    report = fit_and_evaluate_polymarket_ridge(_dataset())
+    inconsistent_metrics = replace(
+        report.test_metrics,
+        aggregate_stress_utility_quote=(
+            report.test_metrics.aggregate_stress_utility_quote + 1.0
+        ),
+    )
+    provisional = replace(
+        report,
+        test_metrics=inconsistent_metrics,
+        report_sha256="",
+    )
+    tampered = replace(
+        provisional,
+        report_sha256=polymarket_ridge_module._sha256(provisional.identity_payload()),
+    )
+
+    with pytest.raises(ValueError, match="policy metrics are invalid"):
+        tampered.validated()
+
+
+def test_round9_ridge_metric_parser_rejects_boolean_counts() -> None:
+    payload = fit_and_evaluate_polymarket_ridge(_dataset()).test_metrics.asdict()
+    payload["attempt_count"] = True
+
+    with pytest.raises(ValueError, match="stored Polymarket ridge metrics"):
+        polymarket_ridge_module._ridge_metrics_from_payload(payload)
+
+
 def test_round9_ridge_refuses_fewer_than_30_synchronized_groups() -> None:
     with pytest.raises(ValueError, match="insufficient synchronized groups:29/30"):
         split_polymarket_ridge_dataset(_dataset(29))
 
 
 def test_round9_ridge_blocks_unproven_post_submission_entry_state() -> None:
-    assert polymarket_ridge_module._training_blocking_entry_terminal_counts(
-        {
-            "entry_not_filled": 4,
-            "entry_confirmation_enters_excluded_close_window": 0,
-            "missing_entry_execution_book": 0,
-        }
-    ) == {}
+    assert (
+        polymarket_ridge_module._training_blocking_entry_terminal_counts(
+            {
+                "entry_not_filled": 4,
+                "entry_confirmation_enters_excluded_close_window": 0,
+                "missing_entry_execution_book": 0,
+            }
+        )
+        == {}
+    )
     assert polymarket_ridge_module._training_blocking_entry_terminal_counts(
         {
             "entry_confirmation_enters_excluded_close_window": 2,
@@ -192,9 +228,7 @@ def test_round9_ridge_blocks_unproven_post_submission_entry_state() -> None:
         {1: 0},
     ):
         with pytest.raises(ValueError, match="terminal counts are invalid"):
-            polymarket_ridge_module._training_blocking_entry_terminal_counts(
-                malformed
-            )
+            polymarket_ridge_module._training_blocking_entry_terminal_counts(malformed)
 
 
 def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(
@@ -309,13 +343,17 @@ def test_round9_ridge_failed_claim_cannot_silently_retry(
     assert calls == 1
     assert "already claimed:state=failed" in second_error
     with PolymarketEvidenceStore(database) as store:
-        state, failure_sha256 = store.connect().execute(
-            """
+        state, failure_sha256 = (
+            store.connect()
+            .execute(
+                """
             SELECT state, failure_sha256 FROM polymarket_model_fit_claim
             WHERE experiment = 'round9_ridge' AND parent_sha256 = ?
             """,
-            [dataset.pipeline_report_sha256],
-        ).fetchone()
+                [dataset.pipeline_report_sha256],
+            )
+            .fetchone()
+        )
     assert state == "failed"
     assert len(failure_sha256) == 64
 
@@ -402,10 +440,7 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
 
     assert tuple(item.seed for item in report.ensemble.members) == POLYMARKET_MLP_SEEDS
     assert report.ensemble.backend.kind == "cpu"
-    assert (
-        report.ensemble.backend.canonical_replay_max_probability_drift
-        <= 0.00001
-    )
+    assert report.ensemble.backend.canonical_replay_max_probability_drift <= 0.00001
     assert "preflight_seconds" in report.ensemble.backend.asdict()
     assert "training_seconds" in report.ensemble.backend.asdict()
     assert "preflight_seconds" not in report.ensemble.identity_payload()["backend"]
@@ -426,6 +461,21 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
     assert report.asdict()["foundation_ai_authorized"] is False
     assert report.asdict()["profitability_claim"] is False
     assert report.asdict()["trading_authority"] is False
+    inconsistent_bootstrap = replace(
+        report.validation_log_loss_uplift,
+        sample_count=report.validation_log_loss_uplift.sample_count + 1,
+    )
+    provisional = replace(
+        report,
+        validation_log_loss_uplift=inconsistent_bootstrap,
+        report_sha256="",
+    )
+    inconsistent_report = replace(
+        provisional,
+        report_sha256=polymarket_mlp_module._sha256(provisional.identity_payload()),
+    )
+    with pytest.raises(ValueError, match="bootstrap evidence is invalid"):
+        inconsistent_report.validated()
     assert {phase for phase, _payload in progress} >= {
         "polymarket_mlp_preflight",
         "polymarket_mlp_seed",
@@ -437,9 +487,11 @@ def test_round9_mlp_is_reproducible_and_keeps_test_closed_without_admission(
     with PolymarketEvidenceStore(tmp_path / "mlp.duckdb") as store:
         created = materialize_polymarket_mlp_report(store, dataset, parent, report)
         existing = materialize_polymarket_mlp_report(store, dataset, parent, report)
-        runtime_count = store.connect().execute(
-            "SELECT count(*) FROM polymarket_mlp_runtime_evidence"
-        ).fetchone()[0]
+        runtime_count = (
+            store.connect()
+            .execute("SELECT count(*) FROM polymarket_mlp_runtime_evidence")
+            .fetchone()[0]
+        )
         store.connect().execute(
             """
             UPDATE polymarket_mlp_prediction SET probability = 0.123

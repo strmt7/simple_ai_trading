@@ -14,7 +14,10 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import pytest
 
-from simple_ai_trading import polymarket_ai_veto as ai_veto_module
+from simple_ai_trading import (
+    polymarket_action_value as action_value_module,
+    polymarket_ai_veto as ai_veto_module,
+)
 from simple_ai_trading.ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
 from simple_ai_trading.ai_uplift import assess_ai_uplift
 from simple_ai_trading.cli import (
@@ -1204,6 +1207,22 @@ def test_round9_complete_action_uses_exact_two_leg_net_value() -> None:
     assert label.entry_cost_quote == execution.entry_cost_quote
     assert label.exit_proceeds_quote == execution.exit_proceeds_quote
     assert not label.condition_blocked
+
+    inconsistent = replace(
+        label,
+        net_quote=label.net_quote + Decimal("0.01"),
+        stress_utility_quote=label.stress_utility_quote + Decimal("0.01"),
+        action_label_id="",
+        action_label_sha256="",
+    )
+    digest = action_value_module._sha256(inconsistent.identity_payload())
+    inconsistent = replace(
+        inconsistent,
+        action_label_id=digest,
+        action_label_sha256=digest,
+    )
+    with pytest.raises(ValueError, match="action label identity is invalid"):
+        inconsistent.validated()
 
 
 def test_round9_dataset_builds_both_actions_and_rejects_sampled_execution() -> None:

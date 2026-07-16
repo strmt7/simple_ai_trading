@@ -88,10 +88,7 @@ def _binary_log_loss(probability: np.ndarray, target: np.ndarray) -> float:
         raise ValueError("Polymarket MLP log loss requires aligned nonempty values")
     clipped = np.clip(predicted, 1e-12, 1.0 - 1e-12)
     return float(
-        -np.mean(
-            labels * np.log(clipped)
-            + (1.0 - labels) * np.log1p(-clipped)
-        )
+        -np.mean(labels * np.log(clipped) + (1.0 - labels) * np.log1p(-clipped))
     )
 
 
@@ -118,6 +115,34 @@ class PolymarketMLPBackendEvidence:
         payload.pop("preflight_seconds")
         payload.pop("training_seconds")
         return payload
+
+    def validated(self) -> PolymarketMLPBackendEvidence:
+        values = (
+            self.preflight_objective,
+            self.preflight_parameter_delta,
+            self.preflight_seconds,
+            self.training_seconds,
+        )
+        allowed = {"cpu", "cuda", "rocm", "directml", "mps"}
+        if (
+            self.requested not in {"auto", *allowed}
+            or self.kind not in allowed
+            or (self.requested != "auto" and self.requested != self.kind)
+            or not self.device
+            or not self.vendor
+            or not self.torch_version
+            or (self.kind == "directml" and not self.torch_directml_version)
+            or not all(math.isfinite(value) and value >= 0.0 for value in values)
+            or self.preflight_parameter_delta <= 0.0
+            or self.training_seconds <= 0.0
+            or self.canonical_replay_max_probability_drift is None
+            or not math.isfinite(self.canonical_replay_max_probability_drift)
+            or not 0.0
+            <= self.canonical_replay_max_probability_drift
+            <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
+        ):
+            raise ValueError("Polymarket MLP backend evidence is invalid")
+        return self
 
 
 @dataclass(frozen=True)
@@ -172,6 +197,12 @@ class PolymarketMLPMember:
             *self.output_weight,
             self.output_bias,
         )
+        best_loss = math.inf
+        expected_best_epoch = 0
+        for item in self.trace:
+            if item.validation_log_loss < best_loss - POLYMARKET_MLP_MIN_DELTA:
+                best_loss = item.validation_log_loss
+                expected_best_epoch = item.epoch
         if (
             self.seed not in POLYMARKET_MLP_SEEDS
             or not 1 <= self.best_epoch <= self.epochs_ran <= POLYMARKET_MLP_MAX_EPOCHS
@@ -189,8 +220,11 @@ class PolymarketMLPMember:
                 item.seed != self.seed
                 or not math.isfinite(item.training_loss)
                 or not math.isfinite(item.validation_log_loss)
+                or item.training_loss < 0.0
+                or item.validation_log_loss < 0.0
                 for item in self.trace
             )
+            or self.best_epoch != expected_best_epoch
             or not _is_sha256(self.member_sha256)
             or self.member_sha256 != _sha256(self.identity_payload())
         ):
@@ -202,20 +236,14 @@ class PolymarketMLPMember:
         matrix = np.asarray(values, dtype=np.float64)
         if matrix.ndim != 2 or matrix.shape[1] != _FEATURE_COUNT:
             raise ValueError("Polymarket MLP prediction matrix is invalid")
-        hidden1 = (
-            matrix
-            @ np.asarray(self.hidden1_weight, dtype=np.float64).reshape(
-                64,
-                _FEATURE_COUNT,
-            ).T
-            + np.asarray(self.hidden1_bias, dtype=np.float64)
-        )
+        hidden1 = matrix @ np.asarray(self.hidden1_weight, dtype=np.float64).reshape(
+            64,
+            _FEATURE_COUNT,
+        ).T + np.asarray(self.hidden1_bias, dtype=np.float64)
         hidden1 = hidden1 * ndtr(hidden1)
-        hidden2 = (
-            hidden1
-            @ np.asarray(self.hidden2_weight, dtype=np.float64).reshape(32, 64).T
-            + np.asarray(self.hidden2_bias, dtype=np.float64)
-        )
+        hidden2 = hidden1 @ np.asarray(self.hidden2_weight, dtype=np.float64).reshape(
+            32, 64
+        ).T + np.asarray(self.hidden2_bias, dtype=np.float64)
         hidden2 = hidden2 * ndtr(hidden2)
         logits = (
             hidden2 @ np.asarray(self.output_weight, dtype=np.float64)
@@ -256,32 +284,16 @@ class PolymarketMLPEnsemble:
     def validated(self) -> PolymarketMLPEnsemble:
         for member in self.members:
             member.validated()
-        backend_values = (
-            self.backend.preflight_objective,
-            self.backend.preflight_parameter_delta,
-            self.backend.preflight_seconds,
-            self.backend.training_seconds,
-        )
+        self.backend.validated()
         if (
             not _is_sha256(self.dataset_sha256)
             or len(self.feature_mean) != _FEATURE_COUNT
             or len(self.feature_scale) != _FEATURE_COUNT
             or not all(math.isfinite(value) for value in self.feature_mean)
             or not all(
-                math.isfinite(value) and value > 0.0
-                for value in self.feature_scale
+                math.isfinite(value) and value > 0.0 for value in self.feature_scale
             )
             or tuple(item.seed for item in self.members) != POLYMARKET_MLP_SEEDS
-            or self.backend.kind not in {"cpu", "cuda", "rocm", "directml", "mps"}
-            or not all(math.isfinite(value) and value >= 0.0 for value in backend_values)
-            or self.backend.preflight_parameter_delta <= 0.0
-            or self.backend.canonical_replay_max_probability_drift is None
-            or not math.isfinite(
-                self.backend.canonical_replay_max_probability_drift
-            )
-            or not 0.0
-            <= self.backend.canonical_replay_max_probability_drift
-            <= POLYMARKET_MLP_REPRODUCIBILITY_TOLERANCE
             or not math.isfinite(self.reproducibility_max_probability_drift)
             or not 0.0
             <= self.reproducibility_max_probability_drift
@@ -324,6 +336,39 @@ class PolymarketMLPBootstrap:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+    def validated(self) -> PolymarketMLPBootstrap:
+        expected_block = (
+            max(
+                1,
+                min(self.sample_count, int(round(math.sqrt(self.sample_count)))),
+            )
+            if self.sample_count > 0
+            else 0
+        )
+        if (
+            isinstance(self.sample_count, bool)
+            or not isinstance(self.sample_count, int)
+            or self.sample_count <= 0
+            or isinstance(self.block_length, bool)
+            or not isinstance(self.block_length, int)
+            or self.block_length != expected_block
+            or self.resamples != POLYMARKET_MLP_BOOTSTRAP_SAMPLES
+            or not all(
+                math.isfinite(value)
+                for value in (
+                    self.mean_delta,
+                    self.lower_95,
+                    self.upper_95,
+                    self.positive_mean_probability,
+                )
+            )
+            or self.lower_95 > self.upper_95
+            or not 0.0 <= self.positive_mean_probability <= 1.0
+            or not _is_sha256(self.values_sha256)
+        ):
+            raise ValueError("Polymarket MLP bootstrap evidence is invalid")
+        return self
 
 
 @dataclass(frozen=True)
@@ -389,7 +434,54 @@ class PolymarketMLPReport:
         return {**self.identity_payload(), "report_sha256": self.report_sha256}
 
     def validated(self) -> PolymarketMLPReport:
+        self.split.validated()
         self.ensemble.validated()
+        self.validation_log_loss_uplift.validated()
+        for metrics in self.validation_trials:
+            metrics.validated(require_asset_profit=False)
+        if self.test_metrics is not None:
+            self.test_metrics.validated(require_asset_profit=True)
+        if self.test_utility_uplift is not None:
+            self.test_utility_uplift.validated()
+        passing_trials = [item for item in self.validation_trials if item.gate_passed]
+        selected_validation = (
+            max(
+                passing_trials,
+                key=lambda item: (
+                    item.wilson_lower_bound_95,
+                    float(item.threshold or 0.0),
+                ),
+            )
+            if passing_trials
+            else None
+        )
+        expected_admission_reasons: list[str] = []
+        if selected_validation is None:
+            expected_admission_reasons.append("no_validation_threshold_passed")
+        if self.validation_log_loss_uplift.lower_95 <= 0.0:
+            expected_admission_reasons.append(
+                "validation_log_loss_uplift_lower_not_positive"
+            )
+        if (
+            self.validation_stress_utility_uplift_quote is None
+            or self.validation_stress_utility_uplift_quote <= 0.0
+        ):
+            expected_admission_reasons.append(
+                "validation_stress_utility_not_above_ridge"
+            )
+        frozen_admission_reasons = tuple(sorted(set(expected_admission_reasons)))
+        admitted = not frozen_admission_reasons
+        expected_policy = "causal_mlp" if admitted else "no_trade"
+        expected_threshold = (
+            selected_validation.threshold
+            if admitted and selected_validation is not None
+            else None
+        )
+        test_reasons_are_canonical = tuple(
+            sorted(set(self.test_gate_reasons))
+        ) == self.test_gate_reasons and all(
+            isinstance(value, str) and value for value in self.test_gate_reasons
+        )
         if (
             not _is_sha256(self.dataset_sha256)
             or self.dataset_sha256 != self.ensemble.dataset_sha256
@@ -397,8 +489,10 @@ class PolymarketMLPReport:
             or tuple(item.threshold for item in self.validation_trials)
             != POLYMARKET_RIDGE_THRESHOLD_GRID
             or self.selected_policy not in {"causal_mlp", "no_trade"}
-            or (self.selected_policy == "no_trade")
-            != (self.selected_threshold is None)
+            or (self.selected_policy == "no_trade") != (self.selected_threshold is None)
+            or self.validation_admission_reasons != frozen_admission_reasons
+            or self.selected_policy != expected_policy
+            or self.selected_threshold != expected_threshold
             or self.test_evaluated != (not self.validation_admission_reasons)
             or self.test_evaluated != (self.selected_policy == "causal_mlp")
             or self.test_evaluated
@@ -410,13 +504,45 @@ class PolymarketMLPReport:
             or self.development_passed
             != (self.test_evaluated and not self.test_gate_reasons)
             or not math.isfinite(self.validation_log_loss)
+            or self.validation_log_loss < 0.0
             or not math.isfinite(self.ridge_validation_log_loss)
+            or self.ridge_validation_log_loss < 0.0
+            or self.validation_log_loss_uplift.sample_count
+            != len(self.split.validation_groups)
             or (
                 self.validation_stress_utility_uplift_quote is not None
                 and not math.isfinite(self.validation_stress_utility_uplift_quote)
             )
+            or (selected_validation is None)
+            != (self.validation_stress_utility_uplift_quote is None)
             or tuple(sorted(set(self.validation_admission_reasons)))
             != self.validation_admission_reasons
+            or not test_reasons_are_canonical
+            or (
+                not self.test_evaluated
+                and (
+                    self.test_log_loss is not None
+                    or self.test_metrics is not None
+                    or self.test_utility_uplift is not None
+                    or self.test_gate_reasons
+                )
+            )
+            or (
+                self.test_evaluated
+                and (
+                    self.test_log_loss is None
+                    or not math.isfinite(self.test_log_loss)
+                    or self.test_log_loss < 0.0
+                    or self.test_metrics is None
+                    or self.test_metrics.threshold != self.selected_threshold
+                    or self.test_utility_uplift is None
+                    or self.test_utility_uplift.sample_count
+                    != len(self.split.test_groups)
+                    or not set(self.test_metrics.gate_reasons).issubset(
+                        self.test_gate_reasons
+                    )
+                )
+            )
             or not _is_sha256(self.report_sha256)
             or self.report_sha256 != _sha256(self.identity_payload())
         ):
@@ -608,7 +734,9 @@ def _torch_runtime(
     try:
         import torch
     except Exception as exc:  # pragma: no cover - optional runtime boundary
-        raise RuntimeError("Polymarket MLP requires the optional torch runtime") from exc
+        raise RuntimeError(
+            "Polymarket MLP requires the optional torch runtime"
+        ) from exc
     requested = requested_backend.strip().lower()
     backend = resolve_backend(requested)
     if requested != "auto" and backend.kind != requested:
@@ -729,10 +857,14 @@ def _preflight(
             torch,
             tuple(model.parameters()),
         )
-        values = torch.linspace(-1.0, 1.0, 8 * _FEATURE_COUNT).reshape(
-            8,
-            _FEATURE_COUNT,
-        ).to(device)
+        values = (
+            torch.linspace(-1.0, 1.0, 8 * _FEATURE_COUNT)
+            .reshape(
+                8,
+                _FEATURE_COUNT,
+            )
+            .to(device)
+        )
         labels = torch.tensor([0.0, 1.0] * 4, dtype=torch.float32).to(device)
         before = model.hidden1.weight.detach().cpu().clone()
         optimizer.zero_grad(set_to_none=True)
@@ -778,9 +910,9 @@ def _predict_torch(
 ) -> np.ndarray:
     model.eval()
     with torch.no_grad():
-        values = torch.from_numpy(
-            np.ascontiguousarray(features, dtype=np.float32)
-        ).to(device)
+        values = torch.from_numpy(np.ascontiguousarray(features, dtype=np.float32)).to(
+            device
+        )
         probability = torch.sigmoid(model(values)).detach().cpu().numpy()
     result = np.asarray(probability, dtype=np.float64)
     if result.shape != (features.shape[0],) or not np.all(np.isfinite(result)):
@@ -912,9 +1044,7 @@ def _fit_member(
         else:
             stale_epochs += 1
         if progress is not None and (
-            epoch == 1
-            or epoch % 5 == 0
-            or stale_epochs >= POLYMARKET_MLP_PATIENCE
+            epoch == 1 or epoch % 5 == 0 or stale_epochs >= POLYMARKET_MLP_PATIENCE
         ):
             progress(
                 "polymarket_mlp_epoch",
