@@ -1915,15 +1915,20 @@ class PolymarketEvidenceStore:
     def _load_compact_frame(self, run_id: str, chunk_id: str) -> bytes:
         if chunk_id == self._frame_cache_id:
             return self._frame_cache
+        stream_counts_projection = (
+            "stream_counts_json"
+            if self._storage_schema_version(run_id) == POLYMARKET_STORAGE_SCHEMA_VERSION
+            else "'{}' AS stream_counts_json"
+        )
         row = (
             self._payload_connection()
             .execute(
-                """
+                f"""
             SELECT chunk_id, run_id, schema_version, chunk_index, frame_format,
                    codec, compression_level, message_count, first_message_id,
                    last_message_id, message_manifest_xor, uncompressed_bytes,
                    uncompressed_sha256, compressed_bytes, compressed_sha256,
-                   compressed_payload, stream_counts_json
+                   compressed_payload, {stream_counts_projection}
             FROM polymarket_raw_chunk
             WHERE run_id = ? AND chunk_id = ?
             """,

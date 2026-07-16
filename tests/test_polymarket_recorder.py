@@ -585,6 +585,44 @@ def test_storage_v3_reader_remains_compatible_with_compact_v2(tmp_path) -> None:
     assert errors == ()
 
 
+def test_read_only_compact_v2_without_v4_stream_counts_column_is_supported(
+    tmp_path,
+) -> None:
+    database = tmp_path / "unmigrated-compact-v2.duckdb"
+    event = {
+        "stream": "btcusdt@trade",
+        "data": {"e": "trade", "E": EPOCH * 1_000, "T": EPOCH * 1_000 - 1},
+    }
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("unmigrated-compact-v2", EPOCH * 1_000)
+        store.connect().execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = 'polymarket-evidence-storage-v2'
+            WHERE run_id = 'unmigrated-compact-v2'
+            """
+        )
+        store._storage_schema_version_by_run.pop("unmigrated-compact-v2", None)
+        store.append_messages(
+            "unmigrated-compact-v2",
+            [_message("binance_spot", event)],
+        )
+
+    connection = duckdb.connect(str(database))
+    connection.execute(
+        "ALTER TABLE polymarket_raw_chunk DROP COLUMN stream_counts_json"
+    )
+    connection.close()
+
+    with PolymarketEvidenceStore(database, read_only=True) as store:
+        reconstructed = tuple(store.iter_public_events("unmigrated-compact-v2"))
+        errors = store.integrity_errors("unmigrated-compact-v2")
+
+    assert len(reconstructed) == 1
+    assert reconstructed[0].event == event
+    assert errors == ()
+
+
 def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> None:
     database = tmp_path / "legacy-v1.duckdb"
     raw_event = {
