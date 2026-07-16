@@ -27,6 +27,7 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .ai_runtime import (
+    AIRuntimeConfig,
     detect_ai_capabilities,
     inspect_ollama_model_residency,
     render_ai_capability_report,
@@ -5757,7 +5758,12 @@ def command_ai(args: argparse.Namespace) -> int:
 
 def command_ai_benchmark(args: argparse.Namespace) -> int:
     from .ai_benchmark_claim import requires_preregistered_ai_benchmark
-    from .ai_model_benchmark import benchmark_finance_ai_models, write_benchmark_report
+    from .ai_model_benchmark import (
+        _resolve_benchmark_models,
+        benchmark_finance_ai_models,
+        installed_ollama_models,
+        write_benchmark_report,
+    )
 
     raw_models = str(getattr(args, "models", "") or "")
     models = [item.strip() for item in raw_models.split(",") if item.strip()]
@@ -5802,6 +5808,31 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                 "the requested model requires its frozen one-shot preregistration and "
                 "complete confirmation recorder"
             )
+        installed_models = installed_ollama_models()
+        models = list(_resolve_benchmark_models(models, installed_models))
+        runtime = load_runtime()
+        runtime_capability = runtime.ai_runtime_config()
+        minimum_vram_gb = max(
+            AIRuntimeConfig().min_free_vram_gb,
+            runtime_capability.min_free_vram_gb,
+        )
+        for model in models:
+            capability = detect_ai_capabilities(
+                replace(
+                    runtime_capability,
+                    enabled=True,
+                    provider="ollama",
+                    model=model,
+                    require_gpu=True,
+                    min_free_vram_gb=minimum_vram_gb,
+                    allow_paper_fallback=False,
+                )
+            )
+            if not capability.ok:
+                reason = "; ".join(capability.messages) or "capability check failed"
+                raise ValueError(
+                    f"AI benchmark preflight failed for {model}: {reason}"
+                )
         if preregistration or confirmation_database or confirmation_run_id:
             if (
                 not preregistration
@@ -5856,6 +5887,7 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
             )
         report = benchmark_finance_ai_models(
             models=models,
+            installed_models=installed_models,
             base_url=base_url,
             timeout_seconds=timeout_seconds,
             minimum_score=minimum_score,
