@@ -5,6 +5,7 @@ from decimal import Decimal
 import hashlib
 import json
 import os
+from pathlib import Path
 import threading
 
 import duckdb
@@ -734,6 +735,31 @@ def test_rtds_uses_independent_json_subscriptions_for_each_crypto_feed(
     assert all(subscription["type"] == "update" for subscription in subscriptions)
     assert binance_filters == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
     assert chainlink_filters == {"btc/usd", "eth/usd", "sol/usd"}
+
+
+def test_rtds_wire_contract_probe_is_hash_bound() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "docs"
+        / "model-research"
+        / "polymarket"
+        / "rtds-wire-contract-probe-2026-07-16.json"
+    )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    claimed = payload.pop("report_sha256")
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+
+    assert hashlib.sha256(encoded).hexdigest() == claimed
+    assert payload["truth_constraints"]["financial_edge_tested"] is False
+    assert payload["implementation_decision"]["connection_isolation"] == (
+        "one topic and symbol per RTDS connection"
+    )
 
 
 def test_binance_stream_uses_one_named_lane_without_redundant_client_pings(

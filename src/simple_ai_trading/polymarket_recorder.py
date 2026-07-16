@@ -3409,6 +3409,8 @@ class PolymarketPublicRecorder:
         output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None],
         stop: asyncio.Event,
     ) -> None:
+        # The live endpoint's filter behavior differs from the current web docs.
+        # Keep this wire contract aligned with the bounded probe artifact.
         assets = ("btc", "eth", "sol")
         subscriptions = (
             *(
