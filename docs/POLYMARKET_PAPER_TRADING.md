@@ -106,6 +106,14 @@ opened positions are never adopted, netted, sold, or settled by the bot. The
   prohibited.
 - Implemented: no synthetic liquidity, midpoint fill, last-price fill, or inferred hidden
   fill is permitted.
+- Round 9 research simulates two causal FOK book matches one second apart. It
+  does not prove that an offchain `MATCHED` BUY reached onchain `CONFIRMED` or
+  that its outcome-token balance was available for the SELL. Official SELL
+  prerequisites require conditional-token balance and allowance. Therefore no
+  Round 9 result can grant paper-policy, live, ROI, or profitability authority.
+  A later execution contract must prove confirmed sellable inventory, model an
+  explicitly capitalized pre-owned inventory buffer, or validate a complement-
+  BUY hedge, with nonterminal settlement and failure risk kept visible.
 - Implemented for research only: the retry challenger may submit at a later frozen
   decision horizon only after the earlier FOK is causally proven `CANCELLED` or
   `EXPIRED` with zero fill. It stops after one fill per market. `UNKNOWN` reserves
@@ -178,7 +186,8 @@ uplift chains instead of trusting aggregate AI claims. Repeated evaluation of an
 identical valid case can reuse the integrity-checked response in the same DuckDB,
 but replay still uses the first measured model latency. The cache is invalidated
 by any case, request, prompt/schema, endpoint-policy, threshold, model-digest, or
-model-metadata change. Invalid or late responses remain fail-closed and uncached.
+model-metadata change. Invalid, late, CPU-only, or runtime-unproven responses
+remain fail-closed and are cached as immutable veto evidence rather than retried.
 The selected risk benchmark must also have a sibling provenance record whose
 benchmark hash and Ollama manifest digest match the live local model before any
 prompt is sent.
@@ -469,5 +478,6 @@ Primary references: [authentication](https://docs.polymarket.com/api-reference/a
 [official V2 Python client](https://github.com/Polymarket/py-clob-client-v2),
 [orders](https://docs.polymarket.com/trading/orders/create),
 [order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle),
+[offchain-match/onchain-revert evidence](https://arxiv.org/abs/2606.16852),
 [fees](https://docs.polymarket.com/trading/fees), and
 [rate limits](https://docs.polymarket.com/api-reference/rate-limits).
