@@ -499,6 +499,11 @@ def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> No
         "simple_ai_trading.ai_model_benchmark.benchmark_finance_ai_models",
         lambda **_kwargs: _Report(),
     )
+    monkeypatch.setattr(
+        cli,
+        "detect_ai_capabilities",
+        lambda _config: SimpleNamespace(ok=True, messages=()),
+    )
 
     output = tmp_path / "ai_benchmark.json"
     assert (

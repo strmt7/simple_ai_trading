@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import duckdb
 import pytest
@@ -328,6 +329,11 @@ def test_preregistered_cli_binds_pre_and_post_inference_runtime(
     )
     monkeypatch.setattr(
         cli,
+        "detect_ai_capabilities",
+        lambda _config: SimpleNamespace(ok=True, messages=()),
+    )
+    monkeypatch.setattr(
+        cli,
         "inspect_ollama_model_residency",
         lambda *_args, **kwargs: (
             _residency()
@@ -365,3 +371,50 @@ def test_preregistered_cli_binds_pre_and_post_inference_runtime(
         ]
         is True
     )
+
+
+def test_preregistered_cli_preflight_failure_does_not_consume_claim(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    checked = []
+
+    def blocked(config):
+        checked.append(config)
+        return SimpleNamespace(
+            ok=False,
+            messages=("free VRAM could not be measured reliably",),
+        )
+
+    monkeypatch.setattr(cli, "detect_ai_capabilities", blocked)
+    monkeypatch.setattr(
+        cli,
+        "PolymarketEvidenceStore",
+        lambda *_args, **_kwargs: pytest.fail(
+            "confirmation claim opened before capability preflight"
+        ),
+    )
+
+    status = cli.command_ai_benchmark(
+        argparse.Namespace(
+            models="qwen3:14b",
+            url="http://127.0.0.1:11434",
+            timeout=60.0,
+            minimum_score=0.78,
+            output=str(tmp_path / "blocked.json"),
+            preregistration=str(PREREGISTRATION),
+            confirmation_database=str(tmp_path / "confirmation.duckdb"),
+            confirmation_run_id="confirmation",
+            confirmation_memory_limit="512MB",
+            confirmation_database_threads=1,
+            json=False,
+        )
+    )
+
+    assert status == 2
+    assert len(checked) == 1
+    assert checked[0].enabled is True
+    assert checked[0].provider == "ollama"
+    assert checked[0].model == "qwen3:14b"
+    assert checked[0].require_gpu is True
+    assert checked[0].min_free_vram_gb >= 8.0
+    assert "preflight failed" in capsys.readouterr().err
