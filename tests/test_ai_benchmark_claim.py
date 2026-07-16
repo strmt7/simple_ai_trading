@@ -103,7 +103,7 @@ def _continuity_gate(monkeypatch):
     )
 
 
-def _passing_report():
+def _passing_report(*, total_duration_ns: int = 2):
     cases = default_finance_ai_test_cases()
     responses = []
     for case in cases:
@@ -129,12 +129,12 @@ def _passing_report():
             "message": {"role": "assistant", "content": json.dumps(response)},
             "done": True,
             "done_reason": "stop",
-            "total_duration": 1_000_000_000,
-            "load_duration": 100_000_000,
+            "total_duration": total_duration_ns,
+            "load_duration": 0,
             "prompt_eval_count": 320,
-            "prompt_eval_duration": 300_000_000,
+            "prompt_eval_duration": 1,
             "eval_count": 24,
-            "eval_duration": 500_000_000,
+            "eval_duration": 1,
         }
 
     return benchmark_finance_ai_models(
@@ -227,6 +227,20 @@ def test_preregistered_ai_benchmark_is_durable_and_exactly_once(tmp_path) -> Non
         assert "output digest differs" in str(exc)
     else:
         raise AssertionError("a tampered one-shot AI benchmark output was accepted")
+
+
+def test_preregistered_ai_benchmark_rejects_impossible_provider_timing(
+    tmp_path,
+) -> None:
+    store = _ClaimStore()
+    output = tmp_path / "impossible-timing.json"
+    claim = _begin(store, output)
+    report = _passing_report(total_duration_ns=2_000_000_000)
+
+    with pytest.raises(ValueError, match="provider duration exceeds"):
+        _write_claimed_report(report, output, claim)
+
+    assert not output.exists()
 
 
 def test_preregistered_ai_benchmark_rejects_short_or_ineligible_confirmation(
