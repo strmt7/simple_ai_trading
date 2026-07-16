@@ -41,6 +41,12 @@ POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION = POLYMARKET_FIT_CLAIM_SCHEMA_VERSION
 POLYMARKET_RIDGE_L2_GRID = (0.01, 0.1, 1.0)
 POLYMARKET_RIDGE_THRESHOLD_GRID = (0.5, 0.6, 0.7, 0.8, 0.9)
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
+_TRAINING_BLOCKING_ENTRY_TERMINALS = frozenset(
+    {
+        "entry_confirmation_enters_excluded_close_window",
+        "missing_entry_execution_book",
+    }
+)
 _FEATURE_COUNT = len(POLYMARKET_ACTION_FEATURE_NAMES)
 PolymarketRidgeFitClaim = PolymarketFitClaim
 
@@ -468,6 +474,27 @@ def _optional_decimal(value: object) -> Decimal | None:
     return None if value is None else Decimal(str(value))
 
 
+def _training_blocking_entry_terminal_counts(value: object) -> dict[str, int]:
+    if not isinstance(value, Mapping):
+        raise ValueError("Polymarket ridge terminal counts are invalid")
+    counts: dict[str, int] = {}
+    for reason, count in value.items():
+        if (
+            not isinstance(reason, str)
+            or not reason
+            or isinstance(count, bool)
+            or not isinstance(count, int)
+            or count < 0
+        ):
+            raise ValueError("Polymarket ridge terminal counts are invalid")
+        counts[reason] = count
+    return {
+        reason: counts.get(reason, 0)
+        for reason in sorted(_TRAINING_BLOCKING_ENTRY_TERMINALS)
+        if counts.get(reason, 0) > 0
+    }
+
+
 def load_polymarket_ridge_dataset(
     store: PolymarketEvidenceStore,
     *,
@@ -505,6 +532,14 @@ def load_polymarket_ridge_dataset(
         or not _is_sha256(eligibility_sha256)
     ):
         raise ValueError("Polymarket ridge pipeline authority is invalid")
+    unresolved = _training_blocking_entry_terminal_counts(
+        pipeline.get("terminal_reason_counts")
+    )
+    if unresolved:
+        details = ",".join(
+            f"{reason}:{count}" for reason, count in sorted(unresolved.items())
+        )
+        raise ValueError(f"unproven post-submission entry state:{details}")
     continuity_row = connection.execute(
         """
         SELECT report_json, run_id, run_report_sha256

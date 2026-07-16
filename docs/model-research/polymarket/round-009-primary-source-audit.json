@@ -15,6 +15,11 @@
       "limitation": "The positive_complete classifier is a composite hurdle: entry availability, FOK fill, exit fill, and strictly positive after-cost round-trip utility must all succeed.",
       "effect": "A single ridge or MLP probability cannot distinguish fill failure from a completed but unprofitable action, which can limit calibration and economic ranking under class imbalance.",
       "handling": "Keep the frozen baseline intact. A future challenger may separately model fill probability and conditional utility or rank actions by a calibrated utility distribution, with new untouched evidence."
+    },
+    {
+      "limitation": "A missing post-submission entry execution book or an entry receipt that first appears inside the excluded close window leaves the hypothetical order state unproven.",
+      "effect": "Treating either state as a known no-fill or silently excluding it would invent execution evidence or condition model admission on future observability.",
+      "handling": "Keep the diagnostic action-unavailable label, but fail the entire ridge admission when either terminal count is nonzero. A definite tick-invalid server rejection remains a classifier-eligible zero-utility no-fill. This safeguard does not change the frozen features, split, thresholds, latency, costs, or utility and grants no profitability or trading claim."
     }
   ],
   "findings": [

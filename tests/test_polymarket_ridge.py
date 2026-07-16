@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from simple_ai_trading import cli, polymarket_mlp as polymarket_mlp_module
+from simple_ai_trading import (
+    cli,
+    polymarket_mlp as polymarket_mlp_module,
+    polymarket_ridge as polymarket_ridge_module,
+)
 from simple_ai_trading.command_contract import command_specs
 from simple_ai_trading.polymarket_action_value import (
     POLYMARKET_ACTION_FEATURE_NAMES,
@@ -160,6 +164,36 @@ def test_round9_ridge_selects_only_from_validation_and_is_deterministic() -> Non
 def test_round9_ridge_refuses_fewer_than_30_synchronized_groups() -> None:
     with pytest.raises(ValueError, match="insufficient synchronized groups:29/30"):
         split_polymarket_ridge_dataset(_dataset(29))
+
+
+def test_round9_ridge_blocks_unproven_post_submission_entry_state() -> None:
+    assert polymarket_ridge_module._training_blocking_entry_terminal_counts(
+        {
+            "entry_not_filled": 4,
+            "entry_confirmation_enters_excluded_close_window": 0,
+            "missing_entry_execution_book": 0,
+        }
+    ) == {}
+    assert polymarket_ridge_module._training_blocking_entry_terminal_counts(
+        {
+            "entry_confirmation_enters_excluded_close_window": 2,
+            "missing_entry_execution_book": 1,
+        }
+    ) == {
+        "entry_confirmation_enters_excluded_close_window": 2,
+        "missing_entry_execution_book": 1,
+    }
+    for malformed in (
+        None,
+        {"missing_entry_execution_book": True},
+        {"missing_entry_execution_book": "1"},
+        {"missing_entry_execution_book": -1},
+        {1: 0},
+    ):
+        with pytest.raises(ValueError, match="terminal counts are invalid"):
+            polymarket_ridge_module._training_blocking_entry_terminal_counts(
+                malformed
+            )
 
 
 def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(

@@ -1271,6 +1271,74 @@ def test_round9_no_fill_has_zero_utility_and_no_inventory() -> None:
     assert not label.condition_blocked
 
 
+def test_round9_rejected_entry_tick_drift_is_classifier_eligible_no_fill() -> None:
+    replay, _entry, _exit_bid = _repricing_replay_fixture(entry_tick_drift=True)
+
+    _row, _market, feature, execution = _round9_execution(replay)
+    label = build_polymarket_action_label(feature, execution)
+
+    assert execution.terminal_reason == "entry_tick_drift"
+    assert not execution.entry_filled
+    assert execution.entry_cost_quote is None
+    assert label.category == "entry_no_fill"
+    assert label.classifier_eligible
+    assert label.stress_utility_quote == 0
+    assert not label.condition_blocked
+
+
+def test_round9_distinguishes_post_submission_close_window_receipt() -> None:
+    replay, entry, _exit_bid = _repricing_replay_fixture()
+    row, market = _round9_source_row(replay)
+    shifted_entry = replace(
+        entry,
+        snapshot=replace(
+            entry.snapshot,
+            source_time_ms=entry.received_wall_ms + 1,
+            received_wall_ms=entry.received_wall_ms + 1,
+            received_monotonic_ns=entry.received_monotonic_ns + 1_000_000,
+            source_payload_sha256="8" * 64,
+        ),
+    )
+    books = tuple(
+        shifted_entry
+        if (item.event_id, item.token_id) == (entry.event_id, entry.token_id)
+        else item
+        for item in replay.books
+    )
+    shifted = PolymarketEvidenceReplay(
+        run_id=replay.run_id,
+        markets=replay.markets,
+        books=books,
+        resolutions=replay.resolutions,
+        diagnostics=replay.diagnostics,
+        market_execution_evidence=replay.market_execution_evidence,
+    )
+    context = PolymarketRepricingExecutionContext(shifted)
+    decision = context.decision_at(
+        market,
+        event_id=row.decision_event_id,
+        received_wall_ms=row.decision_received_wall_ms,
+        received_monotonic_ns=row.decision_received_monotonic_ns,
+        outcome="Up",
+        maximum_creation_book_age_ms=500,
+    )
+    assert decision is not None
+    execution = context.execute(
+        replace(market, end_ms=row.decision_received_wall_ms + 30_500),
+        decision,
+        latency_ms=500,
+        holding_period_ms=1_000,
+        minimum_remaining_market_time_ms=30_000,
+        maximum_order_creation_book_age_ms=500,
+        maximum_post_target_execution_observation_delay_ms=500,
+    )
+
+    assert execution.terminal_reason == (
+        "entry_confirmation_enters_excluded_close_window"
+    )
+    assert not execution.entry_filled
+
+
 def test_round9_failed_exit_loses_full_entry_cost_and_blocks_condition() -> None:
     replay, _entry, _exit_bid = _repricing_replay_fixture(cross_segment_exit=True)
     _row, _market, feature, execution = _round9_execution(replay)

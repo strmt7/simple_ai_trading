@@ -39,6 +39,7 @@ _MAX_ORDER_CREATION_BOOK_AGE_MS = 500
 _MAX_POST_TARGET_EXECUTION_OBSERVATION_DELAY_MS = 500
 _TERMINAL_REASONS = (
     "complete_round_trip",
+    "entry_confirmation_enters_excluded_close_window",
     "entry_not_filled",
     "entry_enters_excluded_close_window",
     "entry_tick_drift",
@@ -1040,7 +1041,10 @@ class PolymarketRepricingExecutionContext:
             market.end_ms - entry.received_wall_ms
             < minimum_remaining_market_time_ms
         ):
-            return terminal("entry_enters_excluded_close_window", **entry_values)
+            return terminal(
+                "entry_confirmation_enters_excluded_close_window",
+                **entry_values,
+            )
         entry_limit = Decimal("1") - selected.creation_book.tick_size
         if not _valid_limit_for_tick(
             entry_limit, selected.creation_book.tick_size
