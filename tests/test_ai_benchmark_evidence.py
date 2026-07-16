@@ -87,9 +87,7 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
 
 
 def test_ai_benchmark_hash_inputs_have_cross_platform_line_endings() -> None:
-    attributes = set(
-        (ROOT / ".gitattributes").read_text(encoding="utf-8").splitlines()
-    )
+    attributes = set((ROOT / ".gitattributes").read_text(encoding="utf-8").splitlines())
 
     assert "docs/ai/risk-review/** text eol=lf" in attributes
     assert "src/simple_ai_trading/ai_model_benchmark.py text eol=lf" in attributes

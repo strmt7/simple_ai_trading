@@ -117,7 +117,9 @@ def test_ai_runtime_blocks_unmeasured_required_vram(monkeypatch) -> None:
     report = detect_ai_capabilities(AIRuntimeConfig(enabled=True, require_gpu=True))
 
     assert report.ok is False
-    assert any("could not be measured reliably" in message for message in report.messages)
+    assert any(
+        "could not be measured reliably" in message for message in report.messages
+    )
 
 
 def test_ai_runtime_blocks_low_measured_amd_vram(monkeypatch) -> None:
@@ -143,7 +145,9 @@ def test_ai_runtime_blocks_low_measured_amd_vram(monkeypatch) -> None:
 
     assert report.ok is False
     assert report.gpu_vendor == "amd"
-    assert any("7.5 GiB is below required 8.0 GiB" in message for message in report.messages)
+    assert any(
+        "7.5 GiB is below required 8.0 GiB" in message for message in report.messages
+    )
 
 
 def test_ai_runtime_accepts_nvidia_or_amd_headroom(monkeypatch) -> None:
@@ -682,7 +686,7 @@ def test_generated_native_contract_matches_cli() -> None:
     )
     text = header.read_text(encoding="utf-8")
     assert (
-        f'inline constexpr const wchar_t* kCommandContractSha256 = '
+        f"inline constexpr const wchar_t* kCommandContractSha256 = "
         f'L"{command_contract_digest()}";'
     ) in text
     for item in workflow_commands():
