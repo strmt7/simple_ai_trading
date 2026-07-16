@@ -18,9 +18,9 @@
       "sha256": "94a9afb1f180338c0ce344c393aceeb2e80e5091f96746a47ee09c316afbb916"
     },
     {
-      "bytes": 5008,
+      "bytes": 5209,
       "path": "latest/README.md",
-      "sha256": "66694da4083bb474167deb4f76aab06d53af836edd21104dee43af7049199bf6"
+      "sha256": "6ef4c44f07db644fb6c85f7b3ab6f134cbc70dbd9839f0782034bf371f0cd354"
     },
     {
       "bytes": 14469,
@@ -85,7 +85,7 @@
       "sha256": "bf9bdac8e73d224504cbc625d27000cba0f88e27275ecd76467378f1d7f7817e"
     }
   ],
-  "manifest_sha256": "419e3bc5f01283c623ee379d8b4d23d8901db3da39bbcc60f660fc1d160fce58",
+  "manifest_sha256": "810e7b405774679ad0ed00cffdd2290028f376f3670a5bfa61b3272d3290b89a",
   "reproduction_command": "python -m simple_ai_trading.polymarket_repricing_publication --report docs/model-research/polymarket/round-008-executable-repricing-ceiling-report.json --capture-evidence docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json --research-root docs/model-research/polymarket",
   "round": 8,
   "schema_version": "polymarket-repricing-publication-v1",

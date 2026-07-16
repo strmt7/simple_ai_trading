@@ -100,6 +100,40 @@ def _message(stream: str, raw: object | str, *, sequence: int = 1) -> RawStreamM
     )
 
 
+def test_storage_v4_live_soak_artifact_is_canonical_and_non_authoritative() -> None:
+    artifact = (
+        Path(__file__).resolve().parents[1]
+        / "docs/model-research/polymarket/storage-v4-live-soak-2026-07-16.json"
+    )
+    payload = json.loads(artifact.read_text(encoding="ascii"))
+    claimed = payload.pop("report_sha256")
+
+    assert _sha(_canonical(payload)) == claimed
+    assert payload["truth_status"] == "degraded_live_storage_diagnostic_only"
+    assert payload["live_capture"]["status"] == "degraded"
+    assert payload["live_capture"]["raw_message_count"] == sum(
+        payload["live_capture"]["stream_counts"].values()
+    )
+    assert (
+        payload["storage"]["persisted_chunk_message_count"]
+        == payload["live_capture"]["raw_message_count"]
+    )
+    assert payload["storage"]["persisted_raw_message_rows"] == 0
+    assert payload["storage"]["persisted_public_event_rows"] == 0
+    assert payload["terminal_audit"]["initial_integrity_errors"] == []
+    assert payload["terminal_audit"]["reopen_integrity_errors"] == []
+    assert payload["transport_gap"]["stream_gap_count"] == 1
+    assert payload["claims"] == {
+        "ai_uplift_tested": False,
+        "bounded_soak_proves_fifteen_hour_capture": False,
+        "financial_edge_tested": False,
+        "model_evidence": False,
+        "profitability_claim": False,
+        "trading_authority": False,
+        "training_authority": False,
+    }
+
+
 def test_ai_veto_cache_is_immutable_and_tamper_evident(tmp_path) -> None:
     identity = {
         "schema_version": "polymarket-ai-veto-cache-v1",

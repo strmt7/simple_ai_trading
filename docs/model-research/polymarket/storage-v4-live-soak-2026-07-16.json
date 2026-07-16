@@ -1,0 +1,87 @@
+{
+  "claims": {
+    "ai_uplift_tested": false,
+    "bounded_soak_proves_fifteen_hour_capture": false,
+    "financial_edge_tested": false,
+    "model_evidence": false,
+    "profitability_claim": false,
+    "trading_authority": false,
+    "training_authority": false
+  },
+  "implementation": {
+    "polymarket_capture_frame_sha256": "f78768f4fd266cd57d366e1f7d60cc806e5ce048b1e250a6a32532414f33839f",
+    "polymarket_recorder_sha256": "72c928c258959403eae526d9b3e27b039c2ae6d0c946ccebf32ea30e86dfdfcc",
+    "repository_commit": "5b2c87a8e4a4640e4408c8641452a4a10c39fbc7",
+    "storage_schema_version": "polymarket-evidence-storage-v4"
+  },
+  "live_capture": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "database": "data/polymarket-storage-v4-soak-20260716-151835Z.duckdb",
+    "database_bytes": 48508928,
+    "duration_seconds": 302.998,
+    "ended_at_ms": 1784215431041,
+    "ended_at_utc": "2026-07-16T15:23:51.041+00:00",
+    "evidence_manifest_sha256": "bf161c5042e829d5d2daed5332404c1a9e2ee6929719e88e06a72bf0cb9971da",
+    "market_snapshot_count": 9,
+    "normalized_event_count": 470420,
+    "raw_message_count": 470422,
+    "report_sha256": "51e122a3f8a1f2be204cba7dbbf8c2e3e7c3e8b1635ad7d2ee3a47ac7d54f9a7",
+    "run_id": "09672b0666574a12989a945ef350fa38",
+    "started_at_ms": 1784215128043,
+    "started_at_utc": "2026-07-16T15:18:48.043+00:00",
+    "status": "degraded",
+    "stream_counts": {
+      "binance_spot": 146392,
+      "clob_market": 322241,
+      "clob_rest_book": 6,
+      "polymarket_rtds": 1783
+    }
+  },
+  "liveness": {
+    "benchmark_to_observed_live_rate_ratio": 31.0383328684674,
+    "observed_messages_per_second": 1552.55810269375,
+    "progress_sidecar_is_non_authoritative_telemetry": true,
+    "queue_capacity": 500000,
+    "queue_high_watermark": 569,
+    "queue_peak_fraction": 0.001138,
+    "queue_size_at_finalization": 0,
+    "recorder_error_count": 0,
+    "requested_duration_seconds": 300,
+    "written_message_count": 470422
+  },
+  "observed_date_utc": "2026-07-16",
+  "report_sha256": "9f1fcd7c7a92085c16a7a8080a763f5127c5926ed849eb9cf1cb2a3a703d0542",
+  "schema_version": "polymarket-storage-v4-live-soak-v1",
+  "storage": {
+    "compressed_frame_bytes": 27220668,
+    "database_bytes_per_message": 103.117898397609,
+    "frame_compression_ratio": 0.100690137755857,
+    "persisted_chunk_count": 780,
+    "persisted_chunk_message_count": 470422,
+    "persisted_public_event_rows": 0,
+    "persisted_raw_message_rows": 0,
+    "uncompressed_frame_bytes": 270340955
+  },
+  "terminal_audit": {
+    "audit_seconds": 12.296,
+    "initial_integrity_errors": [],
+    "reopen_integrity_errors": [],
+    "verified_event_count": 470420,
+    "verified_raw_message_count": 470422
+  },
+  "transport_gap": {
+    "connection_id": "clob:8906f39fcd924d76a2b8b2ae2377cdc7",
+    "gap_id": "8d6f1b09c1e5a9f8c601286075fc3d019078125ad31d51389c080cfadd54b6c6",
+    "last_sequence_number": 93614,
+    "opened_at_ms": 1784215253427,
+    "opened_at_utc": "2026-07-16T15:20:53.427+00:00",
+    "reason": "ConnectionClosedError:no close frame received or sent",
+    "stream": "clob_market",
+    "stream_gap_count": 1
+  },
+  "truth_status": "degraded_live_storage_diagnostic_only"
+}
