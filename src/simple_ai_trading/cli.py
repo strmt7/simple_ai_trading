@@ -6882,6 +6882,14 @@ def _bounded_downside_return_risk_ratio(
     return -999.0 if return_fraction < 0.0 else 0.0
 
 
+def _polymarket_probability_gates_passed(report: object) -> bool:
+    return (
+        float(getattr(report, "validation_log_loss_delta")) < 0.0
+        and float(getattr(report, "test_log_loss_delta")) < 0.0
+        and float(getattr(report, "test_brier_delta")) < 0.0
+    )
+
+
 def _polymarket_execution_uplift_metrics(
     report: object,
     *,
@@ -7311,6 +7319,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                         config=scenario_config,
                     )
                 )
+        probability_gates_passed = _polymarket_probability_gates_passed(
+            probability_report
+        )
         ai_payload: dict[str, object]
         ai_execution = None
         ai_uplift = None
@@ -7318,6 +7329,13 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             ai_payload = {
                 "enabled": False,
                 "reason": "operator_disabled",
+                "trading_authority": False,
+                "profitability_claim": False,
+            }
+        elif not probability_gates_passed:
+            ai_payload = {
+                "enabled": False,
+                "reason": "probability_model_gates_failed",
                 "trading_authority": False,
                 "profitability_claim": False,
             }
@@ -7488,11 +7506,6 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             for policy_reports in latency_sensitivity.values()
             for report in policy_reports.values()
         ]
-        probability_gates_passed = (
-            probability_report.validation_log_loss_delta < 0.0
-            and probability_report.test_log_loss_delta < 0.0
-            and probability_report.test_brier_delta < 0.0
-        )
         retry_latency_reports = latency_sensitivity["model_retry"]
         retry_control_reports = latency_sensitivity["model"]
         retry_gates = {
