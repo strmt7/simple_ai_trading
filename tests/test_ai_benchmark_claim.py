@@ -158,9 +158,13 @@ def _begin(store: _ClaimStore, output: Path):
     )
 
 
-def _residency(*, gpu: bool = True) -> OllamaResidencyReport:
+def _residency(
+    *,
+    gpu: bool = True,
+    vram_ratio: float = 1.0,
+) -> OllamaResidencyReport:
     size_bytes = 9_000_000_000
-    size_vram_bytes = 8_500_000_000 if gpu else 0
+    size_vram_bytes = int(size_bytes * vram_ratio) if gpu else 0
     return OllamaResidencyReport(
         requested_model="qwen3:14b",
         status="gpu_resident" if gpu else "cpu_only",
@@ -270,7 +274,7 @@ def test_preregistered_ai_benchmark_rejects_model_drift_and_cpu_execution(
 
     cpu_store = _ClaimStore("1" * 64)
     cpu_claim = _begin(cpu_store, tmp_path / "cpu.json")
-    with pytest.raises(ValueError, match="exact GPU-resident weights"):
+    with pytest.raises(ValueError, match="fully GPU-resident weights"):
         write_preregistered_ai_benchmark_output(
             report,
             tmp_path / "cpu.json",
@@ -280,6 +284,20 @@ def test_preregistered_ai_benchmark_rejects_model_drift_and_cpu_execution(
             post_model_digest=MODEL_DIGEST,
             post_model_metadata_sha256=MODEL_METADATA_SHA256,
             residency=_residency(gpu=False),
+        )
+
+    partial_store = _ClaimStore("3" * 64)
+    partial_claim = _begin(partial_store, tmp_path / "partial.json")
+    with pytest.raises(ValueError, match="fully GPU-resident weights"):
+        write_preregistered_ai_benchmark_output(
+            report,
+            tmp_path / "partial.json",
+            claim=partial_claim,
+            pre_model_digest=MODEL_DIGEST,
+            pre_model_metadata_sha256=MODEL_METADATA_SHA256,
+            post_model_digest=MODEL_DIGEST,
+            post_model_metadata_sha256=MODEL_METADATA_SHA256,
+            residency=_residency(vram_ratio=0.98),
         )
 
 

@@ -259,12 +259,12 @@ def validate_preregistered_ai_runtime_evidence(
         residency.requested_model != model
         or residency.status != "gpu_resident"
         or residency.digest != pre["model_digest"]
-        or not residency.gpu_resident
+        or not residency.fully_gpu_resident
         or residency.size_vram_bytes is None
         or residency.size_vram_bytes <= 0
     ):
         raise ValueError(
-            "AI benchmark inference was not bound to exact GPU-resident weights"
+            "AI benchmark inference was not bound to fully GPU-resident weights"
         )
     return dict(evidence)
 

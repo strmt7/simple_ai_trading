@@ -89,7 +89,7 @@ def _provider_runtime_is_valid(
         report.requested_model == model
         and report.digest == digest
         and report.loaded
-        and report.gpu_resident
+        and report.fully_gpu_resident
     )
 
 
@@ -1554,8 +1554,8 @@ def run_model_lab_ai_review(
         ).validated()
         if not residency.loaded:
             raise ValueError("reviewed AI model is not resident after inference")
-        if not residency.gpu_resident:
-            raise ValueError("reviewed AI model inference is CPU-only")
+        if not residency.fully_gpu_resident:
+            raise ValueError("reviewed AI model inference is not fully GPU-resident")
         decision = _decision_from_mapping(
             _json_mapping_from_text(_ollama_response_text(response))
         )

@@ -1876,7 +1876,7 @@ def _validate_ai_evidence(
         gpu_runtime_proved = bool(
             runtime is not None
             and runtime.loaded
-            and runtime.gpu_resident
+            and runtime.fully_gpu_resident
             and runtime.digest == veto.get("model_digest")
         )
         valid_response_was_overridden = latency > maximum_latency or (
