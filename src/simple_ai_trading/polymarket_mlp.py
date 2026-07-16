@@ -19,10 +19,11 @@ from .compute import BackendInfo, resolve_backend
 from .polymarket_action_value import POLYMARKET_ACTION_FEATURE_NAMES
 from .polymarket_fit_claim import (
     PolymarketFitClaim,
-    begin_polymarket_fit_claim,
     complete_polymarket_fit_claim,
+    consume_polymarket_fit_claim,
     fail_polymarket_fit_claim,
 )
+from .polymarket_model_contracts import POLYMARKET_ROUND9_MLP_CONTRACT_SHA256
 from .polymarket_ridge import (
     POLYMARKET_RIDGE_CONTRACT_SHA256,
     POLYMARKET_RIDGE_THRESHOLD_GRID,
@@ -38,9 +39,7 @@ from .polymarket_ridge import (
 from .polymarket_recorder import PolymarketEvidenceStore
 
 
-POLYMARKET_MLP_CONTRACT_SHA256 = (
-    "a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2"
-)
+POLYMARKET_MLP_CONTRACT_SHA256 = POLYMARKET_ROUND9_MLP_CONTRACT_SHA256
 POLYMARKET_MLP_MODEL_SCHEMA_VERSION = "polymarket-round9-causal-mlp-model-v2"
 POLYMARKET_MLP_REPORT_SCHEMA_VERSION = "polymarket-round9-causal-mlp-report-v3"
 POLYMARKET_MLP_SEEDS = (4701, 4702, 4703)
@@ -574,7 +573,7 @@ def begin_polymarket_mlp_fit(
     parent.validated()
     if parent.dataset_sha256 != dataset.dataset_sha256:
         raise ValueError("Polymarket MLP claim dataset is inconsistent")
-    return begin_polymarket_fit_claim(
+    return consume_polymarket_fit_claim(
         store,
         experiment="round9_mlp",
         parent_sha256=parent.report_sha256,

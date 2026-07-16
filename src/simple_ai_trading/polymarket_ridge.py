@@ -7,7 +7,7 @@ from decimal import Decimal
 import hashlib
 import json
 import math
-from typing import Mapping, Sequence
+from typing import Iterable, Mapping, Sequence
 
 import numpy as np
 from scipy.optimize import minimize
@@ -25,16 +25,20 @@ from .polymarket_action_value import (
 from .polymarket_fit_claim import (
     POLYMARKET_FIT_CLAIM_SCHEMA_VERSION,
     PolymarketFitClaim,
-    begin_polymarket_fit_claim,
     complete_polymarket_fit_claim,
+    consume_polymarket_fit_claim,
+    discard_polymarket_fit_reservation,
     fail_polymarket_fit_claim,
+    reserve_polymarket_fit_claim,
+)
+from .polymarket_model_contracts import (
+    POLYMARKET_ROUND9_MLP_CONTRACT_SHA256,
+    POLYMARKET_ROUND9_RIDGE_CONTRACT_SHA256,
 )
 from .polymarket_recorder import PolymarketEvidenceStore
 
 
-POLYMARKET_RIDGE_CONTRACT_SHA256 = (
-    "4b192e7f30af3e3d6e7dfb1b2b3342518e23de6d750b6b1cfd2334d87f2f5a12"
-)
+POLYMARKET_RIDGE_CONTRACT_SHA256 = POLYMARKET_ROUND9_RIDGE_CONTRACT_SHA256
 POLYMARKET_RIDGE_MODEL_SCHEMA_VERSION = "polymarket-round9-ridge-model-v1"
 POLYMARKET_RIDGE_REPORT_SCHEMA_VERSION = "polymarket-round9-ridge-report-v1"
 POLYMARKET_RIDGE_FIT_CLAIM_SCHEMA_VERSION = POLYMARKET_FIT_CLAIM_SCHEMA_VERSION
@@ -63,6 +67,46 @@ def _canonical_json(value: object) -> str:
 
 def _sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _ridge_dataset_sha256(
+    *,
+    pipeline_report_sha256: str,
+    eligibility_sha256: str,
+    action_feature_sha256: Iterable[str],
+    action_label_sha256: Iterable[str],
+    source_feature_row_sha256: Iterable[str],
+) -> str:
+    """Hash the existing canonical dataset object without one large JSON copy."""
+
+    payload: dict[str, str | Iterable[str]] = {
+        "schema_version": "polymarket-round9-ridge-dataset-v1",
+        "contract_sha256": POLYMARKET_RIDGE_CONTRACT_SHA256,
+        "pipeline_report_sha256": pipeline_report_sha256,
+        "eligibility_sha256": eligibility_sha256,
+        "action_feature_sha256": action_feature_sha256,
+        "action_label_sha256": action_label_sha256,
+        "source_feature_row_sha256": source_feature_row_sha256,
+    }
+    digest = hashlib.sha256()
+    digest.update(b"{")
+    for field_index, name in enumerate(sorted(payload)):
+        if field_index:
+            digest.update(b",")
+        digest.update(_canonical_json(name).encode("ascii"))
+        digest.update(b":")
+        value = payload[name]
+        if isinstance(value, str):
+            digest.update(_canonical_json(value).encode("ascii"))
+            continue
+        digest.update(b"[")
+        for value_index, item in enumerate(value):
+            if value_index:
+                digest.update(b",")
+            digest.update(_canonical_json(item).encode("ascii"))
+        digest.update(b"]")
+    digest.update(b"}")
+    return digest.hexdigest()
 
 
 def _is_sha256(value: object) -> bool:
@@ -173,9 +217,44 @@ class PolymarketRidgeDataset:
             or len({item.action_feature_sha256 for item in self.observations})
             != len(self.observations)
             or not _is_sha256(self.dataset_sha256)
-            or self.dataset_sha256 != _sha256(self.identity_payload())
+            or self.dataset_sha256
+            != _ridge_dataset_sha256(
+                pipeline_report_sha256=self.pipeline_report_sha256,
+                eligibility_sha256=self.eligibility_sha256,
+                action_feature_sha256=(
+                    item.action_feature_sha256 for item in self.observations
+                ),
+                action_label_sha256=(
+                    item.action_label_sha256 for item in self.observations
+                ),
+                source_feature_row_sha256=(
+                    item.source_feature_row_sha256 for item in self.observations
+                ),
+            )
         ):
             raise ValueError("Polymarket ridge dataset is invalid")
+        return self
+
+
+@dataclass(frozen=True)
+class PolymarketRidgeDatasetIdentity:
+    """Opaque dataset identity that is safe to inspect before test access."""
+
+    pipeline_report_sha256: str
+    eligibility_sha256: str
+    observation_count: int
+    dataset_sha256: str
+
+    def validated(self) -> PolymarketRidgeDatasetIdentity:
+        if (
+            not _is_sha256(self.pipeline_report_sha256)
+            or not _is_sha256(self.eligibility_sha256)
+            or isinstance(self.observation_count, bool)
+            or not isinstance(self.observation_count, int)
+            or self.observation_count <= 0
+            or not _is_sha256(self.dataset_sha256)
+        ):
+            raise ValueError("Polymarket ridge dataset identity is invalid")
         return self
 
 
@@ -539,6 +618,16 @@ class PolymarketRidgeMaterialization:
         return asdict(self)
 
 
+class PolymarketRidgeFitAlreadyComplete(ValueError):
+    """Signal that a signed report exists without reopening clear test labels."""
+
+    def __init__(self, report_sha256: str) -> None:
+        self.report_sha256 = str(report_sha256)
+        super().__init__(
+            f"Polymarket ridge is already complete:report_sha256={self.report_sha256}"
+        )
+
+
 def begin_polymarket_ridge_fit(
     store: PolymarketEvidenceStore,
     dataset: PolymarketRidgeDataset,
@@ -546,7 +635,7 @@ def begin_polymarket_ridge_fit(
     """Claim one parent dataset before any test evaluation."""
 
     dataset.validated()
-    return begin_polymarket_fit_claim(
+    return consume_polymarket_fit_claim(
         store,
         experiment="round9_ridge",
         parent_sha256=dataset.pipeline_report_sha256,
@@ -611,7 +700,19 @@ def build_polymarket_ridge_dataset(
     )
     return replace(
         provisional,
-        dataset_sha256=_sha256(provisional.identity_payload()),
+        dataset_sha256=_ridge_dataset_sha256(
+            pipeline_report_sha256=provisional.pipeline_report_sha256,
+            eligibility_sha256=provisional.eligibility_sha256,
+            action_feature_sha256=(
+                item.action_feature_sha256 for item in provisional.observations
+            ),
+            action_label_sha256=(
+                item.action_label_sha256 for item in provisional.observations
+            ),
+            source_feature_row_sha256=(
+                item.source_feature_row_sha256 for item in provisional.observations
+            ),
+        ),
     ).validated()
 
 
@@ -658,13 +759,21 @@ def _training_blocking_entry_terminal_counts(value: object) -> dict[str, int]:
     }
 
 
-def load_polymarket_ridge_dataset(
+@dataclass(frozen=True)
+class _PolymarketRidgePipelineAuthority:
+    report_sha256: str
+    report: dict[str, object]
+    run_id: str
+    run_report_sha256: str
+    eligibility_sha256: str
+    action_dataset_sha256: tuple[str, ...]
+
+
+def _load_polymarket_ridge_pipeline_authority(
     store: PolymarketEvidenceStore,
     *,
     pipeline_report_sha256: str,
-) -> PolymarketRidgeDataset:
-    """Reconstruct and revalidate every persisted action row before model use."""
-
+) -> _PolymarketRidgePipelineAuthority:
     selected_report = str(pipeline_report_sha256 or "").strip()
     if not _is_sha256(selected_report):
         raise ValueError("Polymarket ridge pipeline report digest is invalid")
@@ -695,14 +804,6 @@ def load_polymarket_ridge_dataset(
         or not _is_sha256(eligibility_sha256)
     ):
         raise ValueError("Polymarket ridge pipeline authority is invalid")
-    unresolved = _training_blocking_entry_terminal_counts(
-        pipeline.get("terminal_reason_counts")
-    )
-    if unresolved:
-        details = ",".join(
-            f"{reason}:{count}" for reason, count in sorted(unresolved.items())
-        )
-        raise ValueError(f"unproven post-submission entry state:{details}")
     continuity_row = connection.execute(
         """
         SELECT report_json, run_id, run_report_sha256
@@ -743,6 +844,111 @@ def load_polymarket_ridge_dataset(
         or action_dataset_sha256 != report_action_datasets
     ):
         raise ValueError("Polymarket ridge action dataset selection is invalid")
+    return _PolymarketRidgePipelineAuthority(
+        report_sha256=selected_report,
+        report=pipeline,
+        run_id=run_id,
+        run_report_sha256=run_report_sha256,
+        eligibility_sha256=eligibility_sha256,
+        action_dataset_sha256=action_dataset_sha256,
+    )
+
+
+def load_polymarket_ridge_dataset_identity(
+    store: PolymarketEvidenceStore,
+    *,
+    pipeline_report_sha256: str,
+) -> PolymarketRidgeDatasetIdentity:
+    """Hash opaque row identities without reading labels, outcomes, or utilities."""
+
+    authority = _load_polymarket_ridge_pipeline_authority(
+        store,
+        pipeline_report_sha256=pipeline_report_sha256,
+    )
+    selected_report = authority.report_sha256
+    eligibility_sha256 = authority.eligibility_sha256
+    action_dataset_sha256 = authority.action_dataset_sha256
+    connection = store.connect()
+    connection.execute("DROP TABLE IF EXISTS ridge_identity_action_dataset")
+    connection.execute(
+        """
+        CREATE TEMP TABLE ridge_identity_action_dataset (
+            dataset_sha256 VARCHAR PRIMARY KEY
+        )
+        """
+    )
+    connection.executemany(
+        "INSERT INTO ridge_identity_action_dataset VALUES (?)",
+        [(value,) for value in action_dataset_sha256],
+    )
+    cursor = connection.execute(
+        """
+        SELECT a.action_feature_sha256, a.action_label_sha256, f.row_sha256
+        FROM polymarket_action_value_row AS a
+        JOIN ridge_identity_action_dataset AS s USING (dataset_sha256)
+        JOIN polymarket_action_value_dataset AS d USING (dataset_sha256)
+        JOIN polymarket_feature_row AS f
+          ON f.dataset_id = d.source_feature_dataset_sha256
+         AND f.feature_id = a.source_feature_id
+        JOIN polymarket_market_snapshot AS m
+          ON m.run_id = d.source_run_id AND m.condition_id = a.condition_id
+        ORDER BY m.event_start_ms, a.decision_received_monotonic_ns,
+                 a.condition_id, a.outcome, a.action_feature_sha256
+        """
+    )
+    feature_hashes: list[str] = []
+    label_hashes: list[str] = []
+    source_hashes: list[str] = []
+    for batch in iter(lambda: cursor.fetchmany(16_384), []):
+        for feature_hash, label_hash, source_hash in batch:
+            values = tuple(map(str, (feature_hash, label_hash, source_hash)))
+            if any(not _is_sha256(value) for value in values):
+                raise ValueError("Polymarket ridge opaque row identity is invalid")
+            feature_hashes.append(values[0])
+            label_hashes.append(values[1])
+            source_hashes.append(values[2])
+    if not feature_hashes or len(set(feature_hashes)) != len(feature_hashes):
+        raise ValueError("Polymarket ridge opaque row identities are invalid")
+    dataset_sha256 = _ridge_dataset_sha256(
+        pipeline_report_sha256=selected_report,
+        eligibility_sha256=eligibility_sha256,
+        action_feature_sha256=feature_hashes,
+        action_label_sha256=label_hashes,
+        source_feature_row_sha256=source_hashes,
+    )
+    return PolymarketRidgeDatasetIdentity(
+        pipeline_report_sha256=selected_report,
+        eligibility_sha256=eligibility_sha256,
+        observation_count=len(feature_hashes),
+        dataset_sha256=dataset_sha256,
+    ).validated()
+
+
+def _load_polymarket_ridge_dataset_after_claim(
+    store: PolymarketEvidenceStore,
+    *,
+    pipeline_report_sha256: str,
+) -> PolymarketRidgeDataset:
+    """Reconstruct clear rows after the durable test-access claim exists."""
+
+    authority = _load_polymarket_ridge_pipeline_authority(
+        store,
+        pipeline_report_sha256=pipeline_report_sha256,
+    )
+    selected_report = authority.report_sha256
+    pipeline = authority.report
+    run_id = authority.run_id
+    eligibility_sha256 = authority.eligibility_sha256
+    action_dataset_sha256 = authority.action_dataset_sha256
+    connection = store.connect()
+    unresolved = _training_blocking_entry_terminal_counts(
+        pipeline.get("terminal_reason_counts")
+    )
+    if unresolved:
+        details = ",".join(
+            f"{reason}:{count}" for reason, count in sorted(unresolved.items())
+        )
+        raise ValueError(f"unproven post-submission entry state:{details}")
     connection.execute("DROP TABLE IF EXISTS ridge_selected_action_dataset")
     connection.execute(
         "CREATE TEMP TABLE ridge_selected_action_dataset (dataset_sha256 VARCHAR PRIMARY KEY)"
@@ -977,6 +1183,60 @@ def load_polymarket_ridge_dataset(
     )
 
 
+def load_polymarket_ridge_dataset(
+    store: PolymarketEvidenceStore,
+    *,
+    pipeline_report_sha256: str,
+) -> PolymarketRidgeDataset:
+    """Claim opaque evidence, then reconstruct and validate clear action labels."""
+
+    identity = load_polymarket_ridge_dataset_identity(
+        store,
+        pipeline_report_sha256=pipeline_report_sha256,
+    )
+    claim = reserve_polymarket_fit_claim(
+        store,
+        experiment="round9_ridge",
+        parent_sha256=identity.pipeline_report_sha256,
+        contract_sha256=POLYMARKET_RIDGE_CONTRACT_SHA256,
+        dataset_sha256=identity.dataset_sha256,
+        report_table="polymarket_ridge_report",
+        report_parent_column="pipeline_report_sha256",
+    )
+    if claim.status == "existing":
+        raise PolymarketRidgeFitAlreadyComplete(claim.report_sha256)
+    try:
+        dataset = _load_polymarket_ridge_dataset_after_claim(
+            store,
+            pipeline_report_sha256=identity.pipeline_report_sha256,
+        )
+        if (
+            dataset.dataset_sha256 != identity.dataset_sha256
+            or len(dataset.observations) != identity.observation_count
+            or dataset.eligibility_sha256 != identity.eligibility_sha256
+        ):
+            raise ValueError("Polymarket ridge clear dataset identity differs")
+    except Exception as exc:
+        if claim.status == "claimed":
+            discard_polymarket_fit_reservation(
+                store,
+                experiment="round9_ridge",
+                parent_sha256=identity.pipeline_report_sha256,
+                contract_sha256=POLYMARKET_RIDGE_CONTRACT_SHA256,
+                dataset_sha256=identity.dataset_sha256,
+                report_table="polymarket_ridge_report",
+                report_parent_column="pipeline_report_sha256",
+            )
+            fail_polymarket_fit_claim(
+                store,
+                experiment="round9_ridge",
+                parent_sha256=identity.pipeline_report_sha256,
+                error=exc,
+            )
+        raise
+    return dataset
+
+
 def _ridge_metrics_from_payload(raw: object) -> PolymarketPolicyMetrics:
     if not isinstance(raw, Mapping):
         raise ValueError("stored Polymarket ridge metrics are invalid")
@@ -1195,11 +1455,14 @@ def load_polymarket_ridge_evidence(
     """Load and replay-check the complete parent evidence for a challenger."""
 
     selected = str(report_sha256 or "").strip()
+    if not _is_sha256(selected):
+        raise ValueError("Polymarket ridge report digest is invalid")
     row = (
         store.connect()
         .execute(
             """
-        SELECT pipeline_report_sha256, eligibility_sha256
+        SELECT pipeline_report_sha256, eligibility_sha256,
+               dataset_sha256, contract_sha256
         FROM polymarket_ridge_report
         WHERE report_sha256 = ?
         """,
@@ -1209,21 +1472,106 @@ def load_polymarket_ridge_evidence(
     )
     if row is None:
         raise ValueError("unknown Polymarket ridge report")
-    dataset = load_polymarket_ridge_dataset(
-        store,
-        pipeline_report_sha256=str(row[0]),
-    )
-    report = load_polymarket_ridge_report(store, report_sha256=selected)
+    dataset_sha256 = str(row[2])
     if (
-        report.dataset_sha256 != dataset.dataset_sha256
-        or dataset.pipeline_report_sha256 != str(row[0])
-        or dataset.eligibility_sha256 != str(row[1])
+        not _is_sha256(row[0])
+        or not _is_sha256(row[1])
+        or not _is_sha256(dataset_sha256)
+        or str(row[3]) != POLYMARKET_RIDGE_CONTRACT_SHA256
     ):
-        raise ValueError("Polymarket ridge report dataset is inconsistent")
-    materialization = materialize_polymarket_ridge_report(store, dataset, report)
-    if materialization.status != "existing":
-        raise ValueError("Polymarket ridge parent was not previously materialized")
+        raise ValueError("Polymarket ridge parent identity is invalid")
+    claim = reserve_polymarket_fit_claim(
+        store,
+        experiment="round9_mlp",
+        parent_sha256=selected,
+        contract_sha256=POLYMARKET_ROUND9_MLP_CONTRACT_SHA256,
+        dataset_sha256=dataset_sha256,
+        report_table="polymarket_mlp_report",
+        report_parent_column="parent_ridge_report_sha256",
+    )
+    if claim.status == "existing":
+        raise ValueError(
+            f"Polymarket MLP is already complete:report_sha256={claim.report_sha256}"
+        )
+    try:
+        dataset = _load_polymarket_ridge_dataset_after_claim(
+            store,
+            pipeline_report_sha256=str(row[0]),
+        )
+        report = load_polymarket_ridge_report(store, report_sha256=selected)
+        if (
+            report.dataset_sha256 != dataset.dataset_sha256
+            or dataset.dataset_sha256 != dataset_sha256
+            or dataset.pipeline_report_sha256 != str(row[0])
+            or dataset.eligibility_sha256 != str(row[1])
+        ):
+            raise ValueError("Polymarket ridge report dataset is inconsistent")
+        materialization = materialize_polymarket_ridge_report(store, dataset, report)
+        if materialization.status != "existing":
+            raise ValueError("Polymarket ridge parent was not previously materialized")
+    except Exception as exc:
+        if claim.status == "claimed":
+            discard_polymarket_fit_reservation(
+                store,
+                experiment="round9_mlp",
+                parent_sha256=selected,
+                contract_sha256=POLYMARKET_ROUND9_MLP_CONTRACT_SHA256,
+                dataset_sha256=dataset_sha256,
+                report_table="polymarket_mlp_report",
+                report_parent_column="parent_ridge_report_sha256",
+            )
+            fail_polymarket_fit_claim(
+                store,
+                experiment="round9_mlp",
+                parent_sha256=selected,
+                error=exc,
+            )
+        raise
     return dataset, report
+
+
+def load_polymarket_ridge_materialization(
+    store: PolymarketEvidenceStore,
+    report: PolymarketRidgeReport,
+) -> PolymarketRidgeMaterialization:
+    """Read an existing materialization without reconstructing clear labels."""
+
+    report.validated()
+    rows = (
+        store.connect()
+        .execute(
+            """
+        SELECT partition, count(*)
+        FROM polymarket_ridge_selected_action
+        WHERE report_sha256 = ?
+        GROUP BY partition
+        """,
+            [report.report_sha256],
+        )
+        .fetchall()
+    )
+    counts = {str(partition): int(count) for partition, count in rows}
+    selected_validation = next(
+        (
+            item.attempt_count
+            for item in report.validation_trials
+            if item.threshold == report.selected_threshold
+        ),
+        0,
+    )
+    expected = {
+        "validation": selected_validation,
+        "test": report.test_metrics.attempt_count,
+    }
+    observed = {partition: counts.get(partition, 0) for partition in expected}
+    if observed != expected or any(partition not in expected for partition in counts):
+        raise ValueError("stored Polymarket ridge selected-action counts are invalid")
+    return PolymarketRidgeMaterialization(
+        report_sha256=report.report_sha256,
+        status="existing",
+        selected_validation_action_count=observed["validation"],
+        selected_test_action_count=observed["test"],
+    )
 
 
 def split_polymarket_ridge_dataset(
@@ -1949,8 +2297,10 @@ __all__ = [
     "POLYMARKET_RIDGE_THRESHOLD_GRID",
     "PolymarketPolicyMetrics",
     "PolymarketPolicyEvaluation",
+    "PolymarketRidgeFitAlreadyComplete",
     "PolymarketRidgeCandidate",
     "PolymarketRidgeDataset",
+    "PolymarketRidgeDatasetIdentity",
     "PolymarketRidgeFitClaim",
     "PolymarketRidgeModel",
     "PolymarketRidgeMaterialization",
@@ -1965,7 +2315,9 @@ __all__ = [
     "fail_polymarket_ridge_fit",
     "fit_polymarket_ridge_model",
     "load_polymarket_ridge_dataset",
+    "load_polymarket_ridge_dataset_identity",
     "load_polymarket_ridge_evidence",
+    "load_polymarket_ridge_materialization",
     "load_polymarket_ridge_report",
     "materialize_polymarket_ridge_report",
     "polymarket_selected_policy_tables",

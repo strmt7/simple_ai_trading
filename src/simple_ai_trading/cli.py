@@ -129,12 +129,14 @@ from .polymarket_mlp import (
     materialize_polymarket_mlp_report,
 )
 from .polymarket_ridge import (
+    PolymarketRidgeFitAlreadyComplete,
     begin_polymarket_ridge_fit,
     complete_polymarket_ridge_fit,
     fail_polymarket_ridge_fit,
     fit_and_evaluate_polymarket_ridge,
     load_polymarket_ridge_dataset,
     load_polymarket_ridge_evidence,
+    load_polymarket_ridge_materialization,
     load_polymarket_ridge_report,
     materialize_polymarket_ridge_report,
 )
@@ -6624,22 +6626,24 @@ def command_polymarket_ridge(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as store:
-            dataset = load_polymarket_ridge_dataset(
-                store,
-                pipeline_report_sha256=str(args.pipeline_report_sha256),
-            )
-            claim = begin_polymarket_ridge_fit(store, dataset)
-            if claim.status == "existing":
+            try:
+                dataset = load_polymarket_ridge_dataset(
+                    store,
+                    pipeline_report_sha256=str(args.pipeline_report_sha256),
+                )
+            except PolymarketRidgeFitAlreadyComplete as completed:
                 report = load_polymarket_ridge_report(
                     store,
-                    report_sha256=claim.report_sha256,
+                    report_sha256=completed.report_sha256,
                 )
-                materialization = materialize_polymarket_ridge_report(
+                materialization = load_polymarket_ridge_materialization(
                     store,
-                    dataset,
                     report,
                 )
             else:
+                claim = begin_polymarket_ridge_fit(store, dataset)
+                if claim.status != "claimed":
+                    raise ValueError("Polymarket ridge claim was not reserved")
                 try:
                     report = fit_and_evaluate_polymarket_ridge(dataset)
                     materialization = materialize_polymarket_ridge_report(

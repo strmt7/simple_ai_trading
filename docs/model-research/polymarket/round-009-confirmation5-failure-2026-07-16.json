@@ -1,0 +1,63 @@
+{
+  "diagnostic_conclusion": {
+    "next_action": "Redesign and long-tail benchmark the evidence writer before another confirmation capture.",
+    "storage_v3_sustained_live_feed": false,
+    "terminal_integrity_audit_complete": false
+  },
+  "progress_sidecar": {
+    "observed_at_ms": 1784207384540,
+    "phase": "writer-draining",
+    "queue_capacity": 500000,
+    "queue_high_watermark": 500000,
+    "queue_size_at_observation": 475404,
+    "received_message_count": 39965871,
+    "sha256": "b42b496ef130d5ebbdde177167ab030788e903148fcbdfd901e3107f1db1a472",
+    "written_message_count_at_observation": 39482296
+  },
+  "schema_version": "polymarket-confirmation-failure-v1",
+  "source": {
+    "database_bytes": 12328382464,
+    "database_path": "data/polymarket-round9-confirmation5-20260716-051217.duckdb",
+    "recorder_commit": "8e3c43ed6e2ae084dfe53b7165cf6a9607fbdf02",
+    "requested_duration_seconds": 54000,
+    "run_id": "79ac19539d384352b865c21cb0c43627",
+    "storage_schema_version": "polymarket-evidence-storage-v3"
+  },
+  "terminal_report": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "duration_seconds": 36402.252,
+    "ended_at_ms": 1784207941354,
+    "errors": [
+      "operator_interrupted_after_evidence_queue_saturation:500000/500000",
+      "confirmation_capture_aborted_as_inadmissible"
+    ],
+    "integrity_errors": [
+      "terminal_integrity_audit_incomplete"
+    ],
+    "market_snapshot_count": 363,
+    "normalized_event_count": 39965093,
+    "raw_message_count": 39965871,
+    "report_sha256": "992458d7c8e59f096890d30746ff9d0e97cb0dfc280ab997c377b8e587bef686",
+    "started_at_ms": 1784171539102,
+    "status": "failed",
+    "stream_counts": {
+      "binance_spot": 9714656,
+      "clob_market": 30038359,
+      "clob_rest_book": 6,
+      "polymarket_rtds": 212850
+    },
+    "stream_gap_count": 226
+  },
+  "truth_constraints": {
+    "confirmation_evidence": false,
+    "financial_edge_claim": false,
+    "model_evidence": false,
+    "payload_reuse_requires_integrity_audit": true,
+    "profitability_evidence": false,
+    "trading_authority": false
+  }
+}

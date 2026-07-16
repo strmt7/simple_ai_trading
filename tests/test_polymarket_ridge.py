@@ -4,6 +4,7 @@ from dataclasses import replace
 from hashlib import sha256
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -22,6 +23,11 @@ from simple_ai_trading.polymarket_mlp import (
     POLYMARKET_MLP_SEEDS,
     fit_and_evaluate_polymarket_mlp,
     materialize_polymarket_mlp_report,
+)
+from simple_ai_trading.polymarket_fit_claim import (
+    PolymarketFitClaim,
+    consume_polymarket_fit_claim,
+    reserve_polymarket_fit_claim,
 )
 from simple_ai_trading.polymarket_ridge import (
     POLYMARKET_RIDGE_CONTRACT_SHA256,
@@ -133,8 +139,12 @@ def test_round9_ridge_contract_code_and_document_are_identical() -> None:
 
 
 def test_round9_ridge_split_is_purged_grouped_and_broad() -> None:
-    split = split_polymarket_ridge_dataset(_dataset())
+    dataset = _dataset()
+    split = split_polymarket_ridge_dataset(dataset)
 
+    assert dataset.dataset_sha256 == polymarket_ridge_module._sha256(
+        dataset.identity_payload()
+    )
     assert len(split.train_groups) == 16
     assert len(split.validation_groups) == 6
     assert len(split.test_groups) == 6
@@ -243,6 +253,12 @@ def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(
             store,
             report_sha256=report.report_sha256,
         )
+        loaded_materialization = (
+            polymarket_ridge_module.load_polymarket_ridge_materialization(
+                store,
+                loaded,
+            )
+        )
         store.connect().execute(
             """
             UPDATE polymarket_ridge_selected_action
@@ -256,6 +272,7 @@ def test_round9_ridge_materialization_is_idempotent_and_tamper_evident(
 
     assert created.status == "created"
     assert existing.status == "existing"
+    assert loaded_materialization == existing
     assert loaded == report
     assert created.selected_test_action_count >= 30
 
@@ -266,7 +283,19 @@ def test_round9_ridge_cli_and_native_contract_share_the_frozen_input(
     capsys,
 ) -> None:
     dataset = _dataset()
-    monkeypatch.setattr(cli, "load_polymarket_ridge_dataset", lambda *_a, **_k: dataset)
+    expected_report = fit_and_evaluate_polymarket_ridge(dataset)
+    load_count = 0
+
+    def load_dataset(*_args, **_kwargs):
+        nonlocal load_count
+        load_count += 1
+        if load_count == 1:
+            return dataset
+        raise polymarket_ridge_module.PolymarketRidgeFitAlreadyComplete(
+            expected_report.report_sha256
+        )
+
+    monkeypatch.setattr(cli, "load_polymarket_ridge_dataset", load_dataset)
     arguments = [
         "polymarket-ridge",
         "--database",
@@ -356,6 +385,247 @@ def test_round9_ridge_failed_claim_cannot_silently_retry(
         )
     assert state == "failed"
     assert len(failure_sha256) == 64
+
+
+def test_round9_fit_claim_reservation_is_exact_and_single_use(tmp_path) -> None:
+    identity = {
+        "experiment": "round9_ridge",
+        "parent_sha256": "a" * 64,
+        "contract_sha256": POLYMARKET_RIDGE_CONTRACT_SHA256,
+        "dataset_sha256": "b" * 64,
+        "report_table": "polymarket_ridge_report",
+        "report_parent_column": "pipeline_report_sha256",
+    }
+    with PolymarketEvidenceStore(tmp_path / "reserved-claim.duckdb") as store:
+        reserved = reserve_polymarket_fit_claim(store, **identity)
+        consumed = consume_polymarket_fit_claim(store, **identity)
+
+        assert reserved.status == "claimed"
+        assert consumed == reserved
+        with pytest.raises(ValueError, match="already claimed:state=started"):
+            consume_polymarket_fit_claim(store, **identity)
+
+
+def test_round9_opaque_identity_matches_clear_dataset_digest() -> None:
+    continuity_payload = {
+        "confirmation_eligible": True,
+        "outcomes_consulted": False,
+        "labels_consulted": False,
+        "model_scores_consulted": False,
+    }
+    eligibility_sha256 = polymarket_ridge_module._sha256(continuity_payload)
+    dataset = build_polymarket_ridge_dataset(
+        pipeline_report_sha256="a" * 64,
+        eligibility_sha256=eligibility_sha256,
+        observations=_synthetic_observations(),
+    )
+    action_dataset_sha256 = "c" * 64
+    run_report_sha256 = "d" * 64
+    pipeline_payload = {
+        "run_id": "opaque-run",
+        "run_report_sha256": run_report_sha256,
+        "eligibility_sha256": dataset.eligibility_sha256,
+        "batches": [{"action_dataset_sha256": action_dataset_sha256}],
+    }
+    pipeline_report_sha256 = polymarket_ridge_module._sha256(pipeline_payload)
+    pipeline_json = json.dumps(
+        {**pipeline_payload, "report_sha256": pipeline_report_sha256}
+    )
+    continuity_json = json.dumps(
+        {
+            **continuity_payload,
+            "report_sha256": eligibility_sha256,
+        }
+    )
+
+    class Cursor:
+        def __init__(self, rows=()):
+            self.rows = list(rows)
+
+        def fetchone(self):
+            return self.rows[0] if self.rows else None
+
+        def fetchmany(self, size):
+            batch, self.rows = self.rows[:size], self.rows[size:]
+            return batch
+
+    class Connection:
+        def execute(self, statement, _parameters=None):
+            if "FROM polymarket_action_value_pipeline" in statement:
+                return Cursor(
+                    [
+                        (
+                            pipeline_json,
+                            polymarket_ridge_module.POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
+                            "opaque-run",
+                            run_report_sha256,
+                            dataset.eligibility_sha256,
+                            json.dumps([action_dataset_sha256]),
+                        )
+                    ]
+                )
+            if "FROM polymarket_continuity_eligibility_report" in statement:
+                return Cursor([(continuity_json, "opaque-run", run_report_sha256)])
+            if "SELECT a.action_feature_sha256" in statement:
+                return Cursor(
+                    [
+                        (
+                            item.action_feature_sha256,
+                            item.action_label_sha256,
+                            item.source_feature_row_sha256,
+                        )
+                        for item in dataset.observations
+                    ]
+                )
+            return Cursor()
+
+        def executemany(self, _statement, _parameters):
+            return None
+
+    store = SimpleNamespace(connect=lambda: Connection())
+    identity = polymarket_ridge_module.load_polymarket_ridge_dataset_identity(
+        store,
+        pipeline_report_sha256=pipeline_report_sha256,
+    )
+    expected_payload = dataset.identity_payload()
+    expected_payload["pipeline_report_sha256"] = pipeline_report_sha256
+
+    assert identity.observation_count == len(dataset.observations)
+    assert identity.dataset_sha256 == polymarket_ridge_module._sha256(expected_payload)
+
+
+def test_round9_parent_loader_reserves_mlp_before_clear_labels(monkeypatch) -> None:
+    dataset = _dataset()
+    parent = fit_and_evaluate_polymarket_ridge(dataset)
+    events: list[str] = []
+
+    class Connection:
+        def execute(self, _statement, _parameters=None):
+            return SimpleNamespace(
+                fetchone=lambda: (
+                    dataset.pipeline_report_sha256,
+                    dataset.eligibility_sha256,
+                    dataset.dataset_sha256,
+                    POLYMARKET_RIDGE_CONTRACT_SHA256,
+                )
+            )
+
+    store = SimpleNamespace(connect=lambda: Connection())
+
+    def reserve(*_args, **_kwargs):
+        events.append("reserve")
+        return PolymarketFitClaim(
+            experiment="round9_mlp",
+            status="claimed",
+            parent_sha256=parent.report_sha256,
+            dataset_sha256=dataset.dataset_sha256,
+            report_sha256="",
+        )
+
+    def load_dataset(*_args, **_kwargs):
+        events.append("clear-labels")
+        return dataset
+
+    monkeypatch.setattr(
+        polymarket_ridge_module, "reserve_polymarket_fit_claim", reserve
+    )
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "_load_polymarket_ridge_dataset_after_claim",
+        load_dataset,
+    )
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "load_polymarket_ridge_report",
+        lambda *_args, **_kwargs: parent,
+    )
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "materialize_polymarket_ridge_report",
+        lambda *_args, **_kwargs: SimpleNamespace(status="existing"),
+    )
+
+    loaded = polymarket_ridge_module.load_polymarket_ridge_evidence(
+        store,
+        report_sha256=parent.report_sha256,
+    )
+
+    assert loaded == (dataset, parent)
+    assert events == ["reserve", "clear-labels"]
+
+
+def test_round9_completed_claims_do_not_reopen_clear_labels(monkeypatch) -> None:
+    dataset = _dataset()
+    parent = fit_and_evaluate_polymarket_ridge(dataset)
+    identity = polymarket_ridge_module.PolymarketRidgeDatasetIdentity(
+        pipeline_report_sha256=dataset.pipeline_report_sha256,
+        eligibility_sha256=dataset.eligibility_sha256,
+        observation_count=len(dataset.observations),
+        dataset_sha256=dataset.dataset_sha256,
+    )
+
+    class Connection:
+        def execute(self, _statement, _parameters=None):
+            return SimpleNamespace(
+                fetchone=lambda: (
+                    dataset.pipeline_report_sha256,
+                    dataset.eligibility_sha256,
+                    dataset.dataset_sha256,
+                    POLYMARKET_RIDGE_CONTRACT_SHA256,
+                )
+            )
+
+    store = SimpleNamespace(connect=lambda: Connection())
+
+    def unexpected_clear_load(*_args, **_kwargs):
+        raise AssertionError("a completed fit must not reconstruct clear labels")
+
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "load_polymarket_ridge_dataset_identity",
+        lambda *_args, **_kwargs: identity,
+    )
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "reserve_polymarket_fit_claim",
+        lambda *_args, **_kwargs: PolymarketFitClaim(
+            experiment="round9_ridge",
+            status="existing",
+            parent_sha256=dataset.pipeline_report_sha256,
+            dataset_sha256=dataset.dataset_sha256,
+            report_sha256=parent.report_sha256,
+        ),
+    )
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "_load_polymarket_ridge_dataset_after_claim",
+        unexpected_clear_load,
+    )
+    with pytest.raises(
+        polymarket_ridge_module.PolymarketRidgeFitAlreadyComplete,
+        match=parent.report_sha256,
+    ):
+        polymarket_ridge_module.load_polymarket_ridge_dataset(
+            store,
+            pipeline_report_sha256=dataset.pipeline_report_sha256,
+        )
+
+    monkeypatch.setattr(
+        polymarket_ridge_module,
+        "reserve_polymarket_fit_claim",
+        lambda *_args, **_kwargs: PolymarketFitClaim(
+            experiment="round9_mlp",
+            status="existing",
+            parent_sha256=parent.report_sha256,
+            dataset_sha256=dataset.dataset_sha256,
+            report_sha256="f" * 64,
+        ),
+    )
+    with pytest.raises(ValueError, match="Polymarket MLP is already complete"):
+        polymarket_ridge_module.load_polymarket_ridge_evidence(
+            store,
+            report_sha256=parent.report_sha256,
+        )
 
 
 def test_round9_mlp_contract_code_and_document_are_identical() -> None:

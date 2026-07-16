@@ -26,6 +26,22 @@ def test_audit_accepts_established_financial_terms() -> None:
     assert findings == []
 
 
+def test_audit_preserves_exact_frozen_evidence_bytes() -> None:
+    frozen_term = "policy" + " replay"
+    findings = audit_entries(
+        [
+            (
+                "docs/model-research/action-value/"
+                "round-049-cost-aware-action-hurdle-tcn-design.json",
+                f'"uses": ["fixed-{frozen_term}"]',
+            ),
+            ("docs/current.json", f'"uses": ["fixed-{frozen_term}"]'),
+        ]
+    )
+
+    assert [(item.path, item.line) for item in findings] == [("docs/current.json", 1)]
+
+
 def test_audit_rejects_superseded_text_and_artifact_names() -> None:
     informal_phrase = "action" + " funnel"
     findings = audit_entries(
