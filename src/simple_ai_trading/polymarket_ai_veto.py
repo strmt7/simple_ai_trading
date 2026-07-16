@@ -25,12 +25,13 @@ from .polymarket_model_execution import (
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v3"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v7"
-POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v6"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v7"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
 POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = "polymarket-ai-veto-ollama-response-v2"
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v2"
 _LEGACY_FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
+_PROVIDER_DURATION_TOLERANCE_SECONDS = 0.001
 SUPPORTED_POLYMARKET_AI_MODELS = (
     "qwen3:8b",
     "qwen3:14b",
@@ -742,6 +743,16 @@ def _validated_provider_usage(
     return usage
 
 
+def _provider_duration_fits_wall_clock(
+    usage: Mapping[str, int],
+    inference_latency_seconds: float,
+) -> bool:
+    provider_seconds = int(usage["total_duration"]) / 1_000_000_000.0
+    return provider_seconds <= (
+        float(inference_latency_seconds) + _PROVIDER_DURATION_TOLERANCE_SECONDS
+    )
+
+
 def _failed_decision(reason: str) -> PolymarketAIVetoDecision:
     return PolymarketAIVetoDecision(
         action="veto",
@@ -966,8 +977,13 @@ def benchmark_polymarket_ai_veto(
             if (
                 not math.isfinite(inference_latency)
                 or inference_latency < 0.0
-                or str(cached.get("response_sha256") or "")
-                != _canonical_sha256(cached_evidence)
+                or str(cached.get("evidence_sha256") or "")
+                != _canonical_sha256(
+                    {
+                        "latency_seconds": inference_latency,
+                        "response_payload": cached_evidence,
+                    }
+                )
             ):
                 raise ValueError("Polymarket AI cache payload is invalid")
             raw, cached_runtime = _decode_cached_response_evidence(cached_evidence)
@@ -977,6 +993,13 @@ def benchmark_polymarket_ai_veto(
                 if decision.valid
                 else None
             )
+            if usage is not None and not _provider_duration_fits_wall_clock(
+                usage,
+                inference_latency,
+            ):
+                raise ValueError(
+                    "Polymarket AI cached latency is shorter than provider telemetry"
+                )
             provider_runtime = _validated_provider_runtime(
                 cached_runtime,
                 model=cfg.model,
@@ -1023,6 +1046,19 @@ def benchmark_polymarket_ai_veto(
                 decision = _decision_from_cached_payload(raw)
                 usage = None
             inference_latency = time.perf_counter() - started
+            if usage is not None and not _provider_duration_fits_wall_clock(
+                usage,
+                inference_latency,
+            ):
+                raw = _failure_envelope(
+                    ValueError(
+                        "provider duration exceeds measured client wall-clock latency"
+                    ),
+                    provider_response_received=provider_response_received,
+                    provider_response=raw,
+                )
+                decision = _decision_from_cached_payload(raw)
+                usage = None
         inference_duration_ns = max(0, math.ceil(inference_latency * 1_000_000_000))
         arrival_ns = case.decision_received_monotonic_ns
         service_start_ns = max(arrival_ns, worker_available_ns or arrival_ns)

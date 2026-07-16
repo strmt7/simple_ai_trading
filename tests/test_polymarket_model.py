@@ -2023,30 +2023,31 @@ def _ollama_chat_response(
     model: str = "qwen3.5:9b",
     prompt_tokens: int = 320,
     output_tokens: int = 24,
+    total_duration_ns: int = 1,
 ) -> dict[str, object]:
     return {
         "model": model,
         "message": {"role": "assistant", "content": content},
         "done": True,
         "done_reason": "stop",
-        "total_duration": 1_000_000_000,
-        "load_duration": 100_000_000,
+        "total_duration": total_duration_ns,
+        "load_duration": 0,
         "prompt_eval_count": prompt_tokens,
-        "prompt_eval_duration": 200_000_000,
+        "prompt_eval_duration": 1,
         "eval_count": output_tokens,
-        "eval_duration": 500_000_000,
+        "eval_duration": 1,
     }
 
 
 def test_ai_veto_requires_exact_completed_provider_usage() -> None:
     response = _ollama_chat_response("{}")
     expected = {
-        "total_duration": 1_000_000_000,
-        "load_duration": 100_000_000,
+        "total_duration": 1,
+        "load_duration": 0,
         "prompt_eval_count": 320,
-        "prompt_eval_duration": 200_000_000,
+        "prompt_eval_duration": 1,
         "eval_count": 24,
-        "eval_duration": 500_000_000,
+        "eval_duration": 1,
     }
     assert ai_veto_module._validated_provider_usage(
         response,
@@ -2070,6 +2071,11 @@ def test_ai_veto_requires_exact_completed_provider_usage() -> None:
                 model="qwen3.5:9b",
             )
         assert _parsed_ai_provider_usage(malformed, model="qwen3.5:9b") is None
+
+    assert ai_veto_module._provider_duration_fits_wall_clock(expected, 0.0)
+    impossible = dict(expected)
+    impossible["total_duration"] = 2_000_000_000
+    assert not ai_veto_module._provider_duration_fits_wall_clock(impossible, 1.0)
 
 
 def test_ai_veto_permissions_are_fail_closed_and_execution_bound(
@@ -2366,6 +2372,7 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     assert cases
     chat_calls = 0
     digest = ["f" * 64]
+    provider_duration_ns = [1_000_000_000]
 
     def approve(
         url: str,
@@ -2387,10 +2394,11 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
                     "reason_codes": ["edge_after_fees"],
                     "summary": "Causal after-fee evidence passes review.",
                 }
-            )
+            ),
+            total_duration_ns=provider_duration_ns[0],
         )
 
-    clock = iter((100.0, 102.25, 200.0, 201.5))
+    clock = iter((100.0, 102.25, 200.0, 201.5, 300.0, 300.5))
     monkeypatch.setattr(
         "simple_ai_trading.polymarket_ai_veto.time.perf_counter",
         lambda: next(clock),
@@ -2413,8 +2421,19 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     with PolymarketEvidenceStore(tmp_path / "ai-cache.duckdb") as store:
         first = run(store)
         second = run(store)
+        store.connect().execute(
+            "UPDATE polymarket_ai_veto_cache_v2 SET latency_seconds = 0.0"
+        )
+        with pytest.raises(ValueError, match="payload hash mismatch"):
+            run(store)
+        store.connect().execute(
+            "UPDATE polymarket_ai_veto_cache_v2 SET latency_seconds = 2.25"
+        )
         digest[0] = "e" * 64
         third = run(store)
+        digest[0] = "d" * 64
+        provider_duration_ns[0] = 2_000_000_000
+        impossible_duration = run(store)
 
     assert first == second
     assert first.results[0].latency_seconds == 2.25
@@ -2422,10 +2441,20 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     assert sum(first.market_permissions.values()) == 1
     assert third.results[0].latency_seconds == 1.5
     assert third.model_digest == "e" * 64
-    assert chat_calls == 2
-    assert [row["cache_hit"] for row in progress_rows] == [False, True, False]
-    assert [row["prompt_tokens"] for row in progress_rows] == [320, 320, 320]
-    assert [row["output_tokens"] for row in progress_rows] == [24, 24, 24]
+    assert impossible_duration.provider_failure_count == 1
+    assert not any(impossible_duration.market_permissions.values())
+    assert impossible_duration.results[0].response_payload[
+        "provider_response_received"
+    ] is True
+    assert chat_calls == 3
+    assert [row["cache_hit"] for row in progress_rows] == [
+        False,
+        True,
+        False,
+        False,
+    ]
+    assert [row["prompt_tokens"] for row in progress_rows] == [320, 320, 320, 0]
+    assert [row["output_tokens"] for row in progress_rows] == [24, 24, 24, 0]
 
 
 def test_ai_veto_charges_single_gpu_worker_queue_delay(
@@ -2576,7 +2605,7 @@ def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
         ]
         cached_rows = (
             store.connect()
-            .execute("SELECT count(*) FROM polymarket_ai_veto_cache")
+            .execute("SELECT count(*) FROM polymarket_ai_veto_cache_v2")
             .fetchone()[0]
         )
 
