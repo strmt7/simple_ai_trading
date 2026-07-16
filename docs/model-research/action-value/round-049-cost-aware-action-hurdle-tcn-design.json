@@ -144,7 +144,7 @@
       "end_inclusive": "2025-06-30T23:59:59Z",
       "uses": [
         "consumed-development diagnostics",
-        "fixed-policy replay"
+        "fixed-policy validation simulation"
       ]
     },
     "maximum_horizon_embargo_minutes": 30,

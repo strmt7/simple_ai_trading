@@ -1,4 +1,4 @@
-"""Diagnostics and fixed-policy replay for the Round 48 mixture candidates."""
+"""Diagnostics and fixed-policy validation simulation for Round 48 candidates."""
 
 from __future__ import annotations
 
@@ -84,9 +84,9 @@ def _roc_auc(labels: np.ndarray, scores: np.ndarray) -> float:
         return 0.5
     ranks = rankdata(scores, method="average")
     positive_rank_sum = float(np.sum(ranks[labels]))
-    return (
-        positive_rank_sum - positives * (positives + 1) / 2.0
-    ) / (positives * negatives)
+    return (positive_rank_sum - positives * (positives + 1) / 2.0) / (
+        positives * negatives
+    )
 
 
 def _binary_log_loss(probabilities: np.ndarray, labels: np.ndarray) -> float:
@@ -117,8 +117,12 @@ def _expected_calibration_error(
             )
         count = int(np.count_nonzero(mask))
         if count:
-            value += count / total * abs(
-                float(np.mean(probabilities[mask])) - float(np.mean(labels[mask]))
+            value += (
+                count
+                / total
+                * abs(
+                    float(np.mean(probabilities[mask])) - float(np.mean(labels[mask]))
+                )
             )
     return value
 
@@ -142,9 +146,7 @@ def _ensemble_components(
     locations = np.concatenate(
         [value for value in bundle.seed_locations_normalized], axis=-1
     )
-    scales = np.concatenate(
-        [value for value in bundle.seed_scales_normalized], axis=-1
-    )
+    scales = np.concatenate([value for value in bundle.seed_scales_normalized], axis=-1)
     if np.max(np.abs(np.sum(weights, axis=-1) - 1.0)) > 1e-6:
         raise RuntimeError("Round 48 reporting ensemble is not a probability mixture")
     return weights, locations, scales
@@ -164,9 +166,7 @@ def _mixture_quantiles(
         upper = upper_bound.copy()
         for _ in range(24):
             midpoint = 0.5 * (lower + upper)
-            cdf = numpy_logistic_mixture_cdf(
-                weights, locations, scales, midpoint
-            )
+            cdf = numpy_logistic_mixture_cdf(weights, locations, scales, midpoint)
             lower = np.where(cdf < quantile, midpoint, lower)
             upper = np.where(cdf >= quantile, midpoint, upper)
         output.append(0.5 * (lower + upper))
@@ -193,9 +193,11 @@ def _training_baselines(
     dataset: MinuteTemporalDataset,
     bundle: MixtureForecastBundle,
 ) -> dict[str, np.ndarray]:
-    training = dataset.signed_target_bps[dataset.role_masks["training"]].reshape(
-        -1, len(HORIZONS_MINUTES)
-    ).astype(np.float64)
+    training = (
+        dataset.signed_target_bps[dataset.role_masks["training"]]
+        .reshape(-1, len(HORIZONS_MINUTES))
+        .astype(np.float64)
+    )
     normalized = (
         training - bundle.target_scaler.median_bps
     ) / bundle.target_scaler.scaled_iqr_bps
@@ -210,12 +212,8 @@ def _training_baselines(
             len(HORIZONS_MINUTES), dtype=np.float64
         ),
         "logistic_scale_normalized": logistic_scale,
-        "short_prevalence": np.mean(
-            training < -EXECUTION_CHARGE_BPS, axis=0
-        ),
-        "long_prevalence": np.mean(
-            training > EXECUTION_CHARGE_BPS, axis=0
-        ),
+        "short_prevalence": np.mean(training < -EXECUTION_CHARGE_BPS, axis=0),
+        "long_prevalence": np.mean(training > EXECUTION_CHARGE_BPS, axis=0),
     }
 
 
@@ -225,9 +223,7 @@ def _seed_stability(
     short_thresholds: np.ndarray,
     long_thresholds: np.ndarray,
 ) -> tuple[list[dict[str, object]], dict[str, float]]:
-    seed_means = np.sum(
-        bundle.seed_weights * bundle.seed_locations_normalized, axis=-1
-    )
+    seed_means = np.sum(bundle.seed_weights * bundle.seed_locations_normalized, axis=-1)
     seed_probabilities = [
         numpy_hurdle_probabilities(
             bundle.seed_weights[index],
@@ -357,20 +353,14 @@ def candidate_diagnostics(
     locations = all_locations[local_evaluation]
     scales = all_scales[local_evaluation]
     mean_normalized = np.sum(weights * locations, axis=-1)
-    mean_bps = (
-        mean_normalized
-        * bundle.target_scaler.scaled_iqr_bps.reshape(1, 1, -1)
-        + bundle.target_scaler.median_bps.reshape(1, 1, -1)
-    )
+    mean_bps = mean_normalized * bundle.target_scaler.scaled_iqr_bps.reshape(
+        1, 1, -1
+    ) + bundle.target_scaler.median_bps.reshape(1, 1, -1)
     quantiles_normalized = _mixture_quantiles(weights, locations, scales)
-    quantiles_bps = (
-        quantiles_normalized
-        * bundle.target_scaler.scaled_iqr_bps.reshape(1, 1, -1, 1)
-        + bundle.target_scaler.median_bps.reshape(1, 1, -1, 1)
-    )
-    pit = numpy_logistic_mixture_cdf(
-        weights, locations, scales, actual_normalized
-    )
+    quantiles_bps = quantiles_normalized * bundle.target_scaler.scaled_iqr_bps.reshape(
+        1, 1, -1, 1
+    ) + bundle.target_scaler.median_bps.reshape(1, 1, -1, 1)
+    pit = numpy_logistic_mixture_cdf(weights, locations, scales, actual_normalized)
     baselines = _training_baselines(dataset, bundle)
     short_thresholds, long_thresholds = bundle.target_scaler.normalized_thresholds(
         EXECUTION_CHARGE_BPS
@@ -409,9 +399,7 @@ def candidate_diagnostics(
         baseline_location = float(
             baselines["logistic_location_normalized"][horizon_index]
         )
-        baseline_scale = float(
-            baselines["logistic_scale_normalized"][horizon_index]
-        )
+        baseline_scale = float(baselines["logistic_scale_normalized"][horizon_index])
         z = (target_normalized - baseline_location) / baseline_scale
         baseline_nll = float(
             np.mean(z + 2.0 * np.logaddexp(0.0, -z) + math.log(baseline_scale))
@@ -424,9 +412,7 @@ def candidate_diagnostics(
             baselines["quantiles_bps"][horizon_index],
             quantiles_bps[:, :, horizon_index].shape,
         )
-        baseline_pinball = _pinball(
-            actual_bps[:, :, horizon_index], baseline_quantiles
-        )
+        baseline_pinball = _pinball(actual_bps[:, :, horizon_index], baseline_quantiles)
         row = {
             "candidate_id": bundle.candidate_id,
             "horizon_minutes": horizon,
@@ -447,14 +433,26 @@ def candidate_diagnostics(
             "five_quantile_pinball_skill": 1.0 - model_pinball / baseline_pinball,
             "central_80_coverage": float(
                 np.mean(
-                    (actual_bps[:, :, horizon_index] >= quantiles_bps[:, :, horizon_index, 0])
-                    & (actual_bps[:, :, horizon_index] <= quantiles_bps[:, :, horizon_index, 4])
+                    (
+                        actual_bps[:, :, horizon_index]
+                        >= quantiles_bps[:, :, horizon_index, 0]
+                    )
+                    & (
+                        actual_bps[:, :, horizon_index]
+                        <= quantiles_bps[:, :, horizon_index, 4]
+                    )
                 )
             ),
             "central_50_coverage": float(
                 np.mean(
-                    (actual_bps[:, :, horizon_index] >= quantiles_bps[:, :, horizon_index, 1])
-                    & (actual_bps[:, :, horizon_index] <= quantiles_bps[:, :, horizon_index, 3])
+                    (
+                        actual_bps[:, :, horizon_index]
+                        >= quantiles_bps[:, :, horizon_index, 1]
+                    )
+                    & (
+                        actual_bps[:, :, horizon_index]
+                        <= quantiles_bps[:, :, horizon_index, 3]
+                    )
                 )
             ),
             "pit_mean": float(np.mean(pit[:, :, horizon_index])),
@@ -485,17 +483,13 @@ def candidate_diagnostics(
                 if side == "short"
                 else actual_bps[:, :, horizon_index] > EXECUTION_CHARGE_BPS
             ).reshape(-1)
-            score = action_probabilities[
-                :, :, horizon_index, class_index
-            ].reshape(-1)
+            score = action_probabilities[:, :, horizon_index, class_index].reshape(-1)
             prevalence = float(baselines[prevalence_key][horizon_index])
             baseline_probability = np.full(score.size, prevalence)
             model_log_loss = _binary_log_loss(score, label)
             baseline_log_loss = _binary_log_loss(baseline_probability, label)
             model_brier = float(np.mean((score - label) ** 2))
-            baseline_brier = float(
-                np.mean((baseline_probability - label) ** 2)
-            )
+            baseline_brier = float(np.mean((baseline_probability - label) ** 2))
             action_rows.append(
                 {
                     "candidate_id": bundle.candidate_id,
@@ -535,7 +529,9 @@ def candidate_diagnostics(
                 }
             )
 
-        months = np.asarray([_month(value) for value in dataset.timestamps_ms[evaluation_indices]])
+        months = np.asarray(
+            [_month(value) for value in dataset.timestamps_ms[evaluation_indices]]
+        )
         for month in sorted(set(months.tolist())):
             month_mask = months == month
             monthly_rows.append(
@@ -570,22 +566,27 @@ def candidate_diagnostics(
         dataset, bundle, local_evaluation
     )
     distribution_reasons: list[str] = []
-    if sum(float(row["negative_log_likelihood_skill"]) > 0.0 for row in horizon_rows) < 3:
+    if (
+        sum(float(row["negative_log_likelihood_skill"]) > 0.0 for row in horizon_rows)
+        < 3
+    ):
         distribution_reasons.append("fewer_than_three_horizons_beat_unconditional_nll")
     if sum(float(row["five_quantile_pinball_skill"]) > 0.0 for row in horizon_rows) < 3:
-        distribution_reasons.append("fewer_than_three_horizons_beat_unconditional_pinball")
+        distribution_reasons.append(
+            "fewer_than_three_horizons_beat_unconditional_pinball"
+        )
     if sum(float(row["distribution_mean_mse_skill"]) > 0.0 for row in horizon_rows) < 3:
         distribution_reasons.append("fewer_than_three_horizons_beat_training_mean_mse")
     if sum(float(row["distribution_mean_spearman"]) > 0.0 for row in horizon_rows) < 3:
-        distribution_reasons.append("fewer_than_three_horizons_have_positive_mean_spearman")
+        distribution_reasons.append(
+            "fewer_than_three_horizons_have_positive_mean_spearman"
+        )
     if any(
-        not 0.72 <= float(row["central_80_coverage"]) <= 0.88
-        for row in horizon_rows
+        not 0.72 <= float(row["central_80_coverage"]) <= 0.88 for row in horizon_rows
     ):
         distribution_reasons.append("central_80_coverage_outside_bounds")
     if any(
-        not 0.42 <= float(row["central_50_coverage"]) <= 0.58
-        for row in horizon_rows
+        not 0.42 <= float(row["central_50_coverage"]) <= 0.58 for row in horizon_rows
     ):
         distribution_reasons.append("central_50_coverage_outside_bounds")
     if seed_minima["distribution_mean"] < 0.5:
@@ -602,7 +603,10 @@ def candidate_diagnostics(
         action_reasons.append("fewer_than_six_side_horizons_beat_prevalence_brier")
     if sum(float(row["roc_auc"]) > 0.5 for row in action_rows) < 6:
         action_reasons.append("fewer_than_six_side_horizons_have_auc_above_half")
-    if max(float(row["expected_calibration_error_10_bin"]) for row in action_rows) > 0.05:
+    if (
+        max(float(row["expected_calibration_error_10_bin"]) for row in action_rows)
+        > 0.05
+    ):
         action_reasons.append("maximum_expected_calibration_error_exceeds_0_05")
     return {
         "candidate_id": bundle.candidate_id,
@@ -679,8 +683,7 @@ def mixture_ablation_gate(
     relative_nll_improvement = 1.0 - mixture_nll / control_nll
     relative_log_loss_degradation = mixture_log_loss / control_log_loss - 1.0
     effective = min(
-        float(value)
-        for value in dict(mixture["effective_components"]).values()
+        float(value) for value in dict(mixture["effective_components"]).values()
     )
     reasons: list[str] = []
     if relative_nll_improvement < 0.005:
@@ -712,11 +715,9 @@ def select_fixed_policy_trades(
     locations = bundle.seed_locations_normalized[:, local_evaluation]
     scales = bundle.seed_scales_normalized[:, local_evaluation]
     seed_mean_normalized = np.sum(weights * locations, axis=-1)
-    seed_mean_bps = (
-        seed_mean_normalized
-        * bundle.target_scaler.scaled_iqr_bps.reshape(1, 1, 1, -1)
-        + bundle.target_scaler.median_bps.reshape(1, 1, 1, -1)
-    )
+    seed_mean_bps = seed_mean_normalized * bundle.target_scaler.scaled_iqr_bps.reshape(
+        1, 1, 1, -1
+    ) + bundle.target_scaler.median_bps.reshape(1, 1, 1, -1)
     short_thresholds, long_thresholds = bundle.target_scaler.normalized_thresholds(
         EXECUTION_CHARGE_BPS
     )
@@ -744,7 +745,8 @@ def select_fixed_policy_trades(
             for horizon_index, horizon in enumerate(HORIZONS_MINUTES):
                 for side, class_index in ((-1, 0), (1, 2)):
                     expected_net = (
-                        side * seed_mean_bps[:, local_index, symbol_index, horizon_index]
+                        side
+                        * seed_mean_bps[:, local_index, symbol_index, horizon_index]
                         - EXECUTION_CHARGE_BPS
                     )
                     probability = seed_probabilities[
@@ -823,9 +825,7 @@ def _circular_block_bootstrap(
     means = np.empty(BOOTSTRAP_SAMPLES, dtype=np.float64)
     for sample in range(BOOTSTRAP_SAMPLES):
         starts = generator.integers(0, returns_bps.size, size=blocks)
-        indices = (
-            starts[:, None] + offsets.reshape(1, -1)
-        ) % returns_bps.size
+        indices = (starts[:, None] + offsets.reshape(1, -1)) % returns_bps.size
         resampled = returns_bps[indices.reshape(-1)[: returns_bps.size]]
         means[sample] = float(np.mean(resampled))
     return {
@@ -850,10 +850,7 @@ def replay_fixed_trades(
     start_ms = int(dataset.timestamps_ms[evaluation_indices[0]])
     step_ms = DECISION_INTERVAL_MINUTES * MINUTE_MS
     latest_booked_time = max(
-        (
-            ((trade.exit_time_ms + step_ms - 1) // step_ms) * step_ms
-            for trade in trades
-        ),
+        (((trade.exit_time_ms + step_ms - 1) // step_ms) * step_ms for trade in trades),
         default=int(dataset.timestamps_ms[evaluation_indices[-1]]),
     )
     end_ms = max(
@@ -887,9 +884,7 @@ def replay_fixed_trades(
                 trade.decision_index, trade.symbol_index, horizon_index
             ]
         )
-        expected_exit = trade.decision_time_ms + (
-            trade.horizon_minutes + 1
-        ) * MINUTE_MS
+        expected_exit = trade.decision_time_ms + (trade.horizon_minutes + 1) * MINUTE_MS
         if (
             abs(source_target - trade.realized_signed_target_bps) > 1e-6
             or trade.exit_time_ms != expected_exit
@@ -897,12 +892,8 @@ def replay_fixed_trades(
         ):
             raise RuntimeError("Round 48 trade target or overlap contract failed")
         free_at_ms[trade.symbol_index] = trade.exit_time_ms
-        net_bps = (
-            trade.side * source_target - execution_charge_bps
-        )
-        expected_base = (
-            trade.side * source_target - EXECUTION_CHARGE_BPS
-        )
+        net_bps = trade.side * source_target - execution_charge_bps
+        expected_base = trade.side * source_target - EXECUTION_CHARGE_BPS
         if scenario == "base" and abs(net_bps - expected_base) > 1e-6:
             raise RuntimeError("Round 48 target-to-replay identity failed")
         booked_time = ((trade.exit_time_ms + step_ms - 1) // step_ms) * step_ms
@@ -1008,18 +999,14 @@ def replay_fixed_trades(
             for symbol in SYMBOLS
         },
         "trades_by_horizon": {
-            str(horizon): sum(
-                1 for trade in trades if trade.horizon_minutes == horizon
-            )
+            str(horizon): sum(1 for trade in trades if trade.horizon_minutes == horizon)
             for horizon in HORIZONS_MINUTES
         },
         "long_trades": sum(1 for trade in trades if trade.side == 1),
         "short_trades": sum(1 for trade in trades if trade.side == -1),
         "active_days": len(active_dates),
         "median_trades_per_active_day": (
-            float(np.median(list(per_day_counts.values())))
-            if per_day_counts
-            else 0.0
+            float(np.median(list(per_day_counts.values()))) if per_day_counts else 0.0
         ),
         "total_net_return_fraction": float(equity[-1] - 1.0),
         "mean_five_minute_portfolio_bps": float(np.mean(portfolio_return_bps)),
@@ -1054,12 +1041,11 @@ def economic_gate(
     quality_passed: bool,
 ) -> dict[str, object]:
     reasons: list[str] = []
-    stress_bootstrap = stress.metrics[
-        "bootstrap_mean_five_minute_portfolio_bps"
-    ]
-    if not isinstance(stress_bootstrap, Mapping) or float(
-        stress_bootstrap["lower_bps"]
-    ) <= 0.0:
+    stress_bootstrap = stress.metrics["bootstrap_mean_five_minute_portfolio_bps"]
+    if (
+        not isinstance(stress_bootstrap, Mapping)
+        or float(stress_bootstrap["lower_bps"]) <= 0.0
+    ):
         reasons.append("stress_familywise_bootstrap_lower_not_positive")
     if int(base.metrics["positive_months"]) < 4:
         reasons.append("fewer_than_four_positive_months")
@@ -1079,10 +1065,7 @@ def economic_gate(
         int(trades_by_symbol[symbol]) <= 0 for symbol in SYMBOLS
     ):
         reasons.append("not_all_symbols_have_activity")
-    if (
-        float(base.metrics["maximum_single_symbol_fraction_of_absolute_net_pnl"])
-        > 0.5
-    ):
+    if float(base.metrics["maximum_single_symbol_fraction_of_absolute_net_pnl"]) > 0.5:
         reasons.append("single_symbol_absolute_net_pnl_fraction_exceeds_half")
     if not quality_passed:
         reasons.append("distribution_or_action_quality_gate_failed")

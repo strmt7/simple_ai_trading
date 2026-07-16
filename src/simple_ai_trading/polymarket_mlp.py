@@ -1404,7 +1404,7 @@ def fit_and_evaluate_polymarket_mlp(
         or ridge_validation_evaluation.metrics.asdict()
         != expected_ridge_validation.asdict()
     ):
-        raise ValueError("Polymarket MLP parent validation policy replay differs")
+        raise ValueError("Polymarket MLP parent-policy validation simulation differs")
     validation_utility_uplift = (
         None
         if selected_validation is None

@@ -1,4 +1,4 @@
-"""Diagnostics and fixed-policy replay for Round 49 action-value candidates."""
+"""Diagnostics and fixed-policy validation simulation for Round 49 candidates."""
 
 from __future__ import annotations
 

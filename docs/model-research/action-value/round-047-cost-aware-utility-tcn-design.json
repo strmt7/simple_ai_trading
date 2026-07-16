@@ -138,7 +138,7 @@
       "start": "2024-10-01T00:00:00Z",
       "end_inclusive": "2025-06-30T23:59:59Z",
       "uses": [
-        "consumed-development diagnostics and fixed-policy replay"
+        "consumed-development diagnostics and fixed-policy validation simulation"
       ]
     },
     "maximum_horizon_embargo_hours": 24,
