@@ -174,7 +174,8 @@ matched-period uplift contract.
 The report separately binds measured inference time, single-GPU-worker queue
 delay, and effective decision latency. Queue delay is recomputed from monotonic
 case arrivals, so simultaneous BTC, ETH, and SOL reviews cannot each claim an
-impossible zero-wait inference.
+impossible zero-wait inference. CLI output and generated `ai-decisions.csv`
+carry the verified per-case token counts and latency components.
 Before any veto prompt, Polymarket also requires the selected benchmark's sibling
 provenance file to bind its exact SHA-256, Ollama manifest, verified multibillion
 weight blob, and current installed digest. A changed tag or manifest fails before
