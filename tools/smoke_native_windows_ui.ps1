@@ -188,6 +188,9 @@ try {
     )) {
         Select-Combo $window $researchCombo $CommandComboId $modelCommand
     }
+    Select-Combo $window $researchCombo $CommandComboId "Polymarket models / polymarket-model"
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-model --disable-ai" 5000
 
     Select-Page $window $pageList 5
     $commandCombo = Get-Control $window $CommandComboId
