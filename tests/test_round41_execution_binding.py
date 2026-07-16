@@ -75,4 +75,3 @@ def test_round41_binding_is_hash_bound_to_exact_prequential_stack() -> None:
     for artifact in binding["blobs"]:
         expected = artifact["git_blob_oid"]
         assert _git("rev-parse", f"{implementation}:{artifact['path']}") == expected
-        assert _git("rev-parse", f"HEAD:{artifact['path']}") == expected

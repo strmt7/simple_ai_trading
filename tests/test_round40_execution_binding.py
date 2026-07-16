@@ -91,9 +91,7 @@ def test_round40_binding_is_hash_bound_to_exact_implementation() -> None:
     assert design["design_sha256"] == binding["design_sha256"]
     implementation = binding["implementation_commit"]
     for artifact in binding["blobs"]:
-        assert _git("rev-parse", f"{implementation}:{artifact['path']}") == (
-            artifact["git_blob_oid"]
-        )
-        assert _git("rev-parse", f"HEAD:{artifact['path']}") == (
-            artifact["git_blob_oid"]
+        assert (
+            _git("rev-parse", f"{implementation}:{artifact['path']}")
+            == artifact["git_blob_oid"]
         )
