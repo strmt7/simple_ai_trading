@@ -1318,6 +1318,38 @@ def test_recorder_saturation_is_a_terminal_operational_failure(tmp_path) -> None
     assert recorder.errors == ["evidence_queue_saturated:500000/500000"]
 
 
+def test_recorder_progress_identifies_the_latest_persisted_gap(tmp_path) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "gap-progress.duckdb")
+    observed: list[dict[str, object]] = []
+    gap = StreamGap(
+        stream="polymarket_rtds",
+        connection_id="rtds:chainlink:sol:" + "a" * 32,
+        opened_at_ms=1_234,
+        reason="ConnectionClosedError:upstream reset",
+        last_sequence_number=987,
+    ).validated()
+
+    recorder._record_written_gap(gap)
+    recorder._notify_progress(
+        lambda _phase, payload: observed.append(dict(payload)),
+        "capturing",
+        run_id="gap-progress",
+        started_at_ms=1_000,
+        duration_seconds=60,
+        queue_size=0,
+    )
+
+    assert observed[0]["written_gap_count"] == 1
+    assert observed[0]["written_gap_counts"] == {"polymarket_rtds": 1}
+    assert observed[0]["last_written_gap"] == {
+        "stream": "polymarket_rtds",
+        "lane": "rtds:chainlink:sol",
+        "opened_at_ms": 1_234,
+        "reason": "ConnectionClosedError:upstream reset",
+        "last_sequence_number": 987,
+    }
+
+
 def test_read_only_evidence_store_never_creates_or_initializes_a_database(
     tmp_path,
 ) -> None:

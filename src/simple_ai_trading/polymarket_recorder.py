@@ -2726,6 +2726,8 @@ class PolymarketPublicRecorder:
         self._written_message_count = 0
         self._written_market_snapshot_count = 0
         self._written_gap_count = 0
+        self._written_gap_counts: dict[str, int] = {}
+        self._last_written_gap: dict[str, object] | None = None
         self._received_message_count = 0
         self._received_stream_counts: dict[str, int] = {}
         self._queue_high_watermark = 0
@@ -2739,6 +2741,22 @@ class PolymarketPublicRecorder:
         )
         if detail not in self.errors:
             self.errors.append(detail)
+
+    def _record_written_gap(self, gap: StreamGap) -> None:
+        lane, separator, suffix = gap.connection_id.rpartition(":")
+        if not separator or not re.fullmatch(r"[0-9a-f]{32}", suffix):
+            lane = gap.connection_id
+        self._written_gap_count += 1
+        self._written_gap_counts[gap.stream] = (
+            self._written_gap_counts.get(gap.stream, 0) + 1
+        )
+        self._last_written_gap = {
+            "stream": gap.stream,
+            "lane": lane[:128],
+            "opened_at_ms": gap.opened_at_ms,
+            "reason": gap.reason,
+            "last_sequence_number": gap.last_sequence_number,
+        }
 
     def _notify_progress(
         self,
@@ -2764,6 +2782,12 @@ class PolymarketPublicRecorder:
             "written_message_count": self._written_message_count,
             "written_market_snapshot_count": self._written_market_snapshot_count,
             "written_gap_count": self._written_gap_count,
+            "written_gap_counts": dict(sorted(self._written_gap_counts.items())),
+            "last_written_gap": (
+                dict(self._last_written_gap)
+                if self._last_written_gap is not None
+                else None
+            ),
             "received_message_count": self._received_message_count,
             "received_stream_counts": dict(
                 sorted(self._received_stream_counts.items())
@@ -2799,6 +2823,8 @@ class PolymarketPublicRecorder:
         self._written_message_count = 0
         self._written_market_snapshot_count = 0
         self._written_gap_count = 0
+        self._written_gap_counts = {}
+        self._last_written_gap = None
         self._received_message_count = 0
         self._received_stream_counts = {}
         self._queue_high_watermark = 0
@@ -3235,7 +3261,7 @@ class PolymarketPublicRecorder:
                         return
                 if isinstance(item, StreamGap):
                     await invoke(writer_store.record_gap, run_id, item)
-                    self._written_gap_count += 1
+                    self._record_written_gap(item)
                 elif isinstance(item, MarketEvidence):
                     await invoke(writer_store.record_market_evidence, run_id, item)
                     self._written_market_snapshot_count += 1
