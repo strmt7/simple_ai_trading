@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -9,18 +9,23 @@ import pytest
 
 from simple_ai_trading.ai_review import (
     load_ai_review_report,
+    resolve_ollama_model_provenance,
     run_model_lab_ai_review,
 )
+from simple_ai_trading.ai_start_gate import evaluate_ai_start_gate
 from simple_ai_trading.ai_runtime import AICapabilityReport
-from simple_ai_trading.terminal_holdout_ledger import terminal_result_fingerprint
+from simple_ai_trading.terminal_holdout_ledger import (
+    terminal_model_fingerprint,
+    terminal_result_fingerprint,
+)
 from simple_ai_trading.types import RuntimeConfig
 
 
 def _capability(ok: bool = True) -> AICapabilityReport:
     return AICapabilityReport(
         ok=ok,
-        provider="local-gpu",
-        model="qwen2.5:7b",
+        provider="ollama",
+        model="qwen3:8b",
         gpu_vendor="amd",
         compute_backend_requested="directml",
         compute_backend_kind="directml" if ok else "cpu",
@@ -31,22 +36,40 @@ def _capability(ok: bool = True) -> AICapabilityReport:
         model_parameters_b=7.0 if ok else None,
         messages=() if ok else ("AI requires a GPU compute backend",),
         warnings=(),
+        provider_available=ok,
+        model_available=ok,
+        model_local=ok,
+    )
+
+
+@pytest.fixture(autouse=True)
+def _fixed_model_provenance(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.resolve_ollama_model_provenance",
+        lambda *_args, **_kwargs: ("d" * 64, "e" * 64),
     )
 
 
 def _approve_response() -> dict[str, object]:
     return {
         "message": {
-            "content": json.dumps({
-                "action": "approve",
-                "confidence": 0.82,
-                "risk_score": 0.21,
-                "rationale": "Deterministic and portfolio gates passed.",
-                "concerns": ["continue paper monitoring"],
-                "required_actions": ["keep stress reports attached"],
-            })
+            "content": json.dumps(
+                {
+                    "action": "approve",
+                    "confidence": 0.82,
+                    "risk_score": 0.21,
+                    "rationale": "Deterministic and portfolio gates passed.",
+                    "concerns": ["continue paper monitoring"],
+                    "required_actions": ["keep stress reports attached"],
+                }
+            )
         }
     }
+
+
+@dataclass(frozen=True)
+class _RuntimeModel:
+    weight: float
 
 
 def _write_report(
@@ -118,9 +141,11 @@ def _write_report(
             },
             "statistical_evidence": {
                 "accepted": not failed_ai_uplift,
-                "reasons": [] if not failed_ai_uplift else ["ai_uplift_sign_test_p_value>0.0500"],
+                "reasons": []
+                if not failed_ai_uplift
+                else ["ai_uplift_sign_test_p_value>0.0500"],
                 "evidence_unit": "matched_fixed_period_return_delta",
-                "scope": "AAAUSDC",
+                "scope": "BTCUSDT",
                 "sample_count": 30,
                 "min_sample_count": 30,
                 "positive_delta_count": 30 if not failed_ai_uplift else 12,
@@ -159,11 +184,11 @@ def _write_report(
             },
         }
     payload = {
-        "quote_asset": "USDC",
+        "quote_asset": "USDT",
         "interval": "15m",
         "market_type": "futures",
         "requested_objectives": ["regular"],
-        "accepted_symbols": ["AAAUSDC"] if accepted else [],
+        "accepted_symbols": ["BTCUSDT"] if accepted else [],
         "portfolio_risk": {
             "accepted": accepted,
             "reason": None if accepted else "symbols<2",
@@ -174,15 +199,15 @@ def _write_report(
             "portfolio_cvar_95": 0.002,
             "portfolio_max_drawdown": 0.01,
             "deployed_weight": 0.20,
-            "accepted_symbols": ["AAAUSDC"] if accepted else [],
+            "accepted_symbols": ["BTCUSDT"] if accepted else [],
         },
         "outcomes": [
             {
-                "symbol": "AAAUSDC",
+                "symbol": "BTCUSDT",
                 "accepted": accepted,
                 "rows": 500,
                 "data_coverage": {
-                    "symbol": "AAAUSDC",
+                    "symbol": "BTCUSDT",
                     "market_type": "futures",
                     "interval": "15m",
                     "source_scope": "binance_full_history",
@@ -256,7 +281,9 @@ def _write_report(
                         "terminal_holdout": {
                             "schema_version": "terminal-holdout-v1",
                             "passed": not harmful_selection_risk,
-                            "reason": "terminal_holdout_failed" if harmful_selection_risk else None,
+                            "reason": "terminal_holdout_failed"
+                            if harmful_selection_risk
+                            else None,
                             "evaluation_count": 1,
                             "rows": 100,
                             "start_timestamp": 1_000,
@@ -277,14 +304,18 @@ def _write_report(
                                 "model_fingerprint": "b" * 64,
                                 "result_fingerprint": "c" * 64,
                                 "status": "complete",
-                                "result_status": "accepted" if not harmful_selection_risk else "rejected",
+                                "result_status": "accepted"
+                                if not harmful_selection_risk
+                                else "rejected",
                                 "error": "",
                                 "reserved_at_ms": 1_000,
                                 "completed_at_ms": 2_000,
                             },
                             "result": {
                                 "accepted": not harmful_selection_risk,
-                                "realized_pnl": -10.0 if harmful_selection_risk else 10.0,
+                                "realized_pnl": -10.0
+                                if harmful_selection_risk
+                                else 10.0,
                                 "stopped_by_liquidation": False,
                                 "liquidation_events": 0,
                             },
@@ -297,7 +328,9 @@ def _write_report(
                                 if harmful_selection_risk
                                 else None
                             ),
-                            "probability_backtest_overfit": 0.75 if harmful_selection_risk else 0.0,
+                            "probability_backtest_overfit": 0.75
+                            if harmful_selection_risk
+                            else 0.0,
                             "max_probability_backtest_overfit": 0.50,
                         },
                     }
@@ -383,22 +416,27 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
         observed["timeout"] = timeout
         return {
             "message": {
-                "content": json.dumps({
-                    "action": "approve",
-                    "confidence": 0.82,
-                    "risk_score": 0.21,
-                    "rationale": "Deterministic and portfolio gates passed with low tail risk.",
-                    "concerns": ["continue paper monitoring"],
-                    "required_actions": ["keep stress reports attached"],
-                })
+                "content": json.dumps(
+                    {
+                        "action": "approve",
+                        "confidence": 0.82,
+                        "risk_score": 0.21,
+                        "rationale": "Deterministic and portfolio gates passed with low tail risk.",
+                        "concerns": ["continue paper monitoring"],
+                        "required_actions": ["keep stress reports attached"],
+                    }
+                )
             }
         }
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
     review = run_model_lab_ai_review(
         report_path,
-        RuntimeConfig(compute_backend="directml", ai_model="qwen2.5:7b"),
+        RuntimeConfig(compute_backend="directml", ai_model="qwen3:8b"),
         base_url="http://127.0.0.1:11434",
         timeout_seconds=7.0,
         post_json=fake_post,
@@ -413,9 +451,13 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert len(review.prompt_sha256) == 64
     assert len(review.request_sha256 or "") == 64
     assert len(review.response_sha256 or "") == 64
+    assert review.model_digest == "d" * 64
+    assert review.model_metadata_sha256 == "e" * 64
     assert len(review.report_sha256) == 64
     with pytest.raises(ValueError, match="AI review report is invalid"):
         replace(review, source_report_sha256="0" * 64).validated()
+    with pytest.raises(ValueError, match="AI review report is invalid"):
+        replace(review, model_digest="0" * 64).validated()
     assert observed["url"].endswith("/api/chat")
     assert observed["payload"]["format"]["required"] == [
         "action",
@@ -437,16 +479,21 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert (tmp_path / "ai_risk_review.json").exists()
     stored = json.loads((tmp_path / "ai_risk_review.json").read_text(encoding="utf-8"))
     assert stored["report_sha256"] == review.report_sha256
-    assert load_ai_review_report(
-        tmp_path / "ai_risk_review.json",
-        expected_source_report=report_path,
-    ) == review
+    assert (
+        load_ai_review_report(
+            tmp_path / "ai_risk_review.json",
+            expected_source_report=report_path,
+        )
+        == review
+    )
     report_path.write_bytes(report_path.read_bytes() + b" ")
     with pytest.raises(ValueError, match="source report digest differs"):
         load_ai_review_report(tmp_path / "ai_risk_review.json")
 
 
-def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=False)
     called = False
@@ -456,9 +503,14 @@ def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(tmp_path:
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
-    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+    review = run_model_lab_ai_review(
+        report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post
+    )
 
     assert called is False
     assert review.approved is False
@@ -467,7 +519,9 @@ def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(tmp_path:
     assert "deterministic gates" in review.error
 
 
-def test_ai_review_blocks_before_model_call_on_harmful_ablation(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_before_model_call_on_harmful_ablation(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True, harmful_ablation=True)
     called = False
@@ -477,19 +531,29 @@ def test_ai_review_blocks_before_model_call_on_harmful_ablation(tmp_path: Path, 
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
-    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+    review = run_model_lab_ai_review(
+        report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post
+    )
 
     assert called is False
     assert review.approved is False
     assert review.status == "blocked"
     assert review.deterministic_precheck["ablation_warning_count"] == 2
     assert "ablation evidence" in str(review.error)
-    assert any("technical_confluence" in item for item in review.deterministic_precheck["ablation_warnings"])
+    assert any(
+        "technical_confluence" in item
+        for item in review.deterministic_precheck["ablation_warnings"]
+    )
 
 
-def test_ai_review_blocks_before_model_call_on_failed_selection_risk(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_before_model_call_on_failed_selection_risk(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True, harmful_selection_risk=True)
     called = False
@@ -499,19 +563,29 @@ def test_ai_review_blocks_before_model_call_on_failed_selection_risk(tmp_path: P
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
-    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+    review = run_model_lab_ai_review(
+        report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post
+    )
 
     assert called is False
     assert review.approved is False
     assert review.status == "blocked"
     assert review.deterministic_precheck["selection_risk_warning_count"] == 1
     assert "selection-risk evidence" in str(review.error)
-    assert "deflated_score=-0.02" in review.deterministic_precheck["selection_risk_warnings"][0]
+    assert (
+        "deflated_score=-0.02"
+        in review.deterministic_precheck["selection_risk_warnings"][0]
+    )
 
 
-def test_ai_review_blocks_before_model_call_without_terminal_holdout(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_before_model_call_without_terminal_holdout(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True)
     payload = json.loads(report_path.read_text(encoding="utf-8"))
@@ -524,7 +598,10 @@ def test_ai_review_blocks_before_model_call_without_terminal_holdout(tmp_path: P
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
     review = run_model_lab_ai_review(
         report_path,
         RuntimeConfig(compute_backend="directml"),
@@ -534,10 +611,15 @@ def test_ai_review_blocks_before_model_call_without_terminal_holdout(tmp_path: P
     assert called is False
     assert review.approved is False
     assert review.deterministic_precheck["selection_risk_warning_count"] == 1
-    assert "terminal_holdout_missing_or_failed" in review.deterministic_precheck["selection_risk_warnings"][0]
+    assert (
+        "terminal_holdout_missing_or_failed"
+        in review.deterministic_precheck["selection_risk_warnings"][0]
+    )
 
 
-def test_ai_review_blocks_before_model_call_when_ai_uplift_missing(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_before_model_call_when_ai_uplift_missing(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True, include_ai_uplift=False)
     called = False
@@ -547,19 +629,29 @@ def test_ai_review_blocks_before_model_call_when_ai_uplift_missing(tmp_path: Pat
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
-    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+    review = run_model_lab_ai_review(
+        report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post
+    )
 
     assert called is False
     assert review.approved is False
     assert review.status == "blocked"
     assert review.deterministic_precheck["ai_uplift_warning_count"] == 1
     assert "AI-vs-ML uplift" in str(review.error)
-    assert "missing AI-vs-ML uplift evidence" in review.deterministic_precheck["ai_uplift_warnings"][0]
+    assert (
+        "missing AI-vs-ML uplift evidence"
+        in review.deterministic_precheck["ai_uplift_warnings"][0]
+    )
 
 
-def test_ai_review_blocks_before_model_call_when_ai_uplift_fails(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_before_model_call_when_ai_uplift_fails(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True, failed_ai_uplift=True)
     called = False
@@ -569,18 +661,28 @@ def test_ai_review_blocks_before_model_call_when_ai_uplift_fails(tmp_path: Path,
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
-    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+    review = run_model_lab_ai_review(
+        report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post
+    )
 
     assert called is False
     assert review.approved is False
     assert review.status == "blocked"
     assert review.deterministic_precheck["ai_uplift_warning_count"] == 1
-    assert "ai_pnl_not_above_baseline" in review.deterministic_precheck["ai_uplift_warnings"][0]
+    assert (
+        "ai_pnl_not_above_baseline"
+        in review.deterministic_precheck["ai_uplift_warnings"][0]
+    )
 
 
-def test_ai_review_blocks_financially_unsound_accepted_report(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_blocks_financially_unsound_accepted_report(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True)
     payload = json.loads(report_path.read_text(encoding="utf-8"))
@@ -593,9 +695,14 @@ def test_ai_review_blocks_financially_unsound_accepted_report(tmp_path: Path, mo
         called = True
         raise AssertionError("AI provider should not be called")
 
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
-    review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post)
+    review = run_model_lab_ai_review(
+        report_path, RuntimeConfig(compute_backend="directml"), post_json=fake_post
+    )
 
     assert called is False
     assert review.approved is False
@@ -604,15 +711,22 @@ def test_ai_review_blocks_financially_unsound_accepted_report(tmp_path: Path, mo
     assert "financial sanity" in str(review.error)
 
 
-def test_ai_review_fails_closed_on_invalid_ai_payload(tmp_path: Path, monkeypatch) -> None:
+def test_ai_review_fails_closed_on_invalid_ai_payload(
+    tmp_path: Path, monkeypatch
+) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True)
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
 
     review = run_model_lab_ai_review(
         report_path,
         RuntimeConfig(compute_backend="directml"),
-        post_json=lambda *_args, **_kwargs: {"message": {"content": "{\"action\":\"approve\"}"}},
+        post_json=lambda *_args, **_kwargs: {
+            "message": {"content": '{"action":"approve"}'}
+        },
     )
 
     assert review.approved is False
@@ -759,10 +873,213 @@ def test_ai_review_loader_rejects_ambiguous_json_and_boolean_probability(
         )
 
 
+def test_ollama_model_provenance_binds_inventory_digest_and_show_metadata() -> None:
+    digest = "a" * 64
+    metadata = {
+        "details": {"parameter_size": "8.2B", "quantization_level": "Q4_K_M"},
+        "model_info": {"general.parameter_count": 8_200_000_000},
+    }
+    observed: dict[str, object] = {}
+
+    def fake_get(url: str, timeout: float) -> object:
+        observed["get"] = (url, timeout)
+        return {
+            "models": [
+                {
+                    "name": "qwen3:8b",
+                    "model": "qwen3:8b",
+                    "digest": digest,
+                }
+            ]
+        }
+
+    def fake_post(url: str, payload, timeout: float) -> object:
+        observed["post"] = (url, payload, timeout)
+        return metadata
+
+    actual_digest, metadata_sha256 = resolve_ollama_model_provenance(
+        "http://127.0.0.1:11434/",
+        "qwen3:8b",
+        7.0,
+        get_json=fake_get,
+        post_json=fake_post,
+    )
+
+    canonical = json.dumps(
+        metadata,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    assert actual_digest == digest
+    assert metadata_sha256 == sha256(canonical).hexdigest()
+    assert observed["get"] == ("http://127.0.0.1:11434/api/tags", 7.0)
+    assert observed["post"] == (
+        "http://127.0.0.1:11434/api/show",
+        {"model": "qwen3:8b", "verbose": False},
+        7.0,
+    )
+
+
+def test_ai_review_blocks_before_chat_when_model_provenance_fails(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+
+    def fail_provenance(*_args, **_kwargs):
+        raise ValueError("model digest missing")
+
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("chat must not run without model provenance")
+
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(compute_backend="directml"),
+        post_json=fake_post,
+        model_provenance=fail_provenance,
+    )
+
+    assert called is False
+    assert review.status == "blocked"
+    assert review.model_digest is None
+    assert "AI model provenance failed" in str(review.error)
+
+
+def test_ai_start_gate_binds_review_market_and_terminal_model(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    review_path = tmp_path / "ai_risk_review.json"
+    model = _RuntimeModel(weight=0.42)
+    _write_report(report_path, accepted=True)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    reservation = payload["outcomes"][0]["selection_risk"]["regular"][
+        "terminal_holdout"
+    ]["reservation"]
+    reservation["model_fingerprint"] = terminal_model_fingerprint(model)
+    report_path.write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(
+            symbol="BTCUSDT",
+            quote_asset="USDT",
+            interval="15m",
+            market_type="futures",
+            compute_backend="directml",
+        ),
+        output_path=review_path,
+        post_json=lambda *_args, **_kwargs: _approve_response(),
+    )
+    assert review.approved is True
+    runtime = RuntimeConfig(
+        symbol="BTCUSDT",
+        quote_asset="USDT",
+        interval="15m",
+        market_type="futures",
+        compute_backend="directml",
+    )
+    gate = evaluate_ai_start_gate(
+        runtime,
+        objective="regular",
+        model_artifact=model,
+        paper_mode=False,
+        review_path=review_path,
+        capability_detector=lambda _cfg: _capability(True),
+        model_provenance=lambda *_args: ("d" * 64, "e" * 64),
+    )
+
+    assert gate.status == "active"
+    assert gate.allowed is True
+    assert gate.active is True
+    assert gate.terminal_model_fingerprint == terminal_model_fingerprint(model)
+
+    blocked = evaluate_ai_start_gate(
+        runtime,
+        objective="regular",
+        model_artifact=_RuntimeModel(weight=0.41),
+        paper_mode=False,
+        review_path=review_path,
+        capability_detector=lambda _cfg: _capability(True),
+        model_provenance=lambda *_args: ("d" * 64, "e" * 64),
+    )
+    assert blocked.status == "blocked"
+    assert blocked.allowed is False
+    assert "model fingerprint differs" in blocked.reason
+
+    fallback = evaluate_ai_start_gate(
+        runtime,
+        objective="regular",
+        model_artifact=_RuntimeModel(weight=0.41),
+        paper_mode=True,
+        review_path=review_path,
+        capability_detector=lambda _cfg: _capability(True),
+        model_provenance=lambda *_args: ("d" * 64, "e" * 64),
+    )
+    assert fallback.status == "paper_fallback"
+    assert fallback.allowed is True
+    assert fallback.active is False
+
+
+def test_ai_start_gate_missing_review_skips_provider_and_only_falls_back_on_paper(
+    tmp_path: Path,
+) -> None:
+    runtime = RuntimeConfig(
+        symbol="BTCUSDT",
+        quote_asset="USDT",
+        market_type="futures",
+        compute_backend="directml",
+    )
+
+    def unexpected_capability(_cfg):
+        raise AssertionError("missing review must fail before provider checks")
+
+    live = evaluate_ai_start_gate(
+        runtime,
+        objective="conservative",
+        model_artifact=None,
+        paper_mode=False,
+        review_path=tmp_path / "missing.json",
+        capability_detector=unexpected_capability,
+    )
+    assert live.status == "blocked"
+    assert live.allowed is False
+
+    paper = evaluate_ai_start_gate(
+        runtime,
+        objective="conservative",
+        model_artifact=None,
+        paper_mode=True,
+        review_path=tmp_path / "missing.json",
+        capability_detector=unexpected_capability,
+    )
+    assert paper.status == "paper_fallback"
+    assert paper.allowed is True
+    assert paper.active is False
+
+
 def test_ai_review_blocks_on_capability_failure(tmp_path: Path, monkeypatch) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True)
-    monkeypatch.setattr("simple_ai_trading.ai_review.detect_ai_capabilities", lambda _cfg: _capability(False))
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(False),
+    )
 
     review = run_model_lab_ai_review(report_path, RuntimeConfig(compute_backend="cpu"))
 

@@ -128,7 +128,7 @@ try {
     Wait-Until { (Get-ControlText $profile) -eq "Conservative" } "initial operator status" 10000
     Assert-Text $mode "Paper" "execution mode"
     Assert-Text $leverage "5x" "conservative leverage"
-    Assert-Text $ai "AI enabled" "AI toggle"
+    Assert-Text $ai "AI on (gated)" "AI toggle"
     Assert-Text $reinvest "Reinvest off" "reinvestment toggle"
     Assert-Text (Get-Control $window $StopId) "Stop + Close" "stop control"
 
@@ -137,7 +137,7 @@ try {
     Select-Combo $window $mode $ModeId "Testnet live"
     Click-Control $ai
     Click-Control $reinvest
-    Assert-Text $ai "AI disabled" "AI toggle after click"
+    Assert-Text $ai "AI off" "AI toggle after click"
     Assert-Text $reinvest "Reinvest on" "reinvestment toggle after click"
 
     Click-Control (Get-Control $window $RunId)

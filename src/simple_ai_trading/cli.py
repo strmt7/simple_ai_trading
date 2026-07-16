@@ -2147,6 +2147,22 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_autonomous.add_argument("--objective", default="conservative")
     parser_autonomous.add_argument("--model", default="data/model.json", help="model artifact used for autonomous decisions")
+    parser_autonomous.add_argument(
+        "--ai-review",
+        default="data/model_lab/ai_risk_review.json",
+        help="hash-bound AI review artifact required when AI is active",
+    )
+    parser_autonomous.add_argument(
+        "--ai-url",
+        default="http://127.0.0.1:11434",
+        help="local Ollama endpoint used to revalidate AI model provenance",
+    )
+    parser_autonomous.add_argument(
+        "--ai-timeout",
+        type=float,
+        default=10.0,
+        help="seconds allowed for AI capability and provenance checks",
+    )
     parser_autonomous.add_argument("--poll-seconds", type=float, default=30.0, help="seconds between autonomous iterations")
     parser_autonomous.add_argument("--iterations", type=int, default=None, help="stop after N iterations; default runs until stopped")
     parser_autonomous.add_argument("--heartbeat-every", type=int, default=1, help="write heartbeat every N iterations")
@@ -13361,10 +13377,12 @@ def _build_autonomous_decision_fn(
     # Carry the model's tested execution contract into the coordinator without
     # breaking the public three-value return shape used by integrations.
     setattr(decide, "_effective_strategy", effective_strategy)
+    setattr(decide, "_model_artifact", model)
     return decide, None, model_notice
 
 
 def command_autonomous(args: argparse.Namespace) -> int:
+    from .ai_start_gate import evaluate_ai_start_gate
     from .autonomous import (
         AutonomousConfig,
         STATE_PAUSED,
@@ -13424,6 +13442,44 @@ def command_autonomous(args: argparse.Namespace) -> int:
         if model_error is not None or decision_fn is None:
             print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)
             return 2
+        ai_gate = evaluate_ai_start_gate(
+            runtime,
+            objective=objective.name,
+            model_artifact=getattr(decision_fn, "_model_artifact", None),
+            paper_mode=effective_dry_run,
+            review_path=Path(
+                getattr(
+                    args,
+                    "ai_review",
+                    "data/model_lab/ai_risk_review.json",
+                )
+            ),
+            base_url=str(
+                getattr(args, "ai_url", None) or "http://127.0.0.1:11434"
+            ),
+            timeout_seconds=max(
+                0.1,
+                float(getattr(args, "ai_timeout", 10.0)),
+            ),
+        )
+        if not ai_gate.allowed:
+            print(
+                f"Autonomous startup blocked by AI governance: {ai_gate.reason}",
+                file=sys.stderr,
+            )
+            return 2
+        if ai_gate.active:
+            print(
+                "AI assist: active veto-only governance "
+                f"review={ai_gate.review_sha256} model_digest={ai_gate.model_digest}"
+            )
+        elif runtime.ai_enabled:
+            print(
+                f"AI assist: inactive paper fallback ({ai_gate.reason})",
+                file=sys.stderr,
+            )
+        else:
+            print("AI assist: disabled")
         try:
             client = _build_client(runtime)
             if not effective_dry_run:
