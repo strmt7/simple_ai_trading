@@ -128,6 +128,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   2026-07-16 host audit measured about 12.15 GiB free on the AMD DirectML host
   while Ollama remained unloaded; that is capacity evidence, not residency or
   edge evidence.
+- Enabled Polymarket AI also passes the shared local-GPU preflight immediately
+  before provider inference. The native AI-off toggle appends `--disable-ai` to
+  `polymarket-model`; automated UI smoke verifies the emitted command.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
