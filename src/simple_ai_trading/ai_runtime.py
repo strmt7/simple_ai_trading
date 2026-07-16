@@ -409,21 +409,157 @@ def _nvidia_free_vram_gb() -> float | None:
     return max(values) / 1024.0
 
 
+def _rocm_smi_free_vram_gb(output: str) -> float | None:
+    """Parse exact byte totals from legacy ROCm SMI output."""
+
+    patterns = {
+        "total": re.compile(
+            r"GPU\[(\d+)\]\s*:\s*VRAM Total Memory \(B\):\s*(\d+)\s*"
+        ),
+        "used": re.compile(
+            r"GPU\[(\d+)\]\s*:\s*VRAM Total Used Memory \(B\):\s*(\d+)\s*"
+        ),
+    }
+    values: dict[str, dict[int, int]] = {"total": {}, "used": {}}
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        matched = False
+        for kind, pattern in patterns.items():
+            match = pattern.fullmatch(line)
+            if match is None:
+                continue
+            matched = True
+            gpu = int(match.group(1))
+            value = int(match.group(2))
+            if gpu in values[kind]:
+                return None
+            values[kind][gpu] = value
+            break
+        if not matched and (
+            "VRAM Total Memory" in line or "VRAM Total Used Memory" in line
+        ):
+            return None
+    if not values["total"] or values["total"].keys() != values["used"].keys():
+        return None
+    free_values: list[int] = []
+    for gpu, total in values["total"].items():
+        used = values["used"][gpu]
+        if total <= 0 or used < 0 or used > total:
+            return None
+        free_values.append(total - used)
+    return max(free_values) / (1024**3)
+
+
+def _single_distinct_positive_int(values: list[object]) -> int | None:
+    distinct = {
+        value
+        for value in values
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0
+    }
+    if len(distinct) != 1:
+        return None
+    return next(iter(distinct))
+
+
+def _windows_dedicated_vram_total_bytes() -> int | None:
+    """Read the driver's 64-bit VRAM value without WMI uint32 truncation."""
+
+    if platform.system().lower() != "windows":
+        return None
+    try:
+        import winreg
+
+        totals: list[object] = []
+        video_path = r"SYSTEM\CurrentControlSet\Control\Video"
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, video_path) as video_key:
+            guid_index = 0
+            while True:
+                try:
+                    guid_name = winreg.EnumKey(video_key, guid_index)
+                except OSError as exc:
+                    if getattr(exc, "winerror", None) == 259:
+                        break
+                    return None
+                guid_index += 1
+                try:
+                    guid_key = winreg.OpenKey(video_key, guid_name)
+                except OSError:
+                    return None
+                with guid_key:
+                    adapter_index = 0
+                    while True:
+                        try:
+                            adapter_name = winreg.EnumKey(guid_key, adapter_index)
+                        except OSError as exc:
+                            if getattr(exc, "winerror", None) == 259:
+                                break
+                            return None
+                        adapter_index += 1
+                        if re.fullmatch(r"\d{4}", adapter_name) is None:
+                            continue
+                        try:
+                            adapter_key = winreg.OpenKey(guid_key, adapter_name)
+                        except OSError:
+                            return None
+                        with adapter_key:
+                            try:
+                                value, value_type = winreg.QueryValueEx(
+                                    adapter_key, "HardwareInformation.qwMemorySize"
+                                )
+                            except OSError as exc:
+                                if getattr(exc, "winerror", None) == 2:
+                                    continue
+                                return None
+                            if value_type != winreg.REG_QWORD:
+                                return None
+                            totals.append(value)
+    except (ImportError, OSError):
+        return None
+    return _single_distinct_positive_int(totals)
+
+
+def _windows_dedicated_vram_usage_bytes() -> int | None:
+    if platform.system().lower() != "windows":
+        return None
+    output = _run_capture(
+        [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            "Get-CimInstance "
+            "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory "
+            "| Select-Object -ExpandProperty DedicatedUsage",
+        ],
+        timeout=5.0,
+    )
+    values: list[int] = []
+    for raw_line in output.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if re.fullmatch(r"\d+", line) is None:
+            return None
+        values.append(int(line))
+    return sum(values) if values else None
+
+
+def _windows_free_vram_gb() -> float | None:
+    total = _windows_dedicated_vram_total_bytes()
+    used = _windows_dedicated_vram_usage_bytes()
+    if total is None or used is None:
+        return None
+    return max(0, total - used) / (1024**3)
+
+
 def _amd_free_vram_gb() -> float | None:
     exe = shutil.which("rocm-smi") or shutil.which("rocm-smi.exe")
-    if not exe:
-        return None
-    output = _run_capture([exe, "--showmeminfo", "vram"])
-    numbers = []
-    for token in output.replace(",", " ").split():
-        value = _safe_float(token)
-        if value is not None:
-            numbers.append(value)
-    if not numbers:
-        return None
-    # rocm-smi commonly reports MiB. Use the largest visible number as a
-    # conservative free-VRAM proxy when detailed parsing is unavailable.
-    return max(numbers) / 1024.0
+    if exe:
+        parsed = _rocm_smi_free_vram_gb(
+            _run_capture([exe, "--showmeminfo", "vram"])
+        )
+        if parsed is not None:
+            return parsed
+    return _windows_free_vram_gb()
 
 
 def _windows_gpu_names() -> tuple[str, ...]:
@@ -462,9 +598,17 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
     warnings: list[str] = []
     backend = resolve_backend(cfg.compute_backend or default_compute_backend())
     free_ram = _memory_status_gb()
-    nvidia_vram = _nvidia_free_vram_gb()
-    amd_vram = _amd_free_vram_gb()
     windows_gpu_names = _windows_gpu_names()
+    nvidia_vram = _nvidia_free_vram_gb()
+    joined_gpu_names = " ".join(windows_gpu_names).lower()
+    amd_detected = (
+        backend.kind == "rocm"
+        or "amd" in joined_gpu_names
+        or "radeon" in joined_gpu_names
+        or shutil.which("rocm-smi") is not None
+        or shutil.which("rocm-smi.exe") is not None
+    )
+    amd_vram = _amd_free_vram_gb() if amd_detected else None
     if nvidia_vram is not None:
         gpu_vendor = "nvidia"
         free_vram = nvidia_vram
@@ -489,8 +633,8 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
                 f"AI requires a GPU compute backend; {backend.requested} resolved to CPU{reason}"
             )
         elif free_vram is None:
-            warnings.append(
-                "free VRAM could not be measured through vendor tools; GPU backend functional check passed"
+            messages.append(
+                "free VRAM could not be measured reliably; required GPU headroom is unverified"
             )
         elif free_vram < cfg.min_free_vram_gb:
             messages.append(
