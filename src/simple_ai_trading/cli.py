@@ -5756,6 +5756,27 @@ def command_ai(args: argparse.Namespace) -> int:
     )
 
 
+def _require_local_gpu_ai_capability(model: str) -> None:
+    runtime_capability = load_runtime().ai_runtime_config()
+    capability = detect_ai_capabilities(
+        replace(
+            runtime_capability,
+            enabled=True,
+            provider="ollama",
+            model=str(model),
+            require_gpu=True,
+            min_free_vram_gb=max(
+                AIRuntimeConfig().min_free_vram_gb,
+                runtime_capability.min_free_vram_gb,
+            ),
+            allow_paper_fallback=False,
+        )
+    )
+    if not capability.ok:
+        reason = "; ".join(capability.messages) or "capability check failed"
+        raise ValueError(reason)
+
+
 def command_ai_benchmark(args: argparse.Namespace) -> int:
     from .ai_benchmark_claim import requires_preregistered_ai_benchmark
     from .ai_model_benchmark import (
@@ -5810,29 +5831,13 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
             )
         installed_models = installed_ollama_models()
         models = list(_resolve_benchmark_models(models, installed_models))
-        runtime = load_runtime()
-        runtime_capability = runtime.ai_runtime_config()
-        minimum_vram_gb = max(
-            AIRuntimeConfig().min_free_vram_gb,
-            runtime_capability.min_free_vram_gb,
-        )
         for model in models:
-            capability = detect_ai_capabilities(
-                replace(
-                    runtime_capability,
-                    enabled=True,
-                    provider="ollama",
-                    model=model,
-                    require_gpu=True,
-                    min_free_vram_gb=minimum_vram_gb,
-                    allow_paper_fallback=False,
-                )
-            )
-            if not capability.ok:
-                reason = "; ".join(capability.messages) or "capability check failed"
+            try:
+                _require_local_gpu_ai_capability(model)
+            except ValueError as exc:
                 raise ValueError(
-                    f"AI benchmark preflight failed for {model}: {reason}"
-                )
+                    f"AI benchmark preflight failed for {model}: {exc}"
+                ) from exc
         if preregistration or confirmation_database or confirmation_run_id:
             if (
                 not preregistration
@@ -7438,7 +7443,15 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             )
             from .ai_uplift import assess_ai_uplift
 
-            progress("ai-benchmark-verification", model=str(args.ai_model))
+            ai_model = str(args.ai_model)
+            progress("ai-capability-preflight", model=ai_model)
+            try:
+                _require_local_gpu_ai_capability(ai_model)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Polymarket AI preflight failed for {ai_model}: {exc}"
+                ) from exc
+            progress("ai-benchmark-verification", model=ai_model)
             benchmark_path = Path(str(args.ai_benchmark))
             benchmark_bytes = benchmark_path.read_bytes()
             benchmark_payload = json.loads(benchmark_bytes.decode("utf-8"))
@@ -7450,7 +7463,6 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             rescored_benchmark = rescore_finance_ai_benchmark_payload(
                 benchmark_payload
             )
-            ai_model = str(args.ai_model)
             selected_result = next(
                 (
                     item

@@ -1498,6 +1498,12 @@ class MainWindow {
             command += L" ";
             command += extra;
         }
+        if (
+            entry->command == L"polymarket-model" &&
+            !ai_enabled_ &&
+            command.find(L"--disable-ai") == std::wstring::npos) {
+            command += L" --disable-ai";
+        }
         run_sequence({command});
     }
 
