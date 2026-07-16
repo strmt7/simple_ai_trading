@@ -1475,6 +1475,143 @@ class PolymarketEvidenceStore:
         except UnicodeDecodeError as exc:
             raise ValueError("compact raw-message payload is not UTF-8") from exc
 
+    def _iter_verified_v3_raw_events(
+        self,
+        run_id: str,
+        *,
+        selected_streams: tuple[str, ...] | None,
+        selected_conditions: tuple[str, ...] | None,
+        ordered: bool,
+    ) -> Iterator[DecodedPublicEvent]:
+        """Replay audited v3 source chunks without joining the redundant event index."""
+
+        if self._storage_schema_version(run_id) != POLYMARKET_STORAGE_SCHEMA_VERSION:
+            raise ValueError("raw-only public-event replay requires storage v3")
+        filters = ["run_id = ?"]
+        parameters: list[object] = [run_id]
+        if selected_streams is not None:
+            placeholders = ", ".join("?" for _ in selected_streams)
+            filters.append(f"stream IN ({placeholders})")
+            parameters.extend(selected_streams)
+        order_clause = ""
+        if ordered:
+            order_clause = """
+                ORDER BY received_monotonic_ns, received_wall_ms,
+                         connection_id, sequence_number
+            """
+        cursor = self.connect().execute(
+            f"""
+            SELECT message_id, stream, connection_id, sequence_number,
+                   received_wall_ms, received_monotonic_ns,
+                   raw_payload_sha256, raw_text, parse_status, parse_error,
+                   storage_chunk_id, raw_offset, raw_size,
+                   normalized_event_count
+            FROM polymarket_raw_message
+            WHERE {" AND ".join(filters)}
+            {order_clause}
+            """,
+            parameters,
+        )
+        for rows in iter(lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []):
+            for row in rows:
+                (
+                    message_id,
+                    stream,
+                    connection_id,
+                    sequence_number,
+                    received_wall_ms,
+                    received_monotonic_ns,
+                    raw_payload_sha256,
+                    inline_raw_text,
+                    parse_status,
+                    parse_error,
+                    chunk_id,
+                    raw_offset,
+                    raw_size,
+                    normalized_event_count,
+                ) = row
+                event_count = int(normalized_event_count)
+                if event_count == 0:
+                    continue
+                if (
+                    event_count < 0
+                    or str(inline_raw_text)
+                    or str(parse_status) != "ok"
+                    or str(parse_error)
+                ):
+                    raise ValueError("verified v3 raw-message metadata is invalid")
+                raw_text = self._decode_compact_raw_text(
+                    run_id=run_id,
+                    chunk_id=chunk_id,
+                    raw_offset=raw_offset,
+                    raw_size=raw_size,
+                    raw_payload_sha256=raw_payload_sha256,
+                    verify_payload_hash=False,
+                )
+                try:
+                    parsed = _strict_json_loads(raw_text)
+                except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
+                    raise ValueError(
+                        "verified v3 raw message cannot be reconstructed"
+                    ) from exc
+                candidates = parsed if isinstance(parsed, list) else [parsed]
+                if (
+                    len(candidates) != event_count
+                    or not all(isinstance(item, Mapping) for item in candidates)
+                ):
+                    raise ValueError("verified v3 normalized-event count drifted")
+                normalized_message_id = str(message_id)
+                normalized_stream = str(stream)
+                for sub_index, raw_event in enumerate(candidates):
+                    if not isinstance(raw_event, Mapping):
+                        raise ValueError("verified v3 event is not an object")
+                    event = dict(raw_event)
+                    normalized = _event_index(normalized_stream, event)
+                    condition_id = str(normalized["condition_id"])
+                    if (
+                        selected_conditions is not None
+                        and condition_id not in selected_conditions
+                    ):
+                        continue
+                    event_json = _canonical_json(event)
+                    event_sha256 = hashlib.sha256(
+                        event_json.encode("ascii")
+                    ).hexdigest()
+                    event_id = _canonical_sha256(
+                        {
+                            "message_id": normalized_message_id,
+                            "sub_index": sub_index,
+                            "event_sha256": event_sha256,
+                        }
+                    )
+                    yield DecodedPublicEvent(
+                        event_id=event_id,
+                        run_id=run_id,
+                        message_id=normalized_message_id,
+                        sub_index=sub_index,
+                        stream=normalized_stream,
+                        event_type=str(normalized["event_type"]),
+                        symbol=str(normalized["symbol"]),
+                        condition_id=condition_id,
+                        asset_id=str(normalized["asset_id"]),
+                        source_time_ms=(
+                            None
+                            if normalized["source_time_ms"] is None
+                            else int(normalized["source_time_ms"])
+                        ),
+                        publisher_time_ms=(
+                            None
+                            if normalized["publisher_time_ms"] is None
+                            else int(normalized["publisher_time_ms"])
+                        ),
+                        event_sha256=event_sha256,
+                        event=event,
+                        connection_id=str(connection_id),
+                        sequence_number=int(sequence_number),
+                        received_wall_ms=int(received_wall_ms),
+                        received_monotonic_ns=int(received_monotonic_ns),
+                    )
+
     def iter_public_events(
         self,
         run_id: str,
@@ -1516,6 +1653,18 @@ class PolymarketEvidenceStore:
             ):
                 raise ValueError("public-event condition filter is invalid")
         storage_version = self._storage_schema_version(run_id)
+        if (
+            storage_version == POLYMARKET_STORAGE_SCHEMA_VERSION
+            and verified_source
+            and selected_conditions is None
+        ):
+            yield from self._iter_verified_v3_raw_events(
+                run_id,
+                selected_streams=selected_streams,
+                selected_conditions=None,
+                ordered=ordered,
+            )
+            return
         compact = storage_version in _COMPACT_STORAGE_SCHEMA_VERSIONS
         compact_columns = (
             ", r.storage_chunk_id, r.raw_offset, r.raw_size" if compact else ""
@@ -1534,70 +1683,16 @@ class PolymarketEvidenceStore:
         """
 
         def ordered_row_batches() -> Iterator[list[tuple[object, ...]]]:
-            if selected_conditions is None:
-                filters = ["r.run_id = ?"]
-                parameters: list[object] = [run_id]
-                if selected_streams is not None:
-                    stream_placeholders = ", ".join("?" for _ in selected_streams)
-                    filters.append(f"r.stream IN ({stream_placeholders})")
-                    parameters.extend(selected_streams)
-                order_clause = ""
-                if ordered:
-                    order_clause = """
-                        ORDER BY r.received_monotonic_ns, r.received_wall_ms,
-                                 r.connection_id, r.sequence_number
-                    """
-                cursor = self.connect().execute(
-                    f"""
-                    SELECT unhex(r.message_id) AS message_id_bytes
-                    FROM polymarket_raw_message AS r
-                    WHERE {" AND ".join(filters)}
-                    {order_clause}
-                    """,
-                    parameters,
-                )
-                for key_batch in iter(
-                    lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []
-                ):
-                    message_ids = tuple(bytes(row[0]).hex() for row in key_batch)
-                    placeholders = ", ".join("?" for _ in message_ids)
-                    rows = (
-                        self._payload_connection()
-                        .execute(
-                            wide_select
-                            + f" WHERE e.run_id = ? AND e.message_id IN ({placeholders})",
-                            [run_id, *message_ids],
-                        )
-                        .fetchall()
-                    )
-                    rows_by_message: dict[str, list[tuple[object, ...]]] = {}
-                    seen_event_ids: set[str] = set()
-                    for row in rows:
-                        event_id = str(row[0])
-                        if event_id in seen_event_ids:
-                            raise ValueError("normalized event identity is duplicated")
-                        seen_event_ids.add(event_id)
-                        rows_by_message.setdefault(str(row[2]), []).append(row)
-                    ordered_rows: list[tuple[object, ...]] = []
-                    for message_id in message_ids:
-                        ordered_rows.extend(
-                            sorted(
-                                rows_by_message.get(message_id, ()),
-                                key=lambda row: (int(row[3]), str(row[0])),
-                            )
-                        )
-                    yield ordered_rows
-                return
-
             filters = ["e.run_id = ?"]
-            parameters = [run_id]
+            parameters: list[object] = [run_id]
             if selected_streams is not None:
                 stream_placeholders = ", ".join("?" for _ in selected_streams)
                 filters.append(f"e.stream IN ({stream_placeholders})")
                 parameters.extend(selected_streams)
-            condition_placeholders = ", ".join("?" for _ in selected_conditions)
-            filters.append(f"e.condition_id IN ({condition_placeholders})")
-            parameters.extend(selected_conditions)
+            if selected_conditions is not None:
+                condition_placeholders = ", ".join("?" for _ in selected_conditions)
+                filters.append(f"e.condition_id IN ({condition_placeholders})")
+                parameters.extend(selected_conditions)
             order_clause = ""
             if ordered:
                 order_clause = """
@@ -1606,39 +1701,11 @@ class PolymarketEvidenceStore:
                              e.event_id
                 """
             cursor = self.connect().execute(
-                f"""
-                SELECT unhex(e.event_id) AS event_id_bytes
-                FROM polymarket_public_event AS e
-                JOIN polymarket_raw_message AS r
-                  ON r.run_id = e.run_id AND r.message_id = e.message_id
-                WHERE {" AND ".join(filters)}
-                {order_clause}
-                """,
+                wide_select
+                + f" WHERE {' AND '.join(filters)} {order_clause}",
                 parameters,
             )
-            for key_batch in iter(lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), []):
-                event_ids = tuple(bytes(row[0]).hex() for row in key_batch)
-                placeholders = ", ".join("?" for _ in event_ids)
-                rows = (
-                    self._payload_connection()
-                    .execute(
-                        wide_select
-                        + f" WHERE e.run_id = ? AND e.event_id IN ({placeholders})",
-                        [run_id, *event_ids],
-                    )
-                    .fetchall()
-                )
-                rows_by_id: dict[str, tuple[object, ...]] = {}
-                for row in rows:
-                    row_event_id = str(row[0])
-                    if row_event_id in rows_by_id:
-                        raise ValueError("normalized event identity is duplicated")
-                    rows_by_id[row_event_id] = row
-                if len(rows_by_id) != len(event_ids) or any(
-                    event_id not in rows_by_id for event_id in event_ids
-                ):
-                    raise ValueError("normalized event batch lookup is incomplete")
-                yield [rows_by_id[event_id] for event_id in event_ids]
+            yield from iter(lambda: cursor.fetchmany(_INTEGRITY_FETCH_SIZE), [])
 
         cached_message_id = ""
         cached_events: tuple[Mapping[str, object], ...] = ()

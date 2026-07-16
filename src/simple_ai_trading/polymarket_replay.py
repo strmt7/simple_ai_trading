@@ -931,6 +931,7 @@ class PolymarketEvidenceReplay:
             run_id,
             streams=("clob_market", "clob_rest_book"),
             condition_ids=conditions,
+            verified_source=True,
         ):
             raw_row = (
                 decoded.event_id,

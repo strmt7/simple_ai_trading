@@ -34,14 +34,18 @@ too permissive. V8 requires exact typed JSON and is frozen before the one-shot
 Qwen3 14B candidate. No AI model is selected; `ai-risk-models-rejected.json`
 is negative governance evidence only and grants no AI or trading authority.
 
-Capture attempts `eae374e2662c440fb93970d5710937b1` and
-`3a67757c7f174df4b62f2722ea9211cb` are permanently development-only. Their
-queues saturated and both were interrupted without terminal reports, so they
-cannot confirm a model. Recorder v2 keeps the 1,024-message integrity chunk,
-atomically commits up to 8,192 messages, and defaults to a 500,000-message burst
-buffer. The hash-bound [throughput benchmark](../round-009-recorder-throughput-benchmark.json)
-contains the exact real-message windows, results, and limitations. A fresh long
-capture must still finish `complete` before any Round 9 fit or AI benchmark.
+Capture attempts `eae374e2662c440fb93970d5710937b1`,
+`3a67757c7f174df4b62f2722ea9211cb`, and
+`b8a270da20fe4116a01a4626607e42da` are permanently development-only and cannot
+confirm a model. Storage v3 preserves 1,024-message integrity chunks and
+8,192-message atomic commits while removing incremental hot-table indexes.
+Terminal reads now stream one relational query, and clean audited v3 source
+feeds can replay directly from hash-verified raw chunks. The hash-bound
+[writer](../storage-v3-long-tail-benchmark-2026-07-16.json) and
+[reader](../storage-v3-reader-benchmark-2026-07-16.json) benchmarks state their
+real-payload scope and limitations. Capture
+`79ac19539d384352b865c21cb0c43627` is still running; it grants no Round 9 model
+or AI evidence until terminal integrity, continuity, and resolution gates pass.
 
 The host [DirectML preflight](../round-009-directml-preflight.json) completed a
 real MLP forward/backward parameter update on `privateuseone:0` with no CPU

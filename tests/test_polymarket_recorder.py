@@ -496,6 +496,53 @@ def test_verified_event_iteration_requires_and_reuses_clean_integrity_audit(
     assert verified == strict
 
 
+def test_storage_v3_verified_reader_crosses_query_batches_without_drift(
+    tmp_path,
+) -> None:
+    database = tmp_path / "verified-event-batches.duckdb"
+    run_id = "verified-event-batches"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, run_id)
+        store.append_messages(
+            run_id,
+            [
+                _message(
+                    "binance_spot",
+                    {
+                        "stream": "btcusdt@trade",
+                        "data": {
+                            "e": "trade",
+                            "E": EPOCH * 1_000 + sequence,
+                            "T": EPOCH * 1_000 + sequence,
+                        },
+                    },
+                    sequence=sequence,
+                )
+                for sequence in range(2, 5_002)
+            ],
+        )
+        report = store.finish_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 6_000,
+            database=str(database),
+            errors=(),
+        )
+        assert report.status == "complete"
+        assert store.integrity_errors(run_id) == ()
+        strict = tuple(store.iter_public_events(run_id, streams=("binance_spot",)))
+        verified = tuple(
+            store.iter_public_events(
+                run_id,
+                streams=("binance_spot",),
+                verified_source=True,
+            )
+        )
+
+    assert len(strict) == 5_001
+    assert verified == strict
+
+
 def test_terminal_audit_cache_survives_unrelated_derived_writes(tmp_path) -> None:
     database = tmp_path / "derived-write-cache.duckdb"
     phases: list[str] = []
