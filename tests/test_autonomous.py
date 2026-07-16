@@ -1098,6 +1098,49 @@ def test_run_loop_decision_binance_error_continues(tmp_path: Path) -> None:
     assert result.iterations == 2
 
 
+def test_run_loop_live_startup_mismatch_never_publishes_running_state(
+    tmp_path: Path,
+) -> None:
+    cfg = _make_config(tmp_path, dry_run=False)
+
+    def reconcile(_client, runtime, _store):
+        return ReconciliationReport(
+            ok=False,
+            market_type=runtime.market_type,
+            symbols_checked=[runtime.symbol],
+            local_open_count=0,
+            local_live_open_count=0,
+            local_paper_open_count=0,
+            exchange_exposure_count=1,
+            mismatches=[
+                ReconciliationMismatch(
+                    symbol=runtime.symbol,
+                    side="LONG",
+                    local_qty=0.0,
+                    exchange_qty=0.1,
+                    difference=0.1,
+                    reason="exchange_exposure_without_local_position",
+                )
+            ],
+        )
+
+    with pytest.raises(RuntimeError, match="unsafe execution lifecycle"):
+        run_loop(
+            FakeClient(),
+            _runtime(),
+            _strategy(),
+            cfg,
+            decision_fn=lambda *_: Decision(
+                side="FLAT", confidence=0.0, mark_price=100.0
+            ),
+            sleep=lambda _d: None,
+            clock=_tick_clock(),
+            reconcile_fn=reconcile,
+        )
+
+    assert not cfg.control_path.exists()
+
+
 def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
     attempts = {"n": 0}

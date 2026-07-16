@@ -1074,11 +1074,6 @@ def run_loop(
                 f"{paper_startup.asdict()}"
             )
     control = AutonomousControl(path=cfg.control_path)
-    control.write(
-        STATE_RUNNING,
-        note=f"objective={objective.name}",
-        execution="paper" if cfg.dry_run else "live",
-    )
     reconcile = reconcile_fn or _default_reconcile
     if not cfg.dry_run:
         startup_lifecycle = _loop_lifecycle_plan(
@@ -1097,6 +1092,11 @@ def run_loop(
                 "Autonomous live mode refuses to start with unsafe execution lifecycle: "
                 f"{startup_lifecycle.asdict()}"
             )
+    control.write(
+        STATE_RUNNING,
+        note=f"objective={objective.name}",
+        execution="paper" if cfg.dry_run else "live",
+    )
     poll = max(_MIN_INTERVAL_SECONDS, float(cfg.poll_seconds))
 
     iteration = 0
