@@ -4,6 +4,7 @@ import asyncio
 from decimal import Decimal
 import hashlib
 import json
+import os
 import threading
 
 import duckdb
@@ -297,18 +298,27 @@ def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
         with pytest.raises(duckdb.ConstraintException):
             store.append_messages("atomic-batch", messages)
         connection = store.connect()
-        assert connection.execute(
-            "SELECT count(*) FROM polymarket_raw_message"
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT count(*) FROM polymarket_raw_chunk"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM polymarket_raw_message"
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute("SELECT count(*) FROM polymarket_raw_chunk").fetchone()[
+                0
+            ]
+            == 0
+        )
         assert "atomic-batch" not in store._next_chunk_index_by_run
 
         store.append_messages("atomic-batch", messages[:1])
-        assert connection.execute(
-            "SELECT chunk_index FROM polymarket_raw_chunk"
-        ).fetchone()[0] == 0
+        assert (
+            connection.execute(
+                "SELECT chunk_index FROM polymarket_raw_chunk"
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> None:
@@ -350,6 +360,86 @@ def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> No
     assert len(events) == 1
     assert events[0].event == raw_event
     assert errors == ()
+
+
+def test_verified_event_iteration_requires_and_reuses_clean_integrity_audit(
+    tmp_path,
+) -> None:
+    database = tmp_path / "verified-event-iteration.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, "verified-event-iteration")
+        report = store.finish_run(
+            "verified-event-iteration",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(),
+        )
+        assert report.status == "complete"
+
+    with PolymarketEvidenceStore(database, read_only=True) as store:
+        with pytest.raises(ValueError, match="clean current terminal integrity audit"):
+            tuple(
+                store.iter_public_events(
+                    "verified-event-iteration",
+                    verified_source=True,
+                )
+            )
+        assert store.integrity_errors("verified-event-iteration") == ()
+        strict = tuple(store.iter_public_events("verified-event-iteration"))
+        verified = tuple(
+            store.iter_public_events(
+                "verified-event-iteration",
+                verified_source=True,
+            )
+        )
+        stat = database.stat()
+        os.utime(
+            database,
+            ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000),
+        )
+        with pytest.raises(ValueError, match="clean current terminal integrity audit"):
+            tuple(
+                store.iter_public_events(
+                    "verified-event-iteration",
+                    verified_source=True,
+                )
+            )
+
+    assert verified == strict
+
+
+def test_terminal_audit_cache_survives_unrelated_derived_writes(tmp_path) -> None:
+    database = tmp_path / "derived-write-cache.duckdb"
+    phases: list[str] = []
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, "derived-write-cache")
+        report = store.finish_run(
+            "derived-write-cache",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(),
+        )
+        assert report.status == "complete"
+        assert store.integrity_errors("derived-write-cache") == ()
+        store.connect().execute("CREATE TABLE derived_test(value INTEGER)")
+        store.connect().execute("INSERT INTO derived_test VALUES (1)")
+        assert (
+            store.integrity_errors(
+                "derived-write-cache",
+                progress=lambda phase, _details: phases.append(phase),
+            )
+            == ()
+        )
+        assert tuple(
+            store.iter_public_events(
+                "derived-write-cache",
+                verified_source=True,
+            )
+        )
+
+    assert phases == ["integrity-cache-hit"]
 
 
 def test_legacy_rtds_chainlink_type_remains_raw_verifiable(tmp_path) -> None:
@@ -910,7 +1000,7 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
         )
         connection.execute(
             """
-            UPDATE polymarket_public_event SET event_json = '{}'
+            UPDATE polymarket_public_event SET event_json = '{}', symbol = 'TAMPERED'
             WHERE event_id = (SELECT min(event_id) FROM polymarket_public_event)
             """
         )
@@ -938,9 +1028,8 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
         errors = store.integrity_errors("run-tampered")
 
     assert any(error.startswith("compact_inline_raw_payload:") for error in errors)
-    assert any(
-        error.startswith("event_source_reconstruction_failed:") for error in errors
-    )
+    assert any(error.startswith("compact_inline_event_payload:") for error in errors)
+    assert any(error.startswith("normalized_event_manifest_") for error in errors)
     assert any(error.startswith("snapshot_payload_mismatch:") for error in errors)
     assert any(error.startswith("stream_gap_id_mismatch:") for error in errors)
     assert any(error.startswith("raw_message_id_mismatch:") for error in errors)
@@ -964,9 +1053,7 @@ def test_compact_frame_corruption_is_fail_closed(tmp_path) -> None:
             tuple(store.iter_public_events("frame-corruption"))
 
     assert any(error.startswith("raw_chunk_invalid:") for error in errors)
-    assert any(
-        error.startswith("event_source_reconstruction_failed:") for error in errors
-    )
+    assert any(error.startswith("normalized_event_manifest_") for error in errors)
 
 
 def test_terminal_recorder_evidence_rejects_late_append(

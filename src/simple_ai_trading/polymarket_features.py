@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from array import array
 from bisect import bisect_right, insort
 from dataclasses import asdict, dataclass, replace
 from decimal import Decimal, InvalidOperation
@@ -12,7 +13,10 @@ import time
 from typing import Callable, Mapping, Sequence, TypeVar
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
-from .polymarket_coverage import PolymarketFeedCoverage, inspect_polymarket_feed_coverage
+from .polymarket_coverage import (
+    PolymarketFeedCoverage,
+    inspect_polymarket_feed_coverage,
+)
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import (
     PolymarketEvidenceReplay,
@@ -223,10 +227,7 @@ class PolymarketFeatureRow:
             or self.decision_received_monotonic_ns < 0
             or len(self.feature_values) != len(POLYMARKET_FEATURE_NAMES)
             or not all(math.isfinite(value) for value in self.feature_values)
-            or not (
-                self.official_up is None
-                or isinstance(self.official_up, bool)
-            )
+            or not (self.official_up is None or isinstance(self.official_up, bool))
             or (self.official_up is None and bool(self.resolution_event_id))
             or (self.official_up is not None and not self.resolution_event_id)
             or self.row_sha256 != _canonical_sha256(_feature_row_payload(self))
@@ -335,6 +336,294 @@ class _BinanceBookPoint:
         return (self.bid + self.ask) / 2.0
 
 
+class _CompactBookTimeView(Sequence[int]):
+    """Zero-copy receive-clock view over one compact book slice."""
+
+    __slots__ = ("_books",)
+
+    def __init__(self, books: _CompactBinanceBookView) -> None:
+        self._books = books
+
+    def __len__(self) -> int:
+        return len(self._books)
+
+    def __getitem__(self, index: int | slice) -> int | tuple[int, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        return self._books.received_monotonic_ns_at(index)
+
+
+class _CompactBinanceBookView(Sequence[_BinanceBookPoint]):
+    """Ordered zero-copy view over one connection's compact book events."""
+
+    __slots__ = ("_books", "_connection_id", "_end", "_indices", "_start")
+    is_received_ordered = True
+
+    def __init__(
+        self,
+        books: _CompactBinanceBooks,
+        *,
+        connection_id: str,
+        start: int = 0,
+        end: int | None = None,
+        indices: array[int] | None = None,
+    ) -> None:
+        self._books = books
+        self._connection_id = connection_id
+        self._start = int(start)
+        self._end = len(books) if end is None else int(end)
+        self._indices = indices
+        if indices is None and not 0 <= self._start <= self._end <= len(books):
+            raise ValueError("compact Binance book view bounds are invalid")
+
+    @property
+    def connection_id(self) -> str:
+        return self._connection_id
+
+    def __len__(self) -> int:
+        return (
+            len(self._indices) if self._indices is not None else self._end - self._start
+        )
+
+    def _absolute_index(self, index: int) -> int:
+        normalized = int(index)
+        if normalized < 0:
+            normalized += len(self)
+        if not 0 <= normalized < len(self):
+            raise IndexError("compact Binance book view index is outside bounds")
+        return (
+            int(self._indices[normalized])
+            if self._indices is not None
+            else self._start + normalized
+        )
+
+    def __getitem__(
+        self, index: int | slice
+    ) -> _BinanceBookPoint | tuple[_BinanceBookPoint, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        return self._books[self._absolute_index(index)]
+
+    def received_monotonic_ns_at(self, index: int) -> int:
+        return self._books.received_monotonic_ns_at(self._absolute_index(index))
+
+    def event_id_at(self, index: int) -> str:
+        return self._books.event_id_at(self._absolute_index(index))
+
+    def event_sha256_at(self, index: int) -> str:
+        return self._books.event_sha256_at(self._absolute_index(index))
+
+    def midpoint_at(self, index: int) -> float:
+        return self._books.midpoint_at(self._absolute_index(index))
+
+    def times(self) -> _CompactBookTimeView:
+        return _CompactBookTimeView(self)
+
+
+class _CompactBinanceBooks(Sequence[_BinanceBookPoint]):
+    """Memory-bounded immutable storage for high-rate Binance bookTicker rows."""
+
+    __slots__ = (
+        "_ask",
+        "_ask_quantity",
+        "_asset",
+        "_bid",
+        "_bid_quantity",
+        "_connection_codes",
+        "_connection_lookup",
+        "_connections",
+        "_event_ids",
+        "_event_sha256",
+        "_finished",
+        "_pending",
+        "_pending_ns",
+        "_received_monotonic_ns",
+        "_received_wall_ms",
+    )
+    is_received_ordered = True
+
+    def __init__(self, asset: str) -> None:
+        self._asset = str(asset)
+        self._received_wall_ms = array("q")
+        self._received_monotonic_ns = array("q")
+        self._bid = array("d")
+        self._bid_quantity = array("d")
+        self._ask = array("d")
+        self._ask_quantity = array("d")
+        self._connection_codes = array("I")
+        self._connections: list[str] = []
+        self._connection_lookup: dict[str, int] = {}
+        self._event_ids = bytearray()
+        self._event_sha256 = bytearray()
+        self._pending_ns: int | None = None
+        self._pending: list[_BinanceBookPoint] = []
+        self._finished = False
+
+    def __len__(self) -> int:
+        return len(self._received_monotonic_ns) + len(self._pending)
+
+    @staticmethod
+    def _digest_bytes(value: str, *, name: str) -> bytes:
+        try:
+            digest = bytes.fromhex(str(value))
+        except ValueError as exc:
+            raise ValueError(f"{name} is not hexadecimal") from exc
+        if len(digest) != 32:
+            raise ValueError(f"{name} must be SHA-256")
+        return digest
+
+    def _connection_code(self, connection_id: str) -> int:
+        normalized = str(connection_id)
+        existing = self._connection_lookup.get(normalized)
+        if existing is not None:
+            return existing
+        code = len(self._connections)
+        if code >= 2**32:
+            raise ValueError("too many Binance book connection segments")
+        self._connection_lookup[normalized] = code
+        self._connections.append(normalized)
+        return code
+
+    def _store(self, point: _BinanceBookPoint) -> None:
+        if point.asset != self._asset:
+            raise ValueError("compact Binance book asset differs")
+        if (
+            self._received_monotonic_ns
+            and point.received_monotonic_ns < self._received_monotonic_ns[-1]
+        ):
+            raise ValueError("compact Binance book receive clock regressed")
+        self._received_wall_ms.append(int(point.received_wall_ms))
+        self._received_monotonic_ns.append(int(point.received_monotonic_ns))
+        self._bid.append(float(point.bid))
+        self._bid_quantity.append(float(point.bid_quantity))
+        self._ask.append(float(point.ask))
+        self._ask_quantity.append(float(point.ask_quantity))
+        self._connection_codes.append(self._connection_code(point.connection_id))
+        self._event_ids.extend(self._digest_bytes(point.event_id, name="event_id"))
+        self._event_sha256.extend(
+            self._digest_bytes(point.event_sha256, name="event_sha256")
+        )
+
+    def _flush_pending(self) -> None:
+        for point in sorted(self._pending, key=_received_order_key):
+            self._store(point)
+        self._pending.clear()
+
+    def append(self, point: _BinanceBookPoint) -> None:
+        if self._finished:
+            raise RuntimeError("compact Binance books are already finalized")
+        received_ns = int(point.received_monotonic_ns)
+        if self._pending_ns is None:
+            self._pending_ns = received_ns
+        elif received_ns < self._pending_ns:
+            raise ValueError("compact Binance book receive clock regressed")
+        elif received_ns > self._pending_ns:
+            self._flush_pending()
+            self._pending_ns = received_ns
+        self._pending.append(point)
+
+    def finish(self) -> _CompactBinanceBooks:
+        if not self._finished:
+            self._flush_pending()
+            self._pending_ns = None
+            self._finished = True
+        return self
+
+    def _normalized_index(self, index: int) -> int:
+        if not self._finished:
+            raise RuntimeError("compact Binance books are not finalized")
+        normalized = int(index)
+        if normalized < 0:
+            normalized += len(self._received_monotonic_ns)
+        if not 0 <= normalized < len(self._received_monotonic_ns):
+            raise IndexError("compact Binance book index is outside bounds")
+        return normalized
+
+    def _hex_at(self, values: bytearray, index: int) -> str:
+        offset = index * 32
+        return values[offset : offset + 32].hex()
+
+    def __getitem__(
+        self, index: int | slice
+    ) -> _BinanceBookPoint | tuple[_BinanceBookPoint, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        position = self._normalized_index(index)
+        return _BinanceBookPoint(
+            asset=self._asset,
+            connection_id=self.connection_id_at(position),
+            received_wall_ms=int(self._received_wall_ms[position]),
+            received_monotonic_ns=int(self._received_monotonic_ns[position]),
+            bid=float(self._bid[position]),
+            bid_quantity=float(self._bid_quantity[position]),
+            ask=float(self._ask[position]),
+            ask_quantity=float(self._ask_quantity[position]),
+            event_id=self.event_id_at(position),
+            event_sha256=self.event_sha256_at(position),
+        )
+
+    def received_monotonic_ns_at(self, index: int) -> int:
+        return int(self._received_monotonic_ns[self._normalized_index(index)])
+
+    def connection_id_at(self, index: int) -> str:
+        position = self._normalized_index(index)
+        return self._connections[int(self._connection_codes[position])]
+
+    def event_id_at(self, index: int) -> str:
+        position = self._normalized_index(index)
+        return self._hex_at(self._event_ids, position)
+
+    def event_sha256_at(self, index: int) -> str:
+        position = self._normalized_index(index)
+        return self._hex_at(self._event_sha256, position)
+
+    def midpoint_at(self, index: int) -> float:
+        position = self._normalized_index(index)
+        return (float(self._bid[position]) + float(self._ask[position])) / 2.0
+
+    def connection_views(self) -> dict[str, _CompactBinanceBookView]:
+        if not self._finished:
+            raise RuntimeError("compact Binance books are not finalized")
+        spans: dict[int, list[tuple[int, int]]] = {}
+        start = 0
+        while start < len(self._connection_codes):
+            code = int(self._connection_codes[start])
+            end = start + 1
+            while (
+                end < len(self._connection_codes)
+                and int(self._connection_codes[end]) == code
+            ):
+                end += 1
+            spans.setdefault(code, []).append((start, end))
+            start = end
+        views: dict[str, _CompactBinanceBookView] = {}
+        for code, ranges in spans.items():
+            connection_id = self._connections[code]
+            if len(ranges) == 1:
+                views[connection_id] = _CompactBinanceBookView(
+                    self,
+                    connection_id=connection_id,
+                    start=ranges[0][0],
+                    end=ranges[0][1],
+                )
+                continue
+            indices = array("Q")
+            for first, last in ranges:
+                indices.extend(range(first, last))
+            views[connection_id] = _CompactBinanceBookView(
+                self,
+                connection_id=connection_id,
+                indices=indices,
+            )
+        return views
+
+
 @dataclass(frozen=True, slots=True)
 class _BinanceTradePoint:
     asset: str
@@ -346,6 +635,298 @@ class _BinanceTradePoint:
     event_sha256: str
 
 
+class _CompactTradeTimeView(Sequence[int]):
+    """Zero-copy receive-clock view over one compact trade slice."""
+
+    __slots__ = ("_trades",)
+
+    def __init__(self, trades: _CompactBinanceTradeView) -> None:
+        self._trades = trades
+
+    def __len__(self) -> int:
+        return len(self._trades)
+
+    def __getitem__(self, index: int | slice) -> int | tuple[int, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        return self._trades.received_monotonic_ns_at(index)
+
+
+class _CompactBinanceTradeView(Sequence[_BinanceTradePoint]):
+    """Ordered zero-copy view over one connection's compact trade events."""
+
+    __slots__ = ("_connection_id", "_end", "_indices", "_start", "_trades")
+    is_received_ordered = True
+
+    def __init__(
+        self,
+        trades: _CompactBinanceTrades,
+        *,
+        connection_id: str,
+        start: int = 0,
+        end: int | None = None,
+        indices: array[int] | None = None,
+    ) -> None:
+        self._trades = trades
+        self._connection_id = connection_id
+        self._start = int(start)
+        self._end = len(trades) if end is None else int(end)
+        self._indices = indices
+        if indices is None and not 0 <= self._start <= self._end <= len(trades):
+            raise ValueError("compact Binance trade view bounds are invalid")
+
+    @property
+    def connection_id(self) -> str:
+        return self._connection_id
+
+    def __len__(self) -> int:
+        return (
+            len(self._indices) if self._indices is not None else self._end - self._start
+        )
+
+    def _absolute_index(self, index: int) -> int:
+        normalized = int(index)
+        if normalized < 0:
+            normalized += len(self)
+        if not 0 <= normalized < len(self):
+            raise IndexError("compact Binance trade view index is outside bounds")
+        return (
+            int(self._indices[normalized])
+            if self._indices is not None
+            else self._start + normalized
+        )
+
+    def __getitem__(
+        self, index: int | slice
+    ) -> _BinanceTradePoint | tuple[_BinanceTradePoint, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        return self._trades[self._absolute_index(index)]
+
+    def received_monotonic_ns_at(self, index: int) -> int:
+        return self._trades.received_monotonic_ns_at(self._absolute_index(index))
+
+    def connection_id_at(self, index: int) -> str:
+        return self._trades.connection_id_at(self._absolute_index(index))
+
+    def event_id_at(self, index: int) -> str:
+        return self._trades.event_id_at(self._absolute_index(index))
+
+    def event_sha256_at(self, index: int) -> str:
+        return self._trades.event_sha256_at(self._absolute_index(index))
+
+    def signed_quote_at(self, index: int) -> Decimal:
+        return self._trades.signed_quote_at(self._absolute_index(index))
+
+    def gross_quote_at(self, index: int) -> Decimal:
+        return self._trades.gross_quote_at(self._absolute_index(index))
+
+    def times(self) -> _CompactTradeTimeView:
+        return _CompactTradeTimeView(self)
+
+
+class _CompactBinanceTrades(Sequence[_BinanceTradePoint]):
+    """Lossless packed storage for high-rate Binance aggregate trades."""
+
+    __slots__ = (
+        "_asset",
+        "_connection_codes",
+        "_connection_lookup",
+        "_connections",
+        "_event_ids",
+        "_event_sha256",
+        "_finished",
+        "_gross_quote_ends",
+        "_gross_quote_text",
+        "_negative",
+        "_pending",
+        "_pending_ns",
+        "_received_monotonic_ns",
+    )
+    is_received_ordered = True
+
+    def __init__(self, asset: str) -> None:
+        self._asset = str(asset)
+        self._received_monotonic_ns = array("q")
+        self._connection_codes = array("I")
+        self._connections: list[str] = []
+        self._connection_lookup: dict[str, int] = {}
+        self._event_ids = bytearray()
+        self._event_sha256 = bytearray()
+        self._gross_quote_text = bytearray()
+        self._gross_quote_ends = array("Q")
+        self._negative = bytearray()
+        self._pending_ns: int | None = None
+        self._pending: list[_BinanceTradePoint] = []
+        self._finished = False
+
+    def __len__(self) -> int:
+        return len(self._received_monotonic_ns) + len(self._pending)
+
+    def _connection_code(self, connection_id: str) -> int:
+        normalized = str(connection_id)
+        existing = self._connection_lookup.get(normalized)
+        if existing is not None:
+            return existing
+        code = len(self._connections)
+        if code >= 2**32:
+            raise ValueError("too many Binance trade connection segments")
+        self._connection_lookup[normalized] = code
+        self._connections.append(normalized)
+        return code
+
+    def _store(self, point: _BinanceTradePoint) -> None:
+        if point.asset != self._asset:
+            raise ValueError("compact Binance trade asset differs")
+        if point.gross_quote <= 0 or abs(point.signed_quote) != point.gross_quote:
+            raise ValueError("compact Binance trade quote amounts are inconsistent")
+        if (
+            self._received_monotonic_ns
+            and point.received_monotonic_ns < self._received_monotonic_ns[-1]
+        ):
+            raise ValueError("compact Binance trade receive clock regressed")
+        quote_bytes = str(point.gross_quote).encode("ascii", errors="strict")
+        self._received_monotonic_ns.append(int(point.received_monotonic_ns))
+        self._connection_codes.append(self._connection_code(point.connection_id))
+        self._event_ids.extend(
+            _CompactBinanceBooks._digest_bytes(point.event_id, name="event_id")
+        )
+        self._event_sha256.extend(
+            _CompactBinanceBooks._digest_bytes(
+                point.event_sha256,
+                name="event_sha256",
+            )
+        )
+        self._gross_quote_text.extend(quote_bytes)
+        self._gross_quote_ends.append(len(self._gross_quote_text))
+        self._negative.append(point.signed_quote < 0)
+
+    def _flush_pending(self) -> None:
+        for point in sorted(self._pending, key=_received_order_key):
+            self._store(point)
+        self._pending.clear()
+
+    def append(self, point: _BinanceTradePoint) -> None:
+        if self._finished:
+            raise RuntimeError("compact Binance trades are already finalized")
+        received_ns = int(point.received_monotonic_ns)
+        if self._pending_ns is None:
+            self._pending_ns = received_ns
+        elif received_ns < self._pending_ns:
+            raise ValueError("compact Binance trade receive clock regressed")
+        elif received_ns > self._pending_ns:
+            self._flush_pending()
+            self._pending_ns = received_ns
+        self._pending.append(point)
+
+    def finish(self) -> _CompactBinanceTrades:
+        if not self._finished:
+            self._flush_pending()
+            self._pending_ns = None
+            self._finished = True
+        return self
+
+    def _normalized_index(self, index: int) -> int:
+        if not self._finished:
+            raise RuntimeError("compact Binance trades are not finalized")
+        normalized = int(index)
+        if normalized < 0:
+            normalized += len(self._received_monotonic_ns)
+        if not 0 <= normalized < len(self._received_monotonic_ns):
+            raise IndexError("compact Binance trade index is outside bounds")
+        return normalized
+
+    @staticmethod
+    def _hex_at(values: bytearray, index: int) -> str:
+        offset = index * 32
+        return values[offset : offset + 32].hex()
+
+    def __getitem__(
+        self, index: int | slice
+    ) -> _BinanceTradePoint | tuple[_BinanceTradePoint, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        position = self._normalized_index(index)
+        gross = self.gross_quote_at(position)
+        return _BinanceTradePoint(
+            asset=self._asset,
+            connection_id=self.connection_id_at(position),
+            received_monotonic_ns=int(self._received_monotonic_ns[position]),
+            signed_quote=-gross if self._negative[position] else gross,
+            gross_quote=gross,
+            event_id=self.event_id_at(position),
+            event_sha256=self.event_sha256_at(position),
+        )
+
+    def received_monotonic_ns_at(self, index: int) -> int:
+        return int(self._received_monotonic_ns[self._normalized_index(index)])
+
+    def connection_id_at(self, index: int) -> str:
+        position = self._normalized_index(index)
+        return self._connections[int(self._connection_codes[position])]
+
+    def event_id_at(self, index: int) -> str:
+        position = self._normalized_index(index)
+        return self._hex_at(self._event_ids, position)
+
+    def event_sha256_at(self, index: int) -> str:
+        position = self._normalized_index(index)
+        return self._hex_at(self._event_sha256, position)
+
+    def gross_quote_at(self, index: int) -> Decimal:
+        position = self._normalized_index(index)
+        start = 0 if position == 0 else int(self._gross_quote_ends[position - 1])
+        end = int(self._gross_quote_ends[position])
+        return Decimal(self._gross_quote_text[start:end].decode("ascii"))
+
+    def signed_quote_at(self, index: int) -> Decimal:
+        position = self._normalized_index(index)
+        gross = self.gross_quote_at(position)
+        return -gross if self._negative[position] else gross
+
+    def connection_views(self) -> dict[str, _CompactBinanceTradeView]:
+        if not self._finished:
+            raise RuntimeError("compact Binance trades are not finalized")
+        spans: dict[int, list[tuple[int, int]]] = {}
+        start = 0
+        while start < len(self._connection_codes):
+            code = int(self._connection_codes[start])
+            end = start + 1
+            while (
+                end < len(self._connection_codes)
+                and int(self._connection_codes[end]) == code
+            ):
+                end += 1
+            spans.setdefault(code, []).append((start, end))
+            start = end
+        views: dict[str, _CompactBinanceTradeView] = {}
+        for code, ranges in spans.items():
+            connection_id = self._connections[code]
+            if len(ranges) == 1:
+                views[connection_id] = _CompactBinanceTradeView(
+                    self,
+                    connection_id=connection_id,
+                    start=ranges[0][0],
+                    end=ranges[0][1],
+                )
+                continue
+            indices = array("Q")
+            for first, last in ranges:
+                indices.extend(range(first, last))
+            views[connection_id] = _CompactBinanceTradeView(
+                self,
+                connection_id=connection_id,
+                indices=indices,
+            )
+        return views
+
+
 @dataclass(frozen=True)
 class PolymarketFeatureSourceContext:
     """Audited cross-feed state shared by bounded CLOB reconstruction batches."""
@@ -354,8 +935,8 @@ class PolymarketFeatureSourceContext:
     config: PolymarketFeatureConfig
     coverage: PolymarketFeedCoverage
     chainlink: Mapping[str, tuple[_PricePoint, ...]]
-    direct_books: Mapping[str, tuple[_BinanceBookPoint, ...]]
-    direct_trades: Mapping[str, tuple[_BinanceTradePoint, ...]]
+    direct_books: Mapping[str, Sequence[_BinanceBookPoint]]
+    direct_trades: Mapping[str, Sequence[_BinanceTradePoint]]
     market_snapshots: Mapping[str, _MarketSnapshotPoint]
     book_series: Mapping[str, Mapping[str, _BookSeries]]
     trade_series: Mapping[str, Mapping[str, _TradeSeries]]
@@ -372,7 +953,9 @@ def _received_order_key(
 
 def _stable_received_order(
     points: Sequence[_ReceivedPoint],
-) -> tuple[_ReceivedPoint, ...]:
+) -> Sequence[_ReceivedPoint]:
+    if getattr(points, "is_received_ordered", False) is True:
+        return points
     ordered = points if isinstance(points, tuple) else tuple(points)
     if any(
         _received_order_key(previous) > _received_order_key(current)
@@ -380,6 +963,121 @@ def _stable_received_order(
     ):
         return tuple(sorted(ordered, key=_received_order_key))
     return ordered
+
+
+def _book_point(points: Sequence[_BinanceBookPoint], index: int) -> _BinanceBookPoint:
+    value = points[index]
+    if not isinstance(value, _BinanceBookPoint):
+        raise TypeError("Binance book sequence returned an invalid point")
+    return value
+
+
+def _book_received_monotonic_ns(points: Sequence[_BinanceBookPoint], index: int) -> int:
+    accessor = getattr(points, "received_monotonic_ns_at", None)
+    if callable(accessor):
+        return int(accessor(index))
+    return int(_book_point(points, index).received_monotonic_ns)
+
+
+def _book_midpoint(points: Sequence[_BinanceBookPoint], index: int) -> float:
+    accessor = getattr(points, "midpoint_at", None)
+    if callable(accessor):
+        return float(accessor(index))
+    return _book_point(points, index).midpoint
+
+
+def _book_event_id(points: Sequence[_BinanceBookPoint], index: int) -> str:
+    accessor = getattr(points, "event_id_at", None)
+    if callable(accessor):
+        return str(accessor(index))
+    return _book_point(points, index).event_id
+
+
+def _book_event_sha256(points: Sequence[_BinanceBookPoint], index: int) -> str:
+    accessor = getattr(points, "event_sha256_at", None)
+    if callable(accessor):
+        return str(accessor(index))
+    return _book_point(points, index).event_sha256
+
+
+def _trade_point(
+    points: Sequence[_BinanceTradePoint], index: int
+) -> _BinanceTradePoint:
+    value = points[index]
+    if not isinstance(value, _BinanceTradePoint):
+        raise TypeError("Binance trade sequence returned an invalid point")
+    return value
+
+
+def _trade_received_monotonic_ns(
+    points: Sequence[_BinanceTradePoint], index: int
+) -> int:
+    accessor = getattr(points, "received_monotonic_ns_at", None)
+    if callable(accessor):
+        return int(accessor(index))
+    return int(_trade_point(points, index).received_monotonic_ns)
+
+
+def _trade_connection_id(points: Sequence[_BinanceTradePoint], index: int) -> str:
+    accessor = getattr(points, "connection_id_at", None)
+    if callable(accessor):
+        return str(accessor(index))
+    return _trade_point(points, index).connection_id
+
+
+def _trade_event_id(points: Sequence[_BinanceTradePoint], index: int) -> str:
+    accessor = getattr(points, "event_id_at", None)
+    if callable(accessor):
+        return str(accessor(index))
+    return _trade_point(points, index).event_id
+
+
+def _trade_event_sha256(points: Sequence[_BinanceTradePoint], index: int) -> str:
+    accessor = getattr(points, "event_sha256_at", None)
+    if callable(accessor):
+        return str(accessor(index))
+    return _trade_point(points, index).event_sha256
+
+
+def _trade_signed_quote(points: Sequence[_BinanceTradePoint], index: int) -> Decimal:
+    accessor = getattr(points, "signed_quote_at", None)
+    if callable(accessor):
+        return Decimal(accessor(index))
+    return _trade_point(points, index).signed_quote
+
+
+def _trade_gross_quote(points: Sequence[_BinanceTradePoint], index: int) -> Decimal:
+    accessor = getattr(points, "gross_quote_at", None)
+    if callable(accessor):
+        return Decimal(accessor(index))
+    return _trade_point(points, index).gross_quote
+
+
+class _FixedDigestSequence(Sequence[bytes]):
+    """Packed SHA-256 sequence with the previous bytes-indexing contract."""
+
+    __slots__ = ("_values",)
+
+    def __init__(self, values: bytes | bytearray) -> None:
+        if len(values) % 32:
+            raise ValueError("packed SHA-256 sequence has a partial digest")
+        self._values = values if isinstance(values, bytearray) else bytearray(values)
+
+    def __len__(self) -> int:
+        return len(self._values) // 32
+
+    def __getitem__(self, index: int | slice) -> bytes | tuple[bytes, ...]:
+        if isinstance(index, slice):
+            return tuple(
+                self[position] for position in range(*index.indices(len(self)))
+            )
+        normalized = int(index)
+        if normalized < 0:
+            normalized += len(self)
+        if not 0 <= normalized < len(self):
+            raise IndexError("packed SHA-256 index is outside bounds")
+        offset = normalized * 32
+        return bytes(self._values[offset : offset + 32])
 
 
 class _ConnectionCursor:
@@ -408,13 +1106,13 @@ class _ConnectionCursor:
         previous_book_index = self.book_index
         while (
             self.book_index < len(self.book_points)
-            and self.book_points[self.book_index].received_monotonic_ns
+            and _book_received_monotonic_ns(self.book_points, self.book_index)
             <= received_monotonic_ns
         ):
             self.book_index += 1
         if self.book_index > previous_book_index:
             position = self.book_index - 1
-            point = self.book_points[position]
+            point = _book_point(self.book_points, position)
             key = (point.received_monotonic_ns, point.event_id, 0, position)
             if self.latest_key is None or key > self.latest_key:
                 self.latest_key = key
@@ -423,17 +1121,24 @@ class _ConnectionCursor:
         previous_trade_index = self.trade_index
         while (
             self.trade_index < len(self.trade_points)
-            and self.trade_points[self.trade_index].received_monotonic_ns
+            and _trade_received_monotonic_ns(self.trade_points, self.trade_index)
             <= received_monotonic_ns
         ):
             self.trade_index += 1
         if self.trade_index > previous_trade_index:
             position = self.trade_index - 1
-            point = self.trade_points[position]
-            key = (point.received_monotonic_ns, point.event_id, 1, position)
+            key = (
+                _trade_received_monotonic_ns(self.trade_points, position),
+                _trade_event_id(self.trade_points, position),
+                1,
+                position,
+            )
             if self.latest_key is None or key > self.latest_key:
                 self.latest_key = key
-                self.latest_connection_id = point.connection_id
+                self.latest_connection_id = _trade_connection_id(
+                    self.trade_points,
+                    position,
+                )
         return self.latest_connection_id
 
 
@@ -526,10 +1231,12 @@ class _BookCursor:
     def advance(self, received_monotonic_ns: int) -> _BinanceBookPoint | None:
         while (
             self.index < len(self.points)
-            and self.points[self.index].received_monotonic_ns <= received_monotonic_ns
+            and _book_received_monotonic_ns(self.points, self.index)
+            <= received_monotonic_ns
         ):
-            self.latest = self.points[self.index]
             self.index += 1
+        if self.index:
+            self.latest = _book_point(self.points, self.index - 1)
         return self.latest
 
 
@@ -544,11 +1251,15 @@ class _BookSeries:
 
     def __init__(self, points: Sequence[_BinanceBookPoint]) -> None:
         self.points = _stable_received_order(points)
-        connections = {item.connection_id for item in self.points}
-        if len(connections) != 1:
-            raise ValueError("Binance book series crossed connection segments")
-        self.connection_id = next(iter(connections))
-        self.times = tuple(item.received_monotonic_ns for item in self.points)
+        if isinstance(self.points, _CompactBinanceBookView):
+            self.connection_id = self.points.connection_id
+            self.times = self.points.times()
+        else:
+            connections = {item.connection_id for item in self.points}
+            if len(connections) != 1:
+                raise ValueError("Binance book series crossed connection segments")
+            self.connection_id = next(iter(connections))
+            self.times = tuple(item.received_monotonic_ns for item in self.points)
         previous_sha256 = _canonical_sha256(
             {
                 "schema_version": "binance-book-causal-prefix-v2",
@@ -556,24 +1267,29 @@ class _BookSeries:
                 "connection_id": self.connection_id,
             }
         )
-        prefix_digests = [bytes.fromhex(previous_sha256)]
-        for item in self.points:
+        prefix_digests = bytearray(bytes.fromhex(previous_sha256))
+        for index in range(len(self.points)):
             previous_sha256 = _canonical_sha256(
                 {
                     "schema_version": "binance-book-causal-prefix-v2",
                     "previous_sha256": previous_sha256,
-                    "event_id": item.event_id,
-                    "event_sha256": item.event_sha256,
-                    "received_monotonic_ns": item.received_monotonic_ns,
+                    "event_id": _book_event_id(self.points, index),
+                    "event_sha256": _book_event_sha256(self.points, index),
+                    "received_monotonic_ns": _book_received_monotonic_ns(
+                        self.points, index
+                    ),
                 }
             )
-            prefix_digests.append(bytes.fromhex(previous_sha256))
-        self.prefix_digests = tuple(prefix_digests)
-        squared_returns = [0.0]
-        for previous, current in zip(self.points, self.points[1:]):
-            value = math.log(current.midpoint / previous.midpoint)
+            prefix_digests.extend(bytes.fromhex(previous_sha256))
+        self.prefix_digests = _FixedDigestSequence(prefix_digests)
+        squared_returns = array("d", [0.0])
+        for index in range(1, len(self.points)):
+            value = math.log(
+                _book_midpoint(self.points, index)
+                / _book_midpoint(self.points, index - 1)
+            )
             squared_returns.append(value * value)
-        self.squared_returns = tuple(squared_returns)
+        self.squared_returns = squared_returns
 
     def _index_at_or_before(self, received_monotonic_ns: int) -> int:
         return bisect_right(self.times, int(received_monotonic_ns)) - 1
@@ -595,8 +1311,8 @@ class _BookSeries:
         if current < 0 or previous < 0:
             return 0.0
         return _log_basis_bps(
-            self.points[current].midpoint,
-            self.points[previous].midpoint,
+            _book_midpoint(self.points, current),
+            _book_midpoint(self.points, previous),
         )
 
     def realized_volatility_bps(
@@ -625,11 +1341,18 @@ class _TradeSeries:
 
     def __init__(self, points: Sequence[_BinanceTradePoint]) -> None:
         self.points = _stable_received_order(points)
-        connections = {item.connection_id for item in self.points}
-        if len(connections) != 1:
-            raise ValueError("Binance trade series crossed connection segments")
-        self.connection_id = next(iter(connections))
-        self.times = tuple(item.received_monotonic_ns for item in self.points)
+        if isinstance(self.points, _CompactBinanceTradeView):
+            self.connection_id = self.points.connection_id
+            self.times = self.points.times()
+        else:
+            connections = {item.connection_id for item in self.points}
+            if len(connections) != 1:
+                raise ValueError("Binance trade series crossed connection segments")
+            self.connection_id = next(iter(connections))
+            self.times = array(
+                "q",
+                (item.received_monotonic_ns for item in self.points),
+            )
         previous_sha256 = _canonical_sha256(
             {
                 "schema_version": "binance-trade-causal-prefix-v2",
@@ -637,25 +1360,32 @@ class _TradeSeries:
                 "connection_id": self.connection_id,
             }
         )
-        prefix_digests = [bytes.fromhex(previous_sha256)]
+        prefix_digests = bytearray(bytes.fromhex(previous_sha256))
         signed_prefix = [Decimal(0)]
         gross_prefix = [Decimal(0)]
-        for item in self.points:
-            signed_prefix.append(signed_prefix[-1] + item.signed_quote)
-            gross_prefix.append(gross_prefix[-1] + item.gross_quote)
+        for index in range(len(self.points)):
+            signed_prefix.append(
+                signed_prefix[-1] + _trade_signed_quote(self.points, index)
+            )
+            gross_prefix.append(
+                gross_prefix[-1] + _trade_gross_quote(self.points, index)
+            )
             previous_sha256 = _canonical_sha256(
                 {
                     "schema_version": "binance-trade-causal-prefix-v2",
                     "previous_sha256": previous_sha256,
-                    "event_id": item.event_id,
-                    "event_sha256": item.event_sha256,
-                    "received_monotonic_ns": item.received_monotonic_ns,
+                    "event_id": _trade_event_id(self.points, index),
+                    "event_sha256": _trade_event_sha256(self.points, index),
+                    "received_monotonic_ns": _trade_received_monotonic_ns(
+                        self.points,
+                        index,
+                    ),
                 }
             )
-            prefix_digests.append(bytes.fromhex(previous_sha256))
+            prefix_digests.extend(bytes.fromhex(previous_sha256))
         self.signed_prefix = tuple(signed_prefix)
         self.gross_prefix = tuple(gross_prefix)
-        self.prefix_digests = tuple(prefix_digests)
+        self.prefix_digests = _FixedDigestSequence(prefix_digests)
 
     def causal_prefix(self, received_monotonic_ns: int) -> tuple[int, str]:
         count = bisect_right(self.times, int(received_monotonic_ns))
@@ -679,12 +1409,12 @@ def _parse_feed_points(
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> tuple[
     dict[str, tuple[_PricePoint, ...]],
-    dict[str, tuple[_BinanceBookPoint, ...]],
-    dict[str, tuple[_BinanceTradePoint, ...]],
+    dict[str, Sequence[_BinanceBookPoint]],
+    dict[str, Sequence[_BinanceTradePoint]],
 ]:
     chainlink: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
-    direct_books: dict[str, list[_BinanceBookPoint]] = {key: [] for key in _ASSETS}
-    direct_trades: dict[str, list[_BinanceTradePoint]] = {key: [] for key in _ASSETS}
+    direct_books = {key: _CompactBinanceBooks(key) for key in _ASSETS}
+    direct_trades = {key: _CompactBinanceTrades(key) for key in _ASSETS}
     scan_started = time.monotonic()
     last_progress = scan_started
     parsed_count = 0
@@ -715,6 +1445,7 @@ def _parse_feed_points(
     for decoded in store.iter_public_events(
         run_id,
         streams=("binance_spot", "polymarket_rtds"),
+        verified_source=True,
     ):
         parsed_count += 1
         if parsed_count % 4_096 == 0:
@@ -823,10 +1554,14 @@ def _parse_feed_points(
                 )
             )
     notify(force=True)
+    for books in direct_books.values():
+        books.finish()
+    for trades in direct_trades.values():
+        trades.finish()
     return (
         {key: tuple(value) for key, value in chainlink.items()},
-        {key: tuple(value) for key, value in direct_books.items()},
-        {key: tuple(value) for key, value in direct_trades.items()},
+        direct_books,
+        direct_trades,
     )
 
 
@@ -903,12 +1638,18 @@ def load_polymarket_feature_source_context(
                     "status": "started",
                 },
             )
-        grouped: dict[str, list[_BinanceBookPoint]] = {}
-        for point in points:
-            grouped.setdefault(point.connection_id, []).append(point)
+        if isinstance(points, _CompactBinanceBooks):
+            grouped_books: Mapping[str, Sequence[_BinanceBookPoint]] = (
+                points.connection_views()
+            )
+        else:
+            mutable_groups: dict[str, list[_BinanceBookPoint]] = {}
+            for point in points:
+                mutable_groups.setdefault(point.connection_id, []).append(point)
+            grouped_books = mutable_groups
         book_series[asset] = {
             connection_id: _BookSeries(segment)
-            for connection_id, segment in grouped.items()
+            for connection_id, segment in grouped_books.items()
         }
         if progress is not None:
             progress(
@@ -917,7 +1658,7 @@ def load_polymarket_feature_source_context(
                     "asset": asset,
                     "kind": "book",
                     "point_count": len(points),
-                    "segment_count": len(grouped),
+                    "segment_count": len(grouped_books),
                     "status": "complete",
                 },
             )
@@ -932,12 +1673,18 @@ def load_polymarket_feature_source_context(
                     "status": "started",
                 },
             )
-        grouped: dict[str, list[_BinanceTradePoint]] = {}
-        for point in points:
-            grouped.setdefault(point.connection_id, []).append(point)
+        if isinstance(points, _CompactBinanceTrades):
+            grouped_trades: Mapping[str, Sequence[_BinanceTradePoint]] = (
+                points.connection_views()
+            )
+        else:
+            mutable_groups: dict[str, list[_BinanceTradePoint]] = {}
+            for point in points:
+                mutable_groups.setdefault(point.connection_id, []).append(point)
+            grouped_trades = mutable_groups
         trade_series[asset] = {
             connection_id: _TradeSeries(segment)
-            for connection_id, segment in grouped.items()
+            for connection_id, segment in grouped_trades.items()
         }
         if progress is not None:
             progress(
@@ -946,7 +1693,7 @@ def load_polymarket_feature_source_context(
                     "asset": asset,
                     "kind": "trade",
                     "point_count": len(points),
-                    "segment_count": len(grouped),
+                    "segment_count": len(grouped_trades),
                     "status": "complete",
                 },
             )
