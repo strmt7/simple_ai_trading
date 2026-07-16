@@ -2343,6 +2343,101 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     assert [row["cache_hit"] for row in progress_rows] == [False, True, False]
 
 
+def test_ai_veto_charges_single_gpu_worker_queue_delay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, markets = _source_fixture(predictive=True)
+    dataset = build_polymarket_model_dataset(source, markets)
+    split = split_polymarket_model_dataset(dataset)
+    model, probability_report = fit_polymarket_offset_model(dataset, split)
+    predictions = predict_polymarket_probabilities(model, split.test)
+    replay = _replay_fixture(split.test, markets)
+    execution_config = PolymarketExecutionResearchConfig().validated()
+    selection = build_polymarket_policy_selection(
+        split.test,
+        predictions,
+        replay.markets,
+        config=execution_config,
+    )
+    cases = build_polymarket_ai_veto_cases(
+        selection,
+        probability_report,
+        execution_config,
+    )
+    assert len(cases) >= 3
+    arrival_ns = cases[0].decision_received_monotonic_ns
+    queued_cases = []
+    for case in cases[:3]:
+        queued = replace(
+            case,
+            decision_received_monotonic_ns=arrival_ns,
+            case_sha256="",
+        )
+        queued_cases.append(
+            replace(
+                queued,
+                case_sha256=ai_veto_module._canonical_sha256(
+                    queued.identity_payload()
+                ),
+            )
+        )
+    queued_cases.sort(
+        key=lambda item: (
+            item.decision_received_monotonic_ns,
+            item.decision_received_wall_ms,
+            item.asset,
+            item.condition_id,
+        )
+    )
+
+    def approve(
+        url: str,
+        _payload: dict[str, object],
+        _timeout: float,
+        _method: str,
+    ) -> object:
+        if url.endswith("/api/tags"):
+            return {"models": [{"name": "qwen3.5:9b", "digest": "f" * 64}]}
+        if url.endswith("/api/show"):
+            return {"model": "qwen3.5:9b", "parameters": "9B"}
+        return {
+            "message": {
+                "content": json.dumps(
+                    {
+                        "action": "approve",
+                        "confidence": 0.9,
+                        "reason_codes": ["edge_after_fees"],
+                        "summary": "Causal after-fee evidence passes review.",
+                    }
+                )
+            }
+        }
+
+    clock = iter((10.0, 12.0, 20.0, 22.0, 30.0, 32.0))
+    monkeypatch.setattr(
+        "simple_ai_trading.polymarket_ai_veto.time.perf_counter",
+        lambda: next(clock),
+    )
+    report = benchmark_polymarket_ai_veto(
+        tuple(queued_cases),
+        all_condition_ids=[item.condition_id for item in split.test],
+        selection_sha256=selection.selection_sha256,
+        risk_benchmark_evidence_sha256="a" * 64,
+        config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+        post_json=approve,  # type: ignore[arg-type]
+        expected_model_digest="f" * 64,
+        residency_inspector=_gpu_residency,
+    )
+
+    assert [item.inference_latency_seconds for item in report.results] == [2.0] * 3
+    assert [item.queue_delay_seconds for item in report.results] == [0.0, 2.0, 4.0]
+    assert [item.latency_seconds for item in report.results] == [2.0, 4.0, 6.0]
+    assert report.average_inference_latency_seconds == 2.0
+    assert report.maximum_queue_delay_seconds == 4.0
+    assert report.average_latency_seconds == 4.0
+    assert report.maximum_latency_seconds == 6.0
+
+
 def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
     tmp_path: Path,
 ) -> None:
@@ -2686,6 +2781,30 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
             model_execution=model_execution.asdict(),
         )
 
+    forged_queue = json.loads(json.dumps(ai_evidence))
+    queued_result = forged_queue["veto_report"]["results"][0]
+    queued_result["queue_delay_seconds"] += 1.0
+    queued_result["latency_seconds"] += 1.0
+    queue_report = forged_queue["veto_report"]
+    queue_identity = dict(queue_report)
+    queue_identity.pop("report_sha256")
+    queue_report["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            queue_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="AI veto result"):
+        _validate_ai_evidence(
+            forged_queue,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+
     tampered = json.loads(json.dumps(ai_evidence))
     prompt_case = tampered["prompt_cases"][0]
     prompt_case["prompt_payload"]["official_up"] = True
@@ -2718,7 +2837,7 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     veto_report["case_set_sha256"] = hashlib.sha256(
         json.dumps(
             {
-                "schema_version": "polymarket-ai-veto-case-v2",
+                "schema_version": "polymarket-ai-veto-case-v3",
                 "selection_sha256": tampered["policy_selection"]["selection_sha256"],
                 "case_sha256": [
                     item["case_sha256"] for item in tampered["prompt_cases"]
