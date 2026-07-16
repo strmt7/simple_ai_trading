@@ -316,7 +316,7 @@ def test_train_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None
     assert "training failed" in trained.training_backend_reason
 
 
-def test_torch_cpu_training_normalization_matches_population_stats() -> None:
+def test_torch_training_normalization_matches_population_stats() -> None:
     pytest.importorskip("torch")
     from simple_ai_trading import model as model_mod
 
