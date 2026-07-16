@@ -455,7 +455,9 @@ def test_market_grouping_equal_weights_and_purged_split() -> None:
     assert dataset.market_counts == {"BTC": 30, "ETH": 30, "SOL": 30}
     assert dataset.time_group_count == 30
     assert len(POLYMARKET_MODEL_FEATURE_NAMES) == 27
-    up_features = next(item for item in dataset.samples if item.official_up).feature_map()
+    up_features = next(
+        item for item in dataset.samples if item.official_up
+    ).feature_map()
     down_features = next(
         item for item in dataset.samples if not item.official_up
     ).feature_map()
@@ -555,9 +557,7 @@ def test_live_inference_is_label_free_hash_bound_and_prediction_equivalent() -> 
     row = next(
         item for item in source.rows if item.feature_id == sample.source_feature_id
     )
-    market = next(
-        item for item in markets if item.condition_id == sample.condition_id
-    )
+    market = next(item for item in markets if item.condition_id == sample.condition_id)
     unlabeled = replace(
         row,
         official_up=None,
@@ -589,7 +589,10 @@ def test_live_inference_is_label_free_hash_bound_and_prediction_equivalent() -> 
     }.isdisjoint(payload)
     tampered = replace(
         unlabeled,
-        feature_values=(unlabeled.feature_values[0] + 1.0, *unlabeled.feature_values[1:]),
+        feature_values=(
+            unlabeled.feature_values[0] + 1.0,
+            *unlabeled.feature_values[1:],
+        ),
     )
     with pytest.raises(ValueError, match="feature row identity is invalid"):
         build_polymarket_inference_input(tampered, market, config=dataset.config)
@@ -771,8 +774,7 @@ def _repricing_replay_fixture(
         source_time_ms=wall_ms,
         received_wall_ms=wall_ms,
         received_monotonic_ns=(
-            entry.received_monotonic_ns
-            + (1_000 + 500 + venue_delay_ms) * 1_000_000
+            entry.received_monotonic_ns + (1_000 + 500 + venue_delay_ms) * 1_000_000
         ),
         source_payload_sha256="f" * 64,
     )
@@ -1101,7 +1103,9 @@ def test_repricing_ceiling_uses_monotonic_clock_for_causal_elapsed_time() -> Non
     )
 
 
-def test_repricing_ceiling_never_defaults_missing_execution_parameters_to_zero() -> None:
+def test_repricing_ceiling_never_defaults_missing_execution_parameters_to_zero() -> (
+    None
+):
     replay, _entry, _exit_bid = _repricing_replay_fixture()
     missing = PolymarketEvidenceReplay(
         run_id=replay.run_id,
@@ -1433,9 +1437,7 @@ def test_repricing_contract_code_and_document_are_identical() -> None:
         == PolymarketRepricingConfig().maximum_order_creation_book_age_ms
     )
     assert (
-        contract["fixed_grid"][
-            "maximum_post_target_execution_observation_delay_ms"
-        ]
+        contract["fixed_grid"]["maximum_post_target_execution_observation_delay_ms"]
         == PolymarketRepricingConfig().maximum_post_target_execution_observation_delay_ms
     )
     assert contract["economic_contract"]["midpoint_or_last_trade_fill_credit"] is False
@@ -1592,9 +1594,7 @@ def test_execution_waits_for_the_first_proven_book_after_arrival() -> None:
 
     assert report.filled_order_count == 0
     assert all(trade.effective_latency_ms == 200 for trade in report.trades)
-    assert all(
-        "execution" in trade.execution_book_event_id for trade in report.trades
-    )
+    assert all("execution" in trade.execution_book_event_id for trade in report.trades)
 
 
 def test_execution_fails_closed_when_confirmation_arrives_after_bound() -> None:
@@ -1765,8 +1765,7 @@ def test_retry_policy_retries_only_after_terminal_zero_fill() -> None:
                 asks=(BookLevel(book.snapshot.asks[0].price, Decimal("1")),),
             ),
         )
-        if book.outcome == "Up"
-        and book.received_monotonic_ns == first_execution_ns
+        if book.outcome == "Up" and book.received_monotonic_ns == first_execution_ns
         else book
         for book in replay.books
     )
@@ -2121,7 +2120,9 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
     assert [row["cache_hit"] for row in progress_rows] == [False, True, False]
 
 
-def test_ai_veto_cache_never_persists_invalid_responses(tmp_path: Path) -> None:
+def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
+    tmp_path: Path,
+) -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
     split = split_polymarket_model_dataset(dataset)
@@ -2156,9 +2157,10 @@ def test_ai_veto_cache_never_persists_invalid_responses(tmp_path: Path) -> None:
         chat_calls += 1
         return {"message": {"content": "not-json"}}
 
+    progress_rows: list[dict[str, object]] = []
     with PolymarketEvidenceStore(tmp_path / "invalid-cache.duckdb") as store:
-        for _ in range(2):
-            report = benchmark_polymarket_ai_veto(
+        reports = [
+            benchmark_polymarket_ai_veto(
                 cases,
                 all_condition_ids=[item.condition_id for item in split.test],
                 selection_sha256=selection.selection_sha256,
@@ -2166,14 +2168,21 @@ def test_ai_veto_cache_never_persists_invalid_responses(tmp_path: Path) -> None:
                 config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
                 post_json=malformed,  # type: ignore[arg-type]
                 cache_store=store,
+                progress=lambda _event, item: progress_rows.append(dict(item)),
             )
-            assert report.provider_failure_count == 1
-        cached_rows = store.connect().execute(
-            "SELECT count(*) FROM polymarket_ai_veto_cache"
-        ).fetchone()[0]
+            for _ in range(2)
+        ]
+        cached_rows = (
+            store.connect()
+            .execute("SELECT count(*) FROM polymarket_ai_veto_cache")
+            .fetchone()[0]
+        )
 
-    assert chat_calls == 2
-    assert cached_rows == 0
+    assert reports[0] == reports[1]
+    assert reports[0].provider_failure_count == 1
+    assert chat_calls == 1
+    assert cached_rows == 1
+    assert [row["cache_hit"] for row in progress_rows] == [False, True]
 
 
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
@@ -2379,9 +2388,7 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     prompt_case["case_id"] = hashlib.sha256(
         json.dumps(
             {
-                "selection_sha256": tampered["policy_selection"][
-                    "selection_sha256"
-                ],
+                "selection_sha256": tampered["policy_selection"]["selection_sha256"],
                 "model_report_sha256": probability_report.report_sha256,
                 "sample_id": prompt_case["sample_id"],
                 "prompt_payload": prompt_case["prompt_payload"],
@@ -2408,9 +2415,7 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
         json.dumps(
             {
                 "schema_version": "polymarket-ai-veto-case-v2",
-                "selection_sha256": tampered["policy_selection"][
-                    "selection_sha256"
-                ],
+                "selection_sha256": tampered["policy_selection"]["selection_sha256"],
                 "case_sha256": [
                     item["case_sha256"] for item in tampered["prompt_cases"]
                 ],
@@ -2574,8 +2579,8 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     dataset = build_polymarket_model_dataset(source, markets)
     split = split_polymarket_model_dataset(dataset)
     model, probability_report = fit_polymarket_offset_model(dataset, split)
-    profile_model, profile_probability_report = (
-        fit_polymarket_profile_challenger(dataset, split, model)
+    profile_model, profile_probability_report = fit_polymarket_profile_challenger(
+        dataset, split, model
     )
     baseline_probabilities = [item.baseline_up_probability for item in split.test]
     model_probabilities = predict_polymarket_probabilities(model, split.test)
@@ -2634,8 +2639,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
             <= model_execution.maximum_drawdown_fraction
         ),
         "all_order_outcomes_terminal": all(
-            trade.execution_state != "UNKNOWN"
-            for trade in model_retry_execution.trades
+            trade.execution_state != "UNKNOWN" for trade in model_retry_execution.trades
         ),
     }
     prediction_evidence = _polymarket_held_out_prediction_evidence(
@@ -2833,13 +2837,9 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
         model_sha256=model.model_sha256,
         probability_report_sha256=probability_report.report_sha256,
         profile_model_sha256=profile_model.model_sha256,
-        profile_probability_report_sha256=(
-            profile_probability_report.report_sha256
-        ),
+        profile_probability_report_sha256=(profile_probability_report.report_sha256),
         held_out_rows_sha256=str(prediction_evidence["rows_sha256"]),
-        profile_held_out_rows_sha256=str(
-            profile_prediction_evidence["rows_sha256"]
-        ),
+        profile_held_out_rows_sha256=str(profile_prediction_evidence["rows_sha256"]),
         execution_report_sha256_by_policy_and_latency={
             "baseline": {"100": baseline_execution.report_sha256},
             "model": {"100": model_execution.report_sha256},
@@ -2900,16 +2900,16 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     )
     assert repeated.manifest_sha256 == result.manifest_sha256
     incomplete_source_verification = verification.asdict()
-    incomplete_source_verification[
-        "execution_report_sha256_by_policy_and_latency"
-    ].pop("model_retry")
+    incomplete_source_verification["execution_report_sha256_by_policy_and_latency"].pop(
+        "model_retry"
+    )
     incomplete_source_verification["verified_execution_scenario_count"] = 3
     incomplete_source_verification["verified_execution_trade_count"] -= len(
         model_retry_execution.trades
     )
-    incomplete_source_verification[
-        "verified_filled_order_count"
-    ] -= model_retry_execution.filled_order_count
+    incomplete_source_verification["verified_filled_order_count"] -= (
+        model_retry_execution.filled_order_count
+    )
     incomplete_source_verification.pop("report_sha256")
     incomplete_source_verification["report_sha256"] = hashlib.sha256(
         json.dumps(
@@ -2935,15 +2935,15 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     assert manifest["claims"]["profitability_claim"] is False
     assert manifest["source_artifact_sha256"] == payload["artifact_sha256"]
     assert manifest["source_reconstruction_verified"] is True
+    assert manifest["source_verification_report_sha256"] == verification.report_sha256
     assert (
-        manifest["source_verification_report_sha256"]
-        == verification.report_sha256
-    )
-    assert json.loads(
-        (research_root / "latest" / "source-verification.json").read_text(
-            encoding="utf-8"
+        json.loads(
+            (research_root / "latest" / "source-verification.json").read_text(
+                encoding="utf-8"
+            )
         )
-    ) == verification.asdict()
+        == verification.asdict()
+    )
     score_summary = json.loads(
         (research_root / "latest" / "held-out-group-score-summary.json").read_text(
             encoding="utf-8"
@@ -2975,29 +2975,24 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     selection_text = " ".join(selection_chart.itertext())
     assert "INNER TRAINING FOLDS" in selection_text
     assert "OUTER VALIDATION GATE" in selection_text
-    with (
-        research_root / "latest" / "tables" / "profile-model-selection.csv"
-    ).open(encoding="utf-8", newline="") as handle:
+    with (research_root / "latest" / "tables" / "profile-model-selection.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
         profile_selection_rows = list(csv.DictReader(handle))
     assert len(profile_selection_rows) == 23
-    assert sum(
-        row["stage"] == "inner_selection" for row in profile_selection_rows
-    ) == 21
-    assert {
-        row["profile"] for row in profile_selection_rows if row["profile"]
-    } == {
+    assert (
+        sum(row["stage"] == "inner_selection" for row in profile_selection_rows) == 21
+    )
+    assert {row["profile"] for row in profile_selection_rows if row["profile"]} == {
         "diffusion_core",
         "fast_cross_venue_flow",
         "full",
         "prediction_book_state",
     }
     profile_selection_chart = ET.fromstring(
-        (
-            research_root
-            / "latest"
-            / "charts"
-            / "profile-model-selection.svg"
-        ).read_text(encoding="utf-8")
+        (research_root / "latest" / "charts" / "profile-model-selection.svg").read_text(
+            encoding="utf-8"
+        )
     )
     profile_selection_text = " ".join(profile_selection_chart.itertext())
     assert "FROZEN PROFILE CHALLENGER GRID" in profile_selection_text.upper()
@@ -3166,9 +3161,7 @@ def test_polymarket_publication_is_derived_and_tamper_evident(
     with pytest.raises(ValueError, match="model test metrics .* does not reconcile"):
         validate_polymarket_model_artifact(metric_tampered_path)
 
-    probability_input_tampered = json.loads(
-        artifact_path.read_text(encoding="utf-8")
-    )
+    probability_input_tampered = json.loads(artifact_path.read_text(encoding="utf-8"))
     bound_execution = probability_input_tampered["model_execution"]
     bound_execution["probability_input_sha256"] = "f" * 64
     bound_execution_identity = dict(bound_execution)

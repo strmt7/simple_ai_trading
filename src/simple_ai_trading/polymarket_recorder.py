@@ -72,6 +72,7 @@ _RAW_CHUNK_MESSAGE_LIMIT = 1_024
 _CONDITION_CACHE_SCHEMA_VERSION = "polymarket-condition-message-cache-v1"
 _CONDITION_CACHE_FRAME_MESSAGE_LIMIT = 512
 _CONDITION_CACHE_MAX_FRAME_BYTES = 16 * 1024 * 1024
+_MAX_AI_CACHE_LATENCY_SECONDS = 600.0
 _WRITER_BATCH_SIZE = 8_192
 _WRITER_COALESCE_SECONDS = 0.5
 _WRITER_MIN_DRAIN_SECONDS = 60.0
@@ -741,7 +742,10 @@ class PolymarketEvidenceStore:
             str(row[3]),
         )
         latency = float(row[4])
-        if not math.isfinite(latency) or not 0.0 <= latency <= 60.0:
+        if (
+            not math.isfinite(latency)
+            or not 0.0 <= latency <= _MAX_AI_CACHE_LATENCY_SECONDS
+        ):
             raise ValueError("Polymarket AI cache latency is corrupt")
         return {
             "identity": dict(identity),
@@ -771,7 +775,7 @@ class PolymarketEvidenceStore:
             or not schema_version
             or not hmac.compare_digest(_canonical_sha256(identity_payload), key)
             or not math.isfinite(latency)
-            or not 0.0 <= latency <= 60.0
+            or not 0.0 <= latency <= _MAX_AI_CACHE_LATENCY_SECONDS
         ):
             raise ValueError("Polymarket AI cache entry is invalid")
         response_json = _canonical_json(response_payload)

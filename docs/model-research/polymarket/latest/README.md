@@ -31,8 +31,12 @@ The former v6 local-AI selection is revoked because its prompt leaked expected
 actions through case IDs. Label-free v7 inference rejected all four priority
 8B/9B models, and v7 itself is historical-only because its response parser was
 too permissive. V8 requires exact typed JSON and is frozen before the one-shot
-Qwen3 14B candidate. No AI model is selected; `ai-risk-models-rejected.json`
-is negative governance evidence only and grants no AI or trading authority.
+Qwen3 14B candidate. Its exact preregistration digest is code-pinned, and one
+claim cannot be reopened against another confirmation run in the same ledger.
+Polymarket AI provider, schema, confidence, and latency failures are immutable
+cached vetoes, so reruns cannot retry failures for a favorable answer. No AI
+model is selected; `ai-risk-models-rejected.json` is negative governance
+evidence only and grants no AI or trading authority.
 
 Capture attempts `eae374e2662c440fb93970d5710937b1`,
 `3a67757c7f174df4b62f2722ea9211cb`, and
