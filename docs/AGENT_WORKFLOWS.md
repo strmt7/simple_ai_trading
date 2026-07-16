@@ -84,8 +84,11 @@ must not be hand-edited.
 After a current AI governance benchmark, use
 `tools/build_ai_model_provenance.py` to rescore the exact reports and verify the
 Ollama manifest, config, and every referenced blob before atomically writing
-`model-provenance.json`. Do not scan or hash model files manually, and do not
-use this tool with historical benchmark contracts.
+`model-provenance.json`. Protected one-shot reports must also carry matching
+pre/post-inference digest and metadata hashes plus positive exact-digest GPU
+residency; provenance v2 rejects local files that differ from that evidence. Do
+not scan or hash model files manually, and do not use this tool with historical
+benchmark contracts.
 
 ## Transfer Verification
 

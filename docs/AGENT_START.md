@@ -107,7 +107,10 @@ agents to canonical evidence without replacing that evidence.
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
   first. The `ai-benchmark` CLI rejects this model without that preregistration,
   the confirmation database, and its run ID. Its DuckDB claim consumes the test
-  once before inference; interrupted and failed claims cannot reopen it.
+  once before inference; interrupted and failed claims cannot reopen it. A valid
+  output also requires identical Ollama digest/metadata hashes before and after
+  inference plus exact post-inference GPU residency. CPU-only or changed weights
+  fail the consumed claim.
 - The exact terminal facts for failed confirmation capture
   `79ac19539d384352b865c21cb0c43627` are in
   `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.
@@ -118,8 +121,10 @@ agents to canonical evidence without replacing that evidence.
   that database while its recorder process is active. Its sidecar has recorded
   CLOB reconnect gaps, so the full run cannot be called continuous even if it
   completes; only independently audited continuous segments may be admitted.
-- Build current AI provenance with `tools/build_ai_model_provenance.py`; never
-  hand-edit the result or infer blob identity from an Ollama tag.
+- Build current AI provenance with `tools/build_ai_model_provenance.py`; it must
+  match protected inference evidence to the local manifest, `/api/show`
+  metadata, and every blob. Never hand-edit the result or infer identity from a
+  mutable tag.
 
 ## Efficient workflow
 

@@ -5755,6 +5755,7 @@ def command_ai(args: argparse.Namespace) -> int:
 
 
 def command_ai_benchmark(args: argparse.Namespace) -> int:
+    from .ai_benchmark_claim import requires_preregistered_ai_benchmark
     from .ai_model_benchmark import benchmark_finance_ai_models, write_benchmark_report
 
     raw_models = str(getattr(args, "models", "") or "")
@@ -5770,6 +5771,7 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
     confirmation_run_id = str(
         getattr(args, "confirmation_run_id", "") or ""
     ).strip()
+    base_url = str(getattr(args, "url", None) or "http://127.0.0.1:11434")
     claim = None
 
     def progress(phase: str, payload: Mapping[str, object]) -> None:
@@ -5791,9 +5793,12 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
             )
 
     try:
-        if any(model.lower() == "qwen3:14b" for model in models) and not preregistration:
+        if (
+            any(requires_preregistered_ai_benchmark(model) for model in models)
+            and not preregistration
+        ):
             raise ValueError(
-                "qwen3:14b requires its frozen one-shot preregistration and "
+                "the requested model requires its frozen one-shot preregistration and "
                 "complete confirmation recorder"
             )
         if preregistration or confirmation_database or confirmation_run_id:
@@ -5839,16 +5844,52 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                     )
                     print(f"  benchmark -> {output}")
                 return 0 if stored.get("passed") is True else 2
+        pre_model_provenance = None
+        if claim is not None:
+            from .ai_review import resolve_ollama_model_provenance
+
+            pre_model_provenance = resolve_ollama_model_provenance(
+                base_url,
+                claim.model,
+                timeout_seconds,
+            )
         report = benchmark_finance_ai_models(
             models=models,
-            base_url=str(getattr(args, "url", None) or "http://127.0.0.1:11434"),
+            base_url=base_url,
             timeout_seconds=timeout_seconds,
             minimum_score=minimum_score,
             progress=progress,
         )
-        output = write_benchmark_report(report, output)
         if claim is not None:
-            from .ai_benchmark_claim import complete_preregistered_ai_benchmark_claim
+            from .ai_benchmark_claim import (
+                complete_preregistered_ai_benchmark_claim,
+                write_preregistered_ai_benchmark_output,
+            )
+            from .ai_review import resolve_ollama_model_provenance
+
+            post_model_provenance = resolve_ollama_model_provenance(
+                base_url,
+                claim.model,
+                timeout_seconds,
+            )
+            residency = inspect_ollama_model_residency(
+                base_url,
+                claim.model,
+                timeout_seconds,
+                expected_digest=post_model_provenance[0],
+            )
+            if pre_model_provenance is None:
+                raise ValueError("AI benchmark pre-inference provenance is missing")
+            output = write_preregistered_ai_benchmark_output(
+                report,
+                output,
+                claim=claim,
+                pre_model_digest=pre_model_provenance[0],
+                pre_model_metadata_sha256=pre_model_provenance[1],
+                post_model_digest=post_model_provenance[0],
+                post_model_metadata_sha256=post_model_provenance[1],
+                residency=residency,
+            )
 
             with PolymarketEvidenceStore(
                 Path(confirmation_database),
@@ -5856,6 +5897,10 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                 threads=int(args.confirmation_database_threads),
             ) as claim_store:
                 claim = complete_preregistered_ai_benchmark_claim(claim_store, claim)
+                output_payload = load_claimed_ai_benchmark_output(claim)
+        else:
+            output = write_benchmark_report(report, output)
+            output_payload = report.asdict()
     except (OSError, RuntimeError, ValueError) as exc:
         if claim is not None and claim.status == "claimed":
             try:
@@ -5876,7 +5921,7 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
         print(f"ai-benchmark failed: {exc}", file=sys.stderr)
         return 2
     if json_mode:
-        print(json.dumps(report.asdict(), indent=2, sort_keys=True))
+        print(json.dumps(output_payload, indent=2, sort_keys=True))
     else:
         print(
             "ai-benchmark: "

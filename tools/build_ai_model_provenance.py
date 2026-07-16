@@ -16,6 +16,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from simple_ai_trading.ai_benchmark_claim import (
+    requires_preregistered_ai_benchmark,
+    validate_preregistered_ai_runtime_evidence,
+)
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
     rescore_finance_ai_benchmark_payload,
@@ -23,12 +27,23 @@ from simple_ai_trading.ai_model_benchmark import (
 from simple_ai_trading.storage import write_json_atomic
 
 
-_SCHEMA_VERSION = "ollama-local-model-provenance-v1"
+_SCHEMA_VERSION = "ollama-local-model-provenance-v2"
 _SEGMENT = re.compile(r"[A-Za-z0-9._-]+")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAX_JSON_BYTES = 32 * 1024 * 1024
 _MAX_SHOW_BYTES = 4 * 1024 * 1024
 ShowModel = Callable[[str], Mapping[str, object]]
+
+
+def _canonical_sha256(value: object) -> str:
+    payload = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    return hashlib.sha256(payload.encode("ascii")).hexdigest()
 
 
 def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -141,6 +156,7 @@ def _verified_model_row(
     show_model: ShowModel,
     progress: Callable[[str], None] | None,
     minimum_model_bytes: int,
+    runtime_evidence: Mapping[str, object] | None,
 ) -> dict[str, object]:
     manifest_path = _model_manifest_path(model, model_root)
     manifest, manifest_bytes = _read_json_object(manifest_path)
@@ -226,10 +242,24 @@ def _verified_model_row(
         or "completion" not in capabilities
     ):
         raise ValueError("Ollama model does not satisfy local AI provenance policy")
+    manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+    metadata_sha256 = _canonical_sha256(show)
+    if runtime_evidence is not None:
+        pre_inference = _mapping(
+            runtime_evidence.get("pre_inference"),
+            "AI benchmark pre-inference provenance",
+        )
+        if (
+            pre_inference.get("model_digest") != manifest_digest
+            or pre_inference.get("model_metadata_sha256") != metadata_sha256
+        ):
+            raise ValueError(
+                f"Ollama model files differ from inference-time evidence: {model}"
+            )
     return {
         "model": model,
         "source_reference": f"ollama:{model}",
-        "ollama_manifest_digest": hashlib.sha256(manifest_bytes).hexdigest(),
+        "ollama_manifest_digest": manifest_digest,
         "base_blob_sha256": base_blob_sha256,
         "size_bytes": total_size,
         "family": family,
@@ -238,6 +268,9 @@ def _verified_model_row(
         "capabilities": capabilities,
         "verified_blob_count": len(verified),
         "locally_verified": True,
+        "inference_runtime_evidence": (
+            dict(runtime_evidence) if runtime_evidence is not None else None
+        ),
     }
 
 
@@ -290,11 +323,32 @@ def build_provenance(
         raise ValueError("at least one AI source report is required")
     source_rows: list[dict[str, object]] = []
     source_models: list[str] = []
+    runtime_evidence_by_model: dict[str, Mapping[str, object]] = {}
     for path in source_report_paths:
         source, source_bytes = _read_json_object(path)
         models = _report_models(source, f"AI source report {path.name}")
         if len(models) != 1:
             raise ValueError("each AI source report must contain exactly one model")
+        source_tests = source.get("tests")
+        if not isinstance(source_tests, Sequence) or isinstance(
+            source_tests, (str, bytes)
+        ):
+            raise ValueError("AI source report test inventory is invalid")
+        runtime_evidence = source.get("inference_runtime_evidence")
+        if runtime_evidence is None:
+            if requires_preregistered_ai_benchmark(models[0]):
+                raise ValueError(
+                    f"AI source report lacks required inference-time evidence: {models[0]}"
+                )
+        else:
+            runtime_evidence_by_model[models[0]] = (
+                validate_preregistered_ai_runtime_evidence(
+                    runtime_evidence,
+                    model=models[0],
+                    case_count=len(source_tests),
+                    base_url=str(source.get("base_url") or ""),
+                )
+            )
         source_models.extend(models)
         source_rows.append(
             {
@@ -316,6 +370,7 @@ def build_provenance(
             show_model=show_model,
             progress=progress,
             minimum_model_bytes=minimum_model_bytes,
+            runtime_evidence=runtime_evidence_by_model.get(model),
         )
         for model in source_models
     ]
