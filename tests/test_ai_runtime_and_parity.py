@@ -857,6 +857,8 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert 'has_command_switch(command, L"--enable-ai")' in source
     assert 'has_command_switch(command, L"--disable-ai")' in source
     assert 'ai_enabled_ ? L" --enable-ai" : L" --disable-ai"' in source
+    assert "settings_revision_.fetch_add(1)" in source
+    assert "status_revision > controls_reconciled_revision_" in source
     assert "Pause and Stop remain available" in source
     assert "remaining safety controls will still be attempted" in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
@@ -886,6 +888,7 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "Cancelled configuration was followed by autonomous start" in smoke
     assert "Stop + Close" in smoke
     assert "Testnet live" in smoke
+    assert "operator controls reconciling to backend state" in smoke
     assert "independent pause/stop" in smoke
     assert "unsafe ledger-only close all" in smoke
     assert "graceful close abandoned an active worker" in smoke

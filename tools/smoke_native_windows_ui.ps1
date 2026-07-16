@@ -169,6 +169,13 @@ try {
     if ((Get-ControlText $output).Contains("simple-ai-trading close all")) {
         throw "Stop control invoked unsafe ledger-only close all"
     }
+    Wait-Until {
+        (Get-ControlText $profile) -eq "Conservative" -and
+        (Get-ControlText $leverage) -eq "5x" -and
+        (Get-ControlText $mode) -eq "Paper" -and
+        (Get-ControlText $ai) -eq "AI on (gated)" -and
+        (Get-ControlText $reinvest) -eq "Reinvest off"
+    } "operator controls reconciling to backend state" 5000
 
     $pageCount = [SatNativeUi]::SendMessage($pageList, $LB_GETCOUNT, [IntPtr]::Zero, [IntPtr]::Zero).ToInt32()
     if ($pageCount -ne 7) { throw "Expected 7 workflow pages, found $pageCount" }
@@ -190,6 +197,8 @@ try {
         Select-Combo $window $researchCombo $CommandComboId $modelCommand
     }
     Select-Combo $window $researchCombo $CommandComboId "Polymarket models / polymarket-model"
+    Click-Control $ai
+    Assert-Text $ai "AI off" "AI toggle before disabled model workflow"
     Click-Control (Get-Control $window $RunId)
     Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-model --disable-ai" 5000
     Click-Control $ai
