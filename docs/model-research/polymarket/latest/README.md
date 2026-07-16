@@ -46,6 +46,11 @@ feeds can replay directly from hash-verified raw chunks. The hash-bound
 real-payload scope and limitations. Bounded action batches now reconstruct one
 full-resolution CLOB replay and derive the exact 250 ms feature view from it,
 removing the second condition scan without changing feature or action identity.
+After a clean terminal audit, action materialization now builds one
+report-hash-bound, zstd-compressed condition-reference cache and verifies every
+frame, manifest, source coordinate, and decoded condition before replay. The
+cache duplicates no market payloads. Fixture replay is exact; a production-scale
+speed and storage benchmark remains pending.
 Capture
 `79ac19539d384352b865c21cb0c43627` is still running; it grants no Round 9 model
 or AI evidence until terminal integrity, continuity, and resolution gates pass.
@@ -55,8 +60,9 @@ real MLP forward/backward parameter update on `privateuseone:0` with no CPU
 fallback. The complete ensemble fit now also rejects explicit accelerator
 requests that resolve to CPU, captures fallback warnings for every epoch, and
 requires Torch checkpoint probabilities to replay through the persisted
-canonical model within the frozen numerical tolerance. These are implementation
-controls, not model-quality, market-speed, or profitability evidence.
+canonical report-v3 model within the frozen numerical tolerance. These are
+implementation controls, not model-quality, market-speed, or profitability
+evidence.
 
 The `polymarket-ridge` command claims its pipeline in DuckDB before test
 evaluation. A completed claim reloads the signed report without refitting; an

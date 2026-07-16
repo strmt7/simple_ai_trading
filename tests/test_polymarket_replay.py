@@ -1415,6 +1415,92 @@ def test_polymarket_action_materialization_is_idempotent_and_tamper_evident(
     assert dataset.features
 
 
+def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
+    tmp_path,
+) -> None:
+    progress_events: list[str] = []
+    with PolymarketEvidenceStore(tmp_path / "condition-cache.duckdb") as store:
+        _finish_replay_store(store, "condition-cache", feature_evidence=True)
+        assert store.integrity_errors("condition-cache") == ()
+        btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+        eth = parse_polymarket_five_minute_market(_market_payload("ETH"))
+        expected = tuple(
+            store.iter_public_events(
+                "condition-cache",
+                streams=("clob_market", "clob_rest_book"),
+                condition_ids=(btc.condition_id,),
+                verified_source=True,
+            )
+        )
+
+        created = store.ensure_condition_message_cache(
+            "condition-cache",
+            progress=lambda phase, _payload: progress_events.append(phase),
+        )
+        existing = store.ensure_condition_message_cache("condition-cache")
+        actual = tuple(
+            store.iter_public_events(
+                "condition-cache",
+                streams=("clob_market", "clob_rest_book"),
+                condition_ids=(btc.condition_id,),
+                verified_source=True,
+            )
+        )
+        empty = tuple(
+            store.iter_public_events(
+                "condition-cache",
+                streams=("clob_market", "clob_rest_book"),
+                condition_ids=(eth.condition_id,),
+                verified_source=True,
+            )
+        )
+        empty_manifest = (
+            store.connect()
+            .execute(
+                """
+            SELECT frame_count, message_count, first_received_monotonic_ns,
+                   last_received_monotonic_ns, last_frame_sha256
+            FROM polymarket_condition_message_manifest
+            WHERE run_id = ? AND condition_id = ?
+            """,
+                ["condition-cache", eth.condition_id],
+            )
+            .fetchone()
+        )
+
+    assert expected
+    assert actual == expected
+    assert empty == ()
+    assert empty_manifest == (0, 0, 0, 0, "")
+    assert existing == created
+    assert progress_events[0] == progress_events[-1] == "condition-cache"
+
+
+def test_polymarket_condition_cache_payload_tampering_fails_closed(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "condition-cache-tamper.duckdb") as store:
+        _finish_replay_store(store, "condition-cache-tamper", feature_evidence=True)
+        assert store.integrity_errors("condition-cache-tamper") == ()
+        store.ensure_condition_message_cache("condition-cache-tamper")
+        btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+        store.connect().execute(
+            """
+            UPDATE polymarket_condition_message_frame
+            SET compressed_payload = ?
+            WHERE run_id = ? AND condition_id = ? AND frame_index = 0
+            """,
+            [b"corrupted", "condition-cache-tamper", btc.condition_id],
+        )
+
+        with pytest.raises(ValueError, match="frame identity differs"):
+            tuple(
+                store.iter_public_events(
+                    "condition-cache-tamper",
+                    condition_ids=(btc.condition_id,),
+                    verified_source=True,
+                )
+            )
+
+
 def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
     tmp_path,
 ) -> None:
@@ -1464,6 +1550,7 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
     assert first.batches[0].batch_sha256 == second.batches[0].batch_sha256
     assert not first.asdict()["profitability_claim"]
     assert {"integrity-started", "integrity-cache-hit"} & set(progress_events)
+    assert "condition-cache" in progress_events
     assert "feature-source-scan" in progress_events
     assert "feature-source-series" in progress_events
 
