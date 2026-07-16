@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"3baf44ee493180128c49e7a944c59d9e49bdd6d418d2c9da3875aa3d44a25128";
+inline constexpr const wchar_t* kCommandContractSha256 = L"fec3ca114eb9a658420869da9d53671302cca7904306be3af34f505ed976bf44";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -447,7 +447,7 @@ inline constexpr CommandOptionSpec kOptions_polymarket_model[] = {
     {L"--maximum-loss-fraction-per-time-group", L"maximum_loss_fraction_per_time_group", L"", L"0.015", L"", L"1", false, true, false},
     {L"--enable-ai", L"ai_enabled", L"", L"", L"run the gated local multibillion-parameter veto ablation", L"0", false, false, false},
     {L"--disable-ai", L"ai_enabled", L"", L"", L"skip the gated local multibillion-parameter veto ablation", L"0", false, false, false},
-    {L"--ai-model", L"ai_model", L"", L"qwen3:8b", L"", L"1", false, true, false},
+    {L"--ai-model", L"ai_model", L"", L"", L"local AI model override; defaults to the persisted AI runtime model", L"1", false, true, false},
     {L"--ai-benchmark", L"ai_benchmark", L"", L"docs/ai/risk-review/latest/comparison.json", L"frozen adversarial risk benchmark that must select the requested model", L"1", false, true, false},
     {L"--ai-url", L"ai_url", L"", L"http://127.0.0.1:11434", L"", L"1", false, true, false},
     {L"--ai-timeout", L"ai_timeout", L"", L"30.0", L"", L"1", false, true, false},
