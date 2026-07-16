@@ -6,7 +6,6 @@ import json
 import sqlite3
 import time
 from dataclasses import asdict, dataclass
-from itertools import pairwise
 from pathlib import Path
 from typing import Mapping, Sequence, cast
 
@@ -805,8 +804,7 @@ class MarketDataStore:
             ORDER BY open_time ASC
             """,
             params,
-        ).fetchall()
-        open_times = [int(row["open_time"]) for row in rows if row["open_time"] is not None]
+        )
         first_open_time = cast(int, coverage.first_open_time)
         last_open_time = cast(int, coverage.last_open_time)
         span_start = int(start_ms) if start_ms is not None else first_open_time
@@ -814,10 +812,16 @@ class MarketDataStore:
         missing = 0
         if first_open_time > span_start:
             missing += max(0, (first_open_time - span_start) // interval_ms)
-        for previous, current in pairwise(open_times):
-            delta = current - previous
-            if delta > interval_ms:
-                missing += max(0, (delta // interval_ms) - 1)
+        previous: int | None = None
+        for row in rows:
+            if row["open_time"] is None:
+                continue
+            current = int(row["open_time"])
+            if previous is not None:
+                delta = current - previous
+                if delta > interval_ms:
+                    missing += max(0, (delta // interval_ms) - 1)
+            previous = current
         if last_open_time < span_end:
             missing += max(0, (span_end - last_open_time) // interval_ms)
 

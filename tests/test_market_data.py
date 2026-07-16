@@ -329,6 +329,44 @@ def test_market_data_store_reports_coverage_gaps(tmp_path) -> None:
     assert quality.coverage_ratio == 0.5
 
 
+def test_market_data_store_streams_timestamps_for_coverage_quality(tmp_path) -> None:
+    with MarketDataStore(tmp_path / "streamed-gaps.sqlite") as store:
+        store.upsert_candles(
+            "BTCUSDC",
+            "spot",
+            "1m",
+            [_candle(0), _candle(60_000), _candle(180_000)],
+        )
+        connection = store.connect()
+
+        class StreamingCursor:
+            def __init__(self, cursor) -> None:
+                self.cursor = cursor
+
+            def __iter__(self):
+                return iter(self.cursor)
+
+            def fetchall(self):
+                raise AssertionError("coverage timestamps must be streamed")
+
+        class StreamingConnection:
+            def execute(self, query, params=()):
+                cursor = connection.execute(query, params)
+                if cursor.description and cursor.description[0][0] == "open_time":
+                    return StreamingCursor(cursor)
+                return cursor
+
+            def close(self) -> None:
+                connection.close()
+
+        store._conn = StreamingConnection()  # type: ignore[assignment]
+        quality = store.coverage_quality("BTCUSDC", "spot", "1m", 60_000)
+
+    assert quality.expected_count == 4
+    assert quality.gap_count == 1
+    assert quality.coverage_ratio == 0.75
+
+
 def test_market_data_store_roundtrip_agg_trades_with_dedup_and_windowing(tmp_path) -> None:
     trades = [
         AggTrade("BTCUSDT", "futures", 100, 70_000.0, 0.25, 500, 502, 1_717_200_000_123, False),
