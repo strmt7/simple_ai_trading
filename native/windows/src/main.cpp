@@ -713,9 +713,6 @@ class MainWindow {
         const int start_left = pause_left - scale(124);
         RECT state_band{main_left, header_h + scale(18), start_left - scale(16), header_h + scale(66)};
         round_rect(dc, state_band, RGB(22, 31, 36), RGB(49, 65, 73), scale(4));
-        std::wstring profile_state = combo_text(profile_combo_);
-        std::wstring leverage_state = combo_text(leverage_combo_) + L" limit";
-        std::wstring execution_state = combo_text(mode_combo_);
         std::wstring environment_state;
         std::wstring bot_state;
         std::wstring compute_state;
@@ -742,32 +739,32 @@ class MainWindow {
             if (ai_gpu_resident) {
                 ai_state = L"AI GPU resident";
             } else if (ai_runtime_state == L"hybrid") {
-                ai_state = L"AI blocked (partial GPU)";
+                ai_state = L"AI hybrid blocked";
             } else if (ai_runtime_state == L"cpu") {
                 ai_state = L"AI blocked (CPU)";
             } else if (ai_runtime_state == L"unavailable") {
                 ai_state = L"AI unavailable";
             } else {
-                ai_state = L"AI on (gated)";
+                ai_state = L"AI gated";
             }
         }
-        const std::array<std::wstring, 7> states{
-            environment_state, bot_state, execution_state, profile_state,
-            ai_state, leverage_state, command_contract_state};
-        const int state_width = std::max(scale(76), static_cast<int>(state_band.right - state_band.left) / 7);
+        const std::array<std::wstring, 4> states{
+            environment_state, bot_state, command_contract_state, ai_state};
+        const int ai_state_index = static_cast<int>(states.size()) - 1;
+        const int state_width = static_cast<int>(state_band.right - state_band.left) / static_cast<int>(states.size());
         for (int index = 0; index < static_cast<int>(states.size()); ++index) {
             RECT cell{state_band.left + index * state_width, state_band.top, state_band.left + (index + 1) * state_width, state_band.bottom};
             if (index > 0) {
                 fill_rect(dc, RECT{cell.left, cell.top + scale(12), cell.left + scale(1), cell.bottom - scale(12)}, RGB(58, 72, 79));
             }
             RECT dot{cell.left + scale(14), cell.top + scale(19), cell.left + scale(22), cell.top + scale(27)};
-            HBRUSH dot_brush = CreateSolidBrush(index == 4 && ai_gpu_resident ? RGB(68, 207, 137) : RGB(145, 158, 165));
+            HBRUSH dot_brush = CreateSolidBrush(index == ai_state_index && ai_gpu_resident ? RGB(68, 207, 137) : RGB(145, 158, 165));
             HGDIOBJ old = SelectObject(dc, dot_brush);
             Ellipse(dc, dot.left, dot.top, dot.right, dot.bottom);
             SelectObject(dc, old);
             DeleteObject(dot_brush);
             RECT text_rect{cell.left + scale(30), cell.top, cell.right - scale(8), cell.bottom};
-            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, index == 4 && ai_gpu_resident ? RGB(86, 210, 155) : RGB(222, 229, 232),
+            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, index == ai_state_index && ai_gpu_resident ? RGB(86, 210, 155) : RGB(222, 229, 232),
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         }
 
