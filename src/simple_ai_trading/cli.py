@@ -5621,7 +5621,12 @@ def _ai_provider_runtime_status(runtime: RuntimeConfig) -> tuple[str, dict[str, 
 
 
 def command_status(args: argparse.Namespace) -> int:
-    from .autonomous import AutonomousControl
+    from .autonomous import (
+        STATE_PAUSED,
+        STATE_RUNNING,
+        STATE_STOPPING,
+        AutonomousControl,
+    )
     from .command_contract import command_contract_digest
     from .positions import PositionsStore
 
@@ -5636,8 +5641,15 @@ def command_status(args: argparse.Namespace) -> int:
             environment = "paper"
         else:
             environment = "non-mainnet"
-        execution = "paper" if runtime.dry_run else "live"
-        state = str(AutonomousControl().read().get("state") or "UNKNOWN").lower()
+        control = AutonomousControl().read()
+        state = str(control.get("state") or "UNKNOWN").lower()
+        active_execution = str(control.get("execution") or "")
+        execution = (
+            active_execution
+            if state.upper() in {STATE_RUNNING, STATE_PAUSED, STATE_STOPPING}
+            and active_execution in {"paper", "live"}
+            else ("paper" if runtime.dry_run else "live")
+        )
         position_store = PositionsStore()
         ledger_errors = position_store.open_integrity_errors()
         position_count = len(position_store.load_open()) if not ledger_errors else 0
@@ -13880,6 +13892,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
     payload = control.read()
     print(
         f"state={payload.get('state')} note={payload.get('note') or ''} "
+        f"execution={payload.get('execution') or 'unknown'} "
         f"ts_ms={payload.get('ts_ms')}"
     )
     return 0

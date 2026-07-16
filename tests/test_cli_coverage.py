@@ -19,6 +19,7 @@ from simple_ai_trading.advanced_model import (
 )
 from simple_ai_trading.api import BinanceAPIError, Candle, CommissionRates, SymbolConstraints
 from simple_ai_trading.assets import DEFAULT_AGGRESSIVE_LEVERAGE
+from simple_ai_trading.autonomous import AutonomousControl, STATE_RUNNING
 from simple_ai_trading.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
 from simple_ai_trading.model import (
     ModelFeatureMismatchError,
@@ -3640,6 +3641,10 @@ def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_
     assert "ui_contract=" in line
     assert len(line.rsplit("ui_contract=", 1)[1]) == 64
     assert "BTCUSDT" in line
+
+    AutonomousControl().write(STATE_RUNNING, execution="live")
+    assert cli.command_status(argparse.Namespace(compact=True)) == 0
+    assert "execution=live" in capsys.readouterr().out
 
     open_path = tmp_path / "data" / "autonomous" / "open_positions.json"
     open_path.parent.mkdir(parents=True, exist_ok=True)

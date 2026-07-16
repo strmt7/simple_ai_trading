@@ -64,6 +64,7 @@ STATE_PAUSED = "PAUSED"
 STATE_STOPPING = "STOPPING"
 STATE_STOPPED = "STOPPED"
 _VALID_STATES = {STATE_RUNNING, STATE_PAUSED, STATE_STOPPING, STATE_STOPPED}
+_VALID_EXECUTION_MODES = {"paper", "live"}
 _MIN_INTERVAL_SECONDS = 1.0
 _DEFAULT_AUTONOMOUS_DIR = Path("data/autonomous")
 _API_BUDGET_LIVE_START_MAX_USED_RATIO = 0.80
@@ -86,10 +87,24 @@ class AutonomousControl:
     def __post_init__(self) -> None:
         self.path = Path(self.path)
 
-    def write(self, state: str, *, note: str = "") -> None:
+    def write(
+        self,
+        state: str,
+        *,
+        note: str = "",
+        execution: str | None = None,
+    ) -> None:
         if state not in _VALID_STATES:
             raise ValueError(f"Invalid state {state!r}")
+        mode = execution
+        if mode is None:
+            current_mode = self.read().get("execution")
+            mode = str(current_mode) if current_mode in _VALID_EXECUTION_MODES else None
+        if mode is not None and mode not in _VALID_EXECUTION_MODES:
+            raise ValueError(f"Invalid execution mode {mode!r}")
         payload = {"state": state, "note": note, "ts_ms": now_ms()}
+        if mode is not None:
+            payload["execution"] = mode
         write_json_atomic(self.path, payload, indent=2, sort_keys=True)
 
     def read(self) -> dict[str, object]:
@@ -99,7 +114,14 @@ class AutonomousControl:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return {"state": STATE_STOPPED, "note": "read-error", "ts_ms": 0}
-        if not isinstance(payload, dict) or payload.get("state") not in _VALID_STATES:
+        if (
+            not isinstance(payload, dict)
+            or payload.get("state") not in _VALID_STATES
+            or (
+                payload.get("execution") is not None
+                and payload.get("execution") not in _VALID_EXECUTION_MODES
+            )
+        ):
             return {"state": STATE_STOPPED, "note": "malformed", "ts_ms": 0}
         return payload
 
@@ -1052,7 +1074,11 @@ def run_loop(
                 f"{paper_startup.asdict()}"
             )
     control = AutonomousControl(path=cfg.control_path)
-    control.write(STATE_RUNNING, note=f"objective={objective.name}")
+    control.write(
+        STATE_RUNNING,
+        note=f"objective={objective.name}",
+        execution="paper" if cfg.dry_run else "live",
+    )
     reconcile = reconcile_fn or _default_reconcile
     if not cfg.dry_run:
         startup_lifecycle = _loop_lifecycle_plan(

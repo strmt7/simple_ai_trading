@@ -198,6 +198,19 @@ def test_control_write_then_read_roundtrip(tmp_path: Path) -> None:
     assert ctl.state() == STATE_RUNNING
 
 
+def test_control_preserves_active_execution_mode_across_safety_states(
+    tmp_path: Path,
+) -> None:
+    ctl = AutonomousControl(path=tmp_path / "state.json")
+    ctl.write(STATE_RUNNING, execution="live")
+    ctl.write(STATE_PAUSED, note="operator pause")
+    assert ctl.read()["execution"] == "live"
+    ctl.write(STATE_STOPPING, note="operator stop")
+    assert ctl.read()["execution"] == "live"
+    with pytest.raises(ValueError, match="execution mode"):
+        ctl.write(STATE_RUNNING, execution="mainnet")
+
+
 def test_control_read_when_missing_returns_stopped(tmp_path: Path) -> None:
     ctl = AutonomousControl(path=tmp_path / "missing.json")
     payload = ctl.read()
@@ -216,6 +229,16 @@ def test_control_read_malformed_json(tmp_path: Path) -> None:
 def test_control_read_wrong_payload_type(tmp_path: Path) -> None:
     path = tmp_path / "state.json"
     path.write_text(json.dumps(["not", "a", "dict"]), encoding="utf-8")
+    ctl = AutonomousControl(path=path)
+    assert ctl.read() == {"state": STATE_STOPPED, "note": "malformed", "ts_ms": 0}
+
+
+def test_control_read_unknown_execution_is_malformed(tmp_path: Path) -> None:
+    path = tmp_path / "state.json"
+    path.write_text(
+        json.dumps({"state": STATE_RUNNING, "execution": "mainnet"}),
+        encoding="utf-8",
+    )
     ctl = AutonomousControl(path=path)
     assert ctl.read() == {"state": STATE_STOPPED, "note": "malformed", "ts_ms": 0}
 
