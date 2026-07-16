@@ -6890,6 +6890,21 @@ def _polymarket_probability_gates_passed(report: object) -> bool:
     )
 
 
+def _polymarket_ai_skip_reason(
+    *,
+    operator_disabled: bool,
+    probability_gates_passed: bool,
+    case_count: int,
+) -> str:
+    if operator_disabled:
+        return "operator_disabled"
+    if not probability_gates_passed:
+        return "probability_model_gates_failed"
+    if case_count <= 0:
+        return "no_positive_after_fee_proposals"
+    return ""
+
+
 def _polymarket_execution_uplift_metrics(
     report: object,
     *,
@@ -7322,20 +7337,33 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
         probability_gates_passed = _polymarket_probability_gates_passed(
             probability_report
         )
+        ai_operator_disabled = bool(getattr(args, "disable_ai", False))
+        policy_selection = None
+        ai_cases = ()
+        if not ai_operator_disabled and probability_gates_passed:
+            policy_selection = build_polymarket_policy_selection(
+                split.test,
+                model_probabilities,
+                execution_replay.markets,
+                config=execution_config,
+            )
+            ai_cases = build_polymarket_ai_veto_cases(
+                policy_selection,
+                probability_report,
+                execution_config,
+            )
+        ai_skip_reason = _polymarket_ai_skip_reason(
+            operator_disabled=ai_operator_disabled,
+            probability_gates_passed=probability_gates_passed,
+            case_count=len(ai_cases),
+        )
         ai_payload: dict[str, object]
         ai_execution = None
         ai_uplift = None
-        if bool(getattr(args, "disable_ai", False)):
+        if ai_skip_reason:
             ai_payload = {
                 "enabled": False,
-                "reason": "operator_disabled",
-                "trading_authority": False,
-                "profitability_claim": False,
-            }
-        elif not probability_gates_passed:
-            ai_payload = {
-                "enabled": False,
-                "reason": "probability_model_gates_failed",
+                "reason": ai_skip_reason,
                 "trading_authority": False,
                 "profitability_claim": False,
             }
@@ -7378,17 +7406,8 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     f"the requested AI model: {ai_model}"
                 )
             benchmark_sha256 = hashlib.sha256(benchmark_bytes).hexdigest()
-            policy_selection = build_polymarket_policy_selection(
-                split.test,
-                model_probabilities,
-                execution_replay.markets,
-                config=execution_config,
-            )
-            ai_cases = build_polymarket_ai_veto_cases(
-                policy_selection,
-                probability_report,
-                execution_config,
-            )
+            if policy_selection is None:
+                raise RuntimeError("Polymarket AI policy selection is unavailable")
             progress("ai-veto", case_count=len(ai_cases), model=ai_model)
 
             def ai_progress(_event: str, item: Mapping[str, object]) -> None:

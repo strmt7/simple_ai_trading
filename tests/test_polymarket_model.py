@@ -22,6 +22,7 @@ from simple_ai_trading.ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
 from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.ai_uplift import assess_ai_uplift
 from simple_ai_trading.cli import (
+    _polymarket_ai_skip_reason,
     _polymarket_execution_uplift_metrics,
     _polymarket_held_out_prediction_evidence,
     _polymarket_latency_scenarios,
@@ -2678,6 +2679,31 @@ def test_ai_provider_requires_probability_model_gates(
     )
 
     assert _polymarket_probability_gates_passed(report) is expected
+
+
+@pytest.mark.parametrize(
+    ("operator_disabled", "gates_passed", "case_count", "expected"),
+    [
+        (True, True, 3, "operator_disabled"),
+        (False, False, 3, "probability_model_gates_failed"),
+        (False, True, 0, "no_positive_after_fee_proposals"),
+        (False, True, 3, ""),
+    ],
+)
+def test_ai_skip_reason_prevents_unusable_provider_calls(
+    operator_disabled: bool,
+    gates_passed: bool,
+    case_count: int,
+    expected: str,
+) -> None:
+    assert (
+        _polymarket_ai_skip_reason(
+            operator_disabled=operator_disabled,
+            probability_gates_passed=gates_passed,
+            case_count=case_count,
+        )
+        == expected
+    )
 
 
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
