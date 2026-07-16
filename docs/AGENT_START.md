@@ -80,7 +80,8 @@ agents to canonical evidence without replacing that evidence.
   does not prove onchain confirmation or that newly bought tokens are sellable;
   official SELL prerequisites require confirmed conditional-token inventory.
   Keep all Round 9 outputs research-only until a separate settlement/inventory
-  contract passes current source-bound failure and mark-to-market stress gates.
+  contract passes current source-bound failure and mark-to-market stress-test
+  acceptance criteria.
 - Ridge admission fails on any unproven post-submission entry state. Never
   censor or relabel it as no-fill; only a definite entry rejection such as an
   invalidated tick is a classifier-eligible zero-utility no-fill.
