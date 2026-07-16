@@ -16,6 +16,8 @@ agents to canonical evidence without replacing that evidence.
 - AI uplift v3 requires at least 30 non-tied matched outcomes. Exact ties are
   excluded from the paired sign test but retained in the moving-block bootstrap
   and the contiguous 90-day coverage evidence.
+- Profit factor is gross profit divided by gross loss and is capped at `999.0`
+  in finite JSON evidence; positive P&L with zero gross loss uses that cap.
 - Historical labels, future books, resolutions, fills, and PnL must never enter
   a live inference payload. Unknown order state blocks new exposure.
 - Secrets must never enter prompts, logs, artifacts, tests, commits, or docs.
