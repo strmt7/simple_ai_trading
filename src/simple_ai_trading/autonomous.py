@@ -385,6 +385,7 @@ def _open_position_from_decision(
         take_profit_pct=strategy.take_profit_pct,
         open_client_order_id=bot_client_order_id(position_id, "open"),
         exchange_status="paper" if cfg.dry_run else "pending_open",
+        entry_fees=notional * max(0.0, float(strategy.taker_fee_bps)) / 10_000.0,
     )
 
 
@@ -397,7 +398,8 @@ def _close_to_trade(
     fees: float = 0.0,
 ) -> ClosedTrade:
     pnl = position.unrealized_pnl(mark_price)
-    pnl_pct = position.unrealized_pnl_pct(mark_price)
+    realized_pnl = pnl - fees
+    entry_notional = float(position.entry_price) * float(position.qty)
     return ClosedTrade(
         id=position.id,
         symbol=position.symbol,
@@ -409,8 +411,8 @@ def _close_to_trade(
         leverage=position.leverage,
         opened_at_ms=position.opened_at_ms,
         closed_at_ms=int(clock() * 1000),
-        realized_pnl=pnl - fees,
-        realized_pnl_pct=pnl_pct,
+        realized_pnl=realized_pnl,
+        realized_pnl_pct=(realized_pnl / entry_notional) if entry_notional > 0.0 else 0.0,
         fees=fees,
         reason=reason,
         strategy_profile=position.strategy_profile,
@@ -509,18 +511,29 @@ def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> Op
     )
     if qty <= 0.0 or entry_price <= 0.0:
         raise BinanceAPIError("open order response did not include resolved execution fill")
+    modeled_entry_fee_rate = max(0.0, float(position.entry_fees)) / max(
+        float(position.notional),
+        1e-18,
+    )
     return replace(
         position,
         qty=qty,
         entry_price=entry_price,
         notional=qty * entry_price,
+        entry_fees=qty * entry_price * modeled_entry_fee_rate,
         open_exchange_order_id=_order_text(order, "orderId"),
         open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or position.open_client_order_id,
         exchange_status=_order_exchange_status(order),
     )
 
 
-def _apply_close_order(trade: ClosedTrade, order: Mapping[str, object], close_client_order_id: str) -> ClosedTrade:
+def _apply_close_order(
+    trade: ClosedTrade,
+    order: Mapping[str, object],
+    close_client_order_id: str,
+    *,
+    exit_taker_fee_bps: float = 0.0,
+) -> ClosedTrade:
     qty, exit_price = _order_fill_details(
         order,
         fallback_qty=trade.qty,
@@ -528,18 +541,26 @@ def _apply_close_order(trade: ClosedTrade, order: Mapping[str, object], close_cl
     )
     if qty <= 0.0 or exit_price <= 0.0:
         raise BinanceAPIError("close order response did not include resolved execution fill")
-    if qty > 0.0 and abs(qty - trade.qty) > max(1e-12, trade.qty * 1e-8):
-        # Market reduce-only partials are possible. Keep the realized ledger
-        # tied to the actually executed close size when the venue reports one.
-        scaled = qty / max(trade.qty, 1e-12)
-        realized = trade.realized_pnl * scaled
+    fee_bps = float(exit_taker_fee_bps)
+    if not math.isfinite(fee_bps) or fee_bps < 0.0:
+        raise BinanceAPIError("close order fee rate must be finite and non-negative")
+    allocation = min(1.0, qty / max(float(trade.qty), 1e-18))
+    entry_fees = max(0.0, float(trade.fees)) * allocation
+    exit_fees = qty * exit_price * fee_bps / 10_000.0
+    fees = entry_fees + exit_fees
+    if str(trade.side).upper() == "LONG":
+        gross_pnl = (exit_price - float(trade.entry_price)) * qty
     else:
-        realized = trade.realized_pnl
+        gross_pnl = (float(trade.entry_price) - exit_price) * qty
+    realized = gross_pnl - fees
+    entry_notional = float(trade.entry_price) * qty
     return replace(
         trade,
         qty=qty,
         exit_price=exit_price,
         realized_pnl=realized,
+        realized_pnl_pct=(realized / entry_notional) if entry_notional > 0.0 else 0.0,
+        fees=fees,
         close_exchange_order_id=_order_text(order, "orderId"),
         close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or close_client_order_id,
         exchange_status=_order_exchange_status(order),
@@ -582,20 +603,52 @@ def _submit_close_position(
     trade: ClosedTrade,
     *,
     reduce_only: bool,
+    taker_fee_bps: float = 0.0,
+    close_client_order_id: str | None = None,
 ) -> ClosedTrade:
     if position.dry_run:
         return replace(trade, exchange_status="paper")
-    close_client_order_id = bot_client_order_id(position.id, "close")
-    order = client.place_order(
-        position.symbol,
-        _position_order_side(position, close=True),
-        position.qty,
-        dry_run=False,
-        leverage=position.leverage,
-        reduce_only=reduce_only,
-        client_order_id=close_client_order_id,
+    close_client_order_id = close_client_order_id or bot_client_order_id(
+        position.id,
+        "close",
     )
-    return _apply_close_order(trade, order, close_client_order_id)
+    try:
+        order = client.place_order(
+            position.symbol,
+            _position_order_side(position, close=True),
+            position.qty,
+            dry_run=False,
+            leverage=position.leverage,
+            reduce_only=reduce_only,
+            client_order_id=close_client_order_id,
+        )
+    except BinanceAPIError:
+        order = client.get_order(
+            position.symbol,
+            orig_client_order_id=close_client_order_id,
+        )
+    return _apply_close_order(
+        trade,
+        order,
+        close_client_order_id,
+        exit_taker_fee_bps=taker_fee_bps,
+    )
+
+
+def _next_close_client_order_id(
+    store: PositionsStore,
+    position: OpenPosition,
+) -> str:
+    prior_close_fills = sum(
+        1
+        for trade in store.load_ledger()
+        if trade.id == position.id
+    )
+    return bot_client_order_id(
+        position.id,
+        "close",
+        attempt=prior_close_fills + 1,
+    )
 
 
 def close_all_open_positions(
@@ -606,6 +659,7 @@ def close_all_open_positions(
     clock=time.time,
     client: BinanceClient | None = None,
     reduce_only: bool = True,
+    taker_fee_bps: float = 0.0,
     paper_broker: BinancePaperBroker | None = None,
 ) -> int:
     """Close verified positions through the configured live or paper broker."""
@@ -617,6 +671,7 @@ def close_all_open_positions(
         clock=clock,
         client=client,
         reduce_only=reduce_only,
+        taker_fee_bps=taker_fee_bps,
         paper_broker=paper_broker,
     ).closed
 
@@ -629,6 +684,7 @@ def close_tracked_open_positions(
     clock=time.time,
     client: BinanceClient | None = None,
     reduce_only: bool = True,
+    taker_fee_bps: float = 0.0,
     paper_broker: BinancePaperBroker | None = None,
 ) -> CloseAllReport:
     """Close bot-owned local ledger positions and preserve anything uncertain."""
@@ -661,7 +717,13 @@ def close_tracked_open_positions(
             failures.append(f"{position.id}:{ownership_rejection}")
             continue
         close_price = float(mark_price) if mark_price and mark_price > 0 else float(position.entry_price)
-        trade = _close_to_trade(position, close_price, reason, clock=clock)
+        trade = _close_to_trade(
+            position,
+            close_price,
+            reason,
+            clock=clock,
+            fees=max(0.0, float(position.entry_fees)),
+        )
         try:
             if not position.dry_run:
                 if client is None:
@@ -671,6 +733,8 @@ def close_tracked_open_positions(
                     position,
                     trade,
                     reduce_only=reduce_only,
+                    taker_fee_bps=taker_fee_bps,
+                    close_client_order_id=_next_close_client_order_id(store, position),
                 )
             else:
                 if paper_broker is None:
@@ -1057,6 +1121,7 @@ def run_loop(
                     clock=clock,
                     client=None if cfg.dry_run else client,
                     reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                    taker_fee_bps=strategy.taker_fee_bps,
                     paper_broker=paper_broker,
                 )
                 closed += close_report.closed
@@ -1175,6 +1240,7 @@ def run_loop(
                             clock=clock,
                             client=None if cfg.dry_run else client,
                             reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                            taker_fee_bps=strategy.taker_fee_bps,
                             paper_broker=paper_broker,
                         )
                         closed += close_report.closed
@@ -1259,6 +1325,7 @@ def run_loop(
                         clock=clock,
                         client=None if cfg.dry_run else client,
                         reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                        taker_fee_bps=strategy.taker_fee_bps,
                         paper_broker=paper_broker,
                     )
                     closed += close_report.closed
@@ -1333,7 +1400,13 @@ def run_loop(
                             )
                             exit_reason = "close-lifecycle-blocked"
                             break
-                    trade = _close_to_trade(position, decision.mark_price, reason, clock=clock)
+                    trade = _close_to_trade(
+                        position,
+                        decision.mark_price,
+                        reason,
+                        clock=clock,
+                        fees=max(0.0, float(position.entry_fees)),
+                    )
                     try:
                         if not position.dry_run:
                             trade = _submit_close_position(
@@ -1341,6 +1414,8 @@ def run_loop(
                                 position,
                                 trade,
                                 reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                                taker_fee_bps=strategy.taker_fee_bps,
+                                close_client_order_id=_next_close_client_order_id(store, position),
                             )
                         else:
                             if paper_broker is None:

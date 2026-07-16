@@ -668,6 +668,75 @@ def test_command_autonomous_start_stop_status(tmp_path, monkeypatch, capsys):
     assert "state=STOPPING" in out
 
 
+def test_command_autonomous_stop_signals_single_worker_without_second_order(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    path = _autonomous_control_path(tmp_path, monkeypatch)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps({"state": "RUNNING", "note": "worker", "ts_ms": 1}),
+        encoding="utf-8",
+    )
+    store = PositionsStore()
+    position = OpenPosition(
+        id="owned-live",
+        symbol="BTCUSDT",
+        market_type="futures",
+        side="LONG",
+        qty=0.01,
+        entry_price=50_000.0,
+        leverage=5.0,
+        opened_at_ms=1,
+        notional=500.0,
+        dry_run=False,
+        open_client_order_id="sait-o-owned-live",
+        open_exchange_order_id="123",
+        exchange_status="FILLED",
+    )
+    store.record_open(position)
+    client_calls = {"count": 0}
+
+    def fail_if_client_is_built(_runtime):
+        client_calls["count"] += 1
+        raise AssertionError("stop controls must not create a competing execution client")
+
+    monkeypatch.setattr(cli, "_build_client", fail_if_client_is_built)
+
+    assert cli.command_autonomous(argparse.Namespace(action="stop")) == 0
+    assert client_calls["count"] == 0
+    assert store.load_open() == [position]
+    assert json.loads(path.read_text(encoding="utf-8"))["state"] == "STOPPING"
+    assert "request accepted by the single execution worker" in capsys.readouterr().out
+
+
+def test_command_autonomous_stop_fails_loudly_without_worker_for_open_position(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    path = _autonomous_control_path(tmp_path, monkeypatch)
+    store = PositionsStore()
+    position = OpenPosition(
+        id="orphan-paper",
+        symbol="BTCUSDT",
+        market_type="spot",
+        side="LONG",
+        qty=0.01,
+        entry_price=50_000.0,
+        leverage=1.0,
+        opened_at_ms=1,
+        notional=500.0,
+    )
+    store.record_open(position)
+
+    assert cli.command_autonomous(argparse.Namespace(action="stop")) == 2
+    assert store.load_open() == [position]
+    assert json.loads(path.read_text(encoding="utf-8"))["state"] == "STOPPING"
+    assert "no active worker acknowledged" in capsys.readouterr().err
+
+
 def test_command_autonomous_unknown_objective(tmp_path, monkeypatch, capsys):
     _autonomous_control_path(tmp_path, monkeypatch)
     args = argparse.Namespace(action="start", objective="bogus", model="data/model.json")
