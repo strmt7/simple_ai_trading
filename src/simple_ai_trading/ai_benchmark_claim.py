@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 import re
@@ -41,6 +42,7 @@ _MAX_JSON_BYTES = 32 * 1024 * 1024
 _ADMISSIBLE_CONFIRMATION_STATUSES = ("complete", "degraded")
 _MINIMUM_CONFIRMATION_DURATION_SECONDS = 54_000
 _MINIMUM_CONTINUITY_GROUPS = 30
+_PROVIDER_DURATION_TOLERANCE_SECONDS = 0.001
 _APPROVED_PREREGISTRATION_SHA256 = {
     "qwen3:14b": "e96d203d9e8a32114fd2192c2cc86ab029d9185923ff9162214d4ff061aee8ec",
 }
@@ -269,6 +271,43 @@ def validate_preregistered_ai_runtime_evidence(
     return dict(evidence)
 
 
+def _validate_provider_wall_clock_evidence(
+    payload: Mapping[str, object],
+    *,
+    model: str,
+) -> None:
+    results = payload.get("results")
+    if not isinstance(results, (list, tuple)) or len(results) != 1:
+        raise ValueError("preregistered AI benchmark result count is invalid")
+    result = _mapping(results[0], "AI benchmark result")
+    cases = result.get("case_results")
+    if (
+        result.get("model") != model
+        or not isinstance(cases, (list, tuple))
+        or not cases
+    ):
+        raise ValueError("preregistered AI benchmark case evidence is invalid")
+    for raw_case in cases:
+        case = _mapping(raw_case, "AI benchmark case")
+        latency_raw = case.get("latency_seconds")
+        usage = _mapping(case.get("provider_usage"), "AI benchmark provider usage")
+        total_duration = usage.get("total_duration")
+        if (
+            isinstance(latency_raw, bool)
+            or not isinstance(latency_raw, (int, float))
+            or not math.isfinite(float(latency_raw))
+            or float(latency_raw) < 0.0
+            or isinstance(total_duration, bool)
+            or not isinstance(total_duration, int)
+            or total_duration <= 0
+            or total_duration / 1_000_000_000.0
+            > float(latency_raw) + _PROVIDER_DURATION_TOLERANCE_SECONDS
+        ):
+            raise ValueError(
+                "AI benchmark provider duration exceeds measured wall-clock latency"
+            )
+
+
 def write_preregistered_ai_benchmark_output(
     report: AIModelBenchmarkReport,
     output_path: str | Path,
@@ -329,6 +368,7 @@ def write_preregistered_ai_benchmark_output(
         or payload.get("passed") is not rescored.passed
     ):
         raise ValueError("preregistered AI benchmark report is inconsistent")
+    _validate_provider_wall_clock_evidence(payload, model=claim.model)
     validate_preregistered_ai_runtime_evidence(
         evidence,
         model=claim.model,
