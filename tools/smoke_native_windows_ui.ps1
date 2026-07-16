@@ -23,6 +23,7 @@ public static class SatNativeUi {
 "@
 
 $WM_COMMAND = 0x0111
+$WM_CLOSE = 0x0010
 $WM_GETTEXT = 0x000D
 $WM_GETTEXTLENGTH = 0x000E
 $BM_CLICK = 0x00F5
@@ -260,6 +261,25 @@ try {
     Stop-Process -Id $process.Id -Force
     $process = $null
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 -ErrorAction SilentlyContinue
+
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = "1500"
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND = "status"
+    $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
+    Wait-Until { $process.Refresh(); $process.MainWindowHandle -ne [IntPtr]::Zero } "graceful-close app window handle" 10000
+    $window = $process.MainWindowHandle
+    $output = Get-Control $window $OutputEditId
+    Wait-Until { (Get-ControlText (Get-Control $window $ProfileId)) -eq "Conservative" } "graceful-close operator status" 10000
+    Select-Page $window (Get-Control $window $PageListId) 5
+    Select-Combo $window (Get-Control $window $CommandComboId) $CommandComboId "Runtime health / status"
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "> simple-ai-trading status" 5000
+    [void][SatNativeUi]::SendMessage($window, $WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
+    Start-Sleep -Milliseconds 250
+    $process.Refresh()
+    if ($process.HasExited) { throw "graceful close abandoned an active worker" }
+    Wait-Until { $process.Refresh(); $process.HasExited } "graceful close after active worker completion" 5000
+    $process = $null
+    Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue
 
     if (-not $SkipRealCompute.IsPresent) {
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue

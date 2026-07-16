@@ -841,6 +841,12 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256" in source
     assert "struct CommandResult" in source
     assert "workflow_generation_.fetch_add(1)" in source
+    assert "std::atomic_uint32_t active_workers_{0}" in source
+    assert "std::atomic_bool close_requested_{false}" in source
+    assert "case WM_CLOSE:" in source
+    assert "launch_worker(running_, WM_APP + 1" in source
+    assert "active_workers_.load() != 0" in source
+    assert "The app is closing; no new workflow was started" in source
     assert "Workflow cancelled by a safety control" in source
     assert "if (result.exit_code != 0)" in source
     assert "Workflow stopped after failed command" in source
@@ -880,6 +886,7 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "Testnet live" in smoke
     assert "independent pause/stop" in smoke
     assert "unsafe ledger-only close all" in smoke
+    assert "graceful close abandoned an active worker" in smoke
     assert "SetProcessDPIAware" in capture
     assert "PrintWindow" in capture
     assert "Captured window is too small" in capture
