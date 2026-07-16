@@ -785,7 +785,11 @@ def _git_bytes(*arguments: str) -> bytes:
         raise ValueError("outcome-mixture Git implementation binding failed") from exc
 
 
-def _validate_git_blob_binding(binding: Mapping[str, object]) -> None:
+def _validate_git_blob_binding(
+    binding: Mapping[str, object],
+    *,
+    require_current: bool = True,
+) -> None:
     commit = str(binding.get("commit") or "").lower()
     files = binding.get("files")
     if (
@@ -814,11 +818,14 @@ def _validate_git_blob_binding(binding: Mapping[str, object]) -> None:
         seen.add(normalized)
         expected = str(item["sha256"])
         bound_blob = _git_bytes("show", f"{commit}:{normalized}")
+        if hashlib.sha256(bound_blob).hexdigest() != expected:
+            raise ValueError(
+                f"outcome-mixture implementation changed at bound commit: {normalized}"
+            )
+        if not require_current:
+            continue
         head_blob = _git_bytes("show", f"HEAD:{normalized}")
-        if (
-            hashlib.sha256(bound_blob).hexdigest() != expected
-            or hashlib.sha256(head_blob).hexdigest() != expected
-        ):
+        if hashlib.sha256(head_blob).hexdigest() != expected:
             raise ValueError(f"outcome-mixture implementation changed: {normalized}")
         try:
             subprocess.run(
@@ -851,7 +858,7 @@ def _validate_git_blob_binding(binding: Mapping[str, object]) -> None:
 def load_outcome_mixture_design(
     path: str | Path,
     *,
-    require_current: bool = True,
+    require_current: bool = False,
 ) -> tuple[dict[str, object], str]:
     """Load a hash-bound design whose shared controls equal sealed Round 16."""
 
@@ -959,7 +966,10 @@ def load_outcome_mixture_design(
                     **expected,
                     "required_data_types": list(data_types_override),
                 }
-            elif name in {"execution", "barrier_targets"} and horizon_override is not None:
+            elif (
+                name in {"execution", "barrier_targets"}
+                and horizon_override is not None
+            ):
                 expected = {**expected, "horizon_seconds": horizon_override}
             elif name == "runtime_resources" and runtime_mode_override is not None:
                 expected = {**expected, "training_data_mode": runtime_mode_override}
@@ -993,14 +1003,16 @@ def load_outcome_mixture_design(
         or len(research_basis) < 6
     ):
         raise ValueError("outcome-mixture design sections are incomplete")
-    if require_current:
-        _validate_git_blob_binding(implementation)
+    _validate_git_blob_binding(implementation, require_current=require_current)
     expected_feature_names = microstructure_feature_names(
         str(round_contract["feature_version"])
     )
     if round_contract.get("trainer") == "lightgbm_hurdle":
         model_spec = LightGBMHurdleSpec(**dict(model))
-        if asdict(model_spec) != round_contract.get("model") or not expected_feature_names:
+        if (
+            asdict(model_spec) != round_contract.get("model")
+            or not expected_feature_names
+        ):
             raise ValueError("LightGBM hurdle model contract drifted")
     else:
         model_spec = OutcomeMixtureArchitectureSpec(**dict(model))
@@ -1314,7 +1326,10 @@ def run_outcome_mixture_screen(
     threads: int | None = None,
     compute_backend: str | None = None,
 ) -> dict[str, object]:
-    design, design_sha256 = load_outcome_mixture_design(design_path)
+    design, design_sha256 = load_outcome_mixture_design(
+        design_path,
+        require_current=True,
+    )
     resources = design["runtime_resources"]
     data = design["data"]
     execution = design["execution"]
@@ -1481,9 +1496,7 @@ def run_outcome_mixture_screen(
                     )
                 ),
             )
-            expected_model_backend = (
-                "cpu" if effective_backend == "cpu" else "opencl"
-            )
+            expected_model_backend = "cpu" if effective_backend == "cpu" else "opencl"
             if model.backend_kind != expected_model_backend:
                 raise RuntimeError(
                     "LightGBM model training did not remain on the required backend"
@@ -1557,9 +1570,7 @@ def run_outcome_mixture_screen(
                 "calibration_rows": reloaded.calibration_rows,
                 "calibration_start_ms": reloaded.calibration_start_ms,
                 "internal_purged_rows": reloaded.internal_purged_rows,
-                "positive_class_prevalence": list(
-                    reloaded.positive_class_prevalence
-                ),
+                "positive_class_prevalence": list(reloaded.positive_class_prevalence),
                 "class_support": reloaded.class_support,
                 "probability_calibration": reloaded.probability_calibration,
                 "best_iterations": reloaded.best_iterations,
@@ -1613,9 +1624,7 @@ def run_outcome_mixture_screen(
             )
         progress("model-complete", **completion)
     batch_size = int(
-        training[
-            "prediction_batch_size" if lightgbm_trainer else "batch_size"
-        ]
+        training["prediction_batch_size" if lightgbm_trainer else "batch_size"]
     )
     progress("calibration-predict")
     calibration_prediction = _ensemble_for_role(
