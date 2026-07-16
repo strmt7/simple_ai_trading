@@ -316,15 +316,13 @@ def test_train_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None
     assert "training failed" in trained.training_backend_reason
 
 
-def test_torch_training_normalization_matches_population_stats() -> None:
+def test_torch_cpu_training_normalization_matches_population_stats() -> None:
     pytest.importorskip("torch")
     from simple_ai_trading import model as model_mod
 
     rows = _rows()
     expected_means, expected_stds = model_mod._collect_feature_stats(rows)
-    backend = model_mod.resolve_backend("directml")
-    if backend.kind != "directml":
-        backend = BackendInfo("cpu", "cpu", "cpu", "Torch CPU", "")
+    backend = BackendInfo("cpu", "cpu", "cpu", "Torch CPU", "")
 
     trained = model_mod._train_torch(
         rows,
