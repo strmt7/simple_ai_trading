@@ -209,6 +209,7 @@ class MainWindow {
     std::atomic_bool close_requested_{false};
     std::atomic_uint32_t active_workers_{0};
     std::atomic_uint64_t workflow_generation_{0};
+    std::atomic_uint64_t settings_revision_{0};
     std::wstring environment_state_{L"Environment pending"};
     std::wstring bot_state_{L"State pending"};
     std::wstring persisted_profile_{L"Conservative"};
@@ -223,6 +224,13 @@ class MainWindow {
     bool persisted_ai_enabled_ = true;
     bool persisted_reinvest_ = false;
     bool operator_status_initialized_ = false;
+    bool profile_dirty_ = false;
+    bool leverage_dirty_ = false;
+    bool execution_dirty_ = false;
+    bool ai_dirty_ = false;
+    bool reinvest_dirty_ = false;
+    std::uint64_t operator_status_revision_ = 0;
+    std::uint64_t controls_reconciled_revision_ = 0;
     bool ai_enabled_ = true;
     bool reinvest_enabled_ = false;
     bool smoke_ = false;
@@ -1179,10 +1187,18 @@ class MainWindow {
             int profile = static_cast<int>(SendMessageW(profile_combo_, CB_GETCURSEL, 0, 0));
             const int leverage_index = profile == 1 ? 4 : (profile == 2 ? 5 : 3);
             SendMessageW(leverage_combo_, CB_SETCURSEL, leverage_index, 0);
+            profile_dirty_ = true;
+            leverage_dirty_ = true;
+            InvalidateRect(hwnd_, nullptr, FALSE);
+            return;
+        }
+        if (id == kLeverageComboId && notification == CBN_SELCHANGE) {
+            leverage_dirty_ = true;
             InvalidateRect(hwnd_, nullptr, FALSE);
             return;
         }
         if (id == kModeComboId && notification == CBN_SELCHANGE) {
+            execution_dirty_ = true;
             InvalidateRect(hwnd_, nullptr, FALSE);
             return;
         }
@@ -1191,6 +1207,7 @@ class MainWindow {
         }
         if (id == kAiToggleId) {
             ai_enabled_ = !ai_enabled_;
+            ai_dirty_ = true;
             SendMessageW(ai_toggle_, BM_SETCHECK, ai_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
             SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI on (gated)" : L"AI off");
             InvalidateRect(ai_toggle_, nullptr, TRUE);
@@ -1210,6 +1227,7 @@ class MainWindow {
                     enabled = false;
                 }
             }
+            reinvest_dirty_ = enabled != reinvest_enabled_;
             reinvest_enabled_ = enabled;
             SendMessageW(reinvest_toggle_, BM_SETCHECK, enabled ? BST_CHECKED : BST_UNCHECKED, 0);
             SetWindowTextW(reinvest_toggle_, enabled ? L"Reinvest on" : L"Reinvest off");
@@ -1551,11 +1569,42 @@ class MainWindow {
                 position == 0 || std::iswspace(command[position - 1]);
             const std::size_t end = position + switch_name.size();
             const bool ends_token =
-                end == command.size() || std::iswspace(command[end]);
+                end == command.size() || std::iswspace(command[end]) || command[end] == L'=';
             if (starts_token && ends_token) {
                 return true;
             }
             position = end;
+        }
+        return false;
+    }
+
+    static bool mutates_operator_settings(const std::wstring& command) {
+        const std::size_t token_end = command.find_first_of(L" \t\r\n");
+        const std::wstring name = command.substr(0, token_end);
+        if (name == L"configure" || name == L"connect") {
+            return true;
+        }
+        if (name == L"compute") {
+            return has_command_switch(command, L"--backend");
+        }
+        if (name == L"ai") {
+            return has_command_switch(command, L"--enable") ||
+                has_command_switch(command, L"--disable") ||
+                has_command_switch(command, L"--provider") ||
+                has_command_switch(command, L"--model") ||
+                has_command_switch(command, L"--require-gpu") ||
+                has_command_switch(command, L"--no-require-gpu") ||
+                has_command_switch(command, L"--min-free-vram-gb") ||
+                has_command_switch(command, L"--min-free-ram-gb") ||
+                has_command_switch(command, L"--min-model-parameters-b") ||
+                has_command_switch(command, L"--allow-paper-fallback") ||
+                has_command_switch(command, L"--no-paper-fallback");
+        }
+        if (name == L"strategy") {
+            return has_command_switch(command, L"--profile") ||
+                has_command_switch(command, L"--leverage") ||
+                has_command_switch(command, L"--reinvest-profits") ||
+                has_command_switch(command, L"--no-reinvest-profits");
         }
         return false;
     }
@@ -1652,7 +1701,11 @@ class MainWindow {
                     break;
                 }
                 append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
+                const bool mutates_settings = mutates_operator_settings(command);
                 CommandResult result = execute_cli(command);
+                if (mutates_settings) {
+                    settings_revision_.fetch_add(1);
+                }
                 append_output(result.output);
                 if (result.exit_code != 0) {
                     append_output(
@@ -1800,7 +1853,8 @@ class MainWindow {
         if (operator_status_running_.exchange(true)) {
             return;
         }
-        launch_worker(operator_status_running_, WM_APP + 3, [this] {
+        const std::uint64_t settings_revision = settings_revision_.load();
+        launch_worker(operator_status_running_, WM_APP + 3, [this, settings_revision] {
             const std::wstring line = execute_cli_first_line(L"status --compact");
             const std::wstring compute_line = execute_cli_first_line(L"compute");
             const std::wstring environment = compact_status_value(line, L"environment");
@@ -1857,6 +1911,7 @@ class MainWindow {
                 } else {
                     command_contract_state_ = L"Contract mismatch";
                 }
+                operator_status_revision_ = settings_revision;
             }
             command_contract_synced_.store(command_contract_synced);
         });
@@ -1868,6 +1923,7 @@ class MainWindow {
         std::wstring execution;
         bool ai = true;
         bool reinvest = false;
+        std::uint64_t status_revision = 0;
         {
             std::lock_guard lock(operator_status_mutex_);
             profile = persisted_profile_;
@@ -1875,22 +1931,46 @@ class MainWindow {
             execution = persisted_execution_;
             ai = persisted_ai_enabled_;
             reinvest = persisted_reinvest_;
+            status_revision = operator_status_revision_;
         }
-        if (!operator_status_initialized_) {
+        const bool force_reconcile =
+            !operator_status_initialized_ || status_revision > controls_reconciled_revision_;
+        if (force_reconcile || !profile_dirty_) {
             const int profile_index = static_cast<int>(SendMessageW(
                 profile_combo_, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(profile.c_str())));
             if (profile_index >= 0) SendMessageW(profile_combo_, CB_SETCURSEL, profile_index, 0);
+        }
+        if (force_reconcile || !leverage_dirty_) {
             const int leverage_index = static_cast<int>(SendMessageW(
                 leverage_combo_, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(leverage.c_str())));
             if (leverage_index >= 0) SendMessageW(leverage_combo_, CB_SETCURSEL, leverage_index, 0);
+        }
+        if (force_reconcile || !execution_dirty_) {
             const int execution_index = static_cast<int>(SendMessageW(
                 mode_combo_, CB_FINDSTRINGEXACT, static_cast<WPARAM>(-1), reinterpret_cast<LPARAM>(execution.c_str())));
             if (execution_index >= 0) SendMessageW(mode_combo_, CB_SETCURSEL, execution_index, 0);
+        }
+        if (force_reconcile || !ai_dirty_) {
             ai_enabled_ = ai;
-            reinvest_enabled_ = reinvest;
+            SendMessageW(ai_toggle_, BM_SETCHECK, ai_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
             SetWindowTextW(ai_toggle_, ai_enabled_ ? L"AI on (gated)" : L"AI off");
+        }
+        if (force_reconcile || !reinvest_dirty_) {
+            reinvest_enabled_ = reinvest;
+            SendMessageW(reinvest_toggle_, BM_SETCHECK, reinvest_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
             SetWindowTextW(reinvest_toggle_, reinvest_enabled_ ? L"Reinvest on" : L"Reinvest off");
+        }
+        if (force_reconcile) {
+            profile_dirty_ = false;
+            leverage_dirty_ = false;
+            execution_dirty_ = false;
+            ai_dirty_ = false;
+            reinvest_dirty_ = false;
+            controls_reconciled_revision_ = status_revision;
             operator_status_initialized_ = true;
+        }
+        if (status_revision < settings_revision_.load()) {
+            refresh_operator_status_async();
         }
         InvalidateRect(hwnd_, nullptr, FALSE);
         InvalidateRect(ai_toggle_, nullptr, TRUE);
