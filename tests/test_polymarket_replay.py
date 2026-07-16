@@ -1767,7 +1767,7 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
         "initial_capital",
         "maximum_loss_fraction_per_market",
         "maximum_loss_fraction_per_time_group",
-        "disable_ai",
+        "ai_enabled",
         "ai_model",
         "ai_benchmark",
         "ai_url",
@@ -1782,6 +1782,12 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
     assert next(
         option for option in spec.options if option.dest == "latency_ms"
     ).takes_value
+    ai_options = [option for option in spec.options if option.dest == "ai_enabled"]
+    assert {option.flags for option in ai_options} == {
+        ("--enable-ai",),
+        ("--disable-ai",),
+    }
+    assert all(option.default is None for option in ai_options)
     assert (
         next(
             option
@@ -1790,6 +1796,24 @@ def test_polymarket_model_generated_windows_contract_exposes_typed_controls() ->
         ).default
         == 30
     )
+
+
+def test_polymarket_model_ai_mode_uses_runtime_default_and_explicit_overrides(
+    monkeypatch,
+) -> None:
+    parser = cli._build_parser()
+    inherited = parser.parse_args(["polymarket-model"])
+    enabled = parser.parse_args(["polymarket-model", "--enable-ai"])
+    disabled = parser.parse_args(["polymarket-model", "--disable-ai"])
+    runtime = cli.load_runtime({"ai_enabled": False})
+    monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
+
+    assert cli._polymarket_ai_enabled(inherited) is False
+    assert cli._polymarket_ai_enabled(enabled) is True
+    assert cli._polymarket_ai_enabled(disabled) is False
+
+    runtime.ai_enabled = True
+    assert cli._polymarket_ai_enabled(inherited) is True
 
 
 def test_polymarket_source_verification_is_in_the_shared_command_contract() -> None:

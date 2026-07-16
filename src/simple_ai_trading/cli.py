@@ -734,11 +734,20 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_model.add_argument(
         "--maximum-loss-fraction-per-time-group", default="0.015"
     )
-    parser_polymarket_model.add_argument(
-        "--disable-ai",
+    polymarket_ai_group = parser_polymarket_model.add_mutually_exclusive_group()
+    polymarket_ai_group.add_argument(
+        "--enable-ai",
+        dest="ai_enabled",
         action="store_true",
-        help="skip the default local multibillion-parameter veto ablation",
+        help="run the gated local multibillion-parameter veto ablation",
     )
+    polymarket_ai_group.add_argument(
+        "--disable-ai",
+        dest="ai_enabled",
+        action="store_false",
+        help="skip the gated local multibillion-parameter veto ablation",
+    )
+    parser_polymarket_model.set_defaults(ai_enabled=None)
     parser_polymarket_model.add_argument("--ai-model", default="qwen3:8b")
     parser_polymarket_model.add_argument(
         "--ai-benchmark",
@@ -6943,6 +6952,13 @@ def _polymarket_ai_skip_reason(
     return ""
 
 
+def _polymarket_ai_enabled(args: argparse.Namespace) -> bool:
+    explicit = getattr(args, "ai_enabled", None)
+    if explicit is not None:
+        return bool(explicit)
+    return bool(load_runtime().ai_enabled)
+
+
 def _polymarket_ai_latency_stress_passed(
     latency_sensitivity: Mapping[str, Mapping[int, object]],
     latency_scenarios: Sequence[int],
@@ -7188,6 +7204,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
         )
 
     try:
+        polymarket_ai_enabled = _polymarket_ai_enabled(args)
         minimum_markets = int(args.minimum_resolved_markets_per_asset)
         latency_scenarios = _polymarket_latency_scenarios(
             args.latency_stress_ms,
@@ -7406,7 +7423,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
         probability_gates_passed = _polymarket_probability_gates_passed(
             probability_report
         )
-        ai_operator_disabled = bool(getattr(args, "disable_ai", False))
+        ai_operator_disabled = not polymarket_ai_enabled
         policy_selection = None
         ai_cases = ()
         if not ai_operator_disabled and probability_gates_passed:
