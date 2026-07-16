@@ -83,6 +83,7 @@ from simple_ai_trading.polymarket_model_execution import (
 from simple_ai_trading.polymarket_publication import (
     POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION,
     _ai_case_rows,
+    _ai_rows,
     _execution_uplift_metrics,
     _parsed_ai_provider_usage,
     _parsed_valid_ai_response,
@@ -2970,6 +2971,15 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
     case_rows = _ai_case_rows({"ai": ai_evidence})
     assert len(case_rows) == len(cases)
     assert all("official_up" not in row["prompt_payload_json"] for row in case_rows)
+    ai_rows = _ai_rows({"ai": ai_evidence})
+    assert sum(row["prompt_token_count"] for row in ai_rows) == (
+        ai_report.total_prompt_token_count
+    )
+    assert sum(row["output_token_count"] for row in ai_rows) == (
+        ai_report.total_output_token_count
+    )
+    assert all(row["provider_telemetry"] is True for row in ai_rows)
+    assert all("queue_delay_seconds" in row for row in ai_rows)
 
     forged_tokens = json.loads(json.dumps(ai_evidence))
     token_report = forged_tokens["veto_report"]

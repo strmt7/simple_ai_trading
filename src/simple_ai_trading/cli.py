@@ -7511,7 +7511,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                         f"action={item.get('action')} "
                         f"valid={item.get('valid')} "
                         f"cache_hit={item.get('cache_hit')} "
-                        f"latency={item.get('latency_seconds')}s",
+                        f"latency={item.get('latency_seconds')}s "
+                        f"prompt_tokens={item.get('prompt_tokens')} "
+                        f"output_tokens={item.get('output_tokens')}",
                         file=sys.stderr,
                     )
 
@@ -7888,7 +7890,9 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 "polymarket-ai: "
                 f"net={ai_execution.net_realized_pnl_quote} "
                 f"fills={ai_execution.filled_order_count} "
-                f"uplift_accepted={ai_uplift.accepted}"
+                f"uplift_accepted={ai_uplift.accepted} "
+                f"prompt_tokens={ai_report.total_prompt_token_count} "
+                f"output_tokens={ai_report.total_output_token_count}"
             )
         print(f"artifact_sha256: {artifact_sha256}")
         if output:
