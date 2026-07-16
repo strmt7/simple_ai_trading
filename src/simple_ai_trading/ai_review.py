@@ -17,6 +17,7 @@ from .ai_runtime import (
     OllamaResidencyReport,
     detect_ai_capabilities,
     inspect_ollama_model_residency,
+    ollama_residency_from_mapping,
 )
 from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
 from .storage import write_json_atomic
@@ -80,35 +81,12 @@ def _provider_runtime_is_valid(
     model: str,
     digest: str | None,
 ) -> bool:
-    expected_fields = {
-        "requested_model",
-        "status",
-        "loaded_model",
-        "digest",
-        "size_bytes",
-        "size_vram_bytes",
-        "vram_to_model_ratio",
-        "loaded",
-        "gpu_resident",
-    }
-    if not isinstance(value, dict) or set(value) != expected_fields:
-        return False
     try:
-        report = OllamaResidencyReport(
-            requested_model=value["requested_model"],
-            status=value["status"],
-            loaded_model=value["loaded_model"],
-            digest=value["digest"],
-            size_bytes=value["size_bytes"],
-            size_vram_bytes=value["size_vram_bytes"],
-            vram_to_model_ratio=value["vram_to_model_ratio"],
-        ).validated()
+        report = ollama_residency_from_mapping(value)
     except (TypeError, ValueError):
         return False
     return (
-        value["loaded"] is report.loaded
-        and value["gpu_resident"] is report.gpu_resident
-        and report.requested_model == model
+        report.requested_model == model
         and report.digest == digest
         and report.loaded
         and report.gpu_resident

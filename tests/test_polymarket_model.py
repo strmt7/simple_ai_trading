@@ -19,6 +19,7 @@ from simple_ai_trading import (
     polymarket_ai_veto as ai_veto_module,
 )
 from simple_ai_trading.ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
+from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.ai_uplift import assess_ai_uplift
 from simple_ai_trading.cli import (
     _polymarket_execution_uplift_metrics,
@@ -1929,7 +1930,64 @@ def test_ai_veto_supports_preregistered_qwen3_14b_candidate() -> None:
     assert PolymarketAIVetoConfig(model="qwen3:14b").validated().model == "qwen3:14b"
 
 
-def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
+def _gpu_residency(
+    _base_url: str,
+    model: str,
+    _timeout: float,
+    *,
+    expected_digest: str | None = None,
+) -> OllamaResidencyReport:
+    return OllamaResidencyReport(
+        requested_model=model,
+        status="gpu_resident",
+        loaded_model=model,
+        digest=expected_digest or "f" * 64,
+        size_bytes=6_000_000_000,
+        size_vram_bytes=6_000_000_000,
+        vram_to_model_ratio=1.0,
+    ).validated()
+
+
+def _cpu_residency(
+    _base_url: str,
+    model: str,
+    _timeout: float,
+    *,
+    expected_digest: str | None = None,
+) -> OllamaResidencyReport:
+    return OllamaResidencyReport(
+        requested_model=model,
+        status="cpu_only",
+        loaded_model=model,
+        digest=expected_digest or "f" * 64,
+        size_bytes=6_000_000_000,
+        size_vram_bytes=0,
+        vram_to_model_ratio=0.0,
+    ).validated()
+
+
+def _wrong_digest_residency(
+    _base_url: str,
+    model: str,
+    _timeout: float,
+    *,
+    expected_digest: str | None = None,
+) -> OllamaResidencyReport:
+    del expected_digest
+    return OllamaResidencyReport(
+        requested_model=model,
+        status="gpu_resident",
+        loaded_model=model,
+        digest="e" * 64,
+        size_bytes=6_000_000_000,
+        size_vram_bytes=6_000_000_000,
+        vram_to_model_ratio=1.0,
+    ).validated()
+
+
+def test_ai_veto_permissions_are_fail_closed_and_execution_bound(
+    tmp_path: Path,
+) -> None:
     source, markets = _source_fixture(predictive=True)
     dataset = build_polymarket_model_dataset(source, markets)
     split = split_polymarket_model_dataset(dataset)
@@ -1984,6 +2042,7 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
         config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
         post_json=approve,  # type: ignore[arg-type]
         expected_model_digest="f" * 64,
+        residency_inspector=_gpu_residency,
     )
     baseline = evaluate_polymarket_execution_policy(
         split.test,
@@ -2006,6 +2065,58 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
     assert baseline == approved
     assert not ai_report.trading_authority
     assert not ai_report.profitability_claim
+    assert all(
+        result.provider_runtime is not None
+        and result.provider_runtime["status"] == "gpu_resident"
+        for result in ai_report.results
+    )
+    cpu_chat_calls_before = chat_calls
+    with PolymarketEvidenceStore(tmp_path / "cpu-ai-cache.duckdb") as cache_store:
+        cpu_reports = [
+            benchmark_polymarket_ai_veto(
+                cases[:1],
+                all_condition_ids=[item.condition_id for item in split.test],
+                selection_sha256=selection.selection_sha256,
+                risk_benchmark_evidence_sha256="a" * 64,
+                config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+                post_json=approve,  # type: ignore[arg-type]
+                expected_model_digest="f" * 64,
+                residency_inspector=_cpu_residency,
+                cache_store=cache_store,
+            )
+            for _ in range(2)
+        ]
+    cpu_only = cpu_reports[0]
+    assert cpu_reports[1] == cpu_only
+    assert chat_calls == cpu_chat_calls_before + 1
+    assert cpu_only.provider_failure_count == 1
+    assert cpu_only.approval_count == 0
+    assert not any(cpu_only.market_permissions.values())
+    assert cpu_only.results[0].provider_runtime is not None
+    assert cpu_only.results[0].provider_runtime["status"] == "cpu_only"
+    wrong_digest_calls_before = chat_calls
+    with PolymarketEvidenceStore(
+        tmp_path / "wrong-digest-ai-cache.duckdb"
+    ) as cache_store:
+        wrong_digest_reports = [
+            benchmark_polymarket_ai_veto(
+                cases[:1],
+                all_condition_ids=[item.condition_id for item in split.test],
+                selection_sha256=selection.selection_sha256,
+                risk_benchmark_evidence_sha256="a" * 64,
+                config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
+                post_json=approve,  # type: ignore[arg-type]
+                expected_model_digest="f" * 64,
+                residency_inspector=_wrong_digest_residency,
+                cache_store=cache_store,
+            )
+            for _ in range(2)
+        ]
+    wrong_digest = wrong_digest_reports[0]
+    assert wrong_digest_reports[1] == wrong_digest
+    assert chat_calls == wrong_digest_calls_before + 1
+    assert wrong_digest.provider_failure_count == 1
+    assert wrong_digest.results[0].provider_runtime is None
     completed_chat_calls = chat_calls
     with pytest.raises(ValueError, match="differs from benchmark provenance"):
         benchmark_polymarket_ai_veto(
@@ -2016,6 +2127,7 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
             config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
             post_json=approve,  # type: ignore[arg-type]
             expected_model_digest="e" * 64,
+            residency_inspector=_gpu_residency,
         )
     assert chat_calls == completed_chat_calls
 
@@ -2042,6 +2154,7 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
             risk_benchmark_evidence_sha256="a" * 64,
             config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
             post_json=unexpected_provider,  # type: ignore[arg-type]
+            residency_inspector=_gpu_residency,
         )
     with pytest.raises(ValueError, match="exactly one case per market condition"):
         benchmark_polymarket_ai_veto(
@@ -2051,6 +2164,7 @@ def test_ai_veto_permissions_are_fail_closed_and_execution_bound() -> None:
             risk_benchmark_evidence_sha256="a" * 64,
             config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
             post_json=unexpected_provider,  # type: ignore[arg-type]
+            residency_inspector=_gpu_residency,
         )
 
 
@@ -2120,6 +2234,7 @@ def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
             risk_benchmark_evidence_sha256="a" * 64,
             config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
             post_json=approve,  # type: ignore[arg-type]
+            residency_inspector=_gpu_residency,
             progress=lambda _event, item: progress_rows.append(dict(item)),
             cache_store=store,
         )
@@ -2187,6 +2302,7 @@ def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
                 risk_benchmark_evidence_sha256="a" * 64,
                 config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
                 post_json=malformed,  # type: ignore[arg-type]
+                residency_inspector=_gpu_residency,
                 cache_store=store,
                 progress=lambda _event, item: progress_rows.append(dict(item)),
             )
@@ -2308,6 +2424,7 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
         risk_benchmark_evidence_sha256="a" * 64,
         config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
         post_json=approve,  # type: ignore[arg-type]
+        residency_inspector=_gpu_residency,
     )
     model_execution = evaluate_polymarket_execution_policy(
         split.test,
@@ -2455,6 +2572,32 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
             model_execution=model_execution.asdict(),
         )
 
+    forged_runtime = json.loads(json.dumps(ai_evidence))
+    runtime = forged_runtime["veto_report"]["results"][0]["provider_runtime"]
+    runtime["status"] = "cpu_only"
+    runtime["size_vram_bytes"] = 0
+    runtime["vram_to_model_ratio"] = 0.0
+    runtime["gpu_resident"] = False
+    runtime_report = forged_runtime["veto_report"]
+    runtime_identity = dict(runtime_report)
+    runtime_identity.pop("report_sha256")
+    runtime_report["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            runtime_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="AI veto result"):
+        _validate_ai_evidence(
+            forged_runtime,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+
     tampered = json.loads(json.dumps(ai_evidence))
     prompt_case = tampered["prompt_cases"][0]
     prompt_case["prompt_payload"]["official_up"] = True
@@ -2576,6 +2719,7 @@ def test_ai_low_confidence_or_malformed_output_vetoes_without_order_authority() 
         risk_benchmark_evidence_sha256="a" * 64,
         config=PolymarketAIVetoConfig(model="qwen3.5:9b"),
         post_json=uncertain,  # type: ignore[arg-type]
+        residency_inspector=_gpu_residency,
     )
 
     assert ai_report.approval_count == 0

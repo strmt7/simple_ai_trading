@@ -130,6 +130,39 @@ class OllamaResidencyReport:
 
 
 JsonGetter = Callable[[str, float], object]
+_OLLAMA_RESIDENCY_PAYLOAD_FIELDS = {
+    "requested_model",
+    "status",
+    "loaded_model",
+    "digest",
+    "size_bytes",
+    "size_vram_bytes",
+    "vram_to_model_ratio",
+    "loaded",
+    "gpu_resident",
+}
+
+
+def ollama_residency_from_mapping(value: object) -> OllamaResidencyReport:
+    """Reconstruct strict residency evidence from a persisted JSON mapping."""
+
+    if not isinstance(value, Mapping) or set(value) != _OLLAMA_RESIDENCY_PAYLOAD_FIELDS:
+        raise ValueError("Ollama residency payload fields are invalid")
+    report = OllamaResidencyReport(
+        requested_model=value["requested_model"],
+        status=value["status"],
+        loaded_model=value["loaded_model"],
+        digest=value["digest"],
+        size_bytes=value["size_bytes"],
+        size_vram_bytes=value["size_vram_bytes"],
+        vram_to_model_ratio=value["vram_to_model_ratio"],
+    ).validated()
+    if (
+        value["loaded"] is not report.loaded
+        or value["gpu_resident"] is not report.gpu_resident
+    ):
+        raise ValueError("Ollama residency payload flags are invalid")
+    return report
 
 
 def _is_sha256(value: object) -> bool:

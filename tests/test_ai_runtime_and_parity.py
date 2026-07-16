@@ -21,6 +21,7 @@ from simple_ai_trading.ai_runtime import (
     detect_ai_capabilities,
     estimate_model_parameters_b,
     inspect_ollama_model_residency,
+    ollama_residency_from_mapping,
 )
 from simple_ai_trading.command_contract import (
     command_names,
@@ -158,6 +159,11 @@ def test_ollama_residency_binds_exact_digest_and_gpu_bytes() -> None:
     assert report.status == "gpu_resident"
     assert report.digest == digest
     assert report.vram_to_model_ratio == pytest.approx(5 / 6)
+    assert ollama_residency_from_mapping(report.asdict()) == report
+    tampered = report.asdict()
+    tampered["gpu_resident"] = False
+    with pytest.raises(ValueError, match="flags"):
+        ollama_residency_from_mapping(tampered)
 
 
 def test_ollama_residency_reports_unloaded_and_cpu_only_without_guessing() -> None:
