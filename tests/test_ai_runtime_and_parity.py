@@ -265,7 +265,7 @@ def test_finance_ai_benchmark_requires_exact_typed_json() -> None:
         valid.replace('"action":"veto"', '"action":"VETO"'),
         valid.replace('"action":"veto",', '"action":"veto","extra":1,'),
         valid.replace('"action":"veto",', '"action":"approve","action":"veto",'),
-        valid.replace(',"required_actions":["keep risk controls active"]', ''),
+        valid.replace(',"required_actions":["keep risk controls active"]', ""),
     )
     assert all(_json_mapping_from_text(value) is None for value in malformed)
 
@@ -494,7 +494,9 @@ def test_generated_native_contract_matches_cli() -> None:
     )
     text = header.read_text(encoding="utf-8")
     for item in workflow_commands():
-        assert f"{{{_wide(item.page)}, {_wide(item.group)}, {_wide(item.name)}}}" in text
+        assert (
+            f"{{{_wide(item.page)}, {_wide(item.group)}, {_wide(item.name)}}}" in text
+        )
     for spec in command_specs():
         option_count = len(spec.options) + len(spec.positionals)
         array_name = (
