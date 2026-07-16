@@ -13,6 +13,9 @@ agents to canonical evidence without replacing that evidence.
 - Risk, reconciliation, Stop, and ownership checks are deterministic. AI may
   veto or downsize only after matched uplift evidence and may never block a
   close or override a safety gate.
+- AI uplift v3 requires at least 30 non-tied matched outcomes. Exact ties are
+  excluded from the paired sign test but retained in the moving-block bootstrap
+  and the contiguous 90-day coverage evidence.
 - Historical labels, future books, resolutions, fills, and PnL must never enter
   a live inference payload. Unknown order state blocks new exposure.
 - Secrets must never enter prompts, logs, artifacts, tests, commits, or docs.
