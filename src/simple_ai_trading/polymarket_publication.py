@@ -1197,15 +1197,27 @@ def _matched_ai_uplift_periods(
     ]
 
 
+def _strict_ai_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    parsed: dict[str, object] = {}
+    for key, value in pairs:
+        if key in parsed:
+            raise ValueError("duplicate AI response JSON key")
+        parsed[key] = value
+    return parsed
+
+
 def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
     if not isinstance(response, Mapping):
         return None
     message = response.get("message")
     if not isinstance(message, Mapping) or not isinstance(message.get("content"), str):
         return None
+    content = message["content"]
+    if len(content) > 4_096:
+        return None
     try:
-        parsed = json.loads(message["content"])
-    except json.JSONDecodeError:
+        parsed = json.loads(content, object_pairs_hook=_strict_ai_json_object)
+    except (json.JSONDecodeError, ValueError):
         return None
     if not isinstance(parsed, Mapping) or set(parsed) != {
         "action",
@@ -1214,26 +1226,32 @@ def _parsed_valid_ai_response(response: object) -> dict[str, object] | None:
         "summary",
     }:
         return None
-    action = str(parsed.get("action", "")).strip().lower()
+    raw_action = parsed.get("action")
     raw_confidence = parsed.get("confidence")
     raw_codes = parsed.get("reason_codes")
-    summary = str(parsed.get("summary", "")).strip()
+    raw_summary = parsed.get("summary")
     if (
-        action not in {"approve", "veto", "cooldown"}
+        not isinstance(raw_action, str)
+        or isinstance(raw_confidence, bool)
         or not isinstance(raw_confidence, (int, float))
         or not isinstance(raw_codes, list)
+        or any(not isinstance(value, str) for value in raw_codes)
+        or not isinstance(raw_summary, str)
         or not 1 <= len(raw_codes) <= 4
-        or not summary
-        or len(summary) > 180
     ):
         return None
+    action = raw_action.strip().lower()
     confidence = float(raw_confidence)
-    codes = tuple(dict.fromkeys(str(value) for value in raw_codes))
+    codes = tuple(dict.fromkeys(raw_codes))
+    summary = raw_summary.strip()
     if (
-        not math.isfinite(confidence)
+        action not in {"approve", "veto", "cooldown"}
+        or not math.isfinite(confidence)
         or not 0.0 <= confidence <= 1.0
         or len(codes) != len(raw_codes)
         or any(code not in _AI_REASON_CODES for code in codes)
+        or not summary
+        or len(summary) > 180
     ):
         return None
     return {
@@ -1662,7 +1680,7 @@ def _validate_ai_evidence(
     if not isinstance(results_value, list) or len(results_value) != len(cases):
         raise ValueError("AI veto result count is inconsistent")
     results = [_as_mapping(item, "AI veto result") for item in results_value]
-    expected_permissions = {condition: True for condition in conditions}
+    expected_permissions = {condition: False for condition in conditions}
     latencies: list[float] = []
     valid_count = approval_count = veto_count = cooldown_count = failure_count = 0
     for case, result in zip(cases, results, strict=True):

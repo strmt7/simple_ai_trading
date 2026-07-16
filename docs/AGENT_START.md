@@ -73,6 +73,9 @@ agents to canonical evidence without replacing that evidence.
   also failed the causal random-walk benchmark. Any future AI treatment must
   first pass governance, then beat the same-period non-AI path after costs
   without worsening tail risk.
+- AI permission maps are default-deny. Only a valid, timely approval for the
+  exact hash-bound condition may permit that proposal; missing cases, malformed
+  types, duplicate JSON keys, low confidence, and latency failures remain vetoes.
 - Qwen3 14B is the next one-shot v7 candidate, frozen before inference in
   `docs/ai/risk-review/qwen3-14b-v7-preregistration.json`. Run it only after
   the active recorder finalizes; do not alter prompts or cases first.

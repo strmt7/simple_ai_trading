@@ -22,7 +22,12 @@ POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v2"
 POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v1"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v1"
-SUPPORTED_POLYMARKET_AI_MODELS = ("qwen3:8b", "qwen3.5:9b", "fin-r1:8b")
+SUPPORTED_POLYMARKET_AI_MODELS = (
+    "qwen3:8b",
+    "qwen3:14b",
+    "qwen3.5:9b",
+    "fin-r1:8b",
+)
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
 
 _REASON_CODES = (
@@ -519,13 +524,25 @@ def _prompt(case: PolymarketAIVetoCase) -> str:
     )
 
 
+def _strict_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    parsed: dict[str, object] = {}
+    for key, value in pairs:
+        if key in parsed:
+            raise ValueError("AI response JSON contains duplicate keys")
+        parsed[key] = value
+    return parsed
+
+
 def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
     if not isinstance(payload, Mapping):
         raise ValueError("AI response is not an object")
     message = payload.get("message")
     if not isinstance(message, Mapping) or not isinstance(message.get("content"), str):
         raise ValueError("AI response message is missing")
-    parsed = json.loads(str(message["content"]))
+    content = str(message["content"])
+    if len(content) > 4_096:
+        raise ValueError("AI response is too large")
+    parsed = json.loads(content, object_pairs_hook=_strict_json_object)
     if not isinstance(parsed, Mapping) or set(parsed) != {
         "action",
         "confidence",
@@ -533,21 +550,32 @@ def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
         "summary",
     }:
         raise ValueError("AI response schema is invalid")
-    action = str(parsed["action"] or "").strip().lower()
-    confidence = float(parsed["confidence"])
+    action_raw = parsed["action"]
+    confidence_raw = parsed["confidence"]
     codes_raw = parsed["reason_codes"]
-    summary = str(parsed["summary"] or "").strip()
+    summary_raw = parsed["summary"]
+    if (
+        not isinstance(action_raw, str)
+        or isinstance(confidence_raw, bool)
+        or not isinstance(confidence_raw, (int, float))
+        or not isinstance(summary_raw, str)
+        or not isinstance(codes_raw, list)
+        or any(not isinstance(value, str) for value in codes_raw)
+    ):
+        raise ValueError("AI response values are invalid")
+    action = action_raw.strip().lower()
+    confidence = float(confidence_raw)
+    summary = summary_raw.strip()
     if (
         action not in {"approve", "veto", "cooldown"}
         or not math.isfinite(confidence)
         or not 0.0 <= confidence <= 1.0
-        or not isinstance(codes_raw, list)
         or not 1 <= len(codes_raw) <= 4
         or not summary
         or len(summary) > 180
     ):
         raise ValueError("AI response values are invalid")
-    codes = tuple(dict.fromkeys(str(value) for value in codes_raw))
+    codes = tuple(dict.fromkeys(codes_raw))
     if len(codes) != len(codes_raw) or any(value not in _REASON_CODES for value in codes):
         raise ValueError("AI response reason codes are invalid")
     return PolymarketAIVetoDecision(
@@ -592,6 +620,11 @@ def benchmark_polymarket_ai_veto(
     """Run one local model over immutable label-free cases; failures always veto."""
 
     cfg = (config or PolymarketAIVetoConfig()).validated()
+    selection_digest = str(selection_sha256 or "").strip().lower()
+    if len(selection_digest) != 64 or any(
+        value not in "0123456789abcdef" for value in selection_digest
+    ):
+        raise ValueError("Polymarket AI veto selection identity is invalid")
     benchmark_sha256 = str(risk_benchmark_evidence_sha256 or "").strip().lower()
     if len(benchmark_sha256) != 64 or any(
         value not in "0123456789abcdef" for value in benchmark_sha256
@@ -629,7 +662,7 @@ def benchmark_polymarket_ai_veto(
     case_set_sha256 = _canonical_sha256(
         {
             "schema_version": POLYMARKET_AI_CASE_SCHEMA_VERSION,
-            "selection_sha256": selection_sha256,
+            "selection_sha256": selection_digest,
             "case_sha256": [case.case_sha256 for case in cases],
         }
     )
@@ -741,11 +774,9 @@ def benchmark_polymarket_ai_veto(
                     "latency_seconds": round(latency, 3),
                 },
             )
-    permissions = {condition: True for condition in conditions}
+    permissions = {condition: False for condition in conditions}
     for result in results:
-        permissions[result.condition_id] = (
-            permissions[result.condition_id] and result.decision.permits_entry
-        )
+        permissions[result.condition_id] = result.decision.permits_entry
     permission_sha256 = _canonical_sha256(
         {
             "schema_version": "polymarket-market-permission-v1",
@@ -760,7 +791,7 @@ def benchmark_polymarket_ai_veto(
         model_metadata_sha256=metadata_sha256,
         model_parameters_b=float(parameters),
         risk_benchmark_evidence_sha256=benchmark_sha256,
-        selection_sha256=selection_sha256,
+        selection_sha256=selection_digest,
         case_set_sha256=case_set_sha256,
         case_count=len(cases),
         valid_response_count=sum(item.decision.valid for item in results),
