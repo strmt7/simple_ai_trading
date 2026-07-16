@@ -1850,6 +1850,30 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai_benchmark.add_argument("--timeout", type=float, default=20.0)
     parser_ai_benchmark.add_argument("--minimum-score", type=float, default=0.78)
     parser_ai_benchmark.add_argument("--output", default="data/ai_model_benchmark.json")
+    parser_ai_benchmark.add_argument(
+        "--preregistration",
+        default="",
+        help="frozen one-shot candidate preregistration JSON",
+    )
+    parser_ai_benchmark.add_argument(
+        "--confirmation-database",
+        default="",
+        help="terminal Polymarket evidence database required by a preregistration",
+    )
+    parser_ai_benchmark.add_argument(
+        "--confirmation-run-id",
+        default="",
+        help="complete recorder run required by a preregistration",
+    )
+    parser_ai_benchmark.add_argument(
+        "--confirmation-memory-limit",
+        default="4GB",
+    )
+    parser_ai_benchmark.add_argument(
+        "--confirmation-database-threads",
+        type=int,
+        default=1,
+    )
     parser_ai_benchmark.add_argument("--json", action="store_true")
     parser_ai_benchmark.set_defaults(func=command_ai_benchmark)
 
@@ -5663,6 +5687,17 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
     raw_models = str(getattr(args, "models", "") or "")
     models = [item.strip() for item in raw_models.split(",") if item.strip()]
     json_mode = bool(getattr(args, "json", False))
+    output = Path(getattr(args, "output", "data/ai_model_benchmark.json"))
+    timeout_seconds = max(0.1, float(getattr(args, "timeout", 20.0)))
+    minimum_score = max(0.0, min(1.0, float(getattr(args, "minimum_score", 0.78))))
+    preregistration = str(getattr(args, "preregistration", "") or "").strip()
+    confirmation_database = str(
+        getattr(args, "confirmation_database", "") or ""
+    ).strip()
+    confirmation_run_id = str(
+        getattr(args, "confirmation_run_id", "") or ""
+    ).strip()
+    claim = None
 
     def progress(phase: str, payload: Mapping[str, object]) -> None:
         if json_mode:
@@ -5683,15 +5718,88 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
             )
 
     try:
+        if any(model.lower() == "qwen3:14b" for model in models) and not preregistration:
+            raise ValueError(
+                "qwen3:14b requires its frozen one-shot preregistration and "
+                "complete confirmation recorder"
+            )
+        if preregistration or confirmation_database or confirmation_run_id:
+            if (
+                not preregistration
+                or not confirmation_database
+                or not confirmation_run_id
+                or len(models) != 1
+            ):
+                raise ValueError(
+                    "a preregistered AI benchmark requires exactly one model, "
+                    "a confirmation database, and a confirmation run ID"
+                )
+            from .ai_benchmark_claim import (
+                begin_preregistered_ai_benchmark_claim,
+                load_claimed_ai_benchmark_output,
+            )
+
+            with PolymarketEvidenceStore(
+                Path(confirmation_database),
+                memory_limit=str(args.confirmation_memory_limit),
+                threads=int(args.confirmation_database_threads),
+            ) as claim_store:
+                claim = begin_preregistered_ai_benchmark_claim(
+                    claim_store,
+                    preregistration_path=Path(preregistration),
+                    confirmation_run_id=confirmation_run_id,
+                    model=models[0],
+                    timeout_seconds=timeout_seconds,
+                    minimum_score=minimum_score,
+                    output_path=output,
+                )
+            if claim.status == "existing":
+                stored = load_claimed_ai_benchmark_output(claim)
+                if json_mode:
+                    print(json.dumps(stored, indent=2, sort_keys=True))
+                else:
+                    print(
+                        "ai-benchmark: one-shot=existing "
+                        f"passed={stored['passed']} "
+                        f"selected={stored.get('selected_model') or 'none'} "
+                        f"models={len(stored['results'])}"
+                    )
+                    print(f"  benchmark -> {output}")
+                return 0 if stored.get("passed") is True else 2
         report = benchmark_finance_ai_models(
             models=models,
             base_url=str(getattr(args, "url", None) or "http://127.0.0.1:11434"),
-            timeout_seconds=max(0.1, float(getattr(args, "timeout", 20.0))),
-            minimum_score=max(0.0, min(1.0, float(getattr(args, "minimum_score", 0.78)))),
+            timeout_seconds=timeout_seconds,
+            minimum_score=minimum_score,
             progress=progress,
         )
-        output = write_benchmark_report(report, Path(getattr(args, "output", "data/ai_model_benchmark.json")))
+        output = write_benchmark_report(report, output)
+        if claim is not None:
+            from .ai_benchmark_claim import complete_preregistered_ai_benchmark_claim
+
+            with PolymarketEvidenceStore(
+                Path(confirmation_database),
+                memory_limit=str(args.confirmation_memory_limit),
+                threads=int(args.confirmation_database_threads),
+            ) as claim_store:
+                claim = complete_preregistered_ai_benchmark_claim(claim_store, claim)
     except (OSError, RuntimeError, ValueError) as exc:
+        if claim is not None and claim.status == "claimed":
+            try:
+                from .ai_benchmark_claim import fail_preregistered_ai_benchmark_claim
+
+                with PolymarketEvidenceStore(
+                    Path(confirmation_database),
+                    memory_limit=str(args.confirmation_memory_limit),
+                    threads=int(args.confirmation_database_threads),
+                ) as claim_store:
+                    fail_preregistered_ai_benchmark_claim(claim_store, claim, exc)
+            except Exception as claim_exc:  # noqa: BLE001 - preserve both failures
+                print(
+                    "ai-benchmark claim failure: "
+                    f"{claim_exc.__class__.__name__}: {claim_exc}",
+                    file=sys.stderr,
+                )
         print(f"ai-benchmark failed: {exc}", file=sys.stderr)
         return 2
     if json_mode:
