@@ -78,8 +78,13 @@ AI-vs-ML uplift evidence.
 Uplift evidence uses a common fixed-period return table rather than pairing
 trades by list index. The baseline and AI strategies may enter different
 trades, but every statistical observation covers the same contiguous market
-period. Dataset, baseline, AI, local-model, and paired-table SHA-256 values are
-mandatory. The built-in minimum is 30 periods spanning at least 90 days, a
+period. Polymarket group P&L is divided by the exact common initial capital;
+missing, duplicate, or unequal-capital equity periods are rejected rather than
+filled with zero. Dataset, baseline, AI, local-model, and paired-table SHA-256
+values are mandatory, as are finite P&L, return, drawdown, expectancy, profit
+factor, trade count, win rate, liquidation, loss-streak, and downside-risk
+metrics for both arms. The built-in minimum is 30 periods spanning at least 90
+days, a
 one-sided sign-test p-value no
 greater than 0.05, and a positive 95% moving-block-bootstrap lower mean from at
 least 2,000 deterministic resamples. Serialized policy can make these gates
@@ -112,18 +117,22 @@ selected.
 
 That one-shot rule is executable, not advisory. `ai-benchmark` requires the
 frozen preregistration, confirmation DuckDB, and exact run ID for Qwen3 14B. It
-audits terminal evidence before writing a durable claim; a completed result is
+audits terminal evidence before writing a durable claim. The exact
+preregistration digest is code-pinned, and the same preregistration cannot be
+claimed against a second confirmation in that ledger. A completed result is
 digest-verified on reuse, while started or failed claims block another run.
 
 AI therefore remains enabled-but-unavailable and fail-closed until a fresh model
 passes the current gate. No LLM enters the 250 ms action scorer. The veto
-evaluator caches only valid responses
-in the evidence DuckDB. Its key binds the causal case, exact request, prompt and
-response-schema contracts, endpoint policy, decision thresholds, and current
-Ollama model digest and metadata. Cache hits retain the original measured model
-latency for order-book replay; failures, malformed output, low-confidence
-approvals, and over-latency responses are never cached. A later action experiment
-must remain veto-only and pass the separate 90-day matched-period uplift contract.
+evaluator immutably caches the first terminal response in the evidence DuckDB,
+including hash-only provider/schema failure envelopes. Its key binds the causal
+case, exact request, prompt and response-schema contracts, endpoint policy,
+decision thresholds, and current Ollama model digest and metadata. Cache hits
+retain the original measured model latency for order-book replay. Malformed
+output, low-confidence approvals, and over-latency responses therefore remain
+vetoes instead of being retried for a favorable answer. A later action
+experiment must remain veto-only and pass the separate 90-day matched-period
+uplift contract.
 Before any veto prompt, Polymarket also requires the selected benchmark's sibling
 provenance file to bind its exact SHA-256, Ollama manifest, verified multibillion
 weight blob, and current installed digest. A changed tag or manifest fails before

@@ -92,7 +92,10 @@ class AIUpliftPolicy:
             raise ValueError("AI uplift policy values must be finite")
         if self.min_model_parameters_b < _MIN_MODEL_PARAMETERS_B:
             raise ValueError("AI uplift model-size policy cannot weaken the 2B floor")
-        if self.min_ai_closed_trades < 5 or self.min_paired_samples < _MIN_PAIRED_SAMPLES:
+        if (
+            self.min_ai_closed_trades < 5
+            or self.min_paired_samples < _MIN_PAIRED_SAMPLES
+        ):
             raise ValueError("AI uplift sample policy cannot weaken built-in floors")
         if self.min_evaluation_span_days < _MIN_EVALUATION_SPAN_DAYS:
             raise ValueError("AI uplift evaluation span cannot be shorter than 90 days")
@@ -101,11 +104,15 @@ class AIUpliftPolicy:
         if not _MIN_POSITIVE_DELTA_RATE <= self.min_positive_delta_rate <= 1.0:
             raise ValueError("AI uplift positive-delta policy cannot weaken 0.55")
         if self.block_bootstrap_samples < _MIN_BLOCK_BOOTSTRAP_SAMPLES:
-            raise ValueError("AI uplift bootstrap policy cannot use fewer than 2000 samples")
+            raise ValueError(
+                "AI uplift bootstrap policy cannot use fewer than 2000 samples"
+            )
         if not _MIN_BLOCK_BOOTSTRAP_CONFIDENCE <= self.block_bootstrap_confidence < 1.0:
             raise ValueError("AI uplift bootstrap confidence cannot be below 0.95")
         if self.min_bootstrap_mean_delta_lower < 0.0:
-            raise ValueError("AI uplift bootstrap lower-bound requirement cannot be negative")
+            raise ValueError(
+                "AI uplift bootstrap lower-bound requirement cannot be negative"
+            )
         if (
             self.min_pnl_delta < 0.0
             or self.min_expectancy_delta < 0.0
@@ -116,7 +123,9 @@ class AIUpliftPolicy:
         if self.max_drawdown_delta > 0.0 or self.max_loss_streak_delta > 0.0:
             raise ValueError("AI uplift tail-risk policy cannot permit deterioration")
         if self.min_downside_return_risk_delta < 0.0:
-            raise ValueError("AI uplift downside-risk policy cannot permit deterioration")
+            raise ValueError(
+                "AI uplift downside-risk policy cannot permit deterioration"
+            )
         if not (
             self.require_non_degrading_profit_factor
             and self.require_non_degrading_win_rate
@@ -174,13 +183,22 @@ def _required_source_metric_reasons(
     reasons: list[str] = []
     for name, keys in (
         ("realized_pnl", _PNL_KEYS),
+        ("roi_pct", _ROI_KEYS),
         ("max_drawdown", _DRAWDOWN_KEYS),
         ("expectancy", _EXPECTANCY_KEYS),
+        ("profit_factor", _PROFIT_FACTOR_KEYS),
         ("closed_trades", _TRADES_KEYS),
+        ("win_rate", _WIN_RATE_KEYS),
+        ("liquidation_events", _LIQUIDATION_KEYS),
+        ("max_consecutive_losses", _LOSS_STREAK_KEYS),
+        ("downside_return_risk_ratio", _DOWNSIDE_RETURN_RISK_KEYS),
     ):
         key = next((candidate for candidate in keys if candidate in metrics), None)
         if key is None:
             reasons.append(f"ai_uplift_{prefix}_{name}_missing")
+            continue
+        if isinstance(metrics[key], bool):
+            reasons.append(f"ai_uplift_{prefix}_{name}_nonfinite")
             continue
         try:
             parsed = float(metrics[key])
@@ -193,7 +211,9 @@ def _required_source_metric_reasons(
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "").lower()
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _matched_period_deltas(
@@ -262,16 +282,19 @@ def _matched_period_deltas(
         ).encode("ascii")
         fingerprint = hashlib.sha256(encoded).hexdigest()
     deltas = tuple(
-        float(row["ai_return"]) - float(row["baseline_return"])
-        for row in canonical
+        float(row["ai_return"]) - float(row["baseline_return"]) for row in canonical
     )
     binding = {
         "evidence_unit": "matched_fixed_period_return_delta",
         "scope": expected_scope,
         "sample_count": len(canonical),
         "period_duration_ms": expected_duration,
-        "first_period_start_ms": int(canonical[0]["period_start_ms"]) if canonical else None,
-        "last_period_end_ms": int(canonical[-1]["period_end_ms"]) if canonical else None,
+        "first_period_start_ms": int(canonical[0]["period_start_ms"])
+        if canonical
+        else None,
+        "last_period_end_ms": int(canonical[-1]["period_end_ms"])
+        if canonical
+        else None,
         "paired_samples_sha256": fingerprint,
     }
     return deltas, binding, tuple(dict.fromkeys(reasons))
@@ -285,7 +308,11 @@ def _binomial_upper_tail(trials: int, successes: int, p: float = 0.5) -> float:
         return 1.0
     total = 0.0
     for hits in range(k, n + 1):
-        total += math.comb(n, hits) * (probability ** hits) * ((1.0 - probability) ** (n - hits))
+        total += (
+            math.comb(n, hits)
+            * (probability**hits)
+            * ((1.0 - probability) ** (n - hits))
+        )
     return max(0.0, min(1.0, total))
 
 
@@ -381,7 +408,9 @@ def _statistical_evidence(
     )
     minimum_span_ms = int(policy.min_evaluation_span_days) * _DAY_MS
     if evaluation_span_ms < minimum_span_ms:
-        reasons.append(f"ai_uplift_evaluation_span_days<{int(policy.min_evaluation_span_days)}")
+        reasons.append(
+            f"ai_uplift_evaluation_span_days<{int(policy.min_evaluation_span_days)}"
+        )
     if matched_periods is None and any(
         key in baseline_metrics or key in ai_metrics
         for key in _LEGACY_UNBOUND_SAMPLE_KEYS
@@ -390,11 +419,17 @@ def _statistical_evidence(
     if sample_count < max(0, int(policy.min_paired_samples)):
         reasons.append(f"ai_uplift_paired_samples<{int(policy.min_paired_samples)}")
     if positive_rate < max(0.0, min(1.0, float(policy.min_positive_delta_rate))):
-        reasons.append(f"ai_uplift_positive_delta_rate<{float(policy.min_positive_delta_rate):.2f}")
+        reasons.append(
+            f"ai_uplift_positive_delta_rate<{float(policy.min_positive_delta_rate):.2f}"
+        )
     if sign_p_value > max(0.0, min(1.0, float(policy.max_sign_test_p_value))):
-        reasons.append(f"ai_uplift_sign_test_p_value>{float(policy.max_sign_test_p_value):.4f}")
+        reasons.append(
+            f"ai_uplift_sign_test_p_value>{float(policy.max_sign_test_p_value):.4f}"
+        )
     if mean_delta <= float(policy.min_mean_sample_delta):
-        reasons.append(f"ai_uplift_mean_sample_delta<={float(policy.min_mean_sample_delta):g}")
+        reasons.append(
+            f"ai_uplift_mean_sample_delta<={float(policy.min_mean_sample_delta):g}"
+        )
     bootstrap_lower = float(bootstrap["mean_delta_ci_lower"])
     if bootstrap_lower <= float(policy.min_bootstrap_mean_delta_lower):
         reasons.append(
@@ -410,9 +445,13 @@ def _statistical_evidence(
         "min_sample_count": max(0, int(policy.min_paired_samples)),
         "positive_delta_count": positive_count,
         "positive_delta_rate": positive_rate,
-        "min_positive_delta_rate": max(0.0, min(1.0, float(policy.min_positive_delta_rate))),
+        "min_positive_delta_rate": max(
+            0.0, min(1.0, float(policy.min_positive_delta_rate))
+        ),
         "sign_test_p_value": sign_p_value,
-        "max_sign_test_p_value": max(0.0, min(1.0, float(policy.max_sign_test_p_value))),
+        "max_sign_test_p_value": max(
+            0.0, min(1.0, float(policy.max_sign_test_p_value))
+        ),
         "mean_delta": mean_delta,
         "median_delta": _median(deltas),
         "min_mean_sample_delta": float(policy.min_mean_sample_delta),
@@ -457,7 +496,9 @@ def _uplift_evidence_binding(
     return {
         "accepted": not reasons,
         "reasons": list(dict.fromkeys(reasons)),
-        "dataset_fingerprint": baseline_dataset if baseline_dataset == ai_dataset else "",
+        "dataset_fingerprint": baseline_dataset
+        if baseline_dataset == ai_dataset
+        else "",
         "baseline_evidence_sha256": baseline_artifact,
         "ai_evidence_sha256": ai_artifact,
         "model_artifact_sha256": model_artifact,
@@ -478,7 +519,9 @@ def normalize_uplift_metrics(metrics: Mapping[str, object]) -> dict[str, float]:
         "win_rate": _first_metric(metrics, _WIN_RATE_KEYS),
         "liquidation_events": max(0.0, _first_metric(metrics, _LIQUIDATION_KEYS)),
         "max_consecutive_losses": max(0.0, _first_metric(metrics, _LOSS_STREAK_KEYS)),
-        "downside_return_risk_ratio": _first_metric(metrics, _DOWNSIDE_RETURN_RISK_KEYS),
+        "downside_return_risk_ratio": _first_metric(
+            metrics, _DOWNSIDE_RETURN_RISK_KEYS
+        ),
     }
 
 
@@ -518,8 +561,10 @@ def assess_ai_uplift(
         "closed_trades": ai["closed_trades"] - baseline["closed_trades"],
         "win_rate": ai["win_rate"] - baseline["win_rate"],
         "liquidation_events": ai["liquidation_events"] - baseline["liquidation_events"],
-        "max_consecutive_losses": ai["max_consecutive_losses"] - baseline["max_consecutive_losses"],
-        "downside_return_risk_ratio": ai["downside_return_risk_ratio"] - baseline["downside_return_risk_ratio"],
+        "max_consecutive_losses": ai["max_consecutive_losses"]
+        - baseline["max_consecutive_losses"],
+        "downside_return_risk_ratio": ai["downside_return_risk_ratio"]
+        - baseline["downside_return_risk_ratio"],
     }
     statistical = _statistical_evidence(
         baseline_metrics,
@@ -538,15 +583,15 @@ def assess_ai_uplift(
     if parameters_b is None:
         reasons.append("model_parameter_count_unknown")
     elif parameters_b < max(0.0, float(cfg.min_model_parameters_b)):
-        reasons.append(
-            f"model_parameters<{float(cfg.min_model_parameters_b):.2f}B"
-        )
+        reasons.append(f"model_parameters<{float(cfg.min_model_parameters_b):.2f}B")
     if cfg.require_positive_ai_pnl and ai["realized_pnl"] <= 0.0:
         reasons.append("ai_realized_pnl<=0")
     if ai["closed_trades"] < max(0, int(cfg.min_ai_closed_trades)):
         reasons.append(f"ai_closed_trades<{int(cfg.min_ai_closed_trades)}")
     if not bool(statistical.get("accepted")):
-        reasons.extend(str(reason) for reason in statistical.get("reasons", ()) if str(reason))
+        reasons.extend(
+            str(reason) for reason in statistical.get("reasons", ()) if str(reason)
+        )
     if cfg.require_evidence_binding and not bool(evidence_binding.get("accepted")):
         reasons.extend(
             str(reason) for reason in evidence_binding.get("reasons", ()) if str(reason)
@@ -574,8 +619,10 @@ def assess_ai_uplift(
     ):
         reasons.append("ai_win_rate_worse_than_baseline")
     if (
-        (baseline["downside_return_risk_ratio"] > 0.0 or ai["downside_return_risk_ratio"] > 0.0)
-        and deltas["downside_return_risk_ratio"] < float(cfg.min_downside_return_risk_delta)
+        baseline["downside_return_risk_ratio"] > 0.0
+        or ai["downside_return_risk_ratio"] > 0.0
+    ) and deltas["downside_return_risk_ratio"] < float(
+        cfg.min_downside_return_risk_delta
     ):
         reasons.append("ai_downside_return_risk_not_above_baseline")
     accepted = not reasons

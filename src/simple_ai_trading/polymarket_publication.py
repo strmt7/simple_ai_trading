@@ -40,9 +40,7 @@ from .polymarket_source_verification import (
 )
 
 
-POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION = (
-    "polymarket-prospective-model-experiment-v3"
-)
+POLYMARKET_MODEL_ARTIFACT_SCHEMA_VERSION = "polymarket-prospective-model-experiment-v3"
 _PREDICTION_SCHEMA = "polymarket-held-out-predictions-v2"
 _PROFILE_PREDICTION_SCHEMA = "polymarket-profile-held-out-predictions-v1"
 _MODEL_SAMPLE_SCHEMA = "polymarket-model-sample-v4"
@@ -468,12 +466,10 @@ def _validate_profile_model_selection(
         name="profile probability report",
     )
     if (
-        profile_model.get("schema_version")
-        != POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION
+        profile_model.get("schema_version") != POLYMARKET_PROFILE_MODEL_SCHEMA_VERSION
         or profile_probability.get("schema_version")
         != POLYMARKET_PROFILE_REPORT_SCHEMA_VERSION
-        or profile_model.get("contract_sha256")
-        != POLYMARKET_PROFILE_CONTRACT_SHA256
+        or profile_model.get("contract_sha256") != POLYMARKET_PROFILE_CONTRACT_SHA256
         or profile_probability.get("contract_sha256")
         != POLYMARKET_PROFILE_CONTRACT_SHA256
         or profile_model.get("control_model_sha256")
@@ -492,11 +488,10 @@ def _validate_profile_model_selection(
         != control_model.get("inner_fold_boundaries_ms")
     ):
         raise ValueError("Polymarket profile model provenance is inconsistent")
-    if (
-        _canonical_json(profile_probability.get("baseline_metrics"))
-        != _canonical_json(control_probability.get("baseline_metrics"))
-        or _canonical_json(profile_probability.get("control_metrics"))
-        != _canonical_json(control_probability.get("model_metrics"))
+    if _canonical_json(profile_probability.get("baseline_metrics")) != _canonical_json(
+        control_probability.get("baseline_metrics")
+    ) or _canonical_json(profile_probability.get("control_metrics")) != _canonical_json(
+        control_probability.get("model_metrics")
     ):
         raise ValueError("Polymarket profile control metrics drifted")
 
@@ -1141,13 +1136,13 @@ def _execution_uplift_metrics(
         "AI uplift drawdown",
     )
     net = _finite_float(report.get("net_realized_pnl_quote"), "AI uplift PnL")
+    return_fraction = _finite_float(
+        report.get("return_on_initial_capital"),
+        "AI uplift return",
+    )
     return {
         "realized_pnl": net,
-        "roi_pct": 100.0
-        * _finite_float(
-            report.get("return_on_initial_capital"),
-            "AI uplift return",
-        ),
+        "roi_pct": 100.0 * return_fraction,
         "max_drawdown": drawdown,
         "expectancy": net / len(values) if values else 0.0,
         "profit_factor": (
@@ -1159,7 +1154,9 @@ def _execution_uplift_metrics(
         ),
         "liquidation_events": 0,
         "max_consecutive_losses": maximum_loss_streak,
-        "downside_return_risk_ratio": net / drawdown if drawdown > 0.0 else 0.0,
+        "downside_return_risk_ratio": (
+            return_fraction / drawdown if drawdown > 0.0 else 0.0
+        ),
         "dataset_fingerprint": dataset_fingerprint,
         "evidence_sha256": str(report.get("report_sha256", "")),
     }
@@ -1170,31 +1167,50 @@ def _matched_ai_uplift_periods(
     baseline: Mapping[str, Any],
     ai: Mapping[str, Any],
 ) -> list[dict[str, object]]:
-    baseline_by_start = {
-        int(item["event_start_ms"]): _finite_float(
-            item["group_realized_pnl_quote"],
-            "baseline group PnL",
-        )
-        for item in baseline.get("equity_curve", ())
-        if isinstance(item, Mapping)
-    }
-    ai_by_start = {
-        int(item["event_start_ms"]): _finite_float(
-            item["group_realized_pnl_quote"],
-            "AI group PnL",
-        )
-        for item in ai.get("equity_curve", ())
-        if isinstance(item, Mapping)
-    }
+    starts = tuple(sorted({int(row["event_start_ms"]) for row in predictions}))
+    if not starts:
+        raise ValueError("AI uplift prediction periods are empty")
+    baseline_capital = _decimal(
+        baseline.get("initial_capital_quote"),
+        "baseline initial capital",
+    )
+    ai_capital = _decimal(ai.get("initial_capital_quote"), "AI initial capital")
+    if baseline_capital <= 0 or ai_capital != baseline_capital:
+        raise ValueError("AI uplift initial capital differs")
+
+    def returns_by_start(
+        report: Mapping[str, Any],
+        label: str,
+    ) -> dict[int, float]:
+        result: dict[int, float] = {}
+        curve = report.get("equity_curve")
+        if not isinstance(curve, list):
+            raise ValueError(f"{label} equity curve is invalid")
+        for raw in curve:
+            item = _as_mapping(raw, f"{label} equity point")
+            start_ms = int(item["event_start_ms"])
+            if start_ms in result:
+                raise ValueError(f"{label} equity periods are duplicated")
+            group_pnl = _decimal(
+                item["group_realized_pnl_quote"],
+                f"{label} group PnL",
+            )
+            result[start_ms] = float(group_pnl / baseline_capital)
+        if set(result) != set(starts):
+            raise ValueError(f"{label} equity periods differ")
+        return result
+
+    baseline_by_start = returns_by_start(baseline, "baseline")
+    ai_by_start = returns_by_start(ai, "AI")
     return [
         {
             "scope": "polymarket_btc_eth_sol_five_minute_test",
             "period_start_ms": start_ms,
             "period_end_ms": start_ms + 300_000,
-            "baseline_return": baseline_by_start.get(start_ms, 0.0),
-            "ai_return": ai_by_start.get(start_ms, 0.0),
+            "baseline_return": baseline_by_start[start_ms],
+            "ai_return": ai_by_start[start_ms],
         }
-        for start_ms in sorted({int(row["event_start_ms"]) for row in predictions})
+        for start_ms in starts
     ]
 
 
@@ -1526,8 +1542,7 @@ def _validate_ai_evidence(
             )
         }
         expected_microstructure = {
-            name: round(feature_map[name], 8)
-            for name in _AI_MICROSTRUCTURE_FIELDS
+            name: round(feature_map[name], 8) for name in _AI_MICROSTRUCTURE_FIELDS
         }
         expected_freshness = {
             name: round(risk_map[name], 3) for name in _AI_FRESHNESS_FIELDS
@@ -1668,8 +1683,7 @@ def _validate_ai_evidence(
         or model_provenance.get("model") != model_name
         or model_provenance.get("benchmark_sha256") != benchmark.get("sha256")
         or model_provenance.get("benchmark_contract") != benchmark.get("contract")
-        or model_provenance.get("ollama_manifest_digest")
-        != veto.get("model_digest")
+        or model_provenance.get("ollama_manifest_digest") != veto.get("model_digest")
         or not _is_sha256(model_provenance.get("provenance_sha256"))
         or not _is_sha256(model_provenance.get("base_blob_sha256"))
         or model_size <= 2_000_000_000
@@ -1836,8 +1850,7 @@ def _validate_ai_evidence(
         or ai_execution.get("market_permission_sha256") != expected_permission_sha256
         or ai_execution.get("decision_delay_ms_by_condition")
         != dict(sorted(expected_delays.items()))
-        or ai_execution.get("decision_delay_input_sha256")
-        != expected_delay_sha256
+        or ai_execution.get("decision_delay_input_sha256") != expected_delay_sha256
         or ai_execution.get("probability_input_sha256")
         != expected_probability_input_sha256
         or ai_execution.get("config") != model_execution.get("config")
@@ -1918,8 +1931,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         and profile_model.get("source_split_sha256") == split.get("split_sha256")
         and profile_probability.get("source_dataset_sha256")
         == model_dataset.get("dataset_sha256")
-        and profile_probability.get("source_split_sha256")
-        == split.get("split_sha256")
+        and profile_probability.get("source_split_sha256") == split.get("split_sha256")
         and model_dataset.get("source_dataset_sha256")
         == feature_dataset.get("dataset_sha256")
         and payload.get("run_id") == feature_dataset.get("run_id")
@@ -2021,8 +2033,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             for value in feature_values_raw
         )
         risk_values = tuple(
-            _finite_float(value, "held-out risk context")
-            for value in risk_values_raw
+            _finite_float(value, "held-out risk context") for value in risk_values_raw
         )
         sample_identity = dict(row)
         sample_identity.pop("model_up_probability")
@@ -2198,12 +2209,10 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
     if (
         profile_evidence.get("schema_version") != _PROFILE_PREDICTION_SCHEMA
         or profile_evidence.get("role") != "untouched_chronological_test"
-        or profile_evidence.get("control_rows_sha256")
-        != evidence.get("rows_sha256")
+        or profile_evidence.get("control_rows_sha256") != evidence.get("rows_sha256")
         or int(profile_evidence.get("row_count", -1)) != len(predictions)
         or len(profile_rows) != len(predictions)
-        or profile_evidence.get("rows_sha256")
-        != _canonical_sha256(profile_rows)
+        or profile_evidence.get("rows_sha256") != _canonical_sha256(profile_rows)
     ):
         raise ValueError("profile held-out prediction evidence is invalid")
     profile_predictions: list[Mapping[str, Any]] = []
@@ -2466,11 +2475,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             )
             _validate_execution_probability_binding(
                 scenario,
-                (
-                    profile_predictions
-                    if policy == "profile_model"
-                    else predictions
-                ),
+                (profile_predictions if policy == "profile_model" else predictions),
                 probability_key=(
                     "baseline_up_probability"
                     if policy == "baseline"
@@ -2629,14 +2634,11 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
     if (
         retry_challenger.get("schema_version")
         != POLYMARKET_RETRY_CHALLENGER_SCHEMA_VERSION
-        or retry_challenger.get("contract_sha256")
-        != POLYMARKET_RETRY_CONTRACT_SHA256
+        or retry_challenger.get("contract_sha256") != POLYMARKET_RETRY_CONTRACT_SHA256
         or retry_challenger.get("control_policy") != "model"
         or retry_challenger.get("challenger_policy") != "model_retry"
         or dict(retry_gates) != expected_retry_gates
-        or retry_challenger.get("accepted") is not all(
-            expected_retry_gates.values()
-        )
+        or retry_challenger.get("accepted") is not all(expected_retry_gates.values())
     ):
         raise ValueError("model retry challenger does not reconstruct")
     profile_latency_reports = _as_mapping(
@@ -2656,9 +2658,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         "profile test Brier delta",
     )
     expected_profile_gates = {
-        "validation_log_loss_not_worse_than_control": (
-            profile_validation_delta <= 0.0
-        ),
+        "validation_log_loss_not_worse_than_control": (profile_validation_delta <= 0.0),
         "test_log_loss_strictly_better_than_control": (
             profile_test_log_loss_delta < 0.0
         ),
@@ -2781,8 +2781,7 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
         is not profile_promotion_gates_passed
         or profile_challenger.get("accepted") is not False
         or profile_challenger.get("status") != expected_profile_status
-        or profile_challenger.get("requires_later_prospective_confirmation")
-        is not True
+        or profile_challenger.get("requires_later_prospective_confirmation") is not True
     ):
         raise ValueError("profile model challenger does not reconstruct")
     expected_gates = {
@@ -2840,13 +2839,10 @@ def validate_polymarket_model_artifact(path: str | Path) -> ValidatedPolymarketA
             for latency in latency_values
         ),
         "retry_challenger_accepted": all(expected_retry_gates.values()),
-        "profile_challenger_promotion_gates_passed": (
-            profile_promotion_gates_passed
-        ),
+        "profile_challenger_promotion_gates_passed": (profile_promotion_gates_passed),
         "all_positions_officially_settled": all(
             int(report["filled_order_count"])
-            == int(report["winning_order_count"])
-            + int(report["losing_order_count"])
+            == int(report["winning_order_count"]) + int(report["losing_order_count"])
             and all(
                 trade.get("execution_state") != "FILLED"
                 or bool(str(trade.get("official_resolution_event_id", "")))
@@ -3096,8 +3092,7 @@ def _held_out_group_score_rows(
                     label * math.log(model) + (1.0 - label) * math.log1p(-model)
                 )
                 profile_log_loss += row_weight * -(
-                    label * math.log(profile)
-                    + (1.0 - label) * math.log1p(-profile)
+                    label * math.log(profile) + (1.0 - label) * math.log1p(-profile)
                 )
                 baseline_brier += row_weight * (baseline - label) ** 2
                 model_brier += row_weight * (model - label) ** 2
@@ -3695,8 +3690,7 @@ def _profile_model_selection_svg(
     inner = [
         row
         for row in rows
-        if row["stage"] == "inner_selection"
-        and row["candidate"] != "market_baseline"
+        if row["stage"] == "inner_selection" and row["candidate"] != "market_baseline"
     ]
     outer = [
         row
@@ -3826,9 +3820,7 @@ def _group_score_svg(
         (row for row in rows if row["scope"] == "ALL"),
         key=lambda row: int(row["event_start_ms"]),
     )
-    values = [
-        _finite_float(row[value_key], "group log-loss delta") for row in selected
-    ]
+    values = [_finite_float(row[value_key], "group log-loss delta") for row in selected]
     extent = max(max((abs(value) for value in values), default=0.0) * 1.2, 0.01)
     left, top, bottom, width = 120.0, 150.0, 570.0, 1010.0
     zero = (top + bottom) / 2
@@ -4429,8 +4421,7 @@ def publish_polymarket_model_artifact(
             validated_source_verification.get(name) != value
             for name, value in expected_source_identities.items()
         )
-        or
-        validated_source_verification[
+        or validated_source_verification[
             "execution_report_sha256_by_policy_and_latency"
         ]
         != expected_source_hashes
@@ -4444,9 +4435,7 @@ def publish_polymarket_model_artifact(
     end = _utc(max(int(row["end_ms"]) for row in validated.predictions))
     probability_rows = _probability_rows(validated.payload)
     model_selection_rows = _model_selection_rows(validated.payload)
-    profile_model_selection_rows = _profile_model_selection_rows(
-        validated.payload
-    )
+    profile_model_selection_rows = _profile_model_selection_rows(validated.payload)
     group_score_rows = _held_out_group_score_rows(validated.profile_predictions)
     group_score_summary = _group_score_summary(
         group_score_rows,

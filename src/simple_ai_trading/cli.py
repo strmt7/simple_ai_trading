@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import builtins
 from dataclasses import asdict, replace
+from decimal import Decimal
 from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
@@ -6761,9 +6762,10 @@ def _polymarket_execution_uplift_metrics(
         maximum_loss_streak = max(maximum_loss_streak, loss_streak)
     drawdown = float(getattr(report, "maximum_drawdown_fraction"))
     net = float(getattr(report, "net_realized_pnl_quote"))
+    return_fraction = float(getattr(report, "return_on_initial_capital"))
     return {
         "realized_pnl": net,
-        "roi_pct": 100.0 * float(getattr(report, "return_on_initial_capital")),
+        "roi_pct": 100.0 * return_fraction,
         "max_drawdown": drawdown,
         "expectancy": net / len(values) if values else 0.0,
         "profit_factor": gains / losses if losses > 0.0 else (gains if gains > 0.0 else 0.0),
@@ -6773,7 +6775,9 @@ def _polymarket_execution_uplift_metrics(
         ),
         "liquidation_events": 0,
         "max_consecutive_losses": maximum_loss_streak,
-        "downside_return_risk_ratio": net / drawdown if drawdown > 0.0 else 0.0,
+        "downside_return_risk_ratio": (
+            return_fraction / drawdown if drawdown > 0.0 else 0.0
+        ),
         "dataset_fingerprint": dataset_fingerprint,
         "evidence_sha256": str(getattr(report, "report_sha256")),
     }
@@ -6784,23 +6788,38 @@ def _polymarket_matched_uplift_periods(
     baseline: object,
     ai: object,
 ) -> list[dict[str, object]]:
-    baseline_by_start = {
-        item.event_start_ms: float(item.group_realized_pnl_quote)
-        for item in getattr(baseline, "equity_curve")
-    }
-    ai_by_start = {
-        item.event_start_ms: float(item.group_realized_pnl_quote)
-        for item in getattr(ai, "equity_curve")
-    }
+    starts = tuple(int(value) for value in getattr(split, "test_group_starts_ms"))
+    if not starts or len(set(starts)) != len(starts) or starts != tuple(sorted(starts)):
+        raise ValueError("Polymarket AI uplift periods are invalid")
+    baseline_capital = Decimal(str(getattr(baseline, "initial_capital_quote")))
+    ai_capital = Decimal(str(getattr(ai, "initial_capital_quote")))
+    if baseline_capital <= 0 or ai_capital != baseline_capital:
+        raise ValueError("Polymarket AI uplift initial capital differs")
+
+    def returns_by_start(report: object) -> dict[int, float]:
+        result: dict[int, float] = {}
+        for item in getattr(report, "equity_curve"):
+            start_ms = int(item.event_start_ms)
+            if start_ms in result:
+                raise ValueError("Polymarket AI uplift equity periods are duplicated")
+            result[start_ms] = float(
+                Decimal(str(item.group_realized_pnl_quote)) / baseline_capital
+            )
+        if set(result) != set(starts):
+            raise ValueError("Polymarket AI uplift equity periods differ")
+        return result
+
+    baseline_by_start = returns_by_start(baseline)
+    ai_by_start = returns_by_start(ai)
     return [
         {
             "scope": "polymarket_btc_eth_sol_five_minute_test",
             "period_start_ms": int(start_ms),
             "period_end_ms": int(start_ms) + 300_000,
-            "baseline_return": baseline_by_start.get(int(start_ms), 0.0),
-            "ai_return": ai_by_start.get(int(start_ms), 0.0),
+            "baseline_return": baseline_by_start[start_ms],
+            "ai_return": ai_by_start[start_ms],
         }
-        for start_ms in getattr(split, "test_group_starts_ms")
+        for start_ms in starts
     ]
 
 
