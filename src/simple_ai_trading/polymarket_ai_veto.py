@@ -24,9 +24,9 @@ from .polymarket_model_execution import (
 
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
-POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v3"
-POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v2"
-POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v1"
+POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v4"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v3"
+POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = (
@@ -50,6 +50,19 @@ _REASON_CODES = (
     "insufficient_evidence",
     "cooldown_required",
 )
+
+
+def _action_reasons_coherent(action: str, codes: Sequence[str]) -> bool:
+    selected = set(codes)
+    if action == "approve":
+        return selected == {"edge_after_fees"}
+    if action == "cooldown":
+        return "cooldown_required" in selected
+    if action == "veto":
+        return bool(selected - {"edge_after_fees"})
+    return False
+
+
 _RESPONSE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -578,7 +591,9 @@ def _prompt(case: PolymarketAIVetoCase) -> str:
         "raise the limit, waive fees, or assume missing evidence is favorable. Approve "
         "only if the model uplift, direct-market movement, order-book state, volatility, "
         "liquidity, latency, and validation evidence are coherent. Veto contradictions "
-        "or weak after-cost margin; use cooldown for unstable regimes. Return JSON only.\n"
+        "or weak after-cost margin; use cooldown for unstable regimes. An approval must "
+        "use only edge_after_fees. A veto must include an adverse reason. A cooldown must "
+        "include cooldown_required. Return JSON only.\n"
         f"CASE={_canonical_json(case.prompt_payload)}"
     )
 
@@ -639,6 +654,8 @@ def _parse_decision(payload: object) -> PolymarketAIVetoDecision:
         value not in _REASON_CODES for value in codes
     ):
         raise ValueError("AI response reason codes are invalid")
+    if not _action_reasons_coherent(action, codes):
+        raise ValueError("AI response action and reason codes are inconsistent")
     return PolymarketAIVetoDecision(
         action=action,
         confidence=confidence,

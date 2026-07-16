@@ -2190,6 +2190,70 @@ def test_ai_veto_rejects_noncanonical_action_enums(action: str) -> None:
 
     with pytest.raises(ValueError, match="AI response values are invalid"):
         ai_veto_module._parse_decision(payload)
+    assert _parsed_valid_ai_response(payload) is None
+
+
+@pytest.mark.parametrize(
+    ("action", "reason_codes"),
+    (
+        ("approve", ["insufficient_evidence"]),
+        ("approve", ["edge_after_fees", "latency_risk"]),
+        ("veto", ["edge_after_fees"]),
+        ("cooldown", ["volatile_regime"]),
+    ),
+)
+def test_ai_veto_rejects_incoherent_action_reasons(
+    action: str,
+    reason_codes: list[str],
+) -> None:
+    payload = {
+        "message": {
+            "content": json.dumps(
+                {
+                    "action": action,
+                    "confidence": 0.9,
+                    "reason_codes": reason_codes,
+                    "summary": "The structured action contradicts its reason codes.",
+                }
+            )
+        }
+    }
+
+    with pytest.raises(ValueError, match="action and reason codes are inconsistent"):
+        ai_veto_module._parse_decision(payload)
+    assert _parsed_valid_ai_response(payload) is None
+
+
+@pytest.mark.parametrize(
+    ("action", "reason_codes"),
+    (
+        ("veto", ["latency_risk"]),
+        ("veto", ["edge_after_fees", "latency_risk"]),
+        ("cooldown", ["cooldown_required"]),
+        ("cooldown", ["volatile_regime", "cooldown_required"]),
+    ),
+)
+def test_ai_veto_accepts_coherent_risk_reducing_actions(
+    action: str,
+    reason_codes: list[str],
+) -> None:
+    payload = {
+        "message": {
+            "content": json.dumps(
+                {
+                    "action": action,
+                    "confidence": 0.9,
+                    "reason_codes": reason_codes,
+                    "summary": "The adverse evidence supports reducing risk.",
+                }
+            )
+        }
+    }
+
+    decision = ai_veto_module._parse_decision(payload)
+    assert decision.valid is True
+    assert decision.permits_entry is False
+    assert _parsed_valid_ai_response(payload) == decision.asdict()
 
 
 def test_ai_veto_cache_reuses_only_exact_model_evidence_and_latency(
