@@ -312,10 +312,16 @@ def test_ollama_residency_rejects_ambiguous_or_malformed_inventory() -> None:
 
 
 def _benchmark_response(
-    action: str, risk: float, rationale: str = "risk reviewed"
+    action: str,
+    risk: float,
+    rationale: str = "risk reviewed",
+    *,
+    model: str = "qwen3:8b",
 ) -> dict[str, object]:
     return {
+        "model": model,
         "message": {
+            "role": "assistant",
             "content": (
                 "{"
                 f'"action":"{action}",'
@@ -325,8 +331,16 @@ def _benchmark_response(
                 '"concerns":["risk data liquidity uplift drawdown cooldown gap liquidation leverage cost fee ownership position reconcile reconnect correlation concentration untrusted injection provenance human"],'
                 '"required_actions":["keep risk controls active"]'
                 "}"
-            )
-        }
+            ),
+        },
+        "done": True,
+        "done_reason": "stop",
+        "total_duration": 1_000_000_000,
+        "load_duration": 100_000_000,
+        "prompt_eval_count": 320,
+        "prompt_eval_duration": 300_000_000,
+        "eval_count": 24,
+        "eval_duration": 500_000_000,
     }
 
 
@@ -338,7 +352,7 @@ def _benchmark_post(
     def post(_url, payload, _timeout):
         assert '"case_name"' not in payload["messages"][1]["content"]
         action, risk = next(remaining)
-        return _benchmark_response(action, risk)
+        return _benchmark_response(action, risk, model=str(payload["model"]))
 
     return post
 
@@ -392,8 +406,53 @@ def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() ->
     assert report.selected_model == "qwen3:8b"
     assert report.results[0].passed is True
     assert report.results[0].action_match_cases == len(report.tests)
+    assert report.results[0].provider_telemetry_cases == len(report.tests)
+    assert report.results[0].total_prompt_token_count == 320 * len(report.tests)
+    assert report.results[0].total_output_token_count == 24 * len(report.tests)
+    assert report.results[0].maximum_prompt_token_count == 320
+    assert report.results[0].maximum_output_token_count == 24
     assert report.financial_edge_tested is False
     assert report.trading_authority is False
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("model", "wrong:14b"),
+        ("done", False),
+        ("done_reason", "length"),
+        ("prompt_eval_count", None),
+        ("eval_count", 0),
+        ("total_duration", 800_000_000),
+    ),
+)
+def test_finance_ai_benchmark_rejects_unverifiable_provider_evidence(
+    field: str,
+    value: object,
+) -> None:
+    def fake_post(_url, payload, _timeout):
+        response = _benchmark_response(
+            "veto",
+            0.90,
+            model=str(payload["model"]),
+        )
+        if value is None:
+            response.pop(field)
+        else:
+            response[field] = value
+        return response
+
+    report = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=fake_post,
+    )
+
+    assert report.passed is False
+    assert report.selected_model is None
+    assert report.results[0].provider_telemetry_cases == 0
+    assert report.results[0].total_prompt_token_count == 0
+    assert any("provider_error" in failure for failure in report.results[0].failures)
 
 
 def test_finance_ai_candidate_registry_includes_local_and_finance_specialists() -> None:
@@ -469,6 +528,28 @@ def test_finance_ai_rescore_verifies_normalized_response_hashes() -> None:
     with pytest.raises(ValueError, match="response hash changed"):
         rescore_finance_ai_benchmark_payload(tampered)
 
+    provider_tampered = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=_benchmark_post(list(actions.values())),
+        minimum_score=0.90,
+    ).asdict()
+    provider_tampered["results"][0]["case_results"][0]["provider_response_payload"][
+        "eval_count"
+    ] += 1
+    with pytest.raises(ValueError, match="provider response hash changed"):
+        rescore_finance_ai_benchmark_payload(provider_tampered)
+
+    aggregate_tampered = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=_benchmark_post(list(actions.values())),
+        minimum_score=0.90,
+    ).asdict()
+    aggregate_tampered["results"][0]["total_prompt_token_count"] += 1
+    with pytest.raises(ValueError, match="aggregate evidence changed"):
+        rescore_finance_ai_benchmark_payload(aggregate_tampered)
+
     source["benchmark_contract"] = "finance-risk-review-adversarial-v6"
     with pytest.raises(ValueError, match="fresh inference"):
         rescore_finance_ai_benchmark_payload(source)
@@ -487,6 +568,9 @@ def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> No
                 action_match_cases=1,
                 valid_json_cases=1,
                 model_parameters_b=8.0,
+                provider_telemetry_cases=1,
+                total_prompt_token_count=320,
+                total_output_token_count=24,
                 average_latency_seconds=0.5,
                 failures=(),
             ),
@@ -520,7 +604,9 @@ def test_command_ai_benchmark_writes_report(monkeypatch, tmp_path, capsys) -> No
         == 0
     )
     assert output.exists()
-    assert "selected=qwen3:8b" in capsys.readouterr().out
+    rendered = capsys.readouterr().out
+    assert "selected=qwen3:8b" in rendered
+    assert "telemetry=1/1 tokens=320+24" in rendered
 
 
 def test_windows_app_commands_match_cli_contract() -> None:

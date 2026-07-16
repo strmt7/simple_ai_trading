@@ -37,9 +37,19 @@ def _benchmark_payload(model: str = "qwen3:8b") -> dict[str, object]:
             "required_actions": [],
         }
         return {
+            "model": model,
             "message": {
+                "role": "assistant",
                 "content": json.dumps(response, separators=(",", ":")),
-            }
+            },
+            "done": True,
+            "done_reason": "stop",
+            "total_duration": 1_000_000_000,
+            "load_duration": 100_000_000,
+            "prompt_eval_count": 320,
+            "prompt_eval_duration": 300_000_000,
+            "eval_count": 24,
+            "eval_duration": 500_000_000,
         }
 
     report = benchmark_finance_ai_models(

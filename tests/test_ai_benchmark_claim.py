@@ -28,7 +28,7 @@ from simple_ai_trading.polymarket_recorder import POLYMARKET_STORAGE_SCHEMA_VERS
 
 ROOT = Path(__file__).resolve().parents[1]
 PREREGISTRATION = (
-    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v8-preregistration.json"
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v9-preregistration.json"
 )
 MODEL_DIGEST = "d" * 64
 MODEL_METADATA_SHA256 = "e" * 64
@@ -120,11 +120,22 @@ def _passing_report():
         )
     index = 0
 
-    def post_json(_url, _payload, _timeout):
+    def post_json(_url, payload, _timeout):
         nonlocal index
         response = responses[index]
         index += 1
-        return {"message": {"content": json.dumps(response)}}
+        return {
+            "model": payload["model"],
+            "message": {"role": "assistant", "content": json.dumps(response)},
+            "done": True,
+            "done_reason": "stop",
+            "total_duration": 1_000_000_000,
+            "load_duration": 100_000_000,
+            "prompt_eval_count": 320,
+            "prompt_eval_duration": 300_000_000,
+            "eval_count": 24,
+            "eval_duration": 500_000_000,
+        }
 
     return benchmark_finance_ai_models(
         models=["qwen3:14b"],
@@ -176,7 +187,7 @@ def _write_claimed_report(report, output: Path, claim) -> Path:
 
 def test_preregistered_ai_benchmark_is_durable_and_exactly_once(tmp_path) -> None:
     store = _ClaimStore()
-    output = tmp_path / "qwen3-14b-v8.json"
+    output = tmp_path / "qwen3-14b-v9.json"
 
     claim = _begin(store, output)
     assert claim.status == "claimed"
@@ -274,7 +285,7 @@ def test_preregistered_ai_benchmark_rejects_model_drift_and_cpu_execution(
 
 def test_failed_preregistered_ai_benchmark_cannot_reopen_cases(tmp_path) -> None:
     store = _ClaimStore("b" * 64)
-    output = tmp_path / "failed-qwen3-14b-v8.json"
+    output = tmp_path / "failed-qwen3-14b-v9.json"
     claim = _begin(store, output)
     fail_preregistered_ai_benchmark_claim(  # type: ignore[arg-type]
         store,
@@ -424,7 +435,7 @@ def test_preregistered_cli_binds_pre_and_post_inference_runtime(
             else pytest.fail("residency did not receive the exact model digest")
         ),
     )
-    output = tmp_path / "qwen3-14b-v8.json"
+    output = tmp_path / "qwen3-14b-v9.json"
 
     status = cli.command_ai_benchmark(
         argparse.Namespace(

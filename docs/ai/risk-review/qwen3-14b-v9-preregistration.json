@@ -1,0 +1,64 @@
+{
+  "schema_version": "finance-risk-review-candidate-preregistration-v4",
+  "created_at_utc": "2026-07-16T19:43:00Z",
+  "parent_git_commit": "5a496aa7c98cee405fcd0bd0ea3827d93f4fcb0c",
+  "benchmark_contract": "finance-risk-review-adversarial-v9",
+  "benchmark_source_sha256": "0ea21b7649e7bafa17eb18e3ce47e6cbf6b981621452f255c1ebb7e8d5a8ff79",
+  "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+  "prior_comparison_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+  "revoked_predecessor": {
+    "path": "docs/ai/risk-review/historical/qwen3-14b-v8-continuity-preregistration.json",
+    "sha256": "1d4293fcb7e818ade3567e960e95d2f184263158f101beadf1afb07ab33f3ced",
+    "benchmark_contract": "finance-risk-review-adversarial-v8",
+    "reason": "The v8 gate enforced the post-contract 15-hour continuity requirement but did not bind each case to the exact returned model, terminal stop status, raw provider response, or positive token and duration telemetry. No qwen3:14b installation or inference occurred under v8."
+  },
+  "candidate": {
+    "model": "qwen3:14b",
+    "source": "https://ollama.com/library/qwen3:14b",
+    "selection_reason": "This is the smallest untested step above the rejected 8B and 9B candidates that remains practical on the host's AMD GPU. It was selected before installation or v9 inference.",
+    "installed_at_preregistration": false
+  },
+  "frozen_run": {
+    "case_count": 11,
+    "minimum_score": 0.78,
+    "timeout_seconds": 60,
+    "temperature": 0,
+    "thinking": false,
+    "prompt_or_case_changes_allowed": false,
+    "run_count": 1,
+    "run_after_valid_confirmation_recorder_finalization": true,
+    "admissible_recorder_statuses": [
+      "complete",
+      "degraded"
+    ],
+    "minimum_capture_duration_seconds": 54000,
+    "minimum_capture_started_at_ms": 1784143695000,
+    "required_storage_schema_version": "polymarket-evidence-storage-v4",
+    "required_continuity_schema_version": "polymarket-round9-continuity-eligibility-v1",
+    "minimum_eligible_synchronized_groups": 30,
+    "global_gap_free_required": false,
+    "gaps_inside_eligible_windows_allowed": false,
+    "required_provider_response_contract": "finance-risk-review-ollama-response-v1",
+    "exact_returned_model_required": true,
+    "terminal_stop_required": true,
+    "positive_prompt_and_output_token_counts_required": true
+  },
+  "admission": {
+    "top_level_json_object_only": true,
+    "duplicate_keys_forbidden": true,
+    "exact_required_fields_and_types": true,
+    "finite_numeric_ranges_required": true,
+    "all_actions_exact": true,
+    "all_risk_ranges_exact": true,
+    "all_required_terms_present": true,
+    "minimum_score_required": 0.78,
+    "raw_provider_response_hash_bound": true,
+    "provider_usage_recomputed_from_raw_response": true
+  },
+  "interpretation": {
+    "governance_pass_is_trading_edge": false,
+    "governance_pass_grants_order_authority": false,
+    "paired_same_period_after_cost_uplift_still_required": true,
+    "failed_candidate_may_be_tuned_on_v9_cases": false
+  }
+}

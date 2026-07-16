@@ -141,8 +141,8 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Polymarket AI report v6 also requires exact-model terminal Ollama telemetry and
   independently reconstructs prompt/output token totals. Missing, malformed, or
   rehashed usage evidence vetoes the response; token counts do not prove edge.
-- Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
-  `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
+- Qwen3 14B is the next one-shot v9 candidate, frozen before installation in
+  `docs/ai/risk-review/qwen3-14b-v9-preregistration.json`. Run it only after
   a post-contract storage-v4 capture spans at least 15 hours and its label-free
   continuity report retains at least 30 synchronized BTC/ETH/SOL groups. A
   `degraded` run is admissible only when every retained window is gap-free and
@@ -152,7 +152,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   interrupted and failed claims cannot reopen it. A valid output also requires
   identical Ollama digest/metadata hashes before and after inference plus exact
   post-inference GPU residency. CPU-only or changed weights fail the consumed
-  claim. Candidate resolution and required-GPU capability checks run before the
+  claim. Every case also requires a hash-bound raw response for the exact model,
+  terminal `stop`, and positive coherent prompt/output telemetry. Candidate
+  resolution and required-GPU capability checks run before the
   confirmation database opens, so preflight failure must not consume the claim.
 - The exact terminal facts for failed confirmation capture
   `79ac19539d384352b865c21cb0c43627` are in
