@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"48c38ddbe1d73152da70acd1024184a939cead59c3b5325b96447ce9707a4d56";
+inline constexpr const wchar_t* kCommandContractSha256 = L"3baf44ee493180128c49e7a944c59d9e49bdd6d418d2c9da3875aa3d44a25128";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -445,7 +445,8 @@ inline constexpr CommandOptionSpec kOptions_polymarket_model[] = {
     {L"--initial-capital", L"initial_capital", L"", L"1000", L"", L"1", false, true, false},
     {L"--maximum-loss-fraction-per-market", L"maximum_loss_fraction_per_market", L"", L"0.005", L"", L"1", false, true, false},
     {L"--maximum-loss-fraction-per-time-group", L"maximum_loss_fraction_per_time_group", L"", L"0.015", L"", L"1", false, true, false},
-    {L"--disable-ai", L"disable_ai", L"", L"false", L"skip the default local multibillion-parameter veto ablation", L"0", false, false, false},
+    {L"--enable-ai", L"ai_enabled", L"", L"", L"run the gated local multibillion-parameter veto ablation", L"0", false, false, false},
+    {L"--disable-ai", L"ai_enabled", L"", L"", L"skip the gated local multibillion-parameter veto ablation", L"0", false, false, false},
     {L"--ai-model", L"ai_model", L"", L"qwen3:8b", L"", L"1", false, true, false},
     {L"--ai-benchmark", L"ai_benchmark", L"", L"docs/ai/risk-review/latest/comparison.json", L"frozen adversarial risk benchmark that must select the requested model", L"1", false, true, false},
     {L"--ai-url", L"ai_url", L"", L"http://127.0.0.1:11434", L"", L"1", false, true, false},
@@ -960,7 +961,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"polymarket-continuity", L"Evaluate recorder errors, stream gaps, connection segments, market snapshot timing, and fresh CLOB baselines without consulting outcomes, labels, utilities, or model scores.", kOptions_polymarket_continuity, 5},
     {L"polymarket-features", L"Build and materialize hash-bound decision-time features from one validated prospective Polymarket recorder run. Strict gap-free replay is the default. Official outcomes are attached only as future labels; unresolved rows remain shadow-only.", kOptions_polymarket_features, 9},
     {L"polymarket-mlp", L"Load one fully materialized, development-passed Round 9 ridge report; fit the preregistered condition-balanced MLP ensemble; open its test partition only after the validation gates pass; and persist weights, traces, predictions, actions, equity, and market PnL. This command grants no foundation-AI, trading, or profitability authority.", kOptions_polymarket_mlp, 6},
-    {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 24},
+    {L"polymarket-model", L"Fit a bounded residual around the Polymarket-implied probability with purged chronological BTC/ETH/SOL market groups, then compare it with the unchanged market baseline using full-resolution FOK paper replay. The resulting artifact has no live trading or profitability authority.", kOptions_polymarket_model, 25},
     {L"polymarket-paper", L"Use the same durable ownership and reconciliation lifecycle as Binance paper trading against a validated prospective Polymarket recorder run. Strict gap-free replay is the default. This command has no authenticated or live-money order path.", kOptions_polymarket_paper, 23},
     {L"polymarket-publish", L"Validate one prospective experiment artifact and derive every current result table, chart, report, and integrity hash from it. Publication fails closed on provenance drift or unsupported claims.", kOptions_polymarket_publish, 8},
     {L"polymarket-record", L"Record public Polymarket CLOB/RTDS and direct Binance streams into a single audit-ready DuckDB database. This command never authenticates or places an order.", kOptions_polymarket_record, 9},

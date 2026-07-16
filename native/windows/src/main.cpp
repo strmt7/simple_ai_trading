@@ -1500,9 +1500,9 @@ class MainWindow {
         }
         if (
             entry->command == L"polymarket-model" &&
-            !ai_enabled_ &&
-            command.find(L"--disable-ai") == std::wstring::npos) {
-            command += L" --disable-ai";
+            !has_command_switch(command, L"--enable-ai") &&
+            !has_command_switch(command, L"--disable-ai")) {
+            command += ai_enabled_ ? L" --enable-ai" : L" --disable-ai";
         }
         run_sequence({command});
     }
@@ -1532,6 +1532,24 @@ class MainWindow {
         }
         const auto last = value.find_last_not_of(L" \t\r\n");
         return value.substr(first, last - first + 1);
+    }
+
+    static bool has_command_switch(
+        const std::wstring& command,
+        const std::wstring& switch_name) {
+        std::size_t position = 0;
+        while ((position = command.find(switch_name, position)) != std::wstring::npos) {
+            const bool starts_token =
+                position == 0 || std::iswspace(command[position - 1]);
+            const std::size_t end = position + switch_name.size();
+            const bool ends_token =
+                end == command.size() || std::iswspace(command[end]);
+            if (starts_token && ends_token) {
+                return true;
+            }
+            position = end;
+        }
+        return false;
     }
 
     void run_sequence(std::vector<std::wstring> commands) {

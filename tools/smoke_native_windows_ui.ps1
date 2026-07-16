@@ -191,6 +191,10 @@ try {
     Select-Combo $window $researchCombo $CommandComboId "Polymarket models / polymarket-model"
     Click-Control (Get-Control $window $RunId)
     Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-model --disable-ai" 5000
+    Click-Control $ai
+    Assert-Text $ai "AI on (gated)" "AI toggle restored before enabled model workflow"
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-model --enable-ai" 5000
 
     Select-Page $window $pageList 5
     $commandCombo = Get-Control $window $CommandComboId

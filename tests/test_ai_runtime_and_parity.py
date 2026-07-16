@@ -682,6 +682,9 @@ def test_native_window_initializes_hwnd_during_create() -> None:
     assert "Workflow stopped after failed command" in source
     assert "kCommandContractSha256" in source
     assert "command_contract_synced_.load()" in source
+    assert 'has_command_switch(command, L"--enable-ai")' in source
+    assert 'has_command_switch(command, L"--disable-ai")' in source
+    assert 'ai_enabled_ ? L" --enable-ai" : L" --disable-ai"' in source
     assert "Pause and Stop remain available" in source
     assert "remaining safety controls will still be attempted" in source
     assert 'root / L".venv" / L"Scripts" / L"python.exe"' in source
@@ -706,6 +709,8 @@ def test_native_window_has_repeatable_smoke_and_capture_tools() -> None:
     assert "Failed configuration was followed by autonomous start" in smoke
     assert "Contract mismatch was followed by strategy mutation" in smoke
     assert "dry-run: simple-ai-trading autonomous stop" in smoke
+    assert "dry-run: simple-ai-trading polymarket-model --enable-ai" in smoke
+    assert "dry-run: simple-ai-trading polymarket-model --disable-ai" in smoke
     assert "Cancelled configuration was followed by autonomous start" in smoke
     assert "Stop + Close" in smoke
     assert "Testnet live" in smoke
