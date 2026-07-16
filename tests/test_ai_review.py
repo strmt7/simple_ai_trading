@@ -57,8 +57,8 @@ def _fixed_model_provenance(monkeypatch) -> None:
                 loaded_model=model,
                 digest=expected_digest or "d" * 64,
                 size_bytes=6_000_000_000,
-                size_vram_bytes=5_500_000_000,
-                vram_to_model_ratio=5_500_000_000 / 6_000_000_000,
+                size_vram_bytes=6_000_000_000,
+                vram_to_model_ratio=1.0,
             ).validated()
         ),
     )
@@ -512,8 +512,19 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
         load_ai_review_report(tmp_path / "ai_risk_review.json")
 
 
-def test_ai_review_rejects_cpu_only_provider_inference(
-    tmp_path: Path, monkeypatch
+@pytest.mark.parametrize(
+    ("status", "size_vram_bytes", "vram_to_model_ratio"),
+    (
+        ("cpu_only", 0, 0.0),
+        ("gpu_resident", 5_880_000_000, 0.98),
+    ),
+)
+def test_ai_review_rejects_non_full_gpu_provider_inference(
+    tmp_path: Path,
+    monkeypatch,
+    status: str,
+    size_vram_bytes: int,
+    vram_to_model_ratio: float,
 ) -> None:
     report_path = tmp_path / "model_lab_report.json"
     _write_report(report_path, accepted=True)
@@ -529,12 +540,12 @@ def test_ai_review_rejects_cpu_only_provider_inference(
         residency_inspector=lambda _base_url, model, _timeout, *, expected_digest=None: (
             OllamaResidencyReport(
                 requested_model=model,
-                status="cpu_only",
+                status=status,
                 loaded_model=model,
                 digest=expected_digest,
                 size_bytes=6_000_000_000,
-                size_vram_bytes=0,
-                vram_to_model_ratio=0.0,
+                size_vram_bytes=size_vram_bytes,
+                vram_to_model_ratio=vram_to_model_ratio,
             ).validated()
         ),
     )
@@ -542,7 +553,7 @@ def test_ai_review_rejects_cpu_only_provider_inference(
     assert review.status == "blocked"
     assert review.approved is False
     assert review.decision.action == "veto"
-    assert "CPU-only" in str(review.error)
+    assert "not fully GPU-resident" in str(review.error)
 
 
 def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(

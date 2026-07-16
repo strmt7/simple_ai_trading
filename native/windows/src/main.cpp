@@ -732,6 +732,8 @@ class MainWindow {
         if (ai_enabled) {
             if (ai_gpu_resident) {
                 ai_state = L"AI GPU resident";
+            } else if (ai_runtime_state == L"hybrid") {
+                ai_state = L"AI blocked (partial GPU)";
             } else if (ai_runtime_state == L"cpu") {
                 ai_state = L"AI blocked (CPU)";
             } else if (ai_runtime_state == L"unavailable") {

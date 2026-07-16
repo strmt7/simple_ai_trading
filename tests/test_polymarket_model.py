@@ -3094,6 +3094,30 @@ def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
             model_execution=model_execution.asdict(),
         )
 
+    partial_runtime = json.loads(json.dumps(ai_evidence))
+    runtime = partial_runtime["veto_report"]["results"][0]["provider_runtime"]
+    runtime["size_vram_bytes"] = int(runtime["size_bytes"] * 0.98)
+    runtime["vram_to_model_ratio"] = 0.98
+    runtime_report = partial_runtime["veto_report"]
+    runtime_identity = dict(runtime_report)
+    runtime_identity.pop("report_sha256")
+    runtime_report["report_sha256"] = hashlib.sha256(
+        json.dumps(
+            runtime_identity,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+    with pytest.raises(ValueError, match="AI veto result"):
+        _validate_ai_evidence(
+            partial_runtime,
+            predictions=prediction_rows,
+            probability=probability_report.asdict(),
+            model_execution=model_execution.asdict(),
+        )
+
     forged_queue = json.loads(json.dumps(ai_evidence))
     queued_result = forged_queue["veto_report"]["results"][0]
     queued_result["queue_delay_seconds"] += 1.0

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import sys
 from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_trading import cli
+from simple_ai_trading import cli, polymarket_ai_veto as ai_veto_module
 from simple_ai_trading.ai_model_benchmark import (
     AI_MODEL_BENCHMARK_CONTRACT,
     _json_mapping_from_text,
@@ -18,6 +19,7 @@ from simple_ai_trading.ai_model_benchmark import (
 )
 from simple_ai_trading.ai_runtime import (
     AIRuntimeConfig,
+    OllamaResidencyReport,
     _rocm_smi_free_vram_gb,
     _single_distinct_positive_int,
     _windows_free_vram_gb,
@@ -251,6 +253,7 @@ def test_ollama_residency_binds_exact_digest_and_gpu_bytes() -> None:
 
     assert report.loaded is True
     assert report.gpu_resident is True
+    assert report.fully_gpu_resident is False
     assert report.status == "gpu_resident"
     assert report.digest == digest
     assert report.vram_to_model_ratio == pytest.approx(5 / 6)
@@ -259,6 +262,21 @@ def test_ollama_residency_binds_exact_digest_and_gpu_bytes() -> None:
     tampered["gpu_resident"] = False
     with pytest.raises(ValueError, match="flags"):
         ollama_residency_from_mapping(tampered)
+
+    full = replace(
+        report,
+        size_vram_bytes=6_000_000_000,
+        vram_to_model_ratio=1.0,
+    ).validated()
+    assert full.fully_gpu_resident is True
+
+    with pytest.raises(ValueError, match="fully GPU-resident"):
+        ai_veto_module._validated_provider_runtime(
+            report.asdict(),
+            model="qwen3:8b",
+            model_digest=digest,
+            require_gpu=True,
+        )
 
 
 def test_ollama_residency_reports_unloaded_and_cpu_only_without_guessing() -> None:
@@ -290,6 +308,56 @@ def test_ollama_residency_reports_unloaded_and_cpu_only_without_guessing() -> No
     assert cpu.status == "cpu_only"
     assert cpu.loaded is True
     assert cpu.gpu_resident is False
+
+
+def test_ai_runtime_status_exposes_partial_gpu_as_blocked_hybrid(monkeypatch) -> None:
+    partial = OllamaResidencyReport(
+        requested_model="qwen3:8b",
+        status="gpu_resident",
+        loaded_model="qwen3:8b",
+        digest="a" * 64,
+        size_bytes=6_000_000_000,
+        size_vram_bytes=5_880_000_000,
+        vram_to_model_ratio=0.98,
+    ).validated()
+    monkeypatch.setattr(cli, "inspect_ollama_model_residency", lambda *_args: partial)
+
+    status, evidence = cli._ai_provider_runtime_status(
+        RuntimeConfig(ai_enabled=True, ai_provider="ollama", ai_model="qwen3:8b")
+    )
+
+    assert status == "hybrid"
+    assert evidence["vram_to_model_ratio"] == 0.98
+
+
+def test_ai_command_fails_closed_for_partial_gpu_runtime(
+    monkeypatch,
+    capsys,
+) -> None:
+    runtime = RuntimeConfig(
+        ai_enabled=True,
+        ai_provider="ollama",
+        ai_model="qwen3:8b",
+    )
+    capability = SimpleNamespace(
+        ok=True,
+        compute_backend_kind="directml",
+        asdict=lambda: {"ok": True},
+    )
+    monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
+    monkeypatch.setattr(cli, "detect_ai_capabilities", lambda _config: capability)
+    monkeypatch.setattr(cli, "render_ai_capability_report", lambda _report: "ready")
+    monkeypatch.setattr(
+        cli,
+        "_ai_provider_runtime_status",
+        lambda _runtime: (
+            "hybrid",
+            {"status": "gpu_resident", "gpu_resident": True},
+        ),
+    )
+
+    assert cli.command_ai(argparse.Namespace(json=False)) == 2
+    assert "fully_gpu_resident=False" in capsys.readouterr().out
 
 
 def test_ollama_residency_rejects_ambiguous_or_malformed_inventory() -> None:
@@ -725,7 +793,13 @@ def test_generated_native_contract_matches_cli() -> None:
         '{L"--report", L"report", L"", L"", '
         'L"screening report path; repeat for every declared trial", '
         'L"1", true, true, true}'
-    ) in text
+        ) in text
+
+    native_source = (
+        windows_app._repo_root() / "native" / "windows" / "src" / "main.cpp"
+    ).read_text(encoding="utf-8")
+    assert 'ai_runtime_state == L"hybrid"' in native_source
+    assert 'ai_state = L"AI blocked (partial GPU)"' in native_source
     confirmation = next(
         spec for spec in command_specs() if spec.name == "tape-depth-confirm"
     )

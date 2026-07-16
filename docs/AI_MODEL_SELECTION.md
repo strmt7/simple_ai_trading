@@ -128,6 +128,15 @@ request. These fields follow Ollama's official
 [model-details](https://docs.ollama.com/api-reference/show-model-details)
 contracts.
 
+GPU-required AI paths also validate Ollama's post-inference `/api/ps` bytes and
+require a VRAM/model ratio of at least `0.99`; partial CPU/GPU offload is blocked.
+Ollama documents [`size_vram`](https://docs.ollama.com/api/ps), defines `100% GPU`
+versus mixed offload in its [FAQ](https://docs.ollama.com/faq), and provides
+additional Windows AMD coverage through its
+[Vulkan backend](https://github.com/ollama/ollama/blob/main/docs/gpu.mdx). DirectML
+remains the cross-vendor backend for conventional ML; it is not evidence that an
+Ollama LLM used the GPU.
+
 Historical four-case provider telemetry:
 `docs/ai_model_benchmark_legacy_20260710.json`.
 

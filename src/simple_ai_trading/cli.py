@@ -5604,11 +5604,15 @@ def _ai_provider_runtime_status(runtime: RuntimeConfig) -> tuple[str, dict[str, 
         )
     except ValueError as exc:
         return "unavailable", {"status": "unavailable", "error": str(exc)}
-    token = {
-        "gpu_resident": "gpu",
-        "cpu_only": "cpu",
-        "unloaded": "unloaded",
-    }[report.status]
+    token = (
+        "hybrid"
+        if report.status == "gpu_resident" and not report.fully_gpu_resident
+        else {
+            "gpu_resident": "gpu",
+            "cpu_only": "cpu",
+            "unloaded": "unloaded",
+        }[report.status]
+    )
     return token, report.asdict()
 
 
@@ -5731,7 +5735,7 @@ def command_ai(args: argparse.Namespace) -> int:
             "Install torch-directml or choose a GPU backend, then re-enable AI.",
             file=sys.stderr,
         )
-    _ai_runtime_token, provider_runtime = _ai_provider_runtime_status(runtime)
+    ai_runtime_token, provider_runtime = _ai_provider_runtime_status(runtime)
     if getattr(args, "json", False):
         print(
             json.dumps(
@@ -5750,16 +5754,17 @@ def command_ai(args: argparse.Namespace) -> int:
         print(
             "provider_runtime="
             f"{provider_runtime.get('status', 'unavailable')} "
-            f"gpu_resident={provider_runtime.get('gpu_resident', False)}"
+            f"gpu_resident={provider_runtime.get('gpu_resident', False)} "
+            f"fully_gpu_resident={ai_runtime_token == 'gpu'}"
         )
     if enable_requested and enable_blocked:
         return 2
-    provider_cpu_only = provider_runtime.get("status") == "cpu_only"
+    provider_gpu_blocked = ai_runtime_token in {"cpu", "hybrid"}
     return (
         0
         if (
             (report.ok or not runtime.ai_enabled or runtime.ai_allow_paper_fallback)
-            and not provider_cpu_only
+            and not provider_gpu_blocked
         )
         else 2
     )

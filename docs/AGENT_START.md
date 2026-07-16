@@ -126,14 +126,16 @@ After parser or taxonomy changes, regenerate the header through the native build
   positive, ML-beating, return- and drawdown-nondegrading execution at every
   preregistered network-latency stress. A primary-only improvement is rejected.
 - AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
-  exact weight digest with positive VRAM-resident bytes. DirectML selection is
-  separate and does not prove that the review model ran on GPU.
+  exact weight digest with at least 99% of Ollama's reported model bytes in
+  VRAM. Partial CPU/GPU offload is blocked. DirectML selection is separate and
+  does not prove that the review model ran on GPU.
 - Required-GPU AI preflight blocks unknown VRAM. Legacy ROCm output must expose
   exact total/used byte pairs; Windows AMD uses a deduplicated 64-bit driver
   total minus WDDM dedicated usage and rejects conflicting totals. The
   2026-07-16 host audit measured about 12.15 GiB free on the AMD DirectML host
-  while Ollama remained unloaded; that is capacity evidence, not residency or
-  edge evidence.
+  while Ollama remained unloaded. The same host audit found Ollama `0.31.2`, a
+  Vulkan `1.4.349` discrete RX 9070 XT device, and no loaded Ollama model; those
+  are capacity/backend facts, not inference residency or edge evidence.
 - Enabled Polymarket AI also passes the shared local-GPU preflight immediately
   before provider inference. `polymarket-model` accepts mutually exclusive
   `--enable-ai` and `--disable-ai` overrides and otherwise inherits the saved

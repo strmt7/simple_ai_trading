@@ -27,9 +27,7 @@ POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v3"
 POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v6"
 POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v5"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v2"
-POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = (
-    "polymarket-ai-veto-ollama-response-v1"
-)
+POLYMARKET_AI_PROVIDER_RESPONSE_CONTRACT = "polymarket-ai-veto-ollama-response-v1"
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
 _CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = (
@@ -371,9 +369,11 @@ def _validated_provider_runtime(
     if report.loaded and report.digest != model_digest:
         raise ValueError("Polymarket AI provider residency digest differs")
     if require_gpu and (
-        not report.loaded or not report.gpu_resident or report.digest != model_digest
+        not report.loaded
+        or not report.fully_gpu_resident
+        or report.digest != model_digest
     ):
-        raise ValueError("Polymarket AI inference is not proved GPU-resident")
+        raise ValueError("Polymarket AI inference is not proved fully GPU-resident")
     return report.asdict()
 
 

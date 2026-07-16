@@ -17,6 +17,9 @@ from urllib import request as urllib_request
 from .compute import BackendInfo, default_compute_backend, resolve_backend
 
 
+MINIMUM_FULL_GPU_RESIDENCY_RATIO = 0.99
+
+
 @dataclass(frozen=True)
 class AIRuntimeConfig:
     enabled: bool = True
@@ -76,6 +79,14 @@ class OllamaResidencyReport:
     def gpu_resident(self) -> bool:
         return self.status == "gpu_resident"
 
+    @property
+    def fully_gpu_resident(self) -> bool:
+        return (
+            self.gpu_resident
+            and self.vram_to_model_ratio is not None
+            and self.vram_to_model_ratio >= MINIMUM_FULL_GPU_RESIDENCY_RATIO
+        )
+
     def asdict(self) -> dict[str, object]:
         return {
             **asdict(self),
@@ -113,6 +124,7 @@ class OllamaResidencyReport:
             or isinstance(self.size_vram_bytes, bool)
             or not isinstance(self.size_vram_bytes, int)
             or self.size_vram_bytes < 0
+            or self.size_vram_bytes > self.size_bytes
             or isinstance(self.vram_to_model_ratio, bool)
             or not isinstance(self.vram_to_model_ratio, (int, float))
             or not math.isfinite(float(self.vram_to_model_ratio))
@@ -413,9 +425,7 @@ def _rocm_smi_free_vram_gb(output: str) -> float | None:
     """Parse exact byte totals from legacy ROCm SMI output."""
 
     patterns = {
-        "total": re.compile(
-            r"GPU\[(\d+)\]\s*:\s*VRAM Total Memory \(B\):\s*(\d+)\s*"
-        ),
+        "total": re.compile(r"GPU\[(\d+)\]\s*:\s*VRAM Total Memory \(B\):\s*(\d+)\s*"),
         "used": re.compile(
             r"GPU\[(\d+)\]\s*:\s*VRAM Total Used Memory \(B\):\s*(\d+)\s*"
         ),
@@ -554,9 +564,7 @@ def _windows_free_vram_gb() -> float | None:
 def _amd_free_vram_gb() -> float | None:
     exe = shutil.which("rocm-smi") or shutil.which("rocm-smi.exe")
     if exe:
-        parsed = _rocm_smi_free_vram_gb(
-            _run_capture([exe, "--showmeminfo", "vram"])
-        )
+        parsed = _rocm_smi_free_vram_gb(_run_capture([exe, "--showmeminfo", "vram"]))
         if parsed is not None:
             return parsed
     return _windows_free_vram_gb()
