@@ -13950,6 +13950,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
             try:
                 ai_provider = OllamaLiveAIEntryProvider(
                     model=str(ai_gate.model or runtime.ai_model),
+                    expected_model_digest=str(ai_gate.model_digest or ""),
                     base_url=ai_base_url,
                     timeout_seconds=ai_timeout_seconds,
                 )

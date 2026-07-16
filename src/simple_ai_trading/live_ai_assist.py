@@ -20,6 +20,8 @@ import time
 from typing import Callable, Mapping, Protocol
 from urllib.request import Request, urlopen
 
+from .ai_runtime import inspect_ollama_model_residency
+
 
 LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v1"
 LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION = "live-ai-entry-audit-v1"
@@ -126,6 +128,14 @@ def _finite_number(value: object, *, name: str) -> float:
     if not math.isfinite(parsed):
         raise ValueError(f"{name} must be finite")
     return parsed
+
+
+def _bounded_count(value: object, *, name: str, maximum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"AI entry {name} is not an integer")
+    if not 0 <= value <= maximum:
+        raise ValueError(f"AI entry {name} is outside the bounded token budget")
+    return value
 
 
 def _bounded_json_value(value: object, *, depth: int = 0) -> object:
@@ -281,6 +291,10 @@ class LiveAIEntryDecision:
     valid: bool
     failure_reason: str = ""
     response_sha256: str = _ZERO_SHA256
+    observed_model_digest: str = _ZERO_SHA256
+    model_residency_status: str = "unknown"
+    prompt_tokens: int | None = None
+    output_tokens: int | None = None
 
     def asdict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -360,19 +374,31 @@ class OllamaLiveAIEntryProvider:
         self,
         *,
         model: str,
+        expected_model_digest: str,
         base_url: str = "http://127.0.0.1:11434",
         timeout_seconds: float = 30.0,
         seed: int = 3901,
     ) -> None:
         self.model = str(model).strip()
+        self.expected_model_digest = str(expected_model_digest).strip().lower()
         self.base_url = str(base_url).rstrip("/")
         self.timeout_seconds = max(0.1, float(timeout_seconds))
         self.seed = int(seed)
-        if not self.model or not self.base_url.startswith(("http://", "https://")):
+        if (
+            not self.model
+            or len(self.expected_model_digest) != 64
+            or any(
+                value not in "0123456789abcdef"
+                for value in self.expected_model_digest
+            )
+            or not self.base_url.startswith(("http://", "https://"))
+        ):
             raise ValueError("Ollama live AI provider configuration is invalid")
 
     def __call__(self, case: LiveAIEntryCase) -> LiveAIEntryDecision:
         case.validated()
+        if case.model_digest != self.expected_model_digest:
+            raise ValueError("AI entry case differs from the approved model digest")
         prompt = (
             "You are a shadow-only risk reviewer for an autonomous crypto day-trading system. "
             "Review the ML proposal using only the causal structured evidence. You cannot create a trade, "
@@ -412,7 +438,37 @@ class OllamaLiveAIEntryProvider:
         if len(raw_response) > _MAX_PROVIDER_RESPONSE_BYTES:
             raise ValueError("Ollama response exceeds the bounded response budget")
         payload = _strict_json_object(raw_response.decode("utf-8"))
-        return _parse_provider_decision(payload, expected_model=self.model)
+        decision = _parse_provider_decision(payload, expected_model=self.model)
+        prompt_tokens = _bounded_count(
+            payload.get("prompt_eval_count"),
+            name="prompt token count",
+            maximum=4096,
+        )
+        output_tokens = _bounded_count(
+            payload.get("eval_count"),
+            name="output token count",
+            maximum=180,
+        )
+        residency = inspect_ollama_model_residency(
+            self.base_url,
+            self.model,
+            timeout_seconds=min(2.0, self.timeout_seconds),
+            expected_digest=self.expected_model_digest,
+        )
+        if (
+            residency.status != "gpu_resident"
+            or residency.digest != self.expected_model_digest
+        ):
+            raise ValueError(
+                "Ollama response is not bound to the approved GPU-resident model"
+            )
+        return replace(
+            decision,
+            observed_model_digest=residency.digest,
+            model_residency_status=residency.status,
+            prompt_tokens=prompt_tokens,
+            output_tokens=output_tokens,
+        )
 
 
 def _failed_decision(reason: str) -> LiveAIEntryDecision:

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import threading
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -17,9 +18,11 @@ from simple_ai_trading.live_ai_assist import (
     AIAssistedDecisionFunction,
     AsyncLiveAIEntryReviewer,
     LiveAIEntryDecision,
+    OllamaLiveAIEntryProvider,
     _parse_provider_decision,
     build_live_ai_entry_case,
 )
+from simple_ai_trading import live_ai_assist as live_ai_assist_module
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 from simple_ai_trading.objective import get_objective
 
@@ -28,7 +31,7 @@ _DIGEST = "a" * 64
 _FINGERPRINT = "b" * 64
 
 
-def _case(*, observed_at_ms: int = 1_000):
+def _case(*, observed_at_ms: int = 1_000, model_digest: str = _DIGEST):
     return build_live_ai_entry_case(
         symbol="BTCUSDC",
         market_type="futures",
@@ -37,7 +40,7 @@ def _case(*, observed_at_ms: int = 1_000):
         proposed_side="LONG",
         ml_confidence=0.72,
         maximum_risk_multiplier=0.4,
-        model_digest=_DIGEST,
+        model_digest=model_digest,
         terminal_model_fingerprint=_FINGERPRINT,
         evidence={"signal": {"after_cost_margin_bps": 3.2}},
     )
@@ -117,6 +120,76 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
                 },
                 expected_model="qwen3:14b",
             )
+
+
+def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    content = json.dumps(
+        {
+            "action": "approve",
+            "risk_multiplier": 0.5,
+            "confidence": 0.8,
+            "reason_codes": ["edge_after_costs"],
+            "summary": "Evidence covers modeled cost.",
+        }
+    )
+    response_payload = {
+        "model": "qwen3:14b",
+        "done": True,
+        "message": {"content": content},
+        "prompt_eval_count": 321,
+        "eval_count": 47,
+    }
+    requests: list[dict[str, object]] = []
+
+    class _Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit: int) -> bytes:
+            return json.dumps(response_payload).encode("utf-8")
+
+    def fake_urlopen(request, *, timeout):
+        assert timeout == 10.0
+        requests.append(json.loads(request.data.decode("utf-8")))
+        return _Response()
+
+    monkeypatch.setattr(live_ai_assist_module, "urlopen", fake_urlopen)
+    monkeypatch.setattr(
+        live_ai_assist_module,
+        "inspect_ollama_model_residency",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            status="gpu_resident",
+            digest=_DIGEST,
+        ),
+    )
+    provider = OllamaLiveAIEntryProvider(
+        model="qwen3:14b",
+        expected_model_digest=_DIGEST,
+        timeout_seconds=10.0,
+    )
+    decision = provider(_case())
+    assert decision.observed_model_digest == _DIGEST
+    assert decision.model_residency_status == "gpu_resident"
+    assert decision.prompt_tokens == 321
+    assert decision.output_tokens == 47
+    assert requests[0]["think"] is False
+    assert requests[0]["options"]["num_predict"] == 180
+
+    with pytest.raises(ValueError, match="case differs"):
+        provider(_case(observed_at_ms=2_000, model_digest="c" * 64))
+
+    monkeypatch.setattr(
+        live_ai_assist_module,
+        "inspect_ollama_model_residency",
+        lambda *_args, **_kwargs: SimpleNamespace(status="unloaded", digest=None),
+    )
+    with pytest.raises(ValueError, match="approved GPU-resident model"):
+        provider(_case(observed_at_ms=3_000))
 
 
 def test_shadow_reviewer_never_changes_ml_side_or_size(tmp_path: Path) -> None:

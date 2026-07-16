@@ -204,8 +204,10 @@ after-cost uplift gate remains mandatory.
 An approved model-level review now enables a latest-wins background review of
 each directional Binance ML proposal. The prompt contains only bounded causal
 numbers and enums; Ollama must return exact structured JSON. Provider work is
-off the execution thread, never delays closes, and cannot create, reverse,
-resize, or cancel an order. `status --compact` and the Windows dashboard expose
+off the execution thread. Every completed response is rebound to the approved
+GPU-resident model digest and records exact prompt/output token counts. It never
+delays closes and cannot create, reverse, resize, or cancel an order.
+`status --compact` and the Windows dashboard expose
 `shadow_idle`, `shadow_pending`, `shadow_approve`, `shadow_veto`,
 `shadow_cooldown`, or `shadow_failure` without implying order authority.
 
