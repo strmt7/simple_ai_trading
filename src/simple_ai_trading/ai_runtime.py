@@ -8,6 +8,11 @@ import re
 import shutil
 import subprocess  # nosec B404
 from dataclasses import asdict, dataclass
+import json
+import math
+from typing import Callable, Mapping
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 from .compute import BackendInfo, default_compute_backend, resolve_backend
 
@@ -49,6 +54,208 @@ class AICapabilityReport:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class OllamaResidencyReport:
+    """Exact runtime residency reported by Ollama after model inference."""
+
+    requested_model: str
+    status: str
+    loaded_model: str | None
+    digest: str | None
+    size_bytes: int | None
+    size_vram_bytes: int | None
+    vram_to_model_ratio: float | None
+
+    @property
+    def loaded(self) -> bool:
+        return self.status in {"gpu_resident", "cpu_only"}
+
+    @property
+    def gpu_resident(self) -> bool:
+        return self.status == "gpu_resident"
+
+    def asdict(self) -> dict[str, object]:
+        return {
+            **asdict(self),
+            "loaded": self.loaded,
+            "gpu_resident": self.gpu_resident,
+        }
+
+    def validated(self) -> "OllamaResidencyReport":
+        loaded_fields = (
+            self.loaded_model,
+            self.digest,
+            self.size_bytes,
+            self.size_vram_bytes,
+            self.vram_to_model_ratio,
+        )
+        if (
+            not isinstance(self.requested_model, str)
+            or not self.requested_model
+            or self.status not in {"unloaded", "gpu_resident", "cpu_only"}
+        ):
+            raise ValueError("Ollama residency report is invalid")
+        if self.status == "unloaded":
+            if any(value is not None for value in loaded_fields):
+                raise ValueError("Ollama unloaded residency report contains runtime data")
+            return self
+        if (
+            not isinstance(self.loaded_model, str)
+            or not self.loaded_model
+            or not _is_sha256(self.digest)
+            or isinstance(self.size_bytes, bool)
+            or not isinstance(self.size_bytes, int)
+            or self.size_bytes <= 0
+            or isinstance(self.size_vram_bytes, bool)
+            or not isinstance(self.size_vram_bytes, int)
+            or self.size_vram_bytes < 0
+            or isinstance(self.vram_to_model_ratio, bool)
+            or not isinstance(self.vram_to_model_ratio, (int, float))
+            or not math.isfinite(float(self.vram_to_model_ratio))
+            or self.vram_to_model_ratio < 0.0
+            or not math.isclose(
+                float(self.vram_to_model_ratio),
+                self.size_vram_bytes / self.size_bytes,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or self.gpu_resident != (self.size_vram_bytes > 0)
+        ):
+            raise ValueError("Ollama loaded residency report is invalid")
+        return self
+
+
+JsonGetter = Callable[[str, float], object]
+
+
+def _is_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
+
+
+def _strict_json_value(text: str) -> object:
+    def reject_duplicates(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"duplicate key: {key}")
+            result[key] = value
+        return result
+
+    return json.loads(
+        text,
+        object_pairs_hook=reject_duplicates,
+        parse_constant=lambda value: (_ for _ in ()).throw(
+            ValueError(f"non-finite constant: {value}")
+        ),
+    )
+
+
+def _get_json(url: str, timeout: float) -> object:
+    request = urllib_request.Request(url, method="GET")
+    try:
+        with urllib_request.urlopen(request, timeout=timeout) as response:  # nosec B310 - caller supplies local provider URL
+            body = response.read(2_000_001)
+    except (OSError, urllib_error.URLError) as exc:
+        raise ValueError("Ollama runtime inventory is unavailable") from exc
+    if len(body) > 2_000_000:
+        raise ValueError("Ollama runtime inventory exceeds the response limit")
+    try:
+        return _strict_json_value(body.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError("Ollama runtime inventory is invalid JSON") from exc
+
+
+def _normalized_model_name(value: object) -> str:
+    name = str(value or "").strip().lower()
+    return name if ":" in name else f"{name}:latest"
+
+
+def inspect_ollama_model_residency(
+    base_url: str,
+    model: str,
+    timeout_seconds: float = 2.0,
+    *,
+    expected_digest: str | None = None,
+    get_json: JsonGetter = _get_json,
+) -> OllamaResidencyReport:
+    """Read `/api/ps` and bind runtime residency to one exact local model."""
+
+    requested_model = str(model or "").strip()
+    if not requested_model:
+        raise ValueError("Ollama residency model is missing")
+    if expected_digest is not None and not _is_sha256(expected_digest):
+        raise ValueError("Ollama residency expected digest is invalid")
+    timeout = float(timeout_seconds)
+    if not math.isfinite(timeout) or timeout <= 0.0:
+        raise ValueError("Ollama residency timeout is invalid")
+    endpoint = f"{str(base_url or 'http://127.0.0.1:11434').rstrip('/')}/api/ps"
+    payload = get_json(endpoint, timeout)
+    if not isinstance(payload, Mapping) or set(payload) != {"models"}:
+        raise ValueError("Ollama runtime inventory fields are invalid")
+    models = payload["models"]
+    if not isinstance(models, list):
+        raise ValueError("Ollama runtime model inventory is invalid")
+    requested_normalized = _normalized_model_name(requested_model)
+    matches: list[Mapping[str, object]] = []
+    for raw in models:
+        if not isinstance(raw, Mapping):
+            raise ValueError("Ollama runtime model entry is invalid")
+        digest = raw.get("digest")
+        names = {
+            _normalized_model_name(raw.get("name")),
+            _normalized_model_name(raw.get("model")),
+        }
+        if expected_digest is not None:
+            matched = digest == expected_digest
+        else:
+            matched = requested_normalized in names
+        if matched:
+            matches.append(raw)
+    if not matches:
+        return OllamaResidencyReport(
+            requested_model=requested_model,
+            status="unloaded",
+            loaded_model=None,
+            digest=None,
+            size_bytes=None,
+            size_vram_bytes=None,
+            vram_to_model_ratio=None,
+        ).validated()
+    if len(matches) != 1:
+        raise ValueError("Ollama runtime inventory contains ambiguous model entries")
+    raw = matches[0]
+    loaded_model = raw.get("model") or raw.get("name")
+    digest = raw.get("digest")
+    size = raw.get("size")
+    size_vram = raw.get("size_vram")
+    if (
+        not isinstance(loaded_model, str)
+        or not loaded_model
+        or not _is_sha256(digest)
+        or (expected_digest is not None and digest != expected_digest)
+        or isinstance(size, bool)
+        or not isinstance(size, int)
+        or size <= 0
+        or isinstance(size_vram, bool)
+        or not isinstance(size_vram, int)
+        or size_vram < 0
+    ):
+        raise ValueError("Ollama runtime model residency fields are invalid")
+    return OllamaResidencyReport(
+        requested_model=requested_model,
+        status="gpu_resident" if size_vram > 0 else "cpu_only",
+        loaded_model=loaded_model,
+        digest=digest,
+        size_bytes=size,
+        size_vram_bytes=size_vram,
+        vram_to_model_ratio=size_vram / size,
+    ).validated()
 
 
 def _safe_float(value: object) -> float | None:

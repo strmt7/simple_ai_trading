@@ -117,11 +117,11 @@ Startup behavior:
 - The app resolves the repo-local `.venv311` Python and sets `PYTHONPATH` before launching CLI commands, so dev builds do not depend on a globally installed package.
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
-- `AI on (gated)` means AI is requested, not presumed ready. Testnet startup requires an approved review bound to the exact model-lab source, runtime model fingerprint, and current Ollama weight digest; paper mode labels any configured fallback as AI inactive.
+- `AI on (gated)` means AI is configured, not loaded or approved. Green `AI GPU resident` status requires a post-inference Ollama `/api/ps` check bound to the exact model digest with reported VRAM residency; unloaded, CPU-only, ambiguous, or malformed runtime evidence fails closed. DirectML model compute and Ollama residency are separate contracts.
 - The app has direct buttons for Stop + Close, Pause, Reconcile, Positions, and Risk Review. Normal workflow cards are distinct paper, research, graph, data, and settings tasks so the UI does not present multiple similar buttons for the same action.
 - The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
 - `tools\smoke_native_windows_ui.ps1` launches the app in dry-run mode, walks every workflow page, clicks the dashboard cards and safety buttons, and then performs a real Compute smoke unless `-SkipRealCompute` is passed.
-- `tools\capture_native_windows_app.ps1` creates a DPI-aware PNG artifact of the dashboard and fails if the captured app is smaller than the configured minimum window size.
+- `tools\capture_native_windows_app.ps1` creates a DPI-aware PNG artifact and retries complete-frame pixel-health checks after deterministic redraw; undersized or blank captures fail.
 - `tools\validate_native_windows_layout.ps1` launches the real Win32 app, checks stable control geometry, footer API-budget presence, hidden/visible workflow cards, and screenshot pixel health so small-window or overlapping UI regressions fail before release.
 
 ## Core Workflows
@@ -434,7 +434,7 @@ model families, feature contracts, validation rules, and telemetry are documente
 in [model research](docs/MODEL_RESEARCH_AND_OPTIMIZATION.md), [training research](docs/MODEL_TRAINING_INSPIRATION.md),
 and the [open-source gap analysis](docs/OPEN_SOURCE_GAP_ANALYSIS_AND_RULESET_2026-07-05.md).
 
-`ai-review` sends a compact, redacted model-lab report to a local structured-output Ollama model and writes `ai_risk_review.json`. It is an advisory risk review with fail-closed output: deterministic model-lab/portfolio failures, missing or failed data-coverage evidence for accepted symbols, failed selection-risk deflation, unresolved learning-feedback promotion blocks, missing or failed AI-vs-ML uplift evidence when AI is enabled, positive hybrid or feature ablation deltas that show a selected component is hurting the accepted score, missing GPU AI capability, sub-multibillion local model evidence, unavailable providers, or invalid model JSON all produce a veto/review-required result rather than an approval.
+`ai-review` sends a compact, redacted model-lab report to a local structured-output Ollama model and writes a versioned, fail-closed `ai_risk_review.json`. Review v4 binds the source evidence, local weight digest, structured response, and exact post-inference provider residency. Deterministic risk/data failures, missing paired AI uplift, harmful ablations, CPU-only or unproven AI execution, unavailable providers, and invalid output all veto approval. The complete evidence contract is in [AI model selection](docs/AI_MODEL_SELECTION.md).
 
 `coordinator` reads independent loop heartbeats/status for risk, execution, reconciliation, market data, machine learning, AI, and learning feedback, then emits one operator state: `ready`, `waiting`, `review_required`, or `blocked_execution`. Risk/execution/reconciliation can block execution; market data, ML, and AI block new entries; learning feedback does not mutate live positions, but it can block future model promotion when repeated symbol losses have not recovered in stress and temporal validation.
 

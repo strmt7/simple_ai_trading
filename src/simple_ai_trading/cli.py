@@ -26,7 +26,11 @@ from .api_budget import (
     render_api_budget,
     summarize_api_budget,
 )
-from .ai_runtime import detect_ai_capabilities, render_ai_capability_report
+from .ai_runtime import (
+    detect_ai_capabilities,
+    inspect_ollama_model_residency,
+    render_ai_capability_report,
+)
 from .ai_model_provenance import load_local_ai_model_provenance
 from .advanced_model import (
     AdvancedFeatureConfig,
@@ -5573,6 +5577,31 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     return 0
 
 
+def _ai_provider_runtime_status(runtime: RuntimeConfig) -> tuple[str, dict[str, object]]:
+    if not runtime.ai_enabled:
+        return "disabled", {"status": "disabled"}
+    provider = str(runtime.ai_provider or "auto").lower()
+    if provider not in {"auto", "local-gpu", "ollama"}:
+        return "unsupported", {"status": "unsupported", "provider": provider}
+    model = str(runtime.ai_model or "").strip()
+    if not model or model == "auto":
+        return "unselected", {"status": "unselected"}
+    try:
+        report = inspect_ollama_model_residency(
+            "http://127.0.0.1:11434",
+            model,
+            1.0,
+        )
+    except ValueError as exc:
+        return "unavailable", {"status": "unavailable", "error": str(exc)}
+    token = {
+        "gpu_resident": "gpu",
+        "cpu_only": "cpu",
+        "unloaded": "unloaded",
+    }[report.status]
+    return token, report.asdict()
+
+
 def command_status(args: argparse.Namespace) -> int:
     from .autonomous import AutonomousControl
     from .positions import PositionsStore
@@ -5594,9 +5623,11 @@ def command_status(args: argparse.Namespace) -> int:
         ledger_errors = position_store.open_integrity_errors()
         position_count = len(position_store.load_open()) if not ledger_errors else 0
         ledger_state = "invalid" if ledger_errors else ("tracked" if position_count else "clear")
+        ai_runtime, _ai_runtime_payload = _ai_provider_runtime_status(runtime)
         print(
             f"environment={environment} bot_state={state} risk={strategy.risk_level} "
             f"leverage={strategy.leverage:g} ai={'enabled' if runtime.ai_enabled else 'disabled'} "
+            f"ai_runtime={ai_runtime} "
             f"reinvest={'on' if strategy.reinvest_profits else 'off'} symbol={runtime.symbol} "
             f"market={runtime.market_type} execution={execution} positions={position_count} "
             f"ledger={ledger_state}"
@@ -5689,15 +5720,38 @@ def command_ai(args: argparse.Namespace) -> int:
             "Install torch-directml or choose a GPU backend, then re-enable AI.",
             file=sys.stderr,
         )
+    _ai_runtime_token, provider_runtime = _ai_provider_runtime_status(runtime)
     if getattr(args, "json", False):
-        print(json.dumps({"runtime_ai": runtime.ai_runtime_config().asdict(), "capabilities": report.asdict()}, indent=2))
+        print(
+            json.dumps(
+                {
+                    "runtime_ai": runtime.ai_runtime_config().asdict(),
+                    "capabilities": report.asdict(),
+                    "provider_runtime": provider_runtime,
+                },
+                indent=2,
+            )
+        )
     else:
         if changed:
             print("Saved AI runtime settings.")
         print(render_ai_capability_report(report))
+        print(
+            "provider_runtime="
+            f"{provider_runtime.get('status', 'unavailable')} "
+            f"gpu_resident={provider_runtime.get('gpu_resident', False)}"
+        )
     if enable_requested and enable_blocked:
         return 2
-    return 0 if (report.ok or not runtime.ai_enabled or runtime.ai_allow_paper_fallback) else 2
+    provider_cpu_only = provider_runtime.get("status") == "cpu_only"
+    return (
+        0
+        if (
+            (report.ok or not runtime.ai_enabled or runtime.ai_allow_paper_fallback)
+            and not provider_cpu_only
+        )
+        else 2
+    )
 
 
 def command_ai_benchmark(args: argparse.Namespace) -> int:

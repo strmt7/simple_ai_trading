@@ -3601,6 +3601,11 @@ def test_command_status_prints_masked_secret(tmp_path, monkeypatch, capsys) -> N
 def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        cli,
+        "_ai_provider_runtime_status",
+        lambda _runtime: ("gpu", {"status": "gpu_resident"}),
+    )
     save_runtime(
         RuntimeConfig(
             testnet=True,
@@ -3617,6 +3622,7 @@ def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_
     line = capsys.readouterr().out.strip()
     assert "environment=testnet" in line
     assert "execution=paper" in line
+    assert "ai_runtime=gpu" in line
     assert "positions=0 ledger=clear" in line
     assert "BTCUSDT" in line
 

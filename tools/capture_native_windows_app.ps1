@@ -36,6 +36,9 @@ public static class SatNativeCapture {
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint nFlags);
+    [DllImport("user32.dll")] public static extern bool RedrawWindow(IntPtr hWnd, IntPtr updateRect, IntPtr updateRegion, uint flags);
+    [DllImport("user32.dll")] public static extern bool UpdateWindow(IntPtr hWnd);
+    [DllImport("dwmapi.dll")] public static extern int DwmFlush();
 }
 "@
 
@@ -51,6 +54,20 @@ function Wait-Until([scriptblock]$Predicate, [string]$Description, [int]$Timeout
         Start-Sleep -Milliseconds 100
     } while ([DateTime]::UtcNow -lt $deadline)
     throw "Timed out waiting for $Description"
+}
+
+function Test-PixelHealth([Drawing.Bitmap]$Image) {
+    $colors = [Collections.Generic.HashSet[string]]::new()
+    $visible = 0; $accent = 0; $samples = 0
+    $stepX = [Math]::Max(1, [int]($Image.Width / 120)); $stepY = [Math]::Max(1, [int]($Image.Height / 80))
+    for ($y = 0; $y -lt $Image.Height; $y += $stepY) {
+        for ($x = 0; $x -lt $Image.Width; $x += $stepX) {
+            $c = $Image.GetPixel($x, $y); [void]$colors.Add("$($c.R),$($c.G),$($c.B)"); $samples++
+            if (($c.R + $c.G + $c.B) -gt 80) { $visible++ }
+            if ($c.G -gt 110 -and $c.B -gt 100 -and $c.R -lt 145) { $accent++ }
+        }
+    }
+    return $colors.Count -ge 24 -and ($visible / $samples) -gt 0.25 -and $accent -ge 4
 }
 
 $oldRepoRoot = $env:SIMPLE_AI_TRADING_REPO_ROOT
@@ -87,16 +104,30 @@ try {
         throw "Captured window is too small: ${width}x${height}; expected at least ${MinWidth}x${MinHeight}"
     }
 
-    $bitmap = [System.Drawing.Bitmap]::new($width, $height)
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    $hdc = $graphics.GetHdc()
-    try {
-        if (-not [SatNativeCapture]::PrintWindow($process.MainWindowHandle, $hdc, 2)) {
-            throw "PrintWindow failed"
+    $captured = $false
+    for ($attempt = 1; $attempt -le 8; $attempt++) {
+        if ($graphics -ne $null) { $graphics.Dispose(); $graphics = $null }
+        if ($bitmap -ne $null) { $bitmap.Dispose(); $bitmap = $null }
+        [void][SatNativeCapture]::RedrawWindow($process.MainWindowHandle, [IntPtr]::Zero, [IntPtr]::Zero, 0x0181)
+        [void][SatNativeCapture]::UpdateWindow($process.MainWindowHandle)
+        [void][SatNativeCapture]::DwmFlush()
+        Start-Sleep -Milliseconds 120
+        $bitmap = [System.Drawing.Bitmap]::new($width, $height)
+        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+        $hdc = $graphics.GetHdc()
+        try {
+            if (-not [SatNativeCapture]::PrintWindow($process.MainWindowHandle, $hdc, 2)) {
+                throw "PrintWindow failed"
+            }
+        } finally {
+            $graphics.ReleaseHdc($hdc)
         }
-    } finally {
-        $graphics.ReleaseHdc($hdc)
+        if ((Test-PixelHealth $bitmap)) {
+            $captured = $true
+            break
+        }
     }
+    if (-not $captured) { throw "native app did not produce a complete rendered frame after 8 attempts" }
     $bitmap.Save($Out, [System.Drawing.Imaging.ImageFormat]::Png)
     Write-Output "captured native Windows app: $Out (${width}x${height})"
 } finally {
