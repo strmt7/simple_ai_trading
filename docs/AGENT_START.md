@@ -60,7 +60,7 @@ agents to canonical evidence without replacing that evidence.
   real payloads sustained 12,149 messages/s overall, its slowest measured
   interval sustained 9,795 messages/s, and its full audit had zero errors. It
   does not prove a 15-hour live capture; only a fresh run can do that.
-- Round 9 MLP report v2 requires positive validation stress-utility uplift over
+- Round 9 MLP report v3 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
 - Round 9 maps `itode` to the independent 250 ms crypto taker delay and rejects
