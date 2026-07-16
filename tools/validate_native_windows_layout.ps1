@@ -25,6 +25,9 @@ public static class SatNativeLayoutAudit {
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr hWnd, int x, int y, int width, int height, bool repaint);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdc, uint flags);
+    [DllImport("user32.dll")] public static extern bool RedrawWindow(IntPtr hWnd, IntPtr updateRect, IntPtr updateRegion, uint flags);
+    [DllImport("user32.dll")] public static extern bool UpdateWindow(IntPtr hWnd);
+    [DllImport("dwmapi.dll")] public static extern int DwmFlush();
     [DllImport("user32.dll")] public static extern uint GetDpiForSystem();
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, StringBuilder lParam);
@@ -127,15 +130,27 @@ function Select-Page([IntPtr]$Window, [IntPtr]$List, [int]$Index) {
 }
 
 function Capture-Window([IntPtr]$Window, [string]$Path, $Rect) {
-    $bitmap = [Drawing.Bitmap]::new($Rect.Width, $Rect.Height)
-    $graphics = [Drawing.Graphics]::FromImage($bitmap)
-    try {
-        $hdc = $graphics.GetHdc()
-        try { Assert-True ([SatNativeLayoutAudit]::PrintWindow($Window, $hdc, 2)) "PrintWindow failed" }
-        finally { $graphics.ReleaseHdc($hdc) }
-        $bitmap.Save($Path, [Drawing.Imaging.ImageFormat]::Png)
-    } finally {
-        $graphics.Dispose(); $bitmap.Dispose()
+    for ($attempt = 1; $attempt -le 8; $attempt++) {
+        [void][SatNativeLayoutAudit]::RedrawWindow($Window, [IntPtr]::Zero, [IntPtr]::Zero, 0x0181)
+        [void][SatNativeLayoutAudit]::UpdateWindow($Window)
+        [void][SatNativeLayoutAudit]::DwmFlush()
+        Start-Sleep -Milliseconds 120
+        $bitmap = [Drawing.Bitmap]::new($Rect.Width, $Rect.Height)
+        $graphics = [Drawing.Graphics]::FromImage($bitmap)
+        try {
+            $hdc = $graphics.GetHdc()
+            try { Assert-True ([SatNativeLayoutAudit]::PrintWindow($Window, $hdc, 2)) "PrintWindow failed" }
+            finally { $graphics.ReleaseHdc($hdc) }
+            $bitmap.Save($Path, [Drawing.Imaging.ImageFormat]::Png)
+        } finally {
+            $graphics.Dispose(); $bitmap.Dispose()
+        }
+        try {
+            Assert-PixelHealth $Path
+            return
+        } catch {
+            if ($attempt -eq 8) { throw }
+        }
     }
 }
 
@@ -220,7 +235,6 @@ try {
     }
     Select-Page $window $pageList 0
     Capture-Window $window $Out $windowRect
-    Assert-PixelHealth $Out
     Write-Output "native Windows layout audit passed: $Out ($($windowRect.Width)x$($windowRect.Height))"
 } finally {
     if ($process -ne $null -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }

@@ -13,7 +13,7 @@ from simple_ai_trading.ai_review import (
     run_model_lab_ai_review,
 )
 from simple_ai_trading.ai_start_gate import evaluate_ai_start_gate
-from simple_ai_trading.ai_runtime import AICapabilityReport
+from simple_ai_trading.ai_runtime import AICapabilityReport, OllamaResidencyReport
 from simple_ai_trading.terminal_holdout_ledger import (
     terminal_model_fingerprint,
     terminal_result_fingerprint,
@@ -47,6 +47,20 @@ def _fixed_model_provenance(monkeypatch) -> None:
     monkeypatch.setattr(
         "simple_ai_trading.ai_review.resolve_ollama_model_provenance",
         lambda *_args, **_kwargs: ("d" * 64, "e" * 64),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.inspect_ollama_model_residency",
+        lambda _base_url, model, _timeout, *, expected_digest=None: (
+            OllamaResidencyReport(
+                requested_model=model,
+                status="gpu_resident",
+                loaded_model=model,
+                digest=expected_digest or "d" * 64,
+                size_bytes=6_000_000_000,
+                size_vram_bytes=5_500_000_000,
+                vram_to_model_ratio=5_500_000_000 / 6_000_000_000,
+            ).validated()
+        ),
     )
 
 
@@ -453,6 +467,10 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert len(review.response_sha256 or "") == 64
     assert review.model_digest == "d" * 64
     assert review.model_metadata_sha256 == "e" * 64
+    assert review.schema_version == "ai-risk-review-v4"
+    assert review.capability is not None
+    assert review.capability["provider_runtime"]["gpu_resident"] is True
+    assert review.capability["provider_runtime"]["digest"] == "d" * 64
     assert len(review.report_sha256) == 64
     with pytest.raises(ValueError, match="AI review report is invalid"):
         replace(review, source_report_sha256="0" * 64).validated()
@@ -489,6 +507,39 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     report_path.write_bytes(report_path.read_bytes() + b" ")
     with pytest.raises(ValueError, match="source report digest differs"):
         load_ai_review_report(tmp_path / "ai_risk_review.json")
+
+
+def test_ai_review_rejects_cpu_only_provider_inference(
+    tmp_path: Path, monkeypatch
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(compute_backend="directml"),
+        post_json=lambda *_args, **_kwargs: _approve_response(),
+        residency_inspector=lambda _base_url, model, _timeout, *, expected_digest=None: (
+            OllamaResidencyReport(
+                requested_model=model,
+                status="cpu_only",
+                loaded_model=model,
+                digest=expected_digest,
+                size_bytes=6_000_000_000,
+                size_vram_bytes=0,
+                vram_to_model_ratio=0.0,
+            ).validated()
+        ),
+    )
+
+    assert review.status == "blocked"
+    assert review.approved is False
+    assert review.decision.action == "veto"
+    assert "CPU-only" in str(review.error)
 
 
 def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(

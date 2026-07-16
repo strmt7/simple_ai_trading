@@ -211,6 +211,7 @@ class MainWindow {
     std::wstring persisted_leverage_{L"5x"};
     std::wstring persisted_execution_{L"Paper"};
     std::wstring compute_state_{L"Checking"};
+    std::wstring ai_runtime_state_{L"unloaded"};
     std::wstring ledger_state_{L"Not checked"};
     std::wstring api_reserve_state_{L"Loading"};
     std::wstring network_state_{L"Not checked"};
@@ -706,6 +707,7 @@ class MainWindow {
         std::wstring environment_state;
         std::wstring bot_state;
         std::wstring compute_state;
+        std::wstring ai_runtime_state;
         std::wstring ledger_state;
         std::wstring api_reserve_state;
         std::wstring network_state;
@@ -714,14 +716,28 @@ class MainWindow {
             environment_state = environment_state_;
             bot_state = bot_state_;
             compute_state = compute_state_;
+            ai_runtime_state = ai_runtime_state_;
             ledger_state = ledger_state_;
             api_reserve_state = api_reserve_state_;
             network_state = network_state_;
         }
         const bool ai_enabled = ai_enabled_;
+        const bool ai_gpu_resident = ai_enabled && ai_runtime_state == L"gpu";
+        std::wstring ai_state = L"AI off";
+        if (ai_enabled) {
+            if (ai_gpu_resident) {
+                ai_state = L"AI GPU resident";
+            } else if (ai_runtime_state == L"cpu") {
+                ai_state = L"AI blocked (CPU)";
+            } else if (ai_runtime_state == L"unavailable") {
+                ai_state = L"AI unavailable";
+            } else {
+                ai_state = L"AI on (gated)";
+            }
+        }
         const std::array<std::wstring, 6> states{
             environment_state, bot_state, execution_state, profile_state,
-            ai_enabled ? L"AI on (gated)" : L"AI off", leverage_state};
+            ai_state, leverage_state};
         const int state_width = std::max(scale(84), static_cast<int>(state_band.right - state_band.left) / 6);
         for (int index = 0; index < static_cast<int>(states.size()); ++index) {
             RECT cell{state_band.left + index * state_width, state_band.top, state_band.left + (index + 1) * state_width, state_band.bottom};
@@ -729,13 +745,13 @@ class MainWindow {
                 fill_rect(dc, RECT{cell.left, cell.top + scale(12), cell.left + scale(1), cell.bottom - scale(12)}, RGB(58, 72, 79));
             }
             RECT dot{cell.left + scale(14), cell.top + scale(19), cell.left + scale(22), cell.top + scale(27)};
-            HBRUSH dot_brush = CreateSolidBrush(index == 4 && ai_enabled ? RGB(68, 207, 137) : RGB(145, 158, 165));
+            HBRUSH dot_brush = CreateSolidBrush(index == 4 && ai_gpu_resident ? RGB(68, 207, 137) : RGB(145, 158, 165));
             HGDIOBJ old = SelectObject(dc, dot_brush);
             Ellipse(dc, dot.left, dot.top, dot.right, dot.bottom);
             SelectObject(dc, old);
             DeleteObject(dot_brush);
             RECT text_rect{cell.left + scale(30), cell.top, cell.right - scale(8), cell.bottom};
-            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, index == 4 && ai_enabled ? RGB(86, 210, 155) : RGB(222, 229, 232),
+            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, index == 4 && ai_gpu_resident ? RGB(86, 210, 155) : RGB(222, 229, 232),
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         }
 
@@ -1682,6 +1698,7 @@ class MainWindow {
             const std::wstring profile = compact_status_value(line, L"risk");
             const std::wstring leverage = compact_status_value(line, L"leverage");
             const std::wstring ai = compact_status_value(line, L"ai");
+            const std::wstring ai_runtime = compact_status_value(line, L"ai_runtime");
             const std::wstring reinvest = compact_status_value(line, L"reinvest");
             const std::wstring execution = compact_status_value(line, L"execution");
             const std::wstring positions = compact_status_value(line, L"positions");
@@ -1694,6 +1711,7 @@ class MainWindow {
                 if (!profile.empty()) persisted_profile_ = display_token(profile);
                 if (!leverage.empty()) persisted_leverage_ = leverage + L"x";
                 if (!ai.empty()) persisted_ai_enabled_ = ai == L"enabled";
+                ai_runtime_state_ = ai_runtime.empty() ? L"unavailable" : ai_runtime;
                 if (!reinvest.empty()) persisted_reinvest_ = reinvest == L"on";
                 if (!execution.empty()) persisted_execution_ = execution == L"live" ? L"Testnet live" : L"Paper";
                 if (ledger == L"invalid") {
@@ -1805,7 +1823,7 @@ class MainWindow {
     std::wstring execute_cli_first_line(const std::wstring& args) {
         if (dry_run_enabled()) {
             if (args == L"status --compact") {
-                return L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled reinvest=off "
+                return L"environment=testnet bot_state=stopped risk=conservative leverage=5 ai=enabled ai_runtime=gpu reinvest=off "
                        L"symbol=BTCUSDT market=futures execution=paper positions=0 ledger=clear";
             }
             return L"API budget: dry-run";

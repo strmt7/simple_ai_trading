@@ -20,6 +20,7 @@ from simple_ai_trading.ai_runtime import (
     AIRuntimeConfig,
     detect_ai_capabilities,
     estimate_model_parameters_b,
+    inspect_ollama_model_residency,
 )
 from simple_ai_trading.command_contract import (
     command_names,
@@ -131,6 +132,86 @@ def test_ai_runtime_parses_e_size_model_names() -> None:
     assert estimate_model_parameters_b("gemma4:e4b") == 4.0
     assert estimate_model_parameters_b("qwen3:8b") == 8.0
     assert estimate_model_parameters_b("tiny-560m") == 0.56
+
+
+def test_ollama_residency_binds_exact_digest_and_gpu_bytes() -> None:
+    digest = "a" * 64
+    report = inspect_ollama_model_residency(
+        "http://127.0.0.1:11434",
+        "qwen3:8b",
+        expected_digest=digest,
+        get_json=lambda url, timeout: {
+            "models": [
+                {
+                    "name": "qwen3:8b",
+                    "model": "qwen3:8b",
+                    "digest": digest,
+                    "size": 6_000_000_000,
+                    "size_vram": 5_000_000_000,
+                }
+            ]
+        },
+    )
+
+    assert report.loaded is True
+    assert report.gpu_resident is True
+    assert report.status == "gpu_resident"
+    assert report.digest == digest
+    assert report.vram_to_model_ratio == pytest.approx(5 / 6)
+
+
+def test_ollama_residency_reports_unloaded_and_cpu_only_without_guessing() -> None:
+    unloaded = inspect_ollama_model_residency(
+        "http://127.0.0.1:11434",
+        "qwen3:8b",
+        expected_digest="a" * 64,
+        get_json=lambda _url, _timeout: {"models": []},
+    )
+    cpu = inspect_ollama_model_residency(
+        "http://127.0.0.1:11434",
+        "qwen3:8b",
+        expected_digest="a" * 64,
+        get_json=lambda _url, _timeout: {
+            "models": [
+                {
+                    "name": "qwen3:8b",
+                    "model": "qwen3:8b",
+                    "digest": "a" * 64,
+                    "size": 6_000_000_000,
+                    "size_vram": 0,
+                }
+            ]
+        },
+    )
+
+    assert unloaded.status == "unloaded"
+    assert unloaded.loaded is False
+    assert cpu.status == "cpu_only"
+    assert cpu.loaded is True
+    assert cpu.gpu_resident is False
+
+
+def test_ollama_residency_rejects_ambiguous_or_malformed_inventory() -> None:
+    entry = {
+        "name": "qwen3:8b",
+        "model": "qwen3:8b",
+        "digest": "a" * 64,
+        "size": 6_000_000_000,
+        "size_vram": 5_000_000_000,
+    }
+    with pytest.raises(ValueError, match="ambiguous"):
+        inspect_ollama_model_residency(
+            "http://127.0.0.1:11434",
+            "qwen3:8b",
+            expected_digest="a" * 64,
+            get_json=lambda _url, _timeout: {"models": [entry, dict(entry)]},
+        )
+    with pytest.raises(ValueError, match="fields"):
+        inspect_ollama_model_residency(
+            "http://127.0.0.1:11434",
+            "qwen3:8b",
+            get_json=lambda _url, _timeout: {"models": [], "extra": True},
+        )
 
 
 def _benchmark_response(

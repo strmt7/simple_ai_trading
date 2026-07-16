@@ -12,7 +12,12 @@ from typing import Callable, Mapping
 
 import requests
 
-from .ai_runtime import AICapabilityReport, detect_ai_capabilities
+from .ai_runtime import (
+    AICapabilityReport,
+    OllamaResidencyReport,
+    detect_ai_capabilities,
+    inspect_ollama_model_residency,
+)
 from .financial_sanity import blocking_reasons, build_model_lab_financial_sanity_report
 from .storage import write_json_atomic
 from .terminal_holdout_ledger import (
@@ -23,7 +28,7 @@ from .types import RuntimeConfig
 
 DEFAULT_AI_REVIEW_MODEL = "qwen3:8b"
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-AI_REVIEW_REPORT_SCHEMA_VERSION = "ai-risk-review-v3"
+AI_REVIEW_REPORT_SCHEMA_VERSION = "ai-risk-review-v4"
 _EMPTY_TEXT_SHA256 = hashlib.sha256(b"").hexdigest()
 _MAX_OUTCOMES = 8
 _MAX_CONCERNS = 8
@@ -37,6 +42,7 @@ _POSITIVE_ABLATION_DELTA_EPS = 1e-9
 PostJson = Callable[[str, Mapping[str, object], float], object]
 GetJson = Callable[[str, float], object]
 ModelProvenance = Callable[[str, str, float], tuple[str, str]]
+ResidencyInspector = Callable[..., OllamaResidencyReport]
 
 _AI_REVIEW_SCHEMA: dict[str, object] = {
     "type": "object",
@@ -66,6 +72,47 @@ _AI_REVIEW_SCHEMA: dict[str, object] = {
     ],
     "additionalProperties": False,
 }
+
+
+def _provider_runtime_is_valid(
+    value: object,
+    *,
+    model: str,
+    digest: str | None,
+) -> bool:
+    expected_fields = {
+        "requested_model",
+        "status",
+        "loaded_model",
+        "digest",
+        "size_bytes",
+        "size_vram_bytes",
+        "vram_to_model_ratio",
+        "loaded",
+        "gpu_resident",
+    }
+    if not isinstance(value, dict) or set(value) != expected_fields:
+        return False
+    try:
+        report = OllamaResidencyReport(
+            requested_model=value["requested_model"],
+            status=value["status"],
+            loaded_model=value["loaded_model"],
+            digest=value["digest"],
+            size_bytes=value["size_bytes"],
+            size_vram_bytes=value["size_vram_bytes"],
+            vram_to_model_ratio=value["vram_to_model_ratio"],
+        ).validated()
+    except (TypeError, ValueError):
+        return False
+    return (
+        value["loaded"] is report.loaded
+        and value["gpu_resident"] is report.gpu_resident
+        and report.requested_model == model
+        and report.digest == digest
+        and report.loaded
+        and report.gpu_resident
+    )
 
 
 @dataclass(frozen=True)
@@ -158,6 +205,11 @@ class AIReviewReport:
             and self.capability.get("provider_available") is True
             and self.capability.get("model_available") is True
             and self.capability.get("model_local") is True
+            and _provider_runtime_is_valid(
+                self.capability.get("provider_runtime"),
+                model=self.model,
+                digest=self.model_digest,
+            )
         )
         status_consistent = (
             (
@@ -1361,6 +1413,7 @@ def run_model_lab_ai_review(
     output_path: Path | None = None,
     post_json: PostJson = _post_json,
     model_provenance: ModelProvenance | None = None,
+    residency_inspector: ResidencyInspector | None = None,
 ) -> AIReviewReport:
     source_path = Path(report_path)
     output_path = output_path or (source_path.parent / "ai_risk_review.json")
@@ -1514,10 +1567,23 @@ def run_model_lab_ai_review(
         response_sha256 = _canonical_sha256(response)
         if not isinstance(response, Mapping):
             raise ValueError("AI provider response was not a JSON object")
+        residency_fn = residency_inspector or inspect_ollama_model_residency
+        residency = residency_fn(
+            str(base_url or DEFAULT_OLLAMA_URL),
+            selected_model,
+            min(timeout_seconds, 5.0),
+            expected_digest=model_digest,
+        ).validated()
+        if not residency.loaded:
+            raise ValueError("reviewed AI model is not resident after inference")
+        if not residency.gpu_resident:
+            raise ValueError("reviewed AI model inference is CPU-only")
         decision = _decision_from_mapping(
             _json_mapping_from_text(_ollama_response_text(response))
         )
         status = "ok" if decision.action == "approve" else "review_required"
+        capability_payload = capability.asdict()
+        capability_payload["provider_runtime"] = residency.asdict()
         result = _finalize_report(
             AIReviewReport(
                 schema_version=AI_REVIEW_REPORT_SCHEMA_VERSION,
@@ -1537,7 +1603,7 @@ def run_model_lab_ai_review(
                 response_sha256=response_sha256,
                 decision=decision,
                 deterministic_precheck=precheck,
-                capability=_json_mapping(capability.asdict()),
+                capability=_json_mapping(capability_payload),
                 prompt_chars=len(prompt),
                 output_path=str(output_path),
             )

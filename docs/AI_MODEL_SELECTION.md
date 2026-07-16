@@ -215,12 +215,21 @@ documentation covers AMD Radeon and additional Vulkan support. Ollama model
 execution and Windows ML/ONNX inference are separate runtime contracts; neither
 proves that training used a GPU or that a model has financial edge.
 
+AI review v4 queries Ollama `/api/ps` immediately after inference. It binds the
+requested model to one exact SHA-256 weight digest and records model bytes,
+VRAM-resident bytes, and their ratio. An unloaded model, zero VRAM bytes,
+ambiguous inventory, digest mismatch, malformed response, or provider failure
+vetoes the review. The Windows indicator turns green only for this proved
+post-inference GPU-resident state. This is execution evidence, not evidence of
+forecast skill, profitability, or AI uplift.
+
 - https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows
 - https://github.com/microsoft/DirectML
 - https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html
 - https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers
 - https://docs.ollama.com/windows
 - https://docs.ollama.com/gpu
+- https://docs.ollama.com/api/ps
 
 Open-source trading systems also argue for skepticism. LEAN and NautilusTrader
 emphasize research-to-live parity, while Freqtrade warns that backtests can be

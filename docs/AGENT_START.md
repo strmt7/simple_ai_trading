@@ -93,6 +93,9 @@ agents to canonical evidence without replacing that evidence.
 - AI permission maps are default-deny. Only a valid, timely approval for the
   exact hash-bound condition may permit that proposal; missing cases, malformed
   types, duplicate JSON keys, low confidence, and latency failures remain vetoes.
+- AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
+  exact weight digest with positive VRAM-resident bytes. DirectML selection is
+  separate and does not prove that the review model ran on GPU.
 - Qwen3 14B is the next one-shot v8 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v8-preregistration.json`. Run it only after
   a fresh confirmation recorder ends `complete`; do not alter prompts or cases
@@ -103,8 +106,12 @@ agents to canonical evidence without replacing that evidence.
   `79ac19539d384352b865c21cb0c43627` are in
   `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.
   Its terminal integrity audit is incomplete; retain it only for recorder
-  diagnosis and audit any payload sample before reuse. No confirmation capture
-  is active.
+  diagnosis and audit any payload sample before reuse.
+- Confirmation capture `e34d349771da4c35bcc8ae436c2fe9f6` currently owns
+  `data/polymarket-round9-confirmation-v4-20260716-152838Z.duckdb`; never open
+  that database while its recorder process is active. Its sidecar has recorded
+  CLOB reconnect gaps, so the full run cannot be called continuous even if it
+  completes; only independently audited continuous segments may be admitted.
 - Build current AI provenance with `tools/build_ai_model_provenance.py`; never
   hand-edit the result or infer blob identity from an Ollama tag.
 
