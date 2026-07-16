@@ -5309,26 +5309,16 @@ class PolymarketPublicRecorder:
                     heartbeat_task = asyncio.create_task(
                         _periodic_text_heartbeat(websocket, stop, "PING", 10.0)
                     )
+                    receive = asyncio.create_task(websocket.recv())
+                    changed = asyncio.create_task(self.registry.changed.wait())
+                    stopping = asyncio.create_task(stop.wait())
                     try:
                         while not stop.is_set():
-                            receive = asyncio.create_task(websocket.recv())
-                            changed = asyncio.create_task(self.registry.changed.wait())
-                            stopping = asyncio.create_task(stop.wait())
-                            transient = (receive, changed, stopping)
-                            try:
-                                done, _ = await asyncio.wait(
-                                    {*transient, heartbeat_task},
-                                    timeout=_STREAM_INACTIVITY_SECONDS,
-                                    return_when=asyncio.FIRST_COMPLETED,
-                                )
-                            finally:
-                                for task in transient:
-                                    if not task.done():
-                                        task.cancel()
-                                await asyncio.gather(
-                                    *transient,
-                                    return_exceptions=True,
-                                )
+                            done, _ = await asyncio.wait(
+                                {receive, changed, stopping, heartbeat_task},
+                                timeout=_STREAM_INACTIVITY_SECONDS,
+                                return_when=asyncio.FIRST_COMPLETED,
+                            )
                             if not done:
                                 raise RuntimeError(
                                     "CLOB market stream exceeded the inactivity bound"
@@ -5355,6 +5345,7 @@ class PolymarketPublicRecorder:
                                     ),
                                 )
                                 sequence = next_sequence
+                                receive = asyncio.create_task(websocket.recv())
                             if changed in done and changed.result():
                                 self.registry.changed.clear()
                                 desired = set(self.registry.token_ids())
@@ -5380,9 +5371,15 @@ class PolymarketPublicRecorder:
                                         )
                                     )
                                 current = desired
+                                changed = asyncio.create_task(
+                                    self.registry.changed.wait()
+                                )
                     finally:
-                        heartbeat_task.cancel()
-                        await asyncio.gather(heartbeat_task, return_exceptions=True)
+                        tasks = (receive, changed, stopping, heartbeat_task)
+                        for task in tasks:
+                            if not task.done():
+                                task.cancel()
+                        await asyncio.gather(*tasks, return_exceptions=True)
             except asyncio.CancelledError:
                 raise
             except Exception as exc:

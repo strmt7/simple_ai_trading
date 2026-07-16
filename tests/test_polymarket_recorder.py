@@ -1213,6 +1213,91 @@ def test_periodic_heartbeat_runs_independently_of_busy_message_processing() -> N
     assert len(asyncio.run(_exercise())) >= 3
 
 
+def test_busy_clob_stream_reuses_control_waiters_and_updates_subscriptions(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "clob-hot-path.duckdb")
+
+    class _CountingEvent:
+        def __init__(self) -> None:
+            self.event = asyncio.Event()
+            self.wait_calls = 0
+
+        async def wait(self) -> bool:
+            self.wait_calls += 1
+            await self.event.wait()
+            return True
+
+        def set(self) -> None:
+            self.event.set()
+
+        def clear(self) -> None:
+            self.event.clear()
+
+    class _Socket:
+        def __init__(self) -> None:
+            self.received = 0
+            self.sent: list[str] = []
+
+        async def recv(self) -> str:
+            if self.received < 64:
+                self.received += 1
+                await asyncio.sleep(0)
+                return '{"event_type":"book"}'
+            await asyncio.Future()
+            raise AssertionError("unreachable")
+
+        async def send(self, message: str) -> None:
+            self.sent.append(message)
+
+    class _Connection:
+        def __init__(self, socket: _Socket) -> None:
+            self.socket = socket
+
+        async def __aenter__(self) -> _Socket:
+            return self.socket
+
+        async def __aexit__(self, *_args) -> None:
+            return None
+
+    async def _exercise() -> tuple[int, list[str], int]:
+        changed = _CountingEvent()
+        recorder.registry.changed = changed  # type: ignore[assignment]
+        btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+        eth = parse_polymarket_five_minute_market(_market_payload("ETH"))
+        recorder.registry.markets = {btc.condition_id: btc}
+        socket = _Socket()
+        monkeypatch.setattr(
+            recorder_module,
+            "connect",
+            lambda *_args, **_kwargs: _Connection(socket),
+        )
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
+        stop = asyncio.Event()
+        stream = asyncio.create_task(recorder._clob_stream(output, stop))
+        deadline = asyncio.get_running_loop().time() + 1.0
+        while output.qsize() < 16 and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0)
+        recorder.registry.markets[eth.condition_id] = eth
+        changed.set()
+        while len(socket.sent) < 2 and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0)
+        while output.qsize() < 64 and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0)
+        stop.set()
+        await asyncio.wait_for(stream, timeout=1.0)
+        return output.qsize(), socket.sent, changed.wait_calls
+
+    message_count, sent, changed_wait_calls = asyncio.run(_exercise())
+    subscriptions = [json.loads(message) for message in sent if message.startswith("{")]
+    assert message_count == 64
+    assert any(message.get("operation") == "subscribe" for message in subscriptions)
+    assert changed_wait_calls == 2
+
+
 def test_writer_persistence_does_not_block_the_network_event_loop(
     tmp_path,
     monkeypatch,
