@@ -328,7 +328,7 @@ upper bound, not a reservation; short captures use less. Operators can lower it
 with `--memory-limit`, but a failed full audit remains failed rather than silently
 publishing partially verified evidence.
 
-New recorder runs use `polymarket-evidence-storage-v2`. Exact UTF-8 source
+New recorder runs use `polymarket-evidence-storage-v3`. Exact UTF-8 source
 messages are length-prefixed in bounded frames of at most 1,024 messages and 64
 MiB, then compressed with checksummed Zstandard level 1. Chunk identity binds the
 run, sequence, first and last message IDs, an order-aware row manifest, and the
@@ -336,7 +336,11 @@ uncompressed SHA-256. Message rows retain offsets and source hashes; event rows
 retain normalized indexes and event hashes, but neither table stores a second
 JSON body. Every reader reconstructs the event from the raw frame and rejects a
 boundary, UTF-8, source hash, canonical JSON, normalized index, or event hash
-disagreement. Unmigrated v1 databases remain read-only compatible.
+disagreement. V3 removes the incrementally maintained uniqueness indexes from
+the two high-volume tables: the single writer rejects non-increasing sequence
+numbers per stream connection before a transaction, and the independent
+terminal count/XOR/sum/hash manifests reject missing, duplicated, reordered, or
+altered rows. V2 compact evidence and unmigrated v1 evidence remain readable.
 
 A closed-data engineering benchmark on this host used 160,000 real frames
 (135,000 CLOB, 24,000 direct Binance, and 1,000 RTDS) and 159,993 normalized
@@ -354,6 +358,19 @@ column Zstandard was larger ([DuckDB storage](https://duckdb.org/docs/stable/int
 [python-zstandard decompression bounds](https://python-zstandard.readthedocs.io/en/latest/decompressor.html)).
 The exact measured fields are retained in
 [`storage-v2-benchmark-2026-07-15.json`](model-research/polymarket/storage-v2-benchmark-2026-07-15.json).
+
+The incremental v2 uniqueness indexes later collapsed from short-benchmark
+throughput to roughly 1,061 persisted messages/s near 9.9 million rows, below
+the observed live ingress rate. Run `b8a270da20fe4116a01a4626607e42da` was
+stopped before saturation and terminalized `failed`; its data cannot confirm a
+model. A v3 long-tail replay then wrote 2,000,000 exact real public-feed payloads
+at 12,149 messages/s overall. The slowest measured 131,072-message interval was
+9,795 messages/s, and a full audit of 2,000,000 raw messages and 2,001,225 event
+rows completed in 111.67 seconds with zero errors. Receipt timestamps and
+sequences in that infrastructure replay were synthetic, so it is neither live
+capture proof nor financial/model evidence. Exact checkpoints and limitations
+are hash-bound in
+[`storage-v3-long-tail-benchmark-2026-07-16.json`](model-research/polymarket/storage-v3-long-tail-benchmark-2026-07-16.json).
 
 The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,
