@@ -1298,6 +1298,85 @@ def test_busy_clob_stream_reuses_control_waiters_and_updates_subscriptions(
     assert changed_wait_calls == 2
 
 
+def test_busy_simple_stream_reuses_one_stop_waiter(tmp_path, monkeypatch) -> None:
+    recorder = PolymarketPublicRecorder(tmp_path / "simple-hot-path.duckdb")
+
+    class _CountingStop:
+        def __init__(self) -> None:
+            self.event = asyncio.Event()
+            self.wait_calls = 0
+
+        def is_set(self) -> bool:
+            return self.event.is_set()
+
+        async def wait(self) -> bool:
+            self.wait_calls += 1
+            await self.event.wait()
+            return True
+
+        def set(self) -> None:
+            self.event.set()
+
+    class _Socket:
+        def __init__(self) -> None:
+            self.received = 0
+
+        async def recv(self) -> str:
+            if self.received < 64:
+                self.received += 1
+                await asyncio.sleep(0)
+                return '{"stream":"btcusdt@bookTicker"}'
+            await asyncio.Future()
+            raise AssertionError("unreachable")
+
+        async def send(self, _message: str) -> None:
+            return None
+
+    class _Connection:
+        def __init__(self, socket: _Socket) -> None:
+            self.socket = socket
+
+        async def __aenter__(self) -> _Socket:
+            return self.socket
+
+        async def __aexit__(self, *_args) -> None:
+            return None
+
+    async def _exercise() -> tuple[int, int]:
+        socket = _Socket()
+        monkeypatch.setattr(
+            recorder_module,
+            "connect",
+            lambda *_args, **_kwargs: _Connection(socket),
+        )
+        output: asyncio.Queue[RawStreamMessage | StreamGap | MarketEvidence | None] = (
+            asyncio.Queue()
+        )
+        stop = _CountingStop()
+        stream = asyncio.create_task(
+            recorder._simple_stream(
+                stream="binance_spot",
+                lane="binance:test",
+                url="wss://example.invalid",
+                subscription=None,
+                heartbeat=None,
+                heartbeat_seconds=20.0,
+                output=output,
+                stop=stop,  # type: ignore[arg-type]
+            )
+        )
+        deadline = asyncio.get_running_loop().time() + 1.0
+        while output.qsize() < 64 and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0)
+        stop.set()
+        await asyncio.wait_for(stream, timeout=1.0)
+        return output.qsize(), stop.wait_calls
+
+    message_count, stop_wait_calls = asyncio.run(_exercise())
+    assert message_count == 64
+    assert stop_wait_calls == 1
+
+
 def test_writer_persistence_does_not_block_the_network_event_loop(
     tmp_path,
     monkeypatch,
