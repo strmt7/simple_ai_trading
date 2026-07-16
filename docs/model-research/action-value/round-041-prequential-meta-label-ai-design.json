@@ -191,7 +191,7 @@
     "42 primary and 6 meta model artifacts with reload identity",
     "primary prediction panel monthly classification metrics",
     "meta fit early calibration and evaluation metrics for all six refits",
-    "216 threshold-selection simulations including zero-action months",
+    "216 calibration threshold traces including zero-action months",
     "monthly and aggregate nonoverlapping exact-net replays",
     "daily capacity usage and rejection counts by symbol",
     "symbol month funding loss-streak and stationary day-block attribution",

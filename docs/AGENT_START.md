@@ -52,14 +52,19 @@ agents to canonical evidence without replacing that evidence.
   `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The
   first two queues saturated. The third was terminalized `failed` after
   9,887,714 persisted messages when its indexed v2 writer reproduced the same
-  long-duration throughput collapse. Never use them for model, confirmation,
-  or profitability claims.
+  long-duration throughput collapse. Storage-v3 capture
+  `79ac19539d384352b865c21cb0c43627` is also permanently development-only: its
+  queue reached `500000/500000` after 10.1 hours, it was deliberately stopped,
+  fully drained, and terminalized `failed`. Never use any of these runs for
+  model, confirmation, or profitability claims.
 - Recorder storage v3 retains exact compressed payloads and terminal manifests
   while replacing the two incremental high-volume uniqueness indexes with
   strict per-connection sequence admission. A 2,000,000-message replay of exact
   real payloads sustained 12,149 messages/s overall, its slowest measured
-  interval sustained 9,795 messages/s, and its full audit had zero errors. It
-  does not prove a 15-hour live capture; only a fresh run can do that.
+  interval sustained 9,795 messages/s, and its full audit had zero errors. The
+  10.1-hour live run nevertheless saturated, so that short offline benchmark is
+  not evidence that storage v3 can sustain the live feed. Redesign and validate
+  the writer at long-tail scale before starting another confirmation capture.
 - Round 9 MLP report v3 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
@@ -71,8 +76,9 @@ agents to canonical evidence without replacing that evidence.
   censor or relabel it as no-fill; only a definite entry rejection such as an
   invalidated tick is a classifier-eligible zero-utility no-fill.
 - Run Round 9 fits only through `polymarket-ridge` and `polymarket-mlp`. Both
-  write a durable claim before test access; completed ridge claims load the
-  signed report, and any interrupted or failed claim blocks silent retries.
+  read only opaque row identities before writing a durable claim; clear labels
+  load afterward. Completed claims load the signed report, while interrupted
+  or failed claims block silent retries.
 - Finance-LLM v6 is revoked for case-ID label leakage. V7 recorded Qwen3 8B at
   `9/11` and three 8B/9B models at `8/11`, but its permissive response parser
   invalidates the valid-JSON admission contract; keep those results as rejected
@@ -89,10 +95,12 @@ agents to canonical evidence without replacing that evidence.
   first. The `ai-benchmark` CLI rejects this model without that preregistration,
   the confirmation database, and its run ID. Its DuckDB claim consumes the test
   once before inference; interrupted and failed claims cannot reopen it.
-- Confirmation capture `79ac19539d384352b865c21cb0c43627` is the active
-  54,000-second storage-v3 run started from commit `8e3c43e`. Monitor only
-  `.tmp/polymarket-round9-confirmation5-20260716-051217.progress.json` and its
-  verified process tree; never open its DuckDB while the recorder owns it.
+- The exact terminal facts for failed confirmation capture
+  `79ac19539d384352b865c21cb0c43627` are in
+  `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.
+  Its terminal integrity audit is incomplete; retain it only for recorder
+  diagnosis and audit any payload sample before reuse. No confirmation capture
+  is active.
 - Build current AI provenance with `tools/build_ai_model_provenance.py`; never
   hand-edit the result or infer blob identity from an Ollama tag.
 

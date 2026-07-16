@@ -6,7 +6,9 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 import re
+import threading
 import time
+import weakref
 
 from .polymarket_recorder import PolymarketEvidenceStore
 
@@ -14,6 +16,11 @@ from .polymarket_recorder import PolymarketEvidenceStore
 POLYMARKET_FIT_CLAIM_SCHEMA_VERSION = "polymarket-model-fit-claim-v1"
 _IDENTIFIER = re.compile(r"[a-z][a-z0-9_]*")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+_RESERVATION_LOCK = threading.RLock()
+_RESERVATIONS: weakref.WeakKeyDictionary[
+    PolymarketEvidenceStore,
+    dict[tuple[str, str, str, str, str, str], PolymarketFitClaim],
+] = weakref.WeakKeyDictionary()
 
 
 @dataclass(frozen=True)
@@ -227,6 +234,114 @@ def begin_polymarket_fit_claim(
     )
 
 
+def reserve_polymarket_fit_claim(
+    store: PolymarketEvidenceStore,
+    *,
+    experiment: str,
+    parent_sha256: str,
+    contract_sha256: str,
+    dataset_sha256: str,
+    report_table: str,
+    report_parent_column: str,
+) -> PolymarketFitClaim:
+    """Persist a claim before clear labels are loaded and reserve it once locally."""
+
+    identity = _validated_identity(
+        experiment=experiment,
+        parent_sha256=parent_sha256,
+        contract_sha256=contract_sha256,
+        dataset_sha256=dataset_sha256,
+        report_table=report_table,
+        report_parent_column=report_parent_column,
+    )
+    key = identity
+    with _RESERVATION_LOCK:
+        if key in _RESERVATIONS.get(store, {}):
+            raise ValueError(f"{identity[0]} fit claim is already reserved")
+        claim = begin_polymarket_fit_claim(
+            store,
+            experiment=identity[0],
+            parent_sha256=identity[1],
+            contract_sha256=identity[2],
+            dataset_sha256=identity[3],
+            report_table=identity[4],
+            report_parent_column=identity[5],
+        )
+        if claim.status == "claimed":
+            reservations = _RESERVATIONS.setdefault(store, {})
+            reservations[key] = claim
+        return claim
+
+
+def consume_polymarket_fit_claim(
+    store: PolymarketEvidenceStore,
+    *,
+    experiment: str,
+    parent_sha256: str,
+    contract_sha256: str,
+    dataset_sha256: str,
+    report_table: str,
+    report_parent_column: str,
+) -> PolymarketFitClaim:
+    """Consume one matching in-process reservation or create a normal claim."""
+
+    identity = _validated_identity(
+        experiment=experiment,
+        parent_sha256=parent_sha256,
+        contract_sha256=contract_sha256,
+        dataset_sha256=dataset_sha256,
+        report_table=report_table,
+        report_parent_column=report_parent_column,
+    )
+    key = identity
+    with _RESERVATION_LOCK:
+        reservations = _RESERVATIONS.get(store)
+        claim = None if reservations is None else reservations.pop(key, None)
+        if reservations is not None and not reservations:
+            del _RESERVATIONS[store]
+    if claim is not None:
+        return claim
+    return begin_polymarket_fit_claim(
+        store,
+        experiment=identity[0],
+        parent_sha256=identity[1],
+        contract_sha256=identity[2],
+        dataset_sha256=identity[3],
+        report_table=identity[4],
+        report_parent_column=identity[5],
+    )
+
+
+def discard_polymarket_fit_reservation(
+    store: PolymarketEvidenceStore,
+    *,
+    experiment: str,
+    parent_sha256: str,
+    contract_sha256: str,
+    dataset_sha256: str,
+    report_table: str,
+    report_parent_column: str,
+) -> None:
+    """Remove only the local token; the durable claim remains authoritative."""
+
+    identity = _validated_identity(
+        experiment=experiment,
+        parent_sha256=parent_sha256,
+        contract_sha256=contract_sha256,
+        dataset_sha256=dataset_sha256,
+        report_table=report_table,
+        report_parent_column=report_parent_column,
+    )
+    key = identity
+    with _RESERVATION_LOCK:
+        reservations = _RESERVATIONS.get(store)
+        if reservations is None:
+            return
+        reservations.pop(key, None)
+        if not reservations:
+            del _RESERVATIONS[store]
+
+
 def complete_polymarket_fit_claim(
     store: PolymarketEvidenceStore,
     *,
@@ -339,5 +454,8 @@ __all__ = [
     "PolymarketFitClaim",
     "begin_polymarket_fit_claim",
     "complete_polymarket_fit_claim",
+    "consume_polymarket_fit_claim",
+    "discard_polymarket_fit_reservation",
     "fail_polymarket_fit_claim",
+    "reserve_polymarket_fit_claim",
 ]

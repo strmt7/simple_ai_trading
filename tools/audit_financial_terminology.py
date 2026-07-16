@@ -38,6 +38,13 @@ AUTHORED_SUFFIXES = (
 )
 MACHINE_EVIDENCE_JSON_PREFIXES = ("docs/ai/risk-review/latest/",)
 TEXT_EXCLUSIONS = {"tools/audit_financial_terminology.py"}
+IMMUTABLE_EVIDENCE_TEXT_EXCLUSIONS = {
+    "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json",
+    "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json",
+    "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json",
+    "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json",
+    "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json",
+}
 
 # Build phrases from fragments so this enforcement module cannot flag itself.
 _BANNED_PHRASE_SPECS = (
@@ -162,7 +169,11 @@ def _normalize(path: str) -> str:
 
 def _is_authored_text(path: str) -> bool:
     normalized = _normalize(path)
-    if normalized in TEXT_EXCLUSIONS:
+    # Frozen evidence must retain its hash-bound historical bytes.
+    if (
+        normalized in TEXT_EXCLUSIONS
+        or normalized in IMMUTABLE_EVIDENCE_TEXT_EXCLUSIONS
+    ):
         return False
     if not normalized.lower().endswith(AUTHORED_SUFFIXES):
         return False
