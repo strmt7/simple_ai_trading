@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import replace
+from hashlib import sha256
 import json
 from pathlib import Path
 
-from simple_ai_trading.ai_review import run_model_lab_ai_review
+import pytest
+
+from simple_ai_trading.ai_review import (
+    load_ai_review_report,
+    run_model_lab_ai_review,
+)
 from simple_ai_trading.ai_runtime import AICapabilityReport
 from simple_ai_trading.terminal_holdout_ledger import terminal_result_fingerprint
 from simple_ai_trading.types import RuntimeConfig
@@ -25,6 +32,21 @@ def _capability(ok: bool = True) -> AICapabilityReport:
         messages=() if ok else ("AI requires a GPU compute backend",),
         warnings=(),
     )
+
+
+def _approve_response() -> dict[str, object]:
+    return {
+        "message": {
+            "content": json.dumps({
+                "action": "approve",
+                "confidence": 0.82,
+                "risk_score": 0.21,
+                "rationale": "Deterministic and portfolio gates passed.",
+                "concerns": ["continue paper monitoring"],
+                "required_actions": ["keep stress reports attached"],
+            })
+        }
+    }
 
 
 def _write_report(
@@ -386,6 +408,14 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert review.status == "ok"
     assert review.decision.action == "approve"
     assert review.decision.risk_score == 0.21
+    assert review.validated() == review
+    assert review.source_report_sha256 == sha256(report_path.read_bytes()).hexdigest()
+    assert len(review.prompt_sha256) == 64
+    assert len(review.request_sha256 or "") == 64
+    assert len(review.response_sha256 or "") == 64
+    assert len(review.report_sha256) == 64
+    with pytest.raises(ValueError, match="AI review report is invalid"):
+        replace(review, source_report_sha256="0" * 64).validated()
     assert observed["url"].endswith("/api/chat")
     assert observed["payload"]["format"]["required"] == [
         "action",
@@ -405,6 +435,15 @@ def test_ai_review_uses_structured_ollama_response(tmp_path: Path, monkeypatch) 
     assert "ai_uplift" in prompt
     assert "trend_up" in prompt
     assert (tmp_path / "ai_risk_review.json").exists()
+    stored = json.loads((tmp_path / "ai_risk_review.json").read_text(encoding="utf-8"))
+    assert stored["report_sha256"] == review.report_sha256
+    assert load_ai_review_report(
+        tmp_path / "ai_risk_review.json",
+        expected_source_report=report_path,
+    ) == review
+    report_path.write_bytes(report_path.read_bytes() + b" ")
+    with pytest.raises(ValueError, match="source report digest differs"):
+        load_ai_review_report(tmp_path / "ai_risk_review.json")
 
 
 def test_ai_review_blocks_before_model_call_when_no_accepted_portfolio(tmp_path: Path, monkeypatch) -> None:
@@ -579,6 +618,145 @@ def test_ai_review_fails_closed_on_invalid_ai_payload(tmp_path: Path, monkeypatc
     assert review.approved is False
     assert review.status == "blocked"
     assert "AI review failed" in str(review.error)
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        (
+            "prefix "
+            '{"action":"approve","confidence":0.8,"risk_score":0.2,'
+            '"rationale":"ok","concerns":[],"required_actions":[]}'
+        ),
+        (
+            '{"action":"approve","action":"veto","confidence":0.8,'
+            '"risk_score":0.2,"rationale":"ok","concerns":[],'
+            '"required_actions":[]}'
+        ),
+        json.dumps(
+            {
+                "action": "approve",
+                "confidence": "0.8",
+                "risk_score": 0.2,
+                "rationale": "ok",
+                "concerns": [],
+                "required_actions": [],
+            }
+        ),
+        json.dumps(
+            {
+                "action": "approve",
+                "confidence": 1.2,
+                "risk_score": 0.2,
+                "rationale": "ok",
+                "concerns": [],
+                "required_actions": [],
+            }
+        ),
+        json.dumps(
+            {
+                "action": "approve",
+                "confidence": 0.8,
+                "risk_score": 0.2,
+                "rationale": "ok",
+                "concerns": [],
+                "required_actions": [],
+                "unexpected": True,
+            }
+        ),
+    ],
+)
+def test_ai_review_rejects_noncanonical_structured_output(
+    tmp_path: Path,
+    monkeypatch,
+    content: str,
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(compute_backend="directml"),
+        post_json=lambda *_args, **_kwargs: {"message": {"content": content}},
+    )
+
+    assert review.approved is False
+    assert review.status == "blocked"
+    assert "AI review failed" in str(review.error)
+
+
+def test_ai_review_rejects_oversized_prompt_without_calling_model(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    _write_report(report_path, accepted=True)
+    payload = json.loads(report_path.read_text(encoding="utf-8"))
+    payload["outcomes"][0]["diagnostics"] = {"unbounded": "x" * 20_000}
+    report_path.write_text(json.dumps(payload), encoding="utf-8")
+    called = False
+
+    def fake_post(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("oversized evidence must not reach the AI model")
+
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(compute_backend="directml"),
+        post_json=fake_post,
+    )
+
+    assert called is False
+    assert review.approved is False
+    assert "exceeds AI prompt bound" in str(review.error)
+
+
+def test_ai_review_loader_rejects_ambiguous_json_and_boolean_probability(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    report_path = tmp_path / "model_lab_report.json"
+    review_path = tmp_path / "ai_risk_review.json"
+    _write_report(report_path, accepted=True)
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_review.detect_ai_capabilities",
+        lambda _cfg: _capability(True),
+    )
+    review = run_model_lab_ai_review(
+        report_path,
+        RuntimeConfig(compute_backend="directml"),
+        output_path=review_path,
+        post_json=lambda *_args, **_kwargs: _approve_response(),
+    )
+
+    with pytest.raises(ValueError, match="AI review decision is invalid"):
+        replace(
+            review,
+            decision=replace(review.decision, confidence=True),
+        ).validated()
+
+    original = review_path.read_text(encoding="utf-8")
+    ambiguous = original.replace(
+        '"status": "ok"',
+        '"status": "ok", "status": "ok"',
+        1,
+    )
+    assert ambiguous != original
+    review_path.write_text(ambiguous, encoding="utf-8")
+    with pytest.raises(ValueError, match="artifact is unreadable"):
+        load_ai_review_report(
+            review_path,
+            expected_source_report=report_path,
+        )
 
 
 def test_ai_review_blocks_on_capability_failure(tmp_path: Path, monkeypatch) -> None:
