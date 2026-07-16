@@ -1817,12 +1817,20 @@ def test_polymarket_model_ai_mode_uses_runtime_default_and_explicit_overrides(
     inherited = parser.parse_args(["polymarket-model"])
     enabled = parser.parse_args(["polymarket-model", "--enable-ai"])
     disabled = parser.parse_args(["polymarket-model", "--disable-ai"])
-    runtime = cli.load_runtime({"ai_enabled": False})
+    explicit_model = parser.parse_args(
+        ["polymarket-model", "--ai-model", "qwen3:14b"]
+    )
+    runtime = cli.load_runtime(
+        {"ai_enabled": False, "ai_model": "qwen3.5:9b"}
+    )
     monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
 
     assert cli._polymarket_ai_enabled(inherited) is False
     assert cli._polymarket_ai_enabled(enabled) is True
     assert cli._polymarket_ai_enabled(disabled) is False
+    assert inherited.ai_model is None
+    assert cli._polymarket_ai_model(inherited) == "qwen3.5:9b"
+    assert cli._polymarket_ai_model(explicit_model) == "qwen3:14b"
 
     runtime.ai_enabled = True
     assert cli._polymarket_ai_enabled(inherited) is True

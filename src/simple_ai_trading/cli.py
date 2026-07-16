@@ -748,7 +748,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="skip the gated local multibillion-parameter veto ablation",
     )
     parser_polymarket_model.set_defaults(ai_enabled=None)
-    parser_polymarket_model.add_argument("--ai-model", default="qwen3:8b")
+    parser_polymarket_model.add_argument(
+        "--ai-model",
+        default=None,
+        help="local AI model override; defaults to the persisted AI runtime model",
+    )
     parser_polymarket_model.add_argument(
         "--ai-benchmark",
         default="docs/ai/risk-review/latest/comparison.json",
@@ -6968,6 +6972,13 @@ def _polymarket_ai_enabled(args: argparse.Namespace) -> bool:
     return bool(load_runtime().ai_enabled)
 
 
+def _polymarket_ai_model(args: argparse.Namespace) -> str:
+    explicit = str(getattr(args, "ai_model", None) or "").strip()
+    if explicit:
+        return explicit
+    return str(load_runtime().ai_model or "").strip()
+
+
 def _polymarket_ai_latency_stress_passed(
     latency_sensitivity: Mapping[str, Mapping[int, object]],
     latency_scenarios: Sequence[int],
@@ -7469,7 +7480,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             )
             from .ai_uplift import assess_ai_uplift
 
-            ai_model = str(args.ai_model)
+            ai_model = _polymarket_ai_model(args)
             progress("ai-capability-preflight", model=ai_model)
             try:
                 _require_local_gpu_ai_capability(ai_model)
@@ -7484,7 +7495,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             model_provenance = load_local_ai_model_provenance(
                 benchmark_path,
                 benchmark_bytes,
-                model=str(args.ai_model),
+                model=ai_model,
             )
             rescored_benchmark = rescore_finance_ai_benchmark_payload(
                 benchmark_payload
