@@ -17,3 +17,8 @@ docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.csv text eol=lf
 docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.json text eol=lf
 docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.svg text eol=lf
 docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.csv.gz -text
+
+# These immutable legacy manifests bind the Windows CRLF bytes they published.
+docs/model-research/action-value/latest/** text eol=crlf
+docs/model-research/polymarket/round-008-executable-repricing-ceiling-report.json text eol=crlf
+docs/model-research/polymarket/latest/** text eol=crlf
