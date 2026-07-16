@@ -28,16 +28,24 @@ groups. No Round 9 model score, AI edge, profitability, drawdown claim, paper
 authority, or trading authority exists.
 
 The former v6 local-AI selection is revoked because its prompt leaked expected
-actions through case IDs. Fresh label-free v7 inference rejected all four
-priority 8B/9B models; `ai-risk-models-rejected.json` is negative governance
-evidence only and grants no AI or trading authority.
+actions through case IDs. Label-free v7 inference rejected all four priority
+8B/9B models, and v7 itself is historical-only because its response parser was
+too permissive. V8 requires exact typed JSON and is frozen before the one-shot
+Qwen3 14B candidate. No AI model is selected; `ai-risk-models-rejected.json`
+is negative governance evidence only and grants no AI or trading authority.
 
-Capture attempt `eae374e2662c440fb93970d5710937b1` is development-only. Its
-queue reached `100000/100000` and the interrupted run has no terminal report,
-so it cannot confirm a model. A real-message writer replay selected a bounded
-0.5-second coalescing window and 200,000-message queue for the next attempt; the
-signed [throughput benchmark](../round-009-recorder-throughput-benchmark.json)
-contains the exact source window and measurements.
+Capture attempts `eae374e2662c440fb93970d5710937b1` and
+`3a67757c7f174df4b62f2722ea9211cb` are permanently development-only. Their
+queues saturated and both were interrupted without terminal reports, so they
+cannot confirm a model. Recorder v2 keeps the 1,024-message integrity chunk,
+atomically commits up to 8,192 messages, and defaults to a 500,000-message burst
+buffer. The hash-bound [throughput benchmark](../round-009-recorder-throughput-benchmark.json)
+contains the exact real-message windows, results, and limitations. A fresh long
+capture must still finish `complete` before any Round 9 fit or AI benchmark.
+
+The host [DirectML preflight](../round-009-directml-preflight.json) completed a
+real MLP forward/backward parameter update on `privateuseone:0` with no CPU
+fallback. It is environment evidence only, not model-quality or speed evidence.
 
 The `polymarket-ridge` command claims its pipeline in DuckDB before test
 evaluation. A completed claim reloads the signed report without refitting; an

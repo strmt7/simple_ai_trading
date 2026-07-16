@@ -1,0 +1,36 @@
+{
+  "schema_version": "polymarket-round9-directml-preflight-v1",
+  "observed_at_utc": "2026-07-16T00:47:38.789Z",
+  "git_commit": "9789ab50659336e8d27a97d13eaab261e0ae972a",
+  "mlp_contract_sha256": "a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2",
+  "mlp_source_sha256": "bb8f053cede91671e2f3fd832fee3ddc92e52418cf8c6955ff943acc7cbf0ac1",
+  "runtime": {
+    "requested": "auto",
+    "kind": "directml",
+    "device": "privateuseone:0",
+    "vendor": "DirectML",
+    "fallback_reason": "",
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914"
+  },
+  "visible_windows_adapter": {
+    "name": "AMD Radeon RX 9070 XT",
+    "driver_version": "32.0.31021.5001",
+    "directml_adapter_name_exposed_by_torch": false
+  },
+  "parameter_update_preflight": {
+    "objective": 0.69503253698349,
+    "parameter_delta": 0.0010000094771385193,
+    "seconds": 0.677553900051862,
+    "passed": true
+  },
+  "truth_constraints": {
+    "cpu_fallback_observed": false,
+    "model_fit_performed": false,
+    "model_quality_measured": false,
+    "comparative_speed_claim": false,
+    "trading_authority": false,
+    "adapter_ram_from_win32_videocontroller_used": false
+  },
+  "report_sha256": "84311942ee91ce11fd33e11fc3a5184571744359251498ac0a9b2bc0f0e56a99"
+}
