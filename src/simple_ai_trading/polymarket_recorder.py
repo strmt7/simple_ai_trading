@@ -35,8 +35,15 @@ from .polymarket import (
 POLYMARKET_EVIDENCE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
 POLYMARKET_RECORDER_SCHEMA_VERSION = "polymarket-public-recorder-v1"
 POLYMARKET_RECORDER_PROGRESS_SCHEMA_VERSION = "polymarket-recorder-progress-v1"
-POLYMARKET_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v2"
+POLYMARKET_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v3"
+_INDEXED_COMPACT_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v2"
 _LEGACY_STORAGE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
+_COMPACT_STORAGE_SCHEMA_VERSIONS = frozenset(
+    {
+        _INDEXED_COMPACT_STORAGE_SCHEMA_VERSION,
+        POLYMARKET_STORAGE_SCHEMA_VERSION,
+    }
+)
 CLOB_MARKET_WEBSOCKET = "wss://ws-subscriptions-clob.polymarket.com/ws/market"
 POLYMARKET_RTDS_WEBSOCKET = "wss://ws-live-data.polymarket.com"
 BINANCE_SPOT_WEBSOCKET = (
@@ -397,7 +404,10 @@ class PolymarketEvidenceStore:
         self._terminal_evidence_integrity_cache: dict[
             str, tuple[str, tuple[str, ...]]
         ] = {}
+        self._storage_schema_version_by_run: dict[str, str] = {}
         self._next_chunk_index_by_run: dict[str, int] = {}
+        self._last_sequence_by_lane: dict[tuple[str, str, str], int] = {}
+        self._sequence_state_initialized_runs: set[str] = set()
         self._frame_cache_id = ""
         self._frame_cache = b""
         self._decompressor = zstandard.ZstdDecompressor(
@@ -436,7 +446,10 @@ class PolymarketEvidenceStore:
             self.connection = None
             self.paper_journal = None
             self._terminal_evidence_integrity_cache.clear()
+            self._storage_schema_version_by_run.clear()
             self._next_chunk_index_by_run.clear()
+            self._last_sequence_by_lane.clear()
+            self._sequence_state_initialized_runs.clear()
             self._frame_cache_id = ""
             self._frame_cache = b""
 
@@ -537,8 +550,7 @@ class PolymarketEvidenceStore:
                 chunk_message_index UINTEGER,
                 raw_offset UBIGINT,
                 raw_size UINTEGER,
-                normalized_event_count UINTEGER,
-                UNIQUE(run_id, stream, connection_id, sequence_number)
+                normalized_event_count UINTEGER
             );
 
             CREATE TABLE IF NOT EXISTS polymarket_raw_chunk (
@@ -577,8 +589,7 @@ class PolymarketEvidenceStore:
                 source_time_ms BIGINT,
                 publisher_time_ms BIGINT,
                 event_json VARCHAR NOT NULL,
-                event_sha256 VARCHAR NOT NULL,
-                UNIQUE(message_id, sub_index)
+                event_sha256 VARCHAR NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS polymarket_stream_gap (
@@ -735,7 +746,34 @@ class PolymarketEvidenceStore:
         )
 
     def start_run(self, run_id: str, started_at_ms: int) -> None:
-        self.connect().execute(
+        connection = self.connect()
+        indexed_hot_tables = {
+            str(table_name)
+            for (table_name,) in connection.execute(
+                """
+                SELECT DISTINCT table_name
+                FROM duckdb_constraints()
+                WHERE constraint_type = 'UNIQUE'
+                  AND table_name IN (
+                      'polymarket_raw_message', 'polymarket_public_event'
+                  )
+                UNION
+                SELECT DISTINCT table_name
+                FROM duckdb_indexes()
+                WHERE is_unique
+                  AND table_name IN (
+                      'polymarket_raw_message', 'polymarket_public_event'
+                  )
+                """
+            ).fetchall()
+        }
+        if indexed_hot_tables:
+            tables = ",".join(sorted(indexed_hot_tables))
+            raise ValueError(
+                "storage-v3 recorder runs require a fresh database without "
+                f"incremental hot-path uniqueness indexes: {tables}"
+            )
+        connection.execute(
             """
             INSERT INTO polymarket_recorder_run (
                 run_id, schema_version, storage_schema_version, status,
@@ -748,6 +786,9 @@ class PolymarketEvidenceStore:
                 POLYMARKET_STORAGE_SCHEMA_VERSION,
                 int(started_at_ms),
             ],
+        )
+        self._storage_schema_version_by_run[run_id] = (
+            POLYMARKET_STORAGE_SCHEMA_VERSION
         )
 
     def _require_running_run(self, run_id: str) -> None:
@@ -765,6 +806,9 @@ class PolymarketEvidenceStore:
             raise ValueError("terminal Polymarket recorder evidence is immutable")
 
     def _storage_schema_version(self, run_id: str) -> str:
+        cached = self._storage_schema_version_by_run.get(run_id)
+        if cached is not None:
+            return cached
         connection = self.connect()
         has_column = bool(
             connection.execute(
@@ -782,6 +826,9 @@ class PolymarketEvidenceStore:
             ).fetchone()
             if row is None:
                 raise ValueError(f"unknown Polymarket recorder run: {run_id}")
+            self._storage_schema_version_by_run[run_id] = (
+                _LEGACY_STORAGE_SCHEMA_VERSION
+            )
             return _LEGACY_STORAGE_SCHEMA_VERSION
         row = connection.execute(
             """
@@ -795,9 +842,10 @@ class PolymarketEvidenceStore:
         version = str(row[0] or _LEGACY_STORAGE_SCHEMA_VERSION)
         if version not in {
             _LEGACY_STORAGE_SCHEMA_VERSION,
-            POLYMARKET_STORAGE_SCHEMA_VERSION,
+            *_COMPACT_STORAGE_SCHEMA_VERSIONS,
         }:
             raise ValueError(f"unsupported Polymarket storage schema: {version}")
+        self._storage_schema_version_by_run[run_id] = version
         return version
 
     def _terminal_evidence_fingerprint(self, run_id: str) -> str:
@@ -970,13 +1018,34 @@ class PolymarketEvidenceStore:
             return
         self._require_running_run(run_id)
         validated = tuple(message.validated() for message in messages)
-        if self._storage_schema_version(run_id) == _LEGACY_STORAGE_SCHEMA_VERSION:
+        self._initialize_sequence_state(run_id)
+        next_sequences: dict[tuple[str, str, str], int] = {}
+        for message in validated:
+            lane = (run_id, message.stream, message.connection_id)
+            previous = next_sequences.get(
+                lane,
+                self._last_sequence_by_lane.get(lane),
+            )
+            if previous is not None and message.sequence_number <= previous:
+                raise ValueError(
+                    "stream sequence must increase strictly within each connection: "
+                    f"{message.stream}:{message.connection_id}:"
+                    f"{message.sequence_number}<={previous}"
+                )
+            next_sequences[lane] = message.sequence_number
+        storage_schema_version = self._storage_schema_version(run_id)
+        if storage_schema_version == _LEGACY_STORAGE_SCHEMA_VERSION:
             for start in range(0, len(validated), _RAW_CHUNK_MESSAGE_LIMIT):
                 self._append_legacy_message_batch(
                     run_id,
                     validated[start : start + _RAW_CHUNK_MESSAGE_LIMIT],
                 )
+            self._last_sequence_by_lane.update(next_sequences)
             return
+        if storage_schema_version not in _COMPACT_STORAGE_SCHEMA_VERSIONS:
+            raise ValueError(
+                f"unsupported compact Polymarket storage schema: {storage_schema_version}"
+            )
         chunks: list[tuple[RawStreamMessage, ...]] = []
         pending: list[RawStreamMessage] = []
         pending_bytes = 0
@@ -999,11 +1068,24 @@ class PolymarketEvidenceStore:
         connection.execute("BEGIN TRANSACTION")
         try:
             for chunk in chunks:
-                self._append_compact_message_chunk(run_id, chunk, connection)
+                self._append_compact_message_chunk(
+                    run_id,
+                    chunk,
+                    connection,
+                    storage_schema_version=storage_schema_version,
+                )
             connection.execute("COMMIT")
+            self._last_sequence_by_lane.update(next_sequences)
         except Exception:
             try:
-                connection.execute("ROLLBACK")
+                try:
+                    connection.execute("ROLLBACK")
+                except duckdb.TransactionException:
+                    # DuckDB can end the transaction while reporting a failed
+                    # COMMIT (for example, an unavailable WAL). Preserve the
+                    # original commit error instead of masking it with a
+                    # second "no transaction is active" exception.
+                    pass
             finally:
                 if cached_chunk_index_present:
                     assert cached_chunk_index is not None
@@ -1011,6 +1093,26 @@ class PolymarketEvidenceStore:
                 else:
                     self._next_chunk_index_by_run.pop(run_id, None)
             raise
+
+    def _initialize_sequence_state(self, run_id: str) -> None:
+        if run_id in self._sequence_state_initialized_runs:
+            return
+        rows = self.connect().execute(
+            """
+            SELECT stream, connection_id, max(sequence_number)
+            FROM polymarket_raw_message
+            WHERE run_id = ?
+            GROUP BY stream, connection_id
+            """,
+            [run_id],
+        ).fetchall()
+        self._last_sequence_by_lane.update(
+            {
+                (run_id, str(stream), str(connection_id)): int(sequence_number)
+                for stream, connection_id, sequence_number in rows
+            }
+        )
+        self._sequence_state_initialized_runs.add(run_id)
 
     def _append_legacy_message_batch(
         self,
@@ -1041,7 +1143,10 @@ class PolymarketEvidenceStore:
                 )
             connection.execute("COMMIT")
         except Exception:
-            connection.execute("ROLLBACK")
+            try:
+                connection.execute("ROLLBACK")
+            except duckdb.TransactionException:
+                pass
             raise
 
     def _append_compact_message_chunk(
@@ -1049,6 +1154,8 @@ class PolymarketEvidenceStore:
         run_id: str,
         messages: Sequence[RawStreamMessage],
         connection: duckdb.DuckDBPyConnection,
+        *,
+        storage_schema_version: str,
     ) -> None:
         if not messages or len(messages) > _RAW_CHUNK_MESSAGE_LIMIT:
             raise ValueError("compact evidence chunk has an invalid message count")
@@ -1119,7 +1226,7 @@ class PolymarketEvidenceStore:
         chunk_id = _canonical_sha256(
             {
                 "run_id": run_id,
-                "schema_version": POLYMARKET_STORAGE_SCHEMA_VERSION,
+                "schema_version": storage_schema_version,
                 "chunk_index": chunk_index,
                 "message_count": len(prepared),
                 "first_message_id": str(prepared[0][0][0]),
@@ -1138,7 +1245,7 @@ class PolymarketEvidenceStore:
             [
                 chunk_id,
                 run_id,
-                POLYMARKET_STORAGE_SCHEMA_VERSION,
+                storage_schema_version,
                 chunk_index,
                 _RAW_CHUNK_FRAME_FORMAT,
                 _RAW_CHUNK_CODEC,
@@ -1297,9 +1404,11 @@ class PolymarketEvidenceStore:
                 "uncompressed_sha256": str(uncompressed_sha256),
             }
         )
+        expected_storage_schema = self._storage_schema_version(run_id)
         if (
             str(chunk_run) != run_id
-            or str(schema_version) != POLYMARKET_STORAGE_SCHEMA_VERSION
+            or str(schema_version) != expected_storage_schema
+            or str(schema_version) not in _COMPACT_STORAGE_SCHEMA_VERSIONS
             or str(frame_format) != _RAW_CHUNK_FRAME_FORMAT
             or str(codec) != _RAW_CHUNK_CODEC
             or int(compression_level) != _RAW_CHUNK_COMPRESSION_LEVEL
@@ -1407,7 +1516,7 @@ class PolymarketEvidenceStore:
             ):
                 raise ValueError("public-event condition filter is invalid")
         storage_version = self._storage_schema_version(run_id)
-        compact = storage_version == POLYMARKET_STORAGE_SCHEMA_VERSION
+        compact = storage_version in _COMPACT_STORAGE_SCHEMA_VERSIONS
         compact_columns = (
             ", r.storage_chunk_id, r.raw_offset, r.raw_size" if compact else ""
         )
@@ -2060,9 +2169,8 @@ class PolymarketEvidenceStore:
                     errors.append(f"recorder_report_status_mismatch:{run_id}")
             except (json.JSONDecodeError, UnicodeError, ValueError) as exc:
                 errors.append(f"recorder_report_invalid:{run_id}:{exc}")
-        compact = (
-            self._storage_schema_version(run_id) == POLYMARKET_STORAGE_SCHEMA_VERSION
-        )
+        storage_schema_version = self._storage_schema_version(run_id)
+        compact = storage_schema_version in _COMPACT_STORAGE_SCHEMA_VERSIONS
         if compact:
             self._frame_cache_id = ""
             self._frame_cache = b""
@@ -2384,19 +2492,20 @@ class PolymarketEvidenceStore:
                     f"{event_count}:{expected_event_count}"
                 )
         notify("integrity-relational-checks", force=True)
-        orphan_events = connection.execute(
-            """
-            SELECT e.event_id
-            FROM polymarket_public_event AS e
-            WHERE e.run_id = ? AND NOT EXISTS (
-                SELECT 1 FROM polymarket_raw_message AS r
-                WHERE r.run_id = e.run_id AND r.message_id = e.message_id
-            )
-            ORDER BY e.event_id
-            """,
-            [run_id],
-        ).fetchall()
-        errors.extend(f"event_without_message:{row[0]}" for row in orphan_events)
+        if storage_schema_version != POLYMARKET_STORAGE_SCHEMA_VERSION:
+            orphan_events = connection.execute(
+                """
+                SELECT e.event_id
+                FROM polymarket_public_event AS e
+                WHERE e.run_id = ? AND NOT EXISTS (
+                    SELECT 1 FROM polymarket_raw_message AS r
+                    WHERE r.run_id = e.run_id AND r.message_id = e.message_id
+                )
+                ORDER BY e.event_id
+                """,
+                [run_id],
+            ).fetchall()
+            errors.extend(f"event_without_message:{row[0]}" for row in orphan_events)
         if not compact:
             invalid_messages = connection.execute(
                 """

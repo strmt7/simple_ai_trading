@@ -47,14 +47,19 @@ agents to canonical evidence without replacing that evidence.
   nonlinear challenger. No Round 9 model has been fitted or scored.
   Post-contract continuity-qualified outcomes and prospective results are still
   pending, so no profitability or execution authority exists.
-- Captures `eae374e2662c440fb93970d5710937b1` and
-  `3a67757c7f174df4b62f2722ea9211cb` are permanently development-only: both
-  evidence queues saturated and both were interrupted without terminal reports.
-  Never use either capture for model, confirmation, or profitability claims.
-- Recorder v2 throughput changes preserve the 1,024-message storage chunks but
-  atomically commit up to 8,192 messages and default to a 500,000-message burst
-  buffer. The bounded real-message benchmark passed integrity checks, but only a
-  fresh long live capture can validate sustained throughput.
+- Captures `eae374e2662c440fb93970d5710937b1`,
+  `3a67757c7f174df4b62f2722ea9211cb`, and
+  `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The
+  first two queues saturated. The third was terminalized `failed` after
+  9,887,714 persisted messages when its indexed v2 writer reproduced the same
+  long-duration throughput collapse. Never use them for model, confirmation,
+  or profitability claims.
+- Recorder storage v3 retains exact compressed payloads and terminal manifests
+  while replacing the two incremental high-volume uniqueness indexes with
+  strict per-connection sequence admission. A 2,000,000-message replay of exact
+  real payloads sustained 12,149 messages/s overall, its slowest measured
+  interval sustained 9,795 messages/s, and its full audit had zero errors. It
+  does not prove a 15-hour live capture; only a fresh run can do that.
 - Round 9 MLP report v2 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.
@@ -84,10 +89,10 @@ agents to canonical evidence without replacing that evidence.
   first. The `ai-benchmark` CLI rejects this model without that preregistration,
   the confirmation database, and its run ID. Its DuckDB claim consumes the test
   once before inference; interrupted and failed claims cannot reopen it.
-- Confirmation capture `b8a270da20fe4116a01a4626607e42da` is the active
-  54,000-second run. Monitor only
-  `.tmp/polymarket-round9-confirmation4-20260716-024629.progress.json` and the
-  process tree; never open its DuckDB while the recorder owns it.
+- No confirmation capture is active. Start the next 54,000-second run only
+  from a fresh storage-v3 database after the v3 implementation commit, then
+  monitor only its progress sidecar and verified process tree. Never open a
+  DuckDB while its recorder owns it.
 - Build current AI provenance with `tools/build_ai_model_provenance.py`; never
   hand-edit the result or infer blob identity from an Ollama tag.
 

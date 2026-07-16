@@ -279,12 +279,23 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
             )
             .fetchone()[0]
         )
+        hot_path_unique_constraints = store.connect().execute(
+            """
+            SELECT table_name FROM duckdb_constraints()
+            WHERE constraint_type = 'UNIQUE'
+              AND table_name IN (
+                  'polymarket_raw_message', 'polymarket_public_event'
+              )
+            ORDER BY table_name
+            """
+        ).fetchall()
 
     assert stats == (message_count, 1, message_count, message_count)
     assert chunk_stats[0:2] == (3, message_count)
     assert 0 < chunk_stats[2] < chunk_stats[3]
     assert inline_payloads == 0
-    assert storage_schema == "polymarket-evidence-storage-v2"
+    assert storage_schema == "polymarket-evidence-storage-v3"
+    assert hot_path_unique_constraints == []
 
 
 def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
@@ -296,7 +307,7 @@ def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
     messages[-1] = messages[0]
     with PolymarketEvidenceStore(database) as store:
         store.start_run("atomic-batch", EPOCH * 1_000)
-        with pytest.raises(duckdb.ConstraintException):
+        with pytest.raises(ValueError, match="stream sequence must increase strictly"):
             store.append_messages("atomic-batch", messages)
         connection = store.connect()
         assert (
@@ -322,6 +333,80 @@ def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
         )
 
 
+def test_storage_v3_terminal_manifests_detect_unindexed_duplicates(tmp_path) -> None:
+    database = tmp_path / "unindexed-duplicate-audit.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, "duplicate-raw")
+        store.connect().execute(
+            """
+            INSERT INTO polymarket_raw_message
+            SELECT * FROM polymarket_raw_message WHERE run_id = 'duplicate-raw'
+            LIMIT 1
+            """
+        )
+        raw_errors = store.integrity_errors("duplicate-raw")
+
+        _complete_store(store, "duplicate-event")
+        store.connect().execute(
+            """
+            INSERT INTO polymarket_public_event
+            SELECT * FROM polymarket_public_event WHERE run_id = 'duplicate-event'
+            LIMIT 1
+            """
+        )
+        event_errors = store.integrity_errors("duplicate-event")
+
+    assert any(error.startswith("raw_chunk_manifest_mismatch:") for error in raw_errors)
+    assert any(
+        error.startswith("normalized_event_count_mismatch:")
+        for error in event_errors
+    )
+    assert any(
+        error.startswith("normalized_event_manifest_") for error in event_errors
+    )
+
+
+def test_storage_v3_refuses_an_incremental_hot_path_index(tmp_path) -> None:
+    database = tmp_path / "indexed-hot-path.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.connect().execute(
+            """
+            CREATE UNIQUE INDEX indexed_raw_lane
+            ON polymarket_raw_message(
+                run_id, stream, connection_id, sequence_number
+            )
+            """
+        )
+        with pytest.raises(ValueError, match="require a fresh database"):
+            store.start_run("indexed-hot-path", EPOCH * 1_000)
+
+
+def test_storage_v3_reader_remains_compatible_with_compact_v2(tmp_path) -> None:
+    database = tmp_path / "compact-v2.duckdb"
+    event = {
+        "stream": "btcusdt@trade",
+        "data": {"e": "trade", "E": EPOCH * 1_000, "T": EPOCH * 1_000 - 1},
+    }
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("compact-v2", EPOCH * 1_000)
+        store.connect().execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = 'polymarket-evidence-storage-v2'
+            WHERE run_id = 'compact-v2'
+            """
+        )
+        store._storage_schema_version_by_run.pop("compact-v2")
+        store.append_messages("compact-v2", [_message("binance_spot", event)])
+
+        reconstructed = tuple(store.iter_public_events("compact-v2"))
+        errors = store.integrity_errors("compact-v2")
+
+    assert len(reconstructed) == 1
+    assert reconstructed[0].event == event
+    assert errors == ()
+
+
 def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> None:
     database = tmp_path / "legacy-v1.duckdb"
     raw_event = {
@@ -337,6 +422,7 @@ def test_read_only_store_reconstructs_unmigrated_legacy_evidence(tmp_path) -> No
             WHERE run_id = 'legacy-v1'
             """
         )
+        store._storage_schema_version_by_run.pop("legacy-v1")
         store.append_messages("legacy-v1", [_message("binance_spot", raw_event)])
 
     connection = duckdb.connect(str(database))
@@ -463,6 +549,7 @@ def test_legacy_rtds_chainlink_type_remains_raw_verifiable(tmp_path) -> None:
             WHERE run_id = 'legacy-chainlink-v1'
             """
         )
+        store._storage_schema_version_by_run.pop("legacy-chainlink-v1")
         store.append_messages(
             "legacy-chainlink-v1",
             [_message("polymarket_rtds", raw_event)],
@@ -574,7 +661,7 @@ def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
                                 ],
                             },
                         },
-                        sequence=index,
+                        sequence=((index - 1) * 2) + 1,
                     ),
                     _message(
                         "polymarket_rtds",
@@ -588,7 +675,7 @@ def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
                                 "value": "100.5",
                             },
                         },
-                        sequence=index + 3,
+                        sequence=(index - 1) * 2 + 2,
                     ),
                     _message(
                         "binance_spot",
@@ -602,7 +689,7 @@ def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
                                 "A": "11",
                             },
                         },
-                        sequence=index,
+                        sequence=((index - 1) * 2) + 1,
                     ),
                     _message(
                         "binance_spot",
@@ -617,7 +704,7 @@ def test_feed_coverage_requires_real_per_asset_sources_and_resolutions(
                                 "m": False,
                             },
                         },
-                        sequence=index + 3,
+                        sequence=(index - 1) * 2 + 2,
                     ),
                 ]
             )

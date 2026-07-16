@@ -206,6 +206,40 @@ def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -
         after["average_messages_per_chunk"] / before["average_messages_per_chunk"],
     )
 
+    long_tail = json.loads(
+        (RESEARCH / "storage-v3-long-tail-benchmark-2026-07-16.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    claimed = long_tail.pop("report_sha256")
+    canonical = json.dumps(
+        long_tail,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert long_tail["storage_schema_version"] == "polymarket-evidence-storage-v3"
+    assert long_tail["persisted_raw_messages"] == long_tail["total_messages"]
+    assert long_tail["integrity_errors"] == []
+    assert not any(
+        constraint[1] in {"PRIMARY KEY", "UNIQUE"}
+        for constraint in long_tail["hot_path_constraints"]
+    )
+    assert min(
+        checkpoint["interval_messages_per_second"]
+        for checkpoint in long_tail["checkpoints"]
+    ) > 9_700
+    assert long_tail["truth_constraints"] == {
+        "benchmark_proves_fifteen_hour_capture": False,
+        "benchmark_receipt_metadata_is_real": False,
+        "financial_edge_claim": False,
+        "model_evidence": False,
+        "source_payloads_are_real": True,
+        "trading_authority": False,
+    }
+
 
 def test_current_ai_risk_evidence_is_truthfully_scoped() -> None:
     latest = RESEARCH / "latest"
