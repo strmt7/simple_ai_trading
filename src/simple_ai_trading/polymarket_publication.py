@@ -1117,6 +1117,17 @@ def _bounded_profit_factor(gains: float, losses: float) -> float:
     return 999.0 if gains > 0.0 else 0.0
 
 
+def _bounded_downside_return_risk_ratio(
+    return_fraction: float,
+    drawdown: float,
+) -> float:
+    if drawdown > 0.0:
+        return min(999.0, max(-999.0, return_fraction / drawdown))
+    if return_fraction > 0.0:
+        return 999.0
+    return -999.0 if return_fraction < 0.0 else 0.0
+
+
 def _execution_uplift_metrics(
     report: Mapping[str, Any],
     *,
@@ -1159,8 +1170,9 @@ def _execution_uplift_metrics(
         ),
         "liquidation_events": 0,
         "max_consecutive_losses": maximum_loss_streak,
-        "downside_return_risk_ratio": (
-            return_fraction / drawdown if drawdown > 0.0 else 0.0
+        "downside_return_risk_ratio": _bounded_downside_return_risk_ratio(
+            return_fraction,
+            drawdown,
         ),
         "dataset_fingerprint": dataset_fingerprint,
         "evidence_sha256": str(report.get("report_sha256", "")),
