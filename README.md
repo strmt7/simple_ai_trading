@@ -118,6 +118,7 @@ Startup behavior:
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
 - `AI on (gated)` means AI is configured, not loaded or approved. Green `AI GPU resident` status requires a post-inference Ollama `/api/ps` check bound to the exact model digest with reported VRAM residency; unloaded, CPU-only, ambiguous, or malformed runtime evidence fails closed. DirectML model compute and Ollama residency are separate contracts.
+- The desktop AI toggle and backend model workflows share one policy: AI-off launches `polymarket-model` with the canonical `--disable-ai` switch, while AI-on still requires the same local-model, GPU-headroom, provenance, residency, and measured-uplift gates as the CLI.
 - The app has direct buttons for Stop + Close, Pause, Reconcile, Positions, and Risk Review. Normal workflow cards are distinct paper, research, graph, data, and settings tasks so the UI does not present multiple similar buttons for the same action.
 - The bottom status bar shows the shared CLI API-budget summary. It refreshes opportunistically rather than constantly: automatic refresh is capped to the 60-120 second band and defaults to 90 seconds, while command-completion updates use cached status.
 - `tools\smoke_native_windows_ui.ps1` launches the app in dry-run mode, walks every workflow page, clicks the dashboard cards and safety buttons, and then performs a real Compute smoke unless `-SkipRealCompute` is passed.
