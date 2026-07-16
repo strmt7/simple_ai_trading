@@ -184,8 +184,10 @@ Each AI treatment retains its exact label-free prompt and raw local-model
 response. The publisher reconstructs candidate, permission, decision-delay, and
 uplift chains instead of trusting aggregate AI claims. Repeated evaluation of an
 identical valid case can reuse the integrity-checked response in the same DuckDB,
-but replay still uses the first measured model latency. The cache is invalidated
-by any case, request, prompt/schema, endpoint-policy, threshold, model-digest, or
+but replay still uses the first measured inference time. It recomputes
+single-GPU-worker queue delay from monotonic historical arrivals and charges the
+effective inference-plus-queue delay to execution. The cache is invalidated by
+any case, request, prompt/schema, endpoint-policy, threshold, model-digest, or
 model-metadata change. Invalid, late, CPU-only, or runtime-unproven responses
 remain fail-closed and are cached as immutable veto evidence rather than retried.
 The selected risk benchmark must also have a sibling provenance record whose
