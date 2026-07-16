@@ -108,7 +108,7 @@ or:
 .\run-gui.cmd
 ```
 
-The Windows app is a native C++20 Win32 operator workstation inspired by the SuperZip app structure: PowerShell/CMake build, DPI-aware/resizable Win32 layout, DWM dark window chrome, real listbox/combobox/edit/button controls, grouped operator workflows, and generated workflow metadata. The current shell uses a cleaner operator dashboard with Home, Run Bot, Research, Risk Center, Data Center, Settings, and Command Browser pages. Recommended workflow cards never duplicate the pinned safety strip; Stop + Close, Pause, Reconcile, Positions, and Risk Review stay in one always-visible row. The command picker is still generated from the same argparse command contract as the CLI. The parity test `tests/test_ai_runtime_and_parity.py` fails if a CLI command, option flag, positional argument, or choice is not present in the native contract.
+The Windows app is a native C++20 Win32 operator workstation inspired by the SuperZip structure: DPI-aware layout, native controls, dark window chrome, and Overview, Trading, Research, Risk, Data, System, and Settings pages. Overview keeps Start, Pause, Stop + Close, risk profile, execution mode, leverage, AI, and reinvestment controls together. CLI commands and options are generated from `argparse`; one shared taxonomy places every command in a deliberate workflow group. Generation and parity tests fail on missing, duplicate, or stale entries, while Settings retains the complete expert catalog.
 
 The interface is intentionally simple: the app groups workflows by operator intent instead of exposing every internal model check as a separate task. Complex safeguards run in the background and surface as clear states such as blocked, waiting, review required, or stop-and-close.
 

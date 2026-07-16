@@ -37,7 +37,10 @@ def _default_string(value: object) -> str:
 def main() -> int:
     root = _repo_root()
     sys.path.insert(0, str(root / "src"))
-    from simple_ai_trading.command_contract import command_specs  # noqa: PLC0415
+    from simple_ai_trading.command_contract import (  # noqa: PLC0415
+        command_specs,
+        workflow_commands,
+    )
 
     out = root / "native" / "windows" / "generated" / "command_contract.hpp"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -63,6 +66,12 @@ def main() -> int:
         "    const wchar_t* help;",
         "    const CommandOptionSpec* options;",
         "    int option_count;",
+        "};",
+        "",
+        "struct WorkflowCommandSpec {",
+        "    const wchar_t* page;",
+        "    const wchar_t* group;",
+        "    const wchar_t* command;",
         "};",
         "",
     ]
@@ -98,6 +107,21 @@ def main() -> int:
     lines.extend([
         "};",
         "inline constexpr int kCommandCount = static_cast<int>(sizeof(kCommands) / sizeof(kCommands[0]));",
+        "",
+        "inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {",
+    ])
+    for item in workflow_commands():
+        lines.append(
+            "    {"
+            f"{_escape_wide(item.page)}, "
+            f"{_escape_wide(item.group)}, "
+            f"{_escape_wide(item.name)}"
+            "},"
+        )
+    lines.extend([
+        "};",
+        "inline constexpr int kWorkflowCommandCount = "
+        "static_cast<int>(sizeof(kWorkflowCommands) / sizeof(kWorkflowCommands[0]));",
         "",
         "} // namespace simple_ai_trading::native_contract",
         "",

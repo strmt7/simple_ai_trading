@@ -22,6 +22,8 @@ namespace app {
 using simple_ai_trading::native_contract::CommandSpec;
 using simple_ai_trading::native_contract::kCommandCount;
 using simple_ai_trading::native_contract::kCommands;
+using simple_ai_trading::native_contract::kWorkflowCommandCount;
+using simple_ai_trading::native_contract::kWorkflowCommands;
 
 constexpr int kInitialWidth = 1680;
 constexpr int kInitialHeight = 1020;
@@ -1241,21 +1243,19 @@ class MainWindow {
     void refresh_command_combo() {
         command_entries_.clear();
         SendMessageW(command_combo_, CB_RESETCONTENT, 0, 0);
-        if (page_index_ == 0) {
-            add_group(L"Home", {L"status", L"compute", L"api-budget", L"doctor"});
-        } else if (page_index_ == 1) {
-            add_group(L"Run Bot", {L"connect", L"live", L"autonomous", L"spot-roundtrip", L"positions", L"reconcile", L"close"});
-        } else if (page_index_ == 2) {
-            add_group(L"Research", {L"model-lab", L"microstructure-prequential", L"microstructure-promote", L"microstructure-shadow", L"tape-depth-train", L"tape-depth-prequential", L"tape-depth-select", L"tape-depth-confirm", L"ai-forecast-benchmark", L"ai-review", L"train-suite", L"train", L"prepare", L"tune", L"backtest", L"backtest-chart", L"backtest-panel", L"evaluate", L"objectives", L"signals-benchmark"});
-        } else if (page_index_ == 3) {
-            add_group(L"Risk Center", {L"risk", L"universe", L"audit", L"signals", L"source-grades", L"report", L"doctor"});
-        } else if (page_index_ == 4) {
-            add_group(L"Data Center", {L"data-health", L"archive-sync", L"data-sync", L"fetch", L"api-budget", L"signals", L"source-grades"});
-        } else if (page_index_ == 5) {
-            add_group(L"System", {L"status", L"compute", L"api-budget", L"doctor", L"data-health", L"connect"});
-        } else {
-            for (int i = 0; i < kCommandCount; ++i) {
-                add_command_entry(L"CLI", kCommands[i].name);
+        if (page_index_ > 0 && page_index_ < static_cast<int>(kPages.size()) - 1) {
+            const std::wstring page = kPages[static_cast<std::size_t>(page_index_)];
+            for (int i = 0; i < kWorkflowCommandCount; ++i) {
+                const auto& item = kWorkflowCommands[i];
+                if (page == item.page) {
+                    add_command_entry(item.group, item.command);
+                }
+            }
+        } else if (page_index_ == static_cast<int>(kPages.size()) - 1) {
+            for (int i = 0; i < kWorkflowCommandCount; ++i) {
+                const auto& item = kWorkflowCommands[i];
+                const std::wstring group = std::wstring(item.page) + L" - " + item.group;
+                add_command_entry(group.c_str(), item.command);
             }
         }
         for (std::size_t i = 0; i < command_entries_.size(); ++i) {
@@ -1264,12 +1264,6 @@ class MainWindow {
         }
         if (!command_entries_.empty()) {
             SendMessageW(command_combo_, CB_SETCURSEL, 0, 0);
-        }
-    }
-
-    void add_group(const wchar_t* group, std::initializer_list<const wchar_t*> names) {
-        for (const wchar_t* name : names) {
-            add_command_entry(group, name);
         }
     }
 
