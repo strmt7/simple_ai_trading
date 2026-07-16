@@ -5,6 +5,15 @@ component, not as authority to override deterministic risk controls.
 
 ## Research Notes
 
+- Ollama's official library publishes the local `qwen3.5:9b` tag used here as
+  a structured-output challenger. Availability is not selection evidence:
+  https://ollama.com/library/qwen3.5
+- A 2026 prediction-market study found an LLM risk layer reduced loss magnitude
+  mainly by filtering statistically plausible but semantically brittle event
+  relationships. BTC/ETH/SOL five-minute contracts do not provide that diverse
+  event-semantic channel, so this project permits no analogous benefit claim
+  without prospective paired uplift:
+  https://arxiv.org/abs/2602.07048
 - FinGPT is an open-source financial LLM project that emphasizes data curation
   and lightweight adaptation for finance workflows, including algorithmic
   trading research: https://arxiv.org/abs/2306.06031
