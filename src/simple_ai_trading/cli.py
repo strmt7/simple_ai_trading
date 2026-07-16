@@ -6906,6 +6906,37 @@ def _polymarket_ai_skip_reason(
     return ""
 
 
+def _polymarket_ai_latency_stress_passed(
+    latency_sensitivity: Mapping[str, Mapping[int, object]],
+    latency_scenarios: Sequence[int],
+    *,
+    ai_enabled: bool,
+) -> bool:
+    if not ai_enabled or "ai" not in latency_sensitivity:
+        return False
+    ai_reports = latency_sensitivity["ai"]
+    model_reports = latency_sensitivity.get("model", {})
+    if not latency_scenarios or any(
+        latency not in ai_reports or latency not in model_reports
+        for latency in latency_scenarios
+    ):
+        return False
+    return all(
+        getattr(ai_reports[latency], "net_realized_pnl_quote") > 0
+        and getattr(ai_reports[latency], "net_realized_pnl_quote")
+        > getattr(model_reports[latency], "net_realized_pnl_quote")
+        and getattr(ai_reports[latency], "return_on_deployed_capital")
+        >= getattr(model_reports[latency], "return_on_deployed_capital")
+        and getattr(ai_reports[latency], "maximum_drawdown_fraction")
+        <= getattr(model_reports[latency], "maximum_drawdown_fraction")
+        and all(
+            getattr(trade, "execution_state") != "UNKNOWN"
+            for trade in getattr(ai_reports[latency], "trades")
+        )
+        for latency in latency_scenarios
+    )
+
+
 def _polymarket_execution_uplift_metrics(
     report: object,
     *,
@@ -7651,6 +7682,16 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "portfolio_claim": False,
             "leverage_applied": False,
         }
+        ai_primary_uplift_accepted = bool(
+            ai_payload.get("enabled")
+            and ai_uplift is not None
+            and ai_uplift.accepted
+        )
+        ai_latency_stress_accepted = _polymarket_ai_latency_stress_passed(
+            latency_sensitivity,
+            latency_scenarios,
+            ai_enabled=bool(ai_payload.get("enabled")),
+        )
         evidence_gates = {
             "validation_probability_improved": (
                 probability_report.validation_log_loss_delta < 0.0
@@ -7694,8 +7735,10 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 )
             ),
             "ai_enabled": bool(ai_payload.get("enabled")),
-            "ai_uplift_accepted": bool(
-                ai_uplift is not None and ai_uplift.accepted
+            "ai_primary_uplift_accepted": ai_primary_uplift_accepted,
+            "ai_latency_stress_accepted": ai_latency_stress_accepted,
+            "ai_uplift_accepted": (
+                ai_primary_uplift_accepted and ai_latency_stress_accepted
             ),
             "live_trading_authority": False,
             "profitability_claim": False,
