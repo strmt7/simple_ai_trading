@@ -116,6 +116,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   types, duplicate JSON keys, contradictory action/reason codes, low confidence,
   and latency failures remain vetoes. Single-GPU inference queue delay is
   monotonic, hash-bound, and included in effective execution latency.
+- Overall AI uplift now requires both the paired primary-latency gate and
+  positive, ML-beating, return- and drawdown-nondegrading execution at every
+  preregistered network-latency stress. A primary-only improvement is rejected.
 - AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
   exact weight digest with positive VRAM-resident bytes. DirectML selection is
   separate and does not prove that the review model ran on GPU.
