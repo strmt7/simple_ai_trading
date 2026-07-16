@@ -18,6 +18,7 @@ import shutil
 from typing import Any
 
 from .ai_model_benchmark import AI_MODEL_BENCHMARK_CONTRACT
+from .ai_runtime import ollama_residency_from_mapping
 from .ai_uplift import assess_ai_uplift
 from .polymarket_model import (
     POLYMARKET_MODEL_FEATURE_NAMES,
@@ -48,7 +49,7 @@ _PUBLICATION_SCHEMA = "polymarket-model-publication-v1"
 _MODEL_SCHEMA = "polymarket-market-anchored-logit-v4"
 _PROBABILITY_SCHEMA = "polymarket-probability-report-v2"
 _AI_CASE_SCHEMA = "polymarket-ai-veto-case-v2"
-_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v2"
+_AI_REPORT_SCHEMA = "polymarket-ai-veto-report-v3"
 _ASSETS = ("BTC", "ETH", "SOL")
 _POLICIES = ("baseline", "model", "profile_model", "model_retry", "ai")
 _AI_MICROSTRUCTURE_FIELDS = (
@@ -1708,6 +1709,7 @@ def _validate_ai_evidence(
                 "latency_seconds",
                 "response_sha256",
                 "response_payload",
+                "provider_runtime",
                 "decision",
             },
             name="AI veto result",
@@ -1734,6 +1736,23 @@ def _validate_ai_evidence(
         permits = decision.get("permits_entry")
         failure_reason = str(decision.get("failure_reason", ""))
         parsed_response = _parsed_valid_ai_response(result.get("response_payload"))
+        runtime_value = result.get("provider_runtime")
+        runtime = None
+        if runtime_value is not None:
+            try:
+                runtime = ollama_residency_from_mapping(runtime_value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("AI veto provider runtime is invalid") from exc
+            if runtime.requested_model != model_name or (
+                runtime.loaded and runtime.digest != veto.get("model_digest")
+            ):
+                raise ValueError("AI veto provider runtime provenance differs")
+        gpu_runtime_proved = bool(
+            runtime is not None
+            and runtime.loaded
+            and runtime.gpu_resident
+            and runtime.digest == veto.get("model_digest")
+        )
         valid_response_was_overridden = latency > maximum_latency or (
             parsed_response is not None
             and parsed_response["action"] == "approve"
@@ -1759,6 +1778,7 @@ def _validate_ai_evidence(
             or not isinstance(decision.get("summary"), str)
             or len(str(decision["summary"])) > 180
             or (valid and dict(decision) != parsed_response)
+            or (valid and not gpu_runtime_proved)
             or (
                 not valid
                 and parsed_response is not None

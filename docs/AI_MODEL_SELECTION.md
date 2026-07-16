@@ -141,11 +141,12 @@ evaluator immutably caches the first terminal response in the evidence DuckDB,
 including hash-only provider/schema failure envelopes. Its key binds the causal
 case, exact request, prompt and response-schema contracts, endpoint policy,
 decision thresholds, and current Ollama model digest and metadata. Cache hits
-retain the original measured model latency for order-book replay. Malformed
-output, low-confidence approvals, and over-latency responses therefore remain
-vetoes instead of being retried for a favorable answer. A later action
-experiment must remain veto-only and pass the separate 90-day matched-period
-uplift contract.
+retain the original measured model latency and post-inference `/api/ps` evidence.
+Report v3 permits a valid response only when that evidence binds the exact digest
+to positive VRAM residency. CPU-only, missing, or malformed runtime evidence is
+stored as an immutable veto, as are malformed output, low confidence, and excess
+latency. A later action experiment must remain veto-only and pass the separate
+90-day matched-period uplift contract.
 Before any veto prompt, Polymarket also requires the selected benchmark's sibling
 provenance file to bind its exact SHA-256, Ollama manifest, verified multibillion
 weight blob, and current installed digest. A changed tag or manifest fails before

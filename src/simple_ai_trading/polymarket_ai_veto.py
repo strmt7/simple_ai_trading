@@ -10,7 +10,12 @@ import time
 from typing import Callable, Mapping, Protocol, Sequence
 from urllib.request import Request, urlopen
 
-from .ai_runtime import estimate_model_parameters_b
+from .ai_runtime import (
+    OllamaResidencyReport,
+    estimate_model_parameters_b,
+    inspect_ollama_model_residency,
+    ollama_residency_from_mapping,
+)
 from .polymarket_model import PolymarketModelReport
 from .polymarket_model_execution import (
     PolymarketExecutionResearchConfig,
@@ -19,10 +24,11 @@ from .polymarket_model_execution import (
 
 
 POLYMARKET_AI_CASE_SCHEMA_VERSION = "polymarket-ai-veto-case-v2"
-POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v2"
-POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v1"
+POLYMARKET_AI_REPORT_SCHEMA_VERSION = "polymarket-ai-veto-report-v3"
+POLYMARKET_AI_CACHE_SCHEMA_VERSION = "polymarket-ai-veto-cache-v2"
 POLYMARKET_AI_PROMPT_CONTRACT = "polymarket-ai-veto-prompt-v1"
 _FAILURE_ENVELOPE_SCHEMA_VERSION = "polymarket-ai-veto-failure-v1"
+_CACHED_RESPONSE_SCHEMA_VERSION = "polymarket-ai-veto-cached-response-v1"
 SUPPORTED_POLYMARKET_AI_MODELS = (
     "qwen3:8b",
     "qwen3:14b",
@@ -172,6 +178,7 @@ class PolymarketAIVetoResult:
     latency_seconds: float
     response_sha256: str
     response_payload: object
+    provider_runtime: Mapping[str, object] | None
     decision: PolymarketAIVetoDecision
 
     def asdict(self) -> dict[str, object]:
@@ -182,6 +189,9 @@ class PolymarketAIVetoResult:
             "latency_seconds": self.latency_seconds,
             "response_sha256": self.response_sha256,
             "response_payload": self.response_payload,
+            "provider_runtime": (
+                None if self.provider_runtime is None else dict(self.provider_runtime)
+            ),
             "decision": self.decision.asdict(),
         }
 
@@ -242,6 +252,7 @@ class PolymarketAIVetoReport:
 
 PostJson = Callable[[str, Mapping[str, object], float, str], object]
 ProgressCallback = Callable[[str, Mapping[str, object]], None]
+ResidencyInspector = Callable[..., OllamaResidencyReport]
 
 
 class PolymarketAIVetoCache(Protocol):
@@ -296,6 +307,57 @@ def _cache_identity(
             ),
         },
     }
+
+
+def _validated_provider_runtime(
+    value: object,
+    *,
+    model: str,
+    model_digest: str,
+    require_gpu: bool,
+) -> dict[str, object] | None:
+    if value is None:
+        if require_gpu:
+            raise ValueError("Polymarket AI provider residency evidence is missing")
+        return None
+    report = ollama_residency_from_mapping(value)
+    if report.requested_model != model:
+        raise ValueError("Polymarket AI provider residency model differs")
+    if report.loaded and report.digest != model_digest:
+        raise ValueError("Polymarket AI provider residency digest differs")
+    if require_gpu and (
+        not report.loaded or not report.gpu_resident or report.digest != model_digest
+    ):
+        raise ValueError("Polymarket AI inference is not proved GPU-resident")
+    return report.asdict()
+
+
+def _cached_response_evidence(
+    response_payload: object,
+    provider_runtime: Mapping[str, object] | None,
+) -> dict[str, object]:
+    return {
+        "schema_version": _CACHED_RESPONSE_SCHEMA_VERSION,
+        "response_payload": response_payload,
+        "provider_runtime": (
+            None if provider_runtime is None else dict(provider_runtime)
+        ),
+    }
+
+
+def _decode_cached_response_evidence(
+    value: object,
+) -> tuple[object, Mapping[str, object] | None]:
+    if (
+        not isinstance(value, Mapping)
+        or set(value) != {"schema_version", "response_payload", "provider_runtime"}
+        or value.get("schema_version") != _CACHED_RESPONSE_SCHEMA_VERSION
+    ):
+        raise ValueError("Polymarket AI cached response evidence is invalid")
+    runtime = value.get("provider_runtime")
+    if runtime is not None and not isinstance(runtime, Mapping):
+        raise ValueError("Polymarket AI cached provider runtime is invalid")
+    return value.get("response_payload"), runtime
 
 
 def build_polymarket_ai_veto_cases(
@@ -652,6 +714,7 @@ def benchmark_polymarket_ai_veto(
     progress: ProgressCallback | None = None,
     cache_store: PolymarketAIVetoCache | None = None,
     expected_model_digest: str = "",
+    residency_inspector: ResidencyInspector = inspect_ollama_model_residency,
 ) -> PolymarketAIVetoReport:
     """Run one local model over immutable label-free cases; failures always veto."""
 
@@ -742,6 +805,7 @@ def benchmark_polymarket_ai_veto(
         )
         cache_hit = cached is not None
         raw: object = {}
+        provider_runtime: dict[str, object] | None = None
         if cached is not None:
             cached_identity = cached.get("identity")
             if (
@@ -749,15 +813,23 @@ def benchmark_polymarket_ai_veto(
                 or dict(cached_identity) != cache_identity
             ):
                 raise ValueError("Polymarket AI cache identity is invalid")
-            raw = cached.get("response_payload")
+            cached_evidence = cached.get("response_payload")
             latency = float(cached.get("latency_seconds", math.nan))
             if (
                 not math.isfinite(latency)
                 or latency < 0.0
-                or str(cached.get("response_sha256") or "") != _canonical_sha256(raw)
+                or str(cached.get("response_sha256") or "")
+                != _canonical_sha256(cached_evidence)
             ):
                 raise ValueError("Polymarket AI cache payload is invalid")
+            raw, cached_runtime = _decode_cached_response_evidence(cached_evidence)
             decision = _decision_from_cached_payload(raw)
+            provider_runtime = _validated_provider_runtime(
+                cached_runtime,
+                model=cfg.model,
+                model_digest=model_digest,
+                require_gpu=decision.valid,
+            )
         else:
             started = time.perf_counter()
             try:
@@ -768,6 +840,24 @@ def benchmark_polymarket_ai_veto(
                     "POST",
                 )
                 decision = _parse_decision(raw)
+                residency = residency_inspector(
+                    cfg.base_url,
+                    cfg.model,
+                    min(float(cfg.timeout_seconds), 5.0),
+                    expected_digest=model_digest,
+                ).validated()
+                provider_runtime = _validated_provider_runtime(
+                    residency.asdict(),
+                    model=cfg.model,
+                    model_digest=model_digest,
+                    require_gpu=False,
+                )
+                _validated_provider_runtime(
+                    provider_runtime,
+                    model=cfg.model,
+                    model_digest=model_digest,
+                    require_gpu=True,
+                )
             except Exception as exc:  # noqa: BLE001 - evidence records failures
                 raw = _failure_envelope(exc)
                 decision = _decision_from_cached_payload(raw)
@@ -781,10 +871,11 @@ def benchmark_polymarket_ai_veto(
         if latency > cfg.maximum_advisory_latency_seconds:
             decision = _failed_decision("advisory latency exceeded configured ceiling")
         if cache_store is not None and not cache_hit:
+            cached_evidence = _cached_response_evidence(raw, provider_runtime)
             cache_store.put_polymarket_ai_veto_cache(
                 cache_key_sha256,
                 identity=cache_identity,
-                response_payload=raw,
+                response_payload=cached_evidence,
                 latency_seconds=latency,
             )
         result = PolymarketAIVetoResult(
@@ -794,6 +885,7 @@ def benchmark_polymarket_ai_veto(
             latency_seconds=latency,
             response_sha256=_canonical_sha256(raw),
             response_payload=raw,
+            provider_runtime=provider_runtime,
             decision=decision,
         )
         results.append(result)
@@ -808,6 +900,11 @@ def benchmark_polymarket_ai_veto(
                     "valid": decision.valid,
                     "cache_hit": cache_hit,
                     "latency_seconds": round(latency, 3),
+                    "provider_runtime": (
+                        "unavailable"
+                        if provider_runtime is None
+                        else str(provider_runtime["status"])
+                    ),
                 },
             )
     permissions = {condition: False for condition in conditions}
