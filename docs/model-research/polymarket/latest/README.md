@@ -48,8 +48,11 @@ root into the terminal report. The hash-bound
 [v4 long-tail benchmark](../storage-v4-long-tail-benchmark-2026-07-16.json)
 records 2,000,000 exact real sampled payloads at 48,189 writes/s and 66,049
 replays/s with a clean full audit. Synthetic receipt clocks and a failed source
-run make it infrastructure evidence only; a monitored live soak and clean
-15-hour confirmation are still required. Bounded action batches reconstruct one
+run make it infrastructure evidence only. A subsequent
+[five-minute live soak](../storage-v4-live-soak-2026-07-16.json) captured 470,422
+messages with queue high-water 569 of 500,000 and clean initial/reopen audits.
+One recorded CLOB disconnect made it `degraded`, so a clean 15-hour confirmation
+is still required. Bounded action batches reconstruct one
 full-resolution CLOB replay and derive the exact 250 ms feature view from it,
 removing the second condition scan without changing feature or action identity.
 After a clean terminal audit, action materialization now builds one

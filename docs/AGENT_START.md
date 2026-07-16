@@ -64,8 +64,11 @@ agents to canonical evidence without replacing that evidence.
   66,049 messages/s, passed the full audit, and used 198,717,440 bytes. The
   repeated payload sample was real and hash-verified, but receipt metadata was
   synthetic and the source run failed, so this is not live-capture, model, or
-  profitability evidence. Run a monitored live soak before a new 15-hour
-  confirmation capture.
+  profitability evidence. A subsequent five-minute real-feed soak captured
+  470,422 messages with queue high-water `569/500000`, zero recorder or
+  integrity errors, and exact reopen verification. One audited CLOB disconnect
+  made it `degraded`; it validates writer liveness only. A 15-hour confirmation
+  is still required.
 - Round 9 MLP report v3 requires positive validation stress-utility uplift over
   ridge and at least 30 untouched synchronized test groups before reading its
   test partition. Do not weaken or bypass either admission gate.

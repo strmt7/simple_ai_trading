@@ -383,6 +383,17 @@ model quality, ROI, profitability, or trading authority. Exact inputs,
 checkpoints, digests, implementation hashes, and limitations are in
 [`storage-v4-long-tail-benchmark-2026-07-16.json`](model-research/polymarket/storage-v4-long-tail-benchmark-2026-07-16.json).
 
+A five-minute v4 real-feed soak then captured 470,422 messages at 1,553
+messages/s. Queue high-water was 569 of 500,000 (0.1138%), current backlog was
+zero at every recorded heartbeat, the full audit took 12.30 seconds, and a
+fresh read-only reopen audit returned zero errors. The 48,508,928-byte database
+contains 780 frames and no retired hot rows. One CLOB connection ended without
+a close frame and reconnected; the immutable gap correctly made the run
+`degraded`. This validates live writer drainage and recovery, not a gap-free
+15-hour run or any model/financial claim. The exact terminal report, gap ID,
+queue telemetry, storage totals, and limitations are hash-bound in
+[`storage-v4-live-soak-2026-07-16.json`](model-research/polymarket/storage-v4-live-soak-2026-07-16.json).
+
 The recorder writes exact WebSocket frame text, canonical REST evidence,
 normalized event indexes, connection gaps, per-market fee/tick/depth metadata,
 and the shared append-only paper-order journal into one resource-bounded DuckDB
