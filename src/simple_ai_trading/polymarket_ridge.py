@@ -999,36 +999,36 @@ def _load_polymarket_ridge_dataset_after_claim(
         ORDER BY a.dataset_sha256, a.action_index
         """
     ).fetchall()
-    event_rows = connection.execute(
-        """
-        WITH needed AS (
-            SELECT creation_book_event_id AS event_id
-            FROM polymarket_action_value_row AS a
-            JOIN ridge_selected_action_dataset AS s USING (dataset_sha256)
-            UNION
-            SELECT entry_book_event_id
-            FROM polymarket_action_value_row AS a
-            JOIN ridge_selected_action_dataset AS s USING (dataset_sha256)
-            UNION
-            SELECT exit_decision_book_event_id
-            FROM polymarket_action_value_row AS a
-            JOIN ridge_selected_action_dataset AS s USING (dataset_sha256)
-            UNION
-            SELECT exit_book_event_id
-            FROM polymarket_action_value_row AS a
-            JOIN ridge_selected_action_dataset AS s USING (dataset_sha256)
+    integrity = store.integrity_errors(run_id)
+    if integrity:
+        raise ValueError(
+            "Polymarket ridge source integrity failed: " + "; ".join(integrity)
         )
-        SELECT n.event_id, max(r.received_monotonic_ns)
-        FROM needed AS n
-        JOIN polymarket_public_event AS e
-          ON e.run_id = ? AND e.event_id = n.event_id
-        JOIN polymarket_raw_message AS r
-          ON r.run_id = e.run_id AND r.message_id = e.message_id
-        WHERE n.event_id <> '' GROUP BY n.event_id
-        """,
-        [run_id],
-    ).fetchall()
-    event_time = {str(event_id): int(value) for event_id, value in event_rows}
+    needed_event_ids = {
+        str(row[index])
+        for row in action_rows
+        for index in (27, 28, 29, 30)
+        if str(row[index])
+    }
+    selected_conditions = tuple(sorted({str(row[7]) for row in action_rows}))
+    event_time: dict[str, int] = {}
+    if needed_event_ids:
+        for decoded in store.iter_public_events(
+            run_id,
+            streams=("clob_market", "clob_rest_book"),
+            condition_ids=selected_conditions,
+            verified_source=True,
+        ):
+            if decoded.event_id not in needed_event_ids:
+                continue
+            observed = event_time.get(decoded.event_id)
+            if observed is not None and observed != decoded.received_monotonic_ns:
+                raise ValueError(
+                    "Polymarket ridge execution event receipt time differs"
+                )
+            event_time[decoded.event_id] = decoded.received_monotonic_ns
+            if len(event_time) == len(needed_event_ids):
+                break
     rows_by_dataset: dict[str, list[tuple[object, ...]]] = {
         value: [] for value in action_dataset_sha256
     }

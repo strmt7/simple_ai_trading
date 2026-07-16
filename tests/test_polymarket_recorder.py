@@ -139,8 +139,23 @@ def test_ai_veto_cache_is_immutable_and_tamper_evident(tmp_path) -> None:
             store.get_polymarket_ai_veto_cache(cache_key)
 
 
-def _complete_store(store: PolymarketEvidenceStore, run_id: str) -> None:
+def _complete_store(
+    store: PolymarketEvidenceStore,
+    run_id: str,
+    *,
+    storage_schema_version: str | None = None,
+) -> None:
     store.start_run(run_id, EPOCH * 1_000)
+    if storage_schema_version is not None:
+        store.connect().execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = ?
+            WHERE run_id = ?
+            """,
+            [storage_schema_version, run_id],
+        )
+        store._storage_schema_version_by_run.pop(run_id, None)
     for asset in ("BTC", "ETH", "SOL"):
         store.record_market_evidence(run_id, _evidence(asset))
     store.append_messages(
@@ -198,16 +213,9 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
             database=str(tmp_path / "paper.duckdb"),
             errors=(),
         )
-        events = (
-            store.connect()
-            .execute(
-                """
-            SELECT stream, event_type, symbol FROM polymarket_public_event
-            WHERE run_id = ? ORDER BY stream
-            """,
-                ["run-complete"],
-            )
-            .fetchall()
+        events = sorted(
+            (event.stream, event.event_type, event.symbol)
+            for event in store.iter_public_events("run-complete")
         )
         post_finish_integrity = store.integrity_errors("run-complete")
 
@@ -216,6 +224,7 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
     assert report.market_snapshot_count == 3
     assert report.raw_message_count == 4
     assert report.normalized_event_count == 3
+    assert len(report.evidence_manifest_sha256) == 64
     assert report.integrity_errors == ()
     assert post_finish_integrity == ()
     assert events == [
@@ -223,6 +232,34 @@ def test_evidence_store_round_trip_has_complete_coverage_and_event_indexes(
         ("clob_market", "book", ""),
         ("polymarket_rtds", "crypto_prices:update", "BTC"),
     ]
+
+
+def test_storage_v4_terminal_report_binds_the_ordered_chunk_manifest(tmp_path) -> None:
+    database = tmp_path / "terminal-manifest.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, "terminal-manifest")
+        report = store.finish_run(
+            "terminal-manifest",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(),
+        )
+        assert store.integrity_errors("terminal-manifest") == ()
+        store.connect().execute(
+            """
+            UPDATE polymarket_raw_chunk
+            SET stream_counts_json = '{"binance_spot":4}'
+            WHERE run_id = 'terminal-manifest'
+            """
+        )
+        errors = store.integrity_errors("terminal-manifest")
+
+    assert len(report.evidence_manifest_sha256) == 64
+    assert any(error.startswith("capture_frame_invalid:") for error in errors)
+    assert (
+        "recorder_report_evidence_mismatch:terminal-manifest:evidence_manifest_sha256"
+    ) in errors
 
 
 def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
@@ -238,17 +275,7 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
     ) as store:
         store.start_run("bounded-batch", EPOCH * 1_000)
         store.append_messages("bounded-batch", messages)
-        stats = (
-            store.connect()
-            .execute(
-                """
-            SELECT count(*), min(sequence_number), max(sequence_number),
-                   count(DISTINCT sequence_number)
-            FROM polymarket_raw_message
-            """
-            )
-            .fetchone()
-        )
+        stored_messages = tuple(store._iter_capture_messages("bounded-batch"))
         chunk_stats = (
             store.connect()
             .execute(
@@ -260,14 +287,16 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
             )
             .fetchone()
         )
-        inline_payloads = (
+        hot_row_counts = (
             store.connect()
             .execute(
                 """
-            SELECT count(*) FROM polymarket_raw_message WHERE raw_text <> ''
+            SELECT
+              (SELECT count(*) FROM polymarket_raw_message),
+              (SELECT count(*) FROM polymarket_public_event)
             """
             )
-            .fetchone()[0]
+            .fetchone()
         )
         storage_schema = (
             store.connect()
@@ -279,8 +308,10 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
             )
             .fetchone()[0]
         )
-        hot_path_unique_constraints = store.connect().execute(
-            """
+        hot_path_unique_constraints = (
+            store.connect()
+            .execute(
+                """
             SELECT table_name FROM duckdb_constraints()
             WHERE constraint_type = 'UNIQUE'
               AND table_name IN (
@@ -288,13 +319,18 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
               )
             ORDER BY table_name
             """
-        ).fetchall()
+            )
+            .fetchall()
+        )
 
-    assert stats == (message_count, 1, message_count, message_count)
+    assert len(stored_messages) == message_count
+    assert [item.message.sequence_number for item in stored_messages] == list(
+        range(1, message_count + 1)
+    )
     assert chunk_stats[0:2] == (3, message_count)
     assert 0 < chunk_stats[2] < chunk_stats[3]
-    assert inline_payloads == 0
-    assert storage_schema == "polymarket-evidence-storage-v3"
+    assert hot_row_counts == (0, 0)
+    assert storage_schema == "polymarket-evidence-storage-v4"
     assert hot_path_unique_constraints == []
 
 
@@ -333,10 +369,139 @@ def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
         )
 
 
+def test_storage_v4_rejects_cross_batch_receipt_regression_atomically(
+    tmp_path,
+) -> None:
+    database = tmp_path / "receipt-regression.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("receipt-regression", EPOCH * 1_000)
+        store.append_messages(
+            "receipt-regression",
+            [_message("polymarket_rtds", "PING")],
+        )
+        regressed = RawStreamMessage(
+            stream="polymarket_rtds",
+            connection_id="polymarket_rtds-connection",
+            sequence_number=2,
+            received_wall_ms=EPOCH * 1_000,
+            received_monotonic_ns=455_999,
+            raw_text="PONG",
+        )
+        with pytest.raises(ValueError, match="predates already persisted"):
+            store.append_messages("receipt-regression", [regressed])
+
+        assert store.connect().execute(
+            "SELECT count(*), sum(message_count) FROM polymarket_raw_chunk"
+        ).fetchone() == (1, 1)
+        assert [
+            item.message.sequence_number
+            for item in store._iter_capture_messages("receipt-regression")
+        ] == [1]
+
+
+def test_storage_v4_resume_restores_lane_sequence_and_receipt_state(tmp_path) -> None:
+    database = tmp_path / "resume-v4.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("resume-v4", EPOCH * 1_000)
+        store.append_messages(
+            "resume-v4",
+            [_message("polymarket_rtds", "PING")],
+        )
+
+    with PolymarketEvidenceStore(database) as store:
+        store.append_messages(
+            "resume-v4",
+            [_message("polymarket_rtds", "PONG", sequence=2)],
+        )
+        with pytest.raises(ValueError, match="stream sequence must increase strictly"):
+            store.append_messages(
+                "resume-v4",
+                [_message("polymarket_rtds", "PING", sequence=2)],
+            )
+        assert [
+            item.message.sequence_number
+            for item in store._iter_capture_messages("resume-v4")
+        ] == [1, 2]
+
+
+def test_storage_v4_stream_count_and_chunk_sequence_tampering_fail_closed(
+    tmp_path,
+) -> None:
+    stream_database = tmp_path / "stream-count-tamper.duckdb"
+    with PolymarketEvidenceStore(stream_database) as store:
+        store.start_run("stream-count-tamper", EPOCH * 1_000)
+        store.append_messages(
+            "stream-count-tamper",
+            [_message("polymarket_rtds", "PING")],
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_raw_chunk
+            SET stream_counts_json = '{"polymarket_rtds":2}'
+            WHERE run_id = 'stream-count-tamper'
+            """
+        )
+        stream_errors = store.integrity_errors("stream-count-tamper")
+        with pytest.raises(ValueError, match="frame manifest differs"):
+            tuple(store.iter_public_events("stream-count-tamper"))
+
+    chunk_database = tmp_path / "chunk-sequence-tamper.duckdb"
+    with PolymarketEvidenceStore(chunk_database) as store:
+        store.start_run("chunk-sequence-tamper", EPOCH * 1_000)
+        store.append_messages(
+            "chunk-sequence-tamper",
+            [_message("polymarket_rtds", "PING")],
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_raw_chunk SET chunk_index = 1
+            WHERE run_id = 'chunk-sequence-tamper'
+            """
+        )
+        chunk_errors = store.integrity_errors("chunk-sequence-tamper")
+        with pytest.raises(ValueError, match="chunk sequence differs"):
+            tuple(store.iter_public_events("chunk-sequence-tamper"))
+
+    assert any(error.startswith("capture_frame_invalid:") for error in stream_errors)
+    assert any(error.startswith("capture_frame_invalid:") for error in chunk_errors)
+
+
+def test_storage_v4_fail_run_uses_bounded_frame_metadata_without_claiming_events(
+    tmp_path,
+) -> None:
+    database = tmp_path / "fast-terminal-summary.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        store.start_run("fast-terminal-summary", EPOCH * 1_000)
+        store.append_messages(
+            "fast-terminal-summary",
+            [
+                _message("binance_spot", "PING"),
+                _message("polymarket_rtds", "PONG"),
+            ],
+        )
+        report = store.fail_run(
+            "fast-terminal-summary",
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 1_000,
+            database=str(database),
+            errors=("operator_interrupt",),
+        )
+
+    assert report.status == "failed"
+    assert report.raw_message_count == 2
+    assert report.normalized_event_count == 0
+    assert report.stream_counts == {"binance_spot": 1, "polymarket_rtds": 1}
+    assert report.integrity_errors == ("terminal_integrity_audit_incomplete",)
+
+
 def test_storage_v3_terminal_manifests_detect_unindexed_duplicates(tmp_path) -> None:
     database = tmp_path / "unindexed-duplicate-audit.duckdb"
     with PolymarketEvidenceStore(database) as store:
-        _complete_store(store, "duplicate-raw")
+        _complete_store(
+            store,
+            "duplicate-raw",
+            storage_schema_version="polymarket-evidence-storage-v3",
+        )
         store.connect().execute(
             """
             INSERT INTO polymarket_raw_message
@@ -346,7 +511,11 @@ def test_storage_v3_terminal_manifests_detect_unindexed_duplicates(tmp_path) -> 
         )
         raw_errors = store.integrity_errors("duplicate-raw")
 
-        _complete_store(store, "duplicate-event")
+        _complete_store(
+            store,
+            "duplicate-event",
+            storage_schema_version="polymarket-evidence-storage-v3",
+        )
         store.connect().execute(
             """
             INSERT INTO polymarket_public_event
@@ -358,12 +527,9 @@ def test_storage_v3_terminal_manifests_detect_unindexed_duplicates(tmp_path) -> 
 
     assert any(error.startswith("raw_chunk_manifest_mismatch:") for error in raw_errors)
     assert any(
-        error.startswith("normalized_event_count_mismatch:")
-        for error in event_errors
+        error.startswith("normalized_event_count_mismatch:") for error in event_errors
     )
-    assert any(
-        error.startswith("normalized_event_manifest_") for error in event_errors
-    )
+    assert any(error.startswith("normalized_event_manifest_") for error in event_errors)
 
 
 def test_storage_v3_refuses_an_incremental_hot_path_index(tmp_path) -> None:
@@ -377,8 +543,20 @@ def test_storage_v3_refuses_an_incremental_hot_path_index(tmp_path) -> None:
             )
             """
         )
-        with pytest.raises(ValueError, match="require a fresh database"):
-            store.start_run("indexed-hot-path", EPOCH * 1_000)
+        store.start_run("indexed-hot-path", EPOCH * 1_000)
+        store.connect().execute(
+            """
+            UPDATE polymarket_recorder_run
+            SET storage_schema_version = 'polymarket-evidence-storage-v3'
+            WHERE run_id = 'indexed-hot-path'
+            """
+        )
+        store._storage_schema_version_by_run.pop("indexed-hot-path", None)
+        with pytest.raises(ValueError, match="without incremental hot-path"):
+            store.append_messages(
+                "indexed-hot-path",
+                [_message("polymarket_rtds", "PING")],
+            )
 
 
 def test_storage_v3_reader_remains_compatible_with_compact_v2(tmp_path) -> None:
@@ -630,11 +808,13 @@ def test_current_rtds_chainlink_type_rejects_legacy_index_drift(tmp_path) -> Non
         },
     }
     with PolymarketEvidenceStore(database) as store:
-        store.start_run("current-chainlink-v2", EPOCH * 1_000)
-        store.append_messages(
+        _complete_store(
+            store,
             "current-chainlink-v2",
-            [_message("polymarket_rtds", raw_event)],
+            storage_schema_version="polymarket-evidence-storage-v3",
         )
+        event_message = _message("polymarket_rtds", raw_event, sequence=3)
+        store.append_messages("current-chainlink-v2", [event_message])
         store.connect().execute(
             """
             UPDATE polymarket_public_event
@@ -812,16 +992,10 @@ def test_rtds_chainlink_bootstrap_topic_is_canonicalized_from_symbol(tmp_path) -
                 )
             ],
         )
+        decoded = tuple(store.iter_public_events("chainlink-bootstrap"))
         indexed = (
-            store.connect()
-            .execute(
-                """
-            SELECT event_type, symbol FROM polymarket_public_event
-            WHERE run_id = ?
-            """,
-                ["chainlink-bootstrap"],
-            )
-            .fetchone()
+            decoded[0].event_type,
+            decoded[0].symbol,
         )
 
     assert indexed == ("crypto_prices_chainlink:subscribe", "BTC")
@@ -1146,7 +1320,11 @@ def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(
     tmp_path,
 ) -> None:
     with PolymarketEvidenceStore(tmp_path / "tampered.duckdb") as store:
-        _complete_store(store, "run-tampered")
+        _complete_store(
+            store,
+            "run-tampered",
+            storage_schema_version="polymarket-evidence-storage-v3",
+        )
         store.record_gap(
             "run-tampered",
             StreamGap("clob_market", "gap-connection", EPOCH * 1_000, "disconnect", 9),
@@ -1212,8 +1390,7 @@ def test_compact_frame_corruption_is_fail_closed(tmp_path) -> None:
         with pytest.raises(ValueError, match="chunk payload hash mismatch"):
             tuple(store.iter_public_events("frame-corruption"))
 
-    assert any(error.startswith("raw_chunk_invalid:") for error in errors)
-    assert any(error.startswith("normalized_event_manifest_") for error in errors)
+    assert any(error.startswith("capture_frame_invalid:") for error in errors)
 
 
 def test_terminal_recorder_evidence_rejects_late_append(
@@ -1403,6 +1580,7 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
                 conditions=("condition-1", "condition-2", "condition-3"),
                 integrity_errors=(),
                 errors=(),
+                evidence_manifest_sha256="e" * 64,
                 report_sha256="f" * 64,
             )
 

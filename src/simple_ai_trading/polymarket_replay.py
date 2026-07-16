@@ -470,7 +470,9 @@ class PolymarketEvidenceReplay:
         if {item.condition_id for item in market_execution_evidence} != {
             market.condition_id for market in markets
         }:
-            raise ValueError("Polymarket execution evidence does not cover every market")
+            raise ValueError(
+                "Polymarket execution evidence does not cover every market"
+            )
         continuity_mode = "segmented" if gap_count else "strict"
         causal_metrics = _CausalReplayMetrics()
         events = cls._iter_causal_events(
@@ -551,6 +553,14 @@ class PolymarketEvidenceReplay:
         if rows and not allow_segmented_gaps:
             raise ValueError("Polymarket replay refuses runs with stream gaps")
         segmentable_streams = {"clob_market", "binance_spot", "polymarket_rtds"}
+        lane_summaries = store.raw_message_lane_summaries(
+            run_id,
+            streams=tuple(sorted(segmentable_streams)),
+        )
+        summaries_by_connection = {
+            (summary.stream, summary.connection_id): summary
+            for summary in lane_summaries
+        }
         seen_connections: set[tuple[str, str]] = set()
         for stream, connection_id, opened_at_ms, last_sequence_number in rows:
             normalized_stream = str(stream)
@@ -564,21 +574,8 @@ class PolymarketEvidenceReplay:
             if connection_key in seen_connections:
                 raise ValueError("stream connection has duplicate gap evidence")
             seen_connections.add(connection_key)
-            evidence = connection.execute(
-                """
-                SELECT count(*), max(sequence_number), max(received_wall_ms),
-                       sum(CASE WHEN received_wall_ms > ? THEN 1 ELSE 0 END)
-                FROM polymarket_raw_message
-                WHERE run_id = ? AND stream = ? AND connection_id = ?
-                """,
-                [
-                    int(opened_at_ms),
-                    run_id,
-                    normalized_stream,
-                    normalized_connection,
-                ],
-            ).fetchone()
-            evidence_count = 0 if evidence is None else int(evidence[0] or 0)
+            evidence = summaries_by_connection.get(connection_key)
+            evidence_count = 0 if evidence is None else evidence.message_count
             expected_last_sequence = int(last_sequence_number)
             if expected_last_sequence == 0:
                 if evidence_count != 0:
@@ -588,36 +585,27 @@ class PolymarketEvidenceReplay:
                 continue
             if evidence_count < 1:
                 raise ValueError("stream gap has no matching connection evidence")
-            if int(evidence[1]) != expected_last_sequence:
+            assert evidence is not None
+            if evidence.maximum_sequence_number != expected_last_sequence:
                 raise ValueError("stream gap does not close the final sequence")
-            if int(evidence[2]) > int(opened_at_ms) or int(evidence[3] or 0):
+            if evidence.last_received_wall_ms > int(opened_at_ms):
                 raise ValueError("stream gap precedes messages on its connection")
 
-        connection_rows = connection.execute(
-            """
-            SELECT stream, connection_id,
-                   min(received_monotonic_ns), max(received_monotonic_ns),
-                   min(sequence_number)
-            FROM polymarket_raw_message
-            WHERE run_id = ?
-              AND stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
-            GROUP BY stream, connection_id
-            """,
-            [run_id],
-        ).fetchall()
         named_lanes: dict[str, list[tuple[int, int, str, str]]] = {}
-        for stream, connection_id, first_ns, last_ns, first_sequence in connection_rows:
-            normalized_stream = str(stream)
-            normalized_connection = str(connection_id)
+        for summary in lane_summaries:
+            normalized_stream = summary.stream
+            normalized_connection = summary.connection_id
             lane = _named_live_lane(normalized_stream, normalized_connection)
             if lane is None:
                 continue
-            if int(first_sequence) != 1:
-                raise ValueError("named stream connection does not begin at sequence one")
+            if summary.minimum_sequence_number != 1:
+                raise ValueError(
+                    "named stream connection does not begin at sequence one"
+                )
             named_lanes.setdefault(lane, []).append(
                 (
-                    int(first_ns),
-                    int(last_ns),
+                    summary.first_received_monotonic_ns,
+                    summary.last_received_monotonic_ns,
                     normalized_stream,
                     normalized_connection,
                 )

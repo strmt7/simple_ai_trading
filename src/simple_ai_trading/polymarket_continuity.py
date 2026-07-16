@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
@@ -164,8 +165,7 @@ class PolymarketContinuityReport:
             or not _is_sha256(self.run_report_sha256)
             or self.run_started_at_ms <= 0
             or not self.groups
-            or self.eligible_group_count
-            != sum(group.eligible for group in self.groups)
+            or self.eligible_group_count != sum(group.eligible for group in self.groups)
             or self.confirmation_eligible == bool(self.confirmation_reasons)
             or tuple(sorted(set(self.confirmation_reasons)))
             != self.confirmation_reasons
@@ -238,9 +238,7 @@ def _create_window_tables(
                         baseline_deadline,
                     )
                 )
-            asset_rows.append(
-                (event_start_ms, market.asset, window_start, window_end)
-            )
+            asset_rows.append((event_start_ms, market.asset, window_start, window_end))
     connection.executemany(
         "INSERT INTO continuity_market_window VALUES (?, ?, ?, ?, ?, ?)",
         market_rows,
@@ -268,135 +266,225 @@ def _continuity_evidence(
     dict[tuple[str, str], int],
 ]:
     connection = store.connect()
-    connection.execute("DROP TABLE IF EXISTS continuity_connection_start")
-    connection.execute(
+    token_windows = connection.execute(
         """
-        CREATE TEMP TABLE continuity_connection_start AS
-        SELECT stream, connection_id, min(received_wall_ms) AS started_at_ms
-        FROM polymarket_raw_message
+        SELECT event_start_ms, asset, condition_id, token_id,
+               window_start_ms, window_end_ms, baseline_deadline_ms
+        FROM continuity_token_window
+        ORDER BY event_start_ms, asset, token_id
+        """
+    ).fetchall()
+    asset_windows = connection.execute(
+        """
+        SELECT event_start_ms, asset, window_start_ms, window_end_ms
+        FROM continuity_asset_window
+        ORDER BY asset, window_start_ms, event_start_ms
+        """
+    ).fetchall()
+    lane_summaries = store.raw_message_lane_summaries(
+        run_id,
+        streams=("binance_spot", "clob_market", "polymarket_rtds"),
+    )
+    connection_starts = {
+        (summary.stream, summary.connection_id): summary.first_received_wall_ms
+        for summary in lane_summaries
+    }
+
+    indexed_asset_windows: dict[str, list[tuple[int, int, int]]] = {}
+    for event_start_ms, asset, window_start_ms, window_end_ms in asset_windows:
+        indexed_asset_windows.setdefault(str(asset), []).append(
+            (int(window_start_ms), int(window_end_ms), int(event_start_ms))
+        )
+    asset_window_starts: dict[str, tuple[int, ...]] = {}
+    for asset, windows in indexed_asset_windows.items():
+        previous_end: int | None = None
+        for window_start, window_end, _event_start in windows:
+            if window_start > window_end:
+                raise ValueError("Polymarket continuity window is inverted")
+            if previous_end is not None and window_start <= previous_end:
+                raise ValueError("Polymarket continuity windows overlap")
+            previous_end = window_end
+        asset_window_starts[asset] = tuple(item[0] for item in windows)
+
+    def event_window(asset: str, received_wall_ms: int) -> int | None:
+        windows = indexed_asset_windows.get(asset)
+        if not windows:
+            return None
+        position = bisect_right(asset_window_starts[asset], received_wall_ms) - 1
+        if position < 0:
+            return None
+        window_start, window_end, event_start = windows[position]
+        if window_start <= received_wall_ms <= window_end:
+            return event_start
+        return None
+
+    token_window_by_identity = {
+        (str(condition_id).lower(), str(token_id)): (
+            int(event_start_ms),
+            str(asset),
+            int(window_start_ms),
+            int(window_end_ms),
+            int(baseline_deadline_ms),
+        )
+        for (
+            event_start_ms,
+            asset,
+            condition_id,
+            token_id,
+            window_start_ms,
+            window_end_ms,
+            baseline_deadline_ms,
+        ) in token_windows
+    }
+    clob_accumulators: dict[tuple[int, str, str], dict[str, object]] = {}
+    binance_accumulators: dict[tuple[int, str], dict[str, object]] = {}
+    rtds_accumulators: dict[tuple[int, str], dict[str, object]] = {}
+    for decoded in store.iter_public_events(
+        run_id,
+        streams=("binance_spot", "clob_market", "polymarket_rtds"),
+        verified_source=True,
+    ):
+        received_wall_ms = decoded.received_wall_ms
+        event_type = decoded.event_type.lower()
+        if decoded.stream == "clob_market":
+            window = token_window_by_identity.get(
+                (decoded.condition_id.lower(), decoded.asset_id)
+            )
+            if window is None or received_wall_ms > window[3]:
+                continue
+            key = (window[0], window[1], decoded.asset_id)
+            accumulator = clob_accumulators.setdefault(
+                key,
+                {
+                    "window_events": 0,
+                    "window_connections": set(),
+                    "baseline": None,
+                },
+            )
+            if window[2] <= received_wall_ms <= window[3]:
+                accumulator["window_events"] = int(accumulator["window_events"]) + 1
+                connections = accumulator["window_connections"]
+                assert isinstance(connections, set)
+                connections.add(decoded.connection_id)
+            if event_type == "book" and received_wall_ms <= window[4]:
+                candidate = (
+                    received_wall_ms,
+                    decoded.received_monotonic_ns,
+                    decoded.event_id,
+                    decoded.connection_id,
+                )
+                baseline = accumulator["baseline"]
+                if baseline is None or candidate > baseline:
+                    accumulator["baseline"] = candidate
+            continue
+        asset = decoded.symbol.upper()
+        event_start = event_window(asset, received_wall_ms)
+        if event_start is None:
+            continue
+        key = (event_start, asset)
+        if decoded.stream == "binance_spot":
+            accumulator = binance_accumulators.setdefault(
+                key,
+                {"bookticker": 0, "trade": 0, "connections": set()},
+            )
+            if event_type in {"bookticker", "trade"}:
+                accumulator[event_type] = int(accumulator[event_type]) + 1
+            connections = accumulator["connections"]
+            assert isinstance(connections, set)
+            connections.add(decoded.connection_id)
+        elif event_type.startswith("crypto_prices_chainlink:"):
+            accumulator = rtds_accumulators.setdefault(
+                key,
+                {"events": 0, "connections": set()},
+            )
+            accumulator["events"] = int(accumulator["events"]) + 1
+            connections = accumulator["connections"]
+            assert isinstance(connections, set)
+            connections.add(decoded.connection_id)
+
+    clob: dict[tuple[int, str, str], tuple[object, ...]] = {}
+    for event_start_ms, asset, _condition_id, token_id, *_bounds in token_windows:
+        key = (int(event_start_ms), str(asset), str(token_id))
+        accumulator = clob_accumulators.get(key)
+        if accumulator is None:
+            clob[key] = (0, 0, None, None, None)
+            continue
+        connections = accumulator["window_connections"]
+        baseline = accumulator["baseline"]
+        assert isinstance(connections, set)
+        clob[key] = (
+            int(accumulator["window_events"]),
+            len(connections),
+            min(connections) if connections else None,
+            None if baseline is None else baseline[3],
+            None if baseline is None else baseline[0],
+        )
+    binance: dict[tuple[int, str], tuple[object, ...]] = {}
+    rtds: dict[tuple[int, str], tuple[object, ...]] = {}
+    for event_start_ms, asset, _window_start, _window_end in asset_windows:
+        key = (int(event_start_ms), str(asset))
+        binance_accumulator = binance_accumulators.get(key)
+        if binance_accumulator is None:
+            binance[key] = (0, 0, 0, None)
+        else:
+            connections = binance_accumulator["connections"]
+            assert isinstance(connections, set)
+            binance[key] = (
+                int(binance_accumulator["bookticker"]),
+                int(binance_accumulator["trade"]),
+                len(connections),
+                min(connections) if connections else None,
+            )
+        rtds_accumulator = rtds_accumulators.get(key)
+        if rtds_accumulator is None:
+            rtds[key] = (0, 0, None)
+        else:
+            connections = rtds_accumulator["connections"]
+            assert isinstance(connections, set)
+            rtds[key] = (
+                int(rtds_accumulator["events"]),
+                len(connections),
+                min(connections) if connections else None,
+            )
+
+    raw_gaps = connection.execute(
+        """
+        SELECT stream, connection_id, opened_at_ms
+        FROM polymarket_stream_gap
         WHERE run_id = ?
           AND stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
-        GROUP BY stream, connection_id
+        ORDER BY opened_at_ms, gap_id
         """,
         [run_id],
+    ).fetchall()
+    gap_counts: dict[tuple[int, str], int] = {}
+    group_windows = sorted(
+        {
+            (int(event_start), int(window_start), int(window_end))
+            for event_start, _asset, window_start, window_end in asset_windows
+        }
     )
-    connection_rows = connection.execute(
-        """
-        SELECT stream, connection_id, started_at_ms
-        FROM continuity_connection_start
-        ORDER BY stream, connection_id
-        """
-    ).fetchall()
-    clob_rows = connection.execute(
-        """
-        WITH clob AS (
-            SELECT e.condition_id, e.asset_id, lower(e.event_type) AS event_type,
-                   r.connection_id, r.received_wall_ms
-            FROM polymarket_public_event AS e
-            JOIN polymarket_raw_message AS r
-              ON r.run_id = e.run_id AND r.message_id = e.message_id
-            WHERE e.run_id = ? AND e.stream = 'clob_market'
+    for stream, connection_id, opened_at_ms in raw_gaps:
+        normalized_stream = str(stream)
+        normalized_connection = str(connection_id)
+        opened = int(opened_at_ms)
+        resumed = min(
+            (
+                started_at
+                for (
+                    candidate_stream,
+                    candidate_connection,
+                ), started_at in connection_starts.items()
+                if candidate_stream == normalized_stream
+                and candidate_connection != normalized_connection
+                and started_at > opened
+            ),
+            default=None,
         )
-        SELECT w.event_start_ms, w.asset, w.token_id,
-               count(c.event_type) FILTER (
-                   WHERE c.received_wall_ms BETWEEN w.window_start_ms
-                                                AND w.window_end_ms
-               ) AS window_events,
-               count(DISTINCT c.connection_id) FILTER (
-                   WHERE c.received_wall_ms BETWEEN w.window_start_ms
-                                                AND w.window_end_ms
-               ) AS window_connections,
-               min(c.connection_id) FILTER (
-                   WHERE c.received_wall_ms BETWEEN w.window_start_ms
-                                                AND w.window_end_ms
-               ) AS window_connection,
-               arg_max(c.connection_id, c.received_wall_ms) FILTER (
-                   WHERE c.event_type = 'book'
-                     AND c.received_wall_ms <= w.baseline_deadline_ms
-               ) AS baseline_connection,
-               max(c.received_wall_ms) FILTER (
-                   WHERE c.event_type = 'book'
-                     AND c.received_wall_ms <= w.baseline_deadline_ms
-               ) AS baseline_received_wall_ms
-        FROM continuity_token_window AS w
-        LEFT JOIN clob AS c
-          ON c.condition_id = w.condition_id AND c.asset_id = w.token_id
-         AND c.received_wall_ms <= w.window_end_ms
-        GROUP BY w.event_start_ms, w.asset, w.token_id
-        ORDER BY w.event_start_ms, w.asset, w.token_id
-        """,
-        [run_id],
-    ).fetchall()
-    binance_rows = connection.execute(
-        """
-        WITH source AS (
-            SELECT upper(e.symbol) AS asset, lower(e.event_type) AS event_type,
-                   r.connection_id, r.received_wall_ms
-            FROM polymarket_public_event AS e
-            JOIN polymarket_raw_message AS r
-              ON r.run_id = e.run_id AND r.message_id = e.message_id
-            WHERE e.run_id = ? AND e.stream = 'binance_spot'
-        )
-        SELECT w.event_start_ms, w.asset,
-               count(s.event_type) FILTER (WHERE s.event_type = 'bookticker'),
-               count(s.event_type) FILTER (WHERE s.event_type = 'trade'),
-               count(DISTINCT s.connection_id), min(s.connection_id)
-        FROM continuity_asset_window AS w
-        LEFT JOIN source AS s ON s.asset = w.asset
-          AND s.received_wall_ms BETWEEN w.window_start_ms AND w.window_end_ms
-        GROUP BY w.event_start_ms, w.asset
-        ORDER BY w.event_start_ms, w.asset
-        """,
-        [run_id],
-    ).fetchall()
-    rtds_rows = connection.execute(
-        """
-        WITH source AS (
-            SELECT upper(e.symbol) AS asset, lower(e.event_type) AS event_type,
-                   r.connection_id, r.received_wall_ms
-            FROM polymarket_public_event AS e
-            JOIN polymarket_raw_message AS r
-              ON r.run_id = e.run_id AND r.message_id = e.message_id
-            WHERE e.run_id = ? AND e.stream = 'polymarket_rtds'
-              AND lower(e.event_type) LIKE 'crypto_prices_chainlink:%'
-        )
-        SELECT w.event_start_ms, w.asset, count(s.event_type),
-               count(DISTINCT s.connection_id), min(s.connection_id)
-        FROM continuity_asset_window AS w
-        LEFT JOIN source AS s ON s.asset = w.asset
-          AND s.received_wall_ms BETWEEN w.window_start_ms AND w.window_end_ms
-        GROUP BY w.event_start_ms, w.asset
-        ORDER BY w.event_start_ms, w.asset
-        """,
-        [run_id],
-    ).fetchall()
-    gap_rows = connection.execute(
-        """
-        WITH gap_interval AS (
-            SELECT g.gap_id, g.stream, g.opened_at_ms,
-                   min(s.started_at_ms) FILTER (
-                       WHERE s.connection_id <> g.connection_id
-                         AND s.started_at_ms > g.opened_at_ms
-                   ) AS resumed_at_ms
-            FROM polymarket_stream_gap AS g
-            LEFT JOIN continuity_connection_start AS s ON s.stream = g.stream
-            WHERE g.run_id = ?
-              AND g.stream IN ('clob_market', 'binance_spot', 'polymarket_rtds')
-            GROUP BY g.gap_id, g.stream, g.connection_id, g.opened_at_ms
-        )
-        SELECT w.event_start_ms, g.stream, count(*)
-        FROM (
-            SELECT DISTINCT event_start_ms, window_start_ms, window_end_ms
-            FROM continuity_asset_window
-        ) AS w
-        JOIN gap_interval AS g
-          ON g.opened_at_ms <= w.window_end_ms
-         AND coalesce(g.resumed_at_ms, 9223372036854775807) > w.window_start_ms
-        GROUP BY w.event_start_ms, g.stream
-        ORDER BY w.event_start_ms, g.stream
-        """,
-        [run_id],
-    ).fetchall()
+        for event_start, window_start, window_end in group_windows:
+            if opened <= window_end and (resumed is None or resumed > window_start):
+                key = (event_start, normalized_stream)
+                gap_counts[key] = gap_counts.get(key, 0) + 1
     snapshot_rows = connection.execute(
         """
         SELECT condition_id, observed_wall_ms
@@ -406,27 +494,21 @@ def _continuity_evidence(
         [run_id],
     ).fetchall()
     return (
-        {
-            (int(row[0]), str(row[1]), str(row[2])): tuple(row[3:])
-            for row in clob_rows
-        },
-        {(int(row[0]), str(row[1])): tuple(row[2:]) for row in binance_rows},
-        {(int(row[0]), str(row[1])): tuple(row[2:]) for row in rtds_rows},
+        clob,
+        binance,
+        rtds,
         {
             int(start): tuple(
                 sorted(
                     f"stream_gap:{stream}:{count}"
-                    for candidate, stream, count in gap_rows
-                    if int(candidate) == int(start)
+                    for (candidate, stream), count in gap_counts.items()
+                    if candidate == start
                 )
             )
-            for start in {int(row[0]) for row in gap_rows}
+            for start in {candidate for candidate, _stream in gap_counts}
         },
         {str(condition): int(wall_ms) for condition, wall_ms in snapshot_rows},
-        {
-            (str(stream), str(connection_id)): int(started_at_ms)
-            for stream, connection_id, started_at_ms in connection_rows
-        },
+        connection_starts,
     )
 
 
@@ -496,7 +578,10 @@ def _persist_report(
             """,
             [report.report_sha256],
         ).fetchall()
-        if tuple(existing) != report_row or [tuple(row) for row in stored_groups] != group_rows:
+        if (
+            tuple(existing) != report_row
+            or [tuple(row) for row in stored_groups] != group_rows
+        ):
             raise ValueError("stored Polymarket continuity report is inconsistent")
         return
     connection.execute("BEGIN TRANSACTION")
@@ -527,13 +612,17 @@ def evaluate_polymarket_continuity_eligibility(
     if not selected:
         raise ValueError("Polymarket continuity eligibility requires a run ID")
     cfg = (config or PolymarketContinuityConfig()).validated()
-    run = store.connect().execute(
-        """
+    run = (
+        store.connect()
+        .execute(
+            """
         SELECT status, error, report_sha256, started_at_ms, ended_at_ms
         FROM polymarket_recorder_run WHERE run_id = ?
         """,
-        [selected],
-    ).fetchone()
+            [selected],
+        )
+        .fetchone()
+    )
     if run is None:
         raise ValueError("unknown Polymarket continuity run")
     if str(run[0]) not in {"complete", "degraded"} or str(run[1] or "").strip():
@@ -545,7 +634,9 @@ def evaluate_polymarket_continuity_eligibility(
         raise ValueError("Polymarket continuity run report is invalid")
     integrity = store.integrity_errors(selected)
     if integrity:
-        raise ValueError("Polymarket continuity integrity failed: " + "; ".join(integrity))
+        raise ValueError(
+            "Polymarket continuity integrity failed: " + "; ".join(integrity)
+        )
     markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
     groups: dict[int, list[object]] = {}
     for market in markets:
@@ -554,11 +645,13 @@ def evaluate_polymarket_continuity_eligibility(
     for event_start_ms, values in sorted(groups.items()):
         ordered = tuple(sorted(values, key=lambda item: _ASSETS.index(item.asset)))
         if tuple(item.asset for item in ordered) != _ASSETS:
-            raise ValueError("Polymarket continuity requires complete synchronized groups")
+            raise ValueError(
+                "Polymarket continuity requires complete synchronized groups"
+            )
         synchronized[event_start_ms] = ordered
     _create_window_tables(store, synchronized, cfg)
-    clob, binance, rtds, gaps, snapshots, connection_starts = (
-        _continuity_evidence(store, selected)
+    clob, binance, rtds, gaps, snapshots, connection_starts = _continuity_evidence(
+        store, selected
     )
     evaluated: list[PolymarketContinuityGroup] = []
     for event_start_ms, market_group in synchronized.items():
@@ -613,7 +706,9 @@ def evaluate_polymarket_continuity_eligibility(
                 if window_events == 0:
                     reasons.append(f"missing_clob_window:{market.asset}:{outcome}")
                 if window_connections != 1:
-                    reasons.append(f"clob_segment_count:{market.asset}:{outcome}:{window_connections}")
+                    reasons.append(
+                        f"clob_segment_count:{market.asset}:{outcome}:{window_connections}"
+                    )
                 connection_start = connection_starts.get(
                     ("clob_market", window_connection)
                 )
@@ -622,9 +717,13 @@ def evaluate_polymarket_continuity_eligibility(
                         f"clob_segment_started_after_window:{market.asset}:{outcome}"
                     )
                 if baseline_connection and window_connection != baseline_connection:
-                    reasons.append(f"clob_baseline_segment_mismatch:{market.asset}:{outcome}")
+                    reasons.append(
+                        f"clob_baseline_segment_mismatch:{market.asset}:{outcome}"
+                    )
             asset_evidence["clob"] = token_evidence
-            binance_values = binance.get((event_start_ms, market.asset), (0, 0, 0, None))
+            binance_values = binance.get(
+                (event_start_ms, market.asset), (0, 0, 0, None)
+            )
             asset_evidence["binance"] = {
                 "book_event_count": int(binance_values[0] or 0),
                 "trade_event_count": int(binance_values[1] or 0),
@@ -639,7 +738,9 @@ def evaluate_polymarket_continuity_eligibility(
             if int(binance_values[1] or 0) == 0:
                 reasons.append(f"missing_binance_trade:{market.asset}")
             if int(binance_values[2] or 0) != 1:
-                reasons.append(f"binance_segment_count:{market.asset}:{int(binance_values[2] or 0)}")
+                reasons.append(
+                    f"binance_segment_count:{market.asset}:{int(binance_values[2] or 0)}"
+                )
             binance_connection_start = connection_starts.get(
                 ("binance_spot", str(binance_values[3] or ""))
             )
@@ -660,7 +761,9 @@ def evaluate_polymarket_continuity_eligibility(
             if int(rtds_values[0] or 0) == 0:
                 reasons.append(f"missing_rtds_chainlink:{market.asset}")
             if int(rtds_values[1] or 0) != 1:
-                reasons.append(f"rtds_segment_count:{market.asset}:{int(rtds_values[1] or 0)}")
+                reasons.append(
+                    f"rtds_segment_count:{market.asset}:{int(rtds_values[1] or 0)}"
+                )
             rtds_connection_start = connection_starts.get(
                 ("polymarket_rtds", str(rtds_values[2] or ""))
             )
