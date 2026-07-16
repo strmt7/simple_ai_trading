@@ -14,7 +14,26 @@ _PERIOD_MS = 3 * 86_400_000
 
 
 def _bound(metrics: dict[str, object], evidence_sha256: str) -> dict[str, object]:
-    return {**metrics, "dataset_fingerprint": _DATASET_SHA256, "evidence_sha256": evidence_sha256}
+    return {
+        **metrics,
+        "dataset_fingerprint": _DATASET_SHA256,
+        "evidence_sha256": evidence_sha256,
+    }
+
+
+def _complete(metrics: dict[str, object], evidence_sha256: str) -> dict[str, object]:
+    return _bound(
+        {
+            "roi_pct": 0.0,
+            "profit_factor": 1.5,
+            "win_rate": 0.6,
+            "liquidation_events": 0,
+            "max_consecutive_losses": 2,
+            "downside_return_risk_ratio": 1.0,
+            **metrics,
+        },
+        evidence_sha256,
+    )
 
 
 def _matched_periods(deltas: tuple[float, ...]) -> list[dict[str, object]]:
@@ -39,20 +58,26 @@ def test_estimate_model_parameters_from_local_model_names() -> None:
 
 def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
     report = assess_ai_uplift(
-        _bound({
-            "realized_pnl": 12.0,
-            "roi_pct": 1.2,
-            "max_drawdown": 0.04,
-            "expectancy": 0.9,
-            "closed_trades": 10,
-        }, _BASELINE_SHA256),
-        _bound({
-            "realized_pnl": 18.0,
-            "roi_pct": 1.8,
-            "max_drawdown": 0.035,
-            "expectancy": 1.2,
-            "closed_trades": 12,
-        }, _AI_SHA256),
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 1.2,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 18.0,
+                "roi_pct": 1.8,
+                "max_drawdown": 0.035,
+                "expectancy": 1.2,
+                "closed_trades": 12,
+            },
+            _AI_SHA256,
+        ),
         model_name="qwen2.5:7b",
         model_artifact_sha256=_MODEL_SHA256,
         matched_periods=_matched_periods((0.002,) * 30),
@@ -74,8 +99,18 @@ def test_ai_uplift_accepts_multibillion_holdout_improvement() -> None:
 
 def test_ai_uplift_rejects_small_or_non_improving_models() -> None:
     report = assess_ai_uplift(
-        {"realized_pnl": 12.0, "max_drawdown": 0.04, "expectancy": 0.9, "closed_trades": 10},
-        {"realized_pnl": 11.0, "max_drawdown": 0.05, "expectancy": 0.8, "closed_trades": 3},
+        {
+            "realized_pnl": 12.0,
+            "max_drawdown": 0.04,
+            "expectancy": 0.9,
+            "closed_trades": 10,
+        },
+        {
+            "realized_pnl": 11.0,
+            "max_drawdown": 0.05,
+            "expectancy": 0.8,
+            "closed_trades": 3,
+        },
         model_name="tiny-560m",
     )
 
@@ -90,20 +125,26 @@ def test_ai_uplift_rejects_small_or_non_improving_models() -> None:
 
 def test_ai_uplift_rejects_statistically_weak_paired_samples() -> None:
     report = assess_ai_uplift(
-        _bound({
-            "realized_pnl": 12.0,
-            "roi_pct": 1.2,
-            "max_drawdown": 0.04,
-            "expectancy": 0.9,
-            "closed_trades": 10,
-        }, _BASELINE_SHA256),
-        _bound({
-            "realized_pnl": 13.0,
-            "roi_pct": 1.3,
-            "max_drawdown": 0.04,
-            "expectancy": 1.0,
-            "closed_trades": 10,
-        }, _AI_SHA256),
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 1.2,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 13.0,
+                "roi_pct": 1.3,
+                "max_drawdown": 0.04,
+                "expectancy": 1.0,
+                "closed_trades": 10,
+            },
+            _AI_SHA256,
+        ),
         model_name="qwen2.5:7b",
         model_artifact_sha256=_MODEL_SHA256,
         matched_periods=_matched_periods((0.001, -0.001) * 15),
@@ -121,20 +162,26 @@ def test_ai_uplift_rejects_noncontiguous_matched_periods() -> None:
     periods[10]["period_start_ms"] = int(periods[10]["period_start_ms"]) + 1
     periods[10]["period_end_ms"] = int(periods[10]["period_end_ms"]) + 1
     report = assess_ai_uplift(
-        _bound({
-            "realized_pnl": 12.0,
-            "roi_pct": 1.2,
-            "max_drawdown": 0.04,
-            "expectancy": 0.9,
-            "closed_trades": 10,
-        }, _BASELINE_SHA256),
-        _bound({
-            "realized_pnl": 14.0,
-            "roi_pct": 1.4,
-            "max_drawdown": 0.035,
-            "expectancy": 1.1,
-            "closed_trades": 10,
-        }, _AI_SHA256),
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "roi_pct": 1.2,
+                "max_drawdown": 0.04,
+                "expectancy": 0.9,
+                "closed_trades": 10,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 14.0,
+                "roi_pct": 1.4,
+                "max_drawdown": 0.035,
+                "expectancy": 1.1,
+                "closed_trades": 10,
+            },
+            _AI_SHA256,
+        ),
         model_name="qwen2.5:7b",
         model_artifact_sha256=_MODEL_SHA256,
         matched_periods=periods,
@@ -146,28 +193,34 @@ def test_ai_uplift_rejects_noncontiguous_matched_periods() -> None:
 
 def test_ai_uplift_rejects_tail_risk_deterioration() -> None:
     report = assess_ai_uplift(
-        _bound({
-            "realized_pnl": 20.0,
-            "max_drawdown": 0.04,
-            "expectancy": 0.8,
-            "profit_factor": 1.8,
-            "win_rate": 0.62,
-            "closed_trades": 20,
-            "max_consecutive_losses": 2,
-            "downside_return_risk_ratio": 0.70,
-            "liquidation_events": 0,
-        }, _BASELINE_SHA256),
-        _bound({
-            "realized_pnl": 25.0,
-            "max_drawdown": 0.04,
-            "expectancy": 1.0,
-            "profit_factor": 1.4,
-            "win_rate": 0.55,
-            "closed_trades": 22,
-            "max_consecutive_losses": 4,
-            "downside_return_risk_ratio": 0.60,
-            "liquidation_events": 1,
-        }, _AI_SHA256),
+        _bound(
+            {
+                "realized_pnl": 20.0,
+                "max_drawdown": 0.04,
+                "expectancy": 0.8,
+                "profit_factor": 1.8,
+                "win_rate": 0.62,
+                "closed_trades": 20,
+                "max_consecutive_losses": 2,
+                "downside_return_risk_ratio": 0.70,
+                "liquidation_events": 0,
+            },
+            _BASELINE_SHA256,
+        ),
+        _bound(
+            {
+                "realized_pnl": 25.0,
+                "max_drawdown": 0.04,
+                "expectancy": 1.0,
+                "profit_factor": 1.4,
+                "win_rate": 0.55,
+                "closed_trades": 22,
+                "max_consecutive_losses": 4,
+                "downside_return_risk_ratio": 0.60,
+                "liquidation_events": 1,
+            },
+            _AI_SHA256,
+        ),
         model_name="qwen2.5:7b",
         model_artifact_sha256=_MODEL_SHA256,
         matched_periods=_matched_periods((0.002,) * 30),
@@ -183,8 +236,24 @@ def test_ai_uplift_rejects_tail_risk_deterioration() -> None:
 
 def test_ai_uplift_policy_can_require_stricter_model_size() -> None:
     report = assess_ai_uplift(
-        _bound({"realized_pnl": 10.0, "max_drawdown": 0.04, "expectancy": 0.5, "closed_trades": 8}, _BASELINE_SHA256),
-        _bound({"realized_pnl": 12.0, "max_drawdown": 0.03, "expectancy": 0.7, "closed_trades": 8}, _AI_SHA256),
+        _complete(
+            {
+                "realized_pnl": 10.0,
+                "max_drawdown": 0.04,
+                "expectancy": 0.5,
+                "closed_trades": 8,
+            },
+            _BASELINE_SHA256,
+        ),
+        _complete(
+            {
+                "realized_pnl": 12.0,
+                "max_drawdown": 0.03,
+                "expectancy": 0.7,
+                "closed_trades": 8,
+            },
+            _AI_SHA256,
+        ),
         model_name="qwen2.5:7b",
         model_artifact_sha256=_MODEL_SHA256,
         matched_periods=_matched_periods((0.002,) * 30),
@@ -197,8 +266,20 @@ def test_ai_uplift_policy_can_require_stricter_model_size() -> None:
 
 def test_ai_uplift_rejects_index_paired_trade_sequences() -> None:
     report = assess_ai_uplift(
-        {"realized_pnl": 10.0, "max_drawdown": 0.04, "expectancy": 0.5, "closed_trades": 30, "trade_returns": [0.01] * 30},
-        {"realized_pnl": 12.0, "max_drawdown": 0.03, "expectancy": 0.7, "closed_trades": 30, "trade_returns": [0.02] * 30},
+        {
+            "realized_pnl": 10.0,
+            "max_drawdown": 0.04,
+            "expectancy": 0.5,
+            "closed_trades": 30,
+            "trade_returns": [0.01] * 30,
+        },
+        {
+            "realized_pnl": 12.0,
+            "max_drawdown": 0.03,
+            "expectancy": 0.7,
+            "closed_trades": 30,
+            "trade_returns": [0.02] * 30,
+        },
         model_name="qwen2.5:7b",
     )
 
@@ -218,7 +299,9 @@ def test_ai_uplift_rejects_index_paired_trade_sequences() -> None:
         {"require_evidence_binding": False},
     ],
 )
-def test_ai_uplift_policy_cannot_weaken_mandatory_floors(override: dict[str, object]) -> None:
+def test_ai_uplift_policy_cannot_weaken_mandatory_floors(
+    override: dict[str, object],
+) -> None:
     with pytest.raises(ValueError, match="cannot|mandatory"):
         AIUpliftPolicy(**override)
 
@@ -235,3 +318,5 @@ def test_ai_uplift_rejects_missing_source_metrics_even_with_positive_periods() -
     assert report.accepted is False
     assert "ai_uplift_baseline_max_drawdown_missing" in report.reasons
     assert "ai_uplift_ai_expectancy_missing" in report.reasons
+    assert "ai_uplift_baseline_liquidation_events_missing" in report.reasons
+    assert "ai_uplift_ai_downside_return_risk_ratio_missing" in report.reasons

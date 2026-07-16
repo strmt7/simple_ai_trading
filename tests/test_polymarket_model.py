@@ -8,6 +8,7 @@ from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -2183,6 +2184,59 @@ def test_ai_veto_cache_replays_failures_without_retrying_for_a_better_answer(
     assert chat_calls == 1
     assert cached_rows == 1
     assert [row["cache_hit"] for row in progress_rows] == [False, True]
+
+
+def test_ai_uplift_periods_use_initial_capital_returns_and_exact_groups() -> None:
+    starts = (1_000, 301_000)
+
+    def report(values: tuple[str, ...], *, capital: str = "100") -> SimpleNamespace:
+        return SimpleNamespace(
+            initial_capital_quote=Decimal(capital),
+            equity_curve=tuple(
+                SimpleNamespace(
+                    event_start_ms=start_ms,
+                    group_realized_pnl_quote=Decimal(value),
+                )
+                for start_ms, value in zip(starts, values, strict=True)
+            ),
+        )
+
+    split = SimpleNamespace(test_group_starts_ms=starts)
+    periods = _polymarket_matched_uplift_periods(
+        split,
+        report(("1", "-2")),
+        report(("2", "-1")),
+    )
+
+    assert [item["baseline_return"] for item in periods] == pytest.approx([0.01, -0.02])
+    assert [item["ai_return"] for item in periods] == pytest.approx([0.02, -0.01])
+    with pytest.raises(ValueError, match="equity periods differ"):
+        _polymarket_matched_uplift_periods(
+            split,
+            report(("1", "-2")),
+            SimpleNamespace(
+                initial_capital_quote=Decimal("100"),
+                equity_curve=report(("2", "-1")).equity_curve[:1],
+            ),
+        )
+    with pytest.raises(ValueError, match="initial capital differs"):
+        _polymarket_matched_uplift_periods(
+            split,
+            report(("1", "-2")),
+            report(("2", "-1"), capital="200"),
+        )
+
+    metrics = _polymarket_execution_uplift_metrics(
+        SimpleNamespace(
+            trades=(),
+            maximum_drawdown_fraction=Decimal("0.02"),
+            net_realized_pnl_quote=Decimal("10"),
+            return_on_initial_capital=Decimal("0.01"),
+            report_sha256="f" * 64,
+        ),
+        dataset_fingerprint="e" * 64,
+    )
+    assert metrics["downside_return_risk_ratio"] == pytest.approx(0.5)
 
 
 def test_ai_prompt_publication_rejects_rehashed_label_injection() -> None:
