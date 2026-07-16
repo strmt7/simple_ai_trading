@@ -142,13 +142,18 @@ including hash-only provider/schema failure envelopes. Its key binds the causal
 case, exact request, prompt and response-schema contracts, endpoint policy,
 decision thresholds, and current Ollama model digest and metadata. Cache hits
 retain the original measured model latency and post-inference `/api/ps` evidence.
-Report v4 permits a valid response only when that evidence binds the exact digest
+Report v5 permits a valid response only when that evidence binds the exact digest
 to positive VRAM residency. It also rejects contradictory action/reason pairs:
 approval requires only `edge_after_fees`, veto requires an adverse reason, and
 cooldown requires `cooldown_required`. CPU-only, missing, malformed, low-
 confidence, or late output is stored as an immutable veto. A later action
 experiment must remain veto-only and pass the separate 90-day matched-period
 uplift contract.
+
+The report separately binds measured inference time, single-GPU-worker queue
+delay, and effective decision latency. Queue delay is recomputed from monotonic
+case arrivals, so simultaneous BTC, ETH, and SOL reviews cannot each claim an
+impossible zero-wait inference.
 Before any veto prompt, Polymarket also requires the selected benchmark's sibling
 provenance file to bind its exact SHA-256, Ollama manifest, verified multibillion
 weight blob, and current installed digest. A changed tag or manifest fails before

@@ -102,7 +102,8 @@ agents to canonical evidence without replacing that evidence.
 - AI permission maps are default-deny. Only a valid, timely approval for the
   exact hash-bound condition may permit that proposal; missing cases, malformed
   types, duplicate JSON keys, contradictory action/reason codes, low confidence,
-  and latency failures remain vetoes.
+  and latency failures remain vetoes. Single-GPU inference queue delay is
+  monotonic, hash-bound, and included in effective execution latency.
 - AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
   exact weight digest with positive VRAM-resident bytes. DirectML selection is
   separate and does not prove that the review model ran on GPU.
