@@ -103,6 +103,7 @@ $oldDryRun = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN
 $oldDelay = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS
 $oldDelayCommand = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND
 $oldFailCommand = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND
+$oldContractSha = $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256
 $oldSmoke = $env:SIMPLE_AI_TRADING_GUI_SMOKE
 $oldSmokeLog = $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG
 $process = $null
@@ -235,6 +236,24 @@ try {
     $process = $null
     Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue
 
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = "0"
+    $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 = "mismatched-test-contract"
+    $process = Start-Process -FilePath $Exe -PassThru -WindowStyle Normal
+    Wait-Until { $process.Refresh(); $process.MainWindowHandle -ne [IntPtr]::Zero } "contract mismatch app window handle" 10000
+    $window = $process.MainWindowHandle
+    $output = Get-Control $window $OutputEditId
+    Wait-Until { (Get-ControlText (Get-Control $window $ProfileId)) -eq "Conservative" } "contract mismatch operator status" 10000
+    Click-Control (Get-Control $window $RunId)
+    Assert-OutputContains $output "Workflow blocked: the native app and Python backend command contracts are not verified as identical" 5000
+    if ((Get-ControlText $output).Contains("> simple-ai-trading strategy")) {
+        throw "Contract mismatch was followed by strategy mutation"
+    }
+    Click-Control (Get-Control $window $StopId)
+    Assert-OutputContains $output "dry-run: simple-ai-trading autonomous stop" 5000
+    Stop-Process -Id $process.Id -Force
+    $process = $null
+    Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 -ErrorAction SilentlyContinue
+
     if (-not $SkipRealCompute.IsPresent) {
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN -ErrorAction SilentlyContinue
         Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS -ErrorAction SilentlyContinue
@@ -261,6 +280,7 @@ try {
     if ($null -eq $oldDelay) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_MS = $oldDelay }
     if ($null -eq $oldDelayCommand) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_DELAY_COMMAND = $oldDelayCommand }
     if ($null -eq $oldFailCommand) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_FAIL_COMMAND = $oldFailCommand }
+    if ($null -eq $oldContractSha) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_DRY_RUN_CONTRACT_SHA256 = $oldContractSha }
     if ($null -eq $oldSmoke) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE = $oldSmoke }
     if ($null -eq $oldSmokeLog) { Remove-Item Env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG -ErrorAction SilentlyContinue } else { $env:SIMPLE_AI_TRADING_GUI_SMOKE_LOG = $oldSmokeLog }
 }

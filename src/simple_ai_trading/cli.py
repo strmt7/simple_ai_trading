@@ -5604,6 +5604,7 @@ def _ai_provider_runtime_status(runtime: RuntimeConfig) -> tuple[str, dict[str, 
 
 def command_status(args: argparse.Namespace) -> int:
     from .autonomous import AutonomousControl
+    from .command_contract import command_contract_digest
     from .positions import PositionsStore
 
     runtime = load_runtime()
@@ -5630,7 +5631,7 @@ def command_status(args: argparse.Namespace) -> int:
             f"ai_runtime={ai_runtime} "
             f"reinvest={'on' if strategy.reinvest_profits else 'off'} symbol={runtime.symbol} "
             f"market={runtime.market_type} execution={execution} positions={position_count} "
-            f"ledger={ledger_state}"
+            f"ledger={ledger_state} ui_contract={command_contract_digest()}"
         )
         return 0
     print(json.dumps({"runtime": _public_runtime_payload(runtime), "strategy": strategy.asdict()}, indent=2))
