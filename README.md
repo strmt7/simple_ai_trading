@@ -60,7 +60,7 @@ CPU-only mode can run non-AI workflows, but AI features are disabled and trainin
 
 On Windows, a healthy AMD/NVIDIA/Intel GPU install should resolve to `compute=directml`. This host was verified with `torch-directml` on an AMD Radeon GPU using a real tensor operation on `privateuseone:0`.
 
-`simple-ai-trading ai` also reports inferred model size. Use `--model` and `--min-model-parameters-b` if you install a different local LLM. A sub-multibillion model or a CPU-only backend blocks AI approval.
+`simple-ai-trading ai` also reports inferred model size and measured free VRAM. Required GPU headroom is fail-closed: an unknown value, a sub-multibillion model, or a CPU-only backend blocks AI approval. On Windows AMD hosts, the check uses the driver's 64-bit dedicated-memory value and current WDDM dedicated usage instead of the legacy 32-bit WMI field.
 
 DirectML references:
 
