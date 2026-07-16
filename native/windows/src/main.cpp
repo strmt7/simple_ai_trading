@@ -206,6 +206,8 @@ class MainWindow {
     std::atomic_bool api_budget_running_{false};
     std::atomic_bool operator_status_running_{false};
     std::atomic_bool command_contract_synced_{false};
+    std::atomic_bool close_requested_{false};
+    std::atomic_uint32_t active_workers_{0};
     std::atomic_uint64_t workflow_generation_{0};
     std::wstring environment_state_{L"Environment pending"};
     std::wstring bot_state_{L"State pending"};
@@ -319,6 +321,12 @@ class MainWindow {
         case WM_APP + 3:
             sync_operator_status();
             return 0;
+        case WM_APP + 4:
+            try_complete_close();
+            return 0;
+        case WM_CLOSE:
+            request_close();
+            return 0;
         case WM_DESTROY:
             cleanup();
             PostQuitMessage(0);
@@ -348,6 +356,7 @@ class MainWindow {
     }
 
     void cleanup() {
+        close_requested_ = true;
         KillTimer(hwnd_, kApiBudgetTimerId);
         DeleteObject(title_font_);
         DeleteObject(body_font_);
@@ -1554,9 +1563,75 @@ class MainWindow {
         return false;
     }
 
+    template <typename Work>
+    bool launch_worker(
+        std::atomic_bool& gate,
+        UINT completion_message,
+        Work work) {
+        active_workers_.fetch_add(1);
+        try {
+            std::thread([this, &gate, completion_message, work = std::move(work)]() mutable {
+                try {
+                    work();
+                } catch (const std::exception&) {
+                    append_output(
+                        L"\r\nBackground operation failed unexpectedly; the operation was stopped.\r\n");
+                } catch (...) {
+                    append_output(
+                        L"\r\nBackground operation failed with an unknown error; the operation was stopped.\r\n");
+                }
+                gate = false;
+                const HWND target = hwnd_;
+                active_workers_.fetch_sub(1);
+                PostMessageW(target, completion_message, 0, 0);
+                PostMessageW(target, WM_APP + 4, 0, 0);
+            }).detach();
+        } catch (const std::exception&) {
+            active_workers_.fetch_sub(1);
+            gate = false;
+            append_output(L"\r\nUnable to start the background operation.\r\n");
+            PostMessageW(hwnd_, completion_message, 0, 0);
+            PostMessageW(hwnd_, WM_APP + 4, 0, 0);
+            return false;
+        }
+        return true;
+    }
+
+    void request_close() {
+        if (!close_requested_.exchange(true)) {
+            KillTimer(hwnd_, kApiBudgetTimerId);
+            workflow_generation_.fetch_add(1);
+            if (active_workers_.load() > 0) {
+                append_output(
+                    L"\r\nExit pending: active work is finishing. Use Stop + Close for "
+                    L"an autonomous run; the app will not abandon an in-flight worker.\r\n");
+            }
+        }
+        try_complete_close();
+    }
+
+    void try_complete_close() {
+        if (!close_requested_.load()) {
+            return;
+        }
+        if (
+            active_workers_.load() != 0 || running_.load() ||
+            control_running_.load() || api_budget_running_.load() ||
+            operator_status_running_.load()) {
+            return;
+        }
+        if (IsWindow(hwnd_)) {
+            DestroyWindow(hwnd_);
+        }
+    }
+
     void run_sequence(std::vector<std::wstring> commands) {
         if (commands.empty()) {
             run_selected_help();
+            return;
+        }
+        if (close_requested_.load()) {
+            append_output(L"\r\nThe app is closing; no new workflow was started.\r\n");
             return;
         }
         if (!smoke_ && !command_contract_synced_.load()) {
@@ -1572,7 +1647,7 @@ class MainWindow {
         const std::uint64_t generation = workflow_generation_.fetch_add(1) + 1;
         EnableWindow(run_selected_, FALSE);
         SetWindowTextW(output_label_, L"Output - running");
-        std::thread([this, commands = std::move(commands), generation] {
+        launch_worker(running_, WM_APP + 1, [this, commands = std::move(commands), generation] {
             for (const std::wstring& command : commands) {
                 if (workflow_generation_.load() != generation) {
                     append_output(
@@ -1589,7 +1664,6 @@ class MainWindow {
                     break;
                 }
             }
-            running_ = false;
             refresh_api_budget_async(true);
             refresh_operator_status_async();
             if (smoke_) {
@@ -1599,7 +1673,7 @@ class MainWindow {
             if (smoke_) {
                 PostMessageW(hwnd_, WM_CLOSE, 0, 0);
             }
-        }).detach();
+        });
     }
 
     void run_control_sequence(std::vector<std::wstring> commands) {
@@ -1611,7 +1685,7 @@ class MainWindow {
             append_output(L"\r\nA safety control is already being processed.\r\n");
             return;
         }
-        std::thread([this, commands = std::move(commands)] {
+        launch_worker(control_running_, WM_APP + 1, [this, commands = std::move(commands)] {
             for (const std::wstring& command : commands) {
                 append_output(L"\r\n> simple-ai-trading " + command + L"\r\n");
                 CommandResult result = execute_cli(command);
@@ -1623,11 +1697,9 @@ class MainWindow {
                         L"); remaining safety controls will still be attempted.\r\n");
                 }
             }
-            control_running_ = false;
             refresh_api_budget_async(true);
             refresh_operator_status_async();
-            PostMessageW(hwnd_, WM_APP + 1, 0, 0);
-        }).detach();
+        });
     }
 
     void append_output(const std::wstring& text) {
@@ -1656,10 +1728,13 @@ class MainWindow {
     }
 
     void refresh_api_budget_async(bool cached_only) {
+        if (close_requested_.load()) {
+            return;
+        }
         if (api_budget_running_.exchange(true)) {
             return;
         }
-        std::thread([this, cached_only] {
+        launch_worker(api_budget_running_, WM_APP + 2, [this, cached_only] {
             std::wstring command = cached_only ? L"api-budget --compact --cached-only" : L"api-budget --compact";
             std::wstring text = execute_cli_first_line(command);
             if (text.empty()) {
@@ -1686,9 +1761,7 @@ class MainWindow {
                     network_state_ = remaining_at == std::wstring::npos ? L"Unavailable" : L"Exchange queried";
                 }
             }
-            api_budget_running_ = false;
-            PostMessageW(hwnd_, WM_APP + 2, 0, 0);
-        }).detach();
+        });
     }
 
     void sync_api_budget() {
@@ -1724,10 +1797,13 @@ class MainWindow {
     }
 
     void refresh_operator_status_async() {
+        if (close_requested_.load()) {
+            return;
+        }
         if (operator_status_running_.exchange(true)) {
             return;
         }
-        std::thread([this] {
+        launch_worker(operator_status_running_, WM_APP + 3, [this] {
             const std::wstring line = execute_cli_first_line(L"status --compact");
             const std::wstring compute_line = execute_cli_first_line(L"compute");
             const std::wstring environment = compact_status_value(line, L"environment");
@@ -1786,9 +1862,7 @@ class MainWindow {
                 }
             }
             command_contract_synced_.store(command_contract_synced);
-            operator_status_running_ = false;
-            PostMessageW(hwnd_, WM_APP + 3, 0, 0);
-        }).detach();
+        });
     }
 
     void sync_operator_status() {
