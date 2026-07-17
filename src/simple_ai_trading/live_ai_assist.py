@@ -31,16 +31,19 @@ from .meta_label import (
 )
 
 
-LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v1"
-LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION = "live-ai-entry-audit-v1"
-LIVE_AI_ENTRY_PROMPT_CONTRACT = "live-ai-entry-risk-review-v1"
+LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v2"
+LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION = "live-ai-entry-audit-v2"
+LIVE_AI_ENTRY_PROMPT_CONTRACT = "live-ai-entry-risk-review-v2"
 _ZERO_SHA256 = "0" * 64
 _MAX_COMPLETED_REVIEWS = 8
 _MAX_EVIDENCE_DEPTH = 5
 _MAX_EVIDENCE_ITEMS = 64
 _MAX_EVIDENCE_JSON_BYTES = 16_384
+_MAX_PROVIDER_MESSAGE_BYTES = 3_584
 _MAX_PROVIDER_RESPONSE_BYTES = 65_536
 _MAX_AUDIT_RECORD_BYTES = 262_144
+_OLLAMA_CONTEXT_TOKENS = 4_096
+_OLLAMA_MAX_OUTPUT_TOKENS = 128
 _ALLOWED_ACTIONS = frozenset({"approve", "veto", "cooldown"})
 _ALLOWED_REASON_CODES = frozenset(
     {
@@ -573,6 +576,7 @@ class LiveAIEntryCase:
     def identity_payload(self) -> dict[str, object]:
         return {
             "schema_version": LIVE_AI_ENTRY_CASE_SCHEMA_VERSION,
+            "prompt_contract": LIVE_AI_ENTRY_PROMPT_CONTRACT,
             "symbol": self.symbol,
             "market_type": self.market_type,
             "interval": self.interval,
@@ -633,6 +637,7 @@ def build_live_ai_entry_case(
         raise ValueError("AI entry review evidence exceeds the prompt budget")
     identity = {
         "schema_version": LIVE_AI_ENTRY_CASE_SCHEMA_VERSION,
+        "prompt_contract": LIVE_AI_ENTRY_PROMPT_CONTRACT,
         "symbol": str(symbol),
         "market_type": str(market_type),
         "interval": str(interval),
@@ -734,15 +739,17 @@ class LiveAIEntryDecision:
         prompt_tokens = _bounded_count(
             self.prompt_tokens,
             name="prompt token count",
-            maximum=4096,
+            maximum=_OLLAMA_CONTEXT_TOKENS,
         )
         output_tokens = _bounded_count(
             self.output_tokens,
             name="output token count",
-            maximum=180,
+            maximum=_OLLAMA_MAX_OUTPUT_TOKENS,
         )
         if prompt_tokens <= 0 or output_tokens <= 0:
             raise ValueError("AI entry decision token telemetry is empty")
+        if prompt_tokens + output_tokens > _OLLAMA_CONTEXT_TOKENS:
+            raise ValueError("AI entry decision exceeds the combined context budget")
         return self
 
 
@@ -845,30 +852,40 @@ class OllamaLiveAIEntryProvider:
         if case.model_digest != self.expected_model_digest:
             raise ValueError("AI entry case differs from the approved model digest")
         prompt = (
-            "You are a shadow-only risk reviewer for an autonomous crypto day-trading system. "
-            "Review the ML proposal using only the causal structured evidence. You cannot create a trade, "
-            "change direction, increase risk, infer missing facts, or control execution. Treat costs, "
-            "liquidity, regime uncertainty, and drawdown risk conservatively. Return only JSON matching "
-            f"{LIVE_AI_ENTRY_PROMPT_CONTRACT}. CASE="
+            "Shadow-only crypto entry risk review. Use only causal CASE evidence. "
+            "Never create or reverse a trade, increase risk, infer missing facts, or control execution. "
+            "Approve only with explicit positive after-cost evidence; treat cost, liquidity, regime "
+            "uncertainty, and drawdown conservatively. Return only contract JSON. CONTRACT="
+            f"{LIVE_AI_ENTRY_PROMPT_CONTRACT} CASE="
             f"{_canonical_json(case.identity_payload())}"
         )
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Return only schema-valid JSON; missing or conflicting "
+                    "evidence requires veto or cooldown."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ]
+        message_bytes = sum(
+            len(str(message["content"]).encode("utf-8"))
+            for message in messages
+        )
+        if message_bytes > _MAX_PROVIDER_MESSAGE_BYTES:
+            raise ValueError("AI entry prompt exceeds the pre-inference context budget")
         request_payload = {
             "model": self.model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "Return only schema-valid JSON. Missing or conflicting evidence requires veto or cooldown.",
-                },
-                {"role": "user", "content": prompt},
-            ],
+            "messages": messages,
             "stream": False,
             "format": LIVE_AI_ENTRY_RESPONSE_SCHEMA,
             "think": False,
             "keep_alive": "30m",
             "options": {
                 "temperature": 0,
-                "num_ctx": 4096,
-                "num_predict": 180,
+                "num_ctx": _OLLAMA_CONTEXT_TOKENS,
+                "num_predict": _OLLAMA_MAX_OUTPUT_TOKENS,
                 "seed": self.seed,
             },
         }
@@ -890,12 +907,12 @@ class OllamaLiveAIEntryProvider:
         prompt_tokens = _bounded_count(
             payload.get("prompt_eval_count"),
             name="prompt token count",
-            maximum=4096,
+            maximum=_OLLAMA_CONTEXT_TOKENS,
         )
         output_tokens = _bounded_count(
             payload.get("eval_count"),
             name="output token count",
-            maximum=180,
+            maximum=_OLLAMA_MAX_OUTPUT_TOKENS,
         )
         residency = inspect_ollama_model_residency(
             self.base_url,
@@ -947,7 +964,10 @@ def _audit_case_and_decision(
     raw_decision = record.get("decision")
     if not isinstance(raw_case, Mapping) or not isinstance(raw_decision, Mapping):
         raise ValueError(f"AI entry audit evidence is missing at line {line_number}")
-    if raw_case.get("schema_version") != LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
+    if (
+        raw_case.get("schema_version") != LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
+        or raw_case.get("prompt_contract") != LIVE_AI_ENTRY_PROMPT_CONTRACT
+    ):
         raise ValueError(f"AI entry audit case schema is invalid at line {line_number}")
     try:
         case = LiveAIEntryCase(

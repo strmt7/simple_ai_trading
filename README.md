@@ -555,7 +555,9 @@ backtest performance alone; the exact proposal needs validated positive
 after-cost support before any local-model tokens are consumed. The AI wrapper
 recomputes that evidence from the promoted artifact and exact feature vector,
 rejecting supplied summaries that differ from the model; AI-disabled runs do
-not pay this extra inference cost.
+not pay this extra inference cost. The shadow provider also rejects oversized
+messages before an HTTP request, caps structured output at 128 tokens, and
+requires reported prompt plus completion usage to fit its 4,096-token context.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 
@@ -571,6 +573,8 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 68](docs/model-research/action-value/round-068-bounded-ai-context.md)
+records pre-inference AI context and token-budget enforcement;
 [Round 67](docs/model-research/action-value/round-067-purged-meta-label-validation.md)
 records purged chronological policy selection and later-period validation;
 [Round 66](docs/model-research/action-value/round-066-dependent-meta-label-confidence.md)
