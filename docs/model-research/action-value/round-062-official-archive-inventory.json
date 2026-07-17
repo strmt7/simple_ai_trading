@@ -1,0 +1,266 @@
+{
+  "available_only": true,
+  "coverage": [
+    {
+      "available_files": 320,
+      "available_first_period": "2023-05-16",
+      "available_last_period": "2024-03-30",
+      "data_type": "bookTicker",
+      "official_calendar_gap_count": 0,
+      "official_calendar_gaps": [],
+      "selected_bytes": 52578851529,
+      "selected_files": 320,
+      "selected_first_period": "2023-05-16",
+      "selected_last_period": "2024-03-30",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "available_files": 1289,
+      "available_first_period": "2023-01-01",
+      "available_last_period": "2026-07-15",
+      "data_type": "bookDepth",
+      "official_calendar_gap_count": 3,
+      "official_calendar_gaps": [
+        "2023-02-08",
+        "2023-02-09",
+        "2024-04-18"
+      ],
+      "selected_bytes": 598713441,
+      "selected_files": 1289,
+      "selected_first_period": "2023-01-01",
+      "selected_last_period": "2026-07-15",
+      "symbol": "BTCUSDT"
+    },
+    {
+      "available_files": 320,
+      "available_first_period": "2023-05-16",
+      "available_last_period": "2024-03-30",
+      "data_type": "bookTicker",
+      "official_calendar_gap_count": 0,
+      "official_calendar_gaps": [],
+      "selected_bytes": 43271625770,
+      "selected_files": 320,
+      "selected_first_period": "2023-05-16",
+      "selected_last_period": "2024-03-30",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "available_files": 1290,
+      "available_first_period": "2023-01-01",
+      "available_last_period": "2026-07-15",
+      "data_type": "bookDepth",
+      "official_calendar_gap_count": 2,
+      "official_calendar_gaps": [
+        "2023-02-08",
+        "2023-02-09"
+      ],
+      "selected_bytes": 624241324,
+      "selected_files": 1290,
+      "selected_first_period": "2023-01-01",
+      "selected_last_period": "2026-07-15",
+      "symbol": "ETHUSDT"
+    },
+    {
+      "available_files": 320,
+      "available_first_period": "2023-05-16",
+      "available_last_period": "2024-03-30",
+      "data_type": "bookTicker",
+      "official_calendar_gap_count": 0,
+      "official_calendar_gaps": [],
+      "selected_bytes": 23507704936,
+      "selected_files": 320,
+      "selected_first_period": "2023-05-16",
+      "selected_last_period": "2024-03-30",
+      "symbol": "SOLUSDT"
+    },
+    {
+      "available_files": 1287,
+      "available_first_period": "2023-01-01",
+      "available_last_period": "2026-07-15",
+      "data_type": "bookDepth",
+      "official_calendar_gap_count": 5,
+      "official_calendar_gaps": [
+        "2023-02-08",
+        "2023-02-09",
+        "2023-11-13",
+        "2024-04-18",
+        "2026-01-14"
+      ],
+      "selected_bytes": 545217913,
+      "selected_files": 1287,
+      "selected_first_period": "2023-01-01",
+      "selected_last_period": "2026-07-15",
+      "symbol": "SOLUSDT"
+    }
+  ],
+  "data_types": [
+    "bookTicker",
+    "bookDepth"
+  ],
+  "end_date": null,
+  "full_history": true,
+  "generated_at": "2026-07-17T00:15:05.403283+00:00",
+  "inventory_errors": [],
+  "inventory_identity_verified": true,
+  "inventory_snapshots": [
+    {
+      "data_type": "bookDepth",
+      "first_period": "2023-01-01",
+      "full_history": true,
+      "item_count": 1289,
+      "last_period": "2026-07-15",
+      "listing_sha256": "32ead499d79b387b186c68f1bf08f7e8336953294af27c5523f945a20a54bd00",
+      "observed_at_ms": 1784247305486,
+      "snapshot_id": "2e076db7de1409178d005e0582723fa545a758c6b38359a3b8d15be5b6f2ba01",
+      "symbol": "BTCUSDT",
+      "verification_phase": "initial"
+    },
+    {
+      "data_type": "bookTicker",
+      "first_period": "2023-05-16",
+      "full_history": true,
+      "item_count": 320,
+      "last_period": "2024-03-30",
+      "listing_sha256": "83ce1c24568f03c53801a766085af28db83e6a9b848459c7e8b96bc8a290d8fb",
+      "observed_at_ms": 1784247306624,
+      "snapshot_id": "3259367c93d640dc8e868389276f39338a460d95b0ad75efbba8bd677055bf93",
+      "symbol": "BTCUSDT",
+      "verification_phase": "initial"
+    },
+    {
+      "data_type": "bookDepth",
+      "first_period": "2023-01-01",
+      "full_history": true,
+      "item_count": 1290,
+      "last_period": "2026-07-15",
+      "listing_sha256": "e4ff08913fa600f854fa08eca19fed1ecaedac8f70a7f3ef72190f4fedeb5cf0",
+      "observed_at_ms": 1784247306895,
+      "snapshot_id": "5bbdb19f52e7e1713e0b8cce3cff5f9eb192da40b9c3eaa74e0a5302d205561b",
+      "symbol": "ETHUSDT",
+      "verification_phase": "initial"
+    },
+    {
+      "data_type": "bookTicker",
+      "first_period": "2023-05-16",
+      "full_history": true,
+      "item_count": 320,
+      "last_period": "2024-03-30",
+      "listing_sha256": "531d055bf204611280fa0a13fc51ef5d384f85ae38230325379e71668eecb00a",
+      "observed_at_ms": 1784247307850,
+      "snapshot_id": "5939f72f9f7c5e6a77397337d31844d4499371ddaaa990ca43b19eb90523709c",
+      "symbol": "ETHUSDT",
+      "verification_phase": "initial"
+    },
+    {
+      "data_type": "bookDepth",
+      "first_period": "2023-01-01",
+      "full_history": true,
+      "item_count": 1287,
+      "last_period": "2026-07-15",
+      "listing_sha256": "9f4e5673b293793952505307cf9d7e742928237036171d31cc4756f4d2021eae",
+      "observed_at_ms": 1784247308106,
+      "snapshot_id": "982d96c08d5f261f957e7dc277439efdbd6871d285f9a8ee585515ab228d4f4c",
+      "symbol": "SOLUSDT",
+      "verification_phase": "initial"
+    },
+    {
+      "data_type": "bookTicker",
+      "first_period": "2023-05-16",
+      "full_history": true,
+      "item_count": 320,
+      "last_period": "2024-03-30",
+      "listing_sha256": "ebb7dd1e05bc580589eef7af722ae6e38a45f5212967714d0ff512233a39cf65",
+      "observed_at_ms": 1784247309034,
+      "snapshot_id": "88ac9e728e7cf2f7bafdc303eb483c801ee5609b1b1cc09538786c3ef339e4c8",
+      "symbol": "SOLUSDT",
+      "verification_phase": "initial"
+    },
+    {
+      "data_type": "bookDepth",
+      "first_period": "2023-01-01",
+      "full_history": true,
+      "item_count": 1289,
+      "last_period": "2026-07-15",
+      "listing_sha256": "32ead499d79b387b186c68f1bf08f7e8336953294af27c5523f945a20a54bd00",
+      "observed_at_ms": 1784247305486,
+      "snapshot_id": "2e076db7de1409178d005e0582723fa545a758c6b38359a3b8d15be5b6f2ba01",
+      "symbol": "BTCUSDT",
+      "verification_phase": "verification_refresh"
+    },
+    {
+      "data_type": "bookTicker",
+      "first_period": "2023-05-16",
+      "full_history": true,
+      "item_count": 320,
+      "last_period": "2024-03-30",
+      "listing_sha256": "83ce1c24568f03c53801a766085af28db83e6a9b848459c7e8b96bc8a290d8fb",
+      "observed_at_ms": 1784247306624,
+      "snapshot_id": "3259367c93d640dc8e868389276f39338a460d95b0ad75efbba8bd677055bf93",
+      "symbol": "BTCUSDT",
+      "verification_phase": "verification_refresh"
+    },
+    {
+      "data_type": "bookDepth",
+      "first_period": "2023-01-01",
+      "full_history": true,
+      "item_count": 1290,
+      "last_period": "2026-07-15",
+      "listing_sha256": "e4ff08913fa600f854fa08eca19fed1ecaedac8f70a7f3ef72190f4fedeb5cf0",
+      "observed_at_ms": 1784247306895,
+      "snapshot_id": "5bbdb19f52e7e1713e0b8cce3cff5f9eb192da40b9c3eaa74e0a5302d205561b",
+      "symbol": "ETHUSDT",
+      "verification_phase": "verification_refresh"
+    },
+    {
+      "data_type": "bookTicker",
+      "first_period": "2023-05-16",
+      "full_history": true,
+      "item_count": 320,
+      "last_period": "2024-03-30",
+      "listing_sha256": "531d055bf204611280fa0a13fc51ef5d384f85ae38230325379e71668eecb00a",
+      "observed_at_ms": 1784247307850,
+      "snapshot_id": "5939f72f9f7c5e6a77397337d31844d4499371ddaaa990ca43b19eb90523709c",
+      "symbol": "ETHUSDT",
+      "verification_phase": "verification_refresh"
+    },
+    {
+      "data_type": "bookDepth",
+      "first_period": "2023-01-01",
+      "full_history": true,
+      "item_count": 1287,
+      "last_period": "2026-07-15",
+      "listing_sha256": "9f4e5673b293793952505307cf9d7e742928237036171d31cc4756f4d2021eae",
+      "observed_at_ms": 1784247308106,
+      "snapshot_id": "982d96c08d5f261f957e7dc277439efdbd6871d285f9a8ee585515ab228d4f4c",
+      "symbol": "SOLUSDT",
+      "verification_phase": "verification_refresh"
+    },
+    {
+      "data_type": "bookTicker",
+      "first_period": "2023-05-16",
+      "full_history": true,
+      "item_count": 320,
+      "last_period": "2024-03-30",
+      "listing_sha256": "ebb7dd1e05bc580589eef7af722ae6e38a45f5212967714d0ff512233a39cf65",
+      "observed_at_ms": 1784247309034,
+      "snapshot_id": "88ac9e728e7cf2f7bafdc303eb483c801ee5609b1b1cc09538786c3ef339e4c8",
+      "symbol": "SOLUSDT",
+      "verification_phase": "verification_refresh"
+    }
+  ],
+  "max_planned_gb": 500.0,
+  "missing": [],
+  "plan_only": true,
+  "planned_bytes": 121126354913,
+  "planned_files": 4826,
+  "planned_gb": 112.80770871136338,
+  "start_date": null,
+  "status": "ok",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "truth_basis": "official_binance_data_vision_s3_listing",
+  "warehouse": "data/microstructure.duckdb"
+}
