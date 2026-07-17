@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 import threading
 import time
-from typing import Callable, Mapping, Protocol
+from typing import Callable, Mapping, Protocol, Sequence
 from urllib.request import Request, urlopen
 
 from .ai_runtime import inspect_ollama_model_residency
@@ -301,6 +301,42 @@ class LiveAIEntryDecision:
         payload["reason_codes"] = list(self.reason_codes)
         return payload
 
+    def validated_for(self, case: LiveAIEntryCase) -> LiveAIEntryDecision:
+        case.validated()
+        if not self.valid:
+            raise ValueError("AI entry decision is not valid provider evidence")
+        if self.action not in _ALLOWED_ACTIONS:
+            raise ValueError("AI entry decision action is invalid")
+        risk_multiplier = _finite_number(
+            self.risk_multiplier,
+            name="risk_multiplier",
+        )
+        confidence = _finite_number(self.confidence, name="confidence")
+        if (
+            not 0.0 <= risk_multiplier <= case.maximum_risk_multiplier
+            or not 0.0 <= confidence <= 1.0
+        ):
+            raise ValueError("AI entry decision exceeds its causal risk bound")
+        codes = tuple(self.reason_codes)
+        if (
+            not 1 <= len(codes) <= 4
+            or len(set(codes)) != len(codes)
+            or any(code not in _ALLOWED_REASON_CODES for code in codes)
+            or not isinstance(self.summary, str)
+            or not self.summary.strip()
+            or len(self.summary) > 180
+        ):
+            raise ValueError("AI entry decision evidence is invalid")
+        if self.action == "approve" and (
+            risk_multiplier <= 0.0 or "edge_after_costs" not in codes
+        ):
+            raise ValueError("AI approval lacks positive after-cost evidence")
+        if self.action != "approve" and (
+            risk_multiplier != 0.0 or not _ADVERSE_REASON_CODES.intersection(codes)
+        ):
+            raise ValueError("AI adverse action lacks a zero-risk adverse reason")
+        return self
+
 
 @dataclass(frozen=True)
 class LiveAIEntryReview:
@@ -438,7 +474,10 @@ class OllamaLiveAIEntryProvider:
         if len(raw_response) > _MAX_PROVIDER_RESPONSE_BYTES:
             raise ValueError("Ollama response exceeds the bounded response budget")
         payload = _strict_json_object(raw_response.decode("utf-8"))
-        decision = _parse_provider_decision(payload, expected_model=self.model)
+        decision = _parse_provider_decision(
+            payload,
+            expected_model=self.model,
+        ).validated_for(case)
         prompt_tokens = _bounded_count(
             payload.get("prompt_eval_count"),
             name="prompt token count",
@@ -483,30 +522,145 @@ def _failed_decision(reason: str) -> LiveAIEntryDecision:
     )
 
 
+def _audit_case_and_decision(
+    record: Mapping[str, object],
+    *,
+    line_number: int,
+) -> tuple[LiveAIEntryCase, LiveAIEntryDecision]:
+    if (
+        record.get("schema_version") != LIVE_AI_ENTRY_AUDIT_SCHEMA_VERSION
+        or record.get("mode") != "shadow_only"
+        or record.get("trading_authority") is not False
+    ):
+        raise ValueError(f"AI entry audit contract is invalid at line {line_number}")
+    raw_case = record.get("case")
+    raw_decision = record.get("decision")
+    if not isinstance(raw_case, Mapping) or not isinstance(raw_decision, Mapping):
+        raise ValueError(f"AI entry audit evidence is missing at line {line_number}")
+    if raw_case.get("schema_version") != LIVE_AI_ENTRY_CASE_SCHEMA_VERSION:
+        raise ValueError(f"AI entry audit case schema is invalid at line {line_number}")
+    try:
+        case = LiveAIEntryCase(
+            case_id=str(raw_case["case_id"]),
+            symbol=str(raw_case["symbol"]),
+            market_type=str(raw_case["market_type"]),
+            interval=str(raw_case["interval"]),
+            observed_at_ms=int(raw_case["observed_at_ms"]),
+            proposed_side=str(raw_case["proposed_side"]),
+            ml_confidence=float(raw_case["ml_confidence"]),
+            maximum_risk_multiplier=float(raw_case["maximum_risk_multiplier"]),
+            model_digest=str(raw_case["model_digest"]),
+            terminal_model_fingerprint=str(raw_case["terminal_model_fingerprint"]),
+            evidence=dict(raw_case["evidence"]),
+        ).validated()
+        decision = LiveAIEntryDecision(
+            action=str(raw_decision["action"]),
+            risk_multiplier=float(raw_decision["risk_multiplier"]),
+            confidence=float(raw_decision["confidence"]),
+            reason_codes=tuple(raw_decision["reason_codes"]),
+            summary=str(raw_decision["summary"]),
+            valid=bool(raw_decision["valid"]),
+            failure_reason=str(raw_decision.get("failure_reason", "")),
+            response_sha256=str(raw_decision.get("response_sha256", _ZERO_SHA256)),
+            observed_model_digest=str(
+                raw_decision.get("observed_model_digest", _ZERO_SHA256)
+            ),
+            model_residency_status=str(
+                raw_decision.get("model_residency_status", "unknown")
+            ),
+            prompt_tokens=(
+                int(raw_decision["prompt_tokens"])
+                if raw_decision.get("prompt_tokens") is not None
+                else None
+            ),
+            output_tokens=(
+                int(raw_decision["output_tokens"])
+                if raw_decision.get("output_tokens") is not None
+                else None
+            ),
+        )
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(
+            f"AI entry audit typed evidence is invalid at line {line_number}"
+        ) from exc
+    if decision.valid:
+        decision.validated_for(case)
+    elif (
+        decision.action != "veto"
+        or decision.risk_multiplier != 0.0
+        or not decision.failure_reason
+        or decision.reason_codes != ("insufficient_evidence",)
+    ):
+        raise ValueError(f"AI entry audit failure evidence is invalid at line {line_number}")
+    try:
+        completed_at_ms = int(record["completed_at_ms"])
+        latency_seconds = float(record["latency_seconds"])
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"AI entry audit timing is invalid at line {line_number}") from exc
+    if (
+        completed_at_ms <= 0
+        or not math.isfinite(latency_seconds)
+        or latency_seconds < 0.0
+    ):
+        raise ValueError(f"AI entry audit timing is invalid at line {line_number}")
+    return case, decision
+
+
+def validate_live_ai_entry_audit_records(
+    values: Sequence[Mapping[str, object]],
+) -> tuple[dict[str, object], ...]:
+    """Verify a complete ordered audit chain supplied by any storage adapter."""
+
+    previous_sha256 = _ZERO_SHA256
+    case_ids: set[str] = set()
+    records: list[dict[str, object]] = []
+    for line_number, value in enumerate(values, start=1):
+        if not isinstance(value, Mapping):
+            raise ValueError(f"AI entry audit record is invalid at line {line_number}")
+        record = dict(value)
+        record_sha = record.get("record_sha256")
+        if not isinstance(record_sha, str) or len(record_sha) != 64:
+            raise ValueError(f"AI entry audit hash is invalid at line {line_number}")
+        unsigned = dict(record)
+        unsigned.pop("record_sha256", None)
+        if unsigned.get("previous_record_sha256") != previous_sha256:
+            raise ValueError(f"AI entry audit chain is broken at line {line_number}")
+        if _canonical_sha256(unsigned) != record_sha:
+            raise ValueError(f"AI entry audit record is corrupted at line {line_number}")
+        case, _decision = _audit_case_and_decision(record, line_number=line_number)
+        if case.case_id in case_ids:
+            raise ValueError(f"AI entry audit repeats a case at line {line_number}")
+        case_ids.add(case.case_id)
+        records.append(record)
+        previous_sha256 = record_sha
+    return tuple(records)
+
+
+def load_live_ai_entry_audit(path: Path) -> tuple[dict[str, object], ...]:
+    """Load and semantically verify every append-only AI shadow record."""
+
+    audit_path = Path(path)
+    if not audit_path.exists():
+        return ()
+    raw_records: list[dict[str, object]] = []
+    with audit_path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                raise ValueError(f"AI entry audit has a blank record at line {line_number}")
+            if len(line.encode("utf-8")) > _MAX_AUDIT_RECORD_BYTES:
+                raise ValueError(f"AI entry audit record is too large at line {line_number}")
+            raw_records.append(dict(_strict_json_object(line)))
+    return validate_live_ai_entry_audit_records(raw_records)
+
+
 class _HashChainedReviewLog:
     def __init__(self, path: Path) -> None:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.previous_sha256 = _ZERO_SHA256
-        if not self.path.exists():
-            return
-        with self.path.open("r", encoding="utf-8") as handle:
-            for line_number, line in enumerate(handle, start=1):
-                if not line.strip():
-                    raise ValueError(f"AI entry audit has a blank record at line {line_number}")
-                if len(line.encode("utf-8")) > _MAX_AUDIT_RECORD_BYTES:
-                    raise ValueError(f"AI entry audit record is too large at line {line_number}")
-                record = _strict_json_object(line)
-                record_sha = record.get("record_sha256")
-                if not isinstance(record_sha, str) or len(record_sha) != 64:
-                    raise ValueError(f"AI entry audit hash is invalid at line {line_number}")
-                unsigned = dict(record)
-                unsigned.pop("record_sha256", None)
-                if unsigned.get("previous_record_sha256") != self.previous_sha256:
-                    raise ValueError(f"AI entry audit chain is broken at line {line_number}")
-                if _canonical_sha256(unsigned) != record_sha:
-                    raise ValueError(f"AI entry audit record is corrupted at line {line_number}")
-                self.previous_sha256 = record_sha
+        records = load_live_ai_entry_audit(self.path)
+        if records:
+            self.previous_sha256 = str(records[-1]["record_sha256"])
 
     def append(self, *, case: LiveAIEntryCase, review: LiveAIEntryReview, completed_at_ms: int) -> None:
         if review.decision is None:
@@ -582,6 +736,13 @@ class AsyncLiveAIEntryReviewer:
                 self._next_case is not None and self._next_case.case_id == case.case_id
             ):
                 return LiveAIEntryReview(case.case_id, "shadow_pending", None, 0.0)
+            if self._next_case is not None:
+                return LiveAIEntryReview(
+                    case.case_id,
+                    "shadow_failure",
+                    _failed_decision("review queue full; case was not submitted"),
+                    0.0,
+                )
             self._next_case = case
             self._ensure_worker_locked()
             self._condition.notify_all()
@@ -603,6 +764,7 @@ class AsyncLiveAIEntryReviewer:
                 decision = self._provider(case)
                 if not isinstance(decision, LiveAIEntryDecision):
                     raise TypeError("AI entry provider returned an invalid decision type")
+                decision.validated_for(case)
             except Exception as exc:  # noqa: BLE001 - provider failures are fail-closed evidence
                 decision = _failed_decision(f"{type(exc).__name__}: {exc}")
             latency = max(0.0, float(self._perf_counter() - started))
@@ -762,4 +924,6 @@ __all__ = [
     "LiveAIEntryReview",
     "OllamaLiveAIEntryProvider",
     "build_live_ai_entry_case",
+    "load_live_ai_entry_audit",
+    "validate_live_ai_entry_audit_records",
 ]

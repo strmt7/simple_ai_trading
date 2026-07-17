@@ -705,6 +705,7 @@ def test_windows_workflow_taxonomy_is_complete_unique_and_model_first() -> None:
         "ai-benchmark",
         "ai-forecast-benchmark",
         "ai-review",
+        "ai-uplift",
     ]
 
 
