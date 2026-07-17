@@ -319,7 +319,7 @@ def test_approval_accepts_current_meta_bucket_with_positive_block_bound() -> Non
     evidence.pop("proposal")
     evidence["meta_label"] = {
         "enabled": True,
-        "evidence_schema_version": "meta-label-after-cost-v2",
+        "evidence_schema_version": "meta-label-after-cost-v3",
         "action": "take",
         "validation_minimum_sample_count": 30,
         "validation_sample_count": 36,
@@ -428,7 +428,7 @@ def test_invalid_meta_label_bucket_never_consumes_provider_tokens(
             observed_at_ms=1_000,
             model_features=(0.1,),
             meta_label_enabled=True,
-            meta_label_evidence_schema_version="meta-label-after-cost-v2",
+            meta_label_evidence_schema_version="meta-label-after-cost-v3",
             meta_label_action="take",
             meta_label_validation_minimum_sample_count=30,
             meta_label_validation_minimum_precision=0.60,

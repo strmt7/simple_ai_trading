@@ -1278,20 +1278,23 @@ meta-label policy from the accepted model's development-only simulated trade
 log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
 under the current objective precision target and is persisted in both the model
-artifact and `training_suite_summary.json`. Version 2 also records a
-deterministic 2,000-sample, 95% moving-block-bootstrap interval over each
-time-ordered action bucket's after-cost returns and requires at least 30
-outcomes per executable action. Take and downsize buckets need a strictly
-positive lower mean-return bound as well as their support, precision,
-mean-return, and aggregate-P&L gates. This reduces dependence-blind confidence
-but is not untouched confirmation evidence because threshold selection occurs
-on the development sample. Backtests, the legacy live loop, and the autonomous
-loop apply the policy as a deterministic pre-entry skip/downsize gate. It cannot
-create entries or override exits. Explicit observe-only, legacy, and malformed
-enabled policies fail closed in execution and model readiness instead of
-reverting to full-size primary-model entries. The policy is attached before
-the one-shot terminal replay, so its effect is included in sealed final
-evidence rather than added after validation.
+artifact and `training_suite_summary.json`. Version 3 divides the trade outcomes
+chronologically into an earlier calibration partition and a later validation
+partition, targeting a 60/40 split while requiring at least 30 outcomes in each.
+All trades with the boundary opening timestamp stay in validation, and earlier
+trades whose close reaches that boundary are purged. Threshold search uses only
+calibration outcomes. The selected take bucket, and any proposed downsize
+bucket, must then independently pass later-period support, after-cost
+expectancy, aggregate-P&L, and deterministic 2,000-sample 95%
+moving-block-bootstrap gates. Split counts, UTC-compatible timestamps, and
+SHA-256 bindings are persisted; impossible action counts, legacy schemas, and
+malformed evidence fail closed. This is an internal policy-validation split,
+not the sealed terminal result, and it does not by itself establish market
+edge. Backtests, the legacy live loop, and the autonomous loop apply the policy
+as a deterministic pre-entry skip/downsize gate. It cannot create entries or
+override exits. The policy is attached before the one-shot terminal replay, so
+its effect is included in sealed final evidence rather than added after
+validation.
 For host smoke checks, `train-suite` and `model-lab` expose `--max-candidates`;
 this caps candidate count per objective only when explicitly set and should not
 be used to claim a full optimization result.

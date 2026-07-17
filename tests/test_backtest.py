@@ -122,35 +122,55 @@ def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
     assert baseline.closed_trades >= 1
     baseline_notional = float(baseline.trade_log[0]["gross_notional"])
 
+    meta_policy = {
+        "enabled": True,
+        "evidence_schema_version": "meta-label-after-cost-v3",
+        "split_schema_version": "meta-label-chronological-split-v1",
+        "source_sample_count": 90,
+        "source_samples_sha256": "d" * 64,
+        "calibration_sample_count": 30,
+        "purged_sample_count": 0,
+        "policy_validation_sample_count": 60,
+        "calibration_end_closed_at": 1_770_000,
+        "validation_start_opened_at": 1_800_000,
+        "validation_end_closed_at": 5_370_000,
+        "calibration_samples_sha256": "a" * 64,
+        "purged_samples_sha256": "b" * 64,
+        "validation_samples_sha256": "c" * 64,
+        "mode": "take_downsize_skip",
+        "downsize_fraction": 0.25,
+        "minimum_action_samples": 30,
+        "target_precision": 0.60,
+        "calibration_take_sample_count": 30,
+        "calibration_take_precision": 0.70,
+        "calibration_take_mean_return": 0.003,
+        "calibration_take_net_pnl": 9.0,
+        "take_sample_count": 30,
+        "take_precision": 0.70,
+        "take_mean_return": 0.003,
+        "take_net_pnl": 9.0,
+        "take_bootstrap_samples": 2_000,
+        "take_bootstrap_confidence": 0.95,
+        "take_bootstrap_block_length": 5,
+        "take_bootstrap_mean_return_lower": 0.001,
+        "downsize_sample_count": 30,
+        "downsize_precision": 0.70,
+        "downsize_mean_return": 0.002,
+        "downsize_net_pnl": 6.0,
+        "downsize_bootstrap_samples": 2_000,
+        "downsize_bootstrap_confidence": 0.95,
+        "downsize_bootstrap_block_length": 5,
+        "downsize_bootstrap_mean_return_lower": 0.0005,
+    }
+
     downsize_model = TrainedModel(
         **{
-                **base_model.__dict__,
-                "meta_label_policy": {
-                    "enabled": True,
-                    "evidence_schema_version": "meta-label-after-cost-v2",
-                    "mode": "take_downsize_skip",
-                    "take_threshold": 0.90,
-                    "downsize_threshold": 0.20,
-                    "downsize_fraction": 0.25,
-                    "minimum_action_samples": 30,
-                    "target_precision": 0.60,
-                    "take_sample_count": 30,
-                    "take_precision": 0.70,
-                    "take_mean_return": 0.003,
-                    "take_net_pnl": 9.0,
-                    "take_bootstrap_samples": 2_000,
-                    "take_bootstrap_confidence": 0.95,
-                    "take_bootstrap_block_length": 5,
-                    "take_bootstrap_mean_return_lower": 0.001,
-                    "downsize_sample_count": 30,
-                    "downsize_precision": 0.70,
-                    "downsize_mean_return": 0.002,
-                    "downsize_net_pnl": 6.0,
-                    "downsize_bootstrap_samples": 2_000,
-                    "downsize_bootstrap_confidence": 0.95,
-                    "downsize_bootstrap_block_length": 5,
-                    "downsize_bootstrap_mean_return_lower": 0.0005,
-                },
+            **base_model.__dict__,
+            "meta_label_policy": {
+                **meta_policy,
+                "take_threshold": 0.90,
+                "downsize_threshold": 0.20,
+            },
         }
     )
     downsized = run_backtest(rows, downsize_model, cfg, starting_cash=1000.0)
@@ -162,13 +182,10 @@ def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
     skip_model = TrainedModel(
         **{
             **base_model.__dict__,
-                "meta_label_policy": {
-                    "enabled": True,
-                    "evidence_schema_version": "meta-label-after-cost-v2",
-                    "mode": "take_downsize_skip",
+            "meta_label_policy": {
+                **meta_policy,
                 "take_threshold": 1.0,
                 "downsize_threshold": 0.90,
-                "downsize_fraction": 0.25,
             },
         }
     )

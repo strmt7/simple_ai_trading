@@ -541,10 +541,14 @@ downsizing is also bucket-specific: weaker signals receive capital only when
 their own validation bucket has sufficient support and positive after-cost
 expectancy; otherwise they are skipped. Executable buckets also need a strictly
 positive 95% moving-block-bootstrap lower mean-return bound from at least 30
-outcomes and 2,000 deterministic resamples. Explicit observe-only, legacy, or
+outcomes and 2,000 deterministic resamples. The threshold is selected only on
+an earlier chronological calibration partition and must pass those gates again
+on a later validation partition. Trades whose outcome overlaps the validation
+boundary are purged; split timestamps, counts, and SHA-256 bindings are stored
+with the policy. Explicit observe-only, legacy, internally impossible, or
 malformed enabled policies fail closed in execution and model readiness instead
-of reverting to full-size entries. The exact bucket evidence is preserved
-through liquidity overlays and bound into AI review. Active payoff experts also
+of reverting to full-size entries. The exact later-period bucket evidence is
+preserved through liquidity overlays and bound into AI review. Active payoff experts also
 report compact side-specific expected net payoff in basis points from the same
 inference code used by the strategy. AI cannot claim current edge from aggregate
 backtest performance alone; the exact proposal needs validated positive
@@ -567,6 +571,8 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 67](docs/model-research/action-value/round-067-purged-meta-label-validation.md)
+records purged chronological policy selection and later-period validation;
 [Round 66](docs/model-research/action-value/round-066-dependent-meta-label-confidence.md)
 records dependence-aware meta-label confidence and the token-free AI gate;
 [Round 65](docs/model-research/action-value/round-065-live-payoff-ai-evidence.md)
@@ -574,8 +580,8 @@ records live payoff evidence and the current-edge AI gate;
 [Round 64](docs/model-research/action-value/round-064-positive-expectancy-meta-label-research.md)
 records positive-expectancy meta-label contracts;
 [Round 63](docs/model-research/action-value/round-063-cost-aware-ai-gate-research.md)
-records the cost-aware label foundation. Neither contains a new performance
-result, so neither replaces the latest evidence graphs.
+records the cost-aware label foundation. These rounds contain no new
+performance result, so they do not replace the latest evidence graphs.
 Round 61 completed the synchronized economic replay authorized by Round 60.
 It matched `$10,000` long spot with a 1x short perpetual at the same base
 quantity, then applied adverse minute bounds, settled funding, actual-notional
