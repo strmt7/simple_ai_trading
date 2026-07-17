@@ -6811,6 +6811,10 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as store:
+            store.recover_terminal_audit_if_resource_exhausted(
+                str(args.run_id),
+                progress=progress,
+            )
             pipeline_config = PolymarketActionPipelineConfig(
                 market_groups_per_batch=int(args.market_groups_per_batch),
             )
