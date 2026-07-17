@@ -49,7 +49,7 @@ def _case(*, observed_at_ms: int = 1_000, model_digest: str = _DIGEST):
 def _approval() -> LiveAIEntryDecision:
     return LiveAIEntryDecision(
         action="approve",
-        risk_multiplier=0.5,
+        risk_multiplier=0.4,
         confidence=0.8,
         reason_codes=("edge_after_costs", "liquidity_acceptable"),
         summary="After-cost edge and liquidity evidence are coherent.",
@@ -87,7 +87,7 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
     content = json.dumps(
         {
             "action": "approve",
-            "risk_multiplier": 0.5,
+            "risk_multiplier": 0.4,
             "confidence": 0.8,
             "reason_codes": ["edge_after_costs"],
             "summary": "Evidence covers modeled cost.",
@@ -98,7 +98,7 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
         expected_model="qwen3:14b",
     )
     assert parsed.action == "approve"
-    assert parsed.risk_multiplier == 0.5
+    assert parsed.risk_multiplier == 0.4
 
     invalid_contents = (
         content.replace('"action": "approve"', '"action": "APPROVE"'),
@@ -107,7 +107,7 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
             '"action": "approve"',
             '"action": "veto", "action": "approve"',
         ),
-        content.replace('"risk_multiplier": 0.5', '"risk_multiplier": 1.1'),
+        content.replace('"risk_multiplier": 0.4', '"risk_multiplier": 1.1'),
         content.replace('"edge_after_costs"', '"model_uncertainty"'),
     )
     for invalid in invalid_contents:
@@ -128,7 +128,7 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     content = json.dumps(
         {
             "action": "approve",
-            "risk_multiplier": 0.5,
+            "risk_multiplier": 0.4,
             "confidence": 0.8,
             "reason_codes": ["edge_after_costs"],
             "summary": "Evidence covers modeled cost.",
@@ -359,3 +359,57 @@ def test_review_submission_and_shutdown_are_bounded(tmp_path: Path) -> None:
     finally:
         release.set()
         assert reviewer.close(1.0)
+
+
+def test_provider_cannot_exceed_ml_risk_bound(tmp_path: Path) -> None:
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda _case: LiveAIEntryDecision(
+            action="approve",
+            risk_multiplier=0.41,
+            confidence=0.8,
+            reason_codes=("edge_after_costs",),
+            summary="Attempts to exceed the ML risk cap.",
+            valid=True,
+        ),
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+    case = _case()
+    assert reviewer.review(case).status == "shadow_pending"
+    failed = _wait_for_review(reviewer, case, "shadow_failure")
+    assert failed.decision is not None
+    assert "risk bound" in failed.decision.failure_reason
+    assert reviewer.close(1.0)
+
+
+def test_queue_saturation_is_explicit_and_never_overwrites_pending_case(
+    tmp_path: Path,
+) -> None:
+    release = threading.Event()
+    entered = threading.Event()
+    provider_calls: list[str] = []
+
+    def blocking_provider(case):
+        provider_calls.append(case.case_id)
+        if len(provider_calls) == 1:
+            entered.set()
+            release.wait(2.0)
+        return _approval()
+
+    reviewer = AsyncLiveAIEntryReviewer(
+        blocking_provider,
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+    first = _case(observed_at_ms=1_000)
+    second = _case(observed_at_ms=2_000)
+    third = _case(observed_at_ms=3_000)
+    assert reviewer.review(first).status == "shadow_pending"
+    assert entered.wait(1.0)
+    assert reviewer.review(second).status == "shadow_pending"
+    rejected = reviewer.review(third)
+    assert rejected.status == "shadow_failure"
+    assert rejected.decision is not None
+    assert "queue full" in rejected.decision.failure_reason
+    release.set()
+    _wait_for_review(reviewer, second, "shadow_approve")
+    assert reviewer.close(1.0)
+    assert provider_calls == [first.case_id, second.case_id]

@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"15eabe47ddb4bf5f26d2944d88db33875d16a6edac20fd1eb3026d64f2386598";
+inline constexpr const wchar_t* kCommandContractSha256 = L"bf43dba8af70b6c44b974c76d0fc6b00860fc29a54235d889e3330679ec7452d";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -94,6 +94,16 @@ inline constexpr CommandOptionSpec kOptions_ai_review[] = {
     {L"--model", L"model", L"", L"", L"", L"1", false, true, false},
     {L"--url", L"url", L"", L"http://127.0.0.1:11434", L"", L"1", false, true, false},
     {L"--timeout", L"timeout", L"", L"20.0", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_ai_uplift[] = {
+    {L"--positions-root", L"positions_root", L"", L"data/autonomous", L"positions store containing bot-owned closed trades", L"1", false, true, false},
+    {L"--audit", L"audit", L"", L"data/autonomous/ai-entry-reviews.jsonl", L"hash-chained live AI shadow-review audit log", L"1", false, true, false},
+    {L"--starting-capital", L"starting_capital", L"", L"", L"capital denominator used for matched daily returns", L"1", true, true, false},
+    {L"--model", L"model", L"", L"qwen3:14b", L"", L"1", false, true, false},
+    {L"--model-parameters-b", L"model_parameters_b", L"", L"14.0", L"", L"1", false, true, false},
+    {L"--output", L"output", L"", L"data/autonomous/ai-uplift-report.json", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -931,6 +941,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"ai-benchmark", L"usage: simple-ai-trading ai-benchmark [-h] [--models MODELS] [--url URL]                                       [--timeout TIMEOUT]                                       [--minimum-score MINIMUM_SCORE]                                       [--output OUTPUT]                                       [--preregistration PREREGISTRATION]                                       [--confirmation-database CONFIRMATION_DATABASE]                                       [--confirmation-run-id CONFIRMATION_RUN_ID]                                       [--confirmation-memory-limit CONFIRMATION_MEMORY_LIMIT]                                       [--confirmation-database-threads CONFIRMATION_DATABASE_THREADS]                                       [--json]", kOptions_ai_benchmark, 11},
     {L"ai-forecast-benchmark", L"usage: simple-ai-trading ai-forecast-benchmark [-h] [--database DATABASE]                                                [--model-size {small,base}]                                                [--backend {cpu,cuda,rocm,directml,mps,auto}]                                                [--source-cache SOURCE_CACHE]                                                [--bootstrap-source]                                                [--repair-source] [--allow-cpu]                                                [--start START]                                                [--end-exclusive END_EXCLUSIVE]                                                [--samples-per-symbol SAMPLES_PER_SYMBOL]                                                [--lookback-bars LOOKBACK_BARS]                                                [--prediction-bars PREDICTION_BARS]                                                [--batch-size BATCH_SIZE]                                                [--inference-samples INFERENCE_SAMPLES]                                                [--temperature TEMPERATURE]                                                [--top-k TOP_K] [--top-p TOP_P]                                                [--include-volume]                                                [--seed SEED]                                                [--bootstrap-samples BOOTSTRAP_SAMPLES]                                                [--worker-timeout WORKER_TIMEOUT]                                                [--max-worker-restarts MAX_WORKER_RESTARTS]                                                [--worker-rotation-batches WORKER_ROTATION_BATCHES]                                                [--observations OBSERVATIONS]                                                [--output OUTPUT]                                                [--chart CHART] [--json]", kOptions_ai_forecast_benchmark, 27},
     {L"ai-review", L"usage: simple-ai-trading ai-review [-h] [--report REPORT] [--output OUTPUT]                                    [--model MODEL] [--url URL]                                    [--timeout TIMEOUT] [--json]", kOptions_ai_review, 6},
+    {L"ai-uplift", L"usage: simple-ai-trading ai-uplift [-h] [--positions-root POSITIONS_ROOT]                                    [--audit AUDIT] --starting-capital                                    STARTING_CAPITAL [--model MODEL]                                    [--model-parameters-b MODEL_PARAMETERS_B]                                    [--output OUTPUT] [--json]", kOptions_ai_uplift, 7},
     {L"api-budget", L"usage: simple-ai-trading api-budget [-h] [--db DB] [--market {spot,futures}]                                     [--refresh] [--cached-only]                                     [--max-age-seconds MAX_AGE_SECONDS]                                     [--compact] [--json]", kOptions_api_budget, 7},
     {L"archive-sync", L"usage: simple-ai-trading archive-sync [-h] [--db DB] [--symbol SYMBOL]                                       [--symbols SYMBOLS]                                       [--top-symbols TOP_SYMBOLS]                                       [--quote-asset QUOTE_ASSET]                                       [--max-scan MAX_SCAN]                                       [--min-history-months MIN_HISTORY_MONTHS]                                       [--interval INTERVAL]                                       [--market {spot,futures}]                                       [--cadence {monthly,daily}]                                       [--data-type {klines,aggTrades}]                                       [--max-files MAX_FILES]                                       [--start-period START_PERIOD]                                       [--end-period END_PERIOD] [--plan-only]                                       [--progress-path PROGRESS_PATH]                                       [--max-planned-gb MAX_PLANNED_GB]                                       [--timeout TIMEOUT] [--force]                                       [--aggregate-only | --store-raw-agg-trades]                                       [--no-verify-checksum]                                       [--require-checksum] [--json]", kOptions_archive_sync, 24},
     {L"audit", L"usage: simple-ai-trading audit [-h] [--input INPUT] [--model MODEL]", kOptions_audit, 2},
@@ -1019,6 +1030,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"AI validation", L"ai-benchmark"},
     {L"Research", L"AI validation", L"ai-forecast-benchmark"},
     {L"Research", L"AI validation", L"ai-review"},
+    {L"Research", L"AI validation", L"ai-uplift"},
     {L"Research", L"Microstructure models", L"model-blueprint"},
     {L"Research", L"Microstructure models", L"microstructure-train"},
     {L"Research", L"Microstructure models", L"microstructure-refit"},

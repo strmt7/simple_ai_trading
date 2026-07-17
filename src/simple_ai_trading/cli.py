@@ -1967,6 +1967,35 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai_review.add_argument("--json", action="store_true")
     parser_ai_review.set_defaults(func=command_ai_review)
 
+    parser_ai_uplift = subparsers.add_parser(
+        "ai-uplift",
+        help="measure causal live AI-review uplift against the ML baseline",
+    )
+    parser_ai_uplift.add_argument(
+        "--positions-root",
+        default="data/autonomous",
+        help="positions store containing bot-owned closed trades",
+    )
+    parser_ai_uplift.add_argument(
+        "--audit",
+        default="data/autonomous/ai-entry-reviews.jsonl",
+        help="hash-chained live AI shadow-review audit log",
+    )
+    parser_ai_uplift.add_argument(
+        "--starting-capital",
+        type=float,
+        required=True,
+        help="capital denominator used for matched daily returns",
+    )
+    parser_ai_uplift.add_argument("--model", default="qwen3:14b")
+    parser_ai_uplift.add_argument("--model-parameters-b", type=float, default=14.0)
+    parser_ai_uplift.add_argument(
+        "--output",
+        default="data/autonomous/ai-uplift-report.json",
+    )
+    parser_ai_uplift.add_argument("--json", action="store_true")
+    parser_ai_uplift.set_defaults(func=command_ai_uplift)
+
     parser_strategy = subparsers.add_parser("strategy", help="adjust strategy and risk parameters")
     parser_strategy.add_argument("--profile", choices=sorted(_STRATEGY_PROFILES), default="custom")
     parser_strategy.add_argument("--risk-level", choices=["conservative", "regular", "aggressive"], default=None)
@@ -6159,6 +6188,43 @@ def command_ai_review(args: argparse.Namespace) -> int:
         if review.output_path:
             print(f"  review -> {review.output_path}")
     return 0 if review.approved else 2
+
+
+def command_ai_uplift(args: argparse.Namespace) -> int:
+    from .live_ai_uplift import assess_live_ai_shadow_uplift_paths
+
+    output = Path(args.output)
+    try:
+        report = assess_live_ai_shadow_uplift_paths(
+            positions_root=Path(args.positions_root),
+            audit_path=Path(args.audit),
+            initial_capital=float(args.starting_capital),
+            model_name=str(args.model),
+            model_parameters_b=float(args.model_parameters_b),
+        )
+        write_json_atomic(output, report, indent=2, sort_keys=True)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(f"ai-uplift failed: {exc}", file=sys.stderr)
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        matched_periods = report.get("matched_periods")
+        paired_days = len(matched_periods) if isinstance(matched_periods, list) else 0
+        print(
+            "ai-uplift: "
+            f"accepted={report['accepted']} "
+            f"coverage={float(report['causal_coverage']):.1%} "
+            f"eligible={int(report['causally_eligible_trades'])}/"
+            f"{int(report['candidate_trades'])} "
+            f"paired_days={paired_days}"
+        )
+        reasons = report.get("reasons")
+        if isinstance(reasons, list) and reasons:
+            print(f"  first_rejection={reasons[0]}")
+        print(f"  report -> {output}")
+        print("  trading_authority=false; profitability_claim=false")
+    return 0 if report["accepted"] is True else 2
 
 
 def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000

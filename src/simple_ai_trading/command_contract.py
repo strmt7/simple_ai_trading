@@ -98,7 +98,7 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     (
         "Research",
         "AI validation",
-        ("ai-benchmark", "ai-forecast-benchmark", "ai-review"),
+        ("ai-benchmark", "ai-forecast-benchmark", "ai-review", "ai-uplift"),
     ),
     (
         "Research",
