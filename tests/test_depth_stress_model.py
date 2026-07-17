@@ -9,6 +9,7 @@ from simple_ai_trading.depth_stress_model import (
     DEPTH_STRESS_DESCRIPTOR_NAMES,
     DEPTH_STRESS_MODEL_SCHEMA_VERSION,
     assign_depth_stress_states,
+    depth_stress_loss_rows,
     depth_stress_metrics,
     fit_depth_stress_thresholds,
     fit_depth_transition_probabilities,
@@ -26,6 +27,8 @@ def _descriptors(rows: int = 120) -> np.ndarray:
 
 def test_depth_descriptors_are_oriented_toward_stress() -> None:
     descriptors = orient_depth_stress_descriptors(
+        bid_near_depth=[80.0, 20.0],
+        ask_near_depth=[80.0, 5.0],
         bid_near_notional=[80.0, 20.0],
         ask_near_notional=[80.0, 5.0],
         bid_far_notional=[800.0, 500.0],
@@ -46,8 +49,8 @@ def test_depth_descriptors_are_oriented_toward_stress() -> None:
 @pytest.mark.parametrize(
     "changes",
     [
-        {"bid_near_notional": [float("nan")]},
-        {"ask_near_notional": [-1.0]},
+        {"bid_near_depth": [float("nan")]},
+        {"ask_near_depth": [-1.0]},
         {
             "bid_near_notional": [10.0],
             "ask_near_notional": [10.0],
@@ -58,6 +61,8 @@ def test_depth_descriptors_are_oriented_toward_stress() -> None:
 )
 def test_depth_descriptors_reject_invalid_provider_values(changes) -> None:
     values = {
+        "bid_near_depth": [10.0],
+        "ask_near_depth": [10.0],
         "bid_near_notional": [10.0],
         "ask_near_notional": [10.0],
         "bid_far_notional": [100.0],
@@ -105,6 +110,7 @@ def test_conditional_transition_baseline_and_proper_scores() -> None:
     transition = fit_depth_transition_probabilities(pre, post, alpha=1.0)
     probabilities = predict_depth_transition_probabilities(transition, pre)
     metrics = depth_stress_metrics(post, probabilities)
+    losses = depth_stress_loss_rows(post, probabilities)
 
     assert transition.shape == (3, 3)
     assert np.allclose(np.sum(transition, axis=1), 1.0)
@@ -114,6 +120,11 @@ def test_conditional_transition_baseline_and_proper_scores() -> None:
     assert metrics.negative_log_likelihood > 0.0
     assert 0.0 <= metrics.multiclass_brier <= 2.0
     assert 0.0 <= metrics.stressed_brier <= 1.0
+    assert metrics.negative_log_likelihood == pytest.approx(
+        np.mean(losses["negative_log_likelihood"])
+    )
+    assert metrics.multiclass_brier == pytest.approx(np.mean(losses["multiclass_brier"]))
+    assert metrics.stressed_brier == pytest.approx(np.mean(losses["stressed_brier"]))
 
 
 def test_marginal_baseline_has_identical_probability_rows() -> None:

@@ -1,7 +1,7 @@
 {
   "schema_version": "round-062-depth-stress-transition-design-v1",
   "round": 62,
-  "design_sha256": "d110b9fd56bbbfada8399366774bac0385954aea4bfcdad76a47c8856a3134d0",
+  "design_sha256": "9fc720f60b403d214d8558661e60eb18a5738d90c14d7c95700a979ff4836742",
   "phase": "coarse_depth_stress_transition_screen",
   "research_question": "Do causal coarse-depth features improve calibrated 60-second and 300-second depth-stress transition forecasts beyond marginal and pre-state transition baselines for BTCUSDT, ETHUSDT, and SOLUSDT on rolling untouched months?",
   "governance": {
@@ -62,11 +62,11 @@
     "far_band_percent": 5.0,
     "descriptors_oriented_high_is_stress": [
       "near_depth_thinness=-log1p(bid_notional_1pct+ask_notional_1pct)",
-      "near_depth_absolute_imbalance=abs((bid_notional_1pct-ask_notional_1pct)/(bid_notional_1pct+ask_notional_1pct))",
+      "near_depth_absolute_imbalance=abs((bid_depth_1pct-ask_depth_1pct)/(bid_depth_1pct+ask_depth_1pct))",
       "far_to_near_depth_concentration=log1p(bid_notional_5pct+ask_notional_5pct)-log1p(bid_notional_1pct+ask_notional_1pct)"
     ],
     "threshold": "training-fold empirical upper tercile for each oriented descriptor",
-    "state": "count descriptors strictly above their threshold and cap at two",
+    "state": "count descriptors at or above their threshold and cap at two",
     "state_names": ["calm", "mixed", "stressed"],
     "state_values": [0, 1, 2],
     "nonfinite_live_policy": "stressed",
