@@ -955,6 +955,8 @@ def _entry_gate(
     objective: ObjectiveSpec,
     *,
     now_ms_value: int,
+    symbol: str = "",
+    market_type: str = "",
 ) -> EntryGate:
     """Return the deterministic pre-entry gate decision for a signal."""
 
@@ -1005,9 +1007,24 @@ def _entry_gate(
             regime_score = 1.0
     regime_score = max(0.0, min(1.0, regime_score))
     regime_limit = max(0.0, min(1.0, float(strategy.max_regime_unpredictability)))
+    normalized_symbol = str(symbol).strip().upper()
+    normalized_market_type = str(market_type).strip().lower()
+    same_instrument_open = bool(
+        normalized_symbol
+        and any(
+            position.symbol.upper() == normalized_symbol
+            and (
+                not normalized_market_type
+                or position.market_type.lower() == normalized_market_type
+            )
+            for position in opens
+        )
+    )
 
     if decision.side not in {"LONG", "SHORT"}:
         reason = "flat-signal"
+    elif same_instrument_open:
+        reason = f"same-instrument-open:{normalized_symbol}:{normalized_market_type or 'any'}"
     elif not decision.ai_assist_entry_ready:
         reason = decision.ai_assist_reason or "ai-pre-entry-review-unavailable"
     elif _decision_size_multiplier(decision) <= 0.0:
@@ -1189,6 +1206,23 @@ def run_loop(
                 sleep(poll)
                 continue
             try:
+                set_entry_review_required = getattr(
+                    decision_fn,
+                    "set_entry_review_required",
+                    None,
+                )
+                if callable(set_entry_review_required):
+                    open_positions = store.load_open()
+                    same_instrument_open = any(
+                        position.symbol.upper() == runtime.symbol.upper()
+                        and position.market_type.lower() == runtime.market_type.lower()
+                        for position in open_positions
+                    )
+                    set_entry_review_required(
+                        not recovery_pending
+                        and int(strategy.max_open_positions) > len(open_positions)
+                        and not same_instrument_open
+                    )
                 decision = decision_fn(client, runtime, strategy, objective)
             except BinanceAPIError as err:
                 network_errors += 1
@@ -1528,6 +1562,8 @@ def run_loop(
                 cfg,
                 objective,
                 now_ms_value=int(clock() * 1000),
+                symbol=runtime.symbol,
+                market_type=runtime.market_type,
             )
             if decision.side in {"LONG", "SHORT"} and gate.allowed:
                 if cfg.dry_run:
