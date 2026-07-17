@@ -1,9 +1,9 @@
 """Non-blocking, auditable AI shadow review for autonomous entry proposals.
 
 The local language model never owns execution. It reviews only ML proposals,
-uses causal structured evidence, and writes an append-only hash chain. The
-autonomous loop continues with its deterministic decision while the reviewer
-runs on a daemon worker, so exits and risk controls never wait for inference.
+uses causal structured evidence, and writes an append-only hash chain. New
+entries wait asynchronously for exact-case evidence, while exits, monitoring,
+and deterministic risk controls never wait for inference.
 """
 
 from __future__ import annotations
@@ -344,6 +344,7 @@ class LiveAIEntryReview:
     status: str
     decision: LiveAIEntryDecision | None
     latency_seconds: float
+    completed_at_ms: int = 0
 
     @property
     def reason(self) -> str:
@@ -599,6 +600,7 @@ def _audit_case_and_decision(
         raise ValueError(f"AI entry audit timing is invalid at line {line_number}") from exc
     if (
         completed_at_ms <= 0
+        or completed_at_ms < case.observed_at_ms
         or not math.isfinite(latency_seconds)
         or latency_seconds < 0.0
     ):
@@ -685,7 +687,7 @@ class _HashChainedReviewLog:
 
 
 class AsyncLiveAIEntryReviewer:
-    """Latest-wins single-worker reviewer that never blocks the trading loop."""
+    """Bounded single-worker reviewer that never blocks the trading loop."""
 
     def __init__(
         self,
@@ -777,12 +779,19 @@ class AsyncLiveAIEntryReviewer:
                     "cooldown": "shadow_cooldown",
                 }[decision.action]
             )
-            review = LiveAIEntryReview(case.case_id, status, decision, latency)
+            completed_at_ms = int(self._clock() * 1000)
+            review = LiveAIEntryReview(
+                case.case_id,
+                status,
+                decision,
+                latency,
+                completed_at_ms,
+            )
             try:
                 self._audit.append(
                     case=case,
                     review=review,
-                    completed_at_ms=int(self._clock() * 1000),
+                    completed_at_ms=completed_at_ms,
                 )
             except Exception as exc:  # noqa: BLE001 - corrupt audit blocks further AI evidence
                 review = LiveAIEntryReview(
@@ -790,6 +799,7 @@ class AsyncLiveAIEntryReviewer:
                     "shadow_failure",
                     _failed_decision(f"audit:{type(exc).__name__}: {exc}"),
                     latency,
+                    completed_at_ms,
                 )
                 fatal_reason = review.reason
             else:
@@ -826,11 +836,17 @@ class AIAssistedDecisionFunction:
         *,
         model_digest: str,
         terminal_model_fingerprint: str,
+        maximum_review_age_seconds: int = 300,
+        clock: Callable[[], float] = time.time,
     ) -> None:
         self._base_decision_fn = base_decision_fn
         self._reviewer = reviewer
         self._model_digest = model_digest
         self._terminal_model_fingerprint = terminal_model_fingerprint
+        self._maximum_review_age_ms = int(maximum_review_age_seconds) * 1_000
+        self._clock = clock
+        if not 1_000 <= self._maximum_review_age_ms <= 300_000:
+            raise ValueError("live AI maximum review age is invalid")
         for name, value in {
             "model_digest": self._model_digest,
             "terminal_model_fingerprint": self._terminal_model_fingerprint,
@@ -898,17 +914,31 @@ class AIAssistedDecisionFunction:
                 ai_assist_mode="shadow_only",
                 ai_assist_status="shadow_failure",
                 ai_assist_reason=f"{type(exc).__name__}: {exc}"[:240],
+                ai_assist_entry_ready=False,
             )
         reviewed_action = review.decision.action if review.decision is not None else "pending"
         reviewed_risk = review.decision.risk_multiplier if review.decision is not None else 0.0
+        now_ms = int(self._clock() * 1_000)
+        review_age_ms = now_ms - int(review.completed_at_ms)
+        entry_ready = bool(
+            review.decision is not None
+            and review.decision.valid
+            and 0 <= review_age_ms <= self._maximum_review_age_ms
+        )
+        review_reason = review.reason
+        review_status = review.status
+        if review.decision is not None and review.decision.valid and not entry_ready:
+            review_status = "shadow_failure"
+            review_reason = "completed AI pre-entry review is stale or future-dated"
         return replace(
             decision,
             ai_assist_mode="shadow_only",
-            ai_assist_status=review.status,
+            ai_assist_status=review_status,
             ai_assist_case_id=case.case_id,
             ai_assist_action=reviewed_action,
             ai_assist_risk_multiplier=reviewed_risk,
-            ai_assist_reason=review.reason[:240],
+            ai_assist_reason=review_reason[:240],
+            ai_assist_entry_ready=entry_ready,
         )
 
     def close(self, timeout_seconds: float = 0.25) -> bool:

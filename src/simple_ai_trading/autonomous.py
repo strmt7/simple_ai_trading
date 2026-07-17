@@ -238,6 +238,7 @@ class Decision:
     ai_assist_action: str = ""
     ai_assist_risk_multiplier: float = 0.0
     ai_assist_reason: str = ""
+    ai_assist_entry_ready: bool = True
 
 
 DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
@@ -392,6 +393,8 @@ def _open_position_from_decision(
 ) -> OpenPosition:
     """Build a position record from a decision + runtime state."""
 
+    if not decision.ai_assist_entry_ready:
+        raise ValueError("position entry requires a completed AI pre-entry review")
     price = max(0.01, float(decision.mark_price))
     notional_pct = stop_loss_sized_notional_pct(strategy, runtime.market_type, leverage=strategy.leverage)
     size_multiplier = _decision_size_multiplier(decision)
@@ -1004,6 +1007,8 @@ def _entry_gate(
 
     if decision.side not in {"LONG", "SHORT"}:
         reason = "flat-signal"
+    elif not decision.ai_assist_entry_ready:
+        reason = decision.ai_assist_reason or "ai-pre-entry-review-unavailable"
     elif _decision_size_multiplier(decision) <= 0.0:
         reason = decision.meta_label_reason or "meta-label-skip"
     elif confidence < min_confidence:
