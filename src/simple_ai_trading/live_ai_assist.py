@@ -23,6 +23,12 @@ from urllib.request import Request, urlopen
 from .advanced_model import advanced_config_from_signature
 from .ai_runtime import inspect_ollama_model_residency
 from .execution_simulation import configured_round_trip_cost_floor_bps
+from .meta_label import (
+    META_LABEL_BOOTSTRAP_CONFIDENCE,
+    META_LABEL_BOOTSTRAP_SAMPLES,
+    META_LABEL_EVIDENCE_SCHEMA_VERSION,
+    META_LABEL_MINIMUM_ACTION_SAMPLES,
+)
 
 
 LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v1"
@@ -418,6 +424,18 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     meta_expected_pnl = _finite_or_none(
         meta_label.get("expected_after_cost_pnl_quote")
     )
+    meta_bootstrap_samples = _nonnegative_int_or_none(
+        meta_label.get("validation_bootstrap_samples")
+    )
+    meta_bootstrap_confidence = _finite_or_none(
+        meta_label.get("validation_bootstrap_confidence")
+    )
+    meta_bootstrap_block_length = _nonnegative_int_or_none(
+        meta_label.get("validation_bootstrap_block_length")
+    )
+    meta_bootstrap_lower = _finite_or_none(
+        meta_label.get("validation_bootstrap_lower_after_cost_return")
+    )
     payoff_support_count = _nonnegative_int_or_none(
         payoff.get("proposal_support_count")
     )
@@ -439,9 +457,11 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     meta_contract_valid = bool(
         not meta_enabled
         or (
-            meta_label.get("action") in {"take", "downsize"}
+            meta_label.get("evidence_schema_version")
+            == META_LABEL_EVIDENCE_SCHEMA_VERSION
+            and meta_label.get("action") in {"take", "downsize"}
             and meta_minimum_samples is not None
-            and meta_minimum_samples > 0
+            and meta_minimum_samples >= META_LABEL_MINIMUM_ACTION_SAMPLES
             and meta_samples is not None
             and meta_samples >= meta_minimum_samples
             and meta_minimum_precision is not None
@@ -452,6 +472,17 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
             and meta_expected_return > 0.0
             and meta_expected_pnl is not None
             and meta_expected_pnl > 0.0
+            and meta_bootstrap_samples is not None
+            and meta_bootstrap_samples >= META_LABEL_BOOTSTRAP_SAMPLES
+            and meta_bootstrap_confidence is not None
+            and META_LABEL_BOOTSTRAP_CONFIDENCE
+            <= meta_bootstrap_confidence
+            < 1.0
+            and meta_bootstrap_block_length is not None
+            and meta_bootstrap_block_length > 0
+            and meta_bootstrap_block_length <= meta_samples
+            and meta_bootstrap_lower is not None
+            and meta_bootstrap_lower > 0.0
         )
     )
     payoff_contract_valid = bool(
@@ -1395,6 +1426,13 @@ class AIAssistedDecisionFunction:
             },
             "meta_label": {
                 "enabled": bool(getattr(decision, "meta_label_enabled", False)),
+                "evidence_schema_version": str(
+                    getattr(
+                        decision,
+                        "meta_label_evidence_schema_version",
+                        "",
+                    )
+                ),
                 "action": str(getattr(decision, "meta_label_action", "")),
                 "reason": str(getattr(decision, "meta_label_reason", ""))[:180],
                 "size_multiplier": float(getattr(decision, "size_multiplier", 1.0)),
@@ -1426,6 +1464,34 @@ class AIAssistedDecisionFunction:
                 ),
                 "expected_after_cost_pnl_quote": float(
                     getattr(decision, "meta_label_expected_after_cost_pnl", 0.0)
+                ),
+                "validation_bootstrap_samples": int(
+                    getattr(
+                        decision,
+                        "meta_label_validation_bootstrap_samples",
+                        0,
+                    )
+                ),
+                "validation_bootstrap_confidence": float(
+                    getattr(
+                        decision,
+                        "meta_label_validation_bootstrap_confidence",
+                        0.0,
+                    )
+                ),
+                "validation_bootstrap_block_length": int(
+                    getattr(
+                        decision,
+                        "meta_label_validation_bootstrap_block_length",
+                        0,
+                    )
+                ),
+                "validation_bootstrap_lower_after_cost_return": float(
+                    getattr(
+                        decision,
+                        "meta_label_validation_bootstrap_lower_after_cost_return",
+                        0.0,
+                    )
                 ),
             },
             "model_validation": self._model_validation_evidence,

@@ -1278,11 +1278,19 @@ meta-label policy from the accepted model's development-only simulated trade
 log. The policy
 records the signal-strength thresholds that would take, downsize, or skip trades
 under the current objective precision target and is persisted in both the model
-artifact and `training_suite_summary.json`. Backtests, the legacy live loop, and
-the autonomous loop now apply that policy as a deterministic pre-entry
-skip/downsize gate. It cannot create entries or override exits, and malformed
-enabled policies fail closed by skipping the entry. The policy is attached
-before the one-shot terminal replay, so its effect is included in sealed final
+artifact and `training_suite_summary.json`. Version 2 also records a
+deterministic 2,000-sample, 95% moving-block-bootstrap interval over each
+time-ordered action bucket's after-cost returns and requires at least 30
+outcomes per executable action. Take and downsize buckets need a strictly
+positive lower mean-return bound as well as their support, precision,
+mean-return, and aggregate-P&L gates. This reduces dependence-blind confidence
+but is not untouched confirmation evidence because threshold selection occurs
+on the development sample. Backtests, the legacy live loop, and the autonomous
+loop apply the policy as a deterministic pre-entry skip/downsize gate. It cannot
+create entries or override exits. Explicit observe-only, legacy, and malformed
+enabled policies fail closed in execution and model readiness instead of
+reverting to full-size primary-model entries. The policy is attached before
+the one-shot terminal replay, so its effect is included in sealed final
 evidence rather than added after validation.
 For host smoke checks, `train-suite` and `model-lab` expose `--max-candidates`;
 this caps candidate count per objective only when explicitly set and should not

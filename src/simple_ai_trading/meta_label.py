@@ -2,16 +2,24 @@
 
 from __future__ import annotations
 
+import hashlib
 import math
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Sequence
 
 from .features import ModelRow
 from .model import TrainedModel, confidence_adjusted_probability, model_decision_threshold, model_direction_thresholds
+from .statistical_resampling import moving_block_bootstrap_mean
 from .types import StrategyConfig
 
 if TYPE_CHECKING:
     from .backtest import BacktestResult
+
+
+META_LABEL_EVIDENCE_SCHEMA_VERSION = "meta-label-after-cost-v2"
+META_LABEL_MINIMUM_ACTION_SAMPLES = 30
+META_LABEL_BOOTSTRAP_SAMPLES = 2_000
+META_LABEL_BOOTSTRAP_CONFIDENCE = 0.95
 
 
 @dataclass(frozen=True)
@@ -68,6 +76,10 @@ class MetaLabelDecision:
     validation_precision: float = 0.0
     expected_after_cost_return: float = 0.0
     expected_after_cost_pnl: float = 0.0
+    validation_bootstrap_samples: int = 0
+    validation_bootstrap_confidence: float = 0.0
+    validation_bootstrap_block_length: int = 0
+    validation_bootstrap_lower_after_cost_return: float = 0.0
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -81,6 +93,20 @@ def _finite(value: object, default: float = 0.0) -> float:
     return parsed if math.isfinite(parsed) else default
 
 
+def _finite_or_none(value: object) -> float | None:
+    parsed = _finite(value, math.nan)
+    return parsed if math.isfinite(parsed) else None
+
+
+def _integer_or_none(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    parsed = _finite_or_none(value)
+    if parsed is None or not parsed.is_integer():
+        return None
+    return int(parsed)
+
+
 def _precision(samples: Sequence[MetaLabelSample]) -> float:
     if not samples:
         return 0.0
@@ -91,6 +117,30 @@ def _mean_return(samples: Sequence[MetaLabelSample]) -> float:
     if not samples:
         return 0.0
     return sum(sample.return_pct for sample in samples) / len(samples)
+
+
+def _bucket_bootstrap(
+    samples: Sequence[MetaLabelSample],
+    *,
+    objective: str,
+    action: str,
+) -> dict[str, object]:
+    ordered = sorted(samples, key=lambda sample: (sample.opened_at, sample.side))
+    binding = hashlib.sha256()
+    binding.update(f"meta-label:{objective}:{action}:".encode("ascii"))
+    for sample in ordered:
+        binding.update(
+            (
+                f"{sample.opened_at}:{sample.side}:"
+                f"{sample.return_pct:.17g};"
+            ).encode("ascii")
+        )
+    return moving_block_bootstrap_mean(
+        tuple(sample.return_pct for sample in ordered),
+        samples=META_LABEL_BOOTSTRAP_SAMPLES,
+        confidence=META_LABEL_BOOTSTRAP_CONFIDENCE,
+        seed_material=binding.hexdigest(),
+    )
 
 
 def _target_precision(objective_name: str) -> float:
@@ -114,20 +164,111 @@ def _signal_strength(adjusted_probability: float, threshold: float, side: int, m
 def _policy_action_evidence(
     policy: dict[str, object],
     action: str,
-) -> tuple[int, float, int, float, float, float]:
+) -> dict[str, object]:
     prefix = "take" if action == "take" else "downsize"
-    return (
-        max(1, int(_finite(policy.get("minimum_action_samples"), 0.0))),
-        (
-            max(0.0, min(1.0, _finite(policy.get("target_precision"), 0.0)))
+    return {
+        "minimum_samples": _integer_or_none(
+            policy.get("minimum_action_samples")
+        ),
+        "minimum_precision": (
+            _finite_or_none(policy.get("target_precision"))
             if action == "take"
             else 0.0
         ),
-        max(0, int(_finite(policy.get(f"{prefix}_sample_count"), 0.0))),
-        max(0.0, min(1.0, _finite(policy.get(f"{prefix}_precision"), 0.0))),
-        _finite(policy.get(f"{prefix}_mean_return"), 0.0),
-        _finite(policy.get(f"{prefix}_net_pnl"), 0.0),
+        "samples": _integer_or_none(
+            policy.get(f"{prefix}_sample_count")
+        ),
+        "precision": _finite_or_none(
+            policy.get(f"{prefix}_precision")
+        ),
+        "mean_return": _finite_or_none(
+            policy.get(f"{prefix}_mean_return")
+        ),
+        "net_pnl": _finite_or_none(
+            policy.get(f"{prefix}_net_pnl")
+        ),
+        "bootstrap_samples": _integer_or_none(
+            policy.get(f"{prefix}_bootstrap_samples")
+        ),
+        "bootstrap_confidence": _finite_or_none(
+            policy.get(f"{prefix}_bootstrap_confidence")
+        ),
+        "bootstrap_block_length": _integer_or_none(
+            policy.get(f"{prefix}_bootstrap_block_length")
+        ),
+        "bootstrap_lower_return": _finite_or_none(
+            policy.get(f"{prefix}_bootstrap_mean_return_lower")
+        ),
+    }
+
+
+def _action_evidence_is_valid(evidence: dict[str, object]) -> bool:
+    minimum_samples = evidence.get("minimum_samples")
+    samples = evidence.get("samples")
+    minimum_precision = evidence.get("minimum_precision")
+    precision = evidence.get("precision")
+    mean_return = evidence.get("mean_return")
+    net_pnl = evidence.get("net_pnl")
+    bootstrap_samples = evidence.get("bootstrap_samples")
+    bootstrap_confidence = evidence.get("bootstrap_confidence")
+    block_length = evidence.get("bootstrap_block_length")
+    bootstrap_lower = evidence.get("bootstrap_lower_return")
+    return bool(
+        isinstance(minimum_samples, int)
+        and minimum_samples >= META_LABEL_MINIMUM_ACTION_SAMPLES
+        and isinstance(samples, int)
+        and samples >= minimum_samples
+        and isinstance(minimum_precision, float)
+        and 0.0 <= minimum_precision <= 1.0
+        and isinstance(precision, float)
+        and minimum_precision <= precision <= 1.0
+        and isinstance(mean_return, float)
+        and mean_return > 0.0
+        and isinstance(net_pnl, float)
+        and net_pnl > 0.0
+        and isinstance(bootstrap_samples, int)
+        and bootstrap_samples >= META_LABEL_BOOTSTRAP_SAMPLES
+        and isinstance(bootstrap_confidence, float)
+        and META_LABEL_BOOTSTRAP_CONFIDENCE <= bootstrap_confidence < 1.0
+        and isinstance(block_length, int)
+        and 0 < block_length <= samples
+        and isinstance(bootstrap_lower, float)
+        and bootstrap_lower > 0.0
     )
+
+
+def validate_enabled_meta_label_policy(policy: object) -> tuple[bool, str]:
+    """Validate every executable branch of an enabled persisted policy."""
+
+    if not isinstance(policy, dict) or policy.get("enabled") is not True:
+        return False, "meta_label_policy_not_enabled"
+    if policy.get("evidence_schema_version") != META_LABEL_EVIDENCE_SCHEMA_VERSION:
+        return False, "invalid_meta_label_evidence_schema"
+    if policy.get("mode") != "take_downsize_skip":
+        return False, "invalid_meta_label_mode"
+    take_threshold = _finite(policy.get("take_threshold"), math.nan)
+    downsize_threshold = _finite(policy.get("downsize_threshold"), math.nan)
+    downsize_fraction = _finite(policy.get("downsize_fraction"), math.nan)
+    if (
+        not math.isfinite(take_threshold)
+        or not math.isfinite(downsize_threshold)
+        or take_threshold < 0.0
+        or downsize_threshold < 0.0
+        or downsize_threshold > take_threshold
+    ):
+        return False, "invalid_meta_label_thresholds"
+    if not 0.05 <= downsize_fraction <= 1.0:
+        return False, "invalid_meta_label_downsize_fraction"
+    if not _action_evidence_is_valid(_policy_action_evidence(policy, "take")):
+        return False, "invalid_meta_label_take_evidence"
+    if (
+        downsize_threshold < take_threshold
+        and not _action_evidence_is_valid(
+            _policy_action_evidence(policy, "downsize")
+        )
+    ):
+        return False, "invalid_meta_label_downsize_evidence"
+    return True, "meta_label_policy_valid"
 
 
 def apply_meta_label_policy(
@@ -140,9 +281,10 @@ def apply_meta_label_policy(
 ) -> MetaLabelDecision:
     """Return take/downsize/skip behavior for a persisted meta-label policy.
 
-    Missing or disabled policies preserve legacy behavior.  An explicitly
-    enabled but malformed policy fails closed by skipping the entry, because a
-    corrupted execution gate is more dangerous than a missed trade.
+    Missing or user-disabled policies preserve primary-model behavior. An
+    explicit observe-only result and any malformed enabled policy fail closed
+    by skipping the entry, because a corrupted execution gate is more dangerous
+    than a missed trade.
     """
 
     side = 1 if side > 0 else (-1 if side < 0 else 0)
@@ -154,57 +296,85 @@ def apply_meta_label_policy(
     )
     if side == 0:
         return MetaLabelDecision(False, "no_signal", 0.0, float(strength), "no_actionable_signal")
-    if not isinstance(policy, dict) or policy.get("enabled") is not True:
+    if not isinstance(policy, dict):
         return MetaLabelDecision(False, "take", 1.0, float(strength), "meta_label_policy_disabled")
-    if str(policy.get("mode", "")) != "take_downsize_skip":
-        return MetaLabelDecision(True, "skip", 0.0, float(strength), "invalid_meta_label_mode")
+    if policy.get("enabled") is not True:
+        if policy.get("mode") == "observe_only":
+            return MetaLabelDecision(
+                True,
+                "skip",
+                0.0,
+                float(strength),
+                "meta_label_observe_only",
+            )
+        return MetaLabelDecision(
+            False,
+            "take",
+            1.0,
+            float(strength),
+            "meta_label_policy_disabled",
+        )
+    policy_valid, policy_reason = validate_enabled_meta_label_policy(policy)
+    if not policy_valid:
+        return MetaLabelDecision(
+            True,
+            "skip",
+            0.0,
+            float(strength),
+            policy_reason,
+        )
     take_threshold = _finite(policy.get("take_threshold"), math.nan)
     downsize_threshold = _finite(policy.get("downsize_threshold"), math.nan)
     downsize_fraction = _finite(policy.get("downsize_fraction"), 0.5)
-    if (
-        not math.isfinite(take_threshold)
-        or not math.isfinite(downsize_threshold)
-        or take_threshold < 0.0
-        or downsize_threshold < 0.0
-        or downsize_threshold > take_threshold
-    ):
-        return MetaLabelDecision(True, "skip", 0.0, float(strength), "invalid_meta_label_thresholds")
-    downsize_fraction = max(0.05, min(1.0, downsize_fraction))
     if strength >= take_threshold:
-        minimum_samples, minimum_precision, samples, precision, mean_return, net_pnl = _policy_action_evidence(
-            policy,
-            "take",
-        )
+        evidence = _policy_action_evidence(policy, "take")
         return MetaLabelDecision(
             True,
             "take",
             1.0,
             float(strength),
             "meta_label_take",
-            validation_minimum_sample_count=minimum_samples,
-            validation_minimum_precision=minimum_precision,
-            validation_sample_count=samples,
-            validation_precision=precision,
-            expected_after_cost_return=mean_return,
-            expected_after_cost_pnl=net_pnl,
+            validation_minimum_sample_count=int(evidence["minimum_samples"]),
+            validation_minimum_precision=float(evidence["minimum_precision"]),
+            validation_sample_count=int(evidence["samples"]),
+            validation_precision=float(evidence["precision"]),
+            expected_after_cost_return=float(evidence["mean_return"]),
+            expected_after_cost_pnl=float(evidence["net_pnl"]),
+            validation_bootstrap_samples=int(evidence["bootstrap_samples"]),
+            validation_bootstrap_confidence=float(
+                evidence["bootstrap_confidence"]
+            ),
+            validation_bootstrap_block_length=int(
+                evidence["bootstrap_block_length"]
+            ),
+            validation_bootstrap_lower_after_cost_return=float(
+                evidence["bootstrap_lower_return"]
+            ),
         )
     if strength >= downsize_threshold:
-        minimum_samples, minimum_precision, samples, precision, mean_return, net_pnl = _policy_action_evidence(
-            policy,
-            "downsize",
-        )
+        evidence = _policy_action_evidence(policy, "downsize")
         return MetaLabelDecision(
             True,
             "downsize",
             float(downsize_fraction),
             float(strength),
             "meta_label_downsize",
-            validation_minimum_sample_count=minimum_samples,
-            validation_minimum_precision=minimum_precision,
-            validation_sample_count=samples,
-            validation_precision=precision,
-            expected_after_cost_return=mean_return,
-            expected_after_cost_pnl=net_pnl,
+            validation_minimum_sample_count=int(evidence["minimum_samples"]),
+            validation_minimum_precision=float(evidence["minimum_precision"]),
+            validation_sample_count=int(evidence["samples"]),
+            validation_precision=float(evidence["precision"]),
+            expected_after_cost_return=float(evidence["mean_return"]),
+            expected_after_cost_pnl=float(evidence["net_pnl"]),
+            validation_bootstrap_samples=int(evidence["bootstrap_samples"]),
+            validation_bootstrap_confidence=float(
+                evidence["bootstrap_confidence"]
+            ),
+            validation_bootstrap_block_length=int(
+                evidence["bootstrap_block_length"]
+            ),
+            validation_bootstrap_lower_after_cost_return=float(
+                evidence["bootstrap_lower_return"]
+            ),
         )
     return MetaLabelDecision(True, "skip", 0.0, float(strength), "meta_label_skip")
 
@@ -257,10 +427,19 @@ def extract_meta_label_samples(
 
 
 def _candidate_thresholds(samples: Sequence[MetaLabelSample]) -> list[float]:
-    values = sorted({round(max(0.0, sample.signal_strength), 12) for sample in samples})
-    if not values:
+    strengths = [
+        max(0.0, float(sample.signal_strength))
+        for sample in samples
+        if math.isfinite(sample.signal_strength)
+    ]
+    if not strengths:
         return []
-    values.append(max(values) + 1e-9)
+    buckets: dict[float, float] = {}
+    for strength in strengths:
+        key = round(strength, 12)
+        buckets[key] = min(strength, buckets.get(key, strength))
+    values = sorted(set(buckets.values()))
+    values.append(math.nextafter(max(strengths), math.inf))
     return values
 
 
@@ -280,7 +459,10 @@ def build_meta_label_report(
     objective = get_objective(objective_name)
     samples = extract_meta_label_samples(rows, model, strategy, result, market_type=market_type)
     target = _target_precision(objective.name)
-    minimum_samples = max(2, min(max(1, int(objective.min_closed_trades)), max(2, len(samples))))
+    minimum_samples = max(
+        META_LABEL_MINIMUM_ACTION_SAMPLES,
+        int(objective.min_closed_trades),
+    )
     if len(samples) < minimum_samples:
         policy = {
             "enabled": False,
@@ -338,6 +520,15 @@ def build_meta_label_report(
         reason = None
 
     take_samples = [sample for sample in samples if sample.signal_strength >= best_threshold]
+    take_bootstrap = _bucket_bootstrap(
+        take_samples,
+        objective=objective.name,
+        action="take",
+    )
+    take_bootstrap_lower = float(take_bootstrap["mean_ci_lower"])
+    if status == "trained" and take_bootstrap_lower <= 0.0:
+        status = "observe_only"
+        reason = "take_bootstrap_lower_not_positive"
     proposed_downsize_floor = max(0.0, best_threshold * 0.50)
     proposed_downsize_samples = [
         sample
@@ -347,8 +538,18 @@ def build_meta_label_report(
     proposed_downsize_net_pnl = sum(
         sample.net_pnl for sample in proposed_downsize_samples
     )
+    proposed_downsize_bootstrap = _bucket_bootstrap(
+        proposed_downsize_samples,
+        objective=objective.name,
+        action="downsize",
+    )
+    proposed_downsize_bootstrap_lower = float(
+        proposed_downsize_bootstrap["mean_ci_lower"]
+    )
     downsize_evidence_accepted = bool(
-        len(proposed_downsize_samples) >= minimum_samples
+        status == "trained"
+        and proposed_downsize_bootstrap_lower > 0.0
+        and len(proposed_downsize_samples) >= minimum_samples
         and _mean_return(proposed_downsize_samples) > 0.0
         and proposed_downsize_net_pnl > 0.0
     )
@@ -372,9 +573,9 @@ def build_meta_label_report(
     downsize_mean_return = _mean_return(downsize_samples)
     downsize_net_pnl = sum(sample.net_pnl for sample in downsize_samples)
     policy = {
-        "evidence_schema_version": "meta-label-after-cost-v1",
+        "evidence_schema_version": META_LABEL_EVIDENCE_SCHEMA_VERSION,
         "enabled": status == "trained",
-        "mode": "take_downsize_skip",
+        "mode": "take_downsize_skip" if status == "trained" else "observe_only",
         "reason": reason,
         "objective": objective.name,
         "target_precision": target,
@@ -387,11 +588,54 @@ def build_meta_label_report(
         "take_precision": float(take_precision),
         "take_mean_return": float(take_mean_return),
         "take_net_pnl": float(take_net_pnl),
+        "take_bootstrap_samples": int(take_bootstrap["samples"]),
+        "take_bootstrap_confidence": float(take_bootstrap["confidence"]),
+        "take_bootstrap_block_length": int(take_bootstrap["block_length"]),
+        "take_bootstrap_mean_return_lower": take_bootstrap_lower,
+        "take_bootstrap_mean_return_upper": float(
+            take_bootstrap["mean_ci_upper"]
+        ),
+        "take_bootstrap_positive_mean_probability": float(
+            take_bootstrap["positive_mean_probability"]
+        ),
         "downsize_evidence_accepted": downsize_evidence_accepted,
         "downsize_sample_count": len(downsize_samples),
         "downsize_precision": float(downsize_precision),
         "downsize_mean_return": float(downsize_mean_return),
         "downsize_net_pnl": float(downsize_net_pnl),
+        "downsize_bootstrap_samples": (
+            int(proposed_downsize_bootstrap["samples"])
+            if downsize_evidence_accepted
+            else 0
+        ),
+        "downsize_bootstrap_confidence": (
+            float(proposed_downsize_bootstrap["confidence"])
+            if downsize_evidence_accepted
+            else 0.0
+        ),
+        "downsize_bootstrap_block_length": (
+            int(proposed_downsize_bootstrap["block_length"])
+            if downsize_evidence_accepted
+            else 0
+        ),
+        "downsize_bootstrap_mean_return_lower": (
+            proposed_downsize_bootstrap_lower
+            if downsize_evidence_accepted
+            else 0.0
+        ),
+        "downsize_bootstrap_mean_return_upper": (
+            float(proposed_downsize_bootstrap["mean_ci_upper"])
+            if downsize_evidence_accepted
+            else 0.0
+        ),
+        "downsize_bootstrap_positive_mean_probability": (
+            float(proposed_downsize_bootstrap["positive_mean_probability"])
+            if downsize_evidence_accepted
+            else 0.0
+        ),
+        "proposed_downsize_bootstrap_mean_return_lower": (
+            proposed_downsize_bootstrap_lower
+        ),
     }
     return MetaLabelReport(
         status=status,

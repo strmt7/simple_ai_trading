@@ -13845,6 +13845,12 @@ def _build_autonomous_decision_fn(
             mark_price=float(latest.close),
             size_multiplier=float(meta_decision.size_multiplier),
             meta_label_enabled=bool(base_meta_decision.enabled),
+            meta_label_evidence_schema_version=str(
+                getattr(current_model, "meta_label_policy", {}).get(
+                    "evidence_schema_version",
+                    "",
+                )
+            ),
             meta_label_action=str(meta_decision.action),
             meta_label_reason=str(meta_decision.reason),
             meta_label_signal_strength=float(meta_decision.signal_strength),
@@ -13865,6 +13871,18 @@ def _build_autonomous_decision_fn(
             ),
             meta_label_expected_after_cost_pnl=float(
                 meta_decision.expected_after_cost_pnl
+            ),
+            meta_label_validation_bootstrap_samples=int(
+                meta_decision.validation_bootstrap_samples
+            ),
+            meta_label_validation_bootstrap_confidence=float(
+                meta_decision.validation_bootstrap_confidence
+            ),
+            meta_label_validation_bootstrap_block_length=int(
+                meta_decision.validation_bootstrap_block_length
+            ),
+            meta_label_validation_bootstrap_lower_after_cost_return=float(
+                meta_decision.validation_bootstrap_lower_after_cost_return
             ),
             regime=regime_evidence.dominant_regime,
             regime_confidence=float(regime_evidence.confidence),

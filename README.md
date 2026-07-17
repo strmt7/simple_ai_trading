@@ -539,7 +539,11 @@ that cannot reach an entry boundary are rejected before local-model inference,
 so they consume no AI tokens and cannot delay position exits. Meta-label
 downsizing is also bucket-specific: weaker signals receive capital only when
 their own validation bucket has sufficient support and positive after-cost
-expectancy; otherwise they are skipped. The exact bucket evidence is preserved
+expectancy; otherwise they are skipped. Executable buckets also need a strictly
+positive 95% moving-block-bootstrap lower mean-return bound from at least 30
+outcomes and 2,000 deterministic resamples. Explicit observe-only, legacy, or
+malformed enabled policies fail closed in execution and model readiness instead
+of reverting to full-size entries. The exact bucket evidence is preserved
 through liquidity overlays and bound into AI review. Active payoff experts also
 report compact side-specific expected net payoff in basis points from the same
 inference code used by the strategy. AI cannot claim current edge from aggregate
@@ -563,6 +567,8 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 66](docs/model-research/action-value/round-066-dependent-meta-label-confidence.md)
+records dependence-aware meta-label confidence and the token-free AI gate;
 [Round 65](docs/model-research/action-value/round-065-live-payoff-ai-evidence.md)
 records live payoff evidence and the current-edge AI gate;
 [Round 64](docs/model-research/action-value/round-064-positive-expectancy-meta-label-research.md)

@@ -9,6 +9,7 @@ from typing import Mapping
 
 from .financial_sanity import build_model_financial_sanity_report
 from .microstructure_data import MICROSTRUCTURE_SCHEMA_VERSION
+from .meta_label import validate_enabled_meta_label_policy
 from .model import ModelLoadError, TrainedModel, load_model
 from .terminal_holdout_ledger import (
     TerminalHoldoutLedger,
@@ -638,7 +639,22 @@ def build_model_readiness_report(
 
     policy = getattr(model, "meta_label_policy", None)
     if isinstance(policy, dict) and policy.get("enabled") is True:
-        checks.append(_check("ok", "meta-label policy", str(policy.get("mode") or "enabled")))
+        policy_valid, policy_reason = validate_enabled_meta_label_policy(policy)
+        checks.append(
+            _check(
+                "ok" if policy_valid else "block",
+                "meta-label policy",
+                policy_reason,
+            )
+        )
+    elif isinstance(policy, dict) and policy.get("mode") == "observe_only":
+        checks.append(
+            _check(
+                "block",
+                "meta-label policy",
+                str(policy.get("reason") or "observe_only"),
+            )
+        )
     else:
         checks.append(_check("warn", "meta-label policy", "not enabled; entries use primary signal only"))
 

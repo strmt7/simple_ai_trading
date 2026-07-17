@@ -314,6 +314,40 @@ def test_approval_requires_current_validated_after_cost_edge() -> None:
         _approval().validated_for(unsupported)
 
 
+def test_approval_accepts_current_meta_bucket_with_positive_block_bound() -> None:
+    evidence = _approval_evidence()
+    evidence.pop("proposal")
+    evidence["meta_label"] = {
+        "enabled": True,
+        "evidence_schema_version": "meta-label-after-cost-v2",
+        "action": "take",
+        "validation_minimum_sample_count": 30,
+        "validation_sample_count": 36,
+        "validation_minimum_precision": 0.60,
+        "validation_precision": 0.75,
+        "expected_after_cost_return": 0.002,
+        "expected_after_cost_pnl_quote": 24.0,
+        "validation_bootstrap_samples": 2_000,
+        "validation_bootstrap_confidence": 0.95,
+        "validation_bootstrap_block_length": 6,
+        "validation_bootstrap_lower_after_cost_return": 0.0004,
+    }
+    case = build_live_ai_entry_case(
+        symbol="BTCUSDC",
+        market_type="futures",
+        interval="15m",
+        observed_at_ms=1_000,
+        proposed_side="LONG",
+        ml_confidence=0.72,
+        maximum_risk_multiplier=0.4,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+        evidence=evidence,
+    )
+
+    assert _approval().validated_for(case).action == "approve"
+
+
 def test_model_validation_summary_is_compact_and_unit_explicit() -> None:
     artifact = _validated_model_artifact()
 
@@ -367,8 +401,18 @@ def test_ineligible_model_evidence_never_consumes_provider_tokens(
     assert assisted.close(1.0)
 
 
-def test_nonpositive_meta_label_bucket_never_consumes_provider_tokens(
+@pytest.mark.parametrize(
+    ("expected_return", "expected_pnl", "bootstrap_lower"),
+    [
+        (-0.001, -2.0, 0.0001),
+        (0.002, 24.0, 0.0),
+    ],
+)
+def test_invalid_meta_label_bucket_never_consumes_provider_tokens(
     tmp_path: Path,
+    expected_return: float,
+    expected_pnl: float,
+    bootstrap_lower: float,
 ) -> None:
     provider_calls: list[str] = []
     reviewer = AsyncLiveAIEntryReviewer(
@@ -384,13 +428,20 @@ def test_nonpositive_meta_label_bucket_never_consumes_provider_tokens(
             observed_at_ms=1_000,
             model_features=(0.1,),
             meta_label_enabled=True,
+            meta_label_evidence_schema_version="meta-label-after-cost-v2",
             meta_label_action="take",
-            meta_label_validation_minimum_sample_count=5,
+            meta_label_validation_minimum_sample_count=30,
             meta_label_validation_minimum_precision=0.60,
-            meta_label_validation_sample_count=8,
+            meta_label_validation_sample_count=36,
             meta_label_validation_precision=0.75,
-            meta_label_expected_after_cost_return=-0.001,
-            meta_label_expected_after_cost_pnl=-2.0,
+            meta_label_expected_after_cost_return=expected_return,
+            meta_label_expected_after_cost_pnl=expected_pnl,
+            meta_label_validation_bootstrap_samples=2_000,
+            meta_label_validation_bootstrap_confidence=0.95,
+            meta_label_validation_bootstrap_block_length=6,
+            meta_label_validation_bootstrap_lower_after_cost_return=(
+                bootstrap_lower
+            ),
         )
 
     base_decision._model_artifact = _validated_model_artifact()
