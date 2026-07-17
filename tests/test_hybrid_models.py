@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -359,6 +360,14 @@ def test_signed_payoff_ranker_roundtrip_and_scores_both_sides(tmp_path: Path) ->
     short_probability = model.predict_proba((-1.0, 1.0))
     assert long_probability > 0.90
     assert short_probability < 0.10
+    evidence = model.predict_payoff_evidence(
+        (1.0, -1.0),
+        proposed_side="LONG",
+    )
+    assert evidence["proposal_support_count"] == 1
+    assert evidence["weighted_proposal_expected_after_cost_bps"] == pytest.approx(20.0)
+    assert evidence["proposal_value_weight_coverage"] == pytest.approx(1.0)
+    assert evidence["experts"][0]["validation_supports_after_cost_edge"] is False
 
     path = tmp_path / "payoff.json"
     serialize_model(model, path)
@@ -397,12 +406,91 @@ def test_signed_payoff_mlp_ranker_roundtrip_and_scores_both_sides(tmp_path: Path
     short_probability = model.predict_proba((-1.0, 1.0))
     assert long_probability > 0.95
     assert short_probability < 0.05
+    evidence = model.predict_payoff_evidence(
+        (-1.0, 1.0),
+        proposed_side="SHORT",
+    )
+    assert evidence["proposal_support_count"] == 1
+    assert evidence["weighted_proposal_expected_after_cost_bps"] == pytest.approx(
+        19.28055160
+    )
 
     path = tmp_path / "payoff_mlp.json"
     serialize_model(model, path)
     loaded = load_model(path)
     assert loaded.hybrid_experts[0].kind == "signed_payoff_mlp_ranker"
     assert loaded.predict_proba((1.0, -1.0)) == long_probability
+
+
+def test_hurdle_payoff_evidence_exposes_validated_side_specific_net_edge() -> None:
+    long_tree = {
+        "tree_structure": {
+            "split_feature": 0,
+            "threshold": 0.0,
+            "decision_type": "<=",
+            "default_left": True,
+            "left_child": {"leaf_value": -2.0},
+            "right_child": {"leaf_value": 2.0},
+        }
+    }
+    short_tree = {
+        "tree_structure": {
+            "split_feature": 0,
+            "threshold": 0.0,
+            "decision_type": "<=",
+            "default_left": True,
+            "left_child": {"leaf_value": 2.0},
+            "right_child": {"leaf_value": -2.0},
+        }
+    }
+    model = _model()
+    model.hybrid_base_weight = 0.0
+    model.hybrid_experts = [
+        HybridExpert(
+            name="validated-hurdle",
+            kind="signed_payoff_lightgbm_ranker",
+            weight=1.0,
+            feature_count=2,
+            params={
+                "input_dim": 2,
+                "payoff_tree_schema": "action_value_hurdle_v1",
+                "long_classifier_tree_info": [long_tree],
+                "short_classifier_tree_info": [short_tree],
+                "long_enabled": True,
+                "short_enabled": True,
+                "long_calibration_slope": 1.0,
+                "long_calibration_intercept": 0.0,
+                "short_calibration_slope": 1.0,
+                "short_calibration_intercept": 0.0,
+                "long_positive_mean": 0.6,
+                "long_nonpositive_mean": -0.4,
+                "short_positive_mean": 0.6,
+                "short_nonpositive_mean": -0.4,
+                "clip_bps": 20.0,
+                "deadband_bps": 0.5,
+                "sensitivity": 4.0,
+                "validation_rows": 500,
+                "validation_actionable_rows": 80,
+                "validation_actionable_realized_mean_edge_bps": 2.5,
+            },
+        )
+    ]
+
+    evidence = model.predict_payoff_evidence(
+        (1.0, -1.0),
+        proposed_side="LONG",
+    )
+
+    expert = evidence["experts"][0]
+    assert evidence["validated_support_count"] == 1
+    assert evidence["minimum_supporting_validation_rows"] == 80
+    assert evidence["minimum_supporting_validation_after_cost_edge_bps"] == pytest.approx(2.5)
+    assert evidence["weighted_proposal_expected_after_cost_bps"] == pytest.approx(9.61594156)
+    assert expert["long_expected_after_cost_bps"] == pytest.approx(9.61594156)
+    assert expert["short_expected_after_cost_bps"] == pytest.approx(-5.61594156)
+    assert expert["proposal_status"] == "support"
+    assert len(json.dumps(evidence, separators=(",", ":"))) < 4_096
+    assert model.predict_proba((1.0, -1.0)) > 0.5
 
 
 def test_optimize_hybrid_model_zoo_returns_report() -> None:

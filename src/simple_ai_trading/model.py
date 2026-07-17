@@ -686,6 +686,18 @@ class HybridExpert:
     params: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class _PayoffExpertPrediction:
+    schema: str
+    clip_bps: float
+    deadband_bps: float
+    signed_score: float | None = None
+    long_score: float | None = None
+    short_score: float | None = None
+    long_enabled: bool = False
+    short_enabled: bool = False
+
+
 @dataclass
 class TrainedModel:
     weights: List[float]
@@ -968,14 +980,22 @@ class TrainedModel:
         probability = raw_probability if activation == "sigmoid" else _sigmoid(raw_probability)
         return _clamp(float(probability), 0.0, 1.0)
 
-    def _signed_payoff_mlp_ranker_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
-        """Score a serialized nonlinear signed-payoff network as long/short probability."""
-
+    def _signed_payoff_mlp_ranker_score(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
         params = expert.params if isinstance(expert.params, dict) else {}
         raw_score = self._serialized_mlp_output(params, features)
         if raw_score is None or not math.isfinite(raw_score):
             return None
-        score = _clamp(float(raw_score), -1.0, 1.0)
+        return _clamp(float(raw_score), -1.0, 1.0)
+
+    @staticmethod
+    def _signed_payoff_probability_from_score(
+        params: dict[str, Any],
+        score: float,
+    ) -> float:
         clip_bps = _param_float(params, "clip_bps", 25.0, low=0.1, high=10_000.0)
         deadband_bps = _param_float(params, "deadband_bps", 0.0, low=0.0, high=clip_bps)
         deadband = min(0.95, deadband_bps / max(1e-9, clip_bps))
@@ -988,8 +1008,24 @@ class TrainedModel:
         probability_bias = _param_float(params, "probability_bias", 0.0, low=-5.0, high=5.0)
         return _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.0, 1.0)
 
-    def _signed_payoff_ranker_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
-        """Score signed after-cost payoff estimates as long/short probabilities."""
+    def _signed_payoff_mlp_ranker_probability(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
+        """Score a serialized nonlinear signed-payoff network as long/short probability."""
+
+        params = expert.params if isinstance(expert.params, dict) else {}
+        score = self._signed_payoff_mlp_ranker_score(expert, features)
+        if score is None:
+            return None
+        return self._signed_payoff_probability_from_score(params, score)
+
+    def _signed_payoff_ranker_score(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
 
         params = expert.params if isinstance(expert.params, dict) else {}
         raw_weights = params.get("weights")
@@ -1018,18 +1054,20 @@ class TrainedModel:
             return None
         if not math.isfinite(score):
             return None
-        score = _clamp(score, -1.0, 1.0)
-        clip_bps = _param_float(params, "clip_bps", 25.0, low=0.1, high=10_000.0)
-        deadband_bps = _param_float(params, "deadband_bps", 0.0, low=0.0, high=clip_bps)
-        deadband = min(0.95, deadband_bps / max(1e-9, clip_bps))
-        magnitude = abs(score)
-        if magnitude <= deadband:
-            adjusted = 0.0
-        else:
-            adjusted = math.copysign((magnitude - deadband) / max(1e-9, 1.0 - deadband), score)
-        sensitivity = _param_float(params, "sensitivity", 6.0, low=0.1, high=30.0)
-        probability_bias = _param_float(params, "probability_bias", 0.0, low=-5.0, high=5.0)
-        return _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.0, 1.0)
+        return _clamp(score, -1.0, 1.0)
+
+    def _signed_payoff_ranker_probability(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
+        """Score signed after-cost payoff estimates as long/short probabilities."""
+
+        params = expert.params if isinstance(expert.params, dict) else {}
+        score = self._signed_payoff_ranker_score(expert, features)
+        if score is None:
+            return None
+        return self._signed_payoff_probability_from_score(params, score)
 
     @staticmethod
     def _lightgbm_tree_value(tree: Any, values: Sequence[float]) -> float | None:
@@ -1058,12 +1096,12 @@ class TrainedModel:
             node = node.get("left_child" if go_left else "right_child")
         return None
 
-    def _signed_payoff_lightgbm_ranker_probability(
+    def _signed_payoff_lightgbm_ranker_prediction(
         self,
         expert: HybridExpert,
         features: Tuple[float, ...],
-    ) -> float | None:
-        """Evaluate a numeric LightGBM ensemble without a runtime LightGBM dependency."""
+    ) -> _PayoffExpertPrediction | None:
+        """Evaluate normalized after-cost action values from serialized trees."""
 
         params = expert.params if isinstance(expert.params, dict) else {}
         input_dim = _param_int(params, "input_dim", self.feature_dim, low=1, high=max(1, self.feature_dim))
@@ -1102,9 +1140,6 @@ class TrainedModel:
 
         clip_bps = _param_float(params, "clip_bps", 25.0, low=0.1, high=10_000.0)
         deadband_bps = _param_float(params, "deadband_bps", 0.0, low=0.0, high=clip_bps)
-        deadband = min(0.95, deadband_bps / max(1e-9, clip_bps))
-        sensitivity = _param_float(params, "sensitivity", 6.0, low=0.1, high=30.0)
-        probability_bias = _param_float(params, "probability_bias", 0.0, low=-5.0, high=5.0)
         payoff_tree_schema = str(params.get("payoff_tree_schema", "") or "")
         if payoff_tree_schema == "action_value_hurdle_v1":
             long_margin = ensemble_value(
@@ -1155,35 +1190,333 @@ class TrainedModel:
 
             long_score = calibrated_action_value("long", long_margin)
             short_score = calibrated_action_value("short", short_margin)
-            best_score = max(long_score, short_score)
-            if best_score <= deadband or abs(long_score - short_score) <= 1e-12:
-                return 0.5
-            adjusted = (best_score - deadband) / max(1e-9, 1.0 - deadband)
-            action_confidence = _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.5, 1.0)
-            return action_confidence if long_score > short_score else 1.0 - action_confidence
+            return _PayoffExpertPrediction(
+                schema=payoff_tree_schema,
+                clip_bps=clip_bps,
+                deadband_bps=deadband_bps,
+                long_score=long_score,
+                short_score=short_score,
+                long_enabled=bool(params.get("long_enabled", False)),
+                short_enabled=bool(params.get("short_enabled", False)),
+            )
 
         if payoff_tree_schema == "action_value_v1":
             long_score = ensemble_value("long_tree_info", "long_average_output")
             short_score = ensemble_value("short_tree_info", "short_average_output")
             if long_score is None or short_score is None:
                 return None
-            best_score = max(long_score, short_score)
-            if best_score <= deadband or abs(long_score - short_score) <= 1e-12:
-                return 0.5
-            adjusted = (best_score - deadband) / max(1e-9, 1.0 - deadband)
-            action_confidence = _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.5, 1.0)
-            return action_confidence if long_score > short_score else 1.0 - action_confidence
+            return _PayoffExpertPrediction(
+                schema=payoff_tree_schema,
+                clip_bps=clip_bps,
+                deadband_bps=deadband_bps,
+                long_score=long_score,
+                short_score=short_score,
+                long_enabled=True,
+                short_enabled=True,
+            )
 
         score = ensemble_value("tree_info", "average_output")
         if score is None:
             return None
-        magnitude = abs(score)
-        adjusted = (
-            0.0
-            if magnitude <= deadband
-            else math.copysign((magnitude - deadband) / max(1e-9, 1.0 - deadband), score)
+        return _PayoffExpertPrediction(
+            schema=payoff_tree_schema or "signed_action_value_v1",
+            clip_bps=clip_bps,
+            deadband_bps=deadband_bps,
+            signed_score=score,
         )
-        return _clamp(_sigmoid(adjusted * sensitivity + probability_bias), 0.0, 1.0)
+
+    def _signed_payoff_lightgbm_ranker_probability(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> float | None:
+        """Evaluate a numeric LightGBM ensemble without a runtime LightGBM dependency."""
+
+        prediction = self._signed_payoff_lightgbm_ranker_prediction(
+            expert,
+            features,
+        )
+        if prediction is None:
+            return None
+        params = expert.params if isinstance(expert.params, dict) else {}
+        if prediction.signed_score is not None:
+            return self._signed_payoff_probability_from_score(
+                params,
+                prediction.signed_score,
+            )
+        long_score = prediction.long_score
+        short_score = prediction.short_score
+        if long_score is None or short_score is None:
+            return None
+        deadband = min(
+            0.95,
+            prediction.deadband_bps / max(1e-9, prediction.clip_bps),
+        )
+        best_score = max(long_score, short_score)
+        if best_score <= deadband or abs(long_score - short_score) <= 1e-12:
+            return 0.5
+        adjusted = (best_score - deadband) / max(1e-9, 1.0 - deadband)
+        sensitivity = _param_float(
+            params,
+            "sensitivity",
+            6.0,
+            low=0.1,
+            high=30.0,
+        )
+        probability_bias = _param_float(
+            params,
+            "probability_bias",
+            0.0,
+            low=-5.0,
+            high=5.0,
+        )
+        action_confidence = _clamp(
+            _sigmoid(adjusted * sensitivity + probability_bias),
+            0.5,
+            1.0,
+        )
+        return (
+            action_confidence
+            if long_score > short_score
+            else 1.0 - action_confidence
+        )
+
+    def _payoff_prediction_for_expert(
+        self,
+        expert: HybridExpert,
+        features: Tuple[float, ...],
+    ) -> _PayoffExpertPrediction | None:
+        params = expert.params if isinstance(expert.params, dict) else {}
+        clip_bps = _param_float(
+            params,
+            "clip_bps",
+            25.0,
+            low=0.1,
+            high=10_000.0,
+        )
+        deadband_bps = _param_float(
+            params,
+            "deadband_bps",
+            0.0,
+            low=0.0,
+            high=clip_bps,
+        )
+        if expert.kind == "signed_payoff_ranker":
+            score = self._signed_payoff_ranker_score(expert, features)
+            schema = "linear_signed_action_value_v1"
+        elif expert.kind == "signed_payoff_mlp_ranker":
+            score = self._signed_payoff_mlp_ranker_score(expert, features)
+            schema = "mlp_signed_action_value_v1"
+        elif expert.kind == "signed_payoff_lightgbm_ranker":
+            return self._signed_payoff_lightgbm_ranker_prediction(
+                expert,
+                features,
+            )
+        else:
+            return None
+        if score is None:
+            return None
+        return _PayoffExpertPrediction(
+            schema=schema,
+            clip_bps=clip_bps,
+            deadband_bps=deadband_bps,
+            signed_score=score,
+        )
+
+    def predict_payoff_evidence(
+        self,
+        features: Tuple[float, ...],
+        *,
+        proposed_side: str,
+        max_experts: int = 3,
+    ) -> dict[str, Any]:
+        """Return compact causal evidence from active after-cost payoff experts."""
+
+        side = str(proposed_side).upper()
+        if side not in {"LONG", "SHORT"}:
+            side = ""
+        active: list[tuple[float, HybridExpert]] = []
+        for expert in self.hybrid_experts:
+            if expert.kind not in {
+                "signed_payoff_ranker",
+                "signed_payoff_mlp_ranker",
+                "signed_payoff_lightgbm_ranker",
+            }:
+                continue
+            try:
+                weight = float(expert.weight)
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if math.isfinite(weight) and weight > 0.0:
+                active.append((weight, expert))
+        active.sort(key=lambda item: (-item[0], item[1].name, item[1].kind))
+        report_limit = max(1, min(4, int(max_experts)))
+        records: list[dict[str, Any]] = []
+        known_weight = 0.0
+        weighted_proposal_value = 0.0
+        total_active_weight = sum(item[0] for item in active)
+
+        def optional_finite(params: dict[str, Any], key: str) -> float | None:
+            try:
+                value = float(params[key])
+            except (KeyError, TypeError, ValueError, OverflowError):
+                return None
+            return value if math.isfinite(value) else None
+
+        for weight, expert in active[:report_limit]:
+            prediction = self._payoff_prediction_for_expert(expert, features)
+            if prediction is None:
+                continue
+            long_bps: float | None = None
+            short_bps: float | None = None
+            if prediction.signed_score is not None:
+                signed_bps = prediction.signed_score * prediction.clip_bps
+                selected_expected_bps = abs(signed_bps)
+                if selected_expected_bps <= prediction.deadband_bps:
+                    selected_side = "FLAT"
+                else:
+                    selected_side = "LONG" if signed_bps > 0.0 else "SHORT"
+            else:
+                if prediction.long_enabled and prediction.long_score is not None:
+                    long_bps = prediction.long_score * prediction.clip_bps
+                if prediction.short_enabled and prediction.short_score is not None:
+                    short_bps = prediction.short_score * prediction.clip_bps
+                candidates = [
+                    (candidate_side, value)
+                    for candidate_side, value in (
+                        ("LONG", long_bps),
+                        ("SHORT", short_bps),
+                    )
+                    if value is not None
+                ]
+                if not candidates:
+                    selected_side = "FLAT"
+                    selected_expected_bps = 0.0
+                else:
+                    ordered = sorted(candidates, key=lambda item: item[1], reverse=True)
+                    selected_side, selected_expected_bps = ordered[0]
+                    if (
+                        selected_expected_bps <= prediction.deadband_bps
+                        or (
+                            len(ordered) > 1
+                            and abs(selected_expected_bps - ordered[1][1]) <= 1e-12
+                        )
+                    ):
+                        selected_side = "FLAT"
+            if not side:
+                proposal_status = "not_requested"
+            elif selected_side == "FLAT":
+                proposal_status = "abstain"
+            elif selected_side == side:
+                proposal_status = "support"
+            else:
+                proposal_status = "oppose"
+            if long_bps is not None or short_bps is not None:
+                proposal_bps = long_bps if side == "LONG" else short_bps if side == "SHORT" else None
+            elif proposal_status == "support":
+                proposal_bps = selected_expected_bps
+            else:
+                proposal_bps = None
+            if proposal_bps is not None:
+                known_weight += weight
+                weighted_proposal_value += weight * proposal_bps
+
+            params = expert.params if isinstance(expert.params, dict) else {}
+            validation_rows = max(
+                0,
+                int(optional_finite(params, "validation_rows") or 0.0),
+            )
+            validation_actionable_rows = max(
+                0,
+                int(
+                    optional_finite(params, "validation_actionable_rows")
+                    or 0.0
+                ),
+            )
+            validation_edge_bps = optional_finite(
+                params,
+                "validation_actionable_realized_mean_edge_bps",
+            )
+            validation_supports_edge = bool(
+                validation_rows > 0
+                and validation_actionable_rows > 0
+                and validation_edge_bps is not None
+                and validation_edge_bps > 0.0
+            )
+            records.append(
+                {
+                    "name": str(expert.name)[:120],
+                    "kind": str(expert.kind),
+                    "schema": prediction.schema,
+                    "weight": weight,
+                    "horizon_seconds": max(
+                        0.0,
+                        optional_finite(params, "approx_horizon_seconds")
+                        or 0.0,
+                    ),
+                    "clip_bps": prediction.clip_bps,
+                    "deadband_bps": prediction.deadband_bps,
+                    "selected_side": selected_side,
+                    "selected_expected_after_cost_bps": selected_expected_bps,
+                    "proposal_status": proposal_status,
+                    "proposal_expected_after_cost_bps": proposal_bps,
+                    "long_expected_after_cost_bps": long_bps,
+                    "short_expected_after_cost_bps": short_bps,
+                    "validation_rows": validation_rows,
+                    "validation_actionable_rows": validation_actionable_rows,
+                    "validation_actionable_mean_edge_bps": validation_edge_bps,
+                    "validation_supports_after_cost_edge": validation_supports_edge,
+                }
+            )
+
+        supporting = [item for item in records if item["proposal_status"] == "support"]
+        validated_supporting = [
+            item
+            for item in supporting
+            if item["validation_supports_after_cost_edge"] is True
+        ]
+        validation_edges = [
+            float(item["validation_actionable_mean_edge_bps"])
+            for item in validated_supporting
+        ]
+        validation_rows = [
+            int(item["validation_actionable_rows"])
+            for item in validated_supporting
+        ]
+        return {
+            "schema_version": "active-after-cost-payoff-evidence-v1",
+            "available": bool(records),
+            "model_probability_inverted": bool(self.probability_inverted),
+            "proposal_side": side,
+            "active_expert_count": len(active),
+            "reported_expert_count": len(records),
+            "unreported_or_invalid_expert_count": max(0, len(active) - len(records)),
+            "proposal_support_count": len(supporting),
+            "proposal_oppose_count": sum(
+                1 for item in records if item["proposal_status"] == "oppose"
+            ),
+            "proposal_abstain_count": sum(
+                1 for item in records if item["proposal_status"] == "abstain"
+            ),
+            "validated_support_count": len(validated_supporting),
+            "minimum_supporting_validation_rows": (
+                min(validation_rows) if validation_rows else 0
+            ),
+            "minimum_supporting_validation_after_cost_edge_bps": (
+                min(validation_edges) if validation_edges else None
+            ),
+            "proposal_value_weight_coverage": (
+                known_weight / total_active_weight
+                if total_active_weight > 0.0
+                else 0.0
+            ),
+            "weighted_proposal_expected_after_cost_bps": (
+                weighted_proposal_value / known_weight
+                if known_weight > 0.0
+                else None
+            ),
+            "experts": records,
+        }
 
     def _expert_probability(self, expert: HybridExpert, features: Tuple[float, ...]) -> float | None:
         if expert.kind == "lorentzian_knn":

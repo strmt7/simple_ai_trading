@@ -8815,9 +8815,19 @@ def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_pa
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.90
 
+        def predict_payoff_evidence(self, _features, *, proposed_side):
+            payoff_calls.append(str(proposed_side))
+            return {
+                "schema_version": "active-after-cost-payoff-evidence-v1",
+                "available": True,
+                "proposal_side": proposed_side,
+                "weighted_proposal_expected_after_cost_bps": 2.0,
+            }
+
     row = ModelRow(timestamp=60_000, close=100.0, features=(0.1,), label=1)
     train_calls: list[int] = []
     signal_calls: list[str] = []
+    payoff_calls: list[str] = []
     monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (None, None, None))
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [row])
@@ -8839,6 +8849,8 @@ def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_pa
     assert decision.confidence == pytest.approx(0.99)
     assert train_calls == [1]
     assert signal_calls == ["BTCUSDC"]
+    assert payoff_calls == []
+    assert decision.model_features == row.features
 
 
 def test_build_autonomous_decision_fn_applies_liquidity_guard(tmp_path, monkeypatch) -> None:

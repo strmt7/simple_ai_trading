@@ -540,7 +540,14 @@ so they consume no AI tokens and cannot delay position exits. Meta-label
 downsizing is also bucket-specific: weaker signals receive capital only when
 their own validation bucket has sufficient support and positive after-cost
 expectancy; otherwise they are skipped. The exact bucket evidence is preserved
-through liquidity overlays and bound into AI review.
+through liquidity overlays and bound into AI review. Active payoff experts also
+report compact side-specific expected net payoff in basis points from the same
+inference code used by the strategy. AI cannot claim current edge from aggregate
+backtest performance alone; the exact proposal needs validated positive
+after-cost support before any local-model tokens are consumed. The AI wrapper
+recomputes that evidence from the promoted artifact and exact feature vector,
+rejecting supplied summaries that differ from the model; AI-disabled runs do
+not pay this extra inference cost.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 
@@ -556,8 +563,10 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 65](docs/model-research/action-value/round-065-live-payoff-ai-evidence.md)
+records live payoff evidence and the current-edge AI gate;
 [Round 64](docs/model-research/action-value/round-064-positive-expectancy-meta-label-research.md)
-records positive-expectancy meta-label and token-free preflight contracts;
+records positive-expectancy meta-label contracts;
 [Round 63](docs/model-research/action-value/round-063-cost-aware-ai-gate-research.md)
 records the cost-aware label foundation. Neither contains a new performance
 result, so neither replaces the latest evidence graphs.
