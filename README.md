@@ -536,7 +536,11 @@ New model labels must also clear the configured round-trip fee-plus-spread
 floor; AI approval reads that exact frozen label contract from the model and
 fails closed when sealed after-cost validation evidence is incomplete. Calls
 that cannot reach an entry boundary are rejected before local-model inference,
-so they consume no AI tokens and cannot delay position exits.
+so they consume no AI tokens and cannot delay position exits. Meta-label
+downsizing is also bucket-specific: weaker signals receive capital only when
+their own validation bucket has sufficient support and positive after-cost
+expectancy; otherwise they are skipped. The exact bucket evidence is preserved
+through liquidity overlays and bound into AI review.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 
@@ -552,9 +556,11 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 64](docs/model-research/action-value/round-064-positive-expectancy-meta-label-research.md)
+records positive-expectancy meta-label and token-free preflight contracts;
 [Round 63](docs/model-research/action-value/round-063-cost-aware-ai-gate-research.md)
-records the cost-aware label and AI evidence contracts; it contains no new
-performance result and therefore does not replace the latest evidence graphs.
+records the cost-aware label foundation. Neither contains a new performance
+result, so neither replaces the latest evidence graphs.
 Round 61 completed the synchronized economic replay authorized by Round 60.
 It matched `$10,000` long spot with a 1x short perpetual at the same base
 quantity, then applied adverse minute bounds, settled funding, actual-notional

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Sequence
 
@@ -140,12 +140,12 @@ def apply_liquidity_session_meta(
     elif adjusted_multiplier < float(base.size_multiplier) and action == "take":
         action = "downsize"
     reasons = [base.reason, *adjustment.reasons]
-    return MetaLabelDecision(
-        True,
-        action,
-        adjusted_multiplier,
-        base.signal_strength,
-        "; ".join(reason for reason in reasons if reason),
+    return replace(
+        base,
+        enabled=True,
+        action=action,
+        size_multiplier=adjusted_multiplier,
+        reason="; ".join(reason for reason in reasons if reason),
     )
 
 
