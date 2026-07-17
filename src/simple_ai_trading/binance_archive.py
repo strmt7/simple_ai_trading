@@ -13,7 +13,7 @@ import time
 import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import urlopen
@@ -29,6 +29,20 @@ BINANCE_ARCHIVE_BASE_URL = "https://data.binance.vision/data"
 _ZIP_LINK_PATTERN = re.compile(r'href=["\'](?P<href>[^"\']+\.zip)["\']', re.IGNORECASE)
 _CHECKSUM_PATTERN = re.compile(r"\b(?P<sha256>[a-fA-F0-9]{64})\b")
 _ARCHIVE_PERIOD_PATTERN = re.compile(r"-(?P<period>\d{4}-\d{2}(?:-\d{2})?)$")
+ArchiveProgress = Callable[[str, Mapping[str, object]], None]
+
+
+def _emit_progress(
+    progress: ArchiveProgress | None,
+    phase: str,
+    payload: Mapping[str, object],
+) -> None:
+    if progress is None:
+        return
+    try:
+        progress(phase, payload)
+    except Exception:
+        return
 
 
 @dataclass(frozen=True)
@@ -658,14 +672,37 @@ def _iter_period_bounded_agg_trade_candles(
             gap_time += 1000
 
 
-def _download_to_temp(url: str, *, timeout: int, chunk_size: int = 1024 * 1024) -> tuple[Path, int, str]:
+def _download_to_temp(
+    url: str,
+    *,
+    timeout: int,
+    chunk_size: int = 1024 * 1024,
+    progress: ArchiveProgress | None = None,
+) -> tuple[Path, int, str]:
     digest = hashlib.sha256()
     handle = tempfile.NamedTemporaryFile(prefix="simple-ai-trading-binance-", suffix=".zip", delete=False)
     path = Path(handle.name)
     bytes_downloaded = 0
+    started = time.monotonic()
+    last_progress_at = started
+    last_progress_bytes = 0
     try:
         with handle:
             with urlopen(url, timeout=timeout) as response:  # nosec B310 - official public archive URL
+                headers = getattr(response, "headers", None)
+                try:
+                    total_bytes = int(headers.get("Content-Length", 0)) if headers is not None else 0
+                except (TypeError, ValueError):
+                    total_bytes = 0
+                _emit_progress(
+                    progress,
+                    "download_started",
+                    {
+                        "bytes_downloaded": 0,
+                        "content_length_bytes": max(0, total_bytes),
+                        "elapsed_seconds": 0.0,
+                    },
+                )
                 while True:
                     chunk = response.read(chunk_size)
                     if not chunk:
@@ -673,12 +710,44 @@ def _download_to_temp(url: str, *, timeout: int, chunk_size: int = 1024 * 1024) 
                     handle.write(chunk)
                     digest.update(chunk)
                     bytes_downloaded += len(chunk)
+                    observed = time.monotonic()
+                    if progress is not None and (
+                        observed - last_progress_at >= 5.0
+                        or bytes_downloaded - last_progress_bytes >= 64 * 1024 * 1024
+                    ):
+                        elapsed = max(observed - started, 1e-9)
+                        _emit_progress(
+                            progress,
+                            "downloading",
+                            {
+                                "bytes_downloaded": bytes_downloaded,
+                                "content_length_bytes": max(0, total_bytes),
+                                "elapsed_seconds": elapsed,
+                                "bytes_per_second": bytes_downloaded / elapsed,
+                            },
+                        )
+                        last_progress_at = observed
+                        last_progress_bytes = bytes_downloaded
     except Exception:
         try:
             path.unlink()
         except OSError:
             pass
         raise
+    if progress is not None:
+        elapsed = max(time.monotonic() - started, 0.0)
+        _emit_progress(
+            progress,
+            "download_complete",
+            {
+                "bytes_downloaded": bytes_downloaded,
+                "content_length_bytes": max(0, total_bytes),
+                "elapsed_seconds": elapsed,
+                "bytes_per_second": (
+                    bytes_downloaded / elapsed if elapsed > 0.0 else 0.0
+                ),
+            },
+        )
     return path, bytes_downloaded, digest.hexdigest()
 
 
@@ -719,6 +788,7 @@ def ingest_archive_url(
     require_checksum: bool = False,
     fill_period_edges: bool = True,
     store_raw_agg_trades: bool = True,
+    progress: ArchiveProgress | None = None,
 ) -> ArchiveIngestResult:
     symbol = symbol.upper()
     kind = _normalize_archive_data_type(data_type)
@@ -729,6 +799,12 @@ def ingest_archive_url(
     if kind == "aggTrades" and str(interval) != "1s":
         raise ValueError("aggTrades archive ingestion currently emits 1s candles; interval must be '1s'")
     if not force and store.archive_file_status(url) == "complete":
+        if progress is not None:
+            _emit_progress(
+                progress,
+                "archive_skipped",
+                {"symbol": symbol, "period": period, "url": url},
+            )
         return ArchiveIngestResult(
             url=url,
             symbol=symbol,
@@ -753,8 +829,34 @@ def ingest_archive_url(
     sha256 = ""
     checksum_sha256 = ""
     checksum_status = "unverified"
+    ingest_started = time.monotonic()
+    last_ingest_progress_at = ingest_started
+    last_ingest_progress_rows = 0
+
+    def archive_progress(phase: str, payload: Mapping[str, object]) -> None:
+        _emit_progress(
+            progress,
+            phase,
+            {
+                "symbol": symbol,
+                "period": period,
+                "url": url,
+                **payload,
+            },
+        )
+
     try:
-        zip_path, bytes_downloaded, sha256 = _download_to_temp(url, timeout=timeout)
+        if progress is None:
+            zip_path, bytes_downloaded, sha256 = _download_to_temp(
+                url,
+                timeout=timeout,
+            )
+        else:
+            zip_path, bytes_downloaded, sha256 = _download_to_temp(
+                url,
+                timeout=timeout,
+                progress=archive_progress,
+            )
         if verify_checksum:
             checksum_sha256 = _fetch_archive_checksum(url, timeout=max(1, min(timeout, 30))) or ""
             if checksum_sha256:
@@ -844,6 +946,10 @@ def ingest_archive_url(
                 )
         else:
             candle_iterable = _iter_zip_candles(zip_path)
+        archive_progress(
+            "ingest_started",
+            {"bytes_downloaded": bytes_downloaded, "rows_read": 0, "rows_inserted": 0},
+        )
         for candle in candle_iterable:
             rows_read += 1
             batch.append(candle)
@@ -858,6 +964,22 @@ def ingest_archive_url(
                     ingested_at_ms=ingested_at_ms,
                 )
                 batch.clear()
+                observed = time.monotonic()
+                if (
+                    observed - last_ingest_progress_at >= 5.0
+                    or rows_read - last_ingest_progress_rows >= 1_000_000
+                ):
+                    archive_progress(
+                        "ingesting",
+                        {
+                            "bytes_downloaded": bytes_downloaded,
+                            "rows_read": rows_read,
+                            "rows_inserted": rows_inserted,
+                            "elapsed_seconds": observed - ingest_started,
+                        },
+                    )
+                    last_ingest_progress_at = observed
+                    last_ingest_progress_rows = rows_read
         if batch:
             cleaned = clean_candles(batch, drop_unclosed=False)
             rows_inserted += store.upsert_candles(
@@ -876,6 +998,16 @@ def ingest_archive_url(
             sha256=sha256,
             checksum_sha256=checksum_sha256,
             checksum_status=checksum_status,
+        )
+        archive_progress(
+            "archive_complete",
+            {
+                "bytes_downloaded": bytes_downloaded,
+                "rows_read": rows_read,
+                "rows_inserted": rows_inserted,
+                "elapsed_seconds": time.monotonic() - ingest_started,
+                "checksum_status": checksum_status,
+            },
         )
         return ArchiveIngestResult(
             url=url,
@@ -902,6 +1034,17 @@ def ingest_archive_url(
             checksum_sha256=checksum_sha256,
             checksum_status=checksum_status,
             error=str(exc)[:500],
+        )
+        archive_progress(
+            "archive_error",
+            {
+                "bytes_downloaded": bytes_downloaded,
+                "rows_read": rows_read,
+                "rows_inserted": rows_inserted,
+                "elapsed_seconds": time.monotonic() - ingest_started,
+                "checksum_status": checksum_status,
+                "error": str(exc)[:500],
+            },
         )
         return ArchiveIngestResult(
             url=url,
@@ -940,30 +1083,49 @@ def ingest_archive_urls(
     verify_checksum: bool = True,
     require_checksum: bool = False,
     store_raw_agg_trades: bool = True,
+    progress: ArchiveProgress | None = None,
 ) -> list[ArchiveIngestResult]:
     results: list[ArchiveIngestResult] = []
     kind = _normalize_archive_data_type(data_type)
     with MarketDataStore(db_path) as store:
-        for url in urls:
+        for file_index, url in enumerate(urls, start=1):
             stem = Path(url).stem
             prefix = f"{symbol.upper()}-aggTrades-" if kind == "aggTrades" else f"{symbol.upper()}-{interval}-"
             period = stem[len(prefix):] if stem.startswith(prefix) else stem.rsplit("-", 1)[-1]
-            results.append(
-                ingest_archive_url(
-                    store,
-                    url=url,
-                    symbol=symbol,
-                    interval=interval,
-                    market_type=market_type,
-                    data_type=kind,
-                    period=period,
-                    timeout=timeout,
-                    force=force,
-                    verify_checksum=verify_checksum,
-                    require_checksum=require_checksum,
-                    store_raw_agg_trades=store_raw_agg_trades,
-                )
-            )
+            kwargs = {
+                "url": url,
+                "symbol": symbol,
+                "interval": interval,
+                "market_type": market_type,
+                "data_type": kind,
+                "period": period,
+                "timeout": timeout,
+                "force": force,
+                "verify_checksum": verify_checksum,
+                "require_checksum": require_checksum,
+                "store_raw_agg_trades": store_raw_agg_trades,
+            }
+            if progress is None:
+                result = ingest_archive_url(store, **kwargs)
+            else:
+                def file_progress(
+                    phase: str,
+                    payload: Mapping[str, object],
+                    *,
+                    current_index: int = file_index,
+                ) -> None:
+                    _emit_progress(
+                        progress,
+                        phase,
+                        {
+                            "file_index": current_index,
+                            "file_count": len(urls),
+                            **payload,
+                        },
+                    )
+
+                result = ingest_archive_url(store, progress=file_progress, **kwargs)
+            results.append(result)
     return results
 
 

@@ -959,6 +959,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_archive_sync.add_argument("--end-period", default=None, help="inclusive archive period end, YYYY-MM or YYYY-MM-DD")
     parser_archive_sync.add_argument("--plan-only", action="store_true", help="list the bounded archive plan without downloading files")
     parser_archive_sync.add_argument(
+        "--progress-path",
+        default="data/archive-sync-progress.json",
+        help="atomic JSON progress sidecar for long archive ingestion",
+    )
+    parser_archive_sync.add_argument(
         "--max-planned-gb",
         type=float,
         default=50.0,
@@ -966,10 +971,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_archive_sync.add_argument("--timeout", type=int, default=120)
     parser_archive_sync.add_argument("--force", action="store_true")
-    parser_archive_sync.add_argument(
+    archive_storage = parser_archive_sync.add_mutually_exclusive_group()
+    archive_storage.add_argument(
         "--aggregate-only",
         action="store_true",
-        help="for aggTrades, persist derived 1s candles without duplicating raw trades",
+        help="persist derived 1s candles without duplicating raw trades (default)",
+    )
+    archive_storage.add_argument(
+        "--store-raw-agg-trades",
+        action="store_true",
+        help="also retain every raw aggregate trade for event-time research",
     )
     parser_archive_sync.add_argument("--no-verify-checksum", action="store_true", help="skip Binance .CHECKSUM sidecar verification")
     parser_archive_sync.add_argument("--require-checksum", action="store_true", help="fail archive files without a readable .CHECKSUM sidecar")
@@ -8346,6 +8357,15 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         print(f"archive-sync invalid period window: {exc}", file=sys.stderr)
         return 2
     plan_only = bool(getattr(args, "plan_only", False))
+    store_raw_agg_trades = bool(
+        getattr(args, "store_raw_agg_trades", False)
+    ) and not bool(getattr(args, "aggregate_only", False))
+    database = Path(getattr(args, "db", "data/market_data.sqlite"))
+    progress_path_value = str(getattr(args, "progress_path", None) or "").strip()
+    progress_path = Path(progress_path_value) if progress_path_value else None
+    if progress_path is not None and progress_path.resolve() == database.resolve():
+        print("archive-sync progress path must not overwrite the database", file=sys.stderr)
+        return 2
     quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
     quote_gate = quote_asset if getattr(args, "quote_asset", None) else None
     raw_symbols = str(getattr(args, "symbols", "") or "").strip()
@@ -8489,22 +8509,67 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             "error": f"planned_bytes_exceeds_max:{planned_bytes}/{max_planned_bytes}",
         })
     if not plan_only and not errors and not shortfall:
-        for symbol, urls in selected_archive_urls.items():
-            all_results.extend(
-                ingest_archive_urls(
-                    db_path=Path(getattr(args, "db", "data/market_data.sqlite")),
-                    symbol=symbol,
-                    interval=interval,
-                    urls=urls,
-                    market_type=market_type,
-                    data_type=data_type,
-                    timeout=max(1, int(getattr(args, "timeout", 120) or 120)),
-                    force=bool(getattr(args, "force", False)),
-                    verify_checksum=not bool(getattr(args, "no_verify_checksum", False)),
-                    require_checksum=bool(getattr(args, "require_checksum", False)),
-                    store_raw_agg_trades=not bool(getattr(args, "aggregate_only", False)),
-                )
+        progress_warning_emitted = False
+        completed_files = 0
+
+        def archive_progress(phase: str, item: Mapping[str, object]) -> None:
+            nonlocal completed_files, progress_warning_emitted
+            if phase in {"archive_complete", "archive_error", "archive_skipped"}:
+                completed_files += 1
+            payload = {
+                "schema_version": "archive-sync-progress-v1",
+                "phase": phase,
+                "observed_at_ms": int(time.time() * 1000),
+                "completed_files": completed_files,
+                "planned_files": planned_files,
+                "planned_bytes": planned_bytes,
+                **item,
+            }
+            print(
+                "archive-sync-progress: "
+                f"phase={phase} symbol={payload.get('symbol', '')} "
+                f"period={payload.get('period', '')} "
+                f"file={payload.get('file_index', 0)}/{payload.get('file_count', 0)} "
+                f"overall={completed_files}/{planned_files} "
+                f"bytes={payload.get('bytes_downloaded', 0)} "
+                f"rows={payload.get('rows_inserted', 0)}",
+                file=sys.stderr,
+                flush=True,
             )
+            if progress_path is None:
+                return
+            try:
+                write_json_atomic(progress_path, payload, indent=2, sort_keys=True)
+            except Exception as exc:
+                if not progress_warning_emitted:
+                    print(
+                        "archive-sync progress sidecar failed: "
+                        f"{exc.__class__.__name__}: {exc}",
+                        file=sys.stderr,
+                    )
+                    progress_warning_emitted = True
+
+        for symbol, urls in selected_archive_urls.items():
+            ingest_kwargs = {
+                "db_path": database,
+                "symbol": symbol,
+                "interval": interval,
+                "urls": urls,
+                "market_type": market_type,
+                "data_type": data_type,
+                "timeout": max(1, int(getattr(args, "timeout", 120) or 120)),
+                "force": bool(getattr(args, "force", False)),
+                "verify_checksum": not bool(
+                    getattr(args, "no_verify_checksum", False)
+                ),
+                "require_checksum": bool(
+                    getattr(args, "require_checksum", False)
+                ),
+                "store_raw_agg_trades": store_raw_agg_trades,
+            }
+            if progress_path is not None:
+                ingest_kwargs["progress"] = archive_progress
+            all_results.extend(ingest_archive_urls(**ingest_kwargs))
     payload = {
         "status": (
             "ok"
@@ -8520,6 +8585,7 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         "market_type": market_type,
         "cadence": cadence,
         "plan_only": bool(plan_only),
+        "store_raw_agg_trades": store_raw_agg_trades,
         "start_period": start_period or "",
         "end_period": end_period or "",
         "max_planned_gb": float(max_planned_gb),

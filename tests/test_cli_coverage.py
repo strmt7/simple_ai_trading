@@ -1953,6 +1953,83 @@ def test_command_archive_sync_delegates_archive_listing_and_ingestion(tmp_path, 
     assert "rows_inserted=2" in capsys.readouterr().out
 
 
+def test_archive_sync_raw_trade_storage_requires_explicit_exclusive_opt_in() -> None:
+    parser = cli._build_parser()
+    enabled = parser.parse_args(
+        ["archive-sync", "--store-raw-agg-trades", "--plan-only"]
+    )
+    assert enabled.store_raw_agg_trades is True
+    assert enabled.aggregate_only is False
+    with pytest.raises(SystemExit):
+        parser.parse_args(
+            [
+                "archive-sync",
+                "--store-raw-agg-trades",
+                "--aggregate-only",
+                "--plan-only",
+            ]
+        )
+
+
+def test_command_archive_sync_writes_atomic_progress_sidecar(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures"))
+    monkeypatch.setattr(
+        cli,
+        "list_archive_urls",
+        lambda **_kwargs: [
+            "https://data.binance.vision/x/BTCUSDT-aggTrades-2026-01.zip"
+        ],
+    )
+
+    class Result:
+        status = "complete"
+        rows_read = 10
+        rows_inserted = 10
+        bytes_downloaded = 100
+        url = "https://data.binance.vision/x/BTCUSDT-aggTrades-2026-01.zip"
+        error = ""
+
+        def asdict(self):
+            return dict(vars(self))
+
+    def fake_ingest(**kwargs):
+        kwargs["progress"](
+            "ingesting",
+            {
+                "symbol": "BTCUSDT",
+                "period": "2026-01",
+                "file_index": 1,
+                "file_count": 1,
+                "bytes_downloaded": 100,
+                "rows_inserted": 10,
+            },
+        )
+        return [Result()]
+
+    monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
+    progress_path = tmp_path / "archive-progress.json"
+    args = argparse.Namespace(
+        db=str(tmp_path / "market.sqlite"),
+        symbol=None,
+        interval=None,
+        market="futures",
+        cadence="monthly",
+        max_files=None,
+        timeout=120,
+        force=False,
+        progress_path=str(progress_path),
+        json=True,
+    )
+    assert cli.command_archive_sync(args) == 0
+    progress = json.loads(progress_path.read_text(encoding="utf-8"))
+    assert progress["schema_version"] == "archive-sync-progress-v1"
+    assert progress["phase"] == "ingesting"
+    assert progress["rows_inserted"] == 10
+    assert "archive-sync-progress: phase=ingesting" in capsys.readouterr().err
+
+
 def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path, monkeypatch, capsys) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
     list_kwargs: dict[str, object] = {}
@@ -2006,6 +2083,7 @@ def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path
 
     assert list_kwargs["data_type"] == "aggTrades"
     assert ingest_kwargs["data_type"] == "aggTrades"
+    assert ingest_kwargs["store_raw_agg_trades"] is False
     assert "data_type=aggTrades" in capsys.readouterr().out
 
 
