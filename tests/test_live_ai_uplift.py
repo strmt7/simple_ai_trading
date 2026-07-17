@@ -31,6 +31,19 @@ _DAY_MS = 86_400_000
 def _approval_evidence() -> dict[str, object]:
     return {
         "risk": {"regime": "trend"},
+        "proposal": {
+            "after_cost_payoff": {
+                "schema_version": "active-after-cost-payoff-evidence-v1",
+                "available": True,
+                "proposal_side": "LONG",
+                "proposal_support_count": 1,
+                "validated_support_count": 1,
+                "minimum_supporting_validation_rows": 80,
+                "minimum_supporting_validation_after_cost_edge_bps": 2.5,
+                "proposal_value_weight_coverage": 1.0,
+                "weighted_proposal_expected_after_cost_bps": 3.2,
+            }
+        },
         "cost_model": {
             "configured_round_trip_cost_floor_bps": 13.0,
             "model_gross_label_barrier_bps": 15.0,
@@ -296,12 +309,57 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
     assert report["candidate_trades"] == 41
     assert report["causally_eligible_trades"] == 41
     assert report["causal_coverage"] == 1.0
+    assert report["audited_proposals"] == 41
+    assert report["matched_proposal_outcomes"] == 41
+    assert report["unmatched_proposal_outcomes"] == 0
+    assert report["proposal_outcome_coverage"] == 1.0
     assert len(report["matched_periods"]) >= 90
     assert report["uplift"]["baseline"]["realized_pnl"] == pytest.approx(-11.0)
     assert report["uplift"]["ai"]["realized_pnl"] == pytest.approx(19.0)
     assert report["intratrade_path_evidence"]["verified"] is True
     assert report["accepted"] is True
     assert len(report["report_sha256"]) == 64
+
+
+def test_materializer_rejects_audited_proposal_without_baseline_outcome() -> None:
+    first = _case(1_000)
+    first_record = _record(
+        first,
+        _decision("approve"),
+        completed_at_ms=2_000,
+        previous="0" * 64,
+    )
+    second = _case(5_000)
+    second_record = _record(
+        second,
+        _decision("veto"),
+        completed_at_ms=6_000,
+        previous=str(first_record["record_sha256"]),
+    )
+    trade = _trade(
+        first,
+        opened_at_ms=3_000,
+        pnl=1.0,
+        action="approve",
+        index=1,
+    )
+
+    report = assess_live_ai_shadow_uplift(
+        [trade],
+        [first_record, second_record],
+        initial_capital=1_000.0,
+        model_name="qwen3:14b",
+        intratrade_paths={trade.id: _one_second_path(trade)},
+        model_parameters_b=14.0,
+    )
+
+    assert report["accepted"] is False
+    assert report["audited_proposals"] == 2
+    assert report["matched_proposal_outcomes"] == 1
+    assert report["unmatched_proposal_outcomes"] == 1
+    assert report["proposal_outcome_coverage"] == 0.5
+    assert report["rejection_counts"]["counterfactual_outcome_missing"] == 1
+    assert "ai_shadow_proposal_outcomes_incomplete" in report["reasons"]
 
 
 def test_case_schema_constant_remains_bound_in_audit_fixture() -> None:
@@ -366,6 +424,8 @@ def test_cli_writes_the_same_causal_uplift_report_used_by_windows(
         "causal_coverage": 0.95,
         "causally_eligible_trades": 38,
         "candidate_trades": 40,
+        "audited_proposals": 40,
+        "matched_proposal_outcomes": 38,
         "matched_periods": [{} for _ in range(12)],
         "reasons": ["paired_observations<30"],
         "uplift": {},
@@ -405,5 +465,8 @@ def test_cli_writes_the_same_causal_uplift_report_used_by_windows(
     assert result == 2
     assert json.loads(output.read_text(encoding="utf-8")) == expected
     rendered = capsys.readouterr().out
-    assert "coverage=95.0% eligible=38/40 paired_days=12" in rendered
+    assert (
+        "coverage=95.0% eligible=38/40 proposal_outcomes=38/40 paired_days=12"
+        in rendered
+    )
     assert "trading_authority=false; profitability_claim=false" in rendered

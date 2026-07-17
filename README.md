@@ -558,6 +558,9 @@ rejecting supplied summaries that differ from the model; AI-disabled runs do
 not pay this extra inference cost. The shadow provider also rejects oversized
 messages before an HTTP request, caps structured output at 128 tokens, and
 requires reported prompt plus completion usage to fit its 4,096-token context.
+AI-vs-ML uplift additionally requires every durably audited shadow proposal to
+have a matched baseline outcome; missing outcomes cannot disappear from the
+coverage denominator.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 
@@ -573,6 +576,8 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 69](docs/model-research/action-value/round-069-complete-ai-uplift-cohort.md)
+records complete audited-proposal outcome coverage for AI uplift;
 [Round 68](docs/model-research/action-value/round-068-bounded-ai-context.md)
 records pre-inference AI context and token-budget enforcement;
 [Round 67](docs/model-research/action-value/round-067-purged-meta-label-validation.md)

@@ -6223,6 +6223,8 @@ def command_ai_uplift(args: argparse.Namespace) -> int:
             f"coverage={float(report['causal_coverage']):.1%} "
             f"eligible={int(report['causally_eligible_trades'])}/"
             f"{int(report['candidate_trades'])} "
+            f"proposal_outcomes={int(report['matched_proposal_outcomes'])}/"
+            f"{int(report['audited_proposals'])} "
             f"paired_days={paired_days}"
         )
         reasons = report.get("reasons")

@@ -18,7 +18,7 @@ from .live_ai_assist import (
 from .positions import BOT_OWNER, ClosedTrade, PositionsStore
 
 
-LIVE_AI_UPLIFT_SCHEMA_VERSION = "live-ai-shadow-uplift-v1"
+LIVE_AI_UPLIFT_SCHEMA_VERSION = "live-ai-shadow-uplift-v2"
 _DAY_MS = 86_400_000
 _ACTION_STATUS = {
     "approve": "shadow_approve",
@@ -386,6 +386,18 @@ def assess_live_ai_shadow_uplift(
         if trade.owner == BOT_OWNER and trade.ai_review_mode == "shadow_only"
     ]
     candidates.sort(key=lambda trade: (trade.opened_at_ms, trade.closed_at_ms, trade.id))
+    candidate_case_ids = {
+        str(trade.ai_review_case_id or "").lower()
+        for trade in candidates
+    }
+    audited_case_ids = set(records_by_case)
+    matched_proposal_case_ids = audited_case_ids.intersection(candidate_case_ids)
+    unmatched_proposal_case_ids = audited_case_ids.difference(candidate_case_ids)
+    proposal_outcome_coverage = (
+        len(matched_proposal_case_ids) / len(audited_case_ids)
+        if audited_case_ids
+        else 0.0
+    )
     rejection_counts: Counter[str] = Counter()
     used_case_ids: set[str] = set()
     eligible: list[dict[str, object]] = []
@@ -486,6 +498,13 @@ def assess_live_ai_shadow_uplift(
     if causal_coverage < coverage_floor:
         materialization_reasons.append(
             f"causal_ai_trade_coverage<{coverage_floor:.2f}"
+        )
+    if unmatched_proposal_case_ids:
+        rejection_counts["counterfactual_outcome_missing"] = len(
+            unmatched_proposal_case_ids
+        )
+        materialization_reasons.append(
+            "ai_shadow_proposal_outcomes_incomplete"
         )
     if len(model_digests) != 1:
         materialization_reasons.append("ai_model_digest_not_unique")
@@ -612,6 +631,14 @@ def assess_live_ai_shadow_uplift(
         "causally_eligible_trades": len(eligible),
         "causal_coverage": causal_coverage,
         "minimum_causal_coverage": coverage_floor,
+        "audited_proposals": len(audited_case_ids),
+        "matched_proposal_outcomes": len(matched_proposal_case_ids),
+        "unmatched_proposal_outcomes": len(unmatched_proposal_case_ids),
+        "proposal_outcome_coverage": proposal_outcome_coverage,
+        "required_proposal_outcome_coverage": 1.0,
+        "unmatched_proposal_case_ids_sha256": _canonical_sha256(
+            sorted(unmatched_proposal_case_ids)
+        ),
         "maximum_review_age_seconds": maximum_age_ms // 1_000,
         "rejection_counts": dict(sorted(rejection_counts.items())),
         "dataset_fingerprint": dataset_fingerprint,
