@@ -24,6 +24,7 @@ from simple_ai_trading.live_ai_assist import (
     OllamaLiveAIEntryProvider,
     _parse_provider_decision,
     build_live_ai_entry_case,
+    minimum_exact_case_window_seconds,
 )
 from simple_ai_trading import live_ai_assist as live_ai_assist_module
 from simple_ai_trading.positions import PositionsStore
@@ -40,6 +41,27 @@ _FEATURE_SIGNATURE = advanced_feature_signature(
         label_stop_threshold=0.0015,
     )
 )
+
+
+def test_exact_case_window_accounts_for_submission_and_revisit_polls() -> None:
+    assert minimum_exact_case_window_seconds(
+        poll_seconds=30.0,
+        provider_timeout_seconds=10.0,
+    ) == 60.0
+    assert minimum_exact_case_window_seconds(
+        poll_seconds=10.0,
+        provider_timeout_seconds=45.0,
+    ) == 60.0
+    with pytest.raises(ValueError, match="poll interval"):
+        minimum_exact_case_window_seconds(
+            poll_seconds=0.0,
+            provider_timeout_seconds=10.0,
+        )
+    with pytest.raises(ValueError, match="provider timeout"):
+        minimum_exact_case_window_seconds(
+            poll_seconds=1.0,
+            provider_timeout_seconds=float("nan"),
+        )
 
 
 def _approval_strategy() -> StrategyConfig:

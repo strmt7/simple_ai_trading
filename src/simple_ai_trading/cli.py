@@ -13963,6 +13963,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
         AIAssistedDecisionFunction,
         AsyncLiveAIEntryReviewer,
         OllamaLiveAIEntryProvider,
+        minimum_exact_case_window_seconds,
     )
     from .objective import get_objective
     from .positions import PositionsStore
@@ -14021,6 +14022,11 @@ def command_autonomous(args: argparse.Namespace) -> int:
             0.1,
             float(getattr(args, "ai_timeout", 10.0)),
         )
+        configured_poll_seconds = max(
+            0.0,
+            float(getattr(args, "poll_seconds", 30.0)),
+        )
+        effective_poll_seconds = max(1.0, configured_poll_seconds)
         ai_gate = evaluate_ai_start_gate(
             runtime,
             objective=objective.name,
@@ -14042,6 +14048,30 @@ def command_autonomous(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 2
+        if ai_gate.active:
+            try:
+                candle_seconds = interval_milliseconds(runtime.interval) / 1_000.0
+                minimum_case_window = minimum_exact_case_window_seconds(
+                    poll_seconds=effective_poll_seconds,
+                    provider_timeout_seconds=ai_timeout_seconds,
+                )
+            except (TypeError, ValueError, OverflowError) as exc:
+                print(
+                    f"Autonomous startup blocked: invalid active AI cadence: {exc}",
+                    file=sys.stderr,
+                )
+                return 2
+            if minimum_case_window > candle_seconds:
+                print(
+                    "Autonomous startup blocked: active AI exact-case review "
+                    f"needs at least {minimum_case_window:g}s of stable candle "
+                    f"evidence, but interval {runtime.interval} provides "
+                    f"{candle_seconds:g}s (poll={effective_poll_seconds:g}s, "
+                    f"provider-timeout={ai_timeout_seconds:g}s). Reduce the poll "
+                    "or AI timeout, select a longer interval, or disable AI.",
+                    file=sys.stderr,
+                )
+                return 2
         if ai_gate.active:
             print(
                 "AI assist: active shadow-only per-entry review "
@@ -14150,7 +14180,7 @@ def command_autonomous(args: argparse.Namespace) -> int:
                 return 2
         cfg = AutonomousConfig(
             objective=objective.name,
-            poll_seconds=max(0.0, float(getattr(args, "poll_seconds", 30.0))),
+            poll_seconds=configured_poll_seconds,
             stop_after_iterations=getattr(args, "iterations", None),
             heartbeat_every=max(1, int(getattr(args, "heartbeat_every", 1))),
             dry_run=effective_dry_run,

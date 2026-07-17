@@ -130,6 +130,11 @@ After parser or taxonomy changes, regenerate the header through the native build
   retain the original ML side. `ai-uplift` rejects post-entry/reused reviews and
   requires contiguous one-second low/high paths from a read-only `--market-db`
   before any drawdown-preservation result can pass.
+- Active per-entry AI startup also requires enough nominal candle time to
+  submit and revisit the exact case under the configured poll and provider
+  deadline. Impossible cadences fail before exchange setup instead of spending
+  model tokens on reviews that cannot cross the entry boundary. A slower
+  reusable AI risk supervisor is not implemented or implied by this gate.
 - AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
   exact weight digest with at least 99% of Ollama's reported model bytes in
   VRAM. Partial CPU/GPU offload is blocked. DirectML selection is separate and
