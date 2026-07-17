@@ -20,7 +20,9 @@ import time
 from typing import Callable, Mapping, Protocol, Sequence
 from urllib.request import Request, urlopen
 
+from .advanced_model import advanced_config_from_signature
 from .ai_runtime import inspect_ollama_model_residency
+from .execution_simulation import configured_round_trip_cost_floor_bps
 
 
 LIVE_AI_ENTRY_CASE_SCHEMA_VERSION = "live-ai-entry-case-v1"
@@ -172,6 +174,275 @@ def _bounded_json_value(value: object, *, depth: int = 0) -> object:
             raise ValueError("AI evidence array is too large")
         return [_bounded_json_value(item, depth=depth + 1) for item in value]
     raise ValueError(f"AI evidence contains unsupported type: {type(value).__name__}")
+
+
+def _mapping(value: object) -> Mapping[str, object]:
+    return value if isinstance(value, Mapping) else {}
+
+
+def _finite_or_none(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if math.isfinite(parsed) else None
+
+
+def _nonnegative_int_or_none(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if parsed >= 0 else None
+
+
+def _model_validation_evidence(model: object) -> dict[str, object]:
+    """Extract only compact, unit-explicit, post-cost model evidence."""
+
+    if model is None:
+        return {"available": False}
+    selection = _mapping(getattr(model, "selection_risk", None))
+    terminal = _mapping(selection.get("terminal_holdout"))
+    terminal_result = _mapping(terminal.get("result"))
+    market_edge = _mapping(terminal_result.get("market_edge"))
+    execution = _mapping(getattr(model, "execution_validation", None))
+    walk_forward = _mapping(execution.get("walk_forward_gate"))
+    coverage = _mapping(execution.get("data_coverage"))
+    microstructure = _mapping(execution.get("microstructure_replay"))
+    mean_sample_return = _finite_or_none(market_edge.get("mean_sample_return"))
+    strategy_overrides = getattr(model, "strategy_overrides", None)
+    fallback_features = (
+        strategy_overrides.get("enabled_features")
+        if isinstance(strategy_overrides, Mapping)
+        else None
+    )
+    feature_config = advanced_config_from_signature(
+        getattr(model, "feature_signature", None),
+        fallback_features if isinstance(fallback_features, Sequence) else None,
+    )
+    return {
+        "available": True,
+        "model_family": str(getattr(model, "model_family", ""))[:80],
+        "selected_candidate": str(
+            getattr(model, "model_selected_candidate", "")
+        )[:80],
+        "probability_calibration": {
+            "sample_count": _nonnegative_int_or_none(
+                getattr(model, "probability_calibration_size", None)
+            ),
+            "log_loss_after": _finite_or_none(
+                getattr(model, "probability_log_loss_after", None)
+            ),
+            "brier_after": _finite_or_none(
+                getattr(model, "probability_brier_after", None)
+            ),
+            "ece_after": _finite_or_none(
+                getattr(model, "probability_ece_after", None)
+            ),
+        },
+        "selection_risk": {
+            "passed": selection.get("passed") is True,
+            "effective_trials": _nonnegative_int_or_none(
+                selection.get("effective_trials")
+            ),
+            "deflated_score": _finite_or_none(selection.get("deflated_score")),
+        },
+        "labeling": {
+            "available": feature_config is not None,
+            "mode": str(feature_config.label_mode) if feature_config is not None else "",
+            "lookahead_bars": (
+                int(feature_config.label_lookahead)
+                if feature_config is not None
+                else None
+            ),
+            "gross_label_barrier_bps": (
+                float(feature_config.label_threshold) * 10_000.0
+                if feature_config is not None
+                else None
+            ),
+        },
+        "terminal_holdout": {
+            "passed": terminal.get("passed") is True,
+            "accepted": terminal_result.get("accepted") is True,
+            "closed_trades": _nonnegative_int_or_none(
+                terminal_result.get("closed_trades")
+            ),
+            "realized_pnl_quote": _finite_or_none(
+                terminal_result.get("realized_pnl")
+            ),
+            "maximum_drawdown_fraction": _finite_or_none(
+                terminal_result.get("max_drawdown")
+            ),
+            "total_fees_quote": _finite_or_none(terminal_result.get("total_fees")),
+            "net_edge_vs_buy_hold_quote": _finite_or_none(
+                terminal_result.get("edge_vs_buy_hold")
+            ),
+            "mean_after_cost_sample_return_bps": (
+                mean_sample_return * 10_000.0
+                if mean_sample_return is not None
+                else None
+            ),
+            "bootstrap_lower_mean_return": _finite_or_none(
+                market_edge.get("bootstrap_lower_mean_return")
+            ),
+            "sign_test_p_value": _finite_or_none(
+                market_edge.get("sign_test_p_value")
+            ),
+            "liquidation_events": _nonnegative_int_or_none(
+                terminal_result.get("liquidation_events")
+            ),
+            "market_edge": {
+                "accepted": market_edge.get("accepted") is True,
+                "sample_count": _nonnegative_int_or_none(
+                    market_edge.get("sample_count")
+                ),
+                "minimum_sample_count": _nonnegative_int_or_none(
+                    market_edge.get("min_sample_count")
+                ),
+                "profit_factor": _finite_or_none(market_edge.get("profit_factor")),
+                "minimum_profit_factor": _finite_or_none(
+                    market_edge.get("min_profit_factor")
+                ),
+                "downside_return_risk_ratio": _finite_or_none(
+                    market_edge.get("downside_return_risk_ratio")
+                ),
+                "minimum_downside_return_risk_ratio": _finite_or_none(
+                    market_edge.get("min_downside_return_risk_ratio")
+                ),
+                "sign_test_p_value": _finite_or_none(
+                    market_edge.get("sign_test_p_value")
+                ),
+                "maximum_sign_test_p_value": _finite_or_none(
+                    market_edge.get("max_sign_test_p_value")
+                ),
+                "financial_sanity_allowed": (
+                    market_edge.get("financial_sanity_allowed") is True
+                ),
+            },
+        },
+        "execution_validation": {
+            "passed": execution.get("passed") is True,
+            "walk_forward_passed": walk_forward.get("passed") is True,
+            "walk_forward_folds": _nonnegative_int_or_none(
+                walk_forward.get("fold_count")
+            ),
+            "walk_forward_worst_pnl_quote": _finite_or_none(
+                walk_forward.get("worst_realized_pnl")
+            ),
+            "walk_forward_worst_drawdown_fraction": _finite_or_none(
+                walk_forward.get("worst_max_drawdown")
+            ),
+            "stress_passed": _mapping(execution.get("stress")).get("accepted")
+            is True,
+            "temporal_passed": _mapping(
+                execution.get("temporal_robustness")
+            ).get("accepted")
+            is True,
+            "portfolio_passed": _mapping(execution.get("portfolio")).get(
+                "accepted"
+            )
+            is True,
+            "coverage_years": _finite_or_none(coverage.get("used_duration_years")),
+            "coverage_ratio": _finite_or_none(coverage.get("coverage_ratio")),
+            "gap_count": _nonnegative_int_or_none(coverage.get("gap_count")),
+            "microstructure_passed": microstructure.get("passed") is True,
+            "microstructure_seconds": _nonnegative_int_or_none(
+                microstructure.get("captured_seconds")
+            ),
+            "microstructure_sequence_gaps": _nonnegative_int_or_none(
+                microstructure.get("sequence_gap_count")
+            ),
+        },
+    }
+
+
+def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
+    model_validation = _mapping(case.evidence.get("model_validation"))
+    calibration = _mapping(model_validation.get("probability_calibration"))
+    selection = _mapping(model_validation.get("selection_risk"))
+    labeling = _mapping(model_validation.get("labeling"))
+    terminal = _mapping(model_validation.get("terminal_holdout"))
+    market_edge = _mapping(terminal.get("market_edge"))
+    execution = _mapping(model_validation.get("execution_validation"))
+    cost_model = _mapping(case.evidence.get("cost_model"))
+    sample_count = _nonnegative_int_or_none(calibration.get("sample_count"))
+    effective_trials = _nonnegative_int_or_none(selection.get("effective_trials"))
+    edge_sample_count = _nonnegative_int_or_none(market_edge.get("sample_count"))
+    minimum_edge_samples = _nonnegative_int_or_none(
+        market_edge.get("minimum_sample_count")
+    )
+    brier = _finite_or_none(calibration.get("brier_after"))
+    ece = _finite_or_none(calibration.get("ece_after"))
+    mean_return_bps = _finite_or_none(
+        terminal.get("mean_after_cost_sample_return_bps")
+    )
+    bootstrap_lower = _finite_or_none(
+        terminal.get("bootstrap_lower_mean_return")
+    )
+    cost_floor_bps = _finite_or_none(
+        cost_model.get("configured_round_trip_cost_floor_bps")
+    )
+    evidence_barrier_bps = _finite_or_none(
+        cost_model.get("model_gross_label_barrier_bps")
+    )
+    model_barrier_bps = _finite_or_none(
+        labeling.get("gross_label_barrier_bps")
+    )
+    microstructure_seconds = _nonnegative_int_or_none(
+        execution.get("microstructure_seconds")
+    )
+    microstructure_gaps = _nonnegative_int_or_none(
+        execution.get("microstructure_sequence_gaps")
+    )
+    return bool(
+        model_validation.get("available") is True
+        and sample_count is not None
+        and sample_count > 0
+        and brier is not None
+        and 0.0 <= brier <= 0.35
+        and ece is not None
+        and 0.0 <= ece <= 0.20
+        and selection.get("passed") is True
+        and effective_trials is not None
+        and effective_trials > 0
+        and labeling.get("available") is True
+        and terminal.get("passed") is True
+        and terminal.get("accepted") is True
+        and terminal.get("liquidation_events") == 0
+        and market_edge.get("accepted") is True
+        and market_edge.get("financial_sanity_allowed") is True
+        and edge_sample_count is not None
+        and minimum_edge_samples is not None
+        and edge_sample_count >= minimum_edge_samples
+        and mean_return_bps is not None
+        and mean_return_bps > 0.0
+        and bootstrap_lower is not None
+        and bootstrap_lower > 0.0
+        and execution.get("passed") is True
+        and execution.get("walk_forward_passed") is True
+        and execution.get("stress_passed") is True
+        and execution.get("temporal_passed") is True
+        and execution.get("portfolio_passed") is True
+        and (
+            case.market_type != "futures"
+            or (
+                execution.get("microstructure_passed") is True
+                and microstructure_seconds is not None
+                and microstructure_seconds > 0
+                and microstructure_gaps == 0
+            )
+        )
+        and cost_floor_bps is not None
+        and cost_floor_bps >= 0.0
+        and evidence_barrier_bps is not None
+        and model_barrier_bps is not None
+        and math.isclose(evidence_barrier_bps, model_barrier_bps, abs_tol=1e-9)
+        and model_barrier_bps > cost_floor_bps
+    )
 
 
 @dataclass(frozen=True)
@@ -331,6 +602,8 @@ class LiveAIEntryDecision:
             risk_multiplier <= 0.0 or "edge_after_costs" not in codes
         ):
             raise ValueError("AI approval lacks positive after-cost evidence")
+        if self.action == "approve" and not _approval_evidence_is_valid(case):
+            raise ValueError("AI approval is not supported by bound model evidence")
         if self.action != "approve" and (
             risk_multiplier != 0.0 or not _ADVERSE_REASON_CODES.intersection(codes)
         ):
@@ -872,6 +1145,9 @@ class AIAssistedDecisionFunction:
         self._terminal_model_fingerprint = terminal_model_fingerprint
         self._maximum_review_age_ms = int(maximum_review_age_seconds) * 1_000
         self._clock = clock
+        self._model_validation_evidence = _model_validation_evidence(
+            getattr(base_decision_fn, "_model_artifact", None)
+        )
         if not 1_000 <= self._maximum_review_age_ms <= 300_000:
             raise ValueError("live AI maximum review age is invalid")
         for name, value in {
@@ -896,6 +1172,9 @@ class AIAssistedDecisionFunction:
                 ai_assist_status="shadow_idle",
                 ai_assist_reason="no directional ML proposal",
             )
+        labeling = _mapping(self._model_validation_evidence.get("labeling"))
+        model_barrier_bps = _finite_or_none(labeling.get("gross_label_barrier_bps"))
+        round_trip_cost_floor_bps = configured_round_trip_cost_floor_bps(strategy)
         evidence = {
             "proposal": dict(getattr(decision, "ai_evidence", {}) or {}),
             "risk_contract": {
@@ -904,7 +1183,22 @@ class AIAssistedDecisionFunction:
                 "risk_per_trade": float(getattr(strategy, "risk_per_trade", 0.0)),
                 "max_position_pct": float(getattr(strategy, "max_position_pct", 0.0)),
                 "max_drawdown_limit": float(getattr(strategy, "max_drawdown_limit", 0.0)),
-                "taker_fee_bps": float(getattr(strategy, "taker_fee_bps", 0.0)),
+            },
+            "cost_model": {
+                "one_way_taker_fee_bps": float(
+                    getattr(strategy, "taker_fee_bps", 0.0)
+                ),
+                "configured_spread_floor_bps": max(
+                    float(getattr(strategy, "slippage_bps", 0.0)),
+                    float(getattr(strategy, "max_spread_bps", 0.0)),
+                ),
+                "configured_round_trip_cost_floor_bps": round_trip_cost_floor_bps,
+                "model_gross_label_barrier_bps": model_barrier_bps,
+                "minimum_model_target_net_edge_bps": (
+                    model_barrier_bps - round_trip_cost_floor_bps
+                    if model_barrier_bps is not None
+                    else None
+                ),
             },
             "regime": {
                 "name": str(getattr(decision, "regime", "")),
@@ -916,7 +1210,11 @@ class AIAssistedDecisionFunction:
                 "action": str(getattr(decision, "meta_label_action", "")),
                 "reason": str(getattr(decision, "meta_label_reason", ""))[:180],
                 "size_multiplier": float(getattr(decision, "size_multiplier", 1.0)),
+                "signal_strength": float(
+                    getattr(decision, "meta_label_signal_strength", 0.0)
+                ),
             },
+            "model_validation": self._model_validation_evidence,
         }
         try:
             case = build_live_ai_entry_case(

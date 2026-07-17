@@ -55,6 +55,7 @@ from .backtest import (
 )
 from .assets import DEFAULT_CONSERVATIVE_LEVERAGE, is_supported_major_symbol, normalize_symbol
 from .features import ModelRow
+from .execution_simulation import configured_round_trip_cost_floor_bps
 from .hybrid_models import optimize_hybrid_model_zoo
 from .market_edge import build_market_edge_report
 from .meta_label import build_meta_label_report
@@ -210,41 +211,18 @@ def _strategy_for_candidate(base: StrategyConfig, candidate: CandidateParams,
                             training: ObjectiveTraining) -> StrategyConfig:
     """Overlay a candidate's tunables on top of the base strategy config."""
 
-    return StrategyConfig(
+    return replace(
+        base,
         leverage=training.leverage,
         risk_per_trade=candidate.risk_per_trade,
         max_position_pct=training.max_position_pct,
-        max_open_positions=base.max_open_positions,
         stop_loss_pct=candidate.stop_loss_pct,
         take_profit_pct=candidate.take_profit_pct,
-        feature_windows=base.feature_windows,
         signal_threshold=candidate.signal_threshold,
-        model_lookback=base.model_lookback,
         cooldown_minutes=training.cooldown_minutes,
         max_trades_per_day=training.max_trades_per_day,
-        max_drawdown_limit=base.max_drawdown_limit,
         training_epochs=candidate.epochs,
         confidence_beta=candidate.confidence_beta,
-        taker_fee_bps=base.taker_fee_bps,
-        slippage_bps=base.slippage_bps,
-        liquidity_risk_enabled=base.liquidity_risk_enabled,
-        liquidity_lookback_bars=base.liquidity_lookback_bars,
-        low_liquidity_volume_ratio=base.low_liquidity_volume_ratio,
-        low_liquidity_signal_threshold_add=base.low_liquidity_signal_threshold_add,
-        low_liquidity_size_multiplier=base.low_liquidity_size_multiplier,
-        dynamic_liquidity_session_enabled=base.dynamic_liquidity_session_enabled,
-        dynamic_liquidity_bucket_minutes=base.dynamic_liquidity_bucket_minutes,
-        dynamic_liquidity_session_min_samples=base.dynamic_liquidity_session_min_samples,
-        low_session_liquidity_volume_ratio=base.low_session_liquidity_volume_ratio,
-        low_session_signal_threshold_add=base.low_session_signal_threshold_add,
-        low_session_size_multiplier=base.low_session_size_multiplier,
-        preferred_utc_session_start_hour=base.preferred_utc_session_start_hour,
-        preferred_utc_session_end_hour=base.preferred_utc_session_end_hour,
-        off_session_signal_threshold_add=base.off_session_signal_threshold_add,
-        off_session_size_multiplier=base.off_session_size_multiplier,
-        label_threshold=base.label_threshold,
-        feature_version=base.feature_version,
-        enabled_features=base.enabled_features,
     )
 
 
@@ -255,29 +233,69 @@ def _attach_strategy_overrides(model: TrainedModel, strategy: StrategyConfig) ->
     return model
 
 
+def _minimum_cost_aware_label_threshold(strategy: StrategyConfig) -> float:
+    cost_floor = configured_round_trip_cost_floor_bps(strategy) / 10_000.0
+    return math.nextafter(cost_floor, math.inf) if cost_floor > 0.0 else 0.0
+
+
+def _cost_aware_feature_config(
+    config: AdvancedFeatureConfig,
+    strategy: StrategyConfig,
+) -> AdvancedFeatureConfig:
+    """Raise gross label barriers above the configured round-trip cost floor."""
+
+    strict_floor = _minimum_cost_aware_label_threshold(strategy)
+    stop_threshold = (
+        float(config.label_stop_threshold)
+        if config.label_stop_threshold is not None
+        else float(config.label_threshold)
+    )
+    return replace(
+        config,
+        label_threshold=max(strict_floor, float(config.label_threshold)),
+        label_stop_threshold=max(strict_floor, stop_threshold),
+    )
+
+
 def _feature_config_for_candidate(
     base: AdvancedFeatureConfig,
     candidate: CandidateParams,
+    *,
+    strategy: StrategyConfig | None = None,
 ) -> AdvancedFeatureConfig:
     """Apply candidate label target/horizon multipliers to a feature config."""
 
+    effective_base = _cost_aware_feature_config(base, strategy) if strategy is not None else base
+    cost_floor = (
+        _minimum_cost_aware_label_threshold(strategy)
+        if strategy is not None
+        else 0.0
+    )
     threshold_multiplier = max(0.10, min(5.0, float(candidate.label_threshold_multiplier)))
     lookahead_multiplier = max(0.25, min(4.0, float(candidate.label_lookahead_multiplier)))
     label_mode = str(candidate.label_mode or "forward_return")
     normalized_label_mode = label_mode.strip().lower().replace("-", "_")
-    volatility_window = max(0, int(base.label_volatility_window))
-    volatility_multiplier = max(0.0, float(base.label_volatility_multiplier))
+    volatility_window = max(0, int(effective_base.label_volatility_window))
+    volatility_multiplier = max(0.0, float(effective_base.label_volatility_multiplier))
     if "event" in normalized_label_mode or "volatility" in normalized_label_mode:
-        derived_window = max(6, int(round(float(base.label_lookahead) * lookahead_multiplier * 3.0)))
+        derived_window = max(6, int(round(float(effective_base.label_lookahead) * lookahead_multiplier * 3.0)))
         volatility_window = max(volatility_window, derived_window)
         if volatility_multiplier <= 0.0:
             volatility_multiplier = 0.50
     return replace(
-        base,
-        label_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
-        label_lookahead=max(1, int(round(float(base.label_lookahead) * lookahead_multiplier))),
+        effective_base,
+        label_threshold=max(
+            0.00005,
+            cost_floor,
+            float(effective_base.label_threshold) * threshold_multiplier,
+        ),
+        label_lookahead=max(1, int(round(float(effective_base.label_lookahead) * lookahead_multiplier))),
         label_mode=label_mode,
-        label_stop_threshold=max(0.00005, float(base.label_threshold) * threshold_multiplier),
+        label_stop_threshold=max(
+            0.00005,
+            cost_floor,
+            float(effective_base.label_threshold) * threshold_multiplier,
+        ),
         label_volatility_window=volatility_window,
         label_volatility_multiplier=volatility_multiplier,
     )
@@ -289,11 +307,16 @@ def _rows_for_candidate(
     base_feature_cfg: AdvancedFeatureConfig,
     candidate: CandidateParams,
     *,
+    strategy: StrategyConfig | None = None,
     compute_backend: str | None = None,
 ) -> tuple[list[ModelRow], AdvancedFeatureConfig]:
     """Return candidate-specific rows while preserving the legacy row payload path."""
 
-    feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
+    feature_cfg = _feature_config_for_candidate(
+        base_feature_cfg,
+        candidate,
+        strategy=strategy,
+    )
     if candles is None:
         return list(base_rows), feature_cfg
     return make_advanced_rows(candles, feature_cfg, compute_backend=compute_backend), feature_cfg
@@ -1359,7 +1382,10 @@ def _purged_walk_forward_gate(
             "worst_max_drawdown": None,
             "folds": [],
         }
-    strategy = _strategy_for_candidate(base_strategy, candidate, training)
+    strategy = replace(
+        _strategy_for_candidate(base_strategy, candidate, training),
+        label_threshold=float(feature_cfg.label_threshold),
+    )
     fold_reports: list[dict[str, object]] = []
     worst_score = float("inf")
     worst_realized = float("inf")
@@ -1618,12 +1644,16 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     batch_size = int(payload.get("batch_size") or 8192)
     score_batch_size = int(payload.get("score_batch_size") or batch_size)
     include_full_fit_fallback = bool(payload.get("include_full_fit_fallback", True))
+    objective = get_objective(objective_name)
+    training = _default_training(objective)
+    strategy = _strategy_for_candidate(base_strategy, candidate, training)
     if candle_payload is not None:
         all_rows, feature_cfg = _rows_for_candidate(
             candle_payload,
             [],
             base_feature_cfg,
             candidate,
+            strategy=strategy,
             compute_backend=compute_backend,
         )
         if not all_rows:
@@ -1640,10 +1670,13 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
     else:
         rows_train = list(base_rows_train)
         rows_eval = list(base_rows_eval)
-        feature_cfg = _feature_config_for_candidate(base_feature_cfg, candidate)
+        feature_cfg = _feature_config_for_candidate(
+            base_feature_cfg,
+            candidate,
+            strategy=strategy,
+        )
 
-    objective = get_objective(objective_name)
-    training = _default_training(objective)
+    strategy = replace(strategy, label_threshold=float(feature_cfg.label_threshold))
     purge_gap = _label_purge_gap(feature_cfg)
     model_train_rows, selection_rows = _walk_forward_split(rows_train, purge_gap=purge_gap)
     fit_rows, calibration_rows = _calibration_split(model_train_rows, purge_gap=purge_gap)
@@ -1661,7 +1694,6 @@ def _evaluate_candidate(payload: dict[str, Any]) -> dict[str, Any]:
         batch_size=batch_size,
         focal_gamma=candidate.focal_gamma,
     )
-    strategy = _strategy_for_candidate(base_strategy, candidate, training)
     threshold_score = None
     if calibration_rows:
         probability_calibration = calibrate_probability_temperature(
@@ -1955,7 +1987,10 @@ def train_for_objective(
     """
 
     candle_list = list(candles)
-    feature_cfg = default_config_for(objective.name, base_strategy.enabled_features)
+    feature_cfg = _cost_aware_feature_config(
+        default_config_for(objective.name, base_strategy.enabled_features),
+        base_strategy,
+    )
     effective_compute_backend = effective_training_backend_name(compute_backend)
     rows = make_advanced_rows(candle_list, feature_cfg, compute_backend=effective_compute_backend)
     if not rows:
@@ -1983,10 +2018,18 @@ def train_for_objective(
     if runner is not None:
         results: list[dict[str, Any]] = []
         for candidate in candidates:
-            candidate_feature_cfg = _feature_config_for_candidate(feature_cfg, candidate)
             score, strategy, model, row_count, positive_rate = runner(
                 objective, candidate, rows, base_strategy, feature_cfg,
                 market_type, starting_cash,
+            )
+            candidate_feature_cfg = _feature_config_for_candidate(
+                feature_cfg,
+                candidate,
+                strategy=strategy,
+            )
+            strategy = replace(
+                strategy,
+                label_threshold=float(candidate_feature_cfg.label_threshold),
             )
             _attach_strategy_overrides(model, strategy)
             results.append({
@@ -2103,6 +2146,7 @@ def train_for_objective(
                 rows,
                 feature_cfg,
                 candidate_result["candidate"],
+                strategy=candidate_result["strategy"],
                 compute_backend=effective_compute_backend,
             )
             if not gate_rows:
@@ -2158,6 +2202,7 @@ def train_for_objective(
             rows,
             feature_cfg,
             best["candidate"],
+            strategy=best["strategy"],
             compute_backend=effective_compute_backend,
         )
         best_purge_gap = _label_purge_gap(best_feature_cfg)

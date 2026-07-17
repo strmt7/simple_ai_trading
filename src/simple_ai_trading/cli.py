@@ -13846,6 +13846,7 @@ def _build_autonomous_decision_fn(
             size_multiplier=float(meta_decision.size_multiplier),
             meta_label_action=str(meta_decision.action),
             meta_label_reason=str(meta_decision.reason),
+            meta_label_signal_strength=float(meta_decision.signal_strength),
             regime=regime_evidence.dominant_regime,
             regime_confidence=float(regime_evidence.confidence),
             regime_notes=tuple(regime_evidence.notes),

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 from pathlib import Path
 import threading
@@ -8,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from simple_ai_trading.advanced_model import advanced_feature_signature, default_config_for
 from simple_ai_trading.autonomous import (
     AutonomousConfig,
     Decision,
@@ -31,6 +33,132 @@ from simple_ai_trading.objective import get_objective
 
 _DIGEST = "a" * 64
 _FINGERPRINT = "b" * 64
+_FEATURE_SIGNATURE = advanced_feature_signature(
+    replace(
+        default_config_for("conservative", StrategyConfig().enabled_features),
+        label_threshold=0.0015,
+        label_stop_threshold=0.0015,
+    )
+)
+
+
+def _approval_strategy() -> StrategyConfig:
+    return StrategyConfig(
+        taker_fee_bps=4.0,
+        slippage_bps=2.0,
+        max_spread_bps=5.0,
+    )
+
+
+def _approval_evidence() -> dict[str, object]:
+    return {
+        "signal": {"after_cost_margin_bps": 3.2},
+        "cost_model": {
+            "configured_round_trip_cost_floor_bps": 13.0,
+            "model_gross_label_barrier_bps": 15.0,
+        },
+        "model_validation": {
+            "available": True,
+            "probability_calibration": {
+                "sample_count": 128,
+                "brier_after": 0.20,
+                "ece_after": 0.10,
+            },
+            "selection_risk": {"passed": True, "effective_trials": 24},
+            "labeling": {
+                "available": True,
+                "gross_label_barrier_bps": 15.0,
+            },
+            "terminal_holdout": {
+                "passed": True,
+                "accepted": True,
+                "liquidation_events": 0,
+                "mean_after_cost_sample_return_bps": 2.0,
+                "bootstrap_lower_mean_return": 0.0001,
+                "market_edge": {
+                    "accepted": True,
+                    "sample_count": 40,
+                    "minimum_sample_count": 6,
+                    "financial_sanity_allowed": True,
+                },
+            },
+            "execution_validation": {
+                "passed": True,
+                "walk_forward_passed": True,
+                "stress_passed": True,
+                "temporal_passed": True,
+                "portfolio_passed": True,
+                "microstructure_passed": True,
+                "microstructure_seconds": 1_728_000,
+                "microstructure_sequence_gaps": 0,
+            },
+        },
+    }
+
+
+def _validated_model_artifact() -> SimpleNamespace:
+    return SimpleNamespace(
+        model_family="advanced_logistic",
+        model_selected_candidate="candidate-a",
+        feature_signature=_FEATURE_SIGNATURE,
+        probability_calibration_size=128,
+        probability_log_loss_after=0.50,
+        probability_brier_after=0.20,
+        probability_ece_after=0.10,
+        selection_risk={
+            "passed": True,
+            "effective_trials": 24,
+            "deflated_score": 0.12,
+            "terminal_holdout": {
+                "passed": True,
+                "result": {
+                    "accepted": True,
+                    "closed_trades": 40,
+                    "realized_pnl": 12.0,
+                    "max_drawdown": 0.03,
+                    "total_fees": 5.0,
+                    "edge_vs_buy_hold": 8.0,
+                    "liquidation_events": 0,
+                    "market_edge": {
+                        "accepted": True,
+                        "sample_count": 40,
+                        "min_sample_count": 6,
+                        "mean_sample_return": 0.0002,
+                        "bootstrap_lower_mean_return": 0.0001,
+                        "sign_test_p_value": 0.02,
+                        "max_sign_test_p_value": 0.30,
+                        "profit_factor": 1.4,
+                        "min_profit_factor": 1.0,
+                        "downside_return_risk_ratio": 0.8,
+                        "min_downside_return_risk_ratio": 0.45,
+                        "financial_sanity_allowed": True,
+                    },
+                },
+            },
+        },
+        execution_validation={
+            "passed": True,
+            "walk_forward_gate": {
+                "passed": True,
+                "fold_count": 3,
+                "worst_realized_pnl": 1.0,
+                "worst_max_drawdown": 0.02,
+            },
+            "stress": {"accepted": True},
+            "temporal_robustness": {"accepted": True},
+            "portfolio": {"accepted": True},
+            "data_coverage": {
+                "used_duration_years": 2.0,
+                "coverage_ratio": 1.0,
+                "gap_count": 0,
+            },
+            "microstructure_replay": {
+                "passed": True,
+                "captured_seconds": 1_728_000,
+                "sequence_gap_count": 0,
+            },
+        },
+    )
 
 
 def _case(*, observed_at_ms: int = 1_000, model_digest: str = _DIGEST):
@@ -44,7 +172,7 @@ def _case(*, observed_at_ms: int = 1_000, model_digest: str = _DIGEST):
         maximum_risk_multiplier=0.4,
         model_digest=model_digest,
         terminal_model_fingerprint=_FINGERPRINT,
-        evidence={"signal": {"after_cost_margin_bps": 3.2}},
+        evidence=_approval_evidence(),
     )
 
 
@@ -126,6 +254,34 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
                 },
                 expected_model="qwen3:14b",
             )
+
+
+def test_approval_requires_bound_after_cost_model_evidence() -> None:
+    unsupported = build_live_ai_entry_case(
+        symbol="BTCUSDC",
+        market_type="futures",
+        interval="15m",
+        observed_at_ms=1_000,
+        proposed_side="LONG",
+        ml_confidence=0.72,
+        maximum_risk_multiplier=0.4,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+        evidence={"cost_model": {}},
+    )
+
+    with pytest.raises(ValueError, match="bound model evidence"):
+        _approval().validated_for(unsupported)
+
+
+def test_model_validation_summary_is_compact_and_unit_explicit() -> None:
+    artifact = _validated_model_artifact()
+
+    evidence = live_ai_assist_module._model_validation_evidence(artifact)
+
+    assert evidence["terminal_holdout"]["mean_after_cost_sample_return_bps"] == 2.0
+    assert evidence["execution_validation"]["microstructure_seconds"] == 1_728_000
+    assert len(json.dumps(evidence, separators=(",", ":"))) < 2_500
 
 
 def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
@@ -222,6 +378,8 @@ def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
             ai_evidence={"after_cost_margin_bps": 3.2},
         )
 
+    base_decision._model_artifact = _validated_model_artifact()
+
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
@@ -233,7 +391,7 @@ def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
         market_type="futures",
         interval="15m",
     )
-    strategy = StrategyConfig()
+    strategy = _approval_strategy()
     pending = assisted(None, runtime, strategy, None)
     assert pending.side == "LONG"
     assert pending.size_multiplier == 0.4
@@ -308,6 +466,8 @@ def test_completed_review_cannot_be_replayed_after_freshness_window(
             observed_at_ms=1_000,
         )
 
+    base_decision._model_artifact = _validated_model_artifact()
+
     assisted = AIAssistedDecisionFunction(
         base_decision,
         reviewer,
@@ -316,10 +476,11 @@ def test_completed_review_cannot_be_replayed_after_freshness_window(
         clock=lambda: 400.0,
     )
     runtime = RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m")
-    assert assisted(None, runtime, StrategyConfig(), None).ai_assist_entry_ready is False
+    strategy = _approval_strategy()
+    assert assisted(None, runtime, strategy, None).ai_assist_entry_ready is False
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline:
-        stale = assisted(None, runtime, StrategyConfig(), None)
+        stale = assisted(None, runtime, strategy, None)
         if stale.ai_assist_status != "shadow_pending":
             break
         time.sleep(0.005)

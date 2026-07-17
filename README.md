@@ -532,6 +532,9 @@ margin is treated as lost, the position is cleared, and the run is rejected from
 promotion.
 Backtest win rate is classified by net trade P&L after entry and exit fees, not
 by gross price movement, so a fee-eroded trade is not reported as a win.
+New model labels must also clear the configured round-trip fee-plus-spread
+floor; AI approval reads that exact frozen label contract from the model and
+fails closed when sealed after-cost validation evidence is incomplete.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 
@@ -547,6 +550,9 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 63](docs/model-research/action-value/round-063-cost-aware-ai-gate-research.md)
+records the cost-aware label and AI evidence contracts; it contains no new
+performance result and therefore does not replace the latest evidence graphs.
 Round 61 completed the synchronized economic replay authorized by Round 60.
 It matched `$10,000` long spot with a 1x short perpetual at the same base
 quantity, then applied adverse minute bounds, settled funding, actual-notional

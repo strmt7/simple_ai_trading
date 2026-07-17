@@ -879,7 +879,10 @@ def test_default_training_uses_metadata_when_present() -> None:
 
 
 def test_strategy_for_candidate_applies_overlays() -> None:
-    base = StrategyConfig()
+    base = StrategyConfig(
+        max_daily_loss_pct=0.0043,
+        max_network_errors=7,
+    )
     params = CandidateParams(
         epochs=77, learning_rate=0.05, l2_penalty=0.002,
         signal_threshold=0.7, stop_loss_pct=0.05, take_profit_pct=0.06,
@@ -896,6 +899,36 @@ def test_strategy_for_candidate_applies_overlays() -> None:
     assert strat.confidence_beta == pytest.approx(0.77)
     assert strat.leverage == training.leverage
     assert strat.cooldown_minutes == training.cooldown_minutes
+    assert strat.max_daily_loss_pct == pytest.approx(0.0043)
+    assert strat.max_network_errors == 7
+
+
+def test_candidate_labels_clear_configured_round_trip_cost_floor() -> None:
+    strategy = StrategyConfig(
+        taker_fee_bps=4.0,
+        slippage_bps=2.0,
+        max_spread_bps=5.0,
+    )
+    candidate = CandidateParams(
+        epochs=10,
+        learning_rate=0.01,
+        l2_penalty=0.001,
+        signal_threshold=0.6,
+        stop_loss_pct=0.01,
+        take_profit_pct=0.02,
+        risk_per_trade=0.003,
+        label_threshold_multiplier=0.10,
+    )
+
+    config = _feature_config_for_candidate(
+        default_config_for("aggressive", strategy.enabled_features),
+        candidate,
+        strategy=strategy,
+    )
+
+    assert config.label_threshold * 10_000.0 > 13.0
+    assert config.label_stop_threshold is not None
+    assert config.label_stop_threshold * 10_000.0 > 13.0
 
 
 # ----- train_for_objective: happy path with fake runner --------------------

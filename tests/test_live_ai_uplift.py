@@ -28,6 +28,52 @@ _TERMINAL_FINGERPRINT = "b" * 64
 _DAY_MS = 86_400_000
 
 
+def _approval_evidence() -> dict[str, object]:
+    return {
+        "risk": {"regime": "trend"},
+        "cost_model": {
+            "configured_round_trip_cost_floor_bps": 13.0,
+            "model_gross_label_barrier_bps": 15.0,
+        },
+        "model_validation": {
+            "available": True,
+            "probability_calibration": {
+                "sample_count": 128,
+                "brier_after": 0.20,
+                "ece_after": 0.10,
+            },
+            "selection_risk": {"passed": True, "effective_trials": 24},
+            "labeling": {
+                "available": True,
+                "gross_label_barrier_bps": 15.0,
+            },
+            "terminal_holdout": {
+                "passed": True,
+                "accepted": True,
+                "liquidation_events": 0,
+                "mean_after_cost_sample_return_bps": 2.0,
+                "bootstrap_lower_mean_return": 0.0001,
+                "market_edge": {
+                    "accepted": True,
+                    "sample_count": 40,
+                    "minimum_sample_count": 6,
+                    "financial_sanity_allowed": True,
+                },
+            },
+            "execution_validation": {
+                "passed": True,
+                "walk_forward_passed": True,
+                "stress_passed": True,
+                "temporal_passed": True,
+                "portfolio_passed": True,
+                "microstructure_passed": True,
+                "microstructure_seconds": 1_728_000,
+                "microstructure_sequence_gaps": 0,
+            },
+        },
+    }
+
+
 def _canonical_sha256(payload: object) -> str:
     encoded = json.dumps(
         payload,
@@ -50,7 +96,7 @@ def _case(observed_at_ms: int):
         maximum_risk_multiplier=0.4,
         model_digest=_MODEL_DIGEST,
         terminal_model_fingerprint=_TERMINAL_FINGERPRINT,
-        evidence={"risk": {"regime": "trend"}},
+        evidence=_approval_evidence(),
     )
 
 
