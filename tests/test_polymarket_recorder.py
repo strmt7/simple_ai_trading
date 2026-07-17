@@ -386,6 +386,37 @@ def test_evidence_store_chunks_large_message_batches(tmp_path) -> None:
     assert hot_path_unique_constraints == []
 
 
+def test_storage_v4_audit_pages_payloads_by_primary_key(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    database = tmp_path / "paged-payload-audit.duckdb"
+    with PolymarketEvidenceStore(database, memory_limit="128MB", threads=1) as store:
+        store.start_run("paged-payload-audit", EPOCH * 1_000)
+        for sequence in range(1, 34):
+            store.append_messages(
+                "paged-payload-audit",
+                [_message("polymarket_rtds", "PING", sequence=sequence)],
+            )
+        payload_connection = store._payload_connection()
+        payload_queries: list[tuple[str, list[object]]] = []
+
+        class _RecordingConnection:
+            def execute(self, query: str, parameters: list[object]):
+                payload_queries.append((query, parameters))
+                return payload_connection.execute(query, parameters)
+
+        proxy = _RecordingConnection()
+        monkeypatch.setattr(store, "_payload_connection", lambda: proxy)
+        stored = tuple(store._iter_capture_messages("paged-payload-audit"))
+
+    assert [item.message.sequence_number for item in stored] == list(range(1, 34))
+    assert len(payload_queries) == 2
+    assert [len(parameters) - 1 for _query, parameters in payload_queries] == [32, 1]
+    assert all("compressed_payload" in query for query, _parameters in payload_queries)
+    assert all("ORDER BY" not in query for query, _parameters in payload_queries)
+
+
 def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
     database = tmp_path / "atomic-batch.duckdb"
     messages = [
@@ -1568,6 +1599,175 @@ def test_recorder_terminalizes_when_full_finish_audit_fails(
     assert persisted[1] == report.ended_at_ms
     assert persisted[2] == report.report_sha256
     assert "finish_run:RuntimeError:audit memory ceiling" in persisted[3]
+
+
+def test_storage_v4_recovers_only_an_exact_terminal_audit_oom(tmp_path) -> None:
+    database = tmp_path / "terminal-audit-recovery.duckdb"
+    run_id = "terminal-audit-recovery"
+    error = (
+        "finish_run:OutOfMemoryException:Out of Memory Error: "
+        "failed to pin block of size 256.0 KiB"
+    )
+    with PolymarketEvidenceStore(database, memory_limit="512MB", threads=1) as store:
+        _complete_store(store, run_id)
+        prior = store.fail_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(error,),
+        )
+        recovery = store.recover_terminal_audit_if_resource_exhausted(run_id)
+        assert recovery is not None
+        current = store.connect().execute(
+            """
+            SELECT status, report_json, report_sha256, error
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        recovery_row = store.connect().execute(
+            """
+            SELECT prior_report_json, prior_report_sha256, prior_error,
+                   recovered_report_sha256, recovery_json, recovery_sha256
+            FROM polymarket_terminal_audit_recovery WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        cached_integrity = store.integrity_errors(run_id)
+
+    assert current is not None
+    assert current[0] == "complete"
+    assert current[2] == recovery.recovered_report_sha256
+    assert current[3] == ""
+    assert cached_integrity == ()
+    assert recovery.raw_message_count == 4
+    assert recovery.normalized_event_count == 3
+    assert recovery.memory_limit == "512MB"
+    assert recovery.database_threads == 1
+    assert recovery.labels_consulted is False
+    assert recovery.outcomes_consulted is False
+    assert recovery.model_scores_consulted is False
+    assert recovery.profitability_claim is False
+    assert recovery.trading_authority is False
+    assert recovery.training_authority is False
+    assert recovery_row is not None
+    assert recovery_row[0] == _canonical(prior.asdict())
+    assert recovery_row[1] == prior.report_sha256
+    assert recovery_row[2] == error
+    assert recovery_row[3] == current[2]
+    assert json.loads(recovery_row[4]) == recovery.asdict()
+    assert recovery_row[5] == recovery.recovery_sha256
+
+    with PolymarketEvidenceStore(
+        database,
+        memory_limit="512MB",
+        threads=1,
+        read_only=True,
+    ) as reopened:
+        assert reopened.integrity_errors(run_id) == ()
+
+
+def test_terminal_audit_recovery_rejects_corruption_and_preserves_failure(
+    tmp_path,
+) -> None:
+    database = tmp_path / "terminal-audit-corruption.duckdb"
+    run_id = "terminal-audit-corruption"
+    error = "finish_run:OutOfMemoryException:Out of Memory Error: test ceiling"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, run_id)
+        prior = store.fail_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(error,),
+        )
+        store.connect().execute(
+            """
+            UPDATE polymarket_raw_chunk SET compressed_payload = from_hex('00')
+            WHERE run_id = ? AND chunk_index = 0
+            """,
+            [run_id],
+        )
+        with pytest.raises(ValueError, match="recovery evidence failed"):
+            store.recover_terminal_audit_if_resource_exhausted(run_id)
+        terminal = store.connect().execute(
+            """
+            SELECT status, report_sha256, error FROM polymarket_recorder_run
+            WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        recovery_count = store.connect().execute(
+            """
+            SELECT count(*) FROM polymarket_terminal_audit_recovery
+            WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()[0]
+
+    assert terminal == ("failed", prior.report_sha256, error)
+    assert recovery_count == 0
+
+
+def test_terminal_audit_recovery_ignores_unrelated_failures_and_terminal_is_immutable(
+    tmp_path,
+) -> None:
+    database = tmp_path / "terminal-audit-unrelated.duckdb"
+    run_id = "terminal-audit-unrelated"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, run_id)
+        store.fail_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=("finish_run:RuntimeError:offline",),
+        )
+        assert store.recover_terminal_audit_if_resource_exhausted(run_id) is None
+        with pytest.raises(ValueError, match="evidence is immutable"):
+            store.finish_run(
+                run_id,
+                started_at_ms=EPOCH * 1_000,
+                ended_at_ms=EPOCH * 1_000 + 5_000,
+                database=str(database),
+                errors=(),
+            )
+
+
+def test_terminal_audit_recovery_record_tampering_is_detected(tmp_path) -> None:
+    database = tmp_path / "terminal-audit-recovery-tamper.duckdb"
+    run_id = "terminal-audit-recovery-tamper"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, run_id)
+        store.fail_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(
+                "finish_run:OutOfMemoryException:Out of Memory Error: test ceiling",
+            ),
+        )
+        recovery = store.recover_terminal_audit_if_resource_exhausted(run_id)
+        assert recovery is not None
+        tampered = recovery.asdict()
+        tampered["labels_consulted"] = True
+        store.connect().execute(
+            """
+            UPDATE polymarket_terminal_audit_recovery SET recovery_json = ?
+            WHERE run_id = ?
+            """,
+            [_canonical(tampered), run_id],
+        )
+
+    with PolymarketEvidenceStore(database, read_only=True) as reopened:
+        errors = reopened.integrity_errors(run_id)
+
+    assert any(
+        error.startswith("terminal_audit_recovery_invalid:") for error in errors
+    )
 
 
 def test_integrity_verifier_detects_raw_event_snapshot_and_gap_tampering(

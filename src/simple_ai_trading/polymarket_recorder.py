@@ -46,6 +46,9 @@ POLYMARKET_RECORDER_SCHEMA_VERSION = "polymarket-public-recorder-v1"
 POLYMARKET_RECORDER_PROGRESS_SCHEMA_VERSION = "polymarket-recorder-progress-v1"
 POLYMARKET_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v4"
 POLYMARKET_CAPTURE_MANIFEST_SCHEMA_VERSION = "polymarket-capture-manifest-v1"
+POLYMARKET_TERMINAL_RECOVERY_SCHEMA_VERSION = (
+    "polymarket-terminal-audit-recovery-v1"
+)
 _RAW_RECONSTRUCTED_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v3"
 _INDEXED_COMPACT_STORAGE_SCHEMA_VERSION = "polymarket-evidence-storage-v2"
 _LEGACY_STORAGE_SCHEMA_VERSION = "polymarket-public-evidence-v1"
@@ -94,6 +97,11 @@ _WRITER_MAX_DRAIN_SECONDS = 600.0
 _WRITER_STALL_SECONDS = 30.0
 _WRITER_ASSUMED_MINIMUM_MESSAGES_PER_SECOND = 100.0
 _INTEGRITY_FETCH_SIZE = 4_096
+_CAPTURE_AUDIT_CHUNK_PAGE_SIZE = 32
+_TERMINAL_AUDIT_RESOURCE_EXHAUSTED_PREFIX = (
+    "finish_run:OutOfMemoryException:Out of Memory Error:"
+)
+_TERMINAL_AUDIT_RECOVERY_REASON = "terminal_integrity_audit_resource_exhausted"
 
 _LEGACY_RAW_MESSAGE_INSERT_SQL = """
     INSERT INTO polymarket_raw_message (
@@ -459,6 +467,31 @@ class RecorderReport:
 
 
 @dataclass(frozen=True)
+class TerminalAuditRecoveryReport:
+    schema_version: str
+    run_id: str
+    recovered_at_ms: int
+    recovery_reason: str
+    prior_report_sha256: str
+    recovered_report_sha256: str
+    pre_recovery_evidence_fingerprint: str
+    raw_message_count: int
+    normalized_event_count: int
+    memory_limit: str
+    database_threads: int
+    labels_consulted: bool
+    outcomes_consulted: bool
+    model_scores_consulted: bool
+    profitability_claim: bool
+    trading_authority: bool
+    training_authority: bool
+    recovery_sha256: str
+
+    def asdict(self) -> dict[str, object]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class RawMessageLaneSummary:
     stream: str
     connection_id: str
@@ -694,6 +727,19 @@ class PolymarketEvidenceStore:
                 report_json VARCHAR NOT NULL,
                 report_sha256 VARCHAR NOT NULL,
                 error VARCHAR NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS polymarket_terminal_audit_recovery (
+                run_id VARCHAR PRIMARY KEY,
+                schema_version VARCHAR NOT NULL,
+                recovered_at_ms BIGINT NOT NULL,
+                recovery_reason VARCHAR NOT NULL,
+                prior_report_json VARCHAR NOT NULL,
+                prior_report_sha256 VARCHAR NOT NULL,
+                prior_error VARCHAR NOT NULL,
+                recovered_report_sha256 VARCHAR NOT NULL,
+                recovery_json VARCHAR NOT NULL,
+                recovery_sha256 VARCHAR NOT NULL UNIQUE
             );
 
             CREATE TABLE IF NOT EXISTS polymarket_market_snapshot (
@@ -1116,6 +1162,29 @@ class PolymarketEvidenceStore:
         self._storage_schema_version_by_run[run_id] = version
         return version
 
+    def _terminal_recovery_row(self, run_id: str) -> tuple[object, ...] | None:
+        connection = self.connect()
+        table_exists = bool(
+            connection.execute(
+                """
+                SELECT count(*) FROM information_schema.tables
+                WHERE table_schema = 'main'
+                  AND table_name = 'polymarket_terminal_audit_recovery'
+                """
+            ).fetchone()[0]
+        )
+        if not table_exists:
+            return None
+        return connection.execute(
+            """
+            SELECT run_id, schema_version, recovered_at_ms, recovery_reason,
+                   prior_report_json, prior_report_sha256, prior_error,
+                   recovered_report_sha256, recovery_json, recovery_sha256
+            FROM polymarket_terminal_audit_recovery WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+
     def _terminal_evidence_fingerprint(self, run_id: str) -> str:
         row = (
             self.connect()
@@ -1136,6 +1205,7 @@ class PolymarketEvidenceStore:
             )
             .fetchone()
         )
+        recovery_row = self._terminal_recovery_row(run_id)
         file_state: list[dict[str, object]] = []
         if self.read_only:
             for label, path in (
@@ -1176,8 +1246,195 @@ class PolymarketEvidenceStore:
                 "terminal_metadata_and_counts": None
                 if row is None
                 else [None if value is None else str(value) for value in row],
+                "terminal_recovery": None
+                if recovery_row is None
+                else [
+                    None if value is None else str(value) for value in recovery_row
+                ],
             }
         )
+
+    def _terminal_recovery_integrity_errors(
+        self,
+        run_id: str,
+        current_report: Mapping[str, object] | None,
+    ) -> tuple[str, ...]:
+        row = self._terminal_recovery_row(run_id)
+        if row is None:
+            return ()
+        errors: list[str] = []
+
+        def invalid(detail: str) -> None:
+            errors.append(f"terminal_audit_recovery_invalid:{run_id}:{detail}")
+
+        (
+            stored_run_id,
+            schema_version,
+            recovered_at_ms,
+            recovery_reason,
+            prior_report_json,
+            prior_report_sha256,
+            prior_error,
+            recovered_report_sha256,
+            recovery_json,
+            recovery_sha256,
+        ) = row
+        recovery_payload: Mapping[str, object] | None = None
+        try:
+            parsed_recovery = _strict_json_loads(str(recovery_json))
+            if not isinstance(parsed_recovery, Mapping):
+                raise ValueError("recovery report is not an object")
+            recovery_payload = parsed_recovery
+            if _canonical_json(recovery_payload) != str(recovery_json):
+                invalid("recovery_not_canonical")
+            if set(recovery_payload) != set(
+                TerminalAuditRecoveryReport.__dataclass_fields__
+            ):
+                invalid("recovery_fields")
+            unhashed_recovery = dict(recovery_payload)
+            embedded_recovery_sha = str(
+                unhashed_recovery.pop("recovery_sha256", "")
+            )
+            actual_recovery_sha = _canonical_sha256(unhashed_recovery)
+            if not hmac.compare_digest(actual_recovery_sha, str(recovery_sha256)):
+                invalid("recovery_hash")
+            if not hmac.compare_digest(
+                embedded_recovery_sha,
+                str(recovery_sha256),
+            ):
+                invalid("recovery_embedded_hash")
+        except (json.JSONDecodeError, UnicodeError, TypeError, ValueError) as exc:
+            invalid(f"recovery_json:{exc.__class__.__name__}")
+
+        prior_report: Mapping[str, object] | None = None
+        try:
+            parsed_prior = _strict_json_loads(str(prior_report_json))
+            if not isinstance(parsed_prior, Mapping):
+                raise ValueError("prior report is not an object")
+            prior_report = parsed_prior
+            if _canonical_json(prior_report) != str(prior_report_json):
+                invalid("prior_report_not_canonical")
+            if set(prior_report) != set(RecorderReport.__dataclass_fields__):
+                invalid("prior_report_fields")
+            unhashed_prior = dict(prior_report)
+            embedded_prior_sha = str(unhashed_prior.pop("report_sha256", ""))
+            actual_prior_sha = _canonical_sha256(unhashed_prior)
+            if not hmac.compare_digest(actual_prior_sha, str(prior_report_sha256)):
+                invalid("prior_report_hash")
+            if not hmac.compare_digest(embedded_prior_sha, str(prior_report_sha256)):
+                invalid("prior_report_embedded_hash")
+        except (json.JSONDecodeError, UnicodeError, TypeError, ValueError) as exc:
+            invalid(f"prior_report_json:{exc.__class__.__name__}")
+
+        if str(stored_run_id) != run_id:
+            invalid("stored_run_id")
+        if str(schema_version) != POLYMARKET_TERMINAL_RECOVERY_SCHEMA_VERSION:
+            invalid("schema_version")
+        if str(recovery_reason) != _TERMINAL_AUDIT_RECOVERY_REASON:
+            invalid("recovery_reason")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(recovery_sha256)):
+            invalid("recovery_sha256")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(prior_report_sha256)):
+            invalid("prior_report_sha256")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(recovered_report_sha256)):
+            invalid("recovered_report_sha256")
+        if hmac.compare_digest(
+            str(prior_report_sha256),
+            str(recovered_report_sha256),
+        ):
+            invalid("report_hashes_equal")
+        if prior_report is not None:
+            if (
+                str(prior_report.get("schema_version") or "")
+                != POLYMARKET_RECORDER_SCHEMA_VERSION
+                or str(prior_report.get("run_id") or "") != run_id
+                or str(prior_report.get("status") or "") != "failed"
+                or prior_report.get("integrity_errors")
+                != ["terminal_integrity_audit_incomplete"]
+                or prior_report.get("errors") != [str(prior_error)]
+                or prior_report.get("normalized_event_count") != 0
+                or prior_report.get("evidence_manifest_sha256") != ""
+                or not str(prior_error).startswith(
+                    _TERMINAL_AUDIT_RESOURCE_EXHAUSTED_PREFIX
+                )
+            ):
+                invalid("prior_report_contract")
+        if recovery_payload is not None:
+            expected_scalars = {
+                "schema_version": str(schema_version),
+                "run_id": run_id,
+                "recovered_at_ms": int(recovered_at_ms),
+                "recovery_reason": str(recovery_reason),
+                "prior_report_sha256": str(prior_report_sha256),
+                "recovered_report_sha256": str(recovered_report_sha256),
+                "recovery_sha256": str(recovery_sha256),
+            }
+            if any(
+                recovery_payload.get(key) != value
+                for key, value in expected_scalars.items()
+            ):
+                invalid("stored_fields_disagree")
+            if not re.fullmatch(
+                r"[0-9a-f]{64}",
+                str(recovery_payload.get("pre_recovery_evidence_fingerprint") or ""),
+            ):
+                invalid("pre_recovery_fingerprint")
+            memory_limit = str(recovery_payload.get("memory_limit") or "")
+            database_threads = recovery_payload.get("database_threads")
+            if (
+                not _DUCKDB_MEMORY_LIMIT.fullmatch(memory_limit)
+                or memory_limit != memory_limit.upper()
+                or type(database_threads) is not int
+                or not 1 <= database_threads <= 8
+            ):
+                invalid("database_resources")
+            for field in (
+                "labels_consulted",
+                "outcomes_consulted",
+                "model_scores_consulted",
+                "profitability_claim",
+                "trading_authority",
+                "training_authority",
+            ):
+                if recovery_payload.get(field) is not False:
+                    invalid(field)
+            for field in ("raw_message_count", "normalized_event_count"):
+                value = recovery_payload.get(field)
+                if type(value) is not int or value < 0:
+                    invalid(field)
+            if (
+                prior_report is not None
+                and recovery_payload.get("raw_message_count")
+                != prior_report.get("raw_message_count")
+            ):
+                invalid("prior_report_count")
+        if current_report is None:
+            invalid("current_report_missing")
+        else:
+            current_report_sha256 = str(current_report.get("report_sha256") or "")
+            if (
+                not hmac.compare_digest(
+                    current_report_sha256,
+                    str(recovered_report_sha256),
+                )
+                or str(current_report.get("status") or "")
+                not in {"complete", "degraded"}
+                or current_report.get("errors") != []
+                or current_report.get("integrity_errors") != []
+            ):
+                invalid("current_report_contract")
+            if recovery_payload is not None and any(
+                recovery_payload.get(field) != current_report.get(field)
+                for field in ("raw_message_count", "normalized_event_count")
+            ):
+                invalid("current_report_counts")
+            ended_at_ms = current_report.get("ended_at_ms")
+            if (
+                type(ended_at_ms) is not int
+                or int(recovered_at_ms) < ended_at_ms
+            ):
+                invalid("recovery_time")
+        return tuple(errors)
 
     def _capture_manifest_sha256(self, run_id: str) -> str:
         if self._storage_schema_version(run_id) != POLYMARKET_STORAGE_SCHEMA_VERSION:
@@ -2031,23 +2288,44 @@ class PolymarketEvidenceStore:
     ) -> Iterator[_StoredCaptureMessage]:
         if self._storage_schema_version(run_id) != POLYMARKET_STORAGE_SCHEMA_VERSION:
             raise ValueError("capture-frame iteration requires storage v4")
-        cursor = self.connect().execute(
+        metadata_cursor = self.connect().execute(
             """
-            SELECT chunk_id, run_id, schema_version, chunk_index, frame_format,
-                   codec, compression_level, message_count, first_message_id,
-                   last_message_id, message_manifest_xor, uncompressed_bytes,
-                   uncompressed_sha256, compressed_bytes, compressed_sha256,
-                   compressed_payload, stream_counts_json
+            SELECT chunk_id, run_id, schema_version, chunk_index,
+                   frame_format, codec, compression_level, message_count,
+                   first_message_id, last_message_id, message_manifest_xor,
+                   uncompressed_bytes, uncompressed_sha256, compressed_bytes,
+                   compressed_sha256, stream_counts_json
             FROM polymarket_raw_chunk
             WHERE run_id = ? ORDER BY chunk_index
             """,
             [run_id],
         )
         expected_chunk_index = 0
-        for rows in iter(lambda: cursor.fetchmany(256), []):
-            for row in rows:
-                if int(row[3]) != expected_chunk_index:
+        while metadata_rows := metadata_cursor.fetchmany(
+            _CAPTURE_AUDIT_CHUNK_PAGE_SIZE
+        ):
+            chunk_ids = [str(row[0]) for row in metadata_rows]
+            placeholders = ",".join("?" for _value in chunk_ids)
+            payload_rows = self._payload_connection().execute(
+                f"""
+                SELECT chunk_id, compressed_payload
+                FROM polymarket_raw_chunk
+                WHERE run_id = ? AND chunk_id IN ({placeholders})
+                """,
+                [run_id, *chunk_ids],
+            ).fetchall()
+            payloads = {str(chunk_id): payload for chunk_id, payload in payload_rows}
+            if len(payloads) != len(metadata_rows):
+                raise ValueError("capture evidence chunk payload set differs")
+            for metadata in metadata_rows:
+                if int(metadata[3]) != expected_chunk_index:
                     raise ValueError("capture evidence chunk sequence differs")
+                chunk_id = str(metadata[0])
+                row = (
+                    *metadata[:15],
+                    payloads[chunk_id],
+                    metadata[15],
+                )
                 expected_chunk_index += 1
                 for stored in self._decode_capture_chunk_row(run_id, row):
                     if streams is None or stored.message.stream in streams:
@@ -3618,8 +3896,41 @@ class PolymarketEvidenceStore:
         errors: Sequence[str],
         progress: Callable[[str, Mapping[str, object]], None] | None = None,
         progress_interval_seconds: int = 30,
+        _verified_recovery_fingerprint: str | None = None,
     ) -> RecorderReport:
+        if self.read_only:
+            raise ValueError("read-only Polymarket evidence cannot finish a run")
         connection = self.connect()
+        run_row = connection.execute(
+            """
+            SELECT status, started_at_ms, ended_at_ms
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        if run_row is None:
+            raise ValueError(f"unknown Polymarket recorder run: {run_id}")
+        current_status, recorded_started_at_ms, recorded_ended_at_ms = run_row
+        recovery_mode = _verified_recovery_fingerprint is not None
+        if int(started_at_ms) != int(recorded_started_at_ms):
+            raise ValueError("Polymarket recorder start time differs")
+        if int(ended_at_ms) < int(started_at_ms):
+            raise ValueError("Polymarket recorder end time predates its start")
+        if recovery_mode:
+            if (
+                str(current_status) != "failed"
+                or recorded_ended_at_ms is None
+                or int(recorded_ended_at_ms) != int(ended_at_ms)
+                or tuple(errors)
+            ):
+                raise ValueError("terminal audit recovery preconditions changed")
+            if not hmac.compare_digest(
+                self._terminal_evidence_fingerprint(run_id),
+                str(_verified_recovery_fingerprint),
+            ):
+                raise ValueError("terminal audit recovery evidence changed")
+        elif str(current_status) != "running" or recorded_ended_at_ms is not None:
+            raise ValueError("terminal Polymarket recorder evidence is immutable")
         market_count = int(
             connection.execute(
                 "SELECT count(*) FROM polymarket_market_snapshot WHERE run_id = ?",
@@ -3629,11 +3940,12 @@ class PolymarketEvidenceStore:
         storage_schema_version = self._storage_schema_version(run_id)
         integrity: tuple[str, ...] = ()
         if storage_schema_version == POLYMARKET_STORAGE_SCHEMA_VERSION:
-            integrity = self.integrity_errors(
-                run_id,
-                progress=progress,
-                progress_interval_seconds=progress_interval_seconds,
-            )
+            if not recovery_mode:
+                integrity = self.integrity_errors(
+                    run_id,
+                    progress=progress,
+                    progress_interval_seconds=progress_interval_seconds,
+                )
             audit_summary = self._evidence_audit_summary.get(run_id)
             if audit_summary is None:
                 integrity = (
@@ -3776,6 +4088,9 @@ class PolymarketEvidenceStore:
     ) -> RecorderReport:
         """Terminalize an interrupted run without requiring the full evidence audit."""
 
+        if self.read_only:
+            raise ValueError("read-only Polymarket evidence cannot fail a run")
+        self._require_running_run(run_id)
         connection = self.connect()
         terminal_errors = [str(error) for error in errors]
 
@@ -3880,12 +4195,236 @@ class PolymarketEvidenceStore:
         )
         return report
 
+    def recover_terminal_audit_if_resource_exhausted(
+        self,
+        run_id: str,
+        *,
+        progress: Callable[[str, Mapping[str, object]], None] | None = None,
+        progress_interval_seconds: int = 30,
+    ) -> TerminalAuditRecoveryReport | None:
+        """Recover one exact storage-v4 terminal-audit OOM without hiding evidence."""
+
+        if self.read_only:
+            raise ValueError("read-only Polymarket evidence cannot recover an audit")
+        connection = self.connect()
+        run_row = connection.execute(
+            """
+            SELECT status, storage_schema_version, started_at_ms, ended_at_ms,
+                   report_json, report_sha256, error
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchone()
+        if run_row is None:
+            raise ValueError(f"unknown Polymarket recorder run: {run_id}")
+        (
+            status,
+            storage_schema_version,
+            started_at_ms,
+            ended_at_ms,
+            prior_report_json,
+            prior_report_sha256,
+            prior_error,
+        ) = run_row
+        recovery_row = self._terminal_recovery_row(run_id)
+        if str(status) != "failed":
+            return None
+        if recovery_row is not None:
+            raise ValueError("failed Polymarket run already has an audit recovery")
+        normalized_error = str(prior_error or "")
+        if (
+            str(storage_schema_version) != POLYMARKET_STORAGE_SCHEMA_VERSION
+            or not normalized_error.startswith(
+                _TERMINAL_AUDIT_RESOURCE_EXHAUSTED_PREFIX
+            )
+        ):
+            return None
+        if ended_at_ms is None:
+            raise ValueError("terminal audit recovery requires an ended run")
+
+        try:
+            parsed_prior_report = _strict_json_loads(str(prior_report_json))
+            if not isinstance(parsed_prior_report, Mapping):
+                raise ValueError("prior recorder report is not an object")
+            prior_report = parsed_prior_report
+            if _canonical_json(prior_report) != str(prior_report_json):
+                raise ValueError("prior recorder report is not canonical")
+            if set(prior_report) != set(RecorderReport.__dataclass_fields__):
+                raise ValueError("prior recorder report fields differ")
+            unhashed_prior = dict(prior_report)
+            embedded_prior_sha256 = str(unhashed_prior.pop("report_sha256", ""))
+            actual_prior_sha256 = _canonical_sha256(unhashed_prior)
+        except (json.JSONDecodeError, UnicodeError, TypeError, ValueError) as exc:
+            raise ValueError("terminal audit recovery prior report is invalid") from exc
+        if (
+            not hmac.compare_digest(actual_prior_sha256, str(prior_report_sha256))
+            or not hmac.compare_digest(
+                embedded_prior_sha256,
+                str(prior_report_sha256),
+            )
+            or str(prior_report.get("schema_version") or "")
+            != POLYMARKET_RECORDER_SCHEMA_VERSION
+            or str(prior_report.get("run_id") or "") != run_id
+            or str(prior_report.get("status") or "") != "failed"
+            or prior_report.get("started_at_ms") != int(started_at_ms)
+            or prior_report.get("ended_at_ms") != int(ended_at_ms)
+            or prior_report.get("integrity_errors")
+            != ["terminal_integrity_audit_incomplete"]
+            or prior_report.get("errors") != [normalized_error]
+            or prior_report.get("normalized_event_count") != 0
+            or prior_report.get("evidence_manifest_sha256") != ""
+        ):
+            raise ValueError("terminal audit recovery prior report contract differs")
+        prior_raw_message_count = prior_report.get("raw_message_count")
+        if type(prior_raw_message_count) is not int or prior_raw_message_count < 1:
+            raise ValueError("terminal audit recovery prior count is invalid")
+
+        def notify(phase: str, payload: Mapping[str, object]) -> None:
+            if progress is None:
+                return
+            try:
+                progress(phase, payload)
+            except Exception:
+                return
+
+        fast_raw_count, fast_stream_counts = self._capture_frame_fast_counts(run_id)
+        if fast_raw_count != prior_raw_message_count:
+            raise ValueError("terminal audit recovery fast count differs")
+        pre_recovery_fingerprint = self._terminal_evidence_fingerprint(run_id)
+        notify(
+            "terminal-audit-recovery-started",
+            {
+                "raw_message_count": fast_raw_count,
+                "memory_limit": self.memory_limit,
+                "database_threads": self.threads,
+            },
+        )
+        integrity = self.integrity_errors(
+            run_id,
+            progress=progress,
+            progress_interval_seconds=progress_interval_seconds,
+            _skip_terminal_report_validation=True,
+        )
+        if integrity:
+            raise ValueError(
+                "terminal audit recovery evidence failed: " + "; ".join(integrity)
+            )
+        audit_summary = self._evidence_audit_summary.get(run_id)
+        if (
+            audit_summary is None
+            or audit_summary.raw_message_count != fast_raw_count
+            or audit_summary.normalized_event_count < 1
+            or audit_summary.stream_counts != fast_stream_counts
+        ):
+            raise ValueError("terminal audit recovery summary differs")
+        if not hmac.compare_digest(
+            self._terminal_evidence_fingerprint(run_id),
+            pre_recovery_fingerprint,
+        ):
+            raise ValueError("terminal audit recovery evidence changed during audit")
+
+        recovered_at_ms = int(time.time() * 1_000)
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            recovered_report = self.finish_run(
+                run_id,
+                started_at_ms=int(started_at_ms),
+                ended_at_ms=int(ended_at_ms),
+                database=str(prior_report.get("database") or ""),
+                errors=(),
+                _verified_recovery_fingerprint=pre_recovery_fingerprint,
+            )
+            if (
+                recovered_report.status not in {"complete", "degraded"}
+                or recovered_report.errors
+                or recovered_report.integrity_errors
+                or recovered_report.raw_message_count != fast_raw_count
+                or recovered_report.normalized_event_count
+                != audit_summary.normalized_event_count
+            ):
+                raise ValueError("terminal audit recovery produced an invalid report")
+            recovery_payload: dict[str, object] = {
+                "schema_version": POLYMARKET_TERMINAL_RECOVERY_SCHEMA_VERSION,
+                "run_id": run_id,
+                "recovered_at_ms": recovered_at_ms,
+                "recovery_reason": _TERMINAL_AUDIT_RECOVERY_REASON,
+                "prior_report_sha256": str(prior_report_sha256),
+                "recovered_report_sha256": recovered_report.report_sha256,
+                "pre_recovery_evidence_fingerprint": pre_recovery_fingerprint,
+                "raw_message_count": fast_raw_count,
+                "normalized_event_count": audit_summary.normalized_event_count,
+                "memory_limit": self.memory_limit,
+                "database_threads": self.threads,
+                "labels_consulted": False,
+                "outcomes_consulted": False,
+                "model_scores_consulted": False,
+                "profitability_claim": False,
+                "trading_authority": False,
+                "training_authority": False,
+            }
+            recovery_sha256 = _canonical_sha256(recovery_payload)
+            recovery_payload["recovery_sha256"] = recovery_sha256
+            recovery = TerminalAuditRecoveryReport(**recovery_payload)
+            recovery_json = _canonical_json(recovery.asdict())
+            connection.execute(
+                """
+                INSERT INTO polymarket_terminal_audit_recovery VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                """,
+                [
+                    run_id,
+                    POLYMARKET_TERMINAL_RECOVERY_SCHEMA_VERSION,
+                    recovered_at_ms,
+                    _TERMINAL_AUDIT_RECOVERY_REASON,
+                    str(prior_report_json),
+                    str(prior_report_sha256),
+                    normalized_error,
+                    recovered_report.report_sha256,
+                    recovery_json,
+                    recovery_sha256,
+                ],
+            )
+            parsed_recovered_report = _strict_json_loads(
+                _canonical_json(recovered_report.asdict())
+            )
+            if not isinstance(parsed_recovered_report, Mapping):
+                raise ValueError("recovered recorder report is not an object")
+            chain_errors = self._terminal_recovery_integrity_errors(
+                run_id,
+                parsed_recovered_report,
+            )
+            if chain_errors:
+                raise ValueError("; ".join(chain_errors))
+            connection.execute("COMMIT")
+        except Exception:
+            try:
+                connection.execute("ROLLBACK")
+            except Exception:
+                pass
+            raise
+        terminal_fingerprint = self._terminal_evidence_fingerprint(run_id)
+        self._terminal_evidence_integrity_cache[run_id] = (
+            terminal_fingerprint,
+            (),
+        )
+        notify(
+            "terminal-audit-recovery-complete",
+            {
+                "raw_message_count": recovery.raw_message_count,
+                "normalized_event_count": recovery.normalized_event_count,
+                "recovery_sha256": recovery.recovery_sha256,
+            },
+        )
+        return recovery
+
     def integrity_errors(
         self,
         run_id: str,
         *,
         progress: Callable[[str, Mapping[str, object]], None] | None = None,
         progress_interval_seconds: int = 30,
+        _skip_terminal_report_validation: bool = False,
     ) -> tuple[str, ...]:
         interval = max(1, int(progress_interval_seconds))
         audit_started = time.monotonic()
@@ -3914,8 +4453,10 @@ class PolymarketEvidenceStore:
                 return
 
         cached = self._terminal_evidence_integrity_cache.get(run_id)
-        if cached is not None and cached[0] == self._terminal_evidence_fingerprint(
-            run_id
+        if (
+            not _skip_terminal_report_validation
+            and cached is not None
+            and cached[0] == self._terminal_evidence_fingerprint(run_id)
         ):
             notify("integrity-cache-hit", force=True)
             errors = list(cached[1])
@@ -3948,7 +4489,7 @@ class PolymarketEvidenceStore:
         parsed_report: Mapping[str, object] | None = None
         if str(run_schema) != POLYMARKET_RECORDER_SCHEMA_VERSION:
             errors.append(f"recorder_schema_mismatch:{run_id}")
-        if str(run_status) != "running":
+        if str(run_status) != "running" and not _skip_terminal_report_validation:
             try:
                 parsed = _strict_json_loads(str(report_json))
                 if not isinstance(parsed, Mapping):
@@ -4000,7 +4541,10 @@ class PolymarketEvidenceStore:
                         )
                     last_order_key = order_key
                     if (
-                        str(run_status) != "running"
+                        (
+                            str(run_status) != "running"
+                            or _skip_terminal_report_validation
+                        )
                         and run_ended is not None
                         and (
                             message.received_wall_ms < int(run_started)
@@ -4482,6 +5026,7 @@ class PolymarketEvidenceStore:
             for field, actual, reported in expected_values:
                 if actual != reported:
                     errors.append(f"recorder_report_evidence_mismatch:{run_id}:{field}")
+        if str(run_status) != "running" or _skip_terminal_report_validation:
             if run_ended is None:
                 errors.append(f"recorder_run_missing_end:{run_id}")
             else:
@@ -4534,8 +5079,12 @@ class PolymarketEvidenceStore:
                     }
                 ),
             )
+        if str(run_status) != "running" and not _skip_terminal_report_validation:
+            errors.extend(
+                self._terminal_recovery_integrity_errors(run_id, parsed_report)
+            )
         evidence_result = tuple(errors)
-        if str(run_status) != "running":
+        if str(run_status) != "running" and not _skip_terminal_report_validation:
             self._terminal_evidence_integrity_cache[run_id] = (
                 self._terminal_evidence_fingerprint(run_id),
                 evidence_result,
