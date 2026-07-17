@@ -1250,6 +1250,10 @@ one-sided sign-test
 p-value at or below 5%, and a positive 95% moving-block-bootstrap lower bound
 from at least 2,000 deterministic resamples. Artifact policy can tighten but
 cannot weaken those built-in floors.
+Live shadow materialization separately requires 100% of the durably audited
+proposal cohort to have matched baseline outcomes. Its trade-level causal
+coverage floor cannot hide provider failures, downstream entry blocks, or open
+positions that leave an audited proposal without an outcome.
 Missing or failed uplift evidence leaves AI in advisory/review-only mode.
 
 ### Local AI Risk-Review Benchmark
