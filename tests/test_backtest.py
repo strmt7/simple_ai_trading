@@ -124,14 +124,33 @@ def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
 
     downsize_model = TrainedModel(
         **{
-            **base_model.__dict__,
-            "meta_label_policy": {
-                "enabled": True,
-                "mode": "take_downsize_skip",
-                "take_threshold": 0.90,
-                "downsize_threshold": 0.20,
-                "downsize_fraction": 0.25,
-            },
+                **base_model.__dict__,
+                "meta_label_policy": {
+                    "enabled": True,
+                    "evidence_schema_version": "meta-label-after-cost-v2",
+                    "mode": "take_downsize_skip",
+                    "take_threshold": 0.90,
+                    "downsize_threshold": 0.20,
+                    "downsize_fraction": 0.25,
+                    "minimum_action_samples": 30,
+                    "target_precision": 0.60,
+                    "take_sample_count": 30,
+                    "take_precision": 0.70,
+                    "take_mean_return": 0.003,
+                    "take_net_pnl": 9.0,
+                    "take_bootstrap_samples": 2_000,
+                    "take_bootstrap_confidence": 0.95,
+                    "take_bootstrap_block_length": 5,
+                    "take_bootstrap_mean_return_lower": 0.001,
+                    "downsize_sample_count": 30,
+                    "downsize_precision": 0.70,
+                    "downsize_mean_return": 0.002,
+                    "downsize_net_pnl": 6.0,
+                    "downsize_bootstrap_samples": 2_000,
+                    "downsize_bootstrap_confidence": 0.95,
+                    "downsize_bootstrap_block_length": 5,
+                    "downsize_bootstrap_mean_return_lower": 0.0005,
+                },
         }
     )
     downsized = run_backtest(rows, downsize_model, cfg, starting_cash=1000.0)
@@ -143,9 +162,10 @@ def test_backtest_applies_meta_label_skip_and_downsize_policy() -> None:
     skip_model = TrainedModel(
         **{
             **base_model.__dict__,
-            "meta_label_policy": {
-                "enabled": True,
-                "mode": "take_downsize_skip",
+                "meta_label_policy": {
+                    "enabled": True,
+                    "evidence_schema_version": "meta-label-after-cost-v2",
+                    "mode": "take_downsize_skip",
                 "take_threshold": 1.0,
                 "downsize_threshold": 0.90,
                 "downsize_fraction": 0.25,

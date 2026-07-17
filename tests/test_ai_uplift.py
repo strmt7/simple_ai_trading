@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from simple_ai_trading import ai_uplift as ai_uplift_module
+from simple_ai_trading import statistical_resampling
 from simple_ai_trading.ai_uplift import (
     AIUpliftPolicy,
     _binomial_upper_tail,
@@ -89,7 +89,7 @@ def test_moving_block_bootstrap_samples_every_valid_remainder_start(
             return start
 
     monkeypatch.setattr(
-        ai_uplift_module.random,
+        statistical_resampling.random,
         "Random",
         lambda _seed: DeterministicRandom(),
     )

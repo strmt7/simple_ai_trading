@@ -5,11 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import random
 from dataclasses import asdict, dataclass, field
 from typing import Mapping, Sequence
 
 from .ai_runtime import estimate_model_parameters_b
+from .statistical_resampling import moving_block_bootstrap_mean
 
 
 _PNL_KEYS = ("realized_pnl", "net_pnl", "pnl")
@@ -360,19 +360,6 @@ def _median(values: tuple[float, ...]) -> float:
     return float((ordered[middle - 1] + ordered[middle]) / 2.0)
 
 
-def _quantile(values: Sequence[float], probability: float) -> float:
-    if not values:
-        return 0.0
-    ordered = sorted(float(value) for value in values)
-    position = max(0.0, min(1.0, float(probability))) * (len(ordered) - 1)
-    lower = int(math.floor(position))
-    upper = int(math.ceil(position))
-    if lower == upper:
-        return ordered[lower]
-    weight = position - lower
-    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
-
-
 def _moving_block_bootstrap(
     deltas: tuple[float, ...],
     *,
@@ -380,49 +367,19 @@ def _moving_block_bootstrap(
     confidence: float,
     seed_material: str,
 ) -> dict[str, object]:
-    count = len(deltas)
-    repetitions = max(200, int(samples))
-    confidence_level = max(0.80, min(0.999, float(confidence)))
-    if count <= 0:
-        return {
-            "samples": repetitions,
-            "confidence": confidence_level,
-            "block_length": 0,
-            "mean_delta_ci_lower": 0.0,
-            "mean_delta_ci_upper": 0.0,
-            "positive_mean_probability": 0.0,
-        }
-    block_length = max(1, min(count, int(round(math.sqrt(count)))))
-    maximum_start = max(0, count - block_length)
-    seed = int(hashlib.sha256(seed_material.encode("ascii")).hexdigest()[:16], 16)
-    rng = random.Random(seed)
-    prefix = [0.0]
-    for value in deltas:
-        prefix.append(prefix[-1] + value)
-    complete_blocks, remainder = divmod(count, block_length)
-    remainder_maximum_start = max(0, count - remainder) if remainder else 0
-    means: list[float] = []
-    for _ in range(repetitions):
-        block_totals: list[float] = []
-        for _block in range(complete_blocks):
-            start = rng.randint(0, maximum_start) if maximum_start else 0
-            block_totals.append(prefix[start + block_length] - prefix[start])
-        if remainder:
-            start = (
-                rng.randint(0, remainder_maximum_start)
-                if remainder_maximum_start
-                else 0
-            )
-            block_totals.append(prefix[start + remainder] - prefix[start])
-        means.append(math.fsum(block_totals) / count)
-    tail = (1.0 - confidence_level) / 2.0
+    evidence = moving_block_bootstrap_mean(
+        deltas,
+        samples=samples,
+        confidence=confidence,
+        seed_material=seed_material,
+    )
     return {
-        "samples": repetitions,
-        "confidence": confidence_level,
-        "block_length": block_length,
-        "mean_delta_ci_lower": _quantile(means, tail),
-        "mean_delta_ci_upper": _quantile(means, 1.0 - tail),
-        "positive_mean_probability": sum(value > 0.0 for value in means) / repetitions,
+        "samples": evidence["samples"],
+        "confidence": evidence["confidence"],
+        "block_length": evidence["block_length"],
+        "mean_delta_ci_lower": evidence["mean_ci_lower"],
+        "mean_delta_ci_upper": evidence["mean_ci_upper"],
+        "positive_mean_probability": evidence["positive_mean_probability"],
     }
 
 

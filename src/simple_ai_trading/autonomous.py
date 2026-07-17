@@ -225,6 +225,7 @@ class Decision:
     mark_price: float
     size_multiplier: float = 1.0
     meta_label_enabled: bool = False
+    meta_label_evidence_schema_version: str = ""
     meta_label_action: str = ""
     meta_label_reason: str = ""
     meta_label_signal_strength: float = 0.0
@@ -234,6 +235,10 @@ class Decision:
     meta_label_validation_precision: float = 0.0
     meta_label_expected_after_cost_return: float = 0.0
     meta_label_expected_after_cost_pnl: float = 0.0
+    meta_label_validation_bootstrap_samples: int = 0
+    meta_label_validation_bootstrap_confidence: float = 0.0
+    meta_label_validation_bootstrap_block_length: int = 0
+    meta_label_validation_bootstrap_lower_after_cost_return: float = 0.0
     regime: str = ""
     regime_confidence: float = 0.0
     regime_notes: tuple[str, ...] = ()

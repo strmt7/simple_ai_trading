@@ -84,10 +84,29 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
         } if promoted else {},
         meta_label_policy={
             "enabled": True,
+            "evidence_schema_version": "meta-label-after-cost-v2",
             "mode": "take_downsize_skip",
             "take_threshold": 0.03,
             "downsize_threshold": 0.01,
             "downsize_fraction": 0.5,
+            "minimum_action_samples": 30,
+            "target_precision": 0.70,
+            "take_sample_count": 40,
+            "take_precision": 0.75,
+            "take_mean_return": 0.002,
+            "take_net_pnl": 20.0,
+            "take_bootstrap_samples": 2_000,
+            "take_bootstrap_confidence": 0.95,
+            "take_bootstrap_block_length": 6,
+            "take_bootstrap_mean_return_lower": 0.0005,
+            "downsize_sample_count": 35,
+            "downsize_precision": 0.60,
+            "downsize_mean_return": 0.001,
+            "downsize_net_pnl": 8.0,
+            "downsize_bootstrap_samples": 2_000,
+            "downsize_bootstrap_confidence": 0.95,
+            "downsize_bootstrap_block_length": 6,
+            "downsize_bootstrap_mean_return_lower": 0.0002,
         },
         probability_calibration_size=128,
         probability_log_loss_before=0.62,
@@ -523,6 +542,32 @@ def test_model_readiness_blocks_missing_or_skipped_walk_forward_validation() -> 
     }
     with pytest.raises(ModelPromotionError, match="walk_forward=False"):
         assert_model_promoted(skipped)
+
+
+def test_model_readiness_blocks_legacy_and_observe_only_meta_policies() -> None:
+    legacy = _model()
+    legacy.meta_label_policy["evidence_schema_version"] = (
+        "meta-label-after-cost-v1"
+    )
+    legacy_report = build_model_readiness_report(legacy)
+    assert any(
+        check.label == "meta-label policy" and check.status == "block"
+        for check in legacy_report.checks
+    )
+
+    observe_only = _model()
+    observe_only.meta_label_policy = {
+        "enabled": False,
+        "mode": "observe_only",
+        "reason": "take_bootstrap_lower_not_positive",
+    }
+    observe_report = build_model_readiness_report(observe_only)
+    assert any(
+        check.label == "meta-label policy"
+        and check.status == "block"
+        and "bootstrap" in check.detail
+        for check in observe_report.checks
+    )
 
 
 def test_model_readiness_reports_quality_warning_variants() -> None:
