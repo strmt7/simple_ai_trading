@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import zipfile
 from simple_ai_trading import binance_archive
 from simple_ai_trading.api import Candle
@@ -17,6 +18,89 @@ from simple_ai_trading.binance_archive import (
     validate_archive_period_window,
 )
 from simple_ai_trading.market_store import MarketDataStore
+
+
+def test_archive_download_reports_bounded_progress(monkeypatch) -> None:
+    payload = b"verified archive bytes"
+
+    class _Response:
+        headers = {"Content-Length": str(len(payload))}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _size: int) -> bytes:
+            if getattr(self, "_read", False):
+                return b""
+            self._read = True
+            return payload
+
+    monkeypatch.setattr(binance_archive, "urlopen", lambda *_args, **_kwargs: _Response())
+    events: list[tuple[str, dict[str, object]]] = []
+    path, downloaded, digest = binance_archive._download_to_temp(
+        "https://data.binance.vision/archive.zip",
+        timeout=10,
+        progress=lambda phase, item: events.append((phase, dict(item))),
+    )
+    try:
+        assert downloaded == len(payload)
+        assert digest == hashlib.sha256(payload).hexdigest()
+        assert [phase for phase, _item in events] == [
+            "download_started",
+            "download_complete",
+        ]
+        assert events[-1][1]["content_length_bytes"] == len(payload)
+    finally:
+        path.unlink()
+
+
+def test_archive_batch_progress_includes_file_identity(tmp_path, monkeypatch) -> None:
+    def fake_ingest(_store, **kwargs):
+        kwargs["progress"](
+            "archive_complete",
+            {
+                "symbol": kwargs["symbol"],
+                "period": kwargs["period"],
+                "url": kwargs["url"],
+            },
+        )
+        return binance_archive.ArchiveIngestResult(
+            url=kwargs["url"],
+            symbol=kwargs["symbol"],
+            market_type=kwargs["market_type"],
+            interval=kwargs["interval"],
+            data_type=kwargs["data_type"],
+            period=kwargs["period"],
+            status="complete",
+            rows_inserted=1,
+            rows_read=1,
+            bytes_downloaded=1,
+            sha256="a" * 64,
+        )
+
+    monkeypatch.setattr(binance_archive, "ingest_archive_url", fake_ingest)
+    events: list[dict[str, object]] = []
+    urls = [
+        "https://data.binance.vision/data/futures/um/monthly/aggTrades/"
+        f"BTCUSDT/BTCUSDT-aggTrades-2024-0{month}.zip"
+        for month in (1, 2)
+    ]
+    results = binance_archive.ingest_archive_urls(
+        db_path=tmp_path / "market.sqlite",
+        symbol="BTCUSDT",
+        interval="1s",
+        urls=urls,
+        market_type="futures",
+        data_type="aggTrades",
+        progress=lambda _phase, item: events.append(dict(item)),
+    )
+    assert len(results) == 2
+    assert [item["file_index"] for item in events] == [1, 2]
+    assert all(item["file_count"] == 2 for item in events)
+    assert [item["period"] for item in events] == ["2024-01", "2024-02"]
 
 
 def test_archive_url_builders_and_listing_parser() -> None:
