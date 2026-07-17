@@ -194,6 +194,8 @@ def _serialized_model_sha256(contract: dict[str, object], model_string: str) -> 
 
 def orient_depth_stress_descriptors(
     *,
+    bid_near_depth: Sequence[float] | np.ndarray,
+    ask_near_depth: Sequence[float] | np.ndarray,
     bid_near_notional: Sequence[float] | np.ndarray,
     ask_near_notional: Sequence[float] | np.ndarray,
     bid_far_notional: Sequence[float] | np.ndarray,
@@ -210,6 +212,8 @@ def orient_depth_stress_descriptors(
     arrays = tuple(
         np.asarray(values, dtype=np.float64)
         for values in (
+            bid_near_depth,
+            ask_near_depth,
             bid_near_notional,
             ask_near_notional,
             bid_far_notional,
@@ -224,14 +228,19 @@ def orient_depth_stress_descriptors(
         or any(np.any(values < 0.0) for values in arrays)
     ):
         raise ValueError("depth-stress source arrays are invalid")
-    bid_near, ask_near, bid_far, ask_far = arrays
-    near = bid_near + ask_near
-    far = bid_far + ask_far
-    if np.any(near <= 0.0) or np.any(far < near):
+    bid_depth, ask_depth, bid_near, ask_near, bid_far, ask_far = arrays
+    near_depth = bid_depth + ask_depth
+    near_notional = bid_near + ask_near
+    far_notional = bid_far + ask_far
+    if (
+        np.any(near_depth <= 0.0)
+        or np.any(near_notional <= 0.0)
+        or np.any(far_notional < near_notional)
+    ):
         raise ValueError("depth-stress cumulative notional bands are inconsistent")
-    thinness = -np.log1p(near)
-    absolute_imbalance = np.abs((bid_near - ask_near) / near)
-    concentration = np.log1p(far) - np.log1p(near)
+    thinness = -np.log1p(near_notional)
+    absolute_imbalance = np.abs((bid_depth - ask_depth) / near_depth)
+    concentration = np.log1p(far_notional) - np.log1p(near_notional)
     descriptors = np.column_stack((thinness, absolute_imbalance, concentration))
     if not np.all(np.isfinite(descriptors)):
         raise ValueError("depth-stress descriptors are non-finite")
@@ -343,15 +352,14 @@ def depth_stress_metrics(
 ) -> DepthStressMetrics:
     post = _state_array(post_states, label="post")
     predicted = _probability_matrix(probabilities, rows=len(post))
-    selected = np.clip(predicted[np.arange(len(post)), post], _PROBABILITY_FLOOR, 1.0)
-    one_hot = np.eye(_STATE_COUNT, dtype=np.float64)[post]
+    losses = depth_stress_loss_rows(post, predicted)
     stress_actual = (post == 2).astype(np.float64)
     stress_probability = predicted[:, 2]
     metrics = DepthStressMetrics(
         rows=len(post),
-        negative_log_likelihood=float(-np.mean(np.log(selected))),
-        multiclass_brier=float(np.mean(np.sum((predicted - one_hot) ** 2, axis=1))),
-        stressed_brier=float(np.mean((stress_probability - stress_actual) ** 2)),
+        negative_log_likelihood=float(np.mean(losses["negative_log_likelihood"])),
+        multiclass_brier=float(np.mean(losses["multiclass_brier"])),
+        stressed_brier=float(np.mean(losses["stressed_brier"])),
         accuracy=float(np.mean(np.argmax(predicted, axis=1) == post)),
         stressed_prevalence=float(np.mean(stress_actual)),
         mean_predicted_stress_probability=float(np.mean(stress_probability)),
@@ -359,6 +367,24 @@ def depth_stress_metrics(
     if not all(math.isfinite(value) for value in asdict(metrics).values()):
         raise ValueError("depth-stress metrics are non-finite")
     return metrics
+
+
+def depth_stress_loss_rows(
+    post_states: Sequence[int] | np.ndarray,
+    probabilities: np.ndarray,
+) -> dict[str, np.ndarray]:
+    """Return paired proper-score losses without reducing away time blocks."""
+
+    post = _state_array(post_states, label="post")
+    predicted = _probability_matrix(probabilities, rows=len(post))
+    selected = np.clip(predicted[np.arange(len(post)), post], _PROBABILITY_FLOOR, 1.0)
+    one_hot = np.eye(_STATE_COUNT, dtype=np.float64)[post]
+    stress_actual = (post == 2).astype(np.float64)
+    return {
+        "negative_log_likelihood": -np.log(selected),
+        "multiclass_brier": np.sum((predicted - one_hot) ** 2, axis=1),
+        "stressed_brier": (predicted[:, 2] - stress_actual) ** 2,
+    }
 
 
 def train_depth_stress_challenger(
@@ -498,6 +524,7 @@ __all__ = [
     "DepthStressModelArtifact",
     "DepthStressThresholds",
     "assign_depth_stress_states",
+    "depth_stress_loss_rows",
     "depth_stress_metrics",
     "fit_depth_stress_thresholds",
     "fit_depth_transition_probabilities",
