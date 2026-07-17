@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sqlite3
 
 import pytest
 
@@ -15,7 +16,10 @@ from simple_ai_trading.live_ai_assist import (
     build_live_ai_entry_case,
     load_live_ai_entry_audit,
 )
-from simple_ai_trading.live_ai_uplift import assess_live_ai_shadow_uplift
+from simple_ai_trading.live_ai_uplift import (
+    assess_live_ai_shadow_uplift,
+    load_one_second_trade_paths,
+)
 from simple_ai_trading.positions import ClosedTrade
 
 
@@ -107,6 +111,22 @@ def _trade(case, *, opened_at_ms: int, pnl: float, action: str, index: int) -> C
     )
 
 
+def _one_second_path(trade: ClosedTrade) -> tuple[dict[str, object], ...]:
+    start_ms = trade.opened_at_ms // 1_000 * 1_000
+    end_ms = trade.closed_at_ms // 1_000 * 1_000
+    low = min(trade.entry_price, trade.exit_price)
+    high = max(trade.entry_price, trade.exit_price)
+    return tuple(
+        {
+            "timestamp_ms": timestamp_ms,
+            "high": high,
+            "low": low,
+            "source": "synthetic-unit-test-only",
+        }
+        for timestamp_ms in range(start_ms, end_ms + 1_000, 1_000)
+    )
+
+
 def test_semantic_audit_loader_rejects_rehashed_risk_cap_violation(
     tmp_path: Path,
 ) -> None:
@@ -140,6 +160,24 @@ def test_materializer_rejects_review_completed_after_entry() -> None:
     assert report["rejection_counts"] == {"review_not_causally_available": 1}
     assert report["trading_authority"] is False
     assert report["profitability_claim"] is False
+
+
+def test_materializer_rejects_realized_only_drawdown_evidence() -> None:
+    case = _case(1_000)
+    record = _record(case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64)
+    trade = _trade(case, opened_at_ms=3_000, pnl=1.0, action="approve", index=1)
+    report = assess_live_ai_shadow_uplift(
+        [trade],
+        [record],
+        initial_capital=1_000.0,
+        model_name="qwen3:14b",
+        model_parameters_b=14.0,
+    )
+
+    assert report["accepted"] is False
+    assert report["intratrade_path_evidence"]["verified"] is False
+    assert "intratrade_path_missing" in report["reasons"]
+    assert "intratrade_path_risk_not_verified" in report["reasons"]
 
 
 def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
@@ -180,11 +218,16 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
         encoding="utf-8",
     )
     verified_records = load_live_ai_entry_audit(path)
+    intratrade_paths = {
+        trade.id: _one_second_path(trade)
+        for trade in trades
+    }
     report = assess_live_ai_shadow_uplift(
         trades,
         verified_records,
         initial_capital=1_000.0,
         model_name="qwen3:14b",
+        intratrade_paths=intratrade_paths,
         model_parameters_b=14.0,
     )
 
@@ -194,6 +237,7 @@ def test_materializer_builds_bound_daily_pairs_and_can_clear_existing_gate(
     assert len(report["matched_periods"]) >= 90
     assert report["uplift"]["baseline"]["realized_pnl"] == pytest.approx(-11.0)
     assert report["uplift"]["ai"]["realized_pnl"] == pytest.approx(19.0)
+    assert report["intratrade_path_evidence"]["verified"] is True
     assert report["accepted"] is True
     assert len(report["report_sha256"]) == 64
 
@@ -202,6 +246,52 @@ def test_case_schema_constant_remains_bound_in_audit_fixture() -> None:
     assert _case(1_000).identity_payload()["schema_version"] == (
         LIVE_AI_ENTRY_CASE_SCHEMA_VERSION
     )
+
+
+def test_one_second_path_loader_is_exact_and_read_only(tmp_path: Path) -> None:
+    case = _case(1_000)
+    trade = _trade(case, opened_at_ms=3_000, pnl=1.0, action="approve", index=1)
+    database = tmp_path / "market.sqlite"
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TABLE candles (
+                symbol TEXT NOT NULL,
+                market_type TEXT NOT NULL,
+                interval TEXT NOT NULL,
+                open_time INTEGER NOT NULL,
+                high REAL NOT NULL,
+                low REAL NOT NULL,
+                source TEXT NOT NULL
+            )
+            """
+        )
+        connection.executemany(
+            "INSERT INTO candles VALUES (?, ?, '1s', ?, ?, ?, ?)",
+            [
+                ("BTCUSDT", "futures", 3_000, 100.5, 99.5, "verified-source"),
+                ("BTCUSDT", "futures", 4_000, 101.5, 100.5, "verified-source"),
+            ],
+        )
+    before = hashlib.sha256(database.read_bytes()).hexdigest()
+
+    paths = load_one_second_trade_paths(database, [trade])
+
+    assert paths[trade.id] == (
+        {
+            "timestamp_ms": 3_000,
+            "high": 100.5,
+            "low": 99.5,
+            "source": "verified-source",
+        },
+        {
+            "timestamp_ms": 4_000,
+            "high": 101.5,
+            "low": 100.5,
+            "source": "verified-source",
+        },
+    )
+    assert hashlib.sha256(database.read_bytes()).hexdigest() == before
 
 
 def test_cli_writes_the_same_causal_uplift_report_used_by_windows(
@@ -225,6 +315,7 @@ def test_cli_writes_the_same_causal_uplift_report_used_by_windows(
         assert kwargs == {
             "positions_root": tmp_path / "positions",
             "audit_path": tmp_path / "reviews.jsonl",
+            "market_db": tmp_path / "market.sqlite",
             "initial_capital": 10_000.0,
             "model_name": "qwen3:14b",
             "model_parameters_b": 14.0,
@@ -240,6 +331,7 @@ def test_cli_writes_the_same_causal_uplift_report_used_by_windows(
         argparse.Namespace(
             positions_root=str(tmp_path / "positions"),
             audit=str(tmp_path / "reviews.jsonl"),
+            market_db=str(tmp_path / "market.sqlite"),
             starting_capital=10_000.0,
             model="qwen3:14b",
             model_parameters_b=14.0,
