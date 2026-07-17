@@ -1145,6 +1145,7 @@ class AIAssistedDecisionFunction:
         self._terminal_model_fingerprint = terminal_model_fingerprint
         self._maximum_review_age_ms = int(maximum_review_age_seconds) * 1_000
         self._clock = clock
+        self._entry_review_required = True
         self._model_validation_evidence = _model_validation_evidence(
             getattr(base_decision_fn, "_model_artifact", None)
         )
@@ -1162,6 +1163,11 @@ class AIAssistedDecisionFunction:
             if hasattr(base_decision_fn, attribute):
                 setattr(self, attribute, getattr(base_decision_fn, attribute))
 
+    def set_entry_review_required(self, required: bool) -> None:
+        """Tell the wrapper whether this iteration can reach a new entry."""
+
+        self._entry_review_required = bool(required)
+
     def __call__(self, client: object, runtime: object, strategy: object, objective: object) -> object:
         decision = self._base_decision_fn(client, runtime, strategy, objective)
         side = str(getattr(decision, "side", ""))
@@ -1171,6 +1177,16 @@ class AIAssistedDecisionFunction:
                 ai_assist_mode="shadow_only",
                 ai_assist_status="shadow_idle",
                 ai_assist_reason="no directional ML proposal",
+            )
+        if not self._entry_review_required:
+            return replace(
+                decision,
+                ai_assist_mode="shadow_only",
+                ai_assist_status="shadow_idle",
+                ai_assist_action="",
+                ai_assist_case_id="",
+                ai_assist_reason="coordinator reports no new-entry boundary",
+                ai_assist_entry_ready=False,
             )
         labeling = _mapping(self._model_validation_evidence.get("labeling"))
         model_barrier_bps = _finite_or_none(labeling.get("gross_label_barrier_bps"))
@@ -1232,6 +1248,18 @@ class AIAssistedDecisionFunction:
                 terminal_model_fingerprint=self._terminal_model_fingerprint,
                 evidence=evidence,
             )
+            if not _approval_evidence_is_valid(case):
+                return replace(
+                    decision,
+                    ai_assist_mode="shadow_only",
+                    ai_assist_status="shadow_failure",
+                    ai_assist_action="veto",
+                    ai_assist_case_id=case.case_id,
+                    ai_assist_reason=(
+                        "deterministic model evidence cannot support AI approval"
+                    ),
+                    ai_assist_entry_ready=False,
+                )
             review = self._reviewer.review(case)
         except Exception as exc:  # noqa: BLE001 - shadow AI cannot stop deterministic execution
             return replace(

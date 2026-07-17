@@ -534,7 +534,9 @@ Backtest win rate is classified by net trade P&L after entry and exit fees, not
 by gross price movement, so a fee-eroded trade is not reported as a win.
 New model labels must also clear the configured round-trip fee-plus-spread
 floor; AI approval reads that exact frozen label contract from the model and
-fails closed when sealed after-cost validation evidence is incomplete.
+fails closed when sealed after-cost validation evidence is incomplete. Calls
+that cannot reach an entry boundary are rejected before local-model inference,
+so they consume no AI tokens and cannot delay position exits.
 
 Exchange-backed trading caps follow the active symbol's quote and base assets. The persisted runtime field names remain backward-compatible (`managed_usdc` for quote capacity and `managed_btc` for base-asset capacity), but the CLI and app render and enforce them as USDC/USDT plus BTC/ETH/SOL according to the configured pair.
 

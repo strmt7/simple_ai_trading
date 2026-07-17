@@ -717,6 +717,46 @@ def test_run_loop_closes_optional_ai_decision_worker_with_bounded_wait(
     assert close_timeouts == [0.25]
 
 
+def test_run_loop_suspends_ai_entry_review_for_an_open_instrument(
+    tmp_path: Path,
+) -> None:
+    cfg = _make_config(tmp_path, stop_after_iterations=1)
+    client = FakeClient(price=50.0)
+    _stage_paper_position(cfg, client, _make_position("LONG", entry=50.0))
+    review_boundaries: list[bool] = []
+
+    class EntryAwareDecision:
+        def set_entry_review_required(self, required: bool) -> None:
+            review_boundaries.append(required)
+
+        def __call__(self, *_args):
+            return Decision(
+                side="LONG",
+                confidence=0.9,
+                mark_price=50.0,
+                ai_assist_entry_ready=True,
+            )
+
+    strategy = StrategyConfig(
+        take_profit_pct=10.0,
+        stop_loss_pct=10.0,
+        max_open_positions=3,
+    )
+    result = run_loop(
+        client,
+        _runtime(),
+        strategy,
+        cfg,
+        decision_fn=EntryAwareDecision(),
+        sleep=lambda _duration: None,
+        clock=_tick_clock(),
+    )
+
+    assert result.opened_trades == 0
+    assert review_boundaries == [False]
+    assert len(PositionsStore(root=cfg.positions_root).load_open()) == 1
+
+
 def test_run_loop_paused_and_resumed_and_stopped(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=None)
     control_path = tmp_path / "state.json"

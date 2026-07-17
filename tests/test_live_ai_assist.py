@@ -284,6 +284,89 @@ def test_model_validation_summary_is_compact_and_unit_explicit() -> None:
     assert len(json.dumps(evidence, separators=(",", ":"))) < 2_500
 
 
+def test_ineligible_model_evidence_never_consumes_provider_tokens(
+    tmp_path: Path,
+) -> None:
+    provider_calls: list[str] = []
+
+    def provider(case):
+        provider_calls.append(case.case_id)
+        return _approval()
+
+    reviewer = AsyncLiveAIEntryReviewer(
+        provider,
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+
+    def base_decision(*_args):
+        return Decision(
+            side="LONG",
+            confidence=0.72,
+            mark_price=100.0,
+            observed_at_ms=1_000,
+        )
+
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+    )
+
+    decision = assisted(
+        None,
+        RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m"),
+        _approval_strategy(),
+        None,
+    )
+
+    assert decision.ai_assist_status == "shadow_failure"
+    assert decision.ai_assist_action == "veto"
+    assert "deterministic model evidence" in decision.ai_assist_reason
+    assert provider_calls == []
+    assert assisted.close(1.0)
+
+
+def test_coordinator_can_suspend_entry_review_without_affecting_ml_side(
+    tmp_path: Path,
+) -> None:
+    provider_calls: list[str] = []
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda case: provider_calls.append(case.case_id) or _approval(),
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+
+    def base_decision(*_args):
+        return Decision(
+            side="SHORT",
+            confidence=0.20,
+            mark_price=100.0,
+            observed_at_ms=1_000,
+        )
+
+    base_decision._model_artifact = _validated_model_artifact()
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+    )
+    assisted.set_entry_review_required(False)
+
+    decision = assisted(
+        None,
+        RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m"),
+        _approval_strategy(),
+        None,
+    )
+
+    assert decision.side == "SHORT"
+    assert decision.ai_assist_status == "shadow_idle"
+    assert decision.ai_assist_entry_ready is False
+    assert provider_calls == []
+    assert assisted.close(1.0)
+
+
 def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

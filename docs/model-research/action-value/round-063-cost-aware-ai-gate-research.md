@@ -12,6 +12,7 @@
    Latency, impact, and testnet-to-live buffers remain additional execution costs in backtests and stress validation. They are not silently treated as expected label costs.
 3. AI review used the current UI strategy label threshold rather than the trained artifact's exact feature signature. It now extracts the frozen label mode, horizon, and barrier from the model artifact.
 4. A schema-valid LLM approval could rely on incomplete aggregate evidence. Approval now additionally requires passed calibration, multiple-trial control, sealed terminal holdout, accepted after-cost market-edge statistics, financial sanity, no liquidation, walk-forward, stress, temporal, portfolio, and futures microstructure evidence. The model barrier must exceed the exact configured fee-plus-spread floor.
+5. The provider could consume tokens when those deterministic gates made approval impossible or while the same instrument was already open. The coordinator now skips both calls before inference; model-side exit signals continue without waiting for AI.
 
 ## Research basis
 
@@ -24,7 +25,7 @@ These sources motivate the controls; they do not validate this implementation or
 ## Verification
 
 - Ruff passed on every changed source and test module.
-- 94 AI-assist, uplift, autonomous, and execution-simulation tests passed.
+- 97 AI-assist, uplift, autonomous, and execution-simulation tests passed.
 - 77 training-suite and process-parallelism tests passed.
 - A regression test proves that a 0.10 label multiplier cannot push the final target back below the cost floor.
 
