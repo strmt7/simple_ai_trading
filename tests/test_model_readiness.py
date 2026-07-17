@@ -84,13 +84,29 @@ def _model(*, promoted: bool = True, deflated_score: float = 0.12) -> TrainedMod
         } if promoted else {},
         meta_label_policy={
             "enabled": True,
-            "evidence_schema_version": "meta-label-after-cost-v2",
+            "evidence_schema_version": "meta-label-after-cost-v3",
+            "split_schema_version": "meta-label-chronological-split-v1",
+            "source_sample_count": 105,
+            "source_samples_sha256": "d" * 64,
+            "calibration_sample_count": 30,
+            "purged_sample_count": 0,
+            "policy_validation_sample_count": 75,
+            "calibration_end_closed_at": 1_770_000,
+            "validation_start_opened_at": 1_800_000,
+            "validation_end_closed_at": 6_270_000,
+            "calibration_samples_sha256": "a" * 64,
+            "purged_samples_sha256": "b" * 64,
+            "validation_samples_sha256": "c" * 64,
             "mode": "take_downsize_skip",
             "take_threshold": 0.03,
             "downsize_threshold": 0.01,
             "downsize_fraction": 0.5,
             "minimum_action_samples": 30,
             "target_precision": 0.70,
+            "calibration_take_sample_count": 30,
+            "calibration_take_precision": 0.75,
+            "calibration_take_mean_return": 0.002,
+            "calibration_take_net_pnl": 20.0,
             "take_sample_count": 40,
             "take_precision": 0.75,
             "take_mean_return": 0.002,
@@ -547,7 +563,7 @@ def test_model_readiness_blocks_missing_or_skipped_walk_forward_validation() -> 
 def test_model_readiness_blocks_legacy_and_observe_only_meta_policies() -> None:
     legacy = _model()
     legacy.meta_label_policy["evidence_schema_version"] = (
-        "meta-label-after-cost-v1"
+        "meta-label-after-cost-v2"
     )
     legacy_report = build_model_readiness_report(legacy)
     assert any(

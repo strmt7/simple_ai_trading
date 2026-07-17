@@ -23,39 +23,73 @@ def _model() -> TrainedModel:
     )
 
 
+def _policy_split_evidence() -> dict[str, object]:
+    return {
+        "split_schema_version": "meta-label-chronological-split-v1",
+        "source_sample_count": 132,
+        "source_samples_sha256": "d" * 64,
+        "calibration_sample_count": 60,
+        "purged_sample_count": 0,
+        "policy_validation_sample_count": 72,
+        "calibration_end_closed_at": 3_570_000,
+        "validation_start_opened_at": 3_600_000,
+        "validation_end_closed_at": 7_890_000,
+        "calibration_samples_sha256": "a" * 64,
+        "purged_samples_sha256": "b" * 64,
+        "validation_samples_sha256": "c" * 64,
+        "calibration_take_sample_count": 40,
+        "calibration_take_precision": 0.75,
+        "calibration_take_mean_return": 0.002,
+        "calibration_take_net_pnl": 20.0,
+    }
+
+
 def _rows() -> list[ModelRow]:
     return [
         ModelRow(
             timestamp=index * 60_000,
             close=100.0 + index,
-            features=((0.8 if index < 30 else 0.1),),
+            features=(
+                (0.8 if index < 42 or 54 <= index < 84 else 0.1),
+            ),
             label=1,
         )
-        for index in range(40)
+        for index in range(90)
     ]
 
 
 def _result() -> BacktestResult:
+    def positive(index: int) -> bool:
+        return index < 34 or 54 <= index < 78
+
+    def high_signal(index: int) -> bool:
+        return index < 42 or 54 <= index < 84
+
     trade_log = tuple(
         {
             "opened_at": index * 60_000,
+            "closed_at": index * 60_000 + 30_000,
             "side": 1,
-            "net_pnl": 4.0 if index < 24 else (-1.0 if index < 30 else -2.0),
+            "net_pnl": (
+                4.0 if positive(index) else (-1.0 if high_signal(index) else -2.0)
+            ),
             "return_pct": (
-                0.004 if index < 24 else (-0.001 if index < 30 else -0.002)
+                0.004
+                if positive(index)
+                else (-0.001 if high_signal(index) else -0.002)
             ),
         }
-        for index in range(40)
+        for index in range(90)
     )
     return BacktestResult(
         starting_cash=1000.0,
-        ending_cash=1070.0,
-        realized_pnl=70.0,
-        win_rate=0.6,
-        trades=40,
+        ending_cash=1182.0,
+        realized_pnl=182.0,
+        win_rate=58.0 / 90.0,
+        trades=90,
         max_drawdown=0.02,
-        closed_trades=40,
-        gross_exposure=4000.0,
+        closed_trades=90,
+        gross_exposure=9000.0,
         total_fees=1.0,
         stopped_by_drawdown=False,
         max_exposure=100.0,
@@ -73,7 +107,7 @@ def test_extract_meta_label_samples_uses_open_timestamp_scores() -> None:
         market_type="spot",
     )
 
-    assert len(samples) == 40
+    assert len(samples) == 90
     assert samples[0].profitable is True
     assert samples[0].signal_strength > samples[-1].signal_strength
     assert samples[-1].net_pnl == pytest.approx(-2.0)
@@ -84,6 +118,7 @@ def test_return_bootstrap_is_invariant_to_quote_capital_scale() -> None:
         return tuple(
             meta_label_module.MetaLabelSample(
                 opened_at=index * 60_000,
+                closed_at=index * 60_000 + 30_000,
                 side=1,
                 probability=0.8,
                 adjusted_probability=0.8,
@@ -109,6 +144,101 @@ def test_return_bootstrap_is_invariant_to_quote_capital_scale() -> None:
     assert scaled == base
 
 
+def test_chronological_split_purges_positions_overlapping_validation() -> None:
+    validation_start = 31 * 60_000
+    samples = tuple(
+        meta_label_module.MetaLabelSample(
+            opened_at=index * 60_000,
+            closed_at=(
+                validation_start
+                if index == 30
+                else index * 60_000 + 30_000
+            ),
+            side=1,
+            probability=0.8,
+            adjusted_probability=0.8,
+            signal_strength=0.2,
+            net_pnl=1.0,
+            return_pct=0.001,
+            profitable=True,
+        )
+        for index in range(61)
+    )
+
+    split = meta_label_module._chronological_split(
+        samples,
+        minimum_samples=30,
+    )
+
+    assert split is not None
+    assert len(split.calibration) == 30
+    assert len(split.purged) == 1
+    assert len(split.validation) == 30
+    assert split.purged[0].opened_at == 30 * 60_000
+    assert split.validation_start_opened_at == validation_start
+    assert max(sample.closed_at for sample in split.calibration) < validation_start
+
+
+def test_calibration_only_edge_is_rejected_on_later_validation() -> None:
+    rows = [
+        ModelRow(
+            timestamp=index * 60_000,
+            close=100.0,
+            features=(0.8,),
+            label=1,
+        )
+        for index in range(90)
+    ]
+    trade_log = tuple(
+        {
+            "opened_at": index * 60_000,
+            "closed_at": index * 60_000 + 30_000,
+            "side": 1,
+            "net_pnl": (
+                2.0 if index < 54 else (1.0 if index < 78 else -4.0)
+            ),
+            "return_pct": (
+                0.002
+                if index < 54
+                else (0.001 if index < 78 else -0.004)
+            ),
+        }
+        for index in range(90)
+    )
+    result = BacktestResult(
+        starting_cash=1000.0,
+        ending_cash=1084.0,
+        realized_pnl=84.0,
+        win_rate=78.0 / 90.0,
+        trades=90,
+        max_drawdown=0.05,
+        closed_trades=90,
+        gross_exposure=9000.0,
+        total_fees=0.0,
+        stopped_by_drawdown=False,
+        max_exposure=100.0,
+        trades_per_day_cap_hit=0,
+        trade_log=trade_log,
+    )
+
+    report = build_meta_label_report(
+        rows,
+        _model(),
+        StrategyConfig(confidence_beta=1.0),
+        result,
+        objective_name="regular",
+        market_type="spot",
+    )
+
+    assert report.policy["calibration_take_net_pnl"] > 0.0
+    assert report.take_precision >= report.target_precision
+    assert report.take_mean_return < 0.0
+    assert report.take_net_pnl < 0.0
+    assert report.status == "observe_only"
+    assert report.reason == "take_validation_expectancy_not_positive"
+    assert report.policy["enabled"] is False
+
+
 def test_build_meta_label_report_rejects_negative_expectancy_downsize_band() -> None:
     report = build_meta_label_report(
         _rows(),
@@ -129,7 +259,10 @@ def test_build_meta_label_report_rejects_negative_expectancy_downsize_band() -> 
     assert report.downsize_threshold == report.take_threshold
     assert report.downsize_count == 0
     assert report.skip_count >= 1
-    assert report.policy["evidence_schema_version"] == "meta-label-after-cost-v2"
+    assert report.policy["evidence_schema_version"] == "meta-label-after-cost-v3"
+    assert report.policy["calibration_sample_count"] == 54
+    assert report.policy["policy_validation_sample_count"] == 36
+    assert report.policy["purged_sample_count"] == 0
     assert report.policy["take_bootstrap_samples"] == 2_000
     assert report.policy["take_bootstrap_confidence"] == pytest.approx(0.95)
     assert report.policy["take_bootstrap_mean_return_lower"] > 0.0
@@ -149,7 +282,15 @@ def test_build_meta_label_report_handles_insufficient_samples() -> None:
         stopped_by_drawdown=False,
         max_exposure=100.0,
         trades_per_day_cap_hit=0,
-        trade_log=({"opened_at": 0, "side": 1, "net_pnl": 1.0, "return_pct": 0.001},),
+        trade_log=(
+            {
+                "opened_at": 0,
+                "closed_at": 30_000,
+                "side": 1,
+                "net_pnl": 1.0,
+                "return_pct": 0.001,
+            },
+        ),
     )
 
     report = build_meta_label_report(
@@ -174,26 +315,27 @@ def test_positive_mean_without_positive_block_bootstrap_stays_observe_only() -> 
             features=(0.8,),
             label=1,
         )
-        for index in range(30)
+        for index in range(60)
     ]
     trade_log = tuple(
         {
             "opened_at": index * 60_000,
+            "closed_at": index * 60_000 + 30_000,
             "side": 1,
-            "net_pnl": 10.0 if index < 20 else -19.0,
-            "return_pct": 0.01 if index < 20 else -0.019,
+            "net_pnl": 10.0 if index < 50 else -19.0,
+            "return_pct": 0.01 if index < 50 else -0.019,
         }
-        for index in range(30)
+        for index in range(60)
     )
     result = BacktestResult(
         starting_cash=1000.0,
-        ending_cash=1010.0,
-        realized_pnl=10.0,
-        win_rate=2.0 / 3.0,
-        trades=30,
+        ending_cash=1310.0,
+        realized_pnl=310.0,
+        win_rate=5.0 / 6.0,
+        trades=60,
         max_drawdown=0.19,
-        closed_trades=30,
-        gross_exposure=3000.0,
+        closed_trades=60,
+        gross_exposure=6000.0,
         total_fees=0.0,
         stopped_by_drawdown=False,
         max_exposure=100.0,
@@ -230,7 +372,8 @@ def test_positive_mean_without_positive_block_bootstrap_stays_observe_only() -> 
 def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> None:
     policy = {
         "enabled": True,
-        "evidence_schema_version": "meta-label-after-cost-v2",
+        "evidence_schema_version": "meta-label-after-cost-v3",
+        **_policy_split_evidence(),
         "mode": "take_downsize_skip",
         "take_threshold": 0.20,
         "downsize_threshold": 0.10,
@@ -309,9 +452,7 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
 
     invalid = apply_meta_label_policy(
         {
-            "enabled": True,
-            "evidence_schema_version": "meta-label-after-cost-v2",
-            "mode": "take_downsize_skip",
+            **policy,
             "take_threshold": 0.1,
             "downsize_threshold": 0.2,
         },
@@ -327,7 +468,7 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
     legacy = apply_meta_label_policy(
         {
             **policy,
-            "evidence_schema_version": "meta-label-after-cost-v1",
+            "evidence_schema_version": "meta-label-after-cost-v2",
         },
         adjusted_probability=0.99,
         threshold=0.60,
@@ -350,12 +491,27 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
     assert invalid_evidence.action == "skip"
     assert invalid_evidence.reason == "invalid_meta_label_take_evidence"
 
+    impossible_partition = apply_meta_label_policy(
+        {
+            **policy,
+            "source_sample_count": 120,
+            "policy_validation_sample_count": 60,
+        },
+        adjusted_probability=0.99,
+        threshold=0.60,
+        side=1,
+        market_type="spot",
+    )
+    assert impossible_partition.action == "skip"
+    assert impossible_partition.reason == "invalid_meta_label_action_partition"
+
 
 def test_liquidity_overlay_preserves_after_cost_bucket_evidence() -> None:
     base = apply_meta_label_policy(
         {
             "enabled": True,
-            "evidence_schema_version": "meta-label-after-cost-v2",
+            "evidence_schema_version": "meta-label-after-cost-v3",
+            **_policy_split_evidence(),
             "mode": "take_downsize_skip",
             "take_threshold": 0.20,
             "downsize_threshold": 0.20,

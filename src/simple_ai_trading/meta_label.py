@@ -16,15 +16,18 @@ if TYPE_CHECKING:
     from .backtest import BacktestResult
 
 
-META_LABEL_EVIDENCE_SCHEMA_VERSION = "meta-label-after-cost-v2"
+META_LABEL_EVIDENCE_SCHEMA_VERSION = "meta-label-after-cost-v3"
+META_LABEL_SPLIT_SCHEMA_VERSION = "meta-label-chronological-split-v1"
 META_LABEL_MINIMUM_ACTION_SAMPLES = 30
 META_LABEL_BOOTSTRAP_SAMPLES = 2_000
 META_LABEL_BOOTSTRAP_CONFIDENCE = 0.95
+META_LABEL_VALIDATION_FRACTION = 0.40
 
 
 @dataclass(frozen=True)
 class MetaLabelSample:
     opened_at: int
+    closed_at: int
     side: int
     probability: float
     adjusted_probability: float
@@ -35,6 +38,17 @@ class MetaLabelSample:
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
+
+
+@dataclass(frozen=True)
+class MetaLabelChronologicalSplit:
+    calibration: tuple[MetaLabelSample, ...]
+    purged: tuple[MetaLabelSample, ...]
+    validation: tuple[MetaLabelSample, ...]
+    validation_start_opened_at: int
+    calibration_sha256: str
+    purged_sha256: str
+    validation_sha256: str
 
 
 @dataclass(frozen=True)
@@ -107,6 +121,11 @@ def _integer_or_none(value: object) -> int | None:
     return int(parsed)
 
 
+def _is_sha256(value: object) -> bool:
+    text = str(value or "").lower()
+    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+
+
 def _precision(samples: Sequence[MetaLabelSample]) -> float:
     if not samples:
         return 0.0
@@ -119,22 +138,88 @@ def _mean_return(samples: Sequence[MetaLabelSample]) -> float:
     return sum(sample.return_pct for sample in samples) / len(samples)
 
 
+def _sample_digest(samples: Sequence[MetaLabelSample]) -> str:
+    binding = hashlib.sha256()
+    for sample in sorted(
+        samples,
+        key=lambda item: (item.opened_at, item.closed_at, item.side),
+    ):
+        binding.update(
+            (
+                f"{sample.opened_at}:{sample.closed_at}:{sample.side}:"
+                f"{sample.signal_strength:.17g}:{sample.return_pct:.17g}:"
+                f"{sample.net_pnl:.17g};"
+            ).encode("ascii")
+        )
+    return binding.hexdigest()
+
+
+def _chronological_split(
+    samples: Sequence[MetaLabelSample],
+    *,
+    minimum_samples: int,
+) -> MetaLabelChronologicalSplit | None:
+    ordered = tuple(
+        sorted(
+            samples,
+            key=lambda sample: (
+                sample.opened_at,
+                sample.closed_at,
+                sample.side,
+            ),
+        )
+    )
+    if len(ordered) < minimum_samples * 2:
+        return None
+    requested_validation = max(
+        minimum_samples,
+        int(math.floor(len(ordered) * META_LABEL_VALIDATION_FRACTION)),
+    )
+    boundary_index = len(ordered) - requested_validation
+    validation_start = ordered[boundary_index].opened_at
+    validation = tuple(
+        sample for sample in ordered if sample.opened_at >= validation_start
+    )
+    before_validation = tuple(
+        sample for sample in ordered if sample.opened_at < validation_start
+    )
+    calibration = tuple(
+        sample
+        for sample in before_validation
+        if sample.closed_at < validation_start
+    )
+    purged = tuple(
+        sample
+        for sample in before_validation
+        if sample.closed_at >= validation_start
+    )
+    if len(calibration) < minimum_samples or len(validation) < minimum_samples:
+        return None
+    return MetaLabelChronologicalSplit(
+        calibration=calibration,
+        purged=purged,
+        validation=validation,
+        validation_start_opened_at=int(validation_start),
+        calibration_sha256=_sample_digest(calibration),
+        purged_sha256=_sample_digest(purged),
+        validation_sha256=_sample_digest(validation),
+    )
+
+
 def _bucket_bootstrap(
     samples: Sequence[MetaLabelSample],
     *,
     objective: str,
     action: str,
 ) -> dict[str, object]:
-    ordered = sorted(samples, key=lambda sample: (sample.opened_at, sample.side))
+    ordered = sorted(
+        samples,
+        key=lambda sample: (sample.opened_at, sample.closed_at, sample.side),
+    )
     binding = hashlib.sha256()
     binding.update(f"meta-label:{objective}:{action}:".encode("ascii"))
     for sample in ordered:
-        binding.update(
-            (
-                f"{sample.opened_at}:{sample.side}:"
-                f"{sample.return_pct:.17g};"
-            ).encode("ascii")
-        )
+        binding.update(f"{sample.return_pct:.17g};".encode("ascii"))
     return moving_block_bootstrap_mean(
         tuple(sample.return_pct for sample in ordered),
         samples=META_LABEL_BOOTSTRAP_SAMPLES,
@@ -237,6 +322,71 @@ def _action_evidence_is_valid(evidence: dict[str, object]) -> bool:
     )
 
 
+def _split_evidence_is_valid(policy: dict[str, object]) -> bool:
+    source_count = _integer_or_none(policy.get("source_sample_count"))
+    calibration_count = _integer_or_none(
+        policy.get("calibration_sample_count")
+    )
+    purged_count = _integer_or_none(policy.get("purged_sample_count"))
+    validation_count = _integer_or_none(
+        policy.get("policy_validation_sample_count")
+    )
+    calibration_end = _integer_or_none(
+        policy.get("calibration_end_closed_at")
+    )
+    validation_start = _integer_or_none(
+        policy.get("validation_start_opened_at")
+    )
+    validation_end = _integer_or_none(
+        policy.get("validation_end_closed_at")
+    )
+    minimum_samples = _integer_or_none(policy.get("minimum_action_samples"))
+    target_precision = _finite_or_none(policy.get("target_precision"))
+    calibration_take_count = _integer_or_none(
+        policy.get("calibration_take_sample_count")
+    )
+    calibration_take_precision = _finite_or_none(
+        policy.get("calibration_take_precision")
+    )
+    calibration_take_mean_return = _finite_or_none(
+        policy.get("calibration_take_mean_return")
+    )
+    calibration_take_net_pnl = _finite_or_none(
+        policy.get("calibration_take_net_pnl")
+    )
+    return bool(
+        policy.get("split_schema_version") == META_LABEL_SPLIT_SCHEMA_VERSION
+        and isinstance(source_count, int)
+        and isinstance(minimum_samples, int)
+        and minimum_samples >= META_LABEL_MINIMUM_ACTION_SAMPLES
+        and isinstance(calibration_count, int)
+        and calibration_count >= minimum_samples
+        and isinstance(purged_count, int)
+        and purged_count >= 0
+        and isinstance(validation_count, int)
+        and validation_count >= minimum_samples
+        and source_count == calibration_count + purged_count + validation_count
+        and isinstance(target_precision, float)
+        and 0.0 <= target_precision <= 1.0
+        and isinstance(calibration_take_count, int)
+        and minimum_samples <= calibration_take_count <= calibration_count
+        and isinstance(calibration_take_precision, float)
+        and target_precision <= calibration_take_precision <= 1.0
+        and isinstance(calibration_take_mean_return, float)
+        and calibration_take_mean_return > 0.0
+        and isinstance(calibration_take_net_pnl, float)
+        and calibration_take_net_pnl > 0.0
+        and isinstance(calibration_end, int)
+        and isinstance(validation_start, int)
+        and isinstance(validation_end, int)
+        and 0 <= calibration_end < validation_start <= validation_end
+        and _is_sha256(policy.get("source_samples_sha256"))
+        and _is_sha256(policy.get("calibration_samples_sha256"))
+        and _is_sha256(policy.get("purged_samples_sha256"))
+        and _is_sha256(policy.get("validation_samples_sha256"))
+    )
+
+
 def validate_enabled_meta_label_policy(policy: object) -> tuple[bool, str]:
     """Validate every executable branch of an enabled persisted policy."""
 
@@ -246,6 +396,8 @@ def validate_enabled_meta_label_policy(policy: object) -> tuple[bool, str]:
         return False, "invalid_meta_label_evidence_schema"
     if policy.get("mode") != "take_downsize_skip":
         return False, "invalid_meta_label_mode"
+    if not _split_evidence_is_valid(policy):
+        return False, "invalid_meta_label_split_evidence"
     take_threshold = _finite(policy.get("take_threshold"), math.nan)
     downsize_threshold = _finite(policy.get("downsize_threshold"), math.nan)
     downsize_fraction = _finite(policy.get("downsize_fraction"), math.nan)
@@ -259,15 +411,19 @@ def validate_enabled_meta_label_policy(policy: object) -> tuple[bool, str]:
         return False, "invalid_meta_label_thresholds"
     if not 0.05 <= downsize_fraction <= 1.0:
         return False, "invalid_meta_label_downsize_fraction"
-    if not _action_evidence_is_valid(_policy_action_evidence(policy, "take")):
+    take_evidence = _policy_action_evidence(policy, "take")
+    if not _action_evidence_is_valid(take_evidence):
         return False, "invalid_meta_label_take_evidence"
-    if (
-        downsize_threshold < take_threshold
-        and not _action_evidence_is_valid(
-            _policy_action_evidence(policy, "downsize")
-        )
-    ):
-        return False, "invalid_meta_label_downsize_evidence"
+    validation_count = int(policy["policy_validation_sample_count"])
+    take_count = int(take_evidence["samples"])
+    if take_count > validation_count:
+        return False, "invalid_meta_label_action_partition"
+    if downsize_threshold < take_threshold:
+        downsize_evidence = _policy_action_evidence(policy, "downsize")
+        if not _action_evidence_is_valid(downsize_evidence):
+            return False, "invalid_meta_label_downsize_evidence"
+        if take_count + int(downsize_evidence["samples"]) > validation_count:
+            return False, "invalid_meta_label_action_partition"
     return True, "meta_label_policy_valid"
 
 
@@ -397,8 +553,11 @@ def extract_meta_label_samples(
         if not isinstance(trade, dict):
             continue
         opened_at = int(_finite(trade.get("opened_at"), -1))
+        if "closed_at" not in trade:
+            continue
+        closed_at = int(_finite(trade.get("closed_at"), -1))
         row = rows_by_time.get(opened_at)
-        if row is None:
+        if row is None or closed_at < opened_at:
             continue
         side = int(_finite(trade.get("side"), 0))
         if side == 0:
@@ -415,6 +574,7 @@ def extract_meta_label_samples(
         return_pct = _finite(trade.get("return_pct"))
         samples.append(MetaLabelSample(
             opened_at=opened_at,
+            closed_at=closed_at,
             side=1 if side > 0 else -1,
             probability=float(probability),
             adjusted_probability=float(adjusted),
@@ -463,16 +623,21 @@ def build_meta_label_report(
         META_LABEL_MINIMUM_ACTION_SAMPLES,
         int(objective.min_closed_trades),
     )
-    if len(samples) < minimum_samples:
+    split = _chronological_split(samples, minimum_samples=minimum_samples)
+    if split is None:
         policy = {
+            "evidence_schema_version": META_LABEL_EVIDENCE_SCHEMA_VERSION,
             "enabled": False,
             "mode": "observe_only",
-            "reason": "insufficient_meta_label_samples",
+            "reason": "insufficient_chronological_meta_label_split",
             "target_precision": target,
+            "split_schema_version": META_LABEL_SPLIT_SCHEMA_VERSION,
+            "source_sample_count": len(samples),
+            "minimum_action_samples": int(minimum_samples),
         }
         return MetaLabelReport(
             status="insufficient",
-            reason="insufficient_meta_label_samples",
+            reason="insufficient_chronological_meta_label_split",
             objective=objective.name,
             sample_count=len(samples),
             profitable_count=sum(1 for sample in samples if sample.profitable),
@@ -492,10 +657,16 @@ def build_meta_label_report(
             policy=policy,
         )
 
+    calibration_samples = split.calibration
+    validation_samples = split.validation
     best_threshold: float | None = None
     best_rank = (float("-inf"), float("-inf"), float("-inf"), float("-inf"))
-    for threshold in _candidate_thresholds(samples):
-        kept = [sample for sample in samples if sample.signal_strength >= threshold]
+    for threshold in _candidate_thresholds(calibration_samples):
+        kept = [
+            sample
+            for sample in calibration_samples
+            if sample.signal_strength >= threshold
+        ]
         if len(kept) < minimum_samples:
             continue
         precision = _precision(kept)
@@ -503,7 +674,11 @@ def build_meta_label_report(
         net_pnl = sum(sample.net_pnl for sample in kept)
         if precision < target or mean_return <= 0.0 or net_pnl <= 0.0:
             continue
-        skipped = [sample for sample in samples if sample.signal_strength < threshold]
+        skipped = [
+            sample
+            for sample in calibration_samples
+            if sample.signal_strength < threshold
+        ]
         avoided_loss = sum(-sample.net_pnl for sample in skipped if sample.net_pnl < 0.0)
         missed_profit = sum(sample.net_pnl for sample in skipped if sample.net_pnl > 0.0)
         rank = (net_pnl + avoided_loss - missed_profit, precision, mean_return, -float(len(kept)))
@@ -512,27 +687,52 @@ def build_meta_label_report(
             best_threshold = float(threshold)
 
     if best_threshold is None:
-        best_threshold = max(sample.signal_strength for sample in samples) + 1e-9
+        best_threshold = math.nextafter(
+            max(sample.signal_strength for sample in calibration_samples),
+            math.inf,
+        )
         status = "observe_only"
         reason = "no_profitable_precision_threshold"
     else:
         status = "trained"
         reason = None
 
-    take_samples = [sample for sample in samples if sample.signal_strength >= best_threshold]
+    calibration_take_samples = [
+        sample
+        for sample in calibration_samples
+        if sample.signal_strength >= best_threshold
+    ]
+    take_samples = [
+        sample
+        for sample in validation_samples
+        if sample.signal_strength >= best_threshold
+    ]
     take_bootstrap = _bucket_bootstrap(
         take_samples,
         objective=objective.name,
         action="take",
     )
     take_bootstrap_lower = float(take_bootstrap["mean_ci_lower"])
-    if status == "trained" and take_bootstrap_lower <= 0.0:
-        status = "observe_only"
-        reason = "take_bootstrap_lower_not_positive"
+    if status == "trained":
+        if len(take_samples) < minimum_samples:
+            status = "observe_only"
+            reason = "take_validation_samples_insufficient"
+        elif _precision(take_samples) < target:
+            status = "observe_only"
+            reason = "take_validation_precision_below_target"
+        elif _mean_return(take_samples) <= 0.0:
+            status = "observe_only"
+            reason = "take_validation_expectancy_not_positive"
+        elif sum(sample.net_pnl for sample in take_samples) <= 0.0:
+            status = "observe_only"
+            reason = "take_validation_pnl_not_positive"
+        elif take_bootstrap_lower <= 0.0:
+            status = "observe_only"
+            reason = "take_bootstrap_lower_not_positive"
     proposed_downsize_floor = max(0.0, best_threshold * 0.50)
     proposed_downsize_samples = [
         sample
-        for sample in samples
+        for sample in validation_samples
         if proposed_downsize_floor <= sample.signal_strength < best_threshold
     ]
     proposed_downsize_net_pnl = sum(
@@ -563,7 +763,11 @@ def build_meta_label_report(
         if downsize_evidence_accepted
         else []
     )
-    skip_samples = [sample for sample in samples if sample.signal_strength < downsize_floor]
+    skip_samples = [
+        sample
+        for sample in validation_samples
+        if sample.signal_strength < downsize_floor
+    ]
     skipped_loss = sum(-sample.net_pnl for sample in skip_samples if sample.net_pnl < 0.0)
     skipped_profit = sum(sample.net_pnl for sample in skip_samples if sample.net_pnl > 0.0)
     take_precision = _precision(take_samples)
@@ -583,7 +787,35 @@ def build_meta_label_report(
         "downsize_threshold": downsize_floor,
         "downsize_fraction": 0.5,
         "sample_count": len(samples),
+        "split_schema_version": META_LABEL_SPLIT_SCHEMA_VERSION,
+        "source_sample_count": len(samples),
+        "source_samples_sha256": _sample_digest(
+            tuple(split.calibration) + tuple(split.purged) + tuple(split.validation)
+        ),
+        "calibration_sample_count": len(calibration_samples),
+        "purged_sample_count": len(split.purged),
+        "policy_validation_sample_count": len(validation_samples),
+        "calibration_end_closed_at": max(
+            sample.closed_at for sample in calibration_samples
+        ),
+        "validation_start_opened_at": split.validation_start_opened_at,
+        "validation_end_closed_at": max(
+            sample.closed_at for sample in validation_samples
+        ),
+        "calibration_samples_sha256": split.calibration_sha256,
+        "purged_samples_sha256": split.purged_sha256,
+        "validation_samples_sha256": split.validation_sha256,
         "minimum_action_samples": int(minimum_samples),
+        "calibration_take_sample_count": len(calibration_take_samples),
+        "calibration_take_precision": float(
+            _precision(calibration_take_samples)
+        ),
+        "calibration_take_mean_return": float(
+            _mean_return(calibration_take_samples)
+        ),
+        "calibration_take_net_pnl": float(
+            sum(sample.net_pnl for sample in calibration_take_samples)
+        ),
         "take_sample_count": len(take_samples),
         "take_precision": float(take_precision),
         "take_mean_return": float(take_mean_return),
