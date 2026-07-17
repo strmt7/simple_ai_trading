@@ -12,6 +12,7 @@ from simple_ai_trading.autonomous import (
     AutonomousConfig,
     Decision,
     _close_to_trade,
+    _entry_gate,
     _open_position_from_decision,
 )
 from simple_ai_trading.live_ai_assist import (
@@ -23,6 +24,7 @@ from simple_ai_trading.live_ai_assist import (
     build_live_ai_entry_case,
 )
 from simple_ai_trading import live_ai_assist as live_ai_assist_module
+from simple_ai_trading.positions import PositionsStore
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 from simple_ai_trading.objective import get_objective
 
@@ -192,7 +194,9 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
         provider(_case(observed_at_ms=3_000))
 
 
-def test_shadow_reviewer_never_changes_ml_side_or_size(tmp_path: Path) -> None:
+def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
+    tmp_path: Path,
+) -> None:
     provider_calls: list[str] = []
 
     def provider(case):
@@ -230,6 +234,7 @@ def test_shadow_reviewer_never_changes_ml_side_or_size(tmp_path: Path) -> None:
     assert pending.side == "LONG"
     assert pending.size_multiplier == 0.4
     assert pending.ai_assist_status == "shadow_pending"
+    assert pending.ai_assist_entry_ready is False
 
     deadline = time.monotonic() + 2.0
     while time.monotonic() < deadline:
@@ -242,6 +247,7 @@ def test_shadow_reviewer_never_changes_ml_side_or_size(tmp_path: Path) -> None:
     assert completed.side == "LONG"
     assert completed.size_multiplier == 0.4
     assert completed.ai_assist_action == "approve"
+    assert completed.ai_assist_entry_ready is True
     assert provider_calls == [completed.ai_assist_case_id]
     assert assisted.close(1.0)
 
@@ -280,7 +286,50 @@ def test_provider_failure_is_recorded_without_execution_authority(tmp_path: Path
         AsyncLiveAIEntryReviewer(_approval, audit_path=path)
 
 
-def test_shadow_contract_failure_does_not_change_or_stop_ml_decision(tmp_path: Path) -> None:
+def test_completed_review_cannot_be_replayed_after_freshness_window(
+    tmp_path: Path,
+) -> None:
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda _case: _approval(),
+        audit_path=tmp_path / "ai-entry.jsonl",
+        clock=lambda: 2.0,
+    )
+
+    def base_decision(*_args):
+        return Decision(
+            side="LONG",
+            confidence=0.72,
+            mark_price=100.0,
+            size_multiplier=0.4,
+            observed_at_ms=1_000,
+        )
+
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+        clock=lambda: 400.0,
+    )
+    runtime = RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m")
+    assert assisted(None, runtime, StrategyConfig(), None).ai_assist_entry_ready is False
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        stale = assisted(None, runtime, StrategyConfig(), None)
+        if stale.ai_assist_status != "shadow_pending":
+            break
+        time.sleep(0.005)
+    else:
+        pytest.fail("AI shadow review did not complete")
+
+    assert stale.side == "LONG"
+    assert stale.ai_assist_status == "shadow_failure"
+    assert stale.ai_assist_entry_ready is False
+    assert "stale or future-dated" in stale.ai_assist_reason
+    assert assisted.close(1.0)
+
+
+def test_shadow_contract_failure_blocks_only_entry_not_the_ml_decision(tmp_path: Path) -> None:
     reviewer = AsyncLiveAIEntryReviewer(
         lambda _case: _approval(),
         audit_path=tmp_path / "ai-entry.jsonl",
@@ -310,6 +359,7 @@ def test_shadow_contract_failure_does_not_change_or_stop_ml_decision(tmp_path: P
     assert decision.side == "SHORT"
     assert decision.size_multiplier == 0.3
     assert decision.ai_assist_status == "shadow_failure"
+    assert decision.ai_assist_entry_ready is False
     assert reviewer.close(1.0)
 
 
@@ -320,7 +370,7 @@ def test_ai_case_identity_survives_position_and_trade_ledgers(tmp_path: Path) ->
         mark_price=100.0,
         observed_at_ms=1_000,
         ai_assist_mode="shadow_only",
-        ai_assist_status="shadow_pending",
+        ai_assist_status="shadow_approve",
         ai_assist_case_id="d" * 64,
     )
     position = _open_position_from_decision(
@@ -334,7 +384,46 @@ def test_ai_case_identity_survives_position_and_trade_ledgers(tmp_path: Path) ->
     trade = _close_to_trade(position, 101.0, "test", clock=lambda: 3.0)
     assert position.ai_review_case_id == decision.ai_assist_case_id
     assert trade.ai_review_case_id == decision.ai_assist_case_id
-    assert trade.ai_review_status == "shadow_pending"
+    assert trade.ai_review_status == "shadow_approve"
+
+
+def test_pending_ai_review_cannot_cross_the_entry_boundary(tmp_path: Path) -> None:
+    cfg = AutonomousConfig(
+        positions_root=tmp_path,
+        starting_reference_cash=1_000.0,
+    )
+    decision = Decision(
+        side="LONG",
+        confidence=0.9,
+        mark_price=100.0,
+        ai_assist_mode="shadow_only",
+        ai_assist_status="shadow_pending",
+        ai_assist_case_id="d" * 64,
+        ai_assist_reason="review pending",
+        ai_assist_entry_ready=False,
+    )
+    runtime = RuntimeConfig(symbol="BTCUSDC", market_type="futures")
+    strategy = StrategyConfig()
+    objective = get_objective("conservative")
+
+    gate = _entry_gate(
+        PositionsStore(tmp_path),
+        decision,
+        strategy,
+        cfg,
+        objective,
+        now_ms_value=2_000,
+    )
+    assert gate.allowed is False
+    assert gate.reason == "review pending"
+    with pytest.raises(ValueError, match="completed AI pre-entry review"):
+        _open_position_from_decision(
+            decision,
+            runtime,
+            strategy,
+            objective,
+            cfg,
+        )
 
 
 def test_review_submission_and_shutdown_are_bounded(tmp_path: Path) -> None:
