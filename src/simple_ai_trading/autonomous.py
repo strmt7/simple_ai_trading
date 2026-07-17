@@ -226,6 +226,7 @@ class Decision:
     size_multiplier: float = 1.0
     meta_label_action: str = ""
     meta_label_reason: str = ""
+    meta_label_signal_strength: float = 0.0
     regime: str = ""
     regime_confidence: float = 0.0
     regime_notes: tuple[str, ...] = ()

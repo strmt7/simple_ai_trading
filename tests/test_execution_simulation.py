@@ -4,6 +4,7 @@ import pytest
 
 from simple_ai_trading.execution_simulation import (
     ExecutionAssumptions,
+    configured_round_trip_cost_floor_bps,
     simulate_market_fill,
 )
 from simple_ai_trading.types import StrategyConfig
@@ -18,6 +19,16 @@ def _assumptions() -> ExecutionAssumptions:
         volatility_buffer_bps=2.5,
         testnet_to_live_buffer_bps=2.0,
     )
+
+
+def test_round_trip_cost_floor_matches_fee_and_configured_spread_contract() -> None:
+    strategy = StrategyConfig(
+        taker_fee_bps=4.0,
+        slippage_bps=2.0,
+        max_spread_bps=5.0,
+    )
+
+    assert configured_round_trip_cost_floor_bps(strategy) == pytest.approx(13.0)
 
 
 def test_market_impact_uses_adv_participation_when_available() -> None:

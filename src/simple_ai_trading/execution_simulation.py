@@ -76,6 +76,19 @@ def execution_assumptions_from_strategy(cfg: StrategyConfig) -> ExecutionAssumpt
     )
 
 
+def configured_round_trip_cost_floor_bps(cfg: StrategyConfig) -> float:
+    """Return the deterministic fee-plus-spread hurdle for one round trip.
+
+    Dynamic latency, impact, and testnet-to-live stress remain additional
+    backtest costs. This floor is the minimum gross move a training label must
+    clear before a trade can have positive net value under configured costs.
+    """
+
+    assumptions = execution_assumptions_from_strategy(cfg)
+    taker_fee_bps = max(0.0, float(cfg.taker_fee_bps))
+    return float(2.0 * taker_fee_bps + max(0.0, assumptions.spread_bps))
+
+
 def execution_assumptions_for_symbol(
     cfg: StrategyConfig,
     profile: SymbolExecutionProfile | None = None,
