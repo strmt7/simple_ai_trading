@@ -125,6 +125,11 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Overall AI uplift now requires both the paired primary-latency gate and
   positive, ML-beating, return- and drawdown-nondegrading execution at every
   preregistered network-latency stress. A primary-only improvement is rejected.
+- Live Binance AI reviews are exact-case, asynchronous, hash-chained, and
+  shadow-only. Pending, failed, or stale reviews block only new entries; exits
+  retain the original ML side. `ai-uplift` rejects post-entry/reused reviews and
+  requires contiguous one-second low/high paths from a read-only `--market-db`
+  before any drawdown-preservation result can pass.
 - AI review v4 also requires post-inference Ollama `/api/ps` evidence for the
   exact weight digest with at least 99% of Ollama's reported model bytes in
   VRAM. Partial CPU/GPU offload is blocked. DirectML selection is separate and

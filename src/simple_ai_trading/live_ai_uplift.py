@@ -7,6 +7,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import sqlite3
 from typing import Mapping, Sequence
 
 from .ai_uplift import AIUpliftPolicy, assess_ai_uplift
@@ -24,6 +25,7 @@ _ACTION_STATUS = {
     "veto": "shadow_veto",
     "cooldown": "shadow_cooldown",
 }
+_SECOND_MS = 1_000
 
 
 def _canonical_json(payload: object) -> str:
@@ -61,6 +63,204 @@ def _sha256(value: object, *, label: str) -> str:
     return parsed
 
 
+def load_one_second_trade_paths(
+    market_db: Path,
+    trades: Sequence[ClosedTrade],
+) -> dict[str, tuple[dict[str, object], ...]]:
+    """Read exact one-second high/low paths without mutating the market store."""
+
+    database = Path(market_db).resolve()
+    if not database.is_file():
+        raise ValueError(f"one-second market database is missing: {database}")
+    uri = f"{database.as_uri()}?mode=ro"
+    paths: dict[str, tuple[dict[str, object], ...]] = {}
+    try:
+        connection = sqlite3.connect(uri, uri=True)
+        connection.row_factory = sqlite3.Row
+        for trade in trades:
+            start_ms = int(trade.opened_at_ms) // _SECOND_MS * _SECOND_MS
+            end_ms = int(trade.closed_at_ms) // _SECOND_MS * _SECOND_MS
+            rows = connection.execute(
+                """
+                SELECT open_time, high, low, source
+                FROM candles
+                WHERE symbol = ? AND market_type = ? AND interval = '1s'
+                  AND open_time >= ? AND open_time <= ?
+                ORDER BY open_time
+                """,
+                (trade.symbol.upper(), trade.market_type, start_ms, end_ms),
+            ).fetchall()
+            paths[trade.id] = tuple(
+                {
+                    "timestamp_ms": int(row["open_time"]),
+                    "high": float(row["high"]),
+                    "low": float(row["low"]),
+                    "source": str(row["source"]),
+                }
+                for row in rows
+            )
+    except sqlite3.Error as exc:
+        raise ValueError(f"one-second path query failed: {exc}") from exc
+    finally:
+        if "connection" in locals():
+            connection.close()
+    return paths
+
+
+def _maximum_drawdown_from_events(
+    events: Mapping[int, float],
+    *,
+    initial_capital: float,
+) -> float:
+    equity = initial_capital
+    peak = initial_capital
+    maximum_drawdown = 0.0
+    for timestamp_ms in sorted(events):
+        equity += float(events[timestamp_ms])
+        peak = max(peak, equity)
+        if peak > 0.0:
+            maximum_drawdown = max(maximum_drawdown, (peak - equity) / peak)
+    return maximum_drawdown
+
+
+def _intratrade_path_risk(
+    eligible: Sequence[Mapping[str, object]],
+    paths: Mapping[str, Sequence[Mapping[str, object]]] | None,
+    *,
+    initial_capital: float,
+) -> tuple[float, float, dict[str, object], tuple[str, ...]]:
+    baseline_events: dict[int, float] = {}
+    ai_events: dict[int, float] = {}
+    path_rows: list[dict[str, object]] = []
+    sources: Counter[str] = Counter()
+    reasons: list[str] = []
+    complete_trade_count = 0
+    for item in eligible:
+        trade = item["trade"]
+        if not isinstance(trade, ClosedTrade):
+            raise ValueError("eligible AI uplift trade is invalid")
+        raw_path = paths.get(trade.id) if paths is not None else None
+        if not raw_path:
+            reasons.append("intratrade_path_missing")
+            continue
+        start_ms = int(trade.opened_at_ms) // _SECOND_MS * _SECOND_MS
+        end_ms = int(trade.closed_at_ms) // _SECOND_MS * _SECOND_MS
+        expected_count = (end_ms - start_ms) // _SECOND_MS + 1
+        normalized: list[dict[str, object]] = []
+        path_sources: Counter[str] = Counter()
+        path_valid = len(raw_path) == expected_count
+        for index, row in enumerate(raw_path):
+            try:
+                timestamp_ms = int(row["timestamp_ms"])
+                high = _finite(row["high"], label="intratrade high")
+                low = _finite(row["low"], label="intratrade low")
+                source = str(row["source"])
+            except (KeyError, TypeError, ValueError, OverflowError):
+                path_valid = False
+                break
+            if (
+                timestamp_ms != start_ms + index * _SECOND_MS
+                or low <= 0.0
+                or high < low
+                or not source
+            ):
+                path_valid = False
+                break
+            normalized.append(
+                {
+                    "timestamp_ms": timestamp_ms,
+                    "high": high,
+                    "low": low,
+                    "source": source,
+                }
+            )
+            path_sources[source] += 1
+        if not path_valid:
+            reasons.append("intratrade_path_incomplete_or_invalid")
+            continue
+        qty = _finite(trade.qty, label="trade quantity")
+        entry_price = _finite(trade.entry_price, label="trade entry price")
+        exit_price = _finite(trade.exit_price, label="trade exit price")
+        fees = _finite(trade.fees, label="trade fees")
+        realized_pnl = _finite(trade.realized_pnl, label="trade realized_pnl")
+        if (
+            trade.side not in {"LONG", "SHORT"}
+            or qty <= 0.0
+            or entry_price <= 0.0
+            or exit_price <= 0.0
+            or fees < 0.0
+        ):
+            reasons.append("intratrade_trade_accounting_invalid")
+            continue
+        direction = 1.0 if trade.side == "LONG" else -1.0
+        expected_realized = direction * (exit_price - entry_price) * qty - fees
+        tolerance = max(1e-8, abs(expected_realized) * 1e-9)
+        if abs(expected_realized - realized_pnl) > tolerance:
+            reasons.append("intratrade_trade_accounting_mismatch")
+            continue
+        scale = _finite(item["scale"], label="AI trade scale")
+        previous_baseline = 0.0
+        previous_ai = 0.0
+        for row in normalized:
+            adverse_price = float(row["low"] if trade.side == "LONG" else row["high"])
+            baseline_value = direction * (adverse_price - entry_price) * qty - fees
+            ai_value = baseline_value * scale
+            timestamp_ms = int(row["timestamp_ms"])
+            baseline_events[timestamp_ms] = baseline_events.get(timestamp_ms, 0.0) + (
+                baseline_value - previous_baseline
+            )
+            ai_events[timestamp_ms] = ai_events.get(timestamp_ms, 0.0) + (
+                ai_value - previous_ai
+            )
+            previous_baseline = baseline_value
+            previous_ai = ai_value
+        settlement_ms = end_ms + _SECOND_MS
+        baseline_events[settlement_ms] = baseline_events.get(settlement_ms, 0.0) + (
+            realized_pnl - previous_baseline
+        )
+        ai_realized = realized_pnl * scale
+        ai_events[settlement_ms] = ai_events.get(settlement_ms, 0.0) + (
+            ai_realized - previous_ai
+        )
+        path_rows.append(
+            {
+                "trade_id": trade.id,
+                "row_count": len(normalized),
+                "first_timestamp_ms": start_ms,
+                "last_timestamp_ms": end_ms,
+                "rows_sha256": _canonical_sha256(normalized),
+            }
+        )
+        sources.update(path_sources)
+        complete_trade_count += 1
+    unique_reasons = tuple(dict.fromkeys(reasons))
+    verified = bool(eligible) and complete_trade_count == len(eligible) and not unique_reasons
+    evidence = {
+        "verified": verified,
+        "interval": "1s",
+        "conservative_mark": "low_for_long_high_for_short",
+        "fee_timing": "full_recorded_fees_at_entry",
+        "eligible_trade_count": len(eligible),
+        "complete_trade_count": complete_trade_count,
+        "row_count": sum(int(row["row_count"]) for row in path_rows),
+        "source_counts": dict(sorted(sources.items())),
+        "trade_paths": path_rows,
+    }
+    evidence["evidence_sha256"] = _canonical_sha256(evidence)
+    return (
+        _maximum_drawdown_from_events(
+            baseline_events,
+            initial_capital=initial_capital,
+        ),
+        _maximum_drawdown_from_events(
+            ai_events,
+            initial_capital=initial_capital,
+        ),
+        evidence,
+        unique_reasons,
+    )
+
+
 def _trade_metrics(
     trade_pnls: Sequence[float],
     daily_pnls: Sequence[float],
@@ -69,6 +269,8 @@ def _trade_metrics(
     liquidation_events: int,
     dataset_fingerprint: str,
     role: str,
+    path_maximum_drawdown: float | None = None,
+    path_evidence_sha256: str = "",
 ) -> dict[str, object]:
     executed = tuple(float(value) for value in trade_pnls)
     realized_pnl = math.fsum(executed)
@@ -84,6 +286,11 @@ def _trade_metrics(
         if peak > 0.0:
             maximum_drawdown = max(maximum_drawdown, (peak - equity) / peak)
         daily_returns.append(float(pnl) / initial_capital)
+    if path_maximum_drawdown is not None:
+        maximum_drawdown = _finite(
+            path_maximum_drawdown,
+            label="path maximum drawdown",
+        )
     losses = [value for value in daily_returns if value < 0.0]
     downside_deviation = (
         math.sqrt(math.fsum(value * value for value in losses) / len(daily_returns))
@@ -117,6 +324,7 @@ def _trade_metrics(
         "max_consecutive_losses": maximum_loss_streak,
         "downside_return_risk_ratio": downside_ratio,
         "dataset_fingerprint": dataset_fingerprint,
+        "intratrade_path_evidence_sha256": path_evidence_sha256,
     }
     metrics["evidence_sha256"] = _canonical_sha256(
         {
@@ -125,6 +333,7 @@ def _trade_metrics(
             "metrics": metrics,
             "trade_pnls": list(executed),
             "daily_pnls": [float(value) for value in daily_pnls],
+            "intratrade_path_evidence_sha256": path_evidence_sha256,
         }
     )
     return metrics
@@ -136,6 +345,11 @@ def assess_live_ai_shadow_uplift(
     *,
     initial_capital: float,
     model_name: str,
+    intratrade_paths: Mapping[
+        str,
+        Sequence[Mapping[str, object]],
+    ]
+    | None = None,
     model_parameters_b: float | None = None,
     policy: AIUpliftPolicy | None = None,
     minimum_causal_coverage: float = 0.90,
@@ -335,6 +549,20 @@ def assess_live_ai_shadow_uplift(
         "liquidat" in str(item["trade"].reason).lower() and float(item["scale"]) > 0.0
         for item in eligible
     )
+    (
+        baseline_path_drawdown,
+        ai_path_drawdown,
+        intratrade_path_evidence,
+        intratrade_path_reasons,
+    ) = _intratrade_path_risk(
+        eligible,
+        intratrade_paths,
+        initial_capital=capital,
+    )
+    materialization_reasons.extend(intratrade_path_reasons)
+    if eligible and not intratrade_path_evidence["verified"]:
+        materialization_reasons.append("intratrade_path_risk_not_verified")
+    path_evidence_sha256 = str(intratrade_path_evidence["evidence_sha256"])
     baseline_metrics = _trade_metrics(
         baseline_trade_pnls,
         baseline_daily,
@@ -342,6 +570,8 @@ def assess_live_ai_shadow_uplift(
         liquidation_events=baseline_liquidations,
         dataset_fingerprint=dataset_fingerprint,
         role="baseline_ml",
+        path_maximum_drawdown=baseline_path_drawdown,
+        path_evidence_sha256=path_evidence_sha256,
     )
     ai_metrics = _trade_metrics(
         ai_trade_pnls,
@@ -350,6 +580,8 @@ def assess_live_ai_shadow_uplift(
         liquidation_events=ai_liquidations,
         dataset_fingerprint=dataset_fingerprint,
         role="ai_shadow_counterfactual",
+        path_maximum_drawdown=ai_path_drawdown,
+        path_evidence_sha256=path_evidence_sha256,
     )
     model_digest = next(iter(model_digests)) if len(model_digests) == 1 else ""
     uplift = assess_ai_uplift(
@@ -383,6 +615,7 @@ def assess_live_ai_shadow_uplift(
         "maximum_review_age_seconds": maximum_age_ms // 1_000,
         "rejection_counts": dict(sorted(rejection_counts.items())),
         "dataset_fingerprint": dataset_fingerprint,
+        "intratrade_path_evidence": intratrade_path_evidence,
         "matched_periods": matched_periods,
         "uplift": uplift.asdict(),
         "reasons": list(combined_reasons),
@@ -397,17 +630,26 @@ def assess_live_ai_shadow_uplift_paths(
     *,
     positions_root: Path,
     audit_path: Path,
+    market_db: Path,
     initial_capital: float,
     model_name: str,
     model_parameters_b: float | None = None,
     policy: AIUpliftPolicy | None = None,
 ) -> dict[str, object]:
     store = PositionsStore(Path(positions_root))
+    trades = store.load_ledger()
+    candidates = tuple(
+        trade
+        for trade in trades
+        if trade.owner == BOT_OWNER and trade.ai_review_mode == "shadow_only"
+    )
+    intratrade_paths = load_one_second_trade_paths(Path(market_db), candidates)
     return assess_live_ai_shadow_uplift(
-        store.load_ledger(),
+        trades,
         load_live_ai_entry_audit(Path(audit_path)),
         initial_capital=initial_capital,
         model_name=model_name,
+        intratrade_paths=intratrade_paths,
         model_parameters_b=model_parameters_b,
         policy=policy,
     )
@@ -417,4 +659,5 @@ __all__ = [
     "LIVE_AI_UPLIFT_SCHEMA_VERSION",
     "assess_live_ai_shadow_uplift",
     "assess_live_ai_shadow_uplift_paths",
+    "load_one_second_trade_paths",
 ]

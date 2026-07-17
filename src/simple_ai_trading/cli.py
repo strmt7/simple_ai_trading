@@ -1982,6 +1982,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="hash-chained live AI shadow-review audit log",
     )
     parser_ai_uplift.add_argument(
+        "--market-db",
+        required=True,
+        help="read-only market database with contiguous one-second trade paths",
+    )
+    parser_ai_uplift.add_argument(
         "--starting-capital",
         type=float,
         required=True,
@@ -6198,6 +6203,7 @@ def command_ai_uplift(args: argparse.Namespace) -> int:
         report = assess_live_ai_shadow_uplift_paths(
             positions_root=Path(args.positions_root),
             audit_path=Path(args.audit),
+            market_db=Path(args.market_db),
             initial_capital=float(args.starting_capital),
             model_name=str(args.model),
             model_parameters_b=float(args.model_parameters_b),
