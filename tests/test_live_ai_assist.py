@@ -327,6 +327,89 @@ def test_ineligible_model_evidence_never_consumes_provider_tokens(
     assert assisted.close(1.0)
 
 
+def test_nonpositive_meta_label_bucket_never_consumes_provider_tokens(
+    tmp_path: Path,
+) -> None:
+    provider_calls: list[str] = []
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda case: provider_calls.append(case.case_id) or _approval(),
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+
+    def base_decision(*_args):
+        return Decision(
+            side="LONG",
+            confidence=0.72,
+            mark_price=100.0,
+            observed_at_ms=1_000,
+            meta_label_enabled=True,
+            meta_label_action="take",
+            meta_label_validation_minimum_sample_count=5,
+            meta_label_validation_minimum_precision=0.60,
+            meta_label_validation_sample_count=8,
+            meta_label_validation_precision=0.75,
+            meta_label_expected_after_cost_return=-0.001,
+            meta_label_expected_after_cost_pnl=-2.0,
+        )
+
+    base_decision._model_artifact = _validated_model_artifact()
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+    )
+
+    decision = assisted(
+        None,
+        RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m"),
+        _approval_strategy(),
+        None,
+    )
+
+    assert decision.ai_assist_status == "shadow_failure"
+    assert decision.ai_assist_action == "veto"
+    assert provider_calls == []
+    assert assisted.close(1.0)
+
+
+def test_zero_sized_model_proposal_never_consumes_provider_tokens(
+    tmp_path: Path,
+) -> None:
+    provider_calls: list[str] = []
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda case: provider_calls.append(case.case_id) or _approval(),
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+
+    def base_decision(*_args):
+        return Decision(
+            side="LONG",
+            confidence=0.72,
+            mark_price=100.0,
+            observed_at_ms=1_000,
+            size_multiplier=0.0,
+        )
+
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+    )
+    decision = assisted(
+        None,
+        RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m"),
+        _approval_strategy(),
+        None,
+    )
+
+    assert decision.ai_assist_status == "shadow_idle"
+    assert decision.ai_assist_entry_ready is False
+    assert provider_calls == []
+    assert assisted.close(1.0)
+
+
 def test_coordinator_can_suspend_entry_review_without_affecting_ml_side(
     tmp_path: Path,
 ) -> None:

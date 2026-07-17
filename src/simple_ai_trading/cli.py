@@ -13844,9 +13844,28 @@ def _build_autonomous_decision_fn(
             confidence=float(score),
             mark_price=float(latest.close),
             size_multiplier=float(meta_decision.size_multiplier),
+            meta_label_enabled=bool(base_meta_decision.enabled),
             meta_label_action=str(meta_decision.action),
             meta_label_reason=str(meta_decision.reason),
             meta_label_signal_strength=float(meta_decision.signal_strength),
+            meta_label_validation_minimum_sample_count=int(
+                meta_decision.validation_minimum_sample_count
+            ),
+            meta_label_validation_minimum_precision=float(
+                meta_decision.validation_minimum_precision
+            ),
+            meta_label_validation_sample_count=int(
+                meta_decision.validation_sample_count
+            ),
+            meta_label_validation_precision=float(
+                meta_decision.validation_precision
+            ),
+            meta_label_expected_after_cost_return=float(
+                meta_decision.expected_after_cost_return
+            ),
+            meta_label_expected_after_cost_pnl=float(
+                meta_decision.expected_after_cost_pnl
+            ),
             regime=regime_evidence.dominant_regime,
             regime_confidence=float(regime_evidence.confidence),
             regime_notes=tuple(regime_evidence.notes),

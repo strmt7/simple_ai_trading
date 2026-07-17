@@ -4,6 +4,7 @@ import pytest
 
 from simple_ai_trading.backtest import BacktestResult
 from simple_ai_trading.features import ModelRow
+from simple_ai_trading.liquidity_session import LiquiditySessionAdjustment, apply_liquidity_session_meta
 from simple_ai_trading.meta_label import apply_meta_label_policy, build_meta_label_report, extract_meta_label_samples
 from simple_ai_trading.model import TrainedModel
 from simple_ai_trading.types import StrategyConfig
@@ -66,7 +67,7 @@ def test_extract_meta_label_samples_uses_open_timestamp_scores() -> None:
     assert samples[-1].net_pnl == pytest.approx(-1.0)
 
 
-def test_build_meta_label_report_trains_take_downsize_skip_policy() -> None:
+def test_build_meta_label_report_rejects_negative_expectancy_downsize_band() -> None:
     report = build_meta_label_report(
         _rows(),
         _model(),
@@ -82,7 +83,10 @@ def test_build_meta_label_report_trains_take_downsize_skip_policy() -> None:
     assert report.downsize_threshold is not None
     assert report.take_precision >= report.target_precision
     assert report.take_net_pnl > 0.0
-    assert report.downsize_count + report.skip_count >= 1
+    assert report.policy["downsize_evidence_accepted"] is False
+    assert report.downsize_threshold == report.take_threshold
+    assert report.downsize_count == 0
+    assert report.skip_count >= 1
 
 
 def test_build_meta_label_report_handles_insufficient_samples() -> None:
@@ -122,6 +126,16 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
         "take_threshold": 0.20,
         "downsize_threshold": 0.10,
         "downsize_fraction": 0.35,
+        "minimum_action_samples": 2,
+        "target_precision": 0.60,
+        "take_sample_count": 8,
+        "take_precision": 0.75,
+        "take_mean_return": 0.002,
+        "take_net_pnl": 16.0,
+        "downsize_sample_count": 6,
+        "downsize_precision": 0.50,
+        "downsize_mean_return": 0.001,
+        "downsize_net_pnl": 4.0,
     }
 
     take = apply_meta_label_policy(
@@ -133,6 +147,10 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
     )
     assert take.action == "take"
     assert take.size_multiplier == pytest.approx(1.0)
+    assert take.validation_minimum_sample_count == 2
+    assert take.validation_minimum_precision == pytest.approx(0.60)
+    assert take.validation_sample_count == 8
+    assert take.expected_after_cost_pnl == pytest.approx(16.0)
 
     downsize = apply_meta_label_policy(
         policy,
@@ -143,6 +161,9 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
     )
     assert downsize.action == "downsize"
     assert downsize.size_multiplier == pytest.approx(0.35)
+    assert downsize.validation_minimum_precision == 0.0
+    assert downsize.validation_sample_count == 6
+    assert downsize.expected_after_cost_return == pytest.approx(0.001)
 
     skip = apply_meta_label_policy(
         policy,
@@ -174,3 +195,38 @@ def test_apply_meta_label_policy_classifies_take_downsize_skip_and_invalid() -> 
     assert invalid.enabled is True
     assert invalid.action == "skip"
     assert invalid.reason == "invalid_meta_label_thresholds"
+
+
+def test_liquidity_overlay_preserves_after_cost_bucket_evidence() -> None:
+    base = apply_meta_label_policy(
+        {
+            "enabled": True,
+            "mode": "take_downsize_skip",
+            "take_threshold": 0.20,
+            "downsize_threshold": 0.10,
+            "downsize_fraction": 0.5,
+            "minimum_action_samples": 5,
+            "target_precision": 0.65,
+            "take_sample_count": 12,
+            "take_precision": 0.75,
+            "take_mean_return": 0.002,
+            "take_net_pnl": 24.0,
+        },
+        adjusted_probability=0.85,
+        threshold=0.60,
+        side=1,
+        market_type="spot",
+    )
+
+    adjusted = apply_liquidity_session_meta(
+        base,
+        LiquiditySessionAdjustment(0.70, 0.5, True, False),
+    )
+
+    assert adjusted.action == "downsize"
+    assert adjusted.size_multiplier == pytest.approx(0.5)
+    assert adjusted.validation_minimum_sample_count == 5
+    assert adjusted.validation_minimum_precision == pytest.approx(0.65)
+    assert adjusted.validation_sample_count == 12
+    assert adjusted.expected_after_cost_return == pytest.approx(0.002)
+    assert adjusted.expected_after_cost_pnl == pytest.approx(24.0)

@@ -62,6 +62,12 @@ class MetaLabelDecision:
     size_multiplier: float
     signal_strength: float
     reason: str
+    validation_minimum_sample_count: int = 0
+    validation_minimum_precision: float = 0.0
+    validation_sample_count: int = 0
+    validation_precision: float = 0.0
+    expected_after_cost_return: float = 0.0
+    expected_after_cost_pnl: float = 0.0
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -105,6 +111,25 @@ def _signal_strength(adjusted_probability: float, threshold: float, side: int, m
     return max(0.0, adjusted_probability - threshold)
 
 
+def _policy_action_evidence(
+    policy: dict[str, object],
+    action: str,
+) -> tuple[int, float, int, float, float, float]:
+    prefix = "take" if action == "take" else "downsize"
+    return (
+        max(1, int(_finite(policy.get("minimum_action_samples"), 0.0))),
+        (
+            max(0.0, min(1.0, _finite(policy.get("target_precision"), 0.0)))
+            if action == "take"
+            else 0.0
+        ),
+        max(0, int(_finite(policy.get(f"{prefix}_sample_count"), 0.0))),
+        max(0.0, min(1.0, _finite(policy.get(f"{prefix}_precision"), 0.0))),
+        _finite(policy.get(f"{prefix}_mean_return"), 0.0),
+        _finite(policy.get(f"{prefix}_net_pnl"), 0.0),
+    )
+
+
 def apply_meta_label_policy(
     policy: object,
     *,
@@ -146,9 +171,41 @@ def apply_meta_label_policy(
         return MetaLabelDecision(True, "skip", 0.0, float(strength), "invalid_meta_label_thresholds")
     downsize_fraction = max(0.05, min(1.0, downsize_fraction))
     if strength >= take_threshold:
-        return MetaLabelDecision(True, "take", 1.0, float(strength), "meta_label_take")
+        minimum_samples, minimum_precision, samples, precision, mean_return, net_pnl = _policy_action_evidence(
+            policy,
+            "take",
+        )
+        return MetaLabelDecision(
+            True,
+            "take",
+            1.0,
+            float(strength),
+            "meta_label_take",
+            validation_minimum_sample_count=minimum_samples,
+            validation_minimum_precision=minimum_precision,
+            validation_sample_count=samples,
+            validation_precision=precision,
+            expected_after_cost_return=mean_return,
+            expected_after_cost_pnl=net_pnl,
+        )
     if strength >= downsize_threshold:
-        return MetaLabelDecision(True, "downsize", float(downsize_fraction), float(strength), "meta_label_downsize")
+        minimum_samples, minimum_precision, samples, precision, mean_return, net_pnl = _policy_action_evidence(
+            policy,
+            "downsize",
+        )
+        return MetaLabelDecision(
+            True,
+            "downsize",
+            float(downsize_fraction),
+            float(strength),
+            "meta_label_downsize",
+            validation_minimum_sample_count=minimum_samples,
+            validation_minimum_precision=minimum_precision,
+            validation_sample_count=samples,
+            validation_precision=precision,
+            expected_after_cost_return=mean_return,
+            expected_after_cost_pnl=net_pnl,
+        )
     return MetaLabelDecision(True, "skip", 0.0, float(strength), "meta_label_skip")
 
 
@@ -280,17 +337,42 @@ def build_meta_label_report(
         status = "trained"
         reason = None
 
-    downsize_floor = max(0.0, best_threshold * 0.50)
     take_samples = [sample for sample in samples if sample.signal_strength >= best_threshold]
-    downsize_samples = [
+    proposed_downsize_floor = max(0.0, best_threshold * 0.50)
+    proposed_downsize_samples = [
         sample
         for sample in samples
-        if downsize_floor <= sample.signal_strength < best_threshold
+        if proposed_downsize_floor <= sample.signal_strength < best_threshold
     ]
+    proposed_downsize_net_pnl = sum(
+        sample.net_pnl for sample in proposed_downsize_samples
+    )
+    downsize_evidence_accepted = bool(
+        len(proposed_downsize_samples) >= minimum_samples
+        and _mean_return(proposed_downsize_samples) > 0.0
+        and proposed_downsize_net_pnl > 0.0
+    )
+    downsize_floor = (
+        proposed_downsize_floor
+        if downsize_evidence_accepted
+        else float(best_threshold)
+    )
+    downsize_samples = (
+        proposed_downsize_samples
+        if downsize_evidence_accepted
+        else []
+    )
     skip_samples = [sample for sample in samples if sample.signal_strength < downsize_floor]
     skipped_loss = sum(-sample.net_pnl for sample in skip_samples if sample.net_pnl < 0.0)
     skipped_profit = sum(sample.net_pnl for sample in skip_samples if sample.net_pnl > 0.0)
+    take_precision = _precision(take_samples)
+    take_mean_return = _mean_return(take_samples)
+    take_net_pnl = sum(sample.net_pnl for sample in take_samples)
+    downsize_precision = _precision(downsize_samples)
+    downsize_mean_return = _mean_return(downsize_samples)
+    downsize_net_pnl = sum(sample.net_pnl for sample in downsize_samples)
     policy = {
+        "evidence_schema_version": "meta-label-after-cost-v1",
         "enabled": status == "trained",
         "mode": "take_downsize_skip",
         "reason": reason,
@@ -300,6 +382,16 @@ def build_meta_label_report(
         "downsize_threshold": downsize_floor,
         "downsize_fraction": 0.5,
         "sample_count": len(samples),
+        "minimum_action_samples": int(minimum_samples),
+        "take_sample_count": len(take_samples),
+        "take_precision": float(take_precision),
+        "take_mean_return": float(take_mean_return),
+        "take_net_pnl": float(take_net_pnl),
+        "downsize_evidence_accepted": downsize_evidence_accepted,
+        "downsize_sample_count": len(downsize_samples),
+        "downsize_precision": float(downsize_precision),
+        "downsize_mean_return": float(downsize_mean_return),
+        "downsize_net_pnl": float(downsize_net_pnl),
     }
     return MetaLabelReport(
         status=status,
@@ -313,11 +405,11 @@ def build_meta_label_report(
         take_count=len(take_samples),
         downsize_count=len(downsize_samples),
         skip_count=len(skip_samples),
-        take_precision=_precision(take_samples),
-        take_mean_return=_mean_return(take_samples),
-        take_net_pnl=sum(sample.net_pnl for sample in take_samples),
-        downsize_precision=_precision(downsize_samples),
-        downsize_mean_return=_mean_return(downsize_samples),
+        take_precision=take_precision,
+        take_mean_return=take_mean_return,
+        take_net_pnl=take_net_pnl,
+        downsize_precision=downsize_precision,
+        downsize_mean_return=downsize_mean_return,
         skipped_loss_avoided=float(skipped_loss),
         skipped_profit_missed=float(skipped_profit),
         policy=policy,

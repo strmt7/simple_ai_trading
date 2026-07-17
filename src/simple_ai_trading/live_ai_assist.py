@@ -369,6 +369,7 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     market_edge = _mapping(terminal.get("market_edge"))
     execution = _mapping(model_validation.get("execution_validation"))
     cost_model = _mapping(case.evidence.get("cost_model"))
+    meta_label = _mapping(case.evidence.get("meta_label"))
     sample_count = _nonnegative_int_or_none(calibration.get("sample_count"))
     effective_trials = _nonnegative_int_or_none(selection.get("effective_trials"))
     edge_sample_count = _nonnegative_int_or_none(market_edge.get("sample_count"))
@@ -397,6 +398,23 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     )
     microstructure_gaps = _nonnegative_int_or_none(
         execution.get("microstructure_sequence_gaps")
+    )
+    meta_enabled = meta_label.get("enabled") is True
+    meta_minimum_samples = _nonnegative_int_or_none(
+        meta_label.get("validation_minimum_sample_count")
+    )
+    meta_samples = _nonnegative_int_or_none(
+        meta_label.get("validation_sample_count")
+    )
+    meta_minimum_precision = _finite_or_none(
+        meta_label.get("validation_minimum_precision")
+    )
+    meta_precision = _finite_or_none(meta_label.get("validation_precision"))
+    meta_expected_return = _finite_or_none(
+        meta_label.get("expected_after_cost_return")
+    )
+    meta_expected_pnl = _finite_or_none(
+        meta_label.get("expected_after_cost_pnl_quote")
     )
     return bool(
         model_validation.get("available") is True
@@ -442,6 +460,24 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
         and model_barrier_bps is not None
         and math.isclose(evidence_barrier_bps, model_barrier_bps, abs_tol=1e-9)
         and model_barrier_bps > cost_floor_bps
+        and (
+            not meta_enabled
+            or (
+                meta_label.get("action") in {"take", "downsize"}
+                and meta_minimum_samples is not None
+                and meta_minimum_samples > 0
+                and meta_samples is not None
+                and meta_samples >= meta_minimum_samples
+                and meta_minimum_precision is not None
+                and 0.0 <= meta_minimum_precision <= 1.0
+                and meta_precision is not None
+                and meta_minimum_precision <= meta_precision <= 1.0
+                and meta_expected_return is not None
+                and meta_expected_return > 0.0
+                and meta_expected_pnl is not None
+                and meta_expected_pnl > 0.0
+            )
+        )
     )
 
 
@@ -1188,6 +1224,28 @@ class AIAssistedDecisionFunction:
                 ai_assist_reason="coordinator reports no new-entry boundary",
                 ai_assist_entry_ready=False,
             )
+        proposed_size_multiplier = _finite_or_none(
+            getattr(decision, "size_multiplier", 1.0)
+        )
+        if proposed_size_multiplier is None:
+            return replace(
+                decision,
+                ai_assist_mode="shadow_only",
+                ai_assist_status="shadow_failure",
+                ai_assist_action="veto",
+                ai_assist_reason="deterministic model proposed an invalid size",
+                ai_assist_entry_ready=False,
+            )
+        if proposed_size_multiplier <= 0.0:
+            return replace(
+                decision,
+                ai_assist_mode="shadow_only",
+                ai_assist_status="shadow_idle",
+                ai_assist_action="",
+                ai_assist_case_id="",
+                ai_assist_reason="deterministic model suppresses this entry",
+                ai_assist_entry_ready=False,
+            )
         labeling = _mapping(self._model_validation_evidence.get("labeling"))
         model_barrier_bps = _finite_or_none(labeling.get("gross_label_barrier_bps"))
         round_trip_cost_floor_bps = configured_round_trip_cost_floor_bps(strategy)
@@ -1223,11 +1281,38 @@ class AIAssistedDecisionFunction:
                 "notes": list(getattr(decision, "regime_notes", ())[:8]),
             },
             "meta_label": {
+                "enabled": bool(getattr(decision, "meta_label_enabled", False)),
                 "action": str(getattr(decision, "meta_label_action", "")),
                 "reason": str(getattr(decision, "meta_label_reason", ""))[:180],
                 "size_multiplier": float(getattr(decision, "size_multiplier", 1.0)),
                 "signal_strength": float(
                     getattr(decision, "meta_label_signal_strength", 0.0)
+                ),
+                "validation_minimum_sample_count": int(
+                    getattr(
+                        decision,
+                        "meta_label_validation_minimum_sample_count",
+                        0,
+                    )
+                ),
+                "validation_minimum_precision": float(
+                    getattr(
+                        decision,
+                        "meta_label_validation_minimum_precision",
+                        0.0,
+                    )
+                ),
+                "validation_sample_count": int(
+                    getattr(decision, "meta_label_validation_sample_count", 0)
+                ),
+                "validation_precision": float(
+                    getattr(decision, "meta_label_validation_precision", 0.0)
+                ),
+                "expected_after_cost_return": float(
+                    getattr(decision, "meta_label_expected_after_cost_return", 0.0)
+                ),
+                "expected_after_cost_pnl_quote": float(
+                    getattr(decision, "meta_label_expected_after_cost_pnl", 0.0)
                 ),
             },
             "model_validation": self._model_validation_evidence,
@@ -1242,7 +1327,7 @@ class AIAssistedDecisionFunction:
                 ml_confidence=float(getattr(decision, "confidence", 0.0)),
                 maximum_risk_multiplier=min(
                     1.0,
-                    max(0.0, float(getattr(decision, "size_multiplier", 1.0))),
+                    max(0.0, proposed_size_multiplier),
                 ),
                 model_digest=self._model_digest,
                 terminal_model_fingerprint=self._terminal_model_fingerprint,
