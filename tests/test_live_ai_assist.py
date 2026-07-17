@@ -686,10 +686,34 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     assert decision.prompt_tokens == 321
     assert decision.output_tokens == 47
     assert requests[0]["think"] is False
-    assert requests[0]["options"]["num_predict"] == 180
+    assert requests[0]["options"]["num_ctx"] == 4_096
+    assert requests[0]["options"]["num_predict"] == 128
+    assert "live-ai-entry-risk-review-v2" in requests[0]["messages"][1]["content"]
+    assert sum(
+        len(message["content"].encode("utf-8"))
+        for message in requests[0]["messages"]
+    ) <= live_ai_assist_module._MAX_PROVIDER_MESSAGE_BYTES
 
     with pytest.raises(ValueError, match="case differs"):
         provider(_case(observed_at_ms=2_000, model_digest="c" * 64))
+
+    oversized_evidence = _approval_evidence()
+    oversized_evidence["bounded_notes"] = ["x" * 240 for _ in range(12)]
+    oversized_case = build_live_ai_entry_case(
+        symbol="BTCUSDC",
+        market_type="futures",
+        interval="15m",
+        observed_at_ms=2_000,
+        proposed_side="LONG",
+        ml_confidence=0.72,
+        maximum_risk_multiplier=0.4,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+        evidence=oversized_evidence,
+    )
+    with pytest.raises(ValueError, match="pre-inference context budget"):
+        provider(oversized_case)
+    assert len(requests) == 1
 
     monkeypatch.setattr(
         live_ai_assist_module,
@@ -698,6 +722,17 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     )
     with pytest.raises(ValueError, match="approved GPU-resident model"):
         provider(_case(observed_at_ms=3_000))
+
+
+def test_ai_decision_rejects_combined_context_overrun() -> None:
+    overrun = replace(
+        _approval(),
+        prompt_tokens=4_000,
+        output_tokens=100,
+    )
+
+    with pytest.raises(ValueError, match="combined context budget"):
+        overrun.validated_for(_case())
 
 
 def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
@@ -767,6 +802,9 @@ def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
     assert records[0]["mode"] == "shadow_only"
     assert records[0]["trading_authority"] is False
     assert records[0]["case"]["case_id"] == completed.ai_assist_case_id
+    assert records[0]["case"]["prompt_contract"] == (
+        "live-ai-entry-risk-review-v2"
+    )
 
 
 def test_provider_failure_is_recorded_without_execution_authority(tmp_path: Path) -> None:
