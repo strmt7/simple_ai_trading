@@ -370,6 +370,8 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     execution = _mapping(model_validation.get("execution_validation"))
     cost_model = _mapping(case.evidence.get("cost_model"))
     meta_label = _mapping(case.evidence.get("meta_label"))
+    proposal = _mapping(case.evidence.get("proposal"))
+    payoff = _mapping(proposal.get("after_cost_payoff"))
     sample_count = _nonnegative_int_or_none(calibration.get("sample_count"))
     effective_trials = _nonnegative_int_or_none(selection.get("effective_trials"))
     edge_sample_count = _nonnegative_int_or_none(market_edge.get("sample_count"))
@@ -416,6 +418,62 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     meta_expected_pnl = _finite_or_none(
         meta_label.get("expected_after_cost_pnl_quote")
     )
+    payoff_support_count = _nonnegative_int_or_none(
+        payoff.get("proposal_support_count")
+    )
+    payoff_validated_support_count = _nonnegative_int_or_none(
+        payoff.get("validated_support_count")
+    )
+    payoff_validation_rows = _nonnegative_int_or_none(
+        payoff.get("minimum_supporting_validation_rows")
+    )
+    payoff_validation_edge_bps = _finite_or_none(
+        payoff.get("minimum_supporting_validation_after_cost_edge_bps")
+    )
+    payoff_current_edge_bps = _finite_or_none(
+        payoff.get("weighted_proposal_expected_after_cost_bps")
+    )
+    payoff_value_coverage = _finite_or_none(
+        payoff.get("proposal_value_weight_coverage")
+    )
+    meta_contract_valid = bool(
+        not meta_enabled
+        or (
+            meta_label.get("action") in {"take", "downsize"}
+            and meta_minimum_samples is not None
+            and meta_minimum_samples > 0
+            and meta_samples is not None
+            and meta_samples >= meta_minimum_samples
+            and meta_minimum_precision is not None
+            and 0.0 <= meta_minimum_precision <= 1.0
+            and meta_precision is not None
+            and meta_minimum_precision <= meta_precision <= 1.0
+            and meta_expected_return is not None
+            and meta_expected_return > 0.0
+            and meta_expected_pnl is not None
+            and meta_expected_pnl > 0.0
+        )
+    )
+    payoff_contract_valid = bool(
+        payoff.get("schema_version") == "active-after-cost-payoff-evidence-v1"
+        and payoff.get("available") is True
+        and payoff.get("proposal_side") == case.proposed_side
+        and payoff_support_count is not None
+        and payoff_support_count > 0
+        and payoff_validated_support_count is not None
+        and payoff_validated_support_count > 0
+        and payoff_validation_rows is not None
+        and payoff_validation_rows > 0
+        and payoff_validation_edge_bps is not None
+        and payoff_validation_edge_bps > 0.0
+        and payoff_current_edge_bps is not None
+        and payoff_current_edge_bps > 0.0
+        and payoff_value_coverage is not None
+        and 0.0 < payoff_value_coverage <= 1.0
+    )
+    current_after_cost_edge_valid = bool(
+        (meta_enabled and meta_contract_valid) or payoff_contract_valid
+    )
     return bool(
         model_validation.get("available") is True
         and sample_count is not None
@@ -460,24 +518,8 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
         and model_barrier_bps is not None
         and math.isclose(evidence_barrier_bps, model_barrier_bps, abs_tol=1e-9)
         and model_barrier_bps > cost_floor_bps
-        and (
-            not meta_enabled
-            or (
-                meta_label.get("action") in {"take", "downsize"}
-                and meta_minimum_samples is not None
-                and meta_minimum_samples > 0
-                and meta_samples is not None
-                and meta_samples >= meta_minimum_samples
-                and meta_minimum_precision is not None
-                and 0.0 <= meta_minimum_precision <= 1.0
-                and meta_precision is not None
-                and meta_minimum_precision <= meta_precision <= 1.0
-                and meta_expected_return is not None
-                and meta_expected_return > 0.0
-                and meta_expected_pnl is not None
-                and meta_expected_pnl > 0.0
-            )
-        )
+        and meta_contract_valid
+        and current_after_cost_edge_valid
     )
 
 
@@ -1182,8 +1224,9 @@ class AIAssistedDecisionFunction:
         self._maximum_review_age_ms = int(maximum_review_age_seconds) * 1_000
         self._clock = clock
         self._entry_review_required = True
+        self._model_artifact = getattr(base_decision_fn, "_model_artifact", None)
         self._model_validation_evidence = _model_validation_evidence(
-            getattr(base_decision_fn, "_model_artifact", None)
+            self._model_artifact
         )
         if not 1_000 <= self._maximum_review_age_ms <= 300_000:
             raise ValueError("live AI maximum review age is invalid")
@@ -1246,11 +1289,81 @@ class AIAssistedDecisionFunction:
                 ai_assist_reason="deterministic model suppresses this entry",
                 ai_assist_entry_ready=False,
             )
+        proposal_evidence = dict(
+            _mapping(getattr(decision, "ai_evidence", {}))
+        )
+        provided_payoff_evidence = proposal_evidence.pop(
+            "after_cost_payoff",
+            None,
+        )
+        predict_payoff_evidence = getattr(
+            self._model_artifact,
+            "predict_payoff_evidence",
+            None,
+        )
+        if callable(predict_payoff_evidence):
+            raw_features = getattr(decision, "model_features", ())
+            try:
+                model_features = tuple(float(value) for value in raw_features)
+            except (TypeError, ValueError, OverflowError):
+                model_features = ()
+            if not model_features or any(
+                not math.isfinite(value) for value in model_features
+            ):
+                return replace(
+                    decision,
+                    ai_assist_mode="shadow_only",
+                    ai_assist_status="shadow_failure",
+                    ai_assist_action="veto",
+                    ai_assist_reason="model-bound AI payoff features are invalid",
+                    ai_assist_entry_ready=False,
+                )
+            try:
+                model_payoff_evidence = predict_payoff_evidence(
+                    model_features,
+                    proposed_side=side,
+                )
+            except (TypeError, ValueError, OverflowError):
+                return replace(
+                    decision,
+                    ai_assist_mode="shadow_only",
+                    ai_assist_status="shadow_failure",
+                    ai_assist_action="veto",
+                    ai_assist_reason="model-bound AI payoff evidence is invalid",
+                    ai_assist_entry_ready=False,
+                )
+            if not isinstance(model_payoff_evidence, dict):
+                return replace(
+                    decision,
+                    ai_assist_mode="shadow_only",
+                    ai_assist_status="shadow_failure",
+                    ai_assist_action="veto",
+                    ai_assist_reason="model-bound AI payoff evidence is invalid",
+                    ai_assist_entry_ready=False,
+                )
+            payoff_evidence_mismatch = False
+            if provided_payoff_evidence is not None:
+                try:
+                    payoff_evidence_mismatch = _canonical_json(
+                        provided_payoff_evidence
+                    ) != _canonical_json(model_payoff_evidence)
+                except (TypeError, ValueError, OverflowError):
+                    payoff_evidence_mismatch = True
+            if payoff_evidence_mismatch:
+                return replace(
+                    decision,
+                    ai_assist_mode="shadow_only",
+                    ai_assist_status="shadow_failure",
+                    ai_assist_action="veto",
+                    ai_assist_reason="supplied payoff evidence differs from the model",
+                    ai_assist_entry_ready=False,
+                )
+            proposal_evidence["after_cost_payoff"] = model_payoff_evidence
         labeling = _mapping(self._model_validation_evidence.get("labeling"))
         model_barrier_bps = _finite_or_none(labeling.get("gross_label_barrier_bps"))
         round_trip_cost_floor_bps = configured_round_trip_cost_floor_bps(strategy)
         evidence = {
-            "proposal": dict(getattr(decision, "ai_evidence", {}) or {}),
+            "proposal": proposal_evidence,
             "risk_contract": {
                 "risk_level": str(getattr(strategy, "risk_level", "")),
                 "leverage": float(getattr(strategy, "leverage", 1.0)),

@@ -50,9 +50,24 @@ def _approval_strategy() -> StrategyConfig:
     )
 
 
+def _payoff_proposal_evidence() -> dict[str, object]:
+    return {
+        "schema_version": "active-after-cost-payoff-evidence-v1",
+        "available": True,
+        "proposal_side": "LONG",
+        "proposal_support_count": 1,
+        "validated_support_count": 1,
+        "minimum_supporting_validation_rows": 80,
+        "minimum_supporting_validation_after_cost_edge_bps": 2.5,
+        "proposal_value_weight_coverage": 1.0,
+        "weighted_proposal_expected_after_cost_bps": 3.2,
+    }
+
+
 def _approval_evidence() -> dict[str, object]:
     return {
         "signal": {"after_cost_margin_bps": 3.2},
+        "proposal": {"after_cost_payoff": _payoff_proposal_evidence()},
         "cost_model": {
             "configured_round_trip_cost_floor_bps": 13.0,
             "model_gross_label_barrier_bps": 15.0,
@@ -157,6 +172,10 @@ def _validated_model_artifact() -> SimpleNamespace:
                 "captured_seconds": 1_728_000,
                 "sequence_gap_count": 0,
             },
+        },
+        predict_payoff_evidence=lambda _features, *, proposed_side: {
+            **_payoff_proposal_evidence(),
+            "proposal_side": proposed_side,
         },
     )
 
@@ -274,6 +293,27 @@ def test_approval_requires_bound_after_cost_model_evidence() -> None:
         _approval().validated_for(unsupported)
 
 
+def test_approval_requires_current_validated_after_cost_edge() -> None:
+    evidence = _approval_evidence()
+    payoff = evidence["proposal"]["after_cost_payoff"]
+    payoff["weighted_proposal_expected_after_cost_bps"] = -0.1
+    unsupported = build_live_ai_entry_case(
+        symbol="BTCUSDC",
+        market_type="futures",
+        interval="15m",
+        observed_at_ms=1_000,
+        proposed_side="LONG",
+        ml_confidence=0.72,
+        maximum_risk_multiplier=0.4,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+        evidence=evidence,
+    )
+
+    with pytest.raises(ValueError, match="bound model evidence"):
+        _approval().validated_for(unsupported)
+
+
 def test_model_validation_summary_is_compact_and_unit_explicit() -> None:
     artifact = _validated_model_artifact()
 
@@ -342,6 +382,7 @@ def test_nonpositive_meta_label_bucket_never_consumes_provider_tokens(
             confidence=0.72,
             mark_price=100.0,
             observed_at_ms=1_000,
+            model_features=(0.1,),
             meta_label_enabled=True,
             meta_label_action="take",
             meta_label_validation_minimum_sample_count=5,
@@ -369,6 +410,94 @@ def test_nonpositive_meta_label_bucket_never_consumes_provider_tokens(
 
     assert decision.ai_assist_status == "shadow_failure"
     assert decision.ai_assist_action == "veto"
+    assert provider_calls == []
+    assert assisted.close(1.0)
+
+
+def test_nonpositive_current_payoff_never_consumes_provider_tokens(
+    tmp_path: Path,
+) -> None:
+    provider_calls: list[str] = []
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda case: provider_calls.append(case.case_id) or _approval(),
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+    model_artifact = _validated_model_artifact()
+    negative_payoff = _payoff_proposal_evidence()
+    negative_payoff["weighted_proposal_expected_after_cost_bps"] = -0.1
+    model_artifact.predict_payoff_evidence = (
+        lambda _features, *, proposed_side: {
+            **negative_payoff,
+            "proposal_side": proposed_side,
+        }
+    )
+
+    def base_decision(*_args):
+        return Decision(
+            side="LONG",
+            confidence=0.72,
+            mark_price=100.0,
+            observed_at_ms=1_000,
+            model_features=(0.1,),
+        )
+
+    base_decision._model_artifact = model_artifact
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+    )
+    decision = assisted(
+        None,
+        RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m"),
+        _approval_strategy(),
+        None,
+    )
+
+    assert decision.ai_assist_status == "shadow_failure"
+    assert decision.ai_assist_action == "veto"
+    assert provider_calls == []
+    assert assisted.close(1.0)
+
+
+def test_supplied_payoff_evidence_must_match_promoted_model(
+    tmp_path: Path,
+) -> None:
+    provider_calls: list[str] = []
+    reviewer = AsyncLiveAIEntryReviewer(
+        lambda case: provider_calls.append(case.case_id) or _approval(),
+        audit_path=tmp_path / "ai-entry.jsonl",
+    )
+    forged_payoff = _payoff_proposal_evidence()
+    forged_payoff["weighted_proposal_expected_after_cost_bps"] = 999.0
+
+    def base_decision(*_args):
+        return Decision(
+            side="LONG",
+            confidence=0.72,
+            mark_price=100.0,
+            observed_at_ms=1_000,
+            model_features=(0.1,),
+            ai_evidence={"after_cost_payoff": forged_payoff},
+        )
+
+    base_decision._model_artifact = _validated_model_artifact()
+    assisted = AIAssistedDecisionFunction(
+        base_decision,
+        reviewer,
+        model_digest=_DIGEST,
+        terminal_model_fingerprint=_FINGERPRINT,
+    )
+    decision = assisted(
+        None,
+        RuntimeConfig(symbol="BTCUSDC", market_type="futures", interval="15m"),
+        _approval_strategy(),
+        None,
+    )
+
+    assert decision.ai_assist_status == "shadow_failure"
+    assert "differs from the model" in decision.ai_assist_reason
     assert provider_calls == []
     assert assisted.close(1.0)
 
@@ -541,7 +670,7 @@ def test_shadow_reviewer_defers_only_entry_then_preserves_ml_side_and_size(
             mark_price=100.0,
             size_multiplier=0.4,
             observed_at_ms=1_000,
-            ai_evidence={"after_cost_margin_bps": 3.2},
+            model_features=(0.1,),
         )
 
     base_decision._model_artifact = _validated_model_artifact()
@@ -630,6 +759,7 @@ def test_completed_review_cannot_be_replayed_after_freshness_window(
             mark_price=100.0,
             size_multiplier=0.4,
             observed_at_ms=1_000,
+            model_features=(0.1,),
         )
 
     base_decision._model_artifact = _validated_model_artifact()

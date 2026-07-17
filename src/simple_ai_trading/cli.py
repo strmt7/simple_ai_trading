@@ -13871,6 +13871,7 @@ def _build_autonomous_decision_fn(
             regime_notes=tuple(regime_evidence.notes),
             regime_unpredictability_score=float(regime_score),
             observed_at_ms=int(latest.timestamp),
+            model_features=feature_values,
             ai_evidence={
                 "model_signal": {
                     "raw_probability": float(raw_score),

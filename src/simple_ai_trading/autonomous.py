@@ -239,6 +239,7 @@ class Decision:
     regime_notes: tuple[str, ...] = ()
     regime_unpredictability_score: float | None = None
     observed_at_ms: int = 0
+    model_features: tuple[float, ...] = ()
     ai_evidence: Mapping[str, object] = field(default_factory=dict)
     ai_assist_mode: str = ""
     ai_assist_status: str = ""
