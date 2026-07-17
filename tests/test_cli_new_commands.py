@@ -859,6 +859,73 @@ def test_command_autonomous_live_reaches_signed_loop_when_readiness_passes(tmp_p
     assert "autonomous: iteration-cap iterations=1" in capsys.readouterr().out
 
 
+def test_command_autonomous_blocks_ai_cases_that_cannot_be_revisited(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    _autonomous_control_path(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        cli,
+        "load_runtime",
+        lambda: RuntimeConfig(
+            testnet=True,
+            dry_run=True,
+            market_type="spot",
+            interval="1s",
+            ai_enabled=True,
+            api_key="fake-api-key",
+            api_secret="fake-secret",
+        ),
+    )
+    monkeypatch.setattr(cli, "load_strategy", StrategyConfig)
+    monkeypatch.setattr(
+        cli,
+        "_build_autonomous_decision_fn",
+        lambda **_kwargs: (lambda *_args: None, None, None),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.ai_start_gate.evaluate_ai_start_gate",
+        lambda *_args, **_kwargs: AIStartGateReport(
+            status="approved",
+            allowed=True,
+            active=True,
+            reason="signed test review",
+            review_path="test-ai-review.json",
+            review_sha256="a" * 64,
+            source_report_sha256="b" * 64,
+            model="test-model",
+            model_digest="c" * 64,
+            terminal_model_fingerprint="d" * 64,
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_build_client",
+        lambda _runtime: (_ for _ in ()).throw(
+            AssertionError("exchange setup must not run after the cadence gate")
+        ),
+    )
+
+    args = argparse.Namespace(
+        action="start",
+        objective="conservative",
+        model="data/model.json",
+        poll_seconds=1.0,
+        ai_timeout=10.0,
+        iterations=1,
+        heartbeat_every=1,
+        starting_cash=1000.0,
+        paper=False,
+        live=True,
+    )
+
+    assert cli.command_autonomous(args) == 2
+    error = capsys.readouterr().err
+    assert "active AI exact-case review needs at least 11s" in error
+    assert "interval 1s provides 1s" in error
+
+
 def test_build_autonomous_decision_fn_scores_model_and_external_signals(monkeypatch, tmp_path):
     class _Model:
         feature_signature = None

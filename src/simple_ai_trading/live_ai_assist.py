@@ -69,6 +69,29 @@ _ADVERSE_REASON_CODES = frozenset(
     }
 )
 
+
+def minimum_exact_case_window_seconds(
+    *,
+    poll_seconds: float,
+    provider_timeout_seconds: float,
+) -> float:
+    """Return the nominal candle window needed to submit and revisit one case.
+
+    The first poll may occur almost one poll period after a candle opens. A
+    completed asynchronous review is observable only on a later poll, so the
+    timeout is rounded up to whole poll periods and one initial period is
+    reserved. This is an admission lower bound, not a latency guarantee.
+    """
+
+    poll = float(poll_seconds)
+    timeout = float(provider_timeout_seconds)
+    if not math.isfinite(poll) or poll <= 0.0:
+        raise ValueError("AI review poll interval must be positive and finite")
+    if not math.isfinite(timeout) or timeout <= 0.0:
+        raise ValueError("AI review provider timeout must be positive and finite")
+    return float((math.ceil(timeout / poll) + 1) * poll)
+
+
 LIVE_AI_ENTRY_RESPONSE_SCHEMA = {
     "type": "object",
     "properties": {
@@ -1592,5 +1615,6 @@ __all__ = [
     "OllamaLiveAIEntryProvider",
     "build_live_ai_entry_case",
     "load_live_ai_entry_audit",
+    "minimum_exact_case_window_seconds",
     "validate_live_ai_entry_audit_records",
 ]
