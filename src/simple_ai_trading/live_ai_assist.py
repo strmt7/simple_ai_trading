@@ -335,6 +335,32 @@ class LiveAIEntryDecision:
             risk_multiplier != 0.0 or not _ADVERSE_REASON_CODES.intersection(codes)
         ):
             raise ValueError("AI adverse action lacks a zero-risk adverse reason")
+        if (
+            self.response_sha256 == _ZERO_SHA256
+            or len(self.response_sha256) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.response_sha256
+            )
+        ):
+            raise ValueError("AI entry decision response identity is invalid")
+        if (
+            self.observed_model_digest != case.model_digest
+            or self.model_residency_status != "gpu_resident"
+        ):
+            raise ValueError("AI entry decision is not bound to the approved GPU model")
+        prompt_tokens = _bounded_count(
+            self.prompt_tokens,
+            name="prompt token count",
+            maximum=4096,
+        )
+        output_tokens = _bounded_count(
+            self.output_tokens,
+            name="output token count",
+            maximum=180,
+        )
+        if prompt_tokens <= 0 or output_tokens <= 0:
+            raise ValueError("AI entry decision token telemetry is empty")
         return self
 
 
@@ -478,7 +504,7 @@ class OllamaLiveAIEntryProvider:
         decision = _parse_provider_decision(
             payload,
             expected_model=self.model,
-        ).validated_for(case)
+        )
         prompt_tokens = _bounded_count(
             payload.get("prompt_eval_count"),
             name="prompt token count",
@@ -504,11 +530,12 @@ class OllamaLiveAIEntryProvider:
             )
         return replace(
             decision,
+            response_sha256=hashlib.sha256(raw_response).hexdigest(),
             observed_model_digest=residency.digest,
             model_residency_status=residency.status,
             prompt_tokens=prompt_tokens,
             output_tokens=output_tokens,
-        )
+        ).validated_for(case)
 
 
 def _failed_decision(reason: str) -> LiveAIEntryDecision:

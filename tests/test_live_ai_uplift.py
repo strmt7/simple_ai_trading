@@ -143,6 +143,22 @@ def test_semantic_audit_loader_rejects_rehashed_risk_cap_violation(
         load_live_ai_entry_audit(path)
 
 
+def test_semantic_audit_loader_rejects_rehashed_empty_provider_telemetry(
+    tmp_path: Path,
+) -> None:
+    case = _case(1_000)
+    record = _record(case, _decision("approve"), completed_at_ms=2_000, previous="0" * 64)
+    record["decision"]["prompt_tokens"] = 0
+    unsigned = dict(record)
+    unsigned.pop("record_sha256")
+    record["record_sha256"] = _canonical_sha256(unsigned)
+    path = tmp_path / "audit.jsonl"
+    path.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="token telemetry is empty"):
+        load_live_ai_entry_audit(path)
+
+
 def test_materializer_rejects_review_completed_after_entry() -> None:
     case = _case(1_000)
     record = _record(case, _decision("veto"), completed_at_ms=4_000, previous="0" * 64)

@@ -57,6 +57,10 @@ def _approval() -> LiveAIEntryDecision:
         summary="After-cost edge and liquidity evidence are coherent.",
         valid=True,
         response_sha256="c" * 64,
+        observed_model_digest=_DIGEST,
+        model_residency_status="gpu_resident",
+        prompt_tokens=100,
+        output_tokens=20,
     )
 
 
@@ -459,6 +463,11 @@ def test_provider_cannot_exceed_ml_risk_bound(tmp_path: Path) -> None:
             reason_codes=("edge_after_costs",),
             summary="Attempts to exceed the ML risk cap.",
             valid=True,
+            response_sha256="c" * 64,
+            observed_model_digest=_DIGEST,
+            model_residency_status="gpu_resident",
+            prompt_tokens=100,
+            output_tokens=20,
         ),
         audit_path=tmp_path / "ai-entry.jsonl",
     )
