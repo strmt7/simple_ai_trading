@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import replace
 from decimal import Decimal
 import hashlib
 import json
 import math
+from pathlib import Path
 
 import pytest
 
@@ -65,9 +67,27 @@ from simple_ai_trading.polymarket_replay import PolymarketEvidenceReplay
 from simple_ai_trading.polymarket_repricing import (
     PolymarketRepricingExecutionContext,
 )
+from simple_ai_trading.polymarket_round12_admission import (
+    build_round12_action_evidence_datasets,
+    load_round12_admission_dataset,
+    materialize_round12_admission_dataset,
+)
+from simple_ai_trading.polymarket_round12_capture import (
+    create_round12_capture_manifest,
+)
+from simple_ai_trading.polymarket_round12_reference import (
+    load_round12_confirmation_contract,
+)
 
 
 EPOCH = 1_784_058_600
+ROUND12_CONTRACT = (
+    Path(__file__).resolve().parents[1]
+    / "docs"
+    / "model-research"
+    / "polymarket"
+    / "round-012-fixed-calibration-confirmation-contract.json"
+)
 
 
 def _canonical(value: object) -> str:
@@ -76,6 +96,31 @@ def _canonical(value: object) -> str:
 
 def _sha(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+def _round12_capture_manifest(
+    run_id: str,
+    started_at_ms: int,
+) -> dict[str, object]:
+    contract = load_round12_confirmation_contract(ROUND12_CONTRACT)
+    implementation = contract["implementation"]
+    model = contract["model_contract"]
+    policy = contract["primary_policy"]
+    return create_round12_capture_manifest(
+        run_id=run_id,
+        started_at_ms=started_at_ms,
+        repository_commit="b" * 40,
+        contract_sha256=str(contract["contract_sha256"]),
+        model_sha256=str(model["model_sha256"]),
+        policy_sha256=str(policy["policy_sha256"]),
+        reference_implementation_sha256=str(
+            implementation["reference_implementation_sha256"]
+        ),
+        action_pipeline_implementation_sha256=str(
+            implementation["action_pipeline_implementation_sha256"]
+        ),
+        required_git_blob_sha256={"tests/fixture.py": "a" * 64},
+    )
 
 
 def _market_payload(asset: str) -> dict[str, object]:
@@ -419,8 +464,13 @@ def _finish_replay_store(
     run_ended_at_ms: int = EPOCH * 1_000 + 302_000,
     pre_window_binance_gap: bool = False,
     additional_messages: tuple[RawStreamMessage, ...] = (),
+    preregistration_manifest: Mapping[str, object] | None = None,
 ) -> None:
-    store.start_run(run_id, run_started_at_ms)
+    store.start_run(
+        run_id,
+        run_started_at_ms,
+        preregistration_manifest=preregistration_manifest,
+    )
     for asset in ("BTC", "ETH", "SOL"):
         store.record_market_evidence(run_id, _evidence(asset))
     if pre_window_binance_gap:
@@ -2925,6 +2975,53 @@ def test_polymarket_action_materialization_is_idempotent_and_tamper_evident(
     assert dataset.features
 
 
+def test_round12_admission_materialization_is_compact_idempotent_and_linked(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "round12-admission.duckdb") as store:
+        _finish_replay_store(store, "round12-admission", feature_evidence=True)
+        features = build_polymarket_feature_dataset(
+            store,
+            run_id="round12-admission",
+            config=PolymarketFeatureConfig(
+                cadence_ms=250,
+                warmup_ms=0,
+                minimum_resolved_markets_per_asset=1,
+            ),
+        )
+        materialize_polymarket_feature_dataset(store, features)
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="round12-admission",
+            book_sample_interval_ms=0,
+        )
+        actions, admissions = build_round12_action_evidence_datasets(
+            features,
+            PolymarketRepricingExecutionContext(replay),
+        )
+        materialize_polymarket_action_value_dataset(store, actions)
+
+        created = materialize_round12_admission_dataset(store, admissions)
+        existing = materialize_round12_admission_dataset(store, admissions)
+        loaded = load_round12_admission_dataset(
+            store,
+            source_action_dataset_sha256=actions.dataset_sha256,
+        )
+        columns = {
+            str(row[1])
+            for row in store.connect().execute(
+                "PRAGMA table_info('polymarket_round12_action_local_admission')"
+            ).fetchall()
+        }
+
+    assert created == "created"
+    assert existing == "existing"
+    assert loaded == admissions
+    assert len(admissions.admissions) == len(actions.features)
+    assert "entry_book_event_id" in columns
+    assert "execution_evidence_json" not in columns
+
+
 def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
     tmp_path,
 ) -> None:
@@ -3111,6 +3208,78 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
     assert "feature-source-series" in progress_events
 
 
+def test_round12_action_local_pipeline_uses_full_segmented_scope_and_persists_proof(
+    tmp_path,
+    capsys,
+) -> None:
+    contract_sha256 = json.loads(
+        ROUND12_CONTRACT.read_text(encoding="utf-8")
+    )["contract_sha256"]
+    database = tmp_path / "round12-pipeline.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(
+            store,
+            "round12-pipeline",
+            feature_evidence=True,
+            pre_window_binance_gap=True,
+            preregistration_manifest=_round12_capture_manifest(
+                "round12-pipeline",
+                EPOCH * 1_000,
+            ),
+        )
+        config = replace(
+            PolymarketActionPipelineConfig(),
+            feature=replace(
+                PolymarketActionPipelineConfig().feature,
+                allow_segmented_gaps=True,
+            ),
+        )
+
+        report = materialize_polymarket_action_value_batches(
+            store,
+            run_id="round12-pipeline",
+            config=config,
+            eligibility_sha256=contract_sha256,
+            continuity_admission_mode="action_local",
+        )
+        repeated = materialize_polymarket_action_value_batches(
+            store,
+            run_id="round12-pipeline",
+            config=config,
+            eligibility_sha256=contract_sha256,
+            continuity_admission_mode="action_local",
+        )
+        admission_counts = store.connect().execute(
+            "SELECT count(*) FROM polymarket_round12_admission_dataset"
+        ).fetchone()
+
+    assert report.continuity_admission_mode == "action_local"
+    assert report.report_sha256 == repeated.report_sha256
+    assert report.action_count > 0
+    assert admission_counts == (len(report.batches),)
+
+    status = cli.main(
+        [
+            "polymarket-action-value",
+            "--database",
+            str(database),
+            "--run-id",
+            "round12-pipeline",
+            "--round12-contract",
+            str(ROUND12_CONTRACT),
+            "--memory-limit",
+            "512MB",
+            "--database-threads",
+            "1",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+    assert status == 0
+    assert payload["continuity_admission_mode"] == "action_local"
+    assert payload["report_sha256"] == report.report_sha256
+
+
 def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(
     tmp_path,
     monkeypatch,
@@ -3225,7 +3394,9 @@ def test_polymarket_continuity_cli_and_native_contract_share_controls(
         "database_threads",
         "json",
     }
-    assert "allow_segmented_gaps" in {option.dest for option in action_spec.options}
+    assert {"allow_segmented_gaps", "round12_contract"}.issubset(
+        {option.dest for option in action_spec.options}
+    )
 
 
 def test_polymarket_feature_provenance_binds_pre_window_causal_events(

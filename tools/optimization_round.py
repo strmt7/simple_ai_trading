@@ -42,7 +42,11 @@ def _parser() -> argparse.ArgumentParser:
             "are raised to that floor"
         ),
     )
-    parser.add_argument("--compute-backend", choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"), default="auto")
+    parser.add_argument(
+        "--compute-backend",
+        choices=("auto", "cpu", "cuda", "rocm", "xpu", "mps", "directml"),
+        default="auto",
+    )
     parser.add_argument("--batch-size", type=int, default=8192)
     parser.add_argument(
         "--model-candidates",

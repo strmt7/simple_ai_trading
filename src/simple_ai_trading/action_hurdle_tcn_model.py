@@ -18,6 +18,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import MINUTE_MS, SYMBOLS
 from .derivatives_hurdle_data import (
     EXECUTION_CHARGE_BPS,
@@ -809,20 +810,22 @@ def _preflight(
     }
 
 
-def directml_action_hurdle_preflight() -> tuple[object, dict[str, object]]:
-    try:
-        import torch_directml
-    except ImportError as exc:
-        raise RuntimeError("Round 49 DirectML backend is unavailable") from exc
-    device = torch_directml.device()
+def action_hurdle_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     return device, _preflight(
-        device, backend_kind="directml", backend_device=str(device)
+        device, backend_kind=backend.kind, backend_device=str(device)
     )
 
 
+def directml_action_hurdle_preflight() -> tuple[object, dict[str, object]]:
+    return action_hurdle_preflight("directml")
+
+
 def cpu_action_hurdle_preflight() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    return device, _preflight(device, backend_kind="cpu", backend_device="cpu")
+    return action_hurdle_preflight("cpu")
 
 
 def _contiguous_runs(
@@ -1642,15 +1645,10 @@ def train_action_hurdle_candidates(
     *,
     model_dir: Path,
     prediction_dir: Path,
-    compute_backend: str,
+    compute_backend: str = "auto",
     progress: ProgressCallback | None = None,
 ) -> tuple[dict[str, ActionHurdleForecastBundle], dict[str, object]]:
-    if compute_backend == "directml":
-        device, preflight = directml_action_hurdle_preflight()
-    elif compute_backend == "cpu":
-        device, preflight = cpu_action_hurdle_preflight()
-    else:
-        raise ValueError("Round 49 compute backend must be directml or cpu")
+    device, preflight = action_hurdle_preflight(compute_backend)
     if progress is not None:
         progress("round49_preflight", {"status": "complete", **preflight})
     feature_scaler = fit_robust_feature_scaler(dataset)
@@ -1687,6 +1685,7 @@ def train_action_hurdle_candidates(
 
 
 __all__ = [
+    "action_hurdle_preflight",
     "ActionHurdleArtifact",
     "ActionHurdleForecastBundle",
     "ActionTargetScaler",

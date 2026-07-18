@@ -42,6 +42,7 @@ from simple_ai_trading.barrier_competing_risk_tcn_model import (  # noqa: E402
     barrier_event_classes,
     train_barrier_competing_risk_candidates,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.barrier_payoff_data import (  # noqa: E402
     BarrierSpecification,
     build_barrier_payoff_dataset,
@@ -539,7 +540,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
-        "--compute-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     return parser
 

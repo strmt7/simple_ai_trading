@@ -18,7 +18,7 @@ from .terminal_holdout_ledger import (
     terminal_result_fingerprint,
 )
 
-_ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "directml", "mps"})
+_ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "xpu", "directml", "mps"})
 _LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
 _MICROSTRUCTURE_SCHEMA = MICROSTRUCTURE_SCHEMA_VERSION
 

@@ -1545,19 +1545,41 @@ def test_combine_components_empty_and_nonreaction_paths(tmp_path) -> None:
     assert report.reaction_required is False
 
 
-def test_news_scoring_gpu_fallback_metadata(monkeypatch) -> None:
-    backend = signals.BackendInfo("directml", "directml", "privateuseone:0", "DirectML", "")
+def test_news_scoring_auto_gpu_fallback_metadata(monkeypatch) -> None:
+    backend = signals.BackendInfo("auto", "directml", "privateuseone:0", "DirectML", "")
     monkeypatch.setattr(signals, "resolve_backend", lambda _backend: backend)
 
     def fail_device(_backend):
         raise RuntimeError("no device")
 
     monkeypatch.setattr(signals, "_torch_device_for_backend", fail_device)
-    scores, resolved = signals._score_news_texts(["Bitcoin adoption", "Bitcoin hack"], compute_backend="directml")
+    scores, resolved = signals._score_news_texts(["Bitcoin adoption", "Bitcoin hack"], compute_backend="auto")
     assert scores == [1.0, -1.0]
     assert resolved.kind == "cpu"
-    assert resolved.requested == "directml"
+    assert resolved.requested == "auto"
     assert "news scoring failed" in resolved.reason
+
+
+def test_news_scoring_pinned_gpu_failure_is_not_hidden(monkeypatch) -> None:
+    backend = signals.BackendInfo(
+        "directml",
+        "directml",
+        "privateuseone:0",
+        "DirectML",
+        "",
+    )
+    monkeypatch.setattr(signals, "resolve_backend", lambda _backend: backend)
+    monkeypatch.setattr(
+        signals,
+        "_torch_device_for_backend",
+        lambda _backend: (_ for _ in ()).throw(RuntimeError("no device")),
+    )
+
+    with pytest.raises(RuntimeError, match="directml news scoring failed"):
+        signals._score_news_texts(
+            ["Bitcoin adoption", "Bitcoin hack"],
+            compute_backend="directml",
+        )
 
 
 def test_report_payload_roundtrips_horizon_and_backend_metadata() -> None:

@@ -16,6 +16,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import SYMBOLS
 from .distributional_tcn_model import (
     CausalResidualBlock,
@@ -395,41 +396,21 @@ def _run_preflight(
 
 
 def sequential_q_preflight(
-    compute_backend: str,
+    compute_backend: str = "auto",
     spec: SequentialQSpec = DEFAULT_SPEC,
 ) -> tuple[object, dict[str, object]]:
     spec.validate()
-    if compute_backend == "directml":
-        try:
-            import torch_directml  # type: ignore
-        except ImportError as exc:  # pragma: no cover - host dependent
-            raise RuntimeError("Round 54 DirectML is unavailable") from exc
-        device = torch_directml.device()
-        return device, _run_preflight(
-            device,
-            {
-                "backend_kind": "directml",
-                "backend_device": str(device),
-                "torch_version": str(torch.__version__),
-                "torch_directml_version": str(
-                    getattr(torch_directml, "__version__", "unknown")
-                ),
-            },
-            spec,
-        )
-    if compute_backend == "cpu":
-        device = torch.device("cpu")
-        return device, _run_preflight(
-            device,
-            {
-                "backend_kind": "cpu",
-                "backend_device": str(device),
-                "torch_version": str(torch.__version__),
-                "torch_directml_version": None,
-            },
-            spec,
-        )
-    raise ValueError(f"Round 54 compute backend is invalid: {compute_backend}")
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
+    return device, _run_preflight(
+        device,
+        {
+            "backend_kind": backend.kind,
+            "backend_device": str(device),
+            "torch_version": str(torch.__version__),
+        },
+        spec,
+    )
 
 
 def _contiguous_window_pairs(
@@ -800,7 +781,7 @@ def train_sequential_q_ensemble(
     dataset: DistributionalDataset,
     *,
     model_dir: Path,
-    compute_backend: str = "directml",
+    compute_backend: str = "auto",
     spec: SequentialQSpec = DEFAULT_SPEC,
     progress: ProgressCallback | None = None,
 ) -> SequentialQEnsemble:

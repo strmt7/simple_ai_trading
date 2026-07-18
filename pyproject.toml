@@ -23,9 +23,11 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = [
-    "torch==2.4.1; platform_system == 'Windows' and python_version < '3.13'",
-    "torch==2.13.0; platform_system != 'Windows' or python_version >= '3.13'",
-    "torch-directml==0.2.5.dev240914; platform_system == 'Windows' and python_version < '3.13'",
+    "torch==2.13.0",
+]
+directml = [
+    "torch==2.4.1; (platform_system == 'Windows' or platform_system == 'Linux') and python_version < '3.13'",
+    "torch-directml==0.2.5.dev240914; (platform_system == 'Windows' or platform_system == 'Linux') and python_version < '3.13'",
 ]
 terminal-test = [
     "pyte>=0.8.2,<1",

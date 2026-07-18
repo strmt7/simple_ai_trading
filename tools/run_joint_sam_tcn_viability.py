@@ -46,6 +46,7 @@ from simple_ai_trading.distributional_tcn_model import (  # noqa: E402
     build_distributional_dataset,
     role_mask,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.joint_distributional_tcn_model import (  # noqa: E402
     BATCH_SIZE,
     BOOTSTRAP_BLOCK_HOURS,
@@ -55,8 +56,7 @@ from simple_ai_trading.joint_distributional_tcn_model import (  # noqa: E402
     SAM_RHO,
     SEEDS,
     JointForecastBundle,
-    cpu_joint_device,
-    directml_joint_preflight,
+    joint_preflight,
     joint_economic_gate,
     joint_forecast_diagnostics,
     optimizer_ablation_gate,
@@ -599,10 +599,7 @@ def run(arguments: argparse.Namespace) -> dict[str, object]:
         },
     )
     del panel, funding
-    if arguments.compute_backend == "directml":
-        device, preflight = directml_joint_preflight()
-    else:
-        device, preflight = cpu_joint_device()
+    device, preflight = joint_preflight(arguments.compute_backend)
     bundles: dict[str, JointForecastBundle] = {}
     diagnostics: dict[str, dict[str, object]] = {}
     monthly_rows: list[dict[str, object]] = []
@@ -987,7 +984,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-certificate", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
-        "--compute-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     return parser
 

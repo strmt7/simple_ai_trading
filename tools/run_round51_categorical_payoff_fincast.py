@@ -24,6 +24,8 @@ for import_root in (ROOT, SRC):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
+
 from simple_ai_trading.categorical_payoff_lightgbm import (  # noqa: E402
     CategoricalPayoffSpec,
     build_categorical_payoff_dataset,
@@ -1566,9 +1568,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--fincast-source", type=Path, required=True)
     parser.add_argument("--fincast-checkpoint", type=Path, required=True)
-    parser.add_argument("--compute-backend", default="directml")
     parser.add_argument(
-        "--fincast-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
+    )
+    parser.add_argument(
+        "--fincast-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     parser.add_argument("--memory-limit", default="8GB")
     parser.add_argument("--threads", type=int, default=12)

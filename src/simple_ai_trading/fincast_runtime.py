@@ -22,6 +22,13 @@ import numpy as np
 import torch
 from torch.nn import functional as torch_functional
 
+from .compute import (
+    SUPPORTED_COMPUTE_BACKENDS,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
+
 
 FINCAST_SOURCE_COMMIT = "488b19d1d85fa2b3d4b93469530cefdcf1cc97a4"
 FINCAST_CHECKPOINT_SHA256 = (
@@ -33,7 +40,7 @@ FINCAST_QUANTILES = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 FINCAST_FEATURE_HORIZONS_SECONDS = (5, 15, 30, 60, 120)
 FINCAST_CONTEXT_SECONDS = 512
 FINCAST_MAX_STATE_AGE_SECONDS = 5
-FINCAST_RUNTIME_SCHEMA_VERSION = "pinned-fincast-runtime-v2"
+FINCAST_RUNTIME_SCHEMA_VERSION = "pinned-fincast-runtime-v3"
 _FALLBACK_MARKERS = (
     "not currently supported on the dml backend",
     "fall back to run on the cpu",
@@ -204,6 +211,9 @@ class FinCastRuntimeEvidence:
     model_load_seconds: float
     warning_count: int
     cpu_fallback_warning_count: int
+    backend_requested: str = ""
+    backend_vendor: str = ""
+    backend_selection: str = ""
 
 
 class _FunctionalProxy:
@@ -369,13 +379,13 @@ class FinCastRuntime:
         *,
         source: str | Path,
         checkpoint: str | Path,
-        backend: str = "directml",
+        backend: str = "auto",
     ) -> None:
         self.source = Path(source).resolve()
         self.checkpoint = Path(checkpoint).resolve()
         self.backend = str(backend).strip().lower()
-        if self.backend not in {"directml", "cpu"}:
-            raise ValueError("FinCast backend must be 'directml' or 'cpu'")
+        if self.backend not in SUPPORTED_COMPUTE_BACKENDS:
+            raise ValueError(f"unsupported FinCast backend {self.backend!r}")
         self._model: torch.nn.Module | None = None
         self._device: object | None = None
         self._lock = threading.RLock()
@@ -404,7 +414,8 @@ class FinCastRuntime:
                 or _sha256(self.checkpoint) != FINCAST_CHECKPOINT_SHA256
             ):
                 raise ValueError("FinCast checkpoint identity does not match")
-            directml = self.backend == "directml"
+            resolved = require_backend(resolve_backend(self.backend))
+            directml = resolved.kind == "directml"
             decoder = _load_decoder(self.source, directml=directml)
             state = torch.load(
                 self.checkpoint,
@@ -441,18 +452,18 @@ class FinCastRuntime:
                     "FinCast checkpoint keys do not match the architecture"
                 )
             _materialize_meta_buffers(model)
+            device = (
+                torch_device_for_backend(resolved)
+                if directml
+                else torch.device(resolved.device)
+            )
+            directml_version = "not_applicable"
             if directml:
-                try:
-                    import torch_directml  # type: ignore
-                except ImportError as exc:
-                    raise RuntimeError("torch-directml is unavailable") from exc
-                device = torch_directml.device()
+                import torch_directml  # type: ignore
+
                 directml_version = str(
                     getattr(torch_directml, "__version__", "unknown")
                 )
-            else:
-                device = torch.device("cpu")
-                directml_version = "not_applicable"
             started = time.perf_counter()
             messages: list[str] = []
             with warnings.catch_warnings(record=True) as caught:
@@ -475,11 +486,14 @@ class FinCastRuntime:
                 checkpoint_path=str(self.checkpoint),
                 checkpoint_sha256=FINCAST_CHECKPOINT_SHA256,
                 parameter_count=parameter_count,
-                backend_kind=self.backend,
+                backend_kind=resolved.kind,
                 backend_device=str(device),
                 model_load_seconds=load_seconds,
                 warning_count=len(messages),
                 cpu_fallback_warning_count=0,
+                backend_requested=resolved.requested,
+                backend_vendor=resolved.vendor,
+                backend_selection=resolved.selection,
             )
             if directml_version == "":
                 raise RuntimeError("FinCast DirectML version evidence is empty")

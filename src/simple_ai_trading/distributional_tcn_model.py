@@ -16,6 +16,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import MINUTE_MS, SYMBOLS
 from .stateful_turnover_model import StatefulHourlyDataset
 
@@ -480,14 +481,13 @@ def pinball_loss(
     return torch.maximum(quantiles * errors, (quantiles - 1.0) * errors).mean()
 
 
-def directml_preflight() -> tuple[object, dict[str, object]]:
-    """Require an actual warning-free DirectML convolution backward pass."""
+def distributional_tcn_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    """Require an actual warning-free convolution backward pass on the backend."""
 
-    try:
-        import torch_directml  # type: ignore
-    except ImportError as exc:  # pragma: no cover - host dependent
-        raise RuntimeError("Round 44 DirectML is unavailable") from exc
-    device = torch_directml.device()
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         model = DistributionalTCN().to(device)
@@ -517,29 +517,25 @@ def directml_preflight() -> tuple[object, dict[str, object]]:
         or "fall back to run on the CPU" in item
     ]
     if not math.isfinite(loss_value) or fallback:
-        raise RuntimeError(f"Round 44 DirectML preflight failed: {fallback}")
+        raise RuntimeError(
+            f"Round 44 {backend.kind} preflight failed: {fallback}"
+        )
     return device, {
-        "backend_kind": "directml",
+        "backend_kind": backend.kind,
         "backend_device": str(device),
         "torch_version": str(torch.__version__),
-        "torch_directml_version": str(getattr(torch_directml, "__version__", "unknown")),
         "preflight_loss": loss_value,
         "warning_count": len(messages),
         "cpu_fallback_warning_count": 0,
     }
 
 
+def directml_preflight() -> tuple[object, dict[str, object]]:
+    return distributional_tcn_preflight("directml")
+
+
 def cpu_device() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    return device, {
-        "backend_kind": "cpu",
-        "backend_device": str(device),
-        "torch_version": str(torch.__version__),
-        "torch_directml_version": None,
-        "preflight_loss": None,
-        "warning_count": 0,
-        "cpu_fallback_warning_count": 0,
-    }
+    return distributional_tcn_preflight("cpu")
 
 
 def _training_windows(mask: np.ndarray) -> np.ndarray:
@@ -785,19 +781,14 @@ def train_distributional_tcn_ensemble(
     dataset: DistributionalDataset,
     *,
     model_dir: Path,
-    compute_backend: str = "directml",
+    compute_backend: str = "auto",
     progress: ProgressCallback | None = None,
 ) -> tuple[TCNForecastBundle, dict[str, object]]:
     training_mask = role_mask(dataset, "training")
     feature_scaler = fit_feature_scaler(dataset, training_mask)
     target_scaler = fit_target_scaler(dataset, training_mask)
     normalized_features = feature_scaler.transform(dataset.features)
-    if compute_backend == "directml":
-        device, preflight = directml_preflight()
-    elif compute_backend == "cpu":
-        device, preflight = cpu_device()
-    else:
-        raise ValueError(f"Round 44 compute backend is invalid: {compute_backend}")
+    device, preflight = distributional_tcn_preflight(compute_backend)
     seed_predictions: list[np.ndarray] = []
     artifacts: list[TCNArtifact] = []
     for seed in SEEDS:
@@ -1301,6 +1292,7 @@ def economic_gate(
 
 
 __all__ = [
+    "distributional_tcn_preflight",
     "BASE_ONE_WAY_COST_BPS",
     "BOOTSTRAP_BLOCK_HOURS",
     "BOOTSTRAP_SAMPLES",

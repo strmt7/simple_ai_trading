@@ -15,6 +15,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import SYMBOLS
 from .distributional_tcn_model import (
     BASE_ONE_WAY_COST_BPS,
@@ -493,37 +494,28 @@ def _run_preflight(
     return rows
 
 
-def directml_utility_preflight() -> tuple[object, dict[str, object]]:
-    try:
-        import torch_directml  # type: ignore
-    except ImportError as exc:  # pragma: no cover - host dependent
-        raise RuntimeError("Round 47 DirectML is unavailable") from exc
-    device = torch_directml.device()
+def utility_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     evidence = _run_preflight(
         device,
         {
-            "backend_kind": "directml",
+            "backend_kind": backend.kind,
             "backend_device": str(device),
             "torch_version": str(torch.__version__),
-            "torch_directml_version": str(
-                getattr(torch_directml, "__version__", "unknown")
-            ),
         },
     )
     return device, evidence
 
 
+def directml_utility_preflight() -> tuple[object, dict[str, object]]:
+    return utility_preflight("directml")
+
+
 def cpu_utility_preflight() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    return device, _run_preflight(
-        device,
-        {
-            "backend_kind": "cpu",
-            "backend_device": str(device),
-            "torch_version": str(torch.__version__),
-            "torch_directml_version": None,
-        },
-    )
+    return utility_preflight("cpu")
 
 
 def _training_windows(mask: np.ndarray) -> np.ndarray:
@@ -1055,7 +1047,7 @@ def train_utility_candidates(
     dataset: DistributionalDataset,
     *,
     model_dir: Path,
-    compute_backend: str = "directml",
+    compute_backend: str = "auto",
     progress: ProgressCallback | None = None,
 ) -> tuple[
     dict[str, UtilityForecastBundle],
@@ -1071,12 +1063,7 @@ def train_utility_candidates(
     target_scaler = fit_target_scaler(dataset, training_mask)
     utility_scaler = fit_utility_scaler(utility_bps, training_mask)
     normalized_features = feature_scaler.transform(dataset.features)
-    if compute_backend == "directml":
-        device, preflight = directml_utility_preflight()
-    elif compute_backend == "cpu":
-        device, preflight = cpu_utility_preflight()
-    else:
-        raise ValueError(f"Round 47 compute backend is invalid: {compute_backend}")
+    device, preflight = utility_preflight(compute_backend)
     bundles: dict[str, UtilityForecastBundle] = {}
     for candidate_id, rank_weight in zip(CANDIDATES, (0.0, RANK_WEIGHT), strict=True):
         if progress is not None:
@@ -1469,6 +1456,7 @@ def select_utility_trades(
 
 
 __all__ = [
+    "utility_preflight",
     "ACTION_PROBABILITY_FLOOR",
     "CANDIDATES",
     "CostAwareUtilityTCN",

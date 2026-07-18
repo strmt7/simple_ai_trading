@@ -187,10 +187,10 @@ MODEL_FAMILIES: tuple[ModelFamilyBlueprint, ...] = (
     ),
     ModelFamilyBlueprint(
         family="patch_transformer",
-        role="DirectML sequence model for longer multi-symbol context without forcing an LLM to choose orders.",
+        role="Portable sequence model for longer multi-symbol context without forcing an LLM to choose orders.",
         status="research_candidate",
         training_target="Quantile or class probabilities over barrier-adjusted returns and volatility/tail-risk horizons.",
-        gpu_path="PyTorch DirectML first on Windows; compact model size for 8 GB VRAM.",
+        gpu_path="Runtime-discovered PyTorch accelerator with a CPU reference; compact model size for 8 GB VRAM.",
         risk_levels=RISK_LEVELS,
         execution_authority="forecast_feature_only_until_walk_forward_and_path_gates_pass",
         validation_gates=(
@@ -857,7 +857,10 @@ RESEARCH_SOURCES: tuple[ResearchSourceBlueprint, ...] = (
         url="https://learn.microsoft.com/en-us/windows/ai/directml/pytorch-windows",
         source_type="official_docs",
         applied_to=("patch_transformer", "foundation_forecaster", "ai_risk_reviewer"),
-        usage_policy="Use for Windows GPU capability detection and DirectML training/scoring paths.",
+        usage_policy=(
+            "Use only for explicitly selected DirectML compatibility paths; "
+            "runtime capability discovery and CPU parity remain authoritative."
+        ),
     ),
     ResearchSourceBlueprint(
         source_id="onnx_directml",

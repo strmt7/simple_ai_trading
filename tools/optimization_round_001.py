@@ -24,7 +24,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-scan", type=int, default=250)
     parser.add_argument("--limit", type=int, default=1000)
     parser.add_argument("--market", choices=("spot", "futures"), default=None)
-    parser.add_argument("--compute-backend", choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"), default="auto")
+    parser.add_argument(
+        "--compute-backend",
+        choices=("auto", "cpu", "cuda", "rocm", "xpu", "mps", "directml"),
+        default="auto",
+    )
     parser.add_argument("--batch-size", type=int, default=8192)
     parser.add_argument("--score-batch-size", type=int, default=None)
     parser.add_argument("--max-candidates", type=int, default=None)

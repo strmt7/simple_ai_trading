@@ -10,7 +10,7 @@ from typing import Callable, Mapping, Sequence
 
 import numpy as np
 
-from .compute import resolve_backend
+from .compute import require_backend, resolve_backend
 from .microstructure_architecture import (
     _ManualAdam,
     _feature_scaler,
@@ -424,7 +424,7 @@ def train_action_value_model(
         or np.any(tuning_weights <= 0.0)
     ):
         raise ValueError("action-value sample weights are invalid")
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
     _seed_torch(torch, int(seed), backend)
@@ -657,7 +657,7 @@ def predict_action_value_model(
     )
     if selected.size == 0:
         raise ValueError("action-value prediction has no contiguous endpoints")
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
     network = _network(model.spec, len(model.feature_names)).to(device)

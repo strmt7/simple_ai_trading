@@ -8,7 +8,13 @@ from dataclasses import dataclass
 from typing import Sequence, Tuple
 
 from .api import Candle
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    backend_fallback_allowed,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .market_data import clean_candles
 
 
@@ -207,11 +213,7 @@ def _safe_features(values: Sequence[float]) -> list[float]:
 
 
 def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
-    if backend.kind == "directml":
-        import torch_directml  # type: ignore
-
-        return torch_directml.device()
-    return backend.device
+    return torch_device_for_backend(backend)
 
 
 @dataclass(frozen=True)
@@ -503,7 +505,7 @@ def _make_rows_with_backend(
         if require_accelerated:
             raise FeatureAccelerationError("feature_acceleration_required_but_no_backend_was_provided")
         return None
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     if backend.kind == "cpu":
         if require_accelerated:
             reason = f": {backend.reason}" if backend.reason else ""
@@ -521,9 +523,9 @@ def _make_rows_with_backend(
             backend=backend,
         )
     except Exception as exc:
-        if require_accelerated:
+        if require_accelerated or not backend_fallback_allowed(backend):
             raise FeatureAccelerationError(
-                f"feature_acceleration_required_but_{backend.kind}_feature_generation_failed: "
+                f"{backend.kind}_feature_generation_failed: "
                 f"{exc.__class__.__name__}"
             ) from exc
         return None

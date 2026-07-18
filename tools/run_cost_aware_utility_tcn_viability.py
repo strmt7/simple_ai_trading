@@ -33,6 +33,7 @@ from simple_ai_trading.cost_aware_utility_tcn_model import (  # noqa: E402
     train_utility_candidates,
     utility_action_diagnostics,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.cross_asset_cost_data import SYMBOLS  # noqa: E402
 from simple_ai_trading.distributional_tcn_model import (  # noqa: E402
     BASE_ONE_WAY_COST_BPS,
@@ -921,7 +922,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--derived-cache", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
-        "--compute-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     return parser
 

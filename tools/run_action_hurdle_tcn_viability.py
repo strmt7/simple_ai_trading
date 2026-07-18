@@ -42,6 +42,7 @@ from simple_ai_trading.action_hurdle_tcn_model import (  # noqa: E402
     side_net_targets,
     train_action_hurdle_candidates,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.cross_asset_cost_data import (  # noqa: E402
     SYMBOLS,
     load_verified_minute_panel,
@@ -814,7 +815,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--binding", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
-        "--compute-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     return parser
 

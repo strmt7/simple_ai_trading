@@ -790,6 +790,14 @@ class PolymarketEvidenceStore:
                 error VARCHAR NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS polymarket_preregistration_manifest (
+                run_id VARCHAR PRIMARY KEY,
+                schema_version VARCHAR NOT NULL,
+                created_at_ms BIGINT NOT NULL,
+                manifest_json VARCHAR NOT NULL,
+                manifest_sha256 VARCHAR NOT NULL UNIQUE
+            );
+
             CREATE TABLE IF NOT EXISTS polymarket_terminal_audit_recovery (
                 run_id VARCHAR PRIMARY KEY,
                 schema_version VARCHAR NOT NULL,
@@ -1151,22 +1159,68 @@ class PolymarketEvidenceStore:
             ],
         )
 
-    def start_run(self, run_id: str, started_at_ms: int) -> None:
+    def start_run(
+        self,
+        run_id: str,
+        started_at_ms: int,
+        *,
+        preregistration_manifest: Mapping[str, object] | None = None,
+    ) -> None:
         connection = self.connect()
-        connection.execute(
-            """
-            INSERT INTO polymarket_recorder_run (
-                run_id, schema_version, storage_schema_version, status,
-                started_at_ms, ended_at_ms, report_json, report_sha256, error
-            ) VALUES (?, ?, ?, 'running', ?, NULL, '', '', '')
-            """,
-            [
-                run_id,
-                POLYMARKET_RECORDER_SCHEMA_VERSION,
-                POLYMARKET_STORAGE_SCHEMA_VERSION,
-                int(started_at_ms),
-            ],
-        )
+        manifest_json = ""
+        manifest_sha256 = ""
+        manifest_schema = ""
+        if preregistration_manifest is not None:
+            manifest = dict(preregistration_manifest)
+            claimed_sha256 = manifest.pop("manifest_sha256", None)
+            if (
+                str(manifest.get("run_id") or "") != str(run_id)
+                or manifest.get("created_at_ms") != int(started_at_ms)
+                or not isinstance(claimed_sha256, str)
+                or claimed_sha256 != _canonical_sha256(manifest)
+                or not str(manifest.get("schema_version") or "")
+            ):
+                raise ValueError("Polymarket preregistration manifest is invalid")
+            manifest["manifest_sha256"] = claimed_sha256
+            manifest_json = _canonical_json(manifest)
+            manifest_sha256 = claimed_sha256
+            manifest_schema = str(manifest["schema_version"])
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            connection.execute(
+                """
+                INSERT INTO polymarket_recorder_run (
+                    run_id, schema_version, storage_schema_version, status,
+                    started_at_ms, ended_at_ms, report_json, report_sha256, error
+                ) VALUES (?, ?, ?, 'running', ?, NULL, '', '', '')
+                """,
+                [
+                    run_id,
+                    POLYMARKET_RECORDER_SCHEMA_VERSION,
+                    POLYMARKET_STORAGE_SCHEMA_VERSION,
+                    int(started_at_ms),
+                ],
+            )
+            if manifest_json:
+                connection.execute(
+                    """
+                    INSERT INTO polymarket_preregistration_manifest (
+                        run_id, schema_version, created_at_ms,
+                        manifest_json, manifest_sha256
+                    ) VALUES (?, ?, ?, ?, ?)
+                    """,
+                    [
+                        run_id,
+                        manifest_schema,
+                        int(started_at_ms),
+                        manifest_json,
+                        manifest_sha256,
+                    ],
+                )
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
         self._storage_schema_version_by_run[run_id] = POLYMARKET_STORAGE_SCHEMA_VERSION
 
     def _require_unindexed_compact_hot_tables(self) -> None:
@@ -6291,6 +6345,9 @@ class PolymarketPublicRecorder:
         duration_seconds: int,
         progress: Callable[[str, Mapping[str, object]], None] | None = None,
         progress_interval_seconds: int = 30,
+        preregistration_manifest_factory: (
+            Callable[[str, int], Mapping[str, object]] | None
+        ) = None,
     ) -> RecorderReport:
         duration = int(duration_seconds)
         if duration < 5 or duration > 86_400:
@@ -6319,7 +6376,16 @@ class PolymarketPublicRecorder:
             memory_limit=self.memory_limit,
             threads=self.database_threads,
         ) as store:
-            store.start_run(run_id, started)
+            preregistration_manifest = (
+                None
+                if preregistration_manifest_factory is None
+                else preregistration_manifest_factory(run_id, started)
+            )
+            store.start_run(
+                run_id,
+                started,
+                preregistration_manifest=preregistration_manifest,
+            )
             self._notify_progress(
                 progress,
                 "capture-started",

@@ -4293,9 +4293,8 @@ def test_command_train_rejects_invalid_optimizer_parameters(tmp_path, monkeypatc
     assert "learning_rate must be > 0" in capsys.readouterr().err
     assert cli.command_train(argparse.Namespace(**base, learning_rate=0.1, l2_penalty=-0.1)) == 2
     assert "l2_penalty must be >= 0" in capsys.readouterr().err
-    save_runtime(RuntimeConfig(compute_backend="not-real"))
-    assert cli.command_train(argparse.Namespace(**base, learning_rate=0.1, l2_penalty=0.0)) == 2
-    assert "unknown compute backend" in capsys.readouterr().err
+    with pytest.raises(ValueError, match="unsupported compute backend"):
+        RuntimeConfig(compute_backend="not-real")
 
 
 def test_command_train_handles_no_calibration_split(tmp_path, monkeypatch, capsys) -> None:

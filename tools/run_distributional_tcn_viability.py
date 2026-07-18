@@ -56,6 +56,7 @@ from simple_ai_trading.distributional_tcn_model import (  # noqa: E402
     select_planned_trades,
     train_distributional_tcn_ensemble,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.stateful_turnover_model import (  # noqa: E402
     build_stateful_hourly_dataset,
 )
@@ -776,7 +777,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--source-certificate", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
-        "--compute-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     return parser
 

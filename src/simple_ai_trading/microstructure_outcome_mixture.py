@@ -18,7 +18,7 @@ import numpy as np
 from safetensors import safe_open
 from safetensors.numpy import save_file as save_safetensors
 
-from .compute import resolve_backend
+from .compute import require_backend, resolve_backend
 from .microstructure_action_architecture import ActionValuePredictionBatch
 from .microstructure_architecture import (
     _ManualAdam,
@@ -965,7 +965,7 @@ def train_outcome_mixture_model(
         tuning,
         tuning_sample_weights,
     )
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
     _seed_torch(torch, int(seed), backend)
@@ -1198,7 +1198,7 @@ def predict_outcome_mixture_model(
     )
     if selected.size == 0:
         raise ValueError("outcome-mixture prediction has no contiguous endpoints")
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
     network = _network(model.spec, len(model.feature_names)).to(device)

@@ -2,22 +2,25 @@
 
 from __future__ import annotations
 
+import pytest
+
 from simple_ai_trading.compute import (
     BackendInfo,
+    SUPPORTED_COMPUTE_BACKENDS,
+    backend_fallback_allowed,
     default_compute_backend,
     describe_backend,
     resolve_backend,
 )
 
 
-def test_resolve_backend_defaults_to_platform_preferred_backend() -> None:
+def test_resolve_backend_defaults_to_host_neutral_auto_discovery() -> None:
     info = resolve_backend(None)
     assert isinstance(info, BackendInfo)
-    assert info.requested == default_compute_backend()
-    if default_compute_backend() == "directml":
-        assert info.kind in {"directml", "cpu"}
-    else:
-        assert info.kind in {"cuda", "rocm", "directml", "mps", "cpu"}
+    assert default_compute_backend() == "auto"
+    assert info.requested == "auto"
+    assert info.kind in {"cuda", "rocm", "xpu", "directml", "mps", "cpu"}
+    assert info.request_satisfied is True
 
 
 def test_resolve_backend_cpu_is_always_available() -> None:
@@ -47,7 +50,7 @@ def test_resolve_backend_cuda_returns_cpu_when_torch_missing(monkeypatch) -> Non
     info = resolve_backend("cuda")
 
     assert info.kind == "cpu"
-    assert info.reason == "CUDA unavailable (torch missing or no CUDA device)"
+    assert info.reason == "CUDA unavailable or its selected device is invalid"
 
 
 def test_resolve_backend_rocm_falls_back_with_reason_when_unavailable() -> None:
@@ -68,7 +71,7 @@ def test_resolve_backend_rocm_returns_cpu_when_torch_missing(monkeypatch) -> Non
     info = resolve_backend("rocm")
 
     assert info.kind == "cpu"
-    assert info.reason == "ROCm unavailable (torch missing or not a ROCm build)"
+    assert info.reason == "ROCm unavailable or its selected device is invalid"
 
 
 def test_resolve_backend_directml_falls_back_with_reason_when_unavailable() -> None:
@@ -100,7 +103,7 @@ def test_resolve_backend_auto_returns_cpu_when_every_probe_is_missing(monkeypatc
     info = resolve_backend("auto")
 
     assert info.kind == "cpu"
-    assert info.reason == "No GPU backend available; running on CPU-only mode"
+    assert info.reason == "No supported accelerator passed runtime discovery; using CPU reference"
 
 
 def test_resolve_backend_unknown_value_is_cpu_with_explanation() -> None:
@@ -114,7 +117,8 @@ def test_describe_backend_includes_components() -> None:
     text = describe_backend(info)
     assert "compute=cpu" in text
     assert "device=cpu" in text
-    assert "vendor=Python stdlib" in text
+    assert "vendor=portable CPU reference" in text
+    assert "selection=deterministic_cpu_reference" in text
 
 
 def test_describe_backend_includes_reason_when_present() -> None:
@@ -360,7 +364,7 @@ def test_resolve_backend_mps_returns_cpu_when_torch_missing(monkeypatch) -> None
     info = resolve_backend("mps")
 
     assert info.kind == "cpu"
-    assert info.reason == "MPS unavailable (torch missing or not Apple Silicon)"
+    assert info.reason == "MPS unavailable or its selected device is invalid"
 
 
 def test_resolve_backend_mps_returns_cpu_when_unavailable(monkeypatch) -> None:
@@ -428,7 +432,7 @@ def test_resolve_backend_auto_picks_mps_when_cuda_and_rocm_missing(monkeypatch) 
     assert info.requested == "auto"
 
 
-def test_resolve_backend_auto_picks_directml_before_mps(monkeypatch) -> None:
+def test_resolve_backend_auto_prefers_native_mps_over_legacy_directml(monkeypatch) -> None:
     fake = _make_fake_torch(mps=_FakeMpsBackend())
     monkeypatch.setattr(
         "simple_ai_trading.compute._probe_torch",
@@ -439,7 +443,7 @@ def test_resolve_backend_auto_picks_directml_before_mps(monkeypatch) -> None:
         lambda: (_FakeDirectML(), ""),
     )
     info = resolve_backend("auto")
-    assert info.kind == "directml"
+    assert info.kind == "mps"
     assert info.requested == "auto"
 
 
@@ -518,4 +522,141 @@ def test_resolve_backend_rocm_hip_attribute_falsy_returns_cpu(monkeypatch) -> No
     )
     info = resolve_backend("rocm")
     assert info.kind == "cpu"
+
+
+class _FakeXpu(_FakeCuda):
+    def current_device(self) -> int:
+        return 0
+
+
+def test_resolve_backend_xpu_success(monkeypatch) -> None:
+    fake = _make_fake_torch()
+    fake.xpu = _FakeXpu(name="Intel Arc Test")
+    monkeypatch.setattr("simple_ai_trading.compute._probe_torch", lambda: (fake, ""))
+
+    info = resolve_backend("xpu")
+
+    assert info.kind == "xpu"
+    assert info.device == "xpu:0"
+    assert info.vendor == "Intel Arc Test"
+    assert info.request_satisfied is True
+
+
+def test_modern_torch_accelerator_routes_to_xpu(monkeypatch) -> None:
+    class _Device:
+        type = "xpu"
+
+    class _Accelerator:
+        @staticmethod
+        def is_available() -> bool:
+            return True
+
+        @staticmethod
+        def current_accelerator(*, check_available: bool):
+            assert check_available is True
+            return _Device()
+
+    fake = _make_fake_torch()
+    fake.accelerator = _Accelerator()
+    fake.xpu = _FakeXpu(name="Intel Generic Accelerator")
+    monkeypatch.setattr("simple_ai_trading.compute._probe_torch", lambda: (fake, ""))
+    monkeypatch.setattr(
+        "simple_ai_trading.compute._probe_torch_directml",
+        lambda: (None, "not installed"),
+    )
+
+    info = resolve_backend("auto")
+
+    assert info.kind == "xpu"
+    assert info.requested == "auto"
+    assert info.vendor == "Intel Generic Accelerator"
+
+
+def test_cuda_selects_device_with_most_reported_free_memory(monkeypatch) -> None:
+    class _MemoryCuda(_FakeCuda):
+        def __init__(self) -> None:
+            super().__init__(count=2)
+
+        @staticmethod
+        def current_device() -> int:
+            return 0
+
+        @staticmethod
+        def mem_get_info(index: int) -> tuple[int, int]:
+            return ((2_000, 4_000) if index == 0 else (3_000, 4_000))
+
+        @staticmethod
+        def get_device_name(index: int) -> str:
+            return f"NVIDIA Test {index}"
+
+    fake = _make_fake_torch(cuda=_MemoryCuda())
+    monkeypatch.setattr("simple_ai_trading.compute._probe_torch", lambda: (fake, ""))
+
+    info = resolve_backend("cuda")
+
+    assert info.device == "cuda:1"
+    assert info.vendor == "NVIDIA Test 1"
+    assert info.selection == "maximum_reported_free_memory:3000"
+
+
+def test_operator_device_index_override_is_validated(monkeypatch) -> None:
+    fake = _make_fake_torch(cuda=_FakeCuda(count=2, name="NVIDIA Test"))
+    monkeypatch.setattr("simple_ai_trading.compute._probe_torch", lambda: (fake, ""))
+    monkeypatch.setenv("SIMPLE_AI_TRADING_DEVICE_INDEX", "1")
+
+    selected = resolve_backend("cuda")
+
+    assert selected.device == "cuda:1"
+    assert selected.selection.endswith("=1")
+
+    monkeypatch.setenv("SIMPLE_AI_TRADING_DEVICE_INDEX", "2")
+    rejected = resolve_backend("cuda")
+    assert rejected.kind == "cpu"
+    assert rejected.request_satisfied is False
+
+
+def test_pinned_backend_can_be_required_fail_closed(monkeypatch) -> None:
+    from simple_ai_trading import compute as compute_module
+
+    monkeypatch.setattr("simple_ai_trading.compute._try_cuda", lambda: None)
+
+    diagnostic = resolve_backend("cuda")
+    assert diagnostic.fell_back is True
+    assert backend_fallback_allowed(diagnostic) is False
+
+    with pytest.raises(
+        compute_module.BackendUnavailableError,
+        match="requested compute backend 'cuda'",
+    ):
+        resolve_backend("cuda", require=True)
+
+
+def test_auto_cpu_reference_is_a_satisfied_portable_resolution(monkeypatch) -> None:
+    for name in (
+        "_try_torch_accelerator",
+        "_try_rocm",
+        "_try_cuda",
+        "_try_xpu",
+        "_try_mps",
+        "_try_directml",
+    ):
+        monkeypatch.setattr(f"simple_ai_trading.compute.{name}", lambda: None)
+
+    info = resolve_backend("auto", require=True)
+
+    assert info.kind == "cpu"
+    assert info.request_satisfied is True
+    assert backend_fallback_allowed(info) is True
+
+
+def test_supported_backend_contract_is_explicit_and_host_independent() -> None:
+    assert SUPPORTED_COMPUTE_BACKENDS == (
+        "auto",
+        "cpu",
+        "cuda",
+        "rocm",
+        "xpu",
+        "mps",
+        "directml",
+    )
 
