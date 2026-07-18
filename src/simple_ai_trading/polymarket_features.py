@@ -16,6 +16,7 @@ from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_coverage import (
     PolymarketFeedCoverage,
     inspect_polymarket_feed_coverage,
+    inspect_polymarket_verified_source_coverage,
 )
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import (
@@ -1411,10 +1412,20 @@ def _parse_feed_points(
     dict[str, tuple[_PricePoint, ...]],
     dict[str, Sequence[_BinanceBookPoint]],
     dict[str, Sequence[_BinanceTradePoint]],
+    dict[str, dict[str, int]],
 ]:
     chainlink: dict[str, list[_PricePoint]] = {key: [] for key in _ASSETS}
     direct_books = {key: _CompactBinanceBooks(key) for key in _ASSETS}
     direct_trades = {key: _CompactBinanceTrades(key) for key in _ASSETS}
+    source_counts = {
+        asset: {
+            "direct_binance_book_tickers": 0,
+            "direct_binance_trades": 0,
+            "rtds_chainlink_history_samples": 0,
+            "rtds_chainlink_live_updates": 0,
+        }
+        for asset in _ASSETS
+    }
     scan_started = time.monotonic()
     last_progress = scan_started
     parsed_count = 0
@@ -1457,15 +1468,15 @@ def _parse_feed_points(
         received_wall_ms = decoded.received_wall_ms
         received_monotonic_ns = decoded.received_monotonic_ns
         connection_id = str(decoded.connection_id)
-        asset = decoded.symbol.upper()
-        if asset not in chainlink:
-            raise ValueError(
-                "prospective feature evidence contains an unsupported asset"
-            )
         event = decoded.event
         normalized_stream = str(stream)
         normalized_type = str(event_type).lower()
         if normalized_stream == "binance_spot":
+            asset = decoded.symbol.upper()
+            if asset not in chainlink:
+                raise ValueError(
+                    "direct Binance feature evidence contains an unsupported asset"
+                )
             payload = event.get("data")
             if not isinstance(payload, Mapping):
                 raise ValueError("direct Binance feature payload is malformed")
@@ -1494,6 +1505,7 @@ def _parse_feed_points(
                         event_sha256=str(event_sha256),
                     )
                 )
+                source_counts[asset]["direct_binance_book_tickers"] += 1
             elif normalized_type == "trade":
                 price = _finite_decimal(
                     payload.get("p"), name="Binance trade price", positive=True
@@ -1516,15 +1528,24 @@ def _parse_feed_points(
                         event_sha256=str(event_sha256),
                     )
                 )
+                source_counts[asset]["direct_binance_trades"] += 1
             continue
 
         payload = event.get("payload")
-        if not isinstance(payload, Mapping):
-            raise ValueError("RTDS feature payload is malformed")
-        raw_symbol = str(payload.get("symbol") or "")
-        if not (
-            normalized_type.startswith("crypto_prices_chainlink:") or "/" in raw_symbol
-        ):
+        chainlink_topic = normalized_type.startswith("crypto_prices_chainlink:")
+        if not chainlink_topic and not isinstance(payload, Mapping):
+            continue
+        raw_symbol = (
+            str(payload.get("symbol") or "").strip()
+            if isinstance(payload, Mapping)
+            else ""
+        )
+        if not chainlink_topic and "/" not in raw_symbol:
+            continue
+        if not isinstance(payload, Mapping) or not raw_symbol:
+            raise ValueError("RTDS Chainlink feature payload is malformed")
+        asset = raw_symbol.split("/", 1)[0].upper()
+        if asset not in chainlink:
             continue
         message_type = str(event.get("type") or "").lower()
         raw_points: list[tuple[object, object, int]] = []
@@ -1536,8 +1557,12 @@ def _parse_feed_points(
                 if not isinstance(item, Mapping):
                     raise ValueError("RTDS feature history row is malformed")
                 raw_points.append((item.get("timestamp"), item.get("value"), index))
+            source_counts[asset]["rtds_chainlink_history_samples"] += len(
+                raw_points
+            )
         elif message_type == "update":
             raw_points.append((payload.get("timestamp"), payload.get("value"), 0))
+            source_counts[asset]["rtds_chainlink_live_updates"] += 1
         for raw_time, raw_price, index in raw_points:
             chainlink[asset].append(
                 _PricePoint(
@@ -1562,6 +1587,7 @@ def _parse_feed_points(
         {key: tuple(value) for key, value in chainlink.items()},
         direct_books,
         direct_trades,
+        source_counts,
     )
 
 
@@ -1606,6 +1632,8 @@ def load_polymarket_feature_source_context(
     *,
     run_id: str,
     config: PolymarketFeatureConfig | None = None,
+    condition_ids: Sequence[str] | None = None,
+    continuity_report_sha256: str = "",
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> PolymarketFeatureSourceContext:
     """Parse immutable Binance/RTDS evidence once for bounded market batches."""
@@ -1614,17 +1642,58 @@ def load_polymarket_feature_source_context(
     if not selected:
         raise ValueError("Polymarket feature source context requires a run ID")
     cfg = (config or PolymarketFeatureConfig()).validated()
-    coverage = inspect_polymarket_feed_coverage(
-        store,
-        run_id=selected,
-        minimum_resolved_markets_per_asset=cfg.minimum_resolved_markets_per_asset,
-        allow_segmented_gaps=cfg.allow_segmented_gaps,
+    continuity_sha256 = str(continuity_report_sha256 or "").strip().lower()
+    selected_conditions = tuple(
+        sorted({str(value or "").strip().lower() for value in condition_ids or ()})
     )
-    chainlink, direct_books, direct_trades = _parse_feed_points(
+    if continuity_sha256:
+        if (
+            len(continuity_sha256) != 64
+            or any(value not in "0123456789abcdef" for value in continuity_sha256)
+            or not selected_conditions
+            or "" in selected_conditions
+        ):
+            raise ValueError("Polymarket continuity coverage identity is invalid")
+        from .polymarket_continuity import (  # Avoid an import cycle at module load.
+            evaluate_polymarket_continuity_eligibility,
+        )
+
+        continuity = evaluate_polymarket_continuity_eligibility(
+            store,
+            run_id=selected,
+        )
+        if (
+            continuity.report_sha256 != continuity_sha256
+            or tuple(sorted(continuity.eligible_condition_ids))
+            != selected_conditions
+        ):
+            raise ValueError("Polymarket continuity coverage evidence differs")
+    chainlink, direct_books, direct_trades, source_counts = _parse_feed_points(
         store,
         selected,
         progress=progress,
     )
+    if continuity_sha256:
+        coverage = inspect_polymarket_verified_source_coverage(
+            store,
+            run_id=selected,
+            condition_ids=selected_conditions,
+            clob_baseline_condition_ids=selected_conditions,
+            source_counts=source_counts,
+            minimum_resolved_markets_per_asset=(
+                cfg.minimum_resolved_markets_per_asset
+            ),
+            allow_segmented_gaps=cfg.allow_segmented_gaps,
+        )
+    else:
+        coverage = inspect_polymarket_feed_coverage(
+            store,
+            run_id=selected,
+            minimum_resolved_markets_per_asset=(
+                cfg.minimum_resolved_markets_per_asset
+            ),
+            allow_segmented_gaps=cfg.allow_segmented_gaps,
+        )
     book_series: dict[str, dict[str, _BookSeries]] = {}
     trade_series: dict[str, dict[str, _TradeSeries]] = {}
     for asset, points in direct_books.items():

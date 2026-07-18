@@ -396,6 +396,7 @@ def _finish_replay_store(
     run_started_at_ms: int = EPOCH * 1_000,
     run_ended_at_ms: int = EPOCH * 1_000 + 302_000,
     pre_window_binance_gap: bool = False,
+    additional_messages: tuple[RawStreamMessage, ...] = (),
 ) -> None:
     store.start_run(run_id, run_started_at_ms)
     for asset in ("BTC", "ETH", "SOL"):
@@ -1072,7 +1073,7 @@ def _finish_replay_store(
                 monotonic_ns=5_900_000_000,
             ),
         ]
-    fixture_messages = [*clob_messages, *auxiliary]
+    fixture_messages = [*clob_messages, *auxiliary, *additional_messages]
     next_sequence: dict[tuple[str, str], int] = {}
     normalized_messages: list[RawStreamMessage] = []
     for message in fixture_messages:
@@ -1129,15 +1130,57 @@ def test_replay_reconstructs_depth_tick_resolution_and_post_latency_state(
     )
     assert (
         replay.first_book_after_latency(
-            close_book,
-            latency_ms=1,
-            maximum_observation_delay_ms=500,
+            close_book, latency_ms=1, maximum_observation_delay_ms=500
         )
         is None
     )
     assert replay.book_for_event(changed.event_id, changed.token_id) == changed
     assert replay.resolutions[0].winning_outcome == "Up"
     assert replay.resolutions[0].source == "clob_gamma_crosscheck"
+
+
+def test_replay_accepts_only_matching_persisted_continuity_proof(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    proof_sha256 = "a" * 64
+    with PolymarketEvidenceStore(tmp_path / "proof-replay.duckdb") as store:
+        _finish_replay_store(store, "proof-replay", feature_evidence=True)
+        btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+
+        class Proof:
+            report_sha256 = proof_sha256
+            eligible_condition_ids = (btc.condition_id,)
+
+        monkeypatch.setattr(
+            continuity_module,
+            "evaluate_polymarket_continuity_eligibility",
+            lambda *_args, **_kwargs: Proof(),
+        )
+        monkeypatch.setattr(
+            store,
+            "raw_message_lane_summaries",
+            lambda *_args, **_kwargs: pytest.fail(
+                "validated continuity proof must bypass a global lane rescan"
+            ),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="proof-replay",
+            allow_segmented_gaps=True,
+            condition_ids=(btc.condition_id,),
+            continuity_report_sha256=proof_sha256,
+        )
+        with pytest.raises(ValueError, match="continuity proof differs"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="proof-replay",
+                allow_segmented_gaps=True,
+                condition_ids=(btc.condition_id,),
+                continuity_report_sha256="b" * 64,
+            )
+
+    assert replay.books
 
 
 def test_replay_can_reconstruct_only_selected_conditions(tmp_path) -> None:
@@ -1351,6 +1394,123 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert "insufficient_featured_resolved_markets:ETH:0/1" in first.training_errors
 
 
+def test_feature_source_ignores_irrelevant_and_non_target_rtds(tmp_path) -> None:
+    unrelated = _message(
+        "polymarket_rtds",
+        {"topic": "comments", "type": "update", "payload": None},
+        sequence=90,
+        wall_offset_ms=300_000,
+        monotonic_ns=300_000_000_000,
+    )
+    non_target_chainlink = _message(
+        "polymarket_rtds",
+        {
+            "topic": "crypto_prices_chainlink",
+            "type": "update",
+            "payload": {
+                "symbol": "doge/usd",
+                "timestamp": EPOCH * 1_000 + 300_000,
+                "value": "0.25",
+            },
+        },
+        sequence=91,
+        wall_offset_ms=300_001,
+        monotonic_ns=300_001_000_000,
+    )
+    with PolymarketEvidenceStore(tmp_path / "rtds-selection.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "rtds-selection",
+            feature_evidence=True,
+            additional_messages=(unrelated, non_target_chainlink),
+        )
+        context = load_polymarket_feature_source_context(
+            store,
+            run_id="rtds-selection",
+            config=PolymarketFeatureConfig(
+                minimum_resolved_markets_per_asset=1,
+            ),
+        )
+
+    assert set(context.chainlink) == {"BTC", "ETH", "SOL"}
+    assert all(
+        point.asset in context.chainlink
+        for points in context.chainlink.values()
+        for point in points
+    )
+
+
+def test_feature_source_reuses_hash_bound_continuity_coverage(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    proof_sha256 = "c" * 64
+    with PolymarketEvidenceStore(tmp_path / "source-continuity.duckdb") as store:
+        _finish_replay_store(store, "source-continuity", feature_evidence=True)
+        btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+
+        class Proof:
+            report_sha256 = proof_sha256
+            eligible_condition_ids = (btc.condition_id,)
+
+        monkeypatch.setattr(
+            continuity_module,
+            "evaluate_polymarket_continuity_eligibility",
+            lambda *_args, **_kwargs: Proof(),
+        )
+        monkeypatch.setattr(
+            feature_module,
+            "inspect_polymarket_feed_coverage",
+            lambda *_args, **_kwargs: pytest.fail(
+                "hash-bound source coverage must not rescan every CLOB event"
+            ),
+        )
+        context = load_polymarket_feature_source_context(
+            store,
+            run_id="source-continuity",
+            config=PolymarketFeatureConfig(
+                minimum_resolved_markets_per_asset=1,
+                allow_segmented_gaps=True,
+            ),
+            condition_ids=(btc.condition_id,),
+            continuity_report_sha256=proof_sha256,
+        )
+
+    assert context.coverage.counts["BTC"]["market_snapshots"] == 1
+    assert context.coverage.counts["BTC"]["clob_token_baselines"] == 2
+
+
+def test_feature_source_rejects_malformed_target_chainlink_evidence(tmp_path) -> None:
+    malformed_target = _message(
+        "polymarket_rtds",
+        {
+            "topic": "crypto_prices_chainlink",
+            "type": "update",
+            "payload": {
+                "symbol": "btc/usd",
+                "timestamp": EPOCH * 1_000 + 300_000,
+                "value": "not-a-price",
+            },
+        },
+        sequence=90,
+        wall_offset_ms=300_000,
+        monotonic_ns=300_000_000_000,
+    )
+    with PolymarketEvidenceStore(tmp_path / "rtds-target-invalid.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "rtds-target-invalid",
+            feature_evidence=True,
+            additional_messages=(malformed_target,),
+        )
+        with pytest.raises(ValueError, match="RTDS source price"):
+            load_polymarket_feature_source_context(
+                store,
+                run_id="rtds-target-invalid",
+                config=PolymarketFeatureConfig(
+                    minimum_resolved_markets_per_asset=1,
+                ),
+            )
 def test_polymarket_feature_materialization_accepts_a_truthful_empty_dataset(
     tmp_path,
 ) -> None:
@@ -1442,6 +1602,24 @@ def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
             progress=lambda phase, _payload: progress_events.append(phase),
         )
         existing = store.ensure_condition_message_cache("condition-cache")
+        empty_manifest = (
+            store.connect()
+            .execute(
+                """
+            SELECT frame_count, message_count, first_received_monotonic_ns,
+                   last_received_monotonic_ns, last_frame_sha256
+            FROM polymarket_condition_message_manifest
+            WHERE run_id = ? AND condition_id = ?
+            """,
+                ["condition-cache", eth.condition_id],
+            )
+            .fetchone()
+        )
+        pruned = store.ensure_condition_message_cache(
+            "condition-cache",
+            condition_ids=(btc.condition_id,),
+            progress=lambda phase, _payload: progress_events.append(phase),
+        )
         actual = tuple(
             store.iter_public_events(
                 "condition-cache",
@@ -1458,18 +1636,17 @@ def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
                 verified_source=True,
             )
         )
-        empty_manifest = (
-            store.connect()
+        manifest_conditions = tuple(
+            row[0]
+            for row in store.connect()
             .execute(
                 """
-            SELECT frame_count, message_count, first_received_monotonic_ns,
-                   last_received_monotonic_ns, last_frame_sha256
-            FROM polymarket_condition_message_manifest
-            WHERE run_id = ? AND condition_id = ?
-            """,
-                ["condition-cache", eth.condition_id],
+                SELECT condition_id FROM polymarket_condition_message_manifest
+                WHERE run_id = ? ORDER BY condition_id
+                """,
+                ["condition-cache"],
             )
-            .fetchone()
+            .fetchall()
         )
 
     assert expected
@@ -1477,7 +1654,10 @@ def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
     assert empty == ()
     assert empty_manifest == (0, 0, 0, 0, "")
     assert existing == created
-    assert progress_events[0] == progress_events[-1] == "condition-cache"
+    assert pruned["condition_count"] == 1
+    assert manifest_conditions == (btc.condition_id,)
+    assert progress_events[0] == "condition-cache"
+    assert progress_events[-1] == "condition-cache-prune"
 
 
 def test_polymarket_condition_cache_payload_tampering_fails_closed(tmp_path) -> None:

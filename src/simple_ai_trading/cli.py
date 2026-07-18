@@ -6815,6 +6815,15 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
                 str(args.run_id),
                 progress=progress,
             )
+            resume_errors = store.resume_integrity_errors(
+                str(args.run_id),
+                progress=progress,
+            )
+            if resume_errors:
+                raise ValueError(
+                    "Polymarket evidence resume audit failed: "
+                    + "; ".join(resume_errors)
+                )
             pipeline_config = PolymarketActionPipelineConfig(
                 market_groups_per_batch=int(args.market_groups_per_batch),
             )
