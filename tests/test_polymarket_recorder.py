@@ -418,6 +418,49 @@ def test_storage_v4_audit_pages_payloads_by_primary_key(
     assert all("ORDER BY" not in query for query, _parameters in payload_queries)
 
 
+def test_compact_frame_lookup_uses_global_primary_key_and_revalidates_run(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    database = tmp_path / "indexed-frame-lookup.duckdb"
+    with PolymarketEvidenceStore(database, memory_limit="128MB", threads=1) as store:
+        store.start_run("frame-run-a", EPOCH * 1_000)
+        store.append_messages(
+            "frame-run-a",
+            [_message("polymarket_rtds", "PING")],
+        )
+        store.start_run("frame-run-b", (EPOCH + 1) * 1_000)
+        chunk_id = str(
+            store.connect()
+            .execute(
+                "SELECT chunk_id FROM polymarket_raw_chunk WHERE run_id = ?",
+                ["frame-run-a"],
+            )
+            .fetchone()[0]
+        )
+        payload_connection = store._payload_connection()
+        payload_queries: list[tuple[str, list[object]]] = []
+
+        class _RecordingConnection:
+            def execute(self, query: str, parameters: list[object]):
+                payload_queries.append((query, parameters))
+                return payload_connection.execute(query, parameters)
+
+        proxy = _RecordingConnection()
+        monkeypatch.setattr(store, "_payload_connection", lambda: proxy)
+        assert store._load_compact_frame("frame-run-a", chunk_id)
+        with pytest.raises(ValueError, match="chunk metadata is invalid"):
+            store._load_compact_frame("frame-run-b", chunk_id)
+
+    assert len(payload_queries) == 2
+    assert all(parameters == [chunk_id] for _query, parameters in payload_queries)
+    assert all("WHERE chunk_id = ?" in query for query, _parameters in payload_queries)
+    assert all(
+        "WHERE run_id = ? AND chunk_id = ?" not in query
+        for query, _parameters in payload_queries
+    )
+
+
 def test_compact_multi_chunk_append_rolls_back_atomically(tmp_path) -> None:
     database = tmp_path / "atomic-batch.duckdb"
     messages = [

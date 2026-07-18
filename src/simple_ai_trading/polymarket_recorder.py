@@ -642,6 +642,7 @@ class PolymarketEvidenceStore:
         self._last_sequence_by_lane: dict[tuple[str, str, str], int] = {}
         self._last_capture_order_key_by_run: dict[str, tuple[int, int]] = {}
         self._sequence_state_initialized_runs: set[str] = set()
+        self._frame_cache_run_id = ""
         self._frame_cache_id = ""
         self._frame_cache = b""
         self._validated_condition_cache_runs: dict[str, str] = {}
@@ -687,6 +688,7 @@ class PolymarketEvidenceStore:
             self._last_sequence_by_lane.clear()
             self._last_capture_order_key_by_run.clear()
             self._sequence_state_initialized_runs.clear()
+            self._frame_cache_run_id = ""
             self._frame_cache_id = ""
             self._frame_cache = b""
             self._validated_condition_cache_runs.clear()
@@ -2182,7 +2184,7 @@ class PolymarketEvidenceStore:
         return frame
 
     def _load_compact_frame(self, run_id: str, chunk_id: str) -> bytes:
-        if chunk_id == self._frame_cache_id:
+        if run_id == self._frame_cache_run_id and chunk_id == self._frame_cache_id:
             return self._frame_cache
         stream_counts_projection = (
             "stream_counts_json"
@@ -2199,15 +2201,16 @@ class PolymarketEvidenceStore:
                    uncompressed_sha256, compressed_bytes, compressed_sha256,
                    compressed_payload, {stream_counts_projection}
             FROM polymarket_raw_chunk
-            WHERE run_id = ? AND chunk_id = ?
+            WHERE chunk_id = ?
             """,
-                [run_id, chunk_id],
+                [chunk_id],
             )
             .fetchone()
         )
         if row is None:
             raise ValueError("compact raw message references a missing chunk")
         frame = self._decode_raw_chunk_payload(run_id, row)
+        self._frame_cache_run_id = run_id
         self._frame_cache_id = chunk_id
         self._frame_cache = frame
         return frame
@@ -4989,6 +4992,7 @@ class PolymarketEvidenceStore:
             )
             notify("integrity-public-events", force=True)
         elif compact:
+            self._frame_cache_run_id = ""
             self._frame_cache_id = ""
             self._frame_cache = b""
             chunk_rows = connection.execute(
