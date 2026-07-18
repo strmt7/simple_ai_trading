@@ -567,13 +567,19 @@ def materialize_polymarket_action_value_batches(
             missing_indexes.append(index)
     source_context = None
     if missing_indexes:
-        store.ensure_condition_message_cache(selected, progress=progress)
+        store.ensure_condition_message_cache(
+            selected,
+            condition_ids=tuple(sorted(selected_conditions)),
+            progress=progress,
+        )
         if progress is not None:
             progress("source-context", {"remaining_batches": len(missing_indexes)})
         source_context = load_polymarket_feature_source_context(
             store,
             run_id=selected,
             config=cfg.feature,
+            condition_ids=tuple(sorted(selected_conditions)),
+            continuity_report_sha256=eligibility_digest,
             progress=progress,
         )
     for completed, index in enumerate(missing_indexes, start=1):
@@ -594,6 +600,7 @@ def materialize_polymarket_action_value_batches(
             allow_segmented_gaps=cfg.feature.allow_segmented_gaps,
             book_sample_interval_ms=0,
             condition_ids=conditions,
+            continuity_report_sha256=eligibility_digest,
         )
         feature_replay = replay.with_book_sample_interval(cfg.feature.cadence_ms)
         features = build_polymarket_feature_dataset(

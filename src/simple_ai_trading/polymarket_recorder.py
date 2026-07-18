@@ -2629,13 +2629,104 @@ class PolymarketEvidenceStore:
         self._validated_condition_cache_runs[run_id] = str(build[7])
         return expected
 
+    def _prune_condition_message_cache(
+        self,
+        run_id: str,
+        source_run_report_sha256: str,
+        condition_ids: tuple[str, ...],
+    ) -> dict[str, object]:
+        """Atomically narrow a verified cache without re-reading capture frames."""
+
+        if self.read_only:
+            raise ValueError("read-only Polymarket condition cache cannot be pruned")
+        connection = self.connect()
+        placeholders = ", ".join("?" for _ in condition_ids)
+        parameters: list[object] = [run_id, *condition_ids]
+        manifest_rows = connection.execute(
+            f"""
+            SELECT condition_id, manifest_sha256, frame_count, message_count
+            FROM polymarket_condition_message_manifest
+            WHERE run_id = ? AND condition_id IN ({placeholders})
+            ORDER BY condition_id
+            """,
+            parameters,
+        ).fetchall()
+        if tuple(str(row[0]) for row in manifest_rows) != condition_ids:
+            raise ValueError("Polymarket condition cache cannot cover the selection")
+        frame_count = sum(int(row[2]) for row in manifest_rows)
+        message_count = sum(int(row[3]) for row in manifest_rows)
+        report = {
+            "schema_version": _CONDITION_CACHE_SCHEMA_VERSION,
+            "run_id": run_id,
+            "source_run_report_sha256": source_run_report_sha256,
+            "condition_count": len(condition_ids),
+            "frame_count": frame_count,
+            "message_count": message_count,
+            "manifests": [
+                {
+                    "condition_id": str(row[0]),
+                    "manifest_sha256": str(row[1]),
+                }
+                for row in manifest_rows
+            ],
+        }
+        report_json = _canonical_json(report)
+        report_sha256 = _canonical_sha256(report)
+        self._validated_condition_cache_runs.pop(run_id, None)
+        connection.execute("BEGIN TRANSACTION")
+        try:
+            connection.execute(
+                f"""
+                DELETE FROM polymarket_condition_message_frame
+                WHERE run_id = ? AND condition_id NOT IN ({placeholders})
+                """,
+                parameters,
+            )
+            connection.execute(
+                f"""
+                DELETE FROM polymarket_condition_message_manifest
+                WHERE run_id = ? AND condition_id NOT IN ({placeholders})
+                """,
+                parameters,
+            )
+            updated = connection.execute(
+                """
+                UPDATE polymarket_condition_cache_build
+                SET condition_count = ?, frame_count = ?, message_count = ?,
+                    report_json = ?, report_sha256 = ?, error = ''
+                WHERE run_id = ? AND state = 'complete'
+                  AND source_run_report_sha256 = ?
+                RETURNING run_id
+                """,
+                [
+                    len(condition_ids),
+                    frame_count,
+                    message_count,
+                    report_json,
+                    report_sha256,
+                    run_id,
+                    source_run_report_sha256,
+                ],
+            ).fetchall()
+            if updated != [(run_id,)]:
+                raise ValueError("Polymarket condition cache build changed while pruning")
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
+        return self._validate_condition_message_cache(
+            run_id,
+            source_run_report_sha256,
+        )
+
     def ensure_condition_message_cache(
         self,
         run_id: str,
         *,
+        condition_ids: Sequence[str] | None = None,
         progress: Callable[[str, Mapping[str, object]], None] | None = None,
     ) -> dict[str, object]:
-        """Build one terminal, compressed condition lookup from audited chunks."""
+        """Build an exact, compressed condition lookup from audited chunks."""
 
         selected = str(run_id or "").strip()
         cached_audit = self._terminal_evidence_integrity_cache.get(selected)
@@ -2669,27 +2760,8 @@ class PolymarketEvidenceStore:
         ):
             raise ValueError("Polymarket condition cache source run is not terminal")
         source_report_sha256 = str(run[2])
-        existing = connection.execute(
-            """
-            SELECT state, source_run_report_sha256
-            FROM polymarket_condition_cache_build WHERE run_id = ?
-            """,
-            [selected],
-        ).fetchone()
-        if existing is not None and str(existing[0]) == "complete":
-            if str(existing[1]) != source_report_sha256:
-                raise ValueError("Polymarket condition cache source identity differs")
-            return self._validate_condition_message_cache(
-                selected,
-                source_report_sha256,
-            )
-        if self.read_only:
-            raise ValueError(
-                "read-only Polymarket store has no complete condition cache"
-            )
-
         market_conditions = tuple(
-            str(row[0])
+            str(row[0]).strip().lower()
             for row in connection.execute(
                 """
                 SELECT condition_id FROM polymarket_market_snapshot
@@ -2704,6 +2776,63 @@ class PolymarketEvidenceStore:
             or len(set(market_conditions)) != len(market_conditions)
         ):
             raise ValueError("Polymarket condition cache market coverage is invalid")
+        requested_conditions = (
+            market_conditions
+            if condition_ids is None
+            else tuple(
+                sorted(
+                    {
+                        str(condition_id or "").strip().lower()
+                        for condition_id in condition_ids
+                    }
+                )
+            )
+        )
+        if (
+            not requested_conditions
+            or "" in requested_conditions
+            or not set(requested_conditions).issubset(market_conditions)
+        ):
+            raise ValueError("Polymarket condition cache selection is invalid")
+        existing = connection.execute(
+            """
+            SELECT state, source_run_report_sha256
+            FROM polymarket_condition_cache_build WHERE run_id = ?
+            """,
+            [selected],
+        ).fetchone()
+        if existing is not None and str(existing[0]) == "complete":
+            if str(existing[1]) != source_report_sha256:
+                raise ValueError("Polymarket condition cache source identity differs")
+            report = self._validate_condition_message_cache(
+                selected,
+                source_report_sha256,
+            )
+            cached_conditions = tuple(
+                str(item["condition_id"])
+                for item in report["manifests"]
+                if isinstance(item, Mapping)
+            )
+            if set(requested_conditions).issubset(cached_conditions):
+                if cached_conditions == requested_conditions or self.read_only:
+                    return report
+                if progress is not None:
+                    progress(
+                        "condition-cache-prune",
+                        {
+                            "cached_condition_count": len(cached_conditions),
+                            "selected_condition_count": len(requested_conditions),
+                        },
+                    )
+                return self._prune_condition_message_cache(
+                    selected,
+                    source_report_sha256,
+                    requested_conditions,
+                )
+        if self.read_only:
+            raise ValueError(
+                "read-only Polymarket store has no complete condition cache"
+            )
 
         self._validated_condition_cache_runs.pop(selected, None)
         connection.execute("BEGIN TRANSACTION")
@@ -2739,11 +2868,12 @@ class PolymarketEvidenceStore:
         cached_message_references = 0
         buffers: dict[str, list[tuple[object, ...]]] = {}
         frame_counts: dict[str, int] = {
-            condition_id: 0 for condition_id in market_conditions
+            condition_id: 0 for condition_id in requested_conditions
         }
         message_counts: dict[str, int] = {
-            condition_id: 0 for condition_id in market_conditions
+            condition_id: 0 for condition_id in requested_conditions
         }
+        allowed_conditions = frozenset(requested_conditions)
         first_received: dict[str, int] = {}
         last_received: dict[str, int] = {}
         last_frame_sha256: dict[str, str] = {}
@@ -2893,8 +3023,9 @@ class PolymarketEvidenceStore:
                 for item in candidates
             }
             conditions.discard("")
+            conditions.intersection_update(allowed_conditions)
             if not conditions:
-                raise ValueError("Polymarket condition cache source has no condition")
+                return
             for condition_id in sorted(conditions):
                 buffer = buffers.setdefault(condition_id, [])
                 buffer.append(cache_row)
@@ -3201,7 +3332,7 @@ class PolymarketEvidenceStore:
             [run_id, *selected_conditions],
         ).fetchone()[0]
         if int(count) != len(selected_conditions):
-            raise ValueError("Polymarket condition cache does not cover the selection")
+            return False
         return True
 
     def _iter_verified_condition_cache_events(
@@ -4417,6 +4548,275 @@ class PolymarketEvidenceStore:
             },
         )
         return recovery
+
+    def resume_integrity_errors(
+        self,
+        run_id: str,
+        *,
+        progress: Callable[[str, Mapping[str, object]], None] | None = None,
+        progress_interval_seconds: int = 30,
+    ) -> tuple[str, ...]:
+        """Attest a deeply audited recovery without decompressing it again."""
+
+        selected = str(run_id or "").strip()
+        if not selected:
+            raise ValueError("Polymarket resume audit requires a run ID")
+        if (
+            self._storage_schema_version(selected) != POLYMARKET_STORAGE_SCHEMA_VERSION
+            or self._terminal_recovery_row(selected) is None
+        ):
+            return self.integrity_errors(
+                selected,
+                progress=progress,
+                progress_interval_seconds=progress_interval_seconds,
+            )
+        cached = self._terminal_evidence_integrity_cache.get(selected)
+        if cached is not None and cached[0] == self._terminal_evidence_fingerprint(
+            selected
+        ):
+            errors = list(cached[1])
+            if self.paper_journal is not None:
+                errors.extend(self.paper_journal.integrity_errors())
+            return tuple(errors)
+
+        interval = max(1, int(progress_interval_seconds))
+        started = time.monotonic()
+        last_progress = started
+        verified_chunk_count = 0
+        verified_compressed_bytes = 0
+
+        def notify(phase: str, *, force: bool = False) -> None:
+            nonlocal last_progress
+            if progress is None:
+                return
+            now = time.monotonic()
+            if not force and now - last_progress < interval:
+                return
+            last_progress = now
+            try:
+                progress(
+                    phase,
+                    {
+                        "audit_elapsed_seconds": round(now - started, 3),
+                        "verified_chunk_count": verified_chunk_count,
+                        "verified_compressed_bytes": verified_compressed_bytes,
+                    },
+                )
+            except Exception:
+                return
+
+        connection = self.connect()
+        errors: list[str] = []
+        notify("resume-integrity-started", force=True)
+        fingerprint_before = self._terminal_evidence_fingerprint(selected)
+        row = connection.execute(
+            """
+            SELECT schema_version, storage_schema_version, status, started_at_ms,
+                   ended_at_ms, report_json, report_sha256, error
+            FROM polymarket_recorder_run WHERE run_id = ?
+            """,
+            [selected],
+        ).fetchone()
+        parsed_report: Mapping[str, object] | None = None
+        if row is None:
+            errors.append(f"missing_recorder_run:{selected}")
+        else:
+            (
+                run_schema,
+                storage_schema,
+                run_status,
+                run_started,
+                run_ended,
+                report_json,
+                report_sha256,
+                run_error,
+            ) = row
+            if str(run_schema) != POLYMARKET_RECORDER_SCHEMA_VERSION:
+                errors.append(f"recorder_schema_mismatch:{selected}")
+            if str(storage_schema) != POLYMARKET_STORAGE_SCHEMA_VERSION:
+                errors.append(f"recorder_storage_schema_mismatch:{selected}")
+            if str(run_status) not in {"complete", "degraded"}:
+                errors.append(f"recorder_run_not_resumable:{selected}:{run_status}")
+            if run_ended is None or str(run_error or ""):
+                errors.append(f"recorder_terminal_state_invalid:{selected}")
+            try:
+                parsed = _strict_json_loads(str(report_json))
+                if not isinstance(parsed, Mapping):
+                    raise ValueError("recorder report is not an object")
+                parsed_report = parsed
+                if set(parsed_report) != set(RecorderReport.__dataclass_fields__):
+                    errors.append(f"recorder_report_fields_mismatch:{selected}")
+                if _canonical_json(parsed_report) != str(report_json):
+                    errors.append(f"recorder_report_not_canonical:{selected}")
+                unhashed_report = dict(parsed_report)
+                embedded_sha256 = str(
+                    unhashed_report.pop("report_sha256", "")
+                )
+                actual_sha256 = _canonical_sha256(unhashed_report)
+                if not hmac.compare_digest(actual_sha256, str(report_sha256)):
+                    errors.append(f"recorder_report_hash_mismatch:{selected}")
+                if not hmac.compare_digest(embedded_sha256, str(report_sha256)):
+                    errors.append(
+                        f"recorder_report_embedded_hash_mismatch:{selected}"
+                    )
+                expected_report_fields = {
+                    "schema_version": POLYMARKET_RECORDER_SCHEMA_VERSION,
+                    "run_id": selected,
+                    "status": str(run_status),
+                    "started_at_ms": int(run_started),
+                    "ended_at_ms": int(run_ended or 0),
+                    "errors": [],
+                    "integrity_errors": [],
+                }
+                for field, expected in expected_report_fields.items():
+                    if parsed_report.get(field) != expected:
+                        errors.append(
+                            f"recorder_report_terminal_mismatch:{selected}:{field}"
+                        )
+            except (json.JSONDecodeError, UnicodeError, TypeError, ValueError) as exc:
+                errors.append(
+                    f"recorder_report_invalid:{selected}:{exc.__class__.__name__}:{exc}"
+                )
+
+            errors.extend(
+                self._terminal_recovery_integrity_errors(selected, parsed_report)
+            )
+            try:
+                raw_count, stream_counts = self._capture_frame_fast_counts(selected)
+                manifest_sha256 = self._capture_manifest_sha256(selected)
+            except (json.JSONDecodeError, TypeError, ValueError, OverflowError) as exc:
+                errors.append(
+                    "resume_capture_metadata_invalid:"
+                    f"{selected}:{exc.__class__.__name__}:{exc}"
+                )
+                raw_count, stream_counts, manifest_sha256 = 0, {}, ""
+
+            snapshots = connection.execute(
+                """
+                SELECT snapshot_id, run_id, observed_wall_ms,
+                       observed_monotonic_ns, asset, market_id, condition_id,
+                       slug, question, event_start_ms, end_ms, up_token_id,
+                       down_token_id, tick_size, minimum_order_size, fees_enabled,
+                       fee_rate, fee_exponent, fee_taker_only, fee_rebate_rate,
+                       liquidity_quote, volume_quote, resolution_source,
+                       gamma_payload_json, gamma_payload_sha256, clob_info_json,
+                       clob_info_sha256, up_fee_rate_json, up_fee_rate_sha256,
+                       down_fee_rate_json, down_fee_rate_sha256, maker_base_fee,
+                       taker_base_fee, taker_order_delay_enabled,
+                       minimum_order_age_seconds, snapshot_payload_json,
+                       snapshot_sha256
+                FROM polymarket_market_snapshot
+                WHERE run_id = ? ORDER BY snapshot_id
+                """,
+                [selected],
+            ).fetchall()
+            for snapshot in snapshots:
+                errors.extend(_snapshot_integrity_errors(snapshot))
+            gaps = connection.execute(
+                """
+                SELECT gap_id, run_id, stream, connection_id, opened_at_ms,
+                       reason, last_sequence_number
+                FROM polymarket_stream_gap WHERE run_id = ? ORDER BY gap_id
+                """,
+                [selected],
+            ).fetchall()
+            for gap in gaps:
+                expected_gap_id = _canonical_sha256(
+                    {
+                        "run_id": str(gap[1]),
+                        "stream": str(gap[2]),
+                        "connection_id": str(gap[3]),
+                        "opened_at_ms": int(gap[4]),
+                        "reason": str(gap[5]),
+                        "last_sequence_number": int(gap[6]),
+                    }
+                )
+                if not hmac.compare_digest(str(gap[0]), expected_gap_id):
+                    errors.append(f"stream_gap_id_mismatch:{gap[0]}")
+            if parsed_report is not None:
+                report_evidence = {
+                    "market_snapshot_count": len(snapshots),
+                    "raw_message_count": raw_count,
+                    "stream_gap_count": len(gaps),
+                    "stream_counts": stream_counts,
+                    "assets": sorted({str(snapshot[4]) for snapshot in snapshots}),
+                    "conditions": sorted(
+                        {str(snapshot[6]) for snapshot in snapshots}
+                    ),
+                    "evidence_manifest_sha256": manifest_sha256,
+                }
+                for field, actual in report_evidence.items():
+                    if parsed_report.get(field) != actual:
+                        errors.append(
+                            f"recorder_report_evidence_mismatch:{selected}:{field}"
+                        )
+                normalized_event_count = parsed_report.get("normalized_event_count")
+                if (
+                    type(normalized_event_count) is not int
+                    or normalized_event_count < 0
+                ):
+                    errors.append(
+                        f"recorder_report_evidence_mismatch:{selected}:"
+                        "normalized_event_count"
+                    )
+                if run_ended is not None:
+                    outside = sum(
+                        not int(run_started) <= int(snapshot[2]) <= int(run_ended)
+                        for snapshot in snapshots
+                    )
+                    if outside:
+                        errors.append(
+                            f"recorder_snapshot_outside_run:{selected}:{outside}"
+                        )
+
+        expected_chunk_count = int(
+            connection.execute(
+                "SELECT count(*) FROM polymarket_raw_chunk WHERE run_id = ?",
+                [selected],
+            ).fetchone()[0]
+        )
+        payload_cursor = self._payload_connection().execute(
+            """
+            SELECT chunk_id, compressed_bytes, compressed_sha256,
+                   compressed_payload
+            FROM polymarket_raw_chunk WHERE run_id = ?
+            """,
+            [selected],
+        )
+        while batch := payload_cursor.fetchmany(64):
+            for chunk_id, claimed_bytes, claimed_sha256, payload in batch:
+                verified_chunk_count += 1
+                compressed = bytes(payload)
+                verified_compressed_bytes += len(compressed)
+                if (
+                    not re.fullmatch(r"[0-9a-f]{64}", str(claimed_sha256))
+                    or len(compressed) != int(claimed_bytes)
+                    or not hmac.compare_digest(
+                        hashlib.sha256(compressed).hexdigest(),
+                        str(claimed_sha256),
+                    )
+                ):
+                    errors.append(
+                        f"raw_chunk_compressed_payload_mismatch:{chunk_id}"
+                    )
+                notify("resume-integrity-chunks")
+        if verified_chunk_count != expected_chunk_count:
+            errors.append(
+                f"raw_chunk_count_mismatch:{selected}:"
+                f"{verified_chunk_count}:{expected_chunk_count}"
+            )
+        fingerprint_after = self._terminal_evidence_fingerprint(selected)
+        if not hmac.compare_digest(fingerprint_before, fingerprint_after):
+            errors.append(f"resume_evidence_changed_during_audit:{selected}")
+        evidence_errors = tuple(errors)
+        self._terminal_evidence_integrity_cache[selected] = (
+            fingerprint_after,
+            evidence_errors,
+        )
+        if self.paper_journal is not None:
+            errors.extend(self.paper_journal.integrity_errors())
+        notify("resume-integrity-complete", force=True)
+        return tuple(errors)
 
     def integrity_errors(
         self,

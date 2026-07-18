@@ -398,6 +398,7 @@ class PolymarketEvidenceReplay:
         allow_segmented_gaps: bool = False,
         book_sample_interval_ms: int = 0,
         condition_ids: Sequence[str] | None = None,
+        continuity_report_sha256: str = "",
     ) -> "PolymarketEvidenceReplay":
         sample_interval_ms = int(book_sample_interval_ms)
         if sample_interval_ms < 0 or sample_interval_ms > 5_000:
@@ -451,11 +452,44 @@ class PolymarketEvidenceReplay:
             raise ValueError(
                 "Polymarket replay evidence failed integrity: " + "; ".join(integrity)
             )
-        gap_count = cls.validate_stream_gaps(
-            store,
-            selected,
-            allow_segmented_gaps=allow_segmented_gaps,
-        )
+        continuity_sha256 = str(continuity_report_sha256 or "").strip().lower()
+        if continuity_sha256:
+            if (
+                not allow_segmented_gaps
+                or selected_conditions is None
+                or len(continuity_sha256) != 64
+                or any(
+                    value not in "0123456789abcdef" for value in continuity_sha256
+                )
+            ):
+                raise ValueError("Polymarket replay continuity proof is invalid")
+            from .polymarket_continuity import (
+                evaluate_polymarket_continuity_eligibility,
+            )
+
+            continuity = evaluate_polymarket_continuity_eligibility(
+                store,
+                run_id=selected,
+            )
+            if (
+                continuity.report_sha256 != continuity_sha256
+                or not set(selected_conditions).issubset(
+                    continuity.eligible_condition_ids
+                )
+            ):
+                raise ValueError("Polymarket replay continuity proof differs")
+            gap_count = int(
+                connection.execute(
+                    "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
+                    [selected],
+                ).fetchone()[0]
+            )
+        else:
+            gap_count = cls.validate_stream_gaps(
+                store,
+                selected,
+                allow_segmented_gaps=allow_segmented_gaps,
+            )
 
         markets = cls._load_markets(
             store,

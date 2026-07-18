@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket_recorder import PolymarketEvidenceStore
@@ -101,9 +101,11 @@ def _rtds_sample_count(event: Mapping[str, object]) -> tuple[str, str, int]:
     if not isinstance(payload, Mapping):
         raise ValueError("RTDS crypto payload is not an object")
     raw_symbol = str(payload.get("symbol") or "").strip()
+    if not raw_symbol:
+        raise ValueError("RTDS crypto symbol is missing")
     asset = _asset(raw_symbol)
     if not asset:
-        raise ValueError("RTDS crypto symbol is unsupported")
+        return "", "", 0
     source = (
         "rtds_chainlink"
         if topic == "crypto_prices_chainlink" or "/" in raw_symbol
@@ -124,6 +126,65 @@ def _rtds_sample_count(event: Mapping[str, object]) -> tuple[str, str, int]:
         _positive_decimal(payload.get("value"), name="RTDS update value")
         return asset, f"{source}_live_updates", 1
     return asset, source, 0
+
+
+def _finalize_coverage(
+    *,
+    run_id: str,
+    run_status: str,
+    allow_segmented_gaps: bool,
+    stream_gap_count: int,
+    minimum_resolved: int,
+    counts: dict[str, dict[str, int]],
+    expected_tokens: Mapping[str, set[str]],
+    integrity_errors: Sequence[str],
+    data_errors: Sequence[str],
+) -> PolymarketFeedCoverage:
+    shadow_errors: list[str] = []
+    segmented_status_allowed = bool(allow_segmented_gaps) and run_status == "degraded"
+    if run_status != "complete" and not segmented_status_allowed:
+        shadow_errors.append(f"run_not_complete:{run_status}")
+    if integrity_errors:
+        shadow_errors.append("recorder_integrity_failed")
+    if data_errors:
+        shadow_errors.append("feed_event_validation_failed")
+    for asset in _ASSETS:
+        values = counts[asset]
+        expected_baselines = max(2, len(expected_tokens[asset]))
+        requirements = {
+            "market_snapshots": 1,
+            "clob_token_baselines": expected_baselines,
+            "direct_binance_book_tickers": 1,
+            "direct_binance_trades": 1,
+            "rtds_chainlink_live_updates": 1,
+        }
+        for key, minimum in requirements.items():
+            if minimum <= 0 or values[key] < minimum:
+                shadow_errors.append(
+                    f"insufficient_{key}:{asset}:{values[key]}/{minimum}"
+                )
+
+    training_errors = list(shadow_errors)
+    for asset in _ASSETS:
+        resolutions = counts[asset]["official_resolutions"]
+        if resolutions < minimum_resolved:
+            training_errors.append(
+                f"insufficient_official_resolutions:{asset}:"
+                f"{resolutions}/{minimum_resolved}"
+            )
+    return PolymarketFeedCoverage(
+        schema_version=POLYMARKET_COVERAGE_SCHEMA_VERSION,
+        run_id=run_id,
+        run_status=run_status,
+        allow_segmented_gaps=bool(allow_segmented_gaps),
+        stream_gap_count=stream_gap_count,
+        minimum_resolved_markets_per_asset=minimum_resolved,
+        counts=counts,
+        integrity_errors=tuple(integrity_errors),
+        data_errors=tuple(sorted(set(data_errors))),
+        shadow_errors=tuple(sorted(set(shadow_errors))),
+        training_errors=tuple(sorted(set(training_errors))),
+    )
 
 
 def inspect_polymarket_feed_coverage(
@@ -280,50 +341,142 @@ def inspect_polymarket_feed_coverage(
     for asset in _ASSETS:
         counts[asset]["official_resolutions"] = len(resolved_conditions[asset])
 
-    shadow_errors: list[str] = []
-    segmented_status_allowed = bool(allow_segmented_gaps) and run_status == "degraded"
-    if run_status != "complete" and not segmented_status_allowed:
-        shadow_errors.append(f"run_not_complete:{run_status}")
-    if integrity_errors:
-        shadow_errors.append("recorder_integrity_failed")
-    if data_errors:
-        shadow_errors.append("feed_event_validation_failed")
-    for asset in _ASSETS:
-        values = counts[asset]
-        expected_baselines = max(2, len(expected_tokens[asset]))
-        requirements = {
-            "market_snapshots": 1,
-            "clob_token_baselines": expected_baselines,
-            "direct_binance_book_tickers": 1,
-            "direct_binance_trades": 1,
-            "rtds_chainlink_live_updates": 1,
-        }
-        for key, minimum in requirements.items():
-            if minimum <= 0 or values[key] < minimum:
-                shadow_errors.append(
-                    f"insufficient_{key}:{asset}:{values[key]}/{minimum}"
-                )
-
-    training_errors = list(shadow_errors)
-    for asset in _ASSETS:
-        resolutions = counts[asset]["official_resolutions"]
-        if resolutions < minimum_resolved:
-            training_errors.append(
-                f"insufficient_official_resolutions:{asset}:"
-                f"{resolutions}/{minimum_resolved}"
-            )
-    return PolymarketFeedCoverage(
-        schema_version=POLYMARKET_COVERAGE_SCHEMA_VERSION,
+    return _finalize_coverage(
         run_id=selected,
         run_status=run_status,
-        allow_segmented_gaps=bool(allow_segmented_gaps),
+        allow_segmented_gaps=allow_segmented_gaps,
         stream_gap_count=stream_gap_count,
-        minimum_resolved_markets_per_asset=minimum_resolved,
+        minimum_resolved=minimum_resolved,
         counts=counts,
-        integrity_errors=tuple(integrity_errors),
-        data_errors=tuple(sorted(set(data_errors))),
-        shadow_errors=tuple(sorted(set(shadow_errors))),
-        training_errors=tuple(sorted(set(training_errors))),
+        expected_tokens=expected_tokens,
+        integrity_errors=integrity_errors,
+        data_errors=data_errors,
+    )
+
+
+def inspect_polymarket_verified_source_coverage(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    condition_ids: Sequence[str],
+    clob_baseline_condition_ids: Sequence[str],
+    source_counts: Mapping[str, Mapping[str, int]],
+    minimum_resolved_markets_per_asset: int = (
+        DEFAULT_MINIMUM_RESOLVED_MARKETS_PER_ASSET
+    ),
+    allow_segmented_gaps: bool = False,
+) -> PolymarketFeedCoverage:
+    """Combine one feed parse with hash-validated CLOB continuity evidence."""
+
+    selected = str(run_id or "").strip()
+    selected_conditions = tuple(
+        sorted({str(value or "").strip().lower() for value in condition_ids})
+    )
+    baseline_conditions = tuple(
+        sorted(
+            {
+                str(value or "").strip().lower()
+                for value in clob_baseline_condition_ids
+            }
+        )
+    )
+    minimum_resolved = int(minimum_resolved_markets_per_asset)
+    if (
+        not selected
+        or not selected_conditions
+        or "" in selected_conditions
+        or baseline_conditions != selected_conditions
+        or not 1 <= minimum_resolved <= 100_000
+    ):
+        raise ValueError("verified Polymarket coverage selection is invalid")
+    connection = store.connect()
+    run = connection.execute(
+        "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
+        [selected],
+    ).fetchone()
+    if run is None:
+        raise ValueError(f"unknown Polymarket recorder run: {selected}")
+    run_status = str(run[0])
+    integrity_errors = store.integrity_errors(selected)
+    stream_gap_count = int(
+        connection.execute(
+            "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
+            [selected],
+        ).fetchone()[0]
+    )
+    data_errors: list[str] = []
+    if stream_gap_count and not allow_segmented_gaps:
+        data_errors.append("stream_gap_invalid:segmented continuity is disabled")
+
+    market_rows = connection.execute(
+        """
+        SELECT asset, condition_id, up_token_id, down_token_id
+        FROM polymarket_market_snapshot
+        WHERE run_id = ? ORDER BY event_start_ms, asset
+        """,
+        [selected],
+    ).fetchall()
+    market_by_condition = {str(row[1]).lower(): row for row in market_rows}
+    if (
+        len(market_by_condition) != len(market_rows)
+        or not set(selected_conditions).issubset(market_by_condition)
+    ):
+        raise ValueError("verified Polymarket coverage markets are invalid")
+
+    counts = {asset: {key: 0 for key in _COUNT_KEYS} for asset in _ASSETS}
+    expected_tokens: dict[str, set[str]] = {asset: set() for asset in _ASSETS}
+    condition_asset: dict[str, str] = {}
+    for condition_id in selected_conditions:
+        row = market_by_condition[condition_id]
+        asset = _asset(row[0])
+        if not asset:
+            raise ValueError("verified Polymarket coverage asset is invalid")
+        condition_asset[condition_id] = asset
+        counts[asset]["market_snapshots"] += 1
+        expected_tokens[asset].update((str(row[2]), str(row[3])))
+        counts[asset]["clob_token_baselines"] += 2
+
+    source_keys = {
+        "direct_binance_book_tickers",
+        "direct_binance_trades",
+        "rtds_binance_history_samples",
+        "rtds_binance_live_updates",
+        "rtds_chainlink_history_samples",
+        "rtds_chainlink_live_updates",
+    }
+    if set(source_counts) != set(_ASSETS):
+        raise ValueError("verified Polymarket source-count assets differ")
+    for asset in _ASSETS:
+        values = source_counts[asset]
+        if not isinstance(values, Mapping) or not set(values).issubset(source_keys):
+            raise ValueError("verified Polymarket source-count fields differ")
+        for key, value in values.items():
+            if type(value) is not int or value < 0:
+                raise ValueError("verified Polymarket source count is invalid")
+            counts[asset][str(key)] = value
+
+    resolved_conditions: dict[str, set[str]] = {asset: set() for asset in _ASSETS}
+    try:
+        for resolution in load_official_resolutions(store, run_id=selected):
+            asset = condition_asset.get(resolution.condition_id)
+            if asset:
+                resolved_conditions[asset].add(resolution.condition_id)
+    except ValueError as exc:
+        data_errors.append(
+            f"official_resolution_invalid:{exc.__class__.__name__}:{exc}"
+        )
+    for asset in _ASSETS:
+        counts[asset]["official_resolutions"] = len(resolved_conditions[asset])
+    return _finalize_coverage(
+        run_id=selected,
+        run_status=run_status,
+        allow_segmented_gaps=allow_segmented_gaps,
+        stream_gap_count=stream_gap_count,
+        minimum_resolved=minimum_resolved,
+        counts=counts,
+        expected_tokens=expected_tokens,
+        integrity_errors=integrity_errors,
+        data_errors=data_errors,
     )
 
 
@@ -332,4 +485,5 @@ __all__ = [
     "POLYMARKET_COVERAGE_SCHEMA_VERSION",
     "PolymarketFeedCoverage",
     "inspect_polymarket_feed_coverage",
+    "inspect_polymarket_verified_source_coverage",
 ]

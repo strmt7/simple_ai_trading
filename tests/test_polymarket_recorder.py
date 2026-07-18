@@ -1601,7 +1601,10 @@ def test_recorder_terminalizes_when_full_finish_audit_fails(
     assert "finish_run:RuntimeError:audit memory ceiling" in persisted[3]
 
 
-def test_storage_v4_recovers_only_an_exact_terminal_audit_oom(tmp_path) -> None:
+def test_storage_v4_recovers_only_an_exact_terminal_audit_oom(
+    tmp_path,
+    monkeypatch,
+) -> None:
     database = tmp_path / "terminal-audit-recovery.duckdb"
     run_id = "terminal-audit-recovery"
     error = (
@@ -1665,7 +1668,44 @@ def test_storage_v4_recovers_only_an_exact_terminal_audit_oom(tmp_path) -> None:
         threads=1,
         read_only=True,
     ) as reopened:
+        def unexpected_decompression(*_args: object, **_kwargs: object) -> None:
+            raise AssertionError("resume audit must not decompress capture frames")
+
+        monkeypatch.setattr(reopened, "_iter_capture_messages", unexpected_decompression)
+        assert reopened.resume_integrity_errors(run_id) == ()
         assert reopened.integrity_errors(run_id) == ()
+
+
+def test_terminal_resume_audit_hashes_stored_compressed_payloads(tmp_path) -> None:
+    database = tmp_path / "terminal-resume-payload-tamper.duckdb"
+    run_id = "terminal-resume-payload-tamper"
+    with PolymarketEvidenceStore(database) as store:
+        _complete_store(store, run_id)
+        store.fail_run(
+            run_id,
+            started_at_ms=EPOCH * 1_000,
+            ended_at_ms=EPOCH * 1_000 + 5_000,
+            database=str(database),
+            errors=(
+                "finish_run:OutOfMemoryException:Out of Memory Error: test ceiling",
+            ),
+        )
+        assert store.recover_terminal_audit_if_resource_exhausted(run_id) is not None
+        store.connect().execute(
+            """
+            UPDATE polymarket_raw_chunk SET compressed_payload = from_hex('00')
+            WHERE run_id = ? AND chunk_index = 0
+            """,
+            [run_id],
+        )
+
+    with PolymarketEvidenceStore(database, read_only=True) as reopened:
+        errors = reopened.resume_integrity_errors(run_id)
+
+    assert any(
+        error.startswith("raw_chunk_compressed_payload_mismatch:")
+        for error in errors
+    )
 
 
 def test_terminal_audit_recovery_rejects_corruption_and_preserves_failure(
@@ -1763,7 +1803,7 @@ def test_terminal_audit_recovery_record_tampering_is_detected(tmp_path) -> None:
         )
 
     with PolymarketEvidenceStore(database, read_only=True) as reopened:
-        errors = reopened.integrity_errors(run_id)
+        errors = reopened.resume_integrity_errors(run_id)
 
     assert any(
         error.startswith("terminal_audit_recovery_invalid:") for error in errors
