@@ -412,8 +412,9 @@ def test_storage_v4_audit_pages_payloads_by_primary_key(
 
     assert [item.message.sequence_number for item in stored] == list(range(1, 34))
     assert len(payload_queries) == 2
-    assert [len(parameters) - 1 for _query, parameters in payload_queries] == [32, 1]
+    assert [len(parameters) for _query, parameters in payload_queries] == [32, 1]
     assert all("compressed_payload" in query for query, _parameters in payload_queries)
+    assert all("run_id" not in query for query, _parameters in payload_queries)
     assert all("ORDER BY" not in query for query, _parameters in payload_queries)
 
 
