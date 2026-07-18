@@ -168,8 +168,7 @@ class PolymarketPaperReconciliation:
                 "venue": self.journal.venue,
                 "tracked_inventory_count": len(self.journal.inventory),
                 "open_inventory_count": sum(
-                    item.remaining_quantity > 0
-                    for item in self.journal.inventory
+                    item.remaining_quantity > 0 for item in self.journal.inventory
                 ),
                 "blocking_intent_ids": self.journal.blocking_intent_ids,
                 "integrity_errors": self.journal.integrity_errors,
@@ -307,11 +306,12 @@ class PolymarketPaperBroker:
         expected_token = (
             market.up_token_id if normalized_outcome == "Up" else market.down_token_id
         )
-        if decision.token_id != expected_token or decision.outcome != normalized_outcome:
-            raise ValueError("decision book does not match the requested outcome")
-        if not (
-            market.event_start_ms <= decision.received_wall_ms < market.end_ms
+        if (
+            decision.token_id != expected_token
+            or decision.outcome != normalized_outcome
         ):
+            raise ValueError("decision book does not match the requested outcome")
+        if not (market.event_start_ms <= decision.received_wall_ms < market.end_ms):
             raise ValueError("decision book lies outside the five-minute market window")
         return market, normalized_outcome
 
@@ -338,9 +338,7 @@ class PolymarketPaperBroker:
         execution = self.replay.first_book_after_latency(
             decision,
             latency_ms=latency_ms,
-            maximum_observation_delay_ms=(
-                self.maximum_execution_observation_delay_ms
-            ),
+            maximum_observation_delay_ms=(self.maximum_execution_observation_delay_ms),
         )
         minimum_time = decision.received_wall_ms + int(latency_ms)
         if execution is None:
@@ -367,14 +365,18 @@ class PolymarketPaperBroker:
         )
 
     def _latest_consumed_monotonic_ns(self) -> int:
-        rows = self.store.connect().execute(
-            """
+        rows = (
+            self.store.connect()
+            .execute(
+                """
             SELECT token_id, decision_event_id, execution_event_id
             FROM polymarket_paper_order_context
             WHERE run_id = ?
             """,
-            [self.replay.run_id],
-        ).fetchall()
+                [self.replay.run_id],
+            )
+            .fetchall()
+        )
         latest_monotonic_ns = -1
         for token_id, decision_event_id, execution_event_id in rows:
             for event_id in (str(decision_event_id), str(execution_event_id)):
@@ -657,13 +659,20 @@ class PolymarketPaperBroker:
         parent = self.journal.intent(opening_intent_id)
         if resolution.condition_id != parent.market_id:
             raise ValueError("resolution market does not match bot-owned inventory")
-        payout = Decimal("1") if resolution.winning_asset_id == parent.asset_id else Decimal("0")
-        settlement_id = "paper-polymarket-settlement-" + _canonical_sha256(
-            {
-                "opening_intent_id": opening_intent_id,
-                "resolution_event_id": resolution.event_id,
-            }
-        )[:32]
+        payout = (
+            Decimal("1")
+            if resolution.winning_asset_id == parent.asset_id
+            else Decimal("0")
+        )
+        settlement_id = (
+            "paper-polymarket-settlement-"
+            + _canonical_sha256(
+                {
+                    "opening_intent_id": opening_intent_id,
+                    "resolution_event_id": resolution.event_id,
+                }
+            )[:32]
+        )
         settlement = self.journal.record_settlement(
             settlement_id=settlement_id,
             opening_intent_id=opening_intent_id,
@@ -712,13 +721,17 @@ class PolymarketPaperBroker:
         return replay
 
     def _next_close_attempt(self, opening_intent_id: str) -> int:
-        row = self.store.connect().execute(
-            """
+        row = (
+            self.store.connect()
+            .execute(
+                """
             SELECT count(*) FROM paper_order_intent
             WHERE parent_inventory_id = ?
             """,
-            [opening_intent_id],
-        ).fetchone()
+                [opening_intent_id],
+            )
+            .fetchone()
+        )
         return int(row[0]) + 1
 
     def _record_context(
@@ -747,16 +760,22 @@ class PolymarketPaperBroker:
         }
         payload_json = _canonical_json(payload)
         payload_sha = hashlib.sha256(payload_json.encode("ascii")).hexdigest()
-        existing = self.store.connect().execute(
-            """
+        existing = (
+            self.store.connect()
+            .execute(
+                """
             SELECT context_sha256 FROM polymarket_paper_order_context
             WHERE intent_id = ?
             """,
-            [intent.intent_id],
-        ).fetchone()
+                [intent.intent_id],
+            )
+            .fetchone()
+        )
         if existing is not None:
             if str(existing[0]) != payload_sha:
-                raise ValueError("paper intent context already exists with other evidence")
+                raise ValueError(
+                    "paper intent context already exists with other evidence"
+                )
             return
         self.store.connect().execute(
             """
@@ -816,7 +835,9 @@ class PolymarketPaperBroker:
         missing = sorted(set(intent_assets) - set(contexts))
         extra = sorted(set(contexts) - set(intent_assets))
         errors.extend(f"paper_context_missing:{intent_id}" for intent_id in missing)
-        errors.extend(f"paper_context_without_intent:{intent_id}" for intent_id in extra)
+        errors.extend(
+            f"paper_context_without_intent:{intent_id}" for intent_id in extra
+        )
         active_ids = {
             item.opening_intent_id
             for item in journal_report.inventory
@@ -854,7 +875,9 @@ class PolymarketPaperBroker:
                     errors.append(f"paper_context_decision_missing:{intent_id}")
                 else:
                     if decision.snapshot.source_payload_sha256 != str(row[6]):
-                        errors.append(f"paper_context_decision_hash_mismatch:{intent_id}")
+                        errors.append(
+                            f"paper_context_decision_hash_mismatch:{intent_id}"
+                        )
                 execution_event = str(row[5])
                 if execution_event:
                     try:
@@ -877,7 +900,13 @@ class PolymarketPaperBroker:
             WHERE venue = 'polymarket' ORDER BY settlement_id
             """
         ).fetchall()
-        for settlement_id, opening_id, payout, source_event_id, source_sha in settlements:
+        for (
+            settlement_id,
+            opening_id,
+            payout,
+            source_event_id,
+            source_sha,
+        ) in settlements:
             context = contexts.get(str(opening_id))
             if context is None:
                 errors.append(f"paper_settlement_context_missing:{settlement_id}")
@@ -899,7 +928,9 @@ class PolymarketPaperBroker:
                 errors.append(f"paper_settlement_resolution_missing:{settlement_id}")
                 continue
             if resolution.event_sha256 != str(source_sha):
-                errors.append(f"paper_settlement_resolution_hash_mismatch:{settlement_id}")
+                errors.append(
+                    f"paper_settlement_resolution_hash_mismatch:{settlement_id}"
+                )
             try:
                 parent = self.journal.intent(str(opening_id))
             except KeyError:
@@ -918,13 +949,17 @@ class PolymarketPaperBroker:
 
     def reconcile(self) -> PolymarketPaperReconciliation:
         journal_report = self.journal.reconcile(self.venue)
-        evidence_errors = list(self.store.integrity_errors(self.replay.run_id))
-        run = self.store.connect().execute(
-            """
+        evidence_errors = list(self.store.resume_integrity_errors(self.replay.run_id))
+        run = (
+            self.store.connect()
+            .execute(
+                """
             SELECT status FROM polymarket_recorder_run WHERE run_id = ?
             """,
-            [self.replay.run_id],
-        ).fetchone()
+                [self.replay.run_id],
+            )
+            .fetchone()
+        )
         run_status = "" if run is None else str(run[0])
         status_allowed = run_status == "complete" or (
             self.allow_segmented_gaps and run_status == "degraded"
@@ -947,8 +982,7 @@ class PolymarketPaperBroker:
                 run_id=self.replay.run_id,
             )
             replay_by_condition = {
-                item.condition_id: item
-                for item in self.replay.resolutions
+                item.condition_id: item for item in self.replay.resolutions
             }
             expected_external_ids = {
                 item.event_id
@@ -1095,9 +1129,7 @@ class PolymarketPaperBroker:
                     submission_latency_ms=latency,
                 )
             except Exception as exc:  # noqa: BLE001 - stop must preserve all failures
-                errors.append(
-                    f"close:{opening_id}:{exc.__class__.__name__}:{exc}"
-                )
+                errors.append(f"close:{opening_id}:{exc.__class__.__name__}:{exc}")
                 break
             if closed is None or result.filled_quantity <= 0:
                 errors.append(
@@ -1145,13 +1177,17 @@ class PolymarketPaperBroker:
             raise ValueError("opening intent has no remaining inventory")
         intent = self.journal.intent(opening_intent_id)
         current = self.journal.current(opening_intent_id)
-        context = self.store.connect().execute(
-            """
+        context = (
+            self.store.connect()
+            .execute(
+                """
             SELECT run_id, decision_event_id, execution_event_id
             FROM polymarket_paper_order_context WHERE intent_id = ?
             """,
-            [opening_intent_id],
-        ).fetchone()
+                [opening_intent_id],
+            )
+            .fetchone()
+        )
         if context is None:
             raise ValueError("opening intent context is missing")
         market = self._market(intent.market_id)

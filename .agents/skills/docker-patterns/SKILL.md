@@ -1,7 +1,8 @@
 ---
 name: docker-patterns
 description: Containerization rules for this repo — pinned base image, non-root user, read-only FS, explicit volumes for config and data.
-origin: adapted from ZMB-UZH/omero-docker-extended docker-patterns
+metadata:
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # Docker Patterns

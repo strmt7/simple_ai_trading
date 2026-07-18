@@ -2,7 +2,7 @@
 name: docs-knowledge-maintainer
 description: Keep concise user docs and machine-readable model evidence synchronized with real behavior without losing provenance or caveats.
 metadata:
-  origin: "adapted from ZMB-UZH/omero-docker-extended at b27dbe990703d64d13e540c40cf4e122954c664d"
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # Docs Knowledge Maintainer

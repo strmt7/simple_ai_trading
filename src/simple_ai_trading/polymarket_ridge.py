@@ -22,6 +22,10 @@ from .polymarket_action_value import (
     PolymarketActionValueConfig,
     PolymarketActionValueDataset,
 )
+from .polymarket_action_pipeline import (
+    POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION,
+    polymarket_action_pipeline_implementation_sha256,
+)
 from .polymarket_fit_claim import (
     POLYMARKET_FIT_CLAIM_SCHEMA_VERSION,
     PolymarketFitClaim,
@@ -780,8 +784,9 @@ def _load_polymarket_ridge_pipeline_authority(
     connection = store.connect()
     pipeline_row = connection.execute(
         """
-        SELECT report_json, contract_sha256, run_id, run_report_sha256,
-               eligibility_sha256, action_dataset_sha256_json
+        SELECT report_json, schema_version, contract_sha256, run_id,
+               run_report_sha256, eligibility_sha256,
+               action_dataset_sha256_json, implementation_sha256
         FROM polymarket_action_value_pipeline WHERE report_sha256 = ?
         """,
         [selected_report],
@@ -793,14 +798,18 @@ def _load_polymarket_ridge_pipeline_authority(
         expected_sha256=selected_report,
         label="Polymarket action pipeline",
     )
-    run_id = str(pipeline_row[2])
-    run_report_sha256 = str(pipeline_row[3])
-    eligibility_sha256 = str(pipeline_row[4])
+    run_id = str(pipeline_row[3])
+    run_report_sha256 = str(pipeline_row[4])
+    eligibility_sha256 = str(pipeline_row[5])
+    implementation_sha256 = str(pipeline_row[7] or "")
     if (
-        str(pipeline_row[1]) != POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
+        str(pipeline_row[1]) != POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION
+        or str(pipeline_row[2]) != POLYMARKET_ACTION_VALUE_CONTRACT_SHA256
         or str(pipeline.get("run_id")) != run_id
         or str(pipeline.get("run_report_sha256")) != run_report_sha256
         or str(pipeline.get("eligibility_sha256")) != eligibility_sha256
+        or str(pipeline.get("implementation_sha256")) != implementation_sha256
+        or implementation_sha256 != polymarket_action_pipeline_implementation_sha256()
         or not _is_sha256(eligibility_sha256)
     ):
         raise ValueError("Polymarket ridge pipeline authority is invalid")
@@ -830,7 +839,7 @@ def _load_polymarket_ridge_pipeline_authority(
         raise ValueError("Polymarket ridge continuity authority is insufficient")
     try:
         action_dataset_sha256 = tuple(
-            str(value) for value in json.loads(str(pipeline_row[5]))
+            str(value) for value in json.loads(str(pipeline_row[6]))
         )
         report_action_datasets = tuple(
             str(batch["action_dataset_sha256"]) for batch in pipeline["batches"]
@@ -999,7 +1008,7 @@ def _load_polymarket_ridge_dataset_after_claim(
         ORDER BY a.dataset_sha256, a.action_index
         """
     ).fetchall()
-    integrity = store.integrity_errors(run_id)
+    integrity = store.resume_integrity_errors(run_id)
     if integrity:
         raise ValueError(
             "Polymarket ridge source integrity failed: " + "; ".join(integrity)

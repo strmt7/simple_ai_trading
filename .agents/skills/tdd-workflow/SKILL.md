@@ -1,7 +1,8 @@
 ---
 name: tdd-workflow
 description: Red-green-refactor workflow adapted for a 100% branch-coverage trading CLI — narrow regression tests first, no coverage regressions.
-origin: adapted from ZMB-UZH/omero-docker-extended tdd-workflow
+metadata:
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # TDD Workflow
@@ -13,7 +14,9 @@ Use this skill whenever you add a feature, fix a bug, or change a behavior that 
 1. **Name the contract** you're about to change in one sentence ("`shell` quits on `Ctrl-D` without error" / "`fetch --batch-size 2000` clamps to the exchange limit"). If you can't name it, you don't know the change yet.
 2. **Write the failing regression test first** in `tests/` under the matching file. Target branches, not just happy paths. If the branch is error handling, assert both the failure and the recovery.
 3. **Implement the smallest change** that moves the test from red to green. Do not take the opportunity to restructure unrelated code.
-4. **Run targeted tests first** (`pytest -q tests/test_<module>.py`), then the full suite, then coverage with `--fail-under=100`.
+4. **Run targeted tests first** (`pytest -q tests/test_<module>.py`). Record the
+   passing command and tree state; rerun it only when an input changes. Run the
+   full suite and coverage once on the final tree before promotion or release.
 5. **Stop at green.** Polish and refactoring is a separate commit with its own tests.
 
 ## Coverage is load-bearing

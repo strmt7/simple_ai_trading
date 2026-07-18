@@ -8,15 +8,28 @@ from unittest import mock
 from tools import vulture_check
 
 ROOT = Path(__file__).resolve().parents[1]
-OMERO_COMMIT = "b27dbe990703d64d13e540c40cf4e122954c664d"
+OMERO_COMMIT = "246110b1045cfd4ca318b4e870b5a38d213399b6"
 KARPATHY_COMMIT = "2c606141936f1eeef17fa3043a72095b4765b9c2"
-SKILLS = (
+PUBLISHED_SKILLS = (
     "ai-regression-testing",
     "cocoindex-code-search",
     "docs-knowledge-maintainer",
     "karpathy-guidelines",
     "search-first",
     "source-audit",
+)
+OMERO_SKILLS = (
+    "ai-regression-testing",
+    "cocoindex-code-search",
+    "context-budget",
+    "docker-patterns",
+    "docs-knowledge-maintainer",
+    "python-patterns",
+    "search-first",
+    "security-review",
+    "source-audit",
+    "tdd-workflow",
+    "verification-loop",
 )
 
 
@@ -25,7 +38,7 @@ def _read(relative_path: str) -> str:
 
 
 def test_imported_skills_have_valid_surfaces_and_provenance() -> None:
-    for skill in SKILLS:
+    for skill in PUBLISHED_SKILLS:
         root = ROOT / ".agents" / "skills" / skill
         text = (root / "SKILL.md").read_text(encoding="utf-8")
         assert text.startswith("---\n")
@@ -38,8 +51,13 @@ def test_imported_skills_have_valid_surfaces_and_provenance() -> None:
         assert "allow_implicit_invocation: true" in openai
 
     assert KARPATHY_COMMIT in _read(".agents/skills/karpathy-guidelines/SKILL.md")
-    for skill in set(SKILLS) - {"karpathy-guidelines"}:
-        assert OMERO_COMMIT in _read(f".agents/skills/{skill}/SKILL.md")
+    for skill in OMERO_SKILLS:
+        text = _read(f".agents/skills/{skill}/SKILL.md")
+        assert text.startswith("---\n")
+        assert f"name: {skill}\n" in text
+        assert "metadata:\n  origin:" in text
+        assert OMERO_COMMIT in text
+        assert "ECC v2.0.0 reviewed" in text
 
 
 def test_agent_workflow_doc_records_exact_tool_versions() -> None:
@@ -47,12 +65,24 @@ def test_agent_workflow_doc_records_exact_tool_versions() -> None:
     for expected in (
         OMERO_COMMIT,
         KARPATHY_COMMIT,
+        "`2.0.0`",
         "`0.2.37`",
         "`0.15.22`",
         "`2.16`",
         "`v8.7.0`",
     ):
         assert expected in text
+
+
+def test_agent_verification_skills_enforce_input_aware_efficiency() -> None:
+    context = _read(".agents/skills/context-budget/SKILL.md")
+    verification = _read(".agents/skills/verification-loop/SKILL.md")
+    search = _read(".agents/skills/search-first/SKILL.md")
+    assert "verification ledger" in context
+    assert "until its code, configuration, fixtures" in context
+    assert "final repository-wide matrix" in verification
+    assert "Tool Availability Preflight" in search
+    assert 'Never report "nothing found"' in search
 
 
 def test_root_agent_context_is_compact_without_dropping_hard_routes() -> None:
@@ -78,7 +108,7 @@ def test_ci_enforces_financial_terminology_audit() -> None:
     workflow = _read(".github/workflows/ci.yml")
     documentation = _read("docs/AGENT_WORKFLOWS.md")
 
-    assert "python3 tools/audit_financial_terminology.py" in workflow
+    assert "uv run --locked python tools/audit_financial_terminology.py" in workflow
     assert "tools/audit_financial_terminology.py" in documentation
     assert "env.CODECOV_TOKEN != ''" in workflow
     assert "token: ${{ env.CODECOV_TOKEN }}" in workflow
@@ -160,13 +190,21 @@ def test_all_remote_github_actions_are_commit_pinned() -> None:
                 )
 
 
-def test_full_test_workflows_install_required_foundation_extra() -> None:
-    assert 'python3 -m pip install -q -e ".[foundation-ai,gpu]"' in _read(
-        ".github/workflows/ci.yml"
+def test_full_test_workflows_use_locked_uv_environments() -> None:
+    ci = _read(".github/workflows/ci.yml")
+    release = _read(".github/actions/windows-beta-release/action.yml")
+    setup_uv = "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990"
+    assert ci.count(setup_uv) == 2
+    assert setup_uv in release
+    assert 'version: "0.11.29"' in ci
+    assert 'version: "0.11.29"' in release
+    assert "uv sync --locked --extra foundation-ai --extra gpu --group test" in ci
+    assert (
+        "uv sync --locked --extra foundation-ai --extra gpu --group test "
+        "--group release" in release
     )
-    assert 'python -m pip install -q -e ".[foundation-ai,gpu]"' in _read(
-        ".github/actions/windows-beta-release/action.yml"
-    )
+    assert "pip install" not in ci
+    assert "pip install" not in release
 
 
 def test_vulture_scope_keeps_only_production_python() -> None:

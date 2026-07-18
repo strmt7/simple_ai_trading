@@ -23,8 +23,12 @@ runs:
       uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
       with:
         python-version: "3.11"
-        cache: pip
-        cache-dependency-path: pyproject.toml
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      with:
+        version: "0.11.29"
+        enable-cache: true
 
     - name: Resolve release metadata
       id: meta
@@ -101,17 +105,15 @@ runs:
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
-        python -m pip install -q --upgrade pip
-        python -m pip install -q -e ".[foundation-ai,gpu]"
-        python -m pip install -q build coverage pytest
+        uv sync --locked --extra foundation-ai --extra gpu --group test --group release
 
     - name: Run Python tests and coverage gate
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
-        python -m coverage run --source=src/simple_ai_trading -m pytest -q
-        python -m coverage xml -o out\coverage.xml
-        python -m coverage report
+        uv run --locked coverage run --source=src/simple_ai_trading -m pytest -q
+        uv run --locked coverage xml -o out\coverage.xml
+        uv run --locked coverage report
 
     - name: Build native Windows app
       shell: pwsh
@@ -121,10 +123,10 @@ runs:
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
-        python -m simple_ai_trading --help
-        python -m simple_ai_trading objectives
-        python -m simple_ai_trading compute
-        python -m simple_ai_trading.windows_app --help
+        uv run --locked python -m simple_ai_trading --help
+        uv run --locked python -m simple_ai_trading objectives
+        uv run --locked python -m simple_ai_trading compute
+        uv run --locked python -m simple_ai_trading.windows_app --help
         .\run-shell.cmd --help
         .\run-gui.cmd --help
         if (-not (Test-Path -LiteralPath "build\windows\SimpleAITrading.exe")) {
@@ -135,7 +137,7 @@ runs:
 
     - name: Build Python distributions
       shell: pwsh
-      run: python -m build --sdist --wheel --outdir out\python-dist
+      run: uv run --locked python -m build --sdist --wheel --outdir out\python-dist
 
     - name: Create portable Windows beta bundle
       shell: pwsh
@@ -146,7 +148,7 @@ runs:
         New-Item -ItemType Directory -Force -Path (Join-Path $bundle "bin") | Out-Null
         New-Item -ItemType Directory -Force -Path (Join-Path $bundle "python-dist") | Out-Null
         Copy-Item -LiteralPath "build\windows\SimpleAITrading.exe" -Destination (Join-Path $bundle "bin\SimpleAITrading.exe")
-        Copy-Item -LiteralPath "run-gui.cmd", "run-shell.cmd", "README.md", "pyproject.toml" -Destination $bundle
+        Copy-Item -LiteralPath "run-gui.cmd", "run-shell.cmd", "README.md", "pyproject.toml", "uv.lock" -Destination $bundle
         Copy-Item -LiteralPath "docs" -Destination (Join-Path $bundle "docs") -Recurse
         Copy-Item -LiteralPath "native\windows\generated\command_contract.hpp" -Destination (Join-Path $bundle "command_contract.hpp")
         Copy-Item -Path "out\python-dist\*" -Destination (Join-Path $bundle "python-dist")
@@ -216,12 +218,33 @@ runs:
             gh release view $env:RELEASE_TAG *> $null
             if ($LASTEXITCODE -eq 0) {
                 gh release delete $env:RELEASE_TAG --yes --cleanup-tag
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Unable to delete existing release $env:RELEASE_TAG."
+                }
             } else {
                 $global:LASTEXITCODE = 0
-                $tagQuery = git ls-remote --tags origin "refs/tags/$env:RELEASE_TAG"
-                if ($tagQuery) {
-                    gh api -X DELETE "repos/$env:GITHUB_REPOSITORY/git/refs/tags/$env:RELEASE_TAG"
+            }
+            $tagQuery = git ls-remote --tags origin "refs/tags/$env:RELEASE_TAG"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Unable to verify existing tag $env:RELEASE_TAG."
+            }
+            if ($tagQuery) {
+                gh api -X DELETE "repos/$env:GITHUB_REPOSITORY/git/refs/tags/$env:RELEASE_TAG"
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Unable to delete existing tag $env:RELEASE_TAG."
                 }
+            }
+            gh release view $env:RELEASE_TAG *> $null
+            if ($LASTEXITCODE -eq 0) {
+                throw "GitHub release remained visible after deletion: $env:RELEASE_TAG."
+            }
+            $global:LASTEXITCODE = 0
+            $tagQuery = git ls-remote --tags origin "refs/tags/$env:RELEASE_TAG"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Unable to verify deleted tag $env:RELEASE_TAG."
+            }
+            if ($tagQuery) {
+                throw "GitHub tag remained visible after deletion: $env:RELEASE_TAG."
             }
         }
 

@@ -10,6 +10,7 @@ import math
 import pytest
 
 from simple_ai_trading import (
+    polymarket_action_pipeline as action_pipeline_module,
     cli,
     polymarket_continuity as continuity_module,
     polymarket_features as feature_module,
@@ -217,9 +218,13 @@ def _segmented_message(
 
 
 def _book_payload(
-    token: str, condition: str, source_offset_ms: int
+    token: str,
+    condition: str,
+    source_offset_ms: int,
+    *,
+    tick_size: str | None = "0.01",
 ) -> dict[str, object]:
-    return {
+    payload: dict[str, object] = {
         "event_type": "book",
         "market": condition,
         "asset_id": token,
@@ -228,6 +233,9 @@ def _book_payload(
         "bids": [{"price": "0.49", "size": "10"}],
         "asks": [{"price": "0.51", "size": "10"}],
     }
+    if tick_size is not None:
+        payload["tick_size"] = tick_size
+    return payload
 
 
 def _finish_segmented_store(
@@ -238,6 +246,7 @@ def _finish_segmented_store(
     gap_last_sequence: int = 3,
     second_segment_has_baseline: bool = True,
     named_clob_connections: bool = False,
+    second_segment_tick_size: str | None = "0.01",
 ) -> None:
     store.start_run(run_id, EPOCH * 1_000)
     for asset in ("BTC", "ETH", "SOL"):
@@ -309,14 +318,24 @@ def _finish_segmented_store(
     if second_segment_has_baseline:
         second_messages = [
             _segmented_message(
-                _book_payload(btc.up_token_id, btc.condition_id, 3_000),
+                _book_payload(
+                    btc.up_token_id,
+                    btc.condition_id,
+                    3_000,
+                    tick_size=second_segment_tick_size,
+                ),
                 connection_id=second,
                 sequence=1,
                 wall_offset_ms=3_001,
                 monotonic_ns=3_001_000_000,
             ),
             _segmented_message(
-                _book_payload(btc.down_token_id, btc.condition_id, 3_000),
+                _book_payload(
+                    btc.down_token_id,
+                    btc.condition_id,
+                    3_000,
+                    tick_size=second_segment_tick_size,
+                ),
                 connection_id=second,
                 sequence=2,
                 wall_offset_ms=3_002,
@@ -386,9 +405,12 @@ def _finish_replay_store(
     wrong_best: bool = False,
     trade_resync: bool = False,
     trade_resync_lag_ms: int = 1,
+    trade_resync_top_change: bool = False,
     feature_evidence: bool = False,
     pre_window_trade_quantity: str = "0.1",
     duplicate_tick_transition: bool = False,
+    duplicate_tick_source_delta_ms: int = 0,
+    duplicate_tick_monotonic_ns: int = 1_013_000_000,
     terminal_clear_burst: bool = False,
     interleaved_best_transitions: bool = False,
     compact_resolution_event: bool = False,
@@ -438,6 +460,7 @@ def _finish_replay_store(
                 "market": btc.condition_id,
                 "asset_id": token,
                 "timestamp": str(EPOCH * 1_000 + 1_000),
+                "tick_size": "0.01",
                 "hash": "full-book",
                 "bids": [{"price": "0.49", "size": "10"}],
                 "asks": [{"price": "0.51", "size": "10"}],
@@ -591,11 +614,13 @@ def _finish_replay_store(
                     "asset_id": token,
                     "old_tick_size": "0.01",
                     "new_tick_size": "0.001",
-                    "timestamp": str(EPOCH * 1_000 + 1_012),
+                    "timestamp": str(
+                        EPOCH * 1_000 + 1_012 + duplicate_tick_source_delta_ms
+                    ),
                 },
                 sequence=50,
                 wall_offset_ms=1_014,
-                monotonic_ns=1_013_000_000,
+                monotonic_ns=duplicate_tick_monotonic_ns,
             ),
         )
     if terminal_clear_burst:
@@ -795,29 +820,10 @@ def _finish_replay_store(
             ),
         ]
     if trade_resync:
-        clob_messages.insert(
-            4,
-            _message(
-                "clob_market",
-                {
-                    "event_type": "book",
-                    "market": btc.condition_id,
-                    "asset_id": token,
-                    "timestamp": str(EPOCH * 1_000 + 1_011 - trade_resync_lag_ms),
-                    "hash": "atomic-replacement",
-                    "bids": [],
-                    "asks": [
-                        {"price": "0.50", "size": "8"},
-                        {"price": "0.52", "size": "7"},
-                    ],
-                },
-                sequence=40,
-                wall_offset_ms=1_012,
-                monotonic_ns=1_011_500_000,
-            ),
-        )
-        clob_messages.insert(
-            4,
+        delta_price = "0.49" if trade_resync_top_change else "0.53"
+        delta_side = "BUY" if trade_resync_top_change else "SELL"
+        delta_best_bid = "0.49" if trade_resync_top_change else "0"
+        resync_messages = [
             _message(
                 "clob_market",
                 {
@@ -827,20 +833,65 @@ def _finish_replay_store(
                     "price_changes": [
                         {
                             "asset_id": token,
-                            "price": "0.53",
+                            "price": delta_price,
                             "size": "6",
-                            "side": "SELL",
+                            "side": delta_side,
                             "hash": "post-trade-delta",
-                            "best_bid": "0",
+                            "best_bid": delta_best_bid,
                             "best_ask": "0.50",
                         }
                     ],
                 },
-                sequence=41,
+                sequence=40,
                 wall_offset_ms=1_012,
                 monotonic_ns=1_011_200_000,
             ),
-        )
+            _message(
+                "clob_market",
+                {
+                    "event_type": "book",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "timestamp": str(EPOCH * 1_000 + 1_011 - trade_resync_lag_ms),
+                    "tick_size": "0.01",
+                    "hash": "atomic-replacement",
+                    "bids": [],
+                    "asks": [
+                        {"price": "0.50", "size": "8"},
+                        {"price": "0.52", "size": "7"},
+                    ],
+                },
+                sequence=41,
+                wall_offset_ms=1_012,
+                monotonic_ns=1_011_500_000,
+            ),
+        ]
+        if trade_resync_top_change:
+            resync_messages.append(
+                _message(
+                    "clob_market",
+                    {
+                        "event_type": "price_change",
+                        "market": btc.condition_id,
+                        "timestamp": str(EPOCH * 1_000 + 1_011),
+                        "price_changes": [
+                            {
+                                "asset_id": token,
+                                "price": "0.99",
+                                "size": "5",
+                                "side": "SELL",
+                                "hash": "post-resync-followup",
+                                "best_bid": "0.49",
+                                "best_ask": "0.50",
+                            }
+                        ],
+                    },
+                    sequence=42,
+                    wall_offset_ms=1_012,
+                    monotonic_ns=1_011_700_000,
+                )
+            )
+        clob_messages[4:4] = resync_messages
     if feature_evidence:
         clob_messages.insert(
             1,
@@ -851,6 +902,7 @@ def _finish_replay_store(
                     "market": btc.condition_id,
                     "asset_id": btc.down_token_id,
                     "timestamp": str(EPOCH * 1_000 + 1_000),
+                    "tick_size": "0.01",
                     "hash": "down-full-book",
                     "bids": [{"price": "0.49", "size": "12"}],
                     "asks": [{"price": "0.51", "size": "11"}],
@@ -869,6 +921,7 @@ def _finish_replay_store(
                         "market": btc.condition_id,
                         "asset_id": btc.up_token_id,
                         "timestamp": str(EPOCH * 1_000 + 6_000),
+                        "tick_size": "0.001",
                         "hash": "up-feature-book",
                         "bids": [{"price": "0.49", "size": "10"}],
                         "asks": [{"price": "0.51", "size": "10"}],
@@ -884,6 +937,7 @@ def _finish_replay_store(
                         "market": btc.condition_id,
                         "asset_id": btc.down_token_id,
                         "timestamp": str(EPOCH * 1_000 + 6_000),
+                        "tick_size": "0.01",
                         "hash": "down-feature-book",
                         "bids": [{"price": "0.49", "size": "12"}],
                         "asks": [{"price": "0.51", "size": "11"}],
@@ -1205,6 +1259,65 @@ def test_replay_rejects_empty_condition_selection(tmp_path) -> None:
             PolymarketEvidenceReplay.load(store, condition_ids=[])
 
 
+def _repeated_resolution_message(*, conflicting: bool) -> RawStreamMessage:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    winning_asset_id = btc.up_token_id
+    winning_outcome = "Up"
+    if conflicting:
+        winning_asset_id = btc.down_token_id
+        winning_outcome = "Down"
+    return _message(
+        "clob_market",
+        {
+            "event_type": "market_resolved",
+            "id": btc.market_id,
+            "question": btc.question,
+            "market": btc.condition_id,
+            "slug": btc.slug,
+            "assets_ids": list(btc.token_ids),
+            "outcomes": ["Up", "Down"],
+            "winning_asset_id": winning_asset_id,
+            "winning_outcome": winning_outcome,
+            "timestamp": str(btc.end_ms + 2_000),
+        },
+        sequence=90,
+        wall_offset_ms=301_100,
+        monotonic_ns=301_100_000_000,
+    )
+
+
+def test_replay_treats_consistent_repeated_resolution_as_idempotent(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "repeated-resolution.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "repeated-resolution",
+            additional_messages=(_repeated_resolution_message(conflicting=False),),
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="repeated-resolution")
+
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    assert len(replay.resolutions) == 3
+    resolution = next(
+        item for item in replay.resolutions if item.condition_id == btc.condition_id
+    )
+    assert resolution.winning_outcome == "Up"
+    assert resolution.source == "clob_gamma_crosscheck"
+
+
+def test_replay_rejects_conflicting_repeated_resolution(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "conflicting-resolution.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "conflicting-resolution",
+            additional_messages=(_repeated_resolution_message(conflicting=True),),
+        )
+        with pytest.raises(ValueError, match="conflicting resolution events"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="conflicting-resolution",
+            )
+
+
 def test_websocket_resolution_is_validated_but_cannot_authorize_settlement(
     tmp_path,
 ) -> None:
@@ -1259,23 +1372,41 @@ def test_replay_matches_interleaved_best_prices_to_ordered_checksum_transitions(
 
 
 def _idempotent_checksum_correction_messages(
-    *, corroborate_stale_top: bool
+    *,
+    corroborate_stale_top: bool,
+    include_corrected_best: bool = True,
+    mutation_price: str = "0.499",
+    independent_prefix: bool = False,
+    independent_prefix_monotonic_ns: int | None = None,
+    stale_best_source_delta_ms: int = 0,
+    stale_best_monotonic_ns: int = 2_000_000_000,
+    pending_monotonic_ns: int = 2_000_000_000,
+    replacement_source_delta_ms: int = 0,
+    replacement_hash: str = "idempotent-correction",
+    replacement_monotonic_ns: int = 2_000_000_000,
 ) -> tuple[RawStreamMessage, ...]:
     btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
     token = btc.up_token_id
     source_time = EPOCH * 1_000 + 2_000
+    replacement_source_time = source_time + replacement_source_delta_ms
     common = {
         "market": btc.condition_id,
         "asset_id": token,
         "timestamp": str(source_time),
     }
     messages: list[RawStreamMessage] = []
+    prefix_monotonic_ns = (
+        pending_monotonic_ns
+        if independent_prefix_monotonic_ns is None
+        else independent_prefix_monotonic_ns
+    )
     if corroborate_stale_top:
         messages.append(
             _message(
                 "clob_market",
                 {
                     **common,
+                    "timestamp": str(source_time + stale_best_source_delta_ms),
                     "event_type": "best_bid_ask",
                     "best_bid": "0.499",
                     "best_ask": "0.50",
@@ -1283,9 +1414,42 @@ def _idempotent_checksum_correction_messages(
                 },
                 sequence=80,
                 wall_offset_ms=2_000,
-                monotonic_ns=2_000_000_000,
+                monotonic_ns=stale_best_monotonic_ns,
             )
         )
+    if independent_prefix:
+        messages.append(
+            _message(
+                "clob_market",
+                {
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time),
+                    "event_type": "price_change",
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.40",
+                            "size": "4",
+                            "side": "BUY",
+                            "hash": "independent-prefix",
+                            "best_bid": "0.498",
+                            "best_ask": "0.50",
+                        }
+                    ],
+                },
+                sequence=81,
+                wall_offset_ms=2_000,
+                monotonic_ns=prefix_monotonic_ns,
+            )
+        )
+    messages.sort(
+        key=lambda message: (
+            message.received_monotonic_ns,
+            message.received_wall_ms,
+            message.sequence_number,
+        )
+    )
+    pending_sequence = 82 if independent_prefix else 81
     messages.extend(
         [
             _message(
@@ -1297,7 +1461,7 @@ def _idempotent_checksum_correction_messages(
                     "price_changes": [
                         {
                             "asset_id": token,
-                            "price": "0.499",
+                            "price": mutation_price,
                             "size": "0",
                             "side": "BUY",
                             "hash": "idempotent-correction",
@@ -1306,48 +1470,473 @@ def _idempotent_checksum_correction_messages(
                         }
                     ],
                 },
-                sequence=81,
+                sequence=pending_sequence,
                 wall_offset_ms=2_000,
-                monotonic_ns=2_000_000_000,
-            ),
-            _message(
-                "clob_market",
-                {
-                    **common,
-                    "event_type": "best_bid_ask",
-                    "best_bid": "0.498",
-                    "best_ask": "0.50",
-                    "spread": "0.002",
-                },
-                sequence=82,
-                wall_offset_ms=2_001,
-                monotonic_ns=2_000_000_000,
+                monotonic_ns=pending_monotonic_ns,
             ),
             _message(
                 "clob_market",
                 {
                     "market": btc.condition_id,
-                    "timestamp": str(source_time),
+                    "timestamp": str(replacement_source_time),
                     "event_type": "price_change",
                     "price_changes": [
                         {
                             "asset_id": token,
-                            "price": "0.499",
+                            "price": mutation_price,
                             "size": "0",
                             "side": "BUY",
-                            "hash": "idempotent-correction",
+                            "hash": replacement_hash,
                             "best_bid": "0.498",
                             "best_ask": "0.50",
                         }
                     ],
                 },
-                sequence=83,
+                sequence=pending_sequence + 2,
+                wall_offset_ms=2_001,
+                monotonic_ns=replacement_monotonic_ns,
+            ),
+        ]
+    )
+    if include_corrected_best:
+        messages.insert(
+            -1,
+            _message(
+                "clob_market",
+                {
+                    **common,
+                    "timestamp": str(replacement_source_time),
+                    "event_type": "best_bid_ask",
+                    "best_bid": "0.498",
+                    "best_ask": "0.50",
+                    "spread": "0.002",
+                },
+                sequence=pending_sequence + 1,
+                wall_offset_ms=2_001,
+                monotonic_ns=replacement_monotonic_ns,
+            ),
+        )
+    return tuple(messages)
+
+
+def _corrected_best_before_depth_messages(
+    *,
+    corrected_monotonic_ns: int = 2_000_000_000,
+    depth_monotonic_ns: int = 2_000_000_000,
+    corrected_source_delta_ms: int = 0,
+    depth_source_delta_ms: int = 0,
+    corrected_wall_offset_ms: int = 2_000,
+    depth_wall_offset_ms: int = 2_000,
+) -> tuple[RawStreamMessage, ...]:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    token = btc.up_token_id
+    source_time = EPOCH * 1_000 + 2_000
+    common = {
+        "event_type": "best_bid_ask",
+        "market": btc.condition_id,
+        "asset_id": token,
+        "timestamp": str(source_time),
+    }
+    return (
+        _message(
+            "clob_market",
+            {
+                "event_type": "price_change",
+                "market": btc.condition_id,
+                "timestamp": str(source_time - 1),
+                "price_changes": [
+                    {
+                        "asset_id": token,
+                        "price": "0.50",
+                        "size": "0",
+                        "side": "SELL",
+                        "hash": "pre-corrected-best-state",
+                        "best_bid": "0.498",
+                        "best_ask": "0.51",
+                    }
+                ],
+            },
+            sequence=89,
+            wall_offset_ms=1_999,
+            monotonic_ns=1_999_000_000,
+        ),
+        _message(
+            "clob_market",
+            {
+                **common,
+                "best_bid": "0.498",
+                "best_ask": "0.50",
+                "spread": "0.002",
+            },
+            sequence=90,
+            wall_offset_ms=2_000,
+            monotonic_ns=2_000_000_000,
+        ),
+        _message(
+            "clob_market",
+            {
+                **common,
+                "timestamp": str(source_time + corrected_source_delta_ms),
+                "best_bid": "0.498",
+                "best_ask": "0.51",
+                "spread": "0.012",
+            },
+            sequence=91,
+            wall_offset_ms=corrected_wall_offset_ms,
+            monotonic_ns=corrected_monotonic_ns,
+        ),
+        _message(
+            "clob_market",
+            {
+                "event_type": "price_change",
+                "market": btc.condition_id,
+                "timestamp": str(source_time + depth_source_delta_ms),
+                "price_changes": [
+                    {
+                        "asset_id": token,
+                        "price": "0.50",
+                        "size": "0",
+                        "side": "SELL",
+                        "hash": "corrected-best-before-depth",
+                        "best_bid": "0.498",
+                        "best_ask": "0.51",
+                    }
+                ],
+            },
+            sequence=92,
+            wall_offset_ms=depth_wall_offset_ms,
+            monotonic_ns=depth_monotonic_ns,
+        ),
+    )
+
+
+def _next_group_crossing_messages(
+    *,
+    full_book_best_ask: str = "0.51",
+) -> tuple[RawStreamMessage, ...]:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    token = btc.up_token_id
+    source_time = EPOCH * 1_000 + 2_000
+    proof_source_time = source_time + 2
+    return (
+        _message(
+            "clob_market",
+            {
+                "event_type": "best_bid_ask",
+                "market": btc.condition_id,
+                "asset_id": token,
+                "best_bid": "0.50",
+                "best_ask": "0.51",
+                "spread": "0.01",
+                "timestamp": str(source_time + 1),
+            },
+            sequence=100,
+            wall_offset_ms=2_000,
+            monotonic_ns=2_000_000_000,
+        ),
+        _message(
+            "clob_market",
+            {
+                "event_type": "price_change",
+                "market": btc.condition_id,
+                "timestamp": str(source_time),
+                "price_changes": [
+                    {
+                        "asset_id": token,
+                        "price": "0.50",
+                        "size": "5",
+                        "side": "BUY",
+                        "hash": "crossing-transition",
+                        "best_bid": "0.50",
+                        "best_ask": "0.51",
+                    }
+                ],
+            },
+            sequence=101,
+            wall_offset_ms=2_000,
+            monotonic_ns=2_000_000_000,
+        ),
+        _message(
+            "clob_market",
+            {
+                "event_type": "price_change",
+                "market": btc.condition_id,
+                "timestamp": str(proof_source_time),
+                "price_changes": [
+                    {
+                        "asset_id": token,
+                        "price": "0.50",
+                        "size": "6",
+                        "side": "BUY",
+                        "hash": "next-group-proof",
+                        "best_bid": "0.50",
+                        "best_ask": "0.51",
+                    }
+                ],
+            },
+            sequence=102,
+            wall_offset_ms=2_015,
+            monotonic_ns=2_015_000_000,
+        ),
+        _message(
+            "clob_market",
+            {
+                "event_type": "book",
+                "market": btc.condition_id,
+                "asset_id": token,
+                "timestamp": str(proof_source_time),
+                "tick_size": "0.001",
+                "hash": "next-group-proof",
+                "bids": [
+                    {"price": "0.50", "size": "6"},
+                    {"price": "0.498", "size": "5"},
+                ],
+                "asks": [{"price": full_book_best_ask, "size": "10"}],
+            },
+            sequence=103,
+            wall_offset_ms=2_015,
+            monotonic_ns=2_015_000_000,
+        ),
+    )
+
+
+def _next_group_multi_fragment_crossing_messages(
+    *,
+    include_hash_linked_non_top: bool = False,
+    include_unrelated_fragment: bool = False,
+) -> tuple[RawStreamMessage, ...]:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    token = btc.up_token_id
+    source_time = EPOCH * 1_000 + 2_000
+    changes = [
+        ("BUY", "0.50", "5"),
+        ("SELL", "0.48", "0"),
+        ("SELL", "0.49", "0"),
+    ]
+    if include_unrelated_fragment:
+        changes.append(("BUY", "0.40", "3"))
+    messages: list[RawStreamMessage] = [
+        _message(
+            "clob_market",
+            {
+                "event_type": "best_bid_ask",
+                "market": btc.condition_id,
+                "asset_id": token,
+                "best_bid": "0.50",
+                "best_ask": "0.51",
+                "spread": "0.01",
+                "timestamp": str(source_time + 1),
+            },
+            sequence=110,
+            wall_offset_ms=2_000,
+            monotonic_ns=2_000_000_000,
+        )
+    ]
+    for offset, (side, price, size) in enumerate(changes, start=1):
+        messages.append(
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": price,
+                            "size": size,
+                            "side": side,
+                            "hash": "multi-fragment-crossing",
+                            "best_bid": "0.50",
+                            "best_ask": "0.51",
+                        }
+                    ],
+                },
+                sequence=110 + offset,
+                wall_offset_ms=2_000,
+                monotonic_ns=2_000_000_000,
+            )
+        )
+    if include_hash_linked_non_top:
+        messages.append(
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time + 7),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.40",
+                            "size": "4",
+                            "side": "BUY",
+                            "hash": "direct-next-group-proof",
+                            "best_bid": "0.50",
+                            "best_ask": "0.51",
+                        }
+                    ],
+                },
+                sequence=119,
+                wall_offset_ms=2_015,
+                monotonic_ns=2_015_000_000,
+            )
+        )
+    proof_bids = [
+        {"price": "0.50", "size": "5"},
+        {"price": "0.498", "size": "5"},
+    ]
+    if include_hash_linked_non_top:
+        proof_bids.append({"price": "0.40", "size": "4"})
+    messages.append(
+        _message(
+            "clob_market",
+            {
+                "event_type": "book",
+                "market": btc.condition_id,
+                "asset_id": token,
+                "timestamp": str(source_time + 7),
+                "tick_size": "0.001",
+                "hash": "direct-next-group-proof",
+                "bids": proof_bids,
+                "asks": [{"price": "0.51", "size": "10"}],
+            },
+            sequence=120,
+            wall_offset_ms=2_015,
+            monotonic_ns=2_015_000_000,
+        )
+    )
+    return tuple(messages)
+
+
+def _prefix_stale_full_book_messages(
+    *,
+    reported_best_ask: str = "0.51",
+    full_book_best_ask: str = "0.52",
+    full_book_monotonic_ns: int = 2_000_000_000,
+) -> tuple[RawStreamMessage, ...]:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    token = btc.up_token_id
+    source_time = EPOCH * 1_000 + 2_000
+    common_change = {
+        "asset_id": token,
+        "side": "SELL",
+        "hash": "prefix-stale-depth",
+        "best_bid": "0.498",
+        "best_ask": reported_best_ask,
+    }
+    messages = [
+        _message(
+            "clob_market",
+            {
+                "event_type": "best_bid_ask",
+                "market": btc.condition_id,
+                "asset_id": token,
+                "timestamp": str(source_time),
+                "best_bid": "0.498",
+                "best_ask": reported_best_ask,
+                "spread": "0.012",
+            },
+            sequence=90,
+            wall_offset_ms=2_000,
+            monotonic_ns=2_000_000_000,
+        )
+    ]
+    for sequence, price, size in (
+        (91, "0.52", "7"),
+        (92, "0.50", "0"),
+        (93, "0.51", "0"),
+    ):
+        messages.append(
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time),
+                    "price_changes": [{**common_change, "price": price, "size": size}],
+                },
+                sequence=sequence,
+                wall_offset_ms=2_000,
+                monotonic_ns=2_000_000_000,
+            )
+        )
+    messages.extend(
+        [
+            _message(
+                "clob_market",
+                {
+                    "event_type": "price_change",
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time + 1),
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.40",
+                            "size": "3",
+                            "side": "BUY",
+                            "hash": "corroborating-full-book",
+                            "best_bid": "0.498",
+                            "best_ask": reported_best_ask,
+                        }
+                    ],
+                },
+                sequence=94,
                 wall_offset_ms=2_001,
                 monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "event_type": "book",
+                    "market": btc.condition_id,
+                    "asset_id": token,
+                    "timestamp": str(source_time + 1),
+                    "tick_size": "0.001",
+                    "hash": "corroborating-full-book",
+                    "bids": [
+                        {"price": "0.498", "size": "5"},
+                        {"price": "0.40", "size": "3"},
+                    ],
+                    "asks": [{"price": full_book_best_ask, "size": "7"}],
+                },
+                sequence=95,
+                wall_offset_ms=2_001,
+                monotonic_ns=full_book_monotonic_ns,
             ),
         ]
     )
     return tuple(messages)
+
+
+def _recent_full_book_lagging_bbo_message(
+    *,
+    source_age_ms: int,
+) -> RawStreamMessage:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    full_book_source_time = EPOCH * 1_000 + 2_001
+    return _message(
+        "clob_market",
+        {
+            "event_type": "price_change",
+            "market": btc.condition_id,
+            "timestamp": str(full_book_source_time + source_age_ms),
+            "price_changes": [
+                {
+                    "asset_id": btc.up_token_id,
+                    "price": "0.41",
+                    "size": "2",
+                    "side": "BUY",
+                    "hash": "post-book-lagging-bbo",
+                    "best_bid": "0.498",
+                    "best_ask": "0.519",
+                }
+            ],
+        },
+        sequence=96,
+        wall_offset_ms=2_001 + source_age_ms,
+        monotonic_ns=(2_001 + source_age_ms) * 1_000_000,
+    )
 
 
 def test_replay_accepts_hash_bound_idempotent_checksum_correction(tmp_path) -> None:
@@ -1365,6 +1954,239 @@ def test_replay_accepts_hash_bound_idempotent_checksum_correction(tmp_path) -> N
     assert corrected.source_time_ms == EPOCH * 1_000 + 2_000
     assert corrected.bids[0].price == Decimal("0.498")
     assert corrected.asks[0].price == Decimal("0.50")
+
+
+def test_replay_accepts_same_group_ephemeral_top_removal_correction(
+    tmp_path,
+) -> None:
+    messages = _idempotent_checksum_correction_messages(
+        corroborate_stale_top=True,
+        include_corrected_best=False,
+    )
+    with PolymarketEvidenceStore(tmp_path / "ephemeral-top-removal.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "ephemeral-top-removal",
+            additional_messages=messages,
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="ephemeral-top-removal",
+        )
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.50")
+
+
+def test_replay_rejects_ephemeral_removal_that_does_not_target_stale_top(
+    tmp_path,
+) -> None:
+    messages = _idempotent_checksum_correction_messages(
+        corroborate_stale_top=True,
+        include_corrected_best=False,
+        mutation_price="0.497",
+    )
+    with PolymarketEvidenceStore(
+        tmp_path / "unbound-ephemeral-removal.duckdb"
+    ) as store:
+        _finish_replay_store(
+            store,
+            "unbound-ephemeral-removal",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="unbound-ephemeral-removal",
+            )
+
+
+def test_replay_accepts_corrected_best_pair_before_atomic_depth(tmp_path) -> None:
+    with PolymarketEvidenceStore(
+        tmp_path / "corrected-best-before-depth.duckdb"
+    ) as store:
+        _finish_replay_store(
+            store,
+            "corrected-best-before-depth",
+            additional_messages=_corrected_best_before_depth_messages(),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="corrected-best-before-depth",
+        )
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.source_time_ms == EPOCH * 1_000 + 2_000
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.51")
+
+
+def test_replay_accepts_bounded_prior_group_stale_best_with_same_group_proof(
+    tmp_path,
+) -> None:
+    messages = _corrected_best_before_depth_messages(
+        corrected_monotonic_ns=2_050_000_000,
+        depth_monotonic_ns=2_050_000_000,
+        corrected_source_delta_ms=5,
+        depth_source_delta_ms=5,
+        corrected_wall_offset_ms=2_050,
+        depth_wall_offset_ms=2_050,
+    )
+    with PolymarketEvidenceStore(tmp_path / "bounded-prior-best.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "bounded-prior-best",
+            additional_messages=messages,
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="bounded-prior-best",
+        )
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.source_time_ms == EPOCH * 1_000 + 2_005
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.51")
+
+
+def test_replay_rejects_expired_prior_group_stale_best(tmp_path) -> None:
+    messages = _corrected_best_before_depth_messages(
+        corrected_monotonic_ns=2_251_000_001,
+        depth_monotonic_ns=2_251_000_001,
+        corrected_source_delta_ms=5,
+        depth_source_delta_ms=5,
+        corrected_wall_offset_ms=2_251,
+        depth_wall_offset_ms=2_251,
+    )
+    with PolymarketEvidenceStore(tmp_path / "expired-prior-best.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "expired-prior-best",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="best_bid_ask"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="expired-prior-best",
+            )
+
+
+def test_replay_repairs_crossing_only_with_next_group_full_book_proof(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "next-group-crossing.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "next-group-crossing",
+            additional_messages=_next_group_crossing_messages(),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="next-group-crossing",
+        )
+
+    repaired = next(
+        book.snapshot
+        for book in replay.books
+        if book.snapshot.source_time_ms == EPOCH * 1_000 + 2_000
+    )
+    assert repaired.bids[0].price == Decimal("0.50")
+    assert repaired.asks[0].price == Decimal("0.51")
+    assert repaired.received_monotonic_ns >= 2_015_000_000
+
+
+def test_replay_rejects_crossing_when_next_group_full_book_conflicts(tmp_path) -> None:
+    messages = _next_group_crossing_messages(full_book_best_ask="0.52")
+    with PolymarketEvidenceStore(tmp_path / "conflicting-next-group.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "conflicting-next-group",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="conflicting-next-group",
+            )
+
+
+def test_replay_repairs_atomic_multi_fragment_crossing_with_direct_full_book(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "multi-crossing.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "multi-crossing",
+            additional_messages=_next_group_multi_fragment_crossing_messages(),
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="multi-crossing")
+
+    repaired = next(
+        book.snapshot
+        for book in replay.books
+        if book.snapshot.source_time_ms == EPOCH * 1_000 + 2_000
+    )
+    assert repaired.bids[0].price == Decimal("0.50")
+    assert repaired.asks[0].price == Decimal("0.51")
+    assert repaired.received_monotonic_ns >= 2_015_000_000
+
+
+def test_replay_accepts_hash_linked_non_top_change_before_crossing_proof(
+    tmp_path,
+) -> None:
+    messages = _next_group_multi_fragment_crossing_messages(
+        include_hash_linked_non_top=True
+    )
+    with PolymarketEvidenceStore(tmp_path / "non-top-crossing.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "non-top-crossing",
+            additional_messages=messages,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="non-top-crossing")
+
+    assert replay.books[-1].snapshot.bids[0].price == Decimal("0.50")
+    assert any(
+        level.price == Decimal("0.40") and level.quantity == Decimal("4")
+        for level in replay.books[-1].snapshot.bids
+    )
+
+
+def test_replay_rejects_unrelated_fragment_in_crossing_repair(tmp_path) -> None:
+    messages = _next_group_multi_fragment_crossing_messages(
+        include_unrelated_fragment=True
+    )
+    with PolymarketEvidenceStore(tmp_path / "unrelated-crossing.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "unrelated-crossing",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="unrelated-crossing",
+            )
+
+
+def test_replay_rejects_corrected_best_pair_from_another_receive_group(
+    tmp_path,
+) -> None:
+    messages = _corrected_best_before_depth_messages(depth_monotonic_ns=2_001_000_000)
+    with PolymarketEvidenceStore(
+        tmp_path / "cross-group-best-before-depth.duckdb"
+    ) as store:
+        _finish_replay_store(
+            store,
+            "cross-group-best-before-depth",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="best_bid_ask"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="cross-group-best-before-depth",
+            )
 
 
 def test_replay_rejects_uncorroborated_idempotent_checksum_correction(
@@ -1385,6 +2207,273 @@ def test_replay_rejects_uncorroborated_idempotent_checksum_correction(
             )
 
 
+def test_replay_accepts_same_timestamp_correction_across_bounded_receive_groups(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "bounded-same-time.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "bounded-same-time",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=True,
+                pending_monotonic_ns=2_016_000_000,
+                replacement_monotonic_ns=2_016_000_000,
+            ),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="bounded-same-time",
+        )
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.50")
+
+
+def test_replay_rejects_same_timestamp_correction_after_receive_group_bound(
+    tmp_path,
+) -> None:
+    messages = _idempotent_checksum_correction_messages(
+        corroborate_stale_top=True,
+        pending_monotonic_ns=2_251_000_001,
+        replacement_monotonic_ns=2_251_000_001,
+    )
+    with PolymarketEvidenceStore(tmp_path / "expired-same-time.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "expired-same-time",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="expired-same-time",
+            )
+
+
+def test_replay_accepts_receive_group_cross_timestamp_checksum_correction(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "cross-time-correction.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "cross-time-correction",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=True,
+                replacement_source_delta_ms=1,
+                replacement_hash="corrected-replacement-hash",
+            ),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="cross-time-correction",
+        )
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.source_time_ms == EPOCH * 1_000 + 2_001
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.50")
+
+
+def test_replay_preserves_independent_prefix_before_cross_timestamp_correction(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "prefixed-cross-time.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "prefixed-cross-time",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=True,
+                independent_prefix=True,
+                stale_best_source_delta_ms=1,
+                replacement_source_delta_ms=1,
+                replacement_hash="corrected-replacement-hash",
+            ),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="prefixed-cross-time",
+        )
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert any(
+        level.price == Decimal("0.40") and level.quantity == Decimal("4")
+        for level in corrected.bids
+    )
+
+
+def test_replay_preserves_bounded_earlier_receive_group_prefix_before_correction(
+    tmp_path,
+) -> None:
+    messages = _idempotent_checksum_correction_messages(
+        corroborate_stale_top=True,
+        independent_prefix=True,
+        independent_prefix_monotonic_ns=2_000_000_000,
+        stale_best_monotonic_ns=2_016_000_000,
+        pending_monotonic_ns=2_016_000_000,
+        replacement_source_delta_ms=1,
+        replacement_hash="corrected-replacement-hash",
+        replacement_monotonic_ns=2_016_000_000,
+    )
+    with PolymarketEvidenceStore(tmp_path / "earlier-prefix.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "earlier-prefix",
+            additional_messages=messages,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="earlier-prefix")
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert any(
+        level.price == Decimal("0.40") and level.quantity == Decimal("4")
+        for level in corrected.bids
+    )
+
+
+def test_replay_accepts_bounded_cross_receive_group_checksum_correction(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "cross-group-correction.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "cross-group-correction",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=True,
+                replacement_source_delta_ms=1,
+                replacement_hash="corrected-replacement-hash",
+                replacement_monotonic_ns=2_001_000_000,
+            ),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="cross-group-correction",
+        )
+
+    assert replay.books[-1].snapshot.bids[0].price == Decimal("0.498")
+
+
+def test_replay_rejects_cross_receive_group_correction_after_time_bound(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "expired-group-correction.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "expired-group-correction",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=True,
+                replacement_source_delta_ms=1,
+                replacement_hash="corrected-replacement-hash",
+                replacement_monotonic_ns=2_251_000_001,
+            ),
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="expired-group-correction",
+            )
+
+
+def test_replay_accepts_prefix_stale_checksum_proven_by_same_group_full_book(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "prefix-stale-full-book.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "prefix-stale-full-book",
+            additional_messages=_prefix_stale_full_book_messages(),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="prefix-stale-full-book",
+        )
+
+    corrected = next(
+        book.snapshot
+        for book in replay.books
+        if book.snapshot.source_time_ms == EPOCH * 1_000 + 2_000
+    )
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.52")
+
+
+def test_replay_rejects_prefix_stale_checksum_without_same_group_full_book(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "prefix-stale-other-group.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "prefix-stale-other-group",
+            additional_messages=_prefix_stale_full_book_messages(
+                full_book_monotonic_ns=2_001_000_000
+            ),
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="prefix-stale-other-group",
+            )
+
+
+def test_replay_rejects_prefix_stale_checksum_when_full_book_depth_conflicts(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "prefix-stale-conflict.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "prefix-stale-conflict",
+            additional_messages=_prefix_stale_full_book_messages(
+                full_book_best_ask="0.53"
+            ),
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="prefix-stale-conflict",
+            )
+
+
+def test_replay_accepts_one_tick_lag_after_recent_authoritative_full_book(
+    tmp_path,
+) -> None:
+    messages = (
+        *_prefix_stale_full_book_messages(),
+        _recent_full_book_lagging_bbo_message(source_age_ms=16),
+    )
+    with PolymarketEvidenceStore(tmp_path / "recent-full-book-lag.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "recent-full-book-lag",
+            additional_messages=messages,
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="recent-full-book-lag",
+        )
+
+    assert replay.books[-1].snapshot.bids[0].price == Decimal("0.498")
+    assert replay.books[-1].snapshot.asks[0].price == Decimal("0.52")
+
+
+def test_replay_rejects_lagging_bbo_after_full_book_age_bound(tmp_path) -> None:
+    messages = (
+        *_prefix_stale_full_book_messages(),
+        _recent_full_book_lagging_bbo_message(source_age_ms=251),
+    )
+    with PolymarketEvidenceStore(tmp_path / "expired-full-book-lag.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "expired-full-book-lag",
+            additional_messages=messages,
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="expired-full-book-lag",
+            )
+
+
 def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
     tmp_path,
 ) -> None:
@@ -1397,7 +2486,7 @@ def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
         for index, book in enumerate(replay.books)
         if book.event_type == "book"
         and [level.price for level in book.snapshot.asks]
-        == [Decimal("0.50"), Decimal("0.52")]
+        == [Decimal("0.50"), Decimal("0.52"), Decimal("0.53")]
     )
     resynchronized = replay.books[resync_index].snapshot
     post_resync = replay.books[resync_index + 1].snapshot
@@ -1406,6 +2495,8 @@ def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
     assert resynchronized.asks[0].quantity == Decimal("8")
     assert resynchronized.asks[1].price == Decimal("0.52")
     assert resynchronized.asks[1].quantity == Decimal("7")
+    assert resynchronized.asks[2].price == Decimal("0.53")
+    assert resynchronized.asks[2].quantity == Decimal("6")
     assert post_resync.asks[1].price == Decimal("0.52")
     assert post_resync.bids[0].price == Decimal("0.499")
     assert post_resync.received_monotonic_ns > resynchronized.received_monotonic_ns
@@ -1413,6 +2504,38 @@ def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
     assert replay.diagnostics.maximum_source_regression_ms == 1
     assert replay.diagnostics.deferred_event_count == 0
     assert replay.diagnostics.maximum_availability_delay_ns == 0
+
+
+def test_replay_fast_forwards_stale_full_book_with_newer_top_delta(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "stale-top-resync.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "stale-top-resync",
+            trade_resync=True,
+            trade_resync_top_change=True,
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="stale-top-resync")
+
+    rebased = next(
+        book
+        for book in replay.books
+        if book.event_type == "book"
+        and book.snapshot.source_time_ms == EPOCH * 1_000 + 1_011
+    )
+    assert rebased.snapshot.bids[0].price == Decimal("0.49")
+    assert [level.price for level in rebased.snapshot.asks] == [
+        Decimal("0.50"),
+        Decimal("0.52"),
+    ]
+    followup = next(
+        book
+        for book in replay.books
+        if book.snapshot.received_monotonic_ns > rebased.snapshot.received_monotonic_ns
+        and any(level.price == Decimal("0.99") for level in book.snapshot.asks)
+    )
+    assert followup.snapshot.bids[0].price == Decimal("0.49")
+    assert followup.snapshot.asks[0].price == Decimal("0.50")
+    assert replay.diagnostics.late_event_count >= 1
 
 
 def test_replay_binds_exact_duplicate_tick_transition_idempotently(tmp_path) -> None:
@@ -1425,6 +2548,45 @@ def test_replay_binds_exact_duplicate_tick_transition_idempotently(tmp_path) -> 
         replay = PolymarketEvidenceReplay.load(store, run_id="duplicate-tick")
 
     assert replay.books[2].tick_size == Decimal("0.001")
+
+
+def test_replay_accepts_one_ms_duplicate_tick_transition_in_same_receive_group(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "duplicate-tick-one-ms.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "duplicate-tick-one-ms",
+            duplicate_tick_transition=True,
+            duplicate_tick_source_delta_ms=1,
+            duplicate_tick_monotonic_ns=1_012_000_000,
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="duplicate-tick-one-ms",
+        )
+
+    assert replay.books[2].tick_size == Decimal("0.001")
+
+
+def test_replay_rejects_cross_timestamp_tick_duplicate_from_another_group(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(
+        tmp_path / "duplicate-tick-other-group.duckdb"
+    ) as store:
+        _finish_replay_store(
+            store,
+            "duplicate-tick-other-group",
+            duplicate_tick_transition=True,
+            duplicate_tick_source_delta_ms=1,
+            duplicate_tick_monotonic_ns=1_013_000_000,
+        )
+        with pytest.raises(ValueError, match="old value disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="duplicate-tick-other-group",
+            )
 
 
 def test_replay_rejects_events_outside_bounded_causal_reorder_window(
@@ -1506,7 +2668,7 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert len(first.rows) >= 1
     row = first.rows[0]
     assert polymarket_feature_row_sha256(row) == (
-        "d970d123f454b57026e2e482a4e85112be9c22163f79a752b66f4da2e85036e5"
+        "05646644a59b938942785ebc3bdfabe61335edbff1674557ac0a615668cc55bd"
     )
     assert len(row.feature_values) == len(POLYMARKET_FEATURE_NAMES) == 49
     assert row.official_up is True
@@ -1519,6 +2681,61 @@ def test_polymarket_feature_dataset_is_causal_hashed_and_officially_labeled(
     assert first.labeled_market_counts["BTC"] == 1
     assert first.training_ready is False
     assert "insufficient_featured_resolved_markets:ETH:0/1" in first.training_errors
+
+
+def test_capture_chunk_receipt_index_is_exact_reusable_and_tamper_evident(
+    tmp_path,
+) -> None:
+    database = tmp_path / "receipt-index.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(store, "receipt-index", feature_evidence=True)
+        report = store.ensure_capture_chunk_receipt_index("receipt-index")
+        all_events = tuple(
+            store.iter_public_events(
+                "receipt-index",
+                streams=("binance_spot", "polymarket_rtds"),
+                verified_source=True,
+            )
+        )
+        received = sorted({event.received_wall_ms for event in all_events})
+        lower = received[len(received) // 4]
+        upper = received[(len(received) * 3) // 4]
+        expected = tuple(
+            event.event_id
+            for event in all_events
+            if lower <= event.received_wall_ms <= upper
+        )
+        bounded = tuple(
+            event.event_id
+            for event in store.iter_public_events(
+                "receipt-index",
+                streams=("binance_spot", "polymarket_rtds"),
+                verified_source=True,
+                minimum_received_wall_ms=lower,
+                maximum_received_wall_ms=upper,
+            )
+        )
+        assert bounded == expected
+        assert store.ensure_capture_chunk_receipt_index("receipt-index") == report
+        assert report["chunk_count"] >= 1
+        assert report["message_count"] >= len(all_events)
+
+    with PolymarketEvidenceStore(database, read_only=True) as store:
+        assert store.ensure_capture_chunk_receipt_index("receipt-index") == report
+
+    with PolymarketEvidenceStore(database) as store:
+        store.connect().execute(
+            """
+            UPDATE polymarket_chunk_receipt_index
+            SET first_received_wall_ms = first_received_wall_ms + 1
+            WHERE run_id = ? AND chunk_index = 0
+            """,
+            ["receipt-index"],
+        )
+
+    with PolymarketEvidenceStore(database, read_only=True) as store:
+        with pytest.raises(ValueError, match="chunk receipt index row differs"):
+            store.ensure_capture_chunk_receipt_index("receipt-index")
 
 
 def test_feature_source_ignores_irrelevant_and_non_target_rtds(tmp_path) -> None:
@@ -1638,6 +2855,8 @@ def test_feature_source_rejects_malformed_target_chainlink_evidence(tmp_path) ->
                     minimum_resolved_markets_per_asset=1,
                 ),
             )
+
+
 def test_polymarket_feature_materialization_accepts_a_truthful_empty_dataset(
     tmp_path,
 ) -> None:
@@ -1742,7 +2961,7 @@ def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
             )
             .fetchone()
         )
-        pruned = store.ensure_condition_message_cache(
+        selected = store.ensure_condition_message_cache(
             "condition-cache",
             condition_ids=(btc.condition_id,),
             progress=lambda phase, _payload: progress_events.append(phase),
@@ -1781,10 +3000,20 @@ def test_polymarket_condition_cache_preserves_verified_replay_and_empty_markets(
     assert empty == ()
     assert empty_manifest == (0, 0, 0, 0, "")
     assert existing == created
-    assert pruned["condition_count"] == 1
-    assert manifest_conditions == (btc.condition_id,)
+    assert selected == created
+    assert manifest_conditions == tuple(
+        sorted(
+            (
+                btc.condition_id,
+                eth.condition_id,
+                parse_polymarket_five_minute_market(
+                    _market_payload("SOL")
+                ).condition_id,
+            )
+        )
+    )
     assert progress_events[0] == "condition-cache"
-    assert progress_events[-1] == "condition-cache-prune"
+    assert progress_events[-1] == "condition-cache"
 
 
 def test_polymarket_condition_cache_payload_tampering_fails_closed(tmp_path) -> None:
@@ -1814,6 +3043,7 @@ def test_polymarket_condition_cache_payload_tampering_fails_closed(tmp_path) -> 
 
 def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
     tmp_path,
+    monkeypatch,
 ) -> None:
     with PolymarketEvidenceStore(tmp_path / "action-pipeline.duckdb") as store:
         _finish_replay_store(store, "action-pipeline", feature_evidence=True)
@@ -1853,12 +3083,27 @@ def test_polymarket_action_pipeline_resumes_completed_bounded_batches(
             run_id="action-pipeline",
             config=config,
         )
+        monkeypatch.setattr(
+            action_pipeline_module,
+            "polymarket_action_pipeline_implementation_sha256",
+            lambda: "f" * 64,
+        )
+        changed_implementation = materialize_polymarket_action_value_batches(
+            store,
+            run_id="action-pipeline",
+            config=config,
+        )
 
     assert first.report_sha256 == second.report_sha256
     assert first.action_count == second.action_count
     assert first.batches[0].status == "created"
     assert second.batches[0].status == "existing"
     assert first.batches[0].batch_sha256 == second.batches[0].batch_sha256
+    assert len(first.implementation_sha256) == 64
+    assert changed_implementation.implementation_sha256 == "f" * 64
+    assert changed_implementation.report_sha256 != first.report_sha256
+    assert changed_implementation.batches[0].status == "created"
+    assert first.excluded_after_event_scope_count >= 0
     assert not first.asdict()["profitability_claim"]
     assert {"integrity-started", "integrity-cache-hit"} & set(progress_events)
     assert "condition-cache" in progress_events
@@ -2124,12 +3369,8 @@ def test_polymarket_model_ai_mode_uses_runtime_default_and_explicit_overrides(
     inherited = parser.parse_args(["polymarket-model"])
     enabled = parser.parse_args(["polymarket-model", "--enable-ai"])
     disabled = parser.parse_args(["polymarket-model", "--disable-ai"])
-    explicit_model = parser.parse_args(
-        ["polymarket-model", "--ai-model", "qwen3:14b"]
-    )
-    runtime = cli.load_runtime(
-        {"ai_enabled": False, "ai_model": "qwen3.5:9b"}
-    )
+    explicit_model = parser.parse_args(["polymarket-model", "--ai-model", "qwen3:14b"])
+    runtime = cli.load_runtime({"ai_enabled": False, "ai_model": "qwen3.5:9b"})
     monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
 
     assert cli._polymarket_ai_enabled(inherited) is False
@@ -2226,6 +3467,180 @@ def test_segmented_replay_resets_books_and_never_executes_across_gap(tmp_path) -
             "Up",
             "Down",
         }
+
+
+def test_segmented_replay_uses_reconnect_book_tick_without_metadata_fallback(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "reconnect-tick.duckdb") as store:
+        _finish_segmented_store(
+            store,
+            "reconnect-tick",
+            second_segment_tick_size="0.001",
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="reconnect-tick",
+            allow_segmented_gaps=True,
+        )
+
+    second_segment = replay.books[-1].segment_id
+    assert {
+        book.tick_size for book in replay.books if book.segment_id == second_segment
+    } == {Decimal("0.001")}
+
+
+def test_segmented_replay_blocks_reconnect_without_same_segment_tick(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "unknown-reconnect-tick.duckdb") as store:
+        _finish_segmented_store(
+            store,
+            "unknown-reconnect-tick",
+            second_segment_tick_size=None,
+        )
+        with pytest.raises(ValueError, match="same-segment active tick"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="unknown-reconnect-tick",
+                allow_segmented_gaps=True,
+            )
+
+
+def _scope_boundary_best_messages(
+    *, corroborated: bool
+) -> tuple[RawStreamMessage, ...]:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    cutoff_offset_ms = btc.end_ms - EPOCH * 1_000 - 29_500
+    source_time_ms = EPOCH * 1_000 + cutoff_offset_ms
+    return (
+        _message(
+            "clob_market",
+            {
+                "event_type": "best_bid_ask",
+                "market": btc.condition_id,
+                "asset_id": btc.up_token_id,
+                "best_bid": "0.499",
+                "best_ask": "0.50",
+                "spread": "0.001",
+                "timestamp": str(source_time_ms),
+            },
+            sequence=100,
+            wall_offset_ms=cutoff_offset_ms - 1,
+            monotonic_ns=cutoff_offset_ms * 1_000_000,
+        ),
+        _message(
+            "clob_market",
+            {
+                "event_type": "price_change",
+                "market": btc.condition_id,
+                "timestamp": str(source_time_ms),
+                "price_changes": [
+                    {
+                        "asset_id": btc.up_token_id,
+                        "price": "0.499" if corroborated else "0.40",
+                        "size": "5",
+                        "side": "BUY",
+                        "hash": "scope-boundary-proof",
+                        "best_bid": "0.499",
+                        "best_ask": "0.50",
+                    }
+                ],
+            },
+            sequence=101,
+            wall_offset_ms=cutoff_offset_ms + 1,
+            monotonic_ns=cutoff_offset_ms * 1_000_000,
+        ),
+    )
+
+
+def test_replay_discards_scope_tail_best_proven_by_excluded_same_group_delta(
+    tmp_path,
+) -> None:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    cutoff = btc.end_ms - 29_500
+    with PolymarketEvidenceStore(tmp_path / "scope-tail-proof.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "scope-tail-proof",
+            additional_messages=_scope_boundary_best_messages(corroborated=True),
+        )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="scope-tail-proof",
+            condition_ids=(btc.condition_id,),
+            maximum_received_wall_ms_by_condition={btc.condition_id: cutoff},
+        )
+
+    assert replay.books[-1].snapshot.bids[0].price == Decimal("0.498")
+    assert replay.diagnostics.discarded_uncorroborated_best_count == 1
+    assert replay.diagnostics.excluded_after_event_scope_count == 1
+    assert all(book.received_wall_ms <= cutoff for book in replay.books)
+
+
+def test_replay_rejects_scope_tail_best_without_exact_excluded_delta_proof(
+    tmp_path,
+) -> None:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    cutoff = btc.end_ms - 29_500
+    with PolymarketEvidenceStore(tmp_path / "scope-tail-mismatch.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "scope-tail-mismatch",
+            additional_messages=_scope_boundary_best_messages(corroborated=False),
+        )
+        with pytest.raises(ValueError, match="not corroborated"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="scope-tail-mismatch",
+                condition_ids=(btc.condition_id,),
+                maximum_received_wall_ms_by_condition={btc.condition_id: cutoff},
+            )
+
+
+def test_replay_event_scope_excludes_only_post_contract_receipts(tmp_path) -> None:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    late_book = _segmented_message(
+        {
+            "event_type": "book",
+            "market": btc.condition_id,
+            "asset_id": btc.up_token_id,
+            "timestamp": str(btc.end_ms + 1_000),
+            "tick_size": "0.01",
+            "hash": "post-contract-off-tick",
+            "bids": [{"price": "0.999", "size": "5"}],
+            "asks": [],
+        },
+        connection_id="late-out-of-scope-connection",
+        sequence=1,
+        wall_offset_ms=301_100,
+        monotonic_ns=301_100_000_000,
+    )
+    with PolymarketEvidenceStore(tmp_path / "event-scope.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "event-scope",
+            additional_messages=(late_book,),
+        )
+        with pytest.raises(ValueError, match="price off the active tick"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="event-scope",
+                condition_ids=(btc.condition_id,),
+            )
+        replay = PolymarketEvidenceReplay.load(
+            store,
+            run_id="event-scope",
+            condition_ids=(btc.condition_id,),
+            maximum_received_wall_ms_by_condition={
+                btc.condition_id: btc.end_ms - 29_500
+            },
+        )
+
+    assert replay.diagnostics.event_scope_mode == (
+        "condition_received_wall_upper_bound"
+    )
+    assert len(replay.diagnostics.event_scope_sha256) == 64
+    assert replay.diagnostics.excluded_after_event_scope_count == 1
+    assert all(book.received_wall_ms <= btc.end_ms - 29_500 for book in replay.books)
 
 
 def test_sampled_replay_hashes_all_transitions_and_keeps_segment_baselines(
@@ -2378,7 +3793,10 @@ def test_feature_feed_windows_never_cross_connection_segments() -> None:
     tie_cursor = feature_module._ConnectionCursor((first,), (tied_trade,))
     assert tie_cursor.advance(first.received_monotonic_ns) == "binance:second"
     with pytest.raises(ValueError, match="crossed connection segments"):
-        feature_module._BookSeries((first, second))
+        feature_module._BookSeries(
+            (first, second),
+            source_scope_sha256="f" * 64,
+        )
 
     cursor = feature_module._PriceCursor(
         (
@@ -2457,34 +3875,40 @@ def test_feature_series_compact_storage_preserves_frozen_prefixes_and_math() -> 
         event_sha256="4" * 64,
     )
 
-    books = feature_module._BookSeries((second_book, first_book))
-    trades = feature_module._TradeSeries((second_trade, first_trade))
+    books = feature_module._BookSeries(
+        (second_book, first_book),
+        source_scope_sha256="f" * 64,
+    )
+    trades = feature_module._TradeSeries(
+        (second_trade, first_trade),
+        source_scope_sha256="f" * 64,
+    )
 
     assert isinstance(books.prefix_digests[0], bytes)
     assert isinstance(trades.prefix_digests[0], bytes)
     assert books.causal_prefix(0) == (
         0,
-        "ac9e19825f7af1fc33fa59f496408a2a12c3983a0896dcd230a83c62e70eb5db",
+        "a2e6d9ba539aab6aba0654c1edbaa7291c312c58e671b951f6a375a3feaea133",
     )
     assert books.causal_prefix(1_000_000_000) == (
         1,
-        "c8074e644b0e9c0d8afc50d40ae1cb3b0dc5c73488932fa8c3af7d00361d3ce4",
+        "5a1b639566d7a89526793d60e50ba2f4305d9e2082a3bbf2276dd53b5cd11d90",
     )
     assert books.causal_prefix(2_000_000_000) == (
         2,
-        "70080248adc3ad4daf7ec0dfbf32f03c37f6ab7e4caf76514c4a61d4550257a1",
+        "160eab29a9e4599d9e481af98b1907217e1fcd55ddae9e41c46d9d2c1137ca24",
     )
     assert trades.causal_prefix(0) == (
         0,
-        "a3d96f8e1af2af6d6123dedeae66f2147e6ce74fa565e0608fbff39a73c68354",
+        "a49f2342cbef728020b248a3d9ca04071a540ac3ebbc861c0a0c02561c4b90d5",
     )
     assert trades.causal_prefix(1_100_000_000) == (
         1,
-        "d904b48be9fbf068982dc3b1dd7cb9aff260bedefdc621f1473a81d1f9262088",
+        "cee3e5f51869a8d560f67d0bf70264c58f82bda5b942d6b3bc04fc6289fd0a5c",
     )
     assert trades.causal_prefix(1_900_000_000) == (
         2,
-        "16d4514f546f7028571a9418eb4310030c46a46e4cda871c2622d94b616694dc",
+        "c04dd18d2f1eacaef543b9039efc4d058f9b7ebabe83cb9ea3115e652badc1e7",
     )
     assert books.return_bps(2_000_000_000, 1_000) == 99.50330853168091
     assert books.realized_volatility_bps(2_000_000_000, 1_000) == (99.50330853168091)
@@ -2539,9 +3963,13 @@ def test_compact_binance_books_preserve_point_cursor_and_series_semantics() -> N
     )
 
     compact_series = feature_module._BookSeries(
-        compact.connection_views()["binance:first"]
+        compact.connection_views()["binance:first"],
+        source_scope_sha256="f" * 64,
     )
-    tuple_series = feature_module._BookSeries(expected)
+    tuple_series = feature_module._BookSeries(
+        expected,
+        source_scope_sha256="f" * 64,
+    )
     for received_ns in (0, 1_000_000_000, 2_000_000_000):
         assert compact_series.causal_prefix(received_ns) == tuple_series.causal_prefix(
             received_ns
@@ -2596,8 +4024,14 @@ def test_compact_binance_trades_preserve_point_cursor_and_series_semantics() -> 
     assert tuple(compact) == expected
     assert compact.finish() is compact
     view = compact.connection_views()["binance:first"]
-    compact_series = feature_module._TradeSeries(view)
-    tuple_series = feature_module._TradeSeries(expected)
+    compact_series = feature_module._TradeSeries(
+        view,
+        source_scope_sha256="f" * 64,
+    )
+    tuple_series = feature_module._TradeSeries(
+        expected,
+        source_scope_sha256="f" * 64,
+    )
     for received_ns in (0, 1_000_000_000, 2_000_000_000):
         assert compact_series.causal_prefix(received_ns) == tuple_series.causal_prefix(
             received_ns
@@ -3374,7 +4808,7 @@ def test_polymarket_paper_cli_and_generated_windows_contract_share_actions(
     assert status_payload["control"]["state"] == "STOPPED"
     assert (
         status_payload["replay_diagnostics"]["schema_version"]
-        == "polymarket-replay-diagnostics-v2"
+        == "polymarket-replay-diagnostics-v3"
     )
     assert status_payload["feed_coverage"]["shadow_ready"] is False
     assert status_payload["feed_coverage"]["training_ready"] is False

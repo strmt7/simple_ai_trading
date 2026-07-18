@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="690" viewBox="0 0 1280 690">
+<rect width="1280" height="690" fill="#F8FAFC"/>
+<text x="48" y="55" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700" fill="#0F172A">Round 11 sequential settlement utility</text>
+<text x="48" y="88" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">Real replay labels | 2026-07-16T15:30:00+00:00 to 2026-07-17T05:50:00+00:00 | 42 fills | exact entry fees | redemption overhead unavailable</text>
+<line x1="110" y1="545.0" x2="1210" y2="545.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="550.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">-16.5</text>
+<line x1="110" y1="466.0" x2="1210" y2="466.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="471.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">-7.9</text>
+<line x1="110" y1="387.0" x2="1210" y2="387.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="392.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">0.7</text>
+<line x1="110" y1="308.0" x2="1210" y2="308.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="313.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">9.4</text>
+<line x1="110" y1="229.0" x2="1210" y2="229.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="234.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">18.0</text>
+<line x1="110" y1="150.0" x2="1210" y2="150.0" stroke="#CBD5E1" stroke-width="1"/>
+<text x="94" y="155.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">26.6</text>
+<polyline points="110.0,340.1 194.6,305.4 279.2,272.4 363.8,266.3 448.5,346.9 533.1,379.4 617.7,324.1 702.3,366.6 786.9,310.8 871.5,356.0 956.2,309.7 1040.8,277.3 1125.4,228.3 1210.0,188.2" fill="none" stroke="#0F766E" stroke-width="4" stroke-linejoin="round"/>
+<polyline points="110.0,393.6 194.6,393.6 279.2,393.6 363.8,393.6 448.5,474.2 533.1,506.8 617.7,451.5 702.3,494.0 786.9,438.2 871.5,483.3 956.2,437.0 1040.8,404.7 1125.4,393.6 1210.0,393.6" fill="none" stroke="#B42318" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="110.0" cy="340.1" r="4" fill="#0F766E"/>
+<text x="110.0" y="575" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">07-17 00:30</text>
+<circle cx="194.6" cy="305.4" r="4" fill="#0F766E"/>
+<circle cx="279.2" cy="272.4" r="4" fill="#0F766E"/>
+<circle cx="363.8" cy="266.3" r="4" fill="#0F766E"/>
+<text x="363.8" y="575" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">07-17 01:20</text>
+<circle cx="448.5" cy="346.9" r="4" fill="#0F766E"/>
+<circle cx="533.1" cy="379.4" r="4" fill="#0F766E"/>
+<circle cx="617.7" cy="324.1" r="4" fill="#0F766E"/>
+<text x="617.7" y="575" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">07-17 01:45</text>
+<circle cx="702.3" cy="366.6" r="4" fill="#0F766E"/>
+<circle cx="786.9" cy="310.8" r="4" fill="#0F766E"/>
+<circle cx="871.5" cy="356.0" r="4" fill="#0F766E"/>
+<text x="871.5" y="575" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">07-17 03:25</text>
+<circle cx="956.2" cy="309.7" r="4" fill="#0F766E"/>
+<circle cx="1040.8" cy="277.3" r="4" fill="#0F766E"/>
+<circle cx="1125.4" cy="228.3" r="4" fill="#0F766E"/>
+<circle cx="1210.0" cy="188.2" r="4" fill="#0F766E"/>
+<text x="1210.0" y="575" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">07-17 05:45</text>
+<line x1="395" y1="600" x2="435" y2="600" stroke="#0F766E" stroke-width="4"/><text x="447" y="605" font-family="Segoe UI,Arial,sans-serif" font-size="14" fill="#475569">Cumulative utility</text>
+<line x1="650" y1="600" x2="690" y2="600" stroke="#B42318" stroke-width="3"/><text x="702" y="605" font-family="Segoe UI,Arial,sans-serif" font-size="14" fill="#475569">Drawdown shown below zero</text>
+<text x="48" y="654" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#B42318">Point estimate +22.44105 quote; maximum drawdown 12.36399; 95% bootstrap lower mean-group utility -1.38152. Gate failed.</text>
+</svg>

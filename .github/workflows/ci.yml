@@ -38,23 +38,25 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: "0.11.29"
+          enable-cache: true
 
       - name: Install project and test dependencies
-        run: |
-          python3 -m pip install -q -e ".[foundation-ai,gpu]"
-          python3 -m pip install -q pytest coverage diff-cover==10.3.0
+        run: uv sync --locked --extra foundation-ai --extra gpu --group test
 
       - name: Audit financial terminology
-        run: python3 tools/audit_financial_terminology.py
+        run: uv run --locked python tools/audit_financial_terminology.py
 
       - name: Run tests with coverage
         run: |
-          python3 -m coverage run --source=src/simple_ai_trading -m pytest -q
-          python3 -m coverage xml
-          python3 -m coverage report
-          python3 -m coverage html
+          uv run --locked coverage run --source=src/simple_ai_trading -m pytest -q
+          uv run --locked coverage xml
+          uv run --locked coverage report
+          uv run --locked coverage html
 
       - name: Enforce changed-line coverage
         env:
@@ -66,7 +68,7 @@ jobs:
           else
             compare_branch="HEAD^"
           fi
-          diff-cover coverage.xml --compare-branch="$compare_branch" --fail-under=95
+          uv run --locked diff-cover coverage.xml --compare-branch="$compare_branch" --fail-under=95
 
       - name: Smoke POSIX launchers
         run: |
@@ -108,27 +110,29 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.11"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: "0.11.29"
+          enable-cache: true
 
       - name: Install project
-        run: |
-          python -m pip install -q -e .
-          python -m pip install -q pytest
+        run: uv sync --locked --group test
 
       - name: Smoke CLI and Windows launchers
         shell: pwsh
         run: |
-          python -m simple_ai_trading --help
-          python -m simple_ai_trading objectives
-          powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
-          powershell -ExecutionPolicy Bypass -File tools\smoke_native_windows_ui.ps1 -SkipRealCompute
-          powershell -ExecutionPolicy Bypass -File tools\validate_native_windows_layout.ps1
-          python -m simple_ai_trading.windows_app --help
+          uv run --locked python -m simple_ai_trading --help
+          uv run --locked python -m simple_ai_trading objectives
+          uv run --locked powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
+          uv run --locked powershell -ExecutionPolicy Bypass -File tools\smoke_native_windows_ui.ps1 -SkipRealCompute
+          uv run --locked powershell -ExecutionPolicy Bypass -File tools\validate_native_windows_layout.ps1
+          uv run --locked python -m simple_ai_trading.windows_app --help
           .\run-shell.cmd --help
           .\run-gui.cmd --help
           if (Get-Command py -ErrorAction SilentlyContinue) {
-            py -3.11 -m simple_ai_trading --help
+            uv run --locked py -3.11 -m simple_ai_trading --help
           }
 
       - name: Run Windows terminal regression tests
@@ -137,4 +141,4 @@ jobs:
           $env:TEMP = Join-Path $pwd ".pytest-tmp"
           $env:TMP = $env:TEMP
           New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
-          python -m pytest -q tests/test_tui.py tests/test_style.py tests/test_shell.py tests/test_cli.py -p no:cacheprovider --basetemp .pytest-tmp/windows-ci
+          uv run --locked pytest -q tests/test_tui.py tests/test_style.py tests/test_shell.py tests/test_cli.py -p no:cacheprovider --basetemp .pytest-tmp/windows-ci

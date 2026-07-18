@@ -1,0 +1,208 @@
+{
+  "schema_version": "polymarket-round10-observability-utility-hurdle-contract-v1",
+  "round": 10,
+  "status": "preregistered_development_design_after_round9_failure_before_new_evidence",
+  "contract_sha256": "91cdc3064a88e4d6c744a2e2333d98bbd9ad382f3317def21e02b72983964d9d",
+  "scope": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "markets": "Polymarket five-minute crypto Up/Down markets",
+    "authority": "paper_and_research_only",
+    "live_money_enabled": false,
+    "leverage_applicable": false
+  },
+  "motivation": {
+    "round9_pipeline_report_sha256": "1d3b1e0df05dbb4a7f5b9be9fe7b40fd03ba8f6f06bf90115851adb10efb4d8b",
+    "round9_failure_sha256": "17e111b94ecf78fa21805cd8f4bb5662dd8d2c562ed1375b6ac3dea350dac932",
+    "observed_failure": {
+      "missing_entry_execution_book": 388,
+      "entry_confirmation_enters_excluded_close_window": 12
+    },
+    "prohibited_response": "Do not drop, relabel as no-fill, or condition future inclusion on these post-submission outcomes.",
+    "design_response": "Separate observability, fill, exit, and conditional-utility targets. Charge every unknown post-submit entry the full conservative entry-cost bound and block the condition."
+  },
+  "evidence_roles": {
+    "round9": "Development and failure-analysis evidence only. It may exercise implementation and reject mechanisms but may not confirm Round 10, select a final threshold, establish AI uplift, or support profitability.",
+    "round10_development": "A post-contract development capture may select preprocessing, model family, and validation threshold. Its test role is permanently unavailable.",
+    "round10_confirmation": "A separate capture beginning after the development report and frozen selection hash are committed. It must be consumed once and may not be reopened after interruption or failure.",
+    "minimum_confirmation_support": {
+      "eligible_synchronized_groups": 160,
+      "markets_per_asset": 160,
+      "assets_per_group": 3,
+      "outcomes_per_asset_across_each_partition": [
+        "Up",
+        "Down"
+      ]
+    }
+  },
+  "source_contract": {
+    "public_sources": [
+      "Polymarket public level-2 market WebSocket",
+      "direct Binance spot bookTicker and aggTrade WebSockets",
+      "Polymarket RTDS Chainlink stream",
+      "immutable Gamma/CLOB market metadata",
+      "recorded CLOB V2 execution parameters and fee schedule"
+    ],
+    "authenticated_shadow_sources": [
+      "bot-owned Polymarket user-channel order events",
+      "bot-owned user-channel trade lifecycle events",
+      "authenticated order-status reconciliation for exact bot order IDs"
+    ],
+    "clock": "Local monotonic receipt time controls availability and elapsed duration. Source timestamps are provenance and lag features only.",
+    "continuity": "Reuse the frozen synchronized, gap-free, segment-pure local-window rule. No feature, target, order result, prediction, utility, or official outcome may alter eligibility.",
+    "ownership": "Authenticated evidence is accepted only when API owner, condition, token, side, client intent, and exact bot-generated order ID match the append-only ownership ledger. Manual or foreign orders are never queried for cancellation or closure authority.",
+    "secret_boundary": "Credentials, signatures, passphrases, private keys, and authenticated payload headers never enter model features, prompts, logs, reports, fixtures, or commits."
+  },
+  "execution_state_contract": {
+    "public_replay": "Public books may prove displayed-depth FOK book matches only. They do not prove bot-owned order acceptance, MATCHED, MINED, CONFIRMED, FAILED, balance transfer, or sellable inventory.",
+    "authenticated_lifecycle": "A bot-owned position becomes sellable only after an exact owned trade reaches CONFIRMED and authenticated balance reconciliation observes the expected conditional-token quantity. MATCHED, MINED, RETRYING, missing, conflicting, or stale state blocks all new exposure in that condition.",
+    "reconciliation_priority": "Unknown or conflicting order state starts an independent retry loop with bounded exponential backoff and jitter. It cannot freeze market-data, risk, Stop, or close loops. Reconnect first reconstructs owned orders, trades, balances, and allowances before any new-entry decision.",
+    "stop": "Stop prevents new entries immediately and closes only confirmed bot-owned inventory. It continues reconciling nonterminal owned orders and never assumes that a timed-out cancel or close succeeded.",
+    "close_window": "No entry or planned exit target may enter the final 30 seconds. This gate is deterministic and cannot be relaxed by risk profile, model, AI, or trade-count targets."
+  },
+  "label_contract": {
+    "known_pre_submit_unavailable": "Tick, parameter, stale-creation-book, continuity, balance, allowance, cooldown, close-window, or risk failure known before submission. Exclude from predictive fitting and report separately.",
+    "post_submit_observable": "One only when exact execution state is proven inside the frozen observation window; zero for missing post-target state or first confirmation inside the excluded close window.",
+    "entry_fill_given_observable": "One only for a fully filled FOK entry with exact displayed-depth, fee, quantity, and execution evidence; zero for a definite rejection or no-fill.",
+    "exit_fill_given_entry": "One only when the exact bot-owned quantity receives a fully evidenced FOK exit; zero when a filled entry has no complete exit.",
+    "complete_net_quote": "Exit proceeds minus entry cost after both recorded fee legs for a complete public book match. It remains diagnostic until authenticated lifecycle and inventory are proven.",
+    "unknown_entry_maximum_loss_quote": "For quantity q, creation tick t, recorded V2 fee rate r, and exponent e: q*(1-t) plus the five-decimal ceiling of q*r*(0.25^e). This upper-bounds gross spend and the fee curve for every valid fill price. Unknown state receives the negative of this bound and blocks the condition.",
+    "failed_exit_stress_utility_quote": "Negative full evidenced entry cost with zero recovery; the condition remains blocked.",
+    "settlement_stress_utility_quote": "Without exact bot-owned CONFIRMED lifecycle and balance evidence, trading-authority utility is unavailable rather than inferred from the book-match label.",
+    "label_hash": "Bind every head, cost bound, source coordinate, execution parameter, lifecycle event, and terminal reason independently to the causal feature hash and this contract."
+  },
+  "feature_contract": {
+    "round9_features_retained": "Keep the 39 causal oriented market, Binance, Chainlink, spread, imbalance, volatility, depth, liquidity, age, and remaining-time predictors.",
+    "new_decision_time_features": [
+      "chosen and opposite absolute best bid and ask",
+      "active tick size",
+      "minimum order quantity and maximum entry-cost bound",
+      "recorded dynamic fee rate, exponent, and taker-delay flag",
+      "creation-book update intensity over 100, 250, 500, 1000, and 5000 ms",
+      "time since last full book and last price-level change",
+      "same-token and opposite-token event counts",
+      "cross-asset synchronized return, volatility, and flow context",
+      "measured local data-path lag and reconnect cooldown state"
+    ],
+    "forbidden": [
+      "future books, future source arrivals, or post-decision event counts",
+      "entry or exit result, terminal reason, label, utility, or official outcome",
+      "authenticated order/trade state not received before the decision",
+      "future-smoothed features, centered windows, or target-derived sampling",
+      "LLM response completed after the decision deadline"
+    ],
+    "normalization": "Fit median and interquartile-range scaling on train groups only. Persist exact finite clip bounds. Asset and outcome orientation are frozen before labels load."
+  },
+  "model_contract": {
+    "control": "no_trade",
+    "transparent_baseline": {
+      "binary_heads": "Separate L2-regularized logistic models for post-submit observability, entry fill given observable, and exit fill given entry.",
+      "utility_heads": "L2-regularized Huber mean and 0.10 pinball lower-quantile models for complete net quote.",
+      "selection": "Choose regularization and probability calibration on development validation groups only."
+    },
+    "nonlinear_challenger": {
+      "architecture": "Shared two-layer 128/64 GELU MLP with layer normalization and four bounded heads: observability probability, conditional entry-fill probability, conditional exit-fill probability, and complete-utility mean/lower quantile.",
+      "ensemble": "Three fixed seeds. A candidate decision requires finite outputs and seed-consensus positive lower-bound utility.",
+      "loss": "Masked binary cross entropy for conditional hurdle heads, Huber loss for conditional mean utility, and pinball loss for the 0.10 utility quantile. Missing conditional targets contribute no invented value.",
+      "admission": "Must improve validation calibration and sequential worst-case stress utility over the transparent baseline without increasing unknown-entry selections, failed exits, or maximum drawdown. Otherwise the challenger is rejected before confirmation."
+    },
+    "action_score": "p_observable*p_entry*(p_exit*q10_complete_net-(1-p_exit)*known_entry_cost) - (1-p_observable)*unknown_entry_maximum_loss",
+    "selection_rule": "Select at most one outcome per condition when the seed-consensus action score and its market-group bootstrap lower confidence bound are both strictly positive. If both outcomes pass, choose the larger lower bound; exact ties abstain.",
+    "sequence_model": "Deferred until the point-in-time hurdle model passes development. Any TCN, TLOB, survival, or event-time challenger requires a separately frozen sequence, masking, latency, and normalization contract.",
+    "minimum_trade_count": "A support gate for interpreting evidence, never an instruction to trade. No count target overrides abstention or risk."
+  },
+  "split_and_evaluation": {
+    "group": "All BTC/ETH/SOL markets, both action outcomes, and every cadence row from one five-minute event-start timestamp remain together.",
+    "chronology": "Sixty percent train, one purged synchronized group, twenty percent validation, one purged synchronized group, then twenty percent one-shot test.",
+    "purge": "The purge must cover the maximum feature history, order latency, holding horizon, confirmation horizon, and lifecycle reconciliation horizon.",
+    "calibration": "Fit probability calibration on validation only and report Brier score, log loss, expected calibration error, reliability tables, and class prevalence per head and asset.",
+    "economic_metrics": [
+      "sequential worst-case stress utility",
+      "complete book-match net quote",
+      "attempted and completed actions",
+      "unknown entry and failed exit counts",
+      "per-asset and per-market utility",
+      "realized-only equity and maximum drawdown",
+      "market-group moving-block bootstrap interval",
+      "turnover, capital locked, and API/order budget consumption"
+    ],
+    "development_gate": "At least 30 sequential complete actions and five per asset; positive aggregate and median-market worst-case stress utility; positive per-asset utility; zero selected unknown entries; zero selected failed exits; and positive bootstrap lower mean market-group utility.",
+    "confirmation_gate": "The unchanged selected policy must pass every development gate on at least 30 untouched synchronized test groups and remain nonnegative at every preregistered latency and fee stress. Test failure is final.",
+    "multiple_testing": "Persist every fitted hyperparameter and threshold. Use test once. Report PBO or deflated Sharpe only when assumptions and sample size are satisfied; otherwise mark unavailable."
+  },
+  "risk_profiles": {
+    "default": "conservative",
+    "shared_hard_gates": "Ownership, lifecycle reconciliation, freshness, continuity, close-window, API budget, unknown-state, Stop, and capital-at-risk gates are identical across profiles.",
+    "conservative": "Requires the strongest positive lower-bound utility and smallest existing portfolio risk budget.",
+    "regular": "May use a less conservative preregistered utility confidence threshold only after independent confirmation; it cannot increase unknown-state tolerance.",
+    "aggressive": "May use the least conservative preregistered positive utility threshold only after independent confirmation; it cannot weaken ownership, lifecycle, stale-position, close-window, or hard-loss controls.",
+    "profit_reinvestment": "Off by default. Enabling it requires an explicit warning and never changes model thresholds or loss limits."
+  },
+  "portable_compute_contract": {
+    "reference": "Every accepted model must produce finite deterministic CPU reference predictions from a self-contained artifact with frozen feature order, normalization, opset, and weight hashes.",
+    "training_backends": [
+      "cpu",
+      "cuda",
+      "rocm",
+      "directml",
+      "mps"
+    ],
+    "inference_artifact": "ONNX is required for an accepted nonlinear model. Native framework checkpoints are training evidence, not the deployment contract.",
+    "windows_inference": "Prefer Windows ML provider discovery on supported Windows 11 systems; retain explicit ONNX Runtime CPU and DirectML compatibility paths. Do not assume AMD, NVIDIA, Intel, Qualcomm, x64, or ARM64.",
+    "other_hosts": "Discover installed ONNX Runtime providers explicitly; permit CPU, CUDA, ROCm/MIGraphX, OpenVINO, CoreML, or other compatible providers only after a real preflight.",
+    "parity": "Accelerated and CPU probabilities must remain within a frozen numerical tolerance and produce identical guarded action/safety decisions. Threshold-near backend disagreement abstains.",
+    "fallback": "Requested acceleration that resolves to CPU is reported. AI is disabled on CPU. Safety and close paths always retain a CPU implementation and cannot depend on GPU availability.",
+    "installation": "No runtime silently installs drivers, providers, models, or packages. Capability discovery reports actionable requirements without mutating the host."
+  },
+  "ai_contract": {
+    "default_setting": "enabled_but_fail_closed_without_accepted_model",
+    "execution_loop": "No LLM call is permitted in the subsecond action or close loop.",
+    "role": "A local multibillion-parameter model may asynchronously veto or downsize a hash-bound market-level proposal using information available before its deadline. It may not originate direction, increase size, override deterministic risk, touch foreign positions, or delay a close.",
+    "candidate": "Qwen3 14B v9 remains unexecuted. Round 9 failure grants no permission to run it; Round 10 requires a new preregistered paired AI treatment after the fast model passes development.",
+    "evaluation": "Compare identical held-out opportunities with and without the timely AI response, including queue delay, inference latency, stale vetoes, missed trades, fees, unknown-state losses, drawdown, and every latency stress. Require at least 30 non-tied paired outcomes and a positive moving-block-bootstrap lower utility uplift without worse tail risk.",
+    "residency": "GPU-required inference needs exact model/weight identity and post-inference provider plus memory-residency evidence. Partial or unknown offload fails the AI treatment but never disables deterministic closes."
+  },
+  "publication_contract": {
+    "latest_only": true,
+    "machine_tables_required": [
+      "source and split groups",
+      "per-head prevalence and calibration",
+      "all candidate and selected thresholds",
+      "sequential actions and lifecycle states",
+      "per-market and per-asset utility",
+      "equity, drawdown, capital lock, and API budget",
+      "backend parity and latency",
+      "AI paired outcomes when authorized"
+    ],
+    "graph_labels": "Every graph states UTC span, run and contract hashes, assets, group and market counts, cadence, latency, hold, fee/depth semantics, public versus authenticated evidence, and causal/development/confirmation role.",
+    "null_results": "A pre-fit, development, confirmation, backend, lifecycle, or AI failure is published with null unavailable metrics. It is never replaced by a tuned rerun."
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/user-channel",
+    "https://docs.polymarket.com/concepts/order-lifecycle",
+    "https://docs.polymarket.com/api-reference/trade/post-a-new-order",
+    "https://docs.polymarket.com/api-reference/trade/get-user-orders",
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://learn.microsoft.com/windows/ai/new-windows-ml/overview",
+    "https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers",
+    "https://github.com/microsoft/DirectML",
+    "https://arxiv.org/abs/2512.05734",
+    "https://arxiv.org/abs/2403.02572",
+    "https://arxiv.org/abs/2502.15757",
+    "https://arxiv.org/abs/2403.09267"
+  ],
+  "truth_constraints": {
+    "round10_implemented": false,
+    "round10_model_fitted": false,
+    "round10_confirmation_captured": false,
+    "ai_edge_established": false,
+    "profitability_claim": false,
+    "roi_claim": false,
+    "drawdown_claim": false,
+    "paper_authority": false,
+    "trading_authority": false
+  }
+}

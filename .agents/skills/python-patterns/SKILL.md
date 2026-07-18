@@ -1,7 +1,8 @@
 ---
 name: python-patterns
 description: Python patterns for this repo — pure-stdlib trading core, typed dataclasses, no hidden dependencies, deterministic I/O.
-origin: adapted from ZMB-UZH/omero-docker-extended python-patterns (ECC v1.10.0)
+metadata:
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # Python Patterns

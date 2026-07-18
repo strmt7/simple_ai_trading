@@ -421,10 +421,14 @@ def test_round9_opaque_identity_matches_clear_dataset_digest() -> None:
     )
     action_dataset_sha256 = "c" * 64
     run_report_sha256 = "d" * 64
+    implementation_sha256 = (
+        polymarket_ridge_module.polymarket_action_pipeline_implementation_sha256()
+    )
     pipeline_payload = {
         "run_id": "opaque-run",
         "run_report_sha256": run_report_sha256,
         "eligibility_sha256": dataset.eligibility_sha256,
+        "implementation_sha256": implementation_sha256,
         "batches": [{"action_dataset_sha256": action_dataset_sha256}],
     }
     pipeline_report_sha256 = polymarket_ridge_module._sha256(pipeline_payload)
@@ -456,11 +460,13 @@ def test_round9_opaque_identity_matches_clear_dataset_digest() -> None:
                     [
                         (
                             pipeline_json,
+                            polymarket_ridge_module.POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION,
                             polymarket_ridge_module.POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
                             "opaque-run",
                             run_report_sha256,
                             dataset.eligibility_sha256,
                             json.dumps([action_dataset_sha256]),
+                            implementation_sha256,
                         )
                     ]
                 )

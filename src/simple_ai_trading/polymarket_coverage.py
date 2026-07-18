@@ -212,7 +212,7 @@ def inspect_polymarket_feed_coverage(
     if run is None:
         raise ValueError(f"unknown Polymarket recorder run: {selected}")
     run_status = str(run[0])
-    integrity_errors = store.integrity_errors(selected)
+    integrity_errors = store.resume_integrity_errors(selected)
     try:
         stream_gap_count = PolymarketEvidenceReplay.validate_stream_gaps(
             store,
@@ -374,10 +374,7 @@ def inspect_polymarket_verified_source_coverage(
     )
     baseline_conditions = tuple(
         sorted(
-            {
-                str(value or "").strip().lower()
-                for value in clob_baseline_condition_ids
-            }
+            {str(value or "").strip().lower() for value in clob_baseline_condition_ids}
         )
     )
     minimum_resolved = int(minimum_resolved_markets_per_asset)
@@ -397,7 +394,7 @@ def inspect_polymarket_verified_source_coverage(
     if run is None:
         raise ValueError(f"unknown Polymarket recorder run: {selected}")
     run_status = str(run[0])
-    integrity_errors = store.integrity_errors(selected)
+    integrity_errors = store.resume_integrity_errors(selected)
     stream_gap_count = int(
         connection.execute(
             "SELECT count(*) FROM polymarket_stream_gap WHERE run_id = ?",
@@ -417,10 +414,9 @@ def inspect_polymarket_verified_source_coverage(
         [selected],
     ).fetchall()
     market_by_condition = {str(row[1]).lower(): row for row in market_rows}
-    if (
-        len(market_by_condition) != len(market_rows)
-        or not set(selected_conditions).issubset(market_by_condition)
-    ):
+    if len(market_by_condition) != len(market_rows) or not set(
+        selected_conditions
+    ).issubset(market_by_condition):
         raise ValueError("verified Polymarket coverage markets are invalid")
 
     counts = {asset: {key: 0 for key in _COUNT_KEYS} for asset in _ASSETS}

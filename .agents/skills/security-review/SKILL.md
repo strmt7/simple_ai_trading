@@ -1,7 +1,8 @@
 ---
 name: security-review
 description: Security checklist for credential handling, request signing, artifact redaction, and order-path guards before any broad change lands.
-origin: adapted from ZMB-UZH/omero-docker-extended security-review for a Binance testnet CLI
+metadata:
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # Security Review

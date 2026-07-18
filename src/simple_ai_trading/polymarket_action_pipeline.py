@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import ast
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, replace
 import gc
 import hashlib
 import json
+from pathlib import Path
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .polymarket import PolymarketFiveMinuteMarket
@@ -16,11 +18,15 @@ from .polymarket_action_value import (
     build_polymarket_action_value_dataset,
     materialize_polymarket_action_value_dataset,
 )
+from .polymarket_continuity import polymarket_round9_evidence_window
 from .polymarket_features import (
+    POLYMARKET_DATASET_SCHEMA_VERSION,
+    POLYMARKET_FEATURE_SCHEMA_VERSION,
     PolymarketFeatureConfig,
     build_polymarket_feature_dataset,
     load_polymarket_feature_source_context,
     materialize_polymarket_feature_dataset,
+    validate_polymarket_feature_source_scope,
 )
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay
@@ -28,10 +34,24 @@ from .polymarket_repricing import PolymarketRepricingExecutionContext
 
 
 POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION = (
-    "polymarket-action-value-bounded-pipeline-v1"
+    "polymarket-action-value-bounded-pipeline-v2"
 )
-POLYMARKET_ACTION_BATCH_SCHEMA_VERSION = "polymarket-action-value-batch-v1"
+POLYMARKET_ACTION_BATCH_SCHEMA_VERSION = "polymarket-action-value-batch-v2"
+POLYMARKET_ACTION_IMPLEMENTATION_SCHEMA_VERSION = (
+    "polymarket-action-value-implementation-v2"
+)
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
+_CRITICAL_IMPLEMENTATION_FILES = (
+    "duckdb_batch.py",
+    "polymarket_action_pipeline.py",
+    "polymarket_action_value.py",
+    "polymarket_features.py",
+    "polymarket_continuity.py",
+    "polymarket_coverage.py",
+    "polymarket_recorder.py",
+    "polymarket_replay.py",
+    "polymarket_repricing.py",
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -52,6 +72,31 @@ def _is_sha256(value: object) -> bool:
     text = str(value)
     return len(text) == 64 and all(
         character in "0123456789abcdef" for character in text
+    )
+
+
+def polymarket_action_pipeline_implementation_sha256() -> str:
+    """Hash normalized ASTs so critical code changes invalidate durable batches."""
+
+    source_root = Path(__file__).resolve().parent
+    module_digests: dict[str, str] = {}
+    for filename in _CRITICAL_IMPLEMENTATION_FILES:
+        path = source_root / filename
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=filename)
+        except (OSError, SyntaxError, UnicodeError) as exc:
+            raise RuntimeError(
+                f"cannot attest Polymarket action implementation: {filename}"
+            ) from exc
+        normalized = ast.dump(tree, annotate_fields=True, include_attributes=False)
+        module_digests[filename] = hashlib.sha256(
+            normalized.encode("utf-8")
+        ).hexdigest()
+    return _sha256(
+        {
+            "schema_version": POLYMARKET_ACTION_IMPLEMENTATION_SCHEMA_VERSION,
+            "critical_module_ast_sha256": module_digests,
+        }
     )
 
 
@@ -106,6 +151,7 @@ class PolymarketActionBatchResult:
     positive_complete_count: int
     category_counts: dict[str, int]
     terminal_reason_counts: dict[str, int]
+    excluded_after_event_scope_count: int
     batch_sha256: str
 
     def asdict(self) -> dict[str, object]:
@@ -134,6 +180,7 @@ class PolymarketActionBatchResult:
             or not 0 <= self.classifier_eligible_count <= self.action_count
             or sum(self.category_counts.values()) != self.action_count
             or sum(self.terminal_reason_counts.values()) != self.action_count
+            or self.excluded_after_event_scope_count < 0
         ):
             raise ValueError("Polymarket action batch result is invalid")
         return self
@@ -145,12 +192,14 @@ class PolymarketActionPipelineReport:
     run_report_sha256: str
     config: PolymarketActionPipelineConfig
     eligibility_sha256: str
+    implementation_sha256: str
     batches: tuple[PolymarketActionBatchResult, ...]
     action_count: int
     classifier_eligible_count: int
     positive_complete_count: int
     category_counts: dict[str, int]
     terminal_reason_counts: dict[str, int]
+    excluded_after_event_scope_count: int
     report_sha256: str
 
     def identity_payload(self) -> dict[str, object]:
@@ -161,12 +210,14 @@ class PolymarketActionPipelineReport:
             "run_report_sha256": self.run_report_sha256,
             "config": self.config.asdict(),
             "eligibility_sha256": self.eligibility_sha256,
+            "implementation_sha256": self.implementation_sha256,
             "batches": [batch.asdict() for batch in self.batches],
             "action_count": self.action_count,
             "classifier_eligible_count": self.classifier_eligible_count,
             "positive_complete_count": self.positive_complete_count,
             "category_counts": dict(sorted(self.category_counts.items())),
             "terminal_reason_counts": dict(sorted(self.terminal_reason_counts.items())),
+            "excluded_after_event_scope_count": (self.excluded_after_event_scope_count),
             "training_authority": False,
             "trading_authority": False,
             "profitability_claim": False,
@@ -186,6 +237,7 @@ class PolymarketActionPipelineReport:
             not self.run_id
             or not _is_sha256(self.run_report_sha256)
             or (self.eligibility_sha256 and not _is_sha256(self.eligibility_sha256))
+            or not _is_sha256(self.implementation_sha256)
             or not self.batches
             or self.action_count != sum(item.action_count for item in self.batches)
             or self.classifier_eligible_count
@@ -194,6 +246,8 @@ class PolymarketActionPipelineReport:
             != sum(item.positive_complete_count for item in self.batches)
             or self.category_counts != expected_categories
             or self.terminal_reason_counts != expected_reasons
+            or self.excluded_after_event_scope_count
+            != sum(item.excluded_after_event_scope_count for item in self.batches)
             or len({item.batch_id for item in self.batches}) != len(self.batches)
             or self.report_sha256 != _sha256(self.identity_payload())
         ):
@@ -222,7 +276,9 @@ def _ensure_pipeline_tables(store: PolymarketEvidenceStore) -> None:
             positive_complete_count UBIGINT NOT NULL,
             category_counts_json VARCHAR NOT NULL,
             terminal_reason_counts_json VARCHAR NOT NULL,
-            batch_sha256 VARCHAR NOT NULL
+            batch_sha256 VARCHAR NOT NULL,
+            implementation_sha256 VARCHAR,
+            excluded_after_event_scope_count UBIGINT
         );
 
         CREATE TABLE IF NOT EXISTS polymarket_action_value_pipeline (
@@ -240,8 +296,19 @@ def _ensure_pipeline_tables(store: PolymarketEvidenceStore) -> None:
             positive_complete_count UBIGINT NOT NULL,
             category_counts_json VARCHAR NOT NULL,
             terminal_reason_counts_json VARCHAR NOT NULL,
-            report_json VARCHAR NOT NULL
+            report_json VARCHAR NOT NULL,
+            implementation_sha256 VARCHAR,
+            excluded_after_event_scope_count UBIGINT
         );
+
+        ALTER TABLE polymarket_action_value_batch
+        ADD COLUMN IF NOT EXISTS implementation_sha256 VARCHAR;
+        ALTER TABLE polymarket_action_value_batch
+        ADD COLUMN IF NOT EXISTS excluded_after_event_scope_count UBIGINT;
+        ALTER TABLE polymarket_action_value_pipeline
+        ADD COLUMN IF NOT EXISTS implementation_sha256 VARCHAR;
+        ALTER TABLE polymarket_action_value_pipeline
+        ADD COLUMN IF NOT EXISTS excluded_after_event_scope_count UBIGINT;
         """
     )
 
@@ -252,6 +319,7 @@ def _batch_identity(
     run_report_sha256: str,
     config: PolymarketActionPipelineConfig,
     eligibility_sha256: str,
+    implementation_sha256: str,
     group_starts_ms: Sequence[int],
     condition_ids: Sequence[str],
 ) -> dict[str, object]:
@@ -262,6 +330,7 @@ def _batch_identity(
         "run_report_sha256": run_report_sha256,
         "config": config.asdict(),
         "eligibility_sha256": eligibility_sha256,
+        "implementation_sha256": implementation_sha256,
         "group_starts_ms": [int(value) for value in group_starts_ms],
         "condition_ids": list(condition_ids),
     }
@@ -283,7 +352,8 @@ def _load_existing_batch(
                feature_dataset_sha256, action_dataset_sha256,
                feature_row_count, action_count, classifier_eligible_count,
                positive_complete_count, category_counts_json,
-               terminal_reason_counts_json, batch_sha256
+               terminal_reason_counts_json, batch_sha256,
+               implementation_sha256, excluded_after_event_scope_count
         FROM polymarket_action_value_batch WHERE batch_id = ?
         """,
             [batch_id],
@@ -309,11 +379,14 @@ def _load_existing_batch(
         store.connect()
         .execute(
             """
-        SELECT d.row_count, count(r.feature_id)
+        SELECT d.row_count, count(r.feature_id), d.replay_diagnostics_json,
+               d.schema_version, d.feature_schema_version, d.source_scope_json
         FROM polymarket_feature_dataset AS d
         LEFT JOIN polymarket_feature_row AS r
           ON r.dataset_id = d.dataset_id
-        WHERE d.dataset_sha256 = ? GROUP BY d.row_count
+        WHERE d.dataset_sha256 = ?
+        GROUP BY d.row_count, d.replay_diagnostics_json, d.schema_version,
+                 d.feature_schema_version, d.source_scope_json
         """,
             [row[9]],
         )
@@ -340,13 +413,37 @@ def _load_existing_batch(
         )
         .fetchone()
     )
+    if feature_manifest is None:
+        raise ValueError("stored Polymarket action batch has no feature manifest")
+    try:
+        replay_diagnostics = json.loads(str(feature_manifest[2]))
+        source_scope = validate_polymarket_feature_source_scope(
+            json.loads(str(feature_manifest[5])),
+            run_id=str(identity["run_id"]),
+            condition_ids=tuple(str(value) for value in identity["condition_ids"]),
+            require_bounded=True,
+        )
+        excluded_after_scope = int(
+            replay_diagnostics["excluded_after_event_scope_count"]
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(
+            "stored Polymarket action batch replay diagnostics are invalid"
+        ) from exc
     if (
-        feature_manifest != (row[11], row[11])
+        tuple(feature_manifest[:2]) != (row[11], row[11])
+        or str(feature_manifest[3]) != POLYMARKET_DATASET_SCHEMA_VERSION
+        or str(feature_manifest[4]) != POLYMARKET_FEATURE_SCHEMA_VERSION
+        or tuple(source_scope["condition_ids"])
+        != tuple(sorted(str(value) for value in identity["condition_ids"]))
         or action_manifest is None
         or tuple(action_manifest[:3]) != tuple(row[12:15])
         or tuple(action_manifest[5:]) != tuple(row[12:15])
         or str(action_manifest[3]) != str(row[15])
         or str(action_manifest[4]) != str(row[16])
+        or str(row[18] or "") != str(identity["implementation_sha256"])
+        or row[19] is None
+        or int(row[19]) != excluded_after_scope
     ):
         raise ValueError("stored Polymarket action batch references invalid manifests")
     batch_payload = {
@@ -359,6 +456,7 @@ def _load_existing_batch(
         "positive_complete_count": int(row[14]),
         "category_counts": json.loads(str(row[15])),
         "terminal_reason_counts": json.loads(str(row[16])),
+        "excluded_after_event_scope_count": excluded_after_scope,
     }
     if _sha256(batch_payload) != str(row[17]):
         raise ValueError("stored Polymarket action batch digest is invalid")
@@ -381,6 +479,7 @@ def _load_existing_batch(
             str(key): int(value)
             for key, value in batch_payload["terminal_reason_counts"].items()
         },
+        excluded_after_event_scope_count=excluded_after_scope,
         batch_sha256=str(row[17]),
     ).validated()
 
@@ -397,6 +496,7 @@ def _persist_batch(
     positive_complete_count: int,
     category_counts: Mapping[str, int],
     terminal_reason_counts: Mapping[str, int],
+    excluded_after_event_scope_count: int,
 ) -> PolymarketActionBatchResult:
     batch_id = _sha256(identity)
     payload = {
@@ -409,6 +509,7 @@ def _persist_batch(
         "positive_complete_count": int(positive_complete_count),
         "category_counts": dict(sorted(category_counts.items())),
         "terminal_reason_counts": dict(sorted(terminal_reason_counts.items())),
+        "excluded_after_event_scope_count": int(excluded_after_event_scope_count),
     }
     batch_sha256 = _sha256(payload)
     values = (
@@ -430,11 +531,22 @@ def _persist_batch(
         _canonical_json(dict(sorted(category_counts.items()))),
         _canonical_json(dict(sorted(terminal_reason_counts.items()))),
         batch_sha256,
+        str(identity["implementation_sha256"]),
+        int(excluded_after_event_scope_count),
     )
     store.connect().execute(
         """
-        INSERT INTO polymarket_action_value_batch VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        INSERT INTO polymarket_action_value_batch (
+            batch_id, schema_version, contract_sha256, run_id,
+            run_report_sha256, config_json, eligibility_sha256,
+            group_starts_json, condition_ids_json,
+            feature_dataset_sha256, action_dataset_sha256,
+            feature_row_count, action_count, classifier_eligible_count,
+            positive_complete_count, category_counts_json,
+            terminal_reason_counts_json, batch_sha256,
+            implementation_sha256, excluded_after_event_scope_count
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
         """,
         values,
@@ -452,6 +564,7 @@ def _persist_batch(
         positive_complete_count=int(positive_complete_count),
         category_counts=dict(sorted(category_counts.items())),
         terminal_reason_counts=dict(sorted(terminal_reason_counts.items())),
+        excluded_after_event_scope_count=int(excluded_after_event_scope_count),
         batch_sha256=batch_sha256,
     ).validated()
 
@@ -485,6 +598,7 @@ def materialize_polymarket_action_value_batches(
         raise ValueError(
             "segmented action replay requires hash-bound eligible condition IDs"
         )
+    implementation_sha256 = polymarket_action_pipeline_implementation_sha256()
     run_row = (
         store.connect()
         .execute(
@@ -506,7 +620,7 @@ def materialize_polymarket_action_value_batches(
     run_report_sha256 = str(run_row[2])
     if not _is_sha256(run_report_sha256):
         raise ValueError("Polymarket action pipeline run report is invalid")
-    integrity = store.integrity_errors(selected, progress=progress)
+    integrity = store.resume_integrity_errors(selected, progress=progress)
     if integrity:
         raise ValueError(
             "Polymarket action pipeline integrity failed: " + "; ".join(integrity)
@@ -523,6 +637,14 @@ def materialize_polymarket_action_value_batches(
     market_by_condition = {market.condition_id: market for market in markets}
     if not selected_conditions.issubset(market_by_condition):
         raise ValueError("Polymarket action pipeline selected an unknown condition")
+    replay_cutoff_by_condition: dict[str, int] = {}
+    for condition_id in sorted(selected_conditions):
+        market = market_by_condition[condition_id]
+        _window_start, window_end = polymarket_round9_evidence_window(
+            event_start_ms=market.event_start_ms,
+            end_ms=market.end_ms,
+        )
+        replay_cutoff_by_condition[condition_id] = window_end
     groups: dict[int, list[PolymarketFiveMinuteMarket]] = {}
     for condition_id in selected_conditions:
         market = market_by_condition[condition_id]
@@ -548,6 +670,7 @@ def materialize_polymarket_action_value_batches(
             run_report_sha256=run_report_sha256,
             config=cfg,
             eligibility_sha256=eligibility_digest,
+            implementation_sha256=implementation_sha256,
             group_starts_ms=starts,
             condition_ids=conditions,
         )
@@ -565,23 +688,13 @@ def materialize_polymarket_action_value_batches(
         results.append(existing)
         if existing is None:
             missing_indexes.append(index)
-    source_context = None
     if missing_indexes:
         store.ensure_condition_message_cache(
             selected,
             condition_ids=tuple(sorted(selected_conditions)),
             progress=progress,
         )
-        if progress is not None:
-            progress("source-context", {"remaining_batches": len(missing_indexes)})
-        source_context = load_polymarket_feature_source_context(
-            store,
-            run_id=selected,
-            config=cfg.feature,
-            condition_ids=tuple(sorted(selected_conditions)),
-            continuity_report_sha256=eligibility_digest,
-            progress=progress,
-        )
+        store.ensure_capture_chunk_receipt_index(selected, progress=progress)
     for completed, index in enumerate(missing_indexes, start=1):
         identity, _batch_id = batch_specs[index]
         conditions = tuple(str(value) for value in identity["condition_ids"])
@@ -594,6 +707,15 @@ def materialize_polymarket_action_value_batches(
                     "condition_count": len(conditions),
                 },
             )
+        source_context = load_polymarket_feature_source_context(
+            store,
+            run_id=selected,
+            config=cfg.feature,
+            condition_ids=tuple(sorted(selected_conditions)),
+            source_window_condition_ids=conditions,
+            continuity_report_sha256=eligibility_digest,
+            progress=progress,
+        )
         replay = PolymarketEvidenceReplay.load(
             store,
             run_id=selected,
@@ -601,8 +723,20 @@ def materialize_polymarket_action_value_batches(
             book_sample_interval_ms=0,
             condition_ids=conditions,
             continuity_report_sha256=eligibility_digest,
+            maximum_received_wall_ms_by_condition={
+                condition: replay_cutoff_by_condition[condition]
+                for condition in conditions
+            },
+            materialized_minimum_depth_levels=3,
+            cap_materialized_depth_to_minimum_order_size=True,
         )
         feature_replay = replay.with_book_sample_interval(cfg.feature.cadence_ms)
+        store.recycle_analytical_connections()
+        if progress is not None:
+            progress(
+                "analytical-connections-recycled",
+                {"batch_index": index},
+            )
         features = build_polymarket_feature_dataset(
             store,
             run_id=selected,
@@ -634,6 +768,9 @@ def materialize_polymarket_action_value_batches(
             positive_complete_count=action_materialization.positive_complete_count,
             category_counts=actions.category_counts,
             terminal_reason_counts=actions.terminal_reason_counts,
+            excluded_after_event_scope_count=(
+                replay.diagnostics.excluded_after_event_scope_count
+            ),
         )
         if progress is not None:
             progress(
@@ -642,9 +779,12 @@ def materialize_polymarket_action_value_batches(
                     "batch_index": index,
                     "feature_row_count": len(features.rows),
                     "action_count": len(actions.features),
+                    "excluded_after_event_scope_count": (
+                        replay.diagnostics.excluded_after_event_scope_count
+                    ),
                 },
             )
-        del actions, feature_replay, replay, features
+        del actions, feature_replay, replay, features, source_context
         gc.collect()
     batches = tuple(item for item in results if item is not None)
     if len(batches) != len(batch_specs):
@@ -659,6 +799,7 @@ def materialize_polymarket_action_value_batches(
         run_report_sha256=run_report_sha256,
         config=cfg,
         eligibility_sha256=eligibility_digest,
+        implementation_sha256=implementation_sha256,
         batches=batches,
         action_count=sum(item.action_count for item in batches),
         classifier_eligible_count=sum(
@@ -667,6 +808,9 @@ def materialize_polymarket_action_value_batches(
         positive_complete_count=sum(item.positive_complete_count for item in batches),
         category_counts=dict(sorted(category_counts.items())),
         terminal_reason_counts=dict(sorted(terminal_counts.items())),
+        excluded_after_event_scope_count=sum(
+            item.excluded_after_event_scope_count for item in batches
+        ),
         report_sha256="",
     )
     report = replace(
@@ -689,6 +833,8 @@ def materialize_polymarket_action_value_batches(
         _canonical_json(report.category_counts),
         _canonical_json(report.terminal_reason_counts),
         _canonical_json(report.asdict()),
+        report.implementation_sha256,
+        report.excluded_after_event_scope_count,
     )
     existing_report = (
         store.connect()
@@ -699,6 +845,7 @@ def materialize_polymarket_action_value_batches(
                batch_ids_json, action_dataset_sha256_json, action_count,
                classifier_eligible_count, positive_complete_count,
                category_counts_json, terminal_reason_counts_json, report_json
+               , implementation_sha256, excluded_after_event_scope_count
         FROM polymarket_action_value_pipeline WHERE report_sha256 = ?
         """,
             [report.report_sha256],
@@ -708,8 +855,15 @@ def materialize_polymarket_action_value_batches(
     if existing_report is None:
         store.connect().execute(
             """
-            INSERT INTO polymarket_action_value_pipeline VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            INSERT INTO polymarket_action_value_pipeline (
+                report_sha256, schema_version, contract_sha256, run_id,
+                run_report_sha256, config_json, eligibility_sha256,
+                batch_ids_json, action_dataset_sha256_json, action_count,
+                classifier_eligible_count, positive_complete_count,
+                category_counts_json, terminal_reason_counts_json, report_json,
+                implementation_sha256, excluded_after_event_scope_count
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             """,
             stored_values,
@@ -721,9 +875,11 @@ def materialize_polymarket_action_value_batches(
 
 __all__ = [
     "POLYMARKET_ACTION_BATCH_SCHEMA_VERSION",
+    "POLYMARKET_ACTION_IMPLEMENTATION_SCHEMA_VERSION",
     "POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION",
     "PolymarketActionBatchResult",
     "PolymarketActionPipelineConfig",
     "PolymarketActionPipelineReport",
     "materialize_polymarket_action_value_batches",
+    "polymarket_action_pipeline_implementation_sha256",
 ]

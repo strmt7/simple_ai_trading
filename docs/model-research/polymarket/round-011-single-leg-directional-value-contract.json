@@ -1,0 +1,167 @@
+{
+  "schema_version": "polymarket-round11-single-leg-directional-value-contract-v1",
+  "round": 11,
+  "status": "preregistered_after_round10_mechanism_rejection_before_round11_fit",
+  "contract_sha256": "ced2dfcb058845f3cc430c369b00b0cd493c61b739ff1f0fa3d27b052af1aff4",
+  "scope": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "markets": "Polymarket five-minute crypto Up/Down markets",
+    "authority": "development_only",
+    "live_money_enabled": false,
+    "leverage_applicable": false
+  },
+  "prior_evidence": {
+    "source_pipeline_report_sha256": "1d3b1e0df05dbb4a7f5b9be9fe7b40fd03ba8f6f06bf90115851adb10efb4d8b",
+    "round10_report_sha256": "533025ed929cf4c4706f130e46bfe5369d59cde60dc3bc2161077fb9dfcdfd47",
+    "round10_dataset_sha256": "98465f8b8c1de5dcf86532ad4f9fda0fb1e7f46aad1e121dd6e997d3f78ed4af",
+    "round10_result": "The one-second taker entry/taker exit mechanism failed development. Its largest transparent full hurdle score was negative, so no nonlinear challenger or confirmation was authorized.",
+    "action_geometry_screen": {
+      "paired_decisions": 125946,
+      "both_outcomes_filled": 111132,
+      "positive_complement_pairs": 0,
+      "best_complement_pair_net_quote": -0.00605,
+      "median_complement_pair_net_quote": -0.17947,
+      "unconditional_single_leg_mean_net_quote": {
+        "BTC": -0.08108,
+        "ETH": -0.08024,
+        "SOL": -0.09187
+      },
+      "interpretation": "Complement-pair taker arbitrage is rejected. Single-leg settlement only remains viable if a point-in-time directional probability estimate exceeds the executable break-even probability after all costs."
+    }
+  },
+  "evidence_roles": {
+    "round9_corpus": "Development-only mechanism screening. It cannot confirm Round 11, establish profitability, select a production threshold, or establish AI uplift.",
+    "round11_development": "The frozen Round 9 corpus may fit and reject this action/model design once. The complete candidate grid and negative results remain published.",
+    "round11_confirmation": "A separate capture starting after the selected policy hash is committed. It is consumed once and must contain at least 160 synchronized event groups, 160 resolved markets per asset, both outcomes in every partition, authenticated bot-owned order lifecycle evidence, and measured settlement overhead.",
+    "freshness": "No row, condition, group, or outcome from Round 9 may enter future confirmation or backend/AI uplift evidence."
+  },
+  "economic_action": {
+    "control": "No order and zero utility.",
+    "entry": "At most one chosen outcome receives a minimum-size V2 FOK buy. Execution uses the first same-segment book locally received after 500 ms submission latency plus the recorded market taker delay and must be observable inside the frozen 500 ms confirmation horizon.",
+    "inventory": "A filled entry is held as exact bot-owned conditional-token inventory. No discretionary sell, hedge, opposite-outcome order, doubling, averaging down, leverage, or martingale action is permitted.",
+    "settlement": "Redeem only after official resolution and exact owned CONFIRMED lifecycle plus balance reconciliation. Development utility is payout minus evidenced entry cost; trading authority additionally requires measured redemption, chain, collateral-conversion, and transfer overhead.",
+    "payout": "For minimum quantity q, the winning token pays q quote units and the losing token pays zero. No mark-to-market profit is treated as realized.",
+    "retry": "A definite FOK no-fill leaves zero inventory and may be retried after 1000 ms while the condition is otherwise eligible. Unknown, MATCHED-only, MINED-only, RETRYING, stale, conflicting, or unowned state blocks the condition and starts reconciliation instead of another order.",
+    "condition_lock": "The first fully filled owned entry permanently locks that condition. Exactly one outcome can be owned by this strategy.",
+    "hard_close_window_seconds": 30,
+    "entry_time_candidates_seconds": [
+      120,
+      90,
+      60,
+      45,
+      30
+    ]
+  },
+  "label_contract": {
+    "selected_outcome_wins": "One only when immutable official resolution equals the candidate outcome. Resolution is loaded only after point-in-time features and split membership are frozen.",
+    "known_fill_settlement_net_quote": "q minus exact fee-inclusive entry cost when the selected outcome wins; negative exact entry cost when it loses.",
+    "definite_no_fill_net_quote": "Zero, with no invented inventory, payout, or opportunity cost.",
+    "unknown_post_submit_net_quote": "Negative conservative maximum entry loss from the frozen Round 10 formula. Unknown state also blocks every later action in the condition.",
+    "entry_cost_target": "Exact fee-inclusive FOK cost only for fully evidenced fills. Missing, partial, public-book-only, or inferred costs are unavailable.",
+    "independent_unit": "One resolved five-minute market. Repeated 250 ms rows and both outcome orientations do not increase effective outcome sample size.",
+    "condition_weighting": "Every condition has total training weight one; paired outcome orientations and repeated decisions divide that weight deterministically.",
+    "forbidden": "No exit-book label, future book, official outcome, terminal reason, fill result, settlement event, future source arrival, centered window, or target-derived sample selection may enter a decision feature."
+  },
+  "feature_contract": {
+    "canonical_source": "Use the 49 frozen point-in-time source features and immutable feature/provenance hashes underlying each unique source_feature_id.",
+    "probability_features": "Canonical Up/Down midpoint, microprice, bid/ask, pair-consistency, CEX displacement from the Chainlink open, CEX/Chainlink basis, causal returns, volatility, trade flow, depth, freshness, liquidity, asset, and remaining time.",
+    "execution_features": "Chosen and opposite bid, ask, depth, spread, active tick, minimum quantity, recorded fee parameters, taker-delay flag, and the Round 10 maximum entry-loss bound.",
+    "market_prior": "Normalize contemporaneous Up and Down midpoints into a finite complementary prior. The learned direction model is a regularized residual correction to its clipped logit, not an unconstrained replacement for the market probability.",
+    "orientation": "Fit one canonical Up probability per unique decision. Down probability is exactly one minus Up probability; independent contradictory outcome predictions are prohibited.",
+    "normalization": "Fit finite median/IQR scaling on train groups only, persist zero-variance handling and clip bounds, and never adapt normalization on validation, confirmation, or live rows."
+  },
+  "model_contract": {
+    "baselines": [
+      "normalized contemporaneous market midpoint probability",
+      "fee-adjusted no-trade policy",
+      "frozen direct-price diffusion probability where causally available"
+    ],
+    "direction_head": "L2-regularized logistic residual correction anchored to the market-prior logit. Candidate L2 values are 0.01, 0.1, 1, 10, and 100. Fit with condition-normalized weights.",
+    "observability_head": "L2 logistic probability that post-submit entry state is exactly observable in the frozen horizon.",
+    "fill_head": "L2 logistic probability of a full FOK fill conditional on exact observability.",
+    "entry_cost_head": "L2 linear mean and 0.90 pinball upper-quantile models for fee-inclusive entry cost conditional on a full evidenced fill.",
+    "probability_calibration": "Compare identity, Platt residual scaling, and monotone temperature scaling using chronological train-only folds. Calibration cannot inspect the final development validation groups.",
+    "score": "p_observable*p_fill*(q*p_win-upper_entry_cost) minus (1-p_observable)*maximum_entry_loss. A candidate must also have q*p_win-current_executable_upper_cost strictly positive.",
+    "selection": "Process rows in monotonic receipt order. At each eligible retry, choose the sole outcome with the larger strictly positive conservative score; ties and contradictory safeguards abstain. A fill locks the condition and an unknown blocks it.",
+    "candidate_margins_quote": [
+      0,
+      0.0025,
+      0.005,
+      0.01,
+      0.02,
+      0.05
+    ],
+    "nonlinear_model": "Not authorized on 141 independent outcomes. A neural sequence model requires a separately frozen design and materially broader independent development evidence; row count cannot be used to justify capacity.",
+    "ai_model": "Not authorized. A multibillion-parameter LLM cannot originate or time a subsecond direction and may only enter a later preregistered asynchronous veto/downsize comparison after the deterministic policy passes fresh confirmation."
+  },
+  "split_and_evaluation": {
+    "group": "All assets, conditions, rows, paired outcomes, source messages, and labels sharing one synchronized five-minute event start remain together.",
+    "development_split": "First 32 event groups train, next one group purges, final 14 groups are development validation. Model and threshold selection may consume this validation once, and it remains ineligible for confirmation.",
+    "train_selection": "Use expanding chronological folds entirely inside the first 32 groups to select regularization and calibration. No random row split, shuffle, stratification by outcome, or backward-time fold is permitted.",
+    "proper_scores": "Report weighted Brier score, log loss, calibration slope/intercept, reliability bins, and improvement or degradation from the market prior by asset and pooled.",
+    "economic_metrics": "Report attempts, definite no-fills, unknowns, fills, wins, losses, exact net utility, settlement-overhead-unavailable flag, turnover, capital locked, per-condition and per-asset utility, chronological equity, maximum drawdown, and moving-block-bootstrap intervals over event groups.",
+    "development_gate": "At least 30 filled conditions and five per asset; zero selected unknown entries; positive total, mean-condition, median-condition, and per-asset exact net utility; lower 95% moving-block-bootstrap mean-group utility strictly above zero; lower-bound score better than the market-prior policy; and no settlement-manipulation or ghost-fill authority gap represented as solved.",
+    "confirmation_gate": "The unchanged artifact and policy must pass all development gates on one-shot fresh evidence, every preregistered latency/fee/depth/settlement stress, authenticated CONFIRMED lifecycle, owned-balance reconciliation, and backend parity. Any failure is final for that frozen candidate.",
+    "multiple_testing": "Persist all candidates and failures. Confirmation is unavailable unless one unique policy is frozen before fresh capture. Deflated Sharpe, PBO, annualized ROI, and drawdown claims remain unavailable when their assumptions or independent sample breadth are insufficient."
+  },
+  "market_integrity_risks": {
+    "settlement_manipulation": "Recent evidence specific to five-minute BTC contracts reports settlement-time spot-order-flow distortions. Entry-time candidates are compared explicitly, the final 30 seconds are always excluded, and no observed development profit can waive this unresolved external risk.",
+    "ghost_fills": "An off-chain MATCHED state is not inventory authority. Only exact bot-owned CONFIRMED lifecycle plus balance reconciliation can support settlement utility or a future trading decision.",
+    "microstructure_efficiency": "Published high-frequency Polymarket evidence finds executable arbitrage rare and depth constrained. The no-trade control is therefore primary and trade-frequency targets cannot force exposure.",
+    "market_rules": "Market metadata, fee schedules, tick size, minimum size, collateral, and order lifecycle are queried and hash-bound per market. No static category-wide assumption grants execution authority."
+  },
+  "risk_contract": {
+    "profiles": "Conservative is default. Profiles may change only a post-confirmation positive utility margin and capital fraction; they cannot weaken ownership, state, freshness, continuity, close-window, settlement, API budget, unknown-state, or stop gates.",
+    "capital": "No profile may risk more than its independently configured hard portfolio and per-condition budget. Kelly sizing is prohibited until calibrated fresh confirmation exists and remains capped fractional Kelly afterward.",
+    "profit_reinvestment": "Off by default and guarded by an explicit warning. It never changes model admission, score, loss, ownership, or reconciliation rules.",
+    "stop": "Stop blocks new entries immediately. Held settlement positions cannot be claimed closed merely by a local state transition; exact owned inventory remains tracked through resolution, redemption, and balance reconciliation.",
+    "network_outage": "Independent market-data, order-state, risk, reconciliation, stop, and UI loops have deadlines and bounded queues. Reconnect reconciles exact owned orders, trades, balances, collateral, allowances, and resolution before any new entry."
+  },
+  "portable_compute_contract": {
+    "reference": "A deterministic float64 CPU implementation with frozen feature order, scaler, coefficients, probability clipping, and canonical hashes is the source of truth on every host.",
+    "training": "This transparent small-sample model is intentionally fit on CPU because transfer and provider nondeterminism would cost more than the computation. Accelerator use is optional only after measured end-to-end benefit and numerical parity; GPU utilization is never a correctness or quality metric.",
+    "artifact": "Persist self-contained JSON coefficients and an ONNX inference artifact with fixed opset when a candidate passes development. Native checkpoints, Python pickles, local paths, and environment snapshots are not deployment authority.",
+    "providers": "Discover CPU, CUDA, ROCm/MIGraphX, Windows ML, DirectML, OpenVINO, CoreML, or other ONNX Runtime providers at runtime. Never infer a vendor from the operating system and never silently install drivers, runtimes, models, or packages.",
+    "parity": "Every enabled provider must match finite CPU probabilities within a frozen tolerance and produce identical guarded decisions. Threshold-near disagreement abstains; safety, stop, reconciliation, and ownership checks remain CPU-capable.",
+    "installation": "All paths, database locations, model caches, memory limits, thread counts, and providers are explicit configuration with validated portable defaults. No username, drive letter, shell, WSL, architecture, locale, clock precision, GPU vendor, or package-manager assumption may enter model semantics."
+  },
+  "publication_contract": {
+    "latest_only": true,
+    "required_machine_tables": "Action geometry, split groups, candidate fits, calibration, sequential decisions, per-condition/asset utility, equity/drawdown, bootstrap samples, rejected candidates, and artifact/backend hashes.",
+    "graphs": "Latest charts must be generated only from committed machine tables and label UTC span, evidence role, assets, independent condition/group counts, cadence, latency, fees, action definition, and unavailable authority or metrics.",
+    "truth": "Negative and zero-trade results are first-class. No synthetic result, oracle choice, annualization, interpolation, cherry-picked window, hidden rerun, or visual-only adjustment is permitted."
+  },
+  "research_basis": [
+    "https://docs.polymarket.com/concepts/prices-orderbook",
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/market-data/websocket/user-channel",
+    "https://docs.polymarket.com/concepts/order-lifecycle",
+    "https://docs.polymarket.com/trading/fees",
+    "https://docs.polymarket.com/api-reference/markets/get-clob-market-info",
+    "https://docs.polymarket.com/v2-migration",
+    "https://arxiv.org/abs/2606.31675",
+    "https://arxiv.org/abs/2606.16852",
+    "https://arxiv.org/abs/2605.00864",
+    "https://arxiv.org/abs/2403.02572",
+    "https://arxiv.org/abs/2502.15757"
+  ],
+  "truth_constraints": {
+    "round11_contract_frozen": true,
+    "round11_implemented": false,
+    "round11_model_fitted": false,
+    "round11_development_passed": false,
+    "round11_confirmation_captured": false,
+    "authenticated_lifecycle_proven": false,
+    "settlement_overhead_measured": false,
+    "ai_edge_established": false,
+    "profitability_claim": false,
+    "roi_claim": false,
+    "drawdown_claim": false,
+    "paper_authority": false,
+    "trading_authority": false
+  }
+}
