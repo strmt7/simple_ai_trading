@@ -13,7 +13,10 @@ from typing import Callable, Sequence
 import lightgbm as lgb
 import numpy as np
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .make_take_action_features import (
     MAKE_TAKE_ACTION_FEATURE_SCHEMA_VERSION,
     MakeTakeActionFeatureBatch,
@@ -620,7 +623,7 @@ def _validate_model(
         or any(len(values) != 4 for values in tuple4)
         or not all(math.isfinite(float(value)) for values in tuple4 for value in values)
         or any(not 0.0 <= value <= 1.0 for value in model.q20_calibration_coverage)
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or not all(
             isinstance(value, str) and value.strip()
             for value in (
