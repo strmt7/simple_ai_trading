@@ -15,7 +15,10 @@ import numpy as np
 from scipy.optimize import isotonic_regression
 
 from .cross_asset_cost_data import SYMBOLS
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .storage import write_json_atomic
 
 
@@ -776,7 +779,7 @@ def _validate_model(model: PairedActionModel, *, reload: bool) -> None:
         or not _is_sha256(model.payoff_dataset_sha256)
         or not _is_sha256(model.design_sha256)
         or not _is_sha256(model.model_sha256)
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or not model.outer_fold_diagnostics
         or not 1 <= model.final_iterations <= model.spec.maximum_boosting_rounds
         or model.final_refit_rows < 1
