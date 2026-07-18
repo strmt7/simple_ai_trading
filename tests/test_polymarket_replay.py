@@ -77,6 +77,14 @@ from simple_ai_trading.polymarket_round12_capture import (
 )
 from simple_ai_trading.polymarket_round12_reference import (
     load_round12_confirmation_contract,
+    load_round12_reference_from_round11_artifact,
+    polymarket_round12_primary_policy,
+)
+from simple_ai_trading.polymarket_round13 import (
+    PolymarketRound13Program,
+    load_round13_label_free_dataset,
+    polymarket_round13_evaluation_gates,
+    polymarket_round13_scenarios,
 )
 
 
@@ -88,6 +96,9 @@ ROUND12_CONTRACT = (
     / "polymarket"
     / "round-012-fixed-calibration-confirmation-contract.json"
 )
+ROUND11_ARTIFACT = ROUND12_CONTRACT.with_name(
+    "round-011-single-leg-directional-value-artifact.json"
+)
 
 
 def _canonical(value: object) -> str:
@@ -96,6 +107,18 @@ def _canonical(value: object) -> str:
 
 def _sha(value: str) -> str:
     return hashlib.sha256(value.encode("ascii")).hexdigest()
+
+
+def _round13_program(contract_sha256: str = "d" * 64) -> PolymarketRound13Program:
+    return PolymarketRound13Program(
+        contract={"contract_sha256": contract_sha256},
+        contract_sha256=contract_sha256,
+        model=load_round12_reference_from_round11_artifact(ROUND11_ARTIFACT),
+        policy=polymarket_round12_primary_policy(),
+        scenarios=polymarket_round13_scenarios(),
+        evaluation_gates=polymarket_round13_evaluation_gates(),
+        confirmation_capital_quote=Decimal("1000"),
+    ).validated()
 
 
 def _round12_capture_manifest(
@@ -452,6 +475,7 @@ def _finish_replay_store(
     trade_resync_lag_ms: int = 1,
     trade_resync_top_change: bool = False,
     feature_evidence: bool = False,
+    synchronized_feature_evidence: bool = False,
     pre_window_trade_quantity: str = "0.1",
     duplicate_tick_transition: bool = False,
     duplicate_tick_source_delta_ms: int = 0,
@@ -466,6 +490,8 @@ def _finish_replay_store(
     additional_messages: tuple[RawStreamMessage, ...] = (),
     preregistration_manifest: Mapping[str, object] | None = None,
 ) -> None:
+    if synchronized_feature_evidence and not feature_evidence:
+        raise ValueError("synchronized feature evidence requires feature evidence")
     store.start_run(
         run_id,
         run_started_at_ms,
@@ -998,6 +1024,33 @@ def _finish_replay_store(
                 ),
             ]
         )
+        if synchronized_feature_evidence:
+            for asset_index, asset in enumerate(("ETH", "SOL"), start=1):
+                market = parse_polymarket_five_minute_market(_market_payload(asset))
+                for outcome_index, token_id in enumerate(market.token_ids):
+                    offset = asset_index * 2 + outcome_index
+                    clob_messages.append(
+                        _message(
+                            "clob_market",
+                            {
+                                "event_type": "book",
+                                "market": market.condition_id,
+                                "asset_id": token_id,
+                                "timestamp": str(EPOCH * 1_000 + 6_000),
+                                "tick_size": "0.01",
+                                "hash": (
+                                    f"{asset.lower()}-"
+                                    f"{('up', 'down')[outcome_index]}-"
+                                    "feature-book"
+                                ),
+                                "bids": [{"price": "0.49", "size": "12"}],
+                                "asks": [{"price": "0.51", "size": "11"}],
+                            },
+                            sequence=50 + offset,
+                            wall_offset_ms=6_001,
+                            monotonic_ns=6_000_000_000 + offset * 1_000_000,
+                        )
+                    )
     auxiliary = [
         _message(
             "polymarket_rtds",
@@ -1177,6 +1230,165 @@ def _finish_replay_store(
                 monotonic_ns=5_900_000_000,
             ),
         ]
+        if synchronized_feature_evidence:
+            reference_prices = {"ETH": 3_000, "SOL": 150}
+            for asset_index, asset in enumerate(("ETH", "SOL"), start=1):
+                symbol = f"{asset.lower()}usdt"
+                reference = reference_prices[asset]
+                auxiliary.extend(
+                    [
+                        _message(
+                            "polymarket_rtds",
+                            {
+                                "topic": "crypto_prices_chainlink",
+                                "type": "subscribe",
+                                "timestamp": EPOCH * 1_000 + 800 + asset_index,
+                                "payload": {
+                                    "symbol": f"{asset.lower()}/usd",
+                                    "data": [
+                                        {
+                                            "timestamp": EPOCH * 1_000,
+                                            "value": reference,
+                                        },
+                                        {
+                                            "timestamp": EPOCH * 1_000 + 1_000,
+                                            "value": reference * 1.0001,
+                                        },
+                                    ],
+                                },
+                            },
+                            sequence=10 + asset_index,
+                            wall_offset_ms=800 + asset_index,
+                            monotonic_ns=(800 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "polymarket_rtds",
+                            {
+                                "topic": "crypto_prices",
+                                "type": "subscribe",
+                                "timestamp": EPOCH * 1_000 + 810 + asset_index,
+                                "payload": {
+                                    "symbol": symbol,
+                                    "data": [
+                                        {
+                                            "timestamp": EPOCH * 1_000,
+                                            "value": reference * 1.00001,
+                                        },
+                                        {
+                                            "timestamp": EPOCH * 1_000 + 1_000,
+                                            "value": reference * 1.00011,
+                                        },
+                                    ],
+                                },
+                            },
+                            sequence=20 + asset_index,
+                            wall_offset_ms=810 + asset_index,
+                            monotonic_ns=(810 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "binance_spot",
+                            {
+                                "stream": f"{symbol}@bookTicker",
+                                "data": {
+                                    "u": 1,
+                                    "s": f"{asset}USDT",
+                                    "b": str(reference * 1.00008),
+                                    "B": "20",
+                                    "a": str(reference * 1.00012),
+                                    "A": "18",
+                                },
+                            },
+                            sequence=30 + asset_index,
+                            wall_offset_ms=820 + asset_index,
+                            monotonic_ns=(820 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "binance_spot",
+                            {
+                                "stream": f"{symbol}@trade",
+                                "data": {
+                                    "e": "trade",
+                                    "E": EPOCH * 1_000 + 830 + asset_index,
+                                    "T": EPOCH * 1_000 + 829 + asset_index,
+                                    "s": f"{asset}USDT",
+                                    "p": str(reference * 1.0001),
+                                    "q": "0.2",
+                                    "m": False,
+                                },
+                            },
+                            sequence=40 + asset_index,
+                            wall_offset_ms=830 + asset_index,
+                            monotonic_ns=(830 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "polymarket_rtds",
+                            {
+                                "topic": "crypto_prices_chainlink",
+                                "type": "update",
+                                "timestamp": EPOCH * 1_000 + 5_100 + asset_index,
+                                "payload": {
+                                    "symbol": f"{asset.lower()}/usd",
+                                    "timestamp": EPOCH * 1_000 + 5_000,
+                                    "value": reference * 1.0001,
+                                },
+                            },
+                            sequence=50 + asset_index,
+                            wall_offset_ms=5_100 + asset_index,
+                            monotonic_ns=(5_100 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "polymarket_rtds",
+                            {
+                                "topic": "crypto_prices",
+                                "type": "update",
+                                "timestamp": EPOCH * 1_000 + 5_110 + asset_index,
+                                "payload": {
+                                    "symbol": symbol,
+                                    "timestamp": EPOCH * 1_000 + 5_000,
+                                    "value": reference * 1.00011,
+                                },
+                            },
+                            sequence=60 + asset_index,
+                            wall_offset_ms=5_110 + asset_index,
+                            monotonic_ns=(5_110 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "binance_spot",
+                            {
+                                "stream": f"{symbol}@bookTicker",
+                                "data": {
+                                    "u": 2,
+                                    "s": f"{asset}USDT",
+                                    "b": str(reference * 1.00008),
+                                    "B": "22",
+                                    "a": str(reference * 1.00012),
+                                    "A": "21",
+                                },
+                            },
+                            sequence=70 + asset_index,
+                            wall_offset_ms=5_800 + asset_index,
+                            monotonic_ns=(5_800 + asset_index) * 1_000_000,
+                        ),
+                        _message(
+                            "binance_spot",
+                            {
+                                "stream": f"{symbol}@trade",
+                                "data": {
+                                    "e": "trade",
+                                    "E": EPOCH * 1_000 + 5_900 + asset_index,
+                                    "T": EPOCH * 1_000 + 5_899 + asset_index,
+                                    "s": f"{asset}USDT",
+                                    "p": str(reference * 1.0001),
+                                    "q": "0.3",
+                                    "m": True,
+                                },
+                            },
+                            sequence=80 + asset_index,
+                            wall_offset_ms=5_900 + asset_index,
+                            monotonic_ns=(5_900 + asset_index) * 1_000_000,
+                        ),
+                    ]
+                )
     fixture_messages = [*clob_messages, *auxiliary, *additional_messages]
     next_sequence: dict[tuple[str, str], int] = {}
     normalized_messages: list[RawStreamMessage] = []
@@ -3009,9 +3221,9 @@ def test_round12_admission_materialization_is_compact_idempotent_and_linked(
         )
         columns = {
             str(row[1])
-            for row in store.connect().execute(
-                "PRAGMA table_info('polymarket_round12_action_local_admission')"
-            ).fetchall()
+            for row in store.connect()
+            .execute("PRAGMA table_info('polymarket_round12_action_local_admission')")
+            .fetchall()
         }
 
     assert created == "created"
@@ -3212,9 +3424,9 @@ def test_round12_action_local_pipeline_uses_full_segmented_scope_and_persists_pr
     tmp_path,
     capsys,
 ) -> None:
-    contract_sha256 = json.loads(
-        ROUND12_CONTRACT.read_text(encoding="utf-8")
-    )["contract_sha256"]
+    contract_sha256 = json.loads(ROUND12_CONTRACT.read_text(encoding="utf-8"))[
+        "contract_sha256"
+    ]
     database = tmp_path / "round12-pipeline.duckdb"
     with PolymarketEvidenceStore(database) as store:
         _finish_replay_store(
@@ -3249,9 +3461,11 @@ def test_round12_action_local_pipeline_uses_full_segmented_scope_and_persists_pr
             eligibility_sha256=contract_sha256,
             continuity_admission_mode="action_local",
         )
-        admission_counts = store.connect().execute(
-            "SELECT count(*) FROM polymarket_round12_admission_dataset"
-        ).fetchone()
+        admission_counts = (
+            store.connect()
+            .execute("SELECT count(*) FROM polymarket_round12_admission_dataset")
+            .fetchone()
+        )
 
     assert report.continuity_admission_mode == "action_local"
     assert report.report_sha256 == repeated.report_sha256
@@ -3278,6 +3492,107 @@ def test_round12_action_local_pipeline_uses_full_segmented_scope_and_persists_pr
     assert status == 0
     assert payload["continuity_admission_mode"] == "action_local"
     assert payload["report_sha256"] == report.report_sha256
+
+
+def test_round13_pipeline_persists_label_free_scenarios_before_outcomes(
+    tmp_path,
+) -> None:
+    contract_sha256 = "d" * 64
+    program = _round13_program(contract_sha256)
+    database = tmp_path / "round13-pipeline.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(
+            store,
+            "round13-pipeline",
+            feature_evidence=True,
+            synchronized_feature_evidence=True,
+            pre_window_binance_gap=True,
+            finalize_official=False,
+        )
+        config = replace(
+            PolymarketActionPipelineConfig(),
+            feature=replace(
+                PolymarketActionPipelineConfig().feature,
+                allow_segmented_gaps=True,
+            ),
+        )
+
+        report = materialize_polymarket_action_value_batches(
+            store,
+            run_id="round13-pipeline",
+            config=config,
+            eligibility_sha256=contract_sha256,
+            continuity_admission_mode="action_local",
+            round13_program=program,
+        )
+        repeated = materialize_polymarket_action_value_batches(
+            store,
+            run_id="round13-pipeline",
+            config=config,
+            eligibility_sha256=contract_sha256,
+            continuity_admission_mode="action_local",
+            round13_program=program,
+        )
+        scenario = load_round13_label_free_dataset(
+            store,
+            source_action_dataset_sha256=report.batches[0].action_dataset_sha256,
+        )
+        resolution_count = (
+            store.connect()
+            .execute("SELECT count(*) FROM polymarket_resolution_evidence")
+            .fetchone()[0]
+        )
+        feature_label_count = (
+            store.connect()
+            .execute(
+                """
+            SELECT count(*) FROM polymarket_feature_row
+            WHERE dataset_id = ?
+              AND (official_up IS NOT NULL OR resolution_event_id != '')
+            """,
+                [report.batches[0].feature_dataset_sha256],
+            )
+            .fetchone()[0]
+        )
+
+    assert report.report_sha256 == repeated.report_sha256
+    assert report.batches[0].round13_scenario_dataset_sha256 == (
+        scenario.dataset_sha256
+    )
+    assert scenario.contract_sha256 == contract_sha256
+    assert len(scenario.calibration_snapshots) == 3
+    assert resolution_count == 0
+    assert feature_label_count == 0
+
+
+def test_round13_pipeline_rejects_preexisting_official_resolution_evidence(
+    tmp_path,
+) -> None:
+    database = tmp_path / "round13-preexisting-resolution.duckdb"
+    with PolymarketEvidenceStore(database) as store:
+        _finish_replay_store(
+            store,
+            "round13-preexisting-resolution",
+            feature_evidence=True,
+            pre_window_binance_gap=True,
+        )
+        config = replace(
+            PolymarketActionPipelineConfig(),
+            feature=replace(
+                PolymarketActionPipelineConfig().feature,
+                allow_segmented_gaps=True,
+            ),
+        )
+
+        with pytest.raises(ValueError, match="requires no official resolution"):
+            materialize_polymarket_action_value_batches(
+                store,
+                run_id="round13-preexisting-resolution",
+                config=config,
+                eligibility_sha256="d" * 64,
+                continuity_admission_mode="action_local",
+                round13_program=_round13_program(),
+            )
 
 
 def test_polymarket_continuity_eligibility_is_label_free_and_tamper_evident(

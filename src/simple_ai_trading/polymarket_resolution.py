@@ -19,6 +19,7 @@ from .polymarket_recorder import PolymarketEvidenceStore
 
 
 POLYMARKET_RESOLUTION_SCHEMA_VERSION = "polymarket-official-resolution-v1"
+_ROUND13_CLAIM_SCHEMA_VERSION = "polymarket-round13-one-use-claim-v1"
 
 
 def _canonical_json(value: object) -> str:
@@ -35,6 +36,164 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
+def _is_sha256(value: object) -> bool:
+    text = str(value)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError(f"duplicate JSON key: {key}")
+        output[key] = value
+    return output
+
+
+def _reject_nonfinite_json(value: str) -> object:
+    raise ValueError(f"non-finite JSON number: {value}")
+
+
+def _strict_json(raw: object, *, name: str) -> object:
+    try:
+        return json.loads(
+            str(raw),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite_json,
+        )
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{name} is invalid") from exc
+
+
+def _round13_capture_contract(
+    store: PolymarketEvidenceStore,
+    run_id: str,
+) -> str | None:
+    from .polymarket_round13_capture import (
+        POLYMARKET_ROUND13_CAPTURE_MANIFEST_SCHEMA_VERSION,
+        validate_round13_capture_manifest_payload,
+    )
+
+    row = (
+        store.connect()
+        .execute(
+            """
+        SELECT schema_version, manifest_json, manifest_sha256
+        FROM polymarket_preregistration_manifest WHERE run_id = ?
+        """,
+            [run_id],
+        )
+        .fetchone()
+    )
+    if row is None or str(row[0]) != POLYMARKET_ROUND13_CAPTURE_MANIFEST_SCHEMA_VERSION:
+        return None
+    manifest = _strict_json(row[1], name="Round 13 capture manifest")
+    if not isinstance(manifest, Mapping):
+        raise ValueError("Round 13 capture manifest is invalid")
+    validated = validate_round13_capture_manifest_payload(
+        manifest,
+        expected_run_id=run_id,
+    )
+    body = dict(manifest)
+    claimed = body.pop("manifest_sha256", None)
+    contract = str(validated.get("contract_sha256") or "").strip().lower()
+    if (
+        body.get("schema_version") != POLYMARKET_ROUND13_CAPTURE_MANIFEST_SCHEMA_VERSION
+        or body.get("run_id") != run_id
+        or not _is_sha256(contract)
+        or claimed != str(row[2])
+        or claimed != _canonical_sha256(body)
+        or _canonical_json(manifest) != str(row[1])
+    ):
+        raise ValueError("Round 13 capture manifest does not revalidate")
+    return contract
+
+
+def _require_round13_resolution_authority(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    supplied_contract_sha256: str,
+) -> None:
+    capture_contract = _round13_capture_contract(store, run_id)
+    supplied = str(supplied_contract_sha256 or "").strip().lower()
+    if capture_contract is None:
+        if supplied:
+            raise ValueError("Round 13 resolution authority targets a non-Round 13 run")
+        return
+    if supplied != capture_contract:
+        raise ValueError(
+            "Round 13 resolution requires its committed one-use evaluation claim"
+        )
+    table_exists = bool(
+        store.connect()
+        .execute(
+            """
+            SELECT count(*) FROM duckdb_tables()
+            WHERE table_name = 'polymarket_round13_evaluation_claim'
+            """
+        )
+        .fetchone()[0]
+    )
+    if not table_exists:
+        raise ValueError(
+            "Round 13 resolution requires its committed one-use evaluation claim"
+        )
+    row = (
+        store.connect()
+        .execute(
+            """
+        SELECT schema_version, claim_sha256, pipeline_report_sha256,
+               scenario_dataset_sha256_json, opened_at_ms, status,
+               report_sha256, error
+        FROM polymarket_round13_evaluation_claim
+        WHERE contract_sha256 = ? AND run_id = ?
+        """,
+            [capture_contract, run_id],
+        )
+        .fetchone()
+    )
+    if row is None:
+        raise ValueError(
+            "Round 13 resolution requires its committed one-use evaluation claim"
+        )
+    scenarios = _strict_json(row[3], name="Round 13 claim scenario identity")
+    identity = {
+        "schema_version": _ROUND13_CLAIM_SCHEMA_VERSION,
+        "contract_sha256": capture_contract,
+        "run_id": run_id,
+        "pipeline_report_sha256": str(row[2]),
+        "scenario_dataset_sha256": scenarios,
+        "opened_at_ms": int(row[4]),
+        "state": "opened_before_resolution_query",
+        "preexisting_resolution_count": 0,
+    }
+    maximum_end_ms = int(
+        store.connect()
+        .execute(
+            "SELECT max(end_ms) FROM polymarket_market_snapshot WHERE run_id = ?",
+            [run_id],
+        )
+        .fetchone()[0]
+    )
+    if (
+        str(row[0]) != _ROUND13_CLAIM_SCHEMA_VERSION
+        or not _is_sha256(row[1])
+        or not _is_sha256(row[2])
+        or not isinstance(scenarios, list)
+        or not scenarios
+        or not all(_is_sha256(value) for value in scenarios)
+        or int(row[4]) < maximum_end_ms
+        or str(row[5]) != "opened"
+        or str(row[6] or "")
+        or str(row[7] or "")
+        or _canonical_sha256(identity) != str(row[1])
+    ):
+        raise ValueError("Round 13 evaluation claim does not authorize resolution")
+
+
 def _canonical_mapping(value: Mapping[str, object], *, name: str) -> tuple[str, str]:
     try:
         payload = _canonical_json(dict(value))
@@ -46,10 +205,7 @@ def _canonical_mapping(value: Mapping[str, object], *, name: str) -> tuple[str, 
 def _json_array(value: object, *, name: str) -> list[object]:
     parsed = value
     if isinstance(value, str):
-        try:
-            parsed = json.loads(value)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"{name} is not valid JSON") from exc
+        parsed = _strict_json(value, name=name)
     if not isinstance(parsed, list):
         raise ValueError(f"{name} must be an array")
     return parsed
@@ -264,10 +420,7 @@ def _load_markets(
     )
     markets: list[PolymarketFiveMinuteMarket] = []
     for condition_id, payload_json in rows:
-        try:
-            payload = json.loads(str(payload_json))
-        except json.JSONDecodeError as exc:
-            raise ValueError("stored Gamma market evidence is invalid JSON") from exc
+        payload = _strict_json(payload_json, name="stored Gamma market evidence")
         if not isinstance(payload, Mapping):
             raise ValueError("stored Gamma market evidence must be an object")
         market = parse_polymarket_five_minute_market(payload)
@@ -301,12 +454,9 @@ def _resolution_from_row(
         payload_json,
         evidence_sha,
     ) = row
-    try:
-        clob_payload = json.loads(str(clob_json))
-        gamma_payload = json.loads(str(gamma_json))
-        stored_payload = json.loads(str(payload_json))
-    except json.JSONDecodeError as exc:
-        raise ValueError("stored official resolution JSON is invalid") from exc
+    clob_payload = _strict_json(clob_json, name="stored CLOB resolution")
+    gamma_payload = _strict_json(gamma_json, name="stored Gamma resolution")
+    stored_payload = _strict_json(payload_json, name="stored resolution evidence")
     if not all(
         isinstance(item, Mapping)
         for item in (clob_payload, gamma_payload, stored_payload)
@@ -431,7 +581,13 @@ class PolymarketResolutionFinalizer:
         self.wall_clock_ms = wall_clock_ms or (lambda: time.time_ns() // 1_000_000)
         self.monotonic_clock_ns = monotonic_clock_ns or time.monotonic_ns
 
-    def finalize(self, *, run_id: str) -> PolymarketResolutionFinalizationReport:
+    def finalize(
+        self,
+        *,
+        run_id: str,
+        integrity_prevalidated: bool = False,
+        round13_contract_sha256: str = "",
+    ) -> PolymarketResolutionFinalizationReport:
         selected = str(run_id or "").strip()
         if not selected:
             raise ValueError("run_id is required for Polymarket resolution")
@@ -447,12 +603,18 @@ class PolymarketResolutionFinalizer:
             raise ValueError(f"unknown Polymarket recorder run: {selected}")
         if str(run[0]) not in {"complete", "degraded"}:
             raise ValueError("Polymarket resolution requires a finished valid run")
-        integrity = self.store.resume_integrity_errors(selected)
-        if integrity:
-            raise ValueError(
-                "Polymarket resolution evidence failed integrity: "
-                + "; ".join(integrity)
-            )
+        _require_round13_resolution_authority(
+            self.store,
+            run_id=selected,
+            supplied_contract_sha256=round13_contract_sha256,
+        )
+        if not integrity_prevalidated:
+            integrity = self.store.resume_integrity_errors(selected)
+            if integrity:
+                raise ValueError(
+                    "Polymarket resolution evidence failed integrity: "
+                    + "; ".join(integrity)
+                )
         markets = _load_markets(self.store, selected)
         existing = {
             item.condition_id: item

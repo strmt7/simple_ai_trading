@@ -24,6 +24,12 @@ POLYMARKET_ROUND12_POLICY_SCHEMA_VERSION = (
 POLYMARKET_ROUND12_CONTRACT_SCHEMA_VERSION = (
     "polymarket-round12-fixed-calibration-confirmation-contract-v1"
 )
+POLYMARKET_ROUND12_ACTION_PIPELINE_IMPLEMENTATION_SHA256 = (
+    "b517340e03453aecbdc743f0fd9cf07eaf433397bf02c608a299245832c55c87"
+)
+POLYMARKET_ROUND12_REFERENCE_IMPLEMENTATION_SHA256 = (
+    "edfc9a13c3344ac32700747a35e9a0e54c3c711038fb72688b8a7a402dea6c0e"
+)
 POLYMARKET_ROUND12_PREDECESSOR_ARTIFACT_SHA256 = (
     "c1d174b3274d374b1008272c70954a67c8a2953b875d11b7268658666d23c7bc"
 )
@@ -251,17 +257,14 @@ def _validated_artifact_payload(raw: bytes) -> Mapping[str, object]:
     )
     claimed_calibration_sha256 = calibration.pop("calibration_sha256", None)
     if (
-        claimed_calibration_sha256
-        != POLYMARKET_ROUND12_SOURCE_CALIBRATION_SHA256
+        claimed_calibration_sha256 != POLYMARKET_ROUND12_SOURCE_CALIBRATION_SHA256
         or _canonical_sha256(calibration) != claimed_calibration_sha256
         or calibration.get("method") != "platt"
         or _finite_float(
             calibration.get("intercept"), name="direction_calibration.intercept"
         )
         != _CALIBRATION_INTERCEPT
-        or _finite_float(
-            calibration.get("slope"), name="direction_calibration.slope"
-        )
+        or _finite_float(calibration.get("slope"), name="direction_calibration.slope")
         != _CALIBRATION_SLOPE
     ):
         raise ValueError("Round 11 direction calibration is invalid")
@@ -275,19 +278,11 @@ def load_round12_reference_from_round11_bytes(
 
     _validated_artifact_payload(raw)
     provisional = PolymarketRound12ReferenceModel(
-        predecessor_artifact_sha256=(
-            POLYMARKET_ROUND12_PREDECESSOR_ARTIFACT_SHA256
-        ),
-        predecessor_contract_sha256=(
-            POLYMARKET_ROUND12_PREDECESSOR_CONTRACT_SHA256
-        ),
+        predecessor_artifact_sha256=(POLYMARKET_ROUND12_PREDECESSOR_ARTIFACT_SHA256),
+        predecessor_contract_sha256=(POLYMARKET_ROUND12_PREDECESSOR_CONTRACT_SHA256),
         predecessor_report_sha256=POLYMARKET_ROUND12_PREDECESSOR_REPORT_SHA256,
-        source_direction_head_sha256=(
-            POLYMARKET_ROUND12_SOURCE_DIRECTION_HEAD_SHA256
-        ),
-        source_calibration_sha256=(
-            POLYMARKET_ROUND12_SOURCE_CALIBRATION_SHA256
-        ),
+        source_direction_head_sha256=(POLYMARKET_ROUND12_SOURCE_DIRECTION_HEAD_SHA256),
+        source_calibration_sha256=(POLYMARKET_ROUND12_SOURCE_CALIBRATION_SHA256),
         probability_clip=_PROBABILITY_CLIP,
         residual_intercept=_RESIDUAL_INTERCEPT,
         calibration_intercept=_CALIBRATION_INTERCEPT,
@@ -388,8 +383,9 @@ def load_round12_confirmation_contract(
     path: str | Path,
     *,
     predecessor_artifact_path: str | Path | None = None,
+    require_current_implementation: bool = False,
 ) -> Mapping[str, object]:
-    """Validate the frozen contract, exact predecessor, policy, and implementation."""
+    """Validate frozen identity and optionally require the current implementation."""
 
     contract_path = Path(path)
     try:
@@ -409,8 +405,7 @@ def load_round12_confirmation_contract(
     if (
         not _is_sha256(claimed_sha256)
         or _canonical_sha256(contract) != claimed_sha256
-        or contract.get("schema_version")
-        != POLYMARKET_ROUND12_CONTRACT_SCHEMA_VERSION
+        or contract.get("schema_version") != POLYMARKET_ROUND12_CONTRACT_SCHEMA_VERSION
         or contract.get("round") != 12
         or contract.get("status") != "frozen_before_fresh_capture"
     ):
@@ -438,9 +433,7 @@ def load_round12_confirmation_contract(
     reference = load_round12_reference_from_round11_artifact(artifact_path)
     policy = polymarket_round12_primary_policy()
     model_contract = _mapping(contract.get("model_contract"), name="model_contract")
-    policy_contract = _mapping(
-        contract.get("primary_policy"), name="primary_policy"
-    )
+    policy_contract = _mapping(contract.get("primary_policy"), name="primary_policy")
     if (
         model_contract.get("model_sha256") != reference.model_sha256
         or model_contract.get("external_feature_coefficients_applied") is not False
@@ -460,18 +453,22 @@ def load_round12_confirmation_contract(
         polymarket_action_pipeline_implementation_sha256,
     )
 
-    implementation = _mapping(
-        contract.get("implementation"), name="implementation"
-    )
+    implementation = _mapping(contract.get("implementation"), name="implementation")
     if (
+        implementation.get("reference_implementation_sha256")
+        != POLYMARKET_ROUND12_REFERENCE_IMPLEMENTATION_SHA256
+        or implementation.get("action_pipeline_implementation_sha256")
+        != POLYMARKET_ROUND12_ACTION_PIPELINE_IMPLEMENTATION_SHA256
+        or implementation.get("source_hash_normalization") != "utf8_lf_normalized"
+    ):
+        raise ValueError("Round 12 implementation differs from the frozen contract")
+    if require_current_implementation and (
         implementation.get("reference_implementation_sha256")
         != polymarket_round12_reference_implementation_sha256()
         or implementation.get("action_pipeline_implementation_sha256")
         != polymarket_action_pipeline_implementation_sha256()
-        or implementation.get("source_hash_normalization")
-        != "utf8_lf_normalized"
     ):
-        raise ValueError("Round 12 implementation differs from the frozen contract")
+        raise ValueError("Round 12 implementation differs from the current code")
 
     freshness = _mapping(contract.get("freshness"), name="freshness")
     authority = _mapping(contract.get("authority"), name="authority")
@@ -599,6 +596,8 @@ def decide_round12_primary_action(
 
 
 __all__ = [
+    "POLYMARKET_ROUND12_ACTION_PIPELINE_IMPLEMENTATION_SHA256",
+    "POLYMARKET_ROUND12_REFERENCE_IMPLEMENTATION_SHA256",
     "POLYMARKET_ROUND12_MODEL_SCHEMA_VERSION",
     "POLYMARKET_ROUND12_POLICY_SCHEMA_VERSION",
     "POLYMARKET_ROUND12_CONTRACT_SCHEMA_VERSION",

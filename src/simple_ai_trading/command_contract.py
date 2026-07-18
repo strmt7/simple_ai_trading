@@ -97,6 +97,14 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ),
     (
         "Research",
+        "Polymarket confirmation",
+        (
+            "polymarket-round13-evaluate",
+            "polymarket-round13-publish",
+        ),
+    ),
+    (
+        "Research",
         "AI validation",
         ("ai-benchmark", "ai-forecast-benchmark", "ai-review", "ai-uplift"),
     ),
@@ -225,7 +233,9 @@ def _option_from_action(action: argparse.Action) -> CommandOption | None:
 def command_specs() -> tuple[CommandSpec, ...]:
     parser = _build_parser()
     specs: list[CommandSpec] = []
-    subparsers = next((action for action in parser._actions if _is_subparsers(action)), None)  # noqa: SLF001
+    subparsers = next(
+        (action for action in parser._actions if _is_subparsers(action)), None
+    )  # noqa: SLF001
     if subparsers is None:
         return ()
     for name, subparser in sorted(subparsers.choices.items()):

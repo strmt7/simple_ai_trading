@@ -44,11 +44,47 @@ flowchart LR
   P --> X["Polymarket fill and settlement adapter"]
 ```
 
+## Current sealed experiment
+
+Round 13 is frozen but has not started. It consumes one fresh 86,400-second
+BTC/ETH/SOL capture exactly once. Every treatment and raw-market-prior control
+decision is persisted before official outcomes can be queried. Entry simulation
+uses the first same-segment post-latency book, the full displayed ask ladder,
+the recorded tick and fee schedule, an exact quote-cent BUY amount, and a
+tick-aligned FOK worst-price limit. The live CLOB protocol must report V2. Official
+public material does not specify whether `min_order_size` is a quote or share unit
+for this asymmetric BUY, so both the quote amount and signed minimum shares must
+meet its recorded numeric value. The amount is walked through share-denominated
+asks; signed-minimum, decision-book-modeled, and post-latency-modeled share
+quantities, quote amount, fee, and total cost remain separate hash-bound fields.
+Missing post-submit evidence is `UNKNOWN`, never a no-fill.
+
+Modeled price improvement is retained only as diagnostic evidence. Selection and
+settled utility credit the smaller signed minimum share quantity guaranteed by the
+FOK limit, because an aggregated public book cannot reveal maker-order settlement
+fragmentation. This prevents an unobservable fill decomposition from inflating
+reported edge.
+
+Fee, utility, capital, exposure, equity, and drawdown gate decisions use a local
+50-digit decimal context with fixed half-even rounding and ignore the caller's
+decimal context. Binary64 is restricted to the sealed moving-block bootstrap,
+probability diagnostics, and report/chart serialization.
+
+The primary 500 ms execution and six latency, fee, adverse-tick, and depth
+stresses must all pass activity, per-asset utility, paired-control uncertainty,
+drawdown, and exposure gates. Passing would confirm only this public-data
+research mechanism. Authenticated order lifecycle, owned balances, settlement
+delay, redemption cost, capacity, AI uplift, and live safety remain separate
+unproven contracts.
+
 ## Venue truth
 
 - Market discovery comes from Gamma and must prove `recurrence=5m`, active
   order-book trading, exact event start/end times, fee schedule, tick size,
   minimum size, token IDs, and Chainlink resolution source.
+- Every public CLOB read is preceded by one cached, exact `/version == 2` gate.
+  An absent, malformed, or different response stops the run rather than selecting
+  legacy or future order semantics implicitly.
 - CLOB WebSocket events provide full aggregated books, price-level changes,
   trades, and best bid/ask changes. A reconnect or unprovable gap requires a
   fresh REST snapshot; missing events are never interpolated.
@@ -61,10 +97,14 @@ flowchart LR
 - The official market outcome, not a Binance price inference, settles paper
   positions. Finalization requires exact agreement between independently fetched
   closed CLOB and Gamma market records; disagreement remains pending.
-- Taker fees are read from each market's current fee schedule and calculated at
-  every matched level as `quantity * rate * (price * (1 - price)) ^ exponent`,
-  then rounded against the strategy at five-decimal quote precision. Both the
-  rate and positive-integer exponent are recorded inputs; neither is hard-coded.
+- Taker fees are read from each market's current fee schedule. The paper model
+  applies `shares * rate * (price * (1 - price)) ^ exponent` to each aggregated
+  displayed level and rounds up against the strategy at five-decimal quote
+  precision. Both the rate and positive-integer exponent are recorded inputs;
+  neither is hard-coded. Current V2 BUY fees are modeled as additional quote
+  collateral. Aggregated books cannot reveal individual maker-order settlement
+  fragmentation, so this remains conservative public-book research rather than
+  authenticated fill evidence.
 
 ## Required lifecycle parity
 
@@ -203,12 +243,14 @@ implement the continuous coordinator or grant execution authority. The frozen
 contract is
 [`round-007-label-free-inference-contract.json`](model-research/polymarket/round-007-label-free-inference-contract.json).
 
-Round 8 is an executable mechanism screen, not another fitted classifier. It
+Round 8 is a historical executable mechanism screen, not another fitted
+classifier. It
 asks whether any short-horizon repricing remains after two FOK spreads, recorded
 fee curves, displayed depth, per-leg submission latency, and each market's
-recorded 250 ms taker-delay flag. It posts share-sized signed limit orders as
-FOK, matching the official V2 client path; it does not reinterpret BUY quantity
-through the quote-amount market-order helper. Dynamic ticks are checked when
+recorded 250 ms taker-delay flag. Its frozen research abstraction posts
+share-sized signed limit-order payloads as FOK. That historical abstraction is
+not the current official market-BUY helper, which specifies BUY amount in quote
+currency, and therefore grants no current live-execution parity. Dynamic ticks are checked when
 each order is created and again on the post-target execution-confirmation book.
 Both legs must remain outside the final 30 seconds and inside one connection
 segment. Every rejected decision has a terminal reason, and source books,
@@ -478,6 +520,11 @@ Primary references: [authentication](https://docs.polymarket.com/api-reference/a
 [RTDS](https://docs.polymarket.com/market-data/websocket/rtds),
 [official RTDS client](https://github.com/Polymarket/real-time-data-client),
 [official V2 Python client](https://github.com/Polymarket/py-clob-client-v2),
+[official V2 Rust SDK](https://github.com/Polymarket/rs-clob-client-v2),
+[official CLI](https://github.com/Polymarket/polymarket-cli),
+[official agent order patterns](https://github.com/Polymarket/agent-skills/blob/main/order-patterns.md),
+[official unified Python SDK](https://github.com/Polymarket/py-sdk),
+[official V2 exchange](https://github.com/Polymarket/ctf-exchange-v2),
 [orders](https://docs.polymarket.com/trading/orders/create),
 [order lifecycle](https://docs.polymarket.com/concepts/order-lifecycle),
 [offchain-match/onchain-revert evidence](https://arxiv.org/abs/2606.16852),

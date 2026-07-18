@@ -2,3 +2,5 @@ round,action,status,independent_groups,conditions,selected_filled_conditions,tot
 9,1 s taker scalp admission,failed before fit,47,141,0,,,,False
 10,1 s taker scalp hurdle,no positive score,47,141,0,0.0,0.0,0.0,False
 11,single-leg settlement hold,failed uncertainty gate,14,42,42,22.441050000000004,12.363990000000001,-1.381515892857143,False
+12,sealed calibration confirmation,invalidated before outcome access,,,,,,,False
+13,slippage-limited sealed confirmation,frozen; fresh capture not started,,,,,,,False

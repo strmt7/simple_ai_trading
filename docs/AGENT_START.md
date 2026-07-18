@@ -34,7 +34,7 @@ agents to canonical evidence without replacing that evidence.
 |---|---|---|
 | Binance model or backtest | nearest model module and test | `docs/model-research/action-value/latest/README.md`, then selected rows from `progress.csv` |
 | Prior model failure | last row plus the relevant mechanism row in `docs/model-research/action-value/latest/progress.csv` | that row's named design/report only |
-| Polymarket model | latest numbered model module and focused test; Round 11 uses `src/simple_ai_trading/polymarket_directional_value.py` | `docs/model-research/polymarket/latest/README.md` and the nearest numbered contract |
+| Polymarket model | Round 13 program/evaluator and focused tests; use Round 11 only for predecessor diagnostics | `docs/model-research/polymarket/latest/README.md`, then the Round 13 contract |
 | Polymarket recorder/replay | matching recorder or replay module and test | `docs/model-research/polymarket/prospective-continuity-contract-v2.json` |
 | Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md` or `docs/POLYMARKET_PAPER_TRADING.md` only at the relevant heading |
 | AI provider/model | nearest AI module and test | `docs/ai/risk-review/latest/comparison.json` and its sibling provenance |
@@ -55,16 +55,30 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.
-- Polymarket Round 11 is the latest result and is rejected. It reused the real
+- Polymarket Round 13 is frozen but has not started. It is a one-use prospective
+  24-hour confirmation of the unchanged Round 11 calibration, with label-free
+  treatment/control decisions, full displayed-depth FOK simulation, explicit
+  worst-price limits, seven execution stresses, and conjunctive activity,
+  uncertainty, drawdown, and exposure gates. Its current V2 FOK BUY model first
+  requires the live CLOB protocol version, then uses exact quote cents and walks
+  share-denominated asks. The amount and signed shares both satisfy the recorded
+  numeric minimum because official public material does not specify that field's
+  BUY unit; signed-minimum, decision-book-modeled, and post-latency-modeled
+  quantities remain separate evidence. Model selection and scored utility use
+  only the signed minimum, never unobservable price-improvement shares.
+  Round 12 is invalidated before
+  outcome access and is neither model nor performance evidence. Round 11 remains
+  the latest scored result and is rejected. It reused the real
   47-group Round 9 corpus for development only, modeled one FOK entry held to
   resolution, and evaluated 42 chronological validation markets. The selected
-  point estimate was `+22.44105` quote across 42 fills, but maximum drawdown was
+  simulated point estimate was `+22.44105` quote across 42 displayed-book fills,
+  but maximum drawdown was
   `12.36399` and the bootstrap lower mean-group utility was `-1.38152`. The
   learned external-feature residual norm was only `0.00117`; most apparent
   probability uplift came from recalibrating the market prior. No profitability,
   ROI, acceptable-drawdown, AI, paper, or trading authority exists. Read
-  `docs/model-research/polymarket/latest/README.md`, then the Round 11 contract
-  and report. Round 10 rejected the one-second scalp on negative action scores;
+  `docs/model-research/polymarket/latest/README.md`, then the Round 13 contract,
+  Round 12 invalidation, and Round 11 report. Round 10 rejected the one-second scalp on negative action scores;
   Round 9 remains the immutable unknown-state admission failure.
 - Captures `eae374e2662c440fb93970d5710937b1`,
   `3a67757c7f174df4b62f2722ea9211cb`, and

@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import re
+from threading import Lock
 from typing import Mapping, Sequence
 
 import requests
@@ -24,6 +25,7 @@ POLYMARKET_TAKER_ORDER_DELAY_MS = 250
 SUPPORTED_POLYMARKET_ASSETS = ("BTC", "ETH", "SOL")
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"
 CLOB_BASE_URL = "https://clob.polymarket.com"
+POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION = 2
 _SLUG = re.compile(r"^(btc|eth|sol)-updown-5m-([0-9]{10})$")
 _CONDITION_ID = re.compile(r"^0x[0-9a-f]{64}$")
 _TOKEN_ID = re.compile(r"^[0-9]{20,80}$")
@@ -78,15 +80,12 @@ def parse_clob_general_order_delay_seconds(payload: Mapping[str, object]) -> int
     """Read the independent general delay from compact or full CLOB metadata."""
 
     values = [
-        payload[key]
-        for key in ("sd", "seconds_delay")
-        if payload.get(key) is not None
+        payload[key] for key in ("sd", "seconds_delay") if payload.get(key) is not None
     ]
     if not values:
         return 0
     parsed = tuple(
-        _nonnegative_integer(value, name="CLOB general order delay")
-        for value in values
+        _nonnegative_integer(value, name="CLOB general order delay") for value in values
     )
     if len(set(parsed)) != 1:
         raise ValueError("CLOB general order-delay fields disagree")
@@ -395,8 +394,12 @@ def validate_clob_order_book(
         for row in rows:
             if not isinstance(row, Mapping):
                 raise ValueError(f"order-book {name} level is malformed")
-            price = _decimal(row.get("price"), name=f"{name} price", minimum=Decimal("0.0001"))
-            size = _decimal(row.get("size"), name=f"{name} size", minimum=Decimal("0.000001"))
+            price = _decimal(
+                row.get("price"), name=f"{name} price", minimum=Decimal("0.0001")
+            )
+            size = _decimal(
+                row.get("size"), name=f"{name} size", minimum=Decimal("0.000001")
+            )
             if price >= 1:
                 raise ValueError(f"order-book {name} price must be below one")
             parsed.append(BookLevel(price=price, quantity=size))
@@ -456,6 +459,8 @@ class PolymarketPublicClient:
         self.maximum_response_bytes = max(
             1024, min(64 * 1024 * 1024, int(maximum_response_bytes))
         )
+        self._clob_protocol_version: int | None = None
+        self._clob_protocol_lock = Lock()
 
     def _get_json(
         self,
@@ -517,10 +522,30 @@ class PolymarketPublicClient:
                 )
         return markets
 
+    def protocol_version(self) -> int:
+        """Require and cache the venue protocol used by every CLOB read."""
+
+        if self._clob_protocol_version is not None:
+            return self._clob_protocol_version
+        with self._clob_protocol_lock:
+            if self._clob_protocol_version is not None:
+                return self._clob_protocol_version
+            response = self._get_json(f"{CLOB_BASE_URL}/version")
+            if not isinstance(response, Mapping):
+                raise ValueError("CLOB protocol-version response must be an object")
+            version = response.get("version")
+            if type(version) is not int or version != (
+                POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION
+            ):
+                raise ValueError("unsupported Polymarket CLOB protocol version")
+            self._clob_protocol_version = version
+            return version
+
     def clob_market_info(self, condition_id: str) -> Mapping[str, object]:
         condition = str(condition_id or "").strip().lower()
         if not _CONDITION_ID.fullmatch(condition):
             raise ValueError("condition_id is invalid")
+        self.protocol_version()
         response = self._get_json(f"{CLOB_BASE_URL}/clob-markets/{condition}")
         if not isinstance(response, Mapping):
             raise ValueError("CLOB market-info response must be an object")
@@ -532,6 +557,7 @@ class PolymarketPublicClient:
         condition = str(condition_id or "").strip().lower()
         if not _CONDITION_ID.fullmatch(condition):
             raise ValueError("condition_id is invalid")
+        self.protocol_version()
         response = self._get_json(f"{CLOB_BASE_URL}/markets/{condition}")
         if not isinstance(response, Mapping):
             raise ValueError("CLOB market response must be an object")
@@ -552,6 +578,7 @@ class PolymarketPublicClient:
         token = str(token_id or "").strip()
         if not _TOKEN_ID.fullmatch(token):
             raise ValueError("token_id is invalid")
+        self.protocol_version()
         response = self._get_json(f"{CLOB_BASE_URL}/fee-rate/{token}")
         if not isinstance(response, Mapping) or not isinstance(
             response.get("base_fee"), int
@@ -563,6 +590,7 @@ class PolymarketPublicClient:
         token = str(token_id or "").strip()
         if not _TOKEN_ID.fullmatch(token):
             raise ValueError("token_id is invalid")
+        self.protocol_version()
         response = self._get_json(f"{CLOB_BASE_URL}/book", params={"token_id": token})
         if not isinstance(response, Mapping):
             raise ValueError("CLOB order-book response must be an object")
@@ -573,6 +601,7 @@ __all__ = [
     "CLOB_BASE_URL",
     "GAMMA_MARKETS_URL",
     "POLYMARKET_MARKET_SCHEMA_VERSION",
+    "POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION",
     "POLYMARKET_TAKER_ORDER_DELAY_MS",
     "SUPPORTED_POLYMARKET_ASSETS",
     "PolymarketFeeSchedule",

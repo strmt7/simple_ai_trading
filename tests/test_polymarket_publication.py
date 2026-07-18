@@ -33,18 +33,21 @@ def test_round_002_publication_is_internally_consistent() -> None:
     assert len(report["recorder"]["report_sha256"]) == 64
     assert len(report["dataset"]["dataset_sha256"]) == 64
     assert len(markets) == report["recorder"]["market_snapshot_count"] == 12
-    assert sum(int(row["feature_rows"]) for row in markets) == report["dataset"][
-        "row_count"
-    ]
+    assert (
+        sum(int(row["feature_rows"]) for row in markets)
+        == report["dataset"]["row_count"]
+    )
     for asset, evidence in report["per_asset"].items():
         asset_rows = [row for row in markets if row["asset"] == asset]
         assert len(asset_rows) == evidence["official_resolutions"] == 4
-        assert sum(int(row["feature_rows"]) for row in asset_rows) == evidence[
-            "feature_rows"
-        ]
-        assert sum(int(row["feature_rows"]) > 0 for row in asset_rows) == report[
-            "dataset"
-        ]["labeled_market_counts"][asset]
+        assert (
+            sum(int(row["feature_rows"]) for row in asset_rows)
+            == evidence["feature_rows"]
+        )
+        assert (
+            sum(int(row["feature_rows"]) > 0 for row in asset_rows)
+            == report["dataset"]["labeled_market_counts"][asset]
+        )
 
     manifest = {entry["path"]: entry for entry in report["artifact_integrity"]}
     assert set(report["tracked_artifacts"]) - {
@@ -62,28 +65,43 @@ def test_round_002_publication_is_internally_consistent() -> None:
     assert market_manifest["columns"] == list(markets[0])
 
 
-def test_latest_round_publishes_only_noncausal_round_8_ceiling() -> None:
+def test_latest_publication_reports_pending_round_13_without_invented_metrics() -> None:
     latest = RESEARCH / "latest"
     readme = (latest / "README.md").read_text(encoding="utf-8").lower()
-    chart = (latest / "charts" / "repricing-ceiling.svg").read_text(
-        encoding="utf-8"
+    chart = (
+        (latest / "charts" / "optimization-progress.svg")
+        .read_text(encoding="utf-8")
+        .lower()
     )
+    with (latest / "tables" / "optimization-progress.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        rows = {row["round"]: row for row in csv.DictReader(handle)}
 
-    assert "noncausal mechanism ceiling" in readme
-    assert "not roi or a trading strategy" in readme
-    assert "not roi, not a causal strategy" in chart.lower()
-    assert "2026-07-15t00:46:38.779z" in chart.lower()
-    assert "2026-07-15t00:55:51.787z" in chart.lower()
-    assert not (latest / "charts" / "causal-feature-coverage.svg").exists()
+    assert "round 13 is frozen but has not started" in readme
+    assert "round 12 is not performance evidence" in readme
+    assert "no profitability, roi, acceptable-drawdown" in readme
+    assert "round 13" in chart
+    assert "n/a simulated fills | frozen; fresh capture not started" in chart
+    assert "neither has performance metrics" in chart
+    unavailable_metrics = {
+        "independent_groups",
+        "conditions",
+        "selected_filled_conditions",
+        "total_utility_quote",
+        "maximum_drawdown_quote",
+        "bootstrap_lower_mean_group_utility_quote",
+    }
+    for round_number in ("12", "13"):
+        assert all(rows[round_number][field] == "" for field in unavailable_metrics)
+        assert rows[round_number]["profitability_claim"] == "False"
 
 
-def test_round_008_committed_manifest_reconstructs_every_artifact() -> None:
+def test_pending_round_013_manifest_reconstructs_every_artifact() -> None:
     manifest = json.loads(
-        (RESEARCH / "latest" / "publication-integrity.json").read_text(
-            encoding="utf-8"
-        )
+        (RESEARCH / "latest" / "publication-integrity.json").read_text(encoding="utf-8")
     )
-    claimed = manifest.pop("manifest_sha256")
+    claimed = manifest.pop("publication_sha256")
     canonical = json.dumps(
         manifest,
         ensure_ascii=True,
@@ -93,19 +111,23 @@ def test_round_008_committed_manifest_reconstructs_every_artifact() -> None:
     )
 
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
-    assert manifest["claims"]["noncausal_oracle_upper_bound"] is True
-    assert manifest["claims"]["profitability_claim"] is False
-    assert manifest["claims"]["ai_edge_evaluated"] is False
-    for entry in manifest["generated_artifacts"]:
-        path = RESEARCH / entry["path"]
+    assert manifest["schema_version"] == "polymarket-round13-pending-publication-v1"
+    assert manifest["latest_round"] == 13
+    assert manifest["status"] == "round13_frozen_fresh_capture_not_started"
+    assert manifest["profitability_claim"] is False
+    assert manifest["roi_claim"] is False
+    assert manifest["drawdown_claim"] is False
+    assert manifest["paper_authority"] is False
+    assert manifest["trading_authority"] is False
+    artifact_paths = [entry["path"] for entry in manifest["artifacts"]]
+    assert artifact_paths == sorted(set(artifact_paths))
+    root = ROOT.resolve()
+    for entry in manifest["artifacts"]:
+        path = (ROOT / entry["path"]).resolve()
+        assert path.is_relative_to(root)
         payload = path.read_bytes()
         assert len(payload) == entry["bytes"]
         assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
-        if path.suffix == ".csv":
-            with path.open(encoding="utf-8", newline="") as handle:
-                rows = list(csv.DictReader(handle))
-            assert len(rows) == entry["row_count"]
-            assert list(rows[0]) == entry["columns"]
 
 
 def test_round_008_publication_is_deterministic_and_refuses_tampering(
@@ -120,9 +142,7 @@ def test_round_008_publication_is_deterministic_and_refuses_tampering(
 
     assert first == second
     manifest = json.loads(
-        (tmp_path / "latest" / "publication-integrity.json").read_text(
-            encoding="utf-8"
-        )
+        (tmp_path / "latest" / "publication-integrity.json").read_text(encoding="utf-8")
     )
     assert manifest["claims"]["noncausal_oracle_upper_bound"] is True
     assert manifest["claims"]["profitability_claim"] is False
@@ -134,9 +154,7 @@ def test_round_008_publication_is_deterministic_and_refuses_tampering(
     payload["profitability_claim"] = True
     tampered.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(ValueError, match="publication validation"):
-        publish_polymarket_repricing_report(
-            tampered, local_capture, tmp_path / "bad"
-        )
+        publish_polymarket_repricing_report(tampered, local_capture, tmp_path / "bad")
 
 
 def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -> None:
@@ -157,17 +175,19 @@ def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -
     assert capture["resolution"]["pending_condition_count"] == 0
     for stream in ("binance_spot", "clob_market", "polymarket_rtds"):
         assert sum(gaps[stream]["reasons"].values()) == gaps[stream]["count"]
-    assert sum(
-        gaps[stream]["count"]
-        for stream in ("binance_spot", "clob_market", "polymarket_rtds")
-    ) == gaps["total"] == 54
+    assert (
+        sum(
+            gaps[stream]["count"]
+            for stream in ("binance_spot", "clob_market", "polymarket_rtds")
+        )
+        == gaps["total"]
+        == 54
+    )
     assert capture["model_evidence"]["eligible_for_model_fit"] is False
     assert capture["model_evidence"]["profitability_result"] is None
 
     benchmark = json.loads(
-        (RESEARCH / "recorder-v2-liveness-2026-07-15.json").read_text(
-            encoding="utf-8"
-        )
+        (RESEARCH / "recorder-v2-liveness-2026-07-15.json").read_text(encoding="utf-8")
     )
     assert benchmark["comparison_limits"]["profitability_evidence"] is False
     before = benchmark["measurements"]["before_coalescing"]
@@ -227,10 +247,13 @@ def test_degraded_capture_and_recorder_benchmark_are_arithmetically_truthful() -
         constraint[1] in {"PRIMARY KEY", "UNIQUE"}
         for constraint in long_tail["hot_path_constraints"]
     )
-    assert min(
-        checkpoint["interval_messages_per_second"]
-        for checkpoint in long_tail["checkpoints"]
-    ) > 9_700
+    assert (
+        min(
+            checkpoint["interval_messages_per_second"]
+            for checkpoint in long_tail["checkpoints"]
+        )
+        > 9_700
+    )
     assert long_tail["truth_constraints"] == {
         "benchmark_proves_fifteen_hour_capture": False,
         "benchmark_receipt_metadata_is_real": False,

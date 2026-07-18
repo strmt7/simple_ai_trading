@@ -6381,6 +6381,18 @@ class PolymarketPublicRecorder:
                 if preregistration_manifest_factory is None
                 else preregistration_manifest_factory(run_id, started)
             )
+            if preregistration_manifest is not None and (
+                "capture_duration_seconds" in preregistration_manifest
+                and (
+                    type(preregistration_manifest["capture_duration_seconds"])
+                    is not int
+                    or preregistration_manifest["capture_duration_seconds"] != duration
+                )
+            ):
+                raise ValueError(
+                    "preregistration capture duration differs from recorder duration"
+                )
+            started_monotonic = time.monotonic()
             store.start_run(
                 run_id,
                 started,
@@ -6452,7 +6464,7 @@ class PolymarketPublicRecorder:
                         {stopped, writer},
                         timeout=max(
                             0.0,
-                            duration - ((_wall_ms() - started) / 1_000.0),
+                            duration - (time.monotonic() - started_monotonic),
                         ),
                         return_when=asyncio.FIRST_COMPLETED,
                     )

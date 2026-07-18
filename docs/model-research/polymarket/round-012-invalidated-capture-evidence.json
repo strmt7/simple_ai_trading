@@ -1,0 +1,117 @@
+{
+  "artifact_sha256": "7e8577781d08c75109437cbc478948cc617bdbf82f8cffbd8233c61ada95ff58",
+  "authority": {
+    "live_trading": false,
+    "model_selection": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "capture_manifest": {
+    "action_pipeline_implementation_sha256": "b517340e03453aecbdc743f0fd9cf07eaf433397bf02c608a299245832c55c87",
+    "capture_started_before_manifest": false,
+    "contract_sha256": "e4603c807ec9501005950573d5d03b42609e3e555197ff9a2aeacdb153170ce8",
+    "created_at_ms": 1784402952812,
+    "labels_consulted": false,
+    "live_trading_authority": false,
+    "manifest_sha256": "d1a1b05dcde41142d3b0002194a3b5c4679e901fbff8d01c699fefaf5de9951d",
+    "model_scores_consulted": false,
+    "model_sha256": "16b5d82a483ec2ab86cdbadfbfde6038147d7a176c89bc11aad61c5648e2748f",
+    "paper_trading_authority": false,
+    "policy_sha256": "c8f518ad38e1b616f1b221f5373bb9f8ec9b6bd258ae1114b8fc74501a9e6db9",
+    "reference_implementation_sha256": "edfc9a13c3344ac32700747a35e9a0e54c3c711038fb72688b8a7a402dea6c0e",
+    "repository_commit": "f523acdc98eca600b68ee1095b0c04de82d340a6",
+    "required_git_blob_sha256": {
+      "docs/model-research/polymarket/round-011-single-leg-directional-value-artifact.json": "0f34ebc03f46c3fec88a77816119f81fdba976eb7ef7635539fea0de00ac6a31",
+      "docs/model-research/polymarket/round-012-fixed-calibration-confirmation-contract.json": "b7ef06c5799c4d96f0dcd7c51e23877ae583fc6cc4f8bb51c175331bf7780249",
+      "src/simple_ai_trading/cli.py": "013ad1501f4722c965512f43fde67cb44bbd47dbd7b67cabb8faef2336d3c74a",
+      "src/simple_ai_trading/polymarket_action_pipeline.py": "c73874d2faae209484da1c908c108b6d221b4cc75ed2b63806e42612d289c9ac",
+      "src/simple_ai_trading/polymarket_action_value.py": "93fff745224023cb18cda116126536584c1e0380c19a933272d1c3954efc6fad",
+      "src/simple_ai_trading/polymarket_recorder.py": "10fc677c633c4196435f41025fdde0aca1b21c726a7014ad1af22da3e51c2e1e",
+      "src/simple_ai_trading/polymarket_round12_admission.py": "ab2b7b2a95c003a06e258638b320924d67a264d9c8e42173177ff9164d6e7e7a",
+      "src/simple_ai_trading/polymarket_round12_capture.py": "79dbfd82496d9e04e40a0429a8570685c45e74704999dc87e1fa2ac3f54404e1",
+      "src/simple_ai_trading/polymarket_round12_reference.py": "f9226cfe8f04026661e419cffe42f15cbb3edc48943ed0b1fe21221e8359b203",
+      "tests/test_polymarket_replay.py": "a8d74065a3f3a7d5503cdfc3ea4bddbcc50d1895095b25599723afb9fb9a2666",
+      "tests/test_polymarket_round12_admission.py": "8dafa47e86f2e91b08a56c66711521438fdf87d1ce31580ffcf4b1f713d32b2a",
+      "tests/test_polymarket_round12_capture.py": "ef9a6f9f5ece93e512ef6aebd1779c5b9838890e8099f7b1c21ede78dcf3553c",
+      "tests/test_polymarket_round12_reference.py": "9b76181ca67c0b40dedfbd8083f5897081bc720c1c5e8df51e0c882c0d5e1f07"
+    },
+    "run_id": "75939b9de4b44e788cc032d69a49751d",
+    "schema_version": "polymarket-round12-capture-preregistration-manifest-v1"
+  },
+  "ended_at_ms": 1784403219215,
+  "limitations": [
+    "terminal_integrity_audit_incomplete",
+    "normalized_event_materialization_not_completed",
+    "not_model_evidence",
+    "not_performance_evidence"
+  ],
+  "outcome_access_evidence": {
+    "operator_invalidated_before_outcome_access": true,
+    "performance_labels_opened": false,
+    "persisted_resolution_evidence_rows": 0
+  },
+  "persisted_table_counts": {
+    "polymarket_condition_message_frame": 0,
+    "polymarket_condition_message_manifest": 0,
+    "polymarket_market_snapshot": 9,
+    "polymarket_public_event": 0,
+    "polymarket_resolution_evidence": 0,
+    "polymarket_stream_gap": 0
+  },
+  "raw_chunk_evidence": {
+    "chunk_count": 450,
+    "compressed_bytes": 9984800,
+    "message_count": 142494,
+    "ordered_chunk_manifest_sha256": "11732b0986392f4aeef12886f3ee1b6041b61b5ecad0365ce327ca385614dbc2",
+    "uncompressed_bytes": 91504701
+  },
+  "recorder_report": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "conditions": [
+      "0x16cfe74026908adffeefdb9ab1719cbaf5bcadeb498e650bc7f98619587e3229",
+      "0x193f06a06817bddfeb2f2f552931133dabc412bd483cdc6600ba56a9f86d8888",
+      "0x4975cb61ae811b65214b4d97b42356f8f1e941cdb2d39247c49193c1c928f693",
+      "0x4b2da0a33955d74a79a03d7122f99fff61511e2b2884371faf0c4e12cc0358d4",
+      "0x53b66bc6b6df50117edc35b7139edfa482c2e385c12664c6128e4cd3eff4164c",
+      "0x97b74ed71f417c0adc24e8ffcf3a33cd62675b8be040a5c32159cd57bae04cc2",
+      "0xc48c765ae443a2974ec0fab1e8832f67a29126dbe763d0a32341ba7a39e5d2e4",
+      "0xda14501de3db9ff87c853ab8cdedffc478195a8123d0b8e9ec0e0000868a84c0",
+      "0xeeea1ed9e98275fca2d47b96b9f212c4e4b9e68a232058f0f8ff151e436aab5f"
+    ],
+    "database": "C:\\trader\\simple_ai_trading\\data\\polymarket-round12-confirmation-20260718-192837Z.duckdb",
+    "duration_seconds": 266.403,
+    "ended_at_ms": 1784403219215,
+    "errors": [
+      "operator_invalidated_before_outcome_access:round12_evaluator_and_publication_chain_not_preregistered"
+    ],
+    "evidence_manifest_sha256": "",
+    "integrity_errors": [
+      "terminal_integrity_audit_incomplete"
+    ],
+    "market_snapshot_count": 9,
+    "normalized_event_count": 0,
+    "raw_message_count": 142494,
+    "report_sha256": "264443df363e17a6a57c4da9175b8fd0cbf6638b2ed642a08ce2bc0b6ca439d2",
+    "run_id": "75939b9de4b44e788cc032d69a49751d",
+    "schema_version": "polymarket-public-recorder-v1",
+    "started_at_ms": 1784402952812,
+    "status": "failed",
+    "stream_counts": {
+      "binance_spot": 20812,
+      "clob_market": 120377,
+      "clob_rest_book": 6,
+      "polymarket_rtds": 1299
+    },
+    "stream_gap_count": 0
+  },
+  "round": 12,
+  "run_id": "75939b9de4b44e788cc032d69a49751d",
+  "schema_version": "polymarket-round12-invalidated-capture-evidence-v1",
+  "started_at_ms": 1784402952812,
+  "status": "invalidated_before_outcome_access",
+  "terminal_error": "operator_invalidated_before_outcome_access:round12_evaluator_and_publication_chain_not_preregistered"
+}

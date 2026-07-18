@@ -26,9 +26,7 @@ ARTIFACT = (
     / "polymarket"
     / "round-011-single-leg-directional-value-artifact.json"
 )
-CONTRACT = ARTIFACT.with_name(
-    "round-012-fixed-calibration-confirmation-contract.json"
-)
+CONTRACT = ARTIFACT.with_name("round-012-fixed-calibration-confirmation-contract.json")
 
 
 def _canonical_sha256(value: object) -> str:
@@ -77,9 +75,10 @@ def test_round12_confirmation_contract_is_relocatable(tmp_path: Path) -> None:
 
     relocated = load_round12_confirmation_contract(contract_path)
 
-    assert relocated["contract_sha256"] == load_round12_confirmation_contract(
-        CONTRACT
-    )["contract_sha256"]
+    assert (
+        relocated["contract_sha256"]
+        == load_round12_confirmation_contract(CONTRACT)["contract_sha256"]
+    )
 
 
 def test_round12_confirmation_contract_rejects_rehashed_policy_mutation(
@@ -111,7 +110,10 @@ def test_round12_confirmation_contract_rejects_implementation_drift(
     )
 
     with pytest.raises(ValueError, match="implementation differs"):
-        load_round12_confirmation_contract(CONTRACT)
+        load_round12_confirmation_contract(
+            CONTRACT,
+            require_current_implementation=True,
+        )
 
 
 def test_round12_reference_is_path_and_working_directory_independent(

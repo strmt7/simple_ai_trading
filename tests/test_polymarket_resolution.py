@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from simple_ai_trading import polymarket_round13_capture as round13_capture
 from simple_ai_trading.polymarket import parse_polymarket_five_minute_market
 from simple_ai_trading.polymarket_recorder import (
     MarketEvidence,
@@ -85,7 +86,9 @@ def _evidence(asset: str) -> MarketEvidence:
     )
 
 
-def _official_payloads(asset: str, *, winner: str = "Up") -> tuple[dict[str, object], dict[str, object]]:
+def _official_payloads(
+    asset: str, *, winner: str = "Up"
+) -> tuple[dict[str, object], dict[str, object]]:
     gamma = deepcopy(_market_payload(asset))
     market = parse_polymarket_five_minute_market(_market_payload(asset))
     winner_index = 0 if winner == "Up" else 1
@@ -122,10 +125,50 @@ def _official_payloads(asset: str, *, winner: str = "Up") -> tuple[dict[str, obj
     return clob, gamma
 
 
-def _complete_store(path: Path, run_id: str = "resolution-run") -> PolymarketEvidenceStore:
+def _round13_manifest(run_id: str, contract_sha256: str) -> dict[str, object]:
+    contract_path = "docs/model-research/polymarket/round-013-contract.json"
+    predecessor_path = "docs/model-research/polymarket/round-011-artifact.json"
+    required = {path: "e" * 64 for path in round13_capture._REQUIRED_REPOSITORY_FILES}
+    required[contract_path] = "e" * 64
+    required[predecessor_path] = "e" * 64
+    return round13_capture.create_round13_capture_manifest(
+        run_id=run_id,
+        started_at_ms=EPOCH * 1_000,
+        capture_duration_seconds=(
+            round13_capture.POLYMARKET_ROUND13_CAPTURE_DURATION_SECONDS
+        ),
+        repository_commit="1" * 40,
+        repository_tree="2" * 40,
+        contract_repository_path=contract_path,
+        predecessor_repository_path=predecessor_path,
+        contract_sha256=contract_sha256,
+        model_sha256="3" * 64,
+        policy_sha256="4" * 64,
+        reference_implementation_sha256="5" * 64,
+        action_pipeline_implementation_sha256="6" * 64,
+        round13_program_implementation_sha256="7" * 64,
+        required_file_sha256=required,
+    )
+
+
+def _complete_store(
+    path: Path,
+    run_id: str = "resolution-run",
+    *,
+    round13_contract_sha256: str = "",
+) -> PolymarketEvidenceStore:
     store = PolymarketEvidenceStore(path)
     store.connect()
-    store.start_run(run_id, EPOCH * 1_000)
+    manifest = (
+        None
+        if not round13_contract_sha256
+        else _round13_manifest(run_id, round13_contract_sha256)
+    )
+    store.start_run(
+        run_id,
+        EPOCH * 1_000,
+        preregistration_manifest=manifest,
+    )
     for asset in ("BTC", "ETH", "SOL"):
         store.record_market_evidence(run_id, _evidence(asset))
     for sequence, stream in enumerate(
@@ -139,6 +182,7 @@ def _complete_store(path: Path, run_id: str = "resolution-run") -> PolymarketEvi
                 "asset_id": btc.up_token_id,
                 "timestamp": str(EPOCH * 1_000 + 1_000),
                 "hash": "resolution-fixture-book",
+                "tick_size": "0.01",
                 "bids": [{"price": "0.49", "size": "10"}],
                 "asks": [{"price": "0.51", "size": "10"}],
             }
@@ -188,16 +232,69 @@ class _OfficialClient:
         return deepcopy(self.by_market[market_id])
 
 
+def _insert_round13_open_claim(
+    store: PolymarketEvidenceStore,
+    *,
+    run_id: str,
+    contract_sha256: str,
+) -> None:
+    store.connect().execute(
+        """
+        CREATE TABLE polymarket_round13_evaluation_claim (
+            contract_sha256 VARCHAR PRIMARY KEY,
+            schema_version VARCHAR NOT NULL,
+            claim_sha256 VARCHAR NOT NULL UNIQUE,
+            run_id VARCHAR NOT NULL,
+            pipeline_report_sha256 VARCHAR NOT NULL,
+            scenario_dataset_sha256_json VARCHAR NOT NULL,
+            opened_at_ms BIGINT NOT NULL,
+            status VARCHAR NOT NULL,
+            report_sha256 VARCHAR NOT NULL,
+            error VARCHAR NOT NULL
+        )
+        """
+    )
+    pipeline_sha256 = "8" * 64
+    scenario_ids = ["9" * 64]
+    opened_at_ms = EPOCH * 1_000 + 400_000
+    identity = {
+        "schema_version": "polymarket-round13-one-use-claim-v1",
+        "contract_sha256": contract_sha256,
+        "run_id": run_id,
+        "pipeline_report_sha256": pipeline_sha256,
+        "scenario_dataset_sha256": scenario_ids,
+        "opened_at_ms": opened_at_ms,
+        "state": "opened_before_resolution_query",
+        "preexisting_resolution_count": 0,
+    }
+    store.connect().execute(
+        "INSERT INTO polymarket_round13_evaluation_claim VALUES "
+        "(?, ?, ?, ?, ?, ?, ?, 'opened', '', '')",
+        [
+            contract_sha256,
+            identity["schema_version"],
+            _sha(_canonical(identity)),
+            run_id,
+            pipeline_sha256,
+            _canonical(scenario_ids),
+            opened_at_ms,
+        ],
+    )
+
+
 def test_resolution_waits_for_both_sources_and_rejects_disagreement() -> None:
     market = parse_polymarket_five_minute_market(_market_payload("BTC"))
     clob, gamma = _official_payloads("BTC", winner="Down")
     gamma["closed"] = False
-    assert validate_official_resolution(
-        market,
-        clob,
-        gamma,
-        observed_wall_ms=market.end_ms + 1,
-    ) is None
+    assert (
+        validate_official_resolution(
+            market,
+            clob,
+            gamma,
+            observed_wall_ms=market.end_ms + 1,
+        )
+        is None
+    )
 
     gamma["closed"] = True
     assert validate_official_resolution(
@@ -240,7 +337,52 @@ def test_resolution_requires_terminal_prices_and_non_accepting_market() -> None:
         )
 
 
-def test_finalizer_is_immutable_idempotent_and_detects_tampering(tmp_path: Path) -> None:
+def test_round13_finalizer_requires_committed_open_evaluation_claim(
+    tmp_path: Path,
+) -> None:
+    contract_sha256 = "a" * 64
+    run_id = "round13-resolution-run"
+    store = _complete_store(
+        tmp_path / "round13-resolution.duckdb",
+        run_id,
+        round13_contract_sha256=contract_sha256,
+    )
+    client = _OfficialClient()
+    finalizer = PolymarketResolutionFinalizer(
+        store,
+        client=client,  # type: ignore[arg-type]
+        wall_clock_ms=lambda: EPOCH * 1_000 + 400_001,
+        monotonic_clock_ns=lambda: 9_000_000_000,
+    )
+    try:
+        with pytest.raises(ValueError, match="one-use evaluation claim"):
+            finalizer.finalize(run_id=run_id)
+        with pytest.raises(ValueError, match="one-use evaluation claim"):
+            finalizer.finalize(
+                run_id=run_id,
+                round13_contract_sha256="b" * 64,
+            )
+        assert client.clob_calls == client.gamma_calls == []
+
+        _insert_round13_open_claim(
+            store,
+            run_id=run_id,
+            contract_sha256=contract_sha256,
+        )
+        report = finalizer.finalize(
+            run_id=run_id,
+            round13_contract_sha256=contract_sha256,
+        )
+
+        assert report.status == "complete"
+        assert report.finalized_count == 3
+    finally:
+        store.close()
+
+
+def test_finalizer_is_immutable_idempotent_and_detects_tampering(
+    tmp_path: Path,
+) -> None:
     store = _complete_store(tmp_path / "resolution.duckdb")
     client = _OfficialClient()
     finalizer = PolymarketResolutionFinalizer(
@@ -262,9 +404,7 @@ def test_finalizer_is_immutable_idempotent_and_detects_tampering(tmp_path: Path)
         assert all(item.winning_outcome == "Up" for item in resolutions)
         replay = PolymarketEvidenceReplay.load(store, run_id="resolution-run")
         assert len(replay.resolutions) == 3
-        assert {item.source for item in replay.resolutions} == {
-            "clob_gamma_crosscheck"
-        }
+        assert {item.source for item in replay.resolutions} == {"clob_gamma_crosscheck"}
 
         store.connect().execute(
             """
