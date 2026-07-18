@@ -13,7 +13,10 @@ from typing import Callable, Sequence
 import lightgbm as lgb
 import numpy as np
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .probability_calibration import apply_platt_scaling, fit_platt_scaling
 from .queue_fill_survival import (
     PASSIVE_FILL_SURVIVAL_SCHEMA_VERSION,
@@ -403,7 +406,7 @@ def _validate_model(model: TrainedQueueFillLightGBMModel, *, reload: bool) -> No
         )
         or not model.training_end_ms < model.early_stop_start_ms
         or not model.early_stop_end_ms < model.calibration_start_ms
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or isinstance(model.seed, (bool, np.bool_))
         or not isinstance(model.seed, Integral)
         or model.seed not in QUEUE_FILL_SEEDS

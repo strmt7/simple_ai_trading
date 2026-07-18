@@ -13,7 +13,10 @@ import lightgbm as lgb
 from lightgbm.basic import LightGBMError
 import numpy as np
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 
 
 DEPTH_STRESS_MODEL_SCHEMA_VERSION = "depth-stress-transition-v1"
@@ -162,7 +165,7 @@ class DepthStressModelArtifact:
             or not names
             or any(not isinstance(name, str) or not name or name.strip() != name for name in names)
             or len(set(names)) != len(names)
-            or self.backend_kind not in {"cpu", "opencl"}
+            or self.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
             or not self.backend_device.strip()
             or not self.lightgbm_version.strip()
             or isinstance(self.seed, bool)

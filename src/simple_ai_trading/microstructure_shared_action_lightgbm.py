@@ -12,7 +12,10 @@ from typing import Callable, Mapping
 import lightgbm as lgb
 import numpy as np
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .microstructure_action_architecture import (
     ActionValueEnsembleBatch,
     ActionValuePredictionBatch,
@@ -470,7 +473,7 @@ def _validate_model_contract(
         or model.target_mode != ADAPTIVE_BARRIER_TARGET_MODE
         or model.target_scenario != "stress"
         or model.target_contract_sha256 != expected_target_hash
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or not model.backend_device
         or model.lightgbm_version != str(lgb.__version__)
         or isinstance(model.seed, bool)

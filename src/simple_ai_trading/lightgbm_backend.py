@@ -16,6 +16,7 @@ from .compute import (
 
 OPENCL_PLATFORM_ENV = "SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID"
 OPENCL_DEVICE_ENV = "SIMPLE_AI_TRADING_OPENCL_DEVICE_ID"
+SUPPORTED_LIGHTGBM_BACKEND_KINDS = frozenset({"cpu", "opencl", "cuda"})
 
 
 def _opencl_device_override() -> tuple[int | None, int | None, str]:
@@ -173,5 +174,6 @@ def lightgbm_backend_parameters(
 __all__ = [
     "OPENCL_DEVICE_ENV",
     "OPENCL_PLATFORM_ENV",
+    "SUPPORTED_LIGHTGBM_BACKEND_KINDS",
     "lightgbm_backend_parameters",
 ]
