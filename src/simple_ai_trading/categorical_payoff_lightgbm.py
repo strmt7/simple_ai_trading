@@ -12,7 +12,10 @@ from typing import Callable, Mapping, Sequence
 import lightgbm as lgb
 import numpy as np
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .microstructure_action_architecture import ActionValuePredictionBatch
 from .microstructure_barriers import (
     AdaptiveBarrierTargets,
@@ -570,7 +573,7 @@ def _validate_model(model: TrainedCategoricalPayoffModel, *, reload: bool) -> No
         or model.model_family != _MODEL_FAMILY
         or model.spec.family != _MODEL_FAMILY
         or model.target_scenario not in {"base", "stress"}
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or model.trading_authority
         or model.execution_claim
         or model.profitability_claim

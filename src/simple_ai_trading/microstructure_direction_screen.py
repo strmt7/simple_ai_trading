@@ -11,7 +11,10 @@ from typing import Mapping, Sequence
 import lightgbm as lgb
 import numpy as np
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .microstructure_action_features import mirror_microstructure_direction
 from .microstructure_barriers import (
     AdaptiveBarrierTargets,
@@ -287,7 +290,7 @@ def _validate_model(model: TrainedDirectionScreenModel, *, reload: bool) -> None
         or model.source_feature_names != MICROSTRUCTURE_FEATURE_NAMES
         or isinstance(model.seed, bool)
         or not isinstance(model.seed, int)
-        or model.backend_kind not in {"cpu", "opencl"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or not model.backend_requested.strip()
         or not model.backend_device.strip()
         or not model.lightgbm_version.strip()

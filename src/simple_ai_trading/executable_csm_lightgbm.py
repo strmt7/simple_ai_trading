@@ -14,7 +14,10 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 
 from .executable_payoff_lightgbm import ExecutablePayoffDataset
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .probability_calibration import apply_platt_scaling, fit_platt_scaling
 from .storage import write_json_atomic
 
@@ -511,7 +514,7 @@ def _validate_model(
         or len(set(model.feature_names)) != len(model.feature_names)
         or len(model.source_dataset_sha256) != 64
         or model.target_scenario not in {"base", "stress"}
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or not model.backend_device.strip()
         or model.lightgbm_version != str(lgb.__version__)
         or isinstance(model.seed, bool)

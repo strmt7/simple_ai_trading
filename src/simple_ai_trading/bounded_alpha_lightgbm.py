@@ -14,7 +14,10 @@ import lightgbm as lgb
 import numpy as np
 
 from .cross_asset_cost_data import MINUTE_MS, SYMBOLS
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .stop_time_payoff_data import STOP_EVENT, StopTimePayoffDataset
 from .storage import write_json_atomic
 
@@ -203,7 +206,7 @@ def _validate_model(model: BoundedAlphaModel, *, reload: bool) -> None:
         or not _is_sha256(model.source_dataset_sha256)
         or not _is_sha256(model.payoff_dataset_sha256)
         or not _is_sha256(model.model_sha256)
-        or model.backend_kind not in {"opencl", "cpu"}
+        or model.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
         or model.iteration_training_rows < 1_024
         or model.iteration_selection_rows < 512
         or model.final_refit_rows <= model.iteration_training_rows

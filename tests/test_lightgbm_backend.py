@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from simple_ai_trading.compute import BackendInfo, BackendUnavailableError
@@ -151,6 +153,25 @@ def test_lightgbm_auto_prefers_verified_cuda_target(monkeypatch) -> None:
     assert calls == ["cuda"]
     assert (kind, device) == ("cuda", "cuda:0")
     assert parameters["device_type"] == "cuda"
+
+
+def test_lightgbm_artifact_backend_contract_covers_every_resolver_result() -> None:
+    assert lightgbm_backend.SUPPORTED_LIGHTGBM_BACKEND_KINDS == {
+        "cpu",
+        "opencl",
+        "cuda",
+    }
+
+
+def test_model_artifacts_do_not_duplicate_lightgbm_backend_whitelists() -> None:
+    package_root = Path(lightgbm_backend.__file__).resolve().parent
+    offenders = [
+        path.name
+        for path in package_root.glob("*.py")
+        if "backend_kind not in {" in path.read_text(encoding="utf-8")
+    ]
+
+    assert offenders == []
 
 
 def test_lightgbm_pinned_backend_rejects_tensor_runtime_fallback() -> None:
