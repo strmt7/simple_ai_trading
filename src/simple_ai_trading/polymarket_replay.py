@@ -1248,6 +1248,97 @@ class PolymarketEvidenceReplay:
         )
 
     @classmethod
+    def _corrected_idempotent_duplicate_evidence(
+        cls,
+        token: str,
+        batch: _PendingBookBatch,
+        current: _BookState | None,
+        pending_row: _EventRow,
+        pending_change: Mapping[str, object],
+        pending_checksum: tuple[Decimal, Decimal],
+        replacement_row: _EventRow,
+        replacement_change: Mapping[str, object],
+        replacement_checksum: tuple[Decimal, Decimal],
+        pending_best: Mapping[str, list[_EventRow]],
+    ) -> tuple[_EventRow, _EventRow] | tuple[()]:
+        """Recognize one narrowly bounded exchange-side checksum correction."""
+
+        if (
+            current is None
+            or pending_row.connection_id != replacement_row.connection_id
+            or pending_row.received_monotonic_ns
+            != replacement_row.received_monotonic_ns
+            or cls._event_arrival_key(pending_row)
+            >= cls._event_arrival_key(replacement_row)
+            or pending_checksum == replacement_checksum
+            or pending_checksum[0] > pending_checksum[1]
+            or replacement_checksum[0] > replacement_checksum[1]
+        ):
+            return ()
+
+        def mutation(
+            change: Mapping[str, object],
+        ) -> tuple[str, str, Decimal, Decimal, str]:
+            return (
+                str(change.get("asset_id") or ""),
+                str(change.get("side") or "").upper(),
+                _decimal(
+                    change.get("price"),
+                    name="corrected price_change price",
+                    minimum=Decimal("0.0001"),
+                    maximum=Decimal("0.9999"),
+                ),
+                _decimal(
+                    change.get("size"),
+                    name="corrected price_change size",
+                    minimum=Decimal("0"),
+                ),
+                str(change.get("hash") or "").strip(),
+            )
+
+        pending_mutation = mutation(pending_change)
+        replacement_mutation = mutation(replacement_change)
+        if (
+            pending_mutation != replacement_mutation
+            or pending_mutation[0] != token
+            or pending_mutation[1] not in {"BUY", "SELL"}
+            or not pending_mutation[4]
+        ):
+            return ()
+        _asset_id, side, price, size, _book_hash = pending_mutation
+        levels = current.bids if side == "BUY" else current.asks
+        if (size == 0 and price in levels) or (
+            size != 0 and levels.get(price) != size
+        ):
+            return ()
+        expected = (
+            max(current.bids, default=Decimal("0")),
+            min(current.asks, default=Decimal("1")),
+        )
+        if pending_checksum == expected or replacement_checksum != expected:
+            return ()
+
+        best_rows = pending_best.get(token, [])
+        if not best_rows:
+            return ()
+        stale_best = best_rows[0]
+        if (
+            _timestamp(
+                stale_best.event.get("timestamp"),
+                name="corrected best_bid_ask timestamp",
+            )
+            != batch.source_time_ms
+            or stale_best.connection_id != pending_row.connection_id
+            or stale_best.received_monotonic_ns
+            != pending_row.received_monotonic_ns
+            or cls._event_arrival_key(stale_best)
+            > cls._event_arrival_key(pending_row)
+            or cls._best_bid_ask_values(stale_best) != pending_checksum
+        ):
+            return ()
+        return pending_row, stale_best
+
+    @classmethod
     def _flush_book_batch(
         cls,
         run_id: str,
@@ -1449,7 +1540,41 @@ class PolymarketEvidenceReplay:
                         and pending_hash == book_hash
                         and pending_checksum == change_checksum
                     )
-                    if pending_changes and not same_message and not same_fragment:
+                    correction_evidence: tuple[_EventRow, _EventRow] | tuple[()] = ()
+                    if (
+                        len(pending_changes) == 1
+                        and not same_message
+                        and pending_hash == book_hash
+                        and pending_checksum is not None
+                    ):
+                        correction_evidence = (
+                            cls._corrected_idempotent_duplicate_evidence(
+                                token,
+                                batch,
+                                current,
+                                pending_changes[0][0],
+                                pending_changes[0][1],
+                                pending_checksum,
+                                row,
+                                payload,
+                                change_checksum,
+                                pending_best,
+                            )
+                        )
+                    if correction_evidence:
+                        relevant_rows.extend(correction_evidence)
+                        stale_rows = pending_best[token]
+                        if stale_rows[0] != correction_evidence[1]:
+                            raise TypeError(
+                                "corrected price_change evidence ordering drifted"
+                            )
+                        del stale_rows[0]
+                        if not stale_rows:
+                            pending_best.pop(token)
+                        pending_changes = []
+                        pending_hash = ""
+                        pending_checksum = None
+                    elif pending_changes and not same_message and not same_fragment:
                         flush_changes()
                     if pending_checksum is None:
                         pending_checksum = change_checksum

@@ -1258,6 +1258,133 @@ def test_replay_matches_interleaved_best_prices_to_ordered_checksum_transitions(
     assert final.snapshot.source_time_ms == EPOCH * 1_000 + 2_004
 
 
+def _idempotent_checksum_correction_messages(
+    *, corroborate_stale_top: bool
+) -> tuple[RawStreamMessage, ...]:
+    btc = parse_polymarket_five_minute_market(_market_payload("BTC"))
+    token = btc.up_token_id
+    source_time = EPOCH * 1_000 + 2_000
+    common = {
+        "market": btc.condition_id,
+        "asset_id": token,
+        "timestamp": str(source_time),
+    }
+    messages: list[RawStreamMessage] = []
+    if corroborate_stale_top:
+        messages.append(
+            _message(
+                "clob_market",
+                {
+                    **common,
+                    "event_type": "best_bid_ask",
+                    "best_bid": "0.499",
+                    "best_ask": "0.50",
+                    "spread": "0.001",
+                },
+                sequence=80,
+                wall_offset_ms=2_000,
+                monotonic_ns=2_000_000_000,
+            )
+        )
+    messages.extend(
+        [
+            _message(
+                "clob_market",
+                {
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time),
+                    "event_type": "price_change",
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.499",
+                            "size": "0",
+                            "side": "BUY",
+                            "hash": "idempotent-correction",
+                            "best_bid": "0.499",
+                            "best_ask": "0.50",
+                        }
+                    ],
+                },
+                sequence=81,
+                wall_offset_ms=2_000,
+                monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    **common,
+                    "event_type": "best_bid_ask",
+                    "best_bid": "0.498",
+                    "best_ask": "0.50",
+                    "spread": "0.002",
+                },
+                sequence=82,
+                wall_offset_ms=2_001,
+                monotonic_ns=2_000_000_000,
+            ),
+            _message(
+                "clob_market",
+                {
+                    "market": btc.condition_id,
+                    "timestamp": str(source_time),
+                    "event_type": "price_change",
+                    "price_changes": [
+                        {
+                            "asset_id": token,
+                            "price": "0.499",
+                            "size": "0",
+                            "side": "BUY",
+                            "hash": "idempotent-correction",
+                            "best_bid": "0.498",
+                            "best_ask": "0.50",
+                        }
+                    ],
+                },
+                sequence=83,
+                wall_offset_ms=2_001,
+                monotonic_ns=2_000_000_000,
+            ),
+        ]
+    )
+    return tuple(messages)
+
+
+def test_replay_accepts_hash_bound_idempotent_checksum_correction(tmp_path) -> None:
+    with PolymarketEvidenceStore(tmp_path / "corrected-checksum.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "corrected-checksum",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=True
+            ),
+        )
+        replay = PolymarketEvidenceReplay.load(store, run_id="corrected-checksum")
+
+    corrected = replay.books[-1].snapshot
+    assert corrected.source_time_ms == EPOCH * 1_000 + 2_000
+    assert corrected.bids[0].price == Decimal("0.498")
+    assert corrected.asks[0].price == Decimal("0.50")
+
+
+def test_replay_rejects_uncorroborated_idempotent_checksum_correction(
+    tmp_path,
+) -> None:
+    with PolymarketEvidenceStore(tmp_path / "uncorroborated-checksum.duckdb") as store:
+        _finish_replay_store(
+            store,
+            "uncorroborated-checksum",
+            additional_messages=_idempotent_checksum_correction_messages(
+                corroborate_stale_top=False
+            ),
+        )
+        with pytest.raises(ValueError, match="checksum disagrees"):
+            PolymarketEvidenceReplay.load(
+                store,
+                run_id="uncorroborated-checksum",
+            )
+
+
 def test_replay_full_book_resynchronizes_trade_depth_absent_from_deltas(
     tmp_path,
 ) -> None:
