@@ -693,7 +693,7 @@ def test_round9_mlp_refuses_silent_explicit_backend_fallback(monkeypatch) -> Non
 
     with pytest.raises(
         RuntimeError,
-        match="requested compute backend directml resolved to cpu",
+        match="requested compute backend 'directml' is unavailable",
     ):
         polymarket_mlp_module._torch_runtime("directml")
 

@@ -11,7 +11,12 @@ from typing import Callable, Mapping, Sequence
 import lightgbm as lgb
 import numpy as np
 
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .lightgbm_backend import lightgbm_backend_parameters
 from .microstructure_features import (
     MICROSTRUCTURE_FEATURE_NAMES,
@@ -787,20 +792,16 @@ def _torch_modules():
 
 
 def _torch_device(backend: BackendInfo):
-    torch, _nn, _functional = _torch_modules()
-    if backend.kind == "directml":
-        try:
-            import torch_directml
-        except ImportError as exc:
-            raise RuntimeError("resolved DirectML backend is not importable") from exc
-        return torch_directml.device()
-    return torch.device(backend.device)
+    _torch_modules()
+    return torch_device_for_backend(backend)
 
 
 def _seed_torch(torch, seed: int, backend: BackendInfo) -> None:
     torch.manual_seed(int(seed))
     if backend.kind in {"cuda", "rocm"} and torch.cuda.is_available():
         torch.cuda.manual_seed_all(int(seed))
+    if backend.kind == "xpu" and hasattr(torch, "xpu"):
+        torch.xpu.manual_seed_all(int(seed))
     if backend.kind == "directml":
         try:
             import torch_directml
@@ -1038,7 +1039,7 @@ def train_torch_gross_model(
         or np.any(tuning_weights <= 0.0)
     ):
         raise ValueError("gross architecture sample weights are invalid")
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
     _seed_torch(torch, int(seed), backend)
@@ -1230,7 +1231,7 @@ def predict_torch_gross_model(
     )
     if selected.size == 0:
         raise ValueError("gross neural prediction has no contiguous endpoints")
-    backend = resolve_backend(compute_backend)
+    backend = require_backend(resolve_backend(compute_backend))
     device = _torch_device(backend)
     torch, _nn, _functional = _torch_modules()
     network = _network(model.spec, len(model.feature_names)).to(device)

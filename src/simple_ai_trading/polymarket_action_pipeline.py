@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, replace
 import gc
@@ -31,6 +30,11 @@ from .polymarket_features import (
 from .polymarket_recorder import PolymarketEvidenceStore
 from .polymarket_replay import PolymarketEvidenceReplay
 from .polymarket_repricing import PolymarketRepricingExecutionContext
+from .polymarket_round12_admission import (
+    build_round12_action_evidence_datasets,
+    load_round12_admission_dataset,
+    materialize_round12_admission_dataset,
+)
 
 
 POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION = (
@@ -38,10 +42,11 @@ POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION = (
 )
 POLYMARKET_ACTION_BATCH_SCHEMA_VERSION = "polymarket-action-value-batch-v2"
 POLYMARKET_ACTION_IMPLEMENTATION_SCHEMA_VERSION = (
-    "polymarket-action-value-implementation-v2"
+    "polymarket-action-value-implementation-v3"
 )
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 _CRITICAL_IMPLEMENTATION_FILES = (
+    "cli.py",
     "duckdb_batch.py",
     "polymarket_action_pipeline.py",
     "polymarket_action_value.py",
@@ -51,7 +56,10 @@ _CRITICAL_IMPLEMENTATION_FILES = (
     "polymarket_recorder.py",
     "polymarket_replay.py",
     "polymarket_repricing.py",
+    "polymarket_round12_admission.py",
+    "polymarket_round12_capture.py",
 )
+_CONTINUITY_ADMISSION_MODES = frozenset({"group", "action_local"})
 
 
 def _canonical_json(value: object) -> str:
@@ -76,26 +84,26 @@ def _is_sha256(value: object) -> bool:
 
 
 def polymarket_action_pipeline_implementation_sha256() -> str:
-    """Hash normalized ASTs so critical code changes invalidate durable batches."""
+    """Hash normalized UTF-8 source so identity is interpreter and OS neutral."""
 
     source_root = Path(__file__).resolve().parent
     module_digests: dict[str, str] = {}
     for filename in _CRITICAL_IMPLEMENTATION_FILES:
         path = source_root / filename
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=filename)
-        except (OSError, SyntaxError, UnicodeError) as exc:
+            source = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
             raise RuntimeError(
                 f"cannot attest Polymarket action implementation: {filename}"
             ) from exc
-        normalized = ast.dump(tree, annotate_fields=True, include_attributes=False)
+        normalized = source.replace("\r\n", "\n").replace("\r", "\n")
         module_digests[filename] = hashlib.sha256(
             normalized.encode("utf-8")
         ).hexdigest()
     return _sha256(
         {
             "schema_version": POLYMARKET_ACTION_IMPLEMENTATION_SCHEMA_VERSION,
-            "critical_module_ast_sha256": module_digests,
+            "critical_module_source_sha256": module_digests,
         }
     )
 
@@ -200,10 +208,11 @@ class PolymarketActionPipelineReport:
     category_counts: dict[str, int]
     terminal_reason_counts: dict[str, int]
     excluded_after_event_scope_count: int
+    continuity_admission_mode: str
     report_sha256: str
 
     def identity_payload(self) -> dict[str, object]:
-        return {
+        payload = {
             "schema_version": POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION,
             "contract_sha256": POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
             "run_id": self.run_id,
@@ -222,6 +231,9 @@ class PolymarketActionPipelineReport:
             "trading_authority": False,
             "profitability_claim": False,
         }
+        if self.continuity_admission_mode != "group":
+            payload["continuity_admission_mode"] = self.continuity_admission_mode
+        return payload
 
     def asdict(self) -> dict[str, object]:
         return {**self.identity_payload(), "report_sha256": self.report_sha256}
@@ -237,6 +249,14 @@ class PolymarketActionPipelineReport:
             not self.run_id
             or not _is_sha256(self.run_report_sha256)
             or (self.eligibility_sha256 and not _is_sha256(self.eligibility_sha256))
+            or self.continuity_admission_mode not in _CONTINUITY_ADMISSION_MODES
+            or (
+                self.continuity_admission_mode == "action_local"
+                and (
+                    not self.config.feature.allow_segmented_gaps
+                    or not self.eligibility_sha256
+                )
+            )
             or not _is_sha256(self.implementation_sha256)
             or not self.batches
             or self.action_count != sum(item.action_count for item in self.batches)
@@ -320,10 +340,11 @@ def _batch_identity(
     config: PolymarketActionPipelineConfig,
     eligibility_sha256: str,
     implementation_sha256: str,
+    continuity_admission_mode: str,
     group_starts_ms: Sequence[int],
     condition_ids: Sequence[str],
 ) -> dict[str, object]:
-    return {
+    identity = {
         "schema_version": POLYMARKET_ACTION_BATCH_SCHEMA_VERSION,
         "contract_sha256": POLYMARKET_ACTION_VALUE_CONTRACT_SHA256,
         "run_id": run_id,
@@ -334,6 +355,9 @@ def _batch_identity(
         "group_starts_ms": [int(value) for value in group_starts_ms],
         "condition_ids": list(condition_ids),
     }
+    if continuity_admission_mode != "group":
+        identity["continuity_admission_mode"] = continuity_admission_mode
+    return identity
 
 
 def _load_existing_batch(
@@ -581,6 +605,7 @@ def materialize_polymarket_action_value_batches(
     config: PolymarketActionPipelineConfig | None = None,
     eligible_condition_ids: Sequence[str] | None = None,
     eligibility_sha256: str = "",
+    continuity_admission_mode: str = "group",
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> PolymarketActionPipelineReport:
     """Build resumable action values without materializing a full-run CLOB replay."""
@@ -590,13 +615,25 @@ def materialize_polymarket_action_value_batches(
         raise ValueError("Polymarket action pipeline requires an explicit run ID")
     cfg = (config or PolymarketActionPipelineConfig()).validated()
     eligibility_digest = str(eligibility_sha256 or "").strip()
+    admission_mode = str(continuity_admission_mode or "").strip().lower()
+    if admission_mode not in _CONTINUITY_ADMISSION_MODES:
+        raise ValueError("Polymarket continuity admission mode is invalid")
     if eligibility_digest and not _is_sha256(eligibility_digest):
         raise ValueError("Polymarket eligibility digest is invalid")
-    if cfg.feature.allow_segmented_gaps and (
+    if admission_mode == "group" and cfg.feature.allow_segmented_gaps and (
         not eligibility_digest or eligible_condition_ids is None
     ):
         raise ValueError(
             "segmented action replay requires hash-bound eligible condition IDs"
+        )
+    if admission_mode == "action_local" and (
+        not cfg.feature.allow_segmented_gaps
+        or not eligibility_digest
+        or eligible_condition_ids is not None
+    ):
+        raise ValueError(
+            "action-local replay requires segmented gaps, a frozen contract digest, "
+            "and full condition scope"
         )
     implementation_sha256 = polymarket_action_pipeline_implementation_sha256()
     run_row = (
@@ -627,11 +664,28 @@ def materialize_polymarket_action_value_batches(
         )
     _ensure_pipeline_tables(store)
     markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
-    selected_conditions = (
-        {market.condition_id for market in markets}
-        if eligible_condition_ids is None
-        else {str(value or "").strip().lower() for value in eligible_condition_ids}
-    )
+    if admission_mode == "action_local":
+        discovered_groups: dict[int, list[PolymarketFiveMinuteMarket]] = {}
+        for market in markets:
+            discovered_groups.setdefault(int(market.event_start_ms), []).append(market)
+        selected_conditions = {
+            market.condition_id
+            for values in discovered_groups.values()
+            if tuple(
+                item.asset
+                for item in sorted(values, key=lambda item: _ASSETS.index(item.asset))
+            )
+            == _ASSETS
+            for market in values
+        }
+    else:
+        selected_conditions = (
+            {market.condition_id for market in markets}
+            if eligible_condition_ids is None
+            else {
+                str(value or "").strip().lower() for value in eligible_condition_ids
+            }
+        )
     if not selected_conditions or "" in selected_conditions:
         raise ValueError("Polymarket action pipeline condition selection is empty")
     market_by_condition = {market.condition_id: market for market in markets}
@@ -671,6 +725,7 @@ def materialize_polymarket_action_value_batches(
             config=cfg,
             eligibility_sha256=eligibility_digest,
             implementation_sha256=implementation_sha256,
+            continuity_admission_mode=admission_mode,
             group_starts_ms=starts,
             condition_ids=conditions,
         )
@@ -685,6 +740,11 @@ def materialize_polymarket_action_value_batches(
             batch_id=batch_id,
             identity=identity,
         )
+        if existing is not None and admission_mode == "action_local":
+            load_round12_admission_dataset(
+                store,
+                source_action_dataset_sha256=existing.action_dataset_sha256,
+            )
         results.append(existing)
         if existing is None:
             missing_indexes.append(index)
@@ -713,7 +773,9 @@ def materialize_polymarket_action_value_batches(
             config=cfg.feature,
             condition_ids=tuple(sorted(selected_conditions)),
             source_window_condition_ids=conditions,
-            continuity_report_sha256=eligibility_digest,
+            continuity_report_sha256=(
+                eligibility_digest if admission_mode == "group" else ""
+            ),
             progress=progress,
         )
         replay = PolymarketEvidenceReplay.load(
@@ -722,7 +784,9 @@ def materialize_polymarket_action_value_batches(
             allow_segmented_gaps=cfg.feature.allow_segmented_gaps,
             book_sample_interval_ms=0,
             condition_ids=conditions,
-            continuity_report_sha256=eligibility_digest,
+            continuity_report_sha256=(
+                eligibility_digest if admission_mode == "group" else ""
+            ),
             maximum_received_wall_ms_by_condition={
                 condition: replay_cutoff_by_condition[condition]
                 for condition in conditions
@@ -746,15 +810,26 @@ def materialize_polymarket_action_value_batches(
             preloaded_replay=feature_replay,
         )
         materialize_polymarket_feature_dataset(store, features)
-        actions = build_polymarket_action_value_dataset(
-            features,
-            PolymarketRepricingExecutionContext(replay),
-            config=cfg.action,
-        )
+        execution_context = PolymarketRepricingExecutionContext(replay)
+        admissions = None
+        if admission_mode == "action_local":
+            actions, admissions = build_round12_action_evidence_datasets(
+                features,
+                execution_context,
+                config=cfg.action,
+            )
+        else:
+            actions = build_polymarket_action_value_dataset(
+                features,
+                execution_context,
+                config=cfg.action,
+            )
         action_materialization = materialize_polymarket_action_value_dataset(
             store,
             actions,
         )
+        if admissions is not None:
+            materialize_round12_admission_dataset(store, admissions)
         results[index] = _persist_batch(
             store,
             identity=identity,
@@ -784,7 +859,8 @@ def materialize_polymarket_action_value_batches(
                     ),
                 },
             )
-        del actions, feature_replay, replay, features, source_context
+        del actions, admissions, execution_context
+        del feature_replay, replay, features, source_context
         gc.collect()
     batches = tuple(item for item in results if item is not None)
     if len(batches) != len(batch_specs):
@@ -811,6 +887,7 @@ def materialize_polymarket_action_value_batches(
         excluded_after_event_scope_count=sum(
             item.excluded_after_event_scope_count for item in batches
         ),
+        continuity_admission_mode=admission_mode,
         report_sha256="",
     )
     report = replace(

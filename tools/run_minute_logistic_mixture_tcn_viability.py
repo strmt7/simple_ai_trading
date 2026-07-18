@@ -46,6 +46,7 @@ from simple_ai_trading.minute_logistic_mixture_tcn_model import (  # noqa: E402
     build_minute_temporal_dataset,
     train_minute_mixture_candidates,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
 
@@ -602,8 +603,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
         "--compute-backend",
-        choices=("directml", "cpu"),
-        default="directml",
+        choices=SUPPORTED_COMPUTE_BACKENDS,
+        default="auto",
     )
     return parser
 

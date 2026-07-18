@@ -9,7 +9,13 @@ from dataclasses import asdict, dataclass, field
 from statistics import mean, pstdev
 from typing import Any, Iterable, List, Sequence, Tuple
 
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    backend_fallback_allowed,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .features import FEATURE_VERSION, ModelRow, feature_dimension as _feature_dimension
 from .storage import write_json_atomic
 from .strategy_overrides import StrategyOverrideValue, clean_strategy_overrides
@@ -1665,7 +1671,9 @@ def collect_feature_stats(
 ) -> tuple[List[float], List[float], BackendInfo]:
     """Collect stable population statistics, using the requested accelerator when available."""
 
-    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     if backend.kind != "cpu":
         try:
             means, stds = _collect_feature_stats_torch(
@@ -1675,7 +1683,7 @@ def collect_feature_stats(
             )
             return means, stds, backend
         except Exception as exc:
-            if require_accelerated:
+            if require_accelerated or not backend_fallback_allowed(backend):
                 raise RuntimeError(
                     f"{backend.kind} feature-statistics collection failed: {type(exc).__name__}: {exc}"
                 ) from exc
@@ -2251,7 +2259,9 @@ def calibrate_probability_temperature(
     best_log_loss = base.log_loss_before
     best_brier = base.brier_before
     best_ece = base.expected_calibration_error_before
-    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     if backend.kind != "cpu":
         try:
             best_temperature, best_log_loss, best_brier = _temperature_scan_torch(
@@ -2263,6 +2273,10 @@ def calibrate_probability_temperature(
             )
             best_ece = _expected_calibration_error(rows, model, temperature=best_temperature)
         except Exception as exc:
+            if not backend_fallback_allowed(backend):
+                raise RuntimeError(
+                    f"{backend.kind} temperature calibration failed: {exc.__class__.__name__}: {exc}"
+                ) from exc
             backend = _fallback_backend(
                 backend,
                 f"{backend.kind} temperature calibration failed ({exc.__class__.__name__}); fell back to CPU",
@@ -2700,8 +2714,9 @@ def _fallback_backend(requested: BackendInfo, reason: str) -> BackendInfo:
         requested=requested.requested,
         kind="cpu",
         device="cpu",
-        vendor="Python stdlib",
+        vendor="portable CPU reference",
         reason=reason[:240],
+        selection="deterministic_cpu_reference",
     )
 
 
@@ -2718,11 +2733,7 @@ def effective_training_backend_name(compute_backend: str | None) -> str:
 
 
 def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
-    if backend.kind == "directml":
-        import torch_directml  # type: ignore
-
-        return torch_directml.device()
-    return backend.device
+    return torch_device_for_backend(backend)
 
 
 def _maybe_promote_averaged_params(
@@ -2954,7 +2965,9 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
             expected_feature_dim=feature_dim,
         )
 
-    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     if backend.kind != "cpu":
         try:
             return _with_backend_metadata(
@@ -2980,7 +2993,12 @@ def train(rows: List[ModelRow], *, epochs: int = 200, learning_rate: float = 0.0
                 "directml": "DirectML",
                 "mps": "MPS",
                 "rocm": "ROCm",
+                "xpu": "XPU",
             }.get(backend.kind, backend.kind)
+            if not backend_fallback_allowed(backend):
+                raise RuntimeError(
+                    f"{backend_name} training failed: {exc.__class__.__name__}: {exc}"
+                ) from exc
             backend = _fallback_backend(
                 backend,
                 f"{backend_name} training failed ({exc.__class__.__name__}); fell back to CPU",

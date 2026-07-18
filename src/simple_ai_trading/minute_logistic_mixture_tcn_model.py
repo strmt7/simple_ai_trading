@@ -15,6 +15,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import MINUTE_MS, SYMBOLS
 from .derivatives_hurdle_data import (
     EXECUTION_CHARGE_BPS,
@@ -743,28 +744,25 @@ def _run_preflight(
     }
 
 
-def directml_mixture_preflight() -> tuple[object, dict[str, object]]:
-    try:
-        import torch_directml  # type: ignore
-    except ImportError as exc:  # pragma: no cover - host dependent
-        raise RuntimeError("Round 48 DirectML is unavailable") from exc
-    device = torch_directml.device()
+def mixture_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     report = _run_preflight(
         device,
-        backend_kind="directml",
+        backend_kind=backend.kind,
         backend_device=str(device),
     )
     return device, report
 
 
+def directml_mixture_preflight() -> tuple[object, dict[str, object]]:
+    return mixture_preflight("directml")
+
+
 def cpu_mixture_preflight() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    report = _run_preflight(
-        device,
-        backend_kind="cpu",
-        backend_device="cpu",
-    )
-    return device, report
+    return mixture_preflight("cpu")
 
 
 def _contiguous_runs(
@@ -1543,15 +1541,10 @@ def train_minute_mixture_candidates(
     *,
     model_dir: Path,
     prediction_dir: Path,
-    compute_backend: str,
+    compute_backend: str = "auto",
     progress: ProgressCallback | None = None,
 ) -> tuple[dict[str, MixtureForecastBundle], dict[str, object]]:
-    if compute_backend == "directml":
-        device, preflight = directml_mixture_preflight()
-    elif compute_backend == "cpu":
-        device, preflight = cpu_mixture_preflight()
-    else:
-        raise ValueError("Round 48 compute backend must be directml or cpu")
+    device, preflight = mixture_preflight(compute_backend)
     if progress is not None:
         progress("round48_preflight", {"status": "complete", **preflight})
     feature_scaler = fit_robust_feature_scaler(dataset)
@@ -1589,6 +1582,7 @@ def train_minute_mixture_candidates(
 
 
 __all__ = [
+    "mixture_preflight",
     "ANALYSIS_ROLES",
     "BATCH_SIZE",
     "CANDIDATE_COMPONENTS",

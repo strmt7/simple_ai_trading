@@ -1,20 +1,25 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 
+from simple_ai_trading.compute import BackendInfo, BackendUnavailableError
 from simple_ai_trading import lightgbm_backend
 
 
-def _backend(kind: str):
-    return SimpleNamespace(kind=kind)
+def _backend(requested: str, kind: str) -> BackendInfo:
+    return BackendInfo(
+        requested=requested,
+        kind=kind,  # type: ignore[arg-type]
+        device="cpu" if kind == "cpu" else f"{kind}:0",
+        vendor="test",
+        reason="test fallback" if requested not in {"auto", kind} else "",
+    )
 
 
-def test_lightgbm_cpu_backend_is_seeded_by_default(monkeypatch) -> None:
-    monkeypatch.setattr(lightgbm_backend, "resolve_backend", lambda _value: _backend("cpu"))
-
-    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters("auto", 41)
+def test_lightgbm_cpu_backend_is_seeded_by_default() -> None:
+    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
+        "cpu", 41
+    )
 
     assert kind == "cpu"
     assert device == "cpu"
@@ -24,13 +29,9 @@ def test_lightgbm_cpu_backend_is_seeded_by_default(monkeypatch) -> None:
     assert "gpu_platform_id" not in parameters
 
 
-def test_lightgbm_reproducible_cpu_backend_uses_deterministic_columns(
-    monkeypatch,
-) -> None:
-    monkeypatch.setattr(lightgbm_backend, "resolve_backend", lambda _value: _backend("cpu"))
-
+def test_lightgbm_reproducible_cpu_backend_uses_deterministic_columns() -> None:
     parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
-        "auto",
+        "cpu",
         41,
         reproducible=True,
     )
@@ -41,16 +42,43 @@ def test_lightgbm_reproducible_cpu_backend_uses_deterministic_columns(
     assert parameters["force_col_wise"] is True
 
 
+def test_lightgbm_auto_falls_back_only_after_real_probe_failure(monkeypatch) -> None:
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "resolve_backend",
+        lambda _value: _backend("auto", "cpu"),
+    )
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "_probe_lightgbm_target",
+        lambda *_args: (False, "target unavailable"),
+    )
+
+    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
+        "auto", 7
+    )
+
+    assert (kind, device) == ("cpu", "cpu")
+    assert parameters["device_type"] == "cpu"
+
+
 def test_lightgbm_opencl_defaults_to_driver_selection(monkeypatch) -> None:
     monkeypatch.setattr(
         lightgbm_backend,
         "resolve_backend",
-        lambda _value: _backend("directml"),
+        lambda _value: _backend("auto", "directml"),
+    )
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "_probe_lightgbm_target",
+        lambda target, *_args: (target == "gpu", "probe"),
     )
     monkeypatch.delenv(lightgbm_backend.OPENCL_PLATFORM_ENV, raising=False)
     monkeypatch.delenv(lightgbm_backend.OPENCL_DEVICE_ENV, raising=False)
 
-    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters("auto", 7)
+    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
+        "auto", 7
+    )
 
     assert kind == "opencl"
     assert device == "opencl:auto"
@@ -63,11 +91,16 @@ def test_lightgbm_opencl_defaults_to_driver_selection(monkeypatch) -> None:
 def test_lightgbm_opencl_honors_explicit_device_pair(monkeypatch) -> None:
     monkeypatch.setenv(lightgbm_backend.OPENCL_PLATFORM_ENV, "2")
     monkeypatch.setenv(lightgbm_backend.OPENCL_DEVICE_ENV, "3")
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "_probe_lightgbm_target",
+        lambda *_args: (True, "probe"),
+    )
 
     parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
         "directml",
         11,
-        resolved_backend=_backend("directml"),
+        resolved_backend=_backend("directml", "directml"),
     )
 
     assert kind == "opencl"
@@ -79,24 +112,75 @@ def test_lightgbm_opencl_honors_explicit_device_pair(monkeypatch) -> None:
 def test_lightgbm_reproducible_opencl_backend_uses_fp64(monkeypatch) -> None:
     monkeypatch.delenv(lightgbm_backend.OPENCL_PLATFORM_ENV, raising=False)
     monkeypatch.delenv(lightgbm_backend.OPENCL_DEVICE_ENV, raising=False)
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "_probe_lightgbm_target",
+        lambda *_args: (True, "probe"),
+    )
 
     parameters, kind, _device = lightgbm_backend.lightgbm_backend_parameters(
         "directml",
         11,
-        resolved_backend=_backend("directml"),
+        resolved_backend=_backend("directml", "directml"),
         reproducible=True,
     )
 
     assert kind == "opencl"
     assert parameters["gpu_use_dp"] is True
+    assert "deterministic" not in parameters
 
 
-def test_lightgbm_backend_rejects_non_boolean_reproducibility(monkeypatch) -> None:
-    monkeypatch.setattr(lightgbm_backend, "resolve_backend", lambda _value: _backend("cpu"))
+def test_lightgbm_auto_prefers_verified_cuda_target(monkeypatch) -> None:
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "resolve_backend",
+        lambda _value: _backend("auto", "cuda"),
+    )
+    calls: list[str] = []
 
+    def probe(target: str, *_args) -> tuple[bool, str]:
+        calls.append(target)
+        return target == "cuda", "probe"
+
+    monkeypatch.setattr(lightgbm_backend, "_probe_lightgbm_target", probe)
+
+    parameters, kind, device = lightgbm_backend.lightgbm_backend_parameters(
+        "auto", 13
+    )
+
+    assert calls == ["cuda"]
+    assert (kind, device) == ("cuda", "cuda:0")
+    assert parameters["device_type"] == "cuda"
+
+
+def test_lightgbm_pinned_backend_rejects_tensor_runtime_fallback() -> None:
+    with pytest.raises(BackendUnavailableError, match="requested compute backend"):
+        lightgbm_backend.lightgbm_backend_parameters(
+            "directml",
+            11,
+            resolved_backend=_backend("directml", "cpu"),
+        )
+
+
+def test_lightgbm_pinned_backend_rejects_failed_tree_probe(monkeypatch) -> None:
+    monkeypatch.setattr(
+        lightgbm_backend,
+        "_probe_lightgbm_target",
+        lambda *_args: (False, "OpenCL target absent"),
+    )
+
+    with pytest.raises(BackendUnavailableError, match="OpenCL target absent"):
+        lightgbm_backend.lightgbm_backend_parameters(
+            "directml",
+            11,
+            resolved_backend=_backend("directml", "directml"),
+        )
+
+
+def test_lightgbm_backend_rejects_non_boolean_reproducibility() -> None:
     with pytest.raises(ValueError, match="reproducible must be a boolean"):
         lightgbm_backend.lightgbm_backend_parameters(
-            "auto",
+            "cpu",
             11,
             reproducible=1,  # type: ignore[arg-type]
         )
@@ -126,5 +210,5 @@ def test_lightgbm_opencl_rejects_ambiguous_overrides(
         lightgbm_backend.lightgbm_backend_parameters(
             "directml",
             3,
-            resolved_backend=_backend("directml"),
+            resolved_backend=_backend("directml", "directml"),
         )

@@ -16,6 +16,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .action_hurdle_tcn_model import (
     ProbabilityCalibration,
     apply_probability_calibration,
@@ -695,20 +696,22 @@ def _preflight(
     }
 
 
-def directml_barrier_competing_risk_preflight() -> tuple[object, dict[str, object]]:
-    try:
-        import torch_directml
-    except ImportError as exc:
-        raise RuntimeError("Round 50 DirectML backend is unavailable") from exc
-    device = torch_directml.device()
+def barrier_competing_risk_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     return device, _preflight(
-        device, backend_kind="directml", backend_device=str(device)
+        device, backend_kind=backend.kind, backend_device=str(device)
     )
 
 
+def directml_barrier_competing_risk_preflight() -> tuple[object, dict[str, object]]:
+    return barrier_competing_risk_preflight("directml")
+
+
 def cpu_barrier_competing_risk_preflight() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    return device, _preflight(device, backend_kind="cpu", backend_device="cpu")
+    return barrier_competing_risk_preflight("cpu")
 
 
 def _contiguous_runs(
@@ -1524,15 +1527,10 @@ def train_barrier_competing_risk_candidates(
     *,
     model_dir: Path,
     prediction_dir: Path,
-    compute_backend: str,
+    compute_backend: str = "auto",
     progress: ProgressCallback | None = None,
 ) -> tuple[dict[str, BarrierCompetingRiskForecastBundle], dict[str, object]]:
-    if compute_backend == "directml":
-        device, preflight = directml_barrier_competing_risk_preflight()
-    elif compute_backend == "cpu":
-        device, preflight = cpu_barrier_competing_risk_preflight()
-    else:
-        raise ValueError("Round 50 compute backend must be directml or cpu")
+    device, preflight = barrier_competing_risk_preflight(compute_backend)
     if progress is not None:
         progress("round50_preflight", {"status": "complete", **preflight})
     feature_scaler = fit_barrier_feature_scaler(temporal, barrier)
@@ -1575,6 +1573,7 @@ def train_barrier_competing_risk_candidates(
 
 
 __all__ = [
+    "barrier_competing_risk_preflight",
     "BarrierCompetingRiskArtifact",
     "BarrierCompetingRiskForecastBundle",
     "BarrierTargetBaselines",

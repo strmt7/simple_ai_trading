@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 import torch
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import SYMBOLS
 from .distributional_tcn_model import (
     DistributionalDataset,
@@ -304,38 +305,28 @@ def _run_preflight(
     }
 
 
-def directml_stability_preflight() -> tuple[object, dict[str, object]]:
-    try:
-        import torch_directml  # type: ignore
-    except ImportError as exc:  # pragma: no cover - host dependent
-        raise RuntimeError("Round 46 DirectML is unavailable") from exc
-    device = torch_directml.device()
+def stability_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     evidence = _run_preflight(
         device,
         {
-            "backend_kind": "directml",
+            "backend_kind": backend.kind,
             "backend_device": str(device),
             "torch_version": str(torch.__version__),
-            "torch_directml_version": str(
-                getattr(torch_directml, "__version__", "unknown")
-            ),
         },
     )
     return device, evidence
+
+
+def directml_stability_preflight() -> tuple[object, dict[str, object]]:
+    return stability_preflight("directml")
 
 
 def cpu_stability_preflight() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    evidence = _run_preflight(
-        device,
-        {
-            "backend_kind": "cpu",
-            "backend_device": str(device),
-            "torch_version": str(torch.__version__),
-            "torch_directml_version": None,
-        },
-    )
-    return device, evidence
+    return stability_preflight("cpu")
 
 
 def _training_windows(mask: np.ndarray) -> np.ndarray:
@@ -902,19 +893,14 @@ def train_stability_candidates(
     dataset: DistributionalDataset,
     *,
     model_dir: Path,
-    compute_backend: str = "directml",
+    compute_backend: str = "auto",
     progress: ProgressCallback | None = None,
 ) -> tuple[dict[str, StabilityForecastBundle], dict[str, object]]:
     training_mask = role_mask(dataset, "training")
     feature_scaler = fit_feature_scaler(dataset, training_mask)
     target_scaler = fit_target_scaler(dataset, training_mask)
     normalized_features = feature_scaler.transform(dataset.features)
-    if compute_backend == "directml":
-        device, preflight = directml_stability_preflight()
-    elif compute_backend == "cpu":
-        device, preflight = cpu_stability_preflight()
-    else:
-        raise ValueError(f"Round 46 compute backend is invalid: {compute_backend}")
+    device, preflight = stability_preflight(compute_backend)
     wavebound = _train_wavebound(
         dataset,
         normalized_features,
@@ -986,6 +972,7 @@ def stability_mechanism_gate(
 
 
 __all__ = [
+    "stability_preflight",
     "BATCH_SIZE",
     "CANDIDATES",
     "CONSISTENCY_WEIGHT",

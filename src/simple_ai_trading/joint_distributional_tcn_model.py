@@ -16,6 +16,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .cross_asset_cost_data import SYMBOLS
 from .distributional_tcn_model import (
     BASE_ONE_WAY_COST_BPS,
@@ -281,14 +282,13 @@ def adamw_training_step(
     return value, value
 
 
-def directml_joint_preflight() -> tuple[object, dict[str, object]]:
-    """Require warning-free DirectML backward updates for AdamW and SAM."""
+def joint_preflight(
+    compute_backend: str = "auto",
+) -> tuple[object, dict[str, object]]:
+    """Require warning-free backward updates for both frozen optimizers."""
 
-    try:
-        import torch_directml  # type: ignore
-    except ImportError as exc:  # pragma: no cover - host dependent
-        raise RuntimeError("Round 45 DirectML is unavailable") from exc
-    device = torch_directml.device()
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
     generator = np.random.default_rng(SEEDS[0])
     values_numpy = generator.normal(size=(4, 213, 160)).astype(np.float32)
     targets_numpy = generator.normal(size=(4, len(SYMBOLS), len(HORIZONS), 160)).astype(
@@ -334,31 +334,25 @@ def directml_joint_preflight() -> tuple[object, dict[str, object]]:
     if fallback or any(
         not math.isfinite(float(item["update_loss"])) for item in results
     ):
-        raise RuntimeError(f"Round 45 DirectML preflight failed: {fallback}")
+        raise RuntimeError(
+            f"Round 45 {backend.kind} preflight failed: {fallback}"
+        )
     return device, {
-        "backend_kind": "directml",
+        "backend_kind": backend.kind,
         "backend_device": str(device),
         "torch_version": str(torch.__version__),
-        "torch_directml_version": str(
-            getattr(torch_directml, "__version__", "unknown")
-        ),
         "candidate_updates": results,
         "warning_count": len(all_messages),
         "cpu_fallback_warning_count": 0,
     }
 
 
+def directml_joint_preflight() -> tuple[object, dict[str, object]]:
+    return joint_preflight("directml")
+
+
 def cpu_joint_device() -> tuple[object, dict[str, object]]:
-    device = torch.device("cpu")
-    return device, {
-        "backend_kind": "cpu",
-        "backend_device": str(device),
-        "torch_version": str(torch.__version__),
-        "torch_directml_version": None,
-        "candidate_updates": [],
-        "warning_count": 0,
-        "cpu_fallback_warning_count": 0,
-    }
+    return joint_preflight("cpu")
 
 
 def _training_windows(mask: np.ndarray) -> np.ndarray:
@@ -1258,6 +1252,7 @@ __all__ = [
     "adamw_training_step",
     "cpu_joint_device",
     "directml_joint_preflight",
+    "joint_preflight",
     "joint_economic_gate",
     "joint_forecast_diagnostics",
     "joint_pinball_loss",

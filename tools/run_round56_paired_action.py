@@ -28,6 +28,8 @@ for import_root in (ROOT, SRC):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
+
 from simple_ai_trading.ai_factor_programs import (  # noqa: E402
     ActionConditionedFactorProgram,
     evaluate_factor_program,
@@ -1580,8 +1582,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
         "--compute-backend",
-        choices=("directml", "cpu"),
-        default="directml",
+        choices=SUPPORTED_COMPUTE_BACKENDS,
+        default="auto",
     )
     return parser
 

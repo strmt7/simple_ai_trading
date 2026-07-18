@@ -22,7 +22,7 @@ from .assets import (
     normalize_symbols,
 )
 from .ai_runtime import AIRuntimeConfig
-from .compute import default_compute_backend
+from .compute import SUPPORTED_COMPUTE_BACKENDS, default_compute_backend
 from .features import FEATURE_NAMES, FEATURE_VERSION, normalize_enabled_features
 
 
@@ -126,6 +126,8 @@ class RuntimeConfig:
         self.max_rate_calls_per_minute = max(1, min(2000, _coerce_int(self.max_rate_calls_per_minute, 1100)))
         self.recv_window_ms = max(1, min(60000, _coerce_int(self.recv_window_ms, 5000)))
         self.compute_backend = str(self.compute_backend or default_compute_backend()).strip().lower()
+        if self.compute_backend not in SUPPORTED_COMPUTE_BACKENDS:
+            raise ValueError(f"unsupported compute backend {self.compute_backend!r}")
         self.ai_enabled = _coerce_bool(self.ai_enabled, True)
         self.ai_provider = str(self.ai_provider or "auto")
         self.ai_model = str(self.ai_model or "qwen3:8b")

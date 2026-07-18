@@ -6,7 +6,13 @@ from dataclasses import asdict, dataclass, replace
 from typing import Callable, Dict, List, Mapping, Sequence
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    backend_fallback_allowed,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .execution_simulation import (
     ExecutionAssumptions,
     SimulatedFill,
@@ -710,8 +716,9 @@ def _fallback_score_backend(requested: BackendInfo, reason: str) -> BackendInfo:
         requested=requested.requested,
         kind="cpu",
         device="cpu",
-        vendor="Python stdlib",
+        vendor="portable CPU reference",
         reason=reason[:240],
+        selection="deterministic_cpu_reference",
     )
 
 
@@ -737,11 +744,7 @@ def _position_size_from_risk(
 
 
 def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
-    if backend.kind == "directml":
-        import torch_directml  # type: ignore
-
-        return torch_directml.device()
-    return backend.device
+    return torch_device_for_backend(backend)
 
 
 def _batch_probabilities_torch(  # pragma: no cover - exercised by host GPU smoke verification
@@ -1940,12 +1943,18 @@ def _backtest_probabilities(
     compute_backend: str | None,
     batch_size: int,
 ) -> tuple[list[float], BackendInfo]:
-    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     if backend.kind == "cpu":
         return [model.predict_proba(row.features) for row in rows], backend
     try:
         return _batch_probabilities_torch(rows, model, backend=backend, batch_size=batch_size), backend
     except Exception as exc:
+        if not backend_fallback_allowed(backend):
+            raise RuntimeError(
+                f"{backend.kind} backtest scoring failed: {exc.__class__.__name__}: {exc}"
+            ) from exc
         fallback = _fallback_score_backend(
             backend,
             f"{backend.kind} backtest scoring failed ({exc.__class__.__name__}); fell back to CPU",
@@ -2641,7 +2650,9 @@ def run_backtest(
     precomputed_regime_scores: Sequence[float] | None = None,
     precomputed_liquidity_adjustments: Sequence[tuple[float, float, bool, bool]] | None = None,
 ) -> BacktestResult:
-    score_backend = resolve_backend(effective_training_backend_name(compute_backend))
+    score_backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     if not rows:
         return BacktestResult(
             starting_cash=starting_cash,

@@ -290,30 +290,56 @@ def test_rule_alpha_trade_tape_default_width_tracks_feature_schema() -> None:
     assert implicit.predict_proba(tuple(features)) == pytest.approx(explicit.predict_proba(tuple(features)))
 
 
-def test_train_records_requested_backend_fallback_when_unavailable() -> None:
-    model = train(_rows(), epochs=2, compute_backend="directml")
-    if model.training_backend_kind == "cpu":
-        assert model.training_backend_requested == "directml"
-        assert "DirectML" in model.training_backend_reason
+def test_train_rejects_unavailable_pinned_backend(monkeypatch) -> None:
+    monkeypatch.setattr(
+        model_module,
+        "resolve_backend",
+        lambda _backend: BackendInfo(
+            "directml",
+            "cpu",
+            "cpu",
+            "portable CPU reference",
+            "DirectML unavailable",
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="requested compute backend 'directml'"):
+        train(_rows(), epochs=2, compute_backend="directml")
 
 
-def test_train_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None:
+def test_train_auto_falls_back_when_resolved_gpu_training_errors(monkeypatch) -> None:
     from simple_ai_trading import model as model_mod
 
     monkeypatch.setattr(
         model_mod,
         "resolve_backend",
-        lambda _backend: BackendInfo("cuda", "cuda", "cuda:0", "Fake GPU", ""),
+        lambda _backend: BackendInfo("auto", "cuda", "cuda:0", "Fake GPU", ""),
     )
 
     def fail_gpu(*_args, **_kwargs):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(model_mod, "_train_torch", fail_gpu)
-    trained = model_mod.train(_rows(), epochs=2, compute_backend="cuda")
+    trained = model_mod.train(_rows(), epochs=2, compute_backend="auto")
     assert trained.training_backend_kind == "cpu"
-    assert trained.training_backend_requested == "cuda"
+    assert trained.training_backend_requested == "auto"
     assert "training failed" in trained.training_backend_reason
+
+
+def test_train_pinned_backend_rejects_operation_failure(monkeypatch) -> None:
+    monkeypatch.setattr(
+        model_module,
+        "resolve_backend",
+        lambda _backend: BackendInfo("cuda", "cuda", "cuda:0", "Fake GPU", ""),
+    )
+    monkeypatch.setattr(
+        model_module,
+        "_train_torch",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+
+    with pytest.raises(RuntimeError, match="CUDA training failed"):
+        train(_rows(), epochs=2, compute_backend="cuda")
 
 
 def test_torch_training_normalization_matches_population_stats() -> None:
@@ -920,7 +946,7 @@ def test_temperature_calibration_uses_requested_gpu_backend(
     }
 
 
-def test_temperature_calibration_records_cpu_fallback_when_gpu_scan_fails(
+def test_temperature_calibration_auto_records_cpu_fallback_when_gpu_scan_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     rows = [
@@ -940,7 +966,7 @@ def test_temperature_calibration_records_cpu_fallback_when_gpu_scan_fails(
         model_module,
         "resolve_backend",
         lambda requested: BackendInfo(
-            requested=requested,
+            requested="auto",
             kind="directml",
             device="privateuseone:0",
             vendor="DirectML",
@@ -959,10 +985,10 @@ def test_temperature_calibration_records_cpu_fallback_when_gpu_scan_fails(
         min_temperature=1.0,
         max_temperature=6.0,
         steps=26,
-        compute_backend="directml",
+        compute_backend="auto",
         batch_size=64,
     )
 
-    assert report.calibration_backend_requested == "directml"
+    assert report.calibration_backend_requested == "auto"
     assert report.calibration_backend_kind == "cpu"
     assert "temperature calibration failed" in report.calibration_backend_reason

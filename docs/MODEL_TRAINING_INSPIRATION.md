@@ -511,22 +511,22 @@ Sources:
 
 ## GPU Direction
 
-The repo should keep DirectML as the default Windows path for PyTorch models
-because it supports DirectX 12 GPUs across AMD, NVIDIA, and Intel. For ONNX
-inference, ONNX Runtime's DirectML execution provider remains relevant, but its
-docs now describe DirectML as sustained engineering and point Windows ONNX
-deployments toward WinML for future provider selection.
+The repo uses runtime capability discovery rather than a Windows or vendor
+default. DirectML remains a compatibility path for supported DirectX 12 hosts;
+Microsoft now describes it as sustained engineering and directs new Windows
+ONNX deployments toward Windows ML.
 
 Implementation direction:
 
-- PyTorch training/scoring: `torch-directml` first on Windows.
-- ONNX inference: DirectML today, evaluate WinML provider selection before a
-  packaged inference runtime is added.
+- PyTorch training/scoring: modern `torch.accelerator` when available, then
+  capability-tested CUDA, ROCm, XPU, MPS, or DirectML adapters.
+- ONNX inference: no claimed path until Windows ML/ONNX provider discovery and
+  numerical parity are implemented and tested.
 - LightGBM tabular candidates: OpenCL GPU path when available.
 - CPU mode: allowed, slower, and no AI approval.
-- Every GPU model family must have a CPU fallback for tests, plus a capability
-  artifact that records backend, device, package versions, and reason for
-  fallback.
+- Every model family must have a CPU reference plus a capability artifact that
+  records backend, device, selection method, package versions, and fallback
+  reason. Only `auto` may fall back; a pinned accelerator fails closed.
 - A model cannot be used by signed live startup just because it deserializes.
   Runtime readiness requires the promoted artifact to carry passing
   selection-risk evidence with a positive deflated score; otherwise the operator

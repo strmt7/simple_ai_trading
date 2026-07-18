@@ -421,6 +421,35 @@ def _nvidia_free_vram_gb() -> float | None:
     return max(values) / 1024.0
 
 
+def _torch_backend_free_vram_gb(backend: BackendInfo) -> float | None:
+    """Measure the selected device through PyTorch when its runtime exposes memory."""
+
+    if backend.kind in {"cpu", "directml"}:
+        return None
+    try:
+        import torch
+
+        index = 0
+        if ":" in backend.device:
+            index = int(backend.device.rsplit(":", 1)[1])
+        accelerator = getattr(torch, "accelerator", None)
+        memory = getattr(accelerator, "memory", None)
+        getter = getattr(memory, "get_memory_info", None)
+        if callable(getter):
+            free, total = getter(index)
+        elif backend.kind in {"cuda", "rocm"}:
+            free, total = torch.cuda.mem_get_info(index)
+        else:
+            return None
+        free_bytes = int(free)
+        total_bytes = int(total)
+    except Exception:
+        return None
+    if total_bytes <= 0 or free_bytes < 0 or free_bytes > total_bytes:
+        return None
+    return free_bytes / (1024**3)
+
+
 def _rocm_smi_free_vram_gb(output: str) -> float | None:
     """Parse exact byte totals from legacy ROCm SMI output."""
 
@@ -586,17 +615,23 @@ def _windows_gpu_names() -> tuple[str, ...]:
 
 
 def _gpu_vendor_from_backend(backend: BackendInfo, names: tuple[str, ...]) -> str:
-    joined = " ".join(names).lower()
+    joined = " ".join((*names, backend.vendor)).lower()
     if "amd" in joined or "radeon" in joined:
         return "amd"
     if "nvidia" in joined or "geforce" in joined or "rtx" in joined or "gtx" in joined:
         return "nvidia"
     if "intel" in joined or "arc" in joined or "iris" in joined:
         return "intel"
+    if backend.kind == "rocm":
+        return "amd"
+    if backend.kind == "cuda":
+        return "nvidia"
+    if backend.kind == "xpu":
+        return "intel"
+    if backend.kind == "mps":
+        return "apple"
     if backend.kind == "directml":
         return "directml"
-    if backend.kind in {"cuda", "rocm", "mps"}:
-        return backend.kind
     return "unknown"
 
 
@@ -607,8 +642,9 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
     backend = resolve_backend(cfg.compute_backend or default_compute_backend())
     free_ram = _memory_status_gb()
     windows_gpu_names = _windows_gpu_names()
+    torch_vram = _torch_backend_free_vram_gb(backend)
     nvidia_vram = _nvidia_free_vram_gb()
-    joined_gpu_names = " ".join(windows_gpu_names).lower()
+    joined_gpu_names = " ".join((*windows_gpu_names, backend.vendor)).lower()
     amd_detected = (
         backend.kind == "rocm"
         or "amd" in joined_gpu_names
@@ -617,7 +653,10 @@ def detect_ai_capabilities(config: AIRuntimeConfig | None = None) -> AICapabilit
         or shutil.which("rocm-smi.exe") is not None
     )
     amd_vram = _amd_free_vram_gb() if amd_detected else None
-    if nvidia_vram is not None:
+    if torch_vram is not None:
+        gpu_vendor = _gpu_vendor_from_backend(backend, windows_gpu_names)
+        free_vram = torch_vram
+    elif nvidia_vram is not None:
         gpu_vendor = "nvidia"
         free_vram = nvidia_vram
     elif amd_vram is not None:

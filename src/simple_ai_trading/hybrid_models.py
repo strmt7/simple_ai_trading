@@ -15,7 +15,12 @@ from statistics import median
 from typing import Callable, Mapping, Sequence
 
 from .backtest import BacktestResult, calibrate_threshold_for_backtest, closed_trades_per_day, run_backtest
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    backend_fallback_allowed,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .execution_simulation import (
     EXECUTION_ACTIVITY_ESTIMATOR,
     EXECUTION_MODEL_VERSION,
@@ -691,14 +696,6 @@ def _hybrid_ablation_results(
     return tuple(results)
 
 
-def _torch_device_for_backend(backend: BackendInfo):
-    if backend.kind == "directml":
-        import torch_directml  # type: ignore
-
-        return torch_directml.device()
-    return backend.device
-
-
 def _neural_training_limit(objective_name: str) -> int:
     objective_name = "aggressive" if objective_name == "risky" else objective_name
     if objective_name == "aggressive":
@@ -757,12 +754,14 @@ def _train_dense_mlp_expert(
     except Exception:
         return None
 
-    backend = resolve_backend(compute_backend or "auto")
+    backend = require_backend(resolve_backend(compute_backend or "auto"))
     try:
-        device = _torch_device_for_backend(backend)
+        device = torch_device_for_backend(backend)
     except Exception:
-        backend = resolve_backend("cpu")
-        device = "cpu"
+        if not backend_fallback_allowed(backend):
+            raise
+        backend = require_backend(resolve_backend("cpu"))
+        device = torch_device_for_backend(backend)
 
     validation_count = max(16, min(len(sampled_rows) // 5, 10_000))
     if len(sampled_rows) - validation_count < 48:
@@ -1414,12 +1413,14 @@ def _train_signed_payoff_ranker_expert(
     except Exception:
         return None
 
-    backend = resolve_backend(compute_backend or "auto")
+    backend = require_backend(resolve_backend(compute_backend or "auto"))
     try:
-        device = _torch_device_for_backend(backend)
+        device = torch_device_for_backend(backend)
     except Exception:
-        backend = resolve_backend("cpu")
-        device = "cpu"
+        if not backend_fallback_allowed(backend):
+            raise
+        backend = require_backend(resolve_backend("cpu"))
+        device = torch_device_for_backend(backend)
     if len(example_rows) < 128:
         return None
     split = _purged_payoff_train_validation_split(examples, horizon_bars=horizon_bars)
@@ -1609,12 +1610,14 @@ def _train_signed_payoff_mlp_ranker_expert(
     except Exception:
         return None
 
-    backend = resolve_backend(compute_backend or "auto")
+    backend = require_backend(resolve_backend(compute_backend or "auto"))
     try:
-        device = _torch_device_for_backend(backend)
+        device = torch_device_for_backend(backend)
     except Exception:
-        backend = resolve_backend("cpu")
-        device = "cpu"
+        if not backend_fallback_allowed(backend):
+            raise
+        backend = require_backend(resolve_backend("cpu"))
+        device = torch_device_for_backend(backend)
     if len(example_rows) < 256:
         return None
     split = _purged_payoff_train_validation_split(examples, horizon_bars=horizon_bars)

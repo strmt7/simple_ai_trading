@@ -24,6 +24,8 @@ for import_root in (ROOT, SRC):
     if str(import_root) not in sys.path:
         sys.path.insert(0, str(import_root))
 
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
+
 from simple_ai_trading.executable_csm_lightgbm import (  # noqa: E402
     ExecutableCsmPredictionBatch,
     ExecutableCsmSpec,
@@ -1400,7 +1402,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--cache-root", type=Path, required=True)
     parser.add_argument("--round52-report", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
-    parser.add_argument("--compute-backend", default="directml")
+    parser.add_argument(
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
+    )
     parser.add_argument("--memory-limit", default="8GB")
     parser.add_argument("--threads", type=int, default=8)
     return parser

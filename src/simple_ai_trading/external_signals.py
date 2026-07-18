@@ -23,7 +23,13 @@ from urllib.parse import urlparse
 from defusedxml import ElementTree as ET
 import requests
 
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    backend_fallback_allowed,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .model import effective_training_backend_name
 from .storage import write_json_atomic
 
@@ -571,11 +577,7 @@ def _news_horizon(text: str, *, age_ms: int) -> str:
 
 
 def _torch_device_for_backend(backend: BackendInfo):  # pragma: no cover - optional GPU runtime
-    if backend.kind == "directml":
-        import torch_directml  # type: ignore
-
-        return torch_directml.device()
-    return backend.device
+    return torch_device_for_backend(backend)
 
 
 def _score_news_texts(
@@ -590,7 +592,9 @@ def _score_news_texts(
         ages = [max(0, int(age)) for age in ages_ms[: len(texts)]]
         ages.extend([0] * max(0, len(texts) - len(ages)))
     counts = [_keyword_counts(text, age_ms=age) for text, age in zip(texts, ages, strict=True)]
-    backend = resolve_backend(effective_training_backend_name(compute_backend))
+    backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     if backend.kind != "cpu" and counts:
         try:  # pragma: no cover - covered by host GPU smoke, not CI
             import torch  # type: ignore
@@ -602,12 +606,17 @@ def _score_news_texts(
             values = torch.clamp(numerator / denominator, min=-1.0, max=1.0)
             return [float(value) for value in values.detach().cpu().tolist()], backend
         except Exception as exc:
+            if not backend_fallback_allowed(backend):
+                raise RuntimeError(
+                    f"{backend.kind} news scoring failed: {exc.__class__.__name__}: {exc}"
+                ) from exc
             backend = BackendInfo(
                 requested=backend.requested,
                 kind="cpu",
                 device="cpu",
-                vendor="Python stdlib",
+                vendor="portable CPU reference",
                 reason=f"{backend.kind} news scoring failed ({exc.__class__.__name__}); fell back to CPU",
+                selection="deterministic_cpu_reference",
             )
     scores = []
     for positive, negative in counts:
@@ -2284,7 +2293,9 @@ def collect_external_signals(
             record_report_telemetry(cached_report, [{"provider": "external_signal_cache", "known_at_ms": now, "payload": cached.asdict()}])
             return cached_report
 
-    news_backend = resolve_backend(effective_training_backend_name(compute_backend))
+    news_backend = require_backend(
+        resolve_backend(effective_training_backend_name(compute_backend))
+    )
     raw_records: list[object] = []
     raw_records_lock = Lock()
 

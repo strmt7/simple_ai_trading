@@ -61,7 +61,14 @@ from .binance_archive import (
     list_archive_urls,
     validate_archive_period_window,
 )
-from .compute import BackendInfo, default_compute_backend, describe_backend, resolve_backend
+from .compute import (
+    SUPPORTED_COMPUTE_BACKENDS,
+    BackendInfo,
+    default_compute_backend,
+    describe_backend,
+    require_backend,
+    resolve_backend,
+)
 from .commission import apply_offline_commission_floor, apply_verified_commission_rate
 from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
@@ -126,6 +133,11 @@ from .polymarket_action_pipeline import (
     PolymarketActionPipelineConfig,
     materialize_polymarket_action_value_batches,
 )
+from .polymarket_round12_capture import (
+    build_round12_capture_manifest,
+    load_round12_capture_manifest,
+)
+from .polymarket_round12_reference import load_round12_confirmation_contract
 from .polymarket_mlp import (
     begin_polymarket_mlp_fit,
     complete_polymarket_mlp_fit,
@@ -517,6 +529,15 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="optional atomic JSON sidecar for CLI/app progress",
     )
+    parser_polymarket_record.add_argument(
+        "--round12-contract",
+        default=None,
+        metavar="PATH",
+        help=(
+            "require a clean committed Round 12 preregistration manifest before "
+            "the first captured message"
+        ),
+    )
     parser_polymarket_record.add_argument("--json", action="store_true")
     parser_polymarket_record.set_defaults(func=command_polymarket_record)
 
@@ -600,6 +621,15 @@ def _build_parser() -> argparse.ArgumentParser:
             "eligible synchronized groups"
         ),
     )
+    parser_polymarket_action_value.add_argument(
+        "--round12-contract",
+        default=None,
+        metavar="PATH",
+        help=(
+            "validate a frozen Round 12 contract and use action-local same-segment "
+            "admission across the complete synchronized capture scope"
+        ),
+    )
     parser_polymarket_action_value.add_argument("--json", action="store_true")
     parser_polymarket_action_value.set_defaults(
         func=command_polymarket_action_value
@@ -670,7 +700,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_polymarket_mlp.add_argument(
         "--compute-backend",
-        choices=("cpu", "cuda", "rocm", "directml", "mps", "auto"),
+        choices=SUPPORTED_COMPUTE_BACKENDS,
         default="auto",
     )
     parser_polymarket_mlp.add_argument("--memory-limit", default="4GB")
@@ -1915,7 +1945,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_ai_forecast.add_argument("--database", default="data/market_data.sqlite")
     parser_ai_forecast.add_argument("--model-size", choices=("small", "base"), default="base")
-    parser_ai_forecast.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default="directml")
+    parser_ai_forecast.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default="auto")
     parser_ai_forecast.add_argument("--source-cache", default=None)
     parser_ai_forecast.add_argument("--bootstrap-source", action="store_true")
     parser_ai_forecast.add_argument("--repair-source", action="store_true")
@@ -2583,7 +2613,7 @@ async def _ui_edit_runtime(ui, current: RuntimeConfig) -> RuntimeConfig:
         validate_account=validate_account,
         max_rate_calls_per_minute=max_rate,
         recv_window_ms=recv_window_ms,
-        compute_backend=getattr(current, "compute_backend", "cpu"),
+        compute_backend=getattr(current, "compute_backend", default_compute_backend()),
         managed_usdc=getattr(current, "managed_usdc", 0.0),
         managed_btc=getattr(current, "managed_btc", 0.0),
     )
@@ -3161,7 +3191,7 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
     return all(ok for ok, _label, _detail in checks), lines
 
 
-_COMPUTE_BACKEND_CHOICES = ("cpu", "cuda", "rocm", "directml", "mps", "auto")
+_COMPUTE_BACKEND_CHOICES = SUPPORTED_COMPUTE_BACKENDS
 
 
 def _runtime_quote_asset(runtime: RuntimeConfig) -> str:
@@ -3190,7 +3220,7 @@ def _workflow_compute_backend(
     backend_name = str(requested or runtime.compute_backend or default_compute_backend()).strip().lower()
     if backend_name not in _COMPUTE_BACKEND_CHOICES:
         raise ValueError(f"unknown compute backend {backend_name!r}")
-    info = resolve_backend(backend_name)
+    info = require_backend(resolve_backend(backend_name))
     if info.kind == "cpu":
         detail = f" ({info.reason})" if info.reason else ""
         print(
@@ -3431,13 +3461,13 @@ async def _ui_edit_compute(ui) -> int:
     from .tui import FormField
 
     runtime = load_runtime()
-    current = getattr(runtime, "compute_backend", "cpu")
+    current = getattr(runtime, "compute_backend", default_compute_backend())
     payload = await ui.form(
         "Compute backend",
         [
             FormField(
                 "backend",
-                "Backend [cpu / cuda / rocm / directml / mps / auto]",
+                "Backend [auto / cpu / cuda / rocm / xpu / mps / directml]",
                 current,
             ),
         ],
@@ -3445,13 +3475,16 @@ async def _ui_edit_compute(ui) -> int:
     if payload is None:
         ui.append_log("Compute backend selection cancelled.")
         return 0
-    requested = payload["backend"].strip().lower() or "cpu"
+    requested = payload["backend"].strip().lower() or default_compute_backend()
     if requested not in _COMPUTE_BACKEND_CHOICES:
         ui.append_log(f"Unknown backend {requested!r}; keeping {current!r}.")
         return 2
     info = await ui.run_blocking(resolve_backend, requested)
+    if not info.request_satisfied:
+        ui.append_log(f"Backend not saved: {describe_backend(info)}")
+        return 2
     runtime.compute_backend = requested
-    if info.kind == "cpu" and runtime.ai_enabled:
+    if requested == "cpu" and runtime.ai_enabled:
         runtime.ai_enabled = False
         ui.append_log("AI features disabled because the selected compute backend is CPU-only.")
     save_runtime(runtime)
@@ -3658,7 +3691,7 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                     "-------------------------",
                     "  All settings opens: Connection, Strategy, Orders, Compute backend.",
                     "  Trading caps is exchange-backed: it reads balances and sets caps, never deposits or withdraws.",
-                    "  Compute backend selects CPU (default), CUDA, ROCm, DirectML, MPS, or auto-detect.",
+                    "  Compute backend defaults to auto discovery; CPU, CUDA, ROCm, XPU, MPS, or DirectML can be pinned.",
                     "",
                     "Safety",
                     "------",
@@ -5751,8 +5784,14 @@ def command_compute(args: argparse.Namespace) -> int:
         return 2
     info = resolve_backend(requested)
     if getattr(args, "backend", None) is not None:
+        if not info.request_satisfied:
+            print(
+                f"Compute backend was not saved because the request was not satisfied: {describe_backend(info)}",
+                file=sys.stderr,
+            )
+            return 2
         runtime.compute_backend = requested
-        if info.kind == "cpu" and runtime.ai_enabled:
+        if requested == "cpu" and runtime.ai_enabled:
             runtime.ai_enabled = False
             print("AI features disabled because the selected compute backend is CPU-only.", file=sys.stderr)
         save_runtime(runtime)
@@ -6650,11 +6689,35 @@ def command_polymarket_record(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             database_threads=int(args.database_threads),
         )
+        round12_contract_value = str(
+            getattr(args, "round12_contract", None) or ""
+        ).strip()
+        round12_contract_path = (
+            Path(round12_contract_value) if round12_contract_value else None
+        )
+
+        def preregistration_manifest_factory(
+            run_id: str,
+            started_at_ms: int,
+        ) -> Mapping[str, object]:
+            if round12_contract_path is None:
+                raise RuntimeError("Round 12 contract path is unavailable")
+            return build_round12_capture_manifest(
+                round12_contract_path,
+                run_id=run_id,
+                started_at_ms=started_at_ms,
+            )
+
         report = asyncio.run(
             recorder.run(
                 duration_seconds=int(args.duration_seconds),
                 progress=progress,
                 progress_interval_seconds=int(args.progress_interval_seconds),
+                preregistration_manifest_factory=(
+                    preregistration_manifest_factory
+                    if round12_contract_path is not None
+                    else None
+                ),
             )
         )
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
@@ -6829,7 +6892,27 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
             )
             eligible_condition_ids = None
             eligibility_sha256 = ""
-            if bool(getattr(args, "allow_segmented_gaps", False)):
+            continuity_admission_mode = "group"
+            round12_contract_path = getattr(args, "round12_contract", None)
+            if round12_contract_path:
+                contract = load_round12_confirmation_contract(
+                    Path(str(round12_contract_path))
+                )
+                load_round12_capture_manifest(
+                    store,
+                    run_id=str(args.run_id),
+                    contract=contract,
+                )
+                eligibility_sha256 = str(contract["contract_sha256"])
+                continuity_admission_mode = "action_local"
+                pipeline_config = replace(
+                    pipeline_config,
+                    feature=replace(
+                        pipeline_config.feature,
+                        allow_segmented_gaps=True,
+                    ),
+                )
+            elif bool(getattr(args, "allow_segmented_gaps", False)):
                 continuity = evaluate_polymarket_continuity_eligibility(
                     store,
                     run_id=str(args.run_id),
@@ -6854,6 +6937,7 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
                 config=pipeline_config,
                 eligible_condition_ids=eligible_condition_ids,
                 eligibility_sha256=eligibility_sha256,
+                continuity_admission_mode=continuity_admission_mode,
                 progress=progress,
             )
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.

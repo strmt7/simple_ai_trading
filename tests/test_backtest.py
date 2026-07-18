@@ -457,7 +457,36 @@ def test_backtest_gpu_batch_scoring_path(monkeypatch) -> None:
     assert result.scoring_backend_device == "privateuseone:0"
 
 
-def test_backtest_gpu_batch_scoring_falls_back_to_cpu(monkeypatch) -> None:
+def test_backtest_auto_gpu_batch_scoring_falls_back_to_cpu(monkeypatch) -> None:
+    rows = [
+        ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
+        ModelRow(timestamp=60_000, close=110.0, features=(1.0,), label=1),
+    ]
+    model = TrainedModel(
+        weights=[0.0],
+        bias=4.0,
+        feature_dim=1,
+        epochs=1,
+        feature_means=[0.0],
+        feature_stds=[1.0],
+    )
+    backend = BackendInfo("auto", "cuda", "cuda:0", "NVIDIA CUDA", "")
+    monkeypatch.setattr(backtest_module, "resolve_backend", lambda _requested: backend)
+
+    def fail_gpu_score(*_args, **_kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(backtest_module, "_batch_probabilities_torch", fail_gpu_score)
+
+    result = run_backtest(rows, model, StrategyConfig(risk_per_trade=0.1), compute_backend="auto")
+
+    assert result.closed_trades == 1
+    assert result.scoring_backend_requested == "auto"
+    assert result.scoring_backend_kind == "cpu"
+    assert "fell back to CPU" in result.scoring_backend_reason
+
+
+def test_backtest_pinned_gpu_batch_scoring_failure_is_not_hidden(monkeypatch) -> None:
     rows = [
         ModelRow(timestamp=0, close=100.0, features=(1.0,), label=1),
         ModelRow(timestamp=60_000, close=110.0, features=(1.0,), label=1),
@@ -472,18 +501,19 @@ def test_backtest_gpu_batch_scoring_falls_back_to_cpu(monkeypatch) -> None:
     )
     backend = BackendInfo("cuda", "cuda", "cuda:0", "NVIDIA CUDA", "")
     monkeypatch.setattr(backtest_module, "resolve_backend", lambda _requested: backend)
+    monkeypatch.setattr(
+        backtest_module,
+        "_batch_probabilities_torch",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
 
-    def fail_gpu_score(*_args, **_kwargs):
-        raise RuntimeError("boom")
-
-    monkeypatch.setattr(backtest_module, "_batch_probabilities_torch", fail_gpu_score)
-
-    result = run_backtest(rows, model, StrategyConfig(risk_per_trade=0.1), compute_backend="cuda")
-
-    assert result.closed_trades == 1
-    assert result.scoring_backend_requested == "cuda"
-    assert result.scoring_backend_kind == "cpu"
-    assert "fell back to CPU" in result.scoring_backend_reason
+    with pytest.raises(RuntimeError, match="cuda backtest scoring failed"):
+        run_backtest(
+            rows,
+            model,
+            StrategyConfig(risk_per_trade=0.1),
+            compute_backend="cuda",
+        )
 
 
 def test_backtest_hybrid_gpu_batch_scoring_matches_cpu_when_available() -> None:

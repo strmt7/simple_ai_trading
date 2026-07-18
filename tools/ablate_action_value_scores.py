@@ -9,6 +9,7 @@ from typing import Mapping, Sequence
 import lightgbm as lgb
 import numpy as np
 
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS
 from simple_ai_trading.microstructure_features import (
     apply_path_aware_lifecycle_targets,
     build_executable_microstructure_dataset,
@@ -1349,7 +1350,9 @@ def _arguments() -> argparse.Namespace:
     parser.add_argument("--summary-output", type=Path, default=None)
     parser.add_argument("--memory-limit", default="8GB")
     parser.add_argument("--threads", type=int, default=8)
-    parser.add_argument("--compute-backend", default="directml")
+    parser.add_argument(
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
+    )
     return parser.parse_args()
 
 

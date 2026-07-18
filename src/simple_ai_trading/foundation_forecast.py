@@ -12,7 +12,12 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Sequence
 
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .foundation_model_source import (
     FoundationSourceReport,
     provision_kronos_source,
@@ -141,11 +146,7 @@ def _backend_payload(backend: BackendInfo) -> dict[str, object]:
 def _torch_device(backend: BackendInfo) -> Any:
     import torch
 
-    if backend.kind == "directml":
-        import torch_directml
-
-        return torch_directml.device()
-    return torch.device(backend.device)
+    return torch_device_for_backend(backend) if backend.kind == "directml" else torch.device(backend.device)
 
 
 def _verified_huggingface_snapshot(spec: PinnedHuggingFaceArtifact) -> Path:
@@ -223,7 +224,7 @@ class KronosForecastEngine:
         cls,
         *,
         model_size: str = "base",
-        backend: str = "directml",
+        backend: str = "auto",
         source_cache_root: str | Path | None = None,
         bootstrap_source: bool = False,
         repair_source: bool = False,
@@ -242,7 +243,7 @@ class KronosForecastEngine:
         else:
             source_report = verify_kronos_source(source_cache_root)
 
-        resolved = resolve_backend(backend)
+        resolved = require_backend(resolve_backend(backend))
         if require_accelerator and resolved.kind == "cpu":
             raise RuntimeError(
                 f"foundation-model accelerator is required but {backend!r} resolved to CPU: "

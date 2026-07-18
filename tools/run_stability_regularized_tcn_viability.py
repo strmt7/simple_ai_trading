@@ -42,6 +42,7 @@ from simple_ai_trading.distributional_tcn_model import (  # noqa: E402
     compounded_forward_returns,
     role_mask,
 )
+from simple_ai_trading.compute import SUPPORTED_COMPUTE_BACKENDS  # noqa: E402
 from simple_ai_trading.joint_distributional_tcn_model import (  # noqa: E402
     BOOTSTRAP_BLOCK_HOURS,
     BOOTSTRAP_SAMPLES,
@@ -1195,7 +1196,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--derived-cache", type=Path, required=True)
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument(
-        "--compute-backend", choices=("directml", "cpu"), default="directml"
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
     )
     return parser
 

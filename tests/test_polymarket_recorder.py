@@ -2078,9 +2078,13 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
             duration_seconds: int,
             progress,
             progress_interval_seconds: int,
+            preregistration_manifest_factory=None,
         ) -> RecorderReport:
             captured["duration_seconds"] = duration_seconds
             captured["progress_interval_seconds"] = progress_interval_seconds
+            captured["preregistration_manifest_factory"] = (
+                preregistration_manifest_factory
+            )
             progress(
                 "capturing",
                 {
@@ -2159,6 +2163,7 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         "database_threads": 1,
         "duration_seconds": 5,
         "progress_interval_seconds": 5,
+        "preregistration_manifest_factory": None,
     }
     assert "phase=capturing" in captured_output.err
     assert progress_output["written_message_count"] == 4
@@ -2179,6 +2184,7 @@ def test_polymarket_record_is_generated_from_cli_contract_and_runs(
         "database_threads",
         "progress_interval_seconds",
         "progress_path",
+        "round12_contract",
         "json",
     }
 

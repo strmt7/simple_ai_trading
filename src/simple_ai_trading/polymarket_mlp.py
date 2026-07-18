@@ -15,7 +15,12 @@ import warnings
 import numpy as np
 from scipy.special import expit, ndtr
 
-from .compute import BackendInfo, resolve_backend
+from .compute import (
+    BackendInfo,
+    require_backend,
+    resolve_backend,
+    torch_device_for_backend,
+)
 from .polymarket_action_value import POLYMARKET_ACTION_FEATURE_NAMES
 from .polymarket_fit_claim import (
     PolymarketFitClaim,
@@ -122,7 +127,7 @@ class PolymarketMLPBackendEvidence:
             self.preflight_seconds,
             self.training_seconds,
         )
-        allowed = {"cpu", "cuda", "rocm", "directml", "mps"}
+        allowed = {"cpu", "cuda", "rocm", "xpu", "directml", "mps"}
         if (
             self.requested not in {"auto", *allowed}
             or self.kind not in allowed
@@ -737,20 +742,12 @@ def _torch_runtime(
             "Polymarket MLP requires the optional torch runtime"
         ) from exc
     requested = requested_backend.strip().lower()
-    backend = resolve_backend(requested)
-    if requested != "auto" and backend.kind != requested:
-        detail = f": {backend.reason}" if backend.reason else ""
-        raise RuntimeError(
-            f"requested compute backend {requested} resolved to {backend.kind}{detail}"
-        )
-    if backend.kind == "directml":
-        try:
-            import torch_directml
-        except Exception as exc:  # pragma: no cover - environmental race
-            raise RuntimeError("resolved DirectML backend is unavailable") from exc
-        device = torch_directml.device()
-    else:
-        device = torch.device(backend.device)
+    backend = require_backend(resolve_backend(requested))
+    device = (
+        torch_device_for_backend(backend)
+        if backend.kind == "directml"
+        else torch.device(backend.device)
+    )
     return torch, device, backend
 
 

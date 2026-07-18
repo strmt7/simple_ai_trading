@@ -7,7 +7,7 @@ from decimal import Decimal
 import hashlib
 import json
 import math
-from typing import Sequence
+from typing import Callable, Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
 from .duckdb_batch import insert_rows_columnar
@@ -997,6 +997,10 @@ def build_polymarket_action_value_dataset(
     execution_context: PolymarketRepricingExecutionContext,
     *,
     config: PolymarketActionValueConfig | None = None,
+    execution_observer: Callable[
+        [PolymarketActionFeature, PolymarketRepricingDecisionExecution | None], None
+    ]
+    | None = None,
 ) -> PolymarketActionValueDataset:
     """Build both chosen outcomes for every causal decision row."""
 
@@ -1048,6 +1052,8 @@ def build_polymarket_action_value_dataset(
                     ),
                 )
             )
+            if execution_observer is not None:
+                execution_observer(feature, execution)
             label = build_polymarket_action_label(feature, execution)
             features.append(feature)
             labels.append(label)
