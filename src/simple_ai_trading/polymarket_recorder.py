@@ -2306,13 +2306,15 @@ class PolymarketEvidenceStore:
         ):
             chunk_ids = [str(row[0]) for row in metadata_rows]
             placeholders = ",".join("?" for _value in chunk_ids)
+            # chunk_id is the global primary key. A redundant run_id predicate makes
+            # DuckDB abandon its index for this IN lookup and rescan the BLOB column.
             payload_rows = self._payload_connection().execute(
                 f"""
                 SELECT chunk_id, compressed_payload
                 FROM polymarket_raw_chunk
-                WHERE run_id = ? AND chunk_id IN ({placeholders})
+                WHERE chunk_id IN ({placeholders})
                 """,
-                [run_id, *chunk_ids],
+                chunk_ids,
             ).fetchall()
             payloads = {str(chunk_id): payload for chunk_id, payload in payload_rows}
             if len(payloads) != len(metadata_rows):
