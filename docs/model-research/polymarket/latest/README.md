@@ -1,84 +1,78 @@
-# Polymarket research status
+# Polymarket model status
 
-![Noncausal executable repricing ceiling](charts/repricing-ceiling.svg)
+![Round 11 directional quality](charts/round11-direction-quality.svg)
 
-Round 8 remains the latest completed numeric evidence. Its gap-free
-`2026-07-15T00:46:38.779Z` to `2026-07-15T00:55:51.787Z` capture covers 12
-BTC/ETH/SOL five-minute markets and 612,522 reconstructed books. It found
-171,400 complete two-taker oracle paths; 360 of 480 market/outcome/grid rows had
-a positive best future-timed path after displayed depth and both fee legs.
+![Round 11 sequential equity and drawdown](charts/round11-equity-drawdown.svg)
 
-This is a **noncausal mechanism ceiling**, not ROI or a trading strategy. The
-primary gate has only three complete markets per asset versus 30 required.
+![Round 11 admission result](charts/round11-admission.svg)
 
-Round 9 is implemented but unfitted. Its frozen
-[action](../round-009-causal-action-value-contract.json),
-[ridge](../round-009-ridge-implementation-contract.json), and
-[MLP](../round-009-causal-mlp-challenger-contract.json) hashes are
-`c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800`,
-`4b192e7f30af3e3d6e7dfb1b2b3342518e23de6d750b6b1cfd2334d87f2f5a12`,
-and `a5d87f65036e4a6c71835ce549668d81767b2ba16bd227ea2319c24b0880f7a2`.
-A post-contract capture must pass integrity, continuity, BTC/ETH/SOL
-synchronized-group breadth, and immutable official-resolution checks before
-the ridge may be fitted once. The MLP may run only if the ridge passes its
-preregistered development gate. Its report-v3 implementation also requires
-strictly positive validation stress-utility uplift over ridge and keeps the
-untouched neural test closed unless it contains at least 30 synchronized time
-groups. No Round 9 model score, AI edge, profitability, drawdown claim, paper
-authority, or trading authority exists.
+![Optimization evidence progression](charts/optimization-progress.svg)
 
-The former v6 local-AI selection is revoked because its prompt leaked expected
-actions through case IDs. Label-free v7 inference rejected all four priority
-8B/9B models, and v7 itself is historical-only because its response parser was
-too permissive. V8 requires exact typed JSON and is frozen before the one-shot
-Qwen3 14B candidate. Its exact preregistration digest is code-pinned, and one
-claim cannot be reopened against another confirmation run in the same ledger.
-Polymarket AI provider, schema, confidence, and latency failures are immutable
-cached vetoes, so reruns cannot retry failures for a favorable answer. No AI
-model is selected; `ai-risk-models-rejected.json` is negative governance
-evidence only and grants no AI or trading authority.
+## Latest result
 
-Capture attempts `eae374e2662c440fb93970d5710937b1`,
-`3a67757c7f174df4b62f2722ea9211cb`, and
-`b8a270da20fe4116a01a4626607e42da` are permanently development-only and cannot
-confirm a model. Storage v4 persists exact receipt metadata and payload bytes in
-1,024-message compressed frames, leaves the retired message/event hot tables
-empty, reconstructs normalized events at read time, and binds the ordered chunk
-root into the terminal report. The hash-bound
-[v4 long-tail benchmark](../storage-v4-long-tail-benchmark-2026-07-16.json)
-records 2,000,000 exact real sampled payloads at 48,189 writes/s and 66,049
-replays/s with a clean full audit. Synthetic receipt clocks and a failed source
-run make it infrastructure evidence only. A subsequent
-[five-minute live soak](../storage-v4-live-soak-2026-07-16.json) captured 470,422
-messages with queue high-water 569 of 500,000 and clean initial/reopen audits.
-One recorded CLOB disconnect made it `degraded`, so a clean 15-hour confirmation
-is still required. Bounded action batches reconstruct one
-full-resolution CLOB replay and derive the exact 250 ms feature view from it,
-removing the second condition scan without changing feature or action identity.
-After a clean terminal audit, action materialization now builds one
-report-hash-bound, zstd-compressed condition-reference cache and verifies every
-frame, manifest, source coordinate, and decoded condition before replay. The
-cache duplicates no market payloads. Fixture replay is exact.
-Capture `79ac19539d384352b865c21cb0c43627` saturated after 10.1 hours and was
-terminalized `failed`; it permanently grants no Round 9 model or AI evidence.
-No confirmation capture is active.
+Round 11 tested a fundamentally different action: one minimum-size FOK buy,
+held to official resolution. It used the real Round 9 BTC/ETH/SOL capture,
+exact replayed entry costs and fees, chronological groups, and one total unit of
+training weight per resolved market.
 
-The host [DirectML preflight](../round-009-directml-preflight.json) completed a
-real MLP forward/backward parameter update on `privateuseone:0` with no CPU
-fallback. The complete ensemble fit now also rejects explicit accelerator
-requests that resolve to CPU, captures fallback warnings for every epoch, and
-requires Torch checkpoint probabilities to replay through the persisted
-canonical report-v3 model within the frozen numerical tolerance. These are
-implementation controls, not model-quality, market-speed, or profitability
-evidence.
+The best development candidate filled all 42 validation markets, won 32, and
+returned `+22.44105` quote before redemption overhead. Maximum drawdown was
+`12.36399`. The 95% moving-block-bootstrap interval for mean utility per
+synchronized market group was `[-1.38152, 4.01152]`, so the lower bound was not
+positive and did not beat the market-prior policy. **Round 11 failed.** It does
+not establish profitability, ROI, acceptable drawdown, paper authority, or
+trading authority.
 
-The `polymarket-ridge` command claims its pipeline in DuckDB before test
-evaluation. A completed claim reloads the signed report without refitting; an
-interrupted or failed claim remains fail-closed so a retry cannot silently
-reopen the untouched test. `polymarket-mlp` uses the same database-backed claim
-before any nonlinear test access.
+The probability model improved validation log loss from `0.30933` to `0.25090`,
+but the fitted external-feature residual had an L2 norm of only `0.00117`.
+Nearly all uplift came from sharpening Polymarket's own midpoint probability;
+an independent CEX/flow edge has not been established. A nonlinear model or
+LLM would be unjustified on only 96 independent training markets and was not
+run.
 
-Inspect the [full signed report](../round-008-executable-repricing-ceiling-report.json),
-[exact chart data](tables/repricing-cells.csv),
-[primary market rows](tables/repricing-primary-markets.csv), and
-[integrity manifest](publication-integrity.json).
+Round 10 is also complete and rejected. Its one-second taker entry/taker exit
+mechanism had no positive after-cost transparent score, so it selected zero
+actions. Round 9 remains the immutable pre-fit unknown-state failure.
+
+## Exact evidence
+
+- [Round 11 contract](../round-011-single-leg-directional-value-contract.json)
+- [Round 11 report](../round-011-single-leg-directional-value-report.json)
+- [Round 11 model artifact](../round-011-single-leg-directional-value-artifact.json)
+- [Round 10 report](../round-010-development-hurdle-report.json)
+- [Publication integrity](publication-integrity.json)
+- [Direction metrics](tables/round11-direction-validation.csv)
+- [All policy candidates](tables/round11-policy-candidates.csv)
+- [Selected condition path](tables/round11-selected-conditions.csv)
+- [Equity and drawdown](tables/round11-equity.csv)
+- [Execution heads](tables/round11-execution-validation.csv)
+- [Optimization progression](tables/optimization-progress.csv)
+
+Regenerate the latest tables and SVGs with:
+
+```powershell
+.\.venv311\Scripts\python.exe tools\publish_polymarket_round11.py
+```
+
+The publisher verifies all canonical contract, report, and artifact hashes and
+reconstructs total utility and drawdown from condition-level rows. Graphs are
+generated only from the committed CSV/JSON evidence.
+
+## Next boundary
+
+The next round must freeze a calibration-only control, broader conservative
+probability thresholds, correlated group exposure limits, and uncertainty-aware
+abstention before reading fresh outcomes. It needs materially more independent
+five-minute markets. Public replay may test predictive and displayed-book
+economics, but bot-owned inventory authority additionally requires the
+authenticated user channel, exact `CONFIRMED` lifecycle, balance
+reconciliation, and measured redemption overhead.
+
+Current primary sources:
+
+- <https://docs.polymarket.com/market-data/websocket/user-channel>
+- <https://docs.polymarket.com/trading/fees>
+- <https://docs.polymarket.com/v2-migration>
+- <https://arxiv.org/abs/2606.31675>
+- <https://arxiv.org/abs/2606.16852>
+- <https://arxiv.org/abs/2605.00864>

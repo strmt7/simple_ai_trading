@@ -2,7 +2,7 @@
 name: source-audit
 description: Audit financial, data, model, and dependency claims for primary-source quality, dates, provenance, and reproducibility before implementation or publication.
 metadata:
-  origin: "adapted from ZMB-UZH/omero-docker-extended at b27dbe990703d64d13e540c40cf4e122954c664d"
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # Source Audit

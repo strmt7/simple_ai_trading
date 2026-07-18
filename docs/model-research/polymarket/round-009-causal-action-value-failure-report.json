@@ -1,0 +1,208 @@
+{
+  "admission_failure": {
+    "blocking_reasons": [
+      {
+        "action_count": 12,
+        "asset_count": 3,
+        "condition_count": 6,
+        "decision_timestamp_count": 6,
+        "outcome_count": 2,
+        "terminal_reason": "entry_confirmation_enters_excluded_close_window"
+      },
+      {
+        "action_count": 388,
+        "asset_count": 3,
+        "condition_count": 66,
+        "decision_timestamp_count": 192,
+        "outcome_count": 2,
+        "terminal_reason": "missing_entry_execution_book"
+      }
+    ],
+    "claim_dataset_sha256": "7dd8528cf9fcc73b48727657a4b172ebfac0ed73fac22c487c0150e669d0949f",
+    "claim_schema_version": "polymarket-model-fit-claim-v1",
+    "claim_state": "failed",
+    "completed_at_utc": "2026-07-18T15:56:45.598Z",
+    "error_message": "unproven post-submission entry state:entry_confirmation_enters_excluded_close_window:12,missing_entry_execution_book:388",
+    "error_type": "ValueError",
+    "failure_sha256": "17e111b94ecf78fa21805cd8f4bb5662dd8d2c562ed1375b6ac3dea350dac932",
+    "retry_permitted": false,
+    "started_at_utc": "2026-07-18T15:56:45.290Z"
+  },
+  "failure_stage": "clear_label_admission_after_opaque_claim",
+  "interpretation": {
+    "candidate_net_warning": "all_candidate_net_quote sums every hypothetical candidate and is not a sequential strategy return",
+    "failure_meaning": "The public-feed replay could not prove every post-submission entry state within the frozen confirmation window. Censoring or treating those rows as no-fill would invent evidence.",
+    "required_next_step": "Use a separately frozen development round with explicit unknown-state worst-case capital loss and authenticated lifecycle telemetry before any independent confirmation."
+  },
+  "model_evidence": {
+    "ai_score": null,
+    "ai_uplift_authorized": false,
+    "drawdown_claim": false,
+    "mlp_authorized": false,
+    "mlp_score": null,
+    "paper_authority": false,
+    "profitability_claim": false,
+    "ridge_fit_reached": false,
+    "ridge_report_sha256": null,
+    "ridge_score": null,
+    "roi_claim": false,
+    "trading_authority": false
+  },
+  "population": {
+    "action_count": 251892,
+    "assets": [
+      {
+        "action_count": 88726,
+        "all_candidate_net_quote": "-11434.366720000000000000",
+        "asset": "BTC",
+        "classifier_eligible_count": 88230,
+        "positive_complete_count": 4950,
+        "positive_complete_rate_of_eligible": "5.610337"
+      },
+      {
+        "action_count": 82380,
+        "all_candidate_net_quote": "-10023.100750000000000000",
+        "asset": "ETH",
+        "classifier_eligible_count": 82001,
+        "positive_complete_count": 5249,
+        "positive_complete_rate_of_eligible": "6.401141"
+      },
+      {
+        "action_count": 80786,
+        "all_candidate_net_quote": "-11195.673400000000000000",
+        "asset": "SOL",
+        "classifier_eligible_count": 80356,
+        "positive_complete_count": 3553,
+        "positive_complete_rate_of_eligible": "4.421574"
+      }
+    ],
+    "categories": [
+      {
+        "action_count": 194089,
+        "category": "successful_round_trip",
+        "percentage_of_actions": "77.052467"
+      },
+      {
+        "action_count": 28438,
+        "category": "filled_entry_failed_exit",
+        "percentage_of_actions": "11.289759"
+      },
+      {
+        "action_count": 28060,
+        "category": "entry_no_fill",
+        "percentage_of_actions": "11.139695"
+      },
+      {
+        "action_count": 1305,
+        "category": "action_unavailable",
+        "percentage_of_actions": "0.518079"
+      }
+    ],
+    "classifier_eligible_count": 250587,
+    "condition_blocked_count": 28438,
+    "distinct_action_feature_sha256_count": 251892,
+    "entry_filled_count": 222527,
+    "excluded_after_event_scope_count": 694247,
+    "exit_filled_count": 194089,
+    "feature_row_count": 125946,
+    "outcomes": [
+      {
+        "action_count": 125946,
+        "classifier_eligible_count": 125291,
+        "outcome": "Down",
+        "positive_complete_count": 6919
+      },
+      {
+        "action_count": 125946,
+        "classifier_eligible_count": 125296,
+        "outcome": "Up",
+        "positive_complete_count": 6833
+      }
+    ],
+    "positive_complete_count": 13752,
+    "terminal_reasons": [
+      {
+        "action_count": 194089,
+        "percentage_of_actions": "77.052467",
+        "terminal_reason": "complete_round_trip"
+      },
+      {
+        "action_count": 28060,
+        "percentage_of_actions": "11.139695",
+        "terminal_reason": "entry_not_filled"
+      },
+      {
+        "action_count": 26643,
+        "percentage_of_actions": "10.577152",
+        "terminal_reason": "exit_not_filled"
+      },
+      {
+        "action_count": 1161,
+        "percentage_of_actions": "0.460912",
+        "terminal_reason": "exit_enters_excluded_close_window"
+      },
+      {
+        "action_count": 900,
+        "percentage_of_actions": "0.357296",
+        "terminal_reason": "entry_enters_excluded_close_window"
+      },
+      {
+        "action_count": 388,
+        "percentage_of_actions": "0.154034",
+        "terminal_reason": "missing_entry_execution_book"
+      },
+      {
+        "action_count": 360,
+        "percentage_of_actions": "0.142918",
+        "terminal_reason": "missing_exit_execution_book"
+      },
+      {
+        "action_count": 274,
+        "percentage_of_actions": "0.108777",
+        "terminal_reason": "missing_exit_decision_book"
+      },
+      {
+        "action_count": 12,
+        "percentage_of_actions": "0.004764",
+        "terminal_reason": "entry_confirmation_enters_excluded_close_window"
+      },
+      {
+        "action_count": 5,
+        "percentage_of_actions": "0.001985",
+        "terminal_reason": "missing_entry_creation_book"
+      }
+    ]
+  },
+  "report_canonical_sha256": "3e357bea091259f53d9de3eb4275b863acd368fadbb45950864cabcfdf92a367",
+  "round": 9,
+  "schema_version": "polymarket-round9-admission-failure-report-v1",
+  "scope": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "condition_count": 141,
+    "decision_cadence_ms": 250,
+    "decision_end_utc": "2026-07-17T05:49:30.287Z",
+    "decision_start_utc": "2026-07-16T15:30:05.082Z",
+    "holding_period_ms": 1000,
+    "market_group_count": 47,
+    "maximum_post_target_execution_observation_delay_ms": 500,
+    "minimum_remaining_market_time_ms": 30000,
+    "per_leg_submission_latency_ms": 500
+  },
+  "source": {
+    "action_contract_sha256": "c8988fd548cff295800b977d6e6c92c39e9f2867b6c6e4b5f7e3d0b2b96f9800",
+    "action_implementation_sha256": "5e75c49312431c3bc33c3ace33f2edf061acd6d4e6fa5c0151c76779e9f528ab",
+    "continuity_eligibility_sha256": "3bedeab48314d826a1dcf9dfa4f995b66eed4ac281430781074ebf3395592d72",
+    "database_file": "polymarket-round9-confirmation-v4-20260716-152838Z.duckdb",
+    "ordered_action_batch_root_sha256": "b42d3aa286cb9bc3d9f5feeb46d3aeeb77f097df944bc6b445b22fe3727cf4db",
+    "pipeline_report_sha256": "1d3b1e0df05dbb4a7f5b9be9fe7b40fd03ba8f6f06bf90115851adb10efb4d8b",
+    "pipeline_schema_version": "polymarket-action-value-bounded-pipeline-v2",
+    "ridge_contract_sha256": "4b192e7f30af3e3d6e7dfb1b2b3342518e23de6d750b6b1cfd2334d87f2f5a12",
+    "run_id": "e34d349771da4c35bcc8ae436c2fe9f6",
+    "run_report_sha256": "2e7193ffd48c5008453765402cea3a6d4e5eda2f3989df19c005d9d444793b28"
+  },
+  "status": "failed_before_model_fit"
+}

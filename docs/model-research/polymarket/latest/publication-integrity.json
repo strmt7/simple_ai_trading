@@ -1,97 +1,95 @@
 {
-  "artifact_class": "exchange_sourced_noncausal_mechanism_ceiling",
-  "capture_end_utc": "2026-07-15T00:55:51.787Z",
-  "capture_start_utc": "2026-07-15T00:46:38.779Z",
-  "claims": {
-    "ai_edge_evaluated": false,
-    "drawdown_claim": false,
-    "noncausal_oracle_upper_bound": true,
-    "profitability_claim": false,
-    "roi_claim": false,
-    "trading_authority": false,
-    "training_authority": false
-  },
-  "generated_artifacts": [
+  "artifacts": [
     {
-      "bytes": 1310344,
-      "path": "round-008-executable-repricing-ceiling-report.json",
-      "sha256": "94a9afb1f180338c0ce344c393aceeb2e80e5091f96746a47ee09c316afbb916"
+      "bytes": 2350,
+      "path": "docs/model-research/polymarket/latest/charts/optimization-progress.svg",
+      "sha256": "15a1c60939f6f5189535d715d86e2f1b348ab756752779223b96e6321aff4262"
     },
     {
-      "bytes": 5209,
-      "path": "latest/README.md",
-      "sha256": "6ef4c44f07db644fb6c85f7b3ab6f134cbc70dbd9839f0782034bf371f0cd354"
+      "bytes": 3251,
+      "path": "docs/model-research/polymarket/latest/charts/round11-admission.svg",
+      "sha256": "fcf8bbdbbb2fcf8c2456ee16f577c6df31768f40efedd93a5ccc460511eb8674"
     },
     {
-      "bytes": 14469,
-      "path": "latest/charts/repricing-ceiling.svg",
-      "sha256": "d77e5b12fefbe68a385cc9e88f68e765f1fb6b2ee83da248ee2d7f03ca9a66f3"
+      "bytes": 4569,
+      "path": "docs/model-research/polymarket/latest/charts/round11-direction-quality.svg",
+      "sha256": "536247e99d0f78920158cb0d7de6e7e7184f0afd6aceddd4872270755294f10b"
     },
     {
-      "bytes": 8746,
-      "columns": [
-        "capture_start_utc",
-        "capture_end_utc",
-        "asset",
-        "per_leg_submission_latency_ms",
-        "holding_period_ms",
-        "source_market_count",
-        "complete_market_count",
-        "positive_market_count",
-        "positive_market_fraction",
-        "median_market_outcome_best_net_bps",
-        "maximum_market_outcome_best_net_bps",
-        "confirmation_eligible",
-        "noncausal_oracle_upper_bound"
-      ],
-      "path": "latest/tables/repricing-cells.csv",
-      "row_count": 60,
-      "sha256": "f01a954206c727658f0e6c6676f6e82589593d1306fd5f690e60812a1e73ade2"
+      "bytes": 4328,
+      "path": "docs/model-research/polymarket/latest/charts/round11-equity-drawdown.svg",
+      "sha256": "fd8239a48ea8ab0d17663cd7ad3ffed31ae4a9cd0dfb4542df445bf67d4a33e0"
     },
     {
-      "bytes": 6596,
-      "columns": [
-        "capture_start_utc",
-        "capture_end_utc",
-        "condition_id",
-        "market_id",
-        "asset",
-        "outcome",
-        "per_leg_submission_latency_ms",
-        "holding_period_ms",
-        "decision_count",
-        "complete_round_trip_count",
-        "quantity",
-        "best_entry_cost_quote",
-        "best_exit_proceeds_quote",
-        "best_net_quote",
-        "best_net_bps_on_entry_cost",
-        "positive",
-        "opportunity_sha256"
-      ],
-      "path": "latest/tables/repricing-primary-markets.csv",
-      "row_count": 24,
-      "sha256": "720d790d1bc6a015e54b59547fc601a8cbf4b538f393486d9b2834a95cd0744e"
+      "bytes": 442,
+      "path": "docs/model-research/polymarket/latest/tables/optimization-progress.csv",
+      "sha256": "9b273e67f077e27f2cd745cb4425c168bed04623cf8f1fdbe7bc7166eb2addb4"
     },
     {
-      "bytes": 750,
-      "columns": [
-        "terminal_reason",
-        "decision_count",
-        "decision_fraction"
-      ],
-      "path": "latest/tables/repricing-terminal-reasons.csv",
-      "row_count": 14,
-      "sha256": "bf9bdac8e73d224504cbc625d27000cba0f88e27275ecd76467378f1d7f7817e"
+      "bytes": 642,
+      "path": "docs/model-research/polymarket/latest/tables/round11-direction-validation.csv",
+      "sha256": "a45454b53ea58bf087ea8ffc32eeb9daa20ad2e523c51448ae83032ac1141841"
+    },
+    {
+      "bytes": 1259,
+      "path": "docs/model-research/polymarket/latest/tables/round11-equity.csv",
+      "sha256": "ab50132b0db5bec743ca769e61744cfb9d852417251c0308fa58c61b6e067315"
+    },
+    {
+      "bytes": 392,
+      "path": "docs/model-research/polymarket/latest/tables/round11-execution-validation.csv",
+      "sha256": "dae34e1e9b3feae5aa220da51d644783e265768ed22521ef9f46c063a337c678"
+    },
+    {
+      "bytes": 9778,
+      "path": "docs/model-research/polymarket/latest/tables/round11-policy-candidates.csv",
+      "sha256": "7e05e5f35abef23a5649b1c2813a22251fbdac9d20b038c9b403a252af7a9b21"
+    },
+    {
+      "bytes": 11145,
+      "path": "docs/model-research/polymarket/latest/tables/round11-selected-conditions.csv",
+      "sha256": "83b321a3def1d74e13b76230f1e24920ad99c84c66524f82a44d34ad7b90e17e"
+    },
+    {
+      "bytes": 7385,
+      "path": "docs/model-research/polymarket/round-009-causal-action-value-failure-report.json",
+      "sha256": "6d14391fba776b0e2c21afcbaa7365cf96f1af4f8f10ebe21639e62cbbbb967d"
+    },
+    {
+      "bytes": 31317,
+      "path": "docs/model-research/polymarket/round-010-development-hurdle-report.json",
+      "sha256": "badf8f803ab74a051d1f86f56aa48542fcb2875ef019e6df79feeb3e02f148c8"
+    },
+    {
+      "bytes": 17492,
+      "path": "docs/model-research/polymarket/round-010-observability-utility-hurdle-contract.json",
+      "sha256": "ac4266ab3c0a65b754337c8838175fb241372443221e2fc75978eaeb55217480"
+    },
+    {
+      "bytes": 16163,
+      "path": "docs/model-research/polymarket/round-011-single-leg-directional-value-artifact.json",
+      "sha256": "0f34ebc03f46c3fec88a77816119f81fdba976eb7ef7635539fea0de00ac6a31"
+    },
+    {
+      "bytes": 16616,
+      "path": "docs/model-research/polymarket/round-011-single-leg-directional-value-contract.json",
+      "sha256": "90efc5392c2a9baf0069cabb956e8397bcfa243ae79f03cf2794d2ed71f503fc"
+    },
+    {
+      "bytes": 249424,
+      "path": "docs/model-research/polymarket/round-011-single-leg-directional-value-report.json",
+      "sha256": "05399ff2848eaa2a56d510130ee77965c99fb5b7f0a1929422ce76aab310718c"
     }
   ],
-  "manifest_sha256": "810e7b405774679ad0ed00cffdd2290028f376f3670a5bfa61b3272d3290b89a",
-  "reproduction_command": "python -m simple_ai_trading.polymarket_repricing_publication --report docs/model-research/polymarket/round-008-executable-repricing-ceiling-report.json --capture-evidence docs/model-research/polymarket/round-002-prospective-pipeline-evidence.json --research-root docs/model-research/polymarket",
-  "round": 8,
-  "schema_version": "polymarket-repricing-publication-v1",
-  "source_capture_evidence": "round-002-prospective-pipeline-evidence.json",
-  "source_capture_evidence_file_sha256": "81c7786f8303bcd7f547abc3563cbd7641bc1680a5b583d440bf3282fd741424",
-  "source_report": "round-008-executable-repricing-ceiling-report.json",
-  "source_report_sha256": "d971c0fdcec370f290fc267d5616764a05653175f26c8fcc0b6b1ede8501c7f7",
-  "source_run_id": "0184b6a4bc0846a9b241aadc0491f016"
+  "drawdown_claim": false,
+  "latest_round": 11,
+  "paper_authority": false,
+  "profitability_claim": false,
+  "publication_sha256": "941de5157ae7fcc508d4f255ace82f5d618e7ea8eabc97d4d12f5986d957c6fc",
+  "roi_claim": false,
+  "schema_version": "polymarket-round11-latest-publication-v1",
+  "source_artifact_sha256": "c1d174b3274d374b1008272c70954a67c8a2953b875d11b7268658666d23c7bc",
+  "source_report_sha256": "c64bd0356e4e1e333fa80512665a690bc0fac44161429212c7851e3f2b6cca0e",
+  "status": "development_failed_uncertainty_and_market_prior_gate",
+  "trading_authority": false
 }

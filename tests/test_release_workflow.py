@@ -65,9 +65,12 @@ def test_beta_release_workflow_is_manual_prerelease_with_replacement_guard() -> 
     assert (
         "replace_existing=true requires replacement_acknowledgement exactly" in action
     )
+    assert "gh release delete $env:RELEASE_TAG --yes --cleanup-tag" in action
+    assert "GitHub release remained visible after deletion" in action
+    assert "GitHub tag remained visible after deletion" in action
     assert "tools\\build_native_windows.ps1" in action
     assert "tools\\smoke_native_windows_ui.ps1" in action
     assert "tools\\validate_native_windows_layout.ps1" in action
-    assert "python -m coverage report" in action
+    assert "uv run --locked coverage report" in action
     assert "coverage report --fail-under" not in action
     assert "SimpleAITrading.exe" in action

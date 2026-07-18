@@ -2,7 +2,7 @@
 
 This repository carries the applicable agent tooling from
 [`ZMB-UZH/omero-docker-extended`](https://github.com/ZMB-UZH/omero-docker-extended)
-at commit `b27dbe990703d64d13e540c40cf4e122954c664d`. The files are adapted for a
+at commit `246110b1045cfd4ca318b4e870b5a38d213399b6`. The files are adapted for a
 Windows-first Python trading repository; OMERO, Django, and container-specific
 skills are intentionally not copied.
 
@@ -11,15 +11,23 @@ skills are intentionally not copied.
 | Tool | Pinned version | Repository entry point |
 | --- | --- | --- |
 | CocoIndex Code | `0.2.37` | `tools/cocoindex_agent_search.py` |
+| uv | `0.11.29` | `pyproject.toml` and `uv.lock` |
 | Ruff | `0.15.22` | `.github/workflows/ruff.yml` |
 | Vulture | `2.16` | `tools/vulture_check.py` and `.github/workflows/vulture.yml` |
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
+| Agent skills | ECC `2.0.0` | `.agents/skills/` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
 
 A fresh 2026-07-18 upstream check found CocoIndex Code `0.2.37`, Vulture
-`2.16`, and Super-Linter `v8.7.0` still current. The pinned Karpathy, OMERO,
-and Kronos commits remain their respective upstream `HEAD` revisions. Ruff was
-updated only after reviewing its release notes and pinned action commit.
+`2.16`, and Super-Linter `v8.7.0` still current. The pinned Karpathy commit is
+still its upstream `HEAD`; OMERO advanced to the exact commit above and its
+applicable ECC `2.0.0` skill changes were reviewed and adapted. Ruff and uv were
+updated only after reviewing their release notes and pinned action commits.
+
+CI and release jobs use `uv sync --locked`; `uv.lock` is the cross-platform,
+hash-bound dependency record. Dependabot may propose monthly `uv` and GitHub
+Actions updates, but it cannot merge them. Accelerator and numerical-library
+changes still require host compatibility and model-parity evidence.
 
 The main CI workflow also runs `tools/audit_financial_terminology.py`. It rejects
 superseded labels in authored documentation, Windows UI text, publication
@@ -70,6 +78,11 @@ a claim about model-specific token usage.
 
 Use the narrowest relevant checks while iterating, then the complete suite at a
 promotion or release boundary:
+
+Record each passing command, relevant tree state, and artifact. Do not rerun an
+unchanged gate merely for reassurance; invalidate it only when code,
+configuration, fixtures, dependencies, runtime artifacts, or platform inputs
+change. Run the complete required matrix once against the final release tree.
 
 ```powershell
 python -m ruff check .

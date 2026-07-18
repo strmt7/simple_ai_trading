@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="500" viewBox="0 0 1280 500">
+<rect width="1280" height="500" fill="#F8FAFC"/>
+<text x="48" y="55" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700" fill="#0F172A">Optimization evidence progression</text>
+<text x="48" y="88" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">Sequential filled conditions by frozen round; counts are not comparable ROI and every round remains rejected</text>
+<text x="48" y="177" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Round 9</text>
+<text x="155" y="177" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">1 s taker scalp admission</text>
+<rect x="455" y="150" width="700" height="38" rx="4" fill="#E2E8F0"/>
+<rect x="455" y="150" width="0.0" height="38" rx="4" fill="#B42318"/>
+<text x="470" y="176" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#0F172A">0 fills | failed before fit</text>
+<text x="48" y="272" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Round 10</text>
+<text x="155" y="272" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">1 s taker scalp hurdle</text>
+<rect x="455" y="245" width="700" height="38" rx="4" fill="#E2E8F0"/>
+<rect x="455" y="245" width="0.0" height="38" rx="4" fill="#B42318"/>
+<text x="470" y="271" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#0F172A">0 fills | no positive score</text>
+<text x="48" y="367" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700" fill="#0F172A">Round 11</text>
+<text x="155" y="367" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">single-leg settlement hold</text>
+<rect x="455" y="340" width="700" height="38" rx="4" fill="#E2E8F0"/>
+<rect x="455" y="340" width="700.0" height="38" rx="4" fill="#B42318"/>
+<text x="470" y="366" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#0F172A">42 fills | failed uncertainty gate</text>
+<text x="48" y="463" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#B42318">Round 9 failed before fit; Round 10 selected no positive one-second scalp; Round 11 had 42 fills but failed uncertainty and baseline gates.</text>
+</svg>

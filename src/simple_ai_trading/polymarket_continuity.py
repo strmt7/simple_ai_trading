@@ -76,6 +76,27 @@ class PolymarketContinuityConfig:
         return {key: int(value) for key, value in asdict(self).items()}
 
 
+def polymarket_round9_evidence_window(
+    *,
+    event_start_ms: int,
+    end_ms: int,
+    config: PolymarketContinuityConfig | None = None,
+) -> tuple[int, int]:
+    """Return the frozen local-receipt evidence window for one Round 9 market."""
+
+    cfg = (config or PolymarketContinuityConfig()).validated()
+    start = int(event_start_ms)
+    end = int(end_ms)
+    if start <= 0 or end <= start:
+        raise ValueError("Polymarket market timing is invalid")
+    return (
+        start - cfg.chainlink_anchor_allowance_ms,
+        end
+        - cfg.minimum_remaining_market_time_ms
+        + cfg.maximum_execution_confirmation_delay_ms,
+    )
+
+
 @dataclass(frozen=True)
 class PolymarketContinuityGroup:
     event_start_ms: int
@@ -216,11 +237,10 @@ def _create_window_tables(
     token_rows: list[tuple[object, ...]] = []
     asset_rows: list[tuple[object, ...]] = []
     for event_start_ms, markets in sorted(groups.items()):
-        window_start = event_start_ms - config.chainlink_anchor_allowance_ms
-        window_end = (
-            markets[0].end_ms
-            - config.minimum_remaining_market_time_ms
-            + config.maximum_execution_confirmation_delay_ms
+        window_start, window_end = polymarket_round9_evidence_window(
+            event_start_ms=event_start_ms,
+            end_ms=markets[0].end_ms,
+            config=config,
         )
         baseline_deadline = event_start_ms + config.feature_warmup_ms
         for market in markets:
@@ -842,7 +862,7 @@ def evaluate_polymarket_continuity_eligibility(
     ended_at_ms = None if run[4] is None else int(run[4])
     if not _is_sha256(report_sha256) or ended_at_ms is None:
         raise ValueError("Polymarket continuity run report is invalid")
-    integrity = store.integrity_errors(selected)
+    integrity = store.resume_integrity_errors(selected)
     if integrity:
         raise ValueError(
             "Polymarket continuity integrity failed: " + "; ".join(integrity)
@@ -874,11 +894,10 @@ def evaluate_polymarket_continuity_eligibility(
     evaluated: list[PolymarketContinuityGroup] = []
     for event_start_ms, market_group in synchronized.items():
         reasons: list[str] = list(gaps.get(event_start_ms, ()))
-        window_start = event_start_ms - cfg.chainlink_anchor_allowance_ms
-        window_end = (
-            market_group[0].end_ms
-            - cfg.minimum_remaining_market_time_ms
-            + cfg.maximum_execution_confirmation_delay_ms
+        window_start, window_end = polymarket_round9_evidence_window(
+            event_start_ms=event_start_ms,
+            end_ms=market_group[0].end_ms,
+            config=cfg,
         )
         evidence: dict[str, object] = {
             "run_bounds": {
@@ -1041,4 +1060,5 @@ __all__ = [
     "PolymarketContinuityGroup",
     "PolymarketContinuityReport",
     "evaluate_polymarket_continuity_eligibility",
+    "polymarket_round9_evidence_window",
 ]

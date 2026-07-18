@@ -259,9 +259,7 @@ def _model_validation_evidence(model: object) -> dict[str, object]:
     return {
         "available": True,
         "model_family": str(getattr(model, "model_family", ""))[:80],
-        "selected_candidate": str(
-            getattr(model, "model_selected_candidate", "")
-        )[:80],
+        "selected_candidate": str(getattr(model, "model_selected_candidate", ""))[:80],
         "probability_calibration": {
             "sample_count": _nonnegative_int_or_none(
                 getattr(model, "probability_calibration_size", None)
@@ -272,9 +270,7 @@ def _model_validation_evidence(model: object) -> dict[str, object]:
             "brier_after": _finite_or_none(
                 getattr(model, "probability_brier_after", None)
             ),
-            "ece_after": _finite_or_none(
-                getattr(model, "probability_ece_after", None)
-            ),
+            "ece_after": _finite_or_none(getattr(model, "probability_ece_after", None)),
         },
         "selection_risk": {
             "passed": selection.get("passed") is True,
@@ -285,7 +281,9 @@ def _model_validation_evidence(model: object) -> dict[str, object]:
         },
         "labeling": {
             "available": feature_config is not None,
-            "mode": str(feature_config.label_mode) if feature_config is not None else "",
+            "mode": str(feature_config.label_mode)
+            if feature_config is not None
+            else "",
             "lookahead_bars": (
                 int(feature_config.label_lookahead)
                 if feature_config is not None
@@ -303,9 +301,7 @@ def _model_validation_evidence(model: object) -> dict[str, object]:
             "closed_trades": _nonnegative_int_or_none(
                 terminal_result.get("closed_trades")
             ),
-            "realized_pnl_quote": _finite_or_none(
-                terminal_result.get("realized_pnl")
-            ),
+            "realized_pnl_quote": _finite_or_none(terminal_result.get("realized_pnl")),
             "maximum_drawdown_fraction": _finite_or_none(
                 terminal_result.get("max_drawdown")
             ),
@@ -321,9 +317,7 @@ def _model_validation_evidence(model: object) -> dict[str, object]:
             "bootstrap_lower_mean_return": _finite_or_none(
                 market_edge.get("bootstrap_lower_mean_return")
             ),
-            "sign_test_p_value": _finite_or_none(
-                market_edge.get("sign_test_p_value")
-            ),
+            "sign_test_p_value": _finite_or_none(market_edge.get("sign_test_p_value")),
             "liquidation_events": _nonnegative_int_or_none(
                 terminal_result.get("liquidation_events")
             ),
@@ -368,15 +362,12 @@ def _model_validation_evidence(model: object) -> dict[str, object]:
             "walk_forward_worst_drawdown_fraction": _finite_or_none(
                 walk_forward.get("worst_max_drawdown")
             ),
-            "stress_passed": _mapping(execution.get("stress")).get("accepted")
-            is True,
-            "temporal_passed": _mapping(
-                execution.get("temporal_robustness")
-            ).get("accepted")
-            is True,
-            "portfolio_passed": _mapping(execution.get("portfolio")).get(
+            "stress_passed": _mapping(execution.get("stress")).get("accepted") is True,
+            "temporal_passed": _mapping(execution.get("temporal_robustness")).get(
                 "accepted"
             )
+            is True,
+            "portfolio_passed": _mapping(execution.get("portfolio")).get("accepted")
             is True,
             "coverage_years": _finite_or_none(coverage.get("used_duration_years")),
             "coverage_ratio": _finite_or_none(coverage.get("coverage_ratio")),
@@ -412,21 +403,15 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     )
     brier = _finite_or_none(calibration.get("brier_after"))
     ece = _finite_or_none(calibration.get("ece_after"))
-    mean_return_bps = _finite_or_none(
-        terminal.get("mean_after_cost_sample_return_bps")
-    )
-    bootstrap_lower = _finite_or_none(
-        terminal.get("bootstrap_lower_mean_return")
-    )
+    mean_return_bps = _finite_or_none(terminal.get("mean_after_cost_sample_return_bps"))
+    bootstrap_lower = _finite_or_none(terminal.get("bootstrap_lower_mean_return"))
     cost_floor_bps = _finite_or_none(
         cost_model.get("configured_round_trip_cost_floor_bps")
     )
     evidence_barrier_bps = _finite_or_none(
         cost_model.get("model_gross_label_barrier_bps")
     )
-    model_barrier_bps = _finite_or_none(
-        labeling.get("gross_label_barrier_bps")
-    )
+    model_barrier_bps = _finite_or_none(labeling.get("gross_label_barrier_bps"))
     microstructure_seconds = _nonnegative_int_or_none(
         execution.get("microstructure_seconds")
     )
@@ -437,19 +422,13 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
     meta_minimum_samples = _nonnegative_int_or_none(
         meta_label.get("validation_minimum_sample_count")
     )
-    meta_samples = _nonnegative_int_or_none(
-        meta_label.get("validation_sample_count")
-    )
+    meta_samples = _nonnegative_int_or_none(meta_label.get("validation_sample_count"))
     meta_minimum_precision = _finite_or_none(
         meta_label.get("validation_minimum_precision")
     )
     meta_precision = _finite_or_none(meta_label.get("validation_precision"))
-    meta_expected_return = _finite_or_none(
-        meta_label.get("expected_after_cost_return")
-    )
-    meta_expected_pnl = _finite_or_none(
-        meta_label.get("expected_after_cost_pnl_quote")
-    )
+    meta_expected_return = _finite_or_none(meta_label.get("expected_after_cost_return"))
+    meta_expected_pnl = _finite_or_none(meta_label.get("expected_after_cost_pnl_quote"))
     meta_bootstrap_samples = _nonnegative_int_or_none(
         meta_label.get("validation_bootstrap_samples")
     )
@@ -501,9 +480,7 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
             and meta_bootstrap_samples is not None
             and meta_bootstrap_samples >= META_LABEL_BOOTSTRAP_SAMPLES
             and meta_bootstrap_confidence is not None
-            and META_LABEL_BOOTSTRAP_CONFIDENCE
-            <= meta_bootstrap_confidence
-            < 1.0
+            and META_LABEL_BOOTSTRAP_CONFIDENCE <= meta_bootstrap_confidence < 1.0
             and meta_bootstrap_block_length is not None
             and meta_bootstrap_block_length > 0
             and meta_bootstrap_block_length <= meta_samples
@@ -582,7 +559,7 @@ def _approval_evidence_is_valid(case: LiveAIEntryCase) -> bool:
 
 @dataclass(frozen=True)
 class LiveAIEntryCase:
-    """One immutable, label-free ML proposal presented to the AI reviewer."""
+    """One immutable ML proposal for the LLM risk-assessment overlay."""
 
     case_id: str
     symbol: str
@@ -615,7 +592,11 @@ class LiveAIEntryCase:
     def validated(self) -> LiveAIEntryCase:
         if self.proposed_side not in {"LONG", "SHORT"}:
             raise ValueError("AI entry review requires a directional ML proposal")
-        if not self.symbol or not self.interval or self.market_type not in {"spot", "futures"}:
+        if (
+            not self.symbol
+            or not self.interval
+            or self.market_type not in {"spot", "futures"}
+        ):
             raise ValueError("AI entry review market identity is invalid")
         if int(self.observed_at_ms) <= 0:
             raise ValueError("AI entry review timestamp is invalid")
@@ -628,7 +609,9 @@ class LiveAIEntryCase:
             "terminal_model_fingerprint": self.terminal_model_fingerprint,
             "case_id": self.case_id,
         }.items():
-            if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+            if len(value) != 64 or any(
+                character not in "0123456789abcdef" for character in value
+            ):
                 raise ValueError(f"AI entry review {name} is invalid")
         normalized = _bounded_json_value(self.evidence)
         if not isinstance(normalized, Mapping):
@@ -795,7 +778,9 @@ class LiveAIEntryProvider(Protocol):
     def __call__(self, case: LiveAIEntryCase) -> LiveAIEntryDecision: ...
 
 
-def _parse_provider_decision(payload: object, *, expected_model: str) -> LiveAIEntryDecision:
+def _parse_provider_decision(
+    payload: object, *, expected_model: str
+) -> LiveAIEntryDecision:
     if not isinstance(payload, Mapping):
         raise ValueError("Ollama response is not an object")
     if payload.get("done") is not True:
@@ -819,7 +804,10 @@ def _parse_provider_decision(payload: object, *, expected_model: str) -> LiveAIE
     if (
         not isinstance(raw_codes, list)
         or not 1 <= len(raw_codes) <= 4
-        or any(not isinstance(item, str) or item not in _ALLOWED_REASON_CODES for item in raw_codes)
+        or any(
+            not isinstance(item, str) or item not in _ALLOWED_REASON_CODES
+            for item in raw_codes
+        )
         or len(set(raw_codes)) != len(raw_codes)
     ):
         raise ValueError("AI entry reason codes are invalid")
@@ -827,9 +815,13 @@ def _parse_provider_decision(payload: object, *, expected_model: str) -> LiveAIE
     summary = parsed["summary"]
     if not isinstance(summary, str) or not summary.strip() or len(summary) > 180:
         raise ValueError("AI entry summary is invalid")
-    if action == "approve" and (risk_multiplier <= 0.0 or "edge_after_costs" not in codes):
+    if action == "approve" and (
+        risk_multiplier <= 0.0 or "edge_after_costs" not in codes
+    ):
         raise ValueError("AI approval lacks positive after-cost evidence")
-    if action != "approve" and (risk_multiplier != 0.0 or not _ADVERSE_REASON_CODES.intersection(codes)):
+    if action != "approve" and (
+        risk_multiplier != 0.0 or not _ADVERSE_REASON_CODES.intersection(codes)
+    ):
         raise ValueError("AI adverse action lacks a zero-risk adverse reason")
     return LiveAIEntryDecision(
         action=action,
@@ -863,8 +855,7 @@ class OllamaLiveAIEntryProvider:
             not self.model
             or len(self.expected_model_digest) != 64
             or any(
-                value not in "0123456789abcdef"
-                for value in self.expected_model_digest
+                value not in "0123456789abcdef" for value in self.expected_model_digest
             )
             or not self.base_url.startswith(("http://", "https://"))
         ):
@@ -893,8 +884,7 @@ class OllamaLiveAIEntryProvider:
             {"role": "user", "content": prompt},
         ]
         message_bytes = sum(
-            len(str(message["content"]).encode("utf-8"))
-            for message in messages
+            len(str(message["content"]).encode("utf-8")) for message in messages
         )
         if message_bytes > _MAX_PROVIDER_MESSAGE_BYTES:
             raise ValueError("AI entry prompt exceeds the pre-inference context budget")
@@ -1044,12 +1034,16 @@ def _audit_case_and_decision(
         or not decision.failure_reason
         or decision.reason_codes != ("insufficient_evidence",)
     ):
-        raise ValueError(f"AI entry audit failure evidence is invalid at line {line_number}")
+        raise ValueError(
+            f"AI entry audit failure evidence is invalid at line {line_number}"
+        )
     try:
         completed_at_ms = int(record["completed_at_ms"])
         latency_seconds = float(record["latency_seconds"])
     except (KeyError, TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"AI entry audit timing is invalid at line {line_number}") from exc
+        raise ValueError(
+            f"AI entry audit timing is invalid at line {line_number}"
+        ) from exc
     if (
         completed_at_ms <= 0
         or completed_at_ms < case.observed_at_ms
@@ -1080,7 +1074,9 @@ def validate_live_ai_entry_audit_records(
         if unsigned.get("previous_record_sha256") != previous_sha256:
             raise ValueError(f"AI entry audit chain is broken at line {line_number}")
         if _canonical_sha256(unsigned) != record_sha:
-            raise ValueError(f"AI entry audit record is corrupted at line {line_number}")
+            raise ValueError(
+                f"AI entry audit record is corrupted at line {line_number}"
+            )
         case, _decision = _audit_case_and_decision(record, line_number=line_number)
         if case.case_id in case_ids:
             raise ValueError(f"AI entry audit repeats a case at line {line_number}")
@@ -1100,9 +1096,13 @@ def load_live_ai_entry_audit(path: Path) -> tuple[dict[str, object], ...]:
     with audit_path.open("r", encoding="utf-8") as handle:
         for line_number, line in enumerate(handle, start=1):
             if not line.strip():
-                raise ValueError(f"AI entry audit has a blank record at line {line_number}")
+                raise ValueError(
+                    f"AI entry audit has a blank record at line {line_number}"
+                )
             if len(line.encode("utf-8")) > _MAX_AUDIT_RECORD_BYTES:
-                raise ValueError(f"AI entry audit record is too large at line {line_number}")
+                raise ValueError(
+                    f"AI entry audit record is too large at line {line_number}"
+                )
             raw_records.append(dict(_strict_json_object(line)))
     return validate_live_ai_entry_audit_records(raw_records)
 
@@ -1116,7 +1116,9 @@ class _HashChainedReviewLog:
         if records:
             self.previous_sha256 = str(records[-1]["record_sha256"])
 
-    def append(self, *, case: LiveAIEntryCase, review: LiveAIEntryReview, completed_at_ms: int) -> None:
+    def append(
+        self, *, case: LiveAIEntryCase, review: LiveAIEntryReview, completed_at_ms: int
+    ) -> None:
         if review.decision is None:
             raise ValueError("pending AI reviews cannot be audited as completed")
         unsigned = {
@@ -1175,7 +1177,12 @@ class AsyncLiveAIEntryReviewer:
         case.validated()
         with self._condition:
             if self._closed:
-                return LiveAIEntryReview(case.case_id, "shadow_failure", _failed_decision("reviewer closed"), 0.0)
+                return LiveAIEntryReview(
+                    case.case_id,
+                    "shadow_failure",
+                    _failed_decision("reviewer closed"),
+                    0.0,
+                )
             if self._fatal_reason:
                 return LiveAIEntryReview(
                     case.case_id,
@@ -1205,7 +1212,9 @@ class AsyncLiveAIEntryReviewer:
     def _worker(self) -> None:
         while True:
             with self._condition:
-                self._condition.wait_for(lambda: self._closed or self._next_case is not None)
+                self._condition.wait_for(
+                    lambda: self._closed or self._next_case is not None
+                )
                 if self._closed:
                     return
                 case = self._next_case
@@ -1217,7 +1226,9 @@ class AsyncLiveAIEntryReviewer:
             try:
                 decision = self._provider(case)
                 if not isinstance(decision, LiveAIEntryDecision):
-                    raise TypeError("AI entry provider returned an invalid decision type")
+                    raise TypeError(
+                        "AI entry provider returned an invalid decision type"
+                    )
                 decision.validated_for(case)
             except Exception as exc:  # noqa: BLE001 - provider failures are fail-closed evidence
                 decision = _failed_decision(f"{type(exc).__name__}: {exc}")
@@ -1321,7 +1332,9 @@ class AIAssistedDecisionFunction:
 
         self._entry_review_required = bool(required)
 
-    def __call__(self, client: object, runtime: object, strategy: object, objective: object) -> object:
+    def __call__(
+        self, client: object, runtime: object, strategy: object, objective: object
+    ) -> object:
         decision = self._base_decision_fn(client, runtime, strategy, objective)
         side = str(getattr(decision, "side", ""))
         if side not in {"LONG", "SHORT"}:
@@ -1363,9 +1376,7 @@ class AIAssistedDecisionFunction:
                 ai_assist_reason="deterministic model suppresses this entry",
                 ai_assist_entry_ready=False,
             )
-        proposal_evidence = dict(
-            _mapping(getattr(decision, "ai_evidence", {}))
-        )
+        proposal_evidence = dict(_mapping(getattr(decision, "ai_evidence", {})))
         provided_payoff_evidence = proposal_evidence.pop(
             "after_cost_payoff",
             None,
@@ -1443,12 +1454,12 @@ class AIAssistedDecisionFunction:
                 "leverage": float(getattr(strategy, "leverage", 1.0)),
                 "risk_per_trade": float(getattr(strategy, "risk_per_trade", 0.0)),
                 "max_position_pct": float(getattr(strategy, "max_position_pct", 0.0)),
-                "max_drawdown_limit": float(getattr(strategy, "max_drawdown_limit", 0.0)),
+                "max_drawdown_limit": float(
+                    getattr(strategy, "max_drawdown_limit", 0.0)
+                ),
             },
             "cost_model": {
-                "one_way_taker_fee_bps": float(
-                    getattr(strategy, "taker_fee_bps", 0.0)
-                ),
+                "one_way_taker_fee_bps": float(getattr(strategy, "taker_fee_bps", 0.0)),
                 "configured_spread_floor_bps": max(
                     float(getattr(strategy, "slippage_bps", 0.0)),
                     float(getattr(strategy, "max_spread_bps", 0.0)),
@@ -1464,7 +1475,9 @@ class AIAssistedDecisionFunction:
             "regime": {
                 "name": str(getattr(decision, "regime", "")),
                 "confidence": float(getattr(decision, "regime_confidence", 0.0)),
-                "unpredictability_score": getattr(decision, "regime_unpredictability_score", None),
+                "unpredictability_score": getattr(
+                    decision, "regime_unpredictability_score", None
+                ),
                 "notes": list(getattr(decision, "regime_notes", ())[:8]),
             },
             "meta_label": {
@@ -1576,8 +1589,12 @@ class AIAssistedDecisionFunction:
                 ai_assist_reason=f"{type(exc).__name__}: {exc}"[:240],
                 ai_assist_entry_ready=False,
             )
-        reviewed_action = review.decision.action if review.decision is not None else "pending"
-        reviewed_risk = review.decision.risk_multiplier if review.decision is not None else 0.0
+        reviewed_action = (
+            review.decision.action if review.decision is not None else "pending"
+        )
+        reviewed_risk = (
+            review.decision.risk_multiplier if review.decision is not None else 0.0
+        )
         now_ms = int(self._clock() * 1_000)
         review_age_ms = now_ms - int(review.completed_at_ms)
         entry_ready = bool(

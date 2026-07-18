@@ -49,6 +49,18 @@ class LocatedCaptureFrameRecord:
     raw_size: int
 
 
+@dataclass(frozen=True)
+class CaptureFrameReceiptSummary:
+    """Receipt-clock bounds and stream counts without payload materialization."""
+
+    message_count: int
+    minimum_received_wall_ms: int
+    maximum_received_wall_ms: int
+    minimum_received_monotonic_ns: int
+    maximum_received_monotonic_ns: int
+    stream_counts: dict[str, int]
+
+
 def _encoded_parts(record: CaptureFrameRecord) -> tuple[int, bytes, bytes]:
     stream = str(record.stream)
     try:
@@ -190,14 +202,147 @@ def decode_capture_frame(
     return tuple(decoded)
 
 
+def decode_selected_capture_frame_records(
+    frame: bytes,
+    *,
+    expected_message_count: int,
+    selected_streams: Sequence[str],
+) -> tuple[LocatedCaptureFrameRecord, ...]:
+    """Decode selected records from an already audited frame and skip other payloads."""
+
+    payload = bytes(frame)
+    expected = int(expected_message_count)
+    selected = frozenset(str(value) for value in selected_streams)
+    if not selected or selected - set(_STREAM_TO_CODE):
+        raise ValueError("capture frame stream selection is invalid")
+    if (
+        not 1 <= expected <= CAPTURE_FRAME_MAX_MESSAGES
+        or not len(CAPTURE_FRAME_MAGIC) < len(payload) <= CAPTURE_FRAME_MAX_BYTES
+        or not payload.startswith(CAPTURE_FRAME_MAGIC)
+    ):
+        raise ValueError("capture frame envelope is invalid")
+    offset = len(CAPTURE_FRAME_MAGIC)
+    decoded: list[LocatedCaptureFrameRecord] = []
+    for message_index in range(expected):
+        header_end = offset + _RECORD_HEADER.size
+        if header_end > len(payload):
+            raise ValueError("capture frame record header is truncated")
+        stream_code, connection_size, sequence, wall, monotonic = (
+            _RECORD_HEADER.unpack_from(payload, offset)
+        )
+        stream = _CODE_TO_STREAM.get(stream_code)
+        connection_end = header_end + int(connection_size)
+        if (
+            stream is None
+            or not 1 <= int(connection_size) <= CAPTURE_FRAME_MAX_CONNECTION_BYTES
+            or int(wall) < 0
+            or connection_end + _RAW_SIZE.size > len(payload)
+        ):
+            raise ValueError("capture frame record metadata is invalid")
+        raw_size = int(_RAW_SIZE.unpack_from(payload, connection_end)[0])
+        raw_offset = connection_end + _RAW_SIZE.size
+        raw_end = raw_offset + raw_size
+        if raw_size > CAPTURE_FRAME_MAX_RAW_BYTES or raw_end > len(payload):
+            raise ValueError("capture frame raw payload boundary is invalid")
+        if stream in selected:
+            try:
+                connection_id = payload[header_end:connection_end].decode(
+                    "utf-8", errors="strict"
+                )
+                raw_text = payload[raw_offset:raw_end].decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                raise ValueError("selected capture frame record is not UTF-8") from exc
+            decoded.append(
+                LocatedCaptureFrameRecord(
+                    record=CaptureFrameRecord(
+                        stream=stream,
+                        connection_id=connection_id,
+                        sequence_number=int(sequence),
+                        received_wall_ms=int(wall),
+                        received_monotonic_ns=int(monotonic),
+                        raw_text=raw_text,
+                    ),
+                    message_index=message_index,
+                    raw_offset=raw_offset,
+                    raw_size=raw_size,
+                )
+            )
+        offset = raw_end
+    if offset != len(payload):
+        raise ValueError("capture frame contains trailing or uncounted bytes")
+    return tuple(decoded)
+
+
+def scan_capture_frame_receipts(
+    frame: bytes,
+    *,
+    expected_message_count: int,
+) -> CaptureFrameReceiptSummary:
+    """Boundary-check a frame and scan only receipt headers, skipping raw payloads."""
+
+    payload = bytes(frame)
+    expected = int(expected_message_count)
+    if (
+        not 1 <= expected <= CAPTURE_FRAME_MAX_MESSAGES
+        or not len(CAPTURE_FRAME_MAGIC) < len(payload) <= CAPTURE_FRAME_MAX_BYTES
+        or not payload.startswith(CAPTURE_FRAME_MAGIC)
+    ):
+        raise ValueError("capture frame envelope is invalid")
+    offset = len(CAPTURE_FRAME_MAGIC)
+    minimum_wall = _MAX_SIGNED_64
+    maximum_wall = 0
+    minimum_monotonic = _MAX_UNSIGNED_64
+    maximum_monotonic = 0
+    stream_counts: dict[str, int] = {}
+    for _message_index in range(expected):
+        header_end = offset + _RECORD_HEADER.size
+        if header_end > len(payload):
+            raise ValueError("capture frame record header is truncated")
+        stream_code, connection_size, _sequence, wall, monotonic = (
+            _RECORD_HEADER.unpack_from(payload, offset)
+        )
+        stream = _CODE_TO_STREAM.get(stream_code)
+        connection_end = header_end + int(connection_size)
+        if (
+            stream is None
+            or not 1 <= int(connection_size) <= CAPTURE_FRAME_MAX_CONNECTION_BYTES
+            or int(wall) < 0
+            or connection_end + _RAW_SIZE.size > len(payload)
+        ):
+            raise ValueError("capture frame record metadata is invalid")
+        raw_size = int(_RAW_SIZE.unpack_from(payload, connection_end)[0])
+        raw_end = connection_end + _RAW_SIZE.size + raw_size
+        if raw_size > CAPTURE_FRAME_MAX_RAW_BYTES or raw_end > len(payload):
+            raise ValueError("capture frame raw payload boundary is invalid")
+        offset = raw_end
+        minimum_wall = min(minimum_wall, int(wall))
+        maximum_wall = max(maximum_wall, int(wall))
+        minimum_monotonic = min(minimum_monotonic, int(monotonic))
+        maximum_monotonic = max(maximum_monotonic, int(monotonic))
+        stream_counts[stream] = stream_counts.get(stream, 0) + 1
+    if offset != len(payload):
+        raise ValueError("capture frame contains trailing or uncounted bytes")
+    return CaptureFrameReceiptSummary(
+        message_count=expected,
+        minimum_received_wall_ms=minimum_wall,
+        maximum_received_wall_ms=maximum_wall,
+        minimum_received_monotonic_ns=minimum_monotonic,
+        maximum_received_monotonic_ns=maximum_monotonic,
+        stream_counts=dict(sorted(stream_counts.items())),
+    )
+
+
 __all__ = [
     "CAPTURE_FRAME_FORMAT",
     "CAPTURE_FRAME_MAGIC",
     "CAPTURE_FRAME_MAX_BYTES",
     "CAPTURE_FRAME_MAX_MESSAGES",
     "CaptureFrameRecord",
+    "CaptureFrameReceiptSummary",
     "LocatedCaptureFrameRecord",
     "capture_frame_record_size",
     "decode_capture_frame",
+    "decode_selected_capture_frame_records",
     "encode_capture_frame",
+    "scan_capture_frame_receipts",
 ]

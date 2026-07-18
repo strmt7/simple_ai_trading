@@ -2,13 +2,26 @@
 name: search-first
 description: Research the existing implementation, tests, primary technical sources, and financial rationale before adding trading code or dependencies.
 metadata:
-  origin: "adapted from ZMB-UZH/omero-docker-extended at b27dbe990703d64d13e540c40cf4e122954c664d"
+  origin: "adapted from ZMB-UZH/omero-docker-extended at 246110b1045cfd4ca318b4e870b5a38d213399b6; ECC v2.0.0 reviewed"
 ---
 
 # Search First
 
 Use this skill before new model logic, exchange behavior, risk controls,
 dependencies, data pipelines, workflows, or broad refactors.
+
+## Tool Availability Preflight
+
+Check only the channels relevant to the task before relying on them:
+
+- repository search: prove `rg --files` and targeted `rg` work;
+- package registry: prove the project package manager can query metadata;
+- GitHub: check `gh auth status`, or use public Git and official web sources;
+- MCP/docs tools: inspect the active tool list and use official docs if absent;
+- skills: inspect the repository and local Codex skill catalogs.
+
+State any unavailable or skipped channel. Never report "nothing found" when a
+search path was unavailable.
 
 ## Search Order
 
@@ -32,3 +45,5 @@ dependencies, data pipelines, workflows, or broad refactors.
 - Keep tests offline unless the network boundary is explicitly stubbed.
 - Never put credentials, account details, or private endpoints in queries.
 - Do not use subagents or separate sessions for research in this repository.
+- Treat any upstream `Agent(...)` or legacy `Task(...)` research example as
+  reference-only; this repository's single-session rule takes precedence.

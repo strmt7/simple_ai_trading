@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from array import array
 from bisect import bisect_right, insort
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
@@ -13,6 +13,7 @@ import time
 from typing import Callable, Mapping, Sequence, TypeVar
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
+from .duckdb_batch import insert_rows_columnar
 from .polymarket_coverage import (
     PolymarketFeedCoverage,
     inspect_polymarket_feed_coverage,
@@ -26,8 +27,9 @@ from .polymarket_replay import (
 )
 
 
-POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v5"
-POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v5"
+POLYMARKET_FEATURE_SCHEMA_VERSION = "polymarket-causal-feature-v6"
+POLYMARKET_DATASET_SCHEMA_VERSION = "polymarket-causal-dataset-v6"
+POLYMARKET_FEATURE_SOURCE_SCOPE_SCHEMA_VERSION = "polymarket-feature-source-scope-v1"
 _ASSETS = tuple(SUPPORTED_MAJOR_BASE_ASSETS)
 POLYMARKET_FEATURE_NAMES = (
     "elapsed_fraction",
@@ -80,6 +82,28 @@ POLYMARKET_FEATURE_NAMES = (
     "log1p_market_liquidity_quote",
     "log1p_market_volume_quote",
 )
+_FEATURE_ROW_COLUMNS = (
+    "dataset_id",
+    "feature_id",
+    "run_id",
+    "condition_id",
+    "market_id",
+    "asset",
+    "decision_event_id",
+    "decision_received_wall_ms",
+    "decision_received_monotonic_ns",
+    "feature_values_json",
+    "official_up",
+    "resolution_event_id",
+    "input_provenance_sha256",
+    "row_sha256",
+)
+_FEATURE_ROW_INSERT_SQL = (
+    "INSERT INTO polymarket_feature_row ("
+    + ", ".join(_FEATURE_ROW_COLUMNS)
+    + ") SELECT "
+    + ", ".join("unnest(?)" for _column in _FEATURE_ROW_COLUMNS)
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -94,6 +118,75 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def validate_polymarket_feature_source_scope(
+    source_scope: Mapping[str, object],
+    *,
+    run_id: str,
+    condition_ids: Sequence[str] | None = None,
+    require_bounded: bool = False,
+) -> dict[str, object]:
+    """Validate and normalize the hash-bound cross-feed receipt scope."""
+
+    selected = str(run_id or "").strip()
+    if not selected or not isinstance(require_bounded, bool):
+        raise ValueError("Polymarket feature source scope controls are invalid")
+    scope = dict(source_scope)
+    claimed_sha256 = str(scope.pop("source_scope_sha256", ""))
+    expected_keys = {
+        "schema_version",
+        "run_id",
+        "condition_ids",
+        "minimum_received_wall_ms",
+        "maximum_received_wall_ms",
+        "chunk_receipt_index_sha256",
+    }
+    raw_conditions = scope.get("condition_ids")
+    if not isinstance(raw_conditions, list):
+        raise ValueError("Polymarket feature source scope conditions are invalid")
+    normalized_conditions = tuple(
+        sorted({str(value or "").strip().lower() for value in raw_conditions})
+    )
+    expected_conditions = tuple(
+        sorted({str(value or "").strip().lower() for value in condition_ids or ()})
+    )
+    lower = scope.get("minimum_received_wall_ms")
+    upper = scope.get("maximum_received_wall_ms")
+    receipt_sha256 = str(scope.get("chunk_receipt_index_sha256", ""))
+    bounded = bool(normalized_conditions)
+    if (
+        set(scope) != expected_keys
+        or scope.get("schema_version") != POLYMARKET_FEATURE_SOURCE_SCOPE_SCHEMA_VERSION
+        or scope.get("run_id") != selected
+        or list(normalized_conditions) != raw_conditions
+        or "" in normalized_conditions
+        or len(claimed_sha256) != 64
+        or any(value not in "0123456789abcdef" for value in claimed_sha256)
+        or _canonical_sha256(scope) != claimed_sha256
+        or (require_bounded and not bounded)
+        or (
+            expected_conditions
+            and normalized_conditions
+            and normalized_conditions != expected_conditions
+        )
+    ):
+        raise ValueError("Polymarket feature source scope identity differs")
+    if bounded:
+        if (
+            isinstance(lower, bool)
+            or isinstance(upper, bool)
+            or not isinstance(lower, int)
+            or not isinstance(upper, int)
+            or lower < 0
+            or upper < lower
+            or len(receipt_sha256) != 64
+            or any(value not in "0123456789abcdef" for value in receipt_sha256)
+        ):
+            raise ValueError("Polymarket bounded feature source scope is invalid")
+    elif lower is not None or upper is not None or receipt_sha256:
+        raise ValueError("Polymarket unbounded feature source scope is invalid")
+    return {**scope, "source_scope_sha256": claimed_sha256}
 
 
 def _finite_decimal(
@@ -251,6 +344,7 @@ class PolymarketFeatureDataset:
     replay_diagnostics: dict[str, object]
     coverage: dict[str, object]
     dataset_sha256: str
+    source_scope: dict[str, object] = field(default_factory=dict)
 
     @property
     def shadow_ready(self) -> bool:
@@ -283,6 +377,7 @@ class PolymarketFeatureDataset:
             "training_errors": list(self.training_errors),
             "replay_diagnostics": dict(self.replay_diagnostics),
             "coverage": dict(self.coverage),
+            "source_scope": dict(self.source_scope),
             "dataset_sha256": self.dataset_sha256,
         }
 
@@ -941,6 +1036,7 @@ class PolymarketFeatureSourceContext:
     market_snapshots: Mapping[str, _MarketSnapshotPoint]
     book_series: Mapping[str, Mapping[str, _BookSeries]]
     trade_series: Mapping[str, Mapping[str, _TradeSeries]]
+    source_scope: Mapping[str, object]
 
 
 _ReceivedPoint = TypeVar("_ReceivedPoint", _BinanceBookPoint, _BinanceTradePoint)
@@ -1250,7 +1346,12 @@ class _BookSeries:
         "times",
     )
 
-    def __init__(self, points: Sequence[_BinanceBookPoint]) -> None:
+    def __init__(
+        self,
+        points: Sequence[_BinanceBookPoint],
+        *,
+        source_scope_sha256: str,
+    ) -> None:
         self.points = _stable_received_order(points)
         if isinstance(self.points, _CompactBinanceBookView):
             self.connection_id = self.points.connection_id
@@ -1263,16 +1364,17 @@ class _BookSeries:
             self.times = tuple(item.received_monotonic_ns for item in self.points)
         previous_sha256 = _canonical_sha256(
             {
-                "schema_version": "binance-book-causal-prefix-v2",
+                "schema_version": "binance-book-causal-prefix-v3",
                 "stream": "binance_spot",
                 "connection_id": self.connection_id,
+                "source_scope_sha256": source_scope_sha256,
             }
         )
         prefix_digests = bytearray(bytes.fromhex(previous_sha256))
         for index in range(len(self.points)):
             previous_sha256 = _canonical_sha256(
                 {
-                    "schema_version": "binance-book-causal-prefix-v2",
+                    "schema_version": "binance-book-causal-prefix-v3",
                     "previous_sha256": previous_sha256,
                     "event_id": _book_event_id(self.points, index),
                     "event_sha256": _book_event_sha256(self.points, index),
@@ -1340,7 +1442,12 @@ class _TradeSeries:
         "times",
     )
 
-    def __init__(self, points: Sequence[_BinanceTradePoint]) -> None:
+    def __init__(
+        self,
+        points: Sequence[_BinanceTradePoint],
+        *,
+        source_scope_sha256: str,
+    ) -> None:
         self.points = _stable_received_order(points)
         if isinstance(self.points, _CompactBinanceTradeView):
             self.connection_id = self.points.connection_id
@@ -1356,9 +1463,10 @@ class _TradeSeries:
             )
         previous_sha256 = _canonical_sha256(
             {
-                "schema_version": "binance-trade-causal-prefix-v2",
+                "schema_version": "binance-trade-causal-prefix-v3",
                 "stream": "binance_spot",
                 "connection_id": self.connection_id,
+                "source_scope_sha256": source_scope_sha256,
             }
         )
         prefix_digests = bytearray(bytes.fromhex(previous_sha256))
@@ -1373,7 +1481,7 @@ class _TradeSeries:
             )
             previous_sha256 = _canonical_sha256(
                 {
-                    "schema_version": "binance-trade-causal-prefix-v2",
+                    "schema_version": "binance-trade-causal-prefix-v3",
                     "previous_sha256": previous_sha256,
                     "event_id": _trade_event_id(self.points, index),
                     "event_sha256": _trade_event_sha256(self.points, index),
@@ -1408,6 +1516,8 @@ def _parse_feed_points(
     run_id: str,
     *,
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
+    minimum_received_wall_ms: int | None = None,
+    maximum_received_wall_ms: int | None = None,
 ) -> tuple[
     dict[str, tuple[_PricePoint, ...]],
     dict[str, Sequence[_BinanceBookPoint]],
@@ -1457,6 +1567,8 @@ def _parse_feed_points(
         run_id,
         streams=("binance_spot", "polymarket_rtds"),
         verified_source=True,
+        minimum_received_wall_ms=minimum_received_wall_ms,
+        maximum_received_wall_ms=maximum_received_wall_ms,
     ):
         parsed_count += 1
         if parsed_count % 4_096 == 0:
@@ -1557,9 +1669,7 @@ def _parse_feed_points(
                 if not isinstance(item, Mapping):
                     raise ValueError("RTDS feature history row is malformed")
                 raw_points.append((item.get("timestamp"), item.get("value"), index))
-            source_counts[asset]["rtds_chainlink_history_samples"] += len(
-                raw_points
-            )
+            source_counts[asset]["rtds_chainlink_history_samples"] += len(raw_points)
         elif message_type == "update":
             raw_points.append((payload.get("timestamp"), payload.get("value"), 0))
             source_counts[asset]["rtds_chainlink_live_updates"] += 1
@@ -1633,6 +1743,7 @@ def load_polymarket_feature_source_context(
     run_id: str,
     config: PolymarketFeatureConfig | None = None,
     condition_ids: Sequence[str] | None = None,
+    source_window_condition_ids: Sequence[str] | None = None,
     continuity_report_sha256: str = "",
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> PolymarketFeatureSourceContext:
@@ -1646,12 +1757,24 @@ def load_polymarket_feature_source_context(
     selected_conditions = tuple(
         sorted({str(value or "").strip().lower() for value in condition_ids or ()})
     )
+    source_conditions = tuple(
+        sorted(
+            {
+                str(value or "").strip().lower()
+                for value in source_window_condition_ids or ()
+            }
+        )
+    )
     if continuity_sha256:
         if (
             len(continuity_sha256) != 64
             or any(value not in "0123456789abcdef" for value in continuity_sha256)
             or not selected_conditions
             or "" in selected_conditions
+            or (
+                source_conditions
+                and not set(source_conditions).issubset(selected_conditions)
+            )
         ):
             raise ValueError("Polymarket continuity coverage identity is invalid")
         from .polymarket_continuity import (  # Avoid an import cycle at module load.
@@ -1662,16 +1785,88 @@ def load_polymarket_feature_source_context(
             store,
             run_id=selected,
         )
-        if (
-            continuity.report_sha256 != continuity_sha256
-            or tuple(sorted(continuity.eligible_condition_ids))
-            != selected_conditions
-        ):
+        if continuity.report_sha256 != continuity_sha256 or not set(
+            selected_conditions
+        ).issubset(continuity.eligible_condition_ids):
             raise ValueError("Polymarket continuity coverage evidence differs")
+    minimum_received_wall_ms: int | None = None
+    maximum_received_wall_ms: int | None = None
+    receipt_index_sha256 = ""
+    if source_conditions:
+        placeholders = ", ".join("?" for _value in source_conditions)
+        timing_rows = (
+            store.connect()
+            .execute(
+                f"""
+            SELECT condition_id, event_start_ms, end_ms
+            FROM polymarket_market_snapshot
+            WHERE run_id = ? AND condition_id IN ({placeholders})
+            ORDER BY event_start_ms, condition_id
+            """,
+                [selected, *source_conditions],
+            )
+            .fetchall()
+        )
+        if {str(row[0]) for row in timing_rows} != set(source_conditions):
+            raise ValueError("Polymarket feature source window markets differ")
+        source_lookback_ms = max(
+            5_000,
+            cfg.maximum_direct_binance_age_ms,
+            cfg.maximum_chainlink_source_age_ms,
+            cfg.maximum_chainlink_arrival_age_ms,
+            cfg.maximum_chainlink_anchor_gap_ms,
+        )
+        minimum_received_wall_ms = min(int(row[1]) for row in timing_rows) - (
+            source_lookback_ms
+        )
+        from .polymarket_continuity import polymarket_round9_evidence_window
+
+        maximum_received_wall_ms = max(
+            polymarket_round9_evidence_window(
+                event_start_ms=int(row[1]),
+                end_ms=int(row[2]),
+            )[1]
+            for row in timing_rows
+        )
+        store.ensure_capture_chunk_receipt_index(selected, progress=progress)
+        index_row = (
+            store.connect()
+            .execute(
+                """
+            SELECT report_sha256
+            FROM polymarket_chunk_receipt_index_report WHERE run_id = ?
+            """,
+                [selected],
+            )
+            .fetchone()
+        )
+        if index_row is None:
+            raise ValueError("Polymarket feature source receipt index is unavailable")
+        receipt_index_sha256 = str(index_row[0])
+    source_scope_payload = {
+        "schema_version": POLYMARKET_FEATURE_SOURCE_SCOPE_SCHEMA_VERSION,
+        "run_id": selected,
+        "condition_ids": list(source_conditions),
+        "minimum_received_wall_ms": minimum_received_wall_ms,
+        "maximum_received_wall_ms": maximum_received_wall_ms,
+        "chunk_receipt_index_sha256": receipt_index_sha256,
+    }
+    source_scope_sha256 = _canonical_sha256(source_scope_payload)
+    source_scope = validate_polymarket_feature_source_scope(
+        {
+            **source_scope_payload,
+            "source_scope_sha256": source_scope_sha256,
+        },
+        run_id=selected,
+        condition_ids=source_conditions,
+        require_bounded=bool(source_conditions),
+    )
     chainlink, direct_books, direct_trades, source_counts = _parse_feed_points(
         store,
         selected,
         progress=progress,
+        minimum_received_wall_ms=minimum_received_wall_ms,
+        maximum_received_wall_ms=maximum_received_wall_ms,
     )
     if continuity_sha256:
         coverage = inspect_polymarket_verified_source_coverage(
@@ -1680,18 +1875,14 @@ def load_polymarket_feature_source_context(
             condition_ids=selected_conditions,
             clob_baseline_condition_ids=selected_conditions,
             source_counts=source_counts,
-            minimum_resolved_markets_per_asset=(
-                cfg.minimum_resolved_markets_per_asset
-            ),
+            minimum_resolved_markets_per_asset=(cfg.minimum_resolved_markets_per_asset),
             allow_segmented_gaps=cfg.allow_segmented_gaps,
         )
     else:
         coverage = inspect_polymarket_feed_coverage(
             store,
             run_id=selected,
-            minimum_resolved_markets_per_asset=(
-                cfg.minimum_resolved_markets_per_asset
-            ),
+            minimum_resolved_markets_per_asset=(cfg.minimum_resolved_markets_per_asset),
             allow_segmented_gaps=cfg.allow_segmented_gaps,
         )
     book_series: dict[str, dict[str, _BookSeries]] = {}
@@ -1717,7 +1908,10 @@ def load_polymarket_feature_source_context(
                 mutable_groups.setdefault(point.connection_id, []).append(point)
             grouped_books = mutable_groups
         book_series[asset] = {
-            connection_id: _BookSeries(segment)
+            connection_id: _BookSeries(
+                segment,
+                source_scope_sha256=source_scope_sha256,
+            )
             for connection_id, segment in grouped_books.items()
         }
         if progress is not None:
@@ -1752,7 +1946,10 @@ def load_polymarket_feature_source_context(
                 mutable_groups.setdefault(point.connection_id, []).append(point)
             grouped_trades = mutable_groups
         trade_series[asset] = {
-            connection_id: _TradeSeries(segment)
+            connection_id: _TradeSeries(
+                segment,
+                source_scope_sha256=source_scope_sha256,
+            )
             for connection_id, segment in grouped_trades.items()
         }
         if progress is not None:
@@ -1776,6 +1973,7 @@ def load_polymarket_feature_source_context(
         market_snapshots=_load_market_snapshot_points(store, selected),
         book_series=book_series,
         trade_series=trade_series,
+        source_scope=source_scope,
     )
 
 
@@ -1875,10 +2073,16 @@ def build_polymarket_feature_dataset(
         ):
             raise ValueError("preloaded Polymarket feature replay contract differs")
     selected = replay.run_id
+    replay_conditions = tuple(sorted(market.condition_id for market in replay.markets))
     context = source_context or load_polymarket_feature_source_context(
         store,
         run_id=selected,
         config=cfg,
+    )
+    source_scope = validate_polymarket_feature_source_scope(
+        context.source_scope,
+        run_id=selected,
+        condition_ids=replay_conditions,
     )
     if context.run_id != selected or context.config.asdict() != cfg.asdict():
         raise ValueError("Polymarket feature source context contract differs")
@@ -2084,6 +2288,7 @@ def build_polymarket_feature_dataset(
         provenance = _canonical_sha256(
             {
                 "schema_version": POLYMARKET_FEATURE_SCHEMA_VERSION,
+                "source_scope": source_scope,
                 "market_snapshot": {
                     "condition_id": market_snapshot.condition_id,
                     "observed_wall_ms": market_snapshot.observed_wall_ms,
@@ -2214,6 +2419,7 @@ def build_polymarket_feature_dataset(
         "row_sha256": [row.row_sha256 for row in rows],
         "replay_diagnostics": replay.diagnostics.asdict(),
         "coverage": coverage.asdict(),
+        "source_scope": source_scope,
     }
     dataset_sha256 = _canonical_sha256(dataset_payload)
     return PolymarketFeatureDataset(
@@ -2229,6 +2435,7 @@ def build_polymarket_feature_dataset(
         replay_diagnostics=replay.diagnostics.asdict(),
         coverage=coverage.asdict(),
         dataset_sha256=dataset_sha256,
+        source_scope=source_scope,
     )
 
 
@@ -2238,6 +2445,15 @@ def materialize_polymarket_feature_dataset(
 ) -> PolymarketFeatureMaterialization:
     """Persist one immutable derived dataset beside, never inside, raw evidence."""
 
+    source_scope = validate_polymarket_feature_source_scope(
+        dataset.source_scope,
+        run_id=dataset.run_id,
+    )
+    scoped_conditions = set(source_scope["condition_ids"])
+    if scoped_conditions and any(
+        row.condition_id not in scoped_conditions for row in dataset.rows
+    ):
+        raise ValueError("Polymarket feature row lies outside its source scope")
     report_row = (
         store.connect()
         .execute(
@@ -2262,6 +2478,7 @@ def materialize_polymarket_feature_dataset(
         "row_sha256": [row.row_sha256 for row in dataset.rows],
         "replay_diagnostics": dict(dataset.replay_diagnostics),
         "coverage": dict(dataset.coverage),
+        "source_scope": source_scope,
     }
     expected_dataset_sha256 = _canonical_sha256(expected_dataset_payload)
     if (
@@ -2296,6 +2513,7 @@ def materialize_polymarket_feature_dataset(
             training_errors_json VARCHAR NOT NULL,
             replay_diagnostics_json VARCHAR NOT NULL,
             coverage_json VARCHAR NOT NULL,
+            source_scope_json VARCHAR NOT NULL,
             dataset_sha256 VARCHAR NOT NULL
         );
 
@@ -2318,6 +2536,12 @@ def materialize_polymarket_feature_dataset(
         );
         """
     )
+    connection.execute(
+        """
+        ALTER TABLE polymarket_feature_dataset
+        ADD COLUMN IF NOT EXISTS source_scope_json VARCHAR
+        """
+    )
     manifest_values = [
         dataset.dataset_id,
         POLYMARKET_DATASET_SCHEMA_VERSION,
@@ -2334,6 +2558,7 @@ def materialize_polymarket_feature_dataset(
         _canonical_json(list(dataset.training_errors)),
         _canonical_json(dataset.replay_diagnostics),
         _canonical_json(dataset.coverage),
+        _canonical_json(source_scope),
         dataset.dataset_sha256,
     ]
     expected_stored_rows = sorted(
@@ -2362,6 +2587,7 @@ def materialize_polymarket_feature_dataset(
                labeled_row_count, skipped_counts_json,
                labeled_market_counts_json, shadow_errors_json,
                training_errors_json, replay_diagnostics_json, coverage_json,
+               source_scope_json,
                dataset_sha256
         FROM polymarket_feature_dataset WHERE dataset_id = ?
         """,
@@ -2396,20 +2622,25 @@ def materialize_polymarket_feature_dataset(
     try:
         connection.execute(
             """
-            INSERT INTO polymarket_feature_dataset VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            INSERT INTO polymarket_feature_dataset (
+                dataset_id, schema_version, feature_schema_version, run_id,
+                config_json, feature_names_json, candidate_count, row_count,
+                labeled_row_count, skipped_counts_json,
+                labeled_market_counts_json, shadow_errors_json,
+                training_errors_json, replay_diagnostics_json, coverage_json,
+                source_scope_json, dataset_sha256
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             """,
             manifest_values,
         )
         if expected_stored_rows:
-            connection.executemany(
-                """
-                INSERT INTO polymarket_feature_row VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                )
-                """,
-                expected_stored_rows,
+            insert_rows_columnar(
+                connection,
+                sql=_FEATURE_ROW_INSERT_SQL,
+                rows=expected_stored_rows,
+                width=len(_FEATURE_ROW_COLUMNS),
             )
         connection.execute("COMMIT")
     except Exception:
@@ -2436,5 +2667,6 @@ __all__ = [
     "build_polymarket_feature_dataset",
     "load_polymarket_feature_source_context",
     "materialize_polymarket_feature_dataset",
+    "validate_polymarket_feature_source_scope",
     "polymarket_feature_row_sha256",
 ]

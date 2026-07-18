@@ -1,0 +1,4 @@
+round,action,status,independent_groups,conditions,selected_filled_conditions,total_utility_quote,maximum_drawdown_quote,bootstrap_lower_mean_group_utility_quote,profitability_claim
+9,1 s taker scalp admission,failed before fit,47,141,0,,,,False
+10,1 s taker scalp hurdle,no positive score,47,141,0,0.0,0.0,0.0,False
+11,single-leg settlement hold,failed uncertainty gate,14,42,42,22.441050000000004,12.363990000000001,-1.381515892857143,False

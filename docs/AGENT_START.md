@@ -34,7 +34,7 @@ agents to canonical evidence without replacing that evidence.
 |---|---|---|
 | Binance model or backtest | nearest model module and test | `docs/model-research/action-value/latest/README.md`, then selected rows from `progress.csv` |
 | Prior model failure | last row plus the relevant mechanism row in `docs/model-research/action-value/latest/progress.csv` | that row's named design/report only |
-| Polymarket model | `src/simple_ai_trading/polymarket_model.py` and `tests/test_polymarket_model.py` | `docs/model-research/polymarket/latest/README.md` and the nearest numbered contract |
+| Polymarket model | latest numbered model module and focused test; Round 11 uses `src/simple_ai_trading/polymarket_directional_value.py` | `docs/model-research/polymarket/latest/README.md` and the nearest numbered contract |
 | Polymarket recorder/replay | matching recorder or replay module and test | `docs/model-research/polymarket/prospective-continuity-contract-v2.json` |
 | Risk or execution | nearest risk/execution module and test | `docs/LIVE_MARKET_SIMULATION.md` or `docs/POLYMARKET_PAPER_TRADING.md` only at the relevant heading |
 | AI provider/model | nearest AI module and test | `docs/ai/risk-review/latest/comparison.json` and its sibling provenance |
@@ -55,13 +55,17 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.
-- Polymarket currently has a market-anchored baseline, purged BTC/ETH/SOL
-  splits, exact depth/fee/latency replay, causal resolution-time cash locking,
-  hash-bound label-free inference, a frozen causal action-value contract, an
-  implemented hash-persistent ridge baseline, and a preregistered warning-free
-  nonlinear challenger. No Round 9 model has been fitted or scored.
-  Post-contract continuity-qualified outcomes and prospective results are still
-  pending, so no profitability or execution authority exists.
+- Polymarket Round 11 is the latest result and is rejected. It reused the real
+  47-group Round 9 corpus for development only, modeled one FOK entry held to
+  resolution, and evaluated 42 chronological validation markets. The selected
+  point estimate was `+22.44105` quote across 42 fills, but maximum drawdown was
+  `12.36399` and the bootstrap lower mean-group utility was `-1.38152`. The
+  learned external-feature residual norm was only `0.00117`; most apparent
+  probability uplift came from recalibrating the market prior. No profitability,
+  ROI, acceptable-drawdown, AI, paper, or trading authority exists. Read
+  `docs/model-research/polymarket/latest/README.md`, then the Round 11 contract
+  and report. Round 10 rejected the one-second scalp on negative action scores;
+  Round 9 remains the immutable unknown-state admission failure.
 - Captures `eae374e2662c440fb93970d5710937b1`,
   `3a67757c7f174df4b62f2722ea9211cb`, and
   `b8a270da20fe4116a01a4626607e42da` are permanently development-only. The
@@ -82,8 +86,9 @@ After parser or taxonomy changes, regenerate the header through the native build
   profitability evidence. A subsequent five-minute real-feed soak captured
   470,422 messages with queue high-water `569/500000`, zero recorder or
   integrity errors, and exact reopen verification. One audited CLOB disconnect
-  made it `degraded`; it validates writer liveness only. A 15-hour confirmation
-  is still required.
+  made it `degraded`; it validates writer liveness only. The later Round 9
+  confirmation supplied the required duration and synchronized-group breadth,
+  but its model admission failed on unproven post-submission entry states.
 - For a finished segmented Round 9 run, invoke `polymarket-action-value
   --allow-segmented-gaps` directly after official resolution. It performs and
   persists the label-free continuity audit before materialization, then reuses
@@ -153,7 +158,7 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Polymarket AI report v6 also requires exact-model terminal Ollama telemetry and
   independently reconstructs prompt/output token totals. Missing, malformed, or
   rehashed usage evidence vetoes the response; token counts do not prove edge.
-- Qwen3 14B is the next one-shot v9 candidate, frozen before installation in
+- Qwen3 14B remains the next one-shot v9 candidate, frozen before installation in
   `docs/ai/risk-review/qwen3-14b-v9-preregistration.json`. Run it only after
   a post-contract storage-v4 capture spans at least 15 hours and its label-free
   continuity report retains at least 30 synchronized BTC/ETH/SOL groups. A
@@ -168,16 +173,21 @@ After parser or taxonomy changes, regenerate the header through the native build
   terminal `stop`, and positive coherent prompt/output telemetry. Candidate
   resolution and required-GPU capability checks run before the
   confirmation database opens, so preflight failure must not consume the claim.
+- The continuity breadth condition is now evidenced by the Round 9 capture, but
+  the frozen Ridge admission failed before fitting. That failure blocks MLP and
+  Qwen3 14B evaluation for this round. Do not install, invoke, or reinterpret the
+  Qwen candidate against the failed pipeline.
 - The exact terminal facts for failed confirmation capture
   `79ac19539d384352b865c21cb0c43627` are in
   `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.
   Its terminal integrity audit is incomplete; retain it only for recorder
   diagnosis and audit any payload sample before reuse.
-- Confirmation capture `e34d349771da4c35bcc8ae436c2fe9f6` currently owns
-  `data/polymarket-round9-confirmation-v4-20260716-152838Z.duckdb`; never open
-  that database while its recorder process is active. Its sidecar has recorded
-  CLOB reconnect gaps, so the full run cannot be called continuous even if it
-  completes; only independently audited continuous segments may be admitted.
+- Completed confirmation capture `e34d349771da4c35bcc8ae436c2fe9f6` owns
+  `data/polymarket-round9-confirmation-v4-20260716-152838Z.duckdb`. The full run
+  contains audited reconnect gaps and is not globally continuous; the frozen
+  label-free audit admitted only 47 independently gap-free, segment-pure groups.
+  All 47 groups are replay-certified and action-materialized under implementation
+  digest `5e75c49312431c3bc33c3ace33f2edf061acd6d4e6fa5c0151c76779e9f528ab`.
 - Build current AI provenance with `tools/build_ai_model_provenance.py`; it must
   match protected inference evidence to the local manifest, `/api/show`
   metadata, and every blob. Never hand-edit the result or infer identity from a

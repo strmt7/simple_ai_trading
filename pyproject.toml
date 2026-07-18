@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64.0"]
+requires = ["setuptools==83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "simple-ai-trading"
 version = "0.1.0b1"
 description = "Autonomous BTC/ETH/SOL day-trading CLI and Windows app with conservative testnet-first safeguards"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "defusedxml>=0.7.1,<1",
     "duckdb==1.5.4",
@@ -16,15 +16,16 @@ dependencies = [
     "numpy==2.2.6",
     "requests>=2.32.0,<3",
     "scipy==1.17.1",
-    "textual==8.1.1",
-    "websockets==16.0",
+    "textual==8.2.8",
+    "websockets==16.1.1",
     "zstandard==0.25.0",
 ]
 
 [project.optional-dependencies]
 gpu = [
-    "torch>=2.4,<3; platform_system != 'Windows'",
-    "torch-directml==0.2.5.dev240914; platform_system == 'Windows' and python_version < '3.12'",
+    "torch==2.4.1; platform_system == 'Windows' and python_version < '3.13'",
+    "torch==2.13.0; platform_system != 'Windows' or python_version >= '3.13'",
+    "torch-directml==0.2.5.dev240914; platform_system == 'Windows' and python_version < '3.13'",
 ]
 terminal-test = [
     "pyte>=0.8.2,<1",
@@ -35,14 +36,26 @@ microstructure = [
     "hftbacktest==2.4.4",
 ]
 foundation-ai = [
-    "beartype==0.20.2",
-    "einops==0.8.1",
-    "einx==0.3.0",
-    "huggingface_hub==0.33.1",
+    "einops==0.8.2",
+    "huggingface_hub==1.24.0",
     "pandas>=2.2,<4",
-    "safetensors==0.6.2",
+    "safetensors==0.8.0",
     "tqdm>=4.67,<5",
 ]
+
+[dependency-groups]
+test = [
+    "coverage==7.15.2",
+    "diff-cover==10.3.0",
+    "pytest==9.1.1",
+    "ruff==0.15.22",
+]
+release = [
+    "build==1.5.0",
+]
+
+[tool.uv]
+required-version = "==0.11.29"
 
 [project.scripts]
 simple-ai-trading = "simple_ai_trading.cli:main"

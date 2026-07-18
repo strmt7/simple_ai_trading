@@ -10,6 +10,7 @@ import math
 from typing import Sequence
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS
+from .duckdb_batch import insert_rows_columnar
 from .paper_execution import PaperExecutionResult
 from .polymarket import PolymarketFiveMinuteMarket
 from .polymarket_features import PolymarketFeatureDataset, PolymarketFeatureRow
@@ -128,6 +129,48 @@ POLYMARKET_ACTION_FEATURE_NAMES = (
     "opposite_ask_depth_3_contracts",
     "log1p_market_liquidity_quote",
     "log1p_market_volume_quote",
+)
+_ACTION_VALUE_ROW_COLUMNS = (
+    "dataset_sha256",
+    "action_index",
+    "action_feature_sha256",
+    "action_label_sha256",
+    "source_feature_id",
+    "source_input_provenance_sha256",
+    "source_label_free_sha256",
+    "condition_id",
+    "market_id",
+    "asset",
+    "outcome",
+    "token_id",
+    "decision_event_id",
+    "decision_received_wall_ms",
+    "decision_received_monotonic_ns",
+    "feature_values_json",
+    "terminal_reason",
+    "category",
+    "classifier_eligible",
+    "positive_complete",
+    "condition_blocked",
+    "entry_filled",
+    "exit_filled",
+    "stress_utility_quote",
+    "entry_cost_quote",
+    "exit_proceeds_quote",
+    "net_quote",
+    "creation_book_event_id",
+    "entry_book_event_id",
+    "exit_decision_book_event_id",
+    "exit_book_event_id",
+    "entry_execution_parameter_sha256",
+    "exit_execution_parameter_sha256",
+    "execution_evidence_sha256",
+)
+_ACTION_VALUE_ROW_INSERT_SQL = (
+    "INSERT INTO polymarket_action_value_row ("
+    + ", ".join(_ACTION_VALUE_ROW_COLUMNS)
+    + ") SELECT "
+    + ", ".join("unnest(?)" for _column in _ACTION_VALUE_ROW_COLUMNS)
 )
 
 
@@ -734,9 +777,8 @@ def _validate_execution_economics(
 ) -> None:
     entry = execution.entry_result
     exit_result = execution.exit_result
-    if (
-        (entry is not None and not _paper_result_reconciles(entry))
-        or (exit_result is not None and not _paper_result_reconciles(exit_result))
+    if (entry is not None and not _paper_result_reconciles(entry)) or (
+        exit_result is not None and not _paper_result_reconciles(exit_result)
     ):
         raise ValueError("Polymarket action execution fill accounting is invalid")
     if execution.entry_filled:
@@ -1273,10 +1315,11 @@ def materialize_polymarket_action_value_dataset(
                 manifest_values,
             )
             if expected_rows:
-                placeholders = ", ".join("?" for _ in expected_rows[0])
-                connection.executemany(
-                    f"INSERT INTO polymarket_action_value_row VALUES ({placeholders})",
-                    expected_rows,
+                insert_rows_columnar(
+                    connection,
+                    sql=_ACTION_VALUE_ROW_INSERT_SQL,
+                    rows=expected_rows,
+                    width=len(_ACTION_VALUE_ROW_COLUMNS),
                 )
             connection.execute("COMMIT")
         except Exception:

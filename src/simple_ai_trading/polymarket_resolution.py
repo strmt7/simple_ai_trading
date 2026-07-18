@@ -106,7 +106,10 @@ def _validate_market_identity(
     clob_payload: Mapping[str, object],
     gamma_payload: Mapping[str, object],
 ) -> tuple[list[Mapping[str, object]], list[Decimal]]:
-    if str(clob_payload.get("condition_id") or "").strip().lower() != market.condition_id:
+    if (
+        str(clob_payload.get("condition_id") or "").strip().lower()
+        != market.condition_id
+    ):
         raise ValueError("CLOB resolution condition does not match recorded evidence")
     if str(clob_payload.get("market_slug") or "").strip() != market.slug:
         raise ValueError("CLOB resolution slug does not match recorded evidence")
@@ -137,12 +140,16 @@ def _validate_market_identity(
         raise ValueError("Gamma resolution condition does not match recorded evidence")
     if str(gamma_payload.get("slug") or "").strip() != market.slug:
         raise ValueError("Gamma resolution slug does not match recorded evidence")
-    gamma_outcomes = [str(item) for item in _json_array(
-        gamma_payload.get("outcomes"), name="Gamma outcomes"
-    )]
-    gamma_tokens = [str(item) for item in _json_array(
-        gamma_payload.get("clobTokenIds"), name="Gamma token IDs"
-    )]
+    gamma_outcomes = [
+        str(item)
+        for item in _json_array(gamma_payload.get("outcomes"), name="Gamma outcomes")
+    ]
+    gamma_tokens = [
+        str(item)
+        for item in _json_array(
+            gamma_payload.get("clobTokenIds"), name="Gamma token IDs"
+        )
+    ]
     if gamma_outcomes != ["Up", "Down"] or gamma_tokens != list(market.token_ids):
         raise ValueError("Gamma resolution token mapping drifted")
     resolution_source = str(gamma_payload.get("resolutionSource") or "").strip().lower()
@@ -191,8 +198,7 @@ def validate_official_resolution(
     ):
         raise ValueError("closed CLOB market must identify exactly one winner")
     clob_prices = [
-        _decimal(item.get("price"), name="CLOB terminal token price")
-        for item in tokens
+        _decimal(item.get("price"), name="CLOB terminal token price") for item in tokens
     ]
     if sorted(clob_prices) != [Decimal("0"), Decimal("1")]:
         raise ValueError("closed CLOB market does not have terminal token prices")
@@ -202,7 +208,9 @@ def validate_official_resolution(
     winner = winners[0]
     winning_asset_id = str(winner.get("token_id") or "")
     winning_outcome = str(winner.get("outcome") or "")
-    winner_index = 0 if winning_outcome == "Up" else 1 if winning_outcome == "Down" else -1
+    winner_index = (
+        0 if winning_outcome == "Up" else 1 if winning_outcome == "Down" else -1
+    )
     if winner_index < 0 or gamma_prices[winner_index] != Decimal("1"):
         raise ValueError("CLOB and Gamma disagree on the winning outcome")
     if clob_prices[winner_index] != Decimal("1"):
@@ -242,14 +250,18 @@ def _load_markets(
     store: PolymarketEvidenceStore,
     run_id: str,
 ) -> tuple[PolymarketFiveMinuteMarket, ...]:
-    rows = store.connect().execute(
-        """
+    rows = (
+        store.connect()
+        .execute(
+            """
         SELECT condition_id, gamma_payload_json
         FROM polymarket_market_snapshot
         WHERE run_id = ? ORDER BY event_start_ms, asset
         """,
-        [run_id],
-    ).fetchall()
+            [run_id],
+        )
+        .fetchall()
+    )
     markets: list[PolymarketFiveMinuteMarket] = []
     for condition_id, payload_json in rows:
         try:
@@ -346,7 +358,10 @@ def _resolution_from_row(
         clob_payload_sha256=str(clob_sha),
         gamma_payload_sha256=str(gamma_sha),
     )
-    if _canonical_json(stored_payload) != str(payload_json) or stored_payload != expected_payload:
+    if (
+        _canonical_json(stored_payload) != str(payload_json)
+        or stored_payload != expected_payload
+    ):
         raise ValueError("stored official resolution payload is inconsistent")
     if not hmac.compare_digest(_canonical_sha256(expected_payload), str(evidence_sha)):
         raise ValueError("stored official resolution evidence hash is invalid")
@@ -375,8 +390,10 @@ def load_official_resolutions(
     run_id: str,
 ) -> tuple[PolymarketOfficialResolutionEvidence, ...]:
     markets = {market.condition_id: market for market in _load_markets(store, run_id)}
-    rows = store.connect().execute(
-        """
+    rows = (
+        store.connect()
+        .execute(
+            """
         SELECT resolution_id, run_id, schema_version, condition_id, market_id,
                asset, observed_wall_ms, observed_monotonic_ns, winning_asset_id,
                winning_outcome, clob_payload_json, clob_payload_sha256,
@@ -385,8 +402,10 @@ def load_official_resolutions(
         FROM polymarket_resolution_evidence
         WHERE run_id = ? ORDER BY condition_id
         """,
-        [run_id],
-    ).fetchall()
+            [run_id],
+        )
+        .fetchall()
+    )
     output: list[PolymarketOfficialResolutionEvidence] = []
     for row in rows:
         market = markets.get(str(row[3]))
@@ -416,15 +435,19 @@ class PolymarketResolutionFinalizer:
         selected = str(run_id or "").strip()
         if not selected:
             raise ValueError("run_id is required for Polymarket resolution")
-        run = self.store.connect().execute(
-            "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
-            [selected],
-        ).fetchone()
+        run = (
+            self.store.connect()
+            .execute(
+                "SELECT status FROM polymarket_recorder_run WHERE run_id = ?",
+                [selected],
+            )
+            .fetchone()
+        )
         if run is None:
             raise ValueError(f"unknown Polymarket recorder run: {selected}")
         if str(run[0]) not in {"complete", "degraded"}:
             raise ValueError("Polymarket resolution requires a finished valid run")
-        integrity = self.store.integrity_errors(selected)
+        integrity = self.store.resume_integrity_errors(selected)
         if integrity:
             raise ValueError(
                 "Polymarket resolution evidence failed integrity: "

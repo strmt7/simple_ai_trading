@@ -27,13 +27,20 @@ _KNOWN_NO_BOOK_CHANGE_EVENTS = frozenset(
 _BOOK_DEPTH_EVENTS = frozenset({"book", "price_change"})
 _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS = 1_000
 _BEST_CORROBORATION_MAX_ARRIVAL_NS = 2_000_000_000
+_RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS = 250
+_RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS = 250_000_000
+_DUPLICATE_TICK_TRANSITION_MAX_SOURCE_SKEW_MS = 1
 _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS = 1_000
 _CAUSAL_REORDER_MAX_ARRIVAL_NS = 2_000_000_000
 _REPLAY_FETCH_SIZE = 4_096
+_REPLAY_EVENT_SCOPE_SCHEMA_VERSION = "polymarket-replay-event-scope-v1"
+_REPLAY_MATERIALIZATION_POLICY_SCHEMA_VERSION = (
+    "polymarket-replay-materialization-policy-v1"
+)
 _CAUSALLY_ORDERED_EVENTS = _BOOK_DEPTH_EVENTS | frozenset(
     {"best_bid_ask", "tick_size_change", "market_resolved"}
 )
-POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION = "polymarket-replay-diagnostics-v2"
+POLYMARKET_REPLAY_DIAGNOSTICS_SCHEMA_VERSION = "polymarket-replay-diagnostics-v3"
 _NAMED_LIVE_LANE_STREAMS = {
     "clob": "clob_market",
     "binance:combined:btc-eth-sol": "binance_spot",
@@ -243,6 +250,12 @@ class PolymarketReplayDiagnostics:
     maximum_late_arrival_delay_ns: int
     deferred_event_count: int
     maximum_availability_delay_ns: int
+    event_scope_mode: str = "complete"
+    event_scope_sha256: str = ""
+    excluded_after_event_scope_count: int = 0
+    materialized_minimum_depth_levels: int = 0
+    materialized_depth_quantity_cap: bool = False
+    materialization_policy_sha256: str = ""
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -256,6 +269,16 @@ class _BookState:
     provenance_sha256: str
     tick_size: Decimal
     book_hash: str
+    last_full_book_row: _EventRow | None = None
+    last_tick_size_change_row: _EventRow | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _AppliedPriceChangeBatch:
+    source_time_ms: int
+    changes: tuple[tuple[_EventRow, Mapping[str, object]], ...]
+    book_hash: str
+    checksum: tuple[Decimal, Decimal]
 
 
 @dataclass
@@ -263,6 +286,7 @@ class _PendingBookBatch:
     condition_id: str
     source_time_ms: int
     rows: list[_EventRow]
+    correction_evidence_by_token: dict[str, tuple[_EventRow, ...]]
 
 
 @dataclass(slots=True)
@@ -280,6 +304,10 @@ class _EventRow:
     available_wall_ms: int
     available_monotonic_ns: int
     sub_index: int
+    following_receive_group_rows: tuple[_EventRow, ...] = ()
+    following_bounded_receive_group_rows: tuple[_EventRow, ...] = ()
+    following_scope_boundary_rows: tuple[_EventRow, ...] = ()
+    preceding_receive_group_best_rows: tuple[_EventRow, ...] = ()
 
 
 @dataclass(slots=True)
@@ -291,6 +319,7 @@ class _CausalReplayMetrics:
     maximum_late_arrival_delay_ns: int = 0
     deferred_event_count: int = 0
     maximum_availability_delay_ns: int = 0
+    excluded_after_event_scope_count: int = 0
 
 
 class PolymarketEvidenceReplay:
@@ -399,10 +428,32 @@ class PolymarketEvidenceReplay:
         book_sample_interval_ms: int = 0,
         condition_ids: Sequence[str] | None = None,
         continuity_report_sha256: str = "",
+        maximum_received_wall_ms_by_condition: Mapping[str, int] | None = None,
+        materialized_minimum_depth_levels: int = 0,
+        cap_materialized_depth_to_minimum_order_size: bool = False,
     ) -> "PolymarketEvidenceReplay":
         sample_interval_ms = int(book_sample_interval_ms)
         if sample_interval_ms < 0 or sample_interval_ms > 5_000:
             raise ValueError("book_sample_interval_ms must lie in [0, 5000]")
+        if isinstance(materialized_minimum_depth_levels, bool):
+            raise ValueError("materialized_minimum_depth_levels must lie in [0, 100]")
+        minimum_depth_levels = int(materialized_minimum_depth_levels)
+        if minimum_depth_levels < 0 or minimum_depth_levels > 100:
+            raise ValueError("materialized_minimum_depth_levels must lie in [0, 100]")
+        if not isinstance(cap_materialized_depth_to_minimum_order_size, bool):
+            raise ValueError("materialized depth quantity cap must be boolean")
+        materialization_policy_payload = {
+            "schema_version": _REPLAY_MATERIALIZATION_POLICY_SCHEMA_VERSION,
+            "minimum_depth_levels": minimum_depth_levels,
+            "quantity_cap": (
+                "market_minimum_order_size"
+                if cap_materialized_depth_to_minimum_order_size
+                else "complete_depth"
+            ),
+        }
+        materialization_policy_sha256 = _canonical_sha256(
+            materialization_policy_payload
+        )
         selected_conditions: tuple[str, ...] | None = None
         if condition_ids is not None:
             normalized = tuple(
@@ -447,7 +498,7 @@ class PolymarketEvidenceReplay:
             raise ValueError("Polymarket replay requires a finished valid run")
         if str(run[1] or "").strip():
             raise ValueError("Polymarket replay refuses runs with recorder errors")
-        integrity = store.integrity_errors(selected)
+        integrity = store.resume_integrity_errors(selected)
         if integrity:
             raise ValueError(
                 "Polymarket replay evidence failed integrity: " + "; ".join(integrity)
@@ -458,9 +509,7 @@ class PolymarketEvidenceReplay:
                 not allow_segmented_gaps
                 or selected_conditions is None
                 or len(continuity_sha256) != 64
-                or any(
-                    value not in "0123456789abcdef" for value in continuity_sha256
-                )
+                or any(value not in "0123456789abcdef" for value in continuity_sha256)
             ):
                 raise ValueError("Polymarket replay continuity proof is invalid")
             from .polymarket_continuity import (
@@ -471,12 +520,9 @@ class PolymarketEvidenceReplay:
                 store,
                 run_id=selected,
             )
-            if (
-                continuity.report_sha256 != continuity_sha256
-                or not set(selected_conditions).issubset(
-                    continuity.eligible_condition_ids
-                )
-            ):
+            if continuity.report_sha256 != continuity_sha256 or not set(
+                selected_conditions
+            ).issubset(continuity.eligible_condition_ids):
                 raise ValueError("Polymarket replay continuity proof differs")
             gap_count = int(
                 connection.execute(
@@ -496,6 +542,45 @@ class PolymarketEvidenceReplay:
             selected,
             condition_ids=selected_conditions,
         )
+        event_scope: dict[str, int] | None = None
+        if maximum_received_wall_ms_by_condition is not None:
+            event_scope = {}
+            for (
+                raw_condition,
+                raw_cutoff,
+            ) in maximum_received_wall_ms_by_condition.items():
+                condition = str(raw_condition or "").strip().lower()
+                if (
+                    not condition
+                    or condition in event_scope
+                    or isinstance(raw_cutoff, bool)
+                ):
+                    raise ValueError("Polymarket replay event scope is invalid")
+                try:
+                    cutoff = int(raw_cutoff)
+                except (TypeError, ValueError, OverflowError) as exc:
+                    raise ValueError(
+                        "Polymarket replay event scope is invalid"
+                    ) from exc
+                if cutoff < 0:
+                    raise ValueError("Polymarket replay event scope is invalid")
+                event_scope[condition] = cutoff
+            if set(event_scope) != {market.condition_id for market in markets}:
+                raise ValueError(
+                    "Polymarket replay event scope must cover every selected market"
+                )
+        event_scope_payload: dict[str, object] = {
+            "schema_version": _REPLAY_EVENT_SCOPE_SCHEMA_VERSION,
+            "mode": (
+                "complete"
+                if event_scope is None
+                else "condition_received_wall_upper_bound"
+            ),
+            "condition_maximum_received_wall_ms": (
+                {} if event_scope is None else dict(sorted(event_scope.items()))
+            ),
+        }
+        event_scope_sha256 = _canonical_sha256(event_scope_payload)
         market_execution_evidence = cls._load_market_execution_evidence(
             store,
             selected,
@@ -514,6 +599,7 @@ class PolymarketEvidenceReplay:
             selected,
             markets,
             causal_metrics,
+            maximum_received_wall_ms_by_condition=event_scope,
         )
         (
             books,
@@ -527,6 +613,10 @@ class PolymarketEvidenceReplay:
             markets,
             events,
             book_sample_interval_ms=sample_interval_ms,
+            materialized_minimum_depth_levels=minimum_depth_levels,
+            cap_materialized_depth_to_minimum_order_size=(
+                cap_materialized_depth_to_minimum_order_size
+            ),
         )
         resolutions = cls._merge_external_resolutions(
             store,
@@ -556,6 +646,16 @@ class PolymarketEvidenceReplay:
             maximum_availability_delay_ns=(
                 causal_metrics.maximum_availability_delay_ns
             ),
+            event_scope_mode=str(event_scope_payload["mode"]),
+            event_scope_sha256=event_scope_sha256,
+            excluded_after_event_scope_count=(
+                causal_metrics.excluded_after_event_scope_count
+            ),
+            materialized_minimum_depth_levels=minimum_depth_levels,
+            materialized_depth_quantity_cap=(
+                cap_materialized_depth_to_minimum_order_size
+            ),
+            materialization_policy_sha256=materialization_policy_sha256,
         )
         if not books:
             raise ValueError("Polymarket replay contains no validated book states")
@@ -672,8 +772,25 @@ class PolymarketEvidenceReplay:
         for item in recorded:
             if allowed is not None and item.condition_id not in allowed:
                 continue
-            if item.condition_id in recorded_by_condition:
-                raise ValueError("Polymarket replay has duplicate resolution events")
+            prior = recorded_by_condition.get(item.condition_id)
+            if prior is not None:
+                if (
+                    prior.winning_asset_id != item.winning_asset_id
+                    or prior.winning_outcome != item.winning_outcome
+                ):
+                    raise ValueError(
+                        "Polymarket replay has conflicting resolution events"
+                    )
+                if (
+                    item.received_monotonic_ns,
+                    item.received_wall_ms,
+                    item.event_id,
+                ) >= (
+                    prior.received_monotonic_ns,
+                    prior.received_wall_ms,
+                    prior.event_id,
+                ):
+                    continue
             recorded_by_condition[item.condition_id] = item
         official_by_condition: dict[str, PolymarketResolutionEvidence] = {}
         for item in load_official_resolutions(store, run_id=run_id):
@@ -851,6 +968,8 @@ class PolymarketEvidenceReplay:
         run_id: str,
         markets: tuple[PolymarketFiveMinuteMarket, ...],
         metrics: _CausalReplayMetrics,
+        *,
+        maximum_received_wall_ms_by_condition: Mapping[str, int] | None = None,
     ) -> Iterator[_EventRow]:
         market_by_condition = {market.condition_id: market for market in markets}
         conditions = tuple(sorted(market_by_condition))
@@ -858,11 +977,13 @@ class PolymarketEvidenceReplay:
         availability: dict[str, tuple[int, int]] = {}
         raw_group: list[tuple[object, ...]] = []
         group_monotonic_ns: int | None = None
+        released_group: tuple[_EventRow, ...] | None = None
 
         def release_group(
             grouped: list[tuple[object, ...]],
         ) -> tuple[_EventRow, ...]:
             prepared: list[tuple[_EventRow, str, int | None]] = []
+            excluded_scope_rows: list[tuple[_EventRow, str]] = []
             reorder_slots: dict[tuple[str, str, int], list[int]] = {}
             reorder_epoch: dict[tuple[str, str], int] = {}
             release_wall_by_condition: dict[str, int] = {}
@@ -887,6 +1008,19 @@ class PolymarketEvidenceReplay:
                 )
                 metrics.total_event_count += 1
                 condition = str(row.event.get("market") or row.condition_id).lower()
+                cutoff = (
+                    None
+                    if maximum_received_wall_ms_by_condition is None
+                    else maximum_received_wall_ms_by_condition.get(condition)
+                )
+                if (
+                    cutoff is not None
+                    and row.event_type != "market_resolved"
+                    and row.received_wall_ms > cutoff
+                ):
+                    metrics.excluded_after_event_scope_count += 1
+                    excluded_scope_rows.append((row, condition))
+                    continue
                 if (
                     row.event_type not in _CAUSALLY_ORDERED_EVENTS
                     or condition not in market_by_condition
@@ -940,6 +1074,19 @@ class PolymarketEvidenceReplay:
                     row.received_wall_ms,
                 )
                 prepared.append((row, condition, source_time))
+
+            for index, (row, condition, _source_time) in enumerate(prepared):
+                if row.event_type != "price_change":
+                    continue
+                row.preceding_receive_group_best_rows = tuple(
+                    candidate
+                    for candidate, candidate_condition, _candidate_source in prepared[
+                        :index
+                    ]
+                    if candidate.connection_id == row.connection_id
+                    and candidate_condition == condition
+                    and candidate.event_type == "best_bid_ask"
+                )
 
             for indices in reorder_slots.values():
                 ordered = sorted(
@@ -997,7 +1144,99 @@ class PolymarketEvidenceReplay:
                 row.available_wall_ms = available_wall_ms
                 row.available_monotonic_ns = available_monotonic_ns
                 output.append(row)
+            for row in output:
+                if row.event_type != "best_bid_ask":
+                    continue
+                condition = str(row.event.get("market") or row.condition_id).lower()
+                source_time = _timestamp(
+                    row.event.get("timestamp"),
+                    name="scope-boundary best_bid_ask timestamp",
+                )
+                row.following_scope_boundary_rows = tuple(
+                    sorted(
+                        (
+                            candidate
+                            for candidate, candidate_condition in excluded_scope_rows
+                            if candidate_condition == condition
+                            and candidate.connection_id == row.connection_id
+                            and candidate.received_monotonic_ns
+                            == row.received_monotonic_ns
+                            and candidate.event_type in _BOOK_DEPTH_EVENTS
+                            and cls._event_arrival_key(candidate)
+                            > cls._event_arrival_key(row)
+                            and _timestamp(
+                                candidate.event.get("timestamp"),
+                                name=("scope-boundary book-depth event timestamp"),
+                            )
+                            == source_time
+                        ),
+                        key=cls._event_arrival_key,
+                    )
+                )
+            for index, row in enumerate(output):
+                if row.event_type != "price_change":
+                    continue
+                condition = str(row.event.get("market") or row.condition_id).lower()
+                ordered_preceding = tuple(
+                    candidate
+                    for candidate in output[:index]
+                    if candidate.connection_id == row.connection_id
+                    and str(
+                        candidate.event.get("market") or candidate.condition_id
+                    ).lower()
+                    == condition
+                    and candidate.event_type == "best_bid_ask"
+                )
+                preceding_by_id = {
+                    candidate.event_id: candidate
+                    for candidate in (
+                        *row.preceding_receive_group_best_rows,
+                        *ordered_preceding,
+                    )
+                }
+                row.preceding_receive_group_best_rows = tuple(
+                    sorted(preceding_by_id.values(), key=cls._event_arrival_key)
+                )
+                following = tuple(
+                    candidate
+                    for candidate in output[index + 1 :]
+                    if candidate.connection_id == row.connection_id
+                    and str(
+                        candidate.event.get("market") or candidate.condition_id
+                    ).lower()
+                    == condition
+                    and candidate.event_type in _BOOK_DEPTH_EVENTS
+                )
+                if any(candidate.event_type == "book" for candidate in following):
+                    row.following_receive_group_rows = following
             return tuple(output)
+
+        def attach_bounded_following_group(
+            previous: tuple[_EventRow, ...],
+            following: tuple[_EventRow, ...],
+        ) -> None:
+            for row in previous:
+                if row.event_type != "price_change":
+                    continue
+                condition = str(row.event.get("market") or row.condition_id).lower()
+                candidates = tuple(
+                    candidate
+                    for candidate in following
+                    if candidate.connection_id == row.connection_id
+                    and str(
+                        candidate.event.get("market") or candidate.condition_id
+                    ).lower()
+                    == condition
+                    and candidate.event_type in _BOOK_DEPTH_EVENTS
+                    and 0
+                    < candidate.received_monotonic_ns - row.received_monotonic_ns
+                    <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+                    and 0
+                    <= candidate.received_wall_ms - row.received_wall_ms
+                    <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+                )
+                if any(candidate.event_type == "book" for candidate in candidates):
+                    row.following_bounded_receive_group_rows = candidates
 
         for decoded in store.iter_public_events(
             run_id,
@@ -1023,12 +1262,22 @@ class PolymarketEvidenceReplay:
                 group_monotonic_ns is not None
                 and received_monotonic_ns != group_monotonic_ns
             ):
-                yield from release_group(raw_group)
+                current_group = release_group(raw_group)
+                if released_group is not None:
+                    attach_bounded_following_group(released_group, current_group)
+                    yield from released_group
+                released_group = current_group
                 raw_group = []
             group_monotonic_ns = received_monotonic_ns
             raw_group.append(raw_row)
         if raw_group:
-            yield from release_group(raw_group)
+            current_group = release_group(raw_group)
+            if released_group is not None:
+                attach_bounded_following_group(released_group, current_group)
+                yield from released_group
+            released_group = current_group
+        if released_group is not None:
+            yield from released_group
 
     @classmethod
     def _reconstruct(
@@ -1038,6 +1287,8 @@ class PolymarketEvidenceReplay:
         events: Iterable[_EventRow],
         *,
         book_sample_interval_ms: int,
+        materialized_minimum_depth_levels: int,
+        cap_materialized_depth_to_minimum_order_size: bool,
     ) -> tuple[
         tuple[PolymarketRecordedBook, ...],
         tuple[PolymarketResolutionEvidence, ...],
@@ -1057,6 +1308,7 @@ class PolymarketEvidenceReplay:
         resolutions: list[PolymarketResolutionEvidence] = []
         pending: dict[str, _PendingBookBatch] = {}
         pending_best: dict[str, list[_EventRow]] = {}
+        delta_history: dict[str, list[_AppliedPriceChangeBatch]] = {}
         active_connection: dict[str, str] = {}
         segments: set[tuple[str, str]] = set()
         state_reset_count = 0
@@ -1075,8 +1327,15 @@ class PolymarketEvidenceReplay:
                     market_by_token,
                     state,
                     pending_best,
+                    delta_history,
                     last_materialized_ns,
                     book_sample_interval_ms=book_sample_interval_ms,
+                    materialized_minimum_depth_levels=(
+                        materialized_minimum_depth_levels
+                    ),
+                    cap_materialized_depth_to_minimum_order_size=(
+                        cap_materialized_depth_to_minimum_order_size
+                    ),
                 )
                 books.extend(materialized)
                 transition_count += transitions
@@ -1098,6 +1357,7 @@ class PolymarketEvidenceReplay:
                         state_reset_count += 1
                     for token in market.token_ids:
                         state.pop(token, None)
+                        delta_history.pop(token, None)
                         last_materialized_ns.pop(token, None)
                         discarded_best_count += len(pending_best.pop(token, ()))
                     active_connection[condition] = row.connection_id
@@ -1111,11 +1371,151 @@ class PolymarketEvidenceReplay:
                 )
                 batch = pending.get(condition)
                 if batch is None or source_time != batch.source_time_ms:
-                    flush(condition)
+                    correction_evidence: dict[str, tuple[_EventRow, ...]] | None = None
+                    if batch is not None and event_type == "price_change":
+                        correction_evidence = (
+                            cls._cross_timestamp_idempotent_correction_evidence(
+                                batch,
+                                row,
+                                state,
+                                pending_best,
+                                market_by_token,
+                            )
+                        )
+                        if (
+                            correction_evidence is None
+                            and len(batch.rows) > 1
+                            and not batch.correction_evidence_by_token
+                            and all(
+                                item.event_type in {"price_change", "best_bid_ask"}
+                                for item in batch.rows
+                            )
+                        ):
+                            matches: list[
+                                tuple[
+                                    int,
+                                    _PendingBookBatch,
+                                    dict[str, tuple[_EventRow, ...]],
+                                    list[_EventRow],
+                                ]
+                            ] = []
+                            for index, candidate in enumerate(batch.rows):
+                                candidate_batch = _PendingBookBatch(
+                                    condition_id=batch.condition_id,
+                                    source_time_ms=batch.source_time_ms,
+                                    rows=[candidate],
+                                    correction_evidence_by_token={},
+                                )
+                                candidate_evidence = (
+                                    cls._cross_timestamp_idempotent_correction_evidence(
+                                        candidate_batch,
+                                        row,
+                                        state,
+                                        pending_best,
+                                        market_by_token,
+                                        consume_stale_best=False,
+                                    )
+                                )
+                                if candidate_evidence is not None:
+                                    evidence_ids = {
+                                        evidence_row.event_id
+                                        for evidence_rows in candidate_evidence.values()
+                                        for evidence_row in evidence_rows
+                                    }
+                                    residual_candidates = [
+                                        item
+                                        for residual_index, item in enumerate(
+                                            batch.rows
+                                        )
+                                        if residual_index != index
+                                        and item.event_id not in evidence_ids
+                                    ]
+                                    if all(
+                                        item.event_type == "price_change"
+                                        and item.connection_id
+                                        == candidate.connection_id
+                                        and 0
+                                        <= candidate.received_monotonic_ns
+                                        - item.received_monotonic_ns
+                                        <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+                                        and 0
+                                        <= candidate.received_wall_ms
+                                        - item.received_wall_ms
+                                        <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+                                        and cls._event_arrival_key(item)
+                                        < cls._event_arrival_key(candidate)
+                                        for item in residual_candidates
+                                    ):
+                                        matches.append(
+                                            (
+                                                index,
+                                                candidate_batch,
+                                                candidate_evidence,
+                                                residual_candidates,
+                                            )
+                                        )
+                            if len(matches) > 1:
+                                raise ValueError(
+                                    "cross-timestamp correction matches multiple "
+                                    "pending price-change rows"
+                                )
+                            if matches:
+                                (
+                                    _candidate_index,
+                                    candidate_batch,
+                                    provisional,
+                                    residual_rows,
+                                ) = matches[0]
+                                if residual_rows:
+                                    pending[condition] = _PendingBookBatch(
+                                        condition_id=batch.condition_id,
+                                        source_time_ms=batch.source_time_ms,
+                                        rows=residual_rows,
+                                        correction_evidence_by_token={},
+                                    )
+                                    flush(condition)
+                                else:
+                                    pending.pop(condition, None)
+                                correction_evidence = (
+                                    cls._cross_timestamp_idempotent_correction_evidence(
+                                        candidate_batch,
+                                        row,
+                                        state,
+                                        pending_best,
+                                        market_by_token,
+                                    )
+                                )
+                                if correction_evidence is None:
+                                    raise ValueError(
+                                        "cross-timestamp correction proof changed "
+                                        "after replaying its independent batch prefix"
+                                    )
+                                provisional_ids = {
+                                    token: tuple(
+                                        item.event_id for item in evidence_rows
+                                    )
+                                    for token, evidence_rows in provisional.items()
+                                }
+                                corrected_ids = {
+                                    token: tuple(
+                                        item.event_id for item in evidence_rows
+                                    )
+                                    for token, evidence_rows in correction_evidence.items()
+                                }
+                                if corrected_ids != provisional_ids:
+                                    raise ValueError(
+                                        "cross-timestamp correction evidence changed "
+                                        "after replaying its independent batch prefix"
+                                    )
+                    if correction_evidence is None:
+                        flush(condition)
+                    else:
+                        pending.pop(condition, None)
                     pending[condition] = _PendingBookBatch(
                         condition_id=condition,
                         source_time_ms=source_time,
                         rows=[row],
+                        correction_evidence_by_token=(correction_evidence or {}),
                     )
                 else:
                     batch.rows.append(row)
@@ -1142,6 +1542,7 @@ class PolymarketEvidenceReplay:
             elif event_type == "tick_size_change":
                 flush(condition)
                 cls._apply_tick_size_change(row, market_by_token, state)
+                delta_history.pop(str(row.event.get("asset_id") or row.asset_id), None)
             elif event_type == "market_resolved":
                 flush(condition)
                 resolutions.append(cls._resolution(run_id, row, market_by_condition))
@@ -1149,11 +1550,42 @@ class PolymarketEvidenceReplay:
                 raise ValueError(f"unsupported CLOB replay event type: {event_type}")
         for condition in tuple(pending):
             flush(condition)
+        discarded_best_count += cls._discard_scope_boundary_pending_best(
+            pending_best,
+            state,
+        )
         unresolved_best = sum(len(rows) for rows in pending_best.values())
         if unresolved_best:
+            unresolved_details = []
+            for token in sorted(pending_best):
+                rows = pending_best[token]
+                if not rows:
+                    continue
+                market = market_by_token.get(token)
+                unresolved_details.append(
+                    {
+                        "condition": market.condition_id if market is not None else "",
+                        "token": token,
+                        "events": [
+                            {
+                                "event_id": row.event_id,
+                                "source_time_ms": _timestamp(
+                                    row.event.get("timestamp"),
+                                    name="unresolved best_bid_ask timestamp",
+                                ),
+                                "best": cls._best_bid_ask_values(row),
+                            }
+                            for row in rows[:3]
+                        ],
+                        "additional_event_count": max(0, len(rows) - 3),
+                    }
+                )
+                if len(unresolved_details) == 5:
+                    break
             raise ValueError(
                 "best_bid_ask evidence was not corroborated by a subsequent "
-                "depth transition"
+                f"depth transition: total={unresolved_best} "
+                f"details={unresolved_details}"
             )
         books.sort(
             key=lambda item: (
@@ -1248,6 +1680,92 @@ class PolymarketEvidenceReplay:
         )
 
     @classmethod
+    def _discard_scope_boundary_pending_best(
+        cls,
+        pending_best: dict[str, list[_EventRow]],
+        state: Mapping[str, _BookState],
+    ) -> int:
+        """Retire BBO metadata proven only by an excluded same-group delta."""
+
+        grouped: dict[
+            tuple[str, str, int, int, tuple[str, ...]],
+            list[tuple[str, _EventRow]],
+        ] = {}
+        for token, rows in pending_best.items():
+            if len(rows) != 1:
+                continue
+            row = rows[0]
+            evidence = row.following_scope_boundary_rows
+            if not evidence or any(
+                item.event_type != "price_change" for item in evidence
+            ):
+                continue
+            condition = str(row.event.get("market") or row.condition_id).lower()
+            source_time = _timestamp(
+                row.event.get("timestamp"),
+                name="scope-boundary best_bid_ask timestamp",
+            )
+            key = (
+                condition,
+                row.connection_id,
+                row.received_monotonic_ns,
+                source_time,
+                tuple(item.event_id for item in evidence),
+            )
+            grouped.setdefault(key, []).append((token, row))
+
+        discarded = 0
+        for key, observations in grouped.items():
+            condition, _connection, _receive_group, source_time, _event_ids = key
+            evidence = observations[0][1].following_scope_boundary_rows
+            batch = _PendingBookBatch(
+                condition_id=condition,
+                source_time_ms=source_time,
+                rows=list(evidence),
+                correction_evidence_by_token={},
+            )
+            if not cls._delta_batch_has_complete_top(batch, state):
+                continue
+            reported: dict[str, tuple[Decimal, Decimal]] = {}
+            for evidence_row in evidence:
+                changes = evidence_row.event.get("price_changes")
+                if not isinstance(changes, list):
+                    reported.clear()
+                    break
+                for change in changes:
+                    if not isinstance(change, Mapping):
+                        reported.clear()
+                        break
+                    token = str(change.get("asset_id") or "")
+                    reported[token] = (
+                        _decimal(
+                            change.get("best_bid"),
+                            name="scope-boundary price_change best_bid",
+                            minimum=Decimal("0"),
+                            maximum=Decimal("1"),
+                        ),
+                        _decimal(
+                            change.get("best_ask"),
+                            name="scope-boundary price_change best_ask",
+                            minimum=Decimal("0"),
+                            maximum=Decimal("1"),
+                        ),
+                    )
+                if not reported:
+                    break
+            if not reported or any(
+                cls._best_bid_ask_values(row) != reported.get(token)
+                for token, row in observations
+            ):
+                continue
+            for token, row in observations:
+                if pending_best.get(token) != [row]:
+                    raise TypeError("scope-boundary BBO evidence ordering drifted")
+                pending_best.pop(token)
+                discarded += 1
+        return discarded
+
+    @classmethod
     def _corrected_idempotent_duplicate_evidence(
         cls,
         token: str,
@@ -1260,7 +1778,7 @@ class PolymarketEvidenceReplay:
         replacement_change: Mapping[str, object],
         replacement_checksum: tuple[Decimal, Decimal],
         pending_best: Mapping[str, list[_EventRow]],
-    ) -> tuple[_EventRow, _EventRow] | tuple[()]:
+    ) -> tuple[_EventRow, ...]:
         """Recognize one narrowly bounded exchange-side checksum correction."""
 
         if (
@@ -1307,9 +1825,7 @@ class PolymarketEvidenceReplay:
             return ()
         _asset_id, side, price, size, _book_hash = pending_mutation
         levels = current.bids if side == "BUY" else current.asks
-        if (size == 0 and price in levels) or (
-            size != 0 and levels.get(price) != size
-        ):
+        if (size == 0 and price in levels) or (size != 0 and levels.get(price) != size):
             return ()
         expected = (
             max(current.bids, default=Decimal("0")),
@@ -1322,6 +1838,16 @@ class PolymarketEvidenceReplay:
         if not best_rows:
             return ()
         stale_best = best_rows[0]
+        receive_group_delta_ns = (
+            pending_row.received_monotonic_ns - stale_best.received_monotonic_ns
+        )
+        same_receive_group = receive_group_delta_ns == 0
+        bounded_later_receive_group = (
+            0 < receive_group_delta_ns <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+            and 0
+            <= pending_row.received_wall_ms - stale_best.received_wall_ms
+            <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+        )
         if (
             _timestamp(
                 stale_best.event.get("timestamp"),
@@ -1329,14 +1855,808 @@ class PolymarketEvidenceReplay:
             )
             != batch.source_time_ms
             or stale_best.connection_id != pending_row.connection_id
-            or stale_best.received_monotonic_ns
-            != pending_row.received_monotonic_ns
-            or cls._event_arrival_key(stale_best)
-            > cls._event_arrival_key(pending_row)
+            or not (same_receive_group or bounded_later_receive_group)
+            or cls._event_arrival_key(stale_best) > cls._event_arrival_key(pending_row)
             or cls._best_bid_ask_values(stale_best) != pending_checksum
         ):
             return ()
-        return pending_row, stale_best
+        corrected_best = next(
+            (
+                row
+                for row in best_rows[1:]
+                if _timestamp(
+                    row.event.get("timestamp"),
+                    name="corrected best_bid_ask timestamp",
+                )
+                == batch.source_time_ms
+                and row.connection_id == replacement_row.connection_id
+                and row.received_monotonic_ns == replacement_row.received_monotonic_ns
+                and cls._event_arrival_key(pending_row)
+                < cls._event_arrival_key(row)
+                < cls._event_arrival_key(replacement_row)
+                and cls._best_bid_ask_values(row) == replacement_checksum
+            ),
+            None,
+        )
+        if corrected_best is None:
+            removed_ephemeral_top = size == 0 and (
+                (
+                    side == "BUY"
+                    and price == pending_checksum[0]
+                    and pending_checksum[0] > expected[0]
+                    and pending_checksum[1] == expected[1]
+                )
+                or (
+                    side == "SELL"
+                    and price == pending_checksum[1]
+                    and pending_checksum[1] < expected[1]
+                    and pending_checksum[0] == expected[0]
+                )
+            )
+            if not removed_ephemeral_top:
+                return ()
+            return pending_row, stale_best
+        return pending_row, stale_best, corrected_best
+
+    @classmethod
+    def _cross_timestamp_idempotent_correction_evidence(
+        cls,
+        batch: _PendingBookBatch,
+        replacement_row: _EventRow,
+        state: Mapping[str, _BookState],
+        pending_best: dict[str, list[_EventRow]],
+        market_by_token: Mapping[str, PolymarketFiveMinuteMarket],
+        *,
+        consume_stale_best: bool = True,
+    ) -> dict[str, tuple[_EventRow, ...]] | None:
+        """Bind one receive-group correction without granting stale depth authority."""
+
+        if (
+            len(batch.rows) != 1
+            or batch.rows[0].event_type != "price_change"
+            or replacement_row.event_type != "price_change"
+        ):
+            return None
+        pending_row = batch.rows[0]
+        replacement_source_time_ms = _timestamp(
+            replacement_row.event.get("timestamp"),
+            name="corrected price_change timestamp",
+        )
+        receive_group_delta_ns = (
+            replacement_row.received_monotonic_ns - pending_row.received_monotonic_ns
+        )
+        same_receive_group = receive_group_delta_ns == 0
+        bounded_later_receive_group = (
+            0 < receive_group_delta_ns <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+            and 0
+            <= replacement_row.received_wall_ms - pending_row.received_wall_ms
+            <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+        )
+        if (
+            replacement_source_time_ms <= batch.source_time_ms
+            or replacement_source_time_ms - batch.source_time_ms
+            > _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS
+            or pending_row.connection_id != replacement_row.connection_id
+            or not (same_receive_group or bounded_later_receive_group)
+            or cls._event_arrival_key(pending_row)
+            >= cls._event_arrival_key(replacement_row)
+        ):
+            return None
+        pending_changes = pending_row.event.get("price_changes")
+        replacement_changes = replacement_row.event.get("price_changes")
+        if (
+            not isinstance(pending_changes, list)
+            or not pending_changes
+            or not isinstance(replacement_changes, list)
+            or not replacement_changes
+        ):
+            return None
+
+        def changes_by_token(
+            values: list[object],
+        ) -> dict[str, Mapping[str, object]] | None:
+            output: dict[str, Mapping[str, object]] = {}
+            for value in values:
+                if not isinstance(value, Mapping):
+                    return None
+                token = str(value.get("asset_id") or "")
+                if not token or token in output or token not in market_by_token:
+                    return None
+                output[token] = value
+            return output
+
+        pending_by_token = changes_by_token(pending_changes)
+        replacement_by_token = changes_by_token(replacement_changes)
+        if (
+            pending_by_token is None
+            or replacement_by_token is None
+            or set(pending_by_token) != set(replacement_by_token)
+        ):
+            return None
+
+        evidence: dict[str, tuple[_EventRow, ...]] = {}
+        stale_best_rows: dict[str, _EventRow] = {}
+        pending_stale_best_tokens: set[str] = set()
+        for token in sorted(pending_by_token):
+            current = state.get(token)
+            pending_change = pending_by_token[token]
+            replacement_change = replacement_by_token[token]
+            if current is None:
+                return None
+
+            def mutation(
+                change: Mapping[str, object],
+            ) -> tuple[str, str, Decimal, Decimal]:
+                return (
+                    str(change.get("asset_id") or ""),
+                    str(change.get("side") or "").upper(),
+                    _decimal(
+                        change.get("price"),
+                        name="corrected price_change price",
+                        minimum=Decimal("0.0001"),
+                        maximum=Decimal("0.9999"),
+                    ),
+                    _decimal(
+                        change.get("size"),
+                        name="corrected price_change size",
+                        minimum=Decimal("0"),
+                    ),
+                )
+
+            pending_mutation = mutation(pending_change)
+            replacement_mutation = mutation(replacement_change)
+            if (
+                pending_mutation != replacement_mutation
+                or pending_mutation[0] != token
+                or pending_mutation[1] not in {"BUY", "SELL"}
+                or not str(pending_change.get("hash") or "").strip()
+                or not str(replacement_change.get("hash") or "").strip()
+            ):
+                return None
+            _asset_id, side, price, size = pending_mutation
+            if price % current.tick_size != 0:
+                return None
+            simulated_bids = dict(current.bids)
+            simulated_asks = dict(current.asks)
+            levels = simulated_bids if side == "BUY" else simulated_asks
+            if size == 0:
+                levels.pop(price, None)
+            else:
+                levels[price] = size
+            expected = (
+                max(simulated_bids, default=Decimal("0")),
+                min(simulated_asks, default=Decimal("1")),
+            )
+
+            def checksum(
+                change: Mapping[str, object],
+            ) -> tuple[Decimal, Decimal]:
+                return (
+                    _decimal(
+                        change.get("best_bid"),
+                        name="corrected price_change best_bid",
+                        minimum=Decimal("0"),
+                        maximum=Decimal("1"),
+                    ),
+                    _decimal(
+                        change.get("best_ask"),
+                        name="corrected price_change best_ask",
+                        minimum=Decimal("0"),
+                        maximum=Decimal("1"),
+                    ),
+                )
+
+            pending_checksum = checksum(pending_change)
+            replacement_checksum = checksum(replacement_change)
+            if (
+                pending_checksum == expected
+                or replacement_checksum != expected
+                or pending_checksum[0] > pending_checksum[1]
+                or replacement_checksum[0] > replacement_checksum[1]
+            ):
+                return None
+
+            best_rows = pending_best.get(token, [])
+            stale_candidates_by_id = {
+                row.event_id: row
+                for row in (
+                    *best_rows,
+                    *pending_row.preceding_receive_group_best_rows,
+                )
+                if str(row.event.get("asset_id") or row.asset_id) == token
+            }
+            stale_best = next(
+                (
+                    row
+                    for row in sorted(
+                        stale_candidates_by_id.values(),
+                        key=cls._event_arrival_key,
+                        reverse=True,
+                    )
+                    if batch.source_time_ms
+                    <= _timestamp(
+                        row.event.get("timestamp"),
+                        name="stale corrected best_bid_ask timestamp",
+                    )
+                    <= replacement_source_time_ms
+                    and row.connection_id == pending_row.connection_id
+                    and row.received_monotonic_ns == pending_row.received_monotonic_ns
+                    and cls._event_arrival_key(row)
+                    < cls._event_arrival_key(pending_row)
+                    and cls._best_bid_ask_values(row) == pending_checksum
+                ),
+                None,
+            )
+            if stale_best is None:
+                return None
+            stale_is_pending = bool(
+                best_rows and best_rows[0].event_id == stale_best.event_id
+            )
+            if best_rows and not stale_is_pending:
+                return None
+            corrected_candidates_by_id = {
+                row.event_id: row
+                for row in (
+                    *(best_rows[1:] if stale_is_pending else best_rows),
+                    *replacement_row.preceding_receive_group_best_rows,
+                )
+                if str(row.event.get("asset_id") or row.asset_id) == token
+            }
+            corrected_best = next(
+                (
+                    row
+                    for row in sorted(
+                        corrected_candidates_by_id.values(),
+                        key=cls._event_arrival_key,
+                    )
+                    if replacement_source_time_ms
+                    <= _timestamp(
+                        row.event.get("timestamp"),
+                        name="replacement corrected best_bid_ask timestamp",
+                    )
+                    <= replacement_source_time_ms
+                    + _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+                    and row.connection_id == replacement_row.connection_id
+                    and row.received_monotonic_ns
+                    == replacement_row.received_monotonic_ns
+                    and cls._event_arrival_key(pending_row)
+                    < cls._event_arrival_key(row)
+                    < cls._event_arrival_key(replacement_row)
+                    and cls._best_bid_ask_values(row) == replacement_checksum
+                ),
+                None,
+            )
+            if corrected_best is None:
+                return None
+            if not (
+                cls._event_arrival_key(stale_best)
+                < cls._event_arrival_key(pending_row)
+                < cls._event_arrival_key(corrected_best)
+                < cls._event_arrival_key(replacement_row)
+            ):
+                return None
+            stale_best_rows[token] = stale_best
+            if stale_is_pending:
+                pending_stale_best_tokens.add(token)
+            evidence[token] = (stale_best, pending_row, corrected_best)
+
+        if consume_stale_best:
+            for token in pending_stale_best_tokens:
+                stale_best = stale_best_rows[token]
+                best_rows = pending_best[token]
+                if best_rows[0].event_id != stale_best.event_id:
+                    raise TypeError("corrected best_bid_ask evidence ordering drifted")
+                del best_rows[0]
+                if not best_rows:
+                    pending_best.pop(token)
+        return evidence
+
+    @classmethod
+    def _next_group_full_book_crossing_evidence(
+        cls,
+        token: str,
+        batch: _PendingBookBatch,
+        market: PolymarketFiveMinuteMarket,
+        current: _BookState,
+        pending_changes: list[tuple[_EventRow, Mapping[str, object]]],
+        reported_checksum: tuple[Decimal, Decimal],
+        expected_checksum: tuple[Decimal, Decimal],
+    ) -> tuple[_EventRow, ...]:
+        """Repair one stale opposite top proven by BBO and the next full book."""
+
+        if (
+            not pending_changes
+            or expected_checksum[0] < expected_checksum[1]
+            or reported_checksum[0] >= reported_checksum[1]
+        ):
+            return ()
+        initiating: list[
+            tuple[_EventRow, Mapping[str, object], str, Decimal, Decimal]
+        ] = []
+        parsed_changes: list[tuple[_EventRow, str, Decimal, Decimal]] = []
+        for row, change in pending_changes:
+            candidate_side = str(change.get("side") or "").upper()
+            candidate_price = _decimal(
+                change.get("price"),
+                name="crossing correction price",
+                minimum=Decimal("0.0001"),
+                maximum=Decimal("0.9999"),
+            )
+            candidate_size = _decimal(
+                change.get("size"),
+                name="crossing correction size",
+                minimum=Decimal("0"),
+            )
+            if candidate_side not in {"BUY", "SELL"}:
+                return ()
+            parsed_changes.append(
+                (row, candidate_side, candidate_price, candidate_size)
+            )
+            if candidate_size > 0 and (
+                (
+                    candidate_side == "BUY"
+                    and candidate_price == expected_checksum[0]
+                    and candidate_price == reported_checksum[0]
+                )
+                or (
+                    candidate_side == "SELL"
+                    and candidate_price == expected_checksum[1]
+                    and candidate_price == reported_checksum[1]
+                )
+            ):
+                initiating.append(
+                    (
+                        row,
+                        change,
+                        candidate_side,
+                        candidate_price,
+                        candidate_size,
+                    )
+                )
+        if len(initiating) != 1:
+            return ()
+        change_row, _change, side, price, size = initiating[0]
+        if side == "BUY":
+            stale_prices = tuple(
+                level for level in current.asks if level < reported_checksum[1]
+            )
+            opposite_side = "SELL"
+        else:
+            stale_prices = tuple(
+                level for level in current.bids if level > reported_checksum[0]
+            )
+            opposite_side = "BUY"
+        if not stale_prices:
+            return ()
+        for row, candidate_side, candidate_price, candidate_size in parsed_changes:
+            if (
+                row == change_row
+                and candidate_side == side
+                and candidate_price == price
+            ):
+                continue
+            bounded_opposite_removal = (
+                candidate_side == opposite_side
+                and candidate_size == 0
+                and (
+                    (side == "BUY" and candidate_price < reported_checksum[1])
+                    or (side == "SELL" and candidate_price > reported_checksum[0])
+                )
+            )
+            if not bounded_opposite_removal:
+                return ()
+
+        preceding_best = next(
+            (
+                row
+                for row in reversed(change_row.preceding_receive_group_best_rows)
+                if str(row.event.get("asset_id") or row.asset_id) == token
+                and row.connection_id == change_row.connection_id
+                and row.received_monotonic_ns == change_row.received_monotonic_ns
+                and cls._event_arrival_key(row) < cls._event_arrival_key(change_row)
+                and batch.source_time_ms
+                <= _timestamp(
+                    row.event.get("timestamp"),
+                    name="crossing best_bid_ask timestamp",
+                )
+                <= batch.source_time_ms + _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+                and cls._best_bid_ask_values(row) == reported_checksum
+            ),
+            None,
+        )
+        if preceding_best is None:
+            return ()
+
+        following_rows = sorted(
+            change_row.following_bounded_receive_group_rows,
+            key=cls._event_arrival_key,
+        )
+        full_book_row = next(
+            (
+                row
+                for row in following_rows
+                if row.event_type == "book"
+                and str(row.event.get("asset_id") or row.asset_id) == token
+            ),
+            None,
+        )
+        if full_book_row is None:
+            return ()
+        full_book = validate_clob_order_book(
+            market,
+            token,
+            full_book_row.event,
+            received_wall_ms=full_book_row.received_wall_ms,
+            received_monotonic_ns=full_book_row.received_monotonic_ns,
+        )
+        if (
+            full_book.source_time_ms < batch.source_time_ms
+            or full_book.source_time_ms - batch.source_time_ms
+            > _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+        ):
+            return ()
+        full_bids = {level.price: level.quantity for level in full_book.bids}
+        full_asks = {level.price: level.quantity for level in full_book.asks}
+        full_checksum = (
+            max(full_bids, default=Decimal("0")),
+            min(full_asks, default=Decimal("1")),
+        )
+        if full_checksum != reported_checksum:
+            return ()
+        full_opposite = full_asks if side == "BUY" else full_bids
+        if any(level in full_opposite for level in stale_prices):
+            return ()
+
+        corroborating_changes: list[
+            tuple[_EventRow, Mapping[str, object], str, Decimal, Decimal]
+        ] = []
+        for row in following_rows:
+            if cls._event_arrival_key(row) >= cls._event_arrival_key(full_book_row):
+                break
+            if row.event_type != "price_change":
+                continue
+            changes = row.event.get("price_changes")
+            if not isinstance(changes, list):
+                return ()
+            for candidate in changes:
+                if (
+                    not isinstance(candidate, Mapping)
+                    or str(candidate.get("asset_id") or "") != token
+                ):
+                    continue
+                candidate_side = str(candidate.get("side") or "").upper()
+                if candidate_side not in {"BUY", "SELL"}:
+                    return ()
+                candidate_price = _decimal(
+                    candidate.get("price"),
+                    name="crossing continuation price",
+                    minimum=Decimal("0.0001"),
+                    maximum=Decimal("0.9999"),
+                )
+                if candidate_side == opposite_side and candidate_price in stale_prices:
+                    return ()
+                candidate_size = _decimal(
+                    candidate.get("size"),
+                    name="crossing corroboration size",
+                    minimum=Decimal("0"),
+                )
+                corroborating_changes.append(
+                    (
+                        row,
+                        candidate,
+                        candidate_side,
+                        candidate_price,
+                        candidate_size,
+                    )
+                )
+        full_book_hash = str(full_book_row.event.get("hash") or "").strip()
+        if not full_book_hash:
+            return ()
+        latest_by_level: dict[
+            tuple[str, Decimal],
+            tuple[_EventRow, Mapping[str, object], Decimal],
+        ] = {}
+        for (
+            row,
+            candidate,
+            candidate_side,
+            candidate_price,
+            candidate_size,
+        ) in corroborating_changes:
+            candidate_checksum = (
+                _decimal(
+                    candidate.get("best_bid"),
+                    name="crossing corroboration best_bid",
+                    minimum=Decimal("0"),
+                    maximum=Decimal("1"),
+                ),
+                _decimal(
+                    candidate.get("best_ask"),
+                    name="crossing corroboration best_ask",
+                    minimum=Decimal("0"),
+                    maximum=Decimal("1"),
+                ),
+            )
+            if (
+                candidate_checksum != reported_checksum
+                or _timestamp(
+                    row.event.get("timestamp"),
+                    name="crossing corroboration timestamp",
+                )
+                != full_book.source_time_ms
+                or str(candidate.get("hash") or "").strip() != full_book_hash
+            ):
+                return ()
+            latest_by_level[(candidate_side, candidate_price)] = (
+                row,
+                candidate,
+                candidate_size,
+            )
+        for (candidate_side, candidate_price), (
+            _row,
+            _candidate,
+            candidate_size,
+        ) in latest_by_level.items():
+            levels = full_bids if candidate_side == "BUY" else full_asks
+            if (candidate_size == 0 and candidate_price in levels) or (
+                candidate_size > 0 and levels.get(candidate_price) != candidate_size
+            ):
+                return ()
+
+        full_same_side = full_bids if side == "BUY" else full_asks
+        continuation = latest_by_level.get((side, price))
+        if continuation is None:
+            if full_same_side.get(price) != size:
+                return ()
+        else:
+            _continuation_row, _continuation_change, continuation_size = continuation
+            if continuation_size == 0 or full_same_side.get(price) != continuation_size:
+                return ()
+
+        repaired_levels = current.asks if side == "BUY" else current.bids
+        for level in stale_prices:
+            repaired_levels.pop(level, None)
+        repaired_checksum = (
+            max(current.bids, default=Decimal("0")),
+            min(current.asks, default=Decimal("1")),
+        )
+        if repaired_checksum != reported_checksum:
+            raise ValueError("next-group full-book crossing repair did not converge")
+        corroborating_rows = [item[0] for item in corroborating_changes]
+        return tuple((preceding_best, *corroborating_rows, full_book_row))
+
+    @classmethod
+    def _prefix_stale_full_book_correction_evidence(
+        cls,
+        token: str,
+        batch: _PendingBookBatch,
+        market: PolymarketFiveMinuteMarket,
+        current: _BookState,
+        pending_changes: list[tuple[_EventRow, Mapping[str, object]]],
+        reported_checksum: tuple[Decimal, Decimal],
+        expected_checksum: tuple[Decimal, Decimal],
+        *,
+        checksum_matched_proper_prefix: bool,
+        depth_top_unchanged: bool,
+        pending_best: dict[str, list[_EventRow]],
+    ) -> tuple[_EventRow, ...]:
+        """Accept one stale fragment checksum only when a full book proves the chain."""
+
+        if (
+            not (checksum_matched_proper_prefix or depth_top_unchanged)
+            or not pending_changes
+            or reported_checksum == expected_checksum
+            or reported_checksum[0] > reported_checksum[1]
+            or expected_checksum[0] > expected_checksum[1]
+        ):
+            return ()
+        first_change = pending_changes[0][0]
+        last_change = pending_changes[-1][0]
+        if any(
+            row.connection_id != first_change.connection_id
+            or row.received_monotonic_ns != first_change.received_monotonic_ns
+            for row, _change in pending_changes
+        ):
+            return ()
+
+        pending_best_rows = pending_best.get(token, [])
+        stale_best: list[_EventRow] = []
+        for row in pending_best_rows:
+            source_time = _timestamp(
+                row.event.get("timestamp"), name="stale best_bid_ask timestamp"
+            )
+            if (
+                source_time != batch.source_time_ms
+                or row.connection_id != first_change.connection_id
+                or row.received_monotonic_ns != first_change.received_monotonic_ns
+                or cls._event_arrival_key(row) > cls._event_arrival_key(first_change)
+                or cls._best_bid_ask_values(row) != reported_checksum
+            ):
+                break
+            stale_best.append(row)
+        stale_best_is_pending = bool(stale_best)
+        if not stale_best and pending_best_rows:
+            return ()
+        if not stale_best:
+            for row in reversed(first_change.preceding_receive_group_best_rows):
+                row_token = str(row.event.get("asset_id") or row.asset_id)
+                source_time = _timestamp(
+                    row.event.get("timestamp"),
+                    name="preceding stale best_bid_ask timestamp",
+                )
+                if (
+                    row_token == token
+                    and source_time <= batch.source_time_ms
+                    and batch.source_time_ms - source_time
+                    <= _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS
+                    and row.connection_id == first_change.connection_id
+                    and row.received_monotonic_ns == first_change.received_monotonic_ns
+                    and cls._event_arrival_key(row)
+                    < cls._event_arrival_key(first_change)
+                    and cls._best_bid_ask_values(row) == reported_checksum
+                ):
+                    stale_best.append(row)
+                    break
+        if not stale_best:
+            return ()
+
+        simulated_bids = dict(current.bids)
+        simulated_asks = dict(current.asks)
+        corroborating_rows: list[_EventRow] = []
+        for row in last_change.following_receive_group_rows:
+            if (
+                row.connection_id != last_change.connection_id
+                or row.received_monotonic_ns != last_change.received_monotonic_ns
+                or cls._event_arrival_key(row) <= cls._event_arrival_key(last_change)
+            ):
+                return ()
+            source_time = _timestamp(
+                row.event.get("timestamp"),
+                name=f"corroborating {row.event_type} timestamp",
+            )
+            if (
+                source_time < batch.source_time_ms
+                or source_time - batch.source_time_ms
+                > _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS
+            ):
+                return ()
+            if row.event_type == "price_change":
+                changes = row.event.get("price_changes")
+                if not isinstance(changes, list) or not changes:
+                    return ()
+                changed_token = False
+                for change in changes:
+                    if not isinstance(change, Mapping):
+                        return ()
+                    if str(change.get("asset_id") or "") != token:
+                        continue
+                    side = str(change.get("side") or "").upper()
+                    if (
+                        side not in {"BUY", "SELL"}
+                        or not str(change.get("hash") or "").strip()
+                    ):
+                        return ()
+                    price = _decimal(
+                        change.get("price"),
+                        name="corroborating price_change price",
+                        minimum=Decimal("0.0001"),
+                        maximum=Decimal("0.9999"),
+                    )
+                    size = _decimal(
+                        change.get("size"),
+                        name="corroborating price_change size",
+                        minimum=Decimal("0"),
+                    )
+                    if price % current.tick_size != 0:
+                        return ()
+                    levels = simulated_bids if side == "BUY" else simulated_asks
+                    if size == 0:
+                        levels.pop(price, None)
+                    else:
+                        levels[price] = size
+                    changed_token = True
+                if changed_token:
+                    corroborating_rows.append(row)
+                continue
+
+            if row.event_type != "book":
+                continue
+            row_token = str(row.event.get("asset_id") or row.asset_id)
+            if row_token != token:
+                continue
+            if not str(row.event.get("hash") or "").strip():
+                return ()
+            snapshot = validate_clob_order_book(
+                market,
+                token,
+                row.event,
+                received_wall_ms=row.received_wall_ms,
+                received_monotonic_ns=row.received_monotonic_ns,
+            )
+            reported_tick = row.event.get("tick_size")
+            if (
+                reported_tick is not None
+                and _decimal(
+                    reported_tick,
+                    name="corroborating full-book tick size",
+                    minimum=Decimal("0.0001"),
+                    maximum=Decimal("0.1"),
+                )
+                != current.tick_size
+            ):
+                return ()
+            snapshot_bids = {level.price: level.quantity for level in snapshot.bids}
+            snapshot_asks = {level.price: level.quantity for level in snapshot.asks}
+            if snapshot_bids != simulated_bids or snapshot_asks != simulated_asks:
+                return ()
+            if stale_best_is_pending:
+                best_rows = pending_best[token]
+                if best_rows[: len(stale_best)] != stale_best:
+                    raise TypeError("stale best_bid_ask evidence ordering drifted")
+                del best_rows[: len(stale_best)]
+                if not best_rows:
+                    pending_best.pop(token)
+            return tuple((*stale_best, *corroborating_rows, row))
+        return ()
+
+    @classmethod
+    def _recent_full_book_stale_checksum_evidence(
+        cls,
+        token: str,
+        batch: _PendingBookBatch,
+        current: _BookState,
+        pending_changes: list[tuple[_EventRow, Mapping[str, object]]],
+        reported_checksum: tuple[Decimal, Decimal],
+        expected_checksum: tuple[Decimal, Decimal],
+        *,
+        depth_top_unchanged: bool,
+    ) -> tuple[_EventRow, ...]:
+        """Bound one-tick lagging BBO metadata to a recent authoritative book."""
+
+        full_book = current.last_full_book_row
+        if (
+            not depth_top_unchanged
+            or full_book is None
+            or not pending_changes
+            or reported_checksum == expected_checksum
+            or reported_checksum[0] > reported_checksum[1]
+            or expected_checksum[0] > expected_checksum[1]
+        ):
+            return ()
+        first_change = pending_changes[0][0]
+        full_book_token = str(full_book.event.get("asset_id") or full_book.asset_id)
+        full_book_source_time = _timestamp(
+            full_book.event.get("timestamp"), name="recent full-book timestamp"
+        )
+        arrival_age_ns = (
+            first_change.received_monotonic_ns - full_book.received_monotonic_ns
+        )
+        source_age_ms = batch.source_time_ms - full_book_source_time
+        if (
+            full_book_token != token
+            or full_book.connection_id != first_change.connection_id
+            or not 0 <= source_age_ms <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+            or not 0 <= arrival_age_ns <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+        ):
+            return ()
+
+        reported_bid, reported_ask = reported_checksum
+        expected_bid, expected_ask = expected_checksum
+        bid_differs = reported_bid != expected_bid
+        ask_differs = reported_ask != expected_ask
+        if not (bid_differs ^ ask_differs):
+            return ()
+        if bid_differs and (
+            reported_bid != expected_bid + current.tick_size
+            or reported_bid in current.bids
+        ):
+            return ()
+        if ask_differs and (
+            reported_ask != expected_ask - current.tick_size
+            or reported_ask in current.asks
+        ):
+            return ()
+        return (full_book,)
 
     @classmethod
     def _flush_book_batch(
@@ -1347,9 +2667,12 @@ class PolymarketEvidenceReplay:
         market_by_token: Mapping[str, PolymarketFiveMinuteMarket],
         state: dict[str, _BookState],
         pending_best: dict[str, list[_EventRow]],
+        delta_history: dict[str, list[_AppliedPriceChangeBatch]],
         last_materialized_ns: dict[str, int],
         *,
         book_sample_interval_ms: int,
+        materialized_minimum_depth_levels: int,
+        cap_materialized_depth_to_minimum_order_size: bool,
     ) -> tuple[tuple[PolymarketRecordedBook, ...], int]:
         market = market_by_condition.get(batch.condition_id)
         if market is None:
@@ -1410,6 +2733,9 @@ class PolymarketEvidenceReplay:
                 cls._best_bid_ask_values(row)
                 operations.setdefault(token, []).append(("best", row, dict(row.event)))
 
+        if not set(batch.correction_evidence_by_token).issubset(operations):
+            raise ValueError("cross-timestamp correction evidence lost its token")
+
         output: list[PolymarketRecordedBook] = []
         transition_count = 0
         for token in sorted(operations):
@@ -1419,7 +2745,7 @@ class PolymarketEvidenceReplay:
             pending_hash = ""
             pending_checksum: tuple[Decimal, Decimal] | None = None
             pending_changes: list[tuple[_EventRow, Mapping[str, object]]] = []
-            relevant_rows: list[_EventRow] = []
+            relevant_rows = list(batch.correction_evidence_by_token.get(token, ()))
 
             def flush_changes() -> None:
                 nonlocal current, depth_changed, pending_hash, pending_checksum
@@ -1435,7 +2761,12 @@ class PolymarketEvidenceReplay:
                         f"events={event_ids}"
                     )
                 reported_checksum: tuple[Decimal, Decimal] | None = None
-                for change_row, change in pending_changes:
+                starting_checksum = (
+                    max(current.bids, default=Decimal("0")),
+                    min(current.asks, default=Decimal("1")),
+                )
+                checksum_matched_proper_prefix = False
+                for change_index, (change_row, change) in enumerate(pending_changes):
                     side = str(change.get("side") or "").upper()
                     if side not in {"BUY", "SELL"}:
                         raise ValueError("price_change side must be BUY or SELL")
@@ -1480,23 +2811,111 @@ class PolymarketEvidenceReplay:
                             "same-hash price_change fragments report different "
                             "best bid/ask checksums"
                         )
+                    intermediate_checksum = (
+                        max(current.bids, default=Decimal("0")),
+                        min(current.asks, default=Decimal("1")),
+                    )
+                    if (
+                        change_index < len(pending_changes) - 1
+                        and observed_checksum == intermediate_checksum
+                    ):
+                        checksum_matched_proper_prefix = True
                     relevant_rows.append(change_row)
                 expected = (
                     max(current.bids, default=Decimal("0")),
                     min(current.asks, default=Decimal("1")),
                 )
                 if reported_checksum != expected:
-                    raise ValueError(
-                        "price_change best bid/ask checksum disagrees with "
-                        "atomic depth: "
-                        f"condition={batch.condition_id} token={token} "
-                        f"source_time_ms={batch.source_time_ms} "
-                        f"reported={reported_checksum} expected={expected} "
-                        f"events={[item.event_id for item, _change in pending_changes]}"
+                    correction_evidence = cls._next_group_full_book_crossing_evidence(
+                        token,
+                        batch,
+                        market,
+                        current,
+                        pending_changes,
+                        reported_checksum,
+                        expected,
                     )
+                    if correction_evidence:
+                        expected = (
+                            max(current.bids, default=Decimal("0")),
+                            min(current.asks, default=Decimal("1")),
+                        )
+                    if not correction_evidence:
+                        correction_evidence = (
+                            cls._prefix_stale_full_book_correction_evidence(
+                                token,
+                                batch,
+                                market,
+                                current,
+                                pending_changes,
+                                reported_checksum,
+                                expected,
+                                checksum_matched_proper_prefix=(
+                                    checksum_matched_proper_prefix
+                                ),
+                                depth_top_unchanged=starting_checksum == expected,
+                                pending_best=pending_best,
+                            )
+                        )
+                    if not correction_evidence:
+                        correction_evidence = (
+                            cls._recent_full_book_stale_checksum_evidence(
+                                token,
+                                batch,
+                                current,
+                                pending_changes,
+                                reported_checksum,
+                                expected,
+                                depth_top_unchanged=starting_checksum == expected,
+                            )
+                        )
+                    if not correction_evidence:
+                        raise ValueError(
+                            "price_change best bid/ask checksum disagrees with "
+                            "atomic depth: "
+                            f"condition={batch.condition_id} token={token} "
+                            f"source_time_ms={batch.source_time_ms} "
+                            f"reported={reported_checksum} expected={expected} "
+                            "events="
+                            f"{[item.event_id for item, _change in pending_changes]}"
+                        )
+                    relevant_rows.extend(correction_evidence)
+                    reported_checksum = expected
+                history = delta_history.setdefault(token, [])
+                history.append(
+                    _AppliedPriceChangeBatch(
+                        source_time_ms=batch.source_time_ms,
+                        changes=tuple(
+                            (change_row, dict(change))
+                            for change_row, change in pending_changes
+                        ),
+                        book_hash=pending_hash,
+                        checksum=reported_checksum,
+                    )
+                )
+                latest_source_time_ms = max(
+                    current.source_time_ms,
+                    *(item.source_time_ms for item in history),
+                )
+                retained_after_ms = (
+                    latest_source_time_ms - _CAUSAL_REORDER_MAX_SOURCE_SKEW_MS
+                )
+                history[:] = [
+                    item for item in history if item.source_time_ms >= retained_after_ms
+                ]
                 current.source_time_ms = batch.source_time_ms
                 current.book_hash = pending_hash
                 depth_changed = True
+                relevant_rows.extend(
+                    cls._consume_corrected_pending_best(
+                        token,
+                        batch,
+                        starting_checksum,
+                        current,
+                        [item for item, _change in pending_changes],
+                        pending_best,
+                    )
+                )
                 relevant_rows.extend(
                     cls._consume_pending_best(
                         token,
@@ -1651,25 +3070,163 @@ class PolymarketEvidenceReplay:
                         ),
                     )
                     if level_size != size or reported_best != expected_best:
-                        raise ValueError(
-                            "full book does not corroborate its same-hash price_change"
+                        if current is None:
+                            raise ValueError(
+                                "full book does not corroborate its same-hash "
+                                "price_change"
+                            )
+                        flush_changes()
+                    else:
+                        relevant_rows.extend(
+                            change_row for change_row, _change in pending_changes
                         )
-                    relevant_rows.extend(
-                        change_row for change_row, _change in pending_changes
-                    )
-                    pending_changes = []
-                    pending_hash = ""
-                    pending_checksum = None
+                        pending_changes = []
+                        pending_hash = ""
+                        pending_checksum = None
                 else:
                     flush_changes()
-                active_tick = current.tick_size if current else market.tick_size
-                if any(
-                    level.price % active_tick != 0
-                    for level in (*payload.bids, *payload.asks)
-                ):
-                    raise ValueError("full book contains a price off the active tick")
+                reported_tick = row.event.get("tick_size")
+                if reported_tick is None:
+                    if current is None:
+                        raise ValueError(
+                            "full book does not prove its same-segment active tick: "
+                            f"condition={batch.condition_id} token={token} "
+                            f"source_time_ms={batch.source_time_ms} "
+                            f"event_id={row.event_id}"
+                        )
+                    active_tick = current.tick_size
+                else:
+                    active_tick = _decimal(
+                        reported_tick,
+                        name="full book tick size",
+                        minimum=Decimal("0.0001"),
+                        maximum=Decimal("0.1"),
+                    )
+                    if Decimal("1") % active_tick != 0:
+                        raise ValueError(
+                            "full book tick size does not divide one exactly"
+                        )
+                    if current is not None and active_tick != current.tick_size:
+                        raise ValueError(
+                            "full book tick size disagrees with same-segment replay "
+                            "state: "
+                            f"condition={batch.condition_id} token={token} "
+                            f"event_id={row.event_id} "
+                            f"reported={format(active_tick, 'f')} "
+                            f"active={format(current.tick_size, 'f')}"
+                        )
+                off_tick_prices = sorted(
+                    {
+                        level.price
+                        for level in (*payload.bids, *payload.asks)
+                        if level.price % active_tick != 0
+                    }
+                )
+                if off_tick_prices:
+                    preview = ",".join(
+                        format(price, "f") for price in off_tick_prices[:8]
+                    )
+                    raise ValueError(
+                        "full book contains a price off the active tick: "
+                        f"condition={batch.condition_id} token={token} "
+                        f"source_time_ms={batch.source_time_ms} "
+                        f"event_id={row.event_id} "
+                        f"active_tick={format(active_tick, 'f')} "
+                        f"off_tick_count={len(off_tick_prices)} "
+                        f"off_tick_prices={preview}"
+                    )
                 payload_bids = {level.price: level.quantity for level in payload.bids}
                 payload_asks = {level.price: level.quantity for level in payload.asks}
+                if (
+                    current is not None
+                    and payload.source_time_ms < current.source_time_ms
+                ):
+                    history = delta_history.get(token, [])
+                    newer_batches = [
+                        item
+                        for item in history
+                        if item.source_time_ms > payload.source_time_ms
+                    ]
+                    if (
+                        not newer_batches
+                        or max(item.source_time_ms for item in newer_batches)
+                        < current.source_time_ms
+                    ):
+                        # This snapshot cannot safely supersede a newer state and
+                        # there is not enough retained evidence to fast-forward it.
+                        continue
+                    newer_batches.sort(
+                        key=lambda item: (
+                            item.source_time_ms,
+                            max(
+                                cls._event_arrival_key(change_row)
+                                for change_row, _change in item.changes
+                            ),
+                        )
+                    )
+                    rebased = _BookState(
+                        bids=payload_bids,
+                        asks=payload_asks,
+                        source_time_ms=payload.source_time_ms,
+                        provenance_sha256=current.provenance_sha256,
+                        tick_size=active_tick,
+                        book_hash=book_hash,
+                        last_full_book_row=row,
+                        last_tick_size_change_row=(current.last_tick_size_change_row),
+                    )
+                    replay_rows: list[_EventRow] = []
+                    for applied in newer_batches:
+                        for change_row, change in applied.changes:
+                            side = str(change.get("side") or "").upper()
+                            if side not in {"BUY", "SELL"}:
+                                raise ValueError(
+                                    "retained price_change side must be BUY or SELL"
+                                )
+                            price = _decimal(
+                                change.get("price"),
+                                name="retained price_change price",
+                                minimum=Decimal("0.0001"),
+                                maximum=Decimal("0.9999"),
+                            )
+                            size = _decimal(
+                                change.get("size"),
+                                name="retained price_change size",
+                                minimum=Decimal("0"),
+                            )
+                            if price % active_tick != 0:
+                                raise ValueError(
+                                    "retained price_change is off the active tick"
+                                )
+                            levels = rebased.bids if side == "BUY" else rebased.asks
+                            if size == 0:
+                                levels.pop(price, None)
+                            else:
+                                levels[price] = size
+                            replay_rows.append(change_row)
+                        expected = (
+                            max(rebased.bids, default=Decimal("0")),
+                            min(rebased.asks, default=Decimal("1")),
+                        )
+                        if expected != applied.checksum:
+                            raise ValueError(
+                                "stale full book cannot be causally fast-forwarded: "
+                                f"condition={batch.condition_id} token={token} "
+                                f"snapshot_source_time_ms={payload.source_time_ms} "
+                                f"delta_source_time_ms={applied.source_time_ms} "
+                                f"reported={applied.checksum} expected={expected}"
+                            )
+                        rebased.source_time_ms = applied.source_time_ms
+                        rebased.book_hash = applied.book_hash
+                    if rebased.source_time_ms != current.source_time_ms:
+                        raise ValueError(
+                            "stale full-book fast-forward did not recover current time"
+                        )
+                    current = rebased
+                    delta_history[token] = newer_batches
+                    relevant_rows.append(row)
+                    relevant_rows.extend(replay_rows)
+                    depth_changed = True
+                    continue
                 if (
                     current is not None
                     and current.book_hash == book_hash
@@ -1677,6 +3234,7 @@ class PolymarketEvidenceReplay:
                     and current.asks == payload_asks
                 ):
                     current.source_time_ms = payload.source_time_ms
+                    current.last_full_book_row = row
                 else:
                     # A trade can change depth without a price_change event. The
                     # official full book is therefore an authoritative resync,
@@ -1692,7 +3250,18 @@ class PolymarketEvidenceReplay:
                         ),
                         tick_size=active_tick,
                         book_hash=book_hash,
+                        last_full_book_row=row,
+                        last_tick_size_change_row=(
+                            current.last_tick_size_change_row
+                            if current is not None
+                            else None
+                        ),
                     )
+                delta_history[token] = [
+                    item
+                    for item in delta_history.get(token, [])
+                    if item.source_time_ms > payload.source_time_ms
+                ]
                 relevant_rows.append(row)
                 depth_changed = True
                 relevant_rows.extend(
@@ -1721,7 +3290,7 @@ class PolymarketEvidenceReplay:
                     "previous": previous_provenance,
                     "condition_id": batch.condition_id,
                     "token_id": token,
-                    "source_time_ms": batch.source_time_ms,
+                    "source_time_ms": current.source_time_ms,
                     "official_book_hash": current.book_hash,
                     "tick_size": format(current.tick_size, "f"),
                     "events": [
@@ -1743,6 +3312,29 @@ class PolymarketEvidenceReplay:
                 }
             )
             selected_row = evidence_rows[-1]
+            batch_event_ids = {row.event_id for row in batch.rows}
+            if selected_row.event_id not in batch_event_ids:
+                identity_rows = [
+                    row
+                    for operation, row, _payload in operations[token]
+                    if operation in {"book", "change"}
+                ]
+                if not identity_rows:
+                    raise TypeError("depth transition lost its identity evidence")
+                identity_row = max(identity_rows, key=cls._event_arrival_key)
+                availability_row = max(
+                    evidence_rows,
+                    key=lambda item: (
+                        item.available_monotonic_ns,
+                        item.available_wall_ms,
+                        cls._event_arrival_key(item),
+                    ),
+                )
+                selected_row = replace(
+                    identity_row,
+                    available_wall_ms=availability_row.available_wall_ms,
+                    available_monotonic_ns=availability_row.available_monotonic_ns,
+                )
             previous_materialized_ns = last_materialized_ns.get(token)
             if (
                 previous_materialized_ns is not None
@@ -1757,6 +3349,12 @@ class PolymarketEvidenceReplay:
                     market,
                     token,
                     current,
+                    materialized_minimum_depth_levels=(
+                        materialized_minimum_depth_levels
+                    ),
+                    cap_materialized_depth_to_minimum_order_size=(
+                        cap_materialized_depth_to_minimum_order_size
+                    ),
                 )
             )
             last_materialized_ns[token] = selected_row.available_monotonic_ns
@@ -1781,6 +3379,7 @@ class PolymarketEvidenceReplay:
         )
         observed = cls._best_bid_ask_values(row)
         current = state.get(token)
+        existing = pending_best.get(token)
         if current is not None:
             if (
                 current.source_time_ms - source_time
@@ -1792,8 +3391,35 @@ class PolymarketEvidenceReplay:
                 min(current.asks, default=Decimal("1")),
             )
             if observed == expected:
+                if existing:
+                    first = existing[0]
+                    first_source_time = _timestamp(
+                        first.event.get("timestamp"),
+                        name="best_bid_ask timestamp",
+                    )
+                    receive_group_delta_ns = (
+                        row.received_monotonic_ns - first.received_monotonic_ns
+                    )
+                    same_receive_group = receive_group_delta_ns == 0
+                    bounded_later_receive_group = (
+                        0
+                        < receive_group_delta_ns
+                        <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+                        and 0
+                        <= row.received_wall_ms - first.received_wall_ms
+                        <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+                    )
+                    if (
+                        first_source_time <= source_time
+                        and source_time - first_source_time
+                        <= _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS
+                        and first.connection_id == row.connection_id
+                        and (same_receive_group or bounded_later_receive_group)
+                        and cls._event_arrival_key(first) < cls._event_arrival_key(row)
+                        and cls._best_bid_ask_values(first) != observed
+                    ):
+                        existing.append(row)
                 return
-        existing = pending_best.get(token)
         if existing:
             first = existing[0]
             first_source_time = _timestamp(
@@ -1818,11 +3444,87 @@ class PolymarketEvidenceReplay:
                 f"pending_event={first.event_id} "
                 f"pending_source_time_ms={first_source_time} "
                 f"pending_values={cls._best_bid_ask_values(first)} "
+                f"proven_values={expected if current is not None else None} "
                 f"current_event={row.event_id} "
                 f"current_source_time_ms={source_time} "
                 f"current_values={observed}"
             )
         pending_best[token] = [row]
+
+    @classmethod
+    def _consume_corrected_pending_best(
+        cls,
+        token: str,
+        batch: _PendingBookBatch,
+        starting_checksum: tuple[Decimal, Decimal],
+        current: _BookState,
+        depth_rows: list[_EventRow],
+        pending_best: dict[str, list[_EventRow]],
+    ) -> tuple[_EventRow, ...]:
+        """Consume a stale/corrected BBO pair proven by one atomic transition."""
+
+        rows = pending_best.get(token, [])
+        if len(rows) < 2 or not depth_rows:
+            return ()
+        stale, corrected = rows[:2]
+        first_depth = min(depth_rows, key=cls._event_arrival_key)
+        completion = max(depth_rows, key=cls._event_arrival_key)
+        stale_source_time = _timestamp(
+            stale.event.get("timestamp"), name="stale best_bid_ask timestamp"
+        )
+        corrected_source_time = _timestamp(
+            corrected.event.get("timestamp"), name="corrected best_bid_ask timestamp"
+        )
+        expected = (
+            max(current.bids, default=Decimal("0")),
+            min(current.asks, default=Decimal("1")),
+        )
+        stale_values = cls._best_bid_ask_values(stale)
+        corrected_values = cls._best_bid_ask_values(corrected)
+        top_transition = (
+            starting_checksum != expected and stale_values == starting_checksum
+        )
+        metadata_correction = starting_checksum == expected and stale_values != expected
+        stale_arrival_delta_ns = (
+            corrected.received_monotonic_ns - stale.received_monotonic_ns
+        )
+        stale_wall_delta_ms = corrected.received_wall_ms - stale.received_wall_ms
+        stale_is_bounded_prior_group = (
+            0 < stale_arrival_delta_ns <= _RECENT_FULL_BOOK_STALE_BBO_MAX_ARRIVAL_NS
+            and 0 <= stale_wall_delta_ms <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+        )
+        if (
+            not (top_transition or metadata_correction)
+            or corrected_source_time != batch.source_time_ms
+            or not (
+                stale_source_time <= corrected_source_time
+                and corrected_source_time - stale_source_time
+                <= _RECENT_FULL_BOOK_STALE_BBO_MAX_AGE_MS
+            )
+            or any(
+                row.connection_id != completion.connection_id
+                or row.received_monotonic_ns != completion.received_monotonic_ns
+                for row in depth_rows
+            )
+            or stale.connection_id != completion.connection_id
+            or corrected.connection_id != completion.connection_id
+            or corrected.received_monotonic_ns != completion.received_monotonic_ns
+            or not (
+                stale.received_monotonic_ns == completion.received_monotonic_ns
+                or stale_is_bounded_prior_group
+            )
+            or not (
+                cls._event_arrival_key(stale)
+                < cls._event_arrival_key(corrected)
+                < cls._event_arrival_key(first_depth)
+            )
+            or corrected_values != expected
+        ):
+            return ()
+        del rows[:2]
+        if not rows:
+            pending_best.pop(token)
+        return stale, corrected
 
     @classmethod
     def _consume_pending_best(
@@ -1853,12 +3555,22 @@ class PolymarketEvidenceReplay:
                 > _BEST_CORROBORATION_MAX_SOURCE_SKEW_MS
             ):
                 raise ValueError(
-                    "best_bid_ask was not temporally adjacent to its depth transition"
+                    "best_bid_ask was not temporally adjacent to its depth "
+                    "transition: "
+                    f"condition={batch.condition_id} token={token} "
+                    f"pending_event={row.event_id} "
+                    f"pending_source_time_ms={source_time} "
+                    f"depth_source_time_ms={batch.source_time_ms} "
+                    f"source_delta_ms={batch.source_time_ms - source_time}"
                 )
             arrival_delta = completion.received_monotonic_ns - row.received_monotonic_ns
             if abs(arrival_delta) > _BEST_CORROBORATION_MAX_ARRIVAL_NS:
                 raise ValueError(
-                    "best_bid_ask was not arrival-adjacent to its depth transition"
+                    "best_bid_ask was not arrival-adjacent to its depth transition: "
+                    f"condition={batch.condition_id} token={token} "
+                    f"pending_event={row.event_id} "
+                    f"depth_event={completion.event_id} "
+                    f"arrival_delta_ns={arrival_delta}"
                 )
             if cls._best_bid_ask_values(row) != expected:
                 break
@@ -1907,8 +3619,9 @@ class PolymarketEvidenceReplay:
             row.sub_index,
         )
 
-    @staticmethod
+    @classmethod
     def _apply_tick_size_change(
+        cls,
         row: _EventRow,
         market_by_token: Mapping[str, PolymarketFiveMinuteMarket],
         state: dict[str, _BookState],
@@ -1935,7 +3648,53 @@ class PolymarketEvidenceReplay:
         )
         current = state[token]
         if old_tick != current.tick_size:
-            if current.tick_size != new_tick or current.source_time_ms != source_time:
+            prior = current.last_tick_size_change_row
+            prior_source_time = (
+                -1
+                if prior is None
+                else _timestamp(
+                    prior.event.get("timestamp"),
+                    name="prior tick_size_change timestamp",
+                )
+            )
+            prior_old_tick = (
+                None
+                if prior is None
+                else _decimal(
+                    prior.event.get("old_tick_size"),
+                    name="prior old tick size",
+                    minimum=Decimal("0.0001"),
+                    maximum=Decimal("0.1"),
+                )
+            )
+            prior_new_tick = (
+                None
+                if prior is None
+                else _decimal(
+                    prior.event.get("new_tick_size"),
+                    name="prior new tick size",
+                    minimum=Decimal("0.0001"),
+                    maximum=Decimal("0.1"),
+                )
+            )
+            exact_source_duplicate = source_time == prior_source_time
+            bounded_receive_group_duplicate = bool(
+                prior is not None
+                and source_time > prior_source_time
+                and source_time - prior_source_time
+                <= _DUPLICATE_TICK_TRANSITION_MAX_SOURCE_SKEW_MS
+                and row.received_monotonic_ns == prior.received_monotonic_ns
+            )
+            if (
+                current.tick_size != new_tick
+                or prior is None
+                or prior_old_tick != old_tick
+                or prior_new_tick != new_tick
+                or prior.connection_id != row.connection_id
+                or cls._event_arrival_key(prior) >= cls._event_arrival_key(row)
+                or current.source_time_ms != prior_source_time
+                or not (exact_source_duplicate or bounded_receive_group_duplicate)
+            ):
                 raise ValueError(
                     "tick_size_change old value disagrees with replay state: "
                     f"token={token} event_id={row.event_id} "
@@ -1952,14 +3711,20 @@ class PolymarketEvidenceReplay:
                     "token_id": token,
                     "reported_old_tick_size": format(old_tick, "f"),
                     "active_tick_size": format(current.tick_size, "f"),
+                    "prior_event_id": prior.event_id,
+                    "prior_event_sha256": prior.event_sha256,
+                    "prior_source_time_ms": prior_source_time,
                     "source_time_ms": source_time,
                 }
             )
+            current.source_time_ms = source_time
+            current.last_tick_size_change_row = row
             return
         if any(price % new_tick != 0 for price in (*current.bids, *current.asks)):
             raise ValueError("existing book is not aligned to the new tick size")
         current.tick_size = new_tick
         current.source_time_ms = source_time
+        current.last_tick_size_change_row = row
         current.provenance_sha256 = _canonical_sha256(
             {
                 "schema_version": "polymarket-tick-transition-v1",
@@ -2034,19 +3799,37 @@ class PolymarketEvidenceReplay:
         market: PolymarketFiveMinuteMarket,
         token: str,
         state: _BookState,
+        *,
+        materialized_minimum_depth_levels: int,
+        cap_materialized_depth_to_minimum_order_size: bool,
     ) -> PolymarketRecordedBook:
         outcome = "Up" if token == market.up_token_id else "Down"
+
+        def retained_levels(
+            levels: Mapping[Decimal, Decimal],
+            *,
+            reverse: bool,
+        ) -> tuple[BookLevel, ...]:
+            retained: list[BookLevel] = []
+            cumulative = Decimal("0")
+            for price in sorted(levels, reverse=reverse):
+                quantity = levels[price]
+                retained.append(BookLevel(price, quantity))
+                cumulative += quantity
+                if (
+                    cap_materialized_depth_to_minimum_order_size
+                    and len(retained) >= materialized_minimum_depth_levels
+                    and cumulative >= market.minimum_order_size
+                ):
+                    break
+            return tuple(retained)
+
         snapshot = PaperBookSnapshot(
             venue="polymarket",
             market_id=market.condition_id,
             asset_id=token,
-            bids=tuple(
-                BookLevel(price, state.bids[price])
-                for price in sorted(state.bids, reverse=True)
-            ),
-            asks=tuple(
-                BookLevel(price, state.asks[price]) for price in sorted(state.asks)
-            ),
+            bids=retained_levels(state.bids, reverse=True),
+            asks=retained_levels(state.asks, reverse=False),
             source_time_ms=state.source_time_ms,
             received_wall_ms=row.available_wall_ms,
             received_monotonic_ns=row.available_monotonic_ns,
