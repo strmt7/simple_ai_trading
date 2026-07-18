@@ -48,7 +48,7 @@ def test_agent_workflow_doc_records_exact_tool_versions() -> None:
         OMERO_COMMIT,
         KARPATHY_COMMIT,
         "`0.2.37`",
-        "`0.15.21`",
+        "`0.15.22`",
         "`2.16`",
         "`v8.7.0`",
     ):
@@ -90,11 +90,19 @@ def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:
     assert "branches:\n      - main" in text
     assert "workflow_dispatch:" in text
     assert "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0" in text
-    assert "astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b" in text
-    assert "version: 0.15.21" in text
+    assert "astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89" in text
+    assert "version: 0.15.22" in text
     assert "run: ruff check ." in text
     assert "git diff --name-only --diff-filter=ACMR -z" in text
     assert "xargs -0 ruff format --check --" in text
+
+
+def test_pre_commit_toolchain_matches_reviewed_ruff_release() -> None:
+    text = _read(".pre-commit-config.yaml")
+    assert "rev: v0.15.22" in text
+    assert "- id: ruff-check" in text
+    assert "- id: ruff-format" in text
+    assert "rev: v6.0.0" in text
 
 
 def test_vulture_workflow_and_requirements_are_hash_pinned() -> None:

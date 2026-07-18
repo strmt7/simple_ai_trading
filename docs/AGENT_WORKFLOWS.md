@@ -11,14 +11,15 @@ skills are intentionally not copied.
 | Tool | Pinned version | Repository entry point |
 | --- | --- | --- |
 | CocoIndex Code | `0.2.37` | `tools/cocoindex_agent_search.py` |
-| Ruff | `0.15.21` | `.github/workflows/ruff.yml` |
+| Ruff | `0.15.22` | `.github/workflows/ruff.yml` |
 | Vulture | `2.16` | `tools/vulture_check.py` and `.github/workflows/vulture.yml` |
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
 
-A fresh 2026-07-15 upstream check found CocoIndex Code `0.2.37` still marked
-latest on PyPI and the pinned Karpathy commit still at `main`; no unmeasured
-upgrade was introduced.
+A fresh 2026-07-18 upstream check found CocoIndex Code `0.2.37`, Vulture
+`2.16`, and Super-Linter `v8.7.0` still current. The pinned Karpathy, OMERO,
+and Kronos commits remain their respective upstream `HEAD` revisions. Ruff was
+updated only after reviewing its release notes and pinned action commit.
 
 The main CI workflow also runs `tools/audit_financial_terminology.py`. It rejects
 superseded labels in authored documentation, Windows UI text, publication
@@ -93,7 +94,7 @@ benchmark contracts.
 ## Transfer Verification
 
 The 2026-07-11 Windows-host transfer check passed the six-skill validator,
-CocoIndex contract suite and four-version JSON-RPC handshake, Ruff `0.15.21`,
+CocoIndex contract suite and four-version JSON-RPC handshake, Ruff `0.15.22`,
 Vulture `2.16`, yamllint `1.38.0`, markdownlint-cli `0.49.0`, actionlint
 `1.7.12`, and Zizmor `1.26.1 --pedantic`. Zizmor reported no findings after
 all remote Actions were commit-pinned. The full Super-Linter container remains

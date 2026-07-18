@@ -26,15 +26,15 @@ jobs:
           persist-credentials: false
 
       - name: Install Ruff
-        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
+        uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 # v4.1.0
         with:
-          version: 0.15.21
+          version: 0.15.22
           args: --version
 
       - name: Ruff check
         run: ruff check .
 
-      - name: Ruff format new Python files
+      - name: Ruff format changed Python files
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         shell: bash
@@ -44,13 +44,12 @@ jobs:
           if [[ -z "${base}" || "${base}" =~ ^0+$ ]] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
             base="$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)"
           fi
-          # Existing modules predate Ruff formatting. Keep repository-wide linting
-          # above, and require every newly introduced Python file to be formatted
-          # without forcing unrelated legacy rewrites into feature commits.
+          # Check only files in the current change so legacy modules outside the
+          # affected surface do not force unrelated formatting churn.
           changed="${RUNNER_TEMP}/ruff-python-files"
-          git diff --name-only --diff-filter=A -z "${base}" HEAD -- '*.py' > "${changed}"
+          git diff --name-only --diff-filter=ACMR -z "${base}" HEAD -- '*.py' > "${changed}"
           if [[ -s "${changed}" ]]; then
             xargs -0 ruff format --check -- < "${changed}"
           else
-            echo "No new Python files."
+            echo "No changed Python files."
           fi
