@@ -1,4 +1,4 @@
-"""Publish deterministic Round 10/11 Polymarket model evidence."""
+"""Publish the deterministic Polymarket status through frozen Round 13."""
 
 from __future__ import annotations
 
@@ -32,7 +32,9 @@ ROUND11_REPORT = POLYMARKET_DIR / "round-011-single-leg-directional-value-report
 ROUND11_ARTIFACT = (
     POLYMARKET_DIR / "round-011-single-leg-directional-value-artifact.json"
 )
-PUBLICATION_SCHEMA_VERSION = "polymarket-round11-latest-publication-v1"
+ROUND12_INVALIDATION = POLYMARKET_DIR / "round-012-invalidated-capture-evidence.json"
+ROUND13_CONTRACT = POLYMARKET_DIR / "round-013-sealed-confirmation-contract.json"
+PUBLICATION_SCHEMA_VERSION = "polymarket-round13-pending-publication-v1"
 
 COLORS = {
     "ink": "#0F172A",
@@ -65,6 +67,30 @@ def _file_sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError(f"duplicate JSON key: {key}")
+        output[key] = value
+    return output
+
+
+def _reject_nonfinite_json(value: str) -> object:
+    raise ValueError(f"non-finite JSON number: {value}")
+
+
+def _read_json_object(path: Path) -> dict[str, object]:
+    decoded = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=_strict_object,
+        parse_constant=_reject_nonfinite_json,
+    )
+    if not isinstance(decoded, dict):
+        raise ValueError(f"JSON source is not an object: {path.name}")
+    return decoded
 
 
 def _atomic_text(path: Path, content: str) -> None:
@@ -100,7 +126,7 @@ def _write_csv(
 
 
 def _read_hashed_json(path: Path, hash_field: str) -> dict[str, object]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    value = _read_json_object(path)
     claimed = str(value.pop(hash_field, ""))
     if len(claimed) != 64 or _canonical_sha256(value) != claimed:
         raise ValueError(f"canonical hash mismatch: {path.name}")
@@ -109,7 +135,7 @@ def _read_hashed_json(path: Path, hash_field: str) -> dict[str, object]:
 
 
 def _read_round10_report() -> dict[str, object]:
-    value = json.loads(ROUND10_REPORT.read_text(encoding="utf-8"))
+    value = _read_json_object(ROUND10_REPORT)
     artifact_sha256 = str(value.pop("artifact_sha256", ""))
     if _canonical_sha256(value) != artifact_sha256:
         raise ValueError("Round 10 artifact hash differs")
@@ -137,7 +163,7 @@ def _read_round10_report() -> dict[str, object]:
 
 
 def _verify_sources() -> tuple[dict[str, object], ...]:
-    round9 = json.loads(ROUND9_REPORT.read_text(encoding="utf-8"))
+    round9 = _read_json_object(ROUND9_REPORT)
     round9_claimed = str(round9.pop("report_canonical_sha256", ""))
     if _canonical_sha256(round9) != round9_claimed:
         raise ValueError("Round 9 failure report hash differs")
@@ -253,7 +279,7 @@ def _equity_chart(
         width,
         height,
         "Round 11 sequential settlement utility",
-        f"Real replay labels | {span['start']} to {span['end']} | 42 fills | exact entry fees | redemption overhead unavailable",
+        f"Real replay labels | {span['start']} to {span['end']} | 42 simulated fills | exact entry fees | redemption overhead unavailable",
     )
     for tick in range(6):
         value = minimum + (maximum - minimum) * tick / 5
@@ -353,30 +379,41 @@ def _admission_chart(selected: Mapping[str, object]) -> str:
 
 
 def _progress_chart(rows: Sequence[Mapping[str, object]]) -> str:
-    width, height = 1280, 500
+    width = 1280
+    top = 135
+    row_height = 82
+    height = top + len(rows) * row_height + 90
     body = _svg_start(
         width,
         height,
         "Optimization evidence progression",
-        "Sequential filled conditions by frozen round; counts are not comparable ROI and every round remains rejected",
+        "Exact status; unavailable simulated-fill counts are not zero, and counts are not ROI",
     )
-    maximum = max(1, max(int(row["selected_filled_conditions"]) for row in rows))
+    known_counts = [
+        int(row["selected_filled_conditions"])
+        for row in rows
+        if row.get("selected_filled_conditions") is not None
+    ]
+    maximum = max(1, max(known_counts, default=0))
     for index, row in enumerate(rows):
-        y = 150 + index * 95
-        count = int(row["selected_filled_conditions"])
-        bar = 700 * count / maximum
+        y = top + index * row_height
+        raw_count = row.get("selected_filled_conditions")
+        count = None if raw_count is None else int(raw_count)
+        bar = 700 * (0 if count is None else count) / maximum
+        color = COLORS["muted"] if count is None else COLORS["negative"]
+        count_label = "N/A" if count is None else str(count)
         body.extend(
             [
                 f'<text x="48" y="{y + 27}" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="700" fill="{COLORS["ink"]}">Round {row["round"]}</text>',
                 f'<text x="155" y="{y + 27}" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="{COLORS["muted"]}">{escape(str(row["action"]))}</text>',
                 f'<rect x="455" y="{y}" width="700" height="38" rx="4" fill="#E2E8F0"/>',
-                f'<rect x="455" y="{y}" width="{bar:.1f}" height="38" rx="4" fill="{COLORS["negative"]}"/>',
-                f'<text x="470" y="{y + 26}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="{COLORS["ink"]}">{count} fills | {escape(str(row["status"]))}</text>',
+                f'<rect x="455" y="{y}" width="{bar:.1f}" height="38" rx="4" fill="{color}"/>',
+                f'<text x="470" y="{y + 26}" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="{COLORS["ink"]}">{count_label} simulated fills | {escape(str(row["status"]))}</text>',
             ]
         )
     body.extend(
         [
-            f'<text x="48" y="463" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="{COLORS["negative"]}">Round 9 failed before fit; Round 10 selected no positive one-second scalp; Round 11 had 42 fills but failed uncertainty and baseline gates.</text>',
+            f'<text x="48" y="{height - 34}" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="{COLORS["muted"]}">Round 12 was invalidated before outcomes; Round 13 is frozen and has not started. Neither has performance metrics.</text>',
             "</svg>",
         ]
     )
@@ -396,8 +433,48 @@ def _remove_stale(expected: set[Path]) -> None:
 
 def publish() -> str:
     round9, round10, round11, artifact = _verify_sources()
+    round12 = _read_hashed_json(ROUND12_INVALIDATION, "artifact_sha256")
+    round13 = _read_hashed_json(ROUND13_CONTRACT, "contract_sha256")
+    outcome_access = round12.get("outcome_access_evidence")
+    persisted_counts = round12.get("persisted_table_counts")
+    raw_chunk_evidence = round12.get("raw_chunk_evidence")
+    freshness = round13.get("freshness")
+    if (
+        round12.get("round") != 12
+        or round12.get("status") != "invalidated_before_outcome_access"
+        or not isinstance(outcome_access, Mapping)
+        or outcome_access.get("performance_labels_opened") is not False
+        or not isinstance(persisted_counts, Mapping)
+        or not isinstance(persisted_counts.get("polymarket_market_snapshot"), int)
+        or not isinstance(raw_chunk_evidence, Mapping)
+        or not isinstance(raw_chunk_evidence.get("message_count"), int)
+        or round13.get("round") != 13
+        or round13.get("status") != "frozen_before_fresh_capture"
+        or not isinstance(freshness, Mapping)
+        or freshness.get("capture_started") is not False
+    ):
+        raise ValueError("Round 12/13 status evidence differs")
     selected = round11["selected_policy"]
     direction = round11["direction_validation"]
+    if not isinstance(selected, Mapping):
+        raise ValueError("Round 11 selected policy is not an object")
+    selected_bootstrap = selected.get("bootstrap")
+    if not isinstance(selected_bootstrap, Mapping):
+        raise ValueError("Round 11 bootstrap evidence is not an object")
+    try:
+        round11_conditions = int(selected["filled_conditions"])
+        round11_total = float(selected["total_utility_quote"])
+        round11_drawdown = float(selected["maximum_drawdown_quote"])
+        round11_bootstrap_lower = float(
+            selected_bootstrap["lower_95_mean_group_utility_quote"]
+        )
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Round 11 selected metrics are invalid") from exc
+    if not all(
+        math.isfinite(value)
+        for value in (round11_total, round11_drawdown, round11_bootstrap_lower)
+    ):
+        raise ValueError("Round 11 selected metrics are non-finite")
     direction_rows: list[dict[str, object]] = []
     pooled = direction["pooled"]
     for scope, value in (("Pooled", pooled), *direction["per_asset"].items()):
@@ -553,6 +630,30 @@ def publish() -> str:
             ),
             "profitability_claim": False,
         },
+        {
+            "round": 12,
+            "action": "sealed calibration confirmation",
+            "status": "invalidated before outcome access",
+            "independent_groups": None,
+            "conditions": None,
+            "selected_filled_conditions": None,
+            "total_utility_quote": None,
+            "maximum_drawdown_quote": None,
+            "bootstrap_lower_mean_group_utility_quote": None,
+            "profitability_claim": False,
+        },
+        {
+            "round": 13,
+            "action": "slippage-limited sealed confirmation",
+            "status": "frozen; fresh capture not started",
+            "independent_groups": None,
+            "conditions": None,
+            "selected_filled_conditions": None,
+            "total_utility_quote": None,
+            "maximum_drawdown_quote": None,
+            "bootstrap_lower_mean_group_utility_quote": None,
+            "profitability_claim": False,
+        },
     ]
     table_paths = {
         TABLE_DIR / "round11-direction-validation.csv",
@@ -607,6 +708,49 @@ def publish() -> str:
     _atomic_text(
         CHART_DIR / "optimization-progress.svg", _progress_chart(progression_rows)
     )
+    latest_readme = f"""# Polymarket model status
+
+![Optimization evidence progression](charts/optimization-progress.svg)
+
+## Current boundary
+
+Round 13 is frozen but has not started. It is a one-use prospective
+BTC/ETH/SOL five-minute confirmation of the unchanged Round 11 calibration,
+with explicit FOK worst-price limits, exact recorded fees and depth, seven
+latency/fee/tick/depth scenarios, a raw-market-prior control, and conjunctive
+activity, utility, uncertainty, drawdown, and exposure gates.
+
+Round 12 is not performance evidence. Its recorder captured
+`{raw_chunk_evidence["message_count"]}` messages, but the evaluator
+and publication chain had not been preregistered. It was invalidated before
+outcome access; every return, drawdown, and fill field is therefore unavailable,
+not zero.
+
+Round 11 remains the latest scored result. Its simulated after-cost utility was
+`{round11_total:+.5f}` quote on {round11_conditions} development conditions, but
+maximum drawdown was
+`{round11_drawdown:.5f}` and the 95% moving-block-bootstrap lower mean-group
+utility was `{round11_bootstrap_lower:.5f}`. It failed uncertainty
+and raw-market-prior gates. No profitability, ROI, acceptable-drawdown, paper,
+AI-uplift, or trading claim exists.
+
+## Evidence
+
+- [Round 13 frozen contract](../round-013-sealed-confirmation-contract.json)
+- [Round 12 invalidation](../round-012-invalidated-capture-evidence.json)
+- [Round 11 contract](../round-011-single-leg-directional-value-contract.json)
+- [Round 11 report](../round-011-single-leg-directional-value-report.json)
+- [Round 11 model artifact](../round-011-single-leg-directional-value-artifact.json)
+- [Optimization data](tables/optimization-progress.csv)
+- [Publication integrity](publication-integrity.json)
+
+Regenerate these exact tables, charts, and hashes with
+`python tools/publish_polymarket_round11.py`. Round 13 can acquire no paper or
+live authority until its untouched capture passes every frozen gate and the
+authenticated order lifecycle, balance ownership, settlement delay, and
+redemption overhead are separately proven.
+"""
+    _atomic_text(LATEST_DIR / "README.md", latest_readme)
     source_paths = (
         ROUND9_REPORT,
         ROUND10_CONTRACT,
@@ -614,14 +758,23 @@ def publish() -> str:
         ROUND11_CONTRACT,
         ROUND11_REPORT,
         ROUND11_ARTIFACT,
+        ROUND12_INVALIDATION,
+        ROUND13_CONTRACT,
     )
-    artifact_paths = tuple(sorted(table_paths | chart_paths | set(source_paths)))
+    artifact_paths = tuple(
+        sorted(
+            table_paths | chart_paths | set(source_paths) | {LATEST_DIR / "README.md"},
+            key=lambda path: path.relative_to(ROOT).as_posix(),
+        )
+    )
     integrity: dict[str, object] = {
         "schema_version": PUBLICATION_SCHEMA_VERSION,
-        "latest_round": 11,
-        "status": "development_failed_uncertainty_and_market_prior_gate",
+        "latest_round": 13,
+        "status": "round13_frozen_fresh_capture_not_started",
         "source_report_sha256": round11["report_sha256"],
         "source_artifact_sha256": artifact["artifact_sha256"],
+        "source_invalidation_sha256": round12["artifact_sha256"],
+        "source_round13_contract_sha256": round13["contract_sha256"],
         "artifacts": [
             {
                 "path": path.relative_to(ROOT).as_posix(),
@@ -645,4 +798,4 @@ def publish() -> str:
 
 
 if __name__ == "__main__":
-    print(f"Round 11 publication: {publish()}")
+    print(f"Round 13 pending publication: {publish()}")

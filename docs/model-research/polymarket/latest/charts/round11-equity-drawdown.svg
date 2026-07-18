@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="690" viewBox="0 0 1280 690">
 <rect width="1280" height="690" fill="#F8FAFC"/>
 <text x="48" y="55" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700" fill="#0F172A">Round 11 sequential settlement utility</text>
-<text x="48" y="88" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">Real replay labels | 2026-07-16T15:30:00+00:00 to 2026-07-17T05:50:00+00:00 | 42 fills | exact entry fees | redemption overhead unavailable</text>
+<text x="48" y="88" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">Real replay labels | 2026-07-16T15:30:00+00:00 to 2026-07-17T05:50:00+00:00 | 42 simulated fills | exact entry fees | redemption overhead unavailable</text>
 <line x1="110" y1="545.0" x2="1210" y2="545.0" stroke="#CBD5E1" stroke-width="1"/>
 <text x="94" y="550.0" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">-16.5</text>
 <line x1="110" y1="466.0" x2="1210" y2="466.0" stroke="#CBD5E1" stroke-width="1"/>

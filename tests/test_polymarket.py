@@ -7,7 +7,9 @@ import json
 import pytest
 
 from simple_ai_trading.polymarket import (
+    CLOB_BASE_URL,
     GAMMA_MARKETS_URL,
+    POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION,
     PolymarketPublicClient,
     parse_polymarket_five_minute_market,
     validate_clob_order_book,
@@ -206,6 +208,16 @@ class _Session:
         return _Response(self.payload)
 
 
+class _RoutingSession:
+    def __init__(self, payloads: dict[str, object]) -> None:
+        self.payloads = payloads
+        self.calls: list[tuple[str, object, float]] = []
+
+    def get(self, url: str, *, params: object, timeout: float) -> _Response:
+        self.calls.append((url, params, timeout))
+        return _Response(self.payloads[url])
+
+
 def test_discovery_batches_all_assets_and_never_uses_precompiled_market_ids() -> None:
     session = _Session([_market(asset) for asset in ("BTC", "ETH", "SOL")])
     client = PolymarketPublicClient(session=session, timeout_seconds=3)
@@ -226,10 +238,43 @@ def test_discovery_batches_all_assets_and_never_uses_precompiled_market_ids() ->
 
 def test_public_client_uses_official_full_market_resolution_endpoints() -> None:
     condition_id = "0x" + "7" * 64
-    session = _Session({"condition_id": condition_id})
+    version_url = f"{CLOB_BASE_URL}/version"
+    market_url = f"{CLOB_BASE_URL}/markets/{condition_id}"
+    gamma_url = f"{GAMMA_MARKETS_URL}/1001"
+    session = _RoutingSession(
+        {
+            version_url: {"version": POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION},
+            market_url: {"condition_id": condition_id},
+            gamma_url: {"condition_id": condition_id},
+        }
+    )
     client = PolymarketPublicClient(session=session, timeout_seconds=3)
 
     assert client.clob_market(condition_id) == {"condition_id": condition_id}
-    assert session.calls[-1][0] == f"https://clob.polymarket.com/markets/{condition_id}"
+    assert session.calls[-1][0] == market_url
+    assert client.clob_market(condition_id) == {"condition_id": condition_id}
+    assert sum(url == version_url for url, _params, _timeout in session.calls) == 1
     assert client.gamma_market("1001") == {"condition_id": condition_id}
-    assert session.calls[-1][0] == f"{GAMMA_MARKETS_URL}/1001"
+    assert session.calls[-1][0] == gamma_url
+
+
+@pytest.mark.parametrize("payload", [{"version": 1}, {"version": "2"}, {}, []])
+def test_public_client_fails_closed_on_unknown_clob_protocol(payload: object) -> None:
+    version_url = f"{CLOB_BASE_URL}/version"
+    client = PolymarketPublicClient(
+        session=_RoutingSession({version_url: payload}),
+        timeout_seconds=3,
+    )
+
+    with pytest.raises(ValueError, match="protocol"):
+        client.protocol_version()
+
+
+def test_public_client_rejects_invalid_ids_before_network_io() -> None:
+    session = _RoutingSession({})
+    client = PolymarketPublicClient(session=session, timeout_seconds=3)
+
+    with pytest.raises(ValueError, match="condition_id"):
+        client.clob_market("not-a-condition")
+
+    assert session.calls == []

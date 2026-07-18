@@ -1,9 +1,14 @@
 {
   "artifacts": [
     {
-      "bytes": 2350,
+      "bytes": 1962,
+      "path": "docs/model-research/polymarket/latest/README.md",
+      "sha256": "9b2aa1c3df05302ffb8e28125aeeefc18d1d1d3da50bb066bfc6e114baf36efd"
+    },
+    {
+      "bytes": 3474,
       "path": "docs/model-research/polymarket/latest/charts/optimization-progress.svg",
-      "sha256": "15a1c60939f6f5189535d715d86e2f1b348ab756752779223b96e6321aff4262"
+      "sha256": "3aa0e1457c952b4494ee1aa93661bf6a5942ceff2365e1c7b18ecd74735ce7af"
     },
     {
       "bytes": 3251,
@@ -16,14 +21,14 @@
       "sha256": "536247e99d0f78920158cb0d7de6e7e7184f0afd6aceddd4872270755294f10b"
     },
     {
-      "bytes": 4328,
+      "bytes": 4338,
       "path": "docs/model-research/polymarket/latest/charts/round11-equity-drawdown.svg",
-      "sha256": "fd8239a48ea8ab0d17663cd7ad3ffed31ae4a9cd0dfb4542df445bf67d4a33e0"
+      "sha256": "e5ec8df29f867dcb3a9ad40b0e83d8d1a98b2105191fb8ad62206bcaa166c8dd"
     },
     {
-      "bytes": 442,
+      "bytes": 609,
       "path": "docs/model-research/polymarket/latest/tables/optimization-progress.csv",
-      "sha256": "9b273e67f077e27f2cd745cb4425c168bed04623cf8f1fdbe7bc7166eb2addb4"
+      "sha256": "69a80242a99b9e312d93c5f99e4f96dccf79cfa66994d5f9ffc67c1376eb547b"
     },
     {
       "bytes": 642,
@@ -79,17 +84,29 @@
       "bytes": 249424,
       "path": "docs/model-research/polymarket/round-011-single-leg-directional-value-report.json",
       "sha256": "05399ff2848eaa2a56d510130ee77965c99fb5b7f0a1929422ce76aab310718c"
+    },
+    {
+      "bytes": 5972,
+      "path": "docs/model-research/polymarket/round-012-invalidated-capture-evidence.json",
+      "sha256": "75eba0e92ffa80400eb942101c494978bdbb00996574cec234cbe0418b45c158"
+    },
+    {
+      "bytes": 20510,
+      "path": "docs/model-research/polymarket/round-013-sealed-confirmation-contract.json",
+      "sha256": "57b1a6566feecec82c43a710d6ec40434756c3de75873c39947b8559b2241b2a"
     }
   ],
   "drawdown_claim": false,
-  "latest_round": 11,
+  "latest_round": 13,
   "paper_authority": false,
   "profitability_claim": false,
-  "publication_sha256": "941de5157ae7fcc508d4f255ace82f5d618e7ea8eabc97d4d12f5986d957c6fc",
+  "publication_sha256": "779c67d3bcd400c874fc46d1f435a38604317b1a5106b6d9727243b287447ce9",
   "roi_claim": false,
-  "schema_version": "polymarket-round11-latest-publication-v1",
+  "schema_version": "polymarket-round13-pending-publication-v1",
   "source_artifact_sha256": "c1d174b3274d374b1008272c70954a67c8a2953b875d11b7268658666d23c7bc",
+  "source_invalidation_sha256": "7e8577781d08c75109437cbc478948cc617bdbf82f8cffbd8233c61ada95ff58",
   "source_report_sha256": "c64bd0356e4e1e333fa80512665a690bc0fac44161429212c7851e3f2b6cca0e",
-  "status": "development_failed_uncertainty_and_market_prior_gate",
+  "source_round13_contract_sha256": "9ace8092d26918b7621aafb7f008106b06c80049c314158e6a26fd5b70dd4325",
+  "status": "round13_frozen_fresh_capture_not_started",
   "trading_authority": false
 }

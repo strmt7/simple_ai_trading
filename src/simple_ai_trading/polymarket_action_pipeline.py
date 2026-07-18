@@ -1,4 +1,4 @@
-"""Resumable bounded materialization for Round 9 Polymarket action values."""
+"""Resumable bounded materialization for hash-bound Polymarket action evidence."""
 
 from __future__ import annotations
 
@@ -35,6 +35,12 @@ from .polymarket_round12_admission import (
     load_round12_admission_dataset,
     materialize_round12_admission_dataset,
 )
+from .polymarket_round13 import (
+    PolymarketRound13Program,
+    build_round13_label_free_dataset,
+    load_round13_label_free_dataset,
+    materialize_round13_label_free_dataset,
+)
 
 
 POLYMARKET_ACTION_PIPELINE_SCHEMA_VERSION = (
@@ -56,8 +62,13 @@ _CRITICAL_IMPLEMENTATION_FILES = (
     "polymarket_recorder.py",
     "polymarket_replay.py",
     "polymarket_repricing.py",
+    "polymarket_resolution.py",
     "polymarket_round12_admission.py",
     "polymarket_round12_capture.py",
+    "polymarket_round13.py",
+    "polymarket_round13_capture.py",
+    "polymarket_round13_evaluation.py",
+    "polymarket_round13_publication.py",
 )
 _CONTINUITY_ADMISSION_MODES = frozenset({"group", "action_local"})
 
@@ -81,6 +92,40 @@ def _is_sha256(value: object) -> bool:
     return len(text) == 64 and all(
         character in "0123456789abcdef" for character in text
     )
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    output: dict[str, object] = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError(f"duplicate JSON key: {key}")
+        output[key] = value
+    return output
+
+
+def _reject_nonfinite_json(value: str) -> object:
+    raise ValueError(f"non-finite JSON number: {value}")
+
+
+def _strict_json(raw: object, *, name: str) -> object:
+    try:
+        return json.loads(
+            str(raw),
+            object_pairs_hook=_strict_object,
+            parse_constant=_reject_nonfinite_json,
+        )
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        raise ValueError(f"{name} is invalid JSON") from exc
+
+
+def _nonnegative_count_mapping(raw: object, *, name: str) -> dict[str, int]:
+    decoded = _strict_json(raw, name=name)
+    if not isinstance(decoded, Mapping) or any(
+        not isinstance(key, str) or not key or type(value) is not int or value < 0
+        for key, value in decoded.items()
+    ):
+        raise ValueError(f"{name} is not a non-negative integer count object")
+    return {key: value for key, value in decoded.items()}
 
 
 def polymarket_action_pipeline_implementation_sha256() -> str:
@@ -160,6 +205,7 @@ class PolymarketActionBatchResult:
     category_counts: dict[str, int]
     terminal_reason_counts: dict[str, int]
     excluded_after_event_scope_count: int
+    round13_scenario_dataset_sha256: str
     batch_sha256: str
 
     def asdict(self) -> dict[str, object]:
@@ -171,6 +217,8 @@ class PolymarketActionBatchResult:
         payload["terminal_reason_counts"] = dict(
             sorted(self.terminal_reason_counts.items())
         )
+        if not self.round13_scenario_dataset_sha256:
+            payload.pop("round13_scenario_dataset_sha256")
         return payload
 
     def validated(self) -> PolymarketActionBatchResult:
@@ -186,9 +234,15 @@ class PolymarketActionBatchResult:
             or self.action_count != self.feature_row_count * 2
             or not 0 <= self.positive_complete_count <= self.classifier_eligible_count
             or not 0 <= self.classifier_eligible_count <= self.action_count
+            or any(value < 0 for value in self.category_counts.values())
+            or any(value < 0 for value in self.terminal_reason_counts.values())
             or sum(self.category_counts.values()) != self.action_count
             or sum(self.terminal_reason_counts.values()) != self.action_count
             or self.excluded_after_event_scope_count < 0
+            or (
+                self.round13_scenario_dataset_sha256
+                and not _is_sha256(self.round13_scenario_dataset_sha256)
+            )
         ):
             raise ValueError("Polymarket action batch result is invalid")
         return self
@@ -264,6 +318,8 @@ class PolymarketActionPipelineReport:
             != sum(item.classifier_eligible_count for item in self.batches)
             or self.positive_complete_count
             != sum(item.positive_complete_count for item in self.batches)
+            or any(value < 0 for value in self.category_counts.values())
+            or any(value < 0 for value in self.terminal_reason_counts.values())
             or self.category_counts != expected_categories
             or self.terminal_reason_counts != expected_reasons
             or self.excluded_after_event_scope_count
@@ -298,7 +354,8 @@ def _ensure_pipeline_tables(store: PolymarketEvidenceStore) -> None:
             terminal_reason_counts_json VARCHAR NOT NULL,
             batch_sha256 VARCHAR NOT NULL,
             implementation_sha256 VARCHAR,
-            excluded_after_event_scope_count UBIGINT
+            excluded_after_event_scope_count UBIGINT,
+            round13_scenario_dataset_sha256 VARCHAR
         );
 
         CREATE TABLE IF NOT EXISTS polymarket_action_value_pipeline (
@@ -325,6 +382,8 @@ def _ensure_pipeline_tables(store: PolymarketEvidenceStore) -> None:
         ADD COLUMN IF NOT EXISTS implementation_sha256 VARCHAR;
         ALTER TABLE polymarket_action_value_batch
         ADD COLUMN IF NOT EXISTS excluded_after_event_scope_count UBIGINT;
+        ALTER TABLE polymarket_action_value_batch
+        ADD COLUMN IF NOT EXISTS round13_scenario_dataset_sha256 VARCHAR;
         ALTER TABLE polymarket_action_value_pipeline
         ADD COLUMN IF NOT EXISTS implementation_sha256 VARCHAR;
         ALTER TABLE polymarket_action_value_pipeline
@@ -341,6 +400,7 @@ def _batch_identity(
     eligibility_sha256: str,
     implementation_sha256: str,
     continuity_admission_mode: str,
+    round13_contract_sha256: str,
     group_starts_ms: Sequence[int],
     condition_ids: Sequence[str],
 ) -> dict[str, object]:
@@ -357,6 +417,8 @@ def _batch_identity(
     }
     if continuity_admission_mode != "group":
         identity["continuity_admission_mode"] = continuity_admission_mode
+    if round13_contract_sha256:
+        identity["round13_contract_sha256"] = round13_contract_sha256
     return identity
 
 
@@ -377,7 +439,8 @@ def _load_existing_batch(
                feature_row_count, action_count, classifier_eligible_count,
                positive_complete_count, category_counts_json,
                terminal_reason_counts_json, batch_sha256,
-               implementation_sha256, excluded_after_event_scope_count
+               implementation_sha256, excluded_after_event_scope_count,
+               round13_scenario_dataset_sha256
         FROM polymarket_action_value_batch WHERE batch_id = ?
         """,
             [batch_id],
@@ -440,9 +503,13 @@ def _load_existing_batch(
     if feature_manifest is None:
         raise ValueError("stored Polymarket action batch has no feature manifest")
     try:
-        replay_diagnostics = json.loads(str(feature_manifest[2]))
+        replay_diagnostics = _strict_json(
+            feature_manifest[2], name="stored replay diagnostics"
+        )
+        if not isinstance(replay_diagnostics, Mapping):
+            raise ValueError("stored replay diagnostics is not an object")
         source_scope = validate_polymarket_feature_source_scope(
-            json.loads(str(feature_manifest[5])),
+            _strict_json(feature_manifest[5], name="stored feature source scope"),
             run_id=str(identity["run_id"]),
             condition_ids=tuple(str(value) for value in identity["condition_ids"]),
             require_bounded=True,
@@ -450,7 +517,7 @@ def _load_existing_batch(
         excluded_after_scope = int(
             replay_diagnostics["excluded_after_event_scope_count"]
         )
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+    except (KeyError, TypeError, ValueError) as exc:
         raise ValueError(
             "stored Polymarket action batch replay diagnostics are invalid"
         ) from exc
@@ -470,6 +537,12 @@ def _load_existing_batch(
         or int(row[19]) != excluded_after_scope
     ):
         raise ValueError("stored Polymarket action batch references invalid manifests")
+    category_counts = _nonnegative_count_mapping(
+        row[15], name="stored action category counts"
+    )
+    terminal_reason_counts = _nonnegative_count_mapping(
+        row[16], name="stored action terminal reason counts"
+    )
     batch_payload = {
         **dict(identity),
         "feature_dataset_sha256": str(row[9]),
@@ -478,10 +551,27 @@ def _load_existing_batch(
         "action_count": int(row[12]),
         "classifier_eligible_count": int(row[13]),
         "positive_complete_count": int(row[14]),
-        "category_counts": json.loads(str(row[15])),
-        "terminal_reason_counts": json.loads(str(row[16])),
+        "category_counts": category_counts,
+        "terminal_reason_counts": terminal_reason_counts,
         "excluded_after_event_scope_count": excluded_after_scope,
     }
+    round13_dataset_sha256 = str(row[20] or "")
+    expected_round13 = str(identity.get("round13_contract_sha256") or "")
+    if expected_round13:
+        if not _is_sha256(round13_dataset_sha256):
+            raise ValueError("stored Round 13 scenario dataset is missing")
+        scenario_dataset = load_round13_label_free_dataset(
+            store,
+            source_action_dataset_sha256=str(row[10]),
+        )
+        if (
+            scenario_dataset.dataset_sha256 != round13_dataset_sha256
+            or scenario_dataset.contract_sha256 != expected_round13
+        ):
+            raise ValueError("stored Round 13 scenario dataset differs")
+        batch_payload["round13_scenario_dataset_sha256"] = round13_dataset_sha256
+    elif round13_dataset_sha256:
+        raise ValueError("legacy action batch unexpectedly references Round 13")
     if _sha256(batch_payload) != str(row[17]):
         raise ValueError("stored Polymarket action batch digest is invalid")
     return PolymarketActionBatchResult(
@@ -504,6 +594,7 @@ def _load_existing_batch(
             for key, value in batch_payload["terminal_reason_counts"].items()
         },
         excluded_after_event_scope_count=excluded_after_scope,
+        round13_scenario_dataset_sha256=round13_dataset_sha256,
         batch_sha256=str(row[17]),
     ).validated()
 
@@ -521,6 +612,7 @@ def _persist_batch(
     category_counts: Mapping[str, int],
     terminal_reason_counts: Mapping[str, int],
     excluded_after_event_scope_count: int,
+    round13_scenario_dataset_sha256: str = "",
 ) -> PolymarketActionBatchResult:
     batch_id = _sha256(identity)
     payload = {
@@ -535,6 +627,10 @@ def _persist_batch(
         "terminal_reason_counts": dict(sorted(terminal_reason_counts.items())),
         "excluded_after_event_scope_count": int(excluded_after_event_scope_count),
     }
+    if round13_scenario_dataset_sha256:
+        if not _is_sha256(round13_scenario_dataset_sha256):
+            raise ValueError("Round 13 scenario dataset digest is invalid")
+        payload["round13_scenario_dataset_sha256"] = round13_scenario_dataset_sha256
     batch_sha256 = _sha256(payload)
     values = (
         batch_id,
@@ -557,6 +653,7 @@ def _persist_batch(
         batch_sha256,
         str(identity["implementation_sha256"]),
         int(excluded_after_event_scope_count),
+        round13_scenario_dataset_sha256 or None,
     )
     store.connect().execute(
         """
@@ -568,9 +665,10 @@ def _persist_batch(
             feature_row_count, action_count, classifier_eligible_count,
             positive_complete_count, category_counts_json,
             terminal_reason_counts_json, batch_sha256,
-            implementation_sha256, excluded_after_event_scope_count
+            implementation_sha256, excluded_after_event_scope_count,
+            round13_scenario_dataset_sha256
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
         """,
         values,
@@ -589,6 +687,7 @@ def _persist_batch(
         category_counts=dict(sorted(category_counts.items())),
         terminal_reason_counts=dict(sorted(terminal_reason_counts.items())),
         excluded_after_event_scope_count=int(excluded_after_event_scope_count),
+        round13_scenario_dataset_sha256=round13_scenario_dataset_sha256,
         batch_sha256=batch_sha256,
     ).validated()
 
@@ -596,6 +695,25 @@ def _persist_batch(
 def _add_counts(target: dict[str, int], source: Mapping[str, int]) -> None:
     for key, value in source.items():
         target[str(key)] = target.get(str(key), 0) + int(value)
+
+
+def _require_no_round13_resolution_evidence(
+    store: PolymarketEvidenceStore,
+    run_id: str,
+) -> None:
+    count = int(
+        store.connect()
+        .execute(
+            "SELECT count(*) FROM polymarket_resolution_evidence WHERE run_id = ?",
+            [run_id],
+        )
+        .fetchone()[0]
+    )
+    if count:
+        raise ValueError(
+            "Round 13 label-free materialization requires no official resolution "
+            "evidence"
+        )
 
 
 def materialize_polymarket_action_value_batches(
@@ -606,6 +724,7 @@ def materialize_polymarket_action_value_batches(
     eligible_condition_ids: Sequence[str] | None = None,
     eligibility_sha256: str = "",
     continuity_admission_mode: str = "group",
+    round13_program: PolymarketRound13Program | None = None,
     progress: Callable[[str, Mapping[str, object]], None] | None = None,
 ) -> PolymarketActionPipelineReport:
     """Build resumable action values without materializing a full-run CLOB replay."""
@@ -616,12 +735,18 @@ def materialize_polymarket_action_value_batches(
     cfg = (config or PolymarketActionPipelineConfig()).validated()
     eligibility_digest = str(eligibility_sha256 or "").strip()
     admission_mode = str(continuity_admission_mode or "").strip().lower()
+    frozen_round13 = None if round13_program is None else round13_program.validated()
+    round13_contract_digest = (
+        "" if frozen_round13 is None else frozen_round13.contract_sha256
+    )
     if admission_mode not in _CONTINUITY_ADMISSION_MODES:
         raise ValueError("Polymarket continuity admission mode is invalid")
     if eligibility_digest and not _is_sha256(eligibility_digest):
         raise ValueError("Polymarket eligibility digest is invalid")
-    if admission_mode == "group" and cfg.feature.allow_segmented_gaps and (
-        not eligibility_digest or eligible_condition_ids is None
+    if (
+        admission_mode == "group"
+        and cfg.feature.allow_segmented_gaps
+        and (not eligibility_digest or eligible_condition_ids is None)
     ):
         raise ValueError(
             "segmented action replay requires hash-bound eligible condition IDs"
@@ -634,6 +759,13 @@ def materialize_polymarket_action_value_batches(
         raise ValueError(
             "action-local replay requires segmented gaps, a frozen contract digest, "
             "and full condition scope"
+        )
+    if frozen_round13 is not None and (
+        admission_mode != "action_local"
+        or eligibility_digest != frozen_round13.contract_sha256
+    ):
+        raise ValueError(
+            "Round 13 materialization requires its action-local contract digest"
         )
     implementation_sha256 = polymarket_action_pipeline_implementation_sha256()
     run_row = (
@@ -662,6 +794,8 @@ def materialize_polymarket_action_value_batches(
         raise ValueError(
             "Polymarket action pipeline integrity failed: " + "; ".join(integrity)
         )
+    if frozen_round13 is not None:
+        _require_no_round13_resolution_evidence(store, selected)
     _ensure_pipeline_tables(store)
     markets = PolymarketEvidenceReplay.load_markets(store, run_id=selected)
     if admission_mode == "action_local":
@@ -682,9 +816,7 @@ def materialize_polymarket_action_value_batches(
         selected_conditions = (
             {market.condition_id for market in markets}
             if eligible_condition_ids is None
-            else {
-                str(value or "").strip().lower() for value in eligible_condition_ids
-            }
+            else {str(value or "").strip().lower() for value in eligible_condition_ids}
         )
     if not selected_conditions or "" in selected_conditions:
         raise ValueError("Polymarket action pipeline condition selection is empty")
@@ -726,6 +858,7 @@ def materialize_polymarket_action_value_batches(
             eligibility_sha256=eligibility_digest,
             implementation_sha256=implementation_sha256,
             continuity_admission_mode=admission_mode,
+            round13_contract_sha256=round13_contract_digest,
             group_starts_ms=starts,
             condition_ids=conditions,
         )
@@ -756,6 +889,8 @@ def materialize_polymarket_action_value_batches(
         )
         store.ensure_capture_chunk_receipt_index(selected, progress=progress)
     for completed, index in enumerate(missing_indexes, start=1):
+        if frozen_round13 is not None:
+            _require_no_round13_resolution_evidence(store, selected)
         identity, _batch_id = batch_specs[index]
         conditions = tuple(str(value) for value in identity["condition_ids"])
         if progress is not None:
@@ -792,7 +927,7 @@ def materialize_polymarket_action_value_batches(
                 for condition in conditions
             },
             materialized_minimum_depth_levels=3,
-            cap_materialized_depth_to_minimum_order_size=True,
+            cap_materialized_depth_to_minimum_order_size=(frozen_round13 is None),
         )
         feature_replay = replay.with_book_sample_interval(cfg.feature.cadence_ms)
         store.recycle_analytical_connections()
@@ -830,6 +965,17 @@ def materialize_polymarket_action_value_batches(
         )
         if admissions is not None:
             materialize_round12_admission_dataset(store, admissions)
+        round13_dataset_sha256 = ""
+        if frozen_round13 is not None:
+            round13_dataset = build_round13_label_free_dataset(
+                features,
+                actions,
+                execution_context,
+                frozen_round13,
+            )
+            _require_no_round13_resolution_evidence(store, selected)
+            materialize_round13_label_free_dataset(store, round13_dataset)
+            round13_dataset_sha256 = round13_dataset.dataset_sha256
         results[index] = _persist_batch(
             store,
             identity=identity,
@@ -846,6 +992,7 @@ def materialize_polymarket_action_value_batches(
             excluded_after_event_scope_count=(
                 replay.diagnostics.excluded_after_event_scope_count
             ),
+            round13_scenario_dataset_sha256=round13_dataset_sha256,
         )
         if progress is not None:
             progress(
@@ -859,9 +1006,13 @@ def materialize_polymarket_action_value_batches(
                     ),
                 },
             )
+        if frozen_round13 is not None:
+            del round13_dataset
         del actions, admissions, execution_context
         del feature_replay, replay, features, source_context
         gc.collect()
+    if frozen_round13 is not None:
+        _require_no_round13_resolution_evidence(store, selected)
     batches = tuple(item for item in results if item is not None)
     if len(batches) != len(batch_specs):
         raise RuntimeError("Polymarket action pipeline failed to finalize every batch")

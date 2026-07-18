@@ -51,7 +51,11 @@ from .assets import (
     normalize_symbol,
     symbol_base_for_supported_quote,
 )
-from .backtest import calibrate_threshold_for_backtest, risk_adjusted_backtest_score, run_backtest
+from .backtest import (
+    calibrate_threshold_for_backtest,
+    risk_adjusted_backtest_score,
+    run_backtest,
+)
 from .binance_archive import (
     archive_listing_items_by_url,
     archive_url_period,
@@ -70,16 +74,37 @@ from .compute import (
     resolve_backend,
 )
 from .commission import apply_offline_commission_floor, apply_verified_commission_rate
-from .config import config_paths, load_runtime, load_strategy, prompt_runtime, save_runtime, save_strategy
+from .config import (
+    config_paths,
+    load_runtime,
+    load_strategy,
+    prompt_runtime,
+    save_runtime,
+    save_strategy,
+)
 from .dashboard import DashboardSnapshot, load_artifact_preview, render_dashboard
 from . import data_workflows
 from .data_coverage import describe_candle_coverage
 from .data_downloader import MarketDataSyncConfig, render_sync_result, sync_market_data
-from .features import FEATURE_NAMES, ModelRow, feature_signature, make_inference_rows, make_rows, normalize_enabled_features
+from .features import (
+    FEATURE_NAMES,
+    ModelRow,
+    feature_signature,
+    make_inference_rows,
+    make_rows,
+    normalize_enabled_features,
+)
 from .api import SymbolConstraints
-from .external_signals import ExternalSignalReport, collect_external_signals, render_external_signal_report
+from .external_signals import (
+    ExternalSignalReport,
+    collect_external_signals,
+    render_external_signal_report,
+)
 from .intervals import interval_milliseconds
-from .liquidity_session import apply_liquidity_session_meta, liquidity_session_adjustment
+from .liquidity_session import (
+    apply_liquidity_session_meta,
+    liquidity_session_adjustment,
+)
 from .live_artifacts import build_live_run_payload
 from .market_data import clean_candles
 from .market_store import MarketDataStore
@@ -138,6 +163,14 @@ from .polymarket_round12_capture import (
     load_round12_capture_manifest,
 )
 from .polymarket_round12_reference import load_round12_confirmation_contract
+from .polymarket_round13 import load_round13_confirmation_contract
+from .polymarket_round13_capture import (
+    POLYMARKET_ROUND13_CAPTURE_DURATION_SECONDS,
+    build_round13_capture_manifest,
+    load_round13_capture_manifest,
+)
+from .polymarket_round13_evaluation import evaluate_round13_confirmation
+from .polymarket_round13_publication import publish_round13_evaluation
 from .polymarket_mlp import (
     begin_polymarket_mlp_fit,
     complete_polymarket_mlp_fit,
@@ -362,24 +395,32 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    parser_config = subparsers.add_parser("configure", help="configure Binance credentials and defaults")
+    parser_config = subparsers.add_parser(
+        "configure", help="configure Binance credentials and defaults"
+    )
     parser_config.set_defaults(func=command_configure)
 
-    parser_connect = subparsers.add_parser("connect", help="validate credentials and connectivity")
+    parser_connect = subparsers.add_parser(
+        "connect", help="validate credentials and connectivity"
+    )
     parser_connect.set_defaults(func=command_connect)
 
     parser_roundtrip = subparsers.add_parser(
         "spot-roundtrip",
         help="place a tiny signed spot testnet/demo roundtrip order with balance and filter prechecks",
     )
-    parser_roundtrip.add_argument("--quantity", type=float, default=0.00008, help="base-asset quantity to test")
+    parser_roundtrip.add_argument(
+        "--quantity", type=float, default=0.00008, help="base-asset quantity to test"
+    )
     parser_roundtrip.add_argument(
         "--mode",
         choices=["auto", "buy-sell", "sell-buy"],
         default="auto",
         help="order sequence; auto buys first when quote balance is available, otherwise sells first when base balance is available",
     )
-    parser_roundtrip.add_argument("--yes", action="store_true", help="confirm signed testnet/demo order placement")
+    parser_roundtrip.add_argument(
+        "--yes", action="store_true", help="confirm signed testnet/demo order placement"
+    )
     parser_roundtrip.set_defaults(func=command_spot_roundtrip)
 
     parser_doctor = subparsers.add_parser(
@@ -388,19 +429,36 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_doctor.add_argument("--input", default="data/historical_market.json")
     parser_doctor.add_argument("--model", default="data/model.json")
-    parser_doctor.add_argument("--online", action="store_true", help="also check exchange connectivity")
+    parser_doctor.add_argument(
+        "--online", action="store_true", help="also check exchange connectivity"
+    )
     parser_doctor.set_defaults(func=command_doctor)
 
-    parser_audit = subparsers.add_parser("audit", help="run local data/model/risk diagnostics without network calls")
+    parser_audit = subparsers.add_parser(
+        "audit", help="run local data/model/risk diagnostics without network calls"
+    )
     parser_audit.add_argument("--input", default="data/historical_market.json")
     parser_audit.add_argument("--model", default="data/model.json")
     parser_audit.set_defaults(func=command_audit)
 
-    parser_risk = subparsers.add_parser("risk", help="show local risk policy before paper or live trading")
+    parser_risk = subparsers.add_parser(
+        "risk", help="show local risk policy before paper or live trading"
+    )
     parser_risk.add_argument("--model", default="data/model.json")
-    parser_risk.add_argument("--paper", action="store_true", help="assess paper/dry-run execution")
-    parser_risk.add_argument("--live", action="store_true", help="assess authenticated testnet/demo execution")
-    parser_risk.add_argument("--leverage", type=float, default=None, help="optional futures leverage override")
+    parser_risk.add_argument(
+        "--paper", action="store_true", help="assess paper/dry-run execution"
+    )
+    parser_risk.add_argument(
+        "--live",
+        action="store_true",
+        help="assess authenticated testnet/demo execution",
+    )
+    parser_risk.add_argument(
+        "--leverage",
+        type=float,
+        default=None,
+        help="optional futures leverage override",
+    )
     parser_risk.add_argument("--json", action="store_true")
     parser_risk.set_defaults(func=command_risk)
 
@@ -409,20 +467,40 @@ def _build_parser() -> argparse.ArgumentParser:
         help="compare signed exchange exposure with the local autonomous position ledger",
     )
     parser_reconcile.add_argument("--json", action="store_true")
-    parser_reconcile.add_argument("--output", default="data/autonomous/reconciliation.json")
+    parser_reconcile.add_argument(
+        "--output", default="data/autonomous/reconciliation.json"
+    )
     parser_reconcile.add_argument("--quantity-tolerance", type=float, default=1e-8)
     parser_reconcile.set_defaults(func=command_reconcile)
 
-    parser_universe = subparsers.add_parser("universe", help="measure BTC/ETH/SOL high-liquidity eligibility")
-    parser_universe.add_argument("--symbols", default=None, help="comma-separated symbols; default uses runtime.symbols")
+    parser_universe = subparsers.add_parser(
+        "universe", help="measure BTC/ETH/SOL high-liquidity eligibility"
+    )
+    parser_universe.add_argument(
+        "--symbols",
+        default=None,
+        help="comma-separated symbols; default uses runtime.symbols",
+    )
     parser_universe.add_argument("--json", action="store_true")
     parser_universe.set_defaults(func=command_universe)
 
-    parser_report = subparsers.add_parser("report", help="show dashboard, artifacts, and optional readiness checks")
-    parser_report.add_argument("--account", action="store_true", help="include authenticated account state")
-    parser_report.add_argument("--doctor", action="store_true", help="include readiness checks")
-    parser_report.add_argument("--no-doctor", action="store_false", dest="doctor", help="omit readiness checks")
-    parser_report.add_argument("--online", action="store_true", help="include exchange connectivity in readiness checks")
+    parser_report = subparsers.add_parser(
+        "report", help="show dashboard, artifacts, and optional readiness checks"
+    )
+    parser_report.add_argument(
+        "--account", action="store_true", help="include authenticated account state"
+    )
+    parser_report.add_argument(
+        "--doctor", action="store_true", help="include readiness checks"
+    )
+    parser_report.add_argument(
+        "--no-doctor", action="store_false", dest="doctor", help="omit readiness checks"
+    )
+    parser_report.add_argument(
+        "--online",
+        action="store_true",
+        help="include exchange connectivity in readiness checks",
+    )
     parser_report.add_argument("--input", default="data/historical_market.json")
     parser_report.add_argument("--model", default="data/model.json")
     parser_report.set_defaults(doctor=True)
@@ -437,14 +515,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_coordinator.add_argument("--json", action="store_true")
     parser_coordinator.set_defaults(func=command_coordinator)
 
-    parser_menu = subparsers.add_parser("menu", help="launch the full-screen operator console")
+    parser_menu = subparsers.add_parser(
+        "menu", help="launch the full-screen operator console"
+    )
     parser_menu.set_defaults(func=command_menu)
 
     parser_fetch = subparsers.add_parser("fetch", help="download symbol klines")
     parser_fetch.add_argument("--symbol", default=None)
     parser_fetch.add_argument("--interval", default=None)
     parser_fetch.add_argument("--limit", type=int, default=500)
-    parser_fetch.add_argument("--batch-size", type=int, default=1000, help="klines per request (spot max 1000, futures max 1500)")
+    parser_fetch.add_argument(
+        "--batch-size",
+        type=int,
+        default=1000,
+        help="klines per request (spot max 1000, futures max 1500)",
+    )
     parser_fetch.add_argument("--output", default="data/historical_market.json")
     parser_fetch.set_defaults(func=command_fetch)
 
@@ -463,12 +548,29 @@ def _build_parser() -> argparse.ArgumentParser:
         help="page historical klines backward until the exchange has no older closed candles",
     )
     parser_data_sync.add_argument("--batch-size", type=int, default=1000)
-    parser_data_sync.add_argument("--include-futures-metrics", action="store_true", default=True)
-    parser_data_sync.add_argument("--no-include-futures-metrics", action="store_false", dest="include_futures_metrics")
-    parser_data_sync.add_argument("--loop", action="store_true", help="keep syncing in the foreground")
-    parser_data_sync.add_argument("--iterations", type=int, default=1, help="foreground loop iterations; 0 means unlimited")
-    parser_data_sync.add_argument("--sleep", type=int, default=300, help="seconds between loop iterations")
-    parser_data_sync.add_argument("--background", action="store_true", help="start a detached downloader process")
+    parser_data_sync.add_argument(
+        "--include-futures-metrics", action="store_true", default=True
+    )
+    parser_data_sync.add_argument(
+        "--no-include-futures-metrics",
+        action="store_false",
+        dest="include_futures_metrics",
+    )
+    parser_data_sync.add_argument(
+        "--loop", action="store_true", help="keep syncing in the foreground"
+    )
+    parser_data_sync.add_argument(
+        "--iterations",
+        type=int,
+        default=1,
+        help="foreground loop iterations; 0 means unlimited",
+    )
+    parser_data_sync.add_argument(
+        "--sleep", type=int, default=300, help="seconds between loop iterations"
+    )
+    parser_data_sync.add_argument(
+        "--background", action="store_true", help="start a detached downloader process"
+    )
     parser_data_sync.add_argument("--pid-file", default="data/market_data_sync.pid")
     parser_data_sync.add_argument("--log-file", default="data/market_data_sync.log")
     parser_data_sync.add_argument("--json", action="store_true")
@@ -480,9 +582,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_data_health.add_argument("--db", default="data/market_data.sqlite")
     parser_data_health.add_argument("--symbol", default=None)
-    parser_data_health.add_argument("--symbols", default=None, help="comma-separated symbols; defaults to stored series")
+    parser_data_health.add_argument(
+        "--symbols",
+        default=None,
+        help="comma-separated symbols; defaults to stored series",
+    )
     parser_data_health.add_argument("--interval", default=None)
-    parser_data_health.add_argument("--market", choices=["spot", "futures"], default=None)
+    parser_data_health.add_argument(
+        "--market", choices=["spot", "futures"], default=None
+    )
     parser_data_health.add_argument("--min-rows", type=int, default=0)
     parser_data_health.add_argument("--min-coverage-ratio", type=float, default=0.995)
     parser_data_health.add_argument("--max-gap-count", type=int, default=0)
@@ -495,11 +603,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help="show cached or refreshed Binance API used-weight and order-count budget",
     )
     parser_api_budget.add_argument("--db", default="data/market_data.sqlite")
-    parser_api_budget.add_argument("--market", choices=["spot", "futures"], default=None)
-    parser_api_budget.add_argument("--refresh", action="store_true", help="query Binance exchangeInfo once and cache the latest headers")
-    parser_api_budget.add_argument("--cached-only", action="store_true", help="do not refresh even when the cached sample is stale")
-    parser_api_budget.add_argument("--max-age-seconds", type=int, default=90, help="automatic refresh threshold for cached status")
-    parser_api_budget.add_argument("--compact", action="store_true", help="print one status-bar friendly line")
+    parser_api_budget.add_argument(
+        "--market", choices=["spot", "futures"], default=None
+    )
+    parser_api_budget.add_argument(
+        "--refresh",
+        action="store_true",
+        help="query Binance exchangeInfo once and cache the latest headers",
+    )
+    parser_api_budget.add_argument(
+        "--cached-only",
+        action="store_true",
+        help="do not refresh even when the cached sample is stale",
+    )
+    parser_api_budget.add_argument(
+        "--max-age-seconds",
+        type=int,
+        default=90,
+        help="automatic refresh threshold for cached status",
+    )
+    parser_api_budget.add_argument(
+        "--compact", action="store_true", help="print one status-bar friendly line"
+    )
     parser_api_budget.add_argument("--json", action="store_true")
     parser_api_budget.set_defaults(func=command_api_budget)
 
@@ -512,9 +637,13 @@ def _build_parser() -> argparse.ArgumentParser:
             "places an order."
         ),
     )
-    parser_polymarket_record.add_argument("--database", default="data/polymarket-paper.duckdb")
+    parser_polymarket_record.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
     parser_polymarket_record.add_argument("--duration-seconds", type=int, default=300)
-    parser_polymarket_record.add_argument("--discovery-interval-seconds", type=int, default=60)
+    parser_polymarket_record.add_argument(
+        "--discovery-interval-seconds", type=int, default=60
+    )
     parser_polymarket_record.add_argument("--queue-capacity", type=int, default=500_000)
     parser_polymarket_record.add_argument("--memory-limit", default="4GB")
     parser_polymarket_record.add_argument("--database-threads", type=int, default=2)
@@ -529,13 +658,25 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="optional atomic JSON sidecar for CLI/app progress",
     )
-    parser_polymarket_record.add_argument(
+    parser_polymarket_record_contract = (
+        parser_polymarket_record.add_mutually_exclusive_group()
+    )
+    parser_polymarket_record_contract.add_argument(
         "--round12-contract",
         default=None,
         metavar="PATH",
         help=(
             "require a clean committed Round 12 preregistration manifest before "
             "the first captured message"
+        ),
+    )
+    parser_polymarket_record_contract.add_argument(
+        "--round13-contract",
+        default=None,
+        metavar="PATH",
+        help=(
+            "require the clean committed sealed Round 13 capture manifest before "
+            "the first public message"
         ),
     )
     parser_polymarket_record.add_argument("--json", action="store_true")
@@ -594,12 +735,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser_polymarket_action_value = subparsers.add_parser(
         "polymarket-action-value",
-        help="materialize bounded causal Polymarket execution labels",
+        help="materialize bounded causal Polymarket execution evidence",
         description=(
-            "Build the frozen Round 9 BTC/ETH/SOL action-value dataset in "
-            "resumable synchronized market batches. Segmented evidence is accepted "
-            "only after the built-in label-free continuity audit retains at least "
-            "30 post-contract synchronized groups."
+            "Build hash-bound BTC/ETH/SOL action-value evidence in resumable "
+            "synchronized market batches. A sealed Round 13 run additionally "
+            "materializes label-free treatment, control, and stress decisions "
+            "before official outcomes can be requested."
         ),
     )
     parser_polymarket_action_value.add_argument(
@@ -621,7 +762,10 @@ def _build_parser() -> argparse.ArgumentParser:
             "eligible synchronized groups"
         ),
     )
-    parser_polymarket_action_value.add_argument(
+    parser_polymarket_action_contract = (
+        parser_polymarket_action_value.add_mutually_exclusive_group()
+    )
+    parser_polymarket_action_contract.add_argument(
         "--round12-contract",
         default=None,
         metavar="PATH",
@@ -630,9 +774,74 @@ def _build_parser() -> argparse.ArgumentParser:
             "admission across the complete synchronized capture scope"
         ),
     )
+    parser_polymarket_action_contract.add_argument(
+        "--round13-contract",
+        default=None,
+        metavar="PATH",
+        help=(
+            "materialize the sealed Round 13 label-free treatment, raw-prior "
+            "control, and execution stresses before outcome access"
+        ),
+    )
     parser_polymarket_action_value.add_argument("--json", action="store_true")
-    parser_polymarket_action_value.set_defaults(
-        func=command_polymarket_action_value
+    parser_polymarket_action_value.set_defaults(func=command_polymarket_action_value)
+
+    parser_polymarket_round13_evaluate = subparsers.add_parser(
+        "polymarket-round13-evaluate",
+        help="consume and score one sealed Round 13 confirmation exactly once",
+        description=(
+            "Revalidate the complete recorder and label-free action pipeline, commit "
+            "the one-use claim, then fetch dual-source official resolutions and score "
+            "all frozen execution stresses. This command never places an order."
+        ),
+    )
+    parser_polymarket_round13_evaluate.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_round13_evaluate.add_argument("--run-id", required=True)
+    parser_polymarket_round13_evaluate.add_argument(
+        "--pipeline-report-sha256", required=True
+    )
+    parser_polymarket_round13_evaluate.add_argument(
+        "--contract", required=True, metavar="PATH"
+    )
+    parser_polymarket_round13_evaluate.add_argument(
+        "--resolution-wait-seconds", type=int, default=900
+    )
+    parser_polymarket_round13_evaluate.add_argument(
+        "--resolution-poll-interval-seconds", type=int, default=15
+    )
+    parser_polymarket_round13_evaluate.add_argument("--memory-limit", default="4GB")
+    parser_polymarket_round13_evaluate.add_argument(
+        "--database-threads", type=int, default=1
+    )
+    parser_polymarket_round13_evaluate.add_argument("--json", action="store_true")
+    parser_polymarket_round13_evaluate.set_defaults(
+        func=command_polymarket_round13_evaluate
+    )
+
+    parser_polymarket_round13_publish = subparsers.add_parser(
+        "polymarket-round13-publish",
+        help="publish exact Round 13 tables and deterministic financial charts",
+        description=(
+            "Atomically replace the latest Polymarket research view from one "
+            "immutable stored evaluation report. Manual chart editing is prohibited."
+        ),
+    )
+    parser_polymarket_round13_publish.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
+    parser_polymarket_round13_publish.add_argument("--report-sha256", required=True)
+    parser_polymarket_round13_publish.add_argument(
+        "--research-root", default="docs/model-research/polymarket"
+    )
+    parser_polymarket_round13_publish.add_argument("--memory-limit", default="1GB")
+    parser_polymarket_round13_publish.add_argument(
+        "--database-threads", type=int, default=1
+    )
+    parser_polymarket_round13_publish.add_argument("--json", action="store_true")
+    parser_polymarket_round13_publish.set_defaults(
+        func=command_polymarket_round13_publish
     )
 
     parser_polymarket_continuity = subparsers.add_parser(
@@ -649,9 +858,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_polymarket_continuity.add_argument("--run-id", required=True)
     parser_polymarket_continuity.add_argument("--memory-limit", default="4GB")
-    parser_polymarket_continuity.add_argument(
-        "--database-threads", type=int, default=1
-    )
+    parser_polymarket_continuity.add_argument("--database-threads", type=int, default=1)
     parser_polymarket_continuity.add_argument("--json", action="store_true")
     parser_polymarket_continuity.set_defaults(func=command_polymarket_continuity)
 
@@ -788,9 +995,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default="docs/ai/risk-review/latest/comparison.json",
         help="frozen adversarial risk benchmark that must select the requested model",
     )
-    parser_polymarket_model.add_argument(
-        "--ai-url", default="http://127.0.0.1:11434"
-    )
+    parser_polymarket_model.add_argument("--ai-url", default="http://127.0.0.1:11434")
     parser_polymarket_model.add_argument("--ai-timeout", type=float, default=30.0)
     parser_polymarket_model.add_argument(
         "--ai-min-confidence", type=float, default=0.65
@@ -871,7 +1076,9 @@ def _build_parser() -> argparse.ArgumentParser:
             "or live-money order path."
         ),
     )
-    parser_polymarket_paper.add_argument("--database", default="data/polymarket-paper.duckdb")
+    parser_polymarket_paper.add_argument(
+        "--database", default="data/polymarket-paper.duckdb"
+    )
     parser_polymarket_paper.add_argument("--run-id", default=None)
     parser_polymarket_paper.add_argument(
         "--action",
@@ -895,7 +1102,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_polymarket_paper.add_argument("--event-id", default=None)
     parser_polymarket_paper.add_argument("--position-id", default=None)
     parser_polymarket_paper.add_argument("--opening-intent-id", default=None)
-    parser_polymarket_paper.add_argument("--outcome", choices=["Up", "Down"], default=None)
+    parser_polymarket_paper.add_argument(
+        "--outcome", choices=["Up", "Down"], default=None
+    )
     parser_polymarket_paper.add_argument("--quantity", default=None)
     parser_polymarket_paper.add_argument("--limit-price", default=None)
     parser_polymarket_paper.add_argument("--latency-ms", type=int, default=None)
@@ -965,10 +1174,24 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_archive_sync.add_argument("--db", default="data/market_data.sqlite")
     parser_archive_sync.add_argument("--symbol", default=None)
-    parser_archive_sync.add_argument("--symbols", default=None, help="comma-separated symbols; overrides --symbol")
-    parser_archive_sync.add_argument("--top-symbols", type=int, default=0, help="auto-rank this many high-liquidity symbols")
-    parser_archive_sync.add_argument("--quote-asset", default=None, help="quote asset used with --top-symbols")
-    parser_archive_sync.add_argument("--max-scan", type=int, default=250, help="maximum universe candidates scanned with --top-symbols")
+    parser_archive_sync.add_argument(
+        "--symbols", default=None, help="comma-separated symbols; overrides --symbol"
+    )
+    parser_archive_sync.add_argument(
+        "--top-symbols",
+        type=int,
+        default=0,
+        help="auto-rank this many high-liquidity symbols",
+    )
+    parser_archive_sync.add_argument(
+        "--quote-asset", default=None, help="quote asset used with --top-symbols"
+    )
+    parser_archive_sync.add_argument(
+        "--max-scan",
+        type=int,
+        default=250,
+        help="maximum universe candidates scanned with --top-symbols",
+    )
     parser_archive_sync.add_argument(
         "--min-history-months",
         type=int,
@@ -976,18 +1199,36 @@ def _build_parser() -> argparse.ArgumentParser:
         help="with --top-symbols and monthly cadence, require this many monthly archive files before selecting a symbol",
     )
     parser_archive_sync.add_argument("--interval", default=None)
-    parser_archive_sync.add_argument("--market", choices=["spot", "futures"], default="spot")
-    parser_archive_sync.add_argument("--cadence", choices=["monthly", "daily"], default="monthly")
+    parser_archive_sync.add_argument(
+        "--market", choices=["spot", "futures"], default="spot"
+    )
+    parser_archive_sync.add_argument(
+        "--cadence", choices=["monthly", "daily"], default="monthly"
+    )
     parser_archive_sync.add_argument(
         "--data-type",
         choices=["klines", "aggTrades"],
         default=None,
         help="official archive data type; futures 1s defaults to aggTrades and aggregates real trades to 1s candles",
     )
-    parser_archive_sync.add_argument("--max-files", type=int, default=None, help="optional safety cap for smoke runs")
-    parser_archive_sync.add_argument("--start-period", default=None, help="inclusive archive period start, YYYY-MM or YYYY-MM-DD")
-    parser_archive_sync.add_argument("--end-period", default=None, help="inclusive archive period end, YYYY-MM or YYYY-MM-DD")
-    parser_archive_sync.add_argument("--plan-only", action="store_true", help="list the bounded archive plan without downloading files")
+    parser_archive_sync.add_argument(
+        "--max-files", type=int, default=None, help="optional safety cap for smoke runs"
+    )
+    parser_archive_sync.add_argument(
+        "--start-period",
+        default=None,
+        help="inclusive archive period start, YYYY-MM or YYYY-MM-DD",
+    )
+    parser_archive_sync.add_argument(
+        "--end-period",
+        default=None,
+        help="inclusive archive period end, YYYY-MM or YYYY-MM-DD",
+    )
+    parser_archive_sync.add_argument(
+        "--plan-only",
+        action="store_true",
+        help="list the bounded archive plan without downloading files",
+    )
     parser_archive_sync.add_argument(
         "--progress-path",
         default="data/archive-sync-progress.json",
@@ -1012,8 +1253,16 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also retain every raw aggregate trade for event-time research",
     )
-    parser_archive_sync.add_argument("--no-verify-checksum", action="store_true", help="skip Binance .CHECKSUM sidecar verification")
-    parser_archive_sync.add_argument("--require-checksum", action="store_true", help="fail archive files without a readable .CHECKSUM sidecar")
+    parser_archive_sync.add_argument(
+        "--no-verify-checksum",
+        action="store_true",
+        help="skip Binance .CHECKSUM sidecar verification",
+    )
+    parser_archive_sync.add_argument(
+        "--require-checksum",
+        action="store_true",
+        help="fail archive files without a readable .CHECKSUM sidecar",
+    )
     parser_archive_sync.add_argument("--json", action="store_true")
     parser_archive_sync.set_defaults(func=command_archive_sync)
 
@@ -1037,7 +1286,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="capture and validate raw feeds without producing HftBacktest NPZ files",
     )
     parser_microstructure.add_argument("--json", action="store_true")
-    parser_microstructure.set_defaults(convert=True, func=command_microstructure_capture)
+    parser_microstructure.set_defaults(
+        convert=True, func=command_microstructure_capture
+    )
 
     parser_tick_archive = subparsers.add_parser(
         "tick-archive-sync",
@@ -1053,8 +1304,12 @@ def _build_parser() -> argparse.ArgumentParser:
         default="bookTicker,trades",
         help="comma-separated official products: bookTicker,trades,bookDepth",
     )
-    parser_tick_archive.add_argument("--start-date", default=None, help="inclusive UTC date, YYYY-MM-DD")
-    parser_tick_archive.add_argument("--end-date", default=None, help="inclusive UTC date, YYYY-MM-DD")
+    parser_tick_archive.add_argument(
+        "--start-date", default=None, help="inclusive UTC date, YYYY-MM-DD"
+    )
+    parser_tick_archive.add_argument(
+        "--end-date", default=None, help="inclusive UTC date, YYYY-MM-DD"
+    )
     parser_tick_archive.add_argument(
         "--full-history",
         action="store_true",
@@ -1081,7 +1336,9 @@ def _build_parser() -> argparse.ArgumentParser:
         default=500.0,
         help="block downloads above this official compressed-byte plan; use 0 to disable",
     )
-    parser_tick_archive.add_argument("--warehouse", default="data/microstructure.duckdb")
+    parser_tick_archive.add_argument(
+        "--warehouse", default="data/microstructure.duckdb"
+    )
     parser_tick_archive.add_argument("--cache-root", default="data/archive-cache")
     parser_tick_archive.add_argument("--memory-limit", default="8GB")
     parser_tick_archive.add_argument("--threads", type=int, default=8)
@@ -1135,7 +1392,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_train.add_argument("--symbol", default="BTCUSDT")
     parser_micro_train.add_argument("--warehouse", default="data/microstructure.duckdb")
     parser_micro_train.add_argument("--cache-root", default="data/archive-cache")
-    parser_micro_train.add_argument("--output", default="data/microstructure-model.json")
+    parser_micro_train.add_argument(
+        "--output", default="data/microstructure-model.json"
+    )
     parser_micro_train.add_argument("--horizon-seconds", type=int, default=900)
     parser_micro_train.add_argument(
         "--decision-cadence-seconds",
@@ -1224,7 +1483,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_micro_train.add_argument("--memory-limit", default="8GB")
     parser_micro_train.add_argument("--threads", type=int, default=8)
     parser_micro_train.add_argument("--json", action="store_true")
-    parser_micro_train.set_defaults(evaluate_terminal=False, func=command_microstructure_train)
+    parser_micro_train.set_defaults(
+        evaluate_terminal=False, func=command_microstructure_train
+    )
 
     parser_micro_prequential = subparsers.add_parser(
         "microstructure-prequential",
@@ -1251,12 +1512,20 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=_COMPUTE_BACKEND_CHOICES,
         default="auto",
     )
-    parser_micro_prequential.add_argument("--training-window-days", type=int, default=180)
-    parser_micro_prequential.add_argument("--minimum-training-days", type=int, default=60)
+    parser_micro_prequential.add_argument(
+        "--training-window-days", type=int, default=180
+    )
+    parser_micro_prequential.add_argument(
+        "--minimum-training-days", type=int, default=60
+    )
     parser_micro_prequential.add_argument("--calibration-days", type=int, default=14)
     parser_micro_prequential.add_argument("--policy-days", type=int, default=14)
-    parser_micro_prequential.add_argument("--evaluation-block-days", type=int, default=7)
-    parser_micro_prequential.add_argument("--minimum-segment-rows", type=int, default=256)
+    parser_micro_prequential.add_argument(
+        "--evaluation-block-days", type=int, default=7
+    )
+    parser_micro_prequential.add_argument(
+        "--minimum-segment-rows", type=int, default=256
+    )
     parser_micro_prequential.add_argument("--minimum-class-rows", type=int, default=128)
     parser_micro_prequential.add_argument("--bootstrap-samples", type=int, default=2000)
     parser_micro_prequential.add_argument(
@@ -1324,7 +1593,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "microstructure-shadow",
         help="run the locked no-order public-feed shadow gate for a deployment refit",
     )
-    parser_micro_shadow.add_argument("--input", default="data/microstructure-model.json")
+    parser_micro_shadow.add_argument(
+        "--input", default="data/microstructure-model.json"
+    )
     parser_micro_shadow.add_argument("--output", default=None)
     parser_micro_shadow.add_argument(
         "--seconds",
@@ -1398,7 +1669,9 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=_COMPUTE_BACKEND_CHOICES,
         default="auto",
     )
-    parser_tape_depth_train.add_argument("--minimum-segment-rows", type=int, default=2_000)
+    parser_tape_depth_train.add_argument(
+        "--minimum-segment-rows", type=int, default=2_000
+    )
     parser_tape_depth_train.add_argument("--maximum-rows", type=int, default=5_000_000)
     parser_tape_depth_train.add_argument("--memory-limit", default="8GB")
     parser_tape_depth_train.add_argument("--threads", type=int, default=8)
@@ -1427,9 +1700,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "tape-depth-study",
         help="run and checkpoint every candidate in a precommitted screening design",
     )
-    parser_tape_depth_study.add_argument(
-        "--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT"
-    )
+    parser_tape_depth_study.add_argument("--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT")
     parser_tape_depth_study.add_argument("--design", required=True)
     parser_tape_depth_study.add_argument(
         "--warehouse", default="data/microstructure.duckdb"
@@ -1438,7 +1709,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tape_depth_study.add_argument(
         "--output-dir", default="data/tape-depth-study"
     )
-    parser_tape_depth_study.add_argument("--training-window-days", type=int, default=730)
+    parser_tape_depth_study.add_argument(
+        "--training-window-days", type=int, default=730
+    )
     parser_tape_depth_study.add_argument("--tuning-window-days", type=int, default=30)
     parser_tape_depth_study.add_argument(
         "--calibration-window-days", type=int, default=30
@@ -1511,7 +1784,9 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="default 60; sealed confirmation derives the frozen winner",
     )
-    parser_tape_depth_prequential.add_argument("--total-latency-ms", type=int, default=750)
+    parser_tape_depth_prequential.add_argument(
+        "--total-latency-ms", type=int, default=750
+    )
     parser_tape_depth_prequential.add_argument(
         "--decision-cadence-seconds",
         type=int,
@@ -1524,7 +1799,9 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="default 60000; sealed confirmation derives the frozen winner",
     )
-    parser_tape_depth_prequential.add_argument("--maximum-rows", type=int, default=5_000_000)
+    parser_tape_depth_prequential.add_argument(
+        "--maximum-rows", type=int, default=5_000_000
+    )
     parser_tape_depth_prequential.add_argument(
         "--maximum-cached-rows", type=int, default=15_000_000
     )
@@ -1641,16 +1918,22 @@ def _build_parser() -> argparse.ArgumentParser:
         func=command_tape_depth_execution_confirm
     )
 
-    parser_train = subparsers.add_parser("train", help="train model from cached candles")
+    parser_train = subparsers.add_parser(
+        "train", help="train model from cached candles"
+    )
     parser_train.add_argument("--input", default="data/historical_market.json")
     parser_train.add_argument("--output", default="data/model.json")
-    parser_train.add_argument("--source", choices=["auto", "file", "db"], default="auto")
+    parser_train.add_argument(
+        "--source", choices=["auto", "file", "db"], default="auto"
+    )
     parser_train.add_argument("--db", default="data/market_data.sqlite")
     parser_train.add_argument("--interval", default=None)
     parser_train.add_argument("--market", choices=["spot", "futures"], default=None)
     parser_train.add_argument("--min-rows", type=int, default=120)
     parser_train.add_argument("--download-missing", action="store_true")
-    parser_train.add_argument("--preset", choices=sorted(_TRAINING_PRESETS), default="custom")
+    parser_train.add_argument(
+        "--preset", choices=sorted(_TRAINING_PRESETS), default="custom"
+    )
     parser_train.add_argument("--epochs", type=int, default=250)
     parser_train.add_argument("--learning-rate", type=float, default=0.05)
     parser_train.add_argument("--l2-penalty", type=float, default=1e-4)
@@ -1661,37 +1944,96 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="training backend override; default uses saved runtime compute_backend",
     )
-    parser_train.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for GPU training")
-    parser_train.add_argument("--walk-forward", action="store_true", help="run walk-forward validation before final training")
+    parser_train.add_argument(
+        "--batch-size", type=int, default=8192, help="mini-batch size for GPU training"
+    )
+    parser_train.add_argument(
+        "--walk-forward",
+        action="store_true",
+        help="run walk-forward validation before final training",
+    )
     parser_train.add_argument("--walk-forward-train", type=int, default=300)
     parser_train.add_argument("--walk-forward-test", type=int, default=60)
     parser_train.add_argument("--walk-forward-step", type=int, default=30)
-    parser_train.add_argument("--calibrate-threshold", action="store_true", help="optimize a probability threshold on validation split")
+    parser_train.add_argument(
+        "--calibrate-threshold",
+        action="store_true",
+        help="optimize a probability threshold on validation split",
+    )
     parser_train.set_defaults(func=command_train)
 
-    parser_prepare = subparsers.add_parser("prepare", help="fetch, train, evaluate, backtest, then run readiness checks")
+    parser_prepare = subparsers.add_parser(
+        "prepare", help="fetch, train, evaluate, backtest, then run readiness checks"
+    )
     parser_prepare.add_argument("--historical", default="data/historical_market.json")
     parser_prepare.add_argument("--model", default="data/model.json")
     parser_prepare.add_argument("--limit", type=int, default=500)
-    parser_prepare.add_argument("--batch-size", type=int, default=1000, help="klines per fetch request (spot max 1000, futures max 1500)")
-    parser_prepare.add_argument("--preset", choices=sorted(_TRAINING_PRESETS), default="balanced")
-    parser_prepare.add_argument("--epochs", type=int, default=None, help="override preset training epochs")
+    parser_prepare.add_argument(
+        "--batch-size",
+        type=int,
+        default=1000,
+        help="klines per fetch request (spot max 1000, futures max 1500)",
+    )
+    parser_prepare.add_argument(
+        "--preset", choices=sorted(_TRAINING_PRESETS), default="balanced"
+    )
+    parser_prepare.add_argument(
+        "--epochs", type=int, default=None, help="override preset training epochs"
+    )
     parser_prepare.add_argument("--learning-rate", type=float, default=0.05)
     parser_prepare.add_argument("--l2-penalty", type=float, default=1e-4)
     parser_prepare.add_argument("--seed", type=int, default=7)
     parser_prepare.add_argument("--start-cash", type=float, default=1000.0)
-    parser_prepare.add_argument("--walk-forward", action="store_true", dest="walk_forward", help="force walk-forward validation")
-    parser_prepare.add_argument("--no-walk-forward", action="store_false", dest="walk_forward", help="skip walk-forward validation")
-    parser_prepare.add_argument("--walk-forward-train", type=int, default=None, help="override walk-forward training window")
-    parser_prepare.add_argument("--walk-forward-test", type=int, default=None, help="override walk-forward test window")
-    parser_prepare.add_argument("--walk-forward-step", type=int, default=None, help="override walk-forward step")
-    parser_prepare.add_argument("--calibrate-threshold", action="store_true", dest="calibrate_threshold", help="force threshold calibration")
-    parser_prepare.add_argument("--no-calibrate-threshold", action="store_false", dest="calibrate_threshold", help="skip threshold calibration")
+    parser_prepare.add_argument(
+        "--walk-forward",
+        action="store_true",
+        dest="walk_forward",
+        help="force walk-forward validation",
+    )
+    parser_prepare.add_argument(
+        "--no-walk-forward",
+        action="store_false",
+        dest="walk_forward",
+        help="skip walk-forward validation",
+    )
+    parser_prepare.add_argument(
+        "--walk-forward-train",
+        type=int,
+        default=None,
+        help="override walk-forward training window",
+    )
+    parser_prepare.add_argument(
+        "--walk-forward-test",
+        type=int,
+        default=None,
+        help="override walk-forward test window",
+    )
+    parser_prepare.add_argument(
+        "--walk-forward-step", type=int, default=None, help="override walk-forward step"
+    )
+    parser_prepare.add_argument(
+        "--calibrate-threshold",
+        action="store_true",
+        dest="calibrate_threshold",
+        help="force threshold calibration",
+    )
+    parser_prepare.add_argument(
+        "--no-calibrate-threshold",
+        action="store_false",
+        dest="calibrate_threshold",
+        help="skip threshold calibration",
+    )
     parser_prepare.set_defaults(walk_forward=None, calibrate_threshold=None)
-    parser_prepare.add_argument("--online-doctor", action="store_true", help="include exchange connectivity in final readiness checks")
+    parser_prepare.add_argument(
+        "--online-doctor",
+        action="store_true",
+        help="include exchange connectivity in final readiness checks",
+    )
     parser_prepare.set_defaults(func=command_prepare)
 
-    parser_tune = subparsers.add_parser("tune", help="perform a focused walk-forward tune over few risk parameters")
+    parser_tune = subparsers.add_parser(
+        "tune", help="perform a focused walk-forward tune over few risk parameters"
+    )
     parser_tune.add_argument("--input", default="data/historical_market.json")
     parser_tune.add_argument("--save-best", action="store_true")
     parser_tune.add_argument("--min-risk", type=float, default=0.002)
@@ -1705,14 +2047,36 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tune.add_argument("--max-take", type=float, default=0.06)
     parser_tune.add_argument("--min-stop", type=float, default=0.008)
     parser_tune.add_argument("--max-stop", type=float, default=0.04)
-    parser_tune.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
-    parser_tune.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for accelerated tuning")
-    parser_tune.add_argument("--lookback-days", type=int, default=None, help="use only the most recent N days of candles for tuning")
-    parser_tune.add_argument("--from-date", default=None, help="inclusive start date for tuning window (YYYY-MM-DD)")
-    parser_tune.add_argument("--to-date", default=None, help="inclusive end date for tuning window (YYYY-MM-DD)")
+    parser_tune.add_argument(
+        "--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None
+    )
+    parser_tune.add_argument(
+        "--batch-size",
+        type=int,
+        default=8192,
+        help="mini-batch size for accelerated tuning",
+    )
+    parser_tune.add_argument(
+        "--lookback-days",
+        type=int,
+        default=None,
+        help="use only the most recent N days of candles for tuning",
+    )
+    parser_tune.add_argument(
+        "--from-date",
+        default=None,
+        help="inclusive start date for tuning window (YYYY-MM-DD)",
+    )
+    parser_tune.add_argument(
+        "--to-date",
+        default=None,
+        help="inclusive end date for tuning window (YYYY-MM-DD)",
+    )
     parser_tune.set_defaults(func=command_tune)
 
-    parser_backtest = subparsers.add_parser("backtest", help="run backtest against cached data")
+    parser_backtest = subparsers.add_parser(
+        "backtest", help="run backtest against cached data"
+    )
     parser_backtest.add_argument("--input", default="data/historical_market.json")
     parser_backtest.add_argument("--model", default="data/model.json")
     parser_backtest.add_argument("--start-cash", type=float, default=1000.0)
@@ -1735,12 +2099,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_backtest.set_defaults(func=command_backtest)
 
-    parser_backtest_chart = subparsers.add_parser("backtest-chart", help="run backtest and save an SVG performance chart")
+    parser_backtest_chart = subparsers.add_parser(
+        "backtest-chart", help="run backtest and save an SVG performance chart"
+    )
     parser_backtest_chart.add_argument("--input", default="data/historical_market.json")
     parser_backtest_chart.add_argument("--model", default="data/model.json")
-    parser_backtest_chart.add_argument("--output", default="data/backtest_performance.svg")
+    parser_backtest_chart.add_argument(
+        "--output", default="data/backtest_performance.svg"
+    )
     parser_backtest_chart.add_argument("--start-cash", type=float, default=1000.0)
-    parser_backtest_chart.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_backtest_chart.add_argument(
+        "--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None
+    )
     parser_backtest_chart.add_argument("--score-batch-size", type=int, default=8192)
     parser_backtest_chart.add_argument(
         "--execution-db",
@@ -1749,7 +2119,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_backtest_chart.set_defaults(func=command_backtest_chart)
 
-    parser_evaluate = subparsers.add_parser("evaluate", help="evaluate saved model against cached candles")
+    parser_evaluate = subparsers.add_parser(
+        "evaluate", help="evaluate saved model against cached candles"
+    )
     parser_evaluate.add_argument("--input", default="data/historical_market.json")
     parser_evaluate.add_argument("--model", default="data/model.json")
     parser_evaluate.add_argument("--threshold", type=float, default=None)
@@ -1760,12 +2132,34 @@ def _build_parser() -> argparse.ArgumentParser:
         "signals",
         help="fetch and cache free external market signal checks used by live mode",
     )
-    parser_signals.add_argument("--model", default="data/model.json", help="model path used to derive default cache location")
-    parser_signals.add_argument("--cache", default=None, help="signal cache path (default: model-adjacent data/signals)")
-    parser_signals.add_argument("--ttl", type=int, default=300, help="cache TTL seconds")
-    parser_signals.add_argument("--timeout", type=float, default=3.0, help="per-provider timeout seconds")
-    parser_signals.add_argument("--max-adjustment", type=float, default=0.04, help="maximum model score adjustment")
-    parser_signals.add_argument("--min-providers", type=int, default=2, help="minimum usable providers for positive boosts")
+    parser_signals.add_argument(
+        "--model",
+        default="data/model.json",
+        help="model path used to derive default cache location",
+    )
+    parser_signals.add_argument(
+        "--cache",
+        default=None,
+        help="signal cache path (default: model-adjacent data/signals)",
+    )
+    parser_signals.add_argument(
+        "--ttl", type=int, default=300, help="cache TTL seconds"
+    )
+    parser_signals.add_argument(
+        "--timeout", type=float, default=3.0, help="per-provider timeout seconds"
+    )
+    parser_signals.add_argument(
+        "--max-adjustment",
+        type=float,
+        default=0.04,
+        help="maximum model score adjustment",
+    )
+    parser_signals.add_argument(
+        "--min-providers",
+        type=int,
+        default=2,
+        help="minimum usable providers for positive boosts",
+    )
     parser_signals.add_argument(
         "--compute-backend",
         choices=_COMPUTE_BACKEND_CHOICES,
@@ -1778,41 +2172,112 @@ def _build_parser() -> argparse.ArgumentParser:
         default=30,
         help="seconds after which cached short-horizon reaction news must refresh",
     )
-    parser_signals.add_argument("--news-provider-limit", type=int, default=None, help="maximum RSS/news providers to poll")
-    parser_signals.add_argument("--news-items-per-provider", type=int, default=None, help="feed items scored per news provider")
-    parser_signals.add_argument("--provider-parallelism", type=int, default=None, help="maximum simultaneous news provider requests")
-    parser_signals.add_argument("--provider-jitter", type=float, default=None, help="random per-provider delay ceiling in seconds")
-    parser_signals.add_argument("--ollama-news", action="store_true", default=None, help="enable Ollama AI headline evaluation")
-    parser_signals.add_argument("--no-ollama-news", action="store_false", dest="ollama_news", help="disable Ollama AI headline evaluation")
+    parser_signals.add_argument(
+        "--news-provider-limit",
+        type=int,
+        default=None,
+        help="maximum RSS/news providers to poll",
+    )
+    parser_signals.add_argument(
+        "--news-items-per-provider",
+        type=int,
+        default=None,
+        help="feed items scored per news provider",
+    )
+    parser_signals.add_argument(
+        "--provider-parallelism",
+        type=int,
+        default=None,
+        help="maximum simultaneous news provider requests",
+    )
+    parser_signals.add_argument(
+        "--provider-jitter",
+        type=float,
+        default=None,
+        help="random per-provider delay ceiling in seconds",
+    )
+    parser_signals.add_argument(
+        "--ollama-news",
+        action="store_true",
+        default=None,
+        help="enable Ollama AI headline evaluation",
+    )
+    parser_signals.add_argument(
+        "--no-ollama-news",
+        action="store_false",
+        dest="ollama_news",
+        help="disable Ollama AI headline evaluation",
+    )
     parser_signals.add_argument("--ollama-model", default=None)
     parser_signals.add_argument("--ollama-url", default=None)
     parser_signals.add_argument("--ollama-timeout", type=float, default=None)
-    parser_signals.add_argument("--telemetry-db", default=None, help="SQLite raw telemetry DB path")
-    parser_signals.add_argument("--source-grade-max-age-hours", type=float, default=None, help="ignore source grades older than this; 0 disables the age cap")
-    parser_signals.add_argument("--no-telemetry", action="store_true", help="do not journal raw provider/model payloads")
-    parser_signals.add_argument("--loop", action="store_true", help="poll repeatedly with jitter instead of one collection")
-    parser_signals.add_argument("--iterations", type=int, default=0, help="loop iterations; 0 means until interrupted")
-    parser_signals.add_argument("--sleep", type=float, default=None, help="base loop interval seconds")
-    parser_signals.add_argument("--jitter", type=float, default=None, help="random loop delay ceiling in seconds")
-    parser_signals.add_argument("--refresh", action="store_true", help="ignore cache and fetch every provider")
-    parser_signals.add_argument("--json", action="store_true", help="print machine-readable report")
+    parser_signals.add_argument(
+        "--telemetry-db", default=None, help="SQLite raw telemetry DB path"
+    )
+    parser_signals.add_argument(
+        "--source-grade-max-age-hours",
+        type=float,
+        default=None,
+        help="ignore source grades older than this; 0 disables the age cap",
+    )
+    parser_signals.add_argument(
+        "--no-telemetry",
+        action="store_true",
+        help="do not journal raw provider/model payloads",
+    )
+    parser_signals.add_argument(
+        "--loop",
+        action="store_true",
+        help="poll repeatedly with jitter instead of one collection",
+    )
+    parser_signals.add_argument(
+        "--iterations",
+        type=int,
+        default=0,
+        help="loop iterations; 0 means until interrupted",
+    )
+    parser_signals.add_argument(
+        "--sleep", type=float, default=None, help="base loop interval seconds"
+    )
+    parser_signals.add_argument(
+        "--jitter",
+        type=float,
+        default=None,
+        help="random loop delay ceiling in seconds",
+    )
+    parser_signals.add_argument(
+        "--refresh", action="store_true", help="ignore cache and fetch every provider"
+    )
+    parser_signals.add_argument(
+        "--json", action="store_true", help="print machine-readable report"
+    )
     parser_signals.set_defaults(func=command_signals)
 
     parser_signals_benchmark = subparsers.add_parser(
         "signals-benchmark",
         help="benchmark provider polling limits, parallelism, and optional Ollama latency",
     )
-    parser_signals_benchmark.add_argument("--provider-limit", action="append", type=int, default=None)
-    parser_signals_benchmark.add_argument("--parallelism", action="append", type=int, default=None)
+    parser_signals_benchmark.add_argument(
+        "--provider-limit", action="append", type=int, default=None
+    )
+    parser_signals_benchmark.add_argument(
+        "--parallelism", action="append", type=int, default=None
+    )
     parser_signals_benchmark.add_argument("--iterations", type=int, default=1)
     parser_signals_benchmark.add_argument("--timeout", type=float, default=3.0)
     parser_signals_benchmark.add_argument("--provider-jitter", type=float, default=0.0)
-    parser_signals_benchmark.add_argument("--ollama-news", action="store_true", default=None)
-    parser_signals_benchmark.add_argument("--no-ollama-news", action="store_false", dest="ollama_news")
+    parser_signals_benchmark.add_argument(
+        "--ollama-news", action="store_true", default=None
+    )
+    parser_signals_benchmark.add_argument(
+        "--no-ollama-news", action="store_false", dest="ollama_news"
+    )
     parser_signals_benchmark.add_argument("--ollama-model", default=None)
     parser_signals_benchmark.add_argument("--ollama-url", default=None)
     parser_signals_benchmark.add_argument("--ollama-timeout", type=float, default=None)
-    parser_signals_benchmark.add_argument("--cache", default="data/signals/benchmark_external_signals.json")
+    parser_signals_benchmark.add_argument(
+        "--cache", default="data/signals/benchmark_external_signals.json"
+    )
     parser_signals_benchmark.add_argument("--no-telemetry", action="store_true")
     parser_signals_benchmark.add_argument("--json", action="store_true")
     parser_signals_benchmark.set_defaults(func=command_signals_benchmark)
@@ -1821,21 +2286,37 @@ def _build_parser() -> argparse.ArgumentParser:
         "source-grades",
         help="grade raw signal/news/model sources from telemetry with optional Ollama review",
     )
-    parser_source_grades.add_argument("--db", default=None, help="SQLite raw telemetry DB path")
+    parser_source_grades.add_argument(
+        "--db", default=None, help="SQLite raw telemetry DB path"
+    )
     parser_source_grades.add_argument("--window-hours", type=float, default=None)
-    parser_source_grades.add_argument("--ollama", action="store_true", default=None, help="enable Ollama grading")
-    parser_source_grades.add_argument("--no-ollama", action="store_false", dest="ollama", help="disable Ollama grading")
+    parser_source_grades.add_argument(
+        "--ollama", action="store_true", default=None, help="enable Ollama grading"
+    )
+    parser_source_grades.add_argument(
+        "--no-ollama",
+        action="store_false",
+        dest="ollama",
+        help="disable Ollama grading",
+    )
     parser_source_grades.add_argument("--ollama-model", default=None)
     parser_source_grades.add_argument("--ollama-url", default=None)
     parser_source_grades.add_argument("--ollama-timeout", type=float, default=None)
     parser_source_grades.add_argument("--json", action="store_true")
     parser_source_grades.set_defaults(func=command_source_grades)
 
-    parser_live = subparsers.add_parser("live", help="run a conservative live loop on testnet/demo or paper mode")
+    parser_live = subparsers.add_parser(
+        "live", help="run a conservative live loop on testnet/demo or paper mode"
+    )
     parser_live.add_argument("--model", default="data/model.json")
     parser_live.add_argument("--steps", type=int, default=20)
     parser_live.add_argument("--sleep", type=int, default=5)
-    parser_live.add_argument("--leverage", type=float, default=None, help="override leverage for this run (futures only)")
+    parser_live.add_argument(
+        "--leverage",
+        type=float,
+        default=None,
+        help="override leverage for this run (futures only)",
+    )
     parser_live.add_argument(
         "--retrain-interval",
         type=int,
@@ -1854,8 +2335,15 @@ def _build_parser() -> argparse.ArgumentParser:
         default=240,
         help="minimum rows required before a retrain is attempted",
     )
-    parser_live.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
-    parser_live.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for live retraining")
+    parser_live.add_argument(
+        "--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None
+    )
+    parser_live.add_argument(
+        "--batch-size",
+        type=int,
+        default=8192,
+        help="mini-batch size for live retraining",
+    )
     parser_live.add_argument(
         "--paper",
         action="store_true",
@@ -1880,19 +2368,47 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_live.set_defaults(func=command_live)
 
-    parser_status = subparsers.add_parser("status", help="show persisted runtime and strategy config")
-    parser_status.add_argument("--compact", action="store_true", help="print one secret-free operator status line")
+    parser_status = subparsers.add_parser(
+        "status", help="show persisted runtime and strategy config"
+    )
+    parser_status.add_argument(
+        "--compact",
+        action="store_true",
+        help="print one secret-free operator status line",
+    )
     parser_status.set_defaults(func=command_status)
 
-    parser_compute = subparsers.add_parser("compute", help="show or set the model-training compute backend")
-    parser_compute.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_compute = subparsers.add_parser(
+        "compute", help="show or set the model-training compute backend"
+    )
+    parser_compute.add_argument(
+        "--backend", choices=_COMPUTE_BACKEND_CHOICES, default=None
+    )
     parser_compute.set_defaults(func=command_compute)
 
-    parser_ai = subparsers.add_parser("ai", help="show or configure local GPU AI acceleration preflight")
-    parser_ai.add_argument("--enable", action="store_true", default=None, help="enable AI decision features")
-    parser_ai.add_argument("--disable", action="store_true", default=None, help="disable AI decision features")
-    parser_ai.add_argument("--provider", default=None, help="AI provider: auto, local-gpu, ollama, openai-compatible, etc.")
-    parser_ai.add_argument("--model", default=None, help="AI model identifier or 'auto'")
+    parser_ai = subparsers.add_parser(
+        "ai", help="show or configure local GPU AI acceleration preflight"
+    )
+    parser_ai.add_argument(
+        "--enable",
+        action="store_true",
+        default=None,
+        help="enable AI decision features",
+    )
+    parser_ai.add_argument(
+        "--disable",
+        action="store_true",
+        default=None,
+        help="disable AI decision features",
+    )
+    parser_ai.add_argument(
+        "--provider",
+        default=None,
+        help="AI provider: auto, local-gpu, ollama, openai-compatible, etc.",
+    )
+    parser_ai.add_argument(
+        "--model", default=None, help="AI model identifier or 'auto'"
+    )
     parser_ai.add_argument("--require-gpu", action="store_true", default=None)
     parser_ai.add_argument("--no-require-gpu", action="store_true", default=None)
     parser_ai.add_argument("--min-free-vram-gb", type=float, default=None)
@@ -1907,7 +2423,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "ai-benchmark",
         help="compare local AI models on structured finance-risk review cases",
     )
-    parser_ai_benchmark.add_argument("--models", default="", help="comma-separated Ollama model names; defaults to installed curated candidates")
+    parser_ai_benchmark.add_argument(
+        "--models",
+        default="",
+        help="comma-separated Ollama model names; defaults to installed curated candidates",
+    )
     parser_ai_benchmark.add_argument("--url", default="http://127.0.0.1:11434")
     parser_ai_benchmark.add_argument("--timeout", type=float, default=20.0)
     parser_ai_benchmark.add_argument("--minimum-score", type=float, default=0.78)
@@ -1944,8 +2464,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="benchmark a pinned financial foundation forecast on real post-cutoff BTC/ETH/SOL data",
     )
     parser_ai_forecast.add_argument("--database", default="data/market_data.sqlite")
-    parser_ai_forecast.add_argument("--model-size", choices=("small", "base"), default="base")
-    parser_ai_forecast.add_argument("--backend", choices=_COMPUTE_BACKEND_CHOICES, default="auto")
+    parser_ai_forecast.add_argument(
+        "--model-size", choices=("small", "base"), default="base"
+    )
+    parser_ai_forecast.add_argument(
+        "--backend", choices=_COMPUTE_BACKEND_CHOICES, default="auto"
+    )
     parser_ai_forecast.add_argument("--source-cache", default=None)
     parser_ai_forecast.add_argument("--bootstrap-source", action="store_true")
     parser_ai_forecast.add_argument("--repair-source", action="store_true")
@@ -1989,7 +2513,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "ai-review",
         help="run a structured local-AI risk review over a model-lab report",
     )
-    parser_ai_review.add_argument("--report", default="data/model_lab/model_lab_report.json")
+    parser_ai_review.add_argument(
+        "--report", default="data/model_lab/model_lab_report.json"
+    )
     parser_ai_review.add_argument("--output", default=None)
     parser_ai_review.add_argument("--model", default=None)
     parser_ai_review.add_argument("--url", default="http://127.0.0.1:11434")
@@ -2031,11 +2557,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_ai_uplift.add_argument("--json", action="store_true")
     parser_ai_uplift.set_defaults(func=command_ai_uplift)
 
-    parser_strategy = subparsers.add_parser("strategy", help="adjust strategy and risk parameters")
-    parser_strategy.add_argument("--profile", choices=sorted(_STRATEGY_PROFILES), default="custom")
-    parser_strategy.add_argument("--risk-level", choices=["conservative", "regular", "aggressive"], default=None)
-    parser_strategy.add_argument("--reinvest-profits", action="store_true", default=None)
-    parser_strategy.add_argument("--no-reinvest-profits", action="store_true", default=None)
+    parser_strategy = subparsers.add_parser(
+        "strategy", help="adjust strategy and risk parameters"
+    )
+    parser_strategy.add_argument(
+        "--profile", choices=sorted(_STRATEGY_PROFILES), default="custom"
+    )
+    parser_strategy.add_argument(
+        "--risk-level", choices=["conservative", "regular", "aggressive"], default=None
+    )
+    parser_strategy.add_argument(
+        "--reinvest-profits", action="store_true", default=None
+    )
+    parser_strategy.add_argument(
+        "--no-reinvest-profits", action="store_true", default=None
+    )
     parser_strategy.add_argument("--leverage", type=float, default=None)
     parser_strategy.add_argument("--risk", type=float, default=None)
     parser_strategy.add_argument("--max-position", type=float, default=None)
@@ -2043,7 +2579,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_strategy.add_argument("--take", type=float, default=None)
     parser_strategy.add_argument("--cooldown", type=int, default=None)
     parser_strategy.add_argument("--min-position-hold-bars", type=int, default=None)
-    parser_strategy.add_argument("--flat-signal-exit-grace-bars", type=int, default=None)
+    parser_strategy.add_argument(
+        "--flat-signal-exit-grace-bars", type=int, default=None
+    )
     parser_strategy.add_argument("--max-position-hold-bars", type=int, default=None)
     parser_strategy.add_argument("--max-open", type=int, default=None)
     parser_strategy.add_argument("--min-diversified-assets", type=int, default=None)
@@ -2054,7 +2592,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_strategy.add_argument("--max-spread-bps", type=float, default=None)
     parser_strategy.add_argument("--min-liquidity-score", type=float, default=None)
     parser_strategy.add_argument("--unpredictability-cooldown", type=int, default=None)
-    parser_strategy.add_argument("--max-regime-unpredictability", type=float, default=None)
+    parser_strategy.add_argument(
+        "--max-regime-unpredictability", type=float, default=None
+    )
     parser_strategy.add_argument("--max-prediction-entropy", type=float, default=None)
     parser_strategy.add_argument("--min-model-confidence", type=float, default=None)
     parser_strategy.add_argument("--max-trades-per-day", type=int, default=None)
@@ -2073,37 +2613,83 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_strategy.add_argument("--confidence-beta", type=float, default=None)
     parser_strategy.add_argument("--feature-window-short", type=int, default=None)
     parser_strategy.add_argument("--feature-window-long", type=int, default=None)
-    parser_strategy.add_argument("--set-features", default=None, help="comma-separated ordered feature list for retraining")
-    parser_strategy.add_argument("--enable-feature", action="append", default=None, help="enable a feature by name")
-    parser_strategy.add_argument("--disable-feature", action="append", default=None, help="disable a feature by name")
-    parser_strategy.add_argument("--external-signals", action="store_true", default=None, help="enable live free external signals")
-    parser_strategy.add_argument("--no-external-signals", action="store_false", dest="external_signals", help="disable live free external signals")
-    parser_strategy.add_argument("--external-signal-max-adjustment", type=float, default=None)
-    parser_strategy.add_argument("--external-signal-min-providers", type=int, default=None)
+    parser_strategy.add_argument(
+        "--set-features",
+        default=None,
+        help="comma-separated ordered feature list for retraining",
+    )
+    parser_strategy.add_argument(
+        "--enable-feature",
+        action="append",
+        default=None,
+        help="enable a feature by name",
+    )
+    parser_strategy.add_argument(
+        "--disable-feature",
+        action="append",
+        default=None,
+        help="disable a feature by name",
+    )
+    parser_strategy.add_argument(
+        "--external-signals",
+        action="store_true",
+        default=None,
+        help="enable live free external signals",
+    )
+    parser_strategy.add_argument(
+        "--no-external-signals",
+        action="store_false",
+        dest="external_signals",
+        help="disable live free external signals",
+    )
+    parser_strategy.add_argument(
+        "--external-signal-max-adjustment", type=float, default=None
+    )
+    parser_strategy.add_argument(
+        "--external-signal-min-providers", type=int, default=None
+    )
     parser_strategy.add_argument("--external-signal-ttl", type=int, default=None)
     parser_strategy.add_argument("--external-signal-timeout", type=float, default=None)
-    parser_strategy.add_argument("--external-news-ai", action="store_true", default=None)
-    parser_strategy.add_argument("--no-external-news-ai", action="store_false", dest="external_news_ai")
+    parser_strategy.add_argument(
+        "--external-news-ai", action="store_true", default=None
+    )
+    parser_strategy.add_argument(
+        "--no-external-news-ai", action="store_false", dest="external_news_ai"
+    )
     parser_strategy.add_argument("--external-news-ai-model", default=None)
     parser_strategy.add_argument("--external-news-ai-url", default=None)
     parser_strategy.add_argument("--external-news-ai-timeout", type=float, default=None)
-    parser_strategy.add_argument("--external-news-provider-limit", type=int, default=None)
-    parser_strategy.add_argument("--external-provider-parallelism", type=int, default=None)
+    parser_strategy.add_argument(
+        "--external-news-provider-limit", type=int, default=None
+    )
+    parser_strategy.add_argument(
+        "--external-provider-parallelism", type=int, default=None
+    )
     parser_strategy.add_argument("--external-provider-jitter", type=float, default=None)
     parser_strategy.add_argument("--external-poll-jitter", type=float, default=None)
     parser_strategy.add_argument("--telemetry-db", default=None)
     parser_strategy.add_argument("--no-telemetry", action="store_true", default=None)
     parser_strategy.add_argument("--source-grading", action="store_true", default=None)
-    parser_strategy.add_argument("--no-source-grading", action="store_false", dest="source_grading")
+    parser_strategy.add_argument(
+        "--no-source-grading", action="store_false", dest="source_grading"
+    )
     parser_strategy.add_argument("--source-grading-interval", type=int, default=None)
-    parser_strategy.add_argument("--source-grading-window-hours", type=int, default=None)
-    parser_strategy.add_argument("--source-grade-max-age-hours", type=float, default=None)
+    parser_strategy.add_argument(
+        "--source-grading-window-hours", type=int, default=None
+    )
+    parser_strategy.add_argument(
+        "--source-grade-max-age-hours", type=float, default=None
+    )
     parser_strategy.set_defaults(func=command_strategy)
 
-    parser_shell = subparsers.add_parser("shell", help="launch the fallback-friendly slash-command shell")
+    parser_shell = subparsers.add_parser(
+        "shell", help="launch the fallback-friendly slash-command shell"
+    )
     parser_shell.set_defaults(func=command_shell)
 
-    parser_objectives = subparsers.add_parser("objectives", help="list registered training objectives")
+    parser_objectives = subparsers.add_parser(
+        "objectives", help="list registered training objectives"
+    )
     parser_objectives.set_defaults(func=command_objectives)
 
     parser_model_blueprint = subparsers.add_parser(
@@ -2112,7 +2698,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_model_blueprint.add_argument(
         "--risk-level",
-        choices=["conservative", "regular", "aggressive", "default", "balanced", "risky"],
+        choices=[
+            "conservative",
+            "regular",
+            "aggressive",
+            "default",
+            "balanced",
+            "risky",
+        ],
         default=None,
         help="filter the roadmap to one risk level",
     )
@@ -2125,7 +2718,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_model_blueprint.set_defaults(func=command_model_blueprint)
 
     parser_train_suite = subparsers.add_parser(
-        "train-suite", help="train one advanced model per objective (Conservative/Regular/Aggressive)",
+        "train-suite",
+        help="train one advanced model per objective (Conservative/Regular/Aggressive)",
     )
     parser_train_suite.add_argument("--input", default="data/historical_market.json")
     parser_train_suite.add_argument("--output-dir", default="data")
@@ -2136,7 +2730,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_train_suite.add_argument("--starting-cash", type=float, default=1000.0)
     parser_train_suite.add_argument(
-        "--objective", action="append", default=None,
+        "--objective",
+        action="append",
+        default=None,
         help="restrict suite to named objective(s); repeat to list multiple.",
     )
     parser_train_suite.add_argument(
@@ -2151,7 +2747,9 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="training backend override; GPU backends run candidates sequentially to protect VRAM",
     )
-    parser_train_suite.add_argument("--batch-size", type=int, default=8192, help="mini-batch size for GPU training")
+    parser_train_suite.add_argument(
+        "--batch-size", type=int, default=8192, help="mini-batch size for GPU training"
+    )
     parser_train_suite.add_argument(
         "--max-candidates",
         type=int,
@@ -2166,12 +2764,25 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_model_lab.add_argument("--output-dir", default="data/model_lab")
     parser_model_lab.add_argument("--starting-cash", type=float, default=1000.0)
-    parser_model_lab.add_argument("--objective", action="append", default=None, help="objective/risk level to run; repeatable")
+    parser_model_lab.add_argument(
+        "--objective",
+        action="append",
+        default=None,
+        help="objective/risk level to run; repeatable",
+    )
     parser_model_lab.add_argument("--max-symbols", type=int, default=6)
     parser_model_lab.add_argument("--max-scan", type=int, default=250)
-    parser_model_lab.add_argument("--limit", type=int, default=1000, help="candles per selected symbol")
-    parser_model_lab.add_argument("--quote-asset", default=None, help="override runtime quote asset for this lab run")
-    parser_model_lab.add_argument("--interval", default=None, help="override runtime interval for this lab run")
+    parser_model_lab.add_argument(
+        "--limit", type=int, default=1000, help="candles per selected symbol"
+    )
+    parser_model_lab.add_argument(
+        "--quote-asset",
+        default=None,
+        help="override runtime quote asset for this lab run",
+    )
+    parser_model_lab.add_argument(
+        "--interval", default=None, help="override runtime interval for this lab run"
+    )
     parser_model_lab.add_argument(
         "--full-history",
         action="store_true",
@@ -2187,8 +2798,15 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="force model-lab to train from SQLite market data; defaults to data/market_data.sqlite when --market-db is omitted",
     )
-    parser_model_lab.add_argument("--market", choices=["spot", "futures"], default=None, help="override runtime market type for this lab run")
-    parser_model_lab.add_argument("--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None)
+    parser_model_lab.add_argument(
+        "--market",
+        choices=["spot", "futures"],
+        default=None,
+        help="override runtime market type for this lab run",
+    )
+    parser_model_lab.add_argument(
+        "--compute-backend", choices=_COMPUTE_BACKEND_CHOICES, default=None
+    )
     parser_model_lab.add_argument("--batch-size", type=int, default=8192)
     parser_model_lab.add_argument("--score-batch-size", type=int, default=None)
     parser_model_lab.add_argument(
@@ -2208,10 +2826,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_model_lab.set_defaults(func=command_model_lab)
 
     parser_backtest_panel = subparsers.add_parser(
-        "backtest-panel", help="run a user-parameterized backtest and save a tagged report",
+        "backtest-panel",
+        help="run a user-parameterized backtest and save a tagged report",
     )
     parser_backtest_panel.add_argument("--interval", required=True)
-    parser_backtest_panel.add_argument("--market", default=None, help="override runtime market type")
+    parser_backtest_panel.add_argument(
+        "--market", default=None, help="override runtime market type"
+    )
     parser_backtest_panel.add_argument("--from-date", default=None)
     parser_backtest_panel.add_argument("--to-date", default=None)
     parser_backtest_panel.add_argument("--input", default="data/historical_market.json")
@@ -2234,14 +2855,20 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_backtest_panel.set_defaults(func=command_backtest_panel)
 
     parser_autonomous = subparsers.add_parser(
-        "autonomous", help="control the autonomous non-mainnet loop (start/pause/resume/stop/status)",
+        "autonomous",
+        help="control the autonomous non-mainnet loop (start/pause/resume/stop/status)",
     )
     parser_autonomous.add_argument(
-        "action", choices=["start", "pause", "resume", "stop", "status"],
+        "action",
+        choices=["start", "pause", "resume", "stop", "status"],
         help="autonomous action to perform",
     )
     parser_autonomous.add_argument("--objective", default="conservative")
-    parser_autonomous.add_argument("--model", default="data/model.json", help="model artifact used for autonomous decisions")
+    parser_autonomous.add_argument(
+        "--model",
+        default="data/model.json",
+        help="model artifact used for autonomous decisions",
+    )
     parser_autonomous.add_argument(
         "--ai-review",
         default="data/model_lab/ai_risk_review.json",
@@ -2258,19 +2885,56 @@ def _build_parser() -> argparse.ArgumentParser:
         default=10.0,
         help="seconds allowed for AI capability and provenance checks",
     )
-    parser_autonomous.add_argument("--poll-seconds", type=float, default=30.0, help="seconds between autonomous iterations")
-    parser_autonomous.add_argument("--iterations", type=int, default=None, help="stop after N iterations; default runs until stopped")
-    parser_autonomous.add_argument("--heartbeat-every", type=int, default=1, help="write heartbeat every N iterations")
-    parser_autonomous.add_argument("--starting-cash", type=float, default=1000.0, help="reference cash for local autonomous risk stats")
-    parser_autonomous.add_argument("--paper", action="store_true", default=False, help="force autonomous paper mode")
-    parser_autonomous.add_argument("--live", action="store_true", default=False, help="force authenticated non-mainnet autonomous mode")
+    parser_autonomous.add_argument(
+        "--poll-seconds",
+        type=float,
+        default=30.0,
+        help="seconds between autonomous iterations",
+    )
+    parser_autonomous.add_argument(
+        "--iterations",
+        type=int,
+        default=None,
+        help="stop after N iterations; default runs until stopped",
+    )
+    parser_autonomous.add_argument(
+        "--heartbeat-every",
+        type=int,
+        default=1,
+        help="write heartbeat every N iterations",
+    )
+    parser_autonomous.add_argument(
+        "--starting-cash",
+        type=float,
+        default=1000.0,
+        help="reference cash for local autonomous risk stats",
+    )
+    parser_autonomous.add_argument(
+        "--paper",
+        action="store_true",
+        default=False,
+        help="force autonomous paper mode",
+    )
+    parser_autonomous.add_argument(
+        "--live",
+        action="store_true",
+        default=False,
+        help="force authenticated non-mainnet autonomous mode",
+    )
     parser_autonomous.set_defaults(func=command_autonomous)
 
     parser_positions = subparsers.add_parser(
-        "positions", help="list autonomous open positions and P&L stats",
+        "positions",
+        help="list autonomous open positions and P&L stats",
     )
-    parser_positions.add_argument("--stats", action="store_true", help="also print realized + unrealized stats")
-    parser_positions.add_argument("--learning", action="store_true", help="also print bounded post-trade learning feedback")
+    parser_positions.add_argument(
+        "--stats", action="store_true", help="also print realized + unrealized stats"
+    )
+    parser_positions.add_argument(
+        "--learning",
+        action="store_true",
+        help="also print bounded post-trade learning feedback",
+    )
     parser_positions.set_defaults(func=command_positions)
 
     parser_close = subparsers.add_parser(
@@ -2371,7 +3035,9 @@ def _validate_runtime_connection(runtime, client) -> None:
 _API_BUDGET_LIVE_START_MAX_USED_RATIO = 0.80
 
 
-def _latest_api_budget_snapshot(db_path: str | Path, market_type: str) -> dict[str, object] | None:
+def _latest_api_budget_snapshot(
+    db_path: str | Path, market_type: str
+) -> dict[str, object] | None:
     try:
         with MarketDataStore(db_path) as store:
             return store.latest_api_rate_limit_snapshot("binance", market_type)
@@ -2387,7 +3053,9 @@ def _safe_int_value(value: object) -> int | None:
     return parsed if parsed >= 0 else None
 
 
-def _api_budget_snapshot_age_ms(payload: Mapping[str, object], *, now_ms: int | None = None) -> int | None:
+def _api_budget_snapshot_age_ms(
+    payload: Mapping[str, object], *, now_ms: int | None = None
+) -> int | None:
     generated_at = _safe_int_value(payload.get("generated_at_ms"))
     if generated_at is None:
         return None
@@ -2422,7 +3090,9 @@ def _store_api_budget_snapshot(
         return
 
 
-def _refresh_api_budget_report(runtime: RuntimeConfig, client, *, db_path: str | Path = "data/market_data.sqlite"):
+def _refresh_api_budget_report(
+    runtime: RuntimeConfig, client, *, db_path: str | Path = "data/market_data.sqlite"
+):
     fetch_exchange_info = getattr(client, "get_exchange_info", None)
     exchange_info = fetch_exchange_info() if callable(fetch_exchange_info) else None
     request_info = dict(getattr(client, "last_request_info", {}) or {})
@@ -2475,7 +3145,7 @@ def _parse_optional_form_bool(raw: str) -> bool | None:
 
 
 def _parse_training_preset(raw: str) -> str:
-    preset = (raw.strip().lower() or "custom")
+    preset = raw.strip().lower() or "custom"
     if preset not in _TRAINING_PRESETS:
         choices = "/".join(sorted(_TRAINING_PRESETS))
         raise ValueError(f"Preset must be one of: {choices}.")
@@ -2483,7 +3153,7 @@ def _parse_training_preset(raw: str) -> str:
 
 
 def _parse_strategy_profile(raw: str) -> str:
-    profile = (raw.strip().lower() or "custom")
+    profile = raw.strip().lower() or "custom"
     if profile not in _STRATEGY_PROFILES:
         choices = "/".join(sorted(_STRATEGY_PROFILES))
         raise ValueError(f"Profile must be one of: {choices}.")
@@ -2505,7 +3175,14 @@ def _apply_training_preset(args: argparse.Namespace) -> argparse.Namespace:
     return args
 
 
-def _parse_form_int(raw: str, *, label: str, default: int, minimum: int | None = None, maximum: int | None = None) -> int:
+def _parse_form_int(
+    raw: str,
+    *,
+    label: str,
+    default: int,
+    minimum: int | None = None,
+    maximum: int | None = None,
+) -> int:
     value = default if not raw.strip() else int(raw.strip())
     if minimum is not None and value < minimum:
         raise ValueError(f"{label} must be >= {minimum}.")
@@ -2514,10 +3191,14 @@ def _parse_form_int(raw: str, *, label: str, default: int, minimum: int | None =
     return value
 
 
-def _parse_optional_form_int(raw: str, *, label: str, minimum: int | None = None, maximum: int | None = None) -> int | None:
+def _parse_optional_form_int(
+    raw: str, *, label: str, minimum: int | None = None, maximum: int | None = None
+) -> int | None:
     if not raw.strip():
         return None
-    return _parse_form_int(raw, label=label, default=0, minimum=minimum, maximum=maximum)
+    return _parse_form_int(
+        raw, label=label, default=0, minimum=minimum, maximum=maximum
+    )
 
 
 def _parse_form_float(
@@ -2562,18 +3243,45 @@ async def _ui_edit_runtime(ui, current: RuntimeConfig) -> RuntimeConfig:
         [
             FormField("market_type", "Market type [spot/futures]", current.market_type),
             FormField("interval", "Kline interval", current.interval),
-            FormField("testnet", "Use Binance testnet [yes/no]", "yes" if current.testnet else "no"),
+            FormField(
+                "testnet",
+                "Use Binance testnet [yes/no]",
+                "yes" if current.testnet else "no",
+            ),
             FormField(
                 "demo",
                 "Use Binance Demo Trading API [yes/no]",
                 "yes" if getattr(current, "demo", False) else "no",
             ),
-            FormField("api_key", "Binance API key [blank keeps current]", "", password=True),
-            FormField("api_secret", "Binance API secret [blank keeps current]", "", password=True),
-            FormField("dry_run", "Paper trading mode [yes/no]", "yes" if current.dry_run else "no"),
-            FormField("validate_account", "Validate credentials at startup [yes/no]", "yes" if current.validate_account else "no"),
-            FormField("max_rate_calls_per_minute", "Max REST calls per minute", str(current.max_rate_calls_per_minute)),
-            FormField("recv_window_ms", "Request recvWindow (ms, 1-60000)", str(getattr(current, "recv_window_ms", 5000))),
+            FormField(
+                "api_key", "Binance API key [blank keeps current]", "", password=True
+            ),
+            FormField(
+                "api_secret",
+                "Binance API secret [blank keeps current]",
+                "",
+                password=True,
+            ),
+            FormField(
+                "dry_run",
+                "Paper trading mode [yes/no]",
+                "yes" if current.dry_run else "no",
+            ),
+            FormField(
+                "validate_account",
+                "Validate credentials at startup [yes/no]",
+                "yes" if current.validate_account else "no",
+            ),
+            FormField(
+                "max_rate_calls_per_minute",
+                "Max REST calls per minute",
+                str(current.max_rate_calls_per_minute),
+            ),
+            FormField(
+                "recv_window_ms",
+                "Request recvWindow (ms, 1-60000)",
+                str(getattr(current, "recv_window_ms", 5000)),
+            ),
         ],
     )
     if payload is None:
@@ -2587,7 +3295,9 @@ async def _ui_edit_runtime(ui, current: RuntimeConfig) -> RuntimeConfig:
     api_key = payload["api_key"].strip() or current.api_key
     api_secret = payload["api_secret"].strip() or current.api_secret
     dry_run = _parse_form_bool(payload["dry_run"], current.dry_run)
-    validate_account = _parse_form_bool(payload["validate_account"], current.validate_account)
+    validate_account = _parse_form_bool(
+        payload["validate_account"], current.validate_account
+    )
     max_rate = _parse_form_int(
         payload["max_rate_calls_per_minute"],
         label="Max REST calls per minute",
@@ -2681,45 +3391,135 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
     payload = await ui.form(
         "Strategy settings",
         [
-            FormField("profile", "Risk profile [custom/conservative/balanced/active]", "custom"),
+            FormField(
+                "profile",
+                "Risk profile [custom/conservative/balanced/active]",
+                "custom",
+            ),
             FormField("leverage", "Leverage", str(cfg.leverage)),
             FormField("risk", "Risk per trade", str(cfg.risk_per_trade)),
-            FormField("max_position", "Max position percent", str(cfg.max_position_pct)),
+            FormField(
+                "max_position", "Max position percent", str(cfg.max_position_pct)
+            ),
             FormField("stop", "Stop loss percent", str(cfg.stop_loss_pct)),
             FormField("take", "Take profit percent", str(cfg.take_profit_pct)),
             FormField("cooldown", "Cooldown minutes", str(cfg.cooldown_minutes)),
             FormField("max_open", "Max open positions", str(cfg.max_open_positions)),
-            FormField("max_trades_per_day", "Max trades per day", str(cfg.max_trades_per_day)),
-            FormField("signal_threshold", "Signal threshold", str(cfg.signal_threshold)),
-            FormField("max_drawdown", "Max drawdown limit", str(cfg.max_drawdown_limit)),
+            FormField(
+                "max_trades_per_day", "Max trades per day", str(cfg.max_trades_per_day)
+            ),
+            FormField(
+                "signal_threshold", "Signal threshold", str(cfg.signal_threshold)
+            ),
+            FormField(
+                "max_drawdown", "Max drawdown limit", str(cfg.max_drawdown_limit)
+            ),
             FormField("max_daily_loss", "Max daily loss", str(cfg.max_daily_loss_pct)),
-            FormField("max_session_loss", "Max session loss", str(cfg.max_session_loss_pct)),
-            FormField("max_consecutive_losses", "Max consecutive losses", str(cfg.max_consecutive_losses)),
-            FormField("max_network_errors", "Network errors before halt", str(cfg.max_network_errors)),
-            FormField("recovery_cooldown_seconds", "Reconnect recovery seconds", str(cfg.recovery_cooldown_seconds)),
+            FormField(
+                "max_session_loss", "Max session loss", str(cfg.max_session_loss_pct)
+            ),
+            FormField(
+                "max_consecutive_losses",
+                "Max consecutive losses",
+                str(cfg.max_consecutive_losses),
+            ),
+            FormField(
+                "max_network_errors",
+                "Network errors before halt",
+                str(cfg.max_network_errors),
+            ),
+            FormField(
+                "recovery_cooldown_seconds",
+                "Reconnect recovery seconds",
+                str(cfg.recovery_cooldown_seconds),
+            ),
             FormField("taker_fee_bps", "Taker fee bps", str(cfg.taker_fee_bps)),
             FormField("slippage_bps", "Slippage bps", str(cfg.slippage_bps)),
             FormField("label_threshold", "Label threshold", str(cfg.label_threshold)),
             FormField("model_lookback", "Model lookback rows", str(cfg.model_lookback)),
             FormField("training_epochs", "Training epochs", str(cfg.training_epochs)),
             FormField("confidence_beta", "Confidence beta", str(cfg.confidence_beta)),
-            FormField("feature_window_short", "Feature window short", str(cfg.feature_windows[0])),
-            FormField("feature_window_long", "Feature window long", str(cfg.feature_windows[1])),
-            FormField("external_signals", "External signals [yes/no]", str(cfg.external_signals_enabled)),
-            FormField("external_signal_max_adjustment", "External max score adjustment", str(cfg.external_signal_max_adjustment)),
-            FormField("external_signal_min_providers", "External min providers", str(cfg.external_signal_min_providers)),
-            FormField("external_signal_ttl", "External cache TTL seconds", str(cfg.external_signal_ttl_seconds)),
-            FormField("external_signal_timeout", "External timeout seconds", str(cfg.external_signal_timeout_seconds)),
-            FormField("external_news_ai", "Ollama news AI [yes/no]", str(cfg.external_news_ai_enabled)),
-            FormField("external_news_ai_model", "Ollama news model", str(cfg.external_news_ai_model)),
-            FormField("external_news_provider_limit", "News provider limit", str(cfg.external_signal_news_provider_limit)),
-            FormField("external_provider_parallelism", "News provider parallelism", str(cfg.external_signal_provider_parallelism)),
-            FormField("external_provider_jitter", "Provider jitter seconds", str(cfg.external_signal_provider_jitter_seconds)),
-            FormField("external_poll_jitter", "Poll jitter seconds", str(cfg.external_signal_poll_jitter_seconds)),
+            FormField(
+                "feature_window_short",
+                "Feature window short",
+                str(cfg.feature_windows[0]),
+            ),
+            FormField(
+                "feature_window_long",
+                "Feature window long",
+                str(cfg.feature_windows[1]),
+            ),
+            FormField(
+                "external_signals",
+                "External signals [yes/no]",
+                str(cfg.external_signals_enabled),
+            ),
+            FormField(
+                "external_signal_max_adjustment",
+                "External max score adjustment",
+                str(cfg.external_signal_max_adjustment),
+            ),
+            FormField(
+                "external_signal_min_providers",
+                "External min providers",
+                str(cfg.external_signal_min_providers),
+            ),
+            FormField(
+                "external_signal_ttl",
+                "External cache TTL seconds",
+                str(cfg.external_signal_ttl_seconds),
+            ),
+            FormField(
+                "external_signal_timeout",
+                "External timeout seconds",
+                str(cfg.external_signal_timeout_seconds),
+            ),
+            FormField(
+                "external_news_ai",
+                "Ollama news AI [yes/no]",
+                str(cfg.external_news_ai_enabled),
+            ),
+            FormField(
+                "external_news_ai_model",
+                "Ollama news model",
+                str(cfg.external_news_ai_model),
+            ),
+            FormField(
+                "external_news_provider_limit",
+                "News provider limit",
+                str(cfg.external_signal_news_provider_limit),
+            ),
+            FormField(
+                "external_provider_parallelism",
+                "News provider parallelism",
+                str(cfg.external_signal_provider_parallelism),
+            ),
+            FormField(
+                "external_provider_jitter",
+                "Provider jitter seconds",
+                str(cfg.external_signal_provider_jitter_seconds),
+            ),
+            FormField(
+                "external_poll_jitter",
+                "Poll jitter seconds",
+                str(cfg.external_signal_poll_jitter_seconds),
+            ),
             FormField("telemetry_db", "Raw telemetry DB", str(cfg.telemetry_db_path)),
-            FormField("source_grading", "Hourly source grading [yes/no]", str(cfg.source_grading_enabled)),
-            FormField("source_grading_interval", "Source grading interval seconds", str(cfg.source_grading_interval_seconds)),
-            FormField("source_grade_max_age_hours", "Source grade max age hours", str(cfg.source_grade_max_age_hours)),
+            FormField(
+                "source_grading",
+                "Hourly source grading [yes/no]",
+                str(cfg.source_grading_enabled),
+            ),
+            FormField(
+                "source_grading_interval",
+                "Source grading interval seconds",
+                str(cfg.source_grading_interval_seconds),
+            ),
+            FormField(
+                "source_grade_max_age_hours",
+                "Source grade max age hours",
+                str(cfg.source_grade_max_age_hours),
+            ),
         ],
     )
     if payload is None:
@@ -2773,13 +3573,17 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
         )
     profile = _parse_strategy_profile(payload["profile"])
 
-    def field_float(key: str, current: float, label: str, *, minimum=None, maximum=None):
+    def field_float(
+        key: str, current: float, label: str, *, minimum=None, maximum=None
+    ):
         return _profile_field_value(
             profile,
             payload,
             key,
             current,
-            lambda raw: _parse_form_float(raw, label=label, default=current, minimum=minimum, maximum=maximum),
+            lambda raw: _parse_form_float(
+                raw, label=label, default=current, minimum=minimum, maximum=maximum
+            ),
         )
 
     def field_int(key: str, current: int, label: str, *, minimum=None, maximum=None):
@@ -2788,7 +3592,9 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             payload,
             key,
             current,
-            lambda raw: _parse_form_int(raw, label=label, default=current, minimum=minimum, maximum=maximum),
+            lambda raw: _parse_form_int(
+                raw, label=label, default=current, minimum=minimum, maximum=maximum
+            ),
         )
 
     def field_bool(key: str, current: bool):
@@ -2800,7 +3606,12 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
             lambda raw: _parse_form_bool(raw, current),
         )
 
-    feature_window_short = field_int("feature_window_short", cfg.feature_windows[0], "Feature window short", minimum=1)
+    feature_window_short = field_int(
+        "feature_window_short",
+        cfg.feature_windows[0],
+        "Feature window short",
+        minimum=1,
+    )
     feature_window_floor = int(feature_window_short or cfg.feature_windows[0])
     feature_window_long = _profile_field_value(
         profile,
@@ -2818,35 +3629,103 @@ async def _ui_edit_strategy_args(ui, cfg: StrategyConfig) -> argparse.Namespace:
         profile=profile,
         leverage=field_float("leverage", cfg.leverage, "Leverage", minimum=1.0),
         risk=field_float("risk", cfg.risk_per_trade, "Risk per trade", minimum=0.0001),
-        max_position=field_float("max_position", cfg.max_position_pct, "Max position percent", minimum=0.0, maximum=1.0),
-        stop=field_float("stop", cfg.stop_loss_pct, "Stop loss percent", minimum=0.0, maximum=0.99),
-        take=field_float("take", cfg.take_profit_pct, "Take profit percent", minimum=0.0, maximum=0.99),
-        cooldown=field_int("cooldown", cfg.cooldown_minutes, "Cooldown minutes", minimum=0),
-        max_open=field_int("max_open", cfg.max_open_positions, "Max open positions", minimum=0),
-        max_trades_per_day=field_int("max_trades_per_day", cfg.max_trades_per_day, "Max trades per day", minimum=0),
-        signal_threshold=field_float("signal_threshold", cfg.signal_threshold, "Signal threshold", minimum=0.01, maximum=0.99),
-        max_drawdown=field_float("max_drawdown", cfg.max_drawdown_limit, "Max drawdown limit", minimum=0.0, maximum=1.0),
-        max_daily_loss=field_float("max_daily_loss", cfg.max_daily_loss_pct, "Max daily loss", minimum=0.0, maximum=0.25),
-        max_session_loss=field_float("max_session_loss", cfg.max_session_loss_pct, "Max session loss", minimum=0.0, maximum=0.50),
+        max_position=field_float(
+            "max_position",
+            cfg.max_position_pct,
+            "Max position percent",
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        stop=field_float(
+            "stop", cfg.stop_loss_pct, "Stop loss percent", minimum=0.0, maximum=0.99
+        ),
+        take=field_float(
+            "take",
+            cfg.take_profit_pct,
+            "Take profit percent",
+            minimum=0.0,
+            maximum=0.99,
+        ),
+        cooldown=field_int(
+            "cooldown", cfg.cooldown_minutes, "Cooldown minutes", minimum=0
+        ),
+        max_open=field_int(
+            "max_open", cfg.max_open_positions, "Max open positions", minimum=0
+        ),
+        max_trades_per_day=field_int(
+            "max_trades_per_day",
+            cfg.max_trades_per_day,
+            "Max trades per day",
+            minimum=0,
+        ),
+        signal_threshold=field_float(
+            "signal_threshold",
+            cfg.signal_threshold,
+            "Signal threshold",
+            minimum=0.01,
+            maximum=0.99,
+        ),
+        max_drawdown=field_float(
+            "max_drawdown",
+            cfg.max_drawdown_limit,
+            "Max drawdown limit",
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        max_daily_loss=field_float(
+            "max_daily_loss",
+            cfg.max_daily_loss_pct,
+            "Max daily loss",
+            minimum=0.0,
+            maximum=0.25,
+        ),
+        max_session_loss=field_float(
+            "max_session_loss",
+            cfg.max_session_loss_pct,
+            "Max session loss",
+            minimum=0.0,
+            maximum=0.50,
+        ),
         max_consecutive_losses=field_int(
             "max_consecutive_losses",
             cfg.max_consecutive_losses,
             "Max consecutive losses",
             minimum=0,
         ),
-        max_network_errors=field_int("max_network_errors", cfg.max_network_errors, "Network errors before halt", minimum=1),
+        max_network_errors=field_int(
+            "max_network_errors",
+            cfg.max_network_errors,
+            "Network errors before halt",
+            minimum=1,
+        ),
         recovery_cooldown_seconds=field_int(
             "recovery_cooldown_seconds",
             cfg.recovery_cooldown_seconds,
             "Reconnect recovery seconds",
             minimum=0,
         ),
-        taker_fee_bps=field_float("taker_fee_bps", cfg.taker_fee_bps, "Taker fee bps", minimum=0.0),
-        slippage_bps=field_float("slippage_bps", cfg.slippage_bps, "Slippage bps", minimum=0.0),
-        label_threshold=field_float("label_threshold", cfg.label_threshold, "Label threshold", minimum=0.0001),
-        model_lookback=field_int("model_lookback", cfg.model_lookback, "Model lookback rows", minimum=10),
-        training_epochs=field_int("training_epochs", cfg.training_epochs, "Training epochs", minimum=1),
-        confidence_beta=field_float("confidence_beta", cfg.confidence_beta, "Confidence beta", minimum=0.0, maximum=1.0),
+        taker_fee_bps=field_float(
+            "taker_fee_bps", cfg.taker_fee_bps, "Taker fee bps", minimum=0.0
+        ),
+        slippage_bps=field_float(
+            "slippage_bps", cfg.slippage_bps, "Slippage bps", minimum=0.0
+        ),
+        label_threshold=field_float(
+            "label_threshold", cfg.label_threshold, "Label threshold", minimum=0.0001
+        ),
+        model_lookback=field_int(
+            "model_lookback", cfg.model_lookback, "Model lookback rows", minimum=10
+        ),
+        training_epochs=field_int(
+            "training_epochs", cfg.training_epochs, "Training epochs", minimum=1
+        ),
+        confidence_beta=field_float(
+            "confidence_beta",
+            cfg.confidence_beta,
+            "Confidence beta",
+            minimum=0.0,
+            maximum=1.0,
+        ),
         feature_window_short=feature_window_short,
         feature_window_long=feature_window_long,
         set_features=",".join(enabled_features),
@@ -2964,9 +3843,13 @@ def _render_operator_report(
     model_path: str,
     width: int = 90,
 ) -> str:
-    sections = [render_dashboard(_dashboard_snapshot(with_account=with_account), width=width)]
+    sections = [
+        render_dashboard(_dashboard_snapshot(with_account=with_account), width=width)
+    ]
     if doctor:
-        ok, lines = _readiness_report(input_path=input_path, model_path=model_path, online=online)
+        ok, lines = _readiness_report(
+            input_path=input_path, model_path=model_path, online=online
+        )
         status = "ok" if ok else "fix"
         sections.append("\n".join([f"Readiness report ({status})", *lines]))
     return "\n\n".join(sections)
@@ -2982,7 +3865,9 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
         return [f"Account balances failed: {exc}"]
     balances_payload = account.get("balances", []) if isinstance(account, dict) else []
     assets_payload = account.get("assets", []) if isinstance(account, dict) else []
-    positions_payload = account.get("positions", []) if isinstance(account, dict) else []
+    positions_payload = (
+        account.get("positions", []) if isinstance(account, dict) else []
+    )
     balances = balances_payload if isinstance(balances_payload, list) else []
     assets = assets_payload if isinstance(assets_payload, list) else []
     positions = positions_payload if isinstance(positions_payload, list) else []
@@ -2995,7 +3880,11 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
         asset = str(item.get("asset", ""))
         free = str(item.get("free", "0"))
         locked = str(item.get("locked", "0"))
-        if asset in important_assets or free not in {"0", "0.0", "0.00000000"} or locked not in {"0", "0.0", "0.00000000"}:
+        if (
+            asset in important_assets
+            or free not in {"0", "0.0", "0.00000000"}
+            or locked not in {"0", "0.0", "0.00000000"}
+        ):
             interesting.append(f"{asset}: free={free} locked={locked}")
     for item in assets:
         if not isinstance(item, dict):
@@ -3004,8 +3893,14 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
         wallet = str(item.get("walletBalance", item.get("availableBalance", "0")))
         available = str(item.get("availableBalance", "0"))
         unrealized = str(item.get("unrealizedProfit", "0"))
-        if asset in important_assets or wallet not in {"0", "0.0", "0.00000000"} or unrealized not in {"0", "0.0", "0.00000000"}:
-            interesting.append(f"{asset}: wallet={wallet} available={available} unrealized={unrealized}")
+        if (
+            asset in important_assets
+            or wallet not in {"0", "0.0", "0.00000000"}
+            or unrealized not in {"0", "0.0", "0.00000000"}
+        ):
+            interesting.append(
+                f"{asset}: wallet={wallet} available={available} unrealized={unrealized}"
+            )
     for item in positions:
         if not isinstance(item, dict):
             continue
@@ -3013,8 +3908,14 @@ def _account_overview_lines(runtime) -> list[str]:  # skipcq: PY-R1000
         amount = str(item.get("positionAmt", item.get("positionAmount", "0")))
         entry = str(item.get("entryPrice", "0"))
         unrealized = str(item.get("unrealizedProfit", "0"))
-        if amount not in {"0", "0.0", "0.00000000"} or unrealized not in {"0", "0.0", "0.00000000"}:
-            interesting.append(f"{symbol}: position={amount} entry={entry} unrealized={unrealized}")
+        if amount not in {"0", "0.0", "0.00000000"} or unrealized not in {
+            "0",
+            "0.0",
+            "0.00000000",
+        }:
+            interesting.append(
+                f"{symbol}: position={amount} entry={entry} unrealized={unrealized}"
+            )
     if not interesting:
         return [
             f"market={runtime.market_type} environment={_runtime_environment(runtime)} testnet={runtime.testnet}",
@@ -3051,7 +3952,9 @@ def _dashboard_snapshot(*, with_account: bool) -> DashboardSnapshot:
         runtime=runtime.public_dict(),
         strategy=strategy.asdict(),
         artifacts=[_artifact_summary(path) for path in _recent_artifacts()],
-        account_lines=_account_overview_lines(runtime) if with_account else ["Run Account balances after Connect to fetch balances."],
+        account_lines=_account_overview_lines(runtime)
+        if with_account
+        else ["Run Account balances after Connect to fetch balances."],
         notes=notes,
     )
 
@@ -3068,7 +3971,9 @@ def _connection_status_line() -> str:
         server_time = client.get_exchange_time()
     except BinanceAPIError as exc:
         return f"Connection {checked_at}: public endpoint unreachable {market}; {exc}"
-    server_label = "server-time ok" if server_time is not None else "server-time response ok"
+    server_label = (
+        "server-time ok" if server_time is not None else "server-time response ok"
+    )
     if not _has_api_credentials(runtime):
         return f"Connection {checked_at}: public endpoint reachable {market} {mode}; credentials missing"
     if not _allows_signed_execution(runtime):
@@ -3086,7 +3991,9 @@ def _connection_status_line() -> str:
     return f"Connection {checked_at}: {auth_label} {market} {mode}; {server_label}"
 
 
-def _readiness_report(*, input_path: str, model_path: str, online: bool = False) -> tuple[bool, list[str]]:  # skipcq: PY-R1000
+def _readiness_report(
+    *, input_path: str, model_path: str, online: bool = False
+) -> tuple[bool, list[str]]:  # skipcq: PY-R1000
     runtime = load_runtime()
     strategy = load_strategy()
     checks: list[tuple[bool, str, str]] = []
@@ -3108,16 +4015,34 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
         "execution credentials",
         f"{mode}; credentials {'present' if runtime.api_key and runtime.api_secret else 'not configured'}",
     )
-    add(0.01 <= strategy.signal_threshold <= 0.99, "signal threshold", f"{strategy.signal_threshold:.3f}")
-    add(strategy.risk_per_trade > 0 and strategy.max_position_pct > 0, "risk sizing", f"risk={strategy.risk_per_trade} max_position={strategy.max_position_pct}")
-    add(bool(strategy.enabled_features), "feature set", ",".join(strategy.enabled_features))
+    add(
+        0.01 <= strategy.signal_threshold <= 0.99,
+        "signal threshold",
+        f"{strategy.signal_threshold:.3f}",
+    )
+    add(
+        strategy.risk_per_trade > 0 and strategy.max_position_pct > 0,
+        "risk sizing",
+        f"risk={strategy.risk_per_trade} max_position={strategy.max_position_pct}",
+    )
+    add(
+        bool(strategy.enabled_features),
+        "feature set",
+        ",".join(strategy.enabled_features),
+    )
 
     data_file = Path(input_path)
     candles = None
     if data_file.exists():
-        candles = _load_rows_for_command(str(data_file), label="Readiness data load failed")
+        candles = _load_rows_for_command(
+            str(data_file), label="Readiness data load failed"
+        )
         candle_count = len(candles) if candles is not None else 0
-        add(candle_count > max(strategy.feature_windows), "training data", f"{candle_count} candles at {data_file}")
+        add(
+            candle_count > max(strategy.feature_windows),
+            "training data",
+            f"{candle_count} candles at {data_file}",
+        )
     else:
         add(False, "training data", f"missing {data_file}")
 
@@ -3126,9 +4051,17 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
         try:
             model, model_kind = _load_readiness_model(model_file, strategy)
         except (OSError, ValueError) as exc:
-            add(False, "model artifact", f"{model_file} is not usable with current strategy ({exc})")
+            add(
+                False,
+                "model artifact",
+                f"{model_file} is not usable with current strategy ({exc})",
+            )
         else:
-            add(True, "model artifact", f"{model_file} dim={model.feature_dim} kind={model_kind}")
+            add(
+                True,
+                "model artifact",
+                f"{model_file} dim={model.feature_dim} kind={model_kind}",
+            )
             effective_strategy = apply_model_strategy_overrides(strategy, model)
             if effective_strategy.asdict() != strategy.asdict():
                 add(
@@ -3152,7 +4085,9 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
                 )
             probability_brier = getattr(model, "probability_brier_after", None)
             if probability_brier is not None:
-                probability_temperature = float(getattr(model, "probability_temperature", 1.0) or 1.0)
+                probability_temperature = float(
+                    getattr(model, "probability_temperature", 1.0) or 1.0
+                )
                 probability_ece = getattr(model, "probability_ece_after", None)
                 probability_detail = (
                     f"temperature={probability_temperature:.2f} "
@@ -3169,7 +4104,7 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
             if candles is not None:
                 rows = _readiness_model_rows(candles, effective_strategy, model)
                 if rows:
-                    drift = feature_drift_report(rows[-min(50, len(rows)):], model)
+                    drift = feature_drift_report(rows[-min(50, len(rows)) :], model)
                     drift_warning = "; ".join(drift.warnings[:2]) or "none"
                     add(
                         drift.status != "fail",
@@ -3185,9 +4120,15 @@ def _readiness_report(*, input_path: str, model_path: str, online: bool = False)
     if online:
         line = _connection_status_line()
         authenticated = "authenticated" in line or "auth response ok" in line
-        add(authenticated and "failed" not in line and "unreachable" not in line, "exchange connectivity", line)
+        add(
+            authenticated and "failed" not in line and "unreachable" not in line,
+            "exchange connectivity",
+            line,
+        )
 
-    lines = [f"[{'ok' if ok else 'fix'}] {label}: {detail}" for ok, label, detail in checks]
+    lines = [
+        f"[{'ok' if ok else 'fix'}] {label}: {detail}" for ok, label, detail in checks
+    ]
     return all(ok for ok, _label, _detail in checks), lines
 
 
@@ -3207,7 +4148,9 @@ def _runtime_quote_asset(runtime: RuntimeConfig) -> str:
 
 def _fund_asset_labels(runtime: RuntimeConfig) -> tuple[str, str]:
     quote_asset = _runtime_quote_asset(runtime)
-    base_asset = symbol_base_for_supported_quote(getattr(runtime, "symbol", ""), quote_asset=quote_asset)
+    base_asset = symbol_base_for_supported_quote(
+        getattr(runtime, "symbol", ""), quote_asset=quote_asset
+    )
     return quote_asset, base_asset or "BTC"
 
 
@@ -3217,7 +4160,11 @@ def _workflow_compute_backend(
     *,
     workflow: str,
 ) -> tuple[str, BackendInfo]:
-    backend_name = str(requested or runtime.compute_backend or default_compute_backend()).strip().lower()
+    backend_name = (
+        str(requested or runtime.compute_backend or default_compute_backend())
+        .strip()
+        .lower()
+    )
     if backend_name not in _COMPUTE_BACKEND_CHOICES:
         raise ValueError(f"unknown compute backend {backend_name!r}")
     info = require_backend(resolve_backend(backend_name))
@@ -3231,8 +4178,15 @@ def _workflow_compute_backend(
     return backend_name, info
 
 
-def _account_free_balances(account: object, tracked_assets: Iterable[str] | None = None) -> dict[str, float]:
-    asset_names = tuple(dict.fromkeys(str(asset or "").strip().upper() for asset in (tracked_assets or ("USDC", "BTC"))))
+def _account_free_balances(
+    account: object, tracked_assets: Iterable[str] | None = None
+) -> dict[str, float]:
+    asset_names = tuple(
+        dict.fromkeys(
+            str(asset or "").strip().upper()
+            for asset in (tracked_assets or ("USDC", "BTC"))
+        )
+    )
     balances = {asset: 0.0 for asset in asset_names if asset}
     if not isinstance(account, dict):
         return balances
@@ -3289,8 +4243,17 @@ def _apply_funds_change(
         runtime.managed_btc = 0.0
         save_runtime(runtime)
         return runtime, "Cleared trading caps. No exchange balances were changed."
-    if action in {"deposit_usdc", "withdraw_usdc", "deposit_btc", "withdraw_btc", "reset"}:
-        return runtime, "Funds no longer supports local deposit, withdraw, or reset. Configure credentials and set exchange-backed caps."
+    if action in {
+        "deposit_usdc",
+        "withdraw_usdc",
+        "deposit_btc",
+        "withdraw_btc",
+        "reset",
+    }:
+        return (
+            runtime,
+            "Funds no longer supports local deposit, withdraw, or reset. Configure credentials and set exchange-backed caps.",
+        )
     if action not in {"sync", "set_usdc", "set_btc"}:
         return runtime, f"Unknown funds action {action!r}."
     if balances is None:
@@ -3434,11 +4397,15 @@ async def _ui_edit_execution(ui) -> int:
         order_type = "MARKET"
     tif = payload["time_in_force"].strip().upper() or "GTC"
     if tif not in {"GTC", "IOC", "FOK"}:
-        ui.append_log(f"Unsupported timeInForce {tif!r}; keeping {cfg.time_in_force!r}.")
+        ui.append_log(
+            f"Unsupported timeInForce {tif!r}; keeping {cfg.time_in_force!r}."
+        )
         tif = cfg.time_in_force
     post_only = _parse_form_bool(payload["post_only"], getattr(cfg, "post_only", False))
     if post_only:
-        ui.append_log("Post-only is not compatible with live market execution; using no.")
+        ui.append_log(
+            "Post-only is not compatible with live market execution; using no."
+        )
         post_only = False
     reduce_only = _parse_form_bool(
         payload["reduce_only_on_close"],
@@ -3486,17 +4453,23 @@ async def _ui_edit_compute(ui) -> int:
     runtime.compute_backend = requested
     if requested == "cpu" and runtime.ai_enabled:
         runtime.ai_enabled = False
-        ui.append_log("AI features disabled because the selected compute backend is CPU-only.")
+        ui.append_log(
+            "AI features disabled because the selected compute backend is CPU-only."
+        )
     save_runtime(runtime)
     ui.append_log(
         f"Saved compute_backend={requested}. Runtime status: {describe_backend(info)}"
     )
     if info.kind == "cpu":
-        ui.append_log("CPU-only mode remains usable, but training/backtesting will be slower and AI cannot run.")
+        ui.append_log(
+            "CPU-only mode remains usable, but training/backtesting will be slower and AI cannot run."
+        )
     return 0
 
 
-async def _ui_settings_menu(ui, mark_credentials: Callable[[str], None] | None = None) -> int:
+async def _ui_settings_menu(
+    ui, mark_credentials: Callable[[str], None] | None = None
+) -> int:
     while True:
         choice = await ui.menu(
             "All settings",
@@ -3523,12 +4496,16 @@ async def _ui_settings_menu(ui, mark_credentials: Callable[[str], None] | None =
                 continue
             save_runtime(next_runtime)
             if mark_credentials is not None:
-                mark_credentials("unchecked" if _has_api_credentials(next_runtime) else "missing")
+                mark_credentials(
+                    "unchecked" if _has_api_credentials(next_runtime) else "missing"
+                )
             ui.append_log("Connection settings saved.")
             if next_runtime.validate_account and _has_api_credentials(next_runtime):
                 try:
                     client = _build_client(next_runtime)
-                    await ui.run_blocking(_validate_runtime_connection, next_runtime, client)
+                    await ui.run_blocking(
+                        _validate_runtime_connection, next_runtime, client
+                    )
                 except BinanceAPIError as exc:
                     if mark_credentials is not None:
                         mark_credentials("invalid")
@@ -3544,7 +4521,11 @@ async def _ui_settings_menu(ui, mark_credentials: Callable[[str], None] | None =
             except ValueError as exc:
                 ui.append_log(f"Strategy settings invalid: {exc}")
                 continue
-            if args.set_features is None and args.leverage is None and getattr(args, "profile", "custom") == "custom":
+            if (
+                args.set_features is None
+                and args.leverage is None
+                and getattr(args, "profile", "custom") == "custom"
+            ):
                 ui.append_log("Strategy update cancelled.")
                 continue
             await ui.run_blocking(command_strategy, args)
@@ -3576,12 +4557,16 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             return
         runtime = load_runtime()
         credential_state["fingerprint"] = _credential_fingerprint(runtime)
-        credential_state["status"] = "missing" if not _has_api_credentials(runtime) else status
+        credential_state["status"] = (
+            "missing" if not _has_api_credentials(runtime) else status
+        )
 
     def _credential_lock_reason(action: str) -> str:
         runtime = load_runtime()
         if not _allows_signed_execution(runtime):
-            return f"{action} is locked. Signed actions require testnet=true or demo=true."
+            return (
+                f"{action} is locked. Signed actions require testnet=true or demo=true."
+            )
         status = _credential_status()
         if status == "missing":
             return f"{action} is locked. Add Binance API key and secret in Connection settings first."
@@ -3596,7 +4581,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         return status in {"unchecked", "valid", "invalid", "unavailable"}
 
     def _signed_action_enabled() -> bool:
-        return _credential_status() == "valid" and _allows_signed_execution(load_runtime())
+        return _credential_status() == "valid" and _allows_signed_execution(
+            load_runtime()
+        )
 
     def _make_disabled_reason(action_title: str) -> Callable[[], str]:
         def disabled_reason() -> str:
@@ -3633,14 +4620,24 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         if action != "Connect" and not _allows_signed_execution(load_runtime()):
             ui.append_log(_credential_lock_reason(action))
             return False
-        if credential_state is not None and action != "Connect" and _credential_status() != "valid":
+        if (
+            credential_state is not None
+            and action != "Connect"
+            and _credential_status() != "valid"
+        ):
             ui.append_log(_credential_lock_reason(action))
             return False
         return True
 
     async def _overview(ui):
         include_account = credential_state is None or _credential_status() == "valid"
-        ui.append_log(await ui.run_blocking(lambda: render_dashboard(_dashboard_snapshot(with_account=include_account))))
+        ui.append_log(
+            await ui.run_blocking(
+                lambda: render_dashboard(
+                    _dashboard_snapshot(with_account=include_account)
+                )
+            )
+        )
         return 0
 
     async def _help(ui):
@@ -3718,10 +4715,15 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         if next_runtime.validate_account and _has_api_credentials(next_runtime):
             client = _build_client(next_runtime)
             try:
-                await ui.run_blocking(_validate_runtime_connection, next_runtime, client)
+                await ui.run_blocking(
+                    _validate_runtime_connection, next_runtime, client
+                )
             except BinanceAPIError as exc:
                 _mark_credentials("invalid")
-                print(f"Configuration saved, but validation failed: {exc}", file=sys.stderr)
+                print(
+                    f"Configuration saved, but validation failed: {exc}",
+                    file=sys.stderr,
+                )
                 return 2
             _mark_credentials("valid")
         print("Runtime config saved to", config_paths()["runtime"])
@@ -3737,7 +4739,11 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         except ValueError as exc:
             print(f"Strategy settings invalid: {exc}", file=sys.stderr)
             return 2
-        if args.set_features is None and args.leverage is None and getattr(args, "profile", "custom") == "custom":
+        if (
+            args.set_features is None
+            and args.leverage is None
+            and getattr(args, "profile", "custom") == "custom"
+        ):
             print("Strategy update cancelled.")
             return 0
         return await ui.run_blocking(command_strategy, args)
@@ -3753,7 +4759,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Readiness check",
             [
-                FormField("input", "Training input path", "data/historical_market.json"),
+                FormField(
+                    "input", "Training input path", "data/historical_market.json"
+                ),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("online", "Include exchange connectivity [yes/no]", "yes"),
             ],
@@ -3779,7 +4787,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Data/model audit",
             [
-                FormField("input", "Training input path", "data/historical_market.json"),
+                FormField(
+                    "input", "Training input path", "data/historical_market.json"
+                ),
                 FormField("model", "Model path", "data/model.json"),
             ],
         )
@@ -3801,16 +4811,28 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             "Download market data",
             [
                 FormField("limit", "Fetch limit", "500"),
-                FormField("batch_size", f"Klines per request [max {max_batch_size}]", "1000"),
-                FormField("output", "Candle output path", "data/historical_market.json"),
+                FormField(
+                    "batch_size", f"Klines per request [max {max_batch_size}]", "1000"
+                ),
+                FormField(
+                    "output", "Candle output path", "data/historical_market.json"
+                ),
             ],
         )
         if payload is None:
             print("Market data download cancelled.")
             return 0
         try:
-            limit = _parse_form_int(payload["limit"], label="Fetch limit", default=500, minimum=1)
-            batch_size = _parse_form_int(payload.get("batch_size", "1000"), label="Klines per request", default=1000, minimum=1, maximum=max_batch_size)
+            limit = _parse_form_int(
+                payload["limit"], label="Fetch limit", default=500, minimum=1
+            )
+            batch_size = _parse_form_int(
+                payload.get("batch_size", "1000"),
+                label="Klines per request",
+                default=1000,
+                minimum=1,
+                maximum=max_batch_size,
+            )
         except ValueError as exc:
             print(f"Fetch settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -3829,9 +4851,13 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Train AI model",
             [
-                FormField("input", "Training input path", "data/historical_market.json"),
+                FormField(
+                    "input", "Training input path", "data/historical_market.json"
+                ),
                 FormField("output", "Model output path", "data/model.json"),
-                FormField("preset", "Preset [custom/quick/balanced/thorough]", "custom"),
+                FormField(
+                    "preset", "Preset [custom/quick/balanced/thorough]", "custom"
+                ),
                 FormField("epochs", "Training epochs", "250"),
                 FormField("learning_rate", "Learning rate", "0.05"),
                 FormField("l2_penalty", "L2 penalty", "0.0001"),
@@ -3848,13 +4874,42 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             return 0
         try:
             preset = _parse_training_preset(payload["preset"])
-            epochs = _parse_form_int(payload["epochs"], label="Training epochs", default=250, minimum=1)
-            learning_rate = _parse_form_float(payload.get("learning_rate", "0.05"), label="Learning rate", default=0.05, minimum=0.000001)
-            l2_penalty = _parse_form_float(payload.get("l2_penalty", "0.0001"), label="L2 penalty", default=0.0001, minimum=0.0)
-            seed = _parse_form_int(payload["seed"], label="Training seed", default=7, minimum=0)
-            walk_forward_train = _parse_form_int(payload["walk_forward_train"], label="Walk-forward train window", default=300, minimum=2)
-            walk_forward_test = _parse_form_int(payload["walk_forward_test"], label="Walk-forward test window", default=60, minimum=1)
-            walk_forward_step = _parse_form_int(payload["walk_forward_step"], label="Walk-forward step", default=30, minimum=1)
+            epochs = _parse_form_int(
+                payload["epochs"], label="Training epochs", default=250, minimum=1
+            )
+            learning_rate = _parse_form_float(
+                payload.get("learning_rate", "0.05"),
+                label="Learning rate",
+                default=0.05,
+                minimum=0.000001,
+            )
+            l2_penalty = _parse_form_float(
+                payload.get("l2_penalty", "0.0001"),
+                label="L2 penalty",
+                default=0.0001,
+                minimum=0.0,
+            )
+            seed = _parse_form_int(
+                payload["seed"], label="Training seed", default=7, minimum=0
+            )
+            walk_forward_train = _parse_form_int(
+                payload["walk_forward_train"],
+                label="Walk-forward train window",
+                default=300,
+                minimum=2,
+            )
+            walk_forward_test = _parse_form_int(
+                payload["walk_forward_test"],
+                label="Walk-forward test window",
+                default=60,
+                minimum=1,
+            )
+            walk_forward_step = _parse_form_int(
+                payload["walk_forward_step"],
+                label="Walk-forward step",
+                default=30,
+                minimum=1,
+            )
         except ValueError as exc:
             print(f"Training settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -3872,7 +4927,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                 walk_forward_train=walk_forward_train,
                 walk_forward_test=walk_forward_test,
                 walk_forward_step=walk_forward_step,
-                calibrate_threshold=_parse_form_bool(payload["calibrate_threshold"], True),
+                calibrate_threshold=_parse_form_bool(
+                    payload["calibrate_threshold"], True
+                ),
             ),
         )
 
@@ -3908,23 +4965,80 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         to_date = None
         try:
             if mode == "lookback":
-                lookback_days = _parse_form_int(payload["lookback_days"], label="Lookback days", default=30, minimum=1)
+                lookback_days = _parse_form_int(
+                    payload["lookback_days"],
+                    label="Lookback days",
+                    default=30,
+                    minimum=1,
+                )
             elif mode == "range":
                 from_date = payload["from_date"].strip() or None
                 to_date = payload["to_date"].strip() or None
             elif mode not in {"", "all"}:
                 raise ValueError("Window mode must be all, lookback, or range.")
-            steps = _parse_form_int(payload["steps"], label="Grid steps", default=5, minimum=1)
-            min_risk = _parse_form_float(payload["min_risk"], label="Minimum risk", default=0.002, minimum=0.0001)
-            max_risk = _parse_form_float(payload["max_risk"], label="Maximum risk", default=0.02, minimum=0.0001)
-            min_leverage = _parse_form_float(payload["min_leverage"], label="Minimum leverage", default=1.0, minimum=1.0)
-            max_leverage = _parse_form_float(payload["max_leverage"], label="Maximum leverage", default=20.0, minimum=1.0)
-            min_threshold = _parse_form_float(payload["min_threshold"], label="Minimum threshold", default=0.52, minimum=0.01, maximum=0.99)
-            max_threshold = _parse_form_float(payload["max_threshold"], label="Maximum threshold", default=0.88, minimum=0.01, maximum=0.99)
-            min_take = _parse_form_float(payload["min_take"], label="Minimum take profit", default=0.01, minimum=0.0, maximum=0.99)
-            max_take = _parse_form_float(payload["max_take"], label="Maximum take profit", default=0.06, minimum=0.0, maximum=0.99)
-            min_stop = _parse_form_float(payload["min_stop"], label="Minimum stop loss", default=0.008, minimum=0.0, maximum=0.99)
-            max_stop = _parse_form_float(payload["max_stop"], label="Maximum stop loss", default=0.04, minimum=0.0, maximum=0.99)
+            steps = _parse_form_int(
+                payload["steps"], label="Grid steps", default=5, minimum=1
+            )
+            min_risk = _parse_form_float(
+                payload["min_risk"], label="Minimum risk", default=0.002, minimum=0.0001
+            )
+            max_risk = _parse_form_float(
+                payload["max_risk"], label="Maximum risk", default=0.02, minimum=0.0001
+            )
+            min_leverage = _parse_form_float(
+                payload["min_leverage"],
+                label="Minimum leverage",
+                default=1.0,
+                minimum=1.0,
+            )
+            max_leverage = _parse_form_float(
+                payload["max_leverage"],
+                label="Maximum leverage",
+                default=20.0,
+                minimum=1.0,
+            )
+            min_threshold = _parse_form_float(
+                payload["min_threshold"],
+                label="Minimum threshold",
+                default=0.52,
+                minimum=0.01,
+                maximum=0.99,
+            )
+            max_threshold = _parse_form_float(
+                payload["max_threshold"],
+                label="Maximum threshold",
+                default=0.88,
+                minimum=0.01,
+                maximum=0.99,
+            )
+            min_take = _parse_form_float(
+                payload["min_take"],
+                label="Minimum take profit",
+                default=0.01,
+                minimum=0.0,
+                maximum=0.99,
+            )
+            max_take = _parse_form_float(
+                payload["max_take"],
+                label="Maximum take profit",
+                default=0.06,
+                minimum=0.0,
+                maximum=0.99,
+            )
+            min_stop = _parse_form_float(
+                payload["min_stop"],
+                label="Minimum stop loss",
+                default=0.008,
+                minimum=0.0,
+                maximum=0.99,
+            )
+            max_stop = _parse_form_float(
+                payload["max_stop"],
+                label="Maximum stop loss",
+                default=0.04,
+                minimum=0.0,
+                maximum=0.99,
+            )
         except ValueError as exc:
             print(f"Optimization settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -3954,7 +5068,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Backtest strategy",
             [
-                FormField("input", "Backtest input path", "data/historical_market.json"),
+                FormField(
+                    "input", "Backtest input path", "data/historical_market.json"
+                ),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("start_cash", "Starting cash", "1000"),
             ],
@@ -3963,7 +5079,12 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             print("Strategy backtest cancelled.")
             return 0
         try:
-            start_cash = _parse_form_float(payload["start_cash"], label="Starting cash", default=1000.0, minimum=1.0)
+            start_cash = _parse_form_float(
+                payload["start_cash"],
+                label="Starting cash",
+                default=1000.0,
+                minimum=1.0,
+            )
         except ValueError as exc:
             print(f"Backtest settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -3980,9 +5101,13 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Evaluate model",
             [
-                FormField("input", "Evaluation input path", "data/historical_market.json"),
+                FormField(
+                    "input", "Evaluation input path", "data/historical_market.json"
+                ),
                 FormField("model", "Model path", "data/model.json"),
-                FormField("threshold", "Evaluation threshold [blank=strategy default]", ""),
+                FormField(
+                    "threshold", "Evaluation threshold [blank=strategy default]", ""
+                ),
                 FormField("calibrate_threshold", "Calibrate threshold [yes/no]", "no"),
             ],
         )
@@ -4001,7 +5126,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
                 input=payload["input"].strip() or "data/historical_market.json",
                 model=payload["model"].strip() or "data/model.json",
                 threshold=threshold,
-                calibrate_threshold=_parse_form_bool(payload["calibrate_threshold"], False),
+                calibrate_threshold=_parse_form_bool(
+                    payload["calibrate_threshold"], False
+                ),
             ),
         )
 
@@ -4011,22 +5138,46 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Build full setup",
             [
-                FormField("historical", "Historical candle path", "data/historical_market.json"),
+                FormField(
+                    "historical",
+                    "Historical candle path",
+                    "data/historical_market.json",
+                ),
                 FormField("model", "Model artifact path", "data/model.json"),
                 FormField("limit", "Fetch limit", "500"),
-                FormField("batch_size", f"Klines per request [max {max_batch_size}]", "1000"),
-                FormField("preset", "Training preset [custom/quick/balanced/thorough]", "balanced"),
+                FormField(
+                    "batch_size", f"Klines per request [max {max_batch_size}]", "1000"
+                ),
+                FormField(
+                    "preset",
+                    "Training preset [custom/quick/balanced/thorough]",
+                    "balanced",
+                ),
                 FormField("epochs", "Training epochs [blank=preset]", ""),
                 FormField("learning_rate", "Learning rate", "0.05"),
                 FormField("l2_penalty", "L2 penalty", "0.0001"),
                 FormField("seed", "Training seed", "7"),
-                FormField("walk_forward", "Walk-forward validation [yes/no/blank=preset]", ""),
-                FormField("walk_forward_train", "Walk-forward train window [blank=preset]", ""),
-                FormField("walk_forward_test", "Walk-forward test window [blank=preset]", ""),
+                FormField(
+                    "walk_forward", "Walk-forward validation [yes/no/blank=preset]", ""
+                ),
+                FormField(
+                    "walk_forward_train", "Walk-forward train window [blank=preset]", ""
+                ),
+                FormField(
+                    "walk_forward_test", "Walk-forward test window [blank=preset]", ""
+                ),
                 FormField("walk_forward_step", "Walk-forward step [blank=preset]", ""),
-                FormField("calibrate_threshold", "Calibrate threshold [yes/no/blank=preset]", ""),
+                FormField(
+                    "calibrate_threshold",
+                    "Calibrate threshold [yes/no/blank=preset]",
+                    "",
+                ),
                 FormField("start_cash", "Backtest starting cash", "1000"),
-                FormField("online_doctor", "Include exchange connectivity in final check [yes/no]", "no"),
+                FormField(
+                    "online_doctor",
+                    "Include exchange connectivity in final check [yes/no]",
+                    "no",
+                ),
             ],
         )
         if payload is None:
@@ -4035,19 +5186,60 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         historical = payload["historical"].strip() or "data/historical_market.json"
         model = payload["model"].strip() or "data/model.json"
         try:
-            limit = _parse_form_int(payload["limit"], label="Fetch limit", default=500, minimum=1)
-            batch_size = _parse_form_int(payload.get("batch_size", "1000"), label="Klines per request", default=1000, minimum=1, maximum=max_batch_size)
+            limit = _parse_form_int(
+                payload["limit"], label="Fetch limit", default=500, minimum=1
+            )
+            batch_size = _parse_form_int(
+                payload.get("batch_size", "1000"),
+                label="Klines per request",
+                default=1000,
+                minimum=1,
+                maximum=max_batch_size,
+            )
             preset = _parse_training_preset(payload["preset"])
-            epochs = _parse_optional_form_int(payload.get("epochs", ""), label="Training epochs", minimum=1)
-            learning_rate = _parse_form_float(payload.get("learning_rate", "0.05"), label="Learning rate", default=0.05, minimum=0.000001)
-            l2_penalty = _parse_form_float(payload.get("l2_penalty", "0.0001"), label="L2 penalty", default=0.0001, minimum=0.0)
-            seed = _parse_form_int(payload["seed"], label="Training seed", default=7, minimum=0)
-            walk_forward_train = _parse_optional_form_int(payload.get("walk_forward_train", ""), label="Walk-forward train window", minimum=2)
-            walk_forward_test = _parse_optional_form_int(payload.get("walk_forward_test", ""), label="Walk-forward test window", minimum=1)
-            walk_forward_step = _parse_optional_form_int(payload.get("walk_forward_step", ""), label="Walk-forward step", minimum=1)
+            epochs = _parse_optional_form_int(
+                payload.get("epochs", ""), label="Training epochs", minimum=1
+            )
+            learning_rate = _parse_form_float(
+                payload.get("learning_rate", "0.05"),
+                label="Learning rate",
+                default=0.05,
+                minimum=0.000001,
+            )
+            l2_penalty = _parse_form_float(
+                payload.get("l2_penalty", "0.0001"),
+                label="L2 penalty",
+                default=0.0001,
+                minimum=0.0,
+            )
+            seed = _parse_form_int(
+                payload["seed"], label="Training seed", default=7, minimum=0
+            )
+            walk_forward_train = _parse_optional_form_int(
+                payload.get("walk_forward_train", ""),
+                label="Walk-forward train window",
+                minimum=2,
+            )
+            walk_forward_test = _parse_optional_form_int(
+                payload.get("walk_forward_test", ""),
+                label="Walk-forward test window",
+                minimum=1,
+            )
+            walk_forward_step = _parse_optional_form_int(
+                payload.get("walk_forward_step", ""),
+                label="Walk-forward step",
+                minimum=1,
+            )
             walk_forward = _parse_optional_form_bool(payload.get("walk_forward", ""))
-            calibrate_threshold_opt = _parse_optional_form_bool(payload.get("calibrate_threshold", ""))
-            start_cash = _parse_form_float(payload["start_cash"], label="Backtest starting cash", default=1000.0, minimum=1.0)
+            calibrate_threshold_opt = _parse_optional_form_bool(
+                payload.get("calibrate_threshold", "")
+            )
+            start_cash = _parse_form_float(
+                payload["start_cash"],
+                label="Backtest starting cash",
+                default=1000.0,
+                minimum=1.0,
+            )
         except ValueError as exc:
             print(f"Setup settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -4089,11 +5281,30 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             print("Paper trading cancelled.")
             return 0
         try:
-            steps = _parse_form_int(payload["steps"], label="Paper trading steps", default=20, minimum=1)
-            sleep = _parse_form_int(payload["sleep"], label="Sleep seconds", default=5, minimum=0)
-            retrain_interval = _parse_form_int(payload["retrain_interval"], label="Retrain interval", default=0, minimum=0)
-            retrain_window = _parse_form_int(payload["retrain_window"], label="Retrain window", default=300, minimum=1)
-            retrain_min_rows = _parse_form_int(payload["retrain_min_rows"], label="Retrain minimum rows", default=240, minimum=1)
+            steps = _parse_form_int(
+                payload["steps"], label="Paper trading steps", default=20, minimum=1
+            )
+            sleep = _parse_form_int(
+                payload["sleep"], label="Sleep seconds", default=5, minimum=0
+            )
+            retrain_interval = _parse_form_int(
+                payload["retrain_interval"],
+                label="Retrain interval",
+                default=0,
+                minimum=0,
+            )
+            retrain_window = _parse_form_int(
+                payload["retrain_window"],
+                label="Retrain window",
+                default=300,
+                minimum=1,
+            )
+            retrain_min_rows = _parse_form_int(
+                payload["retrain_min_rows"],
+                label="Retrain minimum rows",
+                default=240,
+                minimum=1,
+            )
         except ValueError as exc:
             print(f"Paper trading settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -4130,11 +5341,30 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             print("Testnet trading cancelled.")
             return 0
         try:
-            steps = _parse_form_int(payload["steps"], label="Live steps", default=1, minimum=1)
-            sleep = _parse_form_int(payload["sleep"], label="Sleep seconds", default=5, minimum=0)
-            retrain_interval = _parse_form_int(payload["retrain_interval"], label="Retrain interval", default=0, minimum=0)
-            retrain_window = _parse_form_int(payload["retrain_window"], label="Retrain window", default=300, minimum=1)
-            retrain_min_rows = _parse_form_int(payload["retrain_min_rows"], label="Retrain minimum rows", default=240, minimum=1)
+            steps = _parse_form_int(
+                payload["steps"], label="Live steps", default=1, minimum=1
+            )
+            sleep = _parse_form_int(
+                payload["sleep"], label="Sleep seconds", default=5, minimum=0
+            )
+            retrain_interval = _parse_form_int(
+                payload["retrain_interval"],
+                label="Retrain interval",
+                default=0,
+                minimum=0,
+            )
+            retrain_window = _parse_form_int(
+                payload["retrain_window"],
+                label="Retrain window",
+                default=300,
+                minimum=1,
+            )
+            retrain_min_rows = _parse_form_int(
+                payload["retrain_min_rows"],
+                label="Retrain minimum rows",
+                default=240,
+                minimum=1,
+            )
         except ValueError as exc:
             print(f"Testnet trading settings invalid: {exc}", file=sys.stderr)
             return 2
@@ -4175,13 +5405,20 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             print("Test order cancelled.")
             return 0
         try:
-            quantity = _parse_form_float(payload["quantity"], label="Order quantity", default=0.00008, minimum=0.00001)
+            quantity = _parse_form_float(
+                payload["quantity"],
+                label="Order quantity",
+                default=0.00008,
+                minimum=0.00001,
+            )
         except ValueError as exc:
             print(f"Test order settings invalid: {exc}", file=sys.stderr)
             return 2
         mode = payload["mode"].strip().lower() or "auto"
         if mode not in {"auto", "buy-sell", "sell-buy"}:
-            print("Test order mode must be auto, buy-sell, or sell-buy.", file=sys.stderr)
+            print(
+                "Test order mode must be auto, buy-sell, or sell-buy.", file=sys.stderr
+            )
             return 2
         runtime = load_runtime()
         if not await ui.confirm(
@@ -4198,7 +5435,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         payload = await ui.form(
             "Full report",
             [
-                FormField("input", "Training input path", "data/historical_market.json"),
+                FormField(
+                    "input", "Training input path", "data/historical_market.json"
+                ),
                 FormField("model", "Model path", "data/model.json"),
                 FormField("readiness", "Include readiness report [yes/no]", "yes"),
                 FormField("online", "Include exchange connectivity [yes/no]", "no"),
@@ -4209,7 +5448,9 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
             print("Full report cancelled.")
             return 0
         include_account = _parse_form_bool(payload["account"], False)
-        if include_account and not _credentials_ready(ui, "Full report account section"):
+        if include_account and not _credentials_ready(
+            ui, "Full report account section"
+        ):
             return 2
         return await ui.run_blocking(
             command_report,
@@ -4232,27 +5473,149 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
 
     quote_asset, base_asset = _fund_asset_labels(load_runtime())
     return [
-        _make_action("1", "Connect", "Validate the saved Binance testnet credentials and unlock account-only actions.", _connect, credentials=True),
-        _make_action("2", "Dashboard", "Show the current setup, strategy, model, and recent run artifacts in the activity log.", _overview, aliases=("Overview",)),
-        _make_action("3", "Account balances", f"Read authenticated {base_asset} and {quote_asset} balances from Binance.", _account, credentials=True, aliases=("Account",)),
-        _make_action("4", "Safety check", "Verify safety flags, training data, model compatibility, and optional exchange reachability.", _doctor, aliases=("Readiness check",)),
-        _make_action("5", "Data/model audit", "Check candle quality, feature stability, model metadata, and risk posture without network calls.", _audit, aliases=("Local audit",)),
-        _make_action("6", "Trading caps", f"Read exchange balances and set the maximum {base_asset} / {quote_asset} the strategy may use.", _funds, credentials=True, aliases=("Funds",)),
-        _make_action("7", "Download market data", "Download fresh market candles into the local dataset.", _fetch, aliases=("Fetch candles",)),
-        _make_action("8", "Train AI model", "Train or retrain the prediction model on cached market data.", _train, aliases=("Train model",)),
-        _make_action("9", "Evaluate model", "Score the saved model on cached candles and inspect threshold quality.", _evaluate, aliases=("Evaluate",)),
-        _make_action("10", "Backtest strategy", "Simulate trades on cached candles and report PnL, fees, and drawdown.", _backtest, aliases=("Backtest",)),
-        _make_action("11", "Optimize strategy", "Search risk, threshold, take-profit, and stop-loss settings over a chosen history window.", _tune, aliases=("Tune strategy",)),
-        _make_action("12", "Build full setup", "Download data, train, evaluate, backtest, audit, then run safety checks.", _prepare, aliases=("Prepare system",)),
-        _make_action("13", "Paper trading", "Run the live loop without placing orders; useful before signed testnet trading.", _paper, aliases=("Paper loop",)),
-        _make_action("14", "Testnet trading", "Run authenticated non-mainnet execution with signed testnet or demo orders.", _live, credentials=True, aliases=("Testnet loop",)),
-        _make_action("15", "Test order", "Place a minimal BUY/SELL roundtrip on spot testnet or demo.", _roundtrip, credentials=True, aliases=("Spot roundtrip",)),
-        _make_action("16", "Full report", "Print dashboard, recent artifacts, safety checks, and optional account state.", _report, aliases=("Operator report",)),
+        _make_action(
+            "1",
+            "Connect",
+            "Validate the saved Binance testnet credentials and unlock account-only actions.",
+            _connect,
+            credentials=True,
+        ),
+        _make_action(
+            "2",
+            "Dashboard",
+            "Show the current setup, strategy, model, and recent run artifacts in the activity log.",
+            _overview,
+            aliases=("Overview",),
+        ),
+        _make_action(
+            "3",
+            "Account balances",
+            f"Read authenticated {base_asset} and {quote_asset} balances from Binance.",
+            _account,
+            credentials=True,
+            aliases=("Account",),
+        ),
+        _make_action(
+            "4",
+            "Safety check",
+            "Verify safety flags, training data, model compatibility, and optional exchange reachability.",
+            _doctor,
+            aliases=("Readiness check",),
+        ),
+        _make_action(
+            "5",
+            "Data/model audit",
+            "Check candle quality, feature stability, model metadata, and risk posture without network calls.",
+            _audit,
+            aliases=("Local audit",),
+        ),
+        _make_action(
+            "6",
+            "Trading caps",
+            f"Read exchange balances and set the maximum {base_asset} / {quote_asset} the strategy may use.",
+            _funds,
+            credentials=True,
+            aliases=("Funds",),
+        ),
+        _make_action(
+            "7",
+            "Download market data",
+            "Download fresh market candles into the local dataset.",
+            _fetch,
+            aliases=("Fetch candles",),
+        ),
+        _make_action(
+            "8",
+            "Train AI model",
+            "Train or retrain the prediction model on cached market data.",
+            _train,
+            aliases=("Train model",),
+        ),
+        _make_action(
+            "9",
+            "Evaluate model",
+            "Score the saved model on cached candles and inspect threshold quality.",
+            _evaluate,
+            aliases=("Evaluate",),
+        ),
+        _make_action(
+            "10",
+            "Backtest strategy",
+            "Simulate trades on cached candles and report PnL, fees, and drawdown.",
+            _backtest,
+            aliases=("Backtest",),
+        ),
+        _make_action(
+            "11",
+            "Optimize strategy",
+            "Search risk, threshold, take-profit, and stop-loss settings over a chosen history window.",
+            _tune,
+            aliases=("Tune strategy",),
+        ),
+        _make_action(
+            "12",
+            "Build full setup",
+            "Download data, train, evaluate, backtest, audit, then run safety checks.",
+            _prepare,
+            aliases=("Prepare system",),
+        ),
+        _make_action(
+            "13",
+            "Paper trading",
+            "Run the live loop without placing orders; useful before signed testnet trading.",
+            _paper,
+            aliases=("Paper loop",),
+        ),
+        _make_action(
+            "14",
+            "Testnet trading",
+            "Run authenticated non-mainnet execution with signed testnet or demo orders.",
+            _live,
+            credentials=True,
+            aliases=("Testnet loop",),
+        ),
+        _make_action(
+            "15",
+            "Test order",
+            "Place a minimal BUY/SELL roundtrip on spot testnet or demo.",
+            _roundtrip,
+            credentials=True,
+            aliases=("Spot roundtrip",),
+        ),
+        _make_action(
+            "16",
+            "Full report",
+            "Print dashboard, recent artifacts, safety checks, and optional account state.",
+            _report,
+            aliases=("Operator report",),
+        ),
         # Backwards-compatible aliases for direct configuration shortcuts.
-        _make_action("17", "Connection settings", "Edit API keys, market type, testnet/demo mode, paper mode, and request limits.", _runtime, aliases=("Runtime settings",)),
-        _make_action("18", "Strategy settings", "Edit risk, thresholds, model windows, enabled features, and external signal behavior.", _strategy),
-        _make_action("19", "All settings", "Open one settings hub for connection, strategy, order execution, and CPU/GPU backend.", _settings, aliases=("Settings",)),
-        _make_action("20", "Help", "Show the plain-language workflow, keyboard shortcuts, safety notes, and setup guide.", _help),
+        _make_action(
+            "17",
+            "Connection settings",
+            "Edit API keys, market type, testnet/demo mode, paper mode, and request limits.",
+            _runtime,
+            aliases=("Runtime settings",),
+        ),
+        _make_action(
+            "18",
+            "Strategy settings",
+            "Edit risk, thresholds, model windows, enabled features, and external signal behavior.",
+            _strategy,
+        ),
+        _make_action(
+            "19",
+            "All settings",
+            "Open one settings hub for connection, strategy, order execution, and CPU/GPU backend.",
+            _settings,
+            aliases=("Settings",),
+        ),
+        _make_action(
+            "20",
+            "Help",
+            "Show the plain-language workflow, keyboard shortcuts, safety notes, and setup guide.",
+            _help,
+        ),
     ]
 
 
@@ -4273,7 +5636,9 @@ def command_menu(_: argparse.Namespace) -> int:
     initial_runtime = load_runtime()
     credential_state = {
         "fingerprint": _credential_fingerprint(initial_runtime),
-        "status": "missing" if not _has_api_credentials(initial_runtime) else "unchecked",
+        "status": "missing"
+        if not _has_api_credentials(initial_runtime)
+        else "unchecked",
     }
 
     def menu_connection_status_line() -> str:
@@ -4402,7 +5767,9 @@ def _artifact_path(kind: str, *, output_dir: Path) -> Path:
     return output_dir / f"{kind}_run_{int(time.time() * 1_000_000)}.json"
 
 
-def _persist_run_artifact(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
+def _persist_run_artifact(
+    kind: str, output_dir: Path, payload: dict[str, object]
+) -> Path:
     path = _artifact_path(kind, output_dir=output_dir)
     write_json_atomic(path, payload, indent=2, sort_keys=True)
     return path
@@ -4475,15 +5842,21 @@ def _entry_leverage_for_notional(
         return requested
     clean_notional = abs(_safe_float(notional))
     if not math.isfinite(clean_notional) or clean_notional <= 0.0:
-        raise BinanceAPIError("Unable to resolve futures leverage bracket without a positive entry notional")
+        raise BinanceAPIError(
+            "Unable to resolve futures leverage bracket without a positive entry notional"
+        )
     if not hasattr(client, "get_max_leverage_for_notional"):
         return requested
     try:
-        bracket_leverage = _safe_float(client.get_max_leverage_for_notional(runtime.symbol, clean_notional))
+        bracket_leverage = _safe_float(
+            client.get_max_leverage_for_notional(runtime.symbol, clean_notional)
+        )
     except BinanceAPIError:
         raise
     except Exception as exc:
-        raise BinanceAPIError(f"Unable to resolve futures leverage bracket for entry notional: {exc}") from exc
+        raise BinanceAPIError(
+            f"Unable to resolve futures leverage bracket for entry notional: {exc}"
+        ) from exc
     if not math.isfinite(bracket_leverage) or bracket_leverage <= 0.0:
         raise BinanceAPIError("Invalid futures leverage bracket for entry notional")
     return max(1.0, min(requested, MAX_AUTONOMOUS_LEVERAGE, bracket_leverage))
@@ -4517,13 +5890,17 @@ def _advanced_objective_for_model(
         feature_cfg = default_config_for(objective_name, strategy.enabled_features)
         if advanced_feature_signature(feature_cfg) == str(model_signature):
             return objective_name, feature_cfg
-    feature_cfg = advanced_config_from_signature(str(model_signature), strategy.enabled_features)
+    feature_cfg = advanced_config_from_signature(
+        str(model_signature), strategy.enabled_features
+    )
     if feature_cfg is not None:
         return "custom", feature_cfg
     return None
 
 
-def _load_readiness_model(model_path: Path, strategy: StrategyConfig) -> tuple[TrainedModel, str]:
+def _load_readiness_model(
+    model_path: Path, strategy: StrategyConfig
+) -> tuple[TrainedModel, str]:
     try:
         return _load_runtime_model(model_path, strategy), "runtime"
     except ModelFeatureMismatchError as runtime_error:
@@ -4563,8 +5940,16 @@ def _backtest_rows_for_model(
     advanced = _advanced_objective_for_model(model, strategy)
     if advanced is not None:
         _objective_name, feature_cfg = advanced
-        rows = make_advanced_inference_rows(candles, feature_cfg, compute_backend=compute_backend)
-        return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
+        rows = make_advanced_inference_rows(
+            candles, feature_cfg, compute_backend=compute_backend
+        )
+        return (
+            rows
+            if rows
+            else _readiness_model_rows(
+                candles, strategy, model, compute_backend=compute_backend
+            )
+        )
     rows = make_inference_rows(
         candles,
         strategy.feature_windows[0],
@@ -4572,7 +5957,13 @@ def _backtest_rows_for_model(
         enabled_features=strategy.enabled_features,
         compute_backend=compute_backend,
     )
-    return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
+    return (
+        rows
+        if rows
+        else _readiness_model_rows(
+            candles, strategy, model, compute_backend=compute_backend
+        )
+    )
 
 
 def _live_rows_for_model(
@@ -4590,12 +5981,24 @@ def _live_rows_for_model(
             enabled_features=strategy.enabled_features,
             compute_backend=compute_backend,
         )
-        return rows if rows else _build_model_rows(candles, strategy, compute_backend=compute_backend)
+        return (
+            rows
+            if rows
+            else _build_model_rows(candles, strategy, compute_backend=compute_backend)
+        )
     advanced = _advanced_objective_for_model(model, strategy)
     if advanced is not None:
         _objective_name, feature_cfg = advanced
-        rows = make_advanced_inference_rows(candles, feature_cfg, compute_backend=compute_backend)
-        return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
+        rows = make_advanced_inference_rows(
+            candles, feature_cfg, compute_backend=compute_backend
+        )
+        return (
+            rows
+            if rows
+            else _readiness_model_rows(
+                candles, strategy, model, compute_backend=compute_backend
+            )
+        )
     rows = make_inference_rows(
         candles,
         strategy.feature_windows[0],
@@ -4603,10 +6006,18 @@ def _live_rows_for_model(
         enabled_features=strategy.enabled_features,
         compute_backend=compute_backend,
     )
-    return rows if rows else _readiness_model_rows(candles, strategy, model, compute_backend=compute_backend)
+    return (
+        rows
+        if rows
+        else _readiness_model_rows(
+            candles, strategy, model, compute_backend=compute_backend
+        )
+    )
 
 
-def _live_model_feature_signature(model: TrainedModel | None, strategy: StrategyConfig) -> str:
+def _live_model_feature_signature(
+    model: TrainedModel | None, strategy: StrategyConfig
+) -> str:
     if model is not None and _advanced_objective_for_model(model, strategy) is not None:
         return str(model.feature_signature)
     return _strategy_feature_signature(strategy)
@@ -4689,7 +6100,9 @@ def _target_notional(
         leverage = _effective_leverage(strategy, market_type)
     if not math.isfinite(float(leverage)):
         return 0.0
-    risk_exposure = stop_loss_sized_notional_pct(strategy, market_type, leverage=leverage)
+    risk_exposure = stop_loss_sized_notional_pct(
+        strategy, market_type, leverage=leverage
+    )
     return max(0.0, cash * risk_exposure)
 
 
@@ -4720,7 +6133,9 @@ def _build_order_notional(
     if constraints is None:
         return requested_notional, abs(qty)
 
-    normalized_qty, parsed_constraints = client.normalize_quantity(constraints.symbol, abs(qty))
+    normalized_qty, parsed_constraints = client.normalize_quantity(
+        constraints.symbol, abs(qty)
+    )
     if normalized_qty <= 0:
         return 0.0, 0.0
 
@@ -4729,12 +6144,20 @@ def _build_order_notional(
     if normalized_qty < parsed_constraints.min_qty:
         return 0.0, 0.0
 
-    if parsed_constraints.min_notional > 0 and requested_notional < parsed_constraints.min_notional:
+    if (
+        parsed_constraints.min_notional > 0
+        and requested_notional < parsed_constraints.min_notional
+    ):
         return 0.0, 0.0
 
-    if parsed_constraints.max_notional > 0 and requested_notional > parsed_constraints.max_notional:
+    if (
+        parsed_constraints.max_notional > 0
+        and requested_notional > parsed_constraints.max_notional
+    ):
         capped_notional = parsed_constraints.max_notional
-        capped_qty, _ = client.normalize_quantity(parsed_constraints.symbol, capped_notional / price)
+        capped_qty, _ = client.normalize_quantity(
+            parsed_constraints.symbol, capped_notional / price
+        )
         if capped_qty <= 0:
             return 0.0, 0.0
         requested_notional = capped_qty * price
@@ -4779,7 +6202,9 @@ def _build_live_model(
         if retrain_every > 0 and step % retrain_every != 0:
             return model
 
-    train_rows = _resolve_live_retrain_rows(rows, retrain_window=retrain_window, retrain_min_rows=retrain_min_rows)
+    train_rows = _resolve_live_retrain_rows(
+        rows, retrain_window=retrain_window, retrain_min_rows=retrain_min_rows
+    )
     if not train_rows:
         return model
 
@@ -4815,8 +6240,16 @@ def _adjust_directional_thresholds(
     threshold_add: float,
 ) -> tuple[float | None, float | None]:
     add = _clamp(float(threshold_add), -1.0, 1.0)
-    adjusted_long = _clamp(float(long_threshold) + add, 0.0, 1.0) if long_threshold is not None else None
-    adjusted_short = _clamp(float(short_threshold) - add, 0.0, 1.0) if short_threshold is not None else None
+    adjusted_long = (
+        _clamp(float(long_threshold) + add, 0.0, 1.0)
+        if long_threshold is not None
+        else None
+    )
+    adjusted_short = (
+        _clamp(float(short_threshold) - add, 0.0, 1.0)
+        if short_threshold is not None
+        else None
+    )
     return adjusted_long, adjusted_short
 
 
@@ -4829,7 +6262,11 @@ def _score_to_direction(
     short_threshold: float | None = None,
     side_thresholds_explicit: bool = False,
 ) -> int:
-    threshold = cfg.signal_threshold if threshold is None else _clamp(float(threshold), 0.0, 1.0)
+    threshold = (
+        cfg.signal_threshold
+        if threshold is None
+        else _clamp(float(threshold), 0.0, 1.0)
+    )
     return market_direction_from_probability(
         score,
         threshold,
@@ -4892,13 +6329,20 @@ def _detect_existing_position(
             amount = _safe_float(item.get("positionAmt"))
             if amount == 0.0:
                 continue
-            entry_price = _safe_float(item.get("entryPrice")) or _safe_float(item.get("markPrice")) or reference_price or 0.0
+            entry_price = (
+                _safe_float(item.get("entryPrice"))
+                or _safe_float(item.get("markPrice"))
+                or reference_price
+                or 0.0
+            )
             qty = abs(amount)
             margin = (
                 _safe_float(item.get("positionInitialMargin"))
                 or _safe_float(item.get("initialMargin"))
                 or _safe_float(item.get("isolatedWallet"))
-                or (qty * entry_price / max(1.0, leverage) if entry_price > 0.0 else 0.0)
+                or (
+                    qty * entry_price / max(1.0, leverage) if entry_price > 0.0 else 0.0
+                )
             )
             return {
                 "market": "futures",
@@ -4952,7 +6396,11 @@ def _paper_or_live_order(
     if leverage is None:
         leverage = _effective_leverage(strategy, runtime.market_type)
     kwargs = {"dry_run": dry_run, "leverage": leverage}
-    if notional is not None and not reduce_only and hasattr(client, "get_max_leverage_for_notional"):
+    if (
+        notional is not None
+        and not reduce_only
+        and hasattr(client, "get_max_leverage_for_notional")
+    ):
         kwargs["notional"] = float(notional)
     if reduce_only and not dry_run:
         kwargs["reduce_only"] = True
@@ -4962,11 +6410,15 @@ def _paper_or_live_order(
         response = client.place_order(runtime.symbol, side, size, **kwargs)
     except TypeError as exc:
         if client_order_id and "client_order_id" in str(exc):
-            raise BinanceAPIError("Signed live orders require client_order_id support") from exc
+            raise BinanceAPIError(
+                "Signed live orders require client_order_id support"
+            ) from exc
         raise
     except BinanceAPIError:
         if not dry_run and client_order_id and hasattr(client, "get_order"):
-            response = client.get_order(runtime.symbol, orig_client_order_id=client_order_id)
+            response = client.get_order(
+                runtime.symbol, orig_client_order_id=client_order_id
+            )
         else:
             raise
     if dry_run:
@@ -5013,7 +6465,11 @@ def _order_fill_details(
     if qty <= 0.0 and allow_quantity_fallback:
         qty = max(0.0, float(fallback_qty))
     if average <= 0.0:
-        average = quote / qty if qty > 0.0 and quote > 0.0 else max(0.0, float(fallback_price))
+        average = (
+            quote / qty
+            if qty > 0.0 and quote > 0.0
+            else max(0.0, float(fallback_price))
+        )
     notional = quote if quote > 0.0 else qty * average
     return float(qty), float(average), float(notional)
 
@@ -5102,7 +6558,9 @@ def _order_executed_qty(order: object) -> float:
     return _safe_float(order.get("executedQty"))
 
 
-def _roundtrip_quantity(client, symbol: str, requested: float, price: float) -> tuple[float, SymbolConstraints, float]:
+def _roundtrip_quantity(
+    client, symbol: str, requested: float, price: float
+) -> tuple[float, SymbolConstraints, float]:
     if requested <= 0.0:
         raise ValueError("Roundtrip quantity must be > 0.")
     if price <= 0.0:
@@ -5112,7 +6570,9 @@ def _roundtrip_quantity(client, symbol: str, requested: float, price: float) -> 
     if min_notional > 0.0 and quantity * price < min_notional:
         step = max(0.0, _safe_float(getattr(constraints, "step_size", 0.0)))
         target = (min_notional / price) + (2.0 * step)
-        quantity, constraints = client.normalize_quantity(symbol, max(target, float(constraints.min_qty)))
+        quantity, constraints = client.normalize_quantity(
+            symbol, max(target, float(constraints.min_qty))
+        )
     notional = quantity * price
     if quantity <= 0.0:
         raise BinanceAPIError(f"Requested quantity is below {symbol} exchange filters")
@@ -5142,7 +6602,10 @@ def _roundtrip_second_quantity(
         target = min(max(0.0, executed_qty), available)
     else:
         available_quote = _asset_free_balance(account, quote_asset)
-        target = min(max(0.0, executed_qty), (available_quote / price) * 0.995 if price > 0.0 else 0.0)
+        target = min(
+            max(0.0, executed_qty),
+            (available_quote / price) * 0.995 if price > 0.0 else 0.0,
+        )
     quantity, _constraints = client.normalize_quantity(symbol, target)
     return quantity
 
@@ -5150,13 +6613,22 @@ def _roundtrip_second_quantity(
 def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     runtime = load_runtime()
     if not getattr(args, "yes", False):
-        print("Pass --yes to confirm signed spot testnet/demo order placement.", file=sys.stderr)
+        print(
+            "Pass --yes to confirm signed spot testnet/demo order placement.",
+            file=sys.stderr,
+        )
         return 2
     if runtime.market_type != "spot":
-        print("Test order requires market_type=spot in Connection settings.", file=sys.stderr)
+        print(
+            "Test order requires market_type=spot in Connection settings.",
+            file=sys.stderr,
+        )
         return 2
     if not _allows_signed_execution(runtime):
-        print("Test order requires testnet=true or demo=true in Connection settings.", file=sys.stderr)
+        print(
+            "Test order requires testnet=true or demo=true in Connection settings.",
+            file=sys.stderr,
+        )
         return 2
     if not _has_api_credentials(runtime):
         print(_credential_required_message("Test order"), file=sys.stderr)
@@ -5206,16 +6678,20 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             raise ValueError(f"Unsupported roundtrip mode: {mode}")
 
         first = client.place_order(runtime.symbol, first_side, quantity, dry_run=False)
-        executed, _first_fill_price, _first_notional, first_fill_source = _resolved_order_fill_details(
-            client,
-            runtime,
-            first,
-            fallback_qty=0.0,
-            fallback_price=float(price),
-            dry_run=False,
+        executed, _first_fill_price, _first_notional, first_fill_source = (
+            _resolved_order_fill_details(
+                client,
+                runtime,
+                first,
+                fallback_qty=0.0,
+                fallback_price=float(price),
+                dry_run=False,
+            )
         )
         if executed <= 0.0:
-            raise BinanceAPIError("First roundtrip order response did not include executed quantity")
+            raise BinanceAPIError(
+                "First roundtrip order response did not include executed quantity"
+            )
         mid = client.get_account()
         second_quantity = _roundtrip_second_quantity(
             client,
@@ -5228,8 +6704,12 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             float(price),
         )
         if second_quantity <= 0.0:
-            raise BinanceAPIError(f"Could not size {second_side} leg from post-{first_side} balances")
-        second = client.place_order(runtime.symbol, second_side, second_quantity, dry_run=False)
+            raise BinanceAPIError(
+                f"Could not size {second_side} leg from post-{first_side} balances"
+            )
+        second = client.place_order(
+            runtime.symbol, second_side, second_quantity, dry_run=False
+        )
         after = client.get_account()
     except (BinanceAPIError, ValueError) as exc:
         if first is not None:
@@ -5265,17 +6745,29 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 "first_order": {
                     "side": first_side,
                     "status": first.get("status") if isinstance(first, dict) else None,
-                    "orderId": first.get("orderId") if isinstance(first, dict) else None,
-                    "executedQty": first.get("executedQty") if isinstance(first, dict) else None,
+                    "orderId": first.get("orderId")
+                    if isinstance(first, dict)
+                    else None,
+                    "executedQty": first.get("executedQty")
+                    if isinstance(first, dict)
+                    else None,
                     "fill_source": first_fill_source,
                 },
                 "second_order": {"side": second_side, "status": "not_completed"},
             }
             try:
-                artifact_path = _persist_run_artifact("spot_roundtrip_partial", Path("data"), partial_payload)
-                print(f"Partial spot roundtrip recorded at {artifact_path}", file=sys.stderr)
+                artifact_path = _persist_run_artifact(
+                    "spot_roundtrip_partial", Path("data"), partial_payload
+                )
+                print(
+                    f"Partial spot roundtrip recorded at {artifact_path}",
+                    file=sys.stderr,
+                )
             except (OSError, RuntimeError, TypeError, ValueError) as persist_exc:
-                print(f"Partial spot roundtrip could not be recorded: {persist_exc}", file=sys.stderr)
+                print(
+                    f"Partial spot roundtrip could not be recorded: {persist_exc}",
+                    file=sys.stderr,
+                )
         print(_credential_failure_message("Test order", exc), file=sys.stderr)
         return 2
 
@@ -5302,14 +6794,18 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             "side": first_side,
             "status": first.get("status") if isinstance(first, dict) else None,
             "orderId": first.get("orderId") if isinstance(first, dict) else None,
-            "executedQty": first.get("executedQty") if isinstance(first, dict) else None,
+            "executedQty": first.get("executedQty")
+            if isinstance(first, dict)
+            else None,
             "fill_source": first_fill_source,
         },
         "second_order": {
             "side": second_side,
             "status": second.get("status") if isinstance(second, dict) else None,
             "orderId": second.get("orderId") if isinstance(second, dict) else None,
-            "executedQty": second.get("executedQty") if isinstance(second, dict) else None,
+            "executedQty": second.get("executedQty")
+            if isinstance(second, dict)
+            else None,
         },
     }
     artifact_path = _persist_run_artifact("spot_roundtrip", Path("data"), payload)
@@ -5387,13 +6883,18 @@ def command_connect(_: argparse.Namespace) -> int:
     print("testnet:", runtime.testnet)
     print("demo:", getattr(runtime, "demo", False))
     print("endpoint:", client.base_url)
-    print("server_time:", server_time.get("serverTime") if isinstance(server_time, dict) else server_time)
+    print(
+        "server_time:",
+        server_time.get("serverTime") if isinstance(server_time, dict) else server_time,
+    )
     print("account:", json.dumps(account, indent=2))
     return 0
 
 
 def command_doctor(args: argparse.Namespace) -> int:
-    ok, lines = _readiness_report(input_path=args.input, model_path=args.model, online=bool(args.online))
+    ok, lines = _readiness_report(
+        input_path=args.input, model_path=args.model, online=bool(args.online)
+    )
     print("Readiness report")
     for line in lines:
         print(line)
@@ -5436,7 +6937,9 @@ def command_reconcile(args: argparse.Namespace) -> int:
             account,
             runtime,
             PositionsStore(),
-            quantity_tolerance=max(0.0, float(getattr(args, "quantity_tolerance", 1e-8))),
+            quantity_tolerance=max(
+                0.0, float(getattr(args, "quantity_tolerance", 1e-8))
+            ),
         )
     except (BinanceAPIError, OSError, ValueError) as exc:
         print(f"reconcile failed: {exc}", file=sys.stderr)
@@ -5508,7 +7011,9 @@ def command_universe(args: argparse.Namespace) -> int:
 
 def command_report(args: argparse.Namespace) -> int:
     if bool(args.account) and not _has_api_credentials(load_runtime()):
-        print(_credential_required_message("Full report account section"), file=sys.stderr)
+        print(
+            _credential_required_message("Full report account section"), file=sys.stderr
+        )
         return 2
     report = _render_operator_report(
         with_account=bool(args.account),
@@ -5561,7 +7066,11 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 calibrate_threshold=False,
             )
         )
-        epochs = int(args.epochs if getattr(args, "epochs", None) is not None else preset_args.epochs)
+        epochs = int(
+            args.epochs
+            if getattr(args, "epochs", None) is not None
+            else preset_args.epochs
+        )
         walk_forward = (
             bool(args.walk_forward)
             if getattr(args, "walk_forward", None) is not None
@@ -5618,7 +7127,13 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         (
             "Download market data",
             command_fetch,
-            argparse.Namespace(symbol=runtime.symbol, interval=runtime.interval, limit=limit, batch_size=batch_size, output=historical),
+            argparse.Namespace(
+                symbol=runtime.symbol,
+                interval=runtime.interval,
+                limit=limit,
+                batch_size=batch_size,
+                output=historical,
+            ),
         ),
         (
             "Train AI model",
@@ -5642,7 +7157,12 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         (
             "Evaluate model",
             command_evaluate,
-            argparse.Namespace(input=historical, model=model, threshold=None, calibrate_threshold=should_calibrate_threshold),
+            argparse.Namespace(
+                input=historical,
+                model=model,
+                threshold=None,
+                calibrate_threshold=should_calibrate_threshold,
+            ),
         ),
         (
             "Backtest strategy",
@@ -5657,7 +7177,9 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         (
             "Readiness check",
             command_doctor,
-            argparse.Namespace(input=historical, model=model, online=bool(args.online_doctor)),
+            argparse.Namespace(
+                input=historical, model=model, online=bool(args.online_doctor)
+            ),
         ),
     ]
     for label, fn, step_args in sequence:
@@ -5669,7 +7191,9 @@ def command_prepare(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     return 0
 
 
-def _ai_provider_runtime_status(runtime: RuntimeConfig) -> tuple[str, dict[str, object]]:
+def _ai_provider_runtime_status(
+    runtime: RuntimeConfig,
+) -> tuple[str, dict[str, object]]:
     if not runtime.ai_enabled:
         return "disabled", {"status": "disabled"}
     provider = str(runtime.ai_provider or "auto").lower()
@@ -5732,7 +7256,9 @@ def command_status(args: argparse.Namespace) -> int:
         position_store = PositionsStore()
         ledger_errors = position_store.open_integrity_errors()
         position_count = len(position_store.load_open()) if not ledger_errors else 0
-        ledger_state = "invalid" if ledger_errors else ("tracked" if position_count else "clear")
+        ledger_state = (
+            "invalid" if ledger_errors else ("tracked" if position_count else "clear")
+        )
         ai_runtime, _ai_runtime_payload = _ai_provider_runtime_status(runtime)
         ai_assist = "disabled" if not runtime.ai_enabled else "gated"
         if runtime.ai_enabled and state.upper() in {
@@ -5772,13 +7298,25 @@ def command_status(args: argparse.Namespace) -> int:
             f"ledger={ledger_state} ui_contract={command_contract_digest()}"
         )
         return 0
-    print(json.dumps({"runtime": _public_runtime_payload(runtime), "strategy": strategy.asdict()}, indent=2))
+    print(
+        json.dumps(
+            {
+                "runtime": _public_runtime_payload(runtime),
+                "strategy": strategy.asdict(),
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
 def command_compute(args: argparse.Namespace) -> int:
     runtime = load_runtime()
-    requested = str(getattr(args, "backend", None) or runtime.compute_backend or default_compute_backend()).lower()
+    requested = str(
+        getattr(args, "backend", None)
+        or runtime.compute_backend
+        or default_compute_backend()
+    ).lower()
     if requested not in _COMPUTE_BACKEND_CHOICES:
         print(f"Unknown compute backend {requested!r}.", file=sys.stderr)
         return 2
@@ -5793,7 +7331,10 @@ def command_compute(args: argparse.Namespace) -> int:
         runtime.compute_backend = requested
         if requested == "cpu" and runtime.ai_enabled:
             runtime.ai_enabled = False
-            print("AI features disabled because the selected compute backend is CPU-only.", file=sys.stderr)
+            print(
+                "AI features disabled because the selected compute backend is CPU-only.",
+                file=sys.stderr,
+            )
         save_runtime(runtime)
     print(describe_backend(info))
     if info.kind == "cpu":
@@ -5810,11 +7351,18 @@ def command_ai(args: argparse.Namespace) -> int:
     if bool(getattr(args, "enable", False)) and bool(getattr(args, "disable", False)):
         print("--enable and --disable cannot be combined.", file=sys.stderr)
         return 2
-    if bool(getattr(args, "require_gpu", False)) and bool(getattr(args, "no_require_gpu", False)):
+    if bool(getattr(args, "require_gpu", False)) and bool(
+        getattr(args, "no_require_gpu", False)
+    ):
         print("--require-gpu and --no-require-gpu cannot be combined.", file=sys.stderr)
         return 2
-    if bool(getattr(args, "allow_paper_fallback", False)) and bool(getattr(args, "no_paper_fallback", False)):
-        print("--allow-paper-fallback and --no-paper-fallback cannot be combined.", file=sys.stderr)
+    if bool(getattr(args, "allow_paper_fallback", False)) and bool(
+        getattr(args, "no_paper_fallback", False)
+    ):
+        print(
+            "--allow-paper-fallback and --no-paper-fallback cannot be combined.",
+            file=sys.stderr,
+        )
         return 2
 
     changed = False
@@ -5940,9 +7488,7 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
     confirmation_database = str(
         getattr(args, "confirmation_database", "") or ""
     ).strip()
-    confirmation_run_id = str(
-        getattr(args, "confirmation_run_id", "") or ""
-    ).strip()
+    confirmation_run_id = str(getattr(args, "confirmation_run_id", "") or "").strip()
     base_url = str(getattr(args, "url", None) or "http://127.0.0.1:11434")
     claim = None
 
@@ -6113,7 +7659,11 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
         )
         for result in report.results:
             status = "pass" if result.passed else "fail"
-            params = f"{result.model_parameters_b:.1f}B" if result.model_parameters_b is not None else "unknown"
+            params = (
+                f"{result.model_parameters_b:.1f}B"
+                if result.model_parameters_b is not None
+                else "unknown"
+            )
             print(
                 f"  {status:<4} {result.model:<24} score={result.score:.3f} "
                 f"actions={result.action_match_cases}/{len(report.tests)} "
@@ -6167,7 +7717,9 @@ def command_ai_forecast_benchmark(args: argparse.Namespace) -> int:
             observations_path=Path(args.observations),
             chart_path=Path(args.chart),
             report_path=Path(args.output),
-            progress=lambda message: print(f"ai-forecast-benchmark: {message}", file=sys.stderr),
+            progress=lambda message: print(
+                f"ai-forecast-benchmark: {message}", file=sys.stderr
+            ),
         )
     except (ImportError, OSError, RuntimeError, ValueError) as exc:
         print(f"ai-forecast-benchmark failed: {exc}", file=sys.stderr)
@@ -6278,7 +7830,9 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     cfg = load_strategy()
     runtime = load_runtime()
     try:
-        profile = _parse_strategy_profile(str(getattr(args, "profile", "custom") or "custom"))
+        profile = _parse_strategy_profile(
+            str(getattr(args, "profile", "custom") or "custom")
+        )
     except ValueError as exc:
         print(f"Invalid strategy profile: {exc}", file=sys.stderr)
         return 2
@@ -6315,9 +7869,13 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "min_diversified_assets", None) is not None:
         updates["min_diversified_assets"] = max(1, int(args.min_diversified_assets))
     if getattr(args, "max_asset_allocation", None) is not None:
-        updates["max_asset_allocation_pct"] = _clamp(float(args.max_asset_allocation), 0.01, 1.0)
+        updates["max_asset_allocation_pct"] = _clamp(
+            float(args.max_asset_allocation), 0.01, 1.0
+        )
     if getattr(args, "max_portfolio_risk", None) is not None:
-        updates["max_portfolio_risk_pct"] = _clamp(float(args.max_portfolio_risk), 0.0, 1.0)
+        updates["max_portfolio_risk_pct"] = _clamp(
+            float(args.max_portfolio_risk), 0.0, 1.0
+        )
     if getattr(args, "min_quote_volume_usdc", None) is not None:
         updates["min_quote_volume_usdc"] = max(0.0, float(args.min_quote_volume_usdc))
     if getattr(args, "min_trade_count_24h", None) is not None:
@@ -6325,15 +7883,25 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "max_spread_bps", None) is not None:
         updates["max_spread_bps"] = max(0.0, float(args.max_spread_bps))
     if getattr(args, "min_liquidity_score", None) is not None:
-        updates["min_liquidity_score"] = _clamp(float(args.min_liquidity_score), 0.0, 1.0)
+        updates["min_liquidity_score"] = _clamp(
+            float(args.min_liquidity_score), 0.0, 1.0
+        )
     if getattr(args, "unpredictability_cooldown", None) is not None:
-        updates["unpredictability_cooldown_minutes"] = max(0, int(args.unpredictability_cooldown))
+        updates["unpredictability_cooldown_minutes"] = max(
+            0, int(args.unpredictability_cooldown)
+        )
     if getattr(args, "max_regime_unpredictability", None) is not None:
-        updates["max_regime_unpredictability"] = _clamp(float(args.max_regime_unpredictability), 0.0, 1.0)
+        updates["max_regime_unpredictability"] = _clamp(
+            float(args.max_regime_unpredictability), 0.0, 1.0
+        )
     if getattr(args, "max_prediction_entropy", None) is not None:
-        updates["max_prediction_entropy"] = _clamp(float(args.max_prediction_entropy), 0.0, 1.0)
+        updates["max_prediction_entropy"] = _clamp(
+            float(args.max_prediction_entropy), 0.0, 1.0
+        )
     if getattr(args, "min_model_confidence", None) is not None:
-        updates["min_model_confidence"] = _clamp(float(args.min_model_confidence), 0.0, 1.0)
+        updates["min_model_confidence"] = _clamp(
+            float(args.min_model_confidence), 0.0, 1.0
+        )
     if args.max_trades_per_day is not None:
         updates["max_trades_per_day"] = max(0, args.max_trades_per_day)
     if args.cooldown is not None:
@@ -6341,7 +7909,9 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "min_position_hold_bars", None) is not None:
         updates["min_position_hold_bars"] = max(0, int(args.min_position_hold_bars))
     if getattr(args, "flat_signal_exit_grace_bars", None) is not None:
-        updates["flat_signal_exit_grace_bars"] = max(0, int(args.flat_signal_exit_grace_bars))
+        updates["flat_signal_exit_grace_bars"] = max(
+            0, int(args.flat_signal_exit_grace_bars)
+        )
     if getattr(args, "max_position_hold_bars", None) is not None:
         updates["max_position_hold_bars"] = max(0, int(args.max_position_hold_bars))
     if args.signal_threshold is not None:
@@ -6351,13 +7921,17 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "max_daily_loss", None) is not None:
         updates["max_daily_loss_pct"] = _clamp(float(args.max_daily_loss), 0.0, 0.25)
     if getattr(args, "max_session_loss", None) is not None:
-        updates["max_session_loss_pct"] = _clamp(float(args.max_session_loss), 0.0, 0.50)
+        updates["max_session_loss_pct"] = _clamp(
+            float(args.max_session_loss), 0.0, 0.50
+        )
     if getattr(args, "max_consecutive_losses", None) is not None:
         updates["max_consecutive_losses"] = max(0, int(args.max_consecutive_losses))
     if getattr(args, "max_network_errors", None) is not None:
         updates["max_network_errors"] = max(1, int(args.max_network_errors))
     if getattr(args, "recovery_cooldown_seconds", None) is not None:
-        updates["recovery_cooldown_seconds"] = max(0, int(args.recovery_cooldown_seconds))
+        updates["recovery_cooldown_seconds"] = max(
+            0, int(args.recovery_cooldown_seconds)
+        )
     if args.taker_fee_bps is not None:
         updates["taker_fee_bps"] = max(0.0, args.taker_fee_bps)
     if args.slippage_bps is not None:
@@ -6373,13 +7947,19 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "external_signals", None) is not None:
         updates["external_signals_enabled"] = bool(args.external_signals)
     if getattr(args, "external_signal_max_adjustment", None) is not None:
-        updates["external_signal_max_adjustment"] = _clamp(float(args.external_signal_max_adjustment), 0.0, 0.20)
+        updates["external_signal_max_adjustment"] = _clamp(
+            float(args.external_signal_max_adjustment), 0.0, 0.20
+        )
     if getattr(args, "external_signal_min_providers", None) is not None:
-        updates["external_signal_min_providers"] = max(0, min(120, int(args.external_signal_min_providers)))
+        updates["external_signal_min_providers"] = max(
+            0, min(120, int(args.external_signal_min_providers))
+        )
     if getattr(args, "external_signal_ttl", None) is not None:
         updates["external_signal_ttl_seconds"] = max(0, int(args.external_signal_ttl))
     if getattr(args, "external_signal_timeout", None) is not None:
-        updates["external_signal_timeout_seconds"] = _clamp(float(args.external_signal_timeout), 0.1, 30.0)
+        updates["external_signal_timeout_seconds"] = _clamp(
+            float(args.external_signal_timeout), 0.1, 30.0
+        )
     if getattr(args, "external_news_ai", None) is not None:
         updates["external_news_ai_enabled"] = bool(args.external_news_ai)
     if getattr(args, "external_news_ai_model", None):
@@ -6387,15 +7967,25 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "external_news_ai_url", None):
         updates["external_news_ai_url"] = str(args.external_news_ai_url)
     if getattr(args, "external_news_ai_timeout", None) is not None:
-        updates["external_news_ai_timeout_seconds"] = _clamp(float(args.external_news_ai_timeout), 0.1, 30.0)
+        updates["external_news_ai_timeout_seconds"] = _clamp(
+            float(args.external_news_ai_timeout), 0.1, 30.0
+        )
     if getattr(args, "external_news_provider_limit", None) is not None:
-        updates["external_signal_news_provider_limit"] = max(0, min(120, int(args.external_news_provider_limit)))
+        updates["external_signal_news_provider_limit"] = max(
+            0, min(120, int(args.external_news_provider_limit))
+        )
     if getattr(args, "external_provider_parallelism", None) is not None:
-        updates["external_signal_provider_parallelism"] = max(1, min(64, int(args.external_provider_parallelism)))
+        updates["external_signal_provider_parallelism"] = max(
+            1, min(64, int(args.external_provider_parallelism))
+        )
     if getattr(args, "external_provider_jitter", None) is not None:
-        updates["external_signal_provider_jitter_seconds"] = _clamp(float(args.external_provider_jitter), 0.0, 30.0)
+        updates["external_signal_provider_jitter_seconds"] = _clamp(
+            float(args.external_provider_jitter), 0.0, 30.0
+        )
     if getattr(args, "external_poll_jitter", None) is not None:
-        updates["external_signal_poll_jitter_seconds"] = _clamp(float(args.external_poll_jitter), 0.0, 60.0)
+        updates["external_signal_poll_jitter_seconds"] = _clamp(
+            float(args.external_poll_jitter), 0.0, 60.0
+        )
     if getattr(args, "telemetry_db", None):
         updates["telemetry_db_path"] = str(args.telemetry_db)
     if getattr(args, "no_telemetry", None) is not None:
@@ -6403,21 +7993,45 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if getattr(args, "source_grading", None) is not None:
         updates["source_grading_enabled"] = bool(args.source_grading)
     if getattr(args, "source_grading_interval", None) is not None:
-        updates["source_grading_interval_seconds"] = max(60, int(args.source_grading_interval))
+        updates["source_grading_interval_seconds"] = max(
+            60, int(args.source_grading_interval)
+        )
     if getattr(args, "source_grading_window_hours", None) is not None:
-        updates["source_grading_window_hours"] = max(1, int(args.source_grading_window_hours))
+        updates["source_grading_window_hours"] = max(
+            1, int(args.source_grading_window_hours)
+        )
     if getattr(args, "source_grade_max_age_hours", None) is not None:
-        updates["source_grade_max_age_hours"] = _clamp(float(args.source_grade_max_age_hours), 0.0, 8760.0)
+        updates["source_grade_max_age_hours"] = _clamp(
+            float(args.source_grade_max_age_hours), 0.0, 8760.0
+        )
     feature_window_short = getattr(args, "feature_window_short", None)
     feature_window_long = getattr(args, "feature_window_long", None)
     if feature_window_short is not None or feature_window_long is not None:
-        short_window = max(1, int(feature_window_short if feature_window_short is not None else cfg.feature_windows[0]))
-        long_window = max(short_window + 1, int(feature_window_long if feature_window_long is not None else cfg.feature_windows[1]))
+        short_window = max(
+            1,
+            int(
+                feature_window_short
+                if feature_window_short is not None
+                else cfg.feature_windows[0]
+            ),
+        )
+        long_window = max(
+            short_window + 1,
+            int(
+                feature_window_long
+                if feature_window_long is not None
+                else cfg.feature_windows[1]
+            ),
+        )
         updates["feature_windows"] = (short_window, long_window)
     try:
         if getattr(args, "set_features", None):
             updates["enabled_features"] = normalize_enabled_features(
-                [part.strip() for part in str(args.set_features).split(",") if part.strip()]
+                [
+                    part.strip()
+                    for part in str(args.set_features).split(",")
+                    if part.strip()
+                ]
             )
         else:
             selected_features = list(cfg.enabled_features)
@@ -6425,9 +8039,15 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 if name not in selected_features:
                     selected_features.append(name)
             for name in getattr(args, "disable_feature", []) or []:
-                selected_features = [feature for feature in selected_features if feature != name]
-            if getattr(args, "enable_feature", None) or getattr(args, "disable_feature", None):
-                updates["enabled_features"] = normalize_enabled_features(selected_features)
+                selected_features = [
+                    feature for feature in selected_features if feature != name
+                ]
+            if getattr(args, "enable_feature", None) or getattr(
+                args, "disable_feature", None
+            ):
+                updates["enabled_features"] = normalize_enabled_features(
+                    selected_features
+                )
     except ValueError as exc:
         print(f"Invalid feature selection: {exc}", file=sys.stderr)
         return 2
@@ -6436,7 +8056,9 @@ def command_strategy(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     save_strategy(cfg)
     print("Saved strategy settings.")
     if cfg.reinvest_profits:
-        print("WARNING: profit reinvestment is enabled; position sizing can compound losses as well as gains.")
+        print(
+            "WARNING: profit reinvestment is enabled; position sizing can compound losses as well as gains."
+        )
     print(json.dumps(cfg.asdict(), indent=2))
     return 0
 
@@ -6445,7 +8067,9 @@ def _runtime_with_market(runtime: RuntimeConfig, market_type: str) -> RuntimeCon
     return data_workflows.runtime_with_market(runtime, market_type)
 
 
-def _data_sync_config_from_args(args: argparse.Namespace, runtime: RuntimeConfig) -> MarketDataSyncConfig:
+def _data_sync_config_from_args(
+    args: argparse.Namespace, runtime: RuntimeConfig
+) -> MarketDataSyncConfig:
     return data_workflows.data_sync_config_from_args(args, runtime)
 
 
@@ -6474,7 +8098,11 @@ def _data_health_iso(ts_ms: int | None) -> str:
     if ts_ms is None:
         return ""
     try:
-        return datetime.fromtimestamp(int(ts_ms) / 1000.0, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+        return (
+            datetime.fromtimestamp(int(ts_ms) / 1000.0, tz=timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
     except (OSError, OverflowError, ValueError):
         return ""
 
@@ -6496,7 +8124,9 @@ def command_data_health(args: argparse.Namespace) -> int:
     if not symbols and getattr(args, "symbol", None):
         symbols = [str(args.symbol).upper()]
     min_rows = max(0, int(getattr(args, "min_rows", 0) or 0))
-    min_coverage_ratio = max(0.0, min(1.0, float(getattr(args, "min_coverage_ratio", 0.995) or 0.995)))
+    min_coverage_ratio = max(
+        0.0, min(1.0, float(getattr(args, "min_coverage_ratio", 0.995) or 0.995))
+    )
     max_gap_count = max(0, int(getattr(args, "max_gap_count", 0) or 0))
     require_verified_checksum = bool(getattr(args, "require_verified_checksum", False))
     db_path = Path(getattr(args, "db", "data/market_data.sqlite"))
@@ -6510,12 +8140,23 @@ def command_data_health(args: argparse.Namespace) -> int:
     items: list[dict[str, object]] = []
     with MarketDataStore(db_path) as store:
         if symbols:
-            coverages = [store.coverage(symbol, market_filter, interval_filter) for symbol in symbols]
+            coverages = [
+                store.coverage(symbol, market_filter, interval_filter)
+                for symbol in symbols
+            ]
         else:
-            coverages = store.candle_series(market_type=market_filter, interval=interval_filter)
+            coverages = store.candle_series(
+                market_type=market_filter, interval=interval_filter
+            )
         for coverage in coverages:
-            quality = store.coverage_quality(coverage.symbol, coverage.market_type, coverage.interval, step_ms)
-            archives = store.archive_files(symbol=coverage.symbol, market_type=coverage.market_type, interval=coverage.interval)
+            quality = store.coverage_quality(
+                coverage.symbol, coverage.market_type, coverage.interval, step_ms
+            )
+            archives = store.archive_files(
+                symbol=coverage.symbol,
+                market_type=coverage.market_type,
+                interval=coverage.interval,
+            )
             archive_status_counts = _count_by(archives, "status")
             checksum_status_counts = _count_by(archives, "checksum_status")
             reasons: list[str] = []
@@ -6523,12 +8164,21 @@ def command_data_health(args: argparse.Namespace) -> int:
             if quality.coverage.count < min_rows:
                 reasons.append(f"rows_below_min:{quality.coverage.count}/{min_rows}")
             if quality.gap_count > max_gap_count:
-                reasons.append(f"gap_count_above_max:{quality.gap_count}/{max_gap_count}")
+                reasons.append(
+                    f"gap_count_above_max:{quality.gap_count}/{max_gap_count}"
+                )
             if quality.coverage_ratio < min_coverage_ratio:
-                reasons.append(f"coverage_ratio_below_min:{quality.coverage_ratio:.6f}/{min_coverage_ratio:.6f}")
+                reasons.append(
+                    f"coverage_ratio_below_min:{quality.coverage_ratio:.6f}/{min_coverage_ratio:.6f}"
+                )
             if checksum_status_counts.get("mismatch", 0) > 0:
-                reasons.append(f"checksum_mismatches:{checksum_status_counts['mismatch']}")
-            if require_verified_checksum and checksum_status_counts.get("verified", 0) <= 0:
+                reasons.append(
+                    f"checksum_mismatches:{checksum_status_counts['mismatch']}"
+                )
+            if (
+                require_verified_checksum
+                and checksum_status_counts.get("verified", 0) <= 0
+            ):
                 reasons.append("no_verified_archive_checksum")
             archive_error_count = archive_status_counts.get("error", 0)
             if archive_error_count > 0:
@@ -6537,7 +8187,10 @@ def command_data_health(args: argparse.Namespace) -> int:
                     and quality.gap_count <= max_gap_count
                     and quality.coverage_ratio >= min_coverage_ratio
                     and checksum_status_counts.get("mismatch", 0) <= 0
-                    and (not require_verified_checksum or checksum_status_counts.get("verified", 0) > 0)
+                    and (
+                        not require_verified_checksum
+                        or checksum_status_counts.get("verified", 0) > 0
+                    )
                 )
                 if superseded_by_verified_coverage:
                     warnings.append(f"superseded_archive_errors:{archive_error_count}")
@@ -6565,7 +8218,9 @@ def command_data_health(args: argparse.Namespace) -> int:
                 }
             )
 
-    overall_status = "ok" if items and all(item["status"] == "ok" for item in items) else "block"
+    overall_status = (
+        "ok" if items and all(item["status"] == "ok" for item in items) else "block"
+    )
     payload = {
         "status": overall_status,
         "db": str(db_path),
@@ -6624,13 +8279,20 @@ def command_api_budget(args: argparse.Namespace) -> int:
             if cached is None or getattr(args, "refresh", False):
                 print(f"API budget refresh failed: {exc}", file=sys.stderr)
                 return 2
-            print(f"API budget refresh failed; using cached sample: {exc}", file=sys.stderr)
+            print(
+                f"API budget refresh failed; using cached sample: {exc}",
+                file=sys.stderr,
+            )
             report = cached
     else:
         report = cached
 
     if getattr(args, "json", False):
-        payload = report.asdict() if hasattr(report, "asdict") else (dict(report) if isinstance(report, Mapping) else {})
+        payload = (
+            report.asdict()
+            if hasattr(report, "asdict")
+            else (dict(report) if isinstance(report, Mapping) else {})
+        )
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 0
     if getattr(args, "compact", False):
@@ -6695,33 +8357,61 @@ def command_polymarket_record(args: argparse.Namespace) -> int:
         round12_contract_path = (
             Path(round12_contract_value) if round12_contract_value else None
         )
+        round13_contract_value = str(
+            getattr(args, "round13_contract", None) or ""
+        ).strip()
+        round13_contract_path = (
+            Path(round13_contract_value) if round13_contract_value else None
+        )
+        capture_duration_seconds = int(args.duration_seconds)
+        if (
+            round13_contract_path is not None
+            and capture_duration_seconds != POLYMARKET_ROUND13_CAPTURE_DURATION_SECONDS
+        ):
+            raise ValueError(
+                "sealed Round 13 capture requires --duration-seconds "
+                f"{POLYMARKET_ROUND13_CAPTURE_DURATION_SECONDS}"
+            )
 
         def preregistration_manifest_factory(
             run_id: str,
             started_at_ms: int,
         ) -> Mapping[str, object]:
-            if round12_contract_path is None:
-                raise RuntimeError("Round 12 contract path is unavailable")
-            return build_round12_capture_manifest(
-                round12_contract_path,
-                run_id=run_id,
-                started_at_ms=started_at_ms,
-            )
+            if round13_contract_path is not None:
+                return build_round13_capture_manifest(
+                    round13_contract_path,
+                    run_id=run_id,
+                    started_at_ms=started_at_ms,
+                    capture_duration_seconds=capture_duration_seconds,
+                )
+            if round12_contract_path is not None:
+                return build_round12_capture_manifest(
+                    round12_contract_path,
+                    run_id=run_id,
+                    started_at_ms=started_at_ms,
+                )
+            raise RuntimeError("sealed capture contract path is unavailable")
 
         report = asyncio.run(
             recorder.run(
-                duration_seconds=int(args.duration_seconds),
+                duration_seconds=capture_duration_seconds,
                 progress=progress,
                 progress_interval_seconds=int(args.progress_interval_seconds),
                 preregistration_manifest_factory=(
                     preregistration_manifest_factory
-                    if round12_contract_path is not None
+                    if (
+                        round12_contract_path is not None
+                        or round13_contract_path is not None
+                    )
                     else None
                 ),
             )
         )
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
-        print(f"polymarket-record failed: {exc.__class__.__name__}: {exc}", file=sys.stderr)
+        print(
+            f"polymarket-record failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
         return 2
     if getattr(args, "json", False):
         print(json.dumps(report.asdict(), indent=2, sort_keys=True))
@@ -6747,7 +8437,10 @@ def command_polymarket_resolve(args: argparse.Namespace) -> int:
     wait_seconds = int(args.wait_seconds)
     poll_seconds = int(args.poll_interval_seconds)
     if wait_seconds < 0 or wait_seconds > 3_600:
-        print("polymarket-resolve failed: --wait-seconds must lie in [0, 3600]", file=sys.stderr)
+        print(
+            "polymarket-resolve failed: --wait-seconds must lie in [0, 3600]",
+            file=sys.stderr,
+        )
         return 2
     if poll_seconds < 1 or poll_seconds > 300:
         print(
@@ -6763,13 +8456,17 @@ def command_polymarket_resolve(args: argparse.Namespace) -> int:
         ) as store:
             selected = str(getattr(args, "run_id", None) or "").strip()
             if not selected:
-                row = store.connect().execute(
-                    """
+                row = (
+                    store.connect()
+                    .execute(
+                        """
                     SELECT run_id FROM polymarket_recorder_run
                     WHERE status IN ('complete', 'degraded')
                     ORDER BY ended_at_ms DESC, run_id DESC LIMIT 1
                     """
-                ).fetchone()
+                    )
+                    .fetchone()
+                )
                 if row is None:
                     raise ValueError("no finished Polymarket recorder run is available")
                 selected = str(row[0])
@@ -6850,16 +8547,14 @@ def command_polymarket_features(args: argparse.Namespace) -> int:
 
 
 def command_polymarket_action_value(args: argparse.Namespace) -> int:
-    """Materialize the frozen Round 9 labels in resumable condition batches."""
+    """Materialize hash-bound causal action evidence in bounded batches."""
 
     started = time.monotonic()
 
     def progress(phase: str, payload: Mapping[str, object]) -> None:
         if getattr(args, "json", False):
             return
-        details = " ".join(
-            f"{key}={value}" for key, value in sorted(payload.items())
-        )
+        details = " ".join(f"{key}={value}" for key, value in sorted(payload.items()))
         print(
             "polymarket-action-value-progress: "
             f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
@@ -6893,8 +8588,32 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
             eligible_condition_ids = None
             eligibility_sha256 = ""
             continuity_admission_mode = "group"
+            round13_program = None
+            round13_contract_path = getattr(args, "round13_contract", None)
             round12_contract_path = getattr(args, "round12_contract", None)
-            if round12_contract_path:
+            if round13_contract_path:
+                round13_program = load_round13_confirmation_contract(
+                    Path(str(round13_contract_path))
+                )
+                if pipeline_config.market_groups_per_batch != 1:
+                    raise ValueError(
+                        "Round 13 requires exactly one synchronized group per batch"
+                    )
+                load_round13_capture_manifest(
+                    store,
+                    run_id=str(args.run_id),
+                    program=round13_program,
+                )
+                eligibility_sha256 = round13_program.contract_sha256
+                continuity_admission_mode = "action_local"
+                pipeline_config = replace(
+                    pipeline_config,
+                    feature=replace(
+                        pipeline_config.feature,
+                        allow_segmented_gaps=True,
+                    ),
+                )
+            elif round12_contract_path:
                 contract = load_round12_confirmation_contract(
                     Path(str(round12_contract_path))
                 )
@@ -6938,6 +8657,7 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
                 eligible_condition_ids=eligible_condition_ids,
                 eligibility_sha256=eligibility_sha256,
                 continuity_admission_mode=continuity_admission_mode,
+                round13_program=round13_program,
                 progress=progress,
             )
     except Exception as exc:  # The CLI/UI boundary must return a stable failure code.
@@ -6947,9 +8667,7 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
         )
         return 2
     payload = report.asdict()
-    payload["batch_materialization_status"] = [
-        item.status for item in report.batches
-    ]
+    payload["batch_materialization_status"] = [item.status for item in report.batches]
     if getattr(args, "json", False):
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
@@ -6962,6 +8680,102 @@ def command_polymarket_action_value(args: argparse.Namespace) -> int:
             f"positive_complete={report.positive_complete_count}"
         )
         print(f"report_sha256: {report.report_sha256}")
+    return 0
+
+
+def command_polymarket_round13_evaluate(args: argparse.Namespace) -> int:
+    """Consume one sealed confirmation only after label-free evidence is complete."""
+
+    started = time.monotonic()
+
+    def progress(phase: str, payload: Mapping[str, object]) -> None:
+        if getattr(args, "json", False):
+            return
+        details = " ".join(f"{key}={value}" for key, value in sorted(payload.items()))
+        print(
+            "polymarket-round13-evaluate-progress: "
+            f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
+            + (f" {details}" if details else ""),
+            file=sys.stderr,
+            flush=True,
+        )
+
+    try:
+        program = load_round13_confirmation_contract(Path(str(args.contract)))
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            report = evaluate_round13_confirmation(
+                store,
+                run_id=str(args.run_id),
+                pipeline_report_sha256=str(args.pipeline_report_sha256),
+                program=program,
+                progress=progress,
+                resolution_wait_seconds=int(args.resolution_wait_seconds),
+                resolution_poll_interval_seconds=int(
+                    args.resolution_poll_interval_seconds
+                ),
+            )
+    except Exception as exc:
+        print(
+            f"polymarket-round13-evaluate failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    if getattr(args, "json", False):
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        primary = report["scenarios"]["primary"]["calibrated_treatment"]
+        print(
+            "polymarket-round13-evaluate: "
+            f"confirmation_passed={report['confirmation_passed']} "
+            f"groups={report['data']['independent_synchronized_groups']} "
+            f"fills={primary['known_filled_conditions']} "
+            f"utility_quote={primary['total_utility_quote']} "
+            f"maximum_drawdown_quote={primary['maximum_drawdown_quote']}"
+        )
+        print(f"report_sha256: {report['report_sha256']}")
+        for reason in primary["gate_reasons"]:
+            print(f"gate_failure: {reason}")
+    return 0
+
+
+def command_polymarket_round13_publish(args: argparse.Namespace) -> int:
+    """Publish integrity-bound Round 13 tables and charts from DuckDB evidence."""
+
+    try:
+        with PolymarketEvidenceStore(
+            Path(args.database),
+            memory_limit=str(args.memory_limit),
+            threads=int(args.database_threads),
+        ) as store:
+            result = publish_round13_evaluation(
+                store,
+                report_sha256=str(args.report_sha256),
+                research_root=Path(args.research_root),
+            )
+    except Exception as exc:
+        print(
+            f"polymarket-round13-publish failed: {exc.__class__.__name__}: {exc}",
+            file=sys.stderr,
+        )
+        return 2
+    payload = {
+        "report_sha256": result.report_sha256,
+        "manifest_sha256": result.manifest_sha256,
+        "generated_files": list(result.generated_files),
+    }
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "polymarket-round13-publish: "
+            f"report_sha256={result.report_sha256} "
+            f"manifest_sha256={result.manifest_sha256} "
+            f"files={len(result.generated_files)}"
+        )
     return 0
 
 
@@ -7071,9 +8885,7 @@ def command_polymarket_mlp(args: argparse.Namespace) -> int:
     started = time.monotonic()
 
     def progress(phase: str, payload: Mapping[str, object]) -> None:
-        details = " ".join(
-            f"{key}={value}" for key, value in sorted(payload.items())
-        )
+        details = " ".join(f"{key}={value}" for key, value in sorted(payload.items()))
         print(
             "polymarket-mlp-progress: "
             f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
@@ -7436,9 +9248,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
     def progress(phase: str, **details: object) -> None:
         if getattr(args, "json", False):
             return
-        suffix = " ".join(
-            f"{key}={value}" for key, value in sorted(details.items())
-        )
+        suffix = " ".join(f"{key}={value}" for key, value in sorted(details.items()))
         print(
             "polymarket-model-progress: "
             f"phase={phase} elapsed_seconds={time.monotonic() - started_monotonic:.1f}"
@@ -7464,9 +9274,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             memory_limit=str(args.memory_limit),
             threads=int(args.database_threads),
         ) as store:
-            allow_segmented_gaps = bool(
-                getattr(args, "allow_segmented_gaps", False)
-            )
+            allow_segmented_gaps = bool(getattr(args, "allow_segmented_gaps", False))
             feature_dataset = build_polymarket_feature_dataset(
                 store,
                 run_id=getattr(args, "run_id", None),
@@ -7524,9 +9332,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     model,
                 )
             )
-            test_conditions = tuple(
-                sorted({item.condition_id for item in split.test})
-            )
+            test_conditions = tuple(sorted({item.condition_id for item in split.test}))
             progress(
                 "execution-replay-load",
                 test_condition_count=len(test_conditions),
@@ -7578,14 +9384,18 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     args.maximum_loss_fraction_per_time_group
                 ),
             ).validated()
-            progress("execution-baseline", latency_ms=execution_config.submission_latency_ms)
+            progress(
+                "execution-baseline", latency_ms=execution_config.submission_latency_ms
+            )
             baseline_execution = evaluate_polymarket_execution_policy(
                 split.test,
                 baseline_probabilities,
                 execution_replay,
                 config=execution_config,
             )
-            progress("execution-model", latency_ms=execution_config.submission_latency_ms)
+            progress(
+                "execution-model", latency_ms=execution_config.submission_latency_ms
+            )
             model_execution = evaluate_polymarket_execution_policy(
                 split.test,
                 model_probabilities,
@@ -7721,9 +9531,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 benchmark_bytes,
                 model=ai_model,
             )
-            rescored_benchmark = rescore_finance_ai_benchmark_payload(
-                benchmark_payload
-            )
+            rescored_benchmark = rescore_finance_ai_benchmark_payload(benchmark_payload)
             selected_result = next(
                 (
                     item
@@ -7733,8 +9541,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                 None,
             )
             if (
-                rescored_benchmark.benchmark_contract
-                != AI_MODEL_BENCHMARK_CONTRACT
+                rescored_benchmark.benchmark_contract != AI_MODEL_BENCHMARK_CONTRACT
                 or rescored_benchmark.selected_model != ai_model
                 or selected_result is None
             ):
@@ -7782,9 +9589,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
                     ),
                     progress=ai_progress,
                     cache_store=ai_cache_store,
-                    expected_model_digest=(
-                        model_provenance.ollama_manifest_digest
-                    ),
+                    expected_model_digest=(model_provenance.ollama_manifest_digest),
                 )
             ai_decision_delays = {
                 condition_id: 0
@@ -7914,8 +9719,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
         profile_control_reports = latency_sensitivity["model"]
         profile_gates = {
             "validation_log_loss_not_worse_than_control": (
-                profile_probability_report.validation_log_loss_delta_vs_control
-                <= 0.0
+                profile_probability_report.validation_log_loss_delta_vs_control <= 0.0
             ),
             "test_log_loss_strictly_better_than_control": (
                 profile_probability_report.test_log_loss_delta_vs_control < 0.0
@@ -7990,9 +9794,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "leverage_applied": False,
         }
         ai_primary_uplift_accepted = bool(
-            ai_payload.get("enabled")
-            and ai_uplift is not None
-            and ai_uplift.accepted
+            ai_payload.get("enabled") and ai_uplift is not None and ai_uplift.accepted
         )
         ai_latency_stress_accepted = _polymarket_ai_latency_stress_passed(
             latency_sensitivity,
@@ -8062,9 +9864,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "profile_model": profile_model.asdict(),
             "profile_probability_report": profile_probability_report.asdict(),
             "held_out_prediction_evidence": prediction_evidence,
-            "profile_held_out_prediction_evidence": (
-                profile_prediction_evidence
-            ),
+            "profile_held_out_prediction_evidence": (profile_prediction_evidence),
             "baseline_execution": baseline_execution.asdict(),
             "model_execution": model_execution.asdict(),
             "profile_model_execution": profile_model_execution.asdict(),
@@ -8076,9 +9876,7 @@ def command_polymarket_model(args: argparse.Namespace) -> int:
             "confirmatory_evidence_contract": {
                 "independent_unit": "shared_btc_eth_sol_five_minute_time_group",
                 "minimum_untouched_test_time_groups": 30,
-                "observed_untouched_test_time_groups": len(
-                    split.test_group_starts_ms
-                ),
+                "observed_untouched_test_time_groups": len(split.test_group_starts_ms),
                 "minimum_markets_per_asset": minimum_markets,
                 "confirmatory_ready": len(split.test_group_starts_ms) >= 30,
                 "trading_authority": False,
@@ -8152,9 +9950,7 @@ def command_polymarket_verify(args: argparse.Namespace) -> int:
     def progress(phase: str, details: Mapping[str, object]) -> None:
         if getattr(args, "json", False):
             return
-        suffix = " ".join(
-            f"{key}={value}" for key, value in sorted(details.items())
-        )
+        suffix = " ".join(f"{key}={value}" for key, value in sorted(details.items()))
         print(
             "polymarket-verify-progress: "
             f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
@@ -8204,9 +10000,7 @@ def command_polymarket_publish(args: argparse.Namespace) -> int:
     def progress(phase: str, details: Mapping[str, object]) -> None:
         if getattr(args, "json", False):
             return
-        suffix = " ".join(
-            f"{key}={value}" for key, value in sorted(details.items())
-        )
+        suffix = " ".join(f"{key}={value}" for key, value in sorted(details.items()))
         print(
             "polymarket-publish-progress: "
             f"phase={phase} elapsed_seconds={time.monotonic() - started:.1f}"
@@ -8272,14 +10066,10 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
     try:
         model_plan = None
         broker_run_id = getattr(args, "run_id", None)
-        maximum_observation_delay_ms = int(
-            args.max_execution_observation_delay_ms
-        )
+        maximum_observation_delay_ms = int(args.max_execution_observation_delay_ms)
         maximum_book_age_ms = 2_000
         order_ttl_ms = 30_000
-        allow_segmented_gaps = bool(
-            getattr(args, "allow_segmented_gaps", False)
-        )
+        allow_segmented_gaps = bool(getattr(args, "allow_segmented_gaps", False))
         if action == "run-model":
             artifact_path = Path(required("artifact"))
             source_verification_path = Path(required("source_verification"))
@@ -8301,9 +10091,7 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                 raise ValueError("--run-id disagrees with the verified model artifact")
             broker_run_id = model_plan.run_id
             maximum_observation_delay_ms = int(
-                model_plan.execution_config[
-                    "maximum_execution_observation_delay_ms"
-                ]
+                model_plan.execution_config["maximum_execution_observation_delay_ms"]
             )
             maximum_book_age_ms = int(
                 model_plan.execution_config["maximum_book_age_ms"]
@@ -8383,7 +10171,9 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                     if book.event_id == event_id and book.outcome == outcome
                 ]
                 if len(matches) != 1:
-                    raise ValueError("--event-id and --outcome must select one replay book")
+                    raise ValueError(
+                        "--event-id and --outcome must select one replay book"
+                    )
                 position, result = broker.open_position(
                     position_id=required("position_id"),
                     decision=matches[0],
@@ -8391,9 +10181,7 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                     quantity=required("quantity"),
                     maximum_price=required("limit_price"),
                     submission_latency_ms=int(required("latency_ms")),
-                    decision_delay_ms=int(
-                        getattr(args, "decision_delay_ms", 0)
-                    ),
+                    decision_delay_ms=int(getattr(args, "decision_delay_ms", 0)),
                     order_type=str(getattr(args, "order_type", "FAK")),
                 )
                 operation["position"] = None if position is None else asdict(position)
@@ -8417,7 +10205,9 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                     if book.event_id == event_id and book.token_id == position.token_id
                 ]
                 if len(matches) != 1:
-                    raise ValueError("--event-id must select one replay book for the inventory")
+                    raise ValueError(
+                        "--event-id must select one replay book for the inventory"
+                    )
                 closed, result = broker.close_position(
                     opening_intent_id=opening_id,
                     decision=matches[0],
@@ -8431,7 +10221,9 @@ def command_polymarket_paper(args: argparse.Namespace) -> int:
                 opening_id = required("opening_intent_id")
                 event_id = required("event_id")
                 resolutions = [
-                    item for item in broker.replay.resolutions if item.event_id == event_id
+                    item
+                    for item in broker.replay.resolutions
+                    if item.event_id == event_id
                 ]
                 if len(resolutions) != 1:
                     raise ValueError("--event-id must select one official resolution")
@@ -8516,9 +10308,15 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     market_type = str(getattr(args, "market", "spot") or "spot")
     cadence = str(getattr(args, "cadence", "monthly") or "monthly")
     data_type_arg = getattr(args, "data_type", None)
-    data_type = str(data_type_arg or ("aggTrades" if market_type == "futures" and interval == "1s" else "klines"))
+    data_type = str(
+        data_type_arg
+        or ("aggTrades" if market_type == "futures" and interval == "1s" else "klines")
+    )
     if data_type == "aggTrades" and interval != "1s":
-        print("archive-sync aggTrades ingestion emits 1s candles; use --interval 1s", file=sys.stderr)
+        print(
+            "archive-sync aggTrades ingestion emits 1s candles; use --interval 1s",
+            file=sys.stderr,
+        )
         return 2
     start_period = str(getattr(args, "start_period", "") or "").strip() or None
     end_period = str(getattr(args, "end_period", "") or "").strip() or None
@@ -8535,9 +10333,14 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     progress_path_value = str(getattr(args, "progress_path", None) or "").strip()
     progress_path = Path(progress_path_value) if progress_path_value else None
     if progress_path is not None and progress_path.resolve() == database.resolve():
-        print("archive-sync progress path must not overwrite the database", file=sys.stderr)
+        print(
+            "archive-sync progress path must not overwrite the database",
+            file=sys.stderr,
+        )
         return 2
-    quote_asset = str(getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC").upper()
+    quote_asset = str(
+        getattr(args, "quote_asset", None) or runtime.quote_asset or "USDC"
+    ).upper()
     quote_gate = quote_asset if getattr(args, "quote_asset", None) else None
     raw_symbols = str(getattr(args, "symbols", "") or "").strip()
     symbols = [item.strip().upper() for item in raw_symbols.split(",") if item.strip()]
@@ -8565,7 +10368,10 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 strict_only=True,
             )
         except (BinanceAPIError, OSError, ValueError) as exc:
-            print(f"archive-sync failed to rank high-liquidity symbols: {exc}", file=sys.stderr)
+            print(
+                f"archive-sync failed to rank high-liquidity symbols: {exc}",
+                file=sys.stderr,
+            )
             return 2
         min_history_months = max(0, int(getattr(args, "min_history_months", 0) or 0))
         symbols = []
@@ -8574,7 +10380,9 @@ def command_archive_sync(args: argparse.Namespace) -> int:
             if len(symbols) >= top_symbols:
                 break
             if not is_supported_major_symbol(item.symbol, quote_asset):
-                history_rejections.append({"symbol": item.symbol, "error": "unsupported_non_major_asset"})
+                history_rejections.append(
+                    {"symbol": item.symbol, "error": "unsupported_non_major_asset"}
+                )
                 continue
             try:
                 urls = list_archive_urls(
@@ -8585,24 +10393,42 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                     data_type=data_type,
                 )
             except (OSError, ValueError) as exc:
-                history_rejections.append({"symbol": item.symbol, "error": f"list_failed:{exc}"})
+                history_rejections.append(
+                    {"symbol": item.symbol, "error": f"list_failed:{exc}"}
+                )
                 continue
-            if cadence == "monthly" and min_history_months > 0 and len(urls) < min_history_months:
-                history_rejections.append({
-                    "symbol": item.symbol,
-                    "error": f"history_months_below_min:{len(urls)}/{min_history_months}",
-                })
+            if (
+                cadence == "monthly"
+                and min_history_months > 0
+                and len(urls) < min_history_months
+            ):
+                history_rejections.append(
+                    {
+                        "symbol": item.symbol,
+                        "error": f"history_months_below_min:{len(urls)}/{min_history_months}",
+                    }
+                )
                 continue
             symbols.append(item.symbol)
             prelisted_archive_urls[item.symbol] = urls
         if not symbols:
-            print(f"archive-sync found no eligible high-liquidity {quote_asset} symbols", file=sys.stderr)
+            print(
+                f"archive-sync found no eligible high-liquidity {quote_asset} symbols",
+                file=sys.stderr,
+            )
             for rejection in history_rejections:
-                print(f"warning: {rejection['symbol']} {rejection['error']}", file=sys.stderr)
+                print(
+                    f"warning: {rejection['symbol']} {rejection['error']}",
+                    file=sys.stderr,
+                )
             return 2
     if not symbols:
         symbols = [str(getattr(args, "symbol", None) or runtime.symbol).upper()]
-    invalid_symbols = [symbol for symbol in symbols if not is_supported_major_symbol(symbol, quote_gate)]
+    invalid_symbols = [
+        symbol
+        for symbol in symbols
+        if not is_supported_major_symbol(symbol, quote_gate)
+    ]
     if invalid_symbols:
         print(
             "archive-sync supports only BTC, ETH, and SOL symbols quoted in USDC or USDT: "
@@ -8634,35 +10460,54 @@ def command_archive_sync(args: argparse.Namespace) -> int:
         metadata_by_url = archive_listing_items_by_url(urls)
         listed_bytes = sum(int(item.size_bytes) for item in metadata_by_url.values())
         try:
-            urls = filter_archive_urls_by_period(urls, start_period=start_period, end_period=end_period)
+            urls = filter_archive_urls_by_period(
+                urls, start_period=start_period, end_period=end_period
+            )
         except ValueError as exc:
             errors.append({"symbol": symbol, "error": f"period_filter_failed:{exc}"})
             continue
         filtered_count = len(urls)
-        filtered_bytes = sum(int(metadata_by_url[url].size_bytes) for url in urls if url in metadata_by_url)
+        filtered_bytes = sum(
+            int(metadata_by_url[url].size_bytes)
+            for url in urls
+            if url in metadata_by_url
+        )
         if max_files_int is not None:
             urls = urls[:max_files_int]
-        selected_bytes = sum(int(metadata_by_url[url].size_bytes) for url in urls if url in metadata_by_url)
+        selected_bytes = sum(
+            int(metadata_by_url[url].size_bytes)
+            for url in urls
+            if url in metadata_by_url
+        )
         periods = [archive_url_period(url) for url in urls]
-        archive_plans.append({
-            "symbol": symbol,
-            "listed_files": int(listed_count),
-            "listed_bytes": int(listed_bytes),
-            "filtered_files": int(filtered_count),
-            "filtered_bytes": int(filtered_bytes),
-            "selected_files": int(len(urls)),
-            "selected_bytes": int(selected_bytes),
-            "size_metadata_available": bool(metadata_by_url),
-            "first_period": next((period for period in periods if period), ""),
-            "last_period": next((period for period in reversed(periods) if period), ""),
-            "first_url": urls[0] if urls else "",
-            "last_url": urls[-1] if urls else "",
-        })
+        archive_plans.append(
+            {
+                "symbol": symbol,
+                "listed_files": int(listed_count),
+                "listed_bytes": int(listed_bytes),
+                "filtered_files": int(filtered_count),
+                "filtered_bytes": int(filtered_bytes),
+                "selected_files": int(len(urls)),
+                "selected_bytes": int(selected_bytes),
+                "size_metadata_available": bool(metadata_by_url),
+                "first_period": next((period for period in periods if period), ""),
+                "last_period": next(
+                    (period for period in reversed(periods) if period), ""
+                ),
+                "first_url": urls[0] if urls else "",
+                "last_url": urls[-1] if urls else "",
+            }
+        )
         if max_files_int == 0 and filtered_count > 0:
             continue
         if not urls:
             window_suffix = "_in_period_window" if start_period or end_period else ""
-            errors.append({"symbol": symbol, "error": f"no_{cadence}_archive_files{window_suffix}"})
+            errors.append(
+                {
+                    "symbol": symbol,
+                    "error": f"no_{cadence}_archive_files{window_suffix}",
+                }
+            )
             continue
         selected_archive_urls[symbol] = list(urls)
     shortfall = requested_top_symbols > 0 and len(symbols) < requested_top_symbols
@@ -8670,15 +10515,13 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     planned_bytes = sum(int(item["selected_bytes"]) for item in archive_plans)
     max_planned_gb = max(0.0, float(getattr(args, "max_planned_gb", 50.0) or 0.0))
     max_planned_bytes = int(max_planned_gb * 1_000_000_000)
-    if (
-        not plan_only
-        and max_planned_bytes > 0
-        and planned_bytes > max_planned_bytes
-    ):
-        errors.append({
-            "symbol": "*",
-            "error": f"planned_bytes_exceeds_max:{planned_bytes}/{max_planned_bytes}",
-        })
+    if not plan_only and max_planned_bytes > 0 and planned_bytes > max_planned_bytes:
+        errors.append(
+            {
+                "symbol": "*",
+                "error": f"planned_bytes_exceeds_max:{planned_bytes}/{max_planned_bytes}",
+            }
+        )
     if not plan_only and not errors and not shortfall:
         progress_warning_emitted = False
         completed_files = 0
@@ -8730,12 +10573,8 @@ def command_archive_sync(args: argparse.Namespace) -> int:
                 "data_type": data_type,
                 "timeout": max(1, int(getattr(args, "timeout", 120) or 120)),
                 "force": bool(getattr(args, "force", False)),
-                "verify_checksum": not bool(
-                    getattr(args, "no_verify_checksum", False)
-                ),
-                "require_checksum": bool(
-                    getattr(args, "require_checksum", False)
-                ),
+                "verify_checksum": not bool(getattr(args, "no_verify_checksum", False)),
+                "require_checksum": bool(getattr(args, "require_checksum", False)),
                 "store_raw_agg_trades": store_raw_agg_trades,
             }
             if progress_path is not None:
@@ -8744,7 +10583,9 @@ def command_archive_sync(args: argparse.Namespace) -> int:
     payload = {
         "status": (
             "ok"
-            if not errors and not shortfall and all(item.status in {"complete", "skipped"} for item in all_results)
+            if not errors
+            and not shortfall
+            and all(item.status in {"complete", "skipped"} for item in all_results)
             else "warn"
         ),
         "symbol": symbols[0] if len(symbols) == 1 else "",
@@ -8798,7 +10639,9 @@ def command_archive_sync(args: argparse.Namespace) -> int:
 
 def command_microstructure_capture(args: argparse.Namespace) -> int:
     raw_symbols = str(getattr(args, "symbols", "") or "")
-    symbols = tuple(item.strip().upper() for item in raw_symbols.split(",") if item.strip())
+    symbols = tuple(
+        item.strip().upper() for item in raw_symbols.split(",") if item.strip()
+    )
     if not symbols:
         symbols = tuple(load_runtime().symbols)
     convert = bool(getattr(args, "convert", True))
@@ -8811,11 +10654,11 @@ def command_microstructure_capture(args: argparse.Namespace) -> int:
         )
         return 2
     try:
+
         def progress(completed: float, total: float) -> None:
             if not json_mode:
                 print(
-                    "microstructure-capture stream: "
-                    f"{completed:.0f}/{total:.0f}s",
+                    f"microstructure-capture stream: {completed:.0f}/{total:.0f}s",
                     flush=True,
                 )
 
@@ -8832,10 +10675,15 @@ def command_microstructure_capture(args: argparse.Namespace) -> int:
         return 2
     catalog_changes = 0
     try:
-        with MarketDataStore(str(getattr(args, "db", "data/market_data.sqlite"))) as store:
+        with MarketDataStore(
+            str(getattr(args, "db", "data/market_data.sqlite"))
+        ) as store:
             catalog_changes = store.record_microstructure_capture(result.asdict())
     except (OSError, ValueError) as exc:
-        print(f"microstructure-capture catalog registration failed: {exc}", file=sys.stderr)
+        print(
+            f"microstructure-capture catalog registration failed: {exc}",
+            file=sys.stderr,
+        )
         return 2
     payload = result.asdict()
     payload["catalog_changes"] = int(catalog_changes)
@@ -8881,14 +10729,24 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         TickArchiveIngestResult,
     )
 
-    recoverable_errors = (OSError, RuntimeError, ValueError, requests.RequestException, duckdb.Error)
+    recoverable_errors = (
+        OSError,
+        RuntimeError,
+        ValueError,
+        requests.RequestException,
+        duckdb.Error,
+    )
 
     raw_symbols = str(getattr(args, "symbols", "") or "")
-    symbols = tuple(item.strip().upper() for item in raw_symbols.split(",") if item.strip())
+    symbols = tuple(
+        item.strip().upper() for item in raw_symbols.split(",") if item.strip()
+    )
     if not symbols:
         symbols = tuple(load_runtime().symbols)
     data_types = tuple(
-        item.strip() for item in str(getattr(args, "data_types", "") or "").split(",") if item.strip()
+        item.strip()
+        for item in str(getattr(args, "data_types", "") or "").split(",")
+        if item.strip()
     )
     unsupported = sorted(set(data_types) - set(SUPPORTED_TICK_ARCHIVES))
     if not data_types or unsupported:
@@ -8925,7 +10783,10 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
             print(f"tick-archive-sync: {exc}", file=sys.stderr)
             return 2
         if start > end:
-            print("tick-archive-sync: start-date must not be after end-date", file=sys.stderr)
+            print(
+                "tick-archive-sync: start-date must not be after end-date",
+                file=sys.stderr,
+            )
             return 2
         requested_periods = {
             (start + timedelta(days=offset)).isoformat()
@@ -8943,7 +10804,9 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     market_type="futures",
                     cadence="daily",
                     data_type=data_type,
-                    timeout=max(1, min(60, int(float(getattr(args, "timeout", 240.0))))),
+                    timeout=max(
+                        1, min(60, int(float(getattr(args, "timeout", 240.0))))
+                    ),
                 )
                 incomplete_object_metadata = [
                     item.period
@@ -8953,9 +10816,7 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                         or not str(getattr(item, "last_modified", "") or "")
                         or not str(getattr(item, "etag", "") or "")
                         or int(getattr(item, "checksum_size_bytes", 0) or 0) <= 0
-                        or not str(
-                            getattr(item, "checksum_last_modified", "") or ""
-                        )
+                        or not str(getattr(item, "checksum_last_modified", "") or "")
                         or not str(getattr(item, "checksum_etag", "") or "")
                     )
                 ]
@@ -8970,9 +10831,7 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     calendar_cursor = datetime.strptime(
                         min(by_period), "%Y-%m-%d"
                     ).date()
-                    calendar_end = datetime.strptime(
-                        max(by_period), "%Y-%m-%d"
-                    ).date()
+                    calendar_end = datetime.strptime(max(by_period), "%Y-%m-%d").date()
                     while calendar_cursor <= calendar_end:
                         calendar_period = calendar_cursor.isoformat()
                         if calendar_period not in by_period:
@@ -9026,16 +10885,15 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
     planned_bytes = sum(int(item.size_bytes) for _, _, item in plan)
     max_planned_gb = float(getattr(args, "max_planned_gb", 500.0))
     if not math.isfinite(max_planned_gb) or max_planned_gb < 0.0:
-        print("tick-archive-sync: --max-planned-gb must be finite and non-negative", file=sys.stderr)
+        print(
+            "tick-archive-sync: --max-planned-gb must be finite and non-negative",
+            file=sys.stderr,
+        )
         return 2
     plan_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "truth_basis": "official_binance_data_vision_s3_listing",
-        "status": (
-            "ok"
-            if plan and (available_only or not missing)
-            else "incomplete"
-        ),
+        "status": ("ok" if plan and (available_only or not missing) else "incomplete"),
         "plan_only": plan_only,
         "full_history": full_history,
         "available_only": available_only,
@@ -9065,7 +10923,9 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                 ) as warehouse:
                     inventory_groups: dict[tuple[str, str], list[object]] = {}
                     for symbol, data_type, item in plan:
-                        inventory_groups.setdefault((symbol, data_type), []).append(item)
+                        inventory_groups.setdefault((symbol, data_type), []).append(
+                            item
+                        )
                     initial_ids: dict[tuple[str, str], str] = {}
                     for (symbol, data_type), items in sorted(inventory_groups.items()):
                         snapshot = warehouse.record_official_archive_inventory(
@@ -9181,9 +11041,7 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
             threads=int(getattr(args, "threads", 8)),
         ) as warehouse:
             inventory_groups: dict[tuple[str, str], list[object]] = {}
-            reusable_archives: dict[
-                tuple[str, str, str], TickArchiveIngestResult
-            ] = {}
+            reusable_archives: dict[tuple[str, str, str], TickArchiveIngestResult] = {}
             for symbol, data_type, item in plan:
                 inventory_groups.setdefault((symbol, data_type), []).append(item)
             for (symbol, data_type), items in sorted(inventory_groups.items()):
@@ -9192,13 +11050,17 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                     data_type=data_type,
                     items=items,
                     full_history=full_history,
-                    scope_start_period=(start.isoformat() if start is not None else None),
+                    scope_start_period=(
+                        start.isoformat() if start is not None else None
+                    ),
                     scope_end_period=(end.isoformat() if end is not None else None),
                 )
                 inventory_snapshots.append(
                     {**snapshot, "verification_phase": "initial"}
                 )
-                initial_inventory_ids[(symbol, data_type)] = str(snapshot["snapshot_id"])
+                initial_inventory_ids[(symbol, data_type)] = str(
+                    snapshot["snapshot_id"]
+                )
                 reusable_archives.update(
                     {
                         (symbol, data_type, period): result
@@ -9211,7 +11073,10 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                 )
             for symbol, data_type, item in plan:
                 if not json_mode:
-                    print(f"tick-archive-sync start {symbol} {data_type} {item.period}", flush=True)
+                    print(
+                        f"tick-archive-sync start {symbol} {data_type} {item.period}",
+                        flush=True,
+                    )
 
                 reusable = reusable_archives.get((symbol, data_type, item.period))
                 if reusable is not None:
@@ -9244,7 +11109,9 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                         checksum_last_modified=item.checksum_last_modified,
                         checksum_etag=item.checksum_etag,
                         timeout_seconds=float(getattr(args, "timeout", 240.0)),
-                        retain_archive=not bool(getattr(args, "no_retain_archive", False)),
+                        retain_archive=not bool(
+                            getattr(args, "no_retain_archive", False)
+                        ),
                         progress=progress,
                     )
                     results.append(result.asdict())
@@ -9365,7 +11232,10 @@ def command_tick_corpus_audit(args: argparse.Namespace) -> int:
     import duckdb
 
     from .assets import normalize_symbols
-    from .microstructure_warehouse import MicrostructureWarehouse, SUPPORTED_TICK_ARCHIVES
+    from .microstructure_warehouse import (
+        MicrostructureWarehouse,
+        SUPPORTED_TICK_ARCHIVES,
+    )
 
     symbols = normalize_symbols(
         str(getattr(args, "symbols", "BTCUSDT,ETHUSDT,SOLUSDT")),
@@ -9380,7 +11250,9 @@ def command_tick_corpus_audit(args: argparse.Namespace) -> int:
             if item.strip()
         )
     )
-    if not data_types or any(item not in SUPPORTED_TICK_ARCHIVES for item in data_types):
+    if not data_types or any(
+        item not in SUPPORTED_TICK_ARCHIVES for item in data_types
+    ):
         print("tick-corpus-audit: unsupported or missing data type", file=sys.stderr)
         return 2
     start_value = getattr(args, "start_date", None)
@@ -9407,17 +11279,22 @@ def command_tick_corpus_audit(args: argparse.Namespace) -> int:
             )
             return 2
         start_ms = int(
-            datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc).timestamp()
-            * 1_000
-        )
-        end_ms = int(
             datetime.combine(
-                end + timedelta(days=1),
-                datetime.min.time(),
-                tzinfo=timezone.utc,
+                start, datetime.min.time(), tzinfo=timezone.utc
             ).timestamp()
             * 1_000
-        ) - 1
+        )
+        end_ms = (
+            int(
+                datetime.combine(
+                    end + timedelta(days=1),
+                    datetime.min.time(),
+                    tzinfo=timezone.utc,
+                ).timestamp()
+                * 1_000
+            )
+            - 1
+        )
     try:
         allowed_official_gap_types = (
             ("bookDepth",)
@@ -9495,7 +11372,10 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
     stop = getattr(args, "stop_loss_bps", None)
     take = getattr(args, "take_profit_bps", None)
     if (stop is None) != (take is None):
-        print("microstructure-train requires both --stop-loss-bps and --take-profit-bps", file=sys.stderr)
+        print(
+            "microstructure-train requires both --stop-loss-bps and --take-profit-bps",
+            file=sys.stderr,
+        )
         return 2
     evaluate_terminal = bool(getattr(args, "evaluate_terminal", False))
     risk_level = str(getattr(args, "risk_level", "conservative"))
@@ -9537,9 +11417,14 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
             memory_limit=str(getattr(args, "memory_limit", "8GB")),
             threads=int(getattr(args, "threads", 8)),
         ) as warehouse:
-            backfilled = warehouse.backfill_book_ticker_paths(progress=warehouse_progress)
+            backfilled = warehouse.backfill_book_ticker_paths(
+                progress=warehouse_progress
+            )
             if not json_mode and backfilled:
-                print(f"microstructure-train backfilled_archives={len(backfilled)}", flush=True)
+                print(
+                    f"microstructure-train backfilled_archives={len(backfilled)}",
+                    flush=True,
+                )
             causal_evidence = warehouse.rebuild_causal_feature_bars(
                 str(getattr(args, "symbol", "BTCUSDT")),
                 progress=warehouse_progress,
@@ -9585,7 +11470,9 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                 dataset,
                 risk_level=risk_level,
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
-                minimum_promotion_days=int(getattr(args, "minimum_promotion_days", 240)),
+                minimum_promotion_days=int(
+                    getattr(args, "minimum_promotion_days", 240)
+                ),
                 deployment_calibration_days=int(
                     getattr(args, "deployment_calibration_days", 14)
                 ),
@@ -9596,7 +11483,9 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
                 progress=model_progress,
             )
     except (OSError, RuntimeError, ValueError) as exc:
-        print(f"microstructure-train failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print(
+            f"microstructure-train failed: {type(exc).__name__}: {exc}", file=sys.stderr
+        )
         return 2
     digest = save_microstructure_model_artifact(artifact, output)
     payload = artifact.asdict()
@@ -9604,7 +11493,9 @@ def command_microstructure_train(args: argparse.Namespace) -> int:
     payload.pop("deployment_model_strings", None)
     payload["artifact_path"] = output
     payload["artifact_sha256"] = digest
-    payload["path_target_evidence"] = asdict(path_evidence) if path_evidence is not None else None
+    payload["path_target_evidence"] = (
+        asdict(path_evidence) if path_evidence is not None else None
+    )
     if json_mode:
         print(json.dumps(payload, indent=2, sort_keys=True))
     else:
@@ -9665,7 +11556,9 @@ def command_microstructure_refit(args: argparse.Namespace) -> int:
     try:
         artifact = load_microstructure_model_artifact(input_path)
         if artifact.status != "validated":
-            raise ValueError("microstructure-refit requires a terminal-validated artifact")
+            raise ValueError(
+                "microstructure-refit requires a terminal-validated artifact"
+            )
         with MicrostructureWarehouse(
             str(getattr(args, "warehouse", "data/microstructure.duckdb")),
             cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
@@ -9704,7 +11597,9 @@ def command_microstructure_refit(args: argparse.Namespace) -> int:
             )
         digest = save_microstructure_model_artifact(shadow_candidate, output_path)
     except (OSError, RuntimeError, ValueError) as exc:
-        print(f"microstructure-refit failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        print(
+            f"microstructure-refit failed: {type(exc).__name__}: {exc}", file=sys.stderr
+        )
         return 2
 
     payload = {
@@ -9900,10 +11795,14 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
             memory_limit=str(getattr(args, "memory_limit", "8GB")),
             threads=int(getattr(args, "threads", 8)),
         ) as warehouse:
-            latest_row = warehouse.connect().execute(
-                "SELECT max(second_ms) FROM current_trade_1s WHERE symbol = ?",
-                [symbol],
-            ).fetchone()
+            latest_row = (
+                warehouse.connect()
+                .execute(
+                    "SELECT max(second_ms) FROM current_trade_1s WHERE symbol = ?",
+                    [symbol],
+                )
+                .fetchone()
+            )
             if latest_row is None or latest_row[0] is None:
                 raise ValueError(f"no one-second trade rows exist for {symbol}")
             target_offset_seconds = max(1, int(math.ceil(latency / 1_000.0))) + horizon
@@ -9913,14 +11812,17 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
             end_value = getattr(args, "end_date", None)
             if end_value:
                 end_date = _parse_cli_utc_date(end_value, "end-date")
-                requested_end_ms = int(
-                    datetime.combine(
-                        end_date + timedelta(days=1),
-                        datetime.min.time(),
-                        tzinfo=timezone.utc,
-                    ).timestamp()
-                    * 1_000
-                ) - 1
+                requested_end_ms = (
+                    int(
+                        datetime.combine(
+                            end_date + timedelta(days=1),
+                            datetime.min.time(),
+                            tzinfo=timezone.utc,
+                        ).timestamp()
+                        * 1_000
+                    )
+                    - 1
+                )
                 end_ms = min(requested_end_ms, last_possible_decision_ms)
             else:
                 end_ms = last_possible_decision_ms
@@ -9940,9 +11842,7 @@ def command_tape_depth_train(args: argparse.Namespace) -> int:
                 horizon_seconds=horizon,
                 total_latency_ms=latency,
                 decision_cadence_seconds=cadence,
-                maximum_depth_age_ms=int(
-                    getattr(args, "maximum_depth_age_ms", 60_000)
-                ),
+                maximum_depth_age_ms=int(getattr(args, "maximum_depth_age_ms", 60_000)),
                 maximum_rows=int(getattr(args, "maximum_rows", 5_000_000)),
                 maximum_cached_rows=int(
                     getattr(args, "maximum_cached_rows", 15_000_000)
@@ -10075,23 +11975,15 @@ def command_tape_depth_study(args: argparse.Namespace) -> int:
         "output_dir": str(getattr(args, "output_dir", "data/tape-depth-study")),
         "training_window_days": int(getattr(args, "training_window_days", 730)),
         "tuning_window_days": int(getattr(args, "tuning_window_days", 30)),
-        "calibration_window_days": int(
-            getattr(args, "calibration_window_days", 30)
-        ),
-        "evaluation_window_days": int(
-            getattr(args, "evaluation_window_days", 90)
-        ),
+        "calibration_window_days": int(getattr(args, "calibration_window_days", 30)),
+        "evaluation_window_days": int(getattr(args, "evaluation_window_days", 90)),
         "total_latency_ms": int(getattr(args, "total_latency_ms", 750)),
         "maximum_rows": int(getattr(args, "maximum_rows", 5_000_000)),
-        "maximum_cached_rows": int(
-            getattr(args, "maximum_cached_rows", 15_000_000)
-        ),
+        "maximum_cached_rows": int(getattr(args, "maximum_cached_rows", 15_000_000)),
         "dataset_cache": bool(getattr(args, "dataset_cache", True)),
         "max_folds": int(getattr(args, "max_folds", 4)),
         "compute_backend": str(getattr(args, "compute_backend", "auto")),
-        "minimum_segment_rows": int(
-            getattr(args, "minimum_segment_rows", 10_000)
-        ),
+        "minimum_segment_rows": int(getattr(args, "minimum_segment_rows", 10_000)),
         "resume": bool(getattr(args, "resume", False)),
         "plan_only": bool(getattr(args, "plan_only", False)),
         "progress": progress,
@@ -10167,16 +12059,12 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
                 output_dir=str(
                     getattr(args, "output_dir", "data/tape-depth-prequential")
                 ),
-                training_window_days=int(
-                    getattr(args, "training_window_days", 730)
-                ),
+                training_window_days=int(getattr(args, "training_window_days", 730)),
                 tuning_window_days=int(getattr(args, "tuning_window_days", 30)),
                 calibration_window_days=int(
                     getattr(args, "calibration_window_days", 30)
                 ),
-                evaluation_window_days=int(
-                    getattr(args, "evaluation_window_days", 90)
-                ),
+                evaluation_window_days=int(getattr(args, "evaluation_window_days", 90)),
                 horizon_seconds=(None if horizon_arg is None else int(horizon_arg)),
                 total_latency_ms=int(getattr(args, "total_latency_ms", 750)),
                 decision_cadence_seconds=(
@@ -10196,9 +12084,7 @@ def command_tape_depth_prequential(args: argparse.Namespace) -> int:
                 model_profile=getattr(args, "model_profile", None),
                 feature_set=getattr(args, "feature_set", None),
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
-                minimum_segment_rows=int(
-                    getattr(args, "minimum_segment_rows", 10_000)
-                ),
+                minimum_segment_rows=int(getattr(args, "minimum_segment_rows", 10_000)),
                 selection_lock=getattr(args, "selection_lock", None),
                 plan_only=bool(getattr(args, "plan_only", False)),
                 resume=bool(getattr(args, "resume", False)),
@@ -10273,9 +12159,7 @@ def command_tape_depth_confirm(args: argparse.Namespace) -> int:
         confirmation = load_and_confirm_tape_depth_report(
             selection_path=str(getattr(args, "selection", "")),
             report_path=str(getattr(args, "report", "")),
-            output=str(
-                getattr(args, "output", "data/tape-depth-confirmation.json")
-            ),
+            output=str(getattr(args, "output", "data/tape-depth-confirmation.json")),
         )
     except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
         print(
@@ -10335,8 +12219,7 @@ def command_tape_depth_execution_confirm(args: argparse.Namespace) -> int:
             )
     except (KeyError, OSError, RuntimeError, TypeError, ValueError) as exc:
         print(
-            "tape-depth-execution-confirm failed: "
-            f"{type(exc).__name__}: {exc}",
+            f"tape-depth-execution-confirm failed: {type(exc).__name__}: {exc}",
             file=sys.stderr,
         )
         return 2
@@ -10400,7 +12283,9 @@ def _confirm_download_missing_training_data(
     )
 
 
-def _download_training_candles(args: argparse.Namespace, runtime: RuntimeConfig, *, interval: str, market_type: str) -> bool:
+def _download_training_candles(
+    args: argparse.Namespace, runtime: RuntimeConfig, *, interval: str, market_type: str
+) -> bool:
     return data_workflows.download_training_candles(
         args,
         runtime,
@@ -10410,7 +12295,9 @@ def _download_training_candles(args: argparse.Namespace, runtime: RuntimeConfig,
     )
 
 
-def _load_training_candles(args: argparse.Namespace, runtime: RuntimeConfig) -> tuple[list | None, str]:
+def _load_training_candles(
+    args: argparse.Namespace, runtime: RuntimeConfig
+) -> tuple[list | None, str]:
     return data_workflows.load_training_candles(
         args,
         runtime,
@@ -10435,7 +12322,9 @@ def _classification_payload(report: object) -> dict[str, float | int]:
     }
 
 
-def _threshold_classification_guard(baseline: object, candidate: object) -> dict[str, float | str | bool]:
+def _threshold_classification_guard(
+    baseline: object, candidate: object
+) -> dict[str, float | str | bool]:
     baseline_accuracy = float(getattr(baseline, "accuracy", 0.0))
     baseline_f1 = float(getattr(baseline, "f1", 0.0))
     baseline_precision = float(getattr(baseline, "precision", 0.0))
@@ -10447,8 +12336,14 @@ def _threshold_classification_guard(baseline: object, candidate: object) -> dict
     accuracy_floor = max(0.0, baseline_accuracy - 0.03)
     f1_floor = max(0.0, baseline_f1 - 0.05)
     precision_floor = max(0.0, baseline_precision - 0.02)
-    detects_positive_cases = not (candidate_true_positive <= 0 < candidate_false_negative)
-    stable_f1 = detects_positive_cases and candidate_accuracy >= accuracy_floor and candidate_f1 >= f1_floor
+    detects_positive_cases = not (
+        candidate_true_positive <= 0 < candidate_false_negative
+    )
+    stable_f1 = (
+        detects_positive_cases
+        and candidate_accuracy >= accuracy_floor
+        and candidate_f1 >= f1_floor
+    )
     conservative_precision = (
         detects_positive_cases
         and candidate_f1 > 0.0
@@ -10459,7 +12354,11 @@ def _threshold_classification_guard(baseline: object, candidate: object) -> dict
     if not detects_positive_cases:
         mode = "zero_true_positive"
     else:
-        mode = "f1_stable" if stable_f1 else ("accuracy_precision" if conservative_precision else "rejected")
+        mode = (
+            "f1_stable"
+            if stable_f1
+            else ("accuracy_precision" if conservative_precision else "rejected")
+        )
     return {
         "passed": bool(passed),
         "mode": mode,
@@ -10478,10 +12377,18 @@ def _threshold_capital_preservation_guard(
     baseline_pnl = float(getattr(profit_calibration, "baseline_realized_pnl", 0.0))
     realized_pnl = float(getattr(profit_calibration, "realized_pnl", baseline_pnl))
     closed_trades = max(0, int(getattr(profit_calibration, "closed_trades", 0)))
-    baseline_closed_trades = max(0, int(getattr(profit_calibration, "baseline_closed_trades", 0)))
-    candidate_true_positive = int(getattr(candidate_report, "true_positive", 0)) if candidate_report else 1
-    candidate_false_negative = int(getattr(candidate_report, "false_negative", 0)) if candidate_report else 0
-    detects_positive_cases = not (candidate_true_positive <= 0 < candidate_false_negative)
+    baseline_closed_trades = max(
+        0, int(getattr(profit_calibration, "baseline_closed_trades", 0))
+    )
+    candidate_true_positive = (
+        int(getattr(candidate_report, "true_positive", 0)) if candidate_report else 1
+    )
+    candidate_false_negative = (
+        int(getattr(candidate_report, "false_negative", 0)) if candidate_report else 0
+    )
+    detects_positive_cases = not (
+        candidate_true_positive <= 0 < candidate_false_negative
+    )
     score_delta = best_score - baseline_score
     pnl_delta = realized_pnl - baseline_pnl
     material_pnl_improvement = pnl_delta >= max(1e-9, abs(baseline_pnl) * 0.10)
@@ -10496,7 +12403,9 @@ def _threshold_capital_preservation_guard(
     )
     return {
         "passed": bool(passed),
-        "mode": "capital_preservation" if passed else ("zero_true_positive" if not detects_positive_cases else "rejected"),
+        "mode": "capital_preservation"
+        if passed
+        else ("zero_true_positive" if not detects_positive_cases else "rejected"),
         "score_delta": float(score_delta),
         "pnl_delta": float(pnl_delta),
         "closed_trades": int(closed_trades),
@@ -10564,7 +12473,7 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 print(
                     "walk-forward fold scores: "
                     + ", ".join(f"{float(v):.3f}" for v in fold_values)
-            )
+                )
         except ValueError as exc:
             print(f"walk-forward unavailable: {exc}")
             wf = None
@@ -10584,7 +12493,9 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         seed=seed,
         feature_signature=model_signature,
         validation_rows=calibration_rows,
-        early_stopping_rounds=max(5, min(25, int(args.epochs) // 5)) if calibration_rows else None,
+        early_stopping_rounds=max(5, min(25, int(args.epochs) // 5))
+        if calibration_rows
+        else None,
         compute_backend=compute_backend,
         batch_size=batch_size,
     )
@@ -10608,23 +12519,43 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if probability_calibration.status != "fail":
         model.probability_temperature = float(probability_calibration.temperature)
         model.probability_calibration_size = int(probability_calibration.rows)
-        model.probability_log_loss_before = float(probability_calibration.log_loss_before)
+        model.probability_log_loss_before = float(
+            probability_calibration.log_loss_before
+        )
         model.probability_log_loss_after = float(probability_calibration.log_loss_after)
         model.probability_brier_before = float(probability_calibration.brier_before)
         model.probability_brier_after = float(probability_calibration.brier_after)
-        model.probability_ece_before = float(probability_calibration.expected_calibration_error_before)
-        model.probability_ece_after = float(probability_calibration.expected_calibration_error_after)
-        model.probability_calibration_backend_requested = str(probability_calibration.calibration_backend_requested)
-        model.probability_calibration_backend_kind = str(probability_calibration.calibration_backend_kind)
-        model.probability_calibration_backend_device = str(probability_calibration.calibration_backend_device)
-        model.probability_calibration_backend_reason = str(probability_calibration.calibration_backend_reason)
+        model.probability_ece_before = float(
+            probability_calibration.expected_calibration_error_before
+        )
+        model.probability_ece_after = float(
+            probability_calibration.expected_calibration_error_after
+        )
+        model.probability_calibration_backend_requested = str(
+            probability_calibration.calibration_backend_requested
+        )
+        model.probability_calibration_backend_kind = str(
+            probability_calibration.calibration_backend_kind
+        )
+        model.probability_calibration_backend_device = str(
+            probability_calibration.calibration_backend_device
+        )
+        model.probability_calibration_backend_reason = str(
+            probability_calibration.calibration_backend_reason
+        )
     threshold = cfg.signal_threshold
     threshold_source = "strategy"
     threshold_calibration: dict[str, object] | None = None
     if args.calibrate_threshold and calibration_rows:
-        strategy_report = evaluate_classification(calibration_rows, model, threshold=cfg.signal_threshold)
-        classification_threshold = calibrate_threshold(calibration_rows, model, start=0.05, end=0.95, steps=31)
-        classification_report = evaluate_classification(calibration_rows, model, threshold=classification_threshold)
+        strategy_report = evaluate_classification(
+            calibration_rows, model, threshold=cfg.signal_threshold
+        )
+        classification_threshold = calibrate_threshold(
+            calibration_rows, model, start=0.05, end=0.95, steps=31
+        )
+        classification_report = evaluate_classification(
+            calibration_rows, model, threshold=classification_threshold
+        )
         profit_calibration = calibrate_threshold_for_backtest(
             calibration_rows,
             model,
@@ -10638,12 +12569,20 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             compute_backend=compute_backend,
             score_batch_size=batch_size,
         )
-        profit_report = evaluate_classification(calibration_rows, model, threshold=profit_calibration.best_threshold)
-        classification_guard = _threshold_classification_guard(strategy_report, profit_report)
+        profit_report = evaluate_classification(
+            calibration_rows, model, threshold=profit_calibration.best_threshold
+        )
+        classification_guard = _threshold_classification_guard(
+            strategy_report, profit_report
+        )
         classification_guard_passed = bool(classification_guard["passed"])
-        capital_guard = _threshold_capital_preservation_guard(profit_calibration, profit_report)
+        capital_guard = _threshold_capital_preservation_guard(
+            profit_calibration, profit_report
+        )
         capital_guard_passed = bool(capital_guard["passed"])
-        if profit_calibration.accepted and (classification_guard_passed or capital_guard_passed):
+        if profit_calibration.accepted and (
+            classification_guard_passed or capital_guard_passed
+        ):
             threshold = profit_calibration.threshold
             threshold_source = "profit_backtest"
         threshold_calibration = {
@@ -10661,7 +12600,9 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     model.training_cutoff_timestamp = train_rows[-1].timestamp if train_rows else None
     model.threshold_source = threshold_source
     if threshold_calibration:
-        profit_backtest = cast(dict[str, object], threshold_calibration["profit_backtest"])
+        profit_backtest = cast(
+            dict[str, object], threshold_calibration["profit_backtest"]
+        )
         threshold_score = cast(float | int | str, profit_backtest["score"])
         threshold_pnl = cast(float | int | str, profit_backtest["realized_pnl"])
         threshold_trades = cast(float | int | str, profit_backtest["closed_trades"])
@@ -10675,16 +12616,32 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             cast(float | int | str, profit_backtest.get("best_score", threshold_score))
         )
         model.threshold_diagnostic_best_pnl = float(
-            cast(float | int | str, profit_backtest.get("best_realized_pnl", threshold_pnl))
+            cast(
+                float | int | str,
+                profit_backtest.get("best_realized_pnl", threshold_pnl),
+            )
         )
         model.threshold_diagnostic_best_trades = int(
-            cast(float | int | str, profit_backtest.get("best_closed_trades", threshold_trades))
+            cast(
+                float | int | str,
+                profit_backtest.get("best_closed_trades", threshold_trades),
+            )
         )
     train_score = evaluate(train_rows, model, threshold=threshold)
-    calibration_score = evaluate(calibration_rows, model, threshold=threshold) if calibration_rows else 0.0
-    validation_score = evaluate(validation_rows, model, threshold=threshold) if validation_rows else 0.0
+    calibration_score = (
+        evaluate(calibration_rows, model, threshold=threshold)
+        if calibration_rows
+        else 0.0
+    )
+    validation_score = (
+        evaluate(validation_rows, model, threshold=threshold)
+        if validation_rows
+        else 0.0
+    )
     quality = build_model_quality_report(train_rows, validation_rows, model, threshold)
-    drift = feature_drift_report(validation_rows if validation_rows else rows[-min(50, len(rows)):], model)
+    drift = feature_drift_report(
+        validation_rows if validation_rows else rows[-min(50, len(rows)) :], model
+    )
     model.quality_score = float(quality.quality_score)
     model.quality_warnings = list(quality.warnings)
     output = Path(args.output)
@@ -10701,11 +12658,17 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print(f"validated threshold: {threshold:.3f} source={threshold_source}")
         print(f"calibration directional accuracy: {calibration_score:.3f}")
         threshold_calibration_payload = cast(dict[str, object], threshold_calibration)
-        profit_backtest = cast(dict[str, object], threshold_calibration_payload["profit_backtest"])
+        profit_backtest = cast(
+            dict[str, object], threshold_calibration_payload["profit_backtest"]
+        )
         accepted = "accepted" if threshold_source == "profit_backtest" else "rejected"
-        best_threshold = float(cast(float | int | str, profit_backtest["best_threshold"]))
+        best_threshold = float(
+            cast(float | int | str, profit_backtest["best_threshold"])
+        )
         best_score = float(cast(float | int | str, profit_backtest["best_score"]))
-        baseline_score = float(cast(float | int | str, profit_backtest["baseline_score"]))
+        baseline_score = float(
+            cast(float | int | str, profit_backtest["baseline_score"])
+        )
         print(
             "profit threshold candidate: "
             f"{accepted} best={best_threshold:.3f} "
@@ -10761,7 +12724,9 @@ def command_train(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             "out_of_sample_accuracy": float(validation_score),
             "calibration_accuracy": float(calibration_score),
             "threshold": float(threshold),
-            "tuned_threshold": float(threshold) if args.calibrate_threshold and calibration_rows else None,
+            "tuned_threshold": float(threshold)
+            if args.calibrate_threshold and calibration_rows
+            else None,
             "threshold_source": threshold_source,
             "threshold_calibration": threshold_calibration,
             "calibrated_out_of_sample_accuracy": float(validation_score)
@@ -10851,7 +12816,9 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     if runtime.market_type == "futures" and runtime.api_key and runtime.api_secret:
         try:
             client = _build_client(runtime)
-            max_leverage = min(MAX_AUTONOMOUS_LEVERAGE, float(client.get_max_leverage(runtime.symbol)))
+            max_leverage = min(
+                MAX_AUTONOMOUS_LEVERAGE, float(client.get_max_leverage(runtime.symbol))
+            )
         except BinanceAPIError:
             max_leverage = MAX_AUTONOMOUS_LEVERAGE
     candles = _load_rows_for_command(args.input, label="Tune data load failed")
@@ -10886,16 +12853,28 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     train_rows = rows[:split]
     test_rows = rows[split:]
 
-    risks: Iterable[float] = [args.min_risk + (args.max_risk - args.min_risk) * i / max(args.steps - 1, 1)
-                              for i in range(args.steps)]
-    levs: Iterable[float] = [args.min_leverage + (args.max_leverage - args.min_leverage) * i / max(args.steps - 1, 1)
-                             for i in range(args.steps)]
-    thrs: Iterable[float] = [args.min_threshold + (args.max_threshold - args.min_threshold) * i / max(args.steps - 1, 1)
-                             for i in range(args.steps)]
-    takes: Iterable[float] = [args.min_take + (args.max_take - args.min_take) * i / max(args.steps - 1, 1)
-                              for i in range(args.steps)]
-    stops: Iterable[float] = [args.min_stop + (args.max_stop - args.min_stop) * i / max(args.steps - 1, 1)
-                              for i in range(args.steps)]
+    risks: Iterable[float] = [
+        args.min_risk + (args.max_risk - args.min_risk) * i / max(args.steps - 1, 1)
+        for i in range(args.steps)
+    ]
+    levs: Iterable[float] = [
+        args.min_leverage
+        + (args.max_leverage - args.min_leverage) * i / max(args.steps - 1, 1)
+        for i in range(args.steps)
+    ]
+    thrs: Iterable[float] = [
+        args.min_threshold
+        + (args.max_threshold - args.min_threshold) * i / max(args.steps - 1, 1)
+        for i in range(args.steps)
+    ]
+    takes: Iterable[float] = [
+        args.min_take + (args.max_take - args.min_take) * i / max(args.steps - 1, 1)
+        for i in range(args.steps)
+    ]
+    stops: Iterable[float] = [
+        args.min_stop + (args.max_stop - args.min_stop) * i / max(args.steps - 1, 1)
+        for i in range(args.steps)
+    ]
     best: StrategyConfig = cfg
     fallback: StrategyConfig | None = None
     fallback_score = float("-inf")
@@ -10911,7 +12890,9 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                             **{
                                 **cfg.asdict(),
                                 "risk_per_trade": max(0.0001, risk),
-                                "leverage": max(1.0, min(float(max_leverage), leverage)),
+                                "leverage": max(
+                                    1.0, min(float(max_leverage), leverage)
+                                ),
                                 "signal_threshold": max(0.05, min(0.95, threshold)),
                                 "take_profit_pct": max(0.0, min(0.99, take)),
                                 "stop_loss_pct": max(0.0, min(0.99, stop)),
@@ -10933,7 +12914,9 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                             score_batch_size=batch_size,
                         )
                         score = _tune_score(candidate_result, starting_cash=1000.0)
-                        candidate_stopped = bool(getattr(candidate_result, "stopped_by_drawdown", False))
+                        candidate_stopped = bool(
+                            getattr(candidate_result, "stopped_by_drawdown", False)
+                        )
                         if candidate_stopped:
                             if score > fallback_score:
                                 fallback_score = score
@@ -10948,7 +12931,9 @@ def command_tune(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         if fallback is not None:
             best = fallback
             best_score = fallback_score
-            print("Warning: all tune candidates hit drawdown limit; using best fallback score by risk-adjusted metric.")
+            print(
+                "Warning: all tune candidates hit drawdown limit; using best fallback score by risk-adjusted metric."
+            )
         else:
             print("No valid candidates evaluated.")
             return 2
@@ -10990,7 +12975,9 @@ def command_backtest(args: argparse.Namespace) -> int:
         print(f"Backtest settings invalid: {exc}.", file=sys.stderr)
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
-    rows = _backtest_rows_for_model(candles, cfg, model, compute_backend=compute_backend)
+    rows = _backtest_rows_for_model(
+        candles, cfg, model, compute_backend=compute_backend
+    )
     data_coverage = describe_candle_coverage(
         symbol=runtime.symbol,
         market_type=runtime.market_type,
@@ -11002,7 +12989,9 @@ def command_backtest(args: argparse.Namespace) -> int:
     )
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
     score_batch_size = max(1, int(getattr(args, "score_batch_size", 8192) or 8192))
-    execution_profile = _load_cli_execution_profile(args, runtime, cfg, workflow="backtest execution profile")
+    execution_profile = _load_cli_execution_profile(
+        args, runtime, cfg, workflow="backtest execution profile"
+    )
     result = run_backtest(
         rows,
         model,
@@ -11072,7 +13061,9 @@ def command_backtest(args: argparse.Namespace) -> int:
         f"rows={data_coverage.rows_used} years={data_coverage.used_duration_years:.2f} "
         f"coverage={data_coverage.coverage_ratio:.4f} gaps={data_coverage.gap_count}"
     )
-    print(f"scoring_backend: {result.scoring_backend_kind} device={result.scoring_backend_device}")
+    print(
+        f"scoring_backend: {result.scoring_backend_kind} device={result.scoring_backend_device}"
+    )
     if result.scoring_backend_reason:
         print(f"scoring_backend_reason: {result.scoring_backend_reason}")
     _print_execution_profile_evidence(execution_profile)
@@ -11087,8 +13078,12 @@ def command_backtest(args: argparse.Namespace) -> int:
     print(f"edge_vs_buy_hold: {result.edge_vs_buy_hold:.2f}")
     print(f"profit_factor: {float(getattr(result, 'profit_factor', 0.0)):.2f}")
     print(f"expectancy: {float(getattr(result, 'expectancy', 0.0)):.2f}")
-    print(f"average_trade_return: {float(getattr(result, 'average_trade_return', 0.0)):.2%}")
-    print(f"max_consecutive_losses: {int(getattr(result, 'max_consecutive_losses', 0))}")
+    print(
+        f"average_trade_return: {float(getattr(result, 'average_trade_return', 0.0)):.2%}"
+    )
+    print(
+        f"max_consecutive_losses: {int(getattr(result, 'max_consecutive_losses', 0))}"
+    )
     print(f"max_drawdown: {result.max_drawdown:.2%}")
     print(f"stopped_by_drawdown: {result.stopped_by_drawdown}")
     return 0
@@ -11146,13 +13141,18 @@ def command_microstructure_prequential(args: argparse.Namespace) -> int:
                 max_l1_participation=artifact.max_l1_participation,
                 decision_cadence_seconds=artifact.decision_cadence_seconds,
             )
-            if artifact.stop_loss_bps is not None or artifact.take_profit_bps is not None:
+            if (
+                artifact.stop_loss_bps is not None
+                or artifact.take_profit_bps is not None
+            ):
                 if (
                     artifact.stop_loss_bps is None
                     or artifact.take_profit_bps is None
                     or artifact.trigger_execution_slippage_bps is None
                 ):
-                    raise ValueError("candidate path-aware target contract is incomplete")
+                    raise ValueError(
+                        "candidate path-aware target contract is incomplete"
+                    )
                 dataset, _path_evidence = apply_path_aware_lifecycle_targets(
                     warehouse,
                     dataset,
@@ -11180,12 +13180,8 @@ def command_microstructure_prequential(args: argparse.Namespace) -> int:
                     minimum_segment_rows=int(
                         getattr(args, "minimum_segment_rows", 256)
                     ),
-                    minimum_class_rows=int(
-                        getattr(args, "minimum_class_rows", 128)
-                    ),
-                    bootstrap_samples=int(
-                        getattr(args, "bootstrap_samples", 2000)
-                    ),
+                    minimum_class_rows=int(getattr(args, "minimum_class_rows", 128)),
+                    bootstrap_samples=int(getattr(args, "bootstrap_samples", 2000)),
                     max_folds=int(getattr(args, "max_folds", 0)),
                 ),
                 compute_backend=str(getattr(args, "compute_backend", "auto")),
@@ -11243,7 +13239,9 @@ def command_microstructure_prequential(args: argparse.Namespace) -> int:
             print(f"  first_rejection={report.reasons[0]}")
         print(f"  predictions -> {report.predictions_path}")
         print(f"  chart -> {report.chart_path}")
-        print(f"  report -> {getattr(args, 'output', 'data/microstructure-prequential.json')}")
+        print(
+            f"  report -> {getattr(args, 'output', 'data/microstructure-prequential.json')}"
+        )
         print("  terminal_holdout=not_accessed trading_authority=false")
     return 0 if report.passed else 2
 
@@ -11379,9 +13377,7 @@ def command_microstructure_promote(args: argparse.Namespace) -> int:
                 artifact = evaluate_microstructure_model_terminal(
                     artifact,
                     dataset,
-                    compute_backend=str(
-                        getattr(args, "compute_backend", "auto")
-                    ),
+                    compute_backend=str(getattr(args, "compute_backend", "auto")),
                     progress=progress,
                 )
                 save_microstructure_model_artifact(artifact, output_path)
@@ -11405,9 +13401,7 @@ def command_microstructure_promote(args: argparse.Namespace) -> int:
                     artifact = refit_validated_microstructure_model(
                         artifact,
                         dataset,
-                        compute_backend=str(
-                            getattr(args, "compute_backend", "auto")
-                        ),
+                        compute_backend=str(getattr(args, "compute_backend", "auto")),
                         progress=progress,
                     )
                     save_microstructure_model_artifact(artifact, output_path)
@@ -11464,7 +13458,9 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
     if not model_path.exists():
         print(f"Model file not found: {model_path}")
         return 2
-    candles = _load_rows_for_command(args.input, label="Backtest chart data load failed")
+    candles = _load_rows_for_command(
+        args.input, label="Backtest chart data load failed"
+    )
     if candles is None:
         return 2
     try:
@@ -11482,7 +13478,9 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
         print(f"Backtest chart settings invalid: {exc}.", file=sys.stderr)
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
-    rows = _backtest_rows_for_model(candles, cfg, model, compute_backend=compute_backend)
+    rows = _backtest_rows_for_model(
+        candles, cfg, model, compute_backend=compute_backend
+    )
     data_coverage = describe_candle_coverage(
         symbol=runtime.symbol,
         market_type=runtime.market_type,
@@ -11495,7 +13493,9 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
     if not rows:
         print("Backtest chart failed: no rows available.", file=sys.stderr)
         return 2
-    execution_profile = _load_cli_execution_profile(args, runtime, cfg, workflow="backtest chart execution profile")
+    execution_profile = _load_cli_execution_profile(
+        args, runtime, cfg, workflow="backtest chart execution profile"
+    )
     result = run_backtest(
         rows,
         model,
@@ -11521,7 +13521,9 @@ def command_backtest_chart(args: argparse.Namespace) -> int:
             EquityPoint(0, float(result.starting_cash), 0.0),
             EquityPoint(1, float(result.ending_cash), float(result.max_drawdown)),
         ]
-    output = write_equity_svg(points, args.output, title=f"{runtime.symbol} day-trading backtest")
+    output = write_equity_svg(
+        points, args.output, title=f"{runtime.symbol} day-trading backtest"
+    )
     print(f"backtest chart saved to {output}")
     print(
         "data_span: "
@@ -11564,7 +13566,9 @@ def command_evaluate(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print(f"Model load failed: {exc}", file=sys.stderr)
         return 2
     cfg = apply_model_strategy_overrides(cfg, model)
-    rows = _readiness_model_rows(candles, cfg, model, compute_backend=runtime.compute_backend)
+    rows = _readiness_model_rows(
+        candles, cfg, model, compute_backend=runtime.compute_backend
+    )
     if not rows:
         print("No rows available for evaluation. Fetch more data first.")
         return 2
@@ -11582,12 +13586,24 @@ def command_evaluate(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         threshold = model_decision_threshold(model, cfg.signal_threshold)
 
     if args.calibrate_threshold and calibration_rows:
-        threshold = calibrate_threshold(calibration_rows, model, start=0.05, end=0.95, steps=31)
+        threshold = calibrate_threshold(
+            calibration_rows, model, start=0.05, end=0.95, steps=31
+        )
 
-    report = evaluate_classification(test_rows if test_rows else rows, model, threshold=threshold)
-    train_report = evaluate_classification(train_rows, model, threshold=threshold) if train_rows else None
-    quality = build_model_quality_report(train_rows, test_rows if test_rows else rows, model, threshold)
-    probability_calibration = assess_probability_calibration(test_rows if test_rows else rows, model)
+    report = evaluate_classification(
+        test_rows if test_rows else rows, model, threshold=threshold
+    )
+    train_report = (
+        evaluate_classification(train_rows, model, threshold=threshold)
+        if train_rows
+        else None
+    )
+    quality = build_model_quality_report(
+        train_rows, test_rows if test_rows else rows, model, threshold
+    )
+    probability_calibration = assess_probability_calibration(
+        test_rows if test_rows else rows, model
+    )
     drift = feature_drift_report(test_rows if test_rows else rows, model)
     artifact = {
         "command": "evaluate",
@@ -11607,14 +13623,28 @@ def command_evaluate(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         "calibrated": bool(args.calibrate_threshold),
         "rows": {
             "train": {
-                "accuracy": float(train_report.accuracy) if train_report is not None else 0.0,
-                "precision": float(train_report.precision) if train_report is not None else 0.0,
-                "recall": float(train_report.recall) if train_report is not None else 0.0,
+                "accuracy": float(train_report.accuracy)
+                if train_report is not None
+                else 0.0,
+                "precision": float(train_report.precision)
+                if train_report is not None
+                else 0.0,
+                "recall": float(train_report.recall)
+                if train_report is not None
+                else 0.0,
                 "f1": float(train_report.f1) if train_report is not None else 0.0,
-                "true_positive": int(train_report.true_positive) if train_report is not None else 0,
-                "false_positive": int(train_report.false_positive) if train_report is not None else 0,
-                "true_negative": int(train_report.true_negative) if train_report is not None else 0,
-                "false_negative": int(train_report.false_negative) if train_report is not None else 0,
+                "true_positive": int(train_report.true_positive)
+                if train_report is not None
+                else 0,
+                "false_positive": int(train_report.false_positive)
+                if train_report is not None
+                else 0,
+                "true_negative": int(train_report.true_negative)
+                if train_report is not None
+                else 0,
+                "false_negative": int(train_report.false_negative)
+                if train_report is not None
+                else 0,
             },
             "test": {
                 "accuracy": float(report.accuracy),
@@ -11651,7 +13681,10 @@ def command_evaluate(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     )
     print(
         "confusion tp={tp} fp={fp} tn={tn} fn={fn}".format(
-            tp=report.true_positive, fp=report.false_positive, tn=report.true_negative, fn=report.false_negative
+            tp=report.true_positive,
+            fp=report.false_positive,
+            tn=report.true_negative,
+            fn=report.false_negative,
         )
     )
     print(f"model_quality: {quality.status} score={quality.quality_score:.2f}")
@@ -11678,7 +13711,9 @@ def _external_signal_cache_path(model_path: Path) -> Path:
     return model_path.parent / "signals" / "external_signals.json"
 
 
-def _strategy_with_external_risk(cfg: StrategyConfig, risk_multiplier: float) -> StrategyConfig:
+def _strategy_with_external_risk(
+    cfg: StrategyConfig, risk_multiplier: float
+) -> StrategyConfig:
     multiplier = _clamp(float(risk_multiplier), 0.0, 1.0)
     if multiplier >= 0.999:
         return cfg
@@ -11691,7 +13726,9 @@ def _strategy_with_external_risk(cfg: StrategyConfig, risk_multiplier: float) ->
     )
 
 
-def _strategy_with_size_multiplier(cfg: StrategyConfig, size_multiplier: float) -> StrategyConfig:
+def _strategy_with_size_multiplier(
+    cfg: StrategyConfig, size_multiplier: float
+) -> StrategyConfig:
     multiplier = _clamp(float(size_multiplier), 0.0, 1.0)
     if multiplier >= 0.999:
         return cfg
@@ -11745,7 +13782,9 @@ def _record_model_telemetry(
             "threshold": float(threshold),
             "model_type": model.__class__.__name__,
             "model_signature": str(getattr(model, "feature_signature", "") or ""),
-            "training_backend_kind": str(getattr(model, "training_backend_kind", "") or ""),
+            "training_backend_kind": str(
+                getattr(model, "training_backend_kind", "") or ""
+            ),
             "runtime_compute_backend": str(runtime.compute_backend),
         }
         with TradingTelemetryStore(cfg.telemetry_db_path) as store:
@@ -11759,7 +13798,9 @@ def _record_model_telemetry(
                 score=float(adjusted_score),
                 confidence=abs(float(adjusted_score) - float(threshold)),
             )
-    except Exception:  # pragma: no cover - telemetry failures must not stop live scoring
+    except (
+        Exception
+    ):  # pragma: no cover - telemetry failures must not stop live scoring
         return
 
 
@@ -11767,34 +13808,55 @@ def command_signals(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     runtime = load_runtime()
     cfg = load_strategy()
     model_path = Path(getattr(args, "model", "data/model.json"))
-    cache_path = Path(getattr(args, "cache", None) or _external_signal_cache_path(model_path))
+    cache_path = Path(
+        getattr(args, "cache", None) or _external_signal_cache_path(model_path)
+    )
 
     def run_once() -> tuple[int, ExternalSignalReport | None]:
         try:
-            telemetry_path = None if getattr(args, "no_telemetry", False) or not cfg.telemetry_enabled else (
-                getattr(args, "telemetry_db", None) or cfg.telemetry_db_path
+            telemetry_path = (
+                None
+                if getattr(args, "no_telemetry", False) or not cfg.telemetry_enabled
+                else (getattr(args, "telemetry_db", None) or cfg.telemetry_db_path)
             )
             report = collect_external_signals(
                 symbol=runtime.symbol,
                 cache_path=cache_path,
                 ttl_seconds=max(0, int(getattr(args, "ttl", 300))),
                 timeout_seconds=_clamp(float(getattr(args, "timeout", 3.0)), 0.1, 30.0),
-                max_adjustment=_clamp(float(getattr(args, "max_adjustment", 0.04)), 0.0, 0.20),
+                max_adjustment=_clamp(
+                    float(getattr(args, "max_adjustment", 0.04)), 0.0, 0.20
+                ),
                 min_providers=max(0, min(120, int(getattr(args, "min_providers", 2)))),
                 force_refresh=bool(getattr(args, "refresh", False)),
-                compute_backend=str(getattr(args, "compute_backend", None) or runtime.compute_backend or "auto"),
-                short_reaction_refresh_seconds=max(1, int(getattr(args, "short_reaction_refresh", 30))),
+                compute_backend=str(
+                    getattr(args, "compute_backend", None)
+                    or runtime.compute_backend
+                    or "auto"
+                ),
+                short_reaction_refresh_seconds=max(
+                    1, int(getattr(args, "short_reaction_refresh", 30))
+                ),
                 news_provider_limit=max(
                     0,
-                    int(getattr(args, "news_provider_limit", None) or cfg.external_signal_news_provider_limit),
+                    int(
+                        getattr(args, "news_provider_limit", None)
+                        or cfg.external_signal_news_provider_limit
+                    ),
                 ),
                 news_items_per_provider=max(
                     1,
-                    int(getattr(args, "news_items_per_provider", None) or cfg.external_signal_news_items_per_provider),
+                    int(
+                        getattr(args, "news_items_per_provider", None)
+                        or cfg.external_signal_news_items_per_provider
+                    ),
                 ),
                 news_provider_parallelism=max(
                     1,
-                    int(getattr(args, "provider_parallelism", None) or cfg.external_signal_provider_parallelism),
+                    int(
+                        getattr(args, "provider_parallelism", None)
+                        or cfg.external_signal_provider_parallelism
+                    ),
                 ),
                 news_provider_jitter_seconds=max(
                     0.0,
@@ -11809,10 +13871,17 @@ def command_signals(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     if getattr(args, "ollama_news", None) is not None
                     else cfg.external_news_ai_enabled
                 ),
-                ollama_model=str(getattr(args, "ollama_model", None) or cfg.external_news_ai_model),
-                ollama_url=str(getattr(args, "ollama_url", None) or cfg.external_news_ai_url),
+                ollama_model=str(
+                    getattr(args, "ollama_model", None) or cfg.external_news_ai_model
+                ),
+                ollama_url=str(
+                    getattr(args, "ollama_url", None) or cfg.external_news_ai_url
+                ),
                 ollama_timeout_seconds=_clamp(
-                    float(getattr(args, "ollama_timeout", None) or cfg.external_news_ai_timeout_seconds),
+                    float(
+                        getattr(args, "ollama_timeout", None)
+                        or cfg.external_news_ai_timeout_seconds
+                    ),
                     0.1,
                     30.0,
                 ),
@@ -11841,7 +13910,11 @@ def command_signals(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         return code
 
     iterations = max(0, int(getattr(args, "iterations", 0) or 0))
-    sleep_seconds = float(getattr(args, "sleep", None) if getattr(args, "sleep", None) is not None else 60.0)
+    sleep_seconds = float(
+        getattr(args, "sleep", None)
+        if getattr(args, "sleep", None) is not None
+        else 60.0
+    )
     jitter_seconds = float(
         getattr(args, "jitter", None)
         if getattr(args, "jitter", None) is not None
@@ -11866,16 +13939,25 @@ def command_source_grades(args: argparse.Namespace) -> int:
     try:
         run = grade_sources(
             db_path=getattr(args, "db", None) or cfg.telemetry_db_path,
-            window_hours=float(getattr(args, "window_hours", None) or cfg.source_grading_window_hours),
-            model=str(getattr(args, "ollama_model", None) or cfg.external_news_ai_model),
+            window_hours=float(
+                getattr(args, "window_hours", None) or cfg.source_grading_window_hours
+            ),
+            model=str(
+                getattr(args, "ollama_model", None) or cfg.external_news_ai_model
+            ),
             ollama_enabled=(
                 bool(getattr(args, "ollama", None))
                 if getattr(args, "ollama", None) is not None
                 else cfg.source_grading_enabled
             ),
-            ollama_url=str(getattr(args, "ollama_url", None) or cfg.external_news_ai_url),
+            ollama_url=str(
+                getattr(args, "ollama_url", None) or cfg.external_news_ai_url
+            ),
             ollama_timeout_seconds=_clamp(
-                float(getattr(args, "ollama_timeout", None) or cfg.external_news_ai_timeout_seconds),
+                float(
+                    getattr(args, "ollama_timeout", None)
+                    or cfg.external_news_ai_timeout_seconds
+                ),
                 0.1,
                 120.0,
             ),
@@ -11893,8 +13975,13 @@ def command_source_grades(args: argparse.Namespace) -> int:
 def command_signals_benchmark(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     runtime = load_runtime()
     cfg = load_strategy()
-    provider_limits = [max(0, int(value)) for value in (getattr(args, "provider_limit", None) or [30, 60])]
-    parallelism_values = [max(1, int(value)) for value in (getattr(args, "parallelism", None) or [8, 16])]
+    provider_limits = [
+        max(0, int(value))
+        for value in (getattr(args, "provider_limit", None) or [30, 60])
+    ]
+    parallelism_values = [
+        max(1, int(value)) for value in (getattr(args, "parallelism", None) or [8, 16])
+    ]
     iterations = max(1, int(getattr(args, "iterations", 1) or 1))
     rows: list[dict[str, object]] = []
     worst_code = 0
@@ -11909,29 +13996,49 @@ def command_signals_benchmark(args: argparse.Namespace) -> int:  # skipcq: PY-R1
                 try:
                     report = collect_external_signals(
                         symbol=runtime.symbol,
-                        cache_path=getattr(args, "cache", "data/signals/benchmark_external_signals.json"),
+                        cache_path=getattr(
+                            args,
+                            "cache",
+                            "data/signals/benchmark_external_signals.json",
+                        ),
                         ttl_seconds=0,
-                        timeout_seconds=_clamp(float(getattr(args, "timeout", 3.0)), 0.1, 30.0),
+                        timeout_seconds=_clamp(
+                            float(getattr(args, "timeout", 3.0)), 0.1, 30.0
+                        ),
                         max_adjustment=cfg.external_signal_max_adjustment,
                         min_providers=cfg.external_signal_min_providers,
                         force_refresh=True,
                         compute_backend=runtime.compute_backend,
                         news_provider_limit=provider_limit,
                         news_provider_parallelism=parallelism,
-                        news_provider_jitter_seconds=max(0.0, float(getattr(args, "provider_jitter", 0.0) or 0.0)),
+                        news_provider_jitter_seconds=max(
+                            0.0, float(getattr(args, "provider_jitter", 0.0) or 0.0)
+                        ),
                         ollama_news_enabled=(
                             bool(getattr(args, "ollama_news", None))
                             if getattr(args, "ollama_news", None) is not None
                             else cfg.external_news_ai_enabled
                         ),
-                        ollama_model=str(getattr(args, "ollama_model", None) or cfg.external_news_ai_model),
-                        ollama_url=str(getattr(args, "ollama_url", None) or cfg.external_news_ai_url),
+                        ollama_model=str(
+                            getattr(args, "ollama_model", None)
+                            or cfg.external_news_ai_model
+                        ),
+                        ollama_url=str(
+                            getattr(args, "ollama_url", None)
+                            or cfg.external_news_ai_url
+                        ),
                         ollama_timeout_seconds=_clamp(
-                            float(getattr(args, "ollama_timeout", None) or cfg.external_news_ai_timeout_seconds),
+                            float(
+                                getattr(args, "ollama_timeout", None)
+                                or cfg.external_news_ai_timeout_seconds
+                            ),
                             0.1,
                             30.0,
                         ),
-                        telemetry_path=None if getattr(args, "no_telemetry", False) or not cfg.telemetry_enabled else cfg.telemetry_db_path,
+                        telemetry_path=None
+                        if getattr(args, "no_telemetry", False)
+                        or not cfg.telemetry_enabled
+                        else cfg.telemetry_db_path,
                         source_grade_max_age_hours=cfg.source_grade_max_age_hours,
                     )
                     status = report.status
@@ -11994,7 +14101,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         print("Leverage override is spot-inactive; spot runs at 1x.")
     external_override = getattr(args, "external_signals", None)
     if external_override is not None:
-        cfg = StrategyConfig(**{**cfg.asdict(), "external_signals_enabled": bool(external_override)})
+        cfg = StrategyConfig(
+            **{**cfg.asdict(), "external_signals_enabled": bool(external_override)}
+        )
     model_path = Path(getattr(args, "model", "data/model.json"))
 
     if getattr(args, "live", False):
@@ -12002,10 +14111,15 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     else:
         effective_dry_run = runtime.dry_run or getattr(args, "paper", False)
     if not effective_dry_run and int(getattr(args, "retrain_interval", 0) or 0) > 0:
-        print("Authenticated live mode cannot retrain inside the live loop; use model-lab promotion first.", file=sys.stderr)
+        print(
+            "Authenticated live mode cannot retrain inside the live loop; use model-lab promotion first.",
+            file=sys.stderr,
+        )
         return 2
     if not _allows_signed_execution(runtime):
-        print("Real-money execution is disabled in this phase. Set testnet=true or demo=true to run.")
+        print(
+            "Real-money execution is disabled in this phase. Set testnet=true or demo=true to run."
+        )
         return 2
     if not effective_dry_run and not _has_api_credentials(runtime):
         print(_credential_required_message("Authenticated live mode"), file=sys.stderr)
@@ -12028,7 +14142,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         sleep_seconds = 1
 
     def live_sleep() -> None:
-        delay = _jittered_seconds(sleep_seconds, cfg.external_signal_poll_jitter_seconds) if sleep_seconds > 0 else 0.0
+        delay = (
+            _jittered_seconds(sleep_seconds, cfg.external_signal_poll_jitter_seconds)
+            if sleep_seconds > 0
+            else 0.0
+        )
         time.sleep(delay)
 
     quote_asset, base_asset = _fund_asset_labels(runtime)
@@ -12040,26 +14158,38 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         except BinanceAPIError as exc:
             print(f"Account balance check failed: {exc}", file=sys.stderr)
             return 2
-        balances = _account_free_balances(exchange_account_snapshot, (quote_asset, base_asset))
+        balances = _account_free_balances(
+            exchange_account_snapshot, (quote_asset, base_asset)
+        )
         available_quote = max(0.0, _safe_float(balances.get(quote_asset, 0.0)))
         if cash <= 0.0:
-            print(f"Authenticated live mode requires a positive {quote_asset} trading cap from Funds.", file=sys.stderr)
+            print(
+                f"Authenticated live mode requires a positive {quote_asset} trading cap from Funds.",
+                file=sys.stderr,
+            )
             return 2
         if available_quote <= 0.0:
-            print(f"Authenticated live mode requires available {quote_asset} on the exchange account.", file=sys.stderr)
+            print(
+                f"Authenticated live mode requires available {quote_asset} on the exchange account.",
+                file=sys.stderr,
+            )
             return 2
         if cash > available_quote:
             cash = available_quote
-            print(f"Authenticated live cash capped to exchange free {quote_asset}={cash:.2f}.")
+            print(
+                f"Authenticated live cash capped to exchange free {quote_asset}={cash:.2f}."
+            )
 
     model, model_error, model_notice = _load_live_start_model(
         model_path,
         cfg,
         effective_dry_run=effective_dry_run,
         require_model_candidate_search=not effective_dry_run,
-        require_accelerator_evidence=not effective_dry_run and _backend_info.kind != "cpu",
+        require_accelerator_evidence=not effective_dry_run
+        and _backend_info.kind != "cpu",
         require_live_data_evidence=not effective_dry_run,
-        require_microstructure_evidence=not effective_dry_run and runtime.market_type == "futures",
+        require_microstructure_evidence=not effective_dry_run
+        and runtime.market_type == "futures",
         expected_symbol=runtime.symbol,
         expected_market_type=runtime.market_type,
         expected_interval=runtime.interval,
@@ -12071,9 +14201,13 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         protected = ("leverage",) if leverage_override is not None else ()
         cfg = apply_model_strategy_overrides(cfg, model, protected_keys=protected)
     if leverage_override is not None and runtime.market_type == "futures":
-        cfg = StrategyConfig(**{**cfg.asdict(), "leverage": max(1.0, float(leverage_override))})
+        cfg = StrategyConfig(
+            **{**cfg.asdict(), "leverage": max(1.0, float(leverage_override))}
+        )
     if external_override is not None:
-        cfg = StrategyConfig(**{**cfg.asdict(), "external_signals_enabled": bool(external_override)})
+        cfg = StrategyConfig(
+            **{**cfg.asdict(), "external_signals_enabled": bool(external_override)}
+        )
     if model_notice is not None:
         print(model_notice, file=sys.stderr)
 
@@ -12094,13 +14228,18 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 symbol=runtime.symbol,
             )
         else:
-            cfg, commission_assumption, _commission_rates = apply_verified_commission_rate(
-                cfg,
-                client=client,
-                symbol=runtime.symbol,
+            cfg, commission_assumption, _commission_rates = (
+                apply_verified_commission_rate(
+                    cfg,
+                    client=client,
+                    symbol=runtime.symbol,
+                )
             )
     except (BinanceAPIError, ValueError) as exc:
-        print(f"Live startup blocked: commission-rate verification failed: {exc}", file=sys.stderr)
+        print(
+            f"Live startup blocked: commission-rate verification failed: {exc}",
+            file=sys.stderr,
+        )
         return 2
     model_fee_error = _model_taker_fee_compatibility_error(
         model,
@@ -12118,7 +14257,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     qty = 0.0
     wait_ticks = cfg.cooldown_minutes
     min_position_hold_bars = max(0, int(getattr(cfg, "min_position_hold_bars", 0) or 0))
-    flat_signal_exit_grace_bars = max(0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0))
+    flat_signal_exit_grace_bars = max(
+        0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0)
+    )
     max_position_hold_bars = max(0, int(getattr(cfg, "max_position_hold_bars", 0) or 0))
     entry_market_timestamp_ms = 0
     flat_signal_streak = 0
@@ -12142,7 +14283,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         return 2
 
     mode_label = "paper" if effective_dry_run else "live"
-    print(f"Starting {mode_label} loop for {args.steps} steps on {runtime.symbol} {runtime.interval} [{runtime.market_type}]")
+    print(
+        f"Starting {mode_label} loop for {args.steps} steps on {runtime.symbol} {runtime.interval} [{runtime.market_type}]"
+    )
     if runtime.market_type == "futures":
         print(f"effective leverage: {leverage:.1f}x")
     print(
@@ -12185,7 +14328,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     current_opened_at_ms = 0
     entry_fee_paid = 0.0
 
-    def persist_live_startup_block(status: str, reason: str, details: Mapping[str, object] | None = None) -> None:
+    def persist_live_startup_block(
+        status: str, reason: str, details: Mapping[str, object] | None = None
+    ) -> None:
         event: dict[str, object] = {"step": 0, "status": status, "reason": reason}
         if details is not None:
             event["details"] = dict(details)
@@ -12212,7 +14357,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
             persist_live_startup_block("startup_reconciliation_error", reason)
             return 2
-        position_store = live_position_store if live_position_store is not None else PositionsStore()
+        position_store = (
+            live_position_store if live_position_store is not None else PositionsStore()
+        )
         try:
             reconciliation_report = reconcile_account_positions(
                 exchange_account_snapshot,
@@ -12242,12 +14389,17 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         ledger_positions = [
             position
             for position in position_store.load_open()
-            if not position.dry_run and str(position.symbol).upper() == runtime.symbol.upper()
+            if not position.dry_run
+            and str(position.symbol).upper() == runtime.symbol.upper()
         ]
         if len(ledger_positions) > 1:
             reason = f"multiple bot-owned ledger positions for {runtime.symbol}"
             print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
-            persist_live_startup_block("startup_reconciliation_mismatch", reason, reconciliation_report.asdict())
+            persist_live_startup_block(
+                "startup_reconciliation_mismatch",
+                reason,
+                reconciliation_report.asdict(),
+            )
             return 2
         if ledger_positions:
             ledger_position = ledger_positions[0]
@@ -12258,17 +14410,27 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     f"({ownership_rejection})"
                 )
                 print(f"Authenticated live startup blocked: {reason}.", file=sys.stderr)
-                persist_live_startup_block("startup_reconciliation_mismatch", reason, reconciliation_report.asdict())
+                persist_live_startup_block(
+                    "startup_reconciliation_mismatch",
+                    reason,
+                    reconciliation_report.asdict(),
+                )
                 return 2
             position_side = 1 if str(ledger_position.side).upper() == "LONG" else -1
             qty = max(0.0, float(ledger_position.qty))
             entry_price = max(0.0, float(ledger_position.entry_price))
-            position_notional = position_side * max(0.0, float(ledger_position.notional or qty * entry_price))
-            ledger_leverage = _safe_float(getattr(ledger_position, "leverage", leverage))
+            position_notional = position_side * max(
+                0.0, float(ledger_position.notional or qty * entry_price)
+            )
+            ledger_leverage = _safe_float(
+                getattr(ledger_position, "leverage", leverage)
+            )
             if runtime.market_type == "spot":
                 position_leverage = 1.0
             elif math.isfinite(ledger_leverage) and ledger_leverage > 0.0:
-                position_leverage = max(1.0, min(MAX_AUTONOMOUS_LEVERAGE, ledger_leverage))
+                position_leverage = max(
+                    1.0, min(MAX_AUTONOMOUS_LEVERAGE, ledger_leverage)
+                )
             else:
                 position_leverage = leverage
             margin_used = (
@@ -12314,12 +14476,22 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     max_network_errors = max(1, int(getattr(cfg, "max_network_errors", 1) or 1))
     recovery_pending = False
 
-    def _next_source_grade_time_ms(after_ms: int) -> int:  # pragma: no cover - hourly live-loop scheduler
-        return after_ms + int(_jittered_seconds(cfg.source_grading_interval_seconds, cfg.external_signal_poll_jitter_seconds) * 1000)
+    def _next_source_grade_time_ms(
+        after_ms: int,
+    ) -> int:  # pragma: no cover - hourly live-loop scheduler
+        return after_ms + int(
+            _jittered_seconds(
+                cfg.source_grading_interval_seconds,
+                cfg.external_signal_poll_jitter_seconds,
+            )
+            * 1000
+        )
 
     next_source_grade_ms = _next_source_grade_time_ms(int(time.time() * 1000))
 
-    def maybe_grade_sources(step: int) -> None:  # pragma: no cover - exercised by long-running live sessions
+    def maybe_grade_sources(
+        step: int,
+    ) -> None:  # pragma: no cover - exercised by long-running live sessions
         nonlocal next_source_grade_ms
         if not cfg.telemetry_enabled or not cfg.source_grading_enabled:
             return
@@ -12349,12 +14521,16 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 f"graded={grade_run.graded_sources} ai={grade_run.ai_status}"
             )
         except Exception as exc:
-            live_events.append({"step": int(step), "status": "source_grading_error", "error": str(exc)})
+            live_events.append(
+                {"step": int(step), "status": "source_grading_error", "error": str(exc)}
+            )
             print(f"step {step:>2}: source grading unavailable: {exc}", file=sys.stderr)
         finally:
             next_source_grade_ms = _next_source_grade_time_ms(current_ms)
 
-    def record_order_error(step: int, side: str, size: float, exc: BinanceAPIError) -> None:
+    def record_order_error(
+        step: int, side: str, size: float, exc: BinanceAPIError
+    ) -> None:
         nonlocal halt_reason, exit_code
         print(f"order error: {exc}", file=sys.stderr)
         halt_reason = "order_error"
@@ -12380,11 +14556,18 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         order_response: object,
         open_client_order_id: str,
     ) -> None:
-        nonlocal current_position_id, current_open_client_order_id, current_open_exchange_order_id, current_opened_at_ms
+        nonlocal \
+            current_position_id, \
+            current_open_client_order_id, \
+            current_open_exchange_order_id, \
+            current_opened_at_ms
         if live_position_store is None or not position_id:
             return
         current_position_id = position_id
-        current_open_client_order_id = _order_response_text(order_response, "clientOrderId", "origClientOrderId") or open_client_order_id
+        current_open_client_order_id = (
+            _order_response_text(order_response, "clientOrderId", "origClientOrderId")
+            or open_client_order_id
+        )
         current_open_exchange_order_id = _order_response_text(order_response, "orderId")
         current_opened_at_ms = int(time.time() * 1000)
         live_position_store.record_open(
@@ -12405,7 +14588,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 take_profit_pct=float(cfg.take_profit_pct),
                 open_client_order_id=current_open_client_order_id,
                 open_exchange_order_id=current_open_exchange_order_id,
-                exchange_status=_order_response_text(order_response, "status") or ("FILLED" if filled_qty > 0.0 else "accepted"),
+                exchange_status=_order_response_text(order_response, "status")
+                or ("FILLED" if filled_qty > 0.0 else "accepted"),
             )
         )
 
@@ -12420,7 +14604,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         order_response: object,
         close_client_order_id: str | None,
     ) -> None:
-        nonlocal current_position_id, current_open_client_order_id, current_open_exchange_order_id, current_opened_at_ms, entry_fee_paid
+        nonlocal \
+            current_position_id, \
+            current_open_client_order_id, \
+            current_open_exchange_order_id, \
+            current_opened_at_ms, \
+            entry_fee_paid
         if live_position_store is None or not current_position_id:
             return
         open_position = live_position_store.find_open(current_position_id)
@@ -12434,8 +14623,12 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 }
             )
             return
-        fee_total = max(0.0, entry_fee_paid * max(0.0, min(1.0, close_ratio))) + max(0.0, float(close_fee))
-        close_client = _order_response_text(order_response, "clientOrderId", "origClientOrderId") or str(close_client_order_id or "")
+        fee_total = max(0.0, entry_fee_paid * max(0.0, min(1.0, close_ratio))) + max(
+            0.0, float(close_fee)
+        )
+        close_client = _order_response_text(
+            order_response, "clientOrderId", "origClientOrderId"
+        ) or str(close_client_order_id or "")
         close_exchange = _order_response_text(order_response, "orderId")
         if close_ratio >= 0.999:
             live_position_store.record_close(
@@ -12452,7 +14645,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     closed_at_ms=int(time.time() * 1000),
                     realized_pnl=float(realized_pnl) - fee_total,
                     realized_pnl_pct=(
-                        (float(realized_pnl) - fee_total) / max(1e-12, abs(float(open_position.entry_price) * float(closed_qty)))
+                        (float(realized_pnl) - fee_total)
+                        / max(
+                            1e-12,
+                            abs(float(open_position.entry_price) * float(closed_qty)),
+                        )
                     ),
                     fees=fee_total,
                     reason=reason,
@@ -12464,7 +14661,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     open_exchange_order_id=open_position.open_exchange_order_id,
                     close_client_order_id=close_client,
                     close_exchange_order_id=close_exchange,
-                    exchange_status=_order_response_text(order_response, "status") or ("FILLED" if closed_qty > 0.0 else "accepted"),
+                    exchange_status=_order_response_text(order_response, "status")
+                    or ("FILLED" if closed_qty > 0.0 else "accepted"),
                 )
             )
             current_position_id = ""
@@ -12474,7 +14672,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             entry_fee_paid = 0.0
             return
         remaining_qty = max(0.0, float(open_position.qty) - max(0.0, float(closed_qty)))
-        entry_fee_paid = max(0.0, entry_fee_paid * (1.0 - max(0.0, min(1.0, close_ratio))))
+        entry_fee_paid = max(
+            0.0, entry_fee_paid * (1.0 - max(0.0, min(1.0, close_ratio)))
+        )
         live_position_store.record_open(
             replace(
                 open_position,
@@ -12520,13 +14720,19 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         if unpredictability_cooldown_left > 0:
             unpredictability_cooldown_left -= 1
         try:
-            candles = client.get_klines(runtime.symbol, runtime.interval, limit=max(cfg.model_lookback, 300))
+            candles = client.get_klines(
+                runtime.symbol, runtime.interval, limit=max(cfg.model_lookback, 300)
+            )
         except BinanceAPIError as exc:
             network_errors += 1
             recovery_pending = True
             halt_reason = "market_recovery_pending"
             exit_code = 2
-            status = "market_error_retry_limit" if network_errors >= max_network_errors else "market_error_retry"
+            status = (
+                "market_error_retry_limit"
+                if network_errors >= max_network_errors
+                else "market_error_retry"
+            )
             print(
                 f"market error: {exc}; retrying "
                 f"({network_errors}/{max_network_errors}) before any new entry",
@@ -12548,7 +14754,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         steps_executed += 1
         recovery_observation_active = bool(recovery_pending)
 
-        rows = _live_rows_for_model(candles, cfg, model, compute_backend=compute_backend)
+        rows = _live_rows_for_model(
+            candles, cfg, model, compute_backend=compute_backend
+        )
         training_rows = (
             _readiness_model_rows(candles, cfg, model, compute_backend=compute_backend)
             if model is not None
@@ -12590,11 +14798,19 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 model_signature = None
             else:
                 model_signature = getattr(model, "feature_signature", None)
-                live_run["model_signature"] = str(model_signature) if model_signature else None
-        elif previous_model is not None and model is not None and previous_model is not model:
+                live_run["model_signature"] = (
+                    str(model_signature) if model_signature else None
+                )
+        elif (
+            previous_model is not None
+            and model is not None
+            and previous_model is not model
+        ):
             model_loads += 1
             model_signature = getattr(model, "feature_signature", None)
-            live_run["model_signature"] = str(model_signature) if model_signature else None
+            live_run["model_signature"] = (
+                str(model_signature) if model_signature else None
+            )
 
         if model is None:
             if not training_rows:
@@ -12619,9 +14835,8 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             regime_evidence.notes,
         )
         regime_limit = float(cfg.max_regime_unpredictability)
-        if (
-            regime_score > regime_limit
-            and regime_unpredictability_requires_cooldown(regime_score, regime_limit)
+        if regime_score > regime_limit and regime_unpredictability_requires_cooldown(
+            regime_score, regime_limit
         ):
             unpredictability_cooldown_left = max(
                 unpredictability_cooldown_left,
@@ -12654,7 +14869,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     print(f"Live feature drift check failed: {exc}", file=sys.stderr)
                     halt_reason = "feature_drift_check_failed"
                     exit_code = 2
-                    live_events.append({"step": i + 1, "status": halt_reason, "error": str(exc)})
+                    live_events.append(
+                        {"step": i + 1, "status": halt_reason, "error": str(exc)}
+                    )
                     break
                 drift = None
             if drift is not None:
@@ -12686,17 +14903,30 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             score = confidence_adjusted_probability(raw_score, cfg.confidence_beta)
         except ValueError as exc:
             if not effective_dry_run:
-                print(f"Live model incompatible with current rows: {exc}", file=sys.stderr)
+                print(
+                    f"Live model incompatible with current rows: {exc}", file=sys.stderr
+                )
                 halt_reason = "model_incompatible"
                 exit_code = 2
-                live_events.append({"step": i + 1, "status": "model_incompatible", "error": str(exc)})
+                live_events.append(
+                    {"step": i + 1, "status": "model_incompatible", "error": str(exc)}
+                )
                 break
             print(f"paper model incompatible; retraining: {exc}", file=sys.stderr)
             if not training_rows:
-                print("not enough labeled historical data to retrain a live model", file=sys.stderr)
+                print(
+                    "not enough labeled historical data to retrain a live model",
+                    file=sys.stderr,
+                )
                 halt_reason = "model_incompatible"
                 exit_code = 2
-                live_events.append({"step": i + 1, "status": "model_incompatible", "error": "no labeled training rows"})
+                live_events.append(
+                    {
+                        "step": i + 1,
+                        "status": "model_incompatible",
+                        "error": "no labeled training rows",
+                    }
+                )
                 break
             model = train(
                 training_rows,
@@ -12730,13 +14960,17 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     ollama_model=cfg.external_news_ai_model,
                     ollama_url=cfg.external_news_ai_url,
                     ollama_timeout_seconds=cfg.external_news_ai_timeout_seconds,
-                    telemetry_path=cfg.telemetry_db_path if cfg.telemetry_enabled else None,
+                    telemetry_path=cfg.telemetry_db_path
+                    if cfg.telemetry_enabled
+                    else None,
                     source_grade_max_age_hours=cfg.source_grade_max_age_hours,
                 )
-                score, decision_cfg, applied_adjustment = _apply_external_signal_to_score(
-                    score,
-                    cfg,
-                    external_report,
+                score, decision_cfg, applied_adjustment = (
+                    _apply_external_signal_to_score(
+                        score,
+                        cfg,
+                        external_report,
+                    )
                 )
                 live_events.append(
                     {
@@ -12775,7 +15009,10 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "error": str(exc),
                     }
                 )
-                print(f"step {i + 1:>2}: external signals unavailable: {exc}", file=sys.stderr)
+                print(
+                    f"step {i + 1:>2}: external signals unavailable: {exc}",
+                    file=sys.stderr,
+                )
         base_long_threshold, base_short_threshold = model_direction_thresholds(
             model,
             decision_cfg.signal_threshold,
@@ -12785,13 +15022,19 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             getattr(model, "long_decision_threshold", None) is not None
             or getattr(model, "short_decision_threshold", None) is not None
         )
-        base_threshold = _directional_threshold_confidence(base_long_threshold, base_short_threshold, threshold)
-        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_cfg, base_threshold)
+        base_threshold = _directional_threshold_confidence(
+            base_long_threshold, base_short_threshold, threshold
+        )
+        liquidity_adjustment = liquidity_session_adjustment(
+            rows, len(rows) - 1, decision_cfg, base_threshold
+        )
         threshold_add = float(liquidity_adjustment.threshold) - float(base_threshold)
-        effective_long_threshold, effective_short_threshold = _adjust_directional_thresholds(
-            base_long_threshold,
-            base_short_threshold,
-            threshold_add,
+        effective_long_threshold, effective_short_threshold = (
+            _adjust_directional_thresholds(
+                base_long_threshold,
+                base_short_threshold,
+                threshold_add,
+            )
         )
         effective_threshold = _directional_threshold_confidence(
             effective_long_threshold,
@@ -12818,7 +15061,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         )
         meta_threshold = (
             1.0 - effective_short_threshold
-            if runtime.market_type == "futures" and direction < 0 and effective_short_threshold is not None
+            if runtime.market_type == "futures"
+            and direction < 0
+            and effective_short_threshold is not None
             else effective_threshold
         )
         base_meta_decision = apply_meta_label_policy(
@@ -12828,7 +15073,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             side=direction,
             market_type=runtime.market_type,
         )
-        meta_decision = apply_liquidity_session_meta(base_meta_decision, liquidity_adjustment) if direction != 0 else base_meta_decision
+        meta_decision = (
+            apply_liquidity_session_meta(base_meta_decision, liquidity_adjustment)
+            if direction != 0
+            else base_meta_decision
+        )
         if liquidity_adjustment.active:
             live_events.append(
                 {
@@ -12837,7 +15086,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     "threshold": float(effective_threshold),
                     "size_multiplier": float(liquidity_adjustment.size_multiplier),
                     "low_liquidity": bool(liquidity_adjustment.low_liquidity),
-                    "low_dynamic_session": bool(liquidity_adjustment.low_dynamic_session),
+                    "low_dynamic_session": bool(
+                        liquidity_adjustment.low_dynamic_session
+                    ),
                     "reasons": list(liquidity_adjustment.reasons),
                 }
             )
@@ -12852,7 +15103,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         day = _safe_day_ms(latest.timestamp)
         if position_side == 0 and direction != 0:
             if recovery_observation_active:
-                current_drawdown = (equity_peak - cash) / equity_peak if equity_peak else 0.0
+                current_drawdown = (
+                    (equity_peak - cash) / equity_peak if equity_peak else 0.0
+                )
                 entry_risk = assess_entry_risk(
                     direction=direction,
                     position_side=position_side,
@@ -12889,7 +15142,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 recovery_sleep()
                 continue
             if meta_decision.enabled and meta_decision.size_multiplier <= 0.0:
-                print(f"step {i + 1:>2}: meta-label skipped entry ({meta_decision.reason})")
+                print(
+                    f"step {i + 1:>2}: meta-label skipped entry ({meta_decision.reason})"
+                )
                 skipped_entries += 1
                 live_events.append(
                     {
@@ -12903,11 +15158,15 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 live_sleep()
                 continue
             entry_cfg = (
-                _strategy_with_size_multiplier(decision_cfg, meta_decision.size_multiplier)
+                _strategy_with_size_multiplier(
+                    decision_cfg, meta_decision.size_multiplier
+                )
                 if meta_decision.enabled and meta_decision.action == "downsize"
                 else decision_cfg
             )
-            current_drawdown = (equity_peak - cash) / equity_peak if equity_peak else 0.0
+            current_drawdown = (
+                (equity_peak - cash) / equity_peak if equity_peak else 0.0
+            )
             entry_risk = assess_entry_risk(
                 direction=direction,
                 position_side=position_side,
@@ -13003,7 +15262,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 continue
 
             live_position_id = new_position_id() if not effective_dry_run else ""
-            open_client_order_id = bot_client_order_id(live_position_id, "open") if live_position_id else None
+            open_client_order_id = (
+                bot_client_order_id(live_position_id, "open")
+                if live_position_id
+                else None
+            )
             try:
                 order_response = _paper_or_live_order(
                     client,
@@ -13020,21 +15283,32 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 record_order_error(i + 1, side, qty, exc)
                 break
 
-            filled_qty, fill, filled_notional, fill_source = _resolved_order_fill_details(
-                client,
-                runtime,
-                order_response,
-                fallback_qty=qty,
-                fallback_price=fill,
-                dry_run=effective_dry_run,
+            filled_qty, fill, filled_notional, fill_source = (
+                _resolved_order_fill_details(
+                    client,
+                    runtime,
+                    order_response,
+                    fallback_qty=qty,
+                    fallback_price=fill,
+                    dry_run=effective_dry_run,
+                )
             )
             if filled_qty <= 0.0 or fill <= 0.0:
-                record_order_error(i + 1, side, qty, BinanceAPIError("Order response did not include executed quantity"))
+                record_order_error(
+                    i + 1,
+                    side,
+                    qty,
+                    BinanceAPIError("Order response did not include executed quantity"),
+                )
                 break
             qty = abs(filled_qty)
             notional = filled_notional if filled_notional > 0.0 else qty * fill
             fee = abs(notional) * fee_rate
-            margin = min(cash, abs(notional)) if runtime.market_type == "spot" else min(cash, abs(notional) / entry_leverage)
+            margin = (
+                min(cash, abs(notional))
+                if runtime.market_type == "spot"
+                else min(cash, abs(notional) / entry_leverage)
+            )
             total = margin + fee
 
             cash = max(0.0, cash - total)
@@ -13059,7 +15333,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 open_client_order_id=str(open_client_order_id or ""),
             )
 
-            print(f"step {i + 1:>2}: enter {'long' if position_side > 0 else 'short'} at {fill:.2f} qty={qty:.6f}")
+            print(
+                f"step {i + 1:>2}: enter {'long' if position_side > 0 else 'short'} at {fill:.2f} qty={qty:.6f}"
+            )
             entries += 1
             live_events.append(
                 {
@@ -13082,7 +15358,11 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
 
         elif position_side != 0:
             pnl = position_side * (price - entry_price) * qty
-            pnl_pct = ((price - entry_price) / entry_price) if position_side > 0 else ((entry_price - price) / entry_price)
+            pnl_pct = (
+                ((price - entry_price) / entry_price)
+                if position_side > 0
+                else ((entry_price - price) / entry_price)
+            )
 
             interval_ms = max(1, interval_milliseconds(runtime.interval))
             bars_held = max(
@@ -13129,20 +15409,32 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                 except BinanceAPIError as exc:
                     record_order_error(i + 1, side_to_close, abs(qty), exc)
                     break
-                closed_qty, fill, closed_notional, fill_source = _resolved_order_fill_details(
-                    client,
-                    runtime,
-                    order_response,
-                    fallback_qty=abs(qty),
-                    fallback_price=fill,
-                    dry_run=effective_dry_run,
+                closed_qty, fill, closed_notional, fill_source = (
+                    _resolved_order_fill_details(
+                        client,
+                        runtime,
+                        order_response,
+                        fallback_qty=abs(qty),
+                        fallback_price=fill,
+                        dry_run=effective_dry_run,
+                    )
                 )
                 if closed_qty <= 0.0 or fill <= 0.0:
-                    record_order_error(i + 1, side_to_close, abs(qty), BinanceAPIError("Close order response did not include executed quantity"))
+                    record_order_error(
+                        i + 1,
+                        side_to_close,
+                        abs(qty),
+                        BinanceAPIError(
+                            "Close order response did not include executed quantity"
+                        ),
+                    )
                     break
                 closed_qty = min(abs(qty), abs(closed_qty))
                 realized = position_side * (fill - entry_price) * closed_qty
-                exit_fee = abs(closed_notional if closed_notional > 0.0 else fill * closed_qty) * fee_rate
+                exit_fee = (
+                    abs(closed_notional if closed_notional > 0.0 else fill * closed_qty)
+                    * fee_rate
+                )
                 close_ratio = min(1.0, closed_qty / abs(qty)) if qty else 1.0
                 cash += margin_used * close_ratio + realized - exit_fee
                 record_signed_live_close(
@@ -13197,7 +15489,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     position_notional = position_side * qty * entry_price
             else:
                 unrealized = margin_used + pnl
-                print(f"step {i + 1:>2}: hold {'long' if position_side > 0 else 'short'} pnl={pnl_pct:.2%} cash={cash:.2f}")
+                print(
+                    f"step {i + 1:>2}: hold {'long' if position_side > 0 else 'short'} pnl={pnl_pct:.2%} cash={cash:.2f}"
+                )
                 print(f"         unrealized equity={cash + unrealized:.2f}")
                 live_events.append(
                     {
@@ -13256,20 +15550,36 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     except BinanceAPIError as exc:
                         record_order_error(i + 1, side_to_close, abs(qty), exc)
                         break
-                    closed_qty, fill, closed_notional, fill_source = _resolved_order_fill_details(
-                        client,
-                        runtime,
-                        order_response,
-                        fallback_qty=abs(qty),
-                        fallback_price=fill,
-                        dry_run=effective_dry_run,
+                    closed_qty, fill, closed_notional, fill_source = (
+                        _resolved_order_fill_details(
+                            client,
+                            runtime,
+                            order_response,
+                            fallback_qty=abs(qty),
+                            fallback_price=fill,
+                            dry_run=effective_dry_run,
+                        )
                     )
                     if closed_qty <= 0.0 or fill <= 0.0:
-                        record_order_error(i + 1, side_to_close, abs(qty), BinanceAPIError("Emergency close order response did not include executed quantity"))
+                        record_order_error(
+                            i + 1,
+                            side_to_close,
+                            abs(qty),
+                            BinanceAPIError(
+                                "Emergency close order response did not include executed quantity"
+                            ),
+                        )
                         break
                     closed_qty = min(abs(qty), abs(closed_qty))
                     realized = position_side * (fill - entry_price) * closed_qty
-                    exit_fee = abs(closed_notional if closed_notional > 0.0 else fill * closed_qty) * fee_rate
+                    exit_fee = (
+                        abs(
+                            closed_notional
+                            if closed_notional > 0.0
+                            else fill * closed_qty
+                        )
+                        * fee_rate
+                    )
                     close_ratio = min(1.0, closed_qty / abs(qty)) if qty else 1.0
                     cash += margin_used * close_ratio + realized - exit_fee
                     record_signed_live_close(
@@ -13307,10 +15617,14 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                         "cash_after": float(cash),
                         "fill_source": fill_source,
                         "position_id": emergency_position_id,
-                        "close_client_order_id": str(emergency_close_client_order_id or ""),
+                        "close_client_order_id": str(
+                            emergency_close_client_order_id or ""
+                        ),
                     }
                 )
-                print(f"step {i + 1:>2}: drawdown limit reached ({cfg.max_drawdown_limit:.1%}), stopping loop")
+                print(
+                    f"step {i + 1:>2}: drawdown limit reached ({cfg.max_drawdown_limit:.1%}), stopping loop"
+                )
                 halt_reason = "drawdown_limit"
                 break
 
@@ -13326,7 +15640,9 @@ def command_live(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
 
         maybe_grade_sources(i + 1)
         if recovery_observation_active:
-            finish_recovery_observation(i + 1, price, "post-interruption-clean-market-read")
+            finish_recovery_observation(
+                i + 1, price, "post-interruption-clean-market-read"
+            )
             recovery_sleep()
         else:
             live_sleep()
@@ -13403,7 +15719,11 @@ def _print_execution_profile_evidence(evidence: object) -> None:
 
 
 def command_model_blueprint(args: argparse.Namespace) -> int:
-    from .model_blueprint import dumps_blueprint, render_blueprint, validate_blueprint_contract
+    from .model_blueprint import (
+        dumps_blueprint,
+        render_blueprint,
+        validate_blueprint_contract,
+    )
 
     errors = validate_blueprint_contract()
     if errors:
@@ -13413,9 +15733,19 @@ def command_model_blueprint(args: argparse.Namespace) -> int:
     include_research = not bool(getattr(args, "implemented_only", False))
     try:
         if getattr(args, "json", False):
-            print(dumps_blueprint(risk_level=getattr(args, "risk_level", None), include_research=include_research))
+            print(
+                dumps_blueprint(
+                    risk_level=getattr(args, "risk_level", None),
+                    include_research=include_research,
+                )
+            )
         else:
-            print(render_blueprint(risk_level=getattr(args, "risk_level", None), include_research=include_research))
+            print(
+                render_blueprint(
+                    risk_level=getattr(args, "risk_level", None),
+                    include_research=include_research,
+                )
+            )
     except ValueError as err:
         print(f"model blueprint failed: {err}", file=sys.stderr)
         return 2
@@ -13436,15 +15766,17 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
     candles = []
     for entry in raw:
         try:
-            candles.append(Candle(
-                open_time=int(entry["open_time"]),
-                open=float(entry["open"]),
-                high=float(entry["high"]),
-                low=float(entry["low"]),
-                close=float(entry["close"]),
-                volume=float(entry.get("volume", 0.0)),
-                close_time=int(entry["close_time"]),
-            ))
+            candles.append(
+                Candle(
+                    open_time=int(entry["open_time"]),
+                    open=float(entry["open"]),
+                    high=float(entry["high"]),
+                    low=float(entry["low"]),
+                    close=float(entry["close"]),
+                    volume=float(entry.get("volume", 0.0)),
+                    close_time=int(entry["close_time"]),
+                )
+            )
         except (KeyError, TypeError, ValueError):
             continue
     try:
@@ -13456,9 +15788,15 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         max_candidates = getattr(args, "max_candidates", None)
         if max_candidates is not None and int(max_candidates) < 1:
             raise ValueError("--max-candidates must be >= 1")
-        grid_counts = {name: len(describe_candidate_grid(get_objective(name))) for name in objectives}
+        grid_counts = {
+            name: len(describe_candidate_grid(get_objective(name)))
+            for name in objectives
+        }
         if max_candidates is not None:
-            grid_counts = {name: min(int(max_candidates), count) for name, count in grid_counts.items()}
+            grid_counts = {
+                name: min(int(max_candidates), count)
+                for name, count in grid_counts.items()
+            }
         total_candidates = sum(grid_counts.values())
         try:
             backend_label, _backend_info = _workflow_compute_backend(
@@ -13487,7 +15825,9 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
         if requested_symbol:
             training_symbol = normalize_symbol(requested_symbol, default="")
             if not is_supported_major_symbol(training_symbol):
-                raise ValueError("train-suite requires a supported BTC, ETH, or SOL symbol")
+                raise ValueError(
+                    "train-suite requires a supported BTC, ETH, or SOL symbol"
+                )
             suite_kwargs["symbol"] = training_symbol
         else:
             print(
@@ -13521,7 +15861,9 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             take_count = int(float(meta.get("take_count", 0) or 0))
             downsize_count = int(float(meta.get("downsize_count", 0) or 0))
             skip_count = int(float(meta.get("skip_count", 0) or 0))
-            meta_text = f"{meta_status}:take{take_count}/down{downsize_count}/skip{skip_count}"
+            meta_text = (
+                f"{meta_status}:take{take_count}/down{downsize_count}/skip{skip_count}"
+            )
         selection_risk = getattr(outcome, "selection_risk", None) or {}
         selection_text = "n/a"
         if isinstance(selection_risk, dict) and selection_risk:
@@ -13543,7 +15885,11 @@ def command_train_suite(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
                     elif status == "skipped":
                         selection_text += "/pbo=skipped"
             except (TypeError, ValueError, OverflowError):
-                selection_text = "fail:selection_risk_malformed" if not passed else "pass:selection_risk"
+                selection_text = (
+                    "fail:selection_risk_malformed"
+                    if not passed
+                    else "pass:selection_risk"
+                )
         print(
             f"  {outcome.objective:<14} score={outcome.best_score:+.4f} "
             f"threshold={outcome.decision_threshold if outcome.decision_threshold is not None else 'n/a'} "
@@ -13575,7 +15921,9 @@ def command_model_lab(args: argparse.Namespace) -> int:
         lab_runtime = replace(
             runtime,
             market_type=str(market_override or runtime.market_type).lower(),
-            quote_asset=str(getattr(args, "quote_asset", None) or runtime.quote_asset).upper(),
+            quote_asset=str(
+                getattr(args, "quote_asset", None) or runtime.quote_asset
+            ).upper(),
             interval=str(getattr(args, "interval", None) or runtime.interval),
         )
         objectives = (
@@ -13614,7 +15962,9 @@ def command_model_lab(args: argparse.Namespace) -> int:
                 if getattr(args, "score_batch_size", None) is not None
                 else None
             ),
-            max_candidates=(int(max_candidates) if max_candidates is not None else None),
+            max_candidates=(
+                int(max_candidates) if max_candidates is not None else None
+            ),
             learning_feedback_path=(
                 Path(args.learning_feedback)
                 if getattr(args, "learning_feedback", None)
@@ -13624,7 +15974,11 @@ def command_model_lab(args: argparse.Namespace) -> int:
             market_db_path=(
                 Path(getattr(args, "market_db", None))
                 if getattr(args, "market_db", None)
-                else (Path("data/market_data.sqlite") if getattr(args, "require_db_data", False) else None)
+                else (
+                    Path("data/market_data.sqlite")
+                    if getattr(args, "require_db_data", False)
+                    else None
+                )
             ),
             require_db_data=bool(getattr(args, "require_db_data", False)),
         )
@@ -13652,8 +16006,13 @@ def command_model_lab(args: argparse.Namespace) -> int:
         )
     for outcome in report.outcomes:
         status = "accepted" if outcome.accepted else "rejected"
-        score_text = ", ".join(f"{key}={value:+.4f}" for key, value in sorted(outcome.objective_scores.items()))
-        hybrid_text = ", ".join(f"{key}:{value}" for key, value in sorted(outcome.hybrid_profiles.items()))
+        score_text = ", ".join(
+            f"{key}={value:+.4f}"
+            for key, value in sorted(outcome.objective_scores.items())
+        )
+        hybrid_text = ", ".join(
+            f"{key}:{value}" for key, value in sorted(outcome.hybrid_profiles.items())
+        )
         stress = outcome.stress_validation or {}
         stress_text = "n/a"
         if stress:
@@ -13671,8 +16030,12 @@ def command_model_lab(args: argparse.Namespace) -> int:
             edge_p = robustness.get("worst_sign_test_p_value")
             edge_lower = robustness.get("worst_bootstrap_lower_mean_return")
             edge_text = ""
-            if isinstance(edge_p, (int, float)) and isinstance(edge_lower, (int, float)):
-                edge_text = f" edge_p={float(edge_p):.3f} lower={float(edge_lower):+.2%}"
+            if isinstance(edge_p, (int, float)) and isinstance(
+                edge_lower, (int, float)
+            ):
+                edge_text = (
+                    f" edge_p={float(edge_p):.3f} lower={float(edge_lower):+.2%}"
+                )
             robustness_text = (
                 f"pass {int(robustness.get('accepted_windows', 0))}/{int(robustness.get('window_count', 0))}{edge_text}"
                 if robustness.get("accepted")
@@ -13783,19 +16146,40 @@ def _build_autonomous_decision_fn(
     if model_error is not None:
         return None, model_error, model_notice
     if model is None and not effective_dry_run:
-        return None, f"Autonomous live mode requires a compatible model: {model_path}", model_notice
+        return (
+            None,
+            f"Autonomous live mode requires a compatible model: {model_path}",
+            model_notice,
+        )
     if not effective_dry_run and minimum_model_taker_fee_bps is not None:
-        fee_error = _model_taker_fee_compatibility_error(model, minimum_model_taker_fee_bps)
+        fee_error = _model_taker_fee_compatibility_error(
+            model, minimum_model_taker_fee_bps
+        )
         if fee_error is not None:
             return None, f"Autonomous startup blocked: {fee_error}", model_notice
-    effective_strategy = apply_model_strategy_overrides(strategy, model) if model is not None else strategy
+    effective_strategy = (
+        apply_model_strategy_overrides(strategy, model)
+        if model is not None
+        else strategy
+    )
     state: dict[str, object] = {"model": model, "step": 0}
 
-    def decide(client, runtime: RuntimeConfig, current_strategy: StrategyConfig, _objective) -> Decision:
+    def decide(
+        client, runtime: RuntimeConfig, current_strategy: StrategyConfig, _objective
+    ) -> Decision:
         state["step"] = int(state["step"]) + 1
         current_model = cast(TrainedModel | None, state["model"])
-        candles = client.get_klines(runtime.symbol, runtime.interval, limit=max(current_strategy.model_lookback, 300))
-        rows = _live_rows_for_model(candles, current_strategy, current_model, compute_backend=runtime.compute_backend)
+        candles = client.get_klines(
+            runtime.symbol,
+            runtime.interval,
+            limit=max(current_strategy.model_lookback, 300),
+        )
+        rows = _live_rows_for_model(
+            candles,
+            current_strategy,
+            current_model,
+            compute_backend=runtime.compute_backend,
+        )
         if not rows:
             price, observed_at_ms = client.get_symbol_price(runtime.symbol)
             return Decision(
@@ -13805,8 +16189,12 @@ def _build_autonomous_decision_fn(
                 observed_at_ms=int(observed_at_ms),
             )
         if current_model is None:
-            if not effective_dry_run:  # pragma: no cover - rejected before the decision function is returned
-                raise RuntimeError(f"Autonomous live mode requires a compatible model: {model_path}")
+            if (
+                not effective_dry_run
+            ):  # pragma: no cover - rejected before the decision function is returned
+                raise RuntimeError(
+                    f"Autonomous live mode requires a compatible model: {model_path}"
+                )
             training_rows = _build_model_rows(
                 candles,
                 current_strategy,
@@ -13830,8 +16218,12 @@ def _build_autonomous_decision_fn(
             state["model"] = current_model
         latest = rows[-1]
         raw_score = current_model.predict_proba(latest.features)
-        threshold = model_decision_threshold(current_model, current_strategy.signal_threshold)
-        score = confidence_adjusted_probability(raw_score, current_strategy.confidence_beta)
+        threshold = model_decision_threshold(
+            current_model, current_strategy.signal_threshold
+        )
+        score = confidence_adjusted_probability(
+            raw_score, current_strategy.confidence_beta
+        )
         decision_strategy = current_strategy
         external_ai_evidence: dict[str, object] = {
             "enabled": bool(current_strategy.external_signals_enabled),
@@ -13855,13 +16247,17 @@ def _build_autonomous_decision_fn(
                 ollama_model=current_strategy.external_news_ai_model,
                 ollama_url=current_strategy.external_news_ai_url,
                 ollama_timeout_seconds=current_strategy.external_news_ai_timeout_seconds,
-                telemetry_path=current_strategy.telemetry_db_path if current_strategy.telemetry_enabled else None,
+                telemetry_path=current_strategy.telemetry_db_path
+                if current_strategy.telemetry_enabled
+                else None,
                 source_grade_max_age_hours=current_strategy.source_grade_max_age_hours,
             )
-            score, decision_strategy, applied_adjustment = _apply_external_signal_to_score(
-                score,
-                current_strategy,
-                external_report,
+            score, decision_strategy, applied_adjustment = (
+                _apply_external_signal_to_score(
+                    score,
+                    current_strategy,
+                    external_report,
+                )
             )
             external_ai_evidence = {
                 "enabled": True,
@@ -13869,7 +16265,9 @@ def _build_autonomous_decision_fn(
                 "fresh_count": int(getattr(external_report, "fresh_count", 0)),
                 "applied_adjustment": float(applied_adjustment),
             }
-        regime_window_size = max(8, min(len(rows), int(decision_strategy.liquidity_lookback_bars)))
+        regime_window_size = max(
+            8, min(len(rows), int(decision_strategy.liquidity_lookback_bars))
+        )
         regime_evidence = classify_market_regime(rows[-regime_window_size:])
         regime_score = market_regime_unpredictability(
             regime_evidence.dominant_regime,
@@ -13885,13 +16283,19 @@ def _build_autonomous_decision_fn(
             getattr(current_model, "long_decision_threshold", None) is not None
             or getattr(current_model, "short_decision_threshold", None) is not None
         )
-        base_threshold = _directional_threshold_confidence(base_long_threshold, base_short_threshold, threshold)
-        liquidity_adjustment = liquidity_session_adjustment(rows, len(rows) - 1, decision_strategy, base_threshold)
+        base_threshold = _directional_threshold_confidence(
+            base_long_threshold, base_short_threshold, threshold
+        )
+        liquidity_adjustment = liquidity_session_adjustment(
+            rows, len(rows) - 1, decision_strategy, base_threshold
+        )
         threshold_add = float(liquidity_adjustment.threshold) - float(base_threshold)
-        effective_long_threshold, effective_short_threshold = _adjust_directional_thresholds(
-            base_long_threshold,
-            base_short_threshold,
-            threshold_add,
+        effective_long_threshold, effective_short_threshold = (
+            _adjust_directional_thresholds(
+                base_long_threshold,
+                base_short_threshold,
+                threshold_add,
+            )
         )
         effective_threshold = _directional_threshold_confidence(
             effective_long_threshold,
@@ -13918,7 +16322,9 @@ def _build_autonomous_decision_fn(
         )
         meta_threshold = (
             1.0 - effective_short_threshold
-            if runtime.market_type == "futures" and direction < 0 and effective_short_threshold is not None
+            if runtime.market_type == "futures"
+            and direction < 0
+            and effective_short_threshold is not None
             else effective_threshold
         )
         base_meta_decision = apply_meta_label_policy(
@@ -13928,7 +16334,11 @@ def _build_autonomous_decision_fn(
             side=direction,
             market_type=runtime.market_type,
         )
-        meta_decision = apply_liquidity_session_meta(base_meta_decision, liquidity_adjustment) if direction != 0 else base_meta_decision
+        meta_decision = (
+            apply_liquidity_session_meta(base_meta_decision, liquidity_adjustment)
+            if direction != 0
+            else base_meta_decision
+        )
         if direction > 0:
             side = "LONG"
         elif direction < 0:
@@ -13962,9 +16372,7 @@ def _build_autonomous_decision_fn(
             meta_label_validation_sample_count=int(
                 meta_decision.validation_sample_count
             ),
-            meta_label_validation_precision=float(
-                meta_decision.validation_precision
-            ),
+            meta_label_validation_precision=float(meta_decision.validation_precision),
             meta_label_expected_after_cost_return=float(
                 meta_decision.expected_after_cost_return
             ),
@@ -14013,17 +16421,14 @@ def _build_autonomous_decision_fn(
                 "market_activity": {
                     "mark_price": float(latest.close),
                     "volume": float(getattr(latest, "volume", 0.0) or 0.0),
-                    "quote_volume": float(
-                        getattr(latest, "quote_volume", 0.0) or 0.0
-                    ),
+                    "quote_volume": float(getattr(latest, "quote_volume", 0.0) or 0.0),
                     "trade_count": int(getattr(latest, "trade_count", 0) or 0),
                     "trailing_quote_volume_24h_estimate": float(
                         getattr(latest, "trailing_quote_volume_24h_estimate", 0.0)
                         or 0.0
                     ),
                     "trailing_trade_count_24h_estimate": int(
-                        getattr(latest, "trailing_trade_count_24h_estimate", 0)
-                        or 0
+                        getattr(latest, "trailing_trade_count_24h_estimate", 0) or 0
                     ),
                 },
                 "liquidity": {
@@ -14082,7 +16487,9 @@ def command_autonomous(args: argparse.Namespace) -> int:
         else:
             effective_dry_run = bool(runtime.dry_run)
         if not _allows_signed_execution(runtime):
-            print("Autonomous mode requires testnet=true or demo=true.", file=sys.stderr)
+            print(
+                "Autonomous mode requires testnet=true or demo=true.", file=sys.stderr
+            )
             return 2
         if not effective_dry_run and not _has_api_credentials(runtime):
             print(_credential_required_message("Autonomous live mode"), file=sys.stderr)
@@ -14095,7 +16502,10 @@ def command_autonomous(args: argparse.Namespace) -> int:
                 symbol=runtime.symbol,
             )
         except ValueError as exc:
-            print(f"Autonomous startup blocked: commission floor failed: {exc}", file=sys.stderr)
+            print(
+                f"Autonomous startup blocked: commission floor failed: {exc}",
+                file=sys.stderr,
+            )
             return 2
         decision_fn, model_error, model_notice = _build_autonomous_decision_fn(
             model_path=model_path,
@@ -14103,18 +16513,21 @@ def command_autonomous(args: argparse.Namespace) -> int:
             effective_dry_run=effective_dry_run,
             require_model_candidate_search=not effective_dry_run,
             require_live_data_evidence=not effective_dry_run,
-            require_microstructure_evidence=not effective_dry_run and runtime.market_type == "futures",
+            require_microstructure_evidence=not effective_dry_run
+            and runtime.market_type == "futures",
             expected_symbol=runtime.symbol,
             expected_market_type=runtime.market_type,
             expected_interval=runtime.interval,
             minimum_model_taker_fee_bps=commission_assumption.modeled_taker_fee_bps,
         )
         if model_error is not None or decision_fn is None:
-            print(model_error or f"Autonomous mode requires a readable model: {model_path}", file=sys.stderr)
+            print(
+                model_error
+                or f"Autonomous mode requires a readable model: {model_path}",
+                file=sys.stderr,
+            )
             return 2
-        ai_base_url = str(
-            getattr(args, "ai_url", None) or "http://127.0.0.1:11434"
-        )
+        ai_base_url = str(getattr(args, "ai_url", None) or "http://127.0.0.1:11434")
         ai_timeout_seconds = max(
             0.1,
             float(getattr(args, "ai_timeout", 10.0)),
@@ -14185,28 +16598,33 @@ def command_autonomous(args: argparse.Namespace) -> int:
         try:
             client = _build_client(runtime)
             if not effective_dry_run:
-                verified_strategy, verified_assumption, _commission_rates = apply_verified_commission_rate(
-                    strategy,
-                    client=client,
-                    symbol=runtime.symbol,
+                verified_strategy, verified_assumption, _commission_rates = (
+                    apply_verified_commission_rate(
+                        strategy,
+                        client=client,
+                        symbol=runtime.symbol,
+                    )
                 )
                 if (
                     verified_assumption.modeled_taker_fee_bps
                     > commission_assumption.modeled_taker_fee_bps
                 ):
-                    decision_fn, model_error, model_notice = _build_autonomous_decision_fn(
-                        model_path=model_path,
-                        strategy=verified_strategy,
-                        effective_dry_run=effective_dry_run,
-                        require_model_candidate_search=True,
-                        require_live_data_evidence=True,
-                        require_microstructure_evidence=runtime.market_type == "futures",
-                        expected_symbol=runtime.symbol,
-                        expected_market_type=runtime.market_type,
-                        expected_interval=runtime.interval,
-                        minimum_model_taker_fee_bps=(
-                            verified_assumption.modeled_taker_fee_bps
-                        ),
+                    decision_fn, model_error, model_notice = (
+                        _build_autonomous_decision_fn(
+                            model_path=model_path,
+                            strategy=verified_strategy,
+                            effective_dry_run=effective_dry_run,
+                            require_model_candidate_search=True,
+                            require_live_data_evidence=True,
+                            require_microstructure_evidence=runtime.market_type
+                            == "futures",
+                            expected_symbol=runtime.symbol,
+                            expected_market_type=runtime.market_type,
+                            expected_interval=runtime.interval,
+                            minimum_model_taker_fee_bps=(
+                                verified_assumption.modeled_taker_fee_bps
+                            ),
+                        )
                     )
                     if model_error is not None or decision_fn is None:
                         print(
@@ -14281,7 +16699,9 @@ def command_autonomous(args: argparse.Namespace) -> int:
             stop_after_iterations=getattr(args, "iterations", None),
             heartbeat_every=max(1, int(getattr(args, "heartbeat_every", 1))),
             dry_run=effective_dry_run,
-            starting_reference_cash=max(0.0, float(getattr(args, "starting_cash", 1000.0))),
+            starting_reference_cash=max(
+                0.0, float(getattr(args, "starting_cash", 1000.0))
+            ),
         )
         print(
             "taker fee: "

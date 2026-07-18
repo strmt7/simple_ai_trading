@@ -114,9 +114,7 @@ def create_round12_capture_manifest(
         "contract_sha256": str(contract_sha256),
         "model_sha256": str(model_sha256),
         "policy_sha256": str(policy_sha256),
-        "reference_implementation_sha256": str(
-            reference_implementation_sha256
-        ),
+        "reference_implementation_sha256": str(reference_implementation_sha256),
         "action_pipeline_implementation_sha256": str(
             action_pipeline_implementation_sha256
         ),
@@ -183,11 +181,12 @@ def validate_round12_capture_manifest_payload(
         implementation = expected_contract.get("implementation")
         model = expected_contract.get("model_contract")
         policy = expected_contract.get("primary_policy")
-        if not all(isinstance(value, Mapping) for value in (implementation, model, policy)):
+        if not all(
+            isinstance(value, Mapping) for value in (implementation, model, policy)
+        ):
             raise ValueError("Round 12 contract sections are unavailable")
         if (
-            manifest["contract_sha256"]
-            != expected_contract.get("contract_sha256")
+            manifest["contract_sha256"] != expected_contract.get("contract_sha256")
             or manifest["model_sha256"] != model.get("model_sha256")
             or manifest["policy_sha256"] != policy.get("policy_sha256")
             or manifest["reference_implementation_sha256"]
@@ -214,7 +213,10 @@ def build_round12_capture_manifest(
     from .polymarket_round12_reference import load_round12_confirmation_contract
 
     selected_contract_path = Path(contract_path).resolve()
-    contract = load_round12_confirmation_contract(selected_contract_path)
+    contract = load_round12_confirmation_contract(
+        selected_contract_path,
+        require_current_implementation=True,
+    )
     root = _repository_root()
     status = _git_bytes(root, "status", "--porcelain", "--untracked-files=all")
     if status.strip():
@@ -228,9 +230,13 @@ def build_round12_capture_manifest(
     if not isinstance(predecessor, Mapping):
         raise ValueError("Round 12 predecessor evidence is unavailable")
     predecessor_relative = (
-        selected_contract_path.parent
-        / str(predecessor.get("artifact_filename") or "")
-    ).relative_to(root).as_posix()
+        (
+            selected_contract_path.parent
+            / str(predecessor.get("artifact_filename") or "")
+        )
+        .relative_to(root)
+        .as_posix()
+    )
     required = tuple(
         dict.fromkeys(
             (
@@ -247,7 +253,9 @@ def build_round12_capture_manifest(
         if path.is_absolute() or ".." in path.parts:
             raise ValueError("Round 12 required repository path is unsafe")
         if not (root / path).is_file():
-            raise ValueError(f"Round 12 required file is unavailable: {path.as_posix()}")
+            raise ValueError(
+                f"Round 12 required file is unavailable: {path.as_posix()}"
+            )
         committed = _git_bytes(root, "show", f"{commit}:{path.as_posix()}")
         file_hashes[path.as_posix()] = hashlib.sha256(committed).hexdigest()
     implementation = contract["implementation"]
@@ -276,15 +284,19 @@ def load_round12_capture_manifest(
     run_id: str,
     contract: Mapping[str, object],
 ) -> dict[str, object]:
-    row = store.connect().execute(
-        """
+    row = (
+        store.connect()
+        .execute(
+            """
         SELECT r.started_at_ms, m.manifest_json, m.manifest_sha256
         FROM polymarket_recorder_run AS r
         JOIN polymarket_preregistration_manifest AS m USING (run_id)
         WHERE r.run_id = ?
         """,
-        [str(run_id)],
-    ).fetchone()
+            [str(run_id)],
+        )
+        .fetchone()
+    )
     if row is None:
         raise ValueError("Round 12 recorder preregistration manifest is missing")
     try:

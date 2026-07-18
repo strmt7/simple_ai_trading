@@ -10,7 +10,7 @@
 [![andrej-karpathy-skills](https://img.shields.io/static/v1?label=&message=andrej-karpathy-skills&color=555&logo=github&logoColor=white)](https://github.com/multica-ai/andrej-karpathy-skills)
 <!-- END GENERATED BADGES -->
 
-Simple AI Trading is a Windows-first, testnet-first autonomous day-trading CLI and desktop app focused only on the major BTC, ETH, and SOL Binance spot/futures markets. It has been expanded from the original single-pair prototype into a tightly scoped major-asset runtime that measures per-symbol liquidity automatically, trains/retrains models, runs realistic backtests with execution frictions, and exposes the same workflows through both the CLI and Windows app.
+Simple AI Trading is a testnet-first day-trading platform for BTC, ETH, and SOL. The Python CLI, model contracts, and evidence formats are cross-platform; the native desktop operator is a Windows app. Runtime capabilities are probed rather than inferred from an OS, installer, path, or GPU vendor.
 
 ## Beta Warning
 
@@ -21,7 +21,7 @@ This software is experimental trading infrastructure. It does not guarantee prof
 ## Current Scope
 
 - Major-asset day trading on Binance testnet or Demo Trading endpoints, limited to BTC, ETH, and SOL.
-- Polymarket BTC/ETH/SOL five-minute work is paper/research only. [Round 11](docs/model-research/polymarket/latest/README.md) replaced the rejected one-second scalp with a single-leg hold-to-resolution experiment on 42 development markets. Its point estimate was positive after exact replayed entry fees, but maximum drawdown was `12.36399` quote and the bootstrap lower mean-group utility was `-1.38152`; it failed uncertainty and market-prior gates. No profitability, ROI, acceptable-drawdown, AI-uplift, paper-policy, or trading claim exists. Authenticated lifecycle, owned-balance, and redemption-cost evidence remain incomplete.
+- Polymarket BTC/ETH/SOL five-minute work is research only. [Round 13](docs/model-research/polymarket/latest/README.md) is frozen for one untouched 24-hour capture but has not started. Its V2 FOK BUY contract requires the live protocol version, satisfies the recorded numeric minimum in both quote and signed-share units because the official public docs do not specify that field's BUY unit, and credits only signed-minimum shares rather than unobservable price improvement. Round 12 was invalidated before outcome access because its evaluator and publisher were not preregistered. Round 11 remains the latest scored result and failed uncertainty and raw-market-prior gates; its measured maximum drawdown was `12.36399` quote. No profitability, ROI, acceptable-drawdown, AI-uplift, paper-policy, or trading claim exists.
 - New Polymarket captures store each exact public message once in bounded checksummed Zstandard frames; replay reconstructs and rehashes event indexes from that source. Legacy evidence remains readable. A same-sample 160,000-message host benchmark measured a 69.607% database reduction with zero raw/event hash differences; this is storage evidence, not trading performance.
 - Default symbols: `BTCUSDC`, `ETHUSDC`, `SOLUSDC`; USD-M futures workflows use the matching `BTCUSDT`, `ETHUSDT`, and `SOLUSDT` contracts.
 - Unsupported bases, low-liquidity assets, leveraged-token patterns, and lookalike symbols are rejected before data sync, archive ingestion, universe ranking, or optimization.
@@ -33,35 +33,44 @@ This software is experimental trading infrastructure. It does not guarantee prof
 - CPU-only mode is allowed for wider installability, but AI is disabled there and training/backtesting warns that it will be slower.
 - Compute defaults to host-neutral `auto` discovery. Modern PyTorch accelerators, CUDA, ROCm, Intel XPU, Apple MPS, legacy DirectML, and the deterministic CPU reference are capability-probed at runtime; neither OS nor vendor names grant capability.
 - Training, scoring, calibration, and backtesting may fall back to CPU only from `auto`. A pinned accelerator that is unavailable or fails an operation aborts the workflow instead of writing misleading CPU evidence. Multi-device tensor runtimes select the device with the most reported free memory, then the framework current device; `SIMPLE_AI_TRADING_DEVICE_INDEX` is a validated operator override. LightGBM independently executes a real CUDA/OpenCL tree-update probe because tensor-runtime discovery cannot establish tree-library capability; optional OpenCL IDs must be supplied together through `SIMPLE_AI_TRADING_OPENCL_PLATFORM_ID` and `SIMPLE_AI_TRADING_OPENCL_DEVICE_ID`.
+- Model decisions never depend on usernames, drive letters, working directories, locale, shell, or GPU vendor. Unsupported runtime capabilities fail before evidence generation. The sealed Round 13 research workflow has the stricter, explicit requirement of a clean Git source checkout so exact implementation bytes can be attested before capture.
 - AI defaults on, but it fails closed without an accepted local multibillion model. A July 2026 audit found that the old v6 benchmark leaked expected actions through case names, so that evidence is revoked. Fresh v7 prompts exclude and hash-bind case labels: Qwen3 8B scored `9/11`, while Fin-R1 8B, Qwen3.5 9B, and Fino1 8B each scored `8/11`; none passed or has order authority. AI also needs a separate paired after-cost uplift test with at least 30 non-tied outcomes across 90 contiguous days before it can be credited with edge. Exact negative evidence and local model identities are under [`docs/ai/risk-review/latest/`](docs/ai/risk-review/latest/).
 - Binance API budget telemetry is captured from exchange response headers when available. Authenticated live startup is blocked when a current budget sample shows any known request-weight or order-count window is 80% or more consumed, or when Binance returns `Retry-After`.
 
 ## Install
 
 ```powershell
-py -3.11 -m venv .venv311
-.\.venv311\Scripts\python.exe -m pip install -e .[gpu]
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[gpu]"
+```
+
+```bash
+python3 -m venv .venv
+./.venv/bin/python -m pip install -e '.[gpu]'
 ```
 
 For the version-pinned DirectML compatibility stack used by the tested Windows AMD host:
 
-```powershell
-.\.venv311\Scripts\python.exe -m pip install -e .[directml]
+```console
+.\.venv\Scripts\python.exe -m pip install -e ".[directml]"
 ```
 
 For CPU-only operation:
 
 ```powershell
-.\.venv311\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe -m pip install -e .
 ```
 
 ROCm and other platform-specific PyTorch wheels must be installed from the official PyTorch selector before installing the base package; the repo does not guess a driver, wheel index, or GPU architecture. CPU-only mode can run non-AI workflows, but AI is disabled and training/backtesting is slower.
 
 ## Verify Hardware
 
-```powershell
-.\.venv311\Scripts\python.exe -m simple_ai_trading compute
-.\.venv311\Scripts\python.exe -m simple_ai_trading ai
+After activating the environment, verify the capabilities actually available on
+that installation:
+
+```console
+python -m simple_ai_trading compute
+python -m simple_ai_trading ai
 ```
 
 On this host, `auto` was verified by a real tensor operation as `compute=directml device=privateuseone:0 vendor=AMD Radeon RX 9070 XT`. On 2026-07-18, bounded forward/backward preflights for all eight retained TCN/action-value families completed on that device with zero framework warnings. That is host evidence, not a portable assumption. Microsoft now places DirectML in sustained engineering and directs new Windows ONNX deployments toward Windows ML; DirectML remains an optional PyTorch compatibility adapter here.
@@ -76,16 +85,16 @@ DirectML references:
 
 ## Configure
 
-```powershell
-.\.venv311\Scripts\python.exe -m simple_ai_trading configure
-.\.venv311\Scripts\python.exe -m simple_ai_trading connect
-.\.venv311\Scripts\python.exe -m simple_ai_trading strategy --profile conservative
+```console
+python -m simple_ai_trading configure
+python -m simple_ai_trading connect
+python -m simple_ai_trading strategy --profile conservative
 ```
 
 Set the supported major symbols in the runtime config or pass them to `universe`:
 
-```powershell
-.\.venv311\Scripts\python.exe -m simple_ai_trading universe --symbols BTCUSDC,ETHUSDC,SOLUSDC
+```console
+python -m simple_ai_trading universe --symbols BTCUSDC,ETHUSDC,SOLUSDC
 ```
 
 The universe gate first enforces the hard BTC/ETH/SOL product scope, then measures exchange status, quote asset, structural leveraged-token patterns, 24h quote volume, trade count, bid/ask spread, likely pegged-pair behavior, and a combined liquidity score. Automatic ranking can adapt the volume/trade floors to the current leaders inside the selected major-asset quote market, but only above hard absolute liquidity floors and without relaxing spread, leveraged-token, pegged-pair, or major-scope filters. If fewer than the configured minimum assets qualify, the command exits nonzero.
@@ -120,7 +129,7 @@ The interface is intentionally simple: the app groups workflows by operator inte
 
 Startup behavior:
 
-- The app resolves the repo-local `.venv311` Python and sets `PYTHONPATH` before launching CLI commands, so dev builds do not depend on a globally installed package.
+- The app honors `SIMPLE_AI_TRADING_PYTHON`, then probes repo-local `.venv311` and `.venv` environments, then the Windows Python launcher. A source checkout receives an explicit `PYTHONPATH`; an installed package does not require a repository path.
 - If DirectML/GPU is available, the Compute workflow reports the active backend in the output console.
 - If only CPU is available, the app remains usable, shows a warning, and disables AI.
 - `AI on (gated)` means AI is configured, not loaded or approved. Green `AI GPU resident` status requires a post-inference Ollama `/api/ps` check bound to the exact model digest with reported VRAM residency; unloaded, CPU-only, ambiguous, or malformed runtime evidence fails closed. DirectML model compute and Ollama residency are separate contracts.

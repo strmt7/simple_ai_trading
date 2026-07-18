@@ -1,0 +1,421 @@
+{
+  "schema_version": "polymarket-round13-sealed-confirmation-contract-v1",
+  "round": 13,
+  "status": "frozen_before_fresh_capture",
+  "scope": {
+    "venue": "Polymarket public five-minute crypto Up/Down markets",
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "strategy": "single dual-minimum-guarded quote-denominated FOK buy held to official resolution",
+    "profile": "conservative research confirmation",
+    "synthetic_data": false,
+    "leverage_applicable": false,
+    "forced_activity": false
+  },
+  "predecessor_evidence": {
+    "artifact_filename": "round-011-single-leg-directional-value-artifact.json",
+    "artifact_sha256": "c1d174b3274d374b1008272c70954a67c8a2953b875d11b7268658666d23c7bc",
+    "artifact_file_sha256": "0f34ebc03f46c3fec88a77816119f81fdba976eb7ef7635539fea0de00ac6a31",
+    "round11_result": "development_rejected",
+    "round12_invalidation_filename": "round-012-invalidated-capture-evidence.json",
+    "round12_invalidation_artifact_sha256": "7e8577781d08c75109437cbc478948cc617bdbf82f8cffbd8233c61ada95ff58",
+    "round12_invalidation_file_sha256": "75eba0e92ffa80400eb942101c494978bdbb00996574cec234cbe0418b45c158",
+    "round12_run_id": "75939b9de4b44e788cc032d69a49751d",
+    "round12_run_report_sha256": "264443df363e17a6a57c4da9175b8fd0cbf6638b2ed642a08ce2bc0b6ca439d2",
+    "round12_result": "invalidated_before_outcome_access",
+    "selection_authority_from_round12": false
+  },
+  "hypothesis": {
+    "primary": "The already frozen monotone calibration of the contemporaneous market prior has positive after-cost utility on one untouched prospective capture under the exact primary and stress executions.",
+    "falsification": "Any data, activity, state, utility, control, drawdown, capital, or stress gate failure rejects this exact candidate.",
+    "complexity_rule": "No additional feature, fit, threshold, AI model, or post-label selection is permitted in this confirmation."
+  },
+  "model_contract": {
+    "model_sha256": "16b5d82a483ec2ab86cdbadfbfde6038147d7a176c89bc11aad61c5648e2748f",
+    "formula": "sigmoid(frozen_intercept + frozen_slope * (logit(clip(market_prior_up,1e-9,1-1e-9)) + frozen_shift))",
+    "coefficients": {
+      "calibration_intercept": -0.23722844771051635,
+      "calibration_slope": 1.6669649708940744,
+      "residual_intercept": 0.03184091198123928,
+      "probability_clip": 1e-09
+    },
+    "orientation": "Down probability is exactly one minus Up probability.",
+    "cpu_reference": "python_scalar_binary64",
+    "external_feature_coefficients_applied": false,
+    "training_or_refit_performed": false,
+    "online_adaptation": false,
+    "accelerator_authority": false
+  },
+  "primary_policy": {
+    "policy_sha256": "c8f518ad38e1b616f1b221f5373bb9f8ec9b6bd258ae1114b8fc74501a9e6db9",
+    "profile": "conservative",
+    "minimum_direction_probability": 0.8,
+    "minimum_expected_edge_quote": 0.02,
+    "numeric_decision_guard": 1e-12,
+    "minimum_remaining_seconds": 120.0,
+    "submission_latency_ms": 500,
+    "maximum_execution_observation_delay_ms": 500,
+    "retry_interval_ms": 1000,
+    "forced_activity": false,
+    "selection": "At each causal 250 ms decision, choose the unique outcome with probability at least 0.80 and quote-denominated, fee-inclusive full-depth expected edge above 0.02 quote plus a 1e-12 numerical guard; derive a cent-exact market BUY amount and tick-aligned FOK worst-price limit whose quote amount and signed minimum shares each meet the recorded numeric minimum and preserve that edge under a conservative fee and rounding bound; otherwise abstain.",
+    "lifecycle": "Retry only a definitely observed FOK non-fill after 1000 ms. The first simulated fill or unknown post-submit state locks the condition.",
+    "position": "Never hedge, average down, martingale, or open the opposite outcome."
+  },
+  "capture_contract": {
+    "one_shot": true,
+    "fresh_prospective_duration_seconds": 86400,
+    "decision_cadence_ms": 250,
+    "minimum_synchronized_event_groups": 160,
+    "minimum_resolved_markets_per_asset": 160,
+    "capture_sources": [
+      "Polymarket public Gamma market discovery",
+      "Polymarket public CLOB protocol-version endpoint",
+      "Polymarket public CLOB metadata, fee, and REST book endpoints",
+      "Polymarket public CLOB market WebSocket",
+      "Polymarket RTDS Chainlink stream",
+      "Binance spot bookTicker WebSocket",
+      "Binance spot aggregate-trade WebSocket"
+    ],
+    "post_claim_resolution_sources": [
+      "Polymarket CLOB and Gamma terminal resolution endpoints"
+    ],
+    "clocks": [
+      "local monotonic receipt",
+      "UTC wall receipt",
+      "source time"
+    ],
+    "storage": "One bounded DuckDB evidence database with compressed immutable raw chunks and compact hash-linked derived tables.",
+    "start_gate": "A clean committed Git tree containing this contract, every critical implementation module, and every Round 13 test must be attested before the recorder run row and before the first source message.",
+    "failure_policy": "Interruption, recorder error, integrity error, CLOB protocol drift, source identity drift, missing manifest, or undersized scope fails the capture. After the one-use claim opens, network interruption or pending official resolution preserves that exact claim for an identity-bound resume."
+  },
+  "label_free_action_contract": {
+    "independent_unit": "one synchronized BTC/ETH/SOL five-minute event start",
+    "derived_feature_labels": "official_up must be null and resolution_event_id empty in every Round 13 feature row",
+    "calibration_snapshot": "One latest same-segment admissible snapshot per condition while at least 120 seconds remain, persisted before outcomes are requested.",
+    "treatment": "frozen calibrated market-prior policy",
+    "control": "same execution with the raw normalized market prior",
+    "unknown_state": "A missing same-segment post-submit observation or post-submit tick drift is unknown, locks the condition, and is never a no-fill.",
+    "simulated_no_fill": "Only an observed same-segment full-depth shortfall within the frozen FOK worst-price limit is a simulated no-fill with zero modeled inventory and zero utility.",
+    "full_depth": true,
+    "displayed_depth_is_not_queue_position": true,
+    "slippage_protection": "per-attempt tick-aligned FOK worst-price limit"
+  },
+  "execution_scenarios": {
+    "scenario_schema_version": "polymarket-round13-label-free-scenario-v1",
+    "scenarios": [
+      {
+        "name": "primary",
+        "submission_latency_ms": 500,
+        "fee_multiplier": 1,
+        "adverse_ticks": 0,
+        "depth_numerator": 2,
+        "depth_denominator": 2
+      },
+      {
+        "name": "latency_750ms",
+        "submission_latency_ms": 750,
+        "fee_multiplier": 1,
+        "adverse_ticks": 0,
+        "depth_numerator": 2,
+        "depth_denominator": 2
+      },
+      {
+        "name": "latency_1000ms",
+        "submission_latency_ms": 1000,
+        "fee_multiplier": 1,
+        "adverse_ticks": 0,
+        "depth_numerator": 2,
+        "depth_denominator": 2
+      },
+      {
+        "name": "double_taker_fee",
+        "submission_latency_ms": 500,
+        "fee_multiplier": 2,
+        "adverse_ticks": 0,
+        "depth_numerator": 2,
+        "depth_denominator": 2
+      },
+      {
+        "name": "one_tick_adverse",
+        "submission_latency_ms": 500,
+        "fee_multiplier": 1,
+        "adverse_ticks": 1,
+        "depth_numerator": 2,
+        "depth_denominator": 2
+      },
+      {
+        "name": "half_displayed_depth",
+        "submission_latency_ms": 500,
+        "fee_multiplier": 1,
+        "adverse_ticks": 0,
+        "depth_numerator": 1,
+        "depth_denominator": 2
+      },
+      {
+        "name": "combined_stress",
+        "submission_latency_ms": 1000,
+        "fee_multiplier": 2,
+        "adverse_ticks": 1,
+        "depth_numerator": 1,
+        "depth_denominator": 2
+      }
+    ],
+    "primary_observation_window_ms": 500,
+    "fee_source": "recorded per-market fee schedule",
+    "tick_source": "recorded per-market tick-size events",
+    "depth_source": "recorded full displayed ask ladder"
+  },
+  "order_semantics": {
+    "audited_at_utc_date": "2026-07-18",
+    "official_documentation": [
+      "https://docs.polymarket.com/trading/orders/create",
+      "https://docs.polymarket.com/trading/orderbook",
+      "https://docs.polymarket.com/trading/fees"
+    ],
+    "market_buy_side": "quote_amount",
+    "market_sell_side": "share_quantity",
+    "fok_behavior": "fill_entire_quote_amount_immediately_or_cancel",
+    "worst_price_limit": true,
+    "book_depth_unit": "shares",
+    "buy_fee_unit": "quote_collateral",
+    "required_live_clob_protocol_version": 2,
+    "minimum_order_size_documented_unit": "unspecified",
+    "minimum_order_size_unit_assumption": false,
+    "minimum_order_size_guard": "quote_amount_and_signed_share_quantity_each_at_least_recorded_numeric_minimum",
+    "utility_share_quantity": "signed_minimum_not_modeled_price_improvement",
+    "market_buy_quote_quantum": "0.01",
+    "settlement_quantum": "0.000001",
+    "fee_quantum": "0.00001",
+    "decimal_precision": 50,
+    "decimal_rounding": "ROUND_HALF_EVEN",
+    "v2_market_buy_taker_decimals_by_tick": {
+      "0.0001": 6,
+      "0.001": 5,
+      "0.0025": 6,
+      "0.005": 5,
+      "0.01": 4,
+      "0.1": 3
+    },
+    "source_files": [
+      {
+        "repository": "Polymarket/py-clob-client-v2",
+        "commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+        "path": "py_clob_client_v2/order_builder/builder.py",
+        "sha256": "cb5d2499da246ec713840ac0c490b5d7cf80e6bef68ff51e6f43fe8e1f231e82"
+      },
+      {
+        "repository": "Polymarket/py-clob-client-v2",
+        "commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+        "path": "py_clob_client_v2/client.py",
+        "sha256": "66604f43bf37f8482f3f50674b9f3e3834ff13ef83722c00c69520e37052bd3a"
+      },
+      {
+        "repository": "Polymarket/py-clob-client-v2",
+        "commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+        "path": "py_clob_client_v2/fees.py",
+        "sha256": "f121783c0492cd2ea3c68dd9e765ae37885b53c5662c02668c22f8f6a64df591"
+      },
+      {
+        "repository": "Polymarket/py-clob-client-v2",
+        "commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+        "path": "py_clob_client_v2/clob_types.py",
+        "sha256": "1eaab86968594bdaa58c20e1bec33c789149441ee1e4e0164922f361f83a8060"
+      },
+      {
+        "repository": "Polymarket/ctf-exchange-v2",
+        "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+        "path": "src/exchange/mixins/Trading.sol",
+        "sha256": "dd8d18fca897e664583a93944b379435e6f70e84f4190c39d669b2be62596012"
+      },
+      {
+        "repository": "Polymarket/ctf-exchange-v2",
+        "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+        "path": "src/exchange/libraries/CalculatorHelper.sol",
+        "sha256": "b8dce122a07f5fe7898747ee61f73a82c4b96bf206b238e98da2ceed97737dc1"
+      },
+      {
+        "repository": "Polymarket/ctf-exchange-v2",
+        "commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+        "path": "src/exchange/mixins/Fees.sol",
+        "sha256": "38af8b9878e55bdddc3669e5771ba995321d7546716be894c851b723cad973fe"
+      },
+      {
+        "repository": "Polymarket/rs-clob-client-v2",
+        "commit": "222143d321eba97d5711a848265eb9aab3bc7ff4",
+        "path": "src/clob/order_builder.rs",
+        "sha256": "7071149a34578310c1a6f0c52eac121e75f5eb238a0b8633b10dc7ae8e04af7e"
+      },
+      {
+        "repository": "Polymarket/rs-clob-client-v2",
+        "commit": "222143d321eba97d5711a848265eb9aab3bc7ff4",
+        "path": "src/clob/types/mod.rs",
+        "sha256": "1311f0b29b4f013eb60582cb0f716a2bcc30b708816c6763624f694526e9e814"
+      },
+      {
+        "repository": "Polymarket/rs-clob-client-v2",
+        "commit": "222143d321eba97d5711a848265eb9aab3bc7ff4",
+        "path": "examples/clob/orders/market_buy.rs",
+        "sha256": "d26d567480c8c9ef2ebd431aa77114b52273267e77171cb2f448aa2cdf8eb9ae"
+      },
+      {
+        "repository": "Polymarket/polymarket-cli",
+        "commit": "9b18b5faf5493b945c48ca22efaf9645f0c69ab8",
+        "path": "src/commands/clob.rs",
+        "sha256": "47e2feeaa46cc0ae4582ed601b9d421f84046e1ef054197f0747a739c92bbab3"
+      },
+      {
+        "repository": "Polymarket/agent-skills",
+        "commit": "91ee44ae113e958affd20cd505c6e9d9d6100e0b",
+        "path": "order-patterns.md",
+        "sha256": "d70c20d09c98edd0f735f8653079672d332d1b0f385094632fcc62691183d88e"
+      }
+    ],
+    "live_order_authority": false
+  },
+  "risk_contract": {
+    "confirmation_capital_quote": "1000",
+    "reinvestment": false,
+    "leverage": false,
+    "maximum_group_exposure_quote": "1000",
+    "unknown_after_submit_charge": "maximum fee-inclusive loss permitted by the frozen FOK limit",
+    "drawdown_denominator": "explicit confirmation capital only",
+    "no_inferred_capital": true
+  },
+  "executable_evaluation_gates": {
+    "minimum_synchronized_event_groups": 160,
+    "minimum_resolved_markets_per_asset": 160,
+    "minimum_outcome_classes_per_asset": 2,
+    "minimum_simulated_filled_conditions": 30,
+    "minimum_simulated_fills_per_asset": 5,
+    "minimum_non_tied_treatment_control_conditions": 30,
+    "bootstrap_samples": 10000,
+    "bootstrap_seed": 13013,
+    "bootstrap_block_groups": 12,
+    "drawdown_capital_fraction": "0.02",
+    "drawdown_median_positive_group_multiple": "2"
+  },
+  "evaluation_contract": {
+    "claim_order": "Persist and commit one-use contract/run/pipeline/scenario identities before calling any official resolution loader.",
+    "resolution_endpoint_gate": "The internal dual-source finalizer refuses a preregistered Round 13 run unless its exact open one-use claim revalidates.",
+    "label": "Known simulated-fill utility uses only the signed minimum share quantity guaranteed by the FOK limit, never modeled price-improvement shares: payout minus exact quote amount and modeled fee when correct, or negative fee-inclusive cost when wrong. Simulated no-fill is zero; unknown is charged the frozen maximum loss.",
+    "bootstrap": {
+      "unit": "chronological synchronized event group",
+      "method": "circular moving-block bootstrap of the mean",
+      "prng": "SplitMix64",
+      "sample_serialization": "little-endian IEEE-754 binary64",
+      "samples": 10000,
+      "seed": 13013,
+      "block_groups": 12,
+      "confidence_interval": "linear 2.5% and 97.5% quantiles"
+    },
+    "proper_scores": [
+      "pooled and per-asset log loss",
+      "pooled and per-asset Brier score",
+      "logistic calibration intercept and slope",
+      "decile reliability bins",
+      "exact differences from raw market prior"
+    ],
+    "conjunctive_gates": [
+      "minimum independent groups and resolved markets",
+      "both outcomes represented in every asset",
+      "minimum simulated fills overall and per asset",
+      "minimum non-tied treatment/control conditions",
+      "zero selected unknown-after-submit conditions",
+      "positive total, mean-condition, median-filled-condition, and per-asset utility",
+      "strictly positive lower bootstrap mean-group utility",
+      "treatment total and lower paired bootstrap strictly beat raw prior",
+      "drawdown within both frozen limits",
+      "maximum event-group entry exposure within explicit allocation",
+      "every primary and stress scenario passes"
+    ],
+    "one_use_failure": "Deterministic integrity, identity, or scoring failure after claim opening marks the contract failed. Process interruption, network failure, and pending official settlement leave the exact claim open and resumable without changing code, data, policy, or scenarios. A complete report is idempotently readable."
+  },
+  "publication_contract": {
+    "latest_only": true,
+    "tables": [
+      "round13-scenario-summary.csv",
+      "round13-equity.csv",
+      "round13-per-asset.csv",
+      "round13-reliability.csv",
+      "round13-treatment-control.csv",
+      "round13-admission-states.csv",
+      "optimization-progress.csv"
+    ],
+    "charts": [
+      "round13-equity-drawdown.svg",
+      "round13-per-asset-utility.svg",
+      "round13-reliability.svg",
+      "round13-treatment-control.svg",
+      "round13-stress.svg",
+      "round13-admission.svg",
+      "optimization-progress.svg"
+    ],
+    "source_rule": "Every chart is deterministic SVG generated from exact integrity-hashed CSV rows derived from the immutable evaluation report.",
+    "staged_crash_recoverable_replacement": true,
+    "single_directory_atomic_exchange": false,
+    "manual_chart_edits_permitted": false
+  },
+  "implementation": {
+    "reference_implementation_sha256": "17aaa8df63d9caf85c6c64fef7a7ca55e811cffc0f7f8e8db8e9fa0ea10ce9ee",
+    "action_pipeline_implementation_sha256": "652b013238a1aab0c8bbdda7716bf82a1c503134d2409ba86548d9c986713c0e",
+    "round13_program_implementation_sha256": "ba8519d40abad897b599b0a46d05d55d83911612d9452422b92725cbb89a3892",
+    "source_hash_normalization": "utf8_lf_normalized",
+    "reference_numeric_semantics": "finite IEEE-754 binary64",
+    "economic_decimal_semantics": "local decimal precision 50 with ROUND_HALF_EVEN; caller context ignored",
+    "financial_gate_numeric_semantics": "local decimal precision 50 with ROUND_HALF_EVEN through gate decisions; finite IEEE-754 binary64 only for the frozen bootstrap and report serialization",
+    "runtime_paths_in_model_semantics": false,
+    "environment_variables_in_model_semantics": false,
+    "operating_system_branches_in_model_semantics": false
+  },
+  "portability_contract": {
+    "reference_decision": "Identical finite inputs must pass the scalar conformance tests on a supported host. Economic arithmetic uses a local precision-50 decimal context independent of caller state. A 1e-12 guard around probability, edge, and tie gates prevents platform-level floating-point noise from granting action.",
+    "capability_discovery": "Database, network, clock, filesystem, memory, and optional accelerator capabilities are probed at runtime; no OS implies a GPU vendor.",
+    "accelerators": "Accelerators are optional performance providers and never alter the reference decision or admission semantics.",
+    "installation": "Inputs and outputs use explicit paths or package resources. Absolute database paths may remain as inert recorder provenance, but drive letters, usernames, locale, shell, and working directory never alter model decisions, gates, or execution economics. Relocation preserves the original evidence identity instead of recomputing it.",
+    "resource_bounds": "Queues, memory, database threads, batches, retries, and deadlines are bounded configuration; resource exhaustion fails closed.",
+    "support_claim": "Portability is claimed only for published capability contracts and tested environments; missing capabilities fail before capture/action."
+  },
+  "freshness": {
+    "capture_started": false,
+    "confirmation_consumed": false,
+    "outcome_labels_consulted": false,
+    "thresholds_changed_after_freeze": false,
+    "one_shot": true
+  },
+  "authority": {
+    "paper_trading": false,
+    "live_trading": false,
+    "profitability_claim": false,
+    "roi_claim": false,
+    "drawdown_claim": false,
+    "ai_edge_claim": false,
+    "authenticated_order_lifecycle_proven": false,
+    "owned_balance_reconciliation_proven": false,
+    "settlement_overhead_measured": false
+  },
+  "unavailable_metrics": [
+    "annualized ROI",
+    "Sharpe and deflated Sharpe",
+    "probability of backtest overfitting",
+    "live capacity",
+    "authenticated lifecycle success",
+    "settlement-overhead-adjusted return"
+  ],
+  "research_basis": [
+    "https://docs.polymarket.com/market-data/websocket/market-channel",
+    "https://docs.polymarket.com/market-data/websocket/overview",
+    "https://docs.polymarket.com/api-reference/rate-limits",
+    "https://docs.polymarket.com/api-reference/authentication",
+    "https://docs.polymarket.com/trading/orders/create",
+    "https://docs.polymarket.com/trading/orderbook",
+    "https://docs.polymarket.com/trading/fees",
+    "https://github.com/Polymarket/py-clob-client-v2/tree/215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+    "https://github.com/Polymarket/ctf-exchange-v2/tree/ccc0596074f4dfd62c944fbca4de252893b82b4b",
+    "https://doi.org/10.1093/biomet/82.3.561",
+    "https://doi.org/10.1029/96WR00928"
+  ],
+  "contract_sha256": "9ace8092d26918b7621aafb7f008106b06c80049c314158e6a26fd5b70dd4325"
+}
