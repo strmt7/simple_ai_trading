@@ -1,0 +1,127 @@
+{
+  "schema_version": "round-073-v8-capture-gate-success-evidence-v1",
+  "artifact_sha256": "3429e30113ef8f162ba0a8cd070f0d1ab26ee26b0045cffa1b97c7a751075f98",
+  "recorded_utc_date": "2026-07-22",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "run": {
+    "run_id": "c34221cd46244eba94fa617d07130d84",
+    "capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
+    "status": "completed",
+    "capture_gate_passed": true,
+    "qualification_passed": false,
+    "elapsed_seconds": 182.20300000000861,
+    "writer_frame_count": 43,
+    "writer_message_count": 66684,
+    "writer_compressed_payload_bytes": 3126957,
+    "messages_per_second": 365.98738769392844,
+    "frames_per_stream_minute": 14.160030295878103,
+    "queue_high_water_messages": 1270,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.019378662109375,
+    "negative_corrected_latency_fraction": 0.0,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "reconnect_count": 0,
+    "event_counts": {
+      "aggTrade": 1453,
+      "bookTicker": 59310,
+      "depthSnapshot": 3,
+      "depthUpdate": 5366,
+      "exchangeInfo": 1,
+      "markPriceUpdate": 537,
+      "openInterest": 9,
+      "serverTime": 5
+    }
+  },
+  "capture_phase": {
+    "process_io_provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "start_write_bytes": 14949570,
+    "end_write_bytes": 138982425,
+    "delta_write_bytes": 124032855,
+    "write_bytes_per_message": 1860.0092226021234,
+    "frozen_maximum_write_bytes_per_message": 4096,
+    "database_physical_start_bytes": 5388382208,
+    "database_physical_end_bytes": 5388382208,
+    "database_physical_growth_bytes": 0,
+    "database_physical_growth_bytes_per_message": 0.0,
+    "frozen_maximum_physical_growth_bytes_per_message": 1024,
+    "storage_efficiency_passed": true
+  },
+  "terminal_phase": {
+    "start_write_bytes": 138982425,
+    "end_write_bytes": 143708496,
+    "delta_write_bytes": 4726071,
+    "qualification_metric": false
+  },
+  "fresh_process_read_only_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 43,
+    "message_count": 66684,
+    "compressed_payload_bytes": 3126957,
+    "last_frame_sha256": "ed807a5fa54018147127b0c40c6761ac4420519a7416c1960adb7c784f3156b6",
+    "stored_report_schema_version": "round-073-capture-report-v8",
+    "stored_report_sha256": "bdb7988d283caa557081bd6192be0ccd46c24757d3bcffbd0b0049ca5078d417"
+  },
+  "feature_source_replay": {
+    "schema_version": "round-073-feature-source-diagnostic-v2",
+    "capture_audit_passed": true,
+    "frame_count": 43,
+    "message_count": 66684,
+    "depth_snapshot_count": 3,
+    "depth_update_count": 5366,
+    "synchronized_depth_update_count": 5262,
+    "stale_depth_update_count": 104,
+    "synchronized_depth_update_fraction": 0.9806187103988073,
+    "level_change_count": 223183,
+    "stored_depth_band_row_count": 5366,
+    "stored_depth_band_rows_reconciled": true,
+    "future_or_target_data_used": false,
+    "identity_whale_or_manipulation_inference": false,
+    "target_constructed": false,
+    "model_evaluated": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "comparison": {
+    "v7_capture_phase_write_bytes_per_message": 16262.82958557889,
+    "v8_gate_to_v7_write_ratio": 0.11437180798177286,
+    "v8_gate_write_reduction_fraction": 0.8856281920182272,
+    "comparison_is_descriptive_not_financial": true
+  },
+  "critical_analysis": {
+    "v8_180_second_capture_gate_passed": true,
+    "v8_fresh_process_audit_passed": true,
+    "v8_feature_source_replay_passed": true,
+    "v8_one_hour_qualification_passed": false,
+    "capture_integrity_evidence": true,
+    "financial_feature_evidence": false,
+    "model_evidence": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false
+  },
+  "decision": {
+    "v8_one_hour_qualification_authorized": true,
+    "v8_long_capture_authorized": false,
+    "round_073_model_evaluation_authorized": false,
+    "reason": "The frozen 180-second capture gate, fresh-process audit, and independent exact-wire feature-source replay passed. Only the one-hour capture qualification is promoted."
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "authorization": {
+    "v8_one_hour_qualification": true,
+    "v8_long_capture": false,
+    "round_073_feature_construction": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
