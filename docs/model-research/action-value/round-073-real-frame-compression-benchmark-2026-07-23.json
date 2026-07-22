@@ -1,0 +1,186 @@
+{
+  "artifact_sha256": "15ceb46fe0d33af653781a74d0118a213a32c91018c7b3cbc0f865c951a098e9",
+  "financial_or_model_evidence": false,
+  "frame_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31
+  ],
+  "frame_sha256_manifest": "5737dc03aa33702cfc4a16a9b24a9c893afe2e810ea7c8c6bd8a31388072d8ce",
+  "frame_table": "impact_capture_frame_v8",
+  "message_count": 52682,
+  "raw_bytes": 19360422,
+  "raw_concatenation_sha256": "2a23c9db8b0d1b6fed472fb7b2c0fdb94cd189879a8fe386d2ff9a75359a6c9c",
+  "scenarios": [
+    {
+      "chunk_frame_count": 1,
+      "compressed_bytes": 2286090,
+      "compression_level": 1,
+      "compression_ratio": 8.468792567221763,
+      "elapsed_seconds": 0.01939279999351129,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 952.0820728499395
+    },
+    {
+      "chunk_frame_count": 1,
+      "compressed_bytes": 2351677,
+      "compression_level": 3,
+      "compression_ratio": 8.23260252151975,
+      "elapsed_seconds": 0.025919799983967096,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 712.3333215382563
+    },
+    {
+      "chunk_frame_count": 1,
+      "compressed_bytes": 2059928,
+      "compression_level": 6,
+      "compression_ratio": 9.39859160125985,
+      "elapsed_seconds": 0.08142729999963194,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 226.7487343467115
+    },
+    {
+      "chunk_frame_count": 1,
+      "compressed_bytes": 1925861,
+      "compression_level": 9,
+      "compression_ratio": 10.05286570526118,
+      "elapsed_seconds": 0.13030789999174885,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 141.6916182162067
+    },
+    {
+      "chunk_frame_count": 1,
+      "compressed_bytes": 1896945,
+      "compression_level": 12,
+      "compression_ratio": 10.20610613380989,
+      "elapsed_seconds": 0.28412480000406504,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 64.98389868086969
+    },
+    {
+      "chunk_frame_count": 8,
+      "compressed_bytes": 2251410,
+      "compression_level": 1,
+      "compression_ratio": 8.599243140964996,
+      "elapsed_seconds": 0.01898389999405481,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 972.5892583699215
+    },
+    {
+      "chunk_frame_count": 8,
+      "compressed_bytes": 2313289,
+      "compression_level": 3,
+      "compression_ratio": 8.369218891370684,
+      "elapsed_seconds": 0.030662200006190687,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 602.1595714742824
+    },
+    {
+      "chunk_frame_count": 8,
+      "compressed_bytes": 2027378,
+      "compression_level": 6,
+      "compression_ratio": 9.549488057974388,
+      "elapsed_seconds": 0.09303439999348484,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 198.45924966979436
+    },
+    {
+      "chunk_frame_count": 8,
+      "compressed_bytes": 1891966,
+      "compression_level": 9,
+      "compression_ratio": 10.232965074425227,
+      "elapsed_seconds": 0.12848380001378246,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 143.70323117938557
+    },
+    {
+      "chunk_frame_count": 8,
+      "compressed_bytes": 1862940,
+      "compression_level": 12,
+      "compression_ratio": 10.392402331798126,
+      "elapsed_seconds": 0.2904276000044774,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 63.573631486476756
+    },
+    {
+      "chunk_frame_count": 32,
+      "compressed_bytes": 2248777,
+      "compression_level": 1,
+      "compression_ratio": 8.609311639170981,
+      "elapsed_seconds": 0.018641100003151223,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 990.4746615309889
+    },
+    {
+      "chunk_frame_count": 32,
+      "compressed_bytes": 2310670,
+      "compression_level": 3,
+      "compression_ratio": 8.378704877806005,
+      "elapsed_seconds": 0.023825000011129305,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 774.9648355744681
+    },
+    {
+      "chunk_frame_count": 32,
+      "compressed_bytes": 2023117,
+      "compression_level": 6,
+      "compression_ratio": 9.56960076950567,
+      "elapsed_seconds": 0.07869969998137094,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 234.60746636336657
+    },
+    {
+      "chunk_frame_count": 32,
+      "compressed_bytes": 1888885,
+      "compression_level": 9,
+      "compression_ratio": 10.249656278704103,
+      "elapsed_seconds": 0.13004889999865554,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 141.97380536380854
+    },
+    {
+      "chunk_frame_count": 32,
+      "compressed_bytes": 1859216,
+      "compression_level": 12,
+      "compression_ratio": 10.413218259739589,
+      "elapsed_seconds": 0.31474629999138415,
+      "exact_round_trip_passed": true,
+      "throughput_mib_per_second": 58.66164976901061
+    }
+  ],
+  "schema_version": "round-073-real-frame-compression-benchmark-v1",
+  "scratch_files_written": false,
+  "source_run_id": "ff078d31000d4fa791ca97bd38144d6a",
+  "source_schema_version": "round-073-prospective-evidence-v8",
+  "stored_level_3_compressed_bytes": 2351677,
+  "synthetic_market_data_used": false
+}
