@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Mapping
 
+from .compute import ACCELERATOR_COMPUTE_BACKENDS
 from .financial_sanity import build_model_financial_sanity_report
 from .microstructure_data import MICROSTRUCTURE_SCHEMA_VERSION
 from .meta_label import validate_enabled_meta_label_policy
@@ -18,7 +19,6 @@ from .terminal_holdout_ledger import (
     terminal_result_fingerprint,
 )
 
-_ACCELERATOR_BACKENDS = frozenset({"cuda", "rocm", "xpu", "directml", "mps"})
 _LIVE_DATA_SOURCES = frozenset({"sqlite_market_data"})
 _MICROSTRUCTURE_SCHEMA = MICROSTRUCTURE_SCHEMA_VERSION
 
@@ -93,7 +93,7 @@ def _int_at_least(value: object, fallback: int, minimum: int) -> int:
 def _is_accelerated_backend(kind: object, device: object) -> bool:
     backend_kind = str(kind or "").strip().lower()
     backend_device = str(device or "").strip().lower()
-    return backend_kind in _ACCELERATOR_BACKENDS and backend_device not in {"", "cpu"}
+    return backend_kind in ACCELERATOR_COMPUTE_BACKENDS and backend_device not in {"", "cpu"}
 
 
 def _walk_forward_gate_passed(raw: object) -> bool:
