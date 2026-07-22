@@ -98,8 +98,13 @@ Execution cost is symbol-specific where market data exists:
   restores provider event time, retains backward audit for v1-v3, and enforces
   an absolute DuckDB-plus-WAL cap with a 512 MiB stopping reserve. Its 30-second
   and three-minute public-feed probes passed fresh-process audit. Those probes
-  authorize only a v4 one-hour qualification attempt; they provide no feature,
-  model, execution, or trading evidence.
+  authorized one v4 one-hour qualification attempt. Run
+  `ec6d54470ef04b0baddc73fd0e27fd5b` passed the in-process and fresh-process
+  replay gates, authorizing bounded feature-pipeline diagnostics only. Its
+  checkpoint profile transferred about 56,293.5 MiB of process writes for
+  629.5 MiB of physical growth. This is not a physical SSD-wear measurement,
+  but it blocks v4 multi-day capture until a bounded WAL/checkpoint policy is
+  frozen and measured on the same real feed.
 - `data-health` is the pre-training database gate. It emits machine-readable
   row counts, UTC spans, expected rows, coverage ratio, gap count,
   archive-status counts, and checksum-status counts, and it exits nonzero when

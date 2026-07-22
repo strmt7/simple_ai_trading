@@ -1,10 +1,10 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** feed qualification passed under capture contract v2. Compact v4
-storage has passed 30-second and three-minute live probes, but its required
-one-hour qualification has not run. No feature comparison, model, replay, or
-profit result exists. This round grants no AI, leverage, paper, testnet, or
-live authority.
+**Status:** capture contract v4 passed its one-hour feed and replay
+qualification. Its default checkpoint policy failed the long-capture storage
+efficiency gate, so only a bounded feature-pipeline diagnostic is authorized.
+No model, replay, or profit result exists. This round grants no AI, leverage,
+paper, testnet, or live authority.
 
 ## Why this is different
 
@@ -62,8 +62,14 @@ flowchart LR
   Contract v4 restores provider event time to the compact link and adds an
   absolute DuckDB-plus-WAL cap. Live probes `7ffd4edbd2654b5997704c988802580d`
   and `ec114dd2c28d4641b0158f4bd0b32c72` passed fresh-process replay. They
-  authorize only one v4 one-hour qualification attempt, not feature or model
-  evaluation. See `round-073-v4-probe-evidence-2026-07-22.json`.
+  authorized one v4 one-hour qualification attempt. Run
+  `ec6d54470ef04b0baddc73fd0e27fd5b` then captured 3,181,236 messages and
+  passed both in-process and fresh-process replay with zero audit errors. Its
+  measured process write transfer was about 56,293.5 MiB for 629.5 MiB of
+  physical database growth. That metric is not an SSD-wear measurement, but it
+  rejects the observed checkpoint policy for multi-day use. Feature-pipeline
+  diagnostics are authorized; long capture and model evaluation remain closed.
+  See `round-073-v4-capture-qualification-2026-07-22.json`.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

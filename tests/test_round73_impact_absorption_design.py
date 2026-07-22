@@ -38,6 +38,9 @@ V3_PROBE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V4_PROBE_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v4-probe-evidence-2026-07-22.json"
 )
+V4_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v4-capture-qualification-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -211,6 +214,30 @@ def test_round73_v4_probe_authorizes_only_one_hour_requalification() -> None:
     assert authorization["round_073_feature_construction"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v4_qualification_separates_feed_and_storage_decisions() -> None:
+    evidence = json.loads(V4_QUALIFICATION_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["attempt_evidence_combined"] is False
+    assert evidence["run"]["qualification_passed"] is True
+    assert evidence["independent_replay_audit"]["passed"] is True
+    assert evidence["gate_reconstruction"]["all_three_symbols_passed"] is True
+    storage = evidence["storage_efficiency_observation"]
+    assert storage["decision"] == "failed_for_long_capture"
+    assert storage["mechanism_status"] == "candidate_not_proven"
+    assert storage["physical_growth_bytes"] > 0
+    semantics = evidence["market_session_semantics"]
+    assert semantics["binance_spot_and_perpetual_formal_daily_close"] is False
+    assert semantics["listed_etf_context_included"] is False
+    authorization = evidence["authorization"]
+    assert authorization["round_073_feature_construction"] is True
+    assert authorization["v4_long_capture"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["profitability_claim"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

@@ -72,10 +72,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   during terminal latency reporting and is development-only. Contract v4 adds
   causal provider event time and an 8 GiB default DuckDB-plus-WAL cap. Its
   30-second and three-minute public-feed probes passed fresh-process replay and
-  authorize only a v4 one-hour qualification attempt. Read
+  authorized one v4 one-hour qualification attempt. Run
+  `ec6d54470ef04b0baddc73fd0e27fd5b` passed with 3,181,236 messages and a
+  separate replay audit, so a bounded feature-pipeline diagnostic is now open.
+  The run also measured about 56,293.5 MiB of process write transfer for 629.5
+  MiB of physical growth; this is not an SSD-wear metric, but it fails the
+  long-capture storage-efficiency gate. Read
   `round-073-capture-contract-v4.json` and
-  `round-073-v4-probe-evidence-2026-07-22.json`; do not start a long capture or
-  evaluate a model yet. Never pool disconnected attempts.
+  `round-073-v4-capture-qualification-2026-07-22.json`; do not start a long
+  capture or evaluate a model yet. Never pool disconnected attempts.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.
