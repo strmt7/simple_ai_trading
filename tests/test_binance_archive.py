@@ -192,6 +192,32 @@ def test_archive_listing_pairs_checksum_across_pagination_boundary() -> None:
     assert item.checksum_etag == "b" * 32
 
 
+def test_archive_listing_rejects_unrelated_and_malformed_zip_objects() -> None:
+    prefix = "data/futures/um/monthly/aggTrades/BTCUSDT/"
+    expected_key = f"{prefix}BTCUSDT-aggTrades-2026-06.zip"
+    html = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+      <IsTruncated>false</IsTruncated>
+      <Contents><Key>{expected_key}</Key><Size>10</Size></Contents>
+      <Contents><Key>{prefix}BTCUSDT-aggTrades-2026-99.zip</Key><Size>20</Size></Contents>
+      <Contents><Key>{prefix}part-00000-unrelated.zip</Key><Size>30</Size></Contents>
+      <Contents><Key>{prefix}ETHUSDT-aggTrades-2026-06.zip</Key><Size>40</Size></Contents>
+    </ListBucketResult>"""
+
+    items = list_archive_items(
+        symbol="BTCUSDT",
+        interval="1s",
+        market_type="futures",
+        cadence="monthly",
+        data_type="aggTrades",
+        html_loader=lambda _url: html,
+    )
+
+    assert [(item.key, item.period, item.size_bytes) for item in items] == [
+        (expected_key, "2026-06", 10)
+    ]
+
+
 def test_archive_period_filtering_supports_daily_and_monthly_windows() -> None:
     urls = [
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-05-31.zip",
@@ -221,6 +247,17 @@ def test_archive_period_window_validation_rejects_bad_bounds() -> None:
         assert "start_period" in str(exc)
     else:  # pragma: no cover - defensive
         raise AssertionError("invalid start period should fail")
+
+    for invalid_period in ("2024-13", "2024-02-30"):
+        try:
+            validate_archive_period_window(
+                start_period=invalid_period,
+                end_period=None,
+            )
+        except ValueError as exc:
+            assert "start_period" in str(exc)
+        else:  # pragma: no cover - defensive
+            raise AssertionError("invalid calendar period should fail")
 
     try:
         validate_archive_period_window(start_period="2024-07-01", end_period="2024-06-30")
@@ -353,6 +390,56 @@ def test_ingest_agg_trades_archive_aggregates_real_trades_to_one_second_candles(
     assert candles[3].trade_count == 3
     assert sources == ["binance_public_archive_aggTrades"]
     assert raw_sources == ["binance_public_archive_aggTrades"]
+
+
+def test_spot_agg_trades_archive_normalizes_documented_microsecond_timestamps(
+    tmp_path, monkeypatch
+) -> None:
+    zip_path = tmp_path / "ETHUSDT-aggTrades-2026-01-01.zip"
+    first_microsecond = 1_767_225_600_123_456
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr(
+            "ETHUSDT-aggTrades-2026-01-01.csv",
+            "\n".join(
+                [
+                    "agg_trade_id,price,quantity,first_trade_id,last_trade_id,transact_time,is_buyer_maker,is_best_match",
+                    f"1,3500,0.2,10,11,{first_microsecond},false,true",
+                    f"2,3501,0.1,12,12,{first_microsecond + 800000},true,true",
+                ]
+            ),
+        )
+
+    monkeypatch.setattr(
+        binance_archive,
+        "_download_to_temp",
+        lambda *_args, **_kwargs: (zip_path, zip_path.stat().st_size, "sha"),
+    )
+    monkeypatch.setattr(
+        binance_archive,
+        "_fetch_archive_checksum",
+        lambda _url, *, timeout: None,
+    )
+
+    with MarketDataStore(tmp_path / "market.sqlite") as store:
+        result = ingest_archive_url(
+            store,
+            url="https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2026-01-01.zip",
+            symbol="ETHUSDT",
+            interval="1s",
+            market_type="spot",
+            data_type="aggTrades",
+            period="2026-01-01",
+            fill_period_edges=False,
+            store_raw_agg_trades=False,
+        )
+        candles = store.fetch_candles("ETHUSDT", "spot", "1s")
+
+    assert result.status == "complete"
+    assert result.rows_read == 1
+    assert len(candles) == 1
+    assert candles[0].open_time == (first_microsecond // 1_000_000) * 1_000
+    assert candles[0].trade_count == 3
+    assert candles[0].taker_buy_base_volume == 0.2
 
 
 def test_ingest_agg_trades_archive_can_skip_raw_trade_duplication(tmp_path, monkeypatch) -> None:
