@@ -70,6 +70,17 @@ Execution cost is symbol-specific where market data exists:
   a deterministic adapter copy; the immutable raw capture remains unchanged.
   Captures are capped at 23 hours because Binance disconnects every WebSocket at
   24 hours; multi-day evidence must use separately hashed capture segments.
+- `impact-capture` is the stricter prospective Round 73 path for BTCUSDT,
+  ETHUSDT, and SOLUSDT. It stores exact public USD-M WebSocket and REST bytes,
+  typed events, synchronized top-20 books, receipt clocks, rate-limit evidence,
+  and a frame hash chain in `data/microstructure.duckdb`. Transport recovery
+  terminalizes the affected attempt, applies bounded backoff, and starts a new
+  run from fresh snapshots; disconnected fragments are never pooled into a
+  qualification. Probe mode defaults to 30 seconds. Qualification mode defaults
+  to one uninterrupted hour and exits nonzero unless every frozen feed and
+  integrity gate passes. `impact-audit` replays the stored frames and verifies
+  their raw-to-typed links without network calls. Neither command authenticates,
+  places orders, or supplies model, P&L, or profitability evidence.
 - `data-health` is the pre-training database gate. It emits machine-readable
   row counts, UTC spans, expected rows, coverage ratio, gap count,
   archive-status counts, and checksum-status counts, and it exits nonzero when

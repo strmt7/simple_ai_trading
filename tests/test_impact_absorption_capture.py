@@ -130,6 +130,10 @@ def test_capture_config_separates_bounded_probe_from_hour_qualification() -> Non
         ImpactCaptureConfig(queue_capacity_messages=65_537).validate()
     with pytest.raises(ValueError, match="maximum reconnects"):
         ImpactCaptureConfig(maximum_reconnects=7).validate()
+    with pytest.raises(ValueError, match="threads must be between 1 and 8"):
+        ImpactCaptureConfig(duckdb_threads=0).validate()
+    with pytest.raises(ValueError, match="positive integer followed by a byte unit"):
+        ImpactCaptureConfig(duckdb_memory_limit="unbounded").validate()
 
 
 def test_stream_topology_is_three_symbols_only_and_uses_specific_liquidations() -> None:

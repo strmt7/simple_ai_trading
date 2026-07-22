@@ -169,13 +169,19 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             "archive-sync",
             "tick-archive-sync",
             "microstructure-capture",
+            "impact-capture",
             "polymarket-record",
         ),
     ),
     (
         "Data",
         "Integrity and outcomes",
-        ("data-health", "tick-corpus-audit", "polymarket-resolve"),
+        (
+            "data-health",
+            "tick-corpus-audit",
+            "impact-audit",
+            "polymarket-resolve",
+        ),
     ),
     (
         "System",
