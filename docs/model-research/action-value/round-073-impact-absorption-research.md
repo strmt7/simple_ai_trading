@@ -101,8 +101,11 @@ flowchart LR
   before its first run. It admits at most 168 one-hour segments per invocation,
   uses one DuckDB writer lease, journals each terminal supervisor result,
   recovers qualified unindexed v8 runs before capture, and defers exact replay
-  until capture stops. Unit and parity tests pass; live runner validation is
-  still pending, so multi-segment collection is not yet authorized.
+  until capture stops. Unit and parity tests pass. Recovery-only batch
+  `6d8c31559bb044b3a83fdf9e771dda4a` then passed its real lease, discovery,
+  journal, release, and independent audit paths without database growth. This
+  authorizes one live runner segment, not a multi-segment collection. See
+  `round-073-rotation-recovery-validation-2026-07-22.json`.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

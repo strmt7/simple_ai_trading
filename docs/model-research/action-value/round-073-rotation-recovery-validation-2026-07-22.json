@@ -1,0 +1,62 @@
+{
+  "schema_version": "round-073-rotation-recovery-validation-v1",
+  "rotation_contract_sha256": "8f20a25adfc2d33a43d0a8acd0ad55361956d4443e85cc7b1740f882bfc5b9ea",
+  "implementation_commit": "a8e7d63",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "invocation": {
+    "requested_capture_segments": 0,
+    "recovery_only": true,
+    "memory_limit": "2GB",
+    "database_threads": 2
+  },
+  "batch": {
+    "batch_id": "6d8c31559bb044b3a83fdf9e771dda4a",
+    "status": "completed",
+    "started_wall_ns": 1784759266993287300,
+    "ended_wall_ns": 1784759267662462800,
+    "recovered_segment_count": 0,
+    "qualified_capture_segment_count": 0,
+    "indexed_segment_count": 0,
+    "failed_phase": "",
+    "error": "",
+    "report_sha256": "185f17d69783a557efa20dece2b4ae7f7e875cceb199de139c227171a670a775"
+  },
+  "independent_batch_audit": {
+    "passed": true,
+    "errors": [],
+    "status": "completed",
+    "segment_count": 0,
+    "deeply_audited_manifest_count": 0,
+    "report_sha256": "185f17d69783a557efa20dece2b4ae7f7e875cceb199de139c227171a670a775"
+  },
+  "post_run_state": {
+    "active_lease_count": 0,
+    "database_file_bytes_before": 5388382208,
+    "database_file_bytes_after": 5388382208,
+    "database_wal_present_after": false,
+    "physical_growth_bytes": 0,
+    "ssd_or_nand_wear_inferred": false
+  },
+  "critical_analysis": {
+    "lease_path_validated": true,
+    "pending_discovery_path_validated": true,
+    "terminal_journal_path_validated": true,
+    "lease_release_validated": true,
+    "live_capture_path_validated": false,
+    "index_worker_responsiveness_live_validated": false,
+    "profitability_evidence": false
+  },
+  "authorization": {
+    "one_live_runner_segment": true,
+    "multi_segment_collection": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "leverage_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "artifact_sha256": "8e2a47509d718ce2828813b9de6407772818b1c428fcb6ac8784edd32582bfc9"
+}
