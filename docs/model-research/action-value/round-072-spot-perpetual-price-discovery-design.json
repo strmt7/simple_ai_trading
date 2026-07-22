@@ -1,0 +1,351 @@
+{
+  "schema_version": "round-072-spot-perpetual-price-discovery-design-v1",
+  "round": 72,
+  "design_sha256": "505818f74cdd9484f66b1a504de821d4d366ec35c7d7bf978ffa15d613104812",
+  "phase": "multi_year_one_second_spot_perpetual_price_discovery_viability",
+  "research_question": "Does causal Binance spot order flow add stable calibrated predictive skill for post-latency BTCUSDT, ETHUSDT, and SOLUSDT perpetual transaction-price direction and magnitude beyond the same shallow model using perpetual flow alone?",
+  "governance": {
+    "freeze_before_archive_download": true,
+    "profitability_claim_permitted": false,
+    "execution_or_fill_claim_permitted": false,
+    "trading_authority_permitted": false,
+    "testnet_or_live_authority_permitted": false,
+    "position_sizing_or_leverage_change_permitted": false,
+    "language_model_price_prediction_permitted": false,
+    "posthoc_feature_horizon_threshold_gate_or_sample_change_permitted": false,
+    "positive_pnl_may_rescue_predictive_failure": false,
+    "full_history_ingestion_requires_this_gate": true
+  },
+  "research_basis": [
+    {
+      "title": "Price discovery in bitcoin spot and futures markets",
+      "url": "https://doi.org/10.1016/j.jimonfin.2025.103415",
+      "adapted_elements": [
+        "one-second lead-lag scale",
+        "asynchronous transaction awareness",
+        "transaction-size conditioning",
+        "separate spot and futures market roles"
+      ],
+      "non_equivalence": "The paper studies 20 spot and 26 futures markets and reports market-level price discovery. Round 72 studies only Binance spot and USD-M perpetual flow for BTC, ETH, and SOL and must establish its own predictive evidence."
+    },
+    {
+      "title": "The Role of Binance in Bitcoin Volatility Transmission",
+      "url": "https://arxiv.org/abs/2107.00298",
+      "adapted_elements": [
+        "perpetual-led information transmission hypothesis",
+        "traditional-market-hours state interaction as a later exogenous question"
+      ],
+      "non_equivalence": "Volatility transmission is not directional return predictability or executable profit."
+    },
+    {
+      "title": "Exploring Microstructural Dynamics in Cryptocurrency Limit Order Books: Better Inputs Matter More Than Stacking Another Hidden Layer",
+      "url": "https://arxiv.org/abs/2506.05764",
+      "adapted_elements": [
+        "input-layer ablation before deeper architecture",
+        "simple-model latency baseline"
+      ],
+      "non_equivalence": "Round 72 uses aggregate trades rather than a reconstructed limit order book."
+    },
+    {
+      "title": "The Quarter-Hour Effect: Periodic Algorithmic Trading and Return Predictability in Cryptocurrency Futures",
+      "url": "https://arxiv.org/abs/2607.09426",
+      "adapted_elements": [
+        "precommitted causal one-minute, five-minute, and fifteen-minute clock-phase features"
+      ],
+      "non_equivalence": "Clock phase is a feature hypothesis, not evidence that the reported effect reproduces in this corpus or at these horizons."
+    }
+  ],
+  "source_contract": {
+    "provider": "Binance public data archive",
+    "provider_repository": "https://github.com/binance/binance-public-data",
+    "truth_basis": "official_s3_zip_and_checksum_object_listing_metadata_plus_verified_sha256_sidecars",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "market_types": [
+      "spot",
+      "futures"
+    ],
+    "futures_product": "USD-M perpetual",
+    "data_type": "aggTrades",
+    "archive_cadence": "daily",
+    "inventory_path": "docs/model-research/action-value/round-072-spot-perpetual-inventory.json",
+    "inventory_file_sha256": "055b5c5a3d975a092bae0c27253757c3be39535945d0aa6caaecdf31e9343b1b",
+    "inventory_canonical_sha256": "e8c505132716c68ad753cbdd93b23094b778d9067c8a6c9381fad0e20cdd662c",
+    "sample_months": [
+      "2020-10",
+      "2026-06"
+    ],
+    "complete_months": 69,
+    "selected_days_per_month": 1,
+    "selected_files": 414,
+    "selected_compressed_bytes": 5964131852,
+    "selection_seed": "round72-price-discovery-v1-20260722",
+    "selection_rule": "For each complete six-stream calendar month choose the UTC day with minimum SHA-256 of seed NUL month NUL day.",
+    "price_or_return_data_used_for_selection": false,
+    "all_six_streams_required_for_every_selected_day": true,
+    "zip_and_checksum_object_version_metadata_required": true,
+    "archive_sha256_must_equal_sidecar_sha256": true,
+    "official_object_size_must_match": true,
+    "retained_archive_policy": "discard_after_verified_transactional_ingestion",
+    "raw_aggregate_trades_retained": false,
+    "derived_one_second_rows_retained": true
+  },
+  "source_semantics": {
+    "aggregate_trade_definition": "one archive row aggregates executions belonging to one taker order at one price",
+    "timestamp": "exchange transaction time",
+    "spot_timestamp_units": "milliseconds before 2025-01-01 and microseconds from 2025-01-01 onward, normalized by integer floor to milliseconds",
+    "futures_timestamp_units": "milliseconds",
+    "aggressor_sign": "is_buyer_maker false means buyer-initiated and true means seller-initiated",
+    "aggregate_trade_count": "archive rows",
+    "constituent_trade_count": "last_trade_id minus first_trade_id plus one",
+    "best_match": "preserved for spot quality audit and never used as a fabricated futures field",
+    "event_or_receive_timestamp_available": false,
+    "quote_or_midprice_available": false,
+    "executable_price_claim_permitted": false
+  },
+  "ingestion_contract": {
+    "warehouse": "single DuckDB microstructure warehouse",
+    "transaction_scope": "one six-stream selected day",
+    "maximum_memory": "4GB",
+    "streaming_downloads": true,
+    "maximum_simultaneous_archives": 1,
+    "temporary_uncompressed_csv_permitted": false,
+    "invalid_numeric_or_schema_row_policy": "fatal",
+    "duplicate_or_regressing_aggregate_trade_id_policy": "fatal",
+    "transaction_time_regression_policy": "fatal",
+    "out_of_utc_day_row_policy": "fatal",
+    "zip_member_count": 1,
+    "zip_path_traversal_policy": "fatal",
+    "zip_bomb_bounds_required": true,
+    "network_retry": "bounded exponential backoff with heartbeat and resumable verified manifests",
+    "database_write": "atomic replacement of a day only after both markets for all three symbols pass verification",
+    "crash_recovery": "orphan rows cannot become current and are reconciled before resume"
+  },
+  "one_second_contract": {
+    "calendar": "UTC",
+    "bucket": "floor exchange transaction time to one second",
+    "within_second_order": "exchange transaction time then aggregate trade ID",
+    "stored_fields_per_market": [
+      "open high low close transaction price",
+      "base and quote volume",
+      "aggressive buy and sell quote volume",
+      "aggregate and constituent trade counts",
+      "maximum aggregate-trade quote notional",
+      "sum of squared aggregate-trade quote notional",
+      "last observed trade age"
+    ],
+    "empty_second_flow": "zero",
+    "empty_second_price": "causal forward carry only after a prior observed trade in the same UTC day",
+    "backfill_before_first_trade": false,
+    "cross_day_carry": false,
+    "future_interpolation": false,
+    "feature_anchor_requires_both_markets_age_at_most_seconds": 2,
+    "target_entry_and_exit_require_an_observed_perpetual_trade_in_exact_second": true,
+    "day_boundary_windows_permitted": false
+  },
+  "feature_contract": {
+    "availability": "all features use only completed seconds at or before the anchor",
+    "windows_seconds": [
+      1,
+      5,
+      15,
+      30,
+      60,
+      300,
+      900
+    ],
+    "perpetual_only": [
+      "log returns and path variation",
+      "realized variance and range",
+      "signed quote flow and taker imbalance",
+      "quote volume and aggregate-order intensity",
+      "mean and maximum aggregate-order quote notional",
+      "aggregate-order notional concentration",
+      "constituent executions per aggregate order",
+      "zero-flow fraction and last-trade age",
+      "causal changes versus the immediately preceding equal window"
+    ],
+    "spot_perpetual": [
+      "all same-asset spot analogues",
+      "log perpetual-to-spot transaction-price basis and causal changes",
+      "spot-minus-perpetual returns",
+      "signed-flow agreement and disagreement",
+      "relative quote volume and order intensity",
+      "causal spot-flow and perpetual-flow lag interactions at 1, 5, 15, and 30 seconds"
+    ],
+    "cross_asset_optional": [
+      "causal BTC ETH SOL return and signed-flow means",
+      "cross-asset return and flow dispersion",
+      "cross-asset directional agreement",
+      "BTC leader features for ETH and SOL",
+      "ETH and SOL peer features for BTC"
+    ],
+    "clock_phase": [
+      "UTC hour sine and cosine",
+      "UTC weekday sine and cosine",
+      "second within one-minute sine and cosine",
+      "second within five-minute sine and cosine",
+      "second within fifteen-minute sine and cosine"
+    ],
+    "crypto_market_close_feature": false,
+    "fixed_low_liquidity_hours_feature": false,
+    "listed_etf_session_feature": false,
+    "large_flow_identity_inference_permitted": false,
+    "large_flow_feature_meaning": "auditable aggregate-order notional and concentration proxy only",
+    "normalization": "training-fold robust median and interquartile range for linear controls; none for trees",
+    "nonfinite_policy": "fatal in research and abstain in any future live adapter"
+  },
+  "target_contract": {
+    "prediction_venue": "Binance USD-M perpetual transaction tape",
+    "decision_availability": "the anchor second is complete before inference begins",
+    "primary_entry_delay_seconds": 2,
+    "mandatory_stress_entry_delay_seconds": 5,
+    "horizons_seconds": [
+      30,
+      60,
+      300
+    ],
+    "entry_reference": "perpetual one-second transaction VWAP in the exact delayed-entry second",
+    "exit_reference": "perpetual one-second transaction VWAP in the exact delayed-entry-plus-horizon second",
+    "continuous_target": "10000 times log exit VWAP over entry VWAP",
+    "direction_target": "positive continuous target versus non-positive continuous target",
+    "zero_target_policy": "non-positive class; never silently removed",
+    "anchor_spacing_seconds": 30,
+    "overlap_in_inference": "UTC-day blocks preserve dependence from overlapping horizons",
+    "target_is_executable_fill": false,
+    "target_is_profit_or_net_return": false
+  },
+  "rolling_split_contract": {
+    "ordered_unit": "selected calendar month",
+    "minimum_training_months": 24,
+    "tuning_months": 6,
+    "test_months": 6,
+    "step_months": 6,
+    "training": "expanding",
+    "fold_count": 6,
+    "development_and_test_last_month": "2026-03",
+    "terminal_holdout_months": [
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "terminal_holdout_may_be_read_before_primary_gate_passes": false,
+    "symbol_pooling_permitted": false,
+    "horizon_pooling_permitted": false,
+    "tuning_rows_may_select_threshold_or_feature_layer": false,
+    "test_rows_may_control_training_or_calibration": false
+  },
+  "model_contract": {
+    "model_hierarchy": [
+      "training-fold prevalence and no-change controls",
+      "fixed shallow LightGBM using perpetual-only features",
+      "same fixed shallow LightGBM using spot-perpetual features",
+      "same fixed shallow LightGBM using optional cross-asset features"
+    ],
+    "heads": [
+      "binary direction probability",
+      "continuous post-latency transaction return"
+    ],
+    "binary_calibration": "single temperature fitted on tuning months and retained only when tuning log loss improves",
+    "continuous_calibration": "single affine slope fitted on tuning months without intercept and retained only when tuning MSE improves",
+    "objective_binary": "binary_logloss",
+    "objective_continuous": "huber",
+    "maximum_depth": 4,
+    "maximum_leaves": 15,
+    "learning_rate": 0.03,
+    "maximum_boosting_iterations": 256,
+    "early_stopping_rounds": 30,
+    "minimum_data_in_leaf": 500,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_frequency": 1,
+    "compute_backend": "OpenCL on a capability-tested GPU when explicitly selected, otherwise capability-tested auto fallback to CPU",
+    "seed": 20260722,
+    "serialized_artifact_sha256_required": true,
+    "reload_prediction_identity_required": true,
+    "deep_neural_or_transformer_model_permitted": false,
+    "reason": "The feature-layer hypothesis must beat the simple fixed control before architecture capacity is increased."
+  },
+  "evaluation_contract": {
+    "binary_primary_metrics": [
+      "log_loss",
+      "brier_score"
+    ],
+    "binary_secondary_metrics": [
+      "accuracy",
+      "balanced_accuracy",
+      "Matthews_correlation_coefficient",
+      "ROC_AUC",
+      "precision_recall_AUC",
+      "expected_calibration_error",
+      "positive_prevalence",
+      "mean_predicted_probability"
+    ],
+    "continuous_primary_metrics": [
+      "mean_squared_error",
+      "mean_absolute_error"
+    ],
+    "continuous_secondary_metrics": [
+      "Spearman_rank_correlation",
+      "sign_accuracy",
+      "mean_target_bps",
+      "mean_prediction_bps"
+    ],
+    "primary_feature_comparison": "spot_perpetual versus perpetual_only with identical model and split",
+    "optional_feature_comparison": "cross_asset versus spot_perpetual with identical model and split",
+    "uninformed_comparisons": [
+      "direction prevalence",
+      "zero continuous return",
+      "training-fold mean continuous return"
+    ],
+    "inference": "paired UTC-day blocked sign permutation for loss differences and UTC-day block bootstrap for metric lower bounds",
+    "permutation_draws": 10000,
+    "bootstrap_draws": 10000,
+    "multiple_testing": "Benjamini-Hochberg false discovery rate across all primary symbol-horizon-head comparisons",
+    "maximum_q_value": 0.05,
+    "minimum_relative_log_loss_improvement_vs_perpetual_only": 0.001,
+    "minimum_relative_brier_improvement_vs_perpetual_only": 0.001,
+    "minimum_relative_log_loss_improvement_vs_prevalence": 0.002,
+    "minimum_relative_brier_improvement_vs_prevalence": 0.002,
+    "minimum_continuous_mse_skill_vs_zero": 0.001,
+    "minimum_positive_proper_score_folds": 4,
+    "required_folds": 6,
+    "balanced_accuracy_day_block_lower_95_must_exceed": 0.5,
+    "matthews_day_block_lower_95_must_exceed": 0.0,
+    "spearman_day_block_lower_95_must_exceed": 0.0,
+    "raw_accuracy_must_exceed_majority_prevalence": true,
+    "five_second_delay_must_retain_positive_log_loss_and_brier_skill": true,
+    "all_symbols_and_horizons_must_pass": true,
+    "primary_scores_must_be_finite": true
+  },
+  "stopping_rule": {
+    "if_primary_gate_passes": "Open the three-month sampled terminal holdout with the same frozen artifacts and gate. Only a second pass may authorize full common-history one-second ingestion and a separately frozen exact-BBO after-cost economic replay.",
+    "if_primary_gate_fails": "Reject this spot-perpetual directional feature family. Do not open the terminal holdout, download the remaining roughly 180 GB common corpus, run PnL optimization, add leverage, or add a larger model without materially new exogenous evidence.",
+    "if_cross_asset_optional_gate_fails": "Retain the spot-perpetual result without the cross-asset layer; optional failure cannot invalidate a primary pass or be hidden.",
+    "additional_unfrozen_search_after_result_permitted": false
+  },
+  "later_economic_replay_requirements": [
+    "exact point-in-time bid and ask rather than aggregate-trade VWAP",
+    "account-specific maker and taker fees queried at run time",
+    "observed feed decision submission acknowledgement and fill latency distributions",
+    "queue and partial-fill uncertainty for passive orders",
+    "symbol-specific spread depth impact and capacity",
+    "funding only for perpetual positions and at actual dynamic funding times",
+    "outage reconnect snapshot reconciliation and observation cooldown",
+    "walk-forward after-cost net expectancy lower bound above zero",
+    "bounded drawdown expected shortfall concentration and no liquidation",
+    "no leverage promotion until unlevered edge passes"
+  ],
+  "limitations": [
+    "One sampled day per month is a resource-bounded viability panel, not the final full-history result.",
+    "Aggregate trades have transaction timestamps but no local receive time, bid, ask, queue position, cancellation flow, or executable fill.",
+    "A directionally predictive transaction-price model can still be untradeable after spread, fees, latency, impact, and adverse selection.",
+    "Binance spot and perpetual crypto have no formal daily close; UTC clock phase is periodic context, not a market session boundary.",
+    "Listed ETF and CME sessions require separate real timestamped exogenous data and are not fabricated in this corpus.",
+    "Large aggregate-order notional is not proof of identity, institution, manipulation, or informed trading.",
+    "A successful predictive screen is not evidence of profitability, AI uplift, or safe leverage."
+  ]
+}
