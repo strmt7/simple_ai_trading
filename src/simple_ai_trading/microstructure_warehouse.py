@@ -48,7 +48,9 @@ _DAY_MS = 86_400_000
 ProgressCallback = Callable[[str, int, int | None], None]
 
 
-def _resilient_http_session() -> requests.Session:
+def create_archive_http_session() -> requests.Session:
+    """Create one retry-enabled session for a bounded archive-ingestion run."""
+
     retry = Retry(
         total=5,
         connect=5,
@@ -2214,7 +2216,7 @@ class MicrostructureWarehouse:
         )
         if has_version_metadata and not complete_version_metadata:
             raise ValueError("official archive object-version metadata is incomplete")
-        active_session = session or _resilient_http_session()
+        active_session = session or create_archive_http_session()
         own_session = session is None
         csv_path: Path | None = None
         archive_path = _safe_archive_path(
@@ -3667,5 +3669,6 @@ __all__ = [
     "SUPPORTED_TICK_ARCHIVES",
     "TICK_WAREHOUSE_SCHEMA_VERSION",
     "TickArchiveIngestResult",
+    "create_archive_http_session",
     "official_tick_archive_url",
 ]
