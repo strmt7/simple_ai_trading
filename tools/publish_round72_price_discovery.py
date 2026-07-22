@@ -46,6 +46,7 @@ HEADS = ("binary_direction", "continuous_return_bps")
 FOLDS = tuple(range(1, 7))
 REPORT_SCHEMA = "round-072-price-discovery-evaluation-v1"
 PUBLICATION_SCHEMA = "round-072-price-discovery-publication-v1"
+CHART_RENDERER_PATH = "tools/publish_round52_executable_support_hurdle.py"
 REPORT_FILE_SHA256 = "eb0723856bcc905698ba39da7e381e67eb61bd6551e1374962abc25d663acec0"
 REPORT_SHA256 = "65900fa58299d56fffa04206dcff83a343e9b005ca71f654efe4e939508d3e3d"
 METRICS_FILE_SHA256 = "42bccfc5cf5a6408e8909695eac060306a281c37ab3f57d928a2a048333ac3bf"
@@ -488,6 +489,7 @@ def _binary_skill_svg(rows: Sequence[Mapping[str, object]]) -> str:
         y_label="Relative log-loss improvement (%)",
         tick_decimals=2,
         value_decimals=3,
+        avoid_value_label_collisions=True,
     )
 
 
@@ -527,6 +529,7 @@ def _continuous_skill_svg(rows: Sequence[Mapping[str, object]]) -> str:
         y_label="Relative MSE skill vs zero (%)",
         tick_decimals=2,
         value_decimals=3,
+        avoid_value_label_collisions=True,
     )
 
 
@@ -558,6 +561,7 @@ def _increment_svg(rows: Sequence[Mapping[str, object]]) -> str:
         y_label="Incremental loss improvement (%)",
         tick_decimals=2,
         value_decimals=3,
+        avoid_value_label_collisions=True,
     )
 
 
@@ -597,6 +601,7 @@ def _confidence_svg(rows: Sequence[Mapping[str, object]]) -> str:
         y_label="Lower-bound margin (percentage points)",
         tick_decimals=1,
         value_decimals=2,
+        avoid_value_label_collisions=True,
     )
 
 
@@ -845,6 +850,10 @@ def publish(
         "publisher_path": "tools/publish_round72_price_discovery.py",
         "publisher_git_blob_oid": _git(
             "rev-parse", "HEAD:tools/publish_round72_price_discovery.py"
+        ),
+        "chart_renderer_path": CHART_RENDERER_PATH,
+        "chart_renderer_git_blob_oid": _git(
+            "rev-parse", f"HEAD:{CHART_RENDERER_PATH}"
         ),
         "source": {
             "execution_commit": EXECUTION_COMMIT,

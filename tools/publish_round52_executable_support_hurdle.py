@@ -551,6 +551,7 @@ def _bar_svg(
     y_label: str,
     tick_decimals: int = 2,
     value_decimals: int = 3,
+    avoid_value_label_collisions: bool = False,
 ) -> str:
     width, height = 1200, 700
     left, right, top, bottom = 100, 50, 135, 125
@@ -576,20 +577,39 @@ def _bar_svg(
     group_width = plot_w / len(groups)
     for group_index, (label, bars) in enumerate(groups):
         slot = group_width / (len(bars) + 1)
+        placed_labels: list[tuple[float, float, float]] = []
         for bar_index, (_series, value, color) in enumerate(bars, start=1):
             if value is None:
                 continue
+            numeric_value = float(value)
             x = left + group_index * group_width + bar_index * slot - slot * 0.34
             zero_y = y(0.0)
-            value_y = y(float(value))
+            value_y = y(numeric_value)
             height_px = abs(zero_y - value_y)
             top_y = min(zero_y, value_y)
             lines.append(
                 f'<rect x="{x:.1f}" y="{top_y:.1f}" width="{slot * 0.68:.1f}" height="{max(1.0, height_px):.1f}" rx="3" fill="{color}"/>'
             )
-            label_y = value_y - 8 if value >= 0 else value_y + 18
+            label_text = f"{numeric_value:.{value_decimals}f}"
+            label_x = x + slot * 0.34
+            label_y = value_y - 8 if numeric_value >= 0 else value_y + 18
+            label_width = max(24.0, len(label_text) * 6.8)
+            if avoid_value_label_collisions:
+                direction = -1.0 if numeric_value >= 0 else 1.0
+                for _attempt in range(len(placed_labels) + 1):
+                    collision = any(
+                        abs(label_x - prior_x)
+                        < (label_width + prior_width) / 2.0 + 4.0
+                        and abs(label_y - prior_y) < 14.0
+                        for prior_x, prior_y, prior_width in placed_labels
+                    )
+                    if not collision:
+                        break
+                    label_y += direction * 14.0
+                label_y = min(max(label_y, top + 12.0), top + plot_h - 4.0)
+            placed_labels.append((label_x, label_y, label_width))
             lines.append(
-                f'<text x="{x + slot * 0.34:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{float(value):.{value_decimals}f}</text>'
+                f'<text x="{label_x:.1f}" y="{label_y:.1f}" text-anchor="middle" fill="{COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="12">{label_text}</text>'
             )
         center = left + group_index * group_width + group_width / 2
         lines.append(
