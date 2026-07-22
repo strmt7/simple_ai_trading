@@ -55,37 +55,20 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Round 72 rejected aggregate spot/perpetual price discovery: all 9 components
   and all 36 incremental comparisons failed their frozen gates. Round 73 is a
   prospective multi-level impact-absorption hypothesis, not a model result.
-  The first one-hour qualification failed closed in two independent v1 runs
-  because live `forceOrder` places `ps` and `st` under `data.o`, not `data`.
-  Contract v2 fixes that stream-specific path, binds every combined wrapper to
-  its exact subscription, preserves malformed receipts as hash-chained
-  `rejectedWire` evidence before failing, and keeps v1 audits reproducible.
-  Qualification run `5d89804a8f404d9b80b3a3ce2d796561` then passed one
-  uninterrupted hour: 3,988,592 exact-wire messages, 10,005 frames, 137
-  liquidation snapshots, zero reconnects, zero invalid/gap/crossed-book events,
-  34.44% peak queue use, and a separate full replay audit with zero errors.
-  Read `round-073-capture-contract-v2.json`, the correction evidence, and
-  `round-073-capture-qualification-2026-07-22.json`. This authorizes Round 73
-  feature construction only. It is not predictive evidence, P&L, profitability,
-  AI uplift, or trading authority. The indexed v2 layout is not approved for a
-  long capture. Compact contract v3 preserved replay but its live probe failed
-  during terminal latency reporting and is development-only. Contract v4 adds
-  causal provider event time and an 8 GiB default DuckDB-plus-WAL cap. Its
-  30-second and three-minute public-feed probes passed fresh-process replay and
-  authorized one v4 one-hour qualification attempt. Run
-  `ec6d54470ef04b0baddc73fd0e27fd5b` passed with 3,181,236 messages and a
-  separate replay audit, so a bounded feature-pipeline diagnostic is now open.
-  The run also measured about 56,293.5 MiB of process write transfer for 629.5
-  MiB of physical growth; this is not an SSD-wear metric, but it fails the
-  long-capture storage-efficiency gate. Read
-  `round-073-capture-contract-v4.json` and
-  `round-073-v4-capture-qualification-2026-07-22.json`; do not start a long
-  capture or evaluate a model yet. The subsequent exact-wire source replay
-  reconstructed all 104,570 depth updates and 7,432,729 level changes with zero
-  typed-row or top-20-state mismatches. This validates causal pre-event depth
-  bands only; gross book churn is not execution or P&L. Read
-  `round-073-v4-feature-source-diagnostic-2026-07-22.json`. Never pool
-  disconnected attempts.
+  Contracts v1-v7 preserve the feed corrections and failed storage experiments;
+  never pool disconnected attempts or reinterpret them as model evidence.
+  Contract v8 routes new exact frames and typed streams to isolated versioned
+  tables while keeping v1-v7 audits reproducible. One-hour run
+  `f3e92ba29e1e4d3188c3f309f5c160a2` passed its capture gate with 1,294,128
+  messages, 847 frames, zero reconnects, zero physical database growth, 21.68%
+  peak queue use, and 3,514.6 process-I/O bytes per message against the frozen
+  4,096 limit. A fresh process audited every frame. Independent exact-wire
+  replay reconciled all 104,305 depth-band rows and reconstructed 4,459,493
+  level changes without future data. Read `round-073-capture-contract-v8.json`
+  and `round-073-v8-capture-qualification-2026-07-22.json`. Storage headroom is
+  only 14.2%, so only bounded segmented-corpus implementation and feature
+  construction are open. Unbounded capture, model evaluation, P&L,
+  profitability, AI uplift, leverage, and trading authority remain closed.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.

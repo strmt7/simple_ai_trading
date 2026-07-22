@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"b15aaf743e4b9eb1eaefd14a0e4bf98e9f9ec1e82232544058a419758a8dbbfd";
+inline constexpr const wchar_t* kCommandContractSha256 = L"123b6c97353d1cdcd4fb737f6607674046945b818cadda779fc36fb284035357";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -284,6 +284,30 @@ inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--maximum-reconnects", L"maximum_reconnects", L"", L"6", L"", L"1", false, true, false},
     {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30.0", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_corpus_audit[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_corpus_day[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--utc-day", L"utc_day", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_corpus_index[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -1016,6 +1040,9 @@ inline constexpr CommandSpec kCommands[] = {
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
     {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
     {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 10},
+    {L"impact-corpus-audit", L"usage: simple-ai-trading impact-corpus-audit [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_audit, 5},
+    {L"impact-corpus-day", L"usage: simple-ai-trading impact-corpus-day [-h] [--database DATABASE]                                            --utc-day UTC_DAY                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_corpus_day, 5},
+    {L"impact-corpus-index", L"usage: simple-ai-trading impact-corpus-index [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_index, 5},
     {L"impact-feature-source", L"usage: simple-ai-trading impact-feature-source [-h] [--database DATABASE]                                                --run-id RUN_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_feature_source, 5},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
@@ -1095,6 +1122,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"AI validation", L"ai-uplift"},
     {L"Research", L"Microstructure models", L"model-blueprint"},
     {L"Research", L"Microstructure models", L"impact-feature-source"},
+    {L"Research", L"Microstructure models", L"impact-corpus-index"},
     {L"Research", L"Microstructure models", L"microstructure-train"},
     {L"Research", L"Microstructure models", L"microstructure-refit"},
     {L"Research", L"Microstructure models", L"microstructure-prequential"},
@@ -1134,6 +1162,8 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Data", L"Integrity and outcomes", L"data-health"},
     {L"Data", L"Integrity and outcomes", L"tick-corpus-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-audit"},
+    {L"Data", L"Integrity and outcomes", L"impact-corpus-audit"},
+    {L"Data", L"Integrity and outcomes", L"impact-corpus-day"},
     {L"Data", L"Integrity and outcomes", L"polymarket-resolve"},
     {L"System", L"Runtime health", L"status"},
     {L"System", L"Runtime health", L"doctor"},
