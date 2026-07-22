@@ -1,0 +1,425 @@
+{
+  "amendment": {
+    "data_feature_target_split_or_model_parameter_changed": false,
+    "original_implementation_sha256": "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd",
+    "predecessor_implementation_sha256": "ebb30e8bebc00054d09d6046dd418ea9a0511bff6aebe863b8858f89de0930d3",
+    "reason": "final pre-result clarification of metric definitions, tied scores, undefined day metrics, and exact gate inequalities",
+    "round72_model_result_available_before_amendment": false,
+    "round72_price_or_return_result_available_before_amendment": false
+  },
+  "anchor_contract": {
+    "anchor_rule": "second_ms modulo 30000 equals 29000; available_time_ms is second_ms plus 1000",
+    "anchor_second_offset_within_spacing": 29,
+    "anchor_spacing_seconds": 30,
+    "burn_in_seconds": 1800,
+    "calendar": "UTC",
+    "day_boundary_windows_permitted": false,
+    "listed_product_session_semantics": "ETF and listed-futures sessions are separate timestamped external context and are excluded from Round 72 features",
+    "market_session_semantics": "Binance spot and USD-M perpetual markets are continuous; a UTC day is only a sampling and resampling block, never a formal market close",
+    "maximum_window_seconds": 900,
+    "peer_age_gate_for_optional_cross_asset_features": false,
+    "target_symbol_perpetual_age_maximum_seconds": 2,
+    "target_symbol_spot_age_maximum_seconds": 2,
+    "window_rule": "current window includes anchor and preceding w-1 seconds; comparison window is the immediately preceding disjoint w seconds"
+  },
+  "calibration_contract": {
+    "binary": "temperature-only scaling of clipped logits on tuning rows",
+    "classification_metric_threshold": 0.5,
+    "continuous": "nonnegative slope through the origin on tuning rows",
+    "continuous_slope_bounds": [
+      0.0,
+      4.0
+    ],
+    "probability_clip": [
+      1e-06,
+      0.999999
+    ],
+    "retain_only_when_primary_tuning_loss_improves_by_more_than": 1e-12,
+    "temperature_bounds": [
+      0.25,
+      4.0
+    ],
+    "temperature_optimizer": "bounded scalar minimization with xatol 1e-6",
+    "threshold_has_trading_authority": false
+  },
+  "design_sha256": "505818f74cdd9484f66b1a504de821d4d366ec35c7d7bf978ffa15d613104812",
+  "evaluation_contract": {
+    "accuracy_rule": "pooled out-of-sample threshold-0.5 accuracy must strictly exceed pooled majority-class accuracy",
+    "all_symbols_horizons_and_declared_primary_metrics_must_pass": true,
+    "binary_day_block_lower_bounds": {
+      "MCC": 0.0,
+      "balanced_accuracy": 0.5
+    },
+    "bootstrap_draws": 10000,
+    "bootstrap_estimand": "unweighted mean of finite per-day balanced accuracy, MCC, or Spearman values",
+    "bootstrap_lower_quantile": 0.025,
+    "bootstrap_quantile_method": "linear",
+    "bootstrap_rule": "sample the finite UTC-day metric values independently with replacement for 10000 draws and use the empirical 0.025 quantile of draw means",
+    "bootstrap_unit": "UTC day",
+    "continuous_controls": {
+      "diagnostic": "that fold's mean primary training return",
+      "primary_gate": "zero return"
+    },
+    "continuous_day_block_lower_bound": {
+      "Spearman": 0.0
+    },
+    "day_metric_rule": "compute each metric independently within each UTC day, discard only mathematically undefined day metrics, and take the unweighted mean across finite days",
+    "fdr_family": "all spot_perpetual primary loss comparisons across three symbols, three horizons, two heads, and each declared primary loss metric",
+    "fdr_family_cardinality": 36,
+    "fdr_family_order": "symbol BTC ETH SOL, then horizon 30 60 300, then head binary continuous, then each head's listed primary loss order",
+    "fdr_method": "Benjamini-Hochberg",
+    "fold_score_rule": "for binary log loss and Brier separately, spot_perpetual must beat that fold's training-prevalence baseline in at least four of six test folds",
+    "loss_aggregation": "concatenate the six chronological out-of-sample test blocks and compute row-weighted losses",
+    "maximum_q_value": 0.05,
+    "metric_definitions": {
+      "MCC": "standard confusion-matrix Matthews coefficient; pooled zero denominator returns zero, while a UTC-day zero denominator is undefined",
+      "ROC_AUC": "Mann-Whitney probability using average ranks for tied scores; undefined when either class is absent",
+      "Spearman": "Pearson correlation of average tie ranks; undefined for a constant target or prediction within a UTC day",
+      "accuracy": "unweighted fraction of exact thresholded labels",
+      "balanced_accuracy": "unweighted mean of positive recall and negative recall; undefined within a UTC day missing either class",
+      "binary_threshold": "predict positive when calibrated probability is greater than or equal to 0.5",
+      "brier_score": "unweighted mean squared probability error",
+      "expected_calibration_error": "ten equal-width probability bins on [0,1], rightmost bin including one, weighted by row count",
+      "log_loss": "unweighted mean binary negative log likelihood after clipping probabilities to [1e-6,1-1e-6]",
+      "mean_absolute_error": "unweighted mean absolute target-minus-prediction error",
+      "mean_squared_error": "unweighted mean squared target-minus-prediction error",
+      "precision_recall_AUC": "average precision with equal-score rows consumed as one tied group; undefined when positives are absent",
+      "sign_accuracy": "unweighted equality of numpy sign values; exact zero is its own sign"
+    },
+    "minimum_binary_relative_improvement_vs_prevalence": 0.002,
+    "minimum_continuous_mse_skill_vs_zero": 0.001,
+    "minimum_finite_days_per_bootstrap_metric": 10,
+    "minimum_positive_proper_score_folds": 4,
+    "minimum_relative_improvement_spot_perpetual_vs_perpetual_only": 0.001,
+    "paired_permutation_p_value": "(one plus draws whose signed challenger-minus-baseline mean loss is less than or equal to the observed mean loss difference) divided by (draws plus one)",
+    "permutation_draws": 10000,
+    "permutation_statistic": "row-weighted mean paired loss difference with one random sign per UTC day",
+    "permutation_unit": "UTC day",
+    "prevalence_baseline": "positive-label fraction in that fold's primary training role, clipped to the probability bounds; the same value is reused for the five-second stress target",
+    "primary_gate_logic": {
+      "binary": "for every symbol-horizon: both pooled prevalence-relative loss improvements are at least 0.002, each loss improves in at least four folds, pooled accuracy strictly exceeds pooled majority accuracy, and day-bootstrap lower bounds strictly exceed 0.5 balanced accuracy and 0 MCC",
+      "continuous": "for every symbol-horizon: pooled MSE skill versus zero is at least 0.001 and the day-bootstrap Spearman lower bound strictly exceeds zero",
+      "feature_increment": "all 36 spot_perpetual-versus-perpetual_only loss comparisons have relative improvement at least 0.001 and Benjamini-Hochberg q at most 0.05",
+      "inequality_policy": "strict only where this object says strictly; otherwise boundary equality passes",
+      "stress": "for every symbol-horizon, both pooled five-second-delay binary loss skills versus the fold-specific primary training prevalence are strictly positive"
+    },
+    "primary_loss_metrics": {
+      "binary_direction": [
+        "log_loss",
+        "brier_score"
+      ],
+      "continuous_return_bps": [
+        "mean_squared_error",
+        "mean_absolute_error"
+      ]
+    },
+    "raw_accuracy_must_exceed_majority_prevalence": true,
+    "seed_derivation": "LightGBM always uses 20260722; resampling uses 20260722 plus the zero-based canonical family index",
+    "stress_delay_binary_skill_vs_prevalence_must_be_positive": [
+      "log_loss",
+      "brier_score"
+    ],
+    "stress_rule": "reuse each fitted and calibrated spot_perpetual primary model without refit; on stress-valid test rows, pooled log loss and Brier must each be strictly below the fold-specific primary-training-prevalence baseline"
+  },
+  "execution_or_fill_claim": false,
+  "feature_contract": {
+    "clock_features": [
+      "utc_day_phase_sine",
+      "utc_day_phase_cosine",
+      "utc_weekday_phase_sine",
+      "utc_weekday_phase_cosine",
+      "utc_minute_phase_sine",
+      "utc_minute_phase_cosine",
+      "utc_five_minute_phase_sine",
+      "utc_five_minute_phase_cosine",
+      "utc_fifteen_minute_phase_sine",
+      "utc_fifteen_minute_phase_cosine"
+    ],
+    "cross_asset_window_metrics": [
+      "perpetual_return_mean_bps",
+      "perpetual_return_dispersion_bps",
+      "perpetual_return_directional_agreement",
+      "perpetual_signed_flow_mean",
+      "perpetual_signed_flow_dispersion",
+      "leader_perpetual_return_bps",
+      "leader_perpetual_signed_flow"
+    ],
+    "formulas": {
+      "absolute_signed_flow_difference": "abs(spot_signed_quote_flow-perpetual_signed_quote_flow)",
+      "aggregate_orders_per_second": "sum(aggregate_count)/window_seconds",
+      "aggregate_quote_hhi": "sum(squared_aggregate_quote_sum)/sum(quote_volume)^2, zero when denominator is zero",
+      "basis_bps": "10000*log(perpetual_close/spot_close)",
+      "basis_change_bps": "basis_t minus basis_t_minus_w",
+      "change": "current metric minus the same metric over the immediately preceding disjoint window",
+      "leader_definition": "BTC for ETH and SOL; equal-weight ETH/SOL mean for BTC",
+      "log1p_constituent_per_aggregate": "log1p(sum(constituent_trade_count)/sum(aggregate_count)), zero when denominator is zero",
+      "log1p_maximum_aggregate_quote": "log1p(max(maximum_aggregate_quote))",
+      "log1p_mean_aggregate_quote": "log1p(sum(quote_volume)/sum(aggregate_count)), zero when denominator is zero",
+      "log1p_quote_volume": "log1p(sum(quote_volume))",
+      "log_range_bps": "10000*log(max(high)/min(low)) over the window",
+      "log_relative_aggregate_rate": "log1p(spot aggregate rate)-log1p(perpetual aggregate rate)",
+      "log_relative_quote_volume": "spot_log1p_quote_volume-perpetual_log1p_quote_volume",
+      "log_return_bps": "10000*log(close_t/close_t_minus_w)",
+      "path_variation_bps": "10000*sum(abs(one_second_log_return)) over the window",
+      "realized_volatility_bps": "10000*sqrt(sum(one_second_log_return_squared)) over the window",
+      "signed_flow_product": "spot_signed_quote_flow*perpetual_signed_quote_flow for the same window",
+      "signed_quote_flow": "sum(aggressive_buy_quote-aggressive_sell_quote)/sum(quote_volume), zero when denominator is zero",
+      "zero_flow_fraction": "mean(aggregate_count==0)"
+    },
+    "layer_feature_counts": {
+      "cross_asset": 336,
+      "perpetual_only": 123,
+      "spot_perpetual": 287
+    },
+    "layer_feature_names_sha256": {
+      "cross_asset": "2965dfa99c8572be767c2746a50c1032abd5080915536fb478b1d0f0c8f30f1e",
+      "perpetual_only": "e0905c61a54558c21fb7c157e0fd3c0e3e10835aaeaa93f2cbc363dc2be86008",
+      "spot_perpetual": "7729cfc53aae363ef4104ffc750f1cf8d550f9d191431966ca985f51083a7331"
+    },
+    "market_change_metrics": [
+      "realized_volatility_bps",
+      "signed_quote_flow",
+      "log1p_quote_volume",
+      "aggregate_orders_per_second"
+    ],
+    "market_window_metrics": [
+      "log_return_bps",
+      "path_variation_bps",
+      "realized_volatility_bps",
+      "log_range_bps",
+      "signed_quote_flow",
+      "log1p_quote_volume",
+      "aggregate_orders_per_second",
+      "log1p_mean_aggregate_quote",
+      "log1p_maximum_aggregate_quote",
+      "aggregate_quote_hhi",
+      "log1p_constituent_per_aggregate",
+      "zero_flow_fraction"
+    ],
+    "nonfinite_policy": "exclude the anchor before any role assignment and report by symbol and month",
+    "normalization": "none for LightGBM",
+    "pair_window_metrics": [
+      "basis_change_bps",
+      "spot_minus_perpetual_return_bps",
+      "signed_flow_product",
+      "absolute_signed_flow_difference",
+      "log_relative_quote_volume",
+      "log_relative_aggregate_rate"
+    ],
+    "spot_flow_lags_seconds": [
+      1,
+      5,
+      15,
+      30
+    ],
+    "windows_seconds": [
+      1,
+      5,
+      15,
+      30,
+      60,
+      300,
+      900
+    ]
+  },
+  "freeze_evidence": {
+    "model_result_available_at_freeze": false,
+    "post_result_changes_permitted": false,
+    "price_or_return_values_read_to_choose_formulas": false,
+    "schema_smoke_used_for_feature_or_parameter_selection": false,
+    "single_smallest_archive_schema_smoke_preceded_this_freeze": true
+  },
+  "frozen_at_utc": "2026-07-22T10:09:40.139728+00:00",
+  "implementation_sha256": "d8679606e75ec7fa2bf00032b34489218085f7c7f5159419e192f3ee351dfad9",
+  "inventory_file_sha256": "055b5c5a3d975a092bae0c27253757c3be39535945d0aa6caaecdf31e9343b1b",
+  "inventory_sha256": "e8c505132716c68ad753cbdd93b23094b778d9067c8a6c9381fad0e20cdd662c",
+  "leverage_authority": false,
+  "model_contract": {
+    "backend": "capability-tested LightGBM OpenCL/CUDA when selected; deterministic CPU reference otherwise",
+    "binary_early_stopping_metric": "binary_logloss",
+    "binary_objective": "binary",
+    "continuous_early_stopping_metric": "l2",
+    "continuous_objective": "huber",
+    "feature_layers": [
+      "perpetual_only",
+      "spot_perpetual",
+      "cross_asset"
+    ],
+    "gpu_acceleration_required_when_operator_explicitly_selects_an_accelerator": true,
+    "gpu_opencl_double_precision": true,
+    "heads": [
+      "binary_direction",
+      "continuous_return_bps"
+    ],
+    "model_reload_max_absolute_prediction_difference": 1e-12,
+    "optional_cross_asset_layer_runs_only_after_primary_spot_perpetual_gate_passes": true,
+    "parameters": {
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "boosting": "gbdt",
+      "class_weight": null,
+      "early_stopping_rounds": 30,
+      "feature_fraction": 0.8,
+      "huber_alpha": 0.9,
+      "lambda_l1": 1.0,
+      "lambda_l2": 1.0,
+      "learning_rate": 0.03,
+      "max_bin": 63,
+      "max_depth": 4,
+      "maximum_boosting_iterations": 256,
+      "min_data_in_leaf": 500,
+      "num_leaves": 15,
+      "seed": 20260722
+    }
+  },
+  "profitability_claim": false,
+  "resource_contract": {
+    "LightGBM_histogram_pool_size_mb": 512,
+    "feature_cache_persisted_to_disk": false,
+    "feature_dtype": "float32",
+    "maximum_expected_in_memory_feature_bytes": 1250000000,
+    "raw_aggregate_trades_retained": false,
+    "target_and_metric_dtype": "float64"
+  },
+  "round": 72,
+  "schema_version": "round-072-price-discovery-implementation-v3",
+  "split_contract": {
+    "development_months": [
+      "2020-10",
+      "2026-03"
+    ],
+    "folds": [
+      {
+        "fold": 1,
+        "test_months": [
+          "2023-04",
+          "2023-09"
+        ],
+        "training_month_count": 24,
+        "training_months": [
+          "2020-10",
+          "2022-09"
+        ],
+        "tuning_months": [
+          "2022-10",
+          "2023-03"
+        ]
+      },
+      {
+        "fold": 2,
+        "test_months": [
+          "2023-10",
+          "2024-03"
+        ],
+        "training_month_count": 30,
+        "training_months": [
+          "2020-10",
+          "2023-03"
+        ],
+        "tuning_months": [
+          "2023-04",
+          "2023-09"
+        ]
+      },
+      {
+        "fold": 3,
+        "test_months": [
+          "2024-04",
+          "2024-09"
+        ],
+        "training_month_count": 36,
+        "training_months": [
+          "2020-10",
+          "2023-09"
+        ],
+        "tuning_months": [
+          "2023-10",
+          "2024-03"
+        ]
+      },
+      {
+        "fold": 4,
+        "test_months": [
+          "2024-10",
+          "2025-03"
+        ],
+        "training_month_count": 42,
+        "training_months": [
+          "2020-10",
+          "2024-03"
+        ],
+        "tuning_months": [
+          "2024-04",
+          "2024-09"
+        ]
+      },
+      {
+        "fold": 5,
+        "test_months": [
+          "2025-04",
+          "2025-09"
+        ],
+        "training_month_count": 48,
+        "training_months": [
+          "2020-10",
+          "2024-09"
+        ],
+        "tuning_months": [
+          "2024-10",
+          "2025-03"
+        ]
+      },
+      {
+        "fold": 6,
+        "test_months": [
+          "2025-10",
+          "2026-03"
+        ],
+        "training_month_count": 54,
+        "training_months": [
+          "2020-10",
+          "2025-03"
+        ],
+        "tuning_months": [
+          "2025-04",
+          "2025-09"
+        ]
+      }
+    ],
+    "horizon_pooling": false,
+    "purge": "every training or tuning label exit must precede the first anchor available time of the following role",
+    "symbol_pooling": false,
+    "terminal_holdout_months_never_read": [
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ]
+  },
+  "stopping_rule": {
+    "new_subsecond_hypothesis": "the June 2026 sub-second paper is materially new evidence and requires a separately numbered preregistration; it cannot rescue Round 72 post hoc",
+    "primary_fail": "reject Round 72 without terminal holdout, PnL optimization, leverage, or larger model",
+    "primary_pass": "open the three frozen terminal months with unchanged code and artifacts"
+  },
+  "target_contract": {
+    "binary_label": "one only when continuous_bps is strictly positive; exact zero belongs to class zero",
+    "continuous_bps": "10000*log(exit_vwap/entry_vwap)",
+    "eligibility": "both entry and exit perpetual seconds must contain at least one aggregate trade and positive base volume",
+    "entry_delays_seconds": [
+      2,
+      5
+    ],
+    "entry_index": "anchor_index plus entry_delay_seconds",
+    "exit_index": "anchor_index plus entry_delay_seconds plus horizon_seconds",
+    "horizons_seconds": [
+      30,
+      60,
+      300
+    ],
+    "primary_entry_delay_seconds": 2,
+    "primary_models_are_not_refit_for_stress_delay": true,
+    "profit_or_executable_fill_target": false,
+    "stress_entry_delay_seconds": 5,
+    "transaction_vwap": "quote_volume/base_volume in the exact second"
+  },
+  "trading_authority": false
+}

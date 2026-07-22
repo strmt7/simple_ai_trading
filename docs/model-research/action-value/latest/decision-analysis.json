@@ -1,125 +1,29 @@
 {
-  "schema_version": "round-061-carry-economic-replay-decision-v1",
-  "round": 61,
-  "status": "rejected_elevated_funding_carry",
-  "decision": "reject elevated-funding seven-day carry family",
-  "source_and_capacity": [
-    {
-      "round": 61,
-      "symbol": "BTCUSDT",
-      "manifest_episodes": 72,
-      "source_rows_reconciled": true,
-      "source_eligible_episodes": 72,
-      "source_ineligible_episodes": 0,
-      "source_eligible_fraction": 1.0,
-      "capacity_eligible_episodes": 30,
-      "capacity_ineligible_source_eligible_episodes": 42,
-      "capacity_eligible_fraction": 0.4166666666666667,
-      "economically_scored_episodes": 30,
-      "mean_stress_net_committed_capital_bps": 1.9434737332365601,
-      "median_stress_net_committed_capital_bps": -6.704403726860724,
-      "positive_stress_net_fraction": 0.43333333333333335,
-      "bootstrap_lower_95_mean_stress_net_committed_capital_bps": -7.426289168385715,
-      "maximum_sequential_drawdown_committed_capital_bps": 123.59367064962652,
-      "worst_episode_committed_capital_bps": -55.681978361239345,
-      "expected_shortfall_10pct_committed_capital_bps": -43.600804845254764,
-      "distinct_calendar_years": 4,
-      "positive_calendar_year_fraction": 0.5,
-      "gate_passed": false
-    },
-    {
-      "round": 61,
-      "symbol": "ETHUSDT",
-      "manifest_episodes": 76,
-      "source_rows_reconciled": true,
-      "source_eligible_episodes": 76,
-      "source_ineligible_episodes": 0,
-      "source_eligible_fraction": 1.0,
-      "capacity_eligible_episodes": 20,
-      "capacity_ineligible_source_eligible_episodes": 56,
-      "capacity_eligible_fraction": 0.2631578947368421,
-      "economically_scored_episodes": 20,
-      "mean_stress_net_committed_capital_bps": 1.5419110158392422,
-      "median_stress_net_committed_capital_bps": -5.559926832949844,
-      "positive_stress_net_fraction": 0.5,
-      "bootstrap_lower_95_mean_stress_net_committed_capital_bps": -11.126732059154893,
-      "maximum_sequential_drawdown_committed_capital_bps": 173.99919746730825,
-      "worst_episode_committed_capital_bps": -67.27242043857898,
-      "expected_shortfall_10pct_committed_capital_bps": -47.53738612582875,
-      "distinct_calendar_years": 3,
-      "positive_calendar_year_fraction": 0.3333333333333333,
-      "gate_passed": false
-    },
-    {
-      "round": 61,
-      "symbol": "SOLUSDT",
-      "manifest_episodes": 62,
-      "source_rows_reconciled": true,
-      "source_eligible_episodes": 61,
-      "source_ineligible_episodes": 1,
-      "source_eligible_fraction": 0.9838709677419355,
-      "capacity_eligible_episodes": 0,
-      "capacity_ineligible_source_eligible_episodes": 61,
-      "capacity_eligible_fraction": 0.0,
-      "economically_scored_episodes": 0,
-      "mean_stress_net_committed_capital_bps": null,
-      "median_stress_net_committed_capital_bps": null,
-      "positive_stress_net_fraction": null,
-      "bootstrap_lower_95_mean_stress_net_committed_capital_bps": null,
-      "maximum_sequential_drawdown_committed_capital_bps": null,
-      "worst_episode_committed_capital_bps": null,
-      "expected_shortfall_10pct_committed_capital_bps": null,
-      "distinct_calendar_years": 0,
-      "positive_calendar_year_fraction": null,
-      "gate_passed": false
-    }
+  "schema_version": "round-072-price-discovery-decision-v1",
+  "round": 72,
+  "decision": "reject_round_072_price_discovery",
+  "primary_gate_passed": false,
+  "component_pass_count": 0,
+  "component_count": 9,
+  "feature_comparison_pass_count": 0,
+  "feature_comparison_count": 36,
+  "positive_increment_count": 15,
+  "feature_increment_q_value_range": [
+    0.9695030496950304,
+    0.9814018598140186
   ],
-  "fill_pass_counts": {
-    "BTCUSDT": {
-      "spot_entry": 42,
-      "spot_exit": 41,
-      "perpetual_entry": 66,
-      "perpetual_exit": 62
-    },
-    "ETHUSDT": {
-      "spot_entry": 31,
-      "spot_exit": 23,
-      "perpetual_entry": 56,
-      "perpetual_exit": 60
-    },
-    "SOLUSDT": {
-      "spot_entry": 2,
-      "spot_exit": 2,
-      "perpetual_entry": 15,
-      "perpetual_exit": 18
-    }
-  },
-  "economic_findings": {
-    "BTCUSDT": {
-      "economically_scored_episodes": 30,
-      "mean_stress_net_committed_capital_bps": 1.9434737332365601,
-      "median_stress_net_committed_capital_bps": -6.704403726860724,
-      "bootstrap_lower_95_mean_stress_net_committed_capital_bps": -7.426289168385715
-    },
-    "ETHUSDT": {
-      "economically_scored_episodes": 20,
-      "mean_stress_net_committed_capital_bps": 1.5419110158392422,
-      "median_stress_net_committed_capital_bps": -5.559926832949844,
-      "bootstrap_lower_95_mean_stress_net_committed_capital_bps": -11.126732059154893
-    },
-    "SOLUSDT": {
-      "economically_scored_episodes": 0,
-      "mean_stress_net_committed_capital_bps": null,
-      "median_stress_net_committed_capital_bps": null,
-      "bootstrap_lower_95_mean_stress_net_committed_capital_bps": null
-    }
-  },
-  "authorized_next_step": null,
+  "critical_findings": [
+    "No symbol-horizon component passed the preregistered primary gate.",
+    "No spot_perpetual comparison passed both the 0.1% incremental-loss hurdle and BH q <= 0.05.",
+    "The continuous-return head failed the zero-return MSE hurdle for all nine symbol-horizon components.",
+    "The sealed 2026-04 through 2026-06 terminal months were not read."
+  ],
+  "authorized_next_step": "A separately numbered and prospectively frozen hypothesis using materially new information; Round 72 terminal, PnL, leverage, and larger-model branches remain closed.",
   "prohibited": [
-    "relaxing the frozen capacity or risk thresholds after observing results",
-    "tick-level confirmation for this rejected family",
-    "model or AI training for this rejected family",
-    "profitability, ROI, testnet, live, leverage, or trading-readiness claims"
+    "opening the Round 72 terminal months",
+    "post hoc threshold or feature tuning against this consumed result",
+    "PnL optimization, leverage, testnet, live, or profitability claims from Round 72",
+    "claiming that predictive accuracy or AI uplift was established"
   ],
-  "analysis_sha256": "0771a6dafdf46331c191b37802be87cdc8c514ee350afffd240dfbc147a8cb29"
+  "analysis_sha256": "65747d7d75c8eb5dcb16eacbf2a78e62fccaa2b3b20ee50db4e7f7d0ddbe7b97"
 }
