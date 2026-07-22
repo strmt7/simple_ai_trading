@@ -259,17 +259,34 @@ def list_archive_items(
         marker = next_marker or (keys[-1] if keys else None)
         if marker is None:
             break
+    kind = _normalize_archive_data_type(data_type)
+    expected_prefix = (
+        f"{symbol.upper()}-{kind}-"
+        if kind != "klines"
+        else f"{symbol.upper()}-{interval}-"
+    )
+    period_pattern = (
+        re.compile(r"^\d{4}-\d{2}-\d{2}$")
+        if cadence == "daily"
+        else re.compile(r"^\d{4}-\d{2}$")
+    )
     items: list[ArchiveListingItem] = []
     for key, entry in entries_by_key.items():
         if not key.endswith(".zip") or key.endswith(".zip.CHECKSUM"):
             continue
         url = _archive_url_from_key(origin, key)
+        filename = Path(urlparse(url).path).stem
+        if not filename.startswith(expected_prefix):
+            continue
+        period = filename.removeprefix(expected_prefix)
+        if period_pattern.fullmatch(period) is None or _period_date_bounds(period) is None:
+            continue
         checksum = entries_by_key.get(f"{key}.CHECKSUM")
         items.append(
             ArchiveListingItem(
                 url=url,
                 key=key,
-                period=archive_url_period(url),
+                period=period,
                 size_bytes=max(0, int(entry.size_bytes)),
                 last_modified=entry.last_modified,
                 etag=entry.etag,
@@ -298,14 +315,17 @@ def archive_url_period(url: str) -> str:
 
 def _period_date_bounds(period: str) -> tuple[date, date] | None:
     value = str(period or "").strip()
-    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
-        year, month, day = (int(part) for part in value.split("-"))
-        parsed = date(year, month, day)
-        return parsed, parsed
-    if re.fullmatch(r"\d{4}-\d{2}", value):
-        year, month = (int(part) for part in value.split("-"))
-        last_day = calendar.monthrange(year, month)[1]
-        return date(year, month, 1), date(year, month, last_day)
+    try:
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+            year, month, day = (int(part) for part in value.split("-"))
+            parsed = date(year, month, day)
+            return parsed, parsed
+        if re.fullmatch(r"\d{4}-\d{2}", value):
+            year, month = (int(part) for part in value.split("-"))
+            last_day = calendar.monthrange(year, month)[1]
+            return date(year, month, 1), date(year, month, last_day)
+    except (ValueError, calendar.IllegalMonthError):
+        return None
     return None
 
 
