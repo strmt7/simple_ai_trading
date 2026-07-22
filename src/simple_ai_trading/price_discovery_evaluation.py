@@ -7,7 +7,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Mapping
 
 import numpy as np
 
@@ -561,10 +561,41 @@ def _model_summaries(run: PriceDiscoveryPredictionRun) -> list[dict[str, object]
     ]
 
 
+def _validated_corpus_certificate(
+    certificate: Mapping[str, object],
+    *,
+    inventory_sha256: str,
+) -> tuple[dict[str, object], str]:
+    value = dict(certificate)
+    hash_fields = ("manifest_fingerprint", "source_fingerprint")
+    if (
+        value.get("schema_version") != "spot-perpetual-corpus-certificate-v1"
+        or value.get("research_round") != 72
+        or value.get("inventory_sha256") != inventory_sha256
+        or value.get("status") != "complete"
+        or value.get("day_count") != 69
+        or value.get("source_count") != 414
+        or value.get("symbol_count") != 3
+        or value.get("flow_rows") != 17_884_800
+        or value.get("compressed_bytes") != 5_964_131_852
+        or not isinstance(value.get("uncompressed_bytes"), int)
+        or int(value["uncompressed_bytes"]) <= int(value["compressed_bytes"])
+        or any(
+            not isinstance(value.get(name), str)
+            or len(str(value[name])) != 64
+            or any(character not in "0123456789abcdef" for character in str(value[name]))
+            for name in hash_fields
+        )
+    ):
+        raise ValueError("Round 72 corpus certificate is invalid")
+    return value, _canonical_sha256(value)
+
+
 def evaluate_price_discovery_primary(
     run: PriceDiscoveryPredictionRun,
     *,
     implementation_path: str | Path,
+    corpus_certificate: Mapping[str, object],
     progress: _ProgressCallback | None = None,
 ) -> dict[str, object]:
     """Evaluate the exact primary layers and apply all frozen gates."""
@@ -575,6 +606,10 @@ def evaluate_price_discovery_primary(
     implementation = load_round72_implementation(implementation_path)
     if implementation["implementation_sha256"] != run.implementation_sha256:
         raise ValueError("Round 72 model run and implementation identities differ")
+    certificate, certificate_sha256 = _validated_corpus_certificate(
+        corpus_certificate,
+        inventory_sha256=str(implementation["inventory_sha256"]),
+    )
     evaluation = implementation.get("evaluation_contract")
     if not isinstance(evaluation, dict):
         raise ValueError("Round 72 evaluation contract is missing")
@@ -761,6 +796,8 @@ def evaluate_price_discovery_primary(
         "implementation_sha256": run.implementation_sha256,
         "dataset_bundle_sha256": run.dataset_bundle_sha256,
         "model_run_sha256": run.run_sha256,
+        "corpus_certificate": certificate,
+        "corpus_certificate_sha256": certificate_sha256,
         "backend": {
             "requested": run.backend_requested,
             "kind": run.backend_kind,
@@ -773,6 +810,8 @@ def evaluate_price_discovery_primary(
             "feature_layers": list(PRIMARY_FEATURE_LAYERS),
             "heads": list(PRICE_DISCOVERY_HEADS),
             "terminal_holdout_read": False,
+            "development_last_month": "2026-03",
+            "terminal_months_excluded": ["2026-04", "2026-05", "2026-06"],
             "profit_or_execution_target": False,
         },
         "resampling": {
@@ -805,6 +844,13 @@ def evaluate_price_discovery_primary(
 def validate_price_discovery_evaluation(report: dict[str, object]) -> None:
     canonical = dict(report)
     observed_hash = canonical.pop("report_sha256", "")
+    raw_certificate = report.get("corpus_certificate")
+    if not isinstance(raw_certificate, dict):
+        raise ValueError("Round 72 evaluation corpus certificate is missing")
+    certificate, certificate_sha256 = _validated_corpus_certificate(
+        raw_certificate,
+        inventory_sha256=str(raw_certificate.get("inventory_sha256", "")),
+    )
     components = report.get("symbol_horizon_components")
     comparisons = report.get("feature_comparisons")
     layer_reports = report.get("layer_reports")
@@ -815,6 +861,8 @@ def validate_price_discovery_evaluation(report: dict[str, object]) -> None:
     if (
         report.get("schema_version") != PRICE_DISCOVERY_EVALUATION_SCHEMA
         or observed_hash != _canonical_sha256(canonical)
+        or report.get("corpus_certificate") != certificate
+        or report.get("corpus_certificate_sha256") != certificate_sha256
         or not isinstance(components, list)
         or not isinstance(comparisons, list)
         or not isinstance(layer_reports, list)
