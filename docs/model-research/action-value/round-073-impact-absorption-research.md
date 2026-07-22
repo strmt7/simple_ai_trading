@@ -1,6 +1,6 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** preregistered research design. No modeling capture, model, replay, or
+**Status:** preregistered research design v2. No modeling capture, model, replay, or
 profit result exists yet. This round grants no AI, leverage, testnet, or live
 authority.
 
@@ -22,7 +22,7 @@ flowchart LR
   A["Verified diff depth + BBO + trades"] --> B["Gap-free local L2 book"]
   B --> C["Aggressive-flow shock"]
   C --> D["Depth consumption"]
-  C --> E["Adds / cancels / replenishment"]
+  C --> E["Adds / removals / replenishment"]
   C --> F["Impact and recovery"]
   D --> G["Shallow staged model"]
   E --> G
@@ -44,6 +44,9 @@ flowchart LR
 - The liquidation feed is a throttled snapshot. No message means "not observed",
   not zero liquidations. Public L2 also omits hidden/RPI liquidity and cannot
   identify market makers, whales, spoofing, or manipulation.
+- Diff-depth quantity decreases are displayed removals, not observed
+  cancellations. Aggregate trades and removals remain separate when their
+  attribution is ambiguous; the software never invents an order-lifecycle fact.
 - The single evidence store is `data/microstructure.duckdb`; long collection
   starts only after a one-hour qualification measures integrity and storage rate.
 
