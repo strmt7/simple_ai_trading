@@ -70,6 +70,15 @@ flowchart LR
   rejects the observed checkpoint policy for multi-day use. Feature-pipeline
   diagnostics are authorized; long capture and model evaluation remain closed.
   See `round-073-v4-capture-qualification-2026-07-22.json`.
+- Exact-wire feature-source replay then reconstructed 104,570 depth updates,
+  104,484 synchronized top-20 states, and 7,432,729 individual price-level
+  changes. Every event-level quote-flow sum and every stored top-20 state
+  reconciled with zero mismatches or nonfinite values. Level bands use the
+  synchronized pre-event book, so future state cannot change a feature's band.
+  The reported additions and removals are gross displayed-book churn, not
+  executions, accessible fill capacity, or performance. Grid features, shocks,
+  targets, and models remain unconstructed. See
+  `round-073-v4-feature-source-diagnostic-2026-07-22.json`.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

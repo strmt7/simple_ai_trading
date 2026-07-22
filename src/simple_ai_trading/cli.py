@@ -107,6 +107,7 @@ from .impact_absorption_capture import (
     ImpactCaptureSupervisorReport,
     capture_round73_supervised,
 )
+from .impact_absorption_features import diagnose_round73_feature_source
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
     ImpactAbsorptionStore,
@@ -1352,6 +1353,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_audit.add_argument("--database-threads", type=int, default=2)
     parser_impact_audit.add_argument("--json", action="store_true")
     parser_impact_audit.set_defaults(func=command_impact_audit)
+
+    parser_impact_features = subparsers.add_parser(
+        "impact-feature-source",
+        help="reconstruct causal Round 73 depth-band primitives from exact wire evidence",
+    )
+    parser_impact_features.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_features.add_argument(
+        "--run-id", required=True, help="qualified v4 capture run ID"
+    )
+    parser_impact_features.add_argument("--memory-limit", default="2GB")
+    parser_impact_features.add_argument("--database-threads", type=int, default=2)
+    parser_impact_features.add_argument("--json", action="store_true")
+    parser_impact_features.set_defaults(func=command_impact_feature_source)
 
     parser_tick_archive = subparsers.add_parser(
         "tick-archive-sync",
@@ -10988,6 +11004,33 @@ def command_impact_audit(args: argparse.Namespace) -> int:
         for error in audit.errors:
             print(f"warning: {error}", file=sys.stderr)
     return 0 if audit.passed else 2
+
+
+def command_impact_feature_source(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        diagnostic = diagnose_round73_feature_source(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-feature-source failed: {exc}", file=sys.stderr)
+        return 2
+    payload = diagnostic.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-feature-source: "
+            f"run={diagnostic.run_id} frames={diagnostic.frame_count} "
+            f"messages={diagnostic.message_count} "
+            f"depth_updates={diagnostic.depth_update_count} "
+            f"level_changes={diagnostic.level_change_count}"
+        )
+    return 0
 
 
 def _parse_cli_utc_date(value: object, label: str):

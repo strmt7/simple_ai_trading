@@ -41,6 +41,9 @@ V4_PROBE_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V4_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v4-capture-qualification-2026-07-22.json"
 )
+V4_FEATURE_SOURCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v4-feature-source-diagnostic-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -238,6 +241,28 @@ def test_round73_v4_qualification_separates_feed_and_storage_decisions() -> None
     assert authorization["v4_long_capture"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
+
+
+def test_round73_v4_feature_source_replay_is_hash_bound_and_nonfinancial() -> None:
+    evidence = json.loads(V4_FEATURE_SOURCE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["input"]["depth_update_count"] == 104570
+    assert evidence["input"]["level_change_count"] == 7432729
+    reconciliation = evidence["reconciliation"]
+    assert reconciliation["mismatch_count"] == 0
+    assert reconciliation["nonfinite_count"] == 0
+    assert reconciliation["reconstructed_top_20_states_match_typed_rows"] is True
+    assert "not executions" in evidence["feature_semantics"][
+        "gross_quote_flow_warning"
+    ]
+    authority = evidence["authority"]
+    assert authority["depth_band_primitives_reconstructed"] is True
+    assert authority["all_grid_anchor_features_constructed"] is False
+    assert authority["model_evaluated"] is False
+    assert authority["profitability_claim"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
