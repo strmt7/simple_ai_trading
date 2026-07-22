@@ -4,6 +4,7 @@ import pytest
 
 from simple_ai_trading.impact_capture_frame import (
     IMPACT_CAPTURE_FRAME_MAGIC,
+    IMPACT_CAPTURE_FRAME_MAX_MESSAGES,
     ImpactCaptureFrameRecord,
     decode_impact_capture_frame,
     encode_impact_capture_frame,
@@ -91,3 +92,21 @@ def test_impact_frame_rejects_unknown_sources_empty_payloads_and_bad_counts() ->
     frame, _located = encode_impact_capture_frame((_record(),))
     with pytest.raises(ValueError, match="truncated"):
         decode_impact_capture_frame(frame, expected_message_count=2)
+
+
+def test_impact_frame_accepts_frozen_v5_message_bound_and_rejects_overflow() -> None:
+    records = tuple(
+        _record(sequence=index + 1)
+        for index in range(IMPACT_CAPTURE_FRAME_MAX_MESSAGES)
+    )
+
+    frame, located = encode_impact_capture_frame(records)
+    receipts = scan_impact_capture_frame_receipts(
+        frame,
+        expected_message_count=IMPACT_CAPTURE_FRAME_MAX_MESSAGES,
+    )
+
+    assert len(located) == IMPACT_CAPTURE_FRAME_MAX_MESSAGES
+    assert receipts.message_count == IMPACT_CAPTURE_FRAME_MAX_MESSAGES
+    with pytest.raises(ValueError, match="message count"):
+        encode_impact_capture_frame(records + (_record(sequence=20_000),))
