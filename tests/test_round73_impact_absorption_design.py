@@ -826,6 +826,9 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
 
     assert claimed == _canonical_sha256(contract)
     assert contract["frozen_before_first_grid_write"] is True
+    revision = contract["revision"]
+    assert revision["first_grid_write_observed_before_revision"] is False
+    assert "outside level 20" in revision["reason"]
     admission = contract["source_admission"]
     assert admission["corpus_manifest_audit_required"] is True
     assert admission["cross_run_or_cross_segment_windows_permitted"] is False
@@ -840,6 +843,7 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
     semantics = contract["derived_semantics"]
     assert semantics["aggressive_buy"].endswith("false")
     assert "anonymous" in semantics["displayed_removal"]
+    assert "outside-20 flow is never normalized" in semantics["order_flow_normalizer"]
     validity = contract["validity_contract"]
     assert validity["negative_corrected_latency_policy"] == "anchor invalid"
     assert validity["nonfinite_feature_policy"].startswith("anchor invalid")
