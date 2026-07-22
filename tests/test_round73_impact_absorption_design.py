@@ -26,6 +26,9 @@ CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
+QUALIFICATION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-qualification-2026-07-22.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -135,3 +138,31 @@ def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
     assert probe["raw_sha256"] == (
         "972aacab0e6cbd8d026505e9ab4d7721a9a6275346ddd845fb32fa2186b8d805"
     )
+
+
+def test_round73_capture_qualification_is_hash_bound_and_narrowly_authorized() -> None:
+    evidence = json.loads(QUALIFICATION_EVIDENCE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["capture"]["qualification_passed"] is True
+    assert evidence["attempt_count"] == 1
+    assert evidence["attempt_evidence_combined"] is False
+    assert evidence["reconnect_count"] == 0
+    assert evidence["independent_replay_audit"]["passed"] is True
+    assert evidence["gate_reconstruction"]["all_three_symbols_passed"] is True
+    assert all(
+        symbol["segment_status"] == "valid"
+        and symbol["invalid_events"] == 0
+        and symbol["sequence_gaps"] == 0
+        and symbol["crossed_books"] == 0
+        for symbol in evidence["symbols"].values()
+    )
+    authorization = evidence["authorization"]
+    assert authorization["round_073_feature_construction"] is True
+    assert authorization["round_073_model_evaluation"] is True
+    assert authorization["profitability_claim"] is False
+    assert authorization["predictive_edge_claim"] is False
+    assert authorization["paper_trading_authority"] is False
+    assert authorization["testnet_trading_authority"] is False
+    assert authorization["live_trading_authority"] is False

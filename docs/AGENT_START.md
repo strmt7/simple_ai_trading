@@ -60,14 +60,14 @@ After parser or taxonomy changes, regenerate the header through the native build
   Contract v2 fixes that stream-specific path, binds every combined wrapper to
   its exact subscription, preserves malformed receipts as hash-chained
   `rejectedWire` evidence before failing, and keeps v1 audits reproducible.
-  Corrected probe `abb5bef24e6a401ab2c42eb23e9afca0` persisted 161,355
-  exact-wire messages in 605 frames, including one independently hash-verified
-  SOLUSDT `forceOrder`; audit passed with no reconnect or negative corrected
-  latency. Read `round-073-capture-contract-v2.json` and
-  `round-073-feed-contract-correction-evidence-2026-07-22.json`. This remains a
-  three-minute probe, not capture qualification, predictive evidence, P&L,
-  profitability, or trading authority. Use `impact-capture` and `impact-audit`;
-  never pool disconnected attempts.
+  Qualification run `5d89804a8f404d9b80b3a3ce2d796561` then passed one
+  uninterrupted hour: 3,988,592 exact-wire messages, 10,005 frames, 137
+  liquidation snapshots, zero reconnects, zero invalid/gap/crossed-book events,
+  34.44% peak queue use, and a separate full replay audit with zero errors.
+  Read `round-073-capture-contract-v2.json`, the correction evidence, and
+  `round-073-capture-qualification-2026-07-22.json`. This authorizes Round 73
+  feature construction only. It is not predictive evidence, P&L, profitability,
+  AI uplift, or trading authority. Never pool disconnected attempts.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.

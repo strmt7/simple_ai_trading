@@ -1,7 +1,8 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** preregistered research design v2. No modeling capture, model, replay, or
-profit result exists yet. This round grants no AI, leverage, testnet, or live
+**Status:** feed qualification passed under capture contract v2. One qualified
+modeling capture now exists; no feature comparison, model, replay, or profit
+result exists yet. This round grants no AI, leverage, paper, testnet, or live
 authority.
 
 ## Why this is different
@@ -47,8 +48,12 @@ flowchart LR
 - Diff-depth quantity decreases are displayed removals, not observed
   cancellations. Aggregate trades and removals remain separate when their
   attribution is ambiguous; the software never invents an order-lifecycle fact.
-- The single evidence store is `data/microstructure.duckdb`; long collection
-  starts only after a one-hour qualification measures integrity and storage rate.
+- The single evidence store is `data/microstructure.duckdb`. Qualification run
+  `5d89804a8f404d9b80b3a3ce2d796561` passed one uninterrupted hour with
+  3,988,592 exact-wire messages and an independent full replay audit. This
+  authorizes feature construction only; the one-hour corpus is far below the
+  seven-day viability and thirty-day promotion gates. See
+  `round-073-capture-qualification-2026-07-22.json`.
 
 Crypto trades continuously. UTC days are statistical blocks, not closes. Any
 later ETF or listed-product context must use the product's actual venue calendar,
