@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img">
+<title>Directional proper-score skill stayed below the frozen hurdle</title>
+<desc>Relative log-loss improvement versus each fold&#x27;s training prevalence; required &gt;= 0.200% for every symbol and horizon</desc>
+<rect width="1200" height="700" fill="#0b1220"/>
+<text x="64" y="58" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">Directional proper-score skill stayed below the frozen hurdle</text>
+<text x="64" y="88" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="15">Relative log-loss improvement versus each fold&#x27;s training prevalence; required &gt;= 0.200% for every symbol and horizon</text>
+<line x1="100" y1="575.0" x2="1150" y2="575.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="580.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-0.10</text>
+<line x1="100" y1="487.0" x2="1150" y2="487.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="492.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">-0.03</text>
+<line x1="100" y1="399.0" x2="1150" y2="399.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="404.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.04</text>
+<line x1="100" y1="311.0" x2="1150" y2="311.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="316.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.11</text>
+<line x1="100" y1="223.0" x2="1150" y2="223.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="228.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.18</text>
+<line x1="100" y1="135.0" x2="1150" y2="135.0" stroke="#334155" stroke-width="1"/>
+<text x="86" y="140.0" text-anchor="end" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">0.25</text>
+<line x1="100" y1="449.3" x2="1150" y2="449.3" stroke="#94a3b8" stroke-width="2"/>
+<rect x="119.2" y="404.4" width="19.8" height="44.9" rx="3" fill="#60a5fa"/>
+<text x="129.2" y="396.4" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.036</text>
+<rect x="148.4" y="449.3" width="19.8" height="7.6" rx="3" fill="#14b8a6"/>
+<text x="158.3" y="474.8" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.006</text>
+<rect x="177.6" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="187.5" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="158.3" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">BTC 30s</text>
+<rect x="235.9" y="449.3" width="19.8" height="8.6" rx="3" fill="#60a5fa"/>
+<text x="245.8" y="475.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.007</text>
+<rect x="265.1" y="449.3" width="19.8" height="8.3" rx="3" fill="#14b8a6"/>
+<text x="275.0" y="503.6" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.007</text>
+<rect x="294.2" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="304.2" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="275.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">BTC 60s</text>
+<rect x="352.6" y="340.3" width="19.8" height="109.0" rx="3" fill="#60a5fa"/>
+<text x="362.5" y="332.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.087</text>
+<rect x="381.8" y="312.4" width="19.8" height="136.9" rx="3" fill="#14b8a6"/>
+<text x="391.7" y="304.4" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.109</text>
+<rect x="410.9" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="420.8" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="391.7" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">BTC 300s</text>
+<rect x="469.2" y="375.4" width="19.8" height="73.8" rx="3" fill="#60a5fa"/>
+<text x="479.2" y="367.4" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.059</text>
+<rect x="498.4" y="359.7" width="19.8" height="89.6" rx="3" fill="#14b8a6"/>
+<text x="508.3" y="351.7" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.071</text>
+<rect x="527.6" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="537.5" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="508.3" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">ETH 30s</text>
+<rect x="585.9" y="377.1" width="19.8" height="72.2" rx="3" fill="#60a5fa"/>
+<text x="595.8" y="369.1" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.057</text>
+<rect x="615.1" y="386.0" width="19.8" height="63.3" rx="3" fill="#14b8a6"/>
+<text x="625.0" y="350.0" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.050</text>
+<rect x="644.3" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="654.2" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="625.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">ETH 60s</text>
+<rect x="702.6" y="431.9" width="19.8" height="17.4" rx="3" fill="#60a5fa"/>
+<text x="712.5" y="423.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.014</text>
+<rect x="731.8" y="445.6" width="19.8" height="3.6" rx="3" fill="#14b8a6"/>
+<text x="741.7" y="409.6" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.003</text>
+<rect x="760.9" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="770.8" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="741.7" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">ETH 300s</text>
+<rect x="819.2" y="442.9" width="19.8" height="6.3" rx="3" fill="#60a5fa"/>
+<text x="829.2" y="434.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.005</text>
+<rect x="848.4" y="449.2" width="19.8" height="1.0" rx="3" fill="#14b8a6"/>
+<text x="858.3" y="413.2" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.000</text>
+<rect x="877.6" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="887.5" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="858.3" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">SOL 30s</text>
+<rect x="935.9" y="449.3" width="19.8" height="14.0" rx="3" fill="#60a5fa"/>
+<text x="945.8" y="481.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.011</text>
+<rect x="965.1" y="436.3" width="19.8" height="12.9" rx="3" fill="#14b8a6"/>
+<text x="975.0" y="428.3" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.010</text>
+<rect x="994.3" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="1004.2" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="975.0" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">SOL 60s</text>
+<rect x="1052.6" y="449.3" width="19.8" height="12.5" rx="3" fill="#60a5fa"/>
+<text x="1062.5" y="479.8" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.010</text>
+<rect x="1081.8" y="449.3" width="19.8" height="25.0" rx="3" fill="#14b8a6"/>
+<text x="1091.7" y="506.2" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">-0.020</text>
+<rect x="1110.9" y="197.9" width="19.8" height="251.4" rx="3" fill="#f59e0b"/>
+<text x="1120.8" y="189.9" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="12">0.200</text>
+<text x="1091.7" y="609" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI,Arial,sans-serif" font-size="14">SOL 300s</text>
+<text transform="translate(24 355.0) rotate(-90)" text-anchor="middle" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="14">Relative log-loss improvement (%)</text>
+<rect x="100.0" y="655" width="14" height="14" rx="2" fill="#60a5fa"/>
+<text x="122.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Perpetual only</text>
+<rect x="450.0" y="655" width="14" height="14" rx="2" fill="#14b8a6"/>
+<text x="472.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Spot + perpetual</text>
+<rect x="800.0" y="655" width="14" height="14" rx="2" fill="#f59e0b"/>
+<text x="822.0" y="667" fill="#cbd5e1" font-family="Segoe UI,Arial,sans-serif" font-size="13">Required</text>
+</svg>

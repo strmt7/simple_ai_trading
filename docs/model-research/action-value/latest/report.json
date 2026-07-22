@@ -1,138 +1,142 @@
 {
-  "schema_version": "round-061-carry-economic-replay-publication-v1",
-  "round": 61,
-  "publisher_path": "tools/publish_round61_carry_economic_replay.py",
+  "schema_version": "round-072-price-discovery-publication-v1",
+  "round": 72,
+  "publisher_path": "tools/publish_round72_price_discovery.py",
+  "publisher_git_blob_oid": "11d8a88e14fd87f502889dea83e39d55773221e0",
+  "chart_renderer_path": "tools/publish_round52_executable_support_hurdle.py",
+  "chart_renderer_git_blob_oid": "368123754a79a8e7af2ba19aec9221eaa8c50a8c",
   "source": {
-    "report_file": "round61-carry-economic-replay-20260715-v1.json",
-    "report_file_sha256": "dc9fa604257db59a1b2d1766c70fa8131aafc5cb132238a2f536f13ad2b08908",
-    "report_canonical_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
-    "design_path": "docs/model-research/action-value/round-061-carry-economic-replay-design.json",
-    "design_file_sha256": "f04422d726045170a7e1221e4fa06a3ed83d094c5bf3a629edda10e6c66d0d6c",
-    "design_sha256": "eadab11fea709aa562f11557e08887a155a8d446cefa09c77153c2b1967159cc",
-    "manifest_path": "docs/model-research/action-value/round-061-carry-event-manifest.json",
-    "manifest_file_sha256": "65a5c20b2ad8a85add95d49f5ea94260d36062c8fed004dfd5ee7e310814700f",
-    "manifest_sha256": "8b5a8037176c5e37af2c261c0ab79dd9f43f6e0d9024e78f6306694293126594",
-    "source_certificate_file_sha256": "a419767b6e04ab6b97aa26f9b526a3c5ac80e37303237af3cd39348f78ca912a",
-    "source_certificate_canonical_sha256": "579c27e3575b46f07231bf510787195048eeedf2b4ca00413b55271ad14a2d30",
-    "implementation_commit": "7d8d16c7194b241c10ef98ef9be94f9b16f9bd9b",
-    "runner_path": "tools/run_round61_carry_economic_replay.py",
-    "runner_git_blob_oid": "fb4399d96806befdecf83845c02c120d40fd9cd2",
-    "source_loader_path": "tools/ingest_round61_carry_event_sources.py",
-    "source_loader_git_blob_oid": "05d6bada41acb28b628cab0bf883e2c7d529f433"
+    "execution_commit": "43e465865a288110e5b01adc6cfc5d22df82eecc",
+    "evaluation_file_sha256": "eb0723856bcc905698ba39da7e381e67eb61bd6551e1374962abc25d663acec0",
+    "evaluation_report_sha256": "65900fa58299d56fffa04206dcff83a343e9b005ca71f654efe4e939508d3e3d",
+    "metrics_file_sha256": "42bccfc5cf5a6408e8909695eac060306a281c37ab3f57d928a2a048333ac3bf",
+    "corpus_file_sha256": "72b7a72a422e8df6d8f01f950a53129e9d4ebf69ca09736317e3238289b72d3f",
+    "corpus_report_sha256": "1d7791db923f1d1a7eddc8189934424795246ea01250f6dbef26a59483605adb",
+    "design_file_sha256": "23b443ec6e30431034dd3156e2bfb40f86638183ced8e28a2d856d0713ef4a20",
+    "design_sha256": "505818f74cdd9484f66b1a504de821d4d366ec35c7d7bf978ffa15d613104812",
+    "inventory_file_sha256": "055b5c5a3d975a092bae0c27253757c3be39535945d0aa6caaecdf31e9343b1b",
+    "inventory_sha256": "e8c505132716c68ad753cbdd93b23094b778d9067c8a6c9381fad0e20cdd662c",
+    "implementation_file_sha256": "e16fef96b033ac1c127c01bed55d56cc3e19ebbcdfe0d358f1c72ce58d129adb",
+    "implementation_sha256": "d8679606e75ec7fa2bf00032b34489218085f7c7f5159419e192f3ee351dfad9",
+    "execution_source_blob_oids": {
+      "tools/run_round72_price_discovery_screen.py": "4358b198960890e45a9fb9faf63d7fc07a0a3fa0",
+      "src/simple_ai_trading/price_discovery_dataset.py": "ff819f7fabf2a5e01255eda7008c8e5729b3d4e0",
+      "src/simple_ai_trading/price_discovery_model.py": "d6385a231f2a59d1ec9be6ef1eff2ce27d664aa3",
+      "src/simple_ai_trading/price_discovery_evaluation.py": "03b77a97113ce110d636e6cde436e29d1642229a"
+    }
   },
   "claims": {
-    "status": "rejected_elevated_funding_carry",
-    "selection_contaminated": true,
-    "tick_execution_replay_authorized": false,
+    "status": "rejected",
+    "terminal_holdout_read": false,
     "profitability_claim": false,
+    "execution_or_fill_claim": false,
     "ai_uplift_claim": false,
-    "model_training_authorized": false,
     "trading_authority": false,
     "testnet_authority": false,
     "live_authority": false,
-    "leverage_applied": false
+    "leverage_authority": false
   },
   "result": {
-    "passed_symbols": [],
-    "required_symbols": [
-      "BTCUSDT",
-      "ETHUSDT",
-      "SOLUSDT"
-    ],
-    "all_symbols_passed": false,
-    "authorized_next_step": "none; reject this elevated-funding carry family"
+    "decision": "reject_round_072_price_discovery",
+    "primary_gate_passed": false,
+    "feature_comparison_passes": 0,
+    "feature_comparisons": 36,
+    "component_passes": 0,
+    "components": 9,
+    "models": 216,
+    "backend": {
+      "device": "opencl:auto",
+      "kind": "opencl",
+      "lightgbm_version": "4.6.0",
+      "requested": "auto"
+    }
   },
   "artifacts": [
     {
-      "path": "capacity.csv",
-      "bytes": 108004,
-      "sha256": "e33a6619fcb3906b56328b1ad2316b734fbf7c1ad2a9b5ef94f2baf2978c7d52"
+      "path": "charts/day-block-confidence.svg",
+      "bytes": 9525,
+      "sha256": "7cee96228860fd4f45551b419a600c99e3147eb59fc6bd5e63b038720b8b17c7"
     },
     {
-      "path": "charts/cumulative-stress-net.svg",
-      "bytes": 6396,
-      "sha256": "6e97cd8cf77bdb19a50bd15bed74554fd6bff66f516e16967f35726387210e0b"
+      "path": "charts/primary-binary-skill.svg",
+      "bytes": 9614,
+      "sha256": "57ac1606f2bef69bef7cc1ca5ad815938f4e4eb0e0871ce8bb255342076f502a"
     },
     {
-      "path": "charts/pnl-decomposition.svg",
-      "bytes": 5485,
-      "sha256": "7035fbe8467c213624dd1411c749198ff4633d775557577b9012bf91a7c03931"
+      "path": "charts/primary-continuous-skill.svg",
+      "bytes": 9533,
+      "sha256": "c5f3f1db266fd7ef89e6cc4be7c0eaa90f285a1c974001b4e2cf7c9a7907de25"
     },
     {
       "path": "charts/research-progress.svg",
-      "bytes": 5398,
-      "sha256": "d9be7d48a0f53f4c558e460162c93c43e71031c2804c7f9e47b80d77c4662cf4"
+      "bytes": 9032,
+      "sha256": "df7e7b46cdf2ce3eb15f0fd8917bdd1b54f695dca3913bfd663166e5d2ea0168"
     },
     {
-      "path": "charts/source-capacity-eligibility.svg",
-      "bytes": 4929,
-      "sha256": "952c50a6e45a36409706d49791ff99038b4b72461932e3d9640498d83bea0f8e"
+      "path": "charts/spot-perpetual-increment.svg",
+      "bytes": 9601,
+      "sha256": "729ffb979d68bdd37d9f249d02d57a3511181ce4128a503b738660506c0cb1c3"
     },
     {
-      "path": "charts/stress-net-economics.svg",
-      "bytes": 4406,
-      "sha256": "b490da3c7c879790448c7f68f0ffcd421179f8925595819037334ac11b545d2e"
+      "path": "components.csv",
+      "bytes": 6964,
+      "sha256": "10af54fc4db0e53e6e662e3eddb8b1f00c16b028949ab01c766ed312998be33f"
     },
     {
-      "path": "cumulative.csv",
-      "bytes": 5421,
-      "sha256": "a8ea628fc7e0b0a386c6034da2e9ecb489ad88c9a167b2e9dc2300894c3831a1"
+      "path": "corpus-ingestion.json",
+      "bytes": 28141,
+      "sha256": "72b7a72a422e8df6d8f01f950a53129e9d4ebf69ca09736317e3238289b72d3f"
     },
     {
       "path": "decision-analysis.json",
-      "bytes": 4945,
-      "sha256": "72821232575ae86c2409acc530b4015738c68a7bf501e8dc2becfa41de411921"
+      "bytes": 1376,
+      "sha256": "8575ab725694c67cbd7be21c80f604c46c4e9aebb64ca104670f2a9108536abf"
     },
     {
       "path": "design.json",
-      "bytes": 13585,
-      "sha256": "f04422d726045170a7e1221e4fa06a3ed83d094c5bf3a629edda10e6c66d0d6c"
+      "bytes": 17154,
+      "sha256": "23b443ec6e30431034dd3156e2bfb40f86638183ced8e28a2d856d0713ef4a20"
     },
     {
-      "path": "episodes.csv",
-      "bytes": 32331,
-      "sha256": "1c6c27a30ef79d96fa082b231303911b033a8c7bf006092d99d0d35694caad16"
+      "path": "evaluation.json",
+      "bytes": 320214,
+      "sha256": "eb0723856bcc905698ba39da7e381e67eb61bd6551e1374962abc25d663acec0"
     },
     {
-      "path": "event-manifest.json",
-      "bytes": 323045,
-      "sha256": "65a5c20b2ad8a85add95d49f5ea94260d36062c8fed004dfd5ee7e310814700f"
+      "path": "feature-comparisons.csv",
+      "bytes": 10130,
+      "sha256": "3e073483a3199c744efc8d07d7f6004c8ed9482eb636b82a956216140c0096f6"
     },
     {
-      "path": "gates.csv",
-      "bytes": 3068,
-      "sha256": "4175b4e2eb32ca675830b3a0e960a32ea350fbb304ecea1a3d6e95613ecf9fb8"
+      "path": "implementation.json",
+      "bytes": 17988,
+      "sha256": "e16fef96b033ac1c127c01bed55d56cc3e19ebbcdfe0d358f1c72ce58d129adb"
+    },
+    {
+      "path": "inventory.json",
+      "bytes": 250619,
+      "sha256": "055b5c5a3d975a092bae0c27253757c3be39535945d0aa6caaecdf31e9343b1b"
+    },
+    {
+      "path": "metrics.csv",
+      "bytes": 24513,
+      "sha256": "42bccfc5cf5a6408e8909695eac060306a281c37ab3f57d928a2a048333ac3bf"
+    },
+    {
+      "path": "models.csv",
+      "bytes": 66550,
+      "sha256": "732c998bfc612308b4ec899e3b095bc7bbc513d103b5ce077f4fe64af3de7183"
     },
     {
       "path": "progress.csv",
-      "bytes": 23028,
-      "sha256": "f711b7b9284953e025793ea888306e339e3117ff44b491adb63fccbe76a76ffc"
+      "bytes": 25867,
+      "sha256": "d337b2bd38a9f3bb6733cc9dd641cd54886fe1151aeb50a511f4de24fc64df3f"
     },
     {
       "path": "README.md",
-      "bytes": 2618,
-      "sha256": "d60867a85091883da73417b2ff3775660a6b9ea2a9fcc2244bcbc33c9f7b84c2"
-    },
-    {
-      "path": "screen.json",
-      "bytes": 925577,
-      "sha256": "dc9fa604257db59a1b2d1766c70fa8131aafc5cb132238a2f536f13ad2b08908"
-    },
-    {
-      "path": "source-certificate.json",
-      "bytes": 239122,
-      "sha256": "a419767b6e04ab6b97aa26f9b526a3c5ac80e37303237af3cd39348f78ca912a"
-    },
-    {
-      "path": "summary.csv",
-      "bytes": 1104,
-      "sha256": "489589311296c154e4f5b3d9b5b729b68665cefcf24c3a341419d73f83c8030e"
-    },
-    {
-      "path": "yearly.csv",
-      "bytes": 531,
-      "sha256": "e69cb5325b7165d486ebaa89c6774f2927b44f0c9994b6c1e38ad5fa167d3cd6"
+      "bytes": 3293,
+      "sha256": "ba5a72c772154279238e1b3c401b9444ed7ed93796f577b4e98136266d5b5474"
     }
   ],
-  "publication_canonical_sha256": "4e3f697c83ca10df0accf8a9aaa8e37579272ce8148ea4967febeb9542d5c8d4"
+  "publication_canonical_sha256": "6060c119a248d8f5ecb121a5ebd3905741216413dacfb2b9253cc25f5ad4ce7e"
 }
