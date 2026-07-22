@@ -145,6 +145,11 @@ def test_round73_capture_qualification_is_hash_bound_and_narrowly_authorized() -
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
+    assert evidence["schema_version"] == "round-073-capture-qualification-evidence-v2"
+    assert evidence["supersedes_artifact_sha256"] == (
+        "c815bb7021097230dd1abccbf47af63154c2ca39fefc20a576e0af93f9f6d510"
+    )
+    assert evidence["governance_correction"]["evidence_values_changed"] is False
     assert evidence["capture"]["qualification_passed"] is True
     assert evidence["attempt_count"] == 1
     assert evidence["attempt_evidence_combined"] is False
@@ -160,7 +165,10 @@ def test_round73_capture_qualification_is_hash_bound_and_narrowly_authorized() -
     )
     authorization = evidence["authorization"]
     assert authorization["round_073_feature_construction"] is True
-    assert authorization["round_073_model_evaluation"] is True
+    assert authorization["one_hour_feature_pipeline_diagnostic"] is True
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["round_073_viability_model_evaluation"] is False
+    assert authorization["round_073_promotion_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
     assert authorization["predictive_edge_claim"] is False
     assert authorization["paper_trading_authority"] is False
