@@ -53,6 +53,9 @@ V5_PROBE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V5_STORAGE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v5-storage-probe-failure-2026-07-22.json"
 )
+V6_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-contract-v6.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -362,6 +365,37 @@ def test_round73_v5_storage_failure_rejects_unsupported_checkpoint_change() -> N
     authorization = evidence["authorization"]
     assert authorization["v6_telemetry_probe"] is True
     assert authorization["v5_one_hour_qualification"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["profitability_claim"] is False
+    assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v6_contract_separates_capture_terminal_and_physical_io() -> None:
+    contract = json.loads(V6_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("capture_contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v6_capture"] is True
+    assert contract["inheritance"]["wire_frame_format_changed"] is False
+    assert contract["inheritance"]["typed_event_hash_changed"] is False
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["formal_daily_close"] is False
+    assert "actual venue calendar" in calendar["listed_etf_or_security_semantics"]
+    capture_io = contract["capture_phase_telemetry"]
+    assert capture_io["endpoint_is_sealed_once"] is True
+    assert capture_io["physical_ssd_or_nand_wear_claim_permitted"] is False
+    assert contract["terminal_phase_telemetry"]["qualification_metric"] is False
+    assert contract["duckdb_policy"]["changed_by_v6"] is False
+    gate = contract["capture_gate"]
+    assert gate["minimum_stream_seconds"] == 180
+    assert gate["maximum_capture_phase_process_write_bytes_per_message"] == 4_096
+    assert gate["maximum_database_physical_growth_bytes_per_message"] == 1_024
+    assert gate["fresh_process_read_only_audit_required"] is True
+    assert gate["independent_exact_wire_feature_source_replay_required"] is True
+    authorization = contract["authorization"]
+    assert authorization["v6_thirty_second_telemetry_diagnostic"] is True
+    assert authorization["v6_180_second_capture_gate_attempt"] is False
+    assert authorization["v6_one_hour_qualification"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
     assert authorization["live_trading_authority"] is False

@@ -580,6 +580,22 @@ def test_store_keeps_v4_event_time_rows_replay_auditable(tmp_path) -> None:
         assert audit.capture_contract_sha256 == v4_contract
 
 
+def test_store_keeps_v5_depth_band_rows_replay_auditable(tmp_path) -> None:
+    v5_schema = "round-073-prospective-evidence-v5"
+    v5_contract = "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+
+        _rewrite_single_frame_version(connection, v5_schema, v5_contract)
+
+        audit = store.audit_run(RUN_ID)
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.capture_contract_sha256 == v5_contract
+
+
 def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
     tmp_path,
 ) -> None:
@@ -994,7 +1010,7 @@ def test_terminal_capture_report_is_canonical_hash_bound_and_secret_free(
             ended_wall_ns=WALL_BASE + 2_000,
         )
         report = {
-            "schema_version": "round-073-capture-report-v5",
+            "schema_version": "round-073-capture-report-v6",
             "run_id": RUN_ID,
             "status": "stopped",
             "qualification_passed": False,

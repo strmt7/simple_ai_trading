@@ -12,9 +12,11 @@ from simple_ai_trading.impact_absorption_capture import (
     ImpactCaptureConfig,
     ImpactCaptureReport,
     _ImpactFrameWriter,
+    _ProcessIoSnapshot,
     _best_effort_wire_identity,
     _is_retriable_capture_failure,
     _market_stream_url,
+    _process_io_interval,
     _public_stream_url,
     _request_weight_limit,
     _rejected_wire_message,
@@ -48,6 +50,7 @@ def _report(
         run_id=run_id,
         mode="probe",
         status=status,
+        capture_gate_passed=False,
         qualification_passed=qualification_passed,
         started_wall_ns=1,
         ended_wall_ns=2,
@@ -59,9 +62,13 @@ def _report(
         writer_message_count=0,
         writer_compressed_payload_bytes=0,
         payload_cap_reached=False,
+        database_physical_start_bytes=0,
         database_physical_bytes=0,
+        database_physical_growth_bytes=0,
+        database_physical_growth_bytes_per_message=None,
         database_size_cap_bytes=8 * 1024 * 1024 * 1024,
         database_size_cap_reached=False,
+        process_io_scope="capture phase through writer connection close",
         process_io_provider="test",
         process_io_semantics="test counter",
         process_io_start_write_bytes=0,
@@ -70,6 +77,11 @@ def _report(
         process_io_write_bytes_per_message=None,
         frames_per_stream_minute=0.0,
         storage_efficiency_passed=False,
+        terminal_process_io_provider="test",
+        terminal_process_io_semantics="test counter",
+        terminal_process_io_start_write_bytes=0,
+        terminal_process_io_end_write_bytes=0,
+        terminal_process_io_delta_write_bytes=0,
         event_counts={},
         symbol_event_counts={},
         negative_corrected_latency_fraction=None,
@@ -181,24 +193,25 @@ def test_storage_efficiency_gate_uses_frozen_process_io_and_queue_bounds(
         elapsed_seconds=180.0,
         queue_capacity_messages=65_536,
     )
-    assert metrics[4] == 4_096_000
-    assert metrics[5] == 4_096.0
-    assert metrics[6] == 25.0
-    assert metrics[7] is True
+    assert metrics.process_io_delta_write_bytes == 4_096_000
+    assert metrics.process_io_write_bytes_per_message == 4_096.0
+    assert metrics.frames_per_stream_minute == 25.0
+    assert metrics.database_physical_growth_bytes_per_message == 0.0
+    assert metrics.storage_efficiency_passed is True
 
     writer.frame_count = 76
     assert _writer_resource_metrics(
         writer,
         elapsed_seconds=180.0,
         queue_capacity_messages=65_536,
-    )[7] is False
+    ).storage_efficiency_passed is False
     writer.frame_count = 75
     writer.high_water_messages = 52_429
     assert _writer_resource_metrics(
         writer,
         elapsed_seconds=180.0,
         queue_capacity_messages=65_536,
-    )[7] is False
+    ).storage_efficiency_passed is False
     writer.high_water_messages = 52_428
     monkeypatch.setattr(
         writer,
@@ -209,7 +222,7 @@ def test_storage_efficiency_gate_uses_frozen_process_io_and_queue_bounds(
         writer,
         elapsed_seconds=180.0,
         queue_capacity_messages=65_536,
-    )[7] is False
+    ).storage_efficiency_passed is False
     monkeypatch.setattr(
         writer,
         "process_io_metrics",
@@ -219,7 +232,28 @@ def test_storage_efficiency_gate_uses_frozen_process_io_and_queue_bounds(
         writer,
         elapsed_seconds=179.999,
         queue_capacity_messages=65_536,
-    )[7] is False
+    ).storage_efficiency_passed is False
+    writer.database_physical_bytes = 1_024_001
+    assert _writer_resource_metrics(
+        writer,
+        elapsed_seconds=180.0,
+        queue_capacity_messages=65_536,
+    ).storage_efficiency_passed is False
+
+
+def test_process_io_interval_fails_closed_if_provider_changes() -> None:
+    matching = _process_io_interval(
+        _ProcessIoSnapshot("provider", "counter", 100),
+        _ProcessIoSnapshot("provider", "counter", 150),
+    )
+    changed = _process_io_interval(
+        _ProcessIoSnapshot("provider-a", "counter", 100),
+        _ProcessIoSnapshot("provider-b", "counter", 150),
+    )
+
+    assert matching.delta_write_bytes == 50
+    assert changed.provider == "provider_changed"
+    assert changed.delta_write_bytes is None
 
 
 def test_stream_topology_is_three_symbols_only_and_uses_specific_liquidations() -> None:
@@ -369,7 +403,7 @@ def test_terminal_post_capture_failure_is_persisted_and_never_retried(tmp_path) 
             "WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()
-    assert stored[0] == "round-073-capture-report-v5"
+    assert stored[0] == "round-073-capture-report-v6"
     assert json.loads(stored[1])["failure_class"] == "post_capture"
     with ImpactAbsorptionStore(database, read_only=True) as store:
         assert store.audit_run(RUN_ID).passed is True

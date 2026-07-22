@@ -39,11 +39,11 @@ from .impact_capture_frame import (
 )
 
 
-IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v5"
+IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v6"
 IMPACT_CAPTURE_CONTRACT_SHA256 = (
-    "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
+    "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
 )
-IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v5"
+IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v6"
 _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v1": (
         "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
@@ -57,7 +57,31 @@ _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v4": (
         "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529"
     ),
+    "round-073-prospective-evidence-v5": (
+        "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
+    ),
 }
+_V5_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v5"
+_V4_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v4"
+_V3_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v3"
+_COMPACT_CAPTURE_SCHEMAS = frozenset(
+    {
+        IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V5_CAPTURE_SCHEMA_VERSION,
+        _V4_CAPTURE_SCHEMA_VERSION,
+        _V3_CAPTURE_SCHEMA_VERSION,
+    }
+)
+_EVENT_TIME_LINK_SCHEMAS = frozenset(
+    {
+        IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V5_CAPTURE_SCHEMA_VERSION,
+        _V4_CAPTURE_SCHEMA_VERSION,
+    }
+)
+_DEPTH_BAND_SCHEMAS = frozenset(
+    {IMPACT_CAPTURE_SCHEMA_VERSION, _V5_CAPTURE_SCHEMA_VERSION}
+)
 IMPACT_CAPTURE_COMPRESSION_LEVEL = 3
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
@@ -557,11 +581,7 @@ _V3_TYPED_TABLES = {
 def _typed_tables_for_schema(
     schema_version: str,
 ) -> dict[str, tuple[str, tuple[str, ...]]]:
-    if schema_version in {
-        IMPACT_CAPTURE_SCHEMA_VERSION,
-        "round-073-prospective-evidence-v4",
-        "round-073-prospective-evidence-v3",
-    }:
+    if schema_version in _COMPACT_CAPTURE_SCHEMAS:
         return dict(_V3_TYPED_TABLES)
     if schema_version in _LEGACY_CAPTURE_CONTRACTS:
         tables = dict(_LEGACY_TYPED_TABLES)
@@ -2301,11 +2321,7 @@ class ImpactAbsorptionStore:
             l2_table = (
                 IMPACT_L2_STATE_TABLE
                 if schema_version
-                in {
-                    IMPACT_CAPTURE_SCHEMA_VERSION,
-                    "round-073-prospective-evidence-v4",
-                    "round-073-prospective-evidence-v3",
-                }
+                in _COMPACT_CAPTURE_SCHEMAS
                 else "impact_l2_state"
             )
             l2_row = connection.execute(
@@ -2362,24 +2378,18 @@ class ImpactAbsorptionStore:
             """,
             [selected],
         ).fetchall()
-        compact_schema = run_schema_version in {
-            IMPACT_CAPTURE_SCHEMA_VERSION,
-            "round-073-prospective-evidence-v4",
-            "round-073-prospective-evidence-v3",
-        }
-        event_time_link_schema = run_schema_version in {
-            IMPACT_CAPTURE_SCHEMA_VERSION,
-            "round-073-prospective-evidence-v4",
-        }
+        compact_schema = run_schema_version in _COMPACT_CAPTURE_SCHEMAS
+        event_time_link_schema = run_schema_version in _EVENT_TIME_LINK_SCHEMAS
+        depth_band_schema = run_schema_version in _DEPTH_BAND_SCHEMAS
         if expected_contract is None:
             typed_contracts: dict[str, tuple[str, tuple[str, ...]]] = {}
         else:
             typed_contracts = _typed_tables_for_schema(run_schema_version)
-        if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+        if run_schema_version in _DEPTH_BAND_SCHEMAS:
             event_link_table = IMPACT_EVENT_LINK_TABLE
-        elif run_schema_version == "round-073-prospective-evidence-v4":
+        elif run_schema_version == _V4_CAPTURE_SCHEMA_VERSION:
             event_link_table = "impact_event_link_v4"
-        elif run_schema_version == "round-073-prospective-evidence-v3":
+        elif run_schema_version == _V3_CAPTURE_SCHEMA_VERSION:
             event_link_table = "impact_event_link_v3"
         else:
             event_link_table = "impact_event_index"
@@ -2527,7 +2537,7 @@ class ImpactAbsorptionStore:
                         [selected, first_frame_index, last_frame_index],
                     ).fetchall()
                 }
-                if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+                if depth_band_schema:
                     depth_band_rows = {
                         (int(band_row[1]), int(band_row[2])): tuple(band_row)
                         for band_row in connection.execute(
@@ -2661,7 +2671,7 @@ class ImpactAbsorptionStore:
                 depth_band_row = (
                     depth_band_rows.get((frame_index, message_index))
                     if indexed_event_type == "depthUpdate"
-                    and run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+                    and depth_band_schema
                     else None
                 )
                 if typed_row is None:
@@ -2693,7 +2703,7 @@ class ImpactAbsorptionStore:
                         "l2_row": l2_row,
                     }
                     if (
-                        run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+                        depth_band_schema
                         and indexed_event_type == "depthUpdate"
                     ):
                         typed_payload["depth_band_row"] = depth_band_row
@@ -2781,7 +2791,7 @@ class ImpactAbsorptionStore:
                 )
             if actual != expected_counts.get(event_type, 0):
                 errors.append(f"typed_count_mismatch:{event_type}")
-        if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+        if depth_band_schema:
             band_count = int(
                 connection.execute(
                     f"SELECT count(*) FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
