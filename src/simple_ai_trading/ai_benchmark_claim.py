@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 import re
 import time
-from typing import Mapping
+from typing import Callable, Mapping
 from urllib.parse import urlparse
 
 from .ai_model_benchmark import (
@@ -32,11 +32,15 @@ from .polymarket_recorder import (
 from .storage import write_json_atomic
 
 
-AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v2"
+AI_BENCHMARK_CLAIM_SCHEMA_VERSION = "preregistered-ai-benchmark-claim-v3"
 AI_BENCHMARK_PREREGISTRATION_SCHEMA_VERSION = (
-    "finance-risk-review-candidate-preregistration-v4"
+    "finance-risk-review-candidate-preregistration-v5"
 )
-AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v2"
+AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION = "preregistered-ai-benchmark-runtime-v3"
+AI_BENCHMARK_FAILURE_EVIDENCE_SCHEMA_VERSION = (
+    "preregistered-ai-benchmark-failure-v1"
+)
+ClaimProgress = Callable[[str, Mapping[str, object]], None]
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MAX_JSON_BYTES = 32 * 1024 * 1024
 _ADMISSIBLE_CONFIRMATION_STATUSES = ("complete", "degraded")
@@ -44,7 +48,7 @@ _MINIMUM_CONFIRMATION_DURATION_SECONDS = 54_000
 _MINIMUM_CONTINUITY_GROUPS = 30
 _PROVIDER_DURATION_TOLERANCE_SECONDS = 0.001
 _APPROVED_PREREGISTRATION_SHA256 = {
-    "qwen3:14b": "e96d203d9e8a32114fd2192c2cc86ab029d9185923ff9162214d4ff061aee8ec",
+    "qwen3:14b": "317fabf1d9f53f5604f62a618e7255f620e540e0852bd0d88087e8967a5aa534",
 }
 
 
@@ -71,6 +75,16 @@ def requires_preregistered_ai_benchmark(model: str) -> bool:
     """Return whether a model is protected by a frozen one-shot benchmark."""
 
     return str(model or "").strip().lower() in _APPROVED_PREREGISTRATION_SHA256
+
+
+def preregistered_ai_benchmark_failure_path(
+    output_path: str | Path,
+) -> Path:
+    """Return the deterministic sidecar path for a consumed failed run."""
+
+    output = Path(output_path)
+    suffix = output.suffix or ".json"
+    return output.with_name(f"{output.stem}.failure{suffix}")
 
 
 def _canonical_json(value: object) -> str:
@@ -322,6 +336,14 @@ def write_preregistered_ai_benchmark_output(
     """Atomically persist a one-shot report with exact inference-time evidence."""
 
     payload = report.asdict()
+    if any(
+        result.provider_telemetry_cases != len(report.tests)
+        for result in report.results
+    ):
+        raise ValueError(
+            "AI benchmark provider completion evidence is incomplete; "
+            "the run must be persisted as an infrastructure failure"
+        )
     evidence: dict[str, object] = {
         "schema_version": AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION,
         "provider": "ollama",
@@ -435,6 +457,10 @@ def _validated_preregistration(
         or frozen.get("gaps_inside_eligible_windows_allowed") is not False
         or frozen.get("required_provider_response_contract")
         != AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
+        or frozen.get("provider_format") != "json"
+        or frozen.get("strict_post_parse_schema_required") is not True
+        or frozen.get("bounded_http_failure_evidence_required") is not True
+        or frozen.get("failure_sidecar_required") is not True
         or frozen.get("exact_returned_model_required") is not True
         or frozen.get("terminal_stop_required") is not True
         or frozen.get("positive_prompt_and_output_token_counts_required") is not True
@@ -568,6 +594,7 @@ def begin_preregistered_ai_benchmark_claim(
     timeout_seconds: float,
     minimum_score: float,
     output_path: Path,
+    progress: ClaimProgress | None = None,
 ) -> PreregisteredAIBenchmarkClaim:
     """Audit confirmation evidence and durably consume a one-shot benchmark."""
 
@@ -698,7 +725,10 @@ def begin_preregistered_ai_benchmark_claim(
     row = connection.execute(query, parameters).fetchone()
     if row is not None:
         return existing_claim(row)
-    integrity = store.integrity_errors(selected_run)
+    failure_output = preregistered_ai_benchmark_failure_path(output)
+    if Path(output).exists() or failure_output.exists():
+        raise ValueError("preregistered AI benchmark output already exists")
+    integrity = store.integrity_errors(selected_run, progress=progress)
     if integrity:
         raise ValueError(
             "AI benchmark confirmation integrity failed: " + "; ".join(integrity)
@@ -724,7 +754,7 @@ def begin_preregistered_ai_benchmark_claim(
     }
     identity_json = _canonical_json(identity)
     claim_sha256 = hashlib.sha256(identity_json.encode("ascii")).hexdigest()
-    if Path(output).exists():
+    if Path(output).exists() or failure_output.exists():
         raise ValueError("preregistered AI benchmark output already exists")
     _validate_prior_comparison(preregistration_path, preregistration)
     connection.execute("BEGIN TRANSACTION")
@@ -734,7 +764,7 @@ def begin_preregistered_ai_benchmark_claim(
             claim = existing_claim(row, expected_identity=identity)
             connection.execute("COMMIT")
             return claim
-        if Path(output).exists():
+        if Path(output).exists() or failure_output.exists():
             raise ValueError("preregistered AI benchmark output already exists")
         now_ms = time.time_ns() // 1_000_000
         connection.execute(
@@ -818,34 +848,154 @@ def fail_preregistered_ai_benchmark_claim(
     store: PolymarketEvidenceStore,
     claim: PreregisteredAIBenchmarkClaim,
     error: BaseException,
-) -> None:
-    """Persist failure so test cases cannot be silently reopened."""
+    *,
+    report: AIModelBenchmarkReport | None = None,
+    pre_model_provenance: tuple[str, str] | None = None,
+    post_model_provenance: tuple[str, str] | None = None,
+    residency: OllamaResidencyReport | None = None,
+) -> Path:
+    """Persist a hash-bound failure sidecar and permanently consume the claim."""
 
-    failure_sha256 = _sha256(
-        {"error_type": type(error).__name__, "error_message": str(error)}
-    )
-    store.connect().execute(
+    connection = store.connect()
+    row = connection.execute(
+        """
+        SELECT schema_version, state FROM preregistered_ai_benchmark_claim
+        WHERE claim_sha256 = ?
+        """,
+        [claim.claim_sha256],
+    ).fetchone()
+    if row is None or tuple(str(item) for item in row) != (
+        AI_BENCHMARK_CLAIM_SCHEMA_VERSION,
+        "started",
+    ):
+        raise ValueError("preregistered AI benchmark failure claim is invalid")
+
+    def provenance_payload(
+        value: tuple[str, str] | None,
+        name: str,
+    ) -> dict[str, str] | None:
+        if value is None:
+            return None
+        digest, metadata_sha256 = value
+        if (
+            _SHA256.fullmatch(str(digest)) is None
+            or _SHA256.fullmatch(str(metadata_sha256)) is None
+        ):
+            raise ValueError(f"{name} is invalid")
+        return {
+            "model_digest": str(digest),
+            "model_metadata_sha256": str(metadata_sha256),
+        }
+
+    partial_report = None if report is None else report.asdict()
+    if report is not None and (
+        report.benchmark_contract != AI_MODEL_BENCHMARK_CONTRACT
+        or len(report.results) != 1
+        or report.results[0].model != claim.model
+    ):
+        raise ValueError("AI benchmark failure report is inconsistent")
+    error_evidence = {
+        "error_type": type(error).__name__,
+        "error_message": str(error)[:2_000],
+    }
+    generated_at_ms = time.time_ns() // 1_000_000
+    payload: dict[str, object] = {
+        "schema_version": AI_BENCHMARK_FAILURE_EVIDENCE_SCHEMA_VERSION,
+        "generated_at_ms": generated_at_ms,
+        "claim": {
+            "claim_sha256": claim.claim_sha256,
+            "model": claim.model,
+            "confirmation_run_id": claim.confirmation_run_id,
+            "confirmation_report_sha256": claim.confirmation_report_sha256,
+            "confirmation_continuity_report_sha256": (
+                claim.confirmation_continuity_report_sha256
+            ),
+            "preregistration_sha256": claim.preregistration_sha256,
+            "output_path": claim.output_path,
+        },
+        "failure_event": error_evidence,
+        "failure_event_sha256": _sha256(error_evidence),
+        "partial_benchmark_report": partial_report,
+        "partial_benchmark_report_canonical_sha256": (
+            None if partial_report is None else _sha256(partial_report)
+        ),
+        "runtime_evidence": {
+            "pre_inference": provenance_payload(
+                pre_model_provenance,
+                "AI benchmark pre-inference provenance",
+            ),
+            "post_inference": provenance_payload(
+                post_model_provenance,
+                "AI benchmark post-inference provenance",
+            ),
+            "residency": None if residency is None else residency.asdict(),
+        },
+        "admission": {
+            "benchmark_completed": False,
+            "benchmark_passed": None,
+            "reasoning_score_available": False,
+            "financial_edge_tested": False,
+            "trading_authority": False,
+        },
+        "success_output_exists_at_failure": Path(claim.output_path).exists(),
+    }
+    failure_path = preregistered_ai_benchmark_failure_path(claim.output_path)
+    if failure_path.exists():
+        raise ValueError("preregistered AI benchmark failure output already exists")
+
+    try:
+        write_json_atomic(failure_path, payload, indent=2, sort_keys=True)
+        failure_sha256 = _file_sha256(failure_path)
+    except Exception as artifact_error:
+        fallback_sha256 = _sha256(
+            {
+                **error_evidence,
+                "artifact_error_type": type(artifact_error).__name__,
+                "artifact_error_message": str(artifact_error)[:2_000],
+            }
+        )
+        connection.execute(
+            """
+            UPDATE preregistered_ai_benchmark_claim
+            SET state = 'failed', failure_sha256 = ?, completed_at_ms = ?
+            WHERE claim_sha256 = ? AND state = 'started'
+            """,
+            [fallback_sha256, generated_at_ms, claim.claim_sha256],
+        )
+        raise RuntimeError(
+            "AI benchmark claim was consumed but its failure sidecar could not be written"
+        ) from artifact_error
+
+    connection.execute(
         """
         UPDATE preregistered_ai_benchmark_claim
         SET state = 'failed', failure_sha256 = ?, completed_at_ms = ?
         WHERE claim_sha256 = ? AND state = 'started'
         """,
-        [
-            failure_sha256,
-            time.time_ns() // 1_000_000,
-            claim.claim_sha256,
-        ],
+        [failure_sha256, generated_at_ms, claim.claim_sha256],
     )
+    persisted = connection.execute(
+        """
+        SELECT state, failure_sha256 FROM preregistered_ai_benchmark_claim
+        WHERE claim_sha256 = ?
+        """,
+        [claim.claim_sha256],
+    ).fetchone()
+    if persisted != ("failed", failure_sha256):
+        raise RuntimeError("AI benchmark failure claim was not durably persisted")
+    return failure_path
 
 
 __all__ = [
     "AI_BENCHMARK_CLAIM_SCHEMA_VERSION",
+    "AI_BENCHMARK_FAILURE_EVIDENCE_SCHEMA_VERSION",
     "AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION",
     "PreregisteredAIBenchmarkClaim",
     "begin_preregistered_ai_benchmark_claim",
     "complete_preregistered_ai_benchmark_claim",
     "fail_preregistered_ai_benchmark_claim",
     "load_claimed_ai_benchmark_output",
+    "preregistered_ai_benchmark_failure_path",
     "requires_preregistered_ai_benchmark",
     "validate_preregistered_ai_runtime_evidence",
     "write_preregistered_ai_benchmark_output",

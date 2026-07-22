@@ -7491,6 +7491,10 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
     confirmation_run_id = str(getattr(args, "confirmation_run_id", "") or "").strip()
     base_url = str(getattr(args, "url", None) or "http://127.0.0.1:11434")
     claim = None
+    report = None
+    pre_model_provenance = None
+    post_model_provenance = None
+    residency = None
 
     def progress(phase: str, payload: Mapping[str, object]) -> None:
         if json_mode:
@@ -7503,11 +7507,29 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
             )
         elif phase == "case_complete":
             match = "match" if payload["action_match"] else "mismatch"
+            provider_status = ""
+            if payload.get("provider_error"):
+                http_status = payload.get("provider_http_status")
+                provider_status = (
+                    f" provider=http-{http_status}"
+                    if http_status is not None
+                    else " provider=error"
+                )
             print(
                 f"  case {payload['case_index']}/{payload['case_count']} "
                 f"{payload['case']}: {match} "
                 f"latency={float(payload['latency_seconds']):.2f}s "
-                f"tokens={payload['prompt_tokens']}+{payload['output_tokens']}",
+                f"tokens={payload['prompt_tokens']}+{payload['output_tokens']}"
+                f"{provider_status}",
+                flush=True,
+            )
+        elif phase.startswith("integrity-"):
+            print(
+                "ai-benchmark confirmation audit: "
+                f"phase={phase} "
+                f"elapsed={float(payload.get('audit_elapsed_seconds') or 0.0):.0f}s "
+                f"raw_messages={int(payload.get('verified_raw_message_count') or 0):,} "
+                f"events={int(payload.get('verified_event_count') or 0):,}",
                 flush=True,
             )
 
@@ -7558,6 +7580,7 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                     timeout_seconds=timeout_seconds,
                     minimum_score=minimum_score,
                     output_path=output,
+                    progress=progress,
                 )
             if claim.status == "existing":
                 stored = load_claimed_ai_benchmark_output(claim)
@@ -7572,7 +7595,6 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                     )
                     print(f"  benchmark -> {output}")
                 return 0 if stored.get("passed") is True else 2
-        pre_model_provenance = None
         if claim is not None:
             from .ai_review import resolve_ollama_model_provenance
 
@@ -7640,7 +7662,19 @@ def command_ai_benchmark(args: argparse.Namespace) -> int:
                     memory_limit=str(args.confirmation_memory_limit),
                     threads=int(args.confirmation_database_threads),
                 ) as claim_store:
-                    fail_preregistered_ai_benchmark_claim(claim_store, claim, exc)
+                    failure_output = fail_preregistered_ai_benchmark_claim(
+                        claim_store,
+                        claim,
+                        exc,
+                        report=report,
+                        pre_model_provenance=pre_model_provenance,
+                        post_model_provenance=post_model_provenance,
+                        residency=residency,
+                    )
+                print(
+                    f"ai-benchmark failure evidence -> {failure_output}",
+                    file=sys.stderr,
+                )
             except Exception as claim_exc:  # noqa: BLE001 - preserve both failures
                 print(
                     "ai-benchmark claim failure: "

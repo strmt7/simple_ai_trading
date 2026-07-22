@@ -21,7 +21,13 @@ ROOT = Path(__file__).resolve().parents[1]
 LATEST = ROOT / "docs" / "ai" / "risk-review" / "latest"
 REPORT_PATH = LATEST / "comparison.json"
 QWEN3_14B_PREREGISTRATION = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v10-preregistration.json"
+)
+QWEN3_14B_V9_PREREGISTRATION = (
     ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v9-preregistration.json"
+)
+QWEN3_14B_V9_INCIDENT = (
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v9-infrastructure-failure.json"
 )
 
 
@@ -46,22 +52,28 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(payload.encode("ascii")).hexdigest()
 
 
-def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
+def test_qwen3_14b_v10_preregistration_binds_source_and_case_suite() -> None:
     preregistration = _json(QWEN3_14B_PREREGISTRATION)
     source = ROOT / "src" / "simple_ai_trading" / "ai_model_benchmark.py"
     suite = [asdict(case) for case in default_finance_ai_test_cases()]
 
     assert preregistration["benchmark_contract"] == AI_MODEL_BENCHMARK_CONTRACT
     assert preregistration["schema_version"] == (
-        "finance-risk-review-candidate-preregistration-v4"
+        "finance-risk-review-candidate-preregistration-v5"
     )
     assert preregistration["benchmark_source_sha256"] == _sha256(source)
     assert preregistration["test_suite_sha256"] == _canonical_sha256(suite)
     assert preregistration["prior_comparison_sha256"] == _sha256(REPORT_PATH)
-    predecessor = ROOT / preregistration["revoked_predecessor"]["path"]  # type: ignore[index]
-    assert preregistration["revoked_predecessor"]["sha256"] == (  # type: ignore[index]
+    predecessor = ROOT / preregistration["superseded_predecessor"]["path"]  # type: ignore[index]
+    assert preregistration["superseded_predecessor"]["sha256"] == (  # type: ignore[index]
         _sha256(predecessor)
     )
+    incident = ROOT / preregistration["superseded_predecessor"][  # type: ignore[index]
+        "infrastructure_incident_path"
+    ]
+    assert preregistration["superseded_predecessor"][  # type: ignore[index]
+        "infrastructure_incident_file_sha256"
+    ] == _sha256(incident)
     assert preregistration["frozen_run"]["run_count"] == 1  # type: ignore[index]
     assert preregistration["frozen_run"]["prompt_or_case_changes_allowed"] is False  # type: ignore[index]
     assert preregistration["frozen_run"]["minimum_capture_duration_seconds"] == 54_000  # type: ignore[index]
@@ -76,6 +88,9 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
     assert preregistration["frozen_run"]["required_provider_response_contract"] == (  # type: ignore[index]
         AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
     )
+    assert preregistration["frozen_run"]["provider_format"] == "json"  # type: ignore[index]
+    assert preregistration["frozen_run"]["strict_post_parse_schema_required"] is True  # type: ignore[index]
+    assert preregistration["frozen_run"]["failure_sidecar_required"] is True  # type: ignore[index]
     assert preregistration["frozen_run"]["exact_returned_model_required"] is True  # type: ignore[index]
     assert preregistration["frozen_run"]["terminal_stop_required"] is True  # type: ignore[index]
     assert (
@@ -84,6 +99,25 @@ def test_qwen3_14b_preregistration_binds_source_and_case_suite() -> None:
         ]
         is True
     )
+
+
+def test_qwen3_14b_v9_is_immutable_consumed_infrastructure_evidence() -> None:
+    preregistration = _json(QWEN3_14B_V9_PREREGISTRATION)
+    incident = _json(QWEN3_14B_V9_INCIDENT)
+    body = dict(incident)
+    embedded_sha256 = str(body.pop("artifact_sha256"))
+
+    assert _sha256(QWEN3_14B_V9_PREREGISTRATION) == (
+        incident["benchmark"]["preregistration_file_sha256"]  # type: ignore[index]
+    )
+    assert preregistration["benchmark_contract"] == (
+        incident["benchmark"]["contract"]  # type: ignore[index]
+    )
+    assert incident["claim"]["state"] == "failed"  # type: ignore[index]
+    assert incident["claim"]["benchmark_passed"] is None  # type: ignore[index]
+    assert incident["provider_evidence"]["model_completions_received"] == 0  # type: ignore[index]
+    assert incident["interpretation"]["reasoning_score_available"] is False  # type: ignore[index]
+    assert embedded_sha256 == _canonical_sha256(body)
 
 
 def test_ai_benchmark_hash_inputs_have_cross_platform_line_endings() -> None:

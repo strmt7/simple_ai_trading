@@ -13,6 +13,9 @@ from simple_ai_trading.ai_model_benchmark import (
     default_finance_ai_test_cases,
 )
 from simple_ai_trading.ai_model_provenance import load_local_ai_model_provenance
+from simple_ai_trading.ai_benchmark_claim import (
+    AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION,
+)
 from tools import build_ai_model_provenance as builder
 
 
@@ -125,7 +128,7 @@ def _runtime_evidence(
         "model_metadata_sha256": metadata_sha256,
     }
     return {
-        "schema_version": "preregistered-ai-benchmark-runtime-v2",
+        "schema_version": AI_BENCHMARK_RUNTIME_EVIDENCE_SCHEMA_VERSION,
         "provider": "ollama",
         "model": "qwen3:8b",
         "benchmark_contract": payload["benchmark_contract"],

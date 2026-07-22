@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
+import http.client
 import json
 import hashlib
 import math
@@ -18,9 +21,11 @@ from .ai_runtime import estimate_model_parameters_b
 from .storage import write_json_atomic
 
 DEFAULT_OLLAMA_URL = "http://127.0.0.1:11434"
-AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v9"
-AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT = "finance-risk-review-ollama-response-v1"
+AI_MODEL_BENCHMARK_CONTRACT = "finance-risk-review-adversarial-v10"
+AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT = "finance-risk-review-ollama-response-v2"
+AI_MODEL_BENCHMARK_PROVIDER_FAILURE_CONTRACT = "finance-risk-review-provider-failure-v1"
 _PROVIDER_RESPONSE_MAX_BYTES = 256 * 1024
+_PROVIDER_ERROR_BODY_MAX_BYTES = 16 * 1024
 PostJson = Callable[[str, Mapping[str, object], float], object]
 BenchmarkProgress = Callable[[str, Mapping[str, object]], None]
 
@@ -62,6 +67,33 @@ _RESPONSE_SCHEMA = {
 }
 _RESPONSE_KEYS = frozenset(_RESPONSE_SCHEMA["required"])
 _ACTIONS = frozenset({"approve", "veto", "cooldown", "human_review"})
+
+_JSON_RESPONSE_INSTRUCTION = (
+    "Return exactly one JSON object and no surrounding text. The object must contain "
+    "exactly these fields: action (approve, veto, cooldown, or human_review), "
+    "risk_score (finite number from 0 through 1), confidence (finite number from 0 "
+    "through 1), rationale (1 through 2000 characters), concerns (at most 8 strings "
+    "of at most 500 characters each), and required_actions (at most 8 strings of at "
+    "most 500 characters each)."
+)
+
+
+class AIProviderHTTPError(RuntimeError):
+    """Bounded HTTP failure evidence returned by the local model provider."""
+
+    def __init__(
+        self,
+        *,
+        status: int,
+        reason: str,
+        captured_body: bytes,
+        body_truncated: bool,
+    ) -> None:
+        self.status = int(status)
+        self.reason = str(reason)[:200]
+        self.captured_body = bytes(captured_body)
+        self.body_truncated = bool(body_truncated)
+        super().__init__(f"HTTP {self.status}: {self.reason}")
 
 _CONCEPT_ALIASES = {
     "reconcile": ("reconcil", "verify exchange state", "verify open orders"),
@@ -588,6 +620,17 @@ def _post_json(url: str, payload: Mapping[str, object], timeout: float) -> objec
             if len(encoded) > _PROVIDER_RESPONSE_MAX_BYTES:
                 raise ValueError("AI benchmark provider response exceeds size limit")
             return json.loads(encoded.decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        try:
+            encoded = exc.read(_PROVIDER_ERROR_BODY_MAX_BYTES + 1)
+        except (http.client.HTTPException, OSError, ValueError):
+            encoded = b""
+        raise AIProviderHTTPError(
+            status=int(exc.code),
+            reason=str(exc.reason or "HTTP provider error"),
+            captured_body=encoded[:_PROVIDER_ERROR_BODY_MAX_BYTES],
+            body_truncated=len(encoded) > _PROVIDER_ERROR_BODY_MAX_BYTES,
+        ) from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(str(exc)) from exc
 
@@ -670,8 +713,100 @@ def _validated_provider_response(
     return str(message["content"]), usage
 
 
-def _provider_error(exc: BaseException) -> str:
-    return f"{exc.__class__.__name__}:{exc}"[:500]
+def _provider_failure_evidence(exc: BaseException) -> dict[str, object]:
+    if isinstance(exc, AIProviderHTTPError):
+        body = exc.captured_body
+        return {
+            "contract": AI_MODEL_BENCHMARK_PROVIDER_FAILURE_CONTRACT,
+            "error_type": "http_error",
+            "http_status": exc.status,
+            "reason": exc.reason,
+            "captured_body_bytes": len(body),
+            "captured_body_sha256": hashlib.sha256(body).hexdigest(),
+            "captured_body_base64": base64.b64encode(body).decode("ascii"),
+            "captured_body_text": body.decode("utf-8", errors="replace"),
+            "body_truncated": exc.body_truncated,
+        }
+    return {
+        "contract": AI_MODEL_BENCHMARK_PROVIDER_FAILURE_CONTRACT,
+        "error_type": exc.__class__.__name__,
+        "message": str(exc)[:500],
+    }
+
+
+def _validated_provider_failure(value: object) -> dict[str, object] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise ValueError("AI benchmark provider failure evidence is invalid")
+    failure = dict(value)
+    if failure.get("contract") != AI_MODEL_BENCHMARK_PROVIDER_FAILURE_CONTRACT:
+        raise ValueError("AI benchmark provider failure evidence is invalid")
+    if failure.get("error_type") == "http_error":
+        expected = {
+            "contract",
+            "error_type",
+            "http_status",
+            "reason",
+            "captured_body_bytes",
+            "captured_body_sha256",
+            "captured_body_base64",
+            "captured_body_text",
+            "body_truncated",
+        }
+        body_text = failure.get("captured_body_text")
+        if not isinstance(body_text, str):
+            raise ValueError("AI benchmark provider failure evidence is invalid")
+        try:
+            body = base64.b64decode(
+                str(failure.get("captured_body_base64") or ""),
+                validate=True,
+            )
+        except (binascii.Error, ValueError, TypeError) as exc:
+            raise ValueError(
+                "AI benchmark provider failure evidence is invalid"
+            ) from exc
+        if (
+            set(failure) != expected
+            or isinstance(failure.get("http_status"), bool)
+            or not isinstance(failure.get("http_status"), int)
+            or not 100 <= int(failure["http_status"]) <= 599
+            or not isinstance(failure.get("reason"), str)
+            or len(str(failure["reason"])) > 200
+            or isinstance(failure.get("captured_body_bytes"), bool)
+            or failure.get("captured_body_bytes") != len(body)
+            or failure.get("captured_body_sha256")
+            != hashlib.sha256(body).hexdigest()
+            or body.decode("utf-8", errors="replace") != body_text
+            or len(body) > _PROVIDER_ERROR_BODY_MAX_BYTES
+            or not isinstance(failure.get("body_truncated"), bool)
+        ):
+            raise ValueError("AI benchmark provider failure evidence is invalid")
+    else:
+        if (
+            set(failure) != {"contract", "error_type", "message"}
+            or not isinstance(failure.get("error_type"), str)
+            or not str(failure["error_type"])
+            or len(str(failure["error_type"])) > 100
+            or not isinstance(failure.get("message"), str)
+            or len(str(failure["message"])) > 500
+        ):
+            raise ValueError("AI benchmark provider failure evidence is invalid")
+    return failure
+
+
+def _provider_error_from_failure(value: Mapping[str, object]) -> str:
+    failure = _validated_provider_failure(value)
+    if failure is None:
+        return ""
+    if failure["error_type"] == "http_error":
+        body = str(failure["captured_body_text"]).strip().replace("\r", " ")
+        body = body.replace("\n", " ")[:300]
+        return (
+            f"HTTPError:status={failure['http_status']} "
+            f"body_sha256={failure['captured_body_sha256']} body={body}"
+        )[:500]
+    return f"{failure['error_type']}:{failure['message']}"[:500]
 
 
 def _strict_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
@@ -777,6 +912,7 @@ def _provider_case_evidence(
     response: Mapping[str, object] | None,
     usage: Mapping[str, int] | None,
     error: str,
+    failure: Mapping[str, object] | None,
 ) -> dict[str, object]:
     payload = None if response is None else dict(response)
     response_sha256 = ""
@@ -796,6 +932,7 @@ def _provider_case_evidence(
         "provider_response_sha256": response_sha256,
         "provider_usage": None if usage is None else dict(usage),
         "provider_error": str(error),
+        "provider_failure": None if failure is None else dict(failure),
     }
 
 
@@ -807,11 +944,13 @@ def _case_score(
     provider_response: Mapping[str, object] | None = None,
     provider_usage: Mapping[str, int] | None = None,
     provider_error: str = "",
+    provider_failure: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     provider_evidence = _provider_case_evidence(
         provider_response,
         provider_usage,
         provider_error,
+        provider_failure,
     )
     validated = _validated_response_mapping(parsed)
     if validated is None:
@@ -918,6 +1057,9 @@ def _result_from_case_results(
                 f"{item.get('name')}: provider_error={item['provider_error']}"
             )
         try:
+            provider_failure = _validated_provider_failure(
+                item.get("provider_failure")
+            )
             if (
                 item.get("provider_response_contract")
                 != AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT
@@ -935,7 +1077,11 @@ def _result_from_case_results(
                 model=model,
             )
             stored_usage = _validated_provider_usage(item.get("provider_usage"))
-            if response_usage != stored_usage or item.get("provider_error"):
+            if (
+                response_usage != stored_usage
+                or item.get("provider_error")
+                or provider_failure is not None
+            ):
                 raise ValueError("provider response usage is inconsistent")
         except ValueError as exc:
             failures.append(f"{item.get('name')}: provider_telemetry_invalid={exc}")
@@ -1094,6 +1240,9 @@ def rescore_finance_ai_benchmark_payload(
             if raw_response is not None and not isinstance(raw_response, Mapping):
                 raise ValueError("AI benchmark provider response evidence is invalid")
             stored_provider_error = str(old_case.get("provider_error") or "")
+            stored_provider_failure = _validated_provider_failure(
+                old_case.get("provider_failure")
+            )
             provider_usage = None
             parsed = None
             if isinstance(raw_response, Mapping):
@@ -1107,14 +1256,25 @@ def rescore_finance_ai_benchmark_payload(
                         model=model,
                     )
                 except ValueError as exc:
-                    expected_provider_error = _provider_error(exc)
+                    expected_provider_failure = _provider_failure_evidence(exc)
+                    expected_provider_error = _provider_error_from_failure(
+                        expected_provider_failure
+                    )
                 else:
+                    expected_provider_failure = None
                     expected_provider_error = ""
                     parsed = _json_mapping_from_text(response_text)
             else:
-                expected_provider_error = stored_provider_error
+                expected_provider_failure = stored_provider_failure
+                expected_provider_error = (
+                    ""
+                    if expected_provider_failure is None
+                    else _provider_error_from_failure(expected_provider_failure)
+                )
                 if old_case.get("provider_response_sha256") != "":
                     raise ValueError("AI benchmark provider response hash changed")
+            if expected_provider_failure != stored_provider_failure:
+                raise ValueError("AI benchmark provider failure evidence changed")
             if not expected_provider_error and stored_provider_error:
                 raise ValueError("AI benchmark provider response status changed")
             if expected_provider_error != stored_provider_error:
@@ -1128,6 +1288,7 @@ def rescore_finance_ai_benchmark_payload(
                 ),
                 provider_usage=provider_usage,
                 provider_error=expected_provider_error,
+                provider_failure=expected_provider_failure,
             )
             if _canonical_payload_sha256(rescored_case) != _canonical_payload_sha256(
                 old_case
@@ -1256,13 +1417,13 @@ def benchmark_finance_ai_models(
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Do not think. Return only valid JSON matching the supplied schema.",
+                        "content": "Do not think. " + _JSON_RESPONSE_INSTRUCTION,
                     },
                     {"role": "user", "content": _prompt(case)},
                 ],
                 "stream": False,
                 "think": False,
-                "format": _RESPONSE_SCHEMA,
+                "format": "json",
                 "keep_alive": "5m",
                 "options": {
                     "temperature": 0.0,
@@ -1275,6 +1436,7 @@ def benchmark_finance_ai_models(
             raw_response: Mapping[str, object] | None = None
             provider_usage: Mapping[str, int] | None = None
             provider_error = ""
+            provider_failure: Mapping[str, object] | None = None
             try:
                 response = post_json(endpoint, request, timeout_seconds)
                 if isinstance(response, Mapping):
@@ -1285,7 +1447,8 @@ def benchmark_finance_ai_models(
                 )
                 parsed = _json_mapping_from_text(response_text)
             except Exception as exc:  # noqa: BLE001 - benchmark records provider failures
-                provider_error = _provider_error(exc)
+                provider_failure = _provider_failure_evidence(exc)
+                provider_error = _provider_error_from_failure(provider_failure)
             latency = max(0.0, time.monotonic() - started)
             result = _case_score(
                 case,
@@ -1294,6 +1457,7 @@ def benchmark_finance_ai_models(
                 provider_response=raw_response,
                 provider_usage=provider_usage,
                 provider_error=provider_error,
+                provider_failure=provider_failure,
             )
             case_results.append(result)
             if progress is not None:
@@ -1319,6 +1483,12 @@ def benchmark_finance_ai_models(
                             else provider_usage["eval_count"]
                         ),
                         "provider_telemetry_valid": provider_usage is not None,
+                        "provider_error": provider_error,
+                        "provider_http_status": (
+                            None
+                            if provider_failure is None
+                            else provider_failure.get("http_status")
+                        ),
                     },
                 )
         model_result = _result_from_case_results(
@@ -1365,6 +1535,7 @@ def write_benchmark_report(
 
 __all__ = [
     "AI_MODEL_BENCHMARK_CONTRACT",
+    "AI_MODEL_BENCHMARK_PROVIDER_FAILURE_CONTRACT",
     "AI_MODEL_BENCHMARK_PROVIDER_RESPONSE_CONTRACT",
     "AIModelBenchmarkReport",
     "AIModelBenchmarkResult",

@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import replace
+import io
 import sys
 from types import SimpleNamespace
+import urllib.error
 
 import pytest
 
 from simple_ai_trading import cli, polymarket_ai_veto as ai_veto_module
 from simple_ai_trading.ai_model_benchmark import (
+    AIProviderHTTPError,
     AI_MODEL_BENCHMARK_CONTRACT,
     _json_mapping_from_text,
+    _post_json,
     _prompt,
     benchmark_finance_ai_models,
     default_finance_ai_test_cases,
@@ -423,6 +427,7 @@ def _benchmark_post(
 
     def post(_url, payload, _timeout):
         assert '"case_name"' not in payload["messages"][1]["content"]
+        assert payload["format"] == "json"
         action, risk = next(remaining)
         return _benchmark_response(action, risk, model=str(payload["model"]))
 
@@ -451,6 +456,49 @@ def test_finance_ai_benchmark_requires_exact_typed_json() -> None:
         valid.replace(',"required_actions":["keep risk controls active"]', ""),
     )
     assert all(_json_mapping_from_text(value) is None for value in malformed)
+
+
+def test_finance_ai_provider_http_failure_preserves_bounded_body(
+    monkeypatch,
+) -> None:
+    body = b'{"error":"grammar rejected before sampling"}'
+
+    def fail_urlopen(*_args, **_kwargs):
+        raise urllib.error.HTTPError(
+            "http://127.0.0.1:11434/api/chat",
+            400,
+            "Bad Request",
+            {},
+            io.BytesIO(body),
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fail_urlopen)
+    with pytest.raises(AIProviderHTTPError) as captured:
+        _post_json("http://127.0.0.1:11434/api/chat", {"model": "x"}, 1.0)
+
+    assert captured.value.status == 400
+    assert captured.value.captured_body == body
+    assert captured.value.body_truncated is False
+
+    def fail_provider(_url, _payload, _timeout):
+        raise AIProviderHTTPError(
+            status=400,
+            reason="Bad Request",
+            captured_body=body,
+            body_truncated=False,
+        )
+
+    report = benchmark_finance_ai_models(
+        models=["qwen3:8b"],
+        installed_models=["qwen3:8b"],
+        post_json=fail_provider,
+    )
+    first = report.results[0].case_results[0]
+
+    assert report.passed is False
+    assert first["provider_failure"]["http_status"] == 400
+    assert first["provider_failure"]["captured_body_text"] == body.decode()
+    assert rescore_finance_ai_benchmark_payload(report.asdict()).passed is False
 
 
 def test_finance_ai_benchmark_selects_model_with_correct_structured_actions() -> None:

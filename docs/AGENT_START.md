@@ -172,25 +172,23 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Polymarket AI report v6 also requires exact-model terminal Ollama telemetry and
   independently reconstructs prompt/output token totals. Missing, malformed, or
   rehashed usage evidence vetoes the response; token counts do not prove edge.
-- Qwen3 14B remains the next one-shot v9 candidate, frozen before installation in
-  `docs/ai/risk-review/qwen3-14b-v9-preregistration.json`. Run it only after
-  a post-contract storage-v4 capture spans at least 15 hours and its label-free
-  continuity report retains at least 30 synchronized BTC/ETH/SOL groups. A
-  `degraded` run is admissible only when every retained window is gap-free and
-  segment-pure. Do not alter prompts or cases first. The `ai-benchmark` CLI
-  rejects this model without that preregistration, the confirmation database,
-  and its run ID. Its DuckDB claim consumes the test once before inference;
-  interrupted and failed claims cannot reopen it. A valid output also requires
-  identical Ollama digest/metadata hashes before and after inference plus exact
-  post-inference GPU residency. CPU-only or changed weights fail the consumed
-  claim. Every case also requires a hash-bound raw response for the exact model,
-  terminal `stop`, and positive coherent prompt/output telemetry. Candidate
-  resolution and required-GPU capability checks run before the
-  confirmation database opens, so preflight failure must not consume the claim.
-- The continuity breadth condition is now evidenced by the Round 9 capture, but
-  the frozen Ridge admission failed before fitting. That failure blocks MLP and
-  Qwen3 14B evaluation for this round. Do not install, invoke, or reinterpret the
-  Qwen candidate against the failed pipeline.
+- Qwen3 14B v9 is consumed. Ollama rejected all 11 requests before sampling
+  because its generated schema grammar exceeded the provider's complexity
+  limit. The durable claim has no score or pass state; the hash-bound incident is
+  `docs/ai/risk-review/qwen3-14b-v9-infrastructure-failure.json`. Never rerun or
+  reinterpret v9 as a reasoning result.
+- Qwen3 14B v10 is the separately frozen one-shot governance candidate in
+  `docs/ai/risk-review/qwen3-14b-v10-preregistration.json`. Its semantic cases
+  are unchanged; only the provider-compatible JSON transport and failure
+  evidence changed. The CLI still requires the exact preregistration, valid
+  storage-v4 confirmation run, continuity evidence, unchanged model digest,
+  terminal `stop`, full GPU residency, and positive coherent telemetry for all
+  11 cases. Provider failures create a hash-bound failure sidecar and cannot
+  produce a score. Failed claims cannot reopen cases.
+- The confirmation breadth condition is evidenced by run
+  `e34d349771da4c35bcc8ae436c2fe9f6`. The earlier frozen Ridge admission failure
+  still blocks any claim of market edge, AI uplift, or trading authority; it does
+  not turn the standalone governance benchmark into an economic experiment.
 - The exact terminal facts for failed confirmation capture
   `79ac19539d384352b865c21cb0c43627` are in
   `docs/model-research/polymarket/round-009-confirmation5-failure-2026-07-16.json`.
