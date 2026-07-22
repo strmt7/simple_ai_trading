@@ -92,6 +92,11 @@ flowchart LR
   is only 14.2%, so the evidence authorizes a bounded rotating corpus pipeline
   and feature construction, not an unbounded seven-day run or model evaluation.
   See `round-073-v8-capture-qualification-2026-07-22.json`.
+- The first immutable corpus manifest catalogs that same qualified run after a
+  second exact-wire replay and a post-write frame-chain audit. It contributes
+  3,608.934 seconds to the 2026-07-22 UTC statistical partition. No complete
+  day exists, so target construction and model evaluation remain closed. See
+  `round-073-first-corpus-manifest-2026-07-22.json`.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

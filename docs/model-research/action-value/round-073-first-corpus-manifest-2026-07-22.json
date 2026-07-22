@@ -1,0 +1,86 @@
+{
+  "schema_version": "round-073-first-corpus-manifest-evidence-v1",
+  "corpus_contract_sha256": "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67",
+  "contract_freeze_commit": "4ec43ac",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "source": {
+    "venue": "Binance USD-M Futures public market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_used": false
+  },
+  "manifest": {
+    "run_id": "f3e92ba29e1e4d3188c3f309f5c160a2",
+    "capture_report_sha256": "44d20a1aa35d0de9e2855aa34aa9a936c45cc04834f6c4bfa97dfdc344717cc5",
+    "feature_source_sha256": "ef9aa06609e4c1073e64258a7ad3beed4e4c444c4eb068c623d69ad8e459e26b",
+    "manifest_sha256": "9cae12b009fd62ca6bd8a1846eb1a89c96ac28ec420398bfb2192359e4caddb3",
+    "last_frame_sha256": "f1a6f273c710d4bc1e849cadeebaa52c42ddee8b80d54a245976d1a6879b8e13",
+    "coverage_start_wall_ns": 1784753020015694400,
+    "coverage_end_wall_ns": 1784756628950033000,
+    "coverage_duration_ns": 3608934338600,
+    "frame_count": 847,
+    "message_count": 1294128,
+    "compressed_payload_bytes": 58753862
+  },
+  "independent_replay": {
+    "capture_audit_passed": true,
+    "depth_snapshot_count": 3,
+    "depth_update_count": 104305,
+    "synchronized_depth_update_count": 104213,
+    "stale_depth_update_count": 92,
+    "level_change_count": 4459493,
+    "stored_depth_band_row_count": 104305,
+    "stored_depth_band_rows_reconciled": true,
+    "future_or_target_data_used": false,
+    "identity_whale_or_manipulation_inference": false
+  },
+  "post_write_manifest_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 847,
+    "message_count": 1294128
+  },
+  "storage_observation": {
+    "database_file_bytes_before_index": 5388382208,
+    "database_file_bytes_after_index": 5388382208,
+    "database_wal_present_before_index": false,
+    "database_wal_present_after_index": false,
+    "physical_growth_bytes": 0,
+    "ssd_or_nand_wear_inferred": false
+  },
+  "utc_partition_diagnostic": {
+    "utc_day": "2026-07-22",
+    "finalized_at_observation": false,
+    "eligible": false,
+    "coverage_ns": 3608934338600,
+    "required_coverage_ns": 82800000000000,
+    "interval_count": 1,
+    "diagnostic_sha256": "37d03e9f9fe77bc0b79764145ab048f780b003a38676312e926d33a51b9510a3",
+    "crypto_formal_daily_close": false,
+    "listed_products_use_actual_venue_calendars": true
+  },
+  "critical_analysis": {
+    "qualified_segment_cataloged": true,
+    "complete_day_count": 0,
+    "seven_day_viability_corpus_complete": false,
+    "thirty_day_promotion_corpus_complete": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false
+  },
+  "authorization": {
+    "bounded_rotation_runner_implementation": true,
+    "round_073_feature_construction": true,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "leverage_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "artifact_sha256": "69860b56921e59a3bbb5ec9cabe48498f634ed975a37df1f1e74344439ca8b42"
+}
