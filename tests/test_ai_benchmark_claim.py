@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,6 +14,7 @@ from simple_ai_trading.ai_benchmark_claim import (
     begin_preregistered_ai_benchmark_claim,
     complete_preregistered_ai_benchmark_claim,
     fail_preregistered_ai_benchmark_claim,
+    preregistered_ai_benchmark_failure_path,
     write_preregistered_ai_benchmark_output,
 )
 from simple_ai_trading.ai_model_benchmark import (
@@ -28,7 +30,7 @@ from simple_ai_trading.polymarket_recorder import POLYMARKET_STORAGE_SCHEMA_VERS
 
 ROOT = Path(__file__).resolve().parents[1]
 PREREGISTRATION = (
-    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v9-preregistration.json"
+    ROOT / "docs" / "ai" / "risk-review" / "qwen3-14b-v10-preregistration.json"
 )
 MODEL_DIGEST = "d" * 64
 MODEL_METADATA_SHA256 = "e" * 64
@@ -80,9 +82,23 @@ class _ClaimStore:
     def __exit__(self, *_args) -> None:
         return None
 
-    def integrity_errors(self, run_id: str) -> tuple[str, ...]:
+    def integrity_errors(
+        self,
+        run_id: str,
+        *,
+        progress=None,
+    ) -> tuple[str, ...]:
         assert run_id == "confirmation"
         self.integrity_calls += 1
+        if progress is not None:
+            progress(
+                "integrity-complete",
+                {
+                    "audit_elapsed_seconds": 1.0,
+                    "verified_raw_message_count": 2,
+                    "verified_event_count": 3,
+                },
+            )
         return ()
 
 
@@ -122,6 +138,7 @@ def _passing_report(*, total_duration_ns: int = 2):
 
     def post_json(_url, payload, _timeout):
         nonlocal index
+        assert payload["format"] == "json"
         response = responses[index]
         index += 1
         return {
@@ -146,7 +163,7 @@ def _passing_report(*, total_duration_ns: int = 2):
     )
 
 
-def _begin(store: _ClaimStore, output: Path):
+def _begin(store: _ClaimStore, output: Path, *, progress=None):
     return begin_preregistered_ai_benchmark_claim(
         store,  # type: ignore[arg-type]
         preregistration_path=PREREGISTRATION,
@@ -155,6 +172,7 @@ def _begin(store: _ClaimStore, output: Path):
         timeout_seconds=60.0,
         minimum_score=0.78,
         output_path=output,
+        progress=progress,
     )
 
 
@@ -317,12 +335,28 @@ def test_preregistered_ai_benchmark_rejects_model_drift_and_cpu_execution(
 
 def test_failed_preregistered_ai_benchmark_cannot_reopen_cases(tmp_path) -> None:
     store = _ClaimStore("b" * 64)
-    output = tmp_path / "failed-qwen3-14b-v9.json"
+    output = tmp_path / "failed-qwen3-14b-v10.json"
     claim = _begin(store, output)
-    fail_preregistered_ai_benchmark_claim(  # type: ignore[arg-type]
+    failure_path = fail_preregistered_ai_benchmark_claim(  # type: ignore[arg-type]
         store,
         claim,
         RuntimeError("provider stopped"),
+    )
+
+    payload = json.loads(failure_path.read_text(encoding="utf-8"))
+    row = store.connection.execute(
+        """
+        SELECT state, failure_sha256 FROM preregistered_ai_benchmark_claim
+        WHERE claim_sha256 = ?
+        """,
+        [claim.claim_sha256],
+    ).fetchone()
+    assert failure_path == preregistered_ai_benchmark_failure_path(output)
+    assert payload["claim"]["claim_sha256"] == claim.claim_sha256
+    assert payload["admission"]["benchmark_completed"] is False
+    assert row == (
+        "failed",
+        hashlib.sha256(failure_path.read_bytes()).hexdigest(),
     )
 
     try:
@@ -331,6 +365,42 @@ def test_failed_preregistered_ai_benchmark_cannot_reopen_cases(tmp_path) -> None
         assert "already claimed:state=failed" in str(exc)
     else:
         raise AssertionError("a failed one-shot AI benchmark reopened its cases")
+
+
+def test_confirmation_integrity_progress_is_forwarded(tmp_path) -> None:
+    store = _ClaimStore("9" * 64)
+    events: list[tuple[str, dict[str, object]]] = []
+
+    _begin(
+        store,
+        tmp_path / "progress.json",
+        progress=lambda phase, payload: events.append((phase, dict(payload))),
+    )
+
+    assert events == [
+        (
+            "integrity-complete",
+            {
+                "audit_elapsed_seconds": 1.0,
+                "verified_raw_message_count": 2,
+                "verified_event_count": 3,
+            },
+        )
+    ]
+
+
+def test_preexisting_failure_sidecar_blocks_before_integrity_audit(tmp_path) -> None:
+    store = _ClaimStore("8" * 64)
+    output = tmp_path / "preexisting.json"
+    preregistered_ai_benchmark_failure_path(output).write_text(
+        "{}",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="output already exists"):
+        _begin(store, output)
+
+    assert store.integrity_calls == 0
 
 
 def test_preregistered_ai_benchmark_rejects_semantically_irrelevant_file_drift(

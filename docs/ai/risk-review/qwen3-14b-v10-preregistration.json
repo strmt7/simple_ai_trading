@@ -1,0 +1,86 @@
+{
+  "schema_version": "finance-risk-review-candidate-preregistration-v5",
+  "created_at_utc": "2026-07-22T12:57:02.099Z",
+  "parent_git_commit": "e6d2df64d1f2eb8f1fc73c865bf896a35597d3cd",
+  "benchmark_contract": "finance-risk-review-adversarial-v10",
+  "benchmark_source_sha256": "62a21eb3e60f1a0ec6de80cf72811c903d037341f2792b5e7fb805da91a35b3b",
+  "test_suite_sha256": "b46f5832405cbb10a0a81f4bd14d0c59720410ef07c4c578092a5435686e6ffb",
+  "prior_comparison_sha256": "78afdd2f3438056da9a062e1e3d00428c69b045f7e57d2c8e268d74e9200b5bd",
+  "superseded_predecessor": {
+    "path": "docs/ai/risk-review/qwen3-14b-v9-preregistration.json",
+    "sha256": "e96d203d9e8a32114fd2192c2cc86ab029d9185923ff9162214d4ff061aee8ec",
+    "benchmark_contract": "finance-risk-review-adversarial-v9",
+    "terminal_state": "failed",
+    "infrastructure_incident_path": "docs/ai/risk-review/qwen3-14b-v9-infrastructure-failure.json",
+    "infrastructure_incident_file_sha256": "eddaacc5eb2832c6423446bb59e5b41a4fccf6a99789edc23b0d170ecd7bfb43",
+    "reason": "Ollama rejected all 11 v9 requests before sampling because the supplied JSON Schema exceeded the provider grammar repetition-complexity limit. V9 is consumed and cannot be rerun."
+  },
+  "candidate": {
+    "model": "qwen3:14b",
+    "source": "https://ollama.com/library/qwen3:14b",
+    "selection_reason": "V9 produced no model completion, so it supplied no evidence for or against Qwen3 14B reasoning. V10 is a transport-corrected, separately frozen one-shot evaluation of the same prospectively selected candidate.",
+    "installed_at_preregistration": true,
+    "ollama_manifest_digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "model_metadata_sha256": "b939f562272424c2099242c1ec4070a10dc85e1599bba88686280e1513256d0e"
+  },
+  "transport_change": {
+    "semantic_case_changes": false,
+    "case_labels_or_expected_actions_exposed_to_model": false,
+    "v9_model_outputs_available_for_tuning": false,
+    "old_provider_format": "json_schema",
+    "new_provider_format": "json",
+    "strict_schema_validation_location": "post_parse",
+    "bounded_http_status_body_and_hash_capture": true,
+    "provider_failure_is_scored_completion": false
+  },
+  "frozen_run": {
+    "case_count": 11,
+    "minimum_score": 0.78,
+    "timeout_seconds": 60,
+    "temperature": 0,
+    "thinking": false,
+    "prompt_or_case_changes_allowed": false,
+    "run_count": 1,
+    "run_after_valid_confirmation_recorder_finalization": true,
+    "admissible_recorder_statuses": [
+      "complete",
+      "degraded"
+    ],
+    "minimum_capture_duration_seconds": 54000,
+    "minimum_capture_started_at_ms": 1784143695000,
+    "required_storage_schema_version": "polymarket-evidence-storage-v4",
+    "required_continuity_schema_version": "polymarket-round9-continuity-eligibility-v1",
+    "minimum_eligible_synchronized_groups": 30,
+    "global_gap_free_required": false,
+    "gaps_inside_eligible_windows_allowed": false,
+    "required_provider_response_contract": "finance-risk-review-ollama-response-v2",
+    "provider_format": "json",
+    "strict_post_parse_schema_required": true,
+    "bounded_http_failure_evidence_required": true,
+    "failure_sidecar_required": true,
+    "exact_returned_model_required": true,
+    "terminal_stop_required": true,
+    "positive_prompt_and_output_token_counts_required": true
+  },
+  "admission": {
+    "top_level_json_object_only": true,
+    "duplicate_keys_forbidden": true,
+    "exact_required_fields_and_types": true,
+    "finite_numeric_ranges_required": true,
+    "all_actions_exact": true,
+    "all_risk_ranges_exact": true,
+    "all_required_terms_present": true,
+    "minimum_score_required": 0.78,
+    "raw_provider_response_hash_bound": true,
+    "provider_usage_recomputed_from_raw_response": true,
+    "all_cases_require_positive_provider_telemetry": true,
+    "provider_failure_sidecar_cannot_grant_a_score": true
+  },
+  "interpretation": {
+    "governance_pass_is_trading_edge": false,
+    "governance_pass_grants_order_authority": false,
+    "paired_same-period_after-cost-ai-vs-ml-uplift-still-required": true,
+    "failed_candidate_may_be_tuned_on_v10_cases": false,
+    "v10_may_reopen_v9": false
+  }
+}
