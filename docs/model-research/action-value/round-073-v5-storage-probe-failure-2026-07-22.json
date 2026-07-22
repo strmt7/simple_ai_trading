@@ -1,0 +1,139 @@
+{
+  "schema_version": "round-073-v5-storage-probe-failure-evidence-v1",
+  "artifact_sha256": "f32de74f3b95cf908e18804675efca1553e54bd8f6562a542e6ee6fa5cac74d4",
+  "recorded_utc_date": "2026-07-22",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "run": {
+    "run_id": "c689f656b9be4013a29b03727dabc43e",
+    "capture_contract_sha256": "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b",
+    "status": "completed",
+    "qualification_passed": false,
+    "failure_class": "none",
+    "elapsed_seconds": 183.125,
+    "writer_frame_count": 41,
+    "writer_message_count": 159799,
+    "writer_compressed_payload_bytes": 6032218,
+    "frames_per_stream_minute": 13.433447098976108,
+    "queue_high_water_messages": 2931,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.0447235107421875,
+    "negative_corrected_latency_fraction": 0.0,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "reconnect_count": 0,
+    "event_counts": {
+      "aggTrade": 4916,
+      "bookTicker": 148955,
+      "depthSnapshot": 3,
+      "depthUpdate": 5372,
+      "exchangeInfo": 1,
+      "forceOrder": 1,
+      "markPriceUpdate": 537,
+      "openInterest": 9,
+      "serverTime": 5
+    },
+    "symbol_event_counts": {
+      "BTCUSDT": {
+        "aggTrade": 2198,
+        "bookTicker": 55036,
+        "depthSnapshot": 1,
+        "depthUpdate": 1814,
+        "markPriceUpdate": 179,
+        "openInterest": 3,
+        "synchronizedDepthUpdate": 1793
+      },
+      "ETHUSDT": {
+        "aggTrade": 2212,
+        "bookTicker": 67984,
+        "depthSnapshot": 1,
+        "depthUpdate": 1807,
+        "forceOrder": 1,
+        "markPriceUpdate": 179,
+        "openInterest": 3,
+        "synchronizedDepthUpdate": 1777
+      },
+      "SOLUSDT": {
+        "aggTrade": 506,
+        "bookTicker": 25935,
+        "depthSnapshot": 1,
+        "depthUpdate": 1751,
+        "markPriceUpdate": 179,
+        "openInterest": 3,
+        "synchronizedDepthUpdate": 1712
+      }
+    }
+  },
+  "fresh_process_read_only_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 41,
+    "message_count": 159799,
+    "compressed_payload_bytes": 6032218,
+    "last_frame_sha256": "d9ea58c15bfaaece4bcf0e81d64deaf30b8dd2508d1dedac5b820ddaedb09c18",
+    "stored_report_sha256": "febd8b78a469915304a20c066b4c0480786b44d51bfecb64d030ad25b17754f4"
+  },
+  "storage_observation": {
+    "database_physical_bytes_before": 5342244864,
+    "database_physical_bytes_after": 5388644352,
+    "database_physical_growth_bytes": 46399488,
+    "database_physical_growth_bytes_per_message": 290.36156671818975,
+    "process_io_provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "process_io_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "process_io_start_write_bytes": 7609538,
+    "process_io_end_write_bytes": 1838646817,
+    "process_io_delta_write_bytes": 1831037279,
+    "process_io_write_bytes_per_message": 11458.377580585611,
+    "process_io_to_physical_growth_ratio": 39.46244577095334,
+    "physical_growth_to_compressed_payload_ratio": 7.691944820296614,
+    "frozen_maximum_process_io_write_bytes_per_message": 4096,
+    "storage_efficiency_passed": false,
+    "scope_limitation": "The v5 process counter ended after terminal finalization, in-process audit, aggregation queries, and latency reconstruction. It does not isolate capture-phase writes."
+  },
+  "bounded_full_path_checkpoint_benchmark": {
+    "source_run_id": "c689f656b9be4013a29b03727dabc43e",
+    "synthetic_market_data_used": false,
+    "frame_indices": [0, 1, 2, 3, 4, 5, 6, 7],
+    "message_count": 44506,
+    "table_count": 11,
+    "default": {
+      "checkpoint_threshold": "16.0 MiB",
+      "auto_checkpoint_skip_wal_threshold_bytes": 100000,
+      "process_write_transfer_bytes": 34004944,
+      "process_write_transfer_bytes_per_message": 764.0530265582169,
+      "physical_bytes": 15216640,
+      "maximum_observed_wal_bytes": 14978260
+    },
+    "candidate_512MiB": {
+      "checkpoint_threshold": "512.0 MiB",
+      "auto_checkpoint_skip_wal_threshold_bytes": 536870912,
+      "process_write_transfer_bytes": 33849780,
+      "process_write_transfer_bytes_per_message": 760.5666651687413,
+      "physical_bytes": 11546624,
+      "maximum_observed_wal_bytes": 23359864
+    },
+    "candidate_to_default_process_write_ratio": 0.9954370164526665,
+    "signatures_equal": true,
+    "scratch_files_retained": false,
+    "decision": "The candidate did not materially reduce process writes on the bounded full-table path, so checkpoint settings remain unchanged."
+  },
+  "decision": {
+    "v5_probe_passed": false,
+    "root_cause_proven": false,
+    "checkpoint_change_supported": false,
+    "required_next_step": "Split capture-phase, terminal-audit, and physical-growth telemetry under a new frozen contract before another qualification attempt.",
+    "feature_source_replay_run": false,
+    "feature_source_replay_reason": "The fail-closed feature command requires a qualified capture; this storage-rejected run is not qualified."
+  },
+  "authorization": {
+    "v6_telemetry_probe": true,
+    "v5_one_hour_qualification": false,
+    "v5_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
