@@ -1,15 +1,15 @@
 {
   "schema_version": "round-073-causal-grid-contract-v1",
-  "contract_sha256": "cf7a222c2b94a5b274771f070b287c1d6ceb90f73edb9fdc0e7402e909271c75",
+  "contract_sha256": "00e59f08b997a7e6bb499b2b75bef6a69c84da523bc6cc97d9a116bcc9056482",
   "round": 73,
   "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
   "parent_corpus_contract_sha256": "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67",
   "parent_rotation_contract_sha256": "8f20a25adfc2d33a43d0a8acd0ad55361956d4443e85cc7b1740f882bfc5b9ea",
   "frozen_before_first_grid_write": true,
   "revision": {
-    "supersedes_contract_sha256": "36e41e94a1a2c8b00bafb373d06a10dabebf18ef125cbcc68724e658f766f971",
+    "supersedes_contract_sha256": "3b94eed56171018de804c92fb67661663ced7c694d33f1976e8eb10d4b681c24",
     "first_grid_write_observed_before_revision": false,
-    "reason": "The typed causal state retains top-20 depth but not displayed depth outside level 20. Outside-20 additions and removals remain raw features and are not divided by an invented denominator."
+    "reason": "The typed causal state retains top-20 depth but not displayed depth outside level 20, so outside-20 flow stays raw. Before any grid write, aggregate row hashes, causal clock offsets, squared-log-return realized variance, exact window bounds, and independent top-20 L2 geometry validation were also required."
   },
   "purpose": "Construct deterministic causal one-second BTCUSDT, ETHUSDT, and SOLUSDT feature grids from admitted exact-wire v8 segments without targets, actor labels, fabricated values, or future receipts.",
   "research_update": [
@@ -58,6 +58,7 @@
     "anchor_clock": "run-local host monotonic nanoseconds",
     "wall_clock_mapping": "run start wall nanoseconds plus anchor monotonic offset from run start monotonic nanoseconds",
     "availability_predicate": "received_monotonic_ns strictly less than anchor_monotonic_ns",
+    "window_interval": "[anchor_monotonic_ns minus window_ns, anchor_monotonic_ns)",
     "tie_order": [
       "received_monotonic_ns",
       "frame_index",
@@ -136,7 +137,7 @@
     "ask_removed_quote_{levels_1_5|levels_6_10|levels_11_20|outside_20}",
     "normalized_order_flow_imbalance_{levels_1_5|levels_6_10|levels_11_20}",
     "mid_log_return",
-    "mid_realized_variation",
+    "mid_realized_variance",
     "bbo_update_count",
     "mean_spread_bps",
     "maximum_spread_bps",
@@ -148,6 +149,8 @@
     "aggressive_sell": "aggregate trade where buyer_is_maker is true",
     "order_flow_imbalance": "bid additions plus ask removals minus bid removals minus ask additions",
     "order_flow_normalizer": "max(contemporaneous bid quote depth plus ask quote depth for the exact retained band, 1e-12); outside-20 flow is never normalized because outside-20 depth is not retained in the typed state",
+    "corrected_event_latency": "host receive wall time plus the best-RTT server-time offset from probes received at a strictly earlier monotonic time, minus exchange event time; the segment startup offset is the fallback before the first retained probe",
+    "mid_realized_variance": "sum of squared consecutive log-mid returns observed inside the window",
     "microprice": "ask times bid quantity plus bid times ask quantity divided by total top quantity",
     "distance_weighted_depth": "sum of level quote notional divided by one-based level rank",
     "depth_concentration": "Herfindahl sum of squared level quote-notional shares",
@@ -161,6 +164,8 @@
     "latest_synchronized_l2_required": true,
     "positive_non_crossed_quotes_required": true,
     "top_20_depth_required_on_both_sides": true,
+    "strict_non_crossed_top_20_l2_geometry_required": true,
+    "finite_unit_interval_l2_imbalances_required": true,
     "maximum_bbo_age_milliseconds": 1000,
     "maximum_l2_age_milliseconds": 1000,
     "maximum_mark_age_milliseconds": 3000,
@@ -197,14 +202,20 @@
     "existing_build_mismatch_policy": "fail without overwrite",
     "duplicate_raw_payload_storage_permitted": false,
     "target_or_future_columns_permitted": false,
-    "per_run_build_manifest_sha256_required": true
+    "per_run_build_manifest_sha256_required": true,
+    "anchor_rows_aggregate_sha256_required": true,
+    "vector_rows_aggregate_sha256_required": true,
+    "build_manifest_binds_every_persisted_row": true
   },
   "diagnostic_gate": {
     "source_manifest_hash_reconciled": true,
     "source_manifest_audit_repeated": true,
     "source_max_receipt_precedes_every_anchor": true,
     "anchor_indices_contiguous_per_symbol": true,
+    "anchor_grids_identical_across_symbols": true,
     "all_three_symbols_required": true,
+    "anchor_rows_aggregate_hash_reconciled": true,
+    "vector_rows_aggregate_hash_reconciled": true,
     "feature_names_and_vector_width_match": true,
     "finite_valid_vectors_required": true,
     "target_constructed": false,

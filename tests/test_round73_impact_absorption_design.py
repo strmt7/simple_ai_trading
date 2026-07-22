@@ -835,6 +835,7 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
     anchors = contract["anchor_contract"]
     assert anchors["base_grid_milliseconds"] == 1_000
     assert anchors["availability_predicate"].startswith("received_monotonic_ns strictly")
+    assert anchors["window_interval"].endswith("anchor_monotonic_ns)")
     assert anchors["warmup_seconds"] == 60
     assert anchors["all_anchors_retained"] is True
     assert anchors["invalid_anchor_feature_vector_written"] is False
@@ -844,8 +845,12 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
     assert semantics["aggressive_buy"].endswith("false")
     assert "anonymous" in semantics["displayed_removal"]
     assert "outside-20 flow is never normalized" in semantics["order_flow_normalizer"]
+    assert "strictly earlier monotonic time" in semantics["corrected_event_latency"]
+    assert semantics["mid_realized_variance"].startswith("sum of squared")
+    assert "mid_realized_variance" in contract["window_feature_template"]
     validity = contract["validity_contract"]
     assert validity["negative_corrected_latency_policy"] == "anchor invalid"
+    assert validity["strict_non_crossed_top_20_l2_geometry_required"] is True
     assert validity["nonfinite_feature_policy"].startswith("anchor invalid")
     shocks = contract["shock_audit_primitives"]
     assert shocks["threshold_selected_during_grid_build"] is False
@@ -853,8 +858,14 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
     storage = contract["storage_contract"]
     assert storage["target_or_future_columns_permitted"] is False
     assert storage["existing_build_mismatch_policy"] == "fail without overwrite"
+    assert storage["build_manifest_binds_every_persisted_row"] is True
+    assert storage["anchor_rows_aggregate_sha256_required"] is True
+    assert storage["vector_rows_aggregate_sha256_required"] is True
     gate = contract["diagnostic_gate"]
     assert gate["source_max_receipt_precedes_every_anchor"] is True
+    assert gate["anchor_grids_identical_across_symbols"] is True
+    assert gate["anchor_rows_aggregate_hash_reconciled"] is True
+    assert gate["vector_rows_aggregate_hash_reconciled"] is True
     assert gate["target_constructed"] is False
     assert gate["model_evaluated"] is False
     authority = contract["authority"]

@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"ccca4e4e20a86d52fad009f2e3b817859e9bb0f3c0b7052921baae6530d496e7";
+inline constexpr const wchar_t* kCommandContractSha256 = L"090cf5334da4675064007fbf7a6a40713b059d26ae800d9e255f33e4bd117b49";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -334,6 +334,22 @@ inline constexpr CommandOptionSpec kOptions_impact_corpus_index[] = {
 inline constexpr CommandOptionSpec kOptions_impact_feature_source[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
     {L"--run-id", L"run_id", L"", L"", L"v4-v8 run ID with a passed capture or qualification gate", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_grid_audit[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_grid_build[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
@@ -1066,6 +1082,8 @@ inline constexpr CommandSpec kCommands[] = {
     {L"impact-corpus-day", L"usage: simple-ai-trading impact-corpus-day [-h] [--database DATABASE]                                            --utc-day UTC_DAY                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_corpus_day, 5},
     {L"impact-corpus-index", L"usage: simple-ai-trading impact-corpus-index [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_index, 5},
     {L"impact-feature-source", L"usage: simple-ai-trading impact-feature-source [-h] [--database DATABASE]                                                --run-id RUN_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_feature_source, 5},
+    {L"impact-grid-audit", L"usage: simple-ai-trading impact-grid-audit [-h] [--database DATABASE] --run-id                                            RUN_ID                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_grid_audit, 5},
+    {L"impact-grid-build", L"usage: simple-ai-trading impact-grid-build [-h] [--database DATABASE] --run-id                                            RUN_ID                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_grid_build, 5},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"microstructure-capture", L"usage: simple-ai-trading microstructure-capture [-h] [--symbols SYMBOLS]                                                 [--seconds SECONDS]                                                 [--output-root OUTPUT_ROOT]                                                 [--db DB] [--timeout TIMEOUT]                                                 [--no-convert] [--json]", kOptions_microstructure_capture, 7},
@@ -1145,6 +1163,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"Microstructure models", L"model-blueprint"},
     {L"Research", L"Microstructure models", L"impact-feature-source"},
     {L"Research", L"Microstructure models", L"impact-corpus-index"},
+    {L"Research", L"Microstructure models", L"impact-grid-build"},
     {L"Research", L"Microstructure models", L"microstructure-train"},
     {L"Research", L"Microstructure models", L"microstructure-refit"},
     {L"Research", L"Microstructure models", L"microstructure-prequential"},
@@ -1186,6 +1205,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Data", L"Integrity and outcomes", L"tick-corpus-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-audit"},
+    {L"Data", L"Integrity and outcomes", L"impact-grid-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-day"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-batch-audit"},
     {L"Data", L"Integrity and outcomes", L"polymarket-resolve"},
