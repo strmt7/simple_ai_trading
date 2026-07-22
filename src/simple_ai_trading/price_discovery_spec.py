@@ -9,9 +9,12 @@ from pathlib import Path
 from typing import Sequence
 
 
-ROUND72_IMPLEMENTATION_SCHEMA = "round-072-price-discovery-implementation-v2"
+ROUND72_IMPLEMENTATION_SCHEMA = "round-072-price-discovery-implementation-v3"
 ROUND72_IMPLEMENTATION_V1_SHA256 = (
     "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd"
+)
+ROUND72_IMPLEMENTATION_V2_SHA256 = (
+    "ebb30e8bebc00054d09d6046dd418ea9a0511bff6aebe863b8858f89de0930d3"
 )
 WINDOWS_SECONDS = (1, 5, 15, 30, 60, 300, 900)
 HORIZONS_SECONDS = (30, 60, 300)
@@ -208,8 +211,9 @@ def build_round72_implementation_spec(
         "round": 72,
         "frozen_at_utc": _canonical_utc(frozen_at_utc),
         "amendment": {
-            "predecessor_implementation_sha256": ROUND72_IMPLEMENTATION_V1_SHA256,
-            "reason": "pre-result clarification of already-declared design metrics, aggregation, resampling, stress, seed, and continuous-market semantics",
+            "predecessor_implementation_sha256": ROUND72_IMPLEMENTATION_V2_SHA256,
+            "original_implementation_sha256": ROUND72_IMPLEMENTATION_V1_SHA256,
+            "reason": "final pre-result clarification of metric definitions, tied scores, undefined day metrics, and exact gate inequalities",
             "round72_price_or_return_result_available_before_amendment": False,
             "round72_model_result_available_before_amendment": False,
             "data_feature_target_split_or_model_parameter_changed": False,
@@ -352,6 +356,21 @@ def build_round72_implementation_spec(
             "primary_loss_metrics": {
                 head: list(metrics) for head, metrics in PRIMARY_LOSS_METRICS.items()
             },
+            "metric_definitions": {
+                "binary_threshold": "predict positive when calibrated probability is greater than or equal to 0.5",
+                "log_loss": "unweighted mean binary negative log likelihood after clipping probabilities to [1e-6,1-1e-6]",
+                "brier_score": "unweighted mean squared probability error",
+                "accuracy": "unweighted fraction of exact thresholded labels",
+                "balanced_accuracy": "unweighted mean of positive recall and negative recall; undefined within a UTC day missing either class",
+                "MCC": "standard confusion-matrix Matthews coefficient; pooled zero denominator returns zero, while a UTC-day zero denominator is undefined",
+                "ROC_AUC": "Mann-Whitney probability using average ranks for tied scores; undefined when either class is absent",
+                "precision_recall_AUC": "average precision with equal-score rows consumed as one tied group; undefined when positives are absent",
+                "expected_calibration_error": "ten equal-width probability bins on [0,1], rightmost bin including one, weighted by row count",
+                "mean_squared_error": "unweighted mean squared target-minus-prediction error",
+                "mean_absolute_error": "unweighted mean absolute target-minus-prediction error",
+                "Spearman": "Pearson correlation of average tie ranks; undefined for a constant target or prediction within a UTC day",
+                "sign_accuracy": "unweighted equality of numpy sign values; exact zero is its own sign",
+            },
             "fdr_family_cardinality": 36,
             "fdr_family_order": "symbol BTC ETH SOL, then horizon 30 60 300, then head binary continuous, then each head's listed primary loss order",
             "permutation_draws": 10_000,
@@ -373,8 +392,18 @@ def build_round72_implementation_spec(
             "accuracy_rule": "pooled out-of-sample threshold-0.5 accuracy must strictly exceed pooled majority-class accuracy",
             "day_metric_rule": "compute each metric independently within each UTC day, discard only mathematically undefined day metrics, and take the unweighted mean across finite days",
             "bootstrap_rule": "sample the finite UTC-day metric values independently with replacement for 10000 draws and use the empirical 0.025 quantile of draw means",
+            "bootstrap_quantile_method": "linear",
+            "minimum_finite_days_per_bootstrap_metric": 10,
             "stress_rule": "reuse each fitted and calibrated spot_perpetual primary model without refit; on stress-valid test rows, pooled log loss and Brier must each be strictly below the fold-specific primary-training-prevalence baseline",
             "seed_derivation": "LightGBM always uses 20260722; resampling uses 20260722 plus the zero-based canonical family index",
+            "paired_permutation_p_value": "(one plus draws whose signed challenger-minus-baseline mean loss is less than or equal to the observed mean loss difference) divided by (draws plus one)",
+            "primary_gate_logic": {
+                "binary": "for every symbol-horizon: both pooled prevalence-relative loss improvements are at least 0.002, each loss improves in at least four folds, pooled accuracy strictly exceeds pooled majority accuracy, and day-bootstrap lower bounds strictly exceed 0.5 balanced accuracy and 0 MCC",
+                "continuous": "for every symbol-horizon: pooled MSE skill versus zero is at least 0.001 and the day-bootstrap Spearman lower bound strictly exceeds zero",
+                "feature_increment": "all 36 spot_perpetual-versus-perpetual_only loss comparisons have relative improvement at least 0.001 and Benjamini-Hochberg q at most 0.05",
+                "stress": "for every symbol-horizon, both pooled five-second-delay binary loss skills versus the fold-specific primary training prevalence are strictly positive",
+                "inequality_policy": "strict only where this object says strictly; otherwise boundary equality passes",
+            },
             "maximum_q_value": 0.05,
             "minimum_relative_improvement_spot_perpetual_vs_perpetual_only": 0.001,
             "minimum_binary_relative_improvement_vs_prevalence": 0.002,
@@ -464,6 +493,7 @@ __all__ = [
     "PRIMARY_LOSS_METRICS",
     "ROUND72_IMPLEMENTATION_SCHEMA",
     "ROUND72_IMPLEMENTATION_V1_SHA256",
+    "ROUND72_IMPLEMENTATION_V2_SHA256",
     "SPOT_FLOW_LAGS_SECONDS",
     "STRESS_ENTRY_DELAY_SECONDS",
     "WINDOWS_SECONDS",

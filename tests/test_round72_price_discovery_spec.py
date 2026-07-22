@@ -9,6 +9,7 @@ from simple_ai_trading.price_discovery_spec import (
     HORIZONS_SECONDS,
     PRIMARY_LOSS_METRICS,
     ROUND72_IMPLEMENTATION_V1_SHA256,
+    ROUND72_IMPLEMENTATION_V2_SHA256,
     build_round72_implementation_spec,
     layer_feature_names,
     validate_layer_prefixes,
@@ -79,8 +80,9 @@ def test_round72_pre_result_amendment_removes_evaluation_and_session_ambiguity()
     evaluation = artifact["evaluation_contract"]
 
     assert artifact["amendment"] == {
-        "predecessor_implementation_sha256": ROUND72_IMPLEMENTATION_V1_SHA256,
-        "reason": "pre-result clarification of already-declared design metrics, aggregation, resampling, stress, seed, and continuous-market semantics",
+        "predecessor_implementation_sha256": ROUND72_IMPLEMENTATION_V2_SHA256,
+        "original_implementation_sha256": ROUND72_IMPLEMENTATION_V1_SHA256,
+        "reason": "final pre-result clarification of metric definitions, tied scores, undefined day metrics, and exact gate inequalities",
         "round72_price_or_return_result_available_before_amendment": False,
         "round72_model_result_available_before_amendment": False,
         "data_feature_target_split_or_model_parameter_changed": False,
@@ -89,6 +91,10 @@ def test_round72_pre_result_amendment_removes_evaluation_and_session_ambiguity()
         head: list(metrics) for head, metrics in PRIMARY_LOSS_METRICS.items()
     }
     assert evaluation["fdr_family_cardinality"] == 36
+    assert evaluation["minimum_finite_days_per_bootstrap_metric"] == 10
+    assert evaluation["metric_definitions"]["MCC"].startswith(
+        "standard confusion-matrix"
+    )
     assert "continuous" in artifact["anchor_contract"]["market_session_semantics"]
     assert "never a formal market close" in artifact["anchor_contract"][
         "market_session_semantics"

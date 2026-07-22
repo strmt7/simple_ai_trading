@@ -1,8 +1,9 @@
 {
   "amendment": {
     "data_feature_target_split_or_model_parameter_changed": false,
-    "predecessor_implementation_sha256": "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd",
-    "reason": "pre-result clarification of already-declared design metrics, aggregation, resampling, stress, seed, and continuous-market semantics",
+    "original_implementation_sha256": "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd",
+    "predecessor_implementation_sha256": "ebb30e8bebc00054d09d6046dd418ea9a0511bff6aebe863b8858f89de0930d3",
+    "reason": "final pre-result clarification of metric definitions, tied scores, undefined day metrics, and exact gate inequalities",
     "round72_model_result_available_before_amendment": false,
     "round72_price_or_return_result_available_before_amendment": false
   },
@@ -52,6 +53,7 @@
     "bootstrap_draws": 10000,
     "bootstrap_estimand": "unweighted mean of finite per-day balanced accuracy, MCC, or Spearman values",
     "bootstrap_lower_quantile": 0.025,
+    "bootstrap_quantile_method": "linear",
     "bootstrap_rule": "sample the finite UTC-day metric values independently with replacement for 10000 draws and use the empirical 0.025 quantile of draw means",
     "bootstrap_unit": "UTC day",
     "continuous_controls": {
@@ -69,14 +71,38 @@
     "fold_score_rule": "for binary log loss and Brier separately, spot_perpetual must beat that fold's training-prevalence baseline in at least four of six test folds",
     "loss_aggregation": "concatenate the six chronological out-of-sample test blocks and compute row-weighted losses",
     "maximum_q_value": 0.05,
+    "metric_definitions": {
+      "MCC": "standard confusion-matrix Matthews coefficient; pooled zero denominator returns zero, while a UTC-day zero denominator is undefined",
+      "ROC_AUC": "Mann-Whitney probability using average ranks for tied scores; undefined when either class is absent",
+      "Spearman": "Pearson correlation of average tie ranks; undefined for a constant target or prediction within a UTC day",
+      "accuracy": "unweighted fraction of exact thresholded labels",
+      "balanced_accuracy": "unweighted mean of positive recall and negative recall; undefined within a UTC day missing either class",
+      "binary_threshold": "predict positive when calibrated probability is greater than or equal to 0.5",
+      "brier_score": "unweighted mean squared probability error",
+      "expected_calibration_error": "ten equal-width probability bins on [0,1], rightmost bin including one, weighted by row count",
+      "log_loss": "unweighted mean binary negative log likelihood after clipping probabilities to [1e-6,1-1e-6]",
+      "mean_absolute_error": "unweighted mean absolute target-minus-prediction error",
+      "mean_squared_error": "unweighted mean squared target-minus-prediction error",
+      "precision_recall_AUC": "average precision with equal-score rows consumed as one tied group; undefined when positives are absent",
+      "sign_accuracy": "unweighted equality of numpy sign values; exact zero is its own sign"
+    },
     "minimum_binary_relative_improvement_vs_prevalence": 0.002,
     "minimum_continuous_mse_skill_vs_zero": 0.001,
+    "minimum_finite_days_per_bootstrap_metric": 10,
     "minimum_positive_proper_score_folds": 4,
     "minimum_relative_improvement_spot_perpetual_vs_perpetual_only": 0.001,
+    "paired_permutation_p_value": "(one plus draws whose signed challenger-minus-baseline mean loss is less than or equal to the observed mean loss difference) divided by (draws plus one)",
     "permutation_draws": 10000,
     "permutation_statistic": "row-weighted mean paired loss difference with one random sign per UTC day",
     "permutation_unit": "UTC day",
     "prevalence_baseline": "positive-label fraction in that fold's primary training role, clipped to the probability bounds; the same value is reused for the five-second stress target",
+    "primary_gate_logic": {
+      "binary": "for every symbol-horizon: both pooled prevalence-relative loss improvements are at least 0.002, each loss improves in at least four folds, pooled accuracy strictly exceeds pooled majority accuracy, and day-bootstrap lower bounds strictly exceed 0.5 balanced accuracy and 0 MCC",
+      "continuous": "for every symbol-horizon: pooled MSE skill versus zero is at least 0.001 and the day-bootstrap Spearman lower bound strictly exceeds zero",
+      "feature_increment": "all 36 spot_perpetual-versus-perpetual_only loss comparisons have relative improvement at least 0.001 and Benjamini-Hochberg q at most 0.05",
+      "inequality_policy": "strict only where this object says strictly; otherwise boundary equality passes",
+      "stress": "for every symbol-horizon, both pooled five-second-delay binary loss skills versus the fold-specific primary training prevalence are strictly positive"
+    },
     "primary_loss_metrics": {
       "binary_direction": [
         "log_loss",
@@ -203,8 +229,8 @@
     "schema_smoke_used_for_feature_or_parameter_selection": false,
     "single_smallest_archive_schema_smoke_preceded_this_freeze": true
   },
-  "frozen_at_utc": "2026-07-22T09:55:35.428895+00:00",
-  "implementation_sha256": "ebb30e8bebc00054d09d6046dd418ea9a0511bff6aebe863b8858f89de0930d3",
+  "frozen_at_utc": "2026-07-22T10:09:40.139728+00:00",
+  "implementation_sha256": "d8679606e75ec7fa2bf00032b34489218085f7c7f5159419e192f3ee351dfad9",
   "inventory_file_sha256": "055b5c5a3d975a092bae0c27253757c3be39535945d0aa6caaecdf31e9343b1b",
   "inventory_sha256": "e8c505132716c68ad753cbdd93b23094b778d9067c8a6c9381fad0e20cdd662c",
   "leverage_authority": false,
@@ -256,7 +282,7 @@
     "target_and_metric_dtype": "float64"
   },
   "round": 72,
-  "schema_version": "round-072-price-discovery-implementation-v2",
+  "schema_version": "round-072-price-discovery-implementation-v3",
   "split_contract": {
     "development_months": [
       "2020-10",
