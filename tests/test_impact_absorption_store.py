@@ -14,6 +14,7 @@ from simple_ai_trading.impact_absorption import (
 from simple_ai_trading.impact_absorption_store import (
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
+    ImpactRejectedWireEvent,
     ImpactRestEvent,
 )
 from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
@@ -129,9 +130,10 @@ def _messages() -> tuple[ImpactCaptureMessage, ...]:
     liquidation_payload = {
         "e": "forceOrder",
         "E": 2_000,
-        "st": 1,
         "o": {
             "s": "BTCUSDT",
+            "ps": "BTCUSDT",
+            "st": 1,
             "S": "SELL",
             "o": "LIMIT",
             "f": "IOC",
@@ -419,12 +421,136 @@ def test_store_rejects_duplicate_json_and_raw_typed_disagreement(tmp_path) -> No
         )
         with pytest.raises(ValueError, match="raw book ticker differs"):
             store.append_frame(run_id=RUN_ID, messages=(disagreement,))
+
+        wrong_stream_wrapper = json.loads(ticker.record.raw_text)
+        wrong_stream_wrapper["stream"] = "btcusdt@bookTicker@100ms"
+        wrong_stream = ImpactCaptureMessage(
+            **{
+                **ticker.__dict__,
+                "record": ImpactCaptureFrameRecord(
+                    **{
+                        **ticker.record.__dict__,
+                        "sequence_number": 0,
+                        "raw_text": json.dumps(
+                            wrong_stream_wrapper, separators=(",", ":")
+                        ),
+                    }
+                ),
+            }
+        )
+        with pytest.raises(ValueError, match="combined stream mismatch"):
+            store.append_frame(run_id=RUN_ID, messages=(wrong_stream,))
         assert (
             store.connect()
             .execute("SELECT count(*) FROM impact_capture_frame")
             .fetchone()[0]
             == 0
         )
+
+
+def test_store_hash_chains_valid_json_and_malformed_rejected_wire_evidence(
+    tmp_path,
+) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        force_raw = (
+            '{"stream":"btcusdt@forceOrder","data":{"e":"forceOrder",'
+            '"E":2000,"o":{"s":"BTCUSDT","st":2,"ps":"BTCUSDT"}}}'
+        )
+        records = (
+            ImpactCaptureFrameRecord(
+                stream="binance_futures_market",
+                connection_id="binance-market:rejected-test",
+                sequence_number=0,
+                received_wall_ns=WALL_BASE + 400,
+                received_monotonic_ns=400,
+                raw_text=force_raw,
+            ),
+            ImpactCaptureFrameRecord(
+                stream="binance_futures_market",
+                connection_id="binance-market:rejected-test",
+                sequence_number=1,
+                received_wall_ns=WALL_BASE + 401,
+                received_monotonic_ns=401,
+                raw_text='{"stream":"one","stream":"two","data":{}}',
+            ),
+        )
+        messages = (
+            ImpactCaptureMessage(
+                record=records[0],
+                event=ImpactRejectedWireEvent(
+                    observed_stream_name="btcusdt@forceOrder",
+                    observed_event_type="forceOrder",
+                    observed_symbol="BTCUSDT",
+                    rejection_class="feed_integrity",
+                    rejection_reason="ImpactFeedIntegrityError:stream type mismatch",
+                    receive_time_ns=400,
+                ),
+                segment_id=SEGMENT_ID,
+            ),
+            ImpactCaptureMessage(
+                record=records[1],
+                event=ImpactRejectedWireEvent(
+                    observed_stream_name="",
+                    observed_event_type="",
+                    observed_symbol="",
+                    rejection_class="feed_integrity",
+                    rejection_reason="ValueError:duplicate JSON key is forbidden",
+                    receive_time_ns=401,
+                ),
+            ),
+        )
+
+        written = store.append_frame(run_id=RUN_ID, messages=messages)
+        audit = store.audit_run(RUN_ID)
+
+        assert written.message_count == 2
+        assert audit.passed is True
+        assert (
+            store.connect()
+            .execute(
+                "SELECT count(*) FROM impact_rejected_wire_event WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()[0]
+            == 2
+        )
+        assert (
+            store.connect()
+            .execute(
+                "SELECT count(*) FROM impact_event_index "
+                "WHERE run_id = ? AND event_type = 'rejectedWire'",
+                [RUN_ID],
+            )
+            .fetchone()[0]
+            == 2
+        )
+
+
+def test_audit_retains_v1_contract_identity_for_historical_runs(tmp_path) -> None:
+    legacy_contract = "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        store.start_run(
+            run_id=RUN_ID,
+            started_wall_ns=WALL_BASE,
+            started_monotonic_ns=1,
+            config={"purpose": "legacy-audit-test"},
+        )
+        store.connect().execute(
+            "UPDATE impact_capture_run SET schema_version = ?, "
+            "capture_contract_sha256 = ? WHERE run_id = ?",
+            ["round-073-prospective-evidence-v1", legacy_contract, RUN_ID],
+        )
+        store.finish_run(
+            run_id=RUN_ID,
+            status="stopped",
+            ended_wall_ns=WALL_BASE + 1,
+        )
+
+        audit = store.audit_run(RUN_ID)
+
+        assert audit.passed is True
+        assert audit.capture_contract_sha256 == legacy_contract
 
 
 def test_store_persists_exact_typed_open_interest(tmp_path) -> None:

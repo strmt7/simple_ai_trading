@@ -1,0 +1,103 @@
+{
+  "schema_version": "round-073-feed-contract-correction-evidence-v1",
+  "round": 73,
+  "artifact_sha256": "f20ad51dfff76dd1be552b0d399801430ae4f821ecdd3ebed626decf8e99413f",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "source": "Binance public USD-M /market combined WebSocket",
+  "failed_qualification_attempts": [
+    {
+      "run_id": "ea0306aa7f4046deb5b38adfa68b3c9f",
+      "report_sha256": "c0d535a76b0b0e68d35b96d9d5b45266ff81d50150930d66fc43dc258eb40df0",
+      "elapsed_seconds": 54.78100000000268,
+      "persisted_message_count": 112223,
+      "persisted_frame_count": 195,
+      "persisted_compressed_payload_bytes": 4108641,
+      "audit_passed": true,
+      "failure_class": "feed_integrity",
+      "error": "market_source:ImpactFeedIntegrityError:stream type must be an integer"
+    },
+    {
+      "run_id": "9d751e69acb1420b91a4887ea43933a1",
+      "report_sha256": "ecb20fccfcfd4fa4959c163710dd8ccbdedbef9171161b2a218c2dbdffac7e63",
+      "elapsed_seconds": 30.422000000005937,
+      "persisted_message_count": 58877,
+      "persisted_frame_count": 114,
+      "persisted_compressed_payload_bytes": 2154700,
+      "audit_passed": true,
+      "failure_class": "feed_integrity",
+      "error": "market_source:ImpactFeedIntegrityError:stream type must be an integer"
+    }
+  ],
+  "live_force_order_probe": {
+    "endpoint": "wss://fstream.binance.com/market/stream",
+    "subscriptions": [
+      "btcusdt@forceOrder",
+      "ethusdt@forceOrder",
+      "solusdt@forceOrder"
+    ],
+    "maximum_probe_seconds": 180,
+    "observed_after_seconds": 121.171,
+    "raw_utf8_bytes": 248,
+    "raw_sha256": "972aacab0e6cbd8d026505e9ab4d7721a9a6275346ddd845fb32fa2186b8d805",
+    "exact_raw_text": "{\"stream\":\"ethusdt@forceOrder\",\"data\":{\"e\":\"forceOrder\",\"E\":1784734386582,\"o\":{\"s\":\"ETHUSDT\",\"S\":\"SELL\",\"o\":\"LIMIT\",\"f\":\"IOC\",\"q\":\"19.599\",\"p\":\"1936.93\",\"ap\":\"1944.11\",\"X\":\"FILLED\",\"l\":\"1.444\",\"z\":\"19.599\",\"T\":1784734385570,\"ps\":\"ETHUSDT\",\"st\":1}}}",
+    "observed_paths": {
+      "wrapper_stream": "stream",
+      "event_type": "data.e",
+      "event_time": "data.E",
+      "symbol": "data.o.s",
+      "product_symbol": "data.o.ps",
+      "stream_type": "data.o.st"
+    },
+    "top_level_data_st_present": false
+  },
+  "corrected_capture_probe": {
+    "run_id": "abb5bef24e6a401ab2c42eb23e9afca0",
+    "capture_contract_sha256": "1b46f178e335b3473b86ee71a113e2538a9068e287c50f0867aab13f3230557c",
+    "report_sha256": "6621b74d4b0d3cba3c2a52939970113ac6d5990b1cb88e3af8db1f067835acd2",
+    "mode": "probe",
+    "status": "completed",
+    "qualification_passed": false,
+    "elapsed_seconds": 182.35899999999674,
+    "persisted_message_count": 161355,
+    "persisted_frame_count": 605,
+    "persisted_compressed_payload_bytes": 6349220,
+    "queue_maximum_utilization": 0.0506439208984375,
+    "reconnect_count": 0,
+    "negative_corrected_latency_fraction": 0.0,
+    "audit_passed": true,
+    "audit_errors": [],
+    "event_counts": {
+      "aggTrade": 4840,
+      "bookTicker": 150594,
+      "depthSnapshot": 3,
+      "depthUpdate": 5365,
+      "exchangeInfo": 1,
+      "forceOrder": 1,
+      "markPriceUpdate": 537,
+      "openInterest": 9,
+      "serverTime": 5
+    },
+    "force_order_evidence": {
+      "symbol": "SOLUSDT",
+      "frame_index": 426,
+      "message_index": 9,
+      "raw_sha256": "dd482df611a6e0557b9192e19088d9321e72d30f3b5458653187f8ceb547e90c",
+      "typed_event_sha256": "bd98f836a894c3e2ebb72a5383984638d66d026a0c510cb10e0875efb370292f",
+      "raw_hash_recomputed_equal": true,
+      "stream_type_path": "data.o.st",
+      "product_symbol_path": "data.o.ps"
+    }
+  },
+  "companion_market_samples": {
+    "aggTrade_stream_type_path": "data.st",
+    "markPriceUpdate_stream_type_path": "data.st",
+    "forceOrder_stream_type_path": "data.o.st"
+  },
+  "diagnosis": "The global v1 stream-type path was false. The correction is stream-specific and preserves strict st=1 validation at each observed path.",
+  "evidence_limits": [
+    "The failed runs did not persist the triggering raw message because v1 parsed before enqueueing it.",
+    "The bounded public live probe independently reproduced the forceOrder wire shape, and the corrected capture then persisted a separate live SOLUSDT forceOrder.",
+    "This evidence does not qualify the feed and does not evaluate a model or any financial outcome."
+  ]
+}

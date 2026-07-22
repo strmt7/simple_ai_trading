@@ -79,7 +79,15 @@ Execution cost is symbol-specific where market data exists:
   qualification. Probe mode defaults to 30 seconds. Qualification mode defaults
   to one uninterrupted hour and exits nonzero unless every frozen feed and
   integrity gate passes. `impact-audit` replays the stored frames and verifies
-  their raw-to-typed links without network calls. Neither command authenticates,
+  raw, typed, and frame hashes with bounded 64-frame table reads rather than a
+  query per message or an unbounded full-run event preload. The v2 contract
+  applies `st=1` at the stream-specific live
+  path: `data.st` for aggregate trade and mark price, and `data.o.st` for
+  liquidation snapshots. It also requires the wrapper name to match the exact
+  symbol stream. A malformed or unknown WebSocket receipt is persisted first as
+  hash-chained `rejectedWire` evidence and then invalidates the run; it cannot
+  disappear between socket receipt and failure reporting. Contract v1 remains
+  immutable and auditable for historical runs. Neither command authenticates,
   places orders, or supplies model, P&L, or profitability evidence.
 - `data-health` is the pre-training database gate. It emits machine-readable
   row counts, UTC spans, expected rows, coverage ratio, gap count,
