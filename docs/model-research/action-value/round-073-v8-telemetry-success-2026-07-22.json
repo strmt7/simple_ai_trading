@@ -1,0 +1,112 @@
+{
+  "schema_version": "round-073-v8-telemetry-success-evidence-v1",
+  "artifact_sha256": "99172858d6b9f3e85d95bf6f330eeec31d2fd65e7273fe4620da058703e5a8c8",
+  "recorded_utc_date": "2026-07-22",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "run": {
+    "run_id": "4c4f505f7c4d45f0ba20b82d5a6a5de9",
+    "capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
+    "status": "completed",
+    "capture_gate_passed": false,
+    "qualification_passed": false,
+    "elapsed_seconds": 32.312999999994645,
+    "writer_frame_count": 7,
+    "writer_message_count": 25360,
+    "writer_compressed_payload_bytes": 1052330,
+    "messages_per_second": 784.8234456721506,
+    "frames_per_stream_minute": 12.997864636526154,
+    "queue_high_water_messages": 973,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.0148468017578125,
+    "negative_corrected_latency_fraction": 0.0,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "reconnect_count": 0
+  },
+  "capture_phase": {
+    "checkpoint_threshold": "16.0 MiB",
+    "auto_checkpoint_skip_wal_threshold_bytes": 100000,
+    "process_io_provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "start_write_bytes": 15483135,
+    "end_write_bytes": 43337565,
+    "delta_write_bytes": 27854430,
+    "write_bytes_per_message": 1098.3608044164039,
+    "frozen_maximum_write_bytes_per_message": 4096,
+    "database_physical_start_bytes": 5388382208,
+    "database_physical_end_bytes": 5388382208,
+    "database_physical_growth_bytes": 0,
+    "database_physical_growth_bytes_per_message": 0.0,
+    "frozen_maximum_physical_growth_bytes_per_message": 1024,
+    "all_metric_thresholds_passed": true
+  },
+  "terminal_phase": {
+    "start_write_bytes": 43337565,
+    "end_write_bytes": 56714386,
+    "delta_write_bytes": 13376821,
+    "qualification_metric": false
+  },
+  "report_interpretation": {
+    "stored_storage_efficiency_passed": false,
+    "stored_capture_gate_passed": false,
+    "storage_efficiency_minimum_seconds": 180.0,
+    "diagnostic_minimum_stream_seconds": 30.0,
+    "elapsed_duration_predicate_passed": false,
+    "all_non_duration_storage_predicates_passed": true,
+    "diagnostic_contract_passed": true,
+    "reason": "The stored field is the full 180-second capture gate and must remain false for this 30-second diagnostic. The v8 diagnostic contract separately requires its 30-second duration, frozen storage thresholds, and a fresh-process audit."
+  },
+  "fresh_process_read_only_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 7,
+    "message_count": 25360,
+    "compressed_payload_bytes": 1052330,
+    "last_frame_sha256": "e6ad2e94c3d2e0daeec93b515c730bf2ecb79aea5d87e09a506adefbccd3a4ea",
+    "stored_report_schema_version": "round-073-capture-report-v8",
+    "stored_report_sha256": "d116fdb17fa13e2364a7c8d40f5e02f9fdbb6abd7a3a1ee6c0ca5b71a04977ff"
+  },
+  "comparison": {
+    "v7_capture_phase_write_bytes_per_message": 16262.82958557889,
+    "v8_to_v7_write_ratio": 0.06753811190337863,
+    "v8_write_reduction_fraction": 0.9324618880966213,
+    "comparison_is_descriptive_not_financial": true,
+    "table_isolation_is_the_only_causal_explanation_proven": false,
+    "reason": "The v8 run both routed observations to fresh tables and reverted the rejected v7 checkpoint candidate, so the observed reduction cannot be attributed to only one change without another controlled experiment."
+  },
+  "critical_analysis": {
+    "v8_telemetry_diagnostic_passed": true,
+    "v8_full_180_second_capture_gate_passed": false,
+    "storage_write_amplification_gate_failure_repeated": false,
+    "root_cause_fully_proven": false,
+    "financial_feature_evidence": false,
+    "model_evidence": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false
+  },
+  "decision": {
+    "v8_180_second_capture_gate_authorized": true,
+    "v8_one_hour_qualification_authorized": false,
+    "v8_long_capture_authorized": false,
+    "feature_source_replay_run": false,
+    "feature_source_replay_reason": "The 180-second capture gate has not run yet."
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "authorization": {
+    "v8_180_second_capture_gate_attempt": true,
+    "v8_one_hour_qualification": false,
+    "v8_long_capture": false,
+    "round_073_feature_construction": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

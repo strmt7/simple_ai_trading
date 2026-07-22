@@ -68,6 +68,9 @@ V7_TELEMETRY_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V8_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-capture-contract-v8.json"
 )
+V8_TELEMETRY_SUCCESS_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v8-telemetry-success-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -540,6 +543,40 @@ def test_round73_v8_contract_isolates_tables_and_reverts_checkpoint_policy() -> 
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v8_telemetry_passes_only_the_frozen_diagnostic() -> None:
+    evidence = json.loads(V8_TELEMETRY_SUCCESS_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["attempt_evidence_combined"] is False
+    run = evidence["run"]
+    assert run["capture_gate_passed"] is False
+    assert run["qualification_passed"] is False
+    capture = evidence["capture_phase"]
+    assert capture["write_bytes_per_message"] <= 4_096
+    assert capture["database_physical_growth_bytes_per_message"] <= 1_024
+    assert capture["all_metric_thresholds_passed"] is True
+    interpretation = evidence["report_interpretation"]
+    assert interpretation["stored_storage_efficiency_passed"] is False
+    assert interpretation["elapsed_duration_predicate_passed"] is False
+    assert interpretation["all_non_duration_storage_predicates_passed"] is True
+    assert interpretation["diagnostic_contract_passed"] is True
+    assert evidence["fresh_process_read_only_audit"]["passed"] is True
+    comparison = evidence["comparison"]
+    assert comparison["v8_to_v7_write_ratio"] < 0.07
+    assert comparison["table_isolation_is_the_only_causal_explanation_proven"] is False
+    analysis = evidence["critical_analysis"]
+    assert analysis["v8_telemetry_diagnostic_passed"] is True
+    assert analysis["v8_full_180_second_capture_gate_passed"] is False
+    assert analysis["root_cause_fully_proven"] is False
+    decision = evidence["decision"]
+    assert decision["v8_180_second_capture_gate_authorized"] is True
+    assert decision["v8_one_hour_qualification_authorized"] is False
+    assert evidence["authorization"]["round_073_model_evaluation"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
