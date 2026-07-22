@@ -1,0 +1,112 @@
+{
+  "schema_version": "round-073-rotation-runner-contract-v1",
+  "contract_sha256": "8f20a25adfc2d33a43d0a8acd0ad55361956d4443e85cc7b1740f882bfc5b9ea",
+  "round": 73,
+  "parent_corpus_contract_sha256": "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67",
+  "first_manifest_evidence_sha256": "69860b56921e59a3bbb5ec9cabe48498f634ed975a37df1f1e74344439ca8b42",
+  "frozen_before_first_rotation_run": true,
+  "purpose": "Collect qualified one-hour BTCUSDT, ETHUSDT, and SOLUSDT public-feed segments with bounded interruption gaps, durable recovery, one writer process, and no trading authority.",
+  "research_update": [
+    {
+      "source": "https://duckdb.org/docs/current/connect/concurrency",
+      "authority": "official DuckDB documentation",
+      "adaptation": "A native DuckDB file is treated as having one read-write process. The runner lease prevents a second collector process from intentionally starting against the same database."
+    },
+    {
+      "source": "https://duckdb.org/docs/current/sql/statements/transactions",
+      "authority": "official DuckDB documentation",
+      "adaptation": "Lease, journal, and terminal report state transitions use explicit transactions and fail on conflicts."
+    },
+    {
+      "source": "https://binance.github.io/binance-connector-js/modules/_binance_derivatives-trading-usds-futures.html",
+      "authority": "official Binance connector documentation",
+      "adaptation": "Each one-hour segment establishes fresh public streams and snapshots, well inside the documented connection-renewal horizon."
+    }
+  ],
+  "scope": {
+    "venue": "Binance USD-M Futures public market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "segment_duration_seconds": 3600,
+    "maximum_reconnects_per_segment": 0,
+    "minimum_segments_per_invocation": 0,
+    "maximum_segments_per_invocation": 168,
+    "default_segments_per_invocation": 1,
+    "zero_segments_means_recovery_only": true,
+    "unbounded_loop_permitted": false
+  },
+  "single_writer_lease": {
+    "table": "impact_corpus_runner_lease_v1",
+    "singleton_key": "round-073-corpus-collector",
+    "lease_ttl_seconds": 7200,
+    "renew_before_each_capture_or_index_operation": true,
+    "second_owner_policy": "fail before public-feed capture",
+    "expired_lease_takeover_permitted": true,
+    "duckdb_file_lock_remains_authoritative": true
+  },
+  "durable_journal": {
+    "batch_table": "impact_corpus_batch_v1",
+    "segment_table": "impact_corpus_batch_segment_v1",
+    "batch_id_format": "32 lowercase hexadecimal characters",
+    "terminal_supervisor_json_hash_required": true,
+    "manifest_hash_required": true,
+    "manifest_audit_result_required": true,
+    "running_batch_without_live_lease_status": "interrupted",
+    "terminal_report_json_hash_required": true,
+    "existing_terminal_rows_overwritten": false
+  },
+  "recovery_policy": {
+    "run_before_new_capture": true,
+    "candidate_scope": "terminal v8 runs whose stored report states qualification_passed true and which have no corpus manifest",
+    "exact_index_admission_reapplied": true,
+    "post_index_manifest_audit_required": true,
+    "recovery_failure_policy": "stop before new capture",
+    "unqualified_or_historical_run_auto_promoted": false
+  },
+  "capture_policy": {
+    "segments_collected_sequentially": true,
+    "fresh_snapshot_per_segment": true,
+    "next_segment_starts_only_after_terminal_capture_report": true,
+    "stop_after_first_nonqualified_or_reconnected_segment": true,
+    "database_and_wal_cap_enforced_each_segment": true,
+    "payload_cap_enforced_each_segment": true,
+    "source_and_writer_heartbeat_enforced": true,
+    "rate_limit_start_guard_fraction": 0.8,
+    "capture_reports_combined_for_admission": false
+  },
+  "index_policy": {
+    "exact_feature_replay_concurrent_with_live_capture": false,
+    "reason": "Avoid replay CPU, memory, and database read pressure during latency-sensitive public-feed capture.",
+    "qualified_runs_indexed_after_capture_phase": true,
+    "previously_qualified_runs_indexed_after_a_later_capture_failure": true,
+    "index_order": "capture start time then run ID",
+    "index_parallelism": 1,
+    "post_write_manifest_audit_required": true,
+    "stop_after_first_index_or_manifest_audit_failure": true,
+    "idempotent_resume_required": true
+  },
+  "calendar_policy": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_statistical_partition_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "authority": {
+    "runner_implementation": true,
+    "bounded_public_feed_collection_after_tests": true,
+    "round_073_feature_construction": true,
+    "round_073_target_construction": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "leverage_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

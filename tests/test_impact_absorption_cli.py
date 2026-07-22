@@ -121,6 +121,10 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     corpus_day = cli._parse_args(
         ["impact-corpus-day", "--utc-day", "2026-07-22"]
     )
+    corpus_collect = cli._parse_args(["impact-corpus-collect", "--segments", "0"])
+    corpus_batch_audit = cli._parse_args(
+        ["impact-corpus-batch-audit", "--batch-id", "c" * 32, "--deep"]
+    )
 
     assert capture.duration_seconds == 3660.0
     assert capture.maximum_reconnects == 2
@@ -130,6 +134,9 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert corpus_index.run_id == "b" * 32
     assert corpus_audit.run_id == "b" * 32
     assert corpus_day.utc_day == "2026-07-22"
+    assert corpus_collect.segments == 0
+    assert corpus_batch_audit.batch_id == "c" * 32
+    assert corpus_batch_audit.deep is True
     specs = {item.name: item for item in command_specs()}
     assert {
         "impact-capture",
@@ -138,6 +145,8 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "impact-corpus-index",
         "impact-corpus-audit",
         "impact-corpus-day",
+        "impact-corpus-collect",
+        "impact-corpus-batch-audit",
     } <= set(specs)
     workflow = {item.name: (item.page, item.group) for item in workflow_commands()}
     assert workflow["impact-capture"] == ("Data", "Market data")
@@ -146,6 +155,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert workflow["impact-corpus-index"] == ("Research", "Microstructure models")
     assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-day"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-corpus-collect"] == ("Data", "Market data")
+    assert workflow["impact-corpus-batch-audit"] == (
+        "Data",
+        "Integrity and outcomes",
+    )
 
 
 def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
@@ -233,6 +247,126 @@ def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
             {"utc_day": "2026-07-22", "memory_limit": "1GB", "threads": 1},
         ),
     ]
+
+
+def test_impact_corpus_collect_handler_uses_bounded_rotation(monkeypatch, capsys) -> None:
+    class Report:
+        status = "completed"
+        batch_id = "d" * 32
+        qualified_capture_segment_count = 0
+        requested_capture_segments = 0
+        recovered_segment_count = 1
+        indexed_segment_count = 1
+        error = ""
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-rotation-runner-v1",
+                "batch_id": self.batch_id,
+                "status": self.status,
+            }
+
+    observed = {}
+
+    async def fake_run(config, *, progress_interval_seconds):
+        observed["config"] = config
+        observed["progress_interval_seconds"] = progress_interval_seconds
+        return Report()
+
+    monkeypatch.setattr(cli, "_run_impact_corpus_rotation_with_progress", fake_run)
+    args = argparse.Namespace(
+        database="corpus.duckdb",
+        segments=0,
+        compressed_payload_cap_bytes=2_147_483_648,
+        database_size_cap_bytes=8 * 1024 * 1024 * 1024,
+        memory_limit="1GB",
+        database_threads=1,
+        progress_interval_seconds=30.0,
+        json=True,
+    )
+
+    assert cli.command_impact_corpus_collect(args) == 0
+    assert json.loads(capsys.readouterr().out)["batch_id"] == "d" * 32
+    assert observed["config"].segment_count == 0
+    assert observed["config"].capture_config().duration_seconds == 3_600
+    assert observed["config"].capture_config().maximum_reconnects == 0
+    assert observed["progress_interval_seconds"] == 30.0
+
+
+def test_impact_corpus_collect_progress_monitor_is_nonblocking(
+    monkeypatch,
+    capsys,
+) -> None:
+    class Report:
+        status = "completed"
+
+    async def delayed_rotation(_config):
+        await asyncio.sleep(0.02)
+        return Report()
+
+    monkeypatch.setattr(cli, "run_round73_corpus_rotation", delayed_rotation)
+    result = asyncio.run(
+        cli._run_impact_corpus_rotation_with_progress(
+            cli.Round73CorpusRotationConfig(segment_count=0),
+            progress_interval_seconds=0.001,
+        )
+    )
+
+    assert result.status == "completed"
+    assert "impact-corpus-collect-progress:" in capsys.readouterr().err
+
+
+def test_impact_corpus_collect_rejects_silent_progress_interval(capsys) -> None:
+    args = argparse.Namespace(progress_interval_seconds=4.9)
+
+    assert cli.command_impact_corpus_collect(args) == 2
+    assert "between 5 and 120" in capsys.readouterr().err
+
+
+def test_impact_corpus_batch_audit_handler_forwards_deep_mode(
+    monkeypatch,
+    capsys,
+) -> None:
+    class Audit:
+        batch_id = "e" * 32
+        passed = True
+        status = "completed"
+        segment_count = 2
+        deeply_audited_manifest_count = 2
+        errors = ()
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-rotation-batch-audit-v1",
+                "passed": True,
+            }
+
+    observed = {}
+
+    def fake_audit(database, **kwargs):
+        observed["database"] = str(database)
+        observed.update(kwargs)
+        return Audit()
+
+    monkeypatch.setattr(cli, "audit_round73_rotation_batch", fake_audit)
+    args = argparse.Namespace(
+        database="corpus.duckdb",
+        batch_id="e" * 32,
+        deep=True,
+        memory_limit="1GB",
+        database_threads=1,
+        json=True,
+    )
+
+    assert cli.command_impact_corpus_batch_audit(args) == 0
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert observed == {
+        "database": "corpus.duckdb",
+        "batch_id": "e" * 32,
+        "deep_manifest_audit": True,
+        "memory_limit": "1GB",
+        "threads": 1,
+    }
 
 
 def test_impact_feature_source_handler_emits_machine_report(monkeypatch, capsys) -> None:

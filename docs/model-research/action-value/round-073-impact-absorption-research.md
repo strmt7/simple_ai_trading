@@ -97,6 +97,12 @@ flowchart LR
   3,608.934 seconds to the 2026-07-22 UTC statistical partition. No complete
   day exists, so target construction and model evaluation remain closed. See
   `round-073-first-corpus-manifest-2026-07-22.json`.
+- `round-073-rotation-runner-contract-v1.json` freezes a bounded collector
+  before its first run. It admits at most 168 one-hour segments per invocation,
+  uses one DuckDB writer lease, journals each terminal supervisor result,
+  recovers qualified unindexed v8 runs before capture, and defers exact replay
+  until capture stops. Unit and parity tests pass; live runner validation is
+  still pending, so multi-segment collection is not yet authorized.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

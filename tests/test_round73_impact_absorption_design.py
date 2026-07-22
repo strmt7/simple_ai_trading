@@ -83,6 +83,9 @@ SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 FIRST_CORPUS_MANIFEST_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-first-corpus-manifest-2026-07-22.json"
 )
+ROTATION_RUNNER_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-rotation-runner-contract-v1.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -741,6 +744,43 @@ def test_round73_first_corpus_manifest_is_real_hash_bound_and_non_predictive() -
     authorization = evidence["authorization"]
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_rotation_runner_contract_is_bounded_and_recoverable() -> None:
+    contract = json.loads(ROTATION_RUNNER_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_rotation_run"] is True
+    scope = contract["scope"]
+    assert scope["segment_duration_seconds"] == 3_600
+    assert scope["maximum_reconnects_per_segment"] == 0
+    assert scope["maximum_segments_per_invocation"] == 168
+    assert scope["unbounded_loop_permitted"] is False
+    lease = contract["single_writer_lease"]
+    assert lease["lease_ttl_seconds"] == 7_200
+    assert lease["second_owner_policy"] == "fail before public-feed capture"
+    journal = contract["durable_journal"]
+    assert journal["terminal_supervisor_json_hash_required"] is True
+    assert journal["terminal_report_json_hash_required"] is True
+    recovery = contract["recovery_policy"]
+    assert recovery["run_before_new_capture"] is True
+    assert recovery["exact_index_admission_reapplied"] is True
+    assert recovery["recovery_failure_policy"] == "stop before new capture"
+    capture = contract["capture_policy"]
+    assert capture["stop_after_first_nonqualified_or_reconnected_segment"] is True
+    assert capture["rate_limit_start_guard_fraction"] == 0.8
+    indexing = contract["index_policy"]
+    assert indexing["exact_feature_replay_concurrent_with_live_capture"] is False
+    assert indexing["index_parallelism"] == 1
+    assert indexing["post_write_manifest_audit_required"] is True
+    calendar = contract["calendar_policy"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_products_use_actual_venue_calendars"] is True
+    authority = contract["authority"]
+    assert authority["round_073_model_evaluation"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
