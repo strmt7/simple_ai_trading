@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"bbefbdf9d3c48ae4b37742db1e218b676d0146617fd0f18364bb4d0ce33c373c";
+inline constexpr const wchar_t* kCommandContractSha256 = L"d804b949739457337470ead87a9b1712771b5c047ef98609f98b4b95bbaf95eb";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -284,6 +284,14 @@ inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--maximum-reconnects", L"maximum_reconnects", L"", L"6", L"", L"1", false, true, false},
     {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30.0", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_feature_source[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"qualified v4 capture run ID", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -1008,6 +1016,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
     {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
     {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 10},
+    {L"impact-feature-source", L"usage: simple-ai-trading impact-feature-source [-h] [--database DATABASE]                                                --run-id RUN_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_feature_source, 5},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"microstructure-capture", L"usage: simple-ai-trading microstructure-capture [-h] [--symbols SYMBOLS]                                                 [--seconds SECONDS]                                                 [--output-root OUTPUT_ROOT]                                                 [--db DB] [--timeout TIMEOUT]                                                 [--no-convert] [--json]", kOptions_microstructure_capture, 7},
@@ -1085,6 +1094,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"AI validation", L"ai-review"},
     {L"Research", L"AI validation", L"ai-uplift"},
     {L"Research", L"Microstructure models", L"model-blueprint"},
+    {L"Research", L"Microstructure models", L"impact-feature-source"},
     {L"Research", L"Microstructure models", L"microstructure-train"},
     {L"Research", L"Microstructure models", L"microstructure-refit"},
     {L"Research", L"Microstructure models", L"microstructure-prequential"},

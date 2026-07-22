@@ -91,16 +91,61 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         ]
     )
     audit = cli._parse_args(["impact-audit", "--run-id", "a" * 32])
+    features = cli._parse_args(
+        ["impact-feature-source", "--run-id", "a" * 32]
+    )
 
     assert capture.duration_seconds == 3660.0
     assert capture.maximum_reconnects == 2
     assert capture.database_size_cap_bytes == 8 * 1024 * 1024 * 1024
     assert audit.run_id == "a" * 32
+    assert features.run_id == "a" * 32
     specs = {item.name: item for item in command_specs()}
-    assert {"impact-capture", "impact-audit"} <= set(specs)
+    assert {"impact-capture", "impact-audit", "impact-feature-source"} <= set(specs)
     workflow = {item.name: (item.page, item.group) for item in workflow_commands()}
     assert workflow["impact-capture"] == ("Data", "Market data")
     assert workflow["impact-audit"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-feature-source"] == ("Research", "Microstructure models")
+
+
+def test_impact_feature_source_handler_emits_machine_report(monkeypatch, capsys) -> None:
+    class Diagnostic:
+        run_id = "a" * 32
+        frame_count = 11
+        message_count = 101
+        depth_update_count = 7
+        level_change_count = 23
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-feature-source-diagnostic-v1",
+                "run_id": self.run_id,
+            }
+
+    observed = {}
+
+    def fake_diagnostic(database, **kwargs):
+        observed["database"] = str(database)
+        observed.update(kwargs)
+        return Diagnostic()
+
+    monkeypatch.setattr(cli, "diagnose_round73_feature_source", fake_diagnostic)
+    args = argparse.Namespace(
+        database="feature.duckdb",
+        run_id="a" * 32,
+        memory_limit="1GB",
+        database_threads=1,
+        json=True,
+    )
+
+    assert cli.command_impact_feature_source(args) == 0
+    assert json.loads(capsys.readouterr().out)["run_id"] == "a" * 32
+    assert observed == {
+        "database": "feature.duckdb",
+        "run_id": "a" * 32,
+        "memory_limit": "1GB",
+        "threads": 1,
+    }
 
 
 def test_impact_capture_handler_uses_mode_default_and_machine_report(

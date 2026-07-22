@@ -113,6 +113,7 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "Microstructure models",
         (
             "model-blueprint",
+            "impact-feature-source",
             "microstructure-train",
             "microstructure-refit",
             "microstructure-prequential",

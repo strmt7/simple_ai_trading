@@ -80,7 +80,12 @@ After parser or taxonomy changes, regenerate the header through the native build
   long-capture storage-efficiency gate. Read
   `round-073-capture-contract-v4.json` and
   `round-073-v4-capture-qualification-2026-07-22.json`; do not start a long
-  capture or evaluate a model yet. Never pool disconnected attempts.
+  capture or evaluate a model yet. The subsequent exact-wire source replay
+  reconstructed all 104,570 depth updates and 7,432,729 level changes with zero
+  typed-row or top-20-state mismatches. This validates causal pre-event depth
+  bands only; gross book churn is not execution or P&L. Read
+  `round-073-v4-feature-source-diagnostic-2026-07-22.json`. Never pool
+  disconnected attempts.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.

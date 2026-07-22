@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from simple_ai_trading.impact_absorption import (
+    DepthLevelChange,
     DepthSequenceGapError,
     DepthSnapshotBridgeError,
     ImpactFeedIntegrityError,
@@ -13,6 +14,7 @@ from simple_ai_trading.impact_absorption import (
     parse_mark_price,
     validate_combined_stream_name,
 )
+from simple_ai_trading.impact_absorption_features import pre_event_level_band
 
 
 def _snapshot() -> dict[str, object]:
@@ -62,6 +64,32 @@ def test_depth_book_bridges_snapshot_and_emits_displayed_changes() -> None:
     assert len(state.bid_levels) == 20
     assert len(state.ask_levels) == 20
     assert -1.0 <= state.imbalance_20 <= 1.0
+
+
+def test_depth_level_bands_use_only_the_pre_event_book() -> None:
+    book = SynchronizedDepthBook("BTCUSDT", "0.1")
+    book.initialize(_snapshot())
+    state = book.state()
+
+    def change(side: str, price: float) -> DepthLevelChange:
+        return DepthLevelChange(
+            side=side,
+            price_ticks=int(round(price * 10)),
+            price=price,
+            previous_qty=0.0,
+            new_qty=1.0,
+            added_qty=1.0,
+            removed_qty=0.0,
+        )
+
+    assert pre_event_level_band(state, change("bid", 100.1)) == "levels_1_5"
+    assert pre_event_level_band(state, change("bid", 99.5)) == "levels_6_10"
+    assert pre_event_level_band(state, change("bid", 99.0)) == "levels_11_20"
+    assert pre_event_level_band(state, change("bid", 98.0)) == "outside_20"
+    assert pre_event_level_band(state, change("ask", 100.0)) == "levels_1_5"
+    assert pre_event_level_band(state, change("ask", 100.6)) == "levels_6_10"
+    assert pre_event_level_band(state, change("ask", 101.1)) == "levels_11_20"
+    assert pre_event_level_band(state, change("ask", 102.1)) == "outside_20"
 
 
 def test_depth_book_rejects_missing_bridge_and_subsequent_gap() -> None:

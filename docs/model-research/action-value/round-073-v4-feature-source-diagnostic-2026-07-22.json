@@ -1,0 +1,119 @@
+{
+  "schema_version": "round-073-feature-source-evidence-v1",
+  "round": 73,
+  "artifact_sha256": "4529f420e453088fa074258d6aecf71d686c08a7f34db557957630b788a72b6e",
+  "run_id": "ec6d54470ef04b0baddc73fd0e27fd5b",
+  "design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "capture_contract_sha256": "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529",
+  "capture_report_sha256": "9a872b9658f6ac3de8ad08f7411d70c22c1af00efd12723ab76877b07beb6566",
+  "qualification_artifact_sha256": "a53a9d2f443359b0b7c38434e06753f73021df28720f4753191fb5677dcada5a",
+  "implementation_sha256": "52d154e039cf258b6fef264b58550d8fe204a3775b821da2822ab788d989e5ae",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "diagnostic_wall_seconds": 238.0,
+  "input": {
+    "frame_count": 11663,
+    "message_count": 3181236,
+    "depth_snapshot_count": 3,
+    "depth_update_count": 104570,
+    "synchronized_depth_update_count": 104484,
+    "stale_depth_update_count": 86,
+    "level_change_count": 7432729
+  },
+  "reconciliation": {
+    "fresh_capture_audit_in_same_process_passed": true,
+    "frame_and_message_totals_match_audit": true,
+    "raw_depth_identity_matches_typed_rows": true,
+    "event_quote_addition_and_removal_sums_match_typed_rows": true,
+    "reconstructed_top_20_states_match_typed_rows": true,
+    "snapshot_count_per_symbol": 1,
+    "mismatch_count": 0,
+    "nonfinite_count": 0
+  },
+  "feature_semantics": {
+    "availability_clock": "received_monotonic_ns",
+    "level_band_clock": "pre-event synchronized local book",
+    "level_band_definition": {
+      "levels_1_5": "prospective price rank 1 through 5",
+      "levels_6_10": "prospective price rank 6 through 10",
+      "levels_11_20": "prospective price rank 11 through 20",
+      "outside_20": "prospective price rank greater than 20"
+    },
+    "future_or_target_data_used": false,
+    "identity_whale_or_manipulation_inference": false,
+    "gross_quote_flow_warning": "Displayed additions and removals are gross book churn. They are not executions, accessible fill capacity, market-maker identity, spoofing labels, profit, or ROI."
+  },
+  "symbols": {
+    "BTCUSDT": {
+      "depth_updates": 35334,
+      "synchronized_depth_updates": 35313,
+      "stale_depth_updates": 21,
+      "level_changes": 3559286,
+      "quote_flow": {
+        "ask": {
+          "levels_1_5": {"changes": 73021, "added_quote": 2213610072.9944115, "removed_quote": 1624471675.5144746},
+          "levels_6_10": {"changes": 27187, "added_quote": 87410159.1299997, "removed_quote": 204638855.1657018},
+          "levels_11_20": {"changes": 50212, "added_quote": 235159643.16899914, "removed_quote": 339435068.9819998},
+          "outside_20": {"changes": 1510852, "added_quote": 28042592685.493317, "removed_quote": 27711185260.028904}
+        },
+        "bid": {
+          "levels_1_5": {"changes": 62633, "added_quote": 2037270045.1769915, "removed_quote": 1613450755.914511},
+          "levels_6_10": {"changes": 20908, "added_quote": 38410983.09130007, "removed_quote": 149046465.0485998},
+          "levels_11_20": {"changes": 41435, "added_quote": 93902859.84719975, "removed_quote": 207863470.64040118},
+          "outside_20": {"changes": 1773038, "added_quote": 29316141501.299995, "removed_quote": 28731449953.57333}
+        }
+      }
+    },
+    "ETHUSDT": {
+      "depth_updates": 35202,
+      "synchronized_depth_updates": 35173,
+      "stale_depth_updates": 29,
+      "level_changes": 3255422,
+      "quote_flow": {
+        "ask": {
+          "levels_1_5": {"changes": 76316, "added_quote": 1266178967.6748664, "removed_quote": 1032151154.7847065},
+          "levels_6_10": {"changes": 37457, "added_quote": 131127537.34644043, "removed_quote": 156469880.92059112},
+          "levels_11_20": {"changes": 80223, "added_quote": 396330200.3714978, "removed_quote": 351447489.0489703},
+          "outside_20": {"changes": 1351466, "added_quote": 16039797919.236603, "removed_quote": 15888194401.333254}
+        },
+        "bid": {
+          "levels_1_5": {"changes": 68630, "added_quote": 1360792869.8289967, "removed_quote": 1149906726.341212},
+          "levels_6_10": {"changes": 36298, "added_quote": 151863560.42801937, "removed_quote": 181413706.94315124},
+          "levels_11_20": {"changes": 75862, "added_quote": 386545275.8969837, "removed_quote": 379580838.2269782},
+          "outside_20": {"changes": 1529170, "added_quote": 16113899678.541803, "removed_quote": 15970755872.789637}
+        }
+      }
+    },
+    "SOLUSDT": {
+      "depth_updates": 34034,
+      "synchronized_depth_updates": 33998,
+      "stale_depth_updates": 36,
+      "level_changes": 618021,
+      "quote_flow": {
+        "ask": {
+          "levels_1_5": {"changes": 84948, "added_quote": 593496767.907504, "removed_quote": 556250335.9779034},
+          "levels_6_10": {"changes": 53319, "added_quote": 127793887.41399966, "removed_quote": 143147199.09740147},
+          "levels_11_20": {"changes": 32778, "added_quote": 90797590.08130099, "removed_quote": 101752104.82740125},
+          "outside_20": {"changes": 131246, "added_quote": 1254068438.054312, "removed_quote": 1260971293.3217263}
+        },
+        "bid": {
+          "levels_1_5": {"changes": 78348, "added_quote": 512726074.3574985, "removed_quote": 522625968.34710056},
+          "levels_6_10": {"changes": 43430, "added_quote": 130699372.85859933, "removed_quote": 126561835.13939938},
+          "levels_11_20": {"changes": 32827, "added_quote": 96957966.25280139, "removed_quote": 103347291.84380132},
+          "outside_20": {"changes": 161125, "added_quote": 1300919739.661818, "removed_quote": 1276779837.409198}
+        }
+      }
+    }
+  },
+  "authority": {
+    "depth_band_primitives_reconstructed": true,
+    "all_grid_anchor_features_constructed": false,
+    "shock_threshold_selected": false,
+    "target_constructed": false,
+    "model_evaluated": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
