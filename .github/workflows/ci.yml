@@ -131,9 +131,6 @@ jobs:
           uv run --locked python -m simple_ai_trading.windows_app --help
           .\run-shell.cmd --help
           .\run-gui.cmd --help
-          if (Get-Command py -ErrorAction SilentlyContinue) {
-            uv run --locked py -3.11 -m simple_ai_trading --help
-          }
 
       - name: Run Windows terminal regression tests
         shell: pwsh

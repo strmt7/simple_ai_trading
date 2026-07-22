@@ -724,7 +724,7 @@ def _comparison_chart(summary: Sequence[Mapping[str, object]], subtitle: str) ->
     body = _svg_start(
         width,
         height,
-        "Round 13 execution stress gates",
+        "Round 13 execution stress-test acceptance criteria",
         subtitle,
         "Treatment total utility and maximum drawdown for every preregistered execution scenario.",
     )
