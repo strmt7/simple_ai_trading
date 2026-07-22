@@ -875,7 +875,7 @@ class ImpactAbsorptionStore:
         _reject_secret_fields(report, "capture report")
         if str(report.get("run_id", "")) != selected:
             raise ValueError("capture report run ID does not match its storage key")
-        if str(report.get("schema_version", "")) != "round-073-capture-report-v1":
+        if str(report.get("schema_version", "")) != "round-073-capture-report-v2":
             raise ValueError("capture report schema version is invalid")
         run = (
             self.connect()
@@ -894,7 +894,7 @@ class ImpactAbsorptionStore:
             """,
             [
                 selected,
-                "round-073-capture-report-v1",
+                "round-073-capture-report-v2",
                 IMPACT_CAPTURE_CONTRACT_SHA256,
                 report_json,
                 report_sha256,

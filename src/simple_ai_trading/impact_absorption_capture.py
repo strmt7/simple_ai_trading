@@ -14,6 +14,7 @@ import uuid
 
 import requests
 from websockets.asyncio.client import connect
+from websockets.exceptions import WebSocketException
 
 from .impact_absorption import (
     ImpactFeedIntegrityError,
@@ -53,6 +54,41 @@ _WRITER_STALL_SECONDS = 5.0
 _SOURCE_STALL_SECONDS = 15.0
 _CLOCK_PROBE_COUNT = 3
 _RATE_LIMIT_FRACTION = 0.80
+_RECONNECT_BACKOFF_SECONDS = (1.0, 2.0, 4.0, 8.0, 16.0, 30.0)
+
+CaptureFailureClass = Literal[
+    "none",
+    "transport",
+    "rest_transport",
+    "feed_integrity",
+    "processing",
+    "rate_limit",
+    "writer",
+    "resource_limit",
+    "audit",
+]
+
+
+class _ImpactRateLimitGuardError(RuntimeError):
+    pass
+
+
+class _ImpactWriterFault(RuntimeError):
+    pass
+
+
+class _ImpactWriterQueueOverflow(RuntimeError):
+    pass
+
+
+class _ImpactPayloadCapReached(RuntimeError):
+    pass
+
+
+class _ImpactRestResponseError(RuntimeError):
+    def __init__(self, path: str, status_code: int) -> None:
+        self.status_code = int(status_code)
+        super().__init__(f"public Binance REST {path} returned HTTP {status_code}")
 
 
 def _strict_json_object(raw_text: str) -> Mapping[str, object]:
@@ -98,6 +134,7 @@ class ImpactCaptureConfig:
     source_stall_seconds: float = _SOURCE_STALL_SECONDS
     duckdb_memory_limit: str = "2GB"
     duckdb_threads: int = 2
+    maximum_reconnects: int = len(_RECONNECT_BACKOFF_SECONDS)
 
     def validate(self) -> None:
         if self.mode not in {"probe", "qualification"}:
@@ -129,6 +166,8 @@ class ImpactCaptureConfig:
             raise ValueError("writer stall timeout is outside the frozen bound")
         if not 5.0 <= float(self.source_stall_seconds) <= _SOURCE_STALL_SECONDS:
             raise ValueError("source stall timeout is outside the frozen bound")
+        if not 0 <= int(self.maximum_reconnects) <= len(_RECONNECT_BACKOFF_SECONDS):
+            raise ValueError("maximum reconnects is outside the frozen bound")
 
 
 @dataclass(frozen=True)
@@ -168,14 +207,47 @@ class ImpactCaptureReport:
     audit_passed: bool
     audit_errors: tuple[str, ...]
     error: str
+    failure_class: CaptureFailureClass
 
     def as_dict(self) -> dict[str, object]:
         result = asdict(self)
-        result["schema_version"] = "round-073-capture-report-v1"
+        result["schema_version"] = "round-073-capture-report-v2"
         result["design_sha256"] = ROUND73_DESIGN_SHA256
         result["capture_contract_sha256"] = IMPACT_CAPTURE_CONTRACT_SHA256
         result["audit_errors"] = list(self.audit_errors)
         return result
+
+
+@dataclass(frozen=True)
+class ImpactCaptureSupervisorReport:
+    """Bounded recovery result without combining evidence across attempts."""
+
+    status: Literal["completed", "failed"]
+    qualification_passed: bool
+    selected_run_id: str
+    attempt_count: int
+    reconnect_count: int
+    reconnect_delays_seconds: tuple[float, ...]
+    attempts: tuple[ImpactCaptureReport, ...]
+    startup_errors: tuple[str, ...]
+    terminal_error: str
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": "round-073-capture-supervisor-report-v1",
+            "design_sha256": ROUND73_DESIGN_SHA256,
+            "capture_contract_sha256": IMPACT_CAPTURE_CONTRACT_SHA256,
+            "status": self.status,
+            "qualification_passed": self.qualification_passed,
+            "selected_run_id": self.selected_run_id,
+            "attempt_count": self.attempt_count,
+            "reconnect_count": self.reconnect_count,
+            "reconnect_delays_seconds": list(self.reconnect_delays_seconds),
+            "attempts": [attempt.as_dict() for attempt in self.attempts],
+            "startup_errors": list(self.startup_errors),
+            "terminal_error": self.terminal_error,
+            "attempt_evidence_combined": False,
+        }
 
 
 class _ImpactFrameWriter:
@@ -208,19 +280,25 @@ class _ImpactFrameWriter:
     def start(self, timeout_seconds: float = 5.0) -> None:
         self.thread.start()
         if not self.started.wait(timeout=max(0.1, float(timeout_seconds))):
-            raise RuntimeError("Round 73 writer did not start within its deadline")
+            raise _ImpactWriterFault(
+                "Round 73 writer did not start within its deadline"
+            )
         if self.failed.is_set():
-            raise RuntimeError(self.error or "Round 73 writer failed during startup")
+            raise _ImpactWriterFault(
+                self.error or "Round 73 writer failed during startup"
+            )
 
     def put(self, message: ImpactCaptureMessage) -> None:
         if self.failed.is_set():
-            raise RuntimeError(self.error or "Round 73 writer has failed")
+            raise _ImpactWriterFault(self.error or "Round 73 writer has failed")
         if self.cap_reached.is_set():
-            raise RuntimeError("Round 73 compressed payload cap was reached")
+            raise _ImpactPayloadCapReached(
+                "Round 73 compressed payload cap was reached"
+            )
         try:
             self.queue.put_nowait(message)
         except Full as exc:
-            raise RuntimeError("Round 73 writer queue overflow") from exc
+            raise _ImpactWriterQueueOverflow("Round 73 writer queue overflow") from exc
         self.high_water_messages = max(self.high_water_messages, self.queue.qsize())
 
     def stop(self, timeout_seconds: float = 10.0) -> bool:
@@ -337,9 +415,7 @@ def _rest_request(
     used_raw = response.headers.get("X-MBX-USED-WEIGHT-1M")
     used_weight = None if used_raw is None else int(used_raw)
     if response.status_code != 200:
-        raise RuntimeError(
-            f"public Binance REST {path} returned HTTP {response.status_code}"
-        )
+        raise _ImpactRestResponseError(path, response.status_code)
     symbol = str(parameters.get("symbol", ""))
     exchange_time_ms = None
     update_id = None
@@ -441,6 +517,24 @@ def _market_stream_url() -> str:
     return BINANCE_FUTURES_MARKET_STREAM + "/".join(streams)
 
 
+def _failure_class_for_exception(exc: BaseException) -> CaptureFailureClass:
+    if isinstance(exc, _ImpactRateLimitGuardError):
+        return "rate_limit"
+    if isinstance(exc, _ImpactRestResponseError):
+        return "rate_limit" if exc.status_code in {418, 429} else "rest_transport"
+    if isinstance(exc, _ImpactWriterQueueOverflow | _ImpactPayloadCapReached):
+        return "resource_limit"
+    if isinstance(exc, _ImpactWriterFault):
+        return "writer"
+    if isinstance(exc, requests.exceptions.RequestException):
+        return "rest_transport"
+    if isinstance(exc, WebSocketException | TimeoutError | ConnectionError):
+        return "transport"
+    if isinstance(exc, ImpactFeedIntegrityError | ValueError | KeyError):
+        return "feed_integrity"
+    return "processing"
+
+
 async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
     """Capture one bounded prospective run; never place or authenticate an order."""
 
@@ -454,14 +548,17 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
     fatal = asyncio.Event()
     stop = asyncio.Event()
     errors: list[str] = []
+    failure_class: CaptureFailureClass = "none"
     public_last_receipt = time.monotonic()
     market_last_receipt = time.monotonic()
     public_sequence = 0
     market_sequence = 0
 
-    def fail(reason: str) -> None:
+    def fail(reason: str, category: CaptureFailureClass) -> None:
+        nonlocal failure_class
         if not errors:
             errors.append(str(reason)[:2_000])
+            failure_class = category
         fatal.set()
 
     async def public_receiver(websocket) -> None:
@@ -492,7 +589,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
         except asyncio.CancelledError:
             raise
         except BaseException as exc:
-            fail(f"public_source:{type(exc).__name__}:{exc}")
+            fail(f"public_source:{type(exc).__name__}:{exc}", "transport")
 
     async with connect(
         _public_stream_url(),
@@ -570,7 +667,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
             ]
             latest_weight = max(observed_weights, default=0)
             if latest_weight / request_weight_limit >= _RATE_LIMIT_FRACTION:
-                raise RuntimeError(
+                raise _ImpactRateLimitGuardError(
                     "Round 73 capture blocked because one-minute request weight is at or above 80%"
                 )
 
@@ -621,6 +718,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                         "frame_message_limit": config.frame_message_limit,
                         "frame_uncompressed_limit_bytes": config.frame_uncompressed_limit_bytes,
                         "frame_flush_seconds": config.frame_flush_seconds,
+                        "maximum_reconnects": config.maximum_reconnects,
                     },
                     compressed_payload_cap_bytes=config.compressed_payload_cap_bytes,
                 )
@@ -730,7 +828,10 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 except asyncio.CancelledError:
                     raise
                 except BaseException as exc:
-                    fail(f"public_processor:{type(exc).__name__}:{exc}")
+                    fail(
+                        f"public_processor:{type(exc).__name__}:{exc}",
+                        _failure_class_for_exception(exc),
+                    )
 
             async def market_receiver() -> None:
                 nonlocal market_last_receipt, market_sequence
@@ -814,7 +915,10 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 except asyncio.CancelledError:
                     raise
                 except BaseException as exc:
-                    fail(f"market_source:{type(exc).__name__}:{exc}")
+                    fail(
+                        f"market_source:{type(exc).__name__}:{exc}",
+                        _failure_class_for_exception(exc),
+                    )
 
             async def rest_poller() -> None:
                 nonlocal rest_sequence
@@ -841,7 +945,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                             and evidence.used_weight_1m / request_weight_limit
                             >= _RATE_LIMIT_FRACTION
                         ):
-                            raise RuntimeError(
+                            raise _ImpactRateLimitGuardError(
                                 "one-minute request weight reached the 80% capture stop gate"
                             )
                         for symbol in IMPACT_CAPTURE_SYMBOLS:
@@ -867,13 +971,16 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                                 and open_interest.used_weight_1m / request_weight_limit
                                 >= _RATE_LIMIT_FRACTION
                             ):
-                                raise RuntimeError(
+                                raise _ImpactRateLimitGuardError(
                                     "one-minute request weight reached the 80% capture stop gate"
                                 )
                 except asyncio.CancelledError:
                     raise
                 except BaseException as exc:
-                    fail(f"rest_poller:{type(exc).__name__}:{exc}")
+                    fail(
+                        f"rest_poller:{type(exc).__name__}:{exc}",
+                        _failure_class_for_exception(exc),
+                    )
 
             processor_task = asyncio.create_task(public_processor())
             market_last_receipt = time.monotonic()
@@ -886,19 +993,19 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     await asyncio.sleep(0.1)
                     now = time.monotonic()
                     if writer.failed.is_set():
-                        fail(writer.error or "writer_failed")
+                        fail(writer.error or "writer_failed", "writer")
                     elif writer.cap_reached.is_set():
-                        fail("compressed_payload_cap_reached")
+                        fail("compressed_payload_cap_reached", "resource_limit")
                     elif (
                         writer.queue.qsize() > 0
                         and now - writer.last_progress_monotonic
                         > float(config.writer_stall_seconds)
                     ):
-                        fail("writer_heartbeat_timeout")
+                        fail("writer_heartbeat_timeout", "writer")
                     elif now - public_last_receipt > float(config.source_stall_seconds):
-                        fail("public_source_stall")
+                        fail("public_source_stall", "transport")
                     elif now - market_last_receipt > float(config.source_stall_seconds):
-                        fail("market_source_stall")
+                        fail("market_source_stall", "transport")
             finally:
                 stop.set()
                 public_task.cancel()
@@ -913,14 +1020,14 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 try:
                     await asyncio.wait_for(public_queue.join(), timeout=5.0)
                 except TimeoutError:
-                    fail("public_processing_drain_timeout")
+                    fail("public_processing_drain_timeout", "processing")
                     processor_task.cancel()
                 await asyncio.gather(processor_task, return_exceptions=True)
                 writer_joined = writer.stop(timeout_seconds=10.0)
                 if not writer_joined:
-                    fail("writer_shutdown_timeout")
+                    fail("writer_shutdown_timeout", "writer")
                 if writer.failed.is_set():
-                    fail(writer.error or "writer_failed")
+                    fail(writer.error or "writer_failed", "writer")
 
             ended_wall_ns = time.time_ns()
             elapsed_seconds = max(0.0, time.monotonic() - capture_started)
@@ -948,6 +1055,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     audit_passed=False,
                     audit_errors=("writer_shutdown_timeout",),
                     error=errors[0] if errors else "writer_shutdown_timeout",
+                    failure_class="writer",
                 )
 
             with ImpactAbsorptionStore(
@@ -1113,6 +1221,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 )
             )
             status = "failed" if errors or not audit.passed else "completed"
+            terminal_failure_class: CaptureFailureClass = failure_class
+            if status == "failed" and terminal_failure_class == "none":
+                terminal_failure_class = "audit"
             report = ImpactCaptureReport(
                 run_id=run_id,
                 mode=config.mode,
@@ -1134,6 +1245,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 audit_passed=audit.passed,
                 audit_errors=audit.errors,
                 error=errors[0] if errors else "",
+                failure_class=terminal_failure_class,
             )
             with ImpactAbsorptionStore(
                 config.database,
@@ -1153,11 +1265,97 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
             raise
 
 
+def _is_retriable_capture_failure(failure_class: CaptureFailureClass) -> bool:
+    return failure_class in {
+        "transport",
+        "rest_transport",
+        "feed_integrity",
+        "processing",
+    }
+
+
+def _is_retriable_startup_exception(exc: Exception) -> bool:
+    if isinstance(exc, _ImpactRestResponseError):
+        return 500 <= exc.status_code <= 599
+    return isinstance(
+        exc,
+        requests.exceptions.RequestException
+        | WebSocketException
+        | TimeoutError
+        | ConnectionError,
+    )
+
+
+async def _sleep_before_reconnect(seconds: float) -> None:
+    await asyncio.sleep(float(seconds))
+
+
+async def capture_round73_supervised(
+    config: ImpactCaptureConfig,
+) -> ImpactCaptureSupervisorReport:
+    """Retry bounded source failures without pooling disconnected evidence."""
+
+    config.validate()
+    attempts: list[ImpactCaptureReport] = []
+    startup_errors: list[str] = []
+    reconnect_delays: list[float] = []
+    terminal_error = ""
+    maximum_attempts = int(config.maximum_reconnects) + 1
+
+    for attempt_index in range(maximum_attempts):
+        try:
+            report = await capture_round73(config)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            reason = f"startup:{type(exc).__name__}:{exc}"[:2_000]
+            startup_errors.append(reason)
+            retriable = _is_retriable_startup_exception(exc)
+        else:
+            attempts.append(report)
+            if report.status == "completed":
+                return ImpactCaptureSupervisorReport(
+                    status="completed",
+                    qualification_passed=report.qualification_passed,
+                    selected_run_id=report.run_id,
+                    attempt_count=attempt_index + 1,
+                    reconnect_count=len(reconnect_delays),
+                    reconnect_delays_seconds=tuple(reconnect_delays),
+                    attempts=tuple(attempts),
+                    startup_errors=tuple(startup_errors),
+                    terminal_error="",
+                )
+            reason = report.error or "capture attempt failed without a reason"
+            retriable = _is_retriable_capture_failure(report.failure_class)
+
+        terminal_error = reason
+        if attempt_index + 1 >= maximum_attempts or not retriable:
+            break
+        delay = _RECONNECT_BACKOFF_SECONDS[attempt_index]
+        reconnect_delays.append(delay)
+        await _sleep_before_reconnect(delay)
+
+    return ImpactCaptureSupervisorReport(
+        status="failed",
+        qualification_passed=False,
+        selected_run_id="",
+        attempt_count=len(attempts) + len(startup_errors),
+        reconnect_count=len(reconnect_delays),
+        reconnect_delays_seconds=tuple(reconnect_delays),
+        attempts=tuple(attempts),
+        startup_errors=tuple(startup_errors),
+        terminal_error=terminal_error,
+    )
+
+
 __all__ = [
     "BINANCE_FUTURES_MARKET_STREAM",
     "BINANCE_FUTURES_PUBLIC_STREAM",
     "BINANCE_FUTURES_REST",
+    "CaptureFailureClass",
     "ImpactCaptureConfig",
     "ImpactCaptureReport",
+    "ImpactCaptureSupervisorReport",
     "capture_round73",
+    "capture_round73_supervised",
 ]

@@ -68,3 +68,10 @@ def test_round73_live_schema_probe_reconciles_without_model_claims() -> None:
         value is False for value in evidence["claims"].values() if value is not True
     )
     assert evidence["claims"]["schema_and_storage_probe"] is True
+    supervisor = evidence["supervisor"]
+    assert evidence["supervisor_sha256"] == _canonical_sha256(supervisor)
+    assert supervisor["selected_run_id"] == evidence["run_id"]
+    assert supervisor["attempt_count"] == 1
+    assert supervisor["reconnect_count"] == 0
+    assert supervisor["attempt_evidence_combined"] is False
+    assert supervisor["reconnect_branch_live_fault_injected"] is False

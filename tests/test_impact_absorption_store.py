@@ -476,7 +476,7 @@ def test_terminal_capture_report_is_canonical_hash_bound_and_secret_free(
             ended_wall_ns=WALL_BASE + 2_000,
         )
         report = {
-            "schema_version": "round-073-capture-report-v1",
+            "schema_version": "round-073-capture-report-v2",
             "run_id": RUN_ID,
             "status": "stopped",
             "qualification_passed": False,
