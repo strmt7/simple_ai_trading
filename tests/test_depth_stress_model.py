@@ -178,6 +178,38 @@ def test_shallow_challenger_reloads_with_no_trading_authority() -> None:
     assert np.mean(np.argmax(probabilities, axis=1) == labels[360:]) > 0.90
 
 
+def test_challenger_allows_sparse_tuning_but_requires_all_training_states() -> None:
+    features, labels, train, tuning = _model_fixture()
+    sparse_tuning_labels = labels.copy()
+    sparse_tuning_labels[tuning] = sparse_tuning_labels[tuning] % 2
+
+    artifact = train_depth_stress_challenger(
+        features,
+        sparse_tuning_labels,
+        train_rows=train,
+        tuning_rows=tuning,
+        feature_names=("state_proxy", "cycle", "noise"),
+        compute_backend="cpu",
+        maximum_iterations=32,
+    )
+    probabilities = predict_depth_stress_challenger(artifact, features[360:])
+
+    assert artifact.tuning_rows == len(tuning)
+    assert probabilities.shape == (30, 3)
+    training_without_stress = sparse_tuning_labels.copy()
+    training_without_stress[train] = training_without_stress[train] % 2
+    with pytest.raises(ValueError, match="training requires all states"):
+        train_depth_stress_challenger(
+            features,
+            training_without_stress,
+            train_rows=train,
+            tuning_rows=tuning,
+            feature_names=("state_proxy", "cycle", "noise"),
+            compute_backend="cpu",
+            maximum_iterations=32,
+        )
+
+
 def test_challenger_rejects_overlap_and_prediction_contract_drift() -> None:
     features, labels, train, tuning = _model_fixture()
     with pytest.raises(ValueError, match="overlap"):

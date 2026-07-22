@@ -1,0 +1,38 @@
+{
+  "schema_version": "round-062-execution-erratum-v1",
+  "round": 62,
+  "recorded_at_utc": "2026-07-22T10:34:10.6703456Z",
+  "frozen_design_sha256": "9fc720f60b403d214d8558661e60eb18a5738d90c14d7c95700a979ff4836742",
+  "execution_status": "failed_without_report",
+  "failure": {
+    "symbol": "BTCUSDT",
+    "horizon_seconds": 60,
+    "fold_index": 23,
+    "test_month": "2025-06",
+    "error_type": "ValueError",
+    "error_message": "depth-stress training and tuning require all states",
+    "progress_file_sha256": "9631101911dea927d3e11420bda566cd79b88e04d86f2aed9de3f961e25de097",
+    "stderr_log_sha256": "e1aaa4712207b892bdd13c6a525b90f8abd6eaf2da2d683f82580a0da9349c88",
+    "model_evaluation_report_published": false
+  },
+  "diagnosis": {
+    "training_state_counts": [385398, 488318, 330883],
+    "tuning_state_counts": [36306, 5189, 0],
+    "test_state_counts": [24819, 14237, 1],
+    "finding": "The training partition contained all three frozen states. Only the untouched tuning month lacked the stressed state.",
+    "contract_analysis": "The frozen design requires a complete immediately preceding tuning month but does not require every state in that month. Multiclass log-loss remains defined when a validation partition omits a class represented in training."
+  },
+  "correction": {
+    "scope": "Remove only the undocumented all-state requirement from the tuning partition while retaining it for training.",
+    "frozen_design_changed": false,
+    "source_data_changed": false,
+    "features_changed": false,
+    "targets_changed": false,
+    "splits_changed": false,
+    "model_parameters_changed": false,
+    "evaluation_metrics_changed": false,
+    "acceptance_gate_changed": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  }
+}
