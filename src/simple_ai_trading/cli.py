@@ -1319,7 +1319,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--duration-seconds",
         type=float,
         default=None,
-        help="streaming duration; defaults to 30 for probe and 3600 for qualification",
+        help="streaming duration; defaults to 180 for probe and 3600 for qualification",
     )
     parser_impact_capture.add_argument(
         "--compressed-payload-cap-bytes",
@@ -10862,7 +10862,7 @@ def command_impact_capture(args: argparse.Namespace) -> int:
     mode = str(getattr(args, "mode", "probe"))
     raw_duration = getattr(args, "duration_seconds", None)
     duration_seconds = (
-        (3_600.0 if mode == "qualification" else 30.0)
+        (3_600.0 if mode == "qualification" else 180.0)
         if raw_duration is None
         else float(raw_duration)
     )

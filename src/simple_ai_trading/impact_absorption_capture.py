@@ -6,8 +6,10 @@ import asyncio
 from dataclasses import asdict, dataclass
 import json
 import math
+import os
 from pathlib import Path
 from queue import Empty, Full, Queue
+import sys
 import threading
 import time
 from typing import Literal, Mapping, Sequence
@@ -56,9 +58,9 @@ BINANCE_FUTURES_MARKET_STREAM = "wss://fstream.binance.com/market/stream?streams
 
 _PUBLIC_SUFFIXES = ("depth@100ms", "bookTicker")
 _MARKET_SUFFIXES = ("aggTrade", "markPrice@1s", "forceOrder")
-_FRAME_MESSAGE_LIMIT = 1_024
-_FRAME_UNCOMPRESSED_LIMIT = 8 * 1024 * 1024
-_FRAME_FLUSH_SECONDS = 0.250
+_FRAME_MESSAGE_LIMIT = 16_384
+_FRAME_UNCOMPRESSED_LIMIT = 32 * 1024 * 1024
+_FRAME_FLUSH_SECONDS = 4.0
 _QUEUE_CAPACITY = 65_536
 _WRITER_STALL_SECONDS = 5.0
 _SOURCE_STALL_SECONDS = 15.0
@@ -67,6 +69,9 @@ _RATE_LIMIT_FRACTION = 0.80
 _RECONNECT_BACKOFF_SECONDS = (1.0, 2.0, 4.0, 8.0, 16.0, 30.0)
 IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES = 8 * 1024 * 1024 * 1024
 _DATABASE_SIZE_CAP_RESERVE_BYTES = 512 * 1024 * 1024
+_STORAGE_EFFICIENCY_MINIMUM_SECONDS = 180.0
+_STORAGE_EFFICIENCY_MAXIMUM_FRAMES_PER_MINUTE = 25.0
+_STORAGE_EFFICIENCY_MAXIMUM_WRITE_BYTES_PER_MESSAGE = 4096.0
 
 CaptureFailureClass = Literal[
     "none",
@@ -100,6 +105,71 @@ class _ImpactPayloadCapReached(RuntimeError):
 
 class _ImpactDatabaseSizeCapReached(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class _ProcessIoSnapshot:
+    provider: str
+    semantics: str
+    write_bytes: int | None
+
+
+def _process_io_snapshot() -> _ProcessIoSnapshot:
+    if os.name == "nt":
+        import ctypes
+
+        class IoCounters(ctypes.Structure):
+            _fields_ = [
+                ("read_operation_count", ctypes.c_ulonglong),
+                ("write_operation_count", ctypes.c_ulonglong),
+                ("other_operation_count", ctypes.c_ulonglong),
+                ("read_transfer_count", ctypes.c_ulonglong),
+                ("write_transfer_count", ctypes.c_ulonglong),
+                ("other_transfer_count", ctypes.c_ulonglong),
+            ]
+
+        counters = IoCounters()
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+        kernel32.GetProcessIoCounters.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(IoCounters),
+        ]
+        kernel32.GetProcessIoCounters.restype = ctypes.c_int
+        if kernel32.GetProcessIoCounters(
+            kernel32.GetCurrentProcess(), ctypes.byref(counters)
+        ):
+            return _ProcessIoSnapshot(
+                provider="windows_GetProcessIoCounters_WriteTransferCount",
+                semantics="process I/O transfer bytes; not physical SSD writes",
+                write_bytes=int(counters.write_transfer_count),
+            )
+    if sys.platform.startswith("linux"):
+        try:
+            values = {
+                key.strip(): int(value.strip())
+                for key, value in (
+                    line.split(":", 1)
+                    for line in Path("/proc/self/io").read_text(
+                        encoding="ascii"
+                    ).splitlines()
+                    if ":" in line
+                )
+            }
+        except (OSError, ValueError):
+            pass
+        else:
+            if "write_bytes" in values:
+                return _ProcessIoSnapshot(
+                    provider="linux_proc_self_io_write_bytes",
+                    semantics="bytes caused to be sent to storage by this process",
+                    write_bytes=values["write_bytes"],
+                )
+    return _ProcessIoSnapshot(
+        provider="unavailable",
+        semantics="host does not expose a supported process write counter",
+        write_bytes=None,
+    )
 
 
 def _database_physical_bytes(database: str) -> int:
@@ -191,7 +261,7 @@ class ImpactCaptureConfig:
 
     database: str = "data/microstructure.duckdb"
     mode: Literal["probe", "qualification"] = "probe"
-    duration_seconds: float = 30.0
+    duration_seconds: float = 180.0
     request_timeout_seconds: float = 10.0
     queue_capacity_messages: int = _QUEUE_CAPACITY
     frame_message_limit: int = _FRAME_MESSAGE_LIMIT
@@ -276,6 +346,14 @@ class ImpactCaptureReport:
     database_physical_bytes: int
     database_size_cap_bytes: int
     database_size_cap_reached: bool
+    process_io_provider: str
+    process_io_semantics: str
+    process_io_start_write_bytes: int | None
+    process_io_end_write_bytes: int | None
+    process_io_delta_write_bytes: int | None
+    process_io_write_bytes_per_message: float | None
+    frames_per_stream_minute: float
+    storage_efficiency_passed: bool
     event_counts: dict[str, int]
     symbol_event_counts: dict[str, dict[str, int]]
     negative_corrected_latency_fraction: float | None
@@ -353,6 +431,27 @@ class _ImpactFrameWriter:
         self.message_count = 0
         self.compressed_payload_bytes = 0
         self.database_physical_bytes = _database_physical_bytes(config.database)
+        self.process_io_start = _process_io_snapshot()
+
+    def process_io_metrics(
+        self,
+    ) -> tuple[str, str, int | None, int | None, int | None]:
+        end = _process_io_snapshot()
+        delta = None
+        if (
+            end.provider == self.process_io_start.provider
+            and end.write_bytes is not None
+            and self.process_io_start.write_bytes is not None
+            and end.write_bytes >= self.process_io_start.write_bytes
+        ):
+            delta = end.write_bytes - self.process_io_start.write_bytes
+        return (
+            end.provider,
+            end.semantics,
+            self.process_io_start.write_bytes,
+            end.write_bytes,
+            delta,
+        )
 
     def start(self, timeout_seconds: float = 5.0) -> None:
         if (
@@ -487,6 +586,70 @@ class _ImpactFrameWriter:
             self.started.set()
         finally:
             self.stopped.set()
+
+
+def _writer_resource_metrics(
+    writer: _ImpactFrameWriter | None,
+    *,
+    elapsed_seconds: float,
+    queue_capacity_messages: int,
+) -> tuple[
+    str,
+    str,
+    int | None,
+    int | None,
+    int | None,
+    float | None,
+    float,
+    bool,
+]:
+    if writer is None:
+        snapshot = _process_io_snapshot()
+        return (
+            snapshot.provider,
+            snapshot.semantics,
+            None,
+            snapshot.write_bytes,
+            None,
+            None,
+            0.0,
+            False,
+        )
+    provider, semantics, start_bytes, end_bytes, delta_bytes = (
+        writer.process_io_metrics()
+    )
+    write_bytes_per_message = (
+        None
+        if delta_bytes is None or writer.message_count == 0
+        else delta_bytes / writer.message_count
+    )
+    frames_per_minute = (
+        0.0
+        if elapsed_seconds <= 0.0
+        else writer.frame_count * 60.0 / elapsed_seconds
+    )
+    queue_utilization = writer.high_water_messages / queue_capacity_messages
+    passed = (
+        elapsed_seconds >= _STORAGE_EFFICIENCY_MINIMUM_SECONDS
+        and frames_per_minute <= _STORAGE_EFFICIENCY_MAXIMUM_FRAMES_PER_MINUTE
+        and write_bytes_per_message is not None
+        and write_bytes_per_message
+        <= _STORAGE_EFFICIENCY_MAXIMUM_WRITE_BYTES_PER_MESSAGE
+        and queue_utilization <= 0.8
+        and not writer.cap_reached.is_set()
+        and not writer.database_cap_reached.is_set()
+        and not writer.failed.is_set()
+    )
+    return (
+        provider,
+        semantics,
+        start_bytes,
+        end_bytes,
+        delta_bytes,
+        write_bytes_per_message,
+        frames_per_minute,
+        passed,
+    )
 
 
 def _rest_request(
@@ -701,6 +864,24 @@ def _terminal_post_capture_failure_report(
             [run_id],
         ).fetchall():
             symbol_event_counts[str(symbol)]["synchronizedDepthUpdate"] = int(count)
+        elapsed_seconds = max(
+            0.0,
+            (int(run[2]) - int(run[1])) / 1_000_000_000,
+        )
+        (
+            io_provider,
+            io_semantics,
+            io_start,
+            io_end,
+            io_delta,
+            io_per_message,
+            frames_per_minute,
+            storage_efficiency_passed,
+        ) = _writer_resource_metrics(
+            writer,
+            elapsed_seconds=elapsed_seconds,
+            queue_capacity_messages=config.queue_capacity_messages,
+        )
         report = ImpactCaptureReport(
             run_id=run_id,
             mode=config.mode,
@@ -708,7 +889,7 @@ def _terminal_post_capture_failure_report(
             qualification_passed=False,
             started_wall_ns=int(run[1]),
             ended_wall_ns=int(run[2]),
-            elapsed_seconds=max(0.0, (int(run[2]) - int(run[1])) / 1_000_000_000),
+            elapsed_seconds=elapsed_seconds,
             queue_high_water_messages=(
                 0 if writer is None else writer.high_water_messages
             ),
@@ -727,6 +908,14 @@ def _terminal_post_capture_failure_report(
             database_size_cap_reached=(
                 False if writer is None else writer.database_cap_reached.is_set()
             ),
+            process_io_provider=io_provider,
+            process_io_semantics=io_semantics,
+            process_io_start_write_bytes=io_start,
+            process_io_end_write_bytes=io_end,
+            process_io_delta_write_bytes=io_delta,
+            process_io_write_bytes_per_message=io_per_message,
+            frames_per_stream_minute=frames_per_minute,
+            storage_efficiency_passed=storage_efficiency_passed,
             event_counts=event_counts,
             symbol_event_counts=symbol_event_counts,
             negative_corrected_latency_fraction=None,
@@ -923,6 +1112,17 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 memory_limit=config.duckdb_memory_limit,
                 threads=config.duckdb_threads,
             ) as store:
+                store_connection = store.connect()
+                checkpoint_threshold = str(
+                    store_connection.execute(
+                        "SELECT current_setting('checkpoint_threshold')"
+                    ).fetchone()[0]
+                )
+                skip_wal_threshold = int(
+                    store_connection.execute(
+                        "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
+                    ).fetchone()[0]
+                )
                 store.start_run(
                     run_id=run_id,
                     started_wall_ns=started_wall_ns,
@@ -936,6 +1136,10 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                         "frame_flush_seconds": config.frame_flush_seconds,
                         "maximum_reconnects": config.maximum_reconnects,
                         "database_size_cap_bytes": config.database_size_cap_bytes,
+                        "duckdb_memory_limit": config.duckdb_memory_limit,
+                        "duckdb_threads": config.duckdb_threads,
+                        "checkpoint_threshold": checkpoint_threshold,
+                        "auto_checkpoint_skip_wal_threshold_bytes": skip_wal_threshold,
                     },
                     compressed_payload_cap_bytes=config.compressed_payload_cap_bytes,
                 )
@@ -1019,6 +1223,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                                 "public", event_type, symbol, int(payload.get("E", 0))
                             )
                             if event_type == "depthUpdate":
+                                pre_state = books[symbol].state()
                                 event = books[symbol].apply(
                                     payload,
                                     receive_time_ns=receipt.received_monotonic_ns,
@@ -1028,6 +1233,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                                     record=record,
                                     event=event,
                                     segment_id=segment_ids[symbol],
+                                    pre_l2_state=pre_state,
                                     l2_state=state,
                                 )
                             elif event_type == "bookTicker":
@@ -1310,6 +1516,20 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
             ended_wall_ns = time.time_ns()
             elapsed_seconds = max(0.0, time.monotonic() - capture_started)
             if writer.thread.is_alive():
+                (
+                    io_provider,
+                    io_semantics,
+                    io_start,
+                    io_end,
+                    io_delta,
+                    io_per_message,
+                    frames_per_minute,
+                    storage_efficiency_passed,
+                ) = _writer_resource_metrics(
+                    writer,
+                    elapsed_seconds=elapsed_seconds,
+                    queue_capacity_messages=config.queue_capacity_messages,
+                )
                 return ImpactCaptureReport(
                     run_id=run_id,
                     mode=config.mode,
@@ -1330,6 +1550,14 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     database_physical_bytes=_database_physical_bytes(config.database),
                     database_size_cap_bytes=config.database_size_cap_bytes,
                     database_size_cap_reached=writer.database_cap_reached.is_set(),
+                    process_io_provider=io_provider,
+                    process_io_semantics=io_semantics,
+                    process_io_start_write_bytes=io_start,
+                    process_io_end_write_bytes=io_end,
+                    process_io_delta_write_bytes=io_delta,
+                    process_io_write_bytes_per_message=io_per_message,
+                    frames_per_stream_minute=frames_per_minute,
+                    storage_efficiency_passed=storage_efficiency_passed,
                     event_counts={},
                     symbol_event_counts={},
                     negative_corrected_latency_fraction=None,
@@ -1481,6 +1709,20 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
             queue_utilization = (
                 writer.high_water_messages / config.queue_capacity_messages
             )
+            (
+                io_provider,
+                io_semantics,
+                io_start,
+                io_end,
+                io_delta,
+                io_per_message,
+                frames_per_minute,
+                storage_efficiency_passed,
+            ) = _writer_resource_metrics(
+                writer,
+                elapsed_seconds=elapsed_seconds,
+                queue_capacity_messages=config.queue_capacity_messages,
+            )
             complete_minutes = max(1, math.floor(elapsed_seconds / 60.0))
             depth_minimum = complete_minutes * 300
             one_per_minute_minimum = complete_minutes
@@ -1492,6 +1734,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 and queue_utilization <= 0.8
                 and negative_latency_fraction is not None
                 and negative_latency_fraction <= 0.001
+                and storage_efficiency_passed
                 and all(
                     symbol_event_counts[symbol].get("synchronizedDepthUpdate", 0)
                     >= depth_minimum
@@ -1524,6 +1767,14 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 database_physical_bytes=_database_physical_bytes(config.database),
                 database_size_cap_bytes=config.database_size_cap_bytes,
                 database_size_cap_reached=writer.database_cap_reached.is_set(),
+                process_io_provider=io_provider,
+                process_io_semantics=io_semantics,
+                process_io_start_write_bytes=io_start,
+                process_io_end_write_bytes=io_end,
+                process_io_delta_write_bytes=io_delta,
+                process_io_write_bytes_per_message=io_per_message,
+                frames_per_stream_minute=frames_per_minute,
+                storage_efficiency_passed=storage_efficiency_passed,
                 event_counts=event_counts,
                 symbol_event_counts=symbol_event_counts,
                 negative_corrected_latency_fraction=negative_latency_fraction,

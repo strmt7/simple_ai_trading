@@ -16,6 +16,18 @@ ROUND73_DESIGN_SHA256 = (
 )
 ROUND73_EVENT_SCHEMA_VERSION = "round-073-prospective-l2-event-v1"
 EXPECTED_STREAM_TYPE = 1
+ROUND73_LEVEL_BANDS = (
+    "levels_1_5",
+    "levels_6_10",
+    "levels_11_20",
+    "outside_20",
+)
+Round73LevelBand = Literal[
+    "levels_1_5",
+    "levels_6_10",
+    "levels_11_20",
+    "outside_20",
+]
 _COMBINED_STREAM_SUFFIXES = {
     "depthUpdate": "depth@100ms",
     "bookTicker": "bookTicker",
@@ -287,6 +299,27 @@ class L2BookState:
     imbalance_5: float
     imbalance_10: float
     imbalance_20: float
+
+
+def pre_event_level_band(
+    state: L2BookState,
+    change: DepthLevelChange,
+) -> Round73LevelBand:
+    """Classify a changed price by its causal rank before applying the event."""
+
+    levels = state.bid_levels if change.side == "bid" else state.ask_levels
+    better = sum(
+        price > change.price if change.side == "bid" else price < change.price
+        for price, _quantity in levels
+    )
+    rank = better + 1
+    if rank <= 5:
+        return "levels_1_5"
+    if rank <= 10:
+        return "levels_6_10"
+    if rank <= 20:
+        return "levels_11_20"
+    return "outside_20"
 
 
 class SynchronizedDepthBook:
