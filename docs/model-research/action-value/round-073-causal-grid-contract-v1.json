@@ -1,0 +1,218 @@
+{
+  "schema_version": "round-073-causal-grid-contract-v1",
+  "contract_sha256": "36e41e94a1a2c8b00bafb373d06a10dabebf18ef125cbcc68724e658f766f971",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "parent_corpus_contract_sha256": "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67",
+  "parent_rotation_contract_sha256": "8f20a25adfc2d33a43d0a8acd0ad55361956d4443e85cc7b1740f882bfc5b9ea",
+  "frozen_before_first_grid_write": true,
+  "purpose": "Construct deterministic causal one-second BTCUSDT, ETHUSDT, and SOLUSDT feature grids from admitted exact-wire v8 segments without targets, actor labels, fabricated values, or future receipts.",
+  "research_update": [
+    {
+      "source": "https://arxiv.org/abs/1011.6402",
+      "authority": "peer-reviewed primary market-microstructure research",
+      "adaptation": "Order-flow imbalance is retained by depth band and normalized by displayed depth; trade volume alone is not treated as sufficient."
+    },
+    {
+      "source": "https://arxiv.org/abs/1602.00731",
+      "authority": "peer-reviewed primary market-microstructure research",
+      "adaptation": "Spread, depth, and order-flow intensity are retained as separate state and resiliency primitives around liquidity shocks."
+    },
+    {
+      "source": "https://arxiv.org/abs/2603.24137",
+      "authority": "primary 2026 market-microstructure research",
+      "adaptation": "Fine-scale event timing, signed-flow persistence, and partial recovery are modeled explicitly; profitability remains sensitive to later execution assumptions."
+    },
+    {
+      "source": "https://arxiv.org/abs/2607.09230",
+      "authority": "primary 2026 crypto-futures research",
+      "adaptation": "L2 liquidity state is the required lower layer; order flow may only receive credit for incremental value above the same state rows."
+    },
+    {
+      "source": "https://www.cftc.gov/LawRegulation/FederalRegister/FinalRules/2013-12365.html",
+      "authority": "official CFTC interpretive guidance",
+      "adaptation": "Public aggregated L2 lacks participant intent and account context. Displayed removals remain anonymous flow, never a spoofing or manipulation label."
+    }
+  ],
+  "source_admission": {
+    "capture_schema_version": "round-073-prospective-evidence-v8",
+    "corpus_manifest_schema_version": "round-073-segmented-corpus-v1",
+    "corpus_manifest_audit_required": true,
+    "all_symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "all_symbol_common_interval_only": true,
+    "cross_run_or_cross_segment_windows_permitted": false,
+    "failed_or_unmanifested_run_permitted": false,
+    "raw_or_typed_row_rewrite_permitted": false
+  },
+  "anchor_contract": {
+    "base_grid_milliseconds": 1000,
+    "anchor_clock": "run-local host monotonic nanoseconds",
+    "wall_clock_mapping": "run start wall nanoseconds plus anchor monotonic offset from run start monotonic nanoseconds",
+    "availability_predicate": "received_monotonic_ns strictly less than anchor_monotonic_ns",
+    "tie_order": [
+      "received_monotonic_ns",
+      "frame_index",
+      "message_index"
+    ],
+    "warmup_seconds": 60,
+    "all_anchors_retained": true,
+    "invalid_anchor_feature_vector_written": false,
+    "anchor_selection_uses_price_or_target": false,
+    "utc_day_is_statistical_partition_only": true,
+    "crypto_formal_daily_close": false,
+    "listed_products_use_actual_venue_calendars": true
+  },
+  "windows_milliseconds": [
+    100,
+    250,
+    500,
+    1000,
+    5000,
+    15000,
+    60000
+  ],
+  "state_features": {
+    "l1": [
+      "spread_bps",
+      "bid_quote_notional",
+      "ask_quote_notional",
+      "l1_imbalance",
+      "microprice_offset_bps",
+      "bbo_age_ms",
+      "bbo_corrected_event_latency_ms"
+    ],
+    "l2": [
+      "bid_depth_quote_5",
+      "ask_depth_quote_5",
+      "bid_depth_quote_10",
+      "ask_depth_quote_10",
+      "bid_depth_quote_20",
+      "ask_depth_quote_20",
+      "imbalance_5",
+      "imbalance_10",
+      "imbalance_20",
+      "bid_depth_5_share_of_20",
+      "ask_depth_5_share_of_20",
+      "bid_distance_weighted_depth_20",
+      "ask_distance_weighted_depth_20",
+      "bid_depth_concentration_20",
+      "ask_depth_concentration_20",
+      "l2_age_ms",
+      "l2_corrected_event_latency_ms"
+    ],
+    "derivatives": [
+      "mark_to_mid_bps",
+      "index_to_mid_bps",
+      "funding_rate",
+      "seconds_to_next_funding",
+      "mark_age_ms",
+      "open_interest",
+      "open_interest_age_ms"
+    ],
+    "calendar": [
+      "utc_second_of_day_sine",
+      "utc_second_of_day_cosine"
+    ]
+  },
+  "window_feature_template": [
+    "buy_aggressive_quote",
+    "sell_aggressive_quote",
+    "signed_aggressive_quote",
+    "absolute_aggressive_quote",
+    "aggregate_trade_count",
+    "buyer_taker_share",
+    "bid_added_quote_{levels_1_5|levels_6_10|levels_11_20|outside_20}",
+    "bid_removed_quote_{levels_1_5|levels_6_10|levels_11_20|outside_20}",
+    "ask_added_quote_{levels_1_5|levels_6_10|levels_11_20|outside_20}",
+    "ask_removed_quote_{levels_1_5|levels_6_10|levels_11_20|outside_20}",
+    "normalized_order_flow_imbalance_{levels_1_5|levels_6_10|levels_11_20|outside_20}",
+    "mid_log_return",
+    "mid_realized_variation",
+    "bbo_update_count",
+    "mean_spread_bps",
+    "maximum_spread_bps",
+    "liquidation_snapshot_count",
+    "liquidation_observed_quote_notional"
+  ],
+  "derived_semantics": {
+    "aggressive_buy": "aggregate trade where buyer_is_maker is false",
+    "aggressive_sell": "aggregate trade where buyer_is_maker is true",
+    "order_flow_imbalance": "bid additions plus ask removals minus bid removals minus ask additions",
+    "order_flow_normalizer": "maximum of contemporaneous displayed depth for that band and a positive machine epsilon",
+    "microprice": "ask times bid quantity plus bid times ask quantity divided by total top quantity",
+    "distance_weighted_depth": "sum of level quote notional divided by one-based level rank",
+    "depth_concentration": "Herfindahl sum of squared level quote-notional shares",
+    "liquidation_zero": "no provider snapshot observed in the window, not proof of zero liquidations",
+    "displayed_removal": "anonymous displayed quantity reduction; execution, cancellation, manipulation, and participant identity remain unresolved"
+  },
+  "validity_contract": {
+    "latest_bbo_required": true,
+    "latest_synchronized_l2_required": true,
+    "positive_non_crossed_quotes_required": true,
+    "top_20_depth_required_on_both_sides": true,
+    "maximum_bbo_age_milliseconds": 1000,
+    "maximum_l2_age_milliseconds": 1000,
+    "maximum_mark_age_milliseconds": 3000,
+    "maximum_open_interest_age_milliseconds": 90000,
+    "negative_corrected_latency_policy": "anchor invalid",
+    "nonfinite_feature_policy": "anchor invalid and no vector row",
+    "missing_slow_feature_policy": "anchor invalid rather than zero-filled",
+    "invalid_reason_mask_required": true
+  },
+  "shock_audit_primitives": {
+    "one_second_signed_aggressive_quote_retained": true,
+    "trailing_60_second_median_absolute_aggressive_quote": "strictly prior complete anchors only",
+    "shock_ratio": "absolute current signed aggressive quote divided by trailing median",
+    "zero_or_missing_trailing_median_policy": "shock ratio unavailable",
+    "threshold_selected_during_grid_build": false,
+    "direction_selected_from_price_or_target": false,
+    "refractory_period_applied_during_grid_build": false
+  },
+  "storage_contract": {
+    "database": "data/microstructure.duckdb",
+    "anchor_table": "impact_feature_anchor_v1",
+    "vector_table": "impact_feature_vector_v1",
+    "run_manifest_table": "impact_feature_run_manifest_v1",
+    "feature_values_type": "DOUBLE[]",
+    "feature_names_canonical_and_hash_bound": true,
+    "anchor_primary_key": [
+      "run_id",
+      "symbol",
+      "anchor_index"
+    ],
+    "vector_primary_key_matches_anchor": true,
+    "transactional_publish_per_run": true,
+    "idempotent_existing_build_required": true,
+    "existing_build_mismatch_policy": "fail without overwrite",
+    "duplicate_raw_payload_storage_permitted": false,
+    "target_or_future_columns_permitted": false,
+    "per_run_build_manifest_sha256_required": true
+  },
+  "diagnostic_gate": {
+    "source_manifest_hash_reconciled": true,
+    "source_manifest_audit_repeated": true,
+    "source_max_receipt_precedes_every_anchor": true,
+    "anchor_indices_contiguous_per_symbol": true,
+    "all_three_symbols_required": true,
+    "feature_names_and_vector_width_match": true,
+    "finite_valid_vectors_required": true,
+    "target_constructed": false,
+    "model_evaluated": false
+  },
+  "authority": {
+    "grid_implementation": true,
+    "one_hour_grid_diagnostic_after_tests": true,
+    "seven_day_target_construction": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

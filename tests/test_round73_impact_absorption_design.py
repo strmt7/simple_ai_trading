@@ -89,6 +89,9 @@ ROTATION_RUNNER_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 ROTATION_RECOVERY_VALIDATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-rotation-recovery-validation-2026-07-22.json"
 )
+CAUSAL_GRID_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-causal-grid-contract-v1.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -815,6 +818,45 @@ def test_round73_rotation_recovery_validation_authorizes_only_one_segment() -> N
     assert authorization["multi_segment_collection"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
+    contract = json.loads(CAUSAL_GRID_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_grid_write"] is True
+    admission = contract["source_admission"]
+    assert admission["corpus_manifest_audit_required"] is True
+    assert admission["cross_run_or_cross_segment_windows_permitted"] is False
+    anchors = contract["anchor_contract"]
+    assert anchors["base_grid_milliseconds"] == 1_000
+    assert anchors["availability_predicate"].startswith("received_monotonic_ns strictly")
+    assert anchors["warmup_seconds"] == 60
+    assert anchors["all_anchors_retained"] is True
+    assert anchors["invalid_anchor_feature_vector_written"] is False
+    assert anchors["crypto_formal_daily_close"] is False
+    assert contract["windows_milliseconds"] == [100, 250, 500, 1_000, 5_000, 15_000, 60_000]
+    semantics = contract["derived_semantics"]
+    assert semantics["aggressive_buy"].endswith("false")
+    assert "anonymous" in semantics["displayed_removal"]
+    validity = contract["validity_contract"]
+    assert validity["negative_corrected_latency_policy"] == "anchor invalid"
+    assert validity["nonfinite_feature_policy"].startswith("anchor invalid")
+    shocks = contract["shock_audit_primitives"]
+    assert shocks["threshold_selected_during_grid_build"] is False
+    assert shocks["direction_selected_from_price_or_target"] is False
+    storage = contract["storage_contract"]
+    assert storage["target_or_future_columns_permitted"] is False
+    assert storage["existing_build_mismatch_policy"] == "fail without overwrite"
+    gate = contract["diagnostic_gate"]
+    assert gate["source_max_receipt_precedes_every_anchor"] is True
+    assert gate["target_constructed"] is False
+    assert gate["model_evaluated"] is False
+    authority = contract["authority"]
+    assert authority["one_hour_grid_diagnostic_after_tests"] is True
+    assert authority["round_073_model_evaluation"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
