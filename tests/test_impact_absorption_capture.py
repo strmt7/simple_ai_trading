@@ -403,7 +403,7 @@ def test_terminal_post_capture_failure_is_persisted_and_never_retried(tmp_path) 
             "WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()
-    assert stored[0] == "round-073-capture-report-v7"
+    assert stored[0] == "round-073-capture-report-v8"
     assert json.loads(stored[1])["failure_class"] == "post_capture"
     with ImpactAbsorptionStore(database, read_only=True) as store:
         assert store.audit_run(RUN_ID).passed is True

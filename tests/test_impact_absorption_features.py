@@ -52,7 +52,7 @@ def _record(
     )
 
 
-def _seed_qualified_v5_run(database) -> None:
+def _seed_qualified_current_run(database) -> None:
     messages: list[ImpactCaptureMessage] = []
     with ImpactAbsorptionStore(database) as store:
         store.start_run(
@@ -156,9 +156,9 @@ def _seed_qualified_v5_run(database) -> None:
         )
 
 
-def test_v5_feature_replay_reconciles_every_stored_depth_band_row(tmp_path) -> None:
+def test_current_feature_replay_reconciles_every_stored_depth_band_row(tmp_path) -> None:
     database = tmp_path / "impact.duckdb"
-    _seed_qualified_v5_run(database)
+    _seed_qualified_current_run(database)
 
     diagnostic = diagnose_round73_feature_source(database, run_id=RUN_ID)
 
@@ -170,9 +170,9 @@ def test_v5_feature_replay_reconciles_every_stored_depth_band_row(tmp_path) -> N
     assert diagnostic.stored_depth_band_rows_reconciled is True
 
 
-def test_v5_feature_replay_rejects_hash_consistent_but_false_band_row(tmp_path) -> None:
+def test_current_feature_replay_rejects_hash_consistent_false_band_row(tmp_path) -> None:
     database = tmp_path / "impact.duckdb"
-    _seed_qualified_v5_run(database)
+    _seed_qualified_current_run(database)
     with ImpactAbsorptionStore(database) as store:
         connection = store.connect()
         frame_index, message_index = connection.execute(

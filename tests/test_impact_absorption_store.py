@@ -15,6 +15,7 @@ from simple_ai_trading.impact_absorption import (
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_AGGREGATE_TRADE_TABLE,
     IMPACT_BOOK_TICKER_TABLE,
+    IMPACT_CAPTURE_FRAME_TABLE,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_DEPTH_BAND_FLOW_TABLE,
     IMPACT_DEPTH_UPDATE_TABLE,
@@ -94,6 +95,47 @@ def _rewrite_single_frame_version(connection, schema: str, contract: str) -> str
         [schema, contract, frame_sha256, RUN_ID],
     )
     return frame_sha256
+
+
+def _copy_current_frame_to_legacy(connection) -> None:
+    connection.execute(
+        f"INSERT INTO impact_capture_frame SELECT * "
+        f"FROM {IMPACT_CAPTURE_FRAME_TABLE} WHERE run_id = ?",
+        [RUN_ID],
+    )
+
+
+def _copy_current_typed_rows_to_v3(connection) -> None:
+    for legacy_table, current_table in (
+        ("impact_depth_update_v3", IMPACT_DEPTH_UPDATE_TABLE),
+        ("impact_l2_state_v3", IMPACT_L2_STATE_TABLE),
+        ("impact_book_ticker_v3", IMPACT_BOOK_TICKER_TABLE),
+        ("impact_aggregate_trade_v3", IMPACT_AGGREGATE_TRADE_TABLE),
+        ("impact_mark_price_v3", IMPACT_MARK_PRICE_TABLE),
+        ("impact_liquidation_snapshot_v3", IMPACT_LIQUIDATION_SNAPSHOT_TABLE),
+        ("impact_rest_event_v3", IMPACT_REST_EVENT_TABLE),
+        ("impact_rejected_wire_event_v3", IMPACT_REJECTED_WIRE_EVENT_TABLE),
+    ):
+        connection.execute(
+            f"INSERT INTO {legacy_table} SELECT * FROM {current_table} "
+            "WHERE run_id = ?",
+            [RUN_ID],
+        )
+
+
+def _copy_current_rows_to_v5_layout(connection) -> None:
+    _copy_current_frame_to_legacy(connection)
+    _copy_current_typed_rows_to_v3(connection)
+    connection.execute(
+        f"INSERT INTO impact_event_link_v5 SELECT * "
+        f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
+        [RUN_ID],
+    )
+    connection.execute(
+        f"INSERT INTO impact_depth_band_flow_v5 SELECT * "
+        f"FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} WHERE run_id = ?",
+        [RUN_ID],
+    )
 
 
 def _legacy_typed_hashes(
@@ -351,10 +393,10 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
         connection = store.connect()
         assert connection.execute(
             "SELECT current_setting('checkpoint_threshold')"
-        ).fetchone()[0] == "512.0 MiB"
+        ).fetchone()[0] == "16.0 MiB"
         assert connection.execute(
             "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
-        ).fetchone()[0] == 512 * 1024 * 1024
+        ).fetchone()[0] == 100_000
         assert (
             connection.execute(
                 f"SELECT count(*) FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
@@ -417,6 +459,23 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
             ).fetchone()[0]
             == 0
         )
+        assert IMPACT_CAPTURE_FRAME_TABLE == "impact_capture_frame_v8"
+        assert connection.execute(
+            "SELECT count(*) FROM impact_capture_frame WHERE run_id = ?", [RUN_ID]
+        ).fetchone()[0] == 0
+        assert connection.execute(
+            "SELECT count(*) FROM impact_depth_update_v3 WHERE run_id = ?", [RUN_ID]
+        ).fetchone()[0] == 0
+        assert connection.execute(
+            "SELECT count(*) FROM duckdb_constraints() "
+            "WHERE table_name = ? AND constraint_type = 'PRIMARY KEY'",
+            [IMPACT_CAPTURE_FRAME_TABLE],
+        ).fetchone()[0] == 1
+        assert connection.execute(
+            "SELECT count(*) FROM duckdb_constraints() "
+            "WHERE table_name = ? AND constraint_type = 'CHECK'",
+            [IMPACT_EVENT_LINK_TABLE],
+        ).fetchone()[0] == 2
 
 
 def test_store_keeps_v2_rows_replay_auditable_without_rewriting_them(tmp_path) -> None:
@@ -428,6 +487,7 @@ def test_store_keeps_v2_rows_replay_auditable_without_rewriting_them(tmp_path) -
         store.append_frame(run_id=RUN_ID, messages=messages)
         connection = store.connect()
         legacy_hashes = _legacy_typed_hashes(store)
+        _copy_current_frame_to_legacy(connection)
 
         table_pairs = (
             ("impact_depth_update", IMPACT_DEPTH_UPDATE_TABLE),
@@ -519,6 +579,8 @@ def test_store_keeps_v3_compact_rows_replay_auditable(tmp_path) -> None:
         store.append_frame(run_id=RUN_ID, messages=_messages())
         connection = store.connect()
         legacy_hashes = _legacy_typed_hashes(store)
+        _copy_current_frame_to_legacy(connection)
+        _copy_current_typed_rows_to_v3(connection)
         connection.execute(
             f"""
             INSERT INTO impact_event_link_v3
@@ -555,6 +617,8 @@ def test_store_keeps_v4_event_time_rows_replay_auditable(tmp_path) -> None:
         store.append_frame(run_id=RUN_ID, messages=_messages())
         connection = store.connect()
         legacy_hashes = _legacy_typed_hashes(store)
+        _copy_current_frame_to_legacy(connection)
+        _copy_current_typed_rows_to_v3(connection)
         connection.execute(
             f"""
             INSERT INTO impact_event_link_v4
@@ -593,6 +657,7 @@ def test_store_keeps_v5_depth_band_rows_replay_auditable(tmp_path) -> None:
         _start(store)
         store.append_frame(run_id=RUN_ID, messages=_messages())
         connection = store.connect()
+        _copy_current_rows_to_v5_layout(connection)
 
         _rewrite_single_frame_version(connection, v5_schema, v5_contract)
 
@@ -609,6 +674,7 @@ def test_store_keeps_v6_telemetry_rows_replay_auditable(tmp_path) -> None:
         _start(store)
         store.append_frame(run_id=RUN_ID, messages=_messages())
         connection = store.connect()
+        _copy_current_rows_to_v5_layout(connection)
 
         _rewrite_single_frame_version(connection, v6_schema, v6_contract)
 
@@ -616,6 +682,23 @@ def test_store_keeps_v6_telemetry_rows_replay_auditable(tmp_path) -> None:
         assert audit.passed is True
         assert audit.errors == ()
         assert audit.capture_contract_sha256 == v6_contract
+
+
+def test_store_keeps_v7_checkpoint_rows_replay_auditable(tmp_path) -> None:
+    v7_schema = "round-073-prospective-evidence-v7"
+    v7_contract = "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+        _copy_current_rows_to_v5_layout(connection)
+
+        _rewrite_single_frame_version(connection, v7_schema, v7_contract)
+
+        audit = store.audit_run(RUN_ID)
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.capture_contract_sha256 == v7_contract
 
 
 def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
@@ -631,7 +714,7 @@ def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
             store.append_frame(run_id=RUN_ID, messages=messages)
         assert (
             store.connect()
-            .execute("SELECT count(*) FROM impact_capture_frame")
+            .execute(f"SELECT count(*) FROM {IMPACT_CAPTURE_FRAME_TABLE}")
             .fetchone()[0]
             == 0
         )
@@ -679,8 +762,8 @@ def test_store_detects_payload_and_typed_row_tampering(tmp_path) -> None:
         )
 
         store.connect().execute(
-            """
-            UPDATE impact_capture_frame SET compressed_payload = from_hex('00')
+            f"""
+            UPDATE {IMPACT_CAPTURE_FRAME_TABLE} SET compressed_payload = from_hex('00')
             WHERE run_id = ? AND frame_index = 0
             """,
             [RUN_ID],
@@ -870,7 +953,7 @@ def test_store_rejects_duplicate_json_and_raw_typed_disagreement(tmp_path) -> No
             store.append_frame(run_id=RUN_ID, messages=(wrong_stream,))
         assert (
             store.connect()
-            .execute("SELECT count(*) FROM impact_capture_frame")
+            .execute(f"SELECT count(*) FROM {IMPACT_CAPTURE_FRAME_TABLE}")
             .fetchone()[0]
             == 0
         )
@@ -1032,7 +1115,7 @@ def test_terminal_capture_report_is_canonical_hash_bound_and_secret_free(
             ended_wall_ns=WALL_BASE + 2_000,
         )
         report = {
-            "schema_version": "round-073-capture-report-v7",
+            "schema_version": "round-073-capture-report-v8",
             "run_id": RUN_ID,
             "status": "stopped",
             "qualification_passed": False,

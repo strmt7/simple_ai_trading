@@ -1,0 +1,90 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v8",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_capture_contract_sha256": "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1",
+  "capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
+  "frozen_before_first_v8_capture": true,
+  "amendment_scope": "Isolate exact frames, compact event links, causal depth bands, and every typed stream in fresh versioned tables inside the existing single DuckDB file. Revert the unsupported v7 checkpoint candidate. Logical evidence and all financial semantics remain unchanged.",
+  "failure_evidence": {
+    "v7_telemetry_failure_artifact": "round-073-v7-telemetry-failure-2026-07-22.json",
+    "v7_telemetry_failure_artifact_sha256": "b7b8894d5ef1a5d486d38051d57aa9b2e5400751e31699f9eb9cbc63e9acae69",
+    "v7_run_id": "7958aa3ce6f3403a82a3680e16fe18b1",
+    "v7_capture_phase_write_bytes_per_message": 16262.82958557889,
+    "v7_database_physical_growth_bytes": 0,
+    "v7_fresh_process_audit_passed": true,
+    "no_write_open_close_control_bytes": 0
+  },
+  "inheritance": {
+    "v7_capture_contract_sha256": "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1",
+    "rule": "All v1 through v7 logical requirements remain binding except for the v8 run schema, report schema, physical table routing, and reverted checkpoint policy below.",
+    "wire_frame_format_changed": false,
+    "event_or_l2_column_shape_changed": false,
+    "typed_event_hash_changed": false,
+    "telemetry_or_gate_threshold_changed": false,
+    "historical_rows_rewritten": false,
+    "historical_v1_through_v7_audit_support_required": true
+  },
+  "storage_schema_v8": {
+    "run_schema": "round-073-prospective-evidence-v8",
+    "report_schema": "round-073-capture-report-v8",
+    "single_database_file_required": true,
+    "frame_table": "impact_capture_frame_v8",
+    "event_link_table": "impact_event_link_v8",
+    "depth_update_table": "impact_depth_update_v8",
+    "depth_band_table": "impact_depth_band_flow_v8",
+    "l2_state_table": "impact_l2_state_v8",
+    "book_ticker_table": "impact_book_ticker_v8",
+    "aggregate_trade_table": "impact_aggregate_trade_v8",
+    "mark_price_table": "impact_mark_price_v8",
+    "liquidation_snapshot_table": "impact_liquidation_snapshot_v8",
+    "rest_event_table": "impact_rest_event_v8",
+    "rejected_wire_event_table": "impact_rejected_wire_event_v8",
+    "column_names_types_nullability_and_primary_key_inherited_from_sources": true,
+    "event_link_digest_length_checks_required": true,
+    "v7_or_earlier_rows_migrated_or_reclassified": false,
+    "cross_version_frame_pooling_permitted": false
+  },
+  "duckdb_policy_v8": {
+    "checkpoint_threshold": "16MiB",
+    "auto_checkpoint_skip_wal_threshold_bytes": 100000,
+    "v7_candidate_promoted": false,
+    "reason": "The v7 live diagnostic failed its frozen process-I/O gate, and the empty full-path benchmark found no material candidate benefit."
+  },
+  "unchanged_capture_contract": {
+    "maximum_messages_per_frame": 16384,
+    "maximum_uncompressed_frame_bytes": 33554432,
+    "maximum_uncommitted_wall_interval_seconds": 4,
+    "queue_capacity_messages": 65536,
+    "maximum_frames_per_stream_minute": 25,
+    "maximum_capture_phase_process_write_bytes_per_message": 4096,
+    "maximum_database_physical_growth_bytes_per_message": 1024,
+    "maximum_queue_utilization": 0.8,
+    "fresh_process_read_only_audit_required": true,
+    "independent_exact_wire_feature_source_replay_required": true
+  },
+  "telemetry_diagnostic": {
+    "minimum_stream_seconds": 30,
+    "must_use_existing_single_database_file": true,
+    "candidate_pass_requires_capture_phase_write_bytes_per_message_at_or_below_4096": true,
+    "candidate_pass_requires_fresh_process_audit": true,
+    "failure_authorizes_180_second_gate_or_one_hour_qualification": false
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "authorization": {
+    "v8_thirty_second_telemetry_diagnostic": true,
+    "v8_180_second_capture_gate_attempt": false,
+    "v8_one_hour_qualification": false,
+    "v8_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

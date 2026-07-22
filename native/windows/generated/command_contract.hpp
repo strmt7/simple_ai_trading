@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"58079a711dc606ad37166ad3993ef72e040dca27ff13f10b0e8b7bcf58098c4b";
+inline constexpr const wchar_t* kCommandContractSha256 = L"b15aaf743e4b9eb1eaefd14a0e4bf98e9f9ec1e82232544058a419758a8dbbfd";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -289,7 +289,7 @@ inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
 
 inline constexpr CommandOptionSpec kOptions_impact_feature_source[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
-    {L"--run-id", L"run_id", L"", L"", L"v4-v7 run ID with a passed capture or qualification gate", L"1", true, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"v4-v8 run ID with a passed capture or qualification gate", L"1", true, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
