@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 
 import pytest
@@ -12,6 +13,15 @@ from simple_ai_trading.impact_absorption import (
     parse_mark_price,
 )
 from simple_ai_trading.impact_absorption_store import (
+    IMPACT_AGGREGATE_TRADE_TABLE,
+    IMPACT_BOOK_TICKER_TABLE,
+    IMPACT_DEPTH_UPDATE_TABLE,
+    IMPACT_EVENT_LINK_TABLE,
+    IMPACT_L2_STATE_TABLE,
+    IMPACT_LIQUIDATION_SNAPSHOT_TABLE,
+    IMPACT_MARK_PRICE_TABLE,
+    IMPACT_REJECTED_WIRE_EVENT_TABLE,
+    IMPACT_REST_EVENT_TABLE,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRejectedWireEvent,
@@ -23,6 +33,65 @@ from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 RUN_ID = "0" * 32
 SEGMENT_ID = "1" * 32
 WALL_BASE = 1_784_058_600_000_000_000
+
+
+def _canonical_sha256(value: object) -> str:
+    payload = json.dumps(
+        value,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+    return hashlib.sha256(payload.encode("ascii")).hexdigest()
+
+
+def _rewrite_single_frame_version(connection, schema: str, contract: str) -> str:
+    frame = connection.execute(
+        """
+        SELECT frame_index, previous_frame_sha256, message_count,
+               first_message_id, last_message_id, message_manifest_sha256,
+               first_received_wall_ns, last_received_wall_ns,
+               first_received_monotonic_ns, last_received_monotonic_ns,
+               uncompressed_bytes, uncompressed_sha256, compressed_bytes,
+               compressed_sha256, stream_counts_json
+        FROM impact_capture_frame WHERE run_id = ?
+        """,
+        [RUN_ID],
+    ).fetchone()
+    frame_sha256 = _canonical_sha256(
+        {
+            "schema_version": schema,
+            "capture_contract_sha256": contract,
+            "run_id": RUN_ID,
+            "frame_index": int(frame[0]),
+            "previous_frame_sha256": str(frame[1]),
+            "message_count": int(frame[2]),
+            "first_message_id": str(frame[3]),
+            "last_message_id": str(frame[4]),
+            "message_manifest_sha256": str(frame[5]),
+            "first_received_wall_ns": int(frame[6]),
+            "last_received_wall_ns": int(frame[7]),
+            "first_received_monotonic_ns": int(frame[8]),
+            "last_received_monotonic_ns": int(frame[9]),
+            "uncompressed_bytes": int(frame[10]),
+            "uncompressed_sha256": str(frame[11]),
+            "compressed_bytes": int(frame[12]),
+            "compressed_sha256": str(frame[13]),
+            "stream_counts_json": str(frame[14]),
+        }
+    )
+    connection.execute(
+        "UPDATE impact_capture_frame SET schema_version = ?, frame_sha256 = ? "
+        "WHERE run_id = ?",
+        [schema, frame_sha256, RUN_ID],
+    )
+    connection.execute(
+        "UPDATE impact_capture_run SET schema_version = ?, "
+        "capture_contract_sha256 = ?, last_frame_sha256 = ? WHERE run_id = ?",
+        [schema, contract, frame_sha256, RUN_ID],
+    )
+    return frame_sha256
 
 
 def _snapshot() -> dict[str, object]:
@@ -250,24 +319,173 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
         connection = store.connect()
         assert (
             connection.execute(
-                "SELECT count(*) FROM impact_event_index WHERE run_id = ?", [RUN_ID]
+                f"SELECT count(*) FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
+                [RUN_ID],
             ).fetchone()[0]
             == 6
         )
         assert (
             connection.execute(
-                "SELECT count(*) FROM impact_l2_state WHERE run_id = ?", [RUN_ID]
+                f"SELECT count(*) FROM {IMPACT_L2_STATE_TABLE} WHERE run_id = ?",
+                [RUN_ID],
             ).fetchone()[0]
             == 1
         )
         bid_prices, ask_prices = connection.execute(
-            "SELECT bid_prices, ask_prices FROM impact_l2_state WHERE run_id = ?",
+            f"SELECT bid_prices, ask_prices FROM {IMPACT_L2_STATE_TABLE} "
+            "WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()
         assert len(bid_prices) == len(ask_prices) == 20
         assert connection.execute(
-            "SELECT funding_rate FROM impact_mark_price WHERE run_id = ?", [RUN_ID]
+            f"SELECT funding_rate FROM {IMPACT_MARK_PRICE_TABLE} WHERE run_id = ?",
+            [RUN_ID],
         ).fetchone()[0] == pytest.approx(-0.0001)
+        raw_digest, typed_digest = connection.execute(
+            f"SELECT raw_payload_sha256, typed_event_sha256 "
+            f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ? LIMIT 1",
+            [RUN_ID],
+        ).fetchone()
+        assert isinstance(raw_digest, bytes) and len(raw_digest) == 32
+        assert isinstance(typed_digest, bytes) and len(typed_digest) == 32
+        link_columns = {
+            str(row[1]): str(row[2])
+            for row in connection.execute(
+                f"PRAGMA table_info('{IMPACT_EVENT_LINK_TABLE}')"
+            ).fetchall()
+        }
+        assert "message_id" not in link_columns
+        assert link_columns["event_time_ms"] == "BIGINT"
+        assert link_columns["message_index"] == "USMALLINT"
+        assert link_columns["raw_payload_sha256"] == "BLOB"
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM duckdb_constraints() "
+                "WHERE table_name = ? AND constraint_type = 'PRIMARY KEY'",
+                [IMPACT_EVENT_LINK_TABLE],
+            ).fetchone()[0]
+            == 0
+        )
+
+
+def test_store_keeps_v2_rows_replay_auditable_without_rewriting_them(tmp_path) -> None:
+    v2_schema = "round-073-prospective-evidence-v2"
+    v2_contract = "1b46f178e335b3473b86ee71a113e2538a9068e287c50f0867aab13f3230557c"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        messages = _messages()
+        store.append_frame(run_id=RUN_ID, messages=messages)
+        connection = store.connect()
+
+        table_pairs = (
+            ("impact_depth_update", IMPACT_DEPTH_UPDATE_TABLE),
+            ("impact_l2_state", IMPACT_L2_STATE_TABLE),
+            ("impact_book_ticker", IMPACT_BOOK_TICKER_TABLE),
+            ("impact_aggregate_trade", IMPACT_AGGREGATE_TRADE_TABLE),
+            ("impact_mark_price", IMPACT_MARK_PRICE_TABLE),
+            ("impact_liquidation_snapshot", IMPACT_LIQUIDATION_SNAPSHOT_TABLE),
+            ("impact_rest_event", IMPACT_REST_EVENT_TABLE),
+            ("impact_rejected_wire_event", IMPACT_REJECTED_WIRE_EVENT_TABLE),
+        )
+        for legacy_table, current_table in table_pairs:
+            connection.execute(
+                f"INSERT INTO {legacy_table} SELECT * FROM {current_table} "
+                "WHERE run_id = ?",
+                [RUN_ID],
+            )
+
+        links = connection.execute(
+            f"SELECT frame_index, message_index, segment_id, stream, connection_id, "
+            "sequence_number, received_wall_ns, received_monotonic_ns, "
+            "raw_payload_sha256, event_type, symbol, typed_event_sha256 "
+            f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ? "
+            "ORDER BY frame_index, message_index",
+            [RUN_ID],
+        ).fetchall()
+        legacy_rows = []
+        for message, link in zip(messages, links, strict=True):
+            raw_sha256 = bytes(link[8]).hex()
+            message_id = _canonical_sha256(
+                {
+                    "run_id": RUN_ID,
+                    "stream": link[3],
+                    "connection_id": link[4],
+                    "sequence_number": int(link[5]),
+                    "raw_payload_sha256": raw_sha256,
+                }
+            )
+            event_type, symbol, event_time, transaction_time, update_id = (
+                store._event_identity(message.event)
+            )
+            legacy_rows.append(
+                (
+                    RUN_ID,
+                    int(link[0]),
+                    int(link[1]),
+                    message_id,
+                    str(link[2]),
+                    str(link[3]),
+                    str(link[4]),
+                    int(link[5]),
+                    int(link[6]),
+                    int(link[7]),
+                    raw_sha256,
+                    event_type,
+                    symbol,
+                    event_time,
+                    transaction_time,
+                    update_id,
+                    bytes(link[11]).hex(),
+                )
+            )
+        connection.executemany(
+            "INSERT INTO impact_event_index VALUES "
+            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            legacy_rows,
+        )
+
+        _rewrite_single_frame_version(connection, v2_schema, v2_contract)
+        connection.execute(
+            f"DELETE FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?", [RUN_ID]
+        )
+        for _legacy_table, current_table in table_pairs:
+            connection.execute(
+                f"DELETE FROM {current_table} WHERE run_id = ?", [RUN_ID]
+            )
+
+        audit = store.audit_run(RUN_ID)
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.capture_contract_sha256 == v2_contract
+
+
+def test_store_keeps_v3_compact_rows_replay_auditable(tmp_path) -> None:
+    v3_schema = "round-073-prospective-evidence-v3"
+    v3_contract = "9228f8243531e44a264d5f88cf8498282986d1b9cb4a6b64e12ee0cede47dc5b"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+        connection.execute(
+            f"""
+            INSERT INTO impact_event_link_v3
+            SELECT run_id, frame_index, message_index, segment_id, stream,
+                   connection_id, sequence_number, received_wall_ns,
+                   received_monotonic_ns, raw_payload_sha256, event_type, symbol,
+                   typed_event_sha256
+            FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?
+            """,
+            [RUN_ID],
+        )
+        _rewrite_single_frame_version(connection, v3_schema, v3_contract)
+        connection.execute(
+            f"DELETE FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?", [RUN_ID]
+        )
+
+        audit = store.audit_run(RUN_ID)
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.capture_contract_sha256 == v3_contract
 
 
 def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
@@ -301,7 +519,7 @@ def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
             store.append_frame(run_id=RUN_ID, messages=messages)
         assert (
             store.connect()
-            .execute("SELECT count(*) FROM impact_event_index")
+            .execute(f"SELECT count(*) FROM {IMPACT_EVENT_LINK_TABLE}")
             .fetchone()[0]
             == 0
         )
@@ -312,14 +530,16 @@ def test_store_detects_payload_and_typed_row_tampering(tmp_path) -> None:
         _start(store)
         store.append_frame(run_id=RUN_ID, messages=_messages())
         store.connect().execute(
-            "DELETE FROM impact_aggregate_trade WHERE run_id = ?", [RUN_ID]
+            f"DELETE FROM {IMPACT_AGGREGATE_TRADE_TABLE} WHERE run_id = ?",
+            [RUN_ID],
         )
         typed_audit = store.audit_run(RUN_ID)
         assert typed_audit.passed is False
         assert "typed_count_mismatch:aggTrade" in typed_audit.errors
 
         store.connect().execute(
-            "UPDATE impact_mark_price SET funding_rate = 0.5 WHERE run_id = ?",
+            f"UPDATE {IMPACT_MARK_PRICE_TABLE} SET funding_rate = 0.5 "
+            "WHERE run_id = ?",
             [RUN_ID],
         )
         value_audit = store.audit_run(RUN_ID)
@@ -339,6 +559,61 @@ def test_store_detects_payload_and_typed_row_tampering(tmp_path) -> None:
         assert payload_audit.passed is False
         assert "compressed_size_mismatch:0" in payload_audit.errors
         assert "compressed_sha256_mismatch:0" in payload_audit.errors
+
+
+def test_store_detects_compact_link_tampering_and_duplicate_rows(tmp_path) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+        frame_index, message_index, raw_digest, event_time_ms = connection.execute(
+            f"SELECT frame_index, message_index, raw_payload_sha256, event_time_ms "
+            f"FROM {IMPACT_EVENT_LINK_TABLE} "
+            "WHERE run_id = ? AND event_type = 'aggTrade'",
+            [RUN_ID],
+        ).fetchone()
+
+        connection.execute(
+            f"UPDATE {IMPACT_EVENT_LINK_TABLE} SET event_time_ms = ? "
+            "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+            [event_time_ms + 1, RUN_ID, frame_index, message_index],
+        )
+        clock_audit = store.audit_run(RUN_ID)
+        assert clock_audit.passed is False
+        assert f"event_time_link_mismatch:{frame_index}:{message_index}" in (
+            clock_audit.errors
+        )
+        connection.execute(
+            f"UPDATE {IMPACT_EVENT_LINK_TABLE} SET event_time_ms = ? "
+            "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+            [event_time_ms, RUN_ID, frame_index, message_index],
+        )
+
+        connection.execute(
+            f"UPDATE {IMPACT_EVENT_LINK_TABLE} SET raw_payload_sha256 = ? "
+            "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+            [bytes(32), RUN_ID, frame_index, message_index],
+        )
+        digest_audit = store.audit_run(RUN_ID)
+        assert digest_audit.passed is False
+        assert f"raw_to_index_mismatch:{frame_index}:{message_index}" in (
+            digest_audit.errors
+        )
+
+        connection.execute(
+            f"UPDATE {IMPACT_EVENT_LINK_TABLE} SET raw_payload_sha256 = ? "
+            "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+            [raw_digest, RUN_ID, frame_index, message_index],
+        )
+        connection.execute(
+            f"INSERT INTO {IMPACT_EVENT_LINK_TABLE} SELECT * "
+            f"FROM {IMPACT_EVENT_LINK_TABLE} "
+            "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+            [RUN_ID, frame_index, message_index],
+        )
+        duplicate_audit = store.audit_run(RUN_ID)
+        assert duplicate_audit.passed is False
+        assert f"event_index_count_mismatch:{frame_index}" in duplicate_audit.errors
 
 
 def test_store_allows_one_bounded_cap_crossing_then_blocks_more_frames(
@@ -509,7 +784,8 @@ def test_store_hash_chains_valid_json_and_malformed_rejected_wire_evidence(
         assert (
             store.connect()
             .execute(
-                "SELECT count(*) FROM impact_rejected_wire_event WHERE run_id = ?",
+                f"SELECT count(*) FROM {IMPACT_REJECTED_WIRE_EVENT_TABLE} "
+                "WHERE run_id = ?",
                 [RUN_ID],
             )
             .fetchone()[0]
@@ -518,7 +794,7 @@ def test_store_hash_chains_valid_json_and_malformed_rejected_wire_evidence(
         assert (
             store.connect()
             .execute(
-                "SELECT count(*) FROM impact_event_index "
+                f"SELECT count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
                 "WHERE run_id = ? AND event_type = 'rejectedWire'",
                 [RUN_ID],
             )
@@ -581,7 +857,8 @@ def test_store_persists_exact_typed_open_interest(tmp_path) -> None:
 
         assert store.audit_run(RUN_ID).passed is True
         assert store.connect().execute(
-            "SELECT open_interest FROM impact_rest_event WHERE run_id = ?", [RUN_ID]
+            f"SELECT open_interest FROM {IMPACT_REST_EVENT_TABLE} WHERE run_id = ?",
+            [RUN_ID],
         ).fetchone()[0] == pytest.approx(12345.678)
 
 
@@ -602,7 +879,7 @@ def test_terminal_capture_report_is_canonical_hash_bound_and_secret_free(
             ended_wall_ns=WALL_BASE + 2_000,
         )
         report = {
-            "schema_version": "round-073-capture-report-v2",
+            "schema_version": "round-073-capture-report-v4",
             "run_id": RUN_ID,
             "status": "stopped",
             "qualification_passed": False,

@@ -23,6 +23,21 @@ BASE_CAPTURE_CONTRACT_PATH = (
 CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-capture-contract-v2.json"
 )
+COMPACT_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-contract-v3.json"
+)
+EVENT_TIME_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-contract-v4.json"
+)
+STORAGE_PROFILE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-storage-profile-2026-07-22.json"
+)
+V3_PROBE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v3-probe-failure-2026-07-22.json"
+)
+V4_PROBE_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v4-probe-evidence-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -122,6 +137,80 @@ def test_round73_capture_contract_closes_storage_and_calendar_ambiguity() -> Non
         is False
     )
     assert contract["qualification"]["failure_authorizes_modeling"] is False
+
+
+def test_round73_compact_storage_contract_is_hash_bound_and_lossless() -> None:
+    profile = json.loads(STORAGE_PROFILE_PATH.read_text(encoding="utf-8"))
+    profile_claimed = profile.pop("artifact_sha256")
+    assert profile_claimed == _canonical_sha256(profile)
+    assert profile["read_only_measurement"] is True
+    assert profile["synthetic_market_data_used"] is False
+    assert profile["decision"]["start_long_v2_capture"] is False
+    assert profile["decision"]["drop_exact_wire_evidence"] is False
+
+    contract = json.loads(COMPACT_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("capture_contract_sha256")
+    assert claimed == _canonical_sha256(contract)
+    assert contract["measurement_evidence"]["artifact_sha256"] == profile_claimed
+    assert contract["inheritance"]["historical_v1_or_v2_evidence_rewritten"] is False
+    unchanged = contract["unchanged_logical_evidence"]
+    assert unchanged["exact_utf8_wire_receipts"] is True
+    assert unchanged["per_message_raw_payload_sha256"] is True
+    assert unchanged["per_message_typed_event_sha256"] is True
+    link = contract["compact_event_link"]
+    assert link["message_id_per_row_stored"] is False
+    assert link["primary_key_index"] is False
+    assert contract["typed_storage"]["logical_columns_equal_v2"] is True
+    assert contract["typed_storage"]["primary_key_indexes"] is False
+    isolation = contract["version_isolation"]
+    assert isolation["cross_version_frame_pooling_permitted"] is False
+    assert isolation["v3_long_capture_before_v3_qualification_permitted"] is False
+
+
+def test_round73_v4_contract_restores_causal_event_time_after_failed_probe() -> None:
+    failure = json.loads(V3_PROBE_FAILURE_PATH.read_text(encoding="utf-8"))
+    failure_claimed = failure.pop("artifact_sha256")
+    assert failure_claimed == _canonical_sha256(failure)
+    assert failure["fresh_process_read_only_replay"]["passed"] is True
+    assert failure["post_capture_failure"]["stored_capture_report_present"] is False
+    assert failure["decision"]["v3_run_qualifies_capture"] is False
+    assert failure["decision"]["v3_run_authorizes_features_or_models"] is False
+
+    contract = json.loads(
+        EVENT_TIME_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8")
+    )
+    claimed = contract.pop("capture_contract_sha256")
+    assert claimed == _canonical_sha256(contract)
+    assert contract["failure_evidence"]["artifact_sha256"] == failure_claimed
+    link = contract["event_link_v4"]
+    assert [column[0] for column in link["columns"]][-2:] == [
+        "event_time_ms",
+        "typed_event_sha256",
+    ]
+    assert link["event_time_is_availability_clock"] is False
+    terminal = contract["terminal_report_contract"]
+    assert terminal["post_capture_materialization_exception_is_startup_error"] is False
+    assert terminal["missing_terminal_report_authorizes_qualification"] is False
+    assert contract["version_isolation"]["failed_v3_probe_reclassified_as_v4"] is False
+
+
+def test_round73_v4_probe_authorizes_only_one_hour_requalification() -> None:
+    evidence = json.loads(V4_PROBE_EVIDENCE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["smoke_probe"]["fresh_process_audit_passed"] is True
+    sustained = evidence["sustained_probe"]
+    assert sustained["fresh_process_audit_passed"] is True
+    assert sustained["database_size_cap_reached"] is False
+    assert sustained["negative_corrected_latency_fraction"] == 0.0
+    authorization = evidence["authorization"]
+    assert authorization["v4_one_hour_qualification_attempt"] is True
+    assert authorization["v4_long_capture"] is False
+    assert authorization["round_073_feature_construction"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

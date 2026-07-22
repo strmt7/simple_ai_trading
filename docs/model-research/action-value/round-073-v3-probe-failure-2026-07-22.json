@@ -1,0 +1,84 @@
+{
+  "schema_version": "round-073-v3-probe-failure-evidence-v1",
+  "round": 73,
+  "artifact_sha256": "15e64642cdc033e7a772eba7b573fb3323b3c36a65da598a2a7c879e38dc6f4c",
+  "recorded_at_utc": "2026-07-22T17:34:24Z",
+  "run_id": "feb1289d71884a23818be1b7f1de3b3e",
+  "capture_schema_version": "round-073-prospective-evidence-v3",
+  "capture_contract_sha256": "9228f8243531e44a264d5f88cf8498282986d1b9cb4a6b64e12ee0cede47dc5b",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "database_terminal_state": {
+    "run_status": "completed",
+    "started_wall_ns": 1784741344491593400,
+    "ended_wall_ns": 1784741533755156500,
+    "wall_elapsed_seconds": 189.2635631,
+    "frame_count": 606,
+    "message_count": 158072,
+    "compressed_exact_wire_bytes": 6492465,
+    "last_frame_sha256": "c4abd6a4f4f15f4d68209cdf2104db59bef8ccfbb9e8ee3ead610e1f741c7741",
+    "segment_statuses": {
+      "BTCUSDT": {"status": "valid", "depth_message_count": 1792},
+      "ETHUSDT": {"status": "valid", "depth_message_count": 1777},
+      "SOLUSDT": {"status": "valid", "depth_message_count": 1718}
+    }
+  },
+  "event_counts": {
+    "aggTrade": 5619,
+    "bookTicker": 146521,
+    "depthSnapshot": 3,
+    "depthUpdate": 5375,
+    "exchangeInfo": 1,
+    "forceOrder": 2,
+    "markPriceUpdate": 537,
+    "openInterest": 9,
+    "serverTime": 5
+  },
+  "fresh_process_read_only_replay": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 606,
+    "message_count": 158072,
+    "compressed_payload_bytes": 6492465,
+    "last_frame_sha256": "c4abd6a4f4f15f4d68209cdf2104db59bef8ccfbb9e8ee3ead610e1f741c7741"
+  },
+  "post_capture_failure": {
+    "stage": "latency-report materialization after run terminalization and replay audit",
+    "exception_class": "duckdb.BinderException",
+    "reason": "The v3 report query selected event_time_ms from impact_depth_update_v3, but the depth typed table has never owned that field.",
+    "stored_capture_report_present": false,
+    "negative_corrected_latency_fraction_computed": false,
+    "qualification_computed": false,
+    "supervisor_classified_as_startup_error": true,
+    "classification_is_semantically_correct": false
+  },
+  "observed_storage": {
+    "duckdb_block_size_bytes": 262144,
+    "used_blocks_before": 16856,
+    "used_blocks_after": 16938,
+    "used_block_delta": 82,
+    "used_byte_delta": 21495808,
+    "physical_file_bytes_before": 4655951872,
+    "physical_file_bytes_after": 4655951872,
+    "physical_growth_bytes": 0,
+    "event_link_v3_blocks": 50,
+    "event_link_v3_allocated_bytes": 13107200,
+    "v3_event_and_typed_table_union_blocks": 77,
+    "v3_event_and_typed_table_union_bytes": 20185088,
+    "capture_frame_table_block_delta": 25,
+    "note": "DuckDB consumed preallocated free blocks, so physical file growth was zero. Block allocation is an observed probe result, not a future-rate guarantee."
+  },
+  "decision": {
+    "v3_run_is_development_only": true,
+    "v3_run_qualifies_capture": false,
+    "v3_run_authorizes_features_or_models": false,
+    "v3_run_may_be_pooled_with_future_capture": false,
+    "rewrite_v3_rows": false,
+    "retain_v3_backward_audit": true,
+    "next_contract": "v4 retains compact binary hashes and adds causal exchange event time to the event link"
+  },
+  "non_claims": [
+    "A passing raw replay does not repair a failed terminal report.",
+    "No model, edge, profitability, ROI, drawdown, leverage, paper, testnet, or live authority exists."
+  ]
+}

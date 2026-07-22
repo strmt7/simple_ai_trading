@@ -102,6 +102,7 @@ from .external_signals import (
 )
 from .intervals import interval_milliseconds
 from .impact_absorption_capture import (
+    IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES,
     ImpactCaptureConfig,
     ImpactCaptureSupervisorReport,
     capture_round73_supervised,
@@ -1323,6 +1324,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--compressed-payload-cap-bytes",
         type=int,
         default=IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    )
+    parser_impact_capture.add_argument(
+        "--database-size-cap-bytes",
+        type=int,
+        default=IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES,
+        help="absolute DuckDB plus WAL cap; capture stops with a 512 MiB reserve",
     )
     parser_impact_capture.add_argument("--memory-limit", default="2GB")
     parser_impact_capture.add_argument("--database-threads", type=int, default=2)
@@ -10860,6 +10867,13 @@ def command_impact_capture(args: argparse.Namespace) -> int:
                     args,
                     "compressed_payload_cap_bytes",
                     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+                )
+            ),
+            database_size_cap_bytes=int(
+                getattr(
+                    args,
+                    "database_size_cap_bytes",
+                    IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES,
                 )
             ),
             duckdb_memory_limit=str(getattr(args, "memory_limit", "2GB")),

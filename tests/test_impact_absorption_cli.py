@@ -33,6 +33,9 @@ def _attempt(
         writer_message_count=1,
         writer_compressed_payload_bytes=1,
         payload_cap_reached=False,
+        database_physical_bytes=1,
+        database_size_cap_bytes=8 * 1024 * 1024 * 1024,
+        database_size_cap_reached=False,
         event_counts={"serverTime": 1},
         symbol_event_counts={},
         negative_corrected_latency_fraction=0.0,
@@ -64,6 +67,7 @@ def _capture_args(**overrides) -> argparse.Namespace:
         "mode": "probe",
         "duration_seconds": None,
         "compressed_payload_cap_bytes": 2_147_483_648,
+        "database_size_cap_bytes": 8 * 1024 * 1024 * 1024,
         "memory_limit": "2GB",
         "database_threads": 2,
         "maximum_reconnects": 6,
@@ -90,6 +94,7 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
 
     assert capture.duration_seconds == 3660.0
     assert capture.maximum_reconnects == 2
+    assert capture.database_size_cap_bytes == 8 * 1024 * 1024 * 1024
     assert audit.run_id == "a" * 32
     specs = {item.name: item for item in command_specs()}
     assert {"impact-capture", "impact-audit"} <= set(specs)

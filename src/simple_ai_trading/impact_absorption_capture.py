@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import asdict, dataclass
 import json
 import math
+from pathlib import Path
 from queue import Empty, Full, Queue
 import threading
 import time
@@ -30,7 +31,12 @@ from .impact_absorption import (
 from .impact_absorption_store import (
     IMPACT_CAPTURE_CONTRACT_SHA256,
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_DEPTH_UPDATE_TABLE,
+    IMPACT_EVENT_LINK_TABLE,
+    IMPACT_REST_EVENT_TABLE,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactFrameWriteResult,
@@ -59,6 +65,8 @@ _SOURCE_STALL_SECONDS = 15.0
 _CLOCK_PROBE_COUNT = 3
 _RATE_LIMIT_FRACTION = 0.80
 _RECONNECT_BACKOFF_SECONDS = (1.0, 2.0, 4.0, 8.0, 16.0, 30.0)
+IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES = 8 * 1024 * 1024 * 1024
+_DATABASE_SIZE_CAP_RESERVE_BYTES = 512 * 1024 * 1024
 
 CaptureFailureClass = Literal[
     "none",
@@ -70,6 +78,7 @@ CaptureFailureClass = Literal[
     "writer",
     "resource_limit",
     "audit",
+    "post_capture",
 ]
 
 
@@ -87,6 +96,23 @@ class _ImpactWriterQueueOverflow(RuntimeError):
 
 class _ImpactPayloadCapReached(RuntimeError):
     pass
+
+
+class _ImpactDatabaseSizeCapReached(RuntimeError):
+    pass
+
+
+def _database_physical_bytes(database: str) -> int:
+    if str(database).strip() == ":memory:":
+        return 0
+    path = Path(database)
+    total = 0
+    for candidate in (path, Path(f"{path}.wal")):
+        try:
+            total += candidate.stat().st_size
+        except FileNotFoundError:
+            continue
+    return total
 
 
 class _ImpactRestResponseError(RuntimeError):
@@ -172,6 +198,7 @@ class ImpactCaptureConfig:
     frame_uncompressed_limit_bytes: int = _FRAME_UNCOMPRESSED_LIMIT
     frame_flush_seconds: float = _FRAME_FLUSH_SECONDS
     compressed_payload_cap_bytes: int = IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES
+    database_size_cap_bytes: int = IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES
     writer_stall_seconds: float = _WRITER_STALL_SECONDS
     source_stall_seconds: float = _SOURCE_STALL_SECONDS
     duckdb_memory_limit: str = "2GB"
@@ -204,6 +231,8 @@ class ImpactCaptureConfig:
             raise ValueError("frame flush interval is outside the frozen bound")
         if int(self.compressed_payload_cap_bytes) < 1:
             raise ValueError("compressed payload cap must be positive")
+        if int(self.database_size_cap_bytes) <= _DATABASE_SIZE_CAP_RESERVE_BYTES:
+            raise ValueError("database size cap must exceed the 512 MiB safety reserve")
         if not 1.0 <= float(self.writer_stall_seconds) <= _WRITER_STALL_SECONDS:
             raise ValueError("writer stall timeout is outside the frozen bound")
         if not 5.0 <= float(self.source_stall_seconds) <= _SOURCE_STALL_SECONDS:
@@ -244,6 +273,9 @@ class ImpactCaptureReport:
     writer_message_count: int
     writer_compressed_payload_bytes: int
     payload_cap_reached: bool
+    database_physical_bytes: int
+    database_size_cap_bytes: int
+    database_size_cap_reached: bool
     event_counts: dict[str, int]
     symbol_event_counts: dict[str, dict[str, int]]
     negative_corrected_latency_fraction: float | None
@@ -254,7 +286,7 @@ class ImpactCaptureReport:
 
     def as_dict(self) -> dict[str, object]:
         result = asdict(self)
-        result["schema_version"] = "round-073-capture-report-v2"
+        result["schema_version"] = IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
         result["design_sha256"] = ROUND73_DESIGN_SHA256
         result["capture_contract_sha256"] = IMPACT_CAPTURE_CONTRACT_SHA256
         result["audit_errors"] = list(self.audit_errors)
@@ -313,14 +345,23 @@ class _ImpactFrameWriter:
         self.stopped = threading.Event()
         self.failed = threading.Event()
         self.cap_reached = threading.Event()
+        self.database_cap_reached = threading.Event()
         self.error = ""
         self.last_progress_monotonic = time.monotonic()
         self.high_water_messages = 0
         self.frame_count = 0
         self.message_count = 0
         self.compressed_payload_bytes = 0
+        self.database_physical_bytes = _database_physical_bytes(config.database)
 
     def start(self, timeout_seconds: float = 5.0) -> None:
+        if (
+            self.database_physical_bytes + _DATABASE_SIZE_CAP_RESERVE_BYTES
+            >= int(self.config.database_size_cap_bytes)
+        ):
+            raise _ImpactDatabaseSizeCapReached(
+                "Round 73 database is already inside its 512 MiB cap reserve"
+            )
         self.thread.start()
         if not self.started.wait(timeout=max(0.1, float(timeout_seconds))):
             raise _ImpactWriterFault(
@@ -338,6 +379,10 @@ class _ImpactFrameWriter:
             raise _ImpactPayloadCapReached(
                 "Round 73 compressed payload cap was reached"
             )
+        if self.database_cap_reached.is_set():
+            raise _ImpactDatabaseSizeCapReached(
+                "Round 73 database size cap reserve was reached"
+            )
         try:
             self.queue.put_nowait(message)
         except Full as exc:
@@ -345,6 +390,8 @@ class _ImpactFrameWriter:
         self.high_water_messages = max(self.high_water_messages, self.queue.qsize())
 
     def stop(self, timeout_seconds: float = 10.0) -> bool:
+        if not self.thread.is_alive():
+            return True
         deadline = time.monotonic() + max(0.1, float(timeout_seconds))
         while time.monotonic() < deadline:
             try:
@@ -378,6 +425,14 @@ class _ImpactFrameWriter:
             self.last_progress_monotonic = time.monotonic()
             if result.payload_cap_reached:
                 self.cap_reached.set()
+            self.database_physical_bytes = _database_physical_bytes(
+                self.config.database
+            )
+            if (
+                self.database_physical_bytes + _DATABASE_SIZE_CAP_RESERVE_BYTES
+                >= int(self.config.database_size_cap_bytes)
+            ):
+                self.database_cap_reached.set()
             return result
 
         try:
@@ -424,7 +479,7 @@ class _ImpactFrameWriter:
                         or time.monotonic() >= flush_deadline
                     ):
                         flush(store)
-                    if self.cap_reached.is_set():
+                    if self.cap_reached.is_set() or self.database_cap_reached.is_set():
                         break
         except BaseException as exc:
             self.error = f"{type(exc).__name__}:{exc}"[:2_000]
@@ -565,7 +620,12 @@ def _failure_class_for_exception(exc: BaseException) -> CaptureFailureClass:
         return "rate_limit"
     if isinstance(exc, _ImpactRestResponseError):
         return "rate_limit" if exc.status_code in {418, 429} else "rest_transport"
-    if isinstance(exc, _ImpactWriterQueueOverflow | _ImpactPayloadCapReached):
+    if isinstance(
+        exc,
+        _ImpactWriterQueueOverflow
+        | _ImpactPayloadCapReached
+        | _ImpactDatabaseSizeCapReached,
+    ):
         return "resource_limit"
     if isinstance(exc, _ImpactWriterFault):
         return "writer"
@@ -578,10 +638,122 @@ def _failure_class_for_exception(exc: BaseException) -> CaptureFailureClass:
     return "processing"
 
 
+def _terminal_post_capture_failure_report(
+    config: ImpactCaptureConfig,
+    *,
+    run_id: str,
+    error: BaseException,
+    writer: _ImpactFrameWriter | None,
+) -> ImpactCaptureReport | None:
+    """Bind a non-retriable failed report to an already terminal current run."""
+
+    with ImpactAbsorptionStore(
+        config.database,
+        memory_limit=config.duckdb_memory_limit,
+        threads=config.duckdb_threads,
+    ) as store:
+        connection = store.connect()
+        run = connection.execute(
+            """
+            SELECT status, started_wall_ns, ended_wall_ns, frame_count,
+                   message_count, compressed_payload_bytes, payload_cap_reached
+            FROM impact_capture_run WHERE run_id = ?
+              AND schema_version = ? AND capture_contract_sha256 = ?
+            """,
+            [
+                run_id,
+                IMPACT_CAPTURE_SCHEMA_VERSION,
+                IMPACT_CAPTURE_CONTRACT_SHA256,
+            ],
+        ).fetchone()
+        if run is None or str(run[0]) == "running" or run[2] is None:
+            return None
+        if (
+            connection.execute(
+                "SELECT count(*) FROM impact_capture_report WHERE run_id = ?",
+                [run_id],
+            ).fetchone()[0]
+            != 0
+        ):
+            return None
+        audit = store.audit_run(run_id)
+        event_counts = {
+            str(event_type): int(count)
+            for event_type, count in connection.execute(
+                f"SELECT event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
+                "WHERE run_id = ? GROUP BY event_type ORDER BY event_type",
+                [run_id],
+            ).fetchall()
+        }
+        symbol_event_counts: dict[str, dict[str, int]] = {
+            symbol: {} for symbol in IMPACT_CAPTURE_SYMBOLS
+        }
+        for symbol, event_type, count in connection.execute(
+            f"SELECT symbol, event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
+            "WHERE run_id = ? AND symbol <> '' "
+            "GROUP BY symbol, event_type ORDER BY symbol, event_type",
+            [run_id],
+        ).fetchall():
+            symbol_event_counts[str(symbol)][str(event_type)] = int(count)
+        for symbol, count in connection.execute(
+            f"SELECT symbol, count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE} "
+            "WHERE run_id = ? AND stale = false GROUP BY symbol ORDER BY symbol",
+            [run_id],
+        ).fetchall():
+            symbol_event_counts[str(symbol)]["synchronizedDepthUpdate"] = int(count)
+        report = ImpactCaptureReport(
+            run_id=run_id,
+            mode=config.mode,
+            status="failed",
+            qualification_passed=False,
+            started_wall_ns=int(run[1]),
+            ended_wall_ns=int(run[2]),
+            elapsed_seconds=max(0.0, (int(run[2]) - int(run[1])) / 1_000_000_000),
+            queue_high_water_messages=(
+                0 if writer is None else writer.high_water_messages
+            ),
+            queue_capacity_messages=config.queue_capacity_messages,
+            queue_maximum_utilization=(
+                0.0
+                if writer is None
+                else writer.high_water_messages / config.queue_capacity_messages
+            ),
+            writer_frame_count=int(run[3]),
+            writer_message_count=int(run[4]),
+            writer_compressed_payload_bytes=int(run[5]),
+            payload_cap_reached=bool(run[6]),
+            database_physical_bytes=_database_physical_bytes(config.database),
+            database_size_cap_bytes=config.database_size_cap_bytes,
+            database_size_cap_reached=(
+                False if writer is None else writer.database_cap_reached.is_set()
+            ),
+            event_counts=event_counts,
+            symbol_event_counts=symbol_event_counts,
+            negative_corrected_latency_fraction=None,
+            audit_passed=audit.passed,
+            audit_errors=audit.errors,
+            error=f"post_capture:{type(error).__name__}:{error}"[:2_000],
+            failure_class="post_capture",
+        )
+        store.record_report(
+            run_id=run_id,
+            report=report.as_dict(),
+            recorded_at_wall_ns=time.time_ns(),
+        )
+        return report
+
+
 async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
     """Capture one bounded prospective run; never place or authenticate an order."""
 
     config.validate()
+    if (
+        _database_physical_bytes(config.database) + _DATABASE_SIZE_CAP_RESERVE_BYTES
+        >= int(config.database_size_cap_bytes)
+    ):
+        raise _ImpactDatabaseSizeCapReached(
+            "Round 73 database is already inside its 512 MiB cap reserve"
+        )
     run_id = uuid.uuid4().hex
     started_wall_ns = time.time_ns()
     started_monotonic_ns = time.perf_counter_ns()
@@ -644,6 +816,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
         max_queue=4_096,
     ) as public_websocket:
         public_task = asyncio.create_task(public_receiver(public_websocket))
+        writer: _ImpactFrameWriter | None = None
         rest_sequence = 0
         retained_rest: list[_RestEvidence] = []
         clock_probes: list[_RestEvidence] = []
@@ -762,6 +935,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                         "frame_uncompressed_limit_bytes": config.frame_uncompressed_limit_bytes,
                         "frame_flush_seconds": config.frame_flush_seconds,
                         "maximum_reconnects": config.maximum_reconnects,
+                        "database_size_cap_bytes": config.database_size_cap_bytes,
                     },
                     compressed_payload_cap_bytes=config.compressed_payload_cap_bytes,
                 )
@@ -1094,6 +1268,8 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                         fail(writer.error or "writer_failed", "writer")
                     elif writer.cap_reached.is_set():
                         fail("compressed_payload_cap_reached", "resource_limit")
+                    elif writer.database_cap_reached.is_set():
+                        fail("database_size_cap_reserve_reached", "resource_limit")
                     elif (
                         writer.queue.qsize() > 0
                         and now - writer.last_progress_monotonic
@@ -1126,6 +1302,10 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     fail("writer_shutdown_timeout", "writer")
                 if writer.failed.is_set():
                     fail(writer.error or "writer_failed", "writer")
+                if writer.cap_reached.is_set():
+                    fail("compressed_payload_cap_reached", "resource_limit")
+                if writer.database_cap_reached.is_set():
+                    fail("database_size_cap_reserve_reached", "resource_limit")
 
             ended_wall_ns = time.time_ns()
             elapsed_seconds = max(0.0, time.monotonic() - capture_started)
@@ -1147,6 +1327,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     writer_message_count=writer.message_count,
                     writer_compressed_payload_bytes=writer.compressed_payload_bytes,
                     payload_cap_reached=writer.cap_reached.is_set(),
+                    database_physical_bytes=_database_physical_bytes(config.database),
+                    database_size_cap_bytes=config.database_size_cap_bytes,
+                    database_size_cap_reached=writer.database_cap_reached.is_set(),
                     event_counts={},
                     symbol_event_counts={},
                     negative_corrected_latency_fraction=None,
@@ -1184,8 +1367,8 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     str(event_type): int(count)
                     for event_type, count in store.connect()
                     .execute(
-                        """
-                        SELECT event_type, count(*) FROM impact_event_index
+                        f"""
+                        SELECT event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE}
                         WHERE run_id = ? GROUP BY event_type ORDER BY event_type
                         """,
                         [run_id],
@@ -1198,8 +1381,8 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 for symbol, event_type, count in (
                     store.connect()
                     .execute(
-                        """
-                    SELECT symbol, event_type, count(*) FROM impact_event_index
+                        f"""
+                    SELECT symbol, event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE}
                     WHERE run_id = ? AND symbol <> ''
                     GROUP BY symbol, event_type ORDER BY symbol, event_type
                     """,
@@ -1211,8 +1394,8 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 for symbol, count in (
                     store.connect()
                     .execute(
-                        """
-                    SELECT symbol, count(*) FROM impact_depth_update
+                        f"""
+                    SELECT symbol, count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE}
                     WHERE run_id = ? AND stale = false
                     GROUP BY symbol ORDER BY symbol
                     """,
@@ -1226,9 +1409,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 latency_rows = (
                     store.connect()
                     .execute(
-                        """
+                        f"""
                     SELECT received_wall_ns, event_time_ms
-                    FROM impact_event_index
+                    FROM {IMPACT_EVENT_LINK_TABLE}
                     WHERE run_id = ? AND event_time_ms IS NOT NULL
                       AND stream <> 'binance_futures_rest'
                     ORDER BY received_wall_ns
@@ -1240,12 +1423,13 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 clock_rows = (
                     store.connect()
                     .execute(
-                        """
+                        f"""
                     SELECT e.received_wall_ns, r.request_started_wall_ns,
                            e.received_monotonic_ns,
                            r.request_started_monotonic_ns, r.exchange_time_ms
-                    FROM impact_event_index e
-                    JOIN impact_rest_event r USING (run_id, frame_index, message_index)
+                    FROM {IMPACT_EVENT_LINK_TABLE} e
+                    JOIN {IMPACT_REST_EVENT_TABLE} r
+                      USING (run_id, frame_index, message_index)
                     WHERE e.run_id = ? AND e.event_type = 'serverTime'
                     ORDER BY e.received_wall_ns
                     """,
@@ -1337,6 +1521,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 writer_message_count=writer.message_count,
                 writer_compressed_payload_bytes=writer.compressed_payload_bytes,
                 payload_cap_reached=writer.cap_reached.is_set(),
+                database_physical_bytes=_database_physical_bytes(config.database),
+                database_size_cap_bytes=config.database_size_cap_bytes,
+                database_size_cap_reached=writer.database_cap_reached.is_set(),
                 event_counts=event_counts,
                 symbol_event_counts=symbol_event_counts,
                 negative_corrected_latency_fraction=negative_latency_fraction,
@@ -1356,10 +1543,26 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     recorded_at_wall_ns=ended_wall_ns,
                 )
             return report
-        except BaseException:
+        except BaseException as exc:
             stop.set()
             public_task.cancel()
             await asyncio.gather(public_task, return_exceptions=True)
+            if not isinstance(exc, asyncio.CancelledError | KeyboardInterrupt | SystemExit):
+                try:
+                    recovered = _terminal_post_capture_failure_report(
+                        config,
+                        run_id=run_id,
+                        error=exc,
+                        writer=writer,
+                    )
+                except Exception as recovery_error:
+                    exc.add_note(
+                        "Round 73 terminal-report recovery also failed: "
+                        f"{type(recovery_error).__name__}:{recovery_error}"
+                    )
+                    recovered = None
+                if recovered is not None:
+                    return recovered
             raise
 
 
