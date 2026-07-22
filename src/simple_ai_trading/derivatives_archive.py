@@ -18,7 +18,7 @@ from .binance_archive import (
     BINANCE_ARCHIVE_BASE_URL,
     _download_to_temp,
     _fetch_archive_checksum,
-    _normalize_archive_timestamp,
+    normalize_archive_timestamp_ms,
 )
 from .market_store import (
     FundingRateRecord,
@@ -165,8 +165,8 @@ def _parse_reference_archive(
                     continue
                 if len(row) < 7:
                     raise ValueError("premium-index row has fewer than seven columns")
-                open_time = _normalize_archive_timestamp(row[0])
-                close_time = _normalize_archive_timestamp(row[6])
+                open_time = normalize_archive_timestamp_ms(row[0])
+                close_time = normalize_archive_timestamp_ms(row[6])
                 values = tuple(float(row[index]) for index in range(1, 5))
                 if not all(math.isfinite(value) for value in values):
                     raise ValueError("reference-price row contains a non-finite value")
@@ -221,7 +221,7 @@ def _parse_funding_archive(
                     continue
                 if len(row) < 3:
                     raise ValueError("funding row has fewer than three columns")
-                calc_time = _normalize_archive_timestamp(row[0])
+                calc_time = normalize_archive_timestamp_ms(row[0])
                 interval_hours = int(row[1])
                 rate = float(row[2])
                 if not math.isfinite(rate) or abs(rate) > 0.1:
