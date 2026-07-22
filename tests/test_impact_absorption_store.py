@@ -349,6 +349,12 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
         assert audit.errors == ()
         assert audit.last_frame_sha256 == written.frame_sha256
         connection = store.connect()
+        assert connection.execute(
+            "SELECT current_setting('checkpoint_threshold')"
+        ).fetchone()[0] == "512.0 MiB"
+        assert connection.execute(
+            "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
+        ).fetchone()[0] == 512 * 1024 * 1024
         assert (
             connection.execute(
                 f"SELECT count(*) FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
@@ -594,6 +600,22 @@ def test_store_keeps_v5_depth_band_rows_replay_auditable(tmp_path) -> None:
         assert audit.passed is True
         assert audit.errors == ()
         assert audit.capture_contract_sha256 == v5_contract
+
+
+def test_store_keeps_v6_telemetry_rows_replay_auditable(tmp_path) -> None:
+    v6_schema = "round-073-prospective-evidence-v6"
+    v6_contract = "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+
+        _rewrite_single_frame_version(connection, v6_schema, v6_contract)
+
+        audit = store.audit_run(RUN_ID)
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.capture_contract_sha256 == v6_contract
 
 
 def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
@@ -1010,7 +1032,7 @@ def test_terminal_capture_report_is_canonical_hash_bound_and_secret_free(
             ended_wall_ns=WALL_BASE + 2_000,
         )
         report = {
-            "schema_version": "round-073-capture-report-v6",
+            "schema_version": "round-073-capture-report-v7",
             "run_id": RUN_ID,
             "status": "stopped",
             "qualification_passed": False,
