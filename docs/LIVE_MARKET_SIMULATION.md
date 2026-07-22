@@ -89,6 +89,9 @@ Execution cost is symbol-specific where market data exists:
   disappear between socket receipt and failure reporting. Contract v1 remains
   immutable and auditable for historical runs. Neither command authenticates,
   places orders, or supplies model, P&L, or profitability evidence.
+  Contract-v2 qualification run `5d89804a8f404d9b80b3a3ce2d796561`
+  completed one uninterrupted hour and passed a separate full replay audit;
+  that qualifies this capture for Round 73 feature research only.
 - `data-health` is the pre-training database gate. It emits machine-readable
   row counts, UTC spans, expected rows, coverage ratio, gap count,
   archive-status counts, and checksum-status counts, and it exits nonzero when
