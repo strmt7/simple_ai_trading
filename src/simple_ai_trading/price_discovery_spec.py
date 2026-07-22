@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 import hashlib
 import json
+from pathlib import Path
 from typing import Sequence
 
 
@@ -412,6 +413,26 @@ def build_round72_implementation_spec(
     }
 
 
+def load_round72_implementation(path: str | Path) -> dict[str, object]:
+    """Load the exact reproducible implementation artifact and reject drift."""
+
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("Round 72 implementation artifact is not an object")
+    try:
+        expected = build_round72_implementation_spec(
+            design_sha256=str(value["design_sha256"]),
+            inventory_sha256=str(value["inventory_sha256"]),
+            inventory_file_sha256=str(value["inventory_file_sha256"]),
+            frozen_at_utc=str(value["frozen_at_utc"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Round 72 implementation artifact fields are invalid") from exc
+    if value != expected:
+        raise ValueError("Round 72 implementation artifact differs from its generator")
+    return value
+
+
 def validate_layer_prefixes(
     feature_names: Sequence[str],
 ) -> tuple[int, int, int]:
@@ -449,6 +470,7 @@ __all__ = [
     "build_round72_implementation_spec",
     "cross_asset_feature_names",
     "layer_feature_names",
+    "load_round72_implementation",
     "market_feature_names",
     "pair_feature_names",
     "validate_layer_prefixes",
