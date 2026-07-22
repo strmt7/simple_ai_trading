@@ -39,11 +39,11 @@ from .impact_capture_frame import (
 )
 
 
-IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v7"
+IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v8"
 IMPACT_CAPTURE_CONTRACT_SHA256 = (
-    "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1"
+    "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462"
 )
-IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v7"
+IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v8"
 _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v1": (
         "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
@@ -63,7 +63,11 @@ _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v6": (
         "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
     ),
+    "round-073-prospective-evidence-v7": (
+        "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1"
+    ),
 }
+_V7_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v7"
 _V6_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v6"
 _V5_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v5"
 _V4_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v4"
@@ -71,6 +75,7 @@ _V3_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v3"
 _COMPACT_CAPTURE_SCHEMAS = frozenset(
     {
         IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V7_CAPTURE_SCHEMA_VERSION,
         _V6_CAPTURE_SCHEMA_VERSION,
         _V5_CAPTURE_SCHEMA_VERSION,
         _V4_CAPTURE_SCHEMA_VERSION,
@@ -80,6 +85,7 @@ _COMPACT_CAPTURE_SCHEMAS = frozenset(
 _EVENT_TIME_LINK_SCHEMAS = frozenset(
     {
         IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V7_CAPTURE_SCHEMA_VERSION,
         _V6_CAPTURE_SCHEMA_VERSION,
         _V5_CAPTURE_SCHEMA_VERSION,
         _V4_CAPTURE_SCHEMA_VERSION,
@@ -88,12 +94,20 @@ _EVENT_TIME_LINK_SCHEMAS = frozenset(
 _DEPTH_BAND_SCHEMAS = frozenset(
     {
         IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V7_CAPTURE_SCHEMA_VERSION,
         _V6_CAPTURE_SCHEMA_VERSION,
         _V5_CAPTURE_SCHEMA_VERSION,
     }
 )
-IMPACT_CAPTURE_CHECKPOINT_THRESHOLD = "512MiB"
-IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 512 * 1024 * 1024
+_LEGACY_DEPTH_BAND_SCHEMAS = frozenset(
+    {
+        _V7_CAPTURE_SCHEMA_VERSION,
+        _V6_CAPTURE_SCHEMA_VERSION,
+        _V5_CAPTURE_SCHEMA_VERSION,
+    }
+)
+IMPACT_CAPTURE_CHECKPOINT_THRESHOLD = "16MiB"
+IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 100_000
 IMPACT_CAPTURE_COMPRESSION_LEVEL = 3
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
@@ -553,16 +567,17 @@ _DEPTH_BAND_FLOW_COLUMNS = (
     ),
 )
 
-IMPACT_EVENT_LINK_TABLE = "impact_event_link_v5"
-IMPACT_DEPTH_UPDATE_TABLE = "impact_depth_update_v3"
-IMPACT_L2_STATE_TABLE = "impact_l2_state_v3"
-IMPACT_BOOK_TICKER_TABLE = "impact_book_ticker_v3"
-IMPACT_AGGREGATE_TRADE_TABLE = "impact_aggregate_trade_v3"
-IMPACT_MARK_PRICE_TABLE = "impact_mark_price_v3"
-IMPACT_LIQUIDATION_SNAPSHOT_TABLE = "impact_liquidation_snapshot_v3"
-IMPACT_REST_EVENT_TABLE = "impact_rest_event_v3"
-IMPACT_REJECTED_WIRE_EVENT_TABLE = "impact_rejected_wire_event_v3"
-IMPACT_DEPTH_BAND_FLOW_TABLE = "impact_depth_band_flow_v5"
+IMPACT_CAPTURE_FRAME_TABLE = "impact_capture_frame_v8"
+IMPACT_EVENT_LINK_TABLE = "impact_event_link_v8"
+IMPACT_DEPTH_UPDATE_TABLE = "impact_depth_update_v8"
+IMPACT_L2_STATE_TABLE = "impact_l2_state_v8"
+IMPACT_BOOK_TICKER_TABLE = "impact_book_ticker_v8"
+IMPACT_AGGREGATE_TRADE_TABLE = "impact_aggregate_trade_v8"
+IMPACT_MARK_PRICE_TABLE = "impact_mark_price_v8"
+IMPACT_LIQUIDATION_SNAPSHOT_TABLE = "impact_liquidation_snapshot_v8"
+IMPACT_REST_EVENT_TABLE = "impact_rest_event_v8"
+IMPACT_REJECTED_WIRE_EVENT_TABLE = "impact_rejected_wire_event_v8"
+IMPACT_DEPTH_BAND_FLOW_TABLE = "impact_depth_band_flow_v8"
 
 _LEGACY_TYPED_TABLES = {
     "depthUpdate": ("impact_depth_update", _DEPTH_COLUMNS),
@@ -577,6 +592,18 @@ _LEGACY_TYPED_TABLES = {
     "rejectedWire": ("impact_rejected_wire_event", _REJECTED_WIRE_COLUMNS),
 }
 _V3_TYPED_TABLES = {
+    "depthUpdate": ("impact_depth_update_v3", _DEPTH_COLUMNS),
+    "bookTicker": ("impact_book_ticker_v3", _BOOK_TICKER_COLUMNS),
+    "aggTrade": ("impact_aggregate_trade_v3", _TRADE_COLUMNS),
+    "markPriceUpdate": ("impact_mark_price_v3", _MARK_COLUMNS),
+    "forceOrder": ("impact_liquidation_snapshot_v3", _LIQUIDATION_COLUMNS),
+    "serverTime": ("impact_rest_event_v3", _REST_COLUMNS),
+    "exchangeInfo": ("impact_rest_event_v3", _REST_COLUMNS),
+    "depthSnapshot": ("impact_rest_event_v3", _REST_COLUMNS),
+    "openInterest": ("impact_rest_event_v3", _REST_COLUMNS),
+    "rejectedWire": ("impact_rejected_wire_event_v3", _REJECTED_WIRE_COLUMNS),
+}
+_V8_TYPED_TABLES = {
     "depthUpdate": (IMPACT_DEPTH_UPDATE_TABLE, _DEPTH_COLUMNS),
     "bookTicker": (IMPACT_BOOK_TICKER_TABLE, _BOOK_TICKER_COLUMNS),
     "aggTrade": (IMPACT_AGGREGATE_TRADE_TABLE, _TRADE_COLUMNS),
@@ -593,6 +620,8 @@ _V3_TYPED_TABLES = {
 def _typed_tables_for_schema(
     schema_version: str,
 ) -> dict[str, tuple[str, tuple[str, ...]]]:
+    if schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+        return dict(_V8_TYPED_TABLES)
     if schema_version in _COMPACT_CAPTURE_SCHEMAS:
         return dict(_V3_TYPED_TABLES)
     if schema_version in _LEGACY_CAPTURE_CONTRACTS:
@@ -601,6 +630,86 @@ def _typed_tables_for_schema(
             tables.pop("rejectedWire")
         return tables
     raise ValueError("impact capture schema version is unsupported")
+
+
+def _quoted_identifier(value: str) -> str:
+    return f'"{str(value).replace(chr(34), chr(34) * 2)}"'
+
+
+def _ensure_isolated_table(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    source_table: str,
+    target_table: str,
+    primary_key: tuple[str, ...] = (),
+    digest_length_check_columns: tuple[str, ...] = (),
+) -> None:
+    source_info = connection.execute(
+        f"PRAGMA table_info('{source_table}')"
+    ).fetchall()
+    if not source_info:
+        raise RuntimeError(f"source table is missing: {source_table}")
+    target_exists = bool(
+        connection.execute(
+            "SELECT count(*) FROM information_schema.tables "
+            "WHERE table_schema = 'main' AND table_name = ?",
+            [target_table],
+        ).fetchone()[0]
+    )
+    target_info = (
+        connection.execute(f"PRAGMA table_info('{target_table}')").fetchall()
+        if target_exists
+        else []
+    )
+    if target_info:
+        source_signature = tuple(
+            (str(row[1]), str(row[2]), bool(row[3])) for row in source_info
+        )
+        target_signature = tuple(
+            (str(row[1]), str(row[2]), bool(row[3])) for row in target_info
+        )
+        target_primary_key = tuple(str(row[1]) for row in target_info if bool(row[5]))
+        target_digest_checks = {
+            tuple(str(column) for column in row[0])
+            for row in connection.execute(
+                "SELECT constraint_column_names FROM duckdb_constraints() "
+                "WHERE table_name = ? AND constraint_type = 'CHECK'",
+                [target_table],
+            ).fetchall()
+        }
+        expected_digest_checks = {
+            (column,) for column in digest_length_check_columns
+        }
+        if (
+            source_signature != target_signature
+            or target_primary_key != primary_key
+            or target_digest_checks != expected_digest_checks
+        ):
+            raise RuntimeError(f"isolated table schema mismatch: {target_table}")
+        return
+    definitions = []
+    for _cid, name, data_type, not_null, default_value, _pk in source_info:
+        definition = f"{_quoted_identifier(str(name))} {data_type}"
+        if bool(not_null):
+            definition += " NOT NULL"
+        if default_value is not None:
+            definition += f" DEFAULT {default_value}"
+        definitions.append(definition)
+    constraints = [
+        f"CHECK (octet_length({_quoted_identifier(column)}) = 32)"
+        for column in digest_length_check_columns
+    ]
+    if primary_key:
+        constraints.append(
+            "PRIMARY KEY ("
+            + ", ".join(_quoted_identifier(column) for column in primary_key)
+            + ")"
+        )
+    connection.execute(
+        f"CREATE TABLE {_quoted_identifier(target_table)} ("
+        + ", ".join((*definitions, *constraints))
+        + ")"
+    )
 
 
 class ImpactAbsorptionStore:
@@ -1050,6 +1159,40 @@ class ImpactAbsorptionStore:
             );
             """
         )
+        _ensure_isolated_table(
+            self.connect(),
+            source_table="impact_capture_frame",
+            target_table=IMPACT_CAPTURE_FRAME_TABLE,
+            primary_key=("run_id", "frame_index"),
+        )
+        _ensure_isolated_table(
+            self.connect(),
+            source_table="impact_event_link_v5",
+            target_table=IMPACT_EVENT_LINK_TABLE,
+            digest_length_check_columns=(
+                "raw_payload_sha256",
+                "typed_event_sha256",
+            ),
+        )
+        for source_table, target_table in (
+            ("impact_depth_update_v3", IMPACT_DEPTH_UPDATE_TABLE),
+            ("impact_l2_state_v3", IMPACT_L2_STATE_TABLE),
+            ("impact_book_ticker_v3", IMPACT_BOOK_TICKER_TABLE),
+            ("impact_aggregate_trade_v3", IMPACT_AGGREGATE_TRADE_TABLE),
+            ("impact_mark_price_v3", IMPACT_MARK_PRICE_TABLE),
+            (
+                "impact_liquidation_snapshot_v3",
+                IMPACT_LIQUIDATION_SNAPSHOT_TABLE,
+            ),
+            ("impact_rest_event_v3", IMPACT_REST_EVENT_TABLE),
+            ("impact_rejected_wire_event_v3", IMPACT_REJECTED_WIRE_EVENT_TABLE),
+            ("impact_depth_band_flow_v5", IMPACT_DEPTH_BAND_FLOW_TABLE),
+        ):
+            _ensure_isolated_table(
+                self.connect(),
+                source_table=source_table,
+                target_table=target_table,
+            )
 
     def start_run(
         self,
@@ -2178,8 +2321,8 @@ class ImpactAbsorptionStore:
         connection.execute("BEGIN TRANSACTION")
         try:
             connection.execute(
-                """
-                INSERT INTO impact_capture_frame VALUES (
+                f"""
+                INSERT INTO {IMPACT_CAPTURE_FRAME_TABLE} VALUES (
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 )
                 """,
@@ -2333,12 +2476,12 @@ class ImpactAbsorptionStore:
         ).fetchone()
         l2_row = None
         if event_type == "depthUpdate":
-            l2_table = (
-                IMPACT_L2_STATE_TABLE
-                if schema_version
-                in _COMPACT_CAPTURE_SCHEMAS
-                else "impact_l2_state"
-            )
+            if schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+                l2_table = IMPACT_L2_STATE_TABLE
+            elif schema_version in _COMPACT_CAPTURE_SCHEMAS:
+                l2_table = "impact_l2_state_v3"
+            else:
+                l2_table = "impact_l2_state"
             l2_row = connection.execute(
                 f"""
                 SELECT {", ".join(_L2_COLUMNS)} FROM {l2_table}
@@ -2379,8 +2522,13 @@ class ImpactAbsorptionStore:
             errors.append("run_design_mismatch")
         if expected_contract is not None and run_contract_sha256 != expected_contract:
             errors.append("run_capture_contract_mismatch")
+        frame_table = (
+            IMPACT_CAPTURE_FRAME_TABLE
+            if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+            else "impact_capture_frame"
+        )
         frames = connection.execute(
-            """
+            f"""
             SELECT frame_index, schema_version, frame_format,
                    previous_frame_sha256, message_count, first_message_id,
                    last_message_id, message_manifest_sha256,
@@ -2389,7 +2537,7 @@ class ImpactAbsorptionStore:
                    uncompressed_bytes, uncompressed_sha256,
                    compressed_bytes, compressed_sha256, stream_counts_json,
                    compressed_payload, frame_sha256
-            FROM impact_capture_frame WHERE run_id = ? ORDER BY frame_index
+            FROM {frame_table} WHERE run_id = ? ORDER BY frame_index
             """,
             [selected],
         ).fetchall()
@@ -2400,15 +2548,25 @@ class ImpactAbsorptionStore:
             typed_contracts: dict[str, tuple[str, tuple[str, ...]]] = {}
         else:
             typed_contracts = _typed_tables_for_schema(run_schema_version)
-        if run_schema_version in _DEPTH_BAND_SCHEMAS:
+        if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
             event_link_table = IMPACT_EVENT_LINK_TABLE
+        elif run_schema_version in _LEGACY_DEPTH_BAND_SCHEMAS:
+            event_link_table = "impact_event_link_v5"
         elif run_schema_version == _V4_CAPTURE_SCHEMA_VERSION:
             event_link_table = "impact_event_link_v4"
         elif run_schema_version == _V3_CAPTURE_SCHEMA_VERSION:
             event_link_table = "impact_event_link_v3"
         else:
             event_link_table = "impact_event_index"
-        l2_table = IMPACT_L2_STATE_TABLE if compact_schema else "impact_l2_state"
+        if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+            l2_table = IMPACT_L2_STATE_TABLE
+            depth_band_table = IMPACT_DEPTH_BAND_FLOW_TABLE
+        elif compact_schema:
+            l2_table = "impact_l2_state_v3"
+            depth_band_table = "impact_depth_band_flow_v5"
+        else:
+            l2_table = "impact_l2_state"
+            depth_band_table = "impact_depth_band_flow_v5"
         event_index_by_frame: dict[int, list[_StoredEventLink]] = {}
         typed_rows_by_event: dict[str, dict[tuple[int, int], tuple[object, ...]]] = {}
         l2_rows: dict[tuple[int, int], tuple[object, ...]] = {}
@@ -2557,7 +2715,7 @@ class ImpactAbsorptionStore:
                         (int(band_row[1]), int(band_row[2])): tuple(band_row)
                         for band_row in connection.execute(
                             f"SELECT {', '.join(_DEPTH_BAND_FLOW_COLUMNS)} "
-                            f"FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+                            f"FROM {depth_band_table} "
                             "WHERE run_id = ? AND frame_index BETWEEN ? AND ?",
                             [selected, first_frame_index, last_frame_index],
                         ).fetchall()
@@ -2809,7 +2967,7 @@ class ImpactAbsorptionStore:
         if depth_band_schema:
             band_count = int(
                 connection.execute(
-                    f"SELECT count(*) FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+                    f"SELECT count(*) FROM {depth_band_table} "
                     "WHERE run_id = ?",
                     [selected],
                 ).fetchone()[0]
@@ -2856,6 +3014,7 @@ __all__ = [
     "IMPACT_CAPTURE_COMPRESSION_LEVEL",
     "IMPACT_CAPTURE_CONTRACT_SHA256",
     "IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES",
+    "IMPACT_CAPTURE_FRAME_TABLE",
     "IMPACT_CAPTURE_REPORT_SCHEMA_VERSION",
     "IMPACT_CAPTURE_SCHEMA_VERSION",
     "IMPACT_CAPTURE_SYMBOLS",

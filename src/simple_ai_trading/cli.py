@@ -1364,7 +1364,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_features.add_argument(
         "--run-id",
         required=True,
-        help="v4-v7 run ID with a passed capture or qualification gate",
+        help="v4-v8 run ID with a passed capture or qualification gate",
     )
     parser_impact_features.add_argument("--memory-limit", default="2GB")
     parser_impact_features.add_argument("--database-threads", type=int, default=2)

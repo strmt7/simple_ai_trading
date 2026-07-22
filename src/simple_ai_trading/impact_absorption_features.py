@@ -22,6 +22,7 @@ from .impact_absorption import (
 )
 from .impact_absorption_store import (
     IMPACT_CAPTURE_CONTRACT_SHA256,
+    IMPACT_CAPTURE_FRAME_TABLE,
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
@@ -58,8 +59,21 @@ _V6_CAPTURE_CONTRACT_SHA256 = (
     "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
 )
 _V6_REPORT_SCHEMA_VERSION = "round-073-capture-report-v6"
+_V7_SCHEMA_VERSION = "round-073-prospective-evidence-v7"
+_V7_CAPTURE_CONTRACT_SHA256 = (
+    "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1"
+)
+_V7_REPORT_SCHEMA_VERSION = "round-073-capture-report-v7"
 _DEPTH_BAND_SCHEMAS = frozenset(
-    {IMPACT_CAPTURE_SCHEMA_VERSION, _V6_SCHEMA_VERSION, _V5_SCHEMA_VERSION}
+    {
+        IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V7_SCHEMA_VERSION,
+        _V6_SCHEMA_VERSION,
+        _V5_SCHEMA_VERSION,
+    }
+)
+_LEGACY_DEPTH_BAND_SCHEMAS = frozenset(
+    {_V7_SCHEMA_VERSION, _V6_SCHEMA_VERSION, _V5_SCHEMA_VERSION}
 )
 
 
@@ -254,7 +268,7 @@ def diagnose_round73_feature_source(
     memory_limit: str = "2GB",
     threads: int = 2,
 ) -> Round73FeatureSourceDiagnostic:
-    """Replay one gated v4-v7 run and reconcile causal depth-band primitives."""
+    """Replay one gated v4-v8 run and reconcile causal depth-band primitives."""
 
     selected = str(run_id).strip().lower()
     with ImpactAbsorptionStore(
@@ -276,6 +290,7 @@ def diagnose_round73_feature_source(
         run_schema = str(run[0])
         capture_contracts = {
             IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_CONTRACT_SHA256,
+            _V7_SCHEMA_VERSION: _V7_CAPTURE_CONTRACT_SHA256,
             _V6_SCHEMA_VERSION: _V6_CAPTURE_CONTRACT_SHA256,
             _V5_SCHEMA_VERSION: _V5_CAPTURE_CONTRACT_SHA256,
             _V4_SCHEMA_VERSION: _V4_CAPTURE_CONTRACT_SHA256,
@@ -284,7 +299,7 @@ def diagnose_round73_feature_source(
             expected_contract = capture_contracts[run_schema]
         except KeyError as exc:
             raise ValueError(
-                "Round 73 feature-source replay requires capture v4 through v7"
+                "Round 73 feature-source replay requires capture v4 through v8"
             ) from exc
         if str(run[1]) != expected_contract:
             raise ValueError("Round 73 feature-source capture contract differs")
@@ -301,6 +316,7 @@ def diagnose_round73_feature_source(
             raise ValueError("Round 73 feature-source replay requires a terminal report")
         expected_report_schema = {
             IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+            _V7_SCHEMA_VERSION: _V7_REPORT_SCHEMA_VERSION,
             _V6_SCHEMA_VERSION: _V6_REPORT_SCHEMA_VERSION,
             _V5_SCHEMA_VERSION: _V5_REPORT_SCHEMA_VERSION,
             _V4_SCHEMA_VERSION: _V4_REPORT_SCHEMA_VERSION,
@@ -340,18 +356,31 @@ def diagnose_round73_feature_source(
         symbol_state = {
             symbol: _empty_symbol_state() for symbol in IMPACT_CAPTURE_SYMBOLS
         }
-        event_link_table = (
-            IMPACT_EVENT_LINK_TABLE
-            if run_schema in _DEPTH_BAND_SCHEMAS
-            else "impact_event_link_v4"
-        )
+        if run_schema == IMPACT_CAPTURE_SCHEMA_VERSION:
+            event_link_table = IMPACT_EVENT_LINK_TABLE
+            frame_table = IMPACT_CAPTURE_FRAME_TABLE
+            depth_table = IMPACT_DEPTH_UPDATE_TABLE
+            l2_table = IMPACT_L2_STATE_TABLE
+            depth_band_table = IMPACT_DEPTH_BAND_FLOW_TABLE
+        elif run_schema in _LEGACY_DEPTH_BAND_SCHEMAS:
+            event_link_table = "impact_event_link_v5"
+            frame_table = "impact_capture_frame"
+            depth_table = "impact_depth_update_v3"
+            l2_table = "impact_l2_state_v3"
+            depth_band_table = "impact_depth_band_flow_v5"
+        else:
+            event_link_table = "impact_event_link_v4"
+            frame_table = "impact_capture_frame"
+            depth_table = "impact_depth_update_v3"
+            l2_table = "impact_l2_state_v3"
+            depth_band_table = "impact_depth_band_flow_v5"
         frame_cursor = connection.cursor()
         lookup = connection.cursor()
         frame_cursor.execute(
-            """
+            f"""
             SELECT frame_index, message_count, uncompressed_bytes,
                    compressed_payload
-            FROM impact_capture_frame WHERE run_id = ? ORDER BY frame_index
+            FROM {frame_table} WHERE run_id = ? ORDER BY frame_index
             """,
             [selected],
         )
@@ -383,7 +412,7 @@ def diagnose_round73_feature_source(
                            final_update_id, previous_update_id, stale,
                            best_bid, best_ask, bid_added_quote,
                            bid_removed_quote, ask_added_quote, ask_removed_quote
-                    FROM {IMPACT_DEPTH_UPDATE_TABLE}
+                    FROM {depth_table}
                     WHERE run_id = ? AND frame_index BETWEEN ? AND ?
                     """,
                     [selected, first_frame, last_frame],
@@ -400,7 +429,7 @@ def diagnose_round73_feature_source(
                            bid_depth_quote_10, ask_depth_quote_10,
                            bid_depth_quote_20, ask_depth_quote_20,
                            imbalance_5, imbalance_10, imbalance_20
-                    FROM {IMPACT_L2_STATE_TABLE}
+                    FROM {l2_table}
                     WHERE run_id = ? AND frame_index BETWEEN ? AND ?
                     """,
                     [selected, first_frame, last_frame],
@@ -412,7 +441,7 @@ def diagnose_round73_feature_source(
                     for row in lookup.execute(
                         f"SELECT frame_index, message_index, "
                         f"{', '.join(_DEPTH_BAND_VALUE_COLUMNS)} "
-                        f"FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+                        f"FROM {depth_band_table} "
                         "WHERE run_id = ? AND frame_index BETWEEN ? AND ?",
                         [selected, first_frame, last_frame],
                     ).fetchall()
@@ -568,7 +597,7 @@ def diagnose_round73_feature_source(
         )
         stored_depth_updates = int(
             connection.execute(
-                f"SELECT count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE} WHERE run_id = ?",
+                f"SELECT count(*) FROM {depth_table} WHERE run_id = ?",
                 [selected],
             ).fetchone()[0]
         )
