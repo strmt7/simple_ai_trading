@@ -86,6 +86,9 @@ FIRST_CORPUS_MANIFEST_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 ROTATION_RUNNER_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-rotation-runner-contract-v1.json"
 )
+ROTATION_RECOVERY_VALIDATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-rotation-recovery-validation-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -781,6 +784,37 @@ def test_round73_rotation_runner_contract_is_bounded_and_recoverable() -> None:
     assert authority["round_073_model_evaluation"] is False
     assert authority["profitability_claim"] is False
     assert authority["live_trading_authority"] is False
+
+
+def test_round73_rotation_recovery_validation_authorizes_only_one_segment() -> None:
+    evidence = json.loads(
+        ROTATION_RECOVERY_VALIDATION_PATH.read_text(encoding="utf-8")
+    )
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["invocation"]["requested_capture_segments"] == 0
+    batch = evidence["batch"]
+    assert batch["status"] == "completed"
+    assert batch["recovered_segment_count"] == 0
+    assert batch["qualified_capture_segment_count"] == 0
+    assert batch["indexed_segment_count"] == 0
+    audit = evidence["independent_batch_audit"]
+    assert audit["passed"] is True
+    assert audit["report_sha256"] == batch["report_sha256"]
+    state = evidence["post_run_state"]
+    assert state["active_lease_count"] == 0
+    assert state["physical_growth_bytes"] == 0
+    analysis = evidence["critical_analysis"]
+    assert analysis["live_capture_path_validated"] is False
+    assert analysis["profitability_evidence"] is False
+    authorization = evidence["authorization"]
+    assert authorization["one_live_runner_segment"] is True
+    assert authorization["multi_segment_collection"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

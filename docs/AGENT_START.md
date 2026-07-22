@@ -72,9 +72,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.
-  Treat it as implementation-only until a real recovery-only run and then one
-  live segment pass their independent audits. Do not start a multi-segment
-  collection before those gates.
+  Recovery-only batch `6d8c31559bb044b3a83fdf9e771dda4a` passed its real
+  lease, discovery, terminal-journal, release, and independent audit paths with
+  zero database growth. This authorizes one live runner segment. Do not start a
+  multi-segment collection until that segment and its deep batch audit pass.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.
