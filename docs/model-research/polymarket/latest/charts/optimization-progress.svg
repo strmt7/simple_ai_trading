@@ -26,6 +26,6 @@
 <text x="155" y="490" font-family="Segoe UI,Arial,sans-serif" font-size="15" fill="#475569">slippage-limited sealed confirmation</text>
 <rect x="455" y="463" width="700" height="38" rx="4" fill="#E2E8F0"/>
 <rect x="455" y="463" width="0.0" height="38" rx="4" fill="#475569"/>
-<text x="470" y="489" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#0F172A">N/A simulated fills | frozen; fresh capture not started</text>
-<text x="48" y="601" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Round 12 was invalidated before outcomes; Round 13 is frozen and has not started. Neither has performance metrics.</text>
+<text x="470" y="489" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#0F172A">N/A simulated fills | failed: 1,921.322 s of 86,400 s; four stream gaps</text>
+<text x="48" y="601" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Rounds 12 and 13 were invalidated before outcomes. Neither has performance metrics.</text>
 </svg>

@@ -1,4 +1,4 @@
-"""Publish the deterministic Polymarket status through frozen Round 13."""
+"""Publish the deterministic Polymarket status through failed Round 13."""
 
 from __future__ import annotations
 
@@ -34,7 +34,8 @@ ROUND11_ARTIFACT = (
 )
 ROUND12_INVALIDATION = POLYMARKET_DIR / "round-012-invalidated-capture-evidence.json"
 ROUND13_CONTRACT = POLYMARKET_DIR / "round-013-sealed-confirmation-contract.json"
-PUBLICATION_SCHEMA_VERSION = "polymarket-round13-pending-publication-v1"
+ROUND13_INVALIDATION = POLYMARKET_DIR / "round-013-invalidated-capture-evidence.json"
+PUBLICATION_SCHEMA_VERSION = "polymarket-round13-failed-capture-publication-v1"
 
 COLORS = {
     "ink": "#0F172A",
@@ -413,7 +414,7 @@ def _progress_chart(rows: Sequence[Mapping[str, object]]) -> str:
         )
     body.extend(
         [
-            f'<text x="48" y="{height - 34}" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="{COLORS["muted"]}">Round 12 was invalidated before outcomes; Round 13 is frozen and has not started. Neither has performance metrics.</text>',
+            f'<text x="48" y="{height - 34}" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="{COLORS["muted"]}">Rounds 12 and 13 were invalidated before outcomes. Neither has performance metrics.</text>',
             "</svg>",
         ]
     )
@@ -434,11 +435,17 @@ def _remove_stale(expected: set[Path]) -> None:
 def publish() -> str:
     round9, round10, round11, artifact = _verify_sources()
     round12 = _read_hashed_json(ROUND12_INVALIDATION, "artifact_sha256")
-    round13 = _read_hashed_json(ROUND13_CONTRACT, "contract_sha256")
+    round13_contract = _read_hashed_json(ROUND13_CONTRACT, "contract_sha256")
+    round13_failure = _read_hashed_json(
+        ROUND13_INVALIDATION, "artifact_sha256"
+    )
     outcome_access = round12.get("outcome_access_evidence")
     persisted_counts = round12.get("persisted_table_counts")
     raw_chunk_evidence = round12.get("raw_chunk_evidence")
-    freshness = round13.get("freshness")
+    freshness = round13_contract.get("freshness")
+    round13_outcome_access = round13_failure.get("outcome_access_evidence")
+    round13_requirement = round13_failure.get("frozen_capture_requirement")
+    round13_authority = round13_failure.get("authority")
     if (
         round12.get("round") != 12
         or round12.get("status") != "invalidated_before_outcome_access"
@@ -448,10 +455,19 @@ def publish() -> str:
         or not isinstance(persisted_counts.get("polymarket_market_snapshot"), int)
         or not isinstance(raw_chunk_evidence, Mapping)
         or not isinstance(raw_chunk_evidence.get("message_count"), int)
-        or round13.get("round") != 13
-        or round13.get("status") != "frozen_before_fresh_capture"
+        or round13_contract.get("round") != 13
+        or round13_contract.get("status") != "frozen_before_fresh_capture"
         or not isinstance(freshness, Mapping)
         or freshness.get("capture_started") is not False
+        or round13_failure.get("round") != 13
+        or round13_failure.get("status")
+        != "failed_capture_ineligible_before_outcome_access"
+        or not isinstance(round13_outcome_access, Mapping)
+        or round13_outcome_access.get("performance_labels_opened") is not False
+        or not isinstance(round13_requirement, Mapping)
+        or round13_requirement.get("required_one_shot_capture_completed") is not False
+        or not isinstance(round13_authority, Mapping)
+        or any(bool(value) for value in round13_authority.values())
     ):
         raise ValueError("Round 12/13 status evidence differs")
     selected = round11["selected_policy"]
@@ -645,7 +661,7 @@ def publish() -> str:
         {
             "round": 13,
             "action": "slippage-limited sealed confirmation",
-            "status": "frozen; fresh capture not started",
+            "status": "failed: 1,921.322 s of 86,400 s; four stream gaps",
             "independent_groups": None,
             "conditions": None,
             "selected_filled_conditions": None,
@@ -714,11 +730,13 @@ def publish() -> str:
 
 ## Current boundary
 
-Round 13 is frozen but has not started. It is a one-use prospective
-BTC/ETH/SOL five-minute confirmation of the unchanged Round 11 calibration,
-with explicit FOK worst-price limits, exact recorded fees and depth, seven
-latency/fee/tick/depth scenarios, a raw-market-prior control, and conjunctive
-activity, utility, uncertainty, drawdown, and exposure gates.
+Round 13 failed before outcome access. Its one-use BTC/ETH/SOL five-minute
+capture stopped at `{round13_requirement["observed_duration_seconds"]}` seconds
+of the required `{round13_requirement["required_duration_seconds"]}` seconds,
+with `{round13_failure["raw_chunk_evidence"]["message_count"]}` persisted source
+messages and `{round13_requirement["stream_gap_count"]}` stream gaps. It never
+reached the frozen evaluation boundary, so every return, drawdown, fill, and
+model-comparison field is unavailable, not zero.
 
 Round 12 is not performance evidence. Its recorder captured
 `{raw_chunk_evidence["message_count"]}` messages, but the evaluator
@@ -737,6 +755,7 @@ AI-uplift, or trading claim exists.
 ## Evidence
 
 - [Round 13 frozen contract](../round-013-sealed-confirmation-contract.json)
+- [Round 13 invalidation](../round-013-invalidated-capture-evidence.json)
 - [Round 12 invalidation](../round-012-invalidated-capture-evidence.json)
 - [Round 11 contract](../round-011-single-leg-directional-value-contract.json)
 - [Round 11 report](../round-011-single-leg-directional-value-report.json)
@@ -745,10 +764,10 @@ AI-uplift, or trading claim exists.
 - [Publication integrity](publication-integrity.json)
 
 Regenerate these exact tables, charts, and hashes with
-`python tools/publish_polymarket_round11.py`. Round 13 can acquire no paper or
-live authority until its untouched capture passes every frozen gate and the
-authenticated order lifecycle, balance ownership, settlement delay, and
-redemption overhead are separately proven.
+`python tools/publish_polymarket_round11.py`. Round 13 cannot acquire paper or
+live authority. Any successor requires a new prospective contract and untouched
+capture, followed by separate proof of authenticated order lifecycle, balance
+ownership, settlement delay, and redemption overhead.
 """
     _atomic_text(LATEST_DIR / "README.md", latest_readme)
     source_paths = (
@@ -760,6 +779,7 @@ redemption overhead are separately proven.
         ROUND11_ARTIFACT,
         ROUND12_INVALIDATION,
         ROUND13_CONTRACT,
+        ROUND13_INVALIDATION,
     )
     artifact_paths = tuple(
         sorted(
@@ -770,11 +790,14 @@ redemption overhead are separately proven.
     integrity: dict[str, object] = {
         "schema_version": PUBLICATION_SCHEMA_VERSION,
         "latest_round": 13,
-        "status": "round13_frozen_fresh_capture_not_started",
+        "status": "round13_capture_failed_ineligible",
         "source_report_sha256": round11["report_sha256"],
         "source_artifact_sha256": artifact["artifact_sha256"],
         "source_invalidation_sha256": round12["artifact_sha256"],
-        "source_round13_contract_sha256": round13["contract_sha256"],
+        "source_round13_contract_sha256": round13_contract["contract_sha256"],
+        "source_round13_invalidation_sha256": round13_failure[
+            "artifact_sha256"
+        ],
         "artifacts": [
             {
                 "path": path.relative_to(ROOT).as_posix(),
@@ -798,4 +821,4 @@ redemption overhead are separately proven.
 
 
 if __name__ == "__main__":
-    print(f"Round 13 pending publication: {publish()}")
+    print(f"Round 13 failed-capture publication: {publish()}")
