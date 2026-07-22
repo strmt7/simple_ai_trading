@@ -1,17 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 import json
 
 import pytest
 
+import simple_ai_trading.impact_absorption_capture as impact_capture
 from simple_ai_trading.impact_absorption import parse_book_ticker
 from simple_ai_trading.impact_absorption_capture import (
+    CaptureFailureClass,
     ImpactCaptureConfig,
+    ImpactCaptureReport,
     _ImpactFrameWriter,
+    _is_retriable_capture_failure,
     _market_stream_url,
     _public_stream_url,
     _request_weight_limit,
     _tick_sizes,
+    capture_round73_supervised,
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SYMBOLS,
@@ -23,6 +29,39 @@ from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
 RUN_ID = "a" * 32
 SEGMENT_ID = "b" * 32
+
+
+def _report(
+    run_id: str,
+    *,
+    status: str,
+    error: str = "",
+    qualification_passed: bool = False,
+    failure_class: CaptureFailureClass = "none",
+) -> ImpactCaptureReport:
+    return ImpactCaptureReport(
+        run_id=run_id,
+        mode="probe",
+        status=status,
+        qualification_passed=qualification_passed,
+        started_wall_ns=1,
+        ended_wall_ns=2,
+        elapsed_seconds=1.0,
+        queue_high_water_messages=0,
+        queue_capacity_messages=65_536,
+        queue_maximum_utilization=0.0,
+        writer_frame_count=0,
+        writer_message_count=0,
+        writer_compressed_payload_bytes=0,
+        payload_cap_reached=False,
+        event_counts={},
+        symbol_event_counts={},
+        negative_corrected_latency_fraction=None,
+        audit_passed=status == "completed",
+        audit_errors=(),
+        error=error,
+        failure_class=failure_class,
+    )
 
 
 def _message() -> ImpactCaptureMessage:
@@ -89,6 +128,8 @@ def test_capture_config_separates_bounded_probe_from_hour_qualification() -> Non
         ImpactCaptureConfig(mode="qualification", duration_seconds=3_599).validate()
     with pytest.raises(ValueError, match="queue capacity"):
         ImpactCaptureConfig(queue_capacity_messages=65_537).validate()
+    with pytest.raises(ValueError, match="maximum reconnects"):
+        ImpactCaptureConfig(maximum_reconnects=7).validate()
 
 
 def test_stream_topology_is_three_symbols_only_and_uses_specific_liquidations() -> None:
@@ -170,3 +211,159 @@ def test_exchange_metadata_requires_one_unambiguous_minute_limit_and_tick_filter
     }
     with pytest.raises(ValueError, match="missing or ambiguous"):
         _request_weight_limit({**exchange_info, "rateLimits": []})
+
+
+def test_capture_supervisor_restarts_with_exact_backoff_without_pooling_attempts(
+    monkeypatch,
+) -> None:
+    reports = iter(
+        (
+            _report(
+                "1" * 32,
+                status="failed",
+                error="public_source:ConnectionClosedError:link lost",
+                failure_class="transport",
+            ),
+            _report("2" * 32, status="completed"),
+        )
+    )
+    delays: list[float] = []
+
+    async def fake_capture(_config):
+        return next(reports)
+
+    async def fake_sleep(seconds):
+        delays.append(seconds)
+
+    monkeypatch.setattr(impact_capture, "capture_round73", fake_capture)
+    monkeypatch.setattr(impact_capture, "_sleep_before_reconnect", fake_sleep)
+
+    result = asyncio.run(
+        capture_round73_supervised(
+            ImpactCaptureConfig(duration_seconds=1, maximum_reconnects=2)
+        )
+    )
+
+    assert result.status == "completed"
+    assert result.selected_run_id == "2" * 32
+    assert result.attempt_count == 2
+    assert result.reconnect_count == 1
+    assert result.reconnect_delays_seconds == (1.0,)
+    assert delays == [1.0]
+    assert [report.run_id for report in result.attempts] == ["1" * 32, "2" * 32]
+    assert result.as_dict()["attempt_evidence_combined"] is False
+
+
+def test_capture_supervisor_never_combines_failed_qualification_fragments(
+    monkeypatch,
+) -> None:
+    reports = iter(
+        (
+            _report(
+                "3" * 32,
+                status="failed",
+                error="market_source_stall",
+                failure_class="transport",
+            ),
+            _report("4" * 32, status="completed", qualification_passed=False),
+        )
+    )
+
+    async def fake_capture(_config):
+        return next(reports)
+
+    async def fake_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(impact_capture, "capture_round73", fake_capture)
+    monkeypatch.setattr(impact_capture, "_sleep_before_reconnect", fake_sleep)
+
+    result = asyncio.run(
+        capture_round73_supervised(
+            ImpactCaptureConfig(duration_seconds=1, maximum_reconnects=1)
+        )
+    )
+
+    assert result.status == "completed"
+    assert result.qualification_passed is False
+    assert len(result.attempts) == 2
+    assert result.as_dict()["attempt_evidence_combined"] is False
+
+
+def test_capture_supervisor_fails_closed_without_retrying_writer_fault(
+    monkeypatch,
+) -> None:
+    calls = 0
+
+    async def fake_capture(_config):
+        nonlocal calls
+        calls += 1
+        return _report(
+            "5" * 32,
+            status="failed",
+            error="writer_heartbeat_timeout",
+            failure_class="writer",
+        )
+
+    monkeypatch.setattr(impact_capture, "capture_round73", fake_capture)
+
+    result = asyncio.run(
+        capture_round73_supervised(
+            ImpactCaptureConfig(duration_seconds=1, maximum_reconnects=6)
+        )
+    )
+
+    assert calls == 1
+    assert result.status == "failed"
+    assert result.reconnect_count == 0
+    assert result.terminal_error == "writer_heartbeat_timeout"
+    assert _is_retriable_capture_failure("writer") is False
+    assert _is_retriable_capture_failure("transport") is True
+
+
+def test_capture_supervisor_retries_bounded_startup_transport_failure(
+    monkeypatch,
+) -> None:
+    calls = 0
+
+    async def fake_capture(_config):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise TimeoutError("open timeout")
+        return _report("6" * 32, status="completed")
+
+    async def fake_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(impact_capture, "capture_round73", fake_capture)
+    monkeypatch.setattr(impact_capture, "_sleep_before_reconnect", fake_sleep)
+
+    result = asyncio.run(
+        capture_round73_supervised(
+            ImpactCaptureConfig(duration_seconds=1, maximum_reconnects=1)
+        )
+    )
+
+    assert result.status == "completed"
+    assert result.attempt_count == 2
+    assert result.reconnect_count == 1
+    assert len(result.startup_errors) == 1
+    assert result.startup_errors[0].startswith("startup:TimeoutError:")
+
+
+@pytest.mark.parametrize(
+    ("error", "expected"),
+    (
+        (impact_capture._ImpactRateLimitGuardError("budget"), "rate_limit"),
+        (impact_capture._ImpactRestResponseError("/time", 429), "rate_limit"),
+        (impact_capture._ImpactRestResponseError("/time", 503), "rest_transport"),
+        (impact_capture._ImpactWriterFault("writer"), "writer"),
+        (impact_capture._ImpactWriterQueueOverflow("queue"), "resource_limit"),
+        (impact_capture._ImpactPayloadCapReached("cap"), "resource_limit"),
+        (impact_capture.ImpactFeedIntegrityError("gap"), "feed_integrity"),
+        (RuntimeError("unknown pipeline failure"), "processing"),
+    ),
+)
+def test_capture_failure_classes_are_structured(error, expected) -> None:
+    assert impact_capture._failure_class_for_exception(error) == expected

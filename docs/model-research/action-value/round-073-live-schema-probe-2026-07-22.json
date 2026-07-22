@@ -1,17 +1,18 @@
 {
   "schema_version": "round-073-live-schema-probe-evidence-v1",
   "round": 73,
-  "recorded_at_utc": "2026-07-22T14:40:03.754571Z",
+  "recorded_at_utc": "2026-07-22T15:03:02.042054Z",
   "database": "data/microstructure.duckdb",
-  "run_id": "2d1be599d5ac44de9e69e1cbce3f54ac",
+  "run_id": "8f9b7146266642448b300c780f7b55ef",
   "design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
   "capture_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
-  "report_sha256": "d54bd9e3f2a5f7f607db28116ca5fa9a5a91f5e9124a4e386bb3c7c2e5e5f0d1",
+  "report_sha256": "51eba933ad57868b05a5a7d1a1273c9410d8fd3208ec8a6dbe4441e371e14374",
+  "supervisor_sha256": "6bd94f0e2dc2c15750986206c4d5818e16bda8b861647aa3b5c1cf7a6b6484fd",
   "capture_window": {
-    "started_at_utc": "2026-07-22T14:39:48.344354Z",
-    "ended_at_utc": "2026-07-22T14:40:03.754571Z",
+    "started_at_utc": "2026-07-22T15:02:48.757578Z",
+    "ended_at_utc": "2026-07-22T15:03:02.042054Z",
     "configured_streaming_duration_seconds": 5.0,
-    "measured_streaming_elapsed_seconds": 7.203000000008615,
+    "measured_streaming_elapsed_seconds": 7.234000000011292,
     "note": "Wall-clock bounds include public REST preflight before the bounded streaming interval."
   },
   "market_time_semantics": {
@@ -22,38 +23,38 @@
   "storage_audit": {
     "status": "completed",
     "passed": true,
-    "frame_count": 25,
-    "message_count": 18115,
-    "compressed_payload_bytes": 729575,
-    "last_frame_sha256": "2daf5a485f594a377ff38c20e60177d7aaf576add8075a9322d7fa562eb159e5",
+    "frame_count": 23,
+    "message_count": 12410,
+    "compressed_payload_bytes": 512208,
+    "last_frame_sha256": "11ca8fd04715d770600d186d72a47e985750d3e8037f48036c46a00dee1d1709",
     "errors": []
   },
   "segments": [
     {
       "symbol": "BTCUSDT",
-      "snapshot_update_id": 11107452694701,
+      "snapshot_update_id": 11107615659059,
       "status": "valid",
-      "accepted_depth_updates": 98,
-      "stale_pre_snapshot_depth_updates": 21,
+      "accepted_depth_updates": 78,
+      "stale_pre_snapshot_depth_updates": 20,
       "sequence_gap_count": 0,
       "crossed_book_count": 0,
       "invalid_event_count": 0
     },
     {
       "symbol": "ETHUSDT",
-      "snapshot_update_id": 11107452764379,
+      "snapshot_update_id": 11107615727148,
       "status": "valid",
-      "accepted_depth_updates": 88,
-      "stale_pre_snapshot_depth_updates": 30,
+      "accepted_depth_updates": 69,
+      "stale_pre_snapshot_depth_updates": 29,
       "sequence_gap_count": 0,
       "crossed_book_count": 0,
       "invalid_event_count": 0
     },
     {
       "symbol": "SOLUSDT",
-      "snapshot_update_id": 11107452894270,
+      "snapshot_update_id": 11107615899794,
       "status": "valid",
-      "accepted_depth_updates": 78,
+      "accepted_depth_updates": 58,
       "stale_pre_snapshot_depth_updates": 38,
       "sequence_gap_count": 0,
       "crossed_book_count": 0,
@@ -65,6 +66,16 @@
     "liquidation_activity_interpretation": "unknown during this short probe; absence of forceOrder messages is not evidence of zero market liquidation activity",
     "reconnect_path_exercised": false,
     "periodic_rest_poll_exercised": false
+  },
+  "supervisor": {
+    "schema_version": "round-073-capture-supervisor-report-v1",
+    "status": "completed",
+    "selected_run_id": "8f9b7146266642448b300c780f7b55ef",
+    "attempt_count": 1,
+    "reconnect_count": 0,
+    "reconnect_delays_seconds": [],
+    "attempt_evidence_combined": false,
+    "reconnect_branch_live_fault_injected": false
   },
   "claims": {
     "schema_and_storage_probe": true,
@@ -83,61 +94,62 @@
     "audit_passed": true,
     "capture_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
     "design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
-    "elapsed_seconds": 7.203000000008615,
-    "ended_wall_ns": 1784731203754571000,
+    "elapsed_seconds": 7.234000000011292,
+    "ended_wall_ns": 1784732582042053800,
     "error": "",
     "event_counts": {
-      "aggTrade": 312,
-      "bookTicker": 17428,
+      "aggTrade": 99,
+      "bookTicker": 11997,
       "depthSnapshot": 3,
-      "depthUpdate": 353,
+      "depthUpdate": 292,
       "exchangeInfo": 1,
       "markPriceUpdate": 12,
       "openInterest": 3,
       "serverTime": 3
     },
+    "failure_class": "none",
     "mode": "probe",
     "negative_corrected_latency_fraction": 0.0,
     "payload_cap_reached": false,
     "qualification_passed": false,
     "queue_capacity_messages": 65536,
-    "queue_high_water_messages": 2594,
-    "queue_maximum_utilization": 0.039581298828125,
-    "run_id": "2d1be599d5ac44de9e69e1cbce3f54ac",
-    "schema_version": "round-073-capture-report-v1",
-    "started_wall_ns": 1784731188344353700,
+    "queue_high_water_messages": 2900,
+    "queue_maximum_utilization": 0.04425048828125,
+    "run_id": "8f9b7146266642448b300c780f7b55ef",
+    "schema_version": "round-073-capture-report-v2",
+    "started_wall_ns": 1784732568757577800,
     "status": "completed",
     "symbol_event_counts": {
       "BTCUSDT": {
-        "aggTrade": 175,
-        "bookTicker": 7597,
+        "aggTrade": 42,
+        "bookTicker": 4446,
         "depthSnapshot": 1,
-        "depthUpdate": 119,
-        "markPriceUpdate": 4,
-        "openInterest": 1,
-        "synchronizedDepthUpdate": 98
-      },
-      "ETHUSDT": {
-        "aggTrade": 128,
-        "bookTicker": 7601,
-        "depthSnapshot": 1,
-        "depthUpdate": 118,
-        "markPriceUpdate": 4,
-        "openInterest": 1,
-        "synchronizedDepthUpdate": 88
-      },
-      "SOLUSDT": {
-        "aggTrade": 9,
-        "bookTicker": 2230,
-        "depthSnapshot": 1,
-        "depthUpdate": 116,
+        "depthUpdate": 98,
         "markPriceUpdate": 4,
         "openInterest": 1,
         "synchronizedDepthUpdate": 78
+      },
+      "ETHUSDT": {
+        "aggTrade": 40,
+        "bookTicker": 6049,
+        "depthSnapshot": 1,
+        "depthUpdate": 98,
+        "markPriceUpdate": 4,
+        "openInterest": 1,
+        "synchronizedDepthUpdate": 69
+      },
+      "SOLUSDT": {
+        "aggTrade": 17,
+        "bookTicker": 1502,
+        "depthSnapshot": 1,
+        "depthUpdate": 96,
+        "markPriceUpdate": 4,
+        "openInterest": 1,
+        "synchronizedDepthUpdate": 58
       }
     },
-    "writer_compressed_payload_bytes": 729575,
-    "writer_frame_count": 25,
-    "writer_message_count": 18115
+    "writer_compressed_payload_bytes": 512208,
+    "writer_frame_count": 23,
+    "writer_message_count": 12410
   }
 }
