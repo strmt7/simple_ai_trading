@@ -115,9 +115,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     corpus_index = cli._parse_args(
         ["impact-corpus-index", "--run-id", "b" * 32]
     )
+    grid_build = cli._parse_args(["impact-grid-build", "--run-id", "b" * 32])
     corpus_audit = cli._parse_args(
         ["impact-corpus-audit", "--run-id", "b" * 32]
     )
+    grid_audit = cli._parse_args(["impact-grid-audit", "--run-id", "b" * 32])
     corpus_day = cli._parse_args(
         ["impact-corpus-day", "--utc-day", "2026-07-22"]
     )
@@ -132,7 +134,9 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert audit.run_id == "a" * 32
     assert features.run_id == "a" * 32
     assert corpus_index.run_id == "b" * 32
+    assert grid_build.run_id == "b" * 32
     assert corpus_audit.run_id == "b" * 32
+    assert grid_audit.run_id == "b" * 32
     assert corpus_day.utc_day == "2026-07-22"
     assert corpus_collect.segments == 0
     assert corpus_batch_audit.batch_id == "c" * 32
@@ -143,7 +147,9 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "impact-audit",
         "impact-feature-source",
         "impact-corpus-index",
+        "impact-grid-build",
         "impact-corpus-audit",
+        "impact-grid-audit",
         "impact-corpus-day",
         "impact-corpus-collect",
         "impact-corpus-batch-audit",
@@ -153,7 +159,9 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert workflow["impact-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-feature-source"] == ("Research", "Microstructure models")
     assert workflow["impact-corpus-index"] == ("Research", "Microstructure models")
+    assert workflow["impact-grid-build"] == ("Research", "Microstructure models")
     assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-grid-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-day"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-collect"] == ("Data", "Market data")
     assert workflow["impact-corpus-batch-audit"] == (
@@ -245,6 +253,72 @@ def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
             "day",
             "corpus.duckdb",
             {"utc_day": "2026-07-22", "memory_limit": "1GB", "threads": 1},
+        ),
+    ]
+
+
+def test_impact_grid_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
+    class Report:
+        run_id = "b" * 32
+        anchor_count = 10_620
+        valid_anchor_count = 10_000
+        vector_count = 10_000
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-causal-grid-v1",
+                "run_id": self.run_id,
+                "target_constructed": False,
+            }
+
+    class Audit:
+        run_id = "b" * 32
+        passed = True
+        errors = ()
+        anchor_count = 10_620
+        valid_anchor_count = 10_000
+        vector_count = 10_000
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-grid-build-audit-v1",
+                "passed": True,
+            }
+
+    observed = []
+
+    def fake_build(database, **kwargs):
+        observed.append(("build", str(database), kwargs))
+        return Report()
+
+    def fake_audit(database, **kwargs):
+        observed.append(("audit", str(database), kwargs))
+        return Audit()
+
+    monkeypatch.setattr(cli, "build_round73_causal_grid", fake_build)
+    monkeypatch.setattr(cli, "audit_round73_causal_grid", fake_audit)
+    common = {
+        "database": "corpus.duckdb",
+        "run_id": "b" * 32,
+        "memory_limit": "1GB",
+        "database_threads": 1,
+        "json": True,
+    }
+
+    assert cli.command_impact_grid_build(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["target_constructed"] is False
+    assert cli.command_impact_grid_audit(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert observed == [
+        (
+            "build",
+            "corpus.duckdb",
+            {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+        (
+            "audit",
+            "corpus.duckdb",
+            {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
         ),
     ]
 

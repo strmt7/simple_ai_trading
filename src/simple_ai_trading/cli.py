@@ -119,6 +119,10 @@ from .impact_absorption_rotation import (
     run_round73_corpus_rotation,
 )
 from .impact_absorption_features import diagnose_round73_feature_source
+from .impact_absorption_grid_store import (
+    audit_round73_causal_grid,
+    build_round73_causal_grid,
+)
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
     ImpactAbsorptionStore,
@@ -1395,6 +1399,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_corpus_index.add_argument("--json", action="store_true")
     parser_impact_corpus_index.set_defaults(func=command_impact_corpus_index)
 
+    parser_impact_grid_build = subparsers.add_parser(
+        "impact-grid-build",
+        help="build one hash-bound target-free Round 73 causal feature grid",
+    )
+    parser_impact_grid_build.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_grid_build.add_argument("--run-id", required=True)
+    parser_impact_grid_build.add_argument("--memory-limit", default="2GB")
+    parser_impact_grid_build.add_argument("--database-threads", type=int, default=2)
+    parser_impact_grid_build.add_argument("--json", action="store_true")
+    parser_impact_grid_build.set_defaults(func=command_impact_grid_build)
+
     parser_impact_corpus_audit = subparsers.add_parser(
         "impact-corpus-audit",
         help="reconcile one immutable Round 73 corpus manifest",
@@ -1407,6 +1424,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_corpus_audit.add_argument("--database-threads", type=int, default=2)
     parser_impact_corpus_audit.add_argument("--json", action="store_true")
     parser_impact_corpus_audit.set_defaults(func=command_impact_corpus_audit)
+
+    parser_impact_grid_audit = subparsers.add_parser(
+        "impact-grid-audit",
+        help="reconcile one Round 73 causal grid and every persisted row hash",
+    )
+    parser_impact_grid_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_grid_audit.add_argument("--run-id", required=True)
+    parser_impact_grid_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_grid_audit.add_argument("--database-threads", type=int, default=2)
+    parser_impact_grid_audit.add_argument("--json", action="store_true")
+    parser_impact_grid_audit.set_defaults(func=command_impact_grid_audit)
 
     parser_impact_corpus_day = subparsers.add_parser(
         "impact-corpus-day",
@@ -11171,6 +11201,31 @@ def command_impact_corpus_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_impact_grid_build(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        report = build_round73_causal_grid(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-grid-build failed: {exc}", file=sys.stderr)
+        return 2
+    payload = report.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-grid-build: "
+            f"run={report.run_id} anchors={report.anchor_count} "
+            f"valid={report.valid_anchor_count} vectors={report.vector_count}"
+        )
+    return 0
+
+
 def command_impact_corpus_audit(args: argparse.Namespace) -> int:
     import duckdb
 
@@ -11192,6 +11247,34 @@ def command_impact_corpus_audit(args: argparse.Namespace) -> int:
             "impact-corpus-audit: "
             f"passed={str(audit.passed).lower()} run={audit.run_id} "
             f"frames={audit.frame_count} messages={audit.message_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
+
+
+def command_impact_grid_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_causal_grid(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-grid-audit failed: {exc}", file=sys.stderr)
+        return 2
+    payload = audit.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-grid-audit: "
+            f"passed={str(audit.passed).lower()} run={audit.run_id} "
+            f"anchors={audit.anchor_count} valid={audit.valid_anchor_count} "
+            f"vectors={audit.vector_count}"
         )
         for error in audit.errors:
             print(f"warning: {error}", file=sys.stderr)
