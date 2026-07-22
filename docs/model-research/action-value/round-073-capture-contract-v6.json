@@ -1,0 +1,115 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v6",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_capture_contract_sha256": "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b",
+  "capture_contract_sha256": "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021",
+  "frozen_before_first_v6_capture": true,
+  "amendment_scope": "Separate capture-phase, terminal, and physical-growth telemetry; add an explicit capture gate; and audit through a read-only connection. Wire, event-time, causal depth-band, market, target, and model semantics remain unchanged.",
+  "failure_evidence": {
+    "v5_encoder_failure_artifact": "round-073-v5-probe-failure-2026-07-22.json",
+    "v5_encoder_failure_artifact_sha256": "1cb48d4ca000a41d83e26825b120b42171dd5a6abf0ef7b74db640fee8440661",
+    "v5_storage_failure_artifact": "round-073-v5-storage-probe-failure-2026-07-22.json",
+    "v5_storage_failure_artifact_sha256": "f32de74f3b95cf908e18804675efca1553e54bd8f6562a542e6ee6fa5cac74d4",
+    "v5_completed_run_id": "c689f656b9be4013a29b03727dabc43e",
+    "v5_completed_run_audit_passed": true,
+    "v5_completed_run_qualification_passed": false,
+    "observed_process_write_bytes_per_message": 11458.377580585611,
+    "observed_physical_growth_bytes_per_message": 290.36156671818975,
+    "measurement_limitation": "The v5 process endpoint followed terminal finalization, in-process audit, aggregation queries, and latency reconstruction, so it did not isolate capture-phase writes."
+  },
+  "inheritance": {
+    "v5_capture_contract_sha256": "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b",
+    "v4_capture_contract_sha256": "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529",
+    "rule": "All v1 through v5 logical requirements remain binding except for the v6 run schema, report schema, telemetry attribution, and gate amendments below.",
+    "wire_frame_format_changed": false,
+    "event_link_or_typed_row_shape_changed": false,
+    "typed_event_hash_changed": false,
+    "historical_rows_rewritten": false,
+    "historical_v1_through_v5_audit_support_required": true
+  },
+  "market_and_calendar_scope": {
+    "instruments": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "venue": "Binance USD-M perpetual public market data",
+    "formal_daily_close": false,
+    "utc_day_semantics": "partition and resampling boundary only, never a crypto market close",
+    "listed_etf_or_security_semantics": "A listed product is a separate instrument and must use its actual venue calendar, including holidays, early closes, halts, and auctions. Its close never creates a Binance crypto close."
+  },
+  "storage_schema_v6": {
+    "run_schema": "round-073-prospective-evidence-v6",
+    "report_schema": "round-073-capture-report-v6",
+    "event_link_table": "impact_event_link_v5",
+    "depth_band_table": "impact_depth_band_flow_v5",
+    "v5_table_rows_reclassified_as_v6": false,
+    "cross_version_frame_pooling_permitted": false
+  },
+  "capture_phase_telemetry": {
+    "start": "after preflight and run metadata creation, immediately before the writer thread opens its DuckDB connection",
+    "end": "immediately after the writer thread joins and its DuckDB connection has closed, before segment or run finalization, audit, aggregation queries, latency reconstruction, or report persistence",
+    "process_counter_is_process_wide": true,
+    "network_and_nonstorage_process_io_may_be_included": true,
+    "physical_ssd_or_nand_wear_claim_permitted": false,
+    "windows_provider": "GetProcessIoCounters.WriteTransferCount",
+    "linux_provider": "/proc/self/io write_bytes when available",
+    "cross_provider_comparison_permitted": false,
+    "endpoint_is_sealed_once": true
+  },
+  "database_physical_growth_telemetry": {
+    "start": "DuckDB plus WAL bytes immediately before the writer starts",
+    "end": "DuckDB plus WAL bytes immediately after the writer connection closes",
+    "includes_temp_files": false,
+    "physical_ssd_or_nand_wear_claim_permitted": false,
+    "maximum_growth_bytes_per_message": 1024
+  },
+  "terminal_phase_telemetry": {
+    "start": "after the capture endpoint is sealed",
+    "end": "after write finalization, read-only audit, aggregation queries, and latency reconstruction but before report persistence",
+    "qualification_metric": false,
+    "reason": "It is reported independently so terminal work cannot contaminate capture-phase storage attribution."
+  },
+  "duckdb_policy": {
+    "checkpoint_threshold": "16.0 MiB observed default",
+    "auto_checkpoint_skip_wal_threshold_bytes": 100000,
+    "changed_by_v6": false,
+    "bounded_full_path_candidate_to_default_process_write_ratio": 0.9954370164526665,
+    "decision": "A 44,506-message real full-table benchmark did not support the 512 MiB candidate."
+  },
+  "telemetry_diagnostic": {
+    "minimum_stream_seconds": 30,
+    "may_authorize_180_second_capture_gate_attempt": true,
+    "may_authorize_one_hour_qualification": false,
+    "may_authorize_feature_construction_or_modeling": false
+  },
+  "capture_gate": {
+    "minimum_stream_seconds": 180,
+    "maximum_frames_per_stream_minute": 25,
+    "maximum_capture_phase_process_write_bytes_per_message": 4096,
+    "maximum_database_physical_growth_bytes_per_message": 1024,
+    "maximum_queue_utilization": 0.8,
+    "fresh_process_read_only_audit_required": true,
+    "independent_exact_wire_feature_source_replay_required": true,
+    "required_feature_source_diagnostic_schema": "round-073-feature-source-diagnostic-v2",
+    "all_v5_feed_integrity_gates_inherited": true,
+    "report_field": "capture_gate_passed",
+    "failure_authorizes_one_hour_qualification_or_long_capture": false
+  },
+  "one_hour_qualification": {
+    "minimum_contiguous_minutes_per_symbol": 60,
+    "capture_gate_must_pass_first": true,
+    "fresh_process_read_only_audit_required": true,
+    "independent_exact_wire_feature_source_replay_required": true,
+    "valid_hash_bound_terminal_report_required": true,
+    "failure_authorizes_long_capture_or_modeling": false
+  },
+  "authorization": {
+    "v6_thirty_second_telemetry_diagnostic": true,
+    "v6_180_second_capture_gate_attempt": false,
+    "v6_one_hour_qualification": false,
+    "v6_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

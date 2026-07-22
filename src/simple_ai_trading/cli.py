@@ -1362,7 +1362,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--database", default="data/microstructure.duckdb"
     )
     parser_impact_features.add_argument(
-        "--run-id", required=True, help="qualified v4 capture run ID"
+        "--run-id",
+        required=True,
+        help="v4-v6 run ID with a passed capture or qualification gate",
     )
     parser_impact_features.add_argument("--memory-limit", default="2GB")
     parser_impact_features.add_argument("--database-threads", type=int, default=2)
@@ -10925,6 +10927,7 @@ def command_impact_capture(args: argparse.Namespace) -> int:
                 f"  {attempt.run_id}: status={attempt.status} "
                 f"failure_class={attempt.failure_class} "
                 f"messages={attempt.writer_message_count} "
+                f"capture_gate={str(attempt.capture_gate_passed).lower()} "
                 f"audit={str(attempt.audit_passed).lower()}"
             )
         for error in report.startup_errors:

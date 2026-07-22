@@ -40,6 +40,7 @@ from .impact_absorption_store import (
     IMPACT_EVENT_LINK_TABLE,
     IMPACT_REST_EVENT_TABLE,
     ImpactAbsorptionStore,
+    ImpactCaptureAudit,
     ImpactCaptureMessage,
     ImpactFrameWriteResult,
     ImpactRejectedWireEvent,
@@ -72,6 +73,7 @@ _DATABASE_SIZE_CAP_RESERVE_BYTES = 512 * 1024 * 1024
 _STORAGE_EFFICIENCY_MINIMUM_SECONDS = 180.0
 _STORAGE_EFFICIENCY_MAXIMUM_FRAMES_PER_MINUTE = 25.0
 _STORAGE_EFFICIENCY_MAXIMUM_WRITE_BYTES_PER_MESSAGE = 4096.0
+_STORAGE_EFFICIENCY_MAXIMUM_PHYSICAL_GROWTH_BYTES_PER_MESSAGE = 1024.0
 
 CaptureFailureClass = Literal[
     "none",
@@ -112,6 +114,53 @@ class _ProcessIoSnapshot:
     provider: str
     semantics: str
     write_bytes: int | None
+
+
+@dataclass(frozen=True)
+class _ProcessIoInterval:
+    provider: str
+    semantics: str
+    start_write_bytes: int | None
+    end_write_bytes: int | None
+    delta_write_bytes: int | None
+
+
+def _process_io_interval(
+    start: _ProcessIoSnapshot,
+    end: _ProcessIoSnapshot,
+) -> _ProcessIoInterval:
+    same_provider = start.provider == end.provider
+    delta = None
+    if (
+        same_provider
+        and start.write_bytes is not None
+        and end.write_bytes is not None
+        and end.write_bytes >= start.write_bytes
+    ):
+        delta = end.write_bytes - start.write_bytes
+    return _ProcessIoInterval(
+        provider=end.provider if same_provider else "provider_changed",
+        semantics=end.semantics if same_provider else "process I/O provider changed",
+        start_write_bytes=start.write_bytes,
+        end_write_bytes=end.write_bytes,
+        delta_write_bytes=delta,
+    )
+
+
+@dataclass(frozen=True)
+class _WriterResourceMetrics:
+    process_io_provider: str
+    process_io_semantics: str
+    process_io_start_write_bytes: int | None
+    process_io_end_write_bytes: int | None
+    process_io_delta_write_bytes: int | None
+    process_io_write_bytes_per_message: float | None
+    database_physical_start_bytes: int | None
+    database_physical_end_bytes: int
+    database_physical_growth_bytes: int | None
+    database_physical_growth_bytes_per_message: float | None
+    frames_per_stream_minute: float
+    storage_efficiency_passed: bool
 
 
 def _process_io_snapshot() -> _ProcessIoSnapshot:
@@ -332,6 +381,7 @@ class ImpactCaptureReport:
     run_id: str
     mode: str
     status: str
+    capture_gate_passed: bool
     qualification_passed: bool
     started_wall_ns: int
     ended_wall_ns: int
@@ -343,9 +393,13 @@ class ImpactCaptureReport:
     writer_message_count: int
     writer_compressed_payload_bytes: int
     payload_cap_reached: bool
+    database_physical_start_bytes: int | None
     database_physical_bytes: int
+    database_physical_growth_bytes: int | None
+    database_physical_growth_bytes_per_message: float | None
     database_size_cap_bytes: int
     database_size_cap_reached: bool
+    process_io_scope: str
     process_io_provider: str
     process_io_semantics: str
     process_io_start_write_bytes: int | None
@@ -354,6 +408,11 @@ class ImpactCaptureReport:
     process_io_write_bytes_per_message: float | None
     frames_per_stream_minute: float
     storage_efficiency_passed: bool
+    terminal_process_io_provider: str
+    terminal_process_io_semantics: str
+    terminal_process_io_start_write_bytes: int | None
+    terminal_process_io_end_write_bytes: int | None
+    terminal_process_io_delta_write_bytes: int | None
     event_counts: dict[str, int]
     symbol_event_counts: dict[str, dict[str, int]]
     negative_corrected_latency_fraction: float | None
@@ -430,13 +489,22 @@ class _ImpactFrameWriter:
         self.frame_count = 0
         self.message_count = 0
         self.compressed_payload_bytes = 0
-        self.database_physical_bytes = _database_physical_bytes(config.database)
+        self.database_physical_start_bytes = _database_physical_bytes(config.database)
+        self.database_physical_bytes = self.database_physical_start_bytes
         self.process_io_start = _process_io_snapshot()
+        self.process_io_end: _ProcessIoSnapshot | None = None
+
+    def seal_resource_endpoint(self) -> None:
+        if self.process_io_end is None:
+            self.process_io_end = _process_io_snapshot()
+            self.database_physical_bytes = _database_physical_bytes(
+                self.config.database
+            )
 
     def process_io_metrics(
         self,
     ) -> tuple[str, str, int | None, int | None, int | None]:
-        end = _process_io_snapshot()
+        end = self.process_io_end or _process_io_snapshot()
         delta = None
         if (
             end.provider == self.process_io_start.provider
@@ -490,6 +558,7 @@ class _ImpactFrameWriter:
 
     def stop(self, timeout_seconds: float = 10.0) -> bool:
         if not self.thread.is_alive():
+            self.seal_resource_endpoint()
             return True
         deadline = time.monotonic() + max(0.1, float(timeout_seconds))
         while time.monotonic() < deadline:
@@ -500,7 +569,10 @@ class _ImpactFrameWriter:
                 if self.failed.is_set():
                     break
         self.thread.join(timeout=max(0.0, deadline - time.monotonic()))
-        return not self.thread.is_alive()
+        joined = not self.thread.is_alive()
+        if joined:
+            self.seal_resource_endpoint()
+        return joined
 
     def _run(self) -> None:
         pending: list[ImpactCaptureMessage] = []
@@ -593,28 +665,25 @@ def _writer_resource_metrics(
     *,
     elapsed_seconds: float,
     queue_capacity_messages: int,
-) -> tuple[
-    str,
-    str,
-    int | None,
-    int | None,
-    int | None,
-    float | None,
-    float,
-    bool,
-]:
+) -> _WriterResourceMetrics:
     if writer is None:
         snapshot = _process_io_snapshot()
-        return (
-            snapshot.provider,
-            snapshot.semantics,
-            None,
-            snapshot.write_bytes,
-            None,
-            None,
-            0.0,
-            False,
+        return _WriterResourceMetrics(
+            process_io_provider=snapshot.provider,
+            process_io_semantics=snapshot.semantics,
+            process_io_start_write_bytes=None,
+            process_io_end_write_bytes=snapshot.write_bytes,
+            process_io_delta_write_bytes=None,
+            process_io_write_bytes_per_message=None,
+            database_physical_start_bytes=None,
+            database_physical_end_bytes=0,
+            database_physical_growth_bytes=None,
+            database_physical_growth_bytes_per_message=None,
+            frames_per_stream_minute=0.0,
+            storage_efficiency_passed=False,
         )
+    if not writer.thread.is_alive():
+        writer.seal_resource_endpoint()
     provider, semantics, start_bytes, end_bytes, delta_bytes = (
         writer.process_io_metrics()
     )
@@ -629,26 +698,153 @@ def _writer_resource_metrics(
         else writer.frame_count * 60.0 / elapsed_seconds
     )
     queue_utilization = writer.high_water_messages / queue_capacity_messages
+    physical_growth_bytes = (
+        writer.database_physical_bytes - writer.database_physical_start_bytes
+    )
+    physical_growth_bytes_per_message = (
+        None
+        if writer.message_count == 0
+        else physical_growth_bytes / writer.message_count
+    )
     passed = (
         elapsed_seconds >= _STORAGE_EFFICIENCY_MINIMUM_SECONDS
         and frames_per_minute <= _STORAGE_EFFICIENCY_MAXIMUM_FRAMES_PER_MINUTE
         and write_bytes_per_message is not None
         and write_bytes_per_message
         <= _STORAGE_EFFICIENCY_MAXIMUM_WRITE_BYTES_PER_MESSAGE
+        and physical_growth_bytes_per_message is not None
+        and physical_growth_bytes_per_message
+        <= _STORAGE_EFFICIENCY_MAXIMUM_PHYSICAL_GROWTH_BYTES_PER_MESSAGE
         and queue_utilization <= 0.8
         and not writer.cap_reached.is_set()
         and not writer.database_cap_reached.is_set()
         and not writer.failed.is_set()
     )
+    return _WriterResourceMetrics(
+        process_io_provider=provider,
+        process_io_semantics=semantics,
+        process_io_start_write_bytes=start_bytes,
+        process_io_end_write_bytes=end_bytes,
+        process_io_delta_write_bytes=delta_bytes,
+        process_io_write_bytes_per_message=write_bytes_per_message,
+        database_physical_start_bytes=writer.database_physical_start_bytes,
+        database_physical_end_bytes=writer.database_physical_bytes,
+        database_physical_growth_bytes=physical_growth_bytes,
+        database_physical_growth_bytes_per_message=(
+            physical_growth_bytes_per_message
+        ),
+        frames_per_stream_minute=frames_per_minute,
+        storage_efficiency_passed=passed,
+    )
+
+
+def _terminal_read_only_analysis(
+    config: ImpactCaptureConfig,
+    *,
+    run_id: str,
+) -> tuple[
+    ImpactCaptureAudit,
+    dict[str, int],
+    dict[str, dict[str, int]],
+    float | None,
+]:
+    with ImpactAbsorptionStore(
+        config.database,
+        read_only=True,
+        memory_limit=config.duckdb_memory_limit,
+        threads=config.duckdb_threads,
+    ) as store:
+        audit = store.audit_run(run_id)
+        connection = store.connect()
+        event_counts = {
+            str(event_type): int(count)
+            for event_type, count in connection.execute(
+                f"SELECT event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
+                "WHERE run_id = ? GROUP BY event_type ORDER BY event_type",
+                [run_id],
+            ).fetchall()
+        }
+        symbol_event_counts: dict[str, dict[str, int]] = {
+            symbol: {} for symbol in IMPACT_CAPTURE_SYMBOLS
+        }
+        for symbol, event_type, count in connection.execute(
+            f"SELECT symbol, event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
+            "WHERE run_id = ? AND symbol <> '' "
+            "GROUP BY symbol, event_type ORDER BY symbol, event_type",
+            [run_id],
+        ).fetchall():
+            symbol_event_counts[str(symbol)][str(event_type)] = int(count)
+        for symbol, count in connection.execute(
+            f"SELECT symbol, count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE} "
+            "WHERE run_id = ? AND stale = false "
+            "GROUP BY symbol ORDER BY symbol",
+            [run_id],
+        ).fetchall():
+            symbol_event_counts[str(symbol)]["synchronizedDepthUpdate"] = int(count)
+
+        latency_rows = connection.execute(
+            f"SELECT received_wall_ns, event_time_ms "
+            f"FROM {IMPACT_EVENT_LINK_TABLE} "
+            "WHERE run_id = ? AND event_time_ms IS NOT NULL "
+            "AND stream <> 'binance_futures_rest' ORDER BY received_wall_ns",
+            [run_id],
+        ).fetchall()
+        clock_rows = connection.execute(
+            f"SELECT e.received_wall_ns, r.request_started_wall_ns, "
+            "e.received_monotonic_ns, r.request_started_monotonic_ns, "
+            f"r.exchange_time_ms FROM {IMPACT_EVENT_LINK_TABLE} e "
+            f"JOIN {IMPACT_REST_EVENT_TABLE} r "
+            "USING (run_id, frame_index, message_index) "
+            "WHERE e.run_id = ? AND e.event_type = 'serverTime' "
+            "ORDER BY e.received_wall_ns",
+            [run_id],
+        ).fetchall()
+        causal_clock: list[tuple[int, int]] = []
+        best_rtt: int | None = None
+        best_offset = 0
+        for (
+            received_wall_ns,
+            request_started_wall_ns,
+            received_monotonic_ns,
+            request_started_monotonic_ns,
+            exchange_time_ms,
+        ) in clock_rows:
+            rtt = int(received_monotonic_ns) - int(request_started_monotonic_ns)
+            if best_rtt is None or rtt < best_rtt:
+                best_rtt = rtt
+                midpoint = (
+                    int(request_started_wall_ns) + int(received_wall_ns)
+                ) // 2
+                best_offset = int(exchange_time_ms) * 1_000_000 - midpoint
+            causal_clock.append((int(received_wall_ns), best_offset))
+        negative_count = 0
+        latency_with_clock_count = 0
+        clock_index = 0
+        active_offset: int | None = None
+        for received_wall_ns, event_time_ms in latency_rows:
+            while (
+                clock_index < len(causal_clock)
+                and causal_clock[clock_index][0] <= int(received_wall_ns)
+            ):
+                active_offset = causal_clock[clock_index][1]
+                clock_index += 1
+            if active_offset is not None:
+                latency_with_clock_count += 1
+                if (
+                    int(received_wall_ns) + active_offset
+                    < int(event_time_ms) * 1_000_000
+                ):
+                    negative_count += 1
+        negative_latency_fraction = (
+            None
+            if latency_with_clock_count == 0
+            else negative_count / latency_with_clock_count
+        )
     return (
-        provider,
-        semantics,
-        start_bytes,
-        end_bytes,
-        delta_bytes,
-        write_bytes_per_message,
-        frames_per_minute,
-        passed,
+        audit,
+        event_counts,
+        symbol_event_counts,
+        negative_latency_fraction,
     )
 
 
@@ -868,24 +1064,18 @@ def _terminal_post_capture_failure_report(
             0.0,
             (int(run[2]) - int(run[1])) / 1_000_000_000,
         )
-        (
-            io_provider,
-            io_semantics,
-            io_start,
-            io_end,
-            io_delta,
-            io_per_message,
-            frames_per_minute,
-            storage_efficiency_passed,
-        ) = _writer_resource_metrics(
+        metrics = _writer_resource_metrics(
             writer,
             elapsed_seconds=elapsed_seconds,
             queue_capacity_messages=config.queue_capacity_messages,
         )
+        terminal_snapshot = _process_io_snapshot()
+        database_end = _database_physical_bytes(config.database)
         report = ImpactCaptureReport(
             run_id=run_id,
             mode=config.mode,
             status="failed",
+            capture_gate_passed=False,
             qualification_passed=False,
             started_wall_ns=int(run[1]),
             ended_wall_ns=int(run[2]),
@@ -903,19 +1093,32 @@ def _terminal_post_capture_failure_report(
             writer_message_count=int(run[4]),
             writer_compressed_payload_bytes=int(run[5]),
             payload_cap_reached=bool(run[6]),
-            database_physical_bytes=_database_physical_bytes(config.database),
+            database_physical_start_bytes=metrics.database_physical_start_bytes,
+            database_physical_bytes=database_end,
+            database_physical_growth_bytes=metrics.database_physical_growth_bytes,
+            database_physical_growth_bytes_per_message=(
+                metrics.database_physical_growth_bytes_per_message
+            ),
             database_size_cap_bytes=config.database_size_cap_bytes,
             database_size_cap_reached=(
                 False if writer is None else writer.database_cap_reached.is_set()
             ),
-            process_io_provider=io_provider,
-            process_io_semantics=io_semantics,
-            process_io_start_write_bytes=io_start,
-            process_io_end_write_bytes=io_end,
-            process_io_delta_write_bytes=io_delta,
-            process_io_write_bytes_per_message=io_per_message,
-            frames_per_stream_minute=frames_per_minute,
-            storage_efficiency_passed=storage_efficiency_passed,
+            process_io_scope="capture phase through writer connection close",
+            process_io_provider=metrics.process_io_provider,
+            process_io_semantics=metrics.process_io_semantics,
+            process_io_start_write_bytes=metrics.process_io_start_write_bytes,
+            process_io_end_write_bytes=metrics.process_io_end_write_bytes,
+            process_io_delta_write_bytes=metrics.process_io_delta_write_bytes,
+            process_io_write_bytes_per_message=(
+                metrics.process_io_write_bytes_per_message
+            ),
+            frames_per_stream_minute=metrics.frames_per_stream_minute,
+            storage_efficiency_passed=metrics.storage_efficiency_passed,
+            terminal_process_io_provider=terminal_snapshot.provider,
+            terminal_process_io_semantics=terminal_snapshot.semantics,
+            terminal_process_io_start_write_bytes=None,
+            terminal_process_io_end_write_bytes=terminal_snapshot.write_bytes,
+            terminal_process_io_delta_write_bytes=None,
             event_counts=event_counts,
             symbol_event_counts=symbol_event_counts,
             negative_corrected_latency_fraction=None,
@@ -1516,24 +1719,17 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
             ended_wall_ns = time.time_ns()
             elapsed_seconds = max(0.0, time.monotonic() - capture_started)
             if writer.thread.is_alive():
-                (
-                    io_provider,
-                    io_semantics,
-                    io_start,
-                    io_end,
-                    io_delta,
-                    io_per_message,
-                    frames_per_minute,
-                    storage_efficiency_passed,
-                ) = _writer_resource_metrics(
+                metrics = _writer_resource_metrics(
                     writer,
                     elapsed_seconds=elapsed_seconds,
                     queue_capacity_messages=config.queue_capacity_messages,
                 )
+                terminal_snapshot = _process_io_snapshot()
                 return ImpactCaptureReport(
                     run_id=run_id,
                     mode=config.mode,
                     status="failed",
+                    capture_gate_passed=False,
                     qualification_passed=False,
                     started_wall_ns=started_wall_ns,
                     ended_wall_ns=ended_wall_ns,
@@ -1547,17 +1743,40 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     writer_message_count=writer.message_count,
                     writer_compressed_payload_bytes=writer.compressed_payload_bytes,
                     payload_cap_reached=writer.cap_reached.is_set(),
+                    database_physical_start_bytes=(
+                        metrics.database_physical_start_bytes
+                    ),
                     database_physical_bytes=_database_physical_bytes(config.database),
+                    database_physical_growth_bytes=(
+                        metrics.database_physical_growth_bytes
+                    ),
+                    database_physical_growth_bytes_per_message=(
+                        metrics.database_physical_growth_bytes_per_message
+                    ),
                     database_size_cap_bytes=config.database_size_cap_bytes,
                     database_size_cap_reached=writer.database_cap_reached.is_set(),
-                    process_io_provider=io_provider,
-                    process_io_semantics=io_semantics,
-                    process_io_start_write_bytes=io_start,
-                    process_io_end_write_bytes=io_end,
-                    process_io_delta_write_bytes=io_delta,
-                    process_io_write_bytes_per_message=io_per_message,
-                    frames_per_stream_minute=frames_per_minute,
-                    storage_efficiency_passed=storage_efficiency_passed,
+                    process_io_scope="capture phase through writer connection close",
+                    process_io_provider=metrics.process_io_provider,
+                    process_io_semantics=metrics.process_io_semantics,
+                    process_io_start_write_bytes=(
+                        metrics.process_io_start_write_bytes
+                    ),
+                    process_io_end_write_bytes=metrics.process_io_end_write_bytes,
+                    process_io_delta_write_bytes=(
+                        metrics.process_io_delta_write_bytes
+                    ),
+                    process_io_write_bytes_per_message=(
+                        metrics.process_io_write_bytes_per_message
+                    ),
+                    frames_per_stream_minute=metrics.frames_per_stream_minute,
+                    storage_efficiency_passed=metrics.storage_efficiency_passed,
+                    terminal_process_io_provider=terminal_snapshot.provider,
+                    terminal_process_io_semantics=terminal_snapshot.semantics,
+                    terminal_process_io_start_write_bytes=None,
+                    terminal_process_io_end_write_bytes=(
+                        terminal_snapshot.write_bytes
+                    ),
+                    terminal_process_io_delta_write_bytes=None,
                     event_counts={},
                     symbol_event_counts={},
                     negative_corrected_latency_fraction=None,
@@ -1567,6 +1786,12 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     failure_class="writer",
                 )
 
+            capture_metrics = _writer_resource_metrics(
+                writer,
+                elapsed_seconds=elapsed_seconds,
+                queue_capacity_messages=config.queue_capacity_messages,
+            )
+            terminal_io_start = _process_io_snapshot()
             with ImpactAbsorptionStore(
                 config.database,
                 memory_limit=config.duckdb_memory_limit,
@@ -1590,151 +1815,30 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     ended_wall_ns=ended_wall_ns,
                     error=errors[0] if errors else "",
                 )
-                audit = store.audit_run(run_id)
-                event_counts = {
-                    str(event_type): int(count)
-                    for event_type, count in store.connect()
-                    .execute(
-                        f"""
-                        SELECT event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE}
-                        WHERE run_id = ? GROUP BY event_type ORDER BY event_type
-                        """,
-                        [run_id],
-                    )
-                    .fetchall()
-                }
-                symbol_event_counts: dict[str, dict[str, int]] = {
-                    symbol: {} for symbol in IMPACT_CAPTURE_SYMBOLS
-                }
-                for symbol, event_type, count in (
-                    store.connect()
-                    .execute(
-                        f"""
-                    SELECT symbol, event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE}
-                    WHERE run_id = ? AND symbol <> ''
-                    GROUP BY symbol, event_type ORDER BY symbol, event_type
-                    """,
-                        [run_id],
-                    )
-                    .fetchall()
-                ):
-                    symbol_event_counts[str(symbol)][str(event_type)] = int(count)
-                for symbol, count in (
-                    store.connect()
-                    .execute(
-                        f"""
-                    SELECT symbol, count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE}
-                    WHERE run_id = ? AND stale = false
-                    GROUP BY symbol ORDER BY symbol
-                    """,
-                        [run_id],
-                    )
-                    .fetchall()
-                ):
-                    symbol_event_counts[str(symbol)]["synchronizedDepthUpdate"] = int(
-                        count
-                    )
-                latency_rows = (
-                    store.connect()
-                    .execute(
-                        f"""
-                    SELECT received_wall_ns, event_time_ms
-                    FROM {IMPACT_EVENT_LINK_TABLE}
-                    WHERE run_id = ? AND event_time_ms IS NOT NULL
-                      AND stream <> 'binance_futures_rest'
-                    ORDER BY received_wall_ns
-                    """,
-                        [run_id],
-                    )
-                    .fetchall()
-                )
-                clock_rows = (
-                    store.connect()
-                    .execute(
-                        f"""
-                    SELECT e.received_wall_ns, r.request_started_wall_ns,
-                           e.received_monotonic_ns,
-                           r.request_started_monotonic_ns, r.exchange_time_ms
-                    FROM {IMPACT_EVENT_LINK_TABLE} e
-                    JOIN {IMPACT_REST_EVENT_TABLE} r
-                      USING (run_id, frame_index, message_index)
-                    WHERE e.run_id = ? AND e.event_type = 'serverTime'
-                    ORDER BY e.received_wall_ns
-                    """,
-                        [run_id],
-                    )
-                    .fetchall()
-                )
-                causal_clock: list[tuple[int, int]] = []
-                best_rtt: int | None = None
-                best_offset = 0
-                for (
-                    received_wall_ns,
-                    request_started_wall_ns,
-                    received_monotonic_ns,
-                    request_started_monotonic_ns,
-                    exchange_time_ms,
-                ) in clock_rows:
-                    rtt = int(received_monotonic_ns) - int(request_started_monotonic_ns)
-                    if best_rtt is None or rtt < best_rtt:
-                        best_rtt = rtt
-                        midpoint = (
-                            int(request_started_wall_ns) + int(received_wall_ns)
-                        ) // 2
-                        best_offset = int(exchange_time_ms) * 1_000_000 - midpoint
-                    causal_clock.append((int(received_wall_ns), best_offset))
-                negative_count = 0
-                latency_with_clock_count = 0
-                clock_index = 0
-                active_offset: int | None = None
-                for received_wall_ns, event_time_ms in latency_rows:
-                    while clock_index < len(causal_clock) and causal_clock[clock_index][
-                        0
-                    ] <= int(received_wall_ns):
-                        active_offset = causal_clock[clock_index][1]
-                        clock_index += 1
-                    if active_offset is not None:
-                        latency_with_clock_count += 1
-                        if (
-                            int(received_wall_ns) + active_offset
-                            < int(event_time_ms) * 1_000_000
-                        ):
-                            negative_count += 1
-                negative_latency_fraction = (
-                    None
-                    if latency_with_clock_count == 0
-                    else negative_count / latency_with_clock_count
-                )
+
+            (
+                audit,
+                event_counts,
+                symbol_event_counts,
+                negative_latency_fraction,
+            ) = _terminal_read_only_analysis(config, run_id=run_id)
+            terminal_io = _process_io_interval(
+                terminal_io_start,
+                _process_io_snapshot(),
+            )
 
             queue_utilization = (
                 writer.high_water_messages / config.queue_capacity_messages
             )
-            (
-                io_provider,
-                io_semantics,
-                io_start,
-                io_end,
-                io_delta,
-                io_per_message,
-                frames_per_minute,
-                storage_efficiency_passed,
-            ) = _writer_resource_metrics(
-                writer,
-                elapsed_seconds=elapsed_seconds,
-                queue_capacity_messages=config.queue_capacity_messages,
-            )
             complete_minutes = max(1, math.floor(elapsed_seconds / 60.0))
             depth_minimum = complete_minutes * 300
             one_per_minute_minimum = complete_minutes
-            qualification_passed = (
-                config.mode == "qualification"
-                and not errors
+            feed_gates_passed = (
+                not errors
                 and audit.passed
-                and elapsed_seconds >= 3_600.0
                 and queue_utilization <= 0.8
                 and negative_latency_fraction is not None
                 and negative_latency_fraction <= 0.001
-                and storage_efficiency_passed
                 and all(
                     symbol_event_counts[symbol].get("synchronizedDepthUpdate", 0)
                     >= depth_minimum
@@ -1745,6 +1849,16 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     for symbol in IMPACT_CAPTURE_SYMBOLS
                 )
             )
+            capture_gate_passed = (
+                feed_gates_passed
+                and elapsed_seconds >= _STORAGE_EFFICIENCY_MINIMUM_SECONDS
+                and capture_metrics.storage_efficiency_passed
+            )
+            qualification_passed = (
+                config.mode == "qualification"
+                and elapsed_seconds >= 3_600.0
+                and capture_gate_passed
+            )
             status = "failed" if errors or not audit.passed else "completed"
             terminal_failure_class: CaptureFailureClass = failure_class
             if status == "failed" and terminal_failure_class == "none":
@@ -1753,6 +1867,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 run_id=run_id,
                 mode=config.mode,
                 status=status,
+                capture_gate_passed=capture_gate_passed,
                 qualification_passed=qualification_passed,
                 started_wall_ns=started_wall_ns,
                 ended_wall_ns=ended_wall_ns,
@@ -1764,17 +1879,44 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 writer_message_count=writer.message_count,
                 writer_compressed_payload_bytes=writer.compressed_payload_bytes,
                 payload_cap_reached=writer.cap_reached.is_set(),
+                database_physical_start_bytes=(
+                    capture_metrics.database_physical_start_bytes
+                ),
                 database_physical_bytes=_database_physical_bytes(config.database),
+                database_physical_growth_bytes=(
+                    capture_metrics.database_physical_growth_bytes
+                ),
+                database_physical_growth_bytes_per_message=(
+                    capture_metrics.database_physical_growth_bytes_per_message
+                ),
                 database_size_cap_bytes=config.database_size_cap_bytes,
                 database_size_cap_reached=writer.database_cap_reached.is_set(),
-                process_io_provider=io_provider,
-                process_io_semantics=io_semantics,
-                process_io_start_write_bytes=io_start,
-                process_io_end_write_bytes=io_end,
-                process_io_delta_write_bytes=io_delta,
-                process_io_write_bytes_per_message=io_per_message,
-                frames_per_stream_minute=frames_per_minute,
-                storage_efficiency_passed=storage_efficiency_passed,
+                process_io_scope="capture phase through writer connection close",
+                process_io_provider=capture_metrics.process_io_provider,
+                process_io_semantics=capture_metrics.process_io_semantics,
+                process_io_start_write_bytes=(
+                    capture_metrics.process_io_start_write_bytes
+                ),
+                process_io_end_write_bytes=(
+                    capture_metrics.process_io_end_write_bytes
+                ),
+                process_io_delta_write_bytes=(
+                    capture_metrics.process_io_delta_write_bytes
+                ),
+                process_io_write_bytes_per_message=(
+                    capture_metrics.process_io_write_bytes_per_message
+                ),
+                frames_per_stream_minute=(
+                    capture_metrics.frames_per_stream_minute
+                ),
+                storage_efficiency_passed=(
+                    capture_metrics.storage_efficiency_passed
+                ),
+                terminal_process_io_provider=terminal_io.provider,
+                terminal_process_io_semantics=terminal_io.semantics,
+                terminal_process_io_start_write_bytes=terminal_io.start_write_bytes,
+                terminal_process_io_end_write_bytes=terminal_io.end_write_bytes,
+                terminal_process_io_delta_write_bytes=terminal_io.delta_write_bytes,
                 event_counts=event_counts,
                 symbol_event_counts=symbol_event_counts,
                 negative_corrected_latency_fraction=negative_latency_fraction,

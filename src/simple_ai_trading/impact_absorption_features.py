@@ -48,6 +48,14 @@ _V4_CAPTURE_CONTRACT_SHA256 = (
     "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529"
 )
 _V4_REPORT_SCHEMA_VERSION = "round-073-capture-report-v4"
+_V5_SCHEMA_VERSION = "round-073-prospective-evidence-v5"
+_V5_CAPTURE_CONTRACT_SHA256 = (
+    "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
+)
+_V5_REPORT_SCHEMA_VERSION = "round-073-capture-report-v5"
+_DEPTH_BAND_SCHEMAS = frozenset(
+    {IMPACT_CAPTURE_SCHEMA_VERSION, _V5_SCHEMA_VERSION}
+)
 
 
 def _strict_json_object(raw_text: str) -> Mapping[str, object]:
@@ -241,7 +249,7 @@ def diagnose_round73_feature_source(
     memory_limit: str = "2GB",
     threads: int = 2,
 ) -> Round73FeatureSourceDiagnostic:
-    """Replay one qualified v4/v5 run and reconcile causal depth-band primitives."""
+    """Replay one gated v4-v6 run and reconcile causal depth-band primitives."""
 
     selected = str(run_id).strip().lower()
     with ImpactAbsorptionStore(
@@ -261,13 +269,17 @@ def diagnose_round73_feature_source(
         if run is None:
             raise ValueError("Round 73 feature-source run was not found")
         run_schema = str(run[0])
-        if run_schema not in {IMPACT_CAPTURE_SCHEMA_VERSION, _V4_SCHEMA_VERSION}:
-            raise ValueError("Round 73 feature-source replay requires capture v4 or v5")
-        expected_contract = (
-            IMPACT_CAPTURE_CONTRACT_SHA256
-            if run_schema == IMPACT_CAPTURE_SCHEMA_VERSION
-            else _V4_CAPTURE_CONTRACT_SHA256
-        )
+        capture_contracts = {
+            IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_CONTRACT_SHA256,
+            _V5_SCHEMA_VERSION: _V5_CAPTURE_CONTRACT_SHA256,
+            _V4_SCHEMA_VERSION: _V4_CAPTURE_CONTRACT_SHA256,
+        }
+        try:
+            expected_contract = capture_contracts[run_schema]
+        except KeyError as exc:
+            raise ValueError(
+                "Round 73 feature-source replay requires capture v4, v5, or v6"
+            ) from exc
         if str(run[1]) != expected_contract:
             raise ValueError("Round 73 feature-source capture contract differs")
         if str(run[2]) != "completed":
@@ -281,19 +293,24 @@ def diagnose_round73_feature_source(
         ).fetchone()
         if report_row is None:
             raise ValueError("Round 73 feature-source replay requires a terminal report")
-        expected_report_schema = (
-            IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
-            if run_schema == IMPACT_CAPTURE_SCHEMA_VERSION
-            else _V4_REPORT_SCHEMA_VERSION
-        )
+        expected_report_schema = {
+            IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+            _V5_SCHEMA_VERSION: _V5_REPORT_SCHEMA_VERSION,
+            _V4_SCHEMA_VERSION: _V4_REPORT_SCHEMA_VERSION,
+        }[run_schema]
         if str(report_row[0]) != expected_report_schema:
             raise ValueError("Round 73 feature-source report schema differs")
         report_text = str(report_row[1])
         if hashlib.sha256(report_text.encode("ascii")).hexdigest() != str(report_row[2]):
             raise ValueError("Round 73 feature-source report hash differs")
         report = _strict_json_object(report_text)
-        if report.get("qualification_passed") is not True:
-            raise ValueError("Round 73 feature-source replay requires qualification")
+        if not (
+            report.get("qualification_passed") is True
+            or report.get("capture_gate_passed") is True
+        ):
+            raise ValueError(
+                "Round 73 feature-source replay requires a passed capture gate"
+            )
         segment_rows = connection.execute(
             """
             SELECT symbol, status, tick_size FROM impact_capture_segment
@@ -318,7 +335,7 @@ def diagnose_round73_feature_source(
         }
         event_link_table = (
             IMPACT_EVENT_LINK_TABLE
-            if run_schema == IMPACT_CAPTURE_SCHEMA_VERSION
+            if run_schema in _DEPTH_BAND_SCHEMAS
             else "impact_event_link_v4"
         )
         frame_cursor = connection.cursor()
@@ -393,7 +410,7 @@ def diagnose_round73_feature_source(
                         [selected, first_frame, last_frame],
                     ).fetchall()
                 }
-                if run_schema == IMPACT_CAPTURE_SCHEMA_VERSION
+                if run_schema in _DEPTH_BAND_SCHEMAS
                 else {}
             )
             for frame_index_value, message_count, uncompressed_bytes, blob in frame_rows:
@@ -482,7 +499,7 @@ def diagnose_round73_feature_source(
                     ):
                         _finite_close(observed, sums[name], f"depth {name} quote")
                     event_band_flow = _depth_band_flow(pre_state, event.changes)
-                    if run_schema == IMPACT_CAPTURE_SCHEMA_VERSION:
+                    if run_schema in _DEPTH_BAND_SCHEMAS:
                         stored_band_row = stored_band_rows.get(key)
                         if stored_band_row is None:
                             raise ValueError(
@@ -551,7 +568,7 @@ def diagnose_round73_feature_source(
         if depth_updates != stored_depth_updates:
             raise ValueError("Round 73 replayed depth count differs")
         if (
-            run_schema == IMPACT_CAPTURE_SCHEMA_VERSION
+            run_schema in _DEPTH_BAND_SCHEMAS
             and reconciled_band_rows != depth_updates
         ):
             raise ValueError("Round 73 reconciled depth-band count differs")
@@ -585,7 +602,7 @@ def diagnose_round73_feature_source(
         level_change_count=level_changes,
         stored_depth_band_row_count=reconciled_band_rows,
         stored_depth_band_rows_reconciled=(
-            run_schema == IMPACT_CAPTURE_SCHEMA_VERSION
+            run_schema in _DEPTH_BAND_SCHEMAS
             and reconciled_band_rows == depth_updates
         ),
         symbols=symbol_state,
