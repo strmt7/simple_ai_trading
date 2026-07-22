@@ -1,0 +1,111 @@
+{
+  "schema_version": "finance-risk-review-infrastructure-failure-v1",
+  "artifact_sha256": "b3247a90205bb4408dd052d022a94af95155424fe035d0605a46faa731527486",
+  "artifact_sha256_contract": "sha256(canonical_json(root_without_artifact_sha256))",
+  "recorded_at_utc": "2026-07-22T12:48:23.776Z",
+  "classification": "provider_transport_rejected_before_sampling",
+  "benchmark": {
+    "contract": "finance-risk-review-adversarial-v9",
+    "model": "qwen3:14b",
+    "preregistration_path": "docs/ai/risk-review/qwen3-14b-v9-preregistration.json",
+    "preregistration_file_sha256": "e96d203d9e8a32114fd2192c2cc86ab029d9185923ff9162214d4ff061aee8ec",
+    "frozen_case_count": 11,
+    "run_count_consumed": 1,
+    "rerun_permitted": false
+  },
+  "claim": {
+    "database_path": "data/polymarket-round9-confirmation-v4-20260716-152838Z.duckdb",
+    "claim_sha256": "6cd658b1ff9518123b16817b9eae5b1b3f01bc36f4212953ac14319e0711d7bc",
+    "state": "failed",
+    "failure_sha256": "2f3453f7a561afe6d95d853fbb1cd55d2d032149ee32e93b24ba0f38f72b7c51",
+    "started_at_ms": 1784724059615,
+    "started_at_utc": "2026-07-22T12:40:59.615000Z",
+    "completed_at_ms": 1784724071240,
+    "completed_at_utc": "2026-07-22T12:41:11.240000Z",
+    "report_file_sha256": null,
+    "benchmark_passed": null,
+    "requested_output_path": "data/qwen3-14b-v9-benchmark.json",
+    "requested_output_exists": false
+  },
+  "confirmation_evidence": {
+    "run_id": "e34d349771da4c35bcc8ae436c2fe9f6",
+    "recorder_status": "degraded",
+    "storage_schema_version": "polymarket-evidence-storage-v4",
+    "started_at_ms": 1784215719761,
+    "ended_at_ms": 1784269722545,
+    "duration_seconds": 54002.784,
+    "report_sha256": "2e7193ffd48c5008453765402cea3a6d4e5eda2f3989df19c005d9d444793b28",
+    "continuity_report_sha256": "3bedeab48314d826a1dcf9dfa4f995b66eed4ac281430781074ebf3395592d72",
+    "continuity_schema_version": "polymarket-round9-continuity-eligibility-v1",
+    "eligible_synchronized_group_count": 47,
+    "confirmation_eligible": true,
+    "labels_or_outcomes_consulted_before_claim": false
+  },
+  "provider_evidence": {
+    "provider": "ollama",
+    "endpoint": "http://127.0.0.1:11434/api/chat",
+    "model_manifest_digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+    "model_metadata_sha256": "b939f562272424c2099242c1ec4070a10dc85e1599bba88686280e1513256d0e",
+    "host_gpu": "AMD Radeon RX 9070 XT",
+    "post_failure_residency_observation": {
+      "ollama_model_id_prefix": "bdbd181c33f2",
+      "reported_model_size": "9.6 GB",
+      "reported_processor": "100% GPU",
+      "reported_context_tokens": 4096
+    },
+    "requested_case_count": 11,
+    "http_400_response_count": 11,
+    "grammar_parse_error_count": 11,
+    "sampler_initialization_error_count": 11,
+    "model_completions_received": 0,
+    "positive_provider_usage_records": 0,
+    "prompt_tokens_reported": 0,
+    "output_tokens_reported": 0,
+    "first_server_error": "number of rules that are going to be repeated multiplied by the new repetition exceeds sane defaults, please reduce the number of repetitions or rule complexity",
+    "sampler_error": "Failed to initialize samplers: failed to parse grammar",
+    "root_cause": "The JSON Schema supplied through Ollama's format field expanded into a grammar that exceeded the provider's repetition-complexity limit. Ollama rejected every request before token sampling.",
+    "terminal_cli_error": "AI benchmark provider usage is not an object",
+    "terminal_cli_error_is_root_cause": false
+  },
+  "hashed_local_evidence": {
+    "stdout": {
+      "path": "data/qwen3-14b-v9-benchmark.stdout.log",
+      "bytes": 931,
+      "sha256": "31adb7db4b625c1928e0d1a07b54510d6539d4a5f6421db20fc2e0ec303a50a6"
+    },
+    "stderr": {
+      "path": "data/qwen3-14b-v9-benchmark.stderr.log",
+      "bytes": 67,
+      "sha256": "7f4fdef73c1f0e75f01f2c94c1f99b28c27ca4b3db41f51c59d524858d821199"
+    },
+    "ollama_server_log_snapshot": {
+      "local_path": "%LOCALAPPDATA%/Ollama/server.log",
+      "bytes": 46610,
+      "sha256": "b0f59294aa10d4618ea97a43d5e25dbab841e9e5cd64af14ad7cfb3e0d855711",
+      "selected_line_range_inclusive": [
+        272,
+        629
+      ],
+      "selected_record_count": 33,
+      "selected_records_canonical_sha256": "f201d3956fbe38b93b69bfcb844b3cd1efdbed4cd8993cb359bdbc52d8b6b519"
+    }
+  },
+  "interpretation": {
+    "reasoning_score_available": false,
+    "governance_pass_available": false,
+    "ai_uplift_tested": false,
+    "financial_edge_tested": false,
+    "trading_authority": false,
+    "profitability_claim": false,
+    "leverage_authorized": false,
+    "candidate_reasoning_rejected": false,
+    "why": "No model output was sampled. The run is a consumed one-shot infrastructure failure, not evidence for or against Qwen3 14B reasoning quality."
+  },
+  "required_remediation_before_any_future_candidate_run": [
+    "Use a provider-compatible JSON transport while retaining strict post-parse schema admission.",
+    "Capture bounded HTTP status and response-body evidence instead of collapsing provider errors into missing usage.",
+    "Persist a separate hash-bound infrastructure-failure artifact without weakening successful-run telemetry requirements.",
+    "Expose bounded progress during the confirmation integrity audit.",
+    "Freeze and commit a new preregistration before any future inference; never reopen v9."
+  ]
+}
