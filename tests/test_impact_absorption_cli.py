@@ -109,20 +109,12 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         ]
     )
     audit = cli._parse_args(["impact-audit", "--run-id", "a" * 32])
-    features = cli._parse_args(
-        ["impact-feature-source", "--run-id", "a" * 32]
-    )
-    corpus_index = cli._parse_args(
-        ["impact-corpus-index", "--run-id", "b" * 32]
-    )
+    features = cli._parse_args(["impact-feature-source", "--run-id", "a" * 32])
+    corpus_index = cli._parse_args(["impact-corpus-index", "--run-id", "b" * 32])
     grid_build = cli._parse_args(["impact-grid-build", "--run-id", "b" * 32])
-    corpus_audit = cli._parse_args(
-        ["impact-corpus-audit", "--run-id", "b" * 32]
-    )
+    corpus_audit = cli._parse_args(["impact-corpus-audit", "--run-id", "b" * 32])
     grid_audit = cli._parse_args(["impact-grid-audit", "--run-id", "b" * 32])
-    corpus_day = cli._parse_args(
-        ["impact-corpus-day", "--utc-day", "2026-07-22"]
-    )
+    corpus_day = cli._parse_args(["impact-corpus-day", "--utc-day", "2026-07-22"])
     corpus_collect = cli._parse_args(["impact-corpus-collect", "--segments", "0"])
     corpus_batch_audit = cli._parse_args(
         ["impact-corpus-batch-audit", "--batch-id", "c" * 32, "--deep"]
@@ -178,7 +170,10 @@ def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
         coverage_duration_ns = 3_600_000_000_000
 
         def as_dict(self):
-            return {"schema_version": "round-073-segmented-corpus-v1", "run_id": self.run_id}
+            return {
+                "schema_version": "round-073-segmented-corpus-v1",
+                "run_id": self.run_id,
+            }
 
     class Audit:
         run_id = "b" * 32
@@ -188,7 +183,10 @@ def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
         message_count = 345
 
         def as_dict(self):
-            return {"schema_version": "round-073-corpus-manifest-audit-v1", "passed": True}
+            return {
+                "schema_version": "round-073-corpus-manifest-audit-v1",
+                "passed": True,
+            }
 
     class Day:
         utc_day = "2026-07-22"
@@ -226,17 +224,22 @@ def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
         "json": True,
     }
 
-    assert cli.command_impact_corpus_index(
-        argparse.Namespace(**common, run_id="b" * 32)
-    ) == 0
+    assert (
+        cli.command_impact_corpus_index(argparse.Namespace(**common, run_id="b" * 32))
+        == 0
+    )
     assert json.loads(capsys.readouterr().out)["run_id"] == "b" * 32
-    assert cli.command_impact_corpus_audit(
-        argparse.Namespace(**common, run_id="b" * 32)
-    ) == 0
+    assert (
+        cli.command_impact_corpus_audit(argparse.Namespace(**common, run_id="b" * 32))
+        == 0
+    )
     assert json.loads(capsys.readouterr().out)["passed"] is True
-    assert cli.command_impact_corpus_day(
-        argparse.Namespace(**common, utc_day="2026-07-22")
-    ) == 0
+    assert (
+        cli.command_impact_corpus_day(
+            argparse.Namespace(**common, utc_day="2026-07-22")
+        )
+        == 0
+    )
     assert json.loads(capsys.readouterr().out)["crypto_formal_daily_close"] is False
     assert observed == [
         (
@@ -323,7 +326,9 @@ def test_impact_grid_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
     ]
 
 
-def test_impact_corpus_collect_handler_uses_bounded_rotation(monkeypatch, capsys) -> None:
+def test_impact_corpus_collect_handler_uses_bounded_rotation(
+    monkeypatch, capsys
+) -> None:
     class Report:
         status = "completed"
         batch_id = "d" * 32
@@ -443,7 +448,9 @@ def test_impact_corpus_batch_audit_handler_forwards_deep_mode(
     }
 
 
-def test_impact_feature_source_handler_emits_machine_report(monkeypatch, capsys) -> None:
+def test_impact_feature_source_handler_emits_machine_report(
+    monkeypatch, capsys
+) -> None:
     class Diagnostic:
         run_id = "a" * 32
         frame_count = 11
