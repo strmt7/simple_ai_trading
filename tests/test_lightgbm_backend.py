@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from simple_ai_trading.compute import BackendInfo, BackendUnavailableError
-from simple_ai_trading import lightgbm_backend
+from simple_ai_trading.compute import BackendInfo
+from simple_ai_trading import compute, lightgbm_backend
 
 
 def _backend(requested: str, kind: str) -> BackendInfo:
@@ -175,7 +175,7 @@ def test_model_artifacts_do_not_duplicate_lightgbm_backend_whitelists() -> None:
 
 
 def test_lightgbm_pinned_backend_rejects_tensor_runtime_fallback() -> None:
-    with pytest.raises(BackendUnavailableError, match="requested compute backend"):
+    with pytest.raises(compute.BackendUnavailableError, match="requested compute backend"):
         lightgbm_backend.lightgbm_backend_parameters(
             "directml",
             11,
@@ -190,7 +190,7 @@ def test_lightgbm_pinned_backend_rejects_failed_tree_probe(monkeypatch) -> None:
         lambda *_args: (False, "OpenCL target absent"),
     )
 
-    with pytest.raises(BackendUnavailableError, match="OpenCL target absent"):
+    with pytest.raises(compute.BackendUnavailableError, match="OpenCL target absent"):
         lightgbm_backend.lightgbm_backend_parameters(
             "directml",
             11,

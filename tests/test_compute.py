@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from simple_ai_trading.compute import (
+    ACCELERATOR_COMPUTE_BACKENDS,
     BackendInfo,
     SUPPORTED_COMPUTE_BACKENDS,
     backend_fallback_allowed,
@@ -449,25 +450,19 @@ def test_resolve_backend_auto_prefers_native_mps_over_legacy_directml(monkeypatc
 
 def test_probe_torch_returns_tuple_when_torch_missing(monkeypatch) -> None:
     """Direct exercise of the _probe_torch fallback path."""
-    import builtins
-    import importlib
-
-    real_import = builtins.__import__
-
-    def fake_import(name, *args, **kwargs):
-        if name == "torch":
-            raise ImportError("simulated missing torch")
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", fake_import)
-    # Reload the function reference
     from simple_ai_trading import compute as compute_mod
 
-    importlib.reload(compute_mod)
+    real_import_module = compute_mod.importlib.import_module
+
+    def fake_import_module(name, *args, **kwargs):
+        if name == "torch":
+            raise ImportError("simulated missing torch")
+        return real_import_module(name, *args, **kwargs)
+
+    monkeypatch.setattr(compute_mod.importlib, "import_module", fake_import_module)
     torch_obj, reason = compute_mod._probe_torch()
     assert torch_obj is None
     assert "torch" in reason.lower()
-    importlib.reload(compute_mod)  # restore for other tests
 
 
 def test_probe_torch_returns_torch_when_importable(monkeypatch) -> None:
@@ -659,4 +654,12 @@ def test_supported_backend_contract_is_explicit_and_host_independent() -> None:
         "mps",
         "directml",
     )
+    assert ACCELERATOR_COMPUTE_BACKENDS == {
+        "cuda",
+        "rocm",
+        "xpu",
+        "mps",
+        "directml",
+    }
+    assert ACCELERATOR_COMPUTE_BACKENDS == frozenset(SUPPORTED_COMPUTE_BACKENDS[2:])
 
