@@ -1,0 +1,168 @@
+{
+  "schema_version": "round-073-v8-capture-qualification-evidence-v1",
+  "artifact_sha256": "5663eea23d71e9a06c4f2d03e6a70ff82d23439942f5c251f93006f4dac9b9fd",
+  "recorded_utc_date": "2026-07-22",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
+  "prior_capture_gate_evidence_sha256": "3429e30113ef8f162ba0a8cd070f0d1ab26ee26b0045cffa1b97c7a751075f98",
+  "run": {
+    "run_id": "f3e92ba29e1e4d3188c3f309f5c160a2",
+    "status": "completed",
+    "capture_gate_passed": true,
+    "qualification_passed": true,
+    "elapsed_seconds": 3602.3429999999935,
+    "writer_frame_count": 847,
+    "writer_message_count": 1294128,
+    "writer_compressed_payload_bytes": 58753862,
+    "compressed_bytes_per_message": 45.400348342667805,
+    "messages_per_second": 359.2461906042824,
+    "frames_per_stream_minute": 14.107485045149808,
+    "queue_high_water_messages": 14206,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.216766357421875,
+    "negative_corrected_latency_fraction": 0.0,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "reconnect_count": 0,
+    "event_counts": {
+      "aggTrade": 42655,
+      "bookTicker": 1136099,
+      "depthSnapshot": 3,
+      "depthUpdate": 104305,
+      "exchangeInfo": 1,
+      "forceOrder": 30,
+      "markPriceUpdate": 10797,
+      "openInterest": 177,
+      "serverTime": 61
+    },
+    "symbol_event_counts": {
+      "BTCUSDT": {
+        "aggTrade": 17133,
+        "bookTicker": 356589,
+        "depthSnapshot": 1,
+        "depthUpdate": 35346,
+        "forceOrder": 18,
+        "markPriceUpdate": 3599,
+        "openInterest": 59,
+        "synchronizedDepthUpdate": 35324
+      },
+      "ETHUSDT": {
+        "aggTrade": 16182,
+        "bookTicker": 491301,
+        "depthSnapshot": 1,
+        "depthUpdate": 35162,
+        "forceOrder": 8,
+        "markPriceUpdate": 3599,
+        "openInterest": 59,
+        "synchronizedDepthUpdate": 35130
+      },
+      "SOLUSDT": {
+        "aggTrade": 9340,
+        "bookTicker": 288209,
+        "depthSnapshot": 1,
+        "depthUpdate": 33797,
+        "forceOrder": 4,
+        "markPriceUpdate": 3599,
+        "openInterest": 59,
+        "synchronizedDepthUpdate": 33759
+      }
+    }
+  },
+  "capture_phase": {
+    "process_io_provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "start_write_bytes": 5512396,
+    "end_write_bytes": 4553796314,
+    "delta_write_bytes": 4548283918,
+    "process_io_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "write_bytes_per_message": 3514.5549111061655,
+    "frozen_maximum_write_bytes_per_message": 4096,
+    "threshold_fraction": 0.8580456325942787,
+    "headroom_fraction": 0.14195436740572132,
+    "database_physical_start_bytes": 5388382208,
+    "database_physical_end_bytes": 5388382208,
+    "database_physical_growth_bytes": 0,
+    "database_physical_growth_bytes_per_message": 0.0,
+    "frozen_maximum_physical_growth_bytes_per_message": 1024,
+    "storage_efficiency_passed": true
+  },
+  "terminal_phase": {
+    "start_write_bytes": 4553796314,
+    "end_write_bytes": 4561405977,
+    "delta_write_bytes": 7609663,
+    "qualification_metric": false
+  },
+  "fresh_process_read_only_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 847,
+    "message_count": 1294128,
+    "compressed_payload_bytes": 58753862,
+    "last_frame_sha256": "f1a6f273c710d4bc1e849cadeebaa52c42ddee8b80d54a245976d1a6879b8e13",
+    "stored_report_schema_version": "round-073-capture-report-v8",
+    "stored_report_sha256": "44d20a1aa35d0de9e2855aa34aa9a936c45cc04834f6c4bfa97dfdc344717cc5"
+  },
+  "feature_source_replay": {
+    "schema_version": "round-073-feature-source-diagnostic-v2",
+    "capture_audit_passed": true,
+    "frame_count": 847,
+    "message_count": 1294128,
+    "depth_snapshot_count": 3,
+    "depth_update_count": 104305,
+    "synchronized_depth_update_count": 104213,
+    "stale_depth_update_count": 92,
+    "synchronized_depth_update_fraction": 0.9991179713340683,
+    "level_change_count": 4459493,
+    "stored_depth_band_row_count": 104305,
+    "stored_depth_band_rows_reconciled": true,
+    "future_or_target_data_used": false,
+    "identity_whale_or_manipulation_inference": false,
+    "target_constructed": false,
+    "model_evaluated": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "comparison": {
+    "v7_capture_phase_write_bytes_per_message": 16262.82958557889,
+    "v8_qualification_to_v7_write_ratio": 0.21610968082840315,
+    "v8_qualification_write_reduction_fraction": 0.7838903191715969,
+    "comparison_is_descriptive_not_financial": true
+  },
+  "critical_analysis": {
+    "v8_one_hour_qualification_passed": true,
+    "v8_fresh_process_audit_passed": true,
+    "v8_feature_source_replay_passed": true,
+    "storage_headroom_is_large": false,
+    "bounded_long_capture_requires_rotation_and_continuous_resource_gates": true,
+    "root_cause_fully_proven": false,
+    "financial_feature_evidence": false,
+    "model_evidence": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false
+  },
+  "decision": {
+    "bounded_segmented_corpus_pipeline_authorized": true,
+    "unbounded_single_run_capture_authorized": false,
+    "seven_day_capture_authorized_before_rotation_design": false,
+    "round_073_feature_construction_authorized": true,
+    "round_073_model_evaluation_authorized": false,
+    "reason": "The frozen one-hour qualification, fresh audit, and independent replay passed. The write metric has only 14.2 percent headroom, so long capture requires bounded rotation and continuous fail-closed resource gates before collection."
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "authorization": {
+    "bounded_segmented_corpus_pipeline_implementation": true,
+    "bounded_long_capture": false,
+    "round_073_feature_construction": true,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

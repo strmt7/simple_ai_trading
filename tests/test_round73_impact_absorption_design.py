@@ -74,6 +74,9 @@ V8_TELEMETRY_SUCCESS_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V8_CAPTURE_GATE_SUCCESS_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v8-capture-gate-success-2026-07-22.json"
 )
+V8_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v8-capture-qualification-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -616,6 +619,47 @@ def test_round73_v8_capture_gate_authorizes_only_one_hour() -> None:
     assert decision["v8_one_hour_qualification_authorized"] is True
     assert decision["v8_long_capture_authorized"] is False
     authorization = evidence["authorization"]
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v8_one_hour_qualification_authorizes_bounded_pipeline() -> None:
+    evidence = json.loads(V8_QUALIFICATION_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["attempt_evidence_combined"] is False
+    run = evidence["run"]
+    assert run["capture_gate_passed"] is True
+    assert run["qualification_passed"] is True
+    assert run["elapsed_seconds"] >= 3_600
+    assert run["reconnect_count"] == 0
+    assert sum(run["event_counts"].values()) == run["writer_message_count"]
+    capture = evidence["capture_phase"]
+    assert capture["write_bytes_per_message"] <= 4_096
+    assert capture["headroom_fraction"] < 0.15
+    assert capture["database_physical_growth_bytes_per_message"] <= 1_024
+    assert capture["storage_efficiency_passed"] is True
+    audit = evidence["fresh_process_read_only_audit"]
+    assert audit["passed"] is True
+    assert audit["message_count"] == run["writer_message_count"]
+    replay = evidence["feature_source_replay"]
+    assert replay["stored_depth_band_rows_reconciled"] is True
+    assert replay["stored_depth_band_row_count"] == replay["depth_update_count"]
+    assert replay["future_or_target_data_used"] is False
+    assert replay["model_evaluated"] is False
+    analysis = evidence["critical_analysis"]
+    assert analysis["v8_one_hour_qualification_passed"] is True
+    assert analysis["storage_headroom_is_large"] is False
+    assert analysis["profitability_evidence"] is False
+    decision = evidence["decision"]
+    assert decision["bounded_segmented_corpus_pipeline_authorized"] is True
+    assert decision["unbounded_single_run_capture_authorized"] is False
+    assert decision["seven_day_capture_authorized_before_rotation_design"] is False
+    authorization = evidence["authorization"]
+    assert authorization["round_073_feature_construction"] is True
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
 
