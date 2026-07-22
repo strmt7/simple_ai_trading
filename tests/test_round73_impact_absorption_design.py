@@ -230,9 +230,7 @@ def test_round73_v4_contract_restores_causal_event_time_after_failed_probe() -> 
     assert failure["decision"]["v3_run_qualifies_capture"] is False
     assert failure["decision"]["v3_run_authorizes_features_or_models"] is False
 
-    contract = json.loads(
-        EVENT_TIME_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8")
-    )
+    contract = json.loads(EVENT_TIME_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8"))
     claimed = contract.pop("capture_contract_sha256")
     assert claimed == _canonical_sha256(contract)
     assert contract["failure_evidence"]["artifact_sha256"] == failure_claimed
@@ -303,9 +301,7 @@ def test_round73_v4_feature_source_replay_is_hash_bound_and_nonfinancial() -> No
     assert reconciliation["mismatch_count"] == 0
     assert reconciliation["nonfinite_count"] == 0
     assert reconciliation["reconstructed_top_20_states_match_typed_rows"] is True
-    assert "not executions" in evidence["feature_semantics"][
-        "gross_quote_flow_warning"
-    ]
+    assert "not executions" in evidence["feature_semantics"]["gross_quote_flow_warning"]
     authority = evidence["authority"]
     assert authority["depth_band_primitives_reconstructed"] is True
     assert authority["all_grid_anchor_features_constructed"] is False
@@ -341,9 +337,12 @@ def test_round73_v5_contract_separates_database_audit_from_wire_replay() -> None
     )
 
     assert contract["duckdb_policy"]["changed_by_v5"] is False
-    assert contract["v5_probe_gate"][
-        "independent_exact_wire_feature_source_replay_required"
-    ] is True
+    assert (
+        contract["v5_probe_gate"][
+            "independent_exact_wire_feature_source_replay_required"
+        ]
+        is True
+    )
     authorization = contract["authorization"]
     assert authorization["v5_three_minute_probe"] is True
     assert authorization["v5_one_hour_qualification"] is False
@@ -528,9 +527,10 @@ def test_round73_v8_contract_isolates_tables_and_reverts_checkpoint_policy() -> 
     assert failure_claimed == _canonical_sha256(failure)
     assert claimed == _canonical_sha256(contract)
     assert contract["frozen_before_first_v8_capture"] is True
-    assert contract["failure_evidence"][
-        "v7_telemetry_failure_artifact_sha256"
-    ] == failure_claimed
+    assert (
+        contract["failure_evidence"]["v7_telemetry_failure_artifact_sha256"]
+        == failure_claimed
+    )
     inheritance = contract["inheritance"]
     assert inheritance["wire_frame_format_changed"] is False
     assert inheritance["event_or_l2_column_shape_changed"] is False
@@ -538,11 +538,7 @@ def test_round73_v8_contract_isolates_tables_and_reverts_checkpoint_policy() -> 
     assert inheritance["historical_rows_rewritten"] is False
     storage = contract["storage_schema_v8"]
     assert storage["single_database_file_required"] is True
-    table_names = {
-        value
-        for key, value in storage.items()
-        if key.endswith("_table")
-    }
+    table_names = {value for key, value in storage.items() if key.endswith("_table")}
     assert len(table_names) == 11
     assert all(name.endswith("_v8") for name in table_names)
     assert storage["v7_or_earlier_rows_migrated_or_reclassified"] is False
@@ -790,9 +786,7 @@ def test_round73_rotation_runner_contract_is_bounded_and_recoverable() -> None:
 
 
 def test_round73_rotation_recovery_validation_authorizes_only_one_segment() -> None:
-    evidence = json.loads(
-        ROTATION_RECOVERY_VALIDATION_PATH.read_text(encoding="utf-8")
-    )
+    evidence = json.loads(ROTATION_RECOVERY_VALIDATION_PATH.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
@@ -834,13 +828,23 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
     assert admission["cross_run_or_cross_segment_windows_permitted"] is False
     anchors = contract["anchor_contract"]
     assert anchors["base_grid_milliseconds"] == 1_000
-    assert anchors["availability_predicate"].startswith("received_monotonic_ns strictly")
+    assert anchors["availability_predicate"].startswith(
+        "received_monotonic_ns strictly"
+    )
     assert anchors["window_interval"].endswith("anchor_monotonic_ns)")
     assert anchors["warmup_seconds"] == 60
     assert anchors["all_anchors_retained"] is True
     assert anchors["invalid_anchor_feature_vector_written"] is False
     assert anchors["crypto_formal_daily_close"] is False
-    assert contract["windows_milliseconds"] == [100, 250, 500, 1_000, 5_000, 15_000, 60_000]
+    assert contract["windows_milliseconds"] == [
+        100,
+        250,
+        500,
+        1_000,
+        5_000,
+        15_000,
+        60_000,
+    ]
     semantics = contract["derived_semantics"]
     assert semantics["aggressive_buy"].endswith("false")
     assert "anonymous" in semantics["displayed_removal"]

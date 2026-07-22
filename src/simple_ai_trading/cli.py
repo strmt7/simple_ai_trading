@@ -1479,9 +1479,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES,
     )
     parser_impact_corpus_collect.add_argument("--memory-limit", default="2GB")
-    parser_impact_corpus_collect.add_argument(
-        "--database-threads", type=int, default=2
-    )
+    parser_impact_corpus_collect.add_argument("--database-threads", type=int, default=2)
     parser_impact_corpus_collect.add_argument(
         "--progress-interval-seconds", type=float, default=30.0
     )
