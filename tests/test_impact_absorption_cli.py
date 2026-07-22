@@ -112,18 +112,127 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     features = cli._parse_args(
         ["impact-feature-source", "--run-id", "a" * 32]
     )
+    corpus_index = cli._parse_args(
+        ["impact-corpus-index", "--run-id", "b" * 32]
+    )
+    corpus_audit = cli._parse_args(
+        ["impact-corpus-audit", "--run-id", "b" * 32]
+    )
+    corpus_day = cli._parse_args(
+        ["impact-corpus-day", "--utc-day", "2026-07-22"]
+    )
 
     assert capture.duration_seconds == 3660.0
     assert capture.maximum_reconnects == 2
     assert capture.database_size_cap_bytes == 8 * 1024 * 1024 * 1024
     assert audit.run_id == "a" * 32
     assert features.run_id == "a" * 32
+    assert corpus_index.run_id == "b" * 32
+    assert corpus_audit.run_id == "b" * 32
+    assert corpus_day.utc_day == "2026-07-22"
     specs = {item.name: item for item in command_specs()}
-    assert {"impact-capture", "impact-audit", "impact-feature-source"} <= set(specs)
+    assert {
+        "impact-capture",
+        "impact-audit",
+        "impact-feature-source",
+        "impact-corpus-index",
+        "impact-corpus-audit",
+        "impact-corpus-day",
+    } <= set(specs)
     workflow = {item.name: (item.page, item.group) for item in workflow_commands()}
     assert workflow["impact-capture"] == ("Data", "Market data")
     assert workflow["impact-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-feature-source"] == ("Research", "Microstructure models")
+    assert workflow["impact-corpus-index"] == ("Research", "Microstructure models")
+    assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-corpus-day"] == ("Data", "Integrity and outcomes")
+
+
+def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
+    class Manifest:
+        run_id = "b" * 32
+        frame_count = 12
+        message_count = 345
+        coverage_duration_ns = 3_600_000_000_000
+
+        def as_dict(self):
+            return {"schema_version": "round-073-segmented-corpus-v1", "run_id": self.run_id}
+
+    class Audit:
+        run_id = "b" * 32
+        passed = True
+        errors = ()
+        frame_count = 12
+        message_count = 345
+
+        def as_dict(self):
+            return {"schema_version": "round-073-corpus-manifest-audit-v1", "passed": True}
+
+    class Day:
+        utc_day = "2026-07-22"
+        finalized = True
+        eligible = False
+        coverage_ns = 3_600_000_000_000
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-corpus-day-coverage-v1",
+                "crypto_formal_daily_close": False,
+            }
+
+    observed = []
+
+    def fake_index(database, **kwargs):
+        observed.append(("index", str(database), kwargs))
+        return Manifest()
+
+    def fake_audit(database, **kwargs):
+        observed.append(("audit", str(database), kwargs))
+        return Audit()
+
+    def fake_day(database, **kwargs):
+        observed.append(("day", str(database), kwargs))
+        return Day()
+
+    monkeypatch.setattr(cli, "index_round73_corpus_run", fake_index)
+    monkeypatch.setattr(cli, "audit_round73_corpus_manifest", fake_audit)
+    monkeypatch.setattr(cli, "round73_corpus_day_coverage", fake_day)
+    common = {
+        "database": "corpus.duckdb",
+        "memory_limit": "1GB",
+        "database_threads": 1,
+        "json": True,
+    }
+
+    assert cli.command_impact_corpus_index(
+        argparse.Namespace(**common, run_id="b" * 32)
+    ) == 0
+    assert json.loads(capsys.readouterr().out)["run_id"] == "b" * 32
+    assert cli.command_impact_corpus_audit(
+        argparse.Namespace(**common, run_id="b" * 32)
+    ) == 0
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert cli.command_impact_corpus_day(
+        argparse.Namespace(**common, utc_day="2026-07-22")
+    ) == 0
+    assert json.loads(capsys.readouterr().out)["crypto_formal_daily_close"] is False
+    assert observed == [
+        (
+            "index",
+            "corpus.duckdb",
+            {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+        (
+            "audit",
+            "corpus.duckdb",
+            {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+        (
+            "day",
+            "corpus.duckdb",
+            {"utc_day": "2026-07-22", "memory_limit": "1GB", "threads": 1},
+        ),
+    ]
 
 
 def test_impact_feature_source_handler_emits_machine_report(monkeypatch, capsys) -> None:

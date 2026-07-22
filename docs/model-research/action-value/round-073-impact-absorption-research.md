@@ -1,10 +1,10 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** capture contract v4 passed its one-hour feed and replay
-qualification. Its default checkpoint policy failed the long-capture storage
-efficiency gate, so only a bounded feature-pipeline diagnostic is authorized.
-No model, replay, or profit result exists. This round grants no AI, leverage,
-paper, testnet, or live authority.
+**Status:** capture contract v8 passed its 30-second telemetry diagnostic,
+180-second capture gate, one-hour qualification, fresh-process audits, and
+independent exact-wire feature replay. Bounded segmented-corpus implementation
+and feature construction are authorized. An unbounded capture and every model,
+profitability, AI, leverage, paper, testnet, or live claim remain closed.
 
 ## Why this is different
 
@@ -79,6 +79,19 @@ flowchart LR
   executions, accessible fill capacity, or performance. Grid features, shocks,
   targets, and models remain unconstructed. See
   `round-073-v4-feature-source-diagnostic-2026-07-22.json`.
+- Contracts v5-v7 isolated terminal I/O telemetry and rejected a larger
+  checkpoint threshold after live probes still exceeded the frozen process-I/O
+  limit. Contract v8 instead routes new frames and typed streams to fresh
+  versioned tables inside the same database while preserving v1-v7 audit
+  support. One-hour run `f3e92ba29e1e4d3188c3f309f5c160a2` captured
+  1,294,128 real messages in 847 frames with zero reconnects, zero physical
+  database growth, 21.68% peak queue use, and 3,514.6 process-I/O bytes per
+  message against the frozen 4,096 limit. Its fresh-process audit passed every
+  frame. Independent replay reconciled all 104,305 depth-band rows and
+  reconstructed 4,459,493 level changes without future data. Storage headroom
+  is only 14.2%, so the evidence authorizes a bounded rotating corpus pipeline
+  and feature construction, not an unbounded seven-day run or model evaluation.
+  See `round-073-v8-capture-qualification-2026-07-22.json`.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

@@ -77,6 +77,9 @@ V8_CAPTURE_GATE_SUCCESS_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V8_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v8-capture-qualification-2026-07-22.json"
 )
+SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-segmented-corpus-contract-v1.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -662,6 +665,45 @@ def test_round73_v8_one_hour_qualification_authorizes_bounded_pipeline() -> None
     assert authorization["round_073_feature_construction"] is True
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_segmented_corpus_contract_is_hash_bound_and_fail_closed() -> None:
+    contract = json.loads(SEGMENTED_CORPUS_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_manifest_write"] is True
+    assert contract["qualification_evidence_sha256"] == (
+        "5663eea23d71e9a06c4f2d03e6a70ff82d23439942f5c251f93006f4dac9b9fd"
+    )
+    admission = contract["segment_admission"]
+    assert admission["capture_schema_version"] == "round-073-prospective-evidence-v8"
+    assert admission["minimum_elapsed_seconds"] == 3_600
+    assert admission["independent_feature_source_replay_required"] is True
+    assert admission["attempt_evidence_combined"] is False
+    assert admission["historical_v1_through_v7_run_admitted"] is False
+    resources = contract["resource_admission"]
+    assert resources["maximum_process_io_write_bytes_per_message"] == 4_096
+    assert resources["maximum_database_physical_growth_bytes_per_message"] == 1_024
+    assert resources["maximum_queue_utilization"] == 0.8
+    storage = contract["manifest_storage"]
+    assert storage["run_manifest_table"] == "impact_corpus_run_manifest_v1"
+    assert storage["existing_manifest_mismatch_policy"] == "fail without overwrite"
+    assert storage["duplicate_raw_payload_storage_permitted"] is False
+    rotation = contract["rotation_policy"]
+    assert rotation["segment_duration_seconds"] == 3_600
+    assert rotation["maximum_reconnects_per_segment"] == 0
+    assert rotation["unbounded_loop_permitted"] is False
+    day = contract["day_contract"]
+    assert day["crypto_formal_daily_close"] is False
+    assert day["minimum_complete_hours"] == 23
+    assert day["listed_products_use_actual_venue_calendars"] is True
+    assert day["listed_product_close_creates_crypto_close"] is False
+    modeling = contract["modeling_gate"]
+    assert modeling["minimum_complete_days_for_viability"] == 7
+    assert modeling["model_evaluation_authorized"] is False
+    assert modeling["profitability_claim"] is False
+    assert modeling["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

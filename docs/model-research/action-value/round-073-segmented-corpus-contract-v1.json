@@ -1,0 +1,123 @@
+{
+  "schema_version": "round-073-segmented-corpus-contract-v1",
+  "contract_sha256": "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
+  "qualification_evidence_sha256": "5663eea23d71e9a06c4f2d03e6a70ff82d23439942f5c251f93006f4dac9b9fd",
+  "frozen_before_first_manifest_write": true,
+  "purpose": "Build a hash-bound catalog of independently qualified one-hour BTCUSDT, ETHUSDT, and SOLUSDT exact-wire segments without pooling failed or disconnected attempts and without loading the corpus into memory.",
+  "research_update": [
+    {
+      "source": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/Introduction",
+      "authority": "official Binance developer documentation",
+      "adaptation": "Public USD-M data remains the source; no credentials or order endpoint is admitted."
+    },
+    {
+      "source": "https://binance.github.io/binance-connector-js/modules/_binance_derivatives-trading-usds-futures.html",
+      "authority": "official Binance connector documentation",
+      "adaptation": "The provider renews streams before the 24-hour connection lifetime. Round 73 uses shorter one-hour evidence segments with a fresh snapshot instead of assuming an immortal socket."
+    },
+    {
+      "source": "https://duckdb.org/docs/current/sql/statements/checkpoint",
+      "authority": "official DuckDB documentation",
+      "adaptation": "WAL checkpoints are treated as durability operations and monitored separately from physical database growth."
+    },
+    {
+      "source": "https://arxiv.org/abs/2607.04280",
+      "authority": "primary research paper",
+      "adaptation": "Order splitting and replenishment motivate anonymous impact-recovery features. A simulated causal mechanism does not identify a market maker or whale in Binance data."
+    },
+    {
+      "source": "https://www.cftc.gov/LawRegulation/FederalRegister/FinalRules/2013-12365.html",
+      "authority": "official CFTC interpretive guidance",
+      "adaptation": "Spoofing requires intent and context unavailable from the public feed. The corpus may retain cancellation-like displayed removal patterns but may not label manipulation or actor identity."
+    }
+  ],
+  "segment_admission": {
+    "capture_schema_version": "round-073-prospective-evidence-v8",
+    "report_schema_version": "round-073-capture-report-v8",
+    "minimum_elapsed_seconds": 3600,
+    "required_run_status": "completed",
+    "capture_gate_passed_required": true,
+    "qualification_passed_required": true,
+    "stored_report_sha256_required": true,
+    "exact_frame_chain_audit_required": true,
+    "independent_feature_source_replay_required": true,
+    "stored_depth_band_rows_reconciled_required": true,
+    "all_symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "all_symbol_segments_valid_required": true,
+    "coverage_interval": "intersection of the three valid symbol-segment wall-clock intervals",
+    "minimum_coverage_seconds": 3600,
+    "attempt_evidence_combined": false,
+    "failed_run_admitted": false,
+    "historical_v1_through_v7_run_admitted": false
+  },
+  "resource_admission": {
+    "maximum_process_io_write_bytes_per_message": 4096,
+    "maximum_database_physical_growth_bytes_per_message": 1024,
+    "maximum_queue_utilization": 0.8,
+    "maximum_negative_corrected_latency_fraction": 0.001,
+    "payload_cap_reached_permitted": false,
+    "database_size_cap_reached_permitted": false,
+    "storage_efficiency_passed_required": true,
+    "nonfinite_metric_permitted": false
+  },
+  "manifest_storage": {
+    "single_database_file": "data/microstructure.duckdb",
+    "run_manifest_table": "impact_corpus_run_manifest_v1",
+    "manifest_primary_key": "run_id",
+    "canonical_report_json_retained": false,
+    "canonical_feature_diagnostic_json_retained": true,
+    "manifest_sha256_required": true,
+    "existing_manifest_mismatch_policy": "fail without overwrite",
+    "underlying_capture_rows_rewritten": false,
+    "duplicate_raw_payload_storage_permitted": false
+  },
+  "rotation_policy": {
+    "segment_duration_seconds": 3600,
+    "reason": "Only one-hour v8 storage behavior is qualified; a longer segment is not inferred safe.",
+    "fresh_snapshot_per_segment": true,
+    "maximum_reconnects_per_segment": 0,
+    "failed_segment_policy": "catalog as ineligible only through capture evidence; never pool it into an admitted segment",
+    "stop_on_resource_gate_failure": true,
+    "stop_on_manifest_or_audit_failure": true,
+    "database_and_wal_cap_required": true,
+    "unbounded_loop_permitted": false
+  },
+  "day_contract": {
+    "boundary": "UTC day used only as a split and resampling block",
+    "crypto_formal_daily_close": false,
+    "minimum_complete_hours": 23,
+    "coverage_measure": "union of admitted all-symbol intersection intervals clipped to the UTC day",
+    "overlap_double_counted": false,
+    "day_finalized_before_utc_end": false,
+    "examples_cross_run_or_day_boundary": false,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "modeling_gate": {
+    "minimum_complete_days_for_viability": 7,
+    "minimum_complete_days_for_promotion": 30,
+    "terminal_holdout_days": 7,
+    "feature_construction_authorized": true,
+    "model_evaluation_authorized": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "implementation_authorization": {
+    "manifest_schema_and_indexer": true,
+    "read_only_manifest_audit": true,
+    "day_coverage_diagnostic": true,
+    "bounded_rotation_runner": true,
+    "start_seven_day_collection_before_runner_validation": false,
+    "round_073_model_evaluation": false
+  }
+}

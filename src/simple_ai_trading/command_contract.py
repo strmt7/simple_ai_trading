@@ -114,6 +114,7 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         (
             "model-blueprint",
             "impact-feature-source",
+            "impact-corpus-index",
             "microstructure-train",
             "microstructure-refit",
             "microstructure-prequential",
@@ -181,6 +182,8 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             "data-health",
             "tick-corpus-audit",
             "impact-audit",
+            "impact-corpus-audit",
+            "impact-corpus-day",
             "polymarket-resolve",
         ),
     ),

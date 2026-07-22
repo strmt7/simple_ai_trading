@@ -107,6 +107,11 @@ from .impact_absorption_capture import (
     ImpactCaptureSupervisorReport,
     capture_round73_supervised,
 )
+from .impact_absorption_corpus import (
+    audit_round73_corpus_manifest,
+    index_round73_corpus_run,
+    round73_corpus_day_coverage,
+)
 from .impact_absorption_features import diagnose_round73_feature_source
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
@@ -1370,6 +1375,45 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_features.add_argument("--database-threads", type=int, default=2)
     parser_impact_features.add_argument("--json", action="store_true")
     parser_impact_features.set_defaults(func=command_impact_feature_source)
+
+    parser_impact_corpus_index = subparsers.add_parser(
+        "impact-corpus-index",
+        help="replay and immutably catalog one qualified Round 73 capture",
+    )
+    parser_impact_corpus_index.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_corpus_index.add_argument("--run-id", required=True)
+    parser_impact_corpus_index.add_argument("--memory-limit", default="2GB")
+    parser_impact_corpus_index.add_argument("--database-threads", type=int, default=2)
+    parser_impact_corpus_index.add_argument("--json", action="store_true")
+    parser_impact_corpus_index.set_defaults(func=command_impact_corpus_index)
+
+    parser_impact_corpus_audit = subparsers.add_parser(
+        "impact-corpus-audit",
+        help="reconcile one immutable Round 73 corpus manifest",
+    )
+    parser_impact_corpus_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_corpus_audit.add_argument("--run-id", required=True)
+    parser_impact_corpus_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_corpus_audit.add_argument("--database-threads", type=int, default=2)
+    parser_impact_corpus_audit.add_argument("--json", action="store_true")
+    parser_impact_corpus_audit.set_defaults(func=command_impact_corpus_audit)
+
+    parser_impact_corpus_day = subparsers.add_parser(
+        "impact-corpus-day",
+        help="measure qualified Round 73 coverage for one UTC crypto partition",
+    )
+    parser_impact_corpus_day.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_corpus_day.add_argument("--utc-day", required=True)
+    parser_impact_corpus_day.add_argument("--memory-limit", default="2GB")
+    parser_impact_corpus_day.add_argument("--database-threads", type=int, default=2)
+    parser_impact_corpus_day.add_argument("--json", action="store_true")
+    parser_impact_corpus_day.set_defaults(func=command_impact_corpus_day)
 
     parser_tick_archive = subparsers.add_parser(
         "tick-archive-sync",
@@ -11032,6 +11076,86 @@ def command_impact_feature_source(args: argparse.Namespace) -> int:
             f"messages={diagnostic.message_count} "
             f"depth_updates={diagnostic.depth_update_count} "
             f"level_changes={diagnostic.level_change_count}"
+        )
+    return 0
+
+
+def command_impact_corpus_index(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        manifest = index_round73_corpus_run(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-corpus-index failed: {exc}", file=sys.stderr)
+        return 2
+    payload = manifest.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-corpus-index: "
+            f"run={manifest.run_id} frames={manifest.frame_count} "
+            f"messages={manifest.message_count} "
+            f"coverage_seconds={manifest.coverage_duration_ns / 1_000_000_000:.3f}"
+        )
+    return 0
+
+
+def command_impact_corpus_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_corpus_manifest(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-corpus-audit failed: {exc}", file=sys.stderr)
+        return 2
+    payload = audit.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-corpus-audit: "
+            f"passed={str(audit.passed).lower()} run={audit.run_id} "
+            f"frames={audit.frame_count} messages={audit.message_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
+
+
+def command_impact_corpus_day(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        diagnostic = round73_corpus_day_coverage(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            utc_day=str(getattr(args, "utc_day", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-corpus-day failed: {exc}", file=sys.stderr)
+        return 2
+    payload = diagnostic.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-corpus-day: "
+            f"utc_day={diagnostic.utc_day} "
+            f"finalized={str(diagnostic.finalized).lower()} "
+            f"eligible={str(diagnostic.eligible).lower()} "
+            f"coverage_hours={diagnostic.coverage_ns / 3_600_000_000_000:.3f}"
         )
     return 0
 
