@@ -44,6 +44,9 @@ V4_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V4_FEATURE_SOURCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v4-feature-source-diagnostic-2026-07-22.json"
 )
+V5_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-contract-v5.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -263,6 +266,46 @@ def test_round73_v4_feature_source_replay_is_hash_bound_and_nonfinancial() -> No
     assert authority["all_grid_anchor_features_constructed"] is False
     assert authority["model_evaluated"] is False
     assert authority["profitability_claim"] is False
+
+
+def test_round73_v5_contract_separates_database_audit_from_wire_replay() -> None:
+    contract = json.loads(V5_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("capture_contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v5_capture"] is True
+    frame = contract["frame_contract_v5"]
+    assert frame["maximum_messages_per_frame"] == 16_384
+    assert frame["flush_message_count"] == 16_384
+    assert frame["maximum_uncompressed_frame_bytes"] == 64 * 1024 * 1024
+    assert frame["flush_uncompressed_bytes"] == 32 * 1024 * 1024
+    assert frame["flush_interval_milliseconds"] == 4_000
+    assert frame["queue_capacity_messages"] == 65_536
+
+    bands = contract["depth_band_flow_v5"]
+    assert bands["database_audit_binds_stored_band_row_to_typed_event_hash"] is True
+    assert (
+        bands["database_audit_reconstructs_band_row_from_exact_wire_and_snapshot"]
+        is False
+    )
+    assert bands["independent_exact_wire_feature_source_replay_required"] is True
+    assert bands["independent_replay_reconciles_each_stored_band_row"] is True
+    assert (
+        bands["required_feature_source_diagnostic_schema"]
+        == "round-073-feature-source-diagnostic-v2"
+    )
+
+    assert contract["duckdb_policy"]["changed_by_v5"] is False
+    assert contract["v5_probe_gate"][
+        "independent_exact_wire_feature_source_replay_required"
+    ] is True
+    authorization = contract["authorization"]
+    assert authorization["v5_three_minute_probe"] is True
+    assert authorization["v5_one_hour_qualification"] is False
+    assert authorization["v5_long_capture"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["profitability_claim"] is False
+    assert authorization["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

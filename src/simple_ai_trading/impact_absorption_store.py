@@ -22,7 +22,9 @@ from .impact_absorption import (
     L2BookState,
     LiquidationSnapshotEvent,
     MarkPriceEvent,
+    ROUND73_LEVEL_BANDS,
     ROUND73_DESIGN_SHA256,
+    pre_event_level_band,
     validate_combined_stream_name,
     parse_aggregate_trade,
     parse_book_ticker,
@@ -37,11 +39,11 @@ from .impact_capture_frame import (
 )
 
 
-IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v4"
+IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v5"
 IMPACT_CAPTURE_CONTRACT_SHA256 = (
-    "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529"
+    "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
 )
-IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v4"
+IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v5"
 _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v1": (
         "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
@@ -51,6 +53,9 @@ _LEGACY_CAPTURE_CONTRACTS = {
     ),
     "round-073-prospective-evidence-v3": (
         "9228f8243531e44a264d5f88cf8498282986d1b9cb4a6b64e12ee0cede47dc5b"
+    ),
+    "round-073-prospective-evidence-v4": (
+        "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529"
     ),
 }
 IMPACT_CAPTURE_COMPRESSION_LEVEL = 3
@@ -262,6 +267,7 @@ class ImpactCaptureMessage:
     record: ImpactCaptureFrameRecord
     event: ImpactParsedEvent
     segment_id: str = ""
+    pre_l2_state: L2BookState | None = None
     l2_state: L2BookState | None = None
 
 
@@ -359,6 +365,7 @@ _EVENT_LINK_V4_COLUMNS = (
     "event_time_ms",
     "typed_event_sha256",
 )
+_EVENT_LINK_V5_COLUMNS = _EVENT_LINK_V4_COLUMNS
 _DEPTH_COLUMNS = (
     "run_id",
     "frame_index",
@@ -496,7 +503,21 @@ _REJECTED_WIRE_COLUMNS = (
     "receive_time_ns",
 )
 
-IMPACT_EVENT_LINK_TABLE = "impact_event_link_v4"
+_DEPTH_BAND_FLOW_COLUMNS = (
+    "run_id",
+    "frame_index",
+    "message_index",
+    "segment_id",
+    "symbol",
+    *(
+        f"{side}_{metric}_{band}"
+        for side in ("bid", "ask")
+        for band in ROUND73_LEVEL_BANDS
+        for metric in ("added_quote", "removed_quote", "change_count")
+    ),
+)
+
+IMPACT_EVENT_LINK_TABLE = "impact_event_link_v5"
 IMPACT_DEPTH_UPDATE_TABLE = "impact_depth_update_v3"
 IMPACT_L2_STATE_TABLE = "impact_l2_state_v3"
 IMPACT_BOOK_TICKER_TABLE = "impact_book_ticker_v3"
@@ -505,6 +526,7 @@ IMPACT_MARK_PRICE_TABLE = "impact_mark_price_v3"
 IMPACT_LIQUIDATION_SNAPSHOT_TABLE = "impact_liquidation_snapshot_v3"
 IMPACT_REST_EVENT_TABLE = "impact_rest_event_v3"
 IMPACT_REJECTED_WIRE_EVENT_TABLE = "impact_rejected_wire_event_v3"
+IMPACT_DEPTH_BAND_FLOW_TABLE = "impact_depth_band_flow_v5"
 
 _LEGACY_TYPED_TABLES = {
     "depthUpdate": ("impact_depth_update", _DEPTH_COLUMNS),
@@ -537,6 +559,7 @@ def _typed_tables_for_schema(
 ) -> dict[str, tuple[str, tuple[str, ...]]]:
     if schema_version in {
         IMPACT_CAPTURE_SCHEMA_VERSION,
+        "round-073-prospective-evidence-v4",
         "round-073-prospective-evidence-v3",
     }:
         return dict(_V3_TYPED_TABLES)
@@ -583,6 +606,10 @@ class ImpactAbsorptionStore:
             self._connection.execute("SET TimeZone='UTC'")
             self._connection.execute("SET preserve_insertion_order=false")
             if not self.read_only:
+                self._connection.execute("SET checkpoint_threshold='16MiB'")
+                self._connection.execute(
+                    "SET auto_checkpoint_skip_wal_threshold=100000"
+                )
                 self._init_schema()
         return self._connection
 
@@ -835,6 +862,25 @@ class ImpactAbsorptionStore:
                     CHECK (octet_length(typed_event_sha256) = 32)
             );
 
+            CREATE TABLE IF NOT EXISTS impact_event_link_v5 (
+                run_id VARCHAR NOT NULL,
+                frame_index UINTEGER NOT NULL,
+                message_index USMALLINT NOT NULL,
+                segment_id VARCHAR NOT NULL,
+                stream VARCHAR NOT NULL,
+                connection_id VARCHAR NOT NULL,
+                sequence_number UBIGINT NOT NULL,
+                received_wall_ns UBIGINT NOT NULL,
+                received_monotonic_ns UBIGINT NOT NULL,
+                raw_payload_sha256 BLOB NOT NULL
+                    CHECK (octet_length(raw_payload_sha256) = 32),
+                event_type VARCHAR NOT NULL,
+                symbol VARCHAR NOT NULL,
+                event_time_ms BIGINT,
+                typed_event_sha256 BLOB NOT NULL
+                    CHECK (octet_length(typed_event_sha256) = 32)
+            );
+
             CREATE TABLE IF NOT EXISTS impact_depth_update_v3 (
                 run_id VARCHAR NOT NULL, frame_index UINTEGER NOT NULL,
                 message_index UINTEGER NOT NULL, segment_id VARCHAR NOT NULL,
@@ -925,6 +971,38 @@ class ImpactAbsorptionStore:
                 rejection_class VARCHAR NOT NULL,
                 rejection_reason VARCHAR NOT NULL,
                 receive_time_ns UBIGINT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS impact_depth_band_flow_v5 (
+                run_id VARCHAR NOT NULL,
+                frame_index UINTEGER NOT NULL,
+                message_index UINTEGER NOT NULL,
+                segment_id VARCHAR NOT NULL,
+                symbol VARCHAR NOT NULL,
+                bid_added_quote_levels_1_5 DOUBLE NOT NULL,
+                bid_removed_quote_levels_1_5 DOUBLE NOT NULL,
+                bid_change_count_levels_1_5 UINTEGER NOT NULL,
+                bid_added_quote_levels_6_10 DOUBLE NOT NULL,
+                bid_removed_quote_levels_6_10 DOUBLE NOT NULL,
+                bid_change_count_levels_6_10 UINTEGER NOT NULL,
+                bid_added_quote_levels_11_20 DOUBLE NOT NULL,
+                bid_removed_quote_levels_11_20 DOUBLE NOT NULL,
+                bid_change_count_levels_11_20 UINTEGER NOT NULL,
+                bid_added_quote_outside_20 DOUBLE NOT NULL,
+                bid_removed_quote_outside_20 DOUBLE NOT NULL,
+                bid_change_count_outside_20 UINTEGER NOT NULL,
+                ask_added_quote_levels_1_5 DOUBLE NOT NULL,
+                ask_removed_quote_levels_1_5 DOUBLE NOT NULL,
+                ask_change_count_levels_1_5 UINTEGER NOT NULL,
+                ask_added_quote_levels_6_10 DOUBLE NOT NULL,
+                ask_removed_quote_levels_6_10 DOUBLE NOT NULL,
+                ask_change_count_levels_6_10 UINTEGER NOT NULL,
+                ask_added_quote_levels_11_20 DOUBLE NOT NULL,
+                ask_removed_quote_levels_11_20 DOUBLE NOT NULL,
+                ask_change_count_levels_11_20 UINTEGER NOT NULL,
+                ask_added_quote_outside_20 DOUBLE NOT NULL,
+                ask_removed_quote_outside_20 DOUBLE NOT NULL,
+                ask_change_count_outside_20 UINTEGER NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS impact_capture_report (
@@ -1683,6 +1761,14 @@ class ImpactAbsorptionStore:
                         "typed event does not belong to an active symbol segment"
                     )
             if isinstance(message.event, DepthUpdate):
+                if message.pre_l2_state is None:
+                    raise ValueError("depth evidence requires a pre-event L2 state")
+                if (
+                    message.pre_l2_state.symbol != symbol
+                    or len(message.pre_l2_state.bid_levels) != 20
+                    or len(message.pre_l2_state.ask_levels) != 20
+                ):
+                    raise ValueError("pre-event L2 state does not match depth evidence")
                 if message.event.stale and message.l2_state is not None:
                     raise ValueError("stale depth evidence cannot create an L2 state")
                 if not message.event.stale:
@@ -1700,8 +1786,8 @@ class ImpactAbsorptionStore:
                         raise ValueError(
                             "stored L2 state must contain exactly 20 levels per side"
                         )
-            elif message.l2_state is not None:
-                raise ValueError("only depth evidence may carry an L2 state")
+            elif message.pre_l2_state is not None or message.l2_state is not None:
+                raise ValueError("only depth evidence may carry L2 states")
             event_receive_time = getattr(message.event, "receive_time_ns", None)
             if (
                 event_receive_time is not None
@@ -1741,6 +1827,7 @@ class ImpactAbsorptionStore:
         message_ids: list[str] = []
         event_rows: list[tuple[object, ...]] = []
         depth_rows: list[tuple[object, ...]] = []
+        depth_band_rows: list[tuple[object, ...]] = []
         l2_rows: list[tuple[object, ...]] = []
         ticker_rows: list[tuple[object, ...]] = []
         trade_rows: list[tuple[object, ...]] = []
@@ -1790,6 +1877,7 @@ class ImpactAbsorptionStore:
             key = (selected, frame_index, index, segment_id)
             typed_row_for_hash: tuple[object, ...] | None = None
             l2_row_for_hash: tuple[object, ...] | None = None
+            depth_band_row_for_hash: tuple[object, ...] | None = None
             if isinstance(event, ImpactRejectedWireEvent):
                 rejected_wire_rows.append(
                     key
@@ -1840,6 +1928,40 @@ class ImpactAbsorptionStore:
                     )
                 )
                 typed_row_for_hash = depth_rows[-1]
+                if message.pre_l2_state is None:
+                    raise RuntimeError("pre-event L2 state was not retained")
+                band_flow = {
+                    side: {
+                        band: {
+                            "added_quote": 0.0,
+                            "removed_quote": 0.0,
+                            "change_count": 0,
+                        }
+                        for band in ROUND73_LEVEL_BANDS
+                    }
+                    for side in ("bid", "ask")
+                }
+                for change in event.changes:
+                    band = pre_event_level_band(message.pre_l2_state, change)
+                    bucket = band_flow[change.side][band]
+                    bucket["added_quote"] += change.added_quote
+                    bucket["removed_quote"] += change.removed_quote
+                    bucket["change_count"] += 1
+                depth_band_rows.append(
+                    key
+                    + (event.symbol,)
+                    + tuple(
+                        value
+                        for side in ("bid", "ask")
+                        for band in ROUND73_LEVEL_BANDS
+                        for value in (
+                            band_flow[side][band]["added_quote"],
+                            band_flow[side][band]["removed_quote"],
+                            band_flow[side][band]["change_count"],
+                        )
+                    )
+                )
+                depth_band_row_for_hash = depth_band_rows[-1]
                 if message.l2_state is not None:
                     state = message.l2_state
                     l2_rows.append(
@@ -1968,13 +2090,14 @@ class ImpactAbsorptionStore:
                 )
             if typed_row_for_hash is None:
                 raise RuntimeError("typed event row was not materialized")
-            typed_event_sha256 = _canonical_sha256(
-                {
-                    "event_type": event_type,
-                    "typed_row": typed_row_for_hash,
-                    "l2_row": l2_row_for_hash,
-                }
-            )
+            typed_payload = {
+                "event_type": event_type,
+                "typed_row": typed_row_for_hash,
+                "l2_row": l2_row_for_hash,
+            }
+            if event_type == "depthUpdate":
+                typed_payload["depth_band_row"] = depth_band_row_for_hash
+            typed_event_sha256 = _canonical_sha256(typed_payload)
             event_rows.append(event_row_prefix + (bytes.fromhex(typed_event_sha256),))
             if item.message_index != index:
                 raise RuntimeError("encoded frame message index changed unexpectedly")
@@ -2049,8 +2172,13 @@ class ImpactAbsorptionStore:
                 ],
             )
             for table, columns, rows in (
-                (IMPACT_EVENT_LINK_TABLE, _EVENT_LINK_V4_COLUMNS, event_rows),
+                (IMPACT_EVENT_LINK_TABLE, _EVENT_LINK_V5_COLUMNS, event_rows),
                 (IMPACT_DEPTH_UPDATE_TABLE, _DEPTH_COLUMNS, depth_rows),
+                (
+                    IMPACT_DEPTH_BAND_FLOW_TABLE,
+                    _DEPTH_BAND_FLOW_COLUMNS,
+                    depth_band_rows,
+                ),
                 (IMPACT_L2_STATE_TABLE, _L2_COLUMNS, l2_rows),
                 (IMPACT_BOOK_TICKER_TABLE, _BOOK_TICKER_COLUMNS, ticker_rows),
                 (IMPACT_AGGREGATE_TRADE_TABLE, _TRADE_COLUMNS, trade_rows),
@@ -2175,6 +2303,7 @@ class ImpactAbsorptionStore:
                 if schema_version
                 in {
                     IMPACT_CAPTURE_SCHEMA_VERSION,
+                    "round-073-prospective-evidence-v4",
                     "round-073-prospective-evidence-v3",
                 }
                 else "impact_l2_state"
@@ -2235,7 +2364,12 @@ class ImpactAbsorptionStore:
         ).fetchall()
         compact_schema = run_schema_version in {
             IMPACT_CAPTURE_SCHEMA_VERSION,
+            "round-073-prospective-evidence-v4",
             "round-073-prospective-evidence-v3",
+        }
+        event_time_link_schema = run_schema_version in {
+            IMPACT_CAPTURE_SCHEMA_VERSION,
+            "round-073-prospective-evidence-v4",
         }
         if expected_contract is None:
             typed_contracts: dict[str, tuple[str, tuple[str, ...]]] = {}
@@ -2243,6 +2377,8 @@ class ImpactAbsorptionStore:
             typed_contracts = _typed_tables_for_schema(run_schema_version)
         if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
             event_link_table = IMPACT_EVENT_LINK_TABLE
+        elif run_schema_version == "round-073-prospective-evidence-v4":
+            event_link_table = "impact_event_link_v4"
         elif run_schema_version == "round-073-prospective-evidence-v3":
             event_link_table = "impact_event_link_v3"
         else:
@@ -2251,6 +2387,7 @@ class ImpactAbsorptionStore:
         event_index_by_frame: dict[int, list[_StoredEventLink]] = {}
         typed_rows_by_event: dict[str, dict[tuple[int, int], tuple[object, ...]]] = {}
         l2_rows: dict[tuple[int, int], tuple[object, ...]] = {}
+        depth_band_rows: dict[tuple[int, int], tuple[object, ...]] = {}
         prior_frame_sha256 = ""
         total_messages = 0
         total_compressed = 0
@@ -2264,7 +2401,7 @@ class ImpactAbsorptionStore:
                 first_frame_index = int(batch[0][0])
                 last_frame_index = int(batch[-1][0])
                 event_index_by_frame = {}
-                if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+                if event_time_link_schema:
                     index_rows = connection.execute(
                         f"""
                         SELECT frame_index, message_index, segment_id, stream,
@@ -2309,7 +2446,7 @@ class ImpactAbsorptionStore:
                         raw_digest = bytes(index_row[8])
                         typed_digest_index = (
                             12
-                            if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+                            if event_time_link_schema
                             else 11
                         )
                         typed_digest = bytes(index_row[typed_digest_index])
@@ -2335,14 +2472,10 @@ class ImpactAbsorptionStore:
                             symbol=str(index_row[10]),
                             event_time_ms=(
                                 None
-                                if run_schema_version
-                                != IMPACT_CAPTURE_SCHEMA_VERSION
-                                or index_row[11] is None
+                                if not event_time_link_schema or index_row[11] is None
                                 else int(index_row[11])
                             ),
-                            event_time_stored=(
-                                run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
-                            ),
+                            event_time_stored=event_time_link_schema,
                             typed_event_sha256=typed_digest.hex(),
                         )
                     else:
@@ -2394,6 +2527,18 @@ class ImpactAbsorptionStore:
                         [selected, first_frame_index, last_frame_index],
                     ).fetchall()
                 }
+                if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+                    depth_band_rows = {
+                        (int(band_row[1]), int(band_row[2])): tuple(band_row)
+                        for band_row in connection.execute(
+                            f"SELECT {', '.join(_DEPTH_BAND_FLOW_COLUMNS)} "
+                            f"FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+                            "WHERE run_id = ? AND frame_index BETWEEN ? AND ?",
+                            [selected, first_frame_index, last_frame_index],
+                        ).fetchall()
+                    }
+                else:
+                    depth_band_rows = {}
             frame_index = int(row[0])
             if frame_index != expected_index:
                 errors.append(f"frame_index_gap:{expected_index}:{frame_index}")
@@ -2513,6 +2658,12 @@ class ImpactAbsorptionStore:
                     if indexed_event_type == "depthUpdate"
                     else None
                 )
+                depth_band_row = (
+                    depth_band_rows.get((frame_index, message_index))
+                    if indexed_event_type == "depthUpdate"
+                    and run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+                    else None
+                )
                 if typed_row is None:
                     errors.append(f"typed_row_missing:{frame_index}:{message_index}")
                 else:
@@ -2536,13 +2687,17 @@ class ImpactAbsorptionStore:
                         errors.append(
                             f"symbol_link_mismatch:{frame_index}:{message_index}"
                         )
-                    typed_sha256 = _canonical_sha256(
-                        {
-                            "event_type": indexed_event_type,
-                            "typed_row": typed_row,
-                            "l2_row": l2_row,
-                        }
-                    )
+                    typed_payload = {
+                        "event_type": indexed_event_type,
+                        "typed_row": typed_row,
+                        "l2_row": l2_row,
+                    }
+                    if (
+                        run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+                        and indexed_event_type == "depthUpdate"
+                    ):
+                        typed_payload["depth_band_row"] = depth_band_row
+                    typed_sha256 = _canonical_sha256(typed_payload)
                     if typed_sha256 != indexed.typed_event_sha256:
                         errors.append(
                             f"typed_sha256_mismatch:{frame_index}:{message_index}"
@@ -2626,6 +2781,16 @@ class ImpactAbsorptionStore:
                 )
             if actual != expected_counts.get(event_type, 0):
                 errors.append(f"typed_count_mismatch:{event_type}")
+        if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+            band_count = int(
+                connection.execute(
+                    f"SELECT count(*) FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+                    "WHERE run_id = ?",
+                    [selected],
+                ).fetchone()[0]
+            )
+            if band_count != expected_counts.get("depthUpdate", 0):
+                errors.append("typed_count_mismatch:depthBandFlow")
 
         stored_lanes = {
             (str(stream), str(connection_id)): (int(sequence), int(monotonic))
@@ -2669,6 +2834,7 @@ __all__ = [
     "IMPACT_CAPTURE_SYMBOLS",
     "IMPACT_AGGREGATE_TRADE_TABLE",
     "IMPACT_BOOK_TICKER_TABLE",
+    "IMPACT_DEPTH_BAND_FLOW_TABLE",
     "IMPACT_DEPTH_UPDATE_TABLE",
     "IMPACT_EVENT_LINK_TABLE",
     "IMPACT_L2_STATE_TABLE",

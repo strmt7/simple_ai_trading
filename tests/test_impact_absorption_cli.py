@@ -36,6 +36,14 @@ def _attempt(
         database_physical_bytes=1,
         database_size_cap_bytes=8 * 1024 * 1024 * 1024,
         database_size_cap_reached=False,
+        process_io_provider="test",
+        process_io_semantics="test counter",
+        process_io_start_write_bytes=0,
+        process_io_end_write_bytes=1,
+        process_io_delta_write_bytes=1,
+        process_io_write_bytes_per_message=1.0,
+        frames_per_stream_minute=1.0,
+        storage_efficiency_passed=False,
         event_counts={"serverTime": 1},
         symbol_event_counts={},
         negative_corrected_latency_fraction=0.0,
@@ -118,7 +126,7 @@ def test_impact_feature_source_handler_emits_machine_report(monkeypatch, capsys)
 
         def as_dict(self):
             return {
-                "schema_version": "round-073-feature-source-diagnostic-v1",
+                "schema_version": "round-073-feature-source-diagnostic-v2",
                 "run_id": self.run_id,
             }
 
@@ -164,7 +172,7 @@ def test_impact_capture_handler_uses_mode_default_and_machine_report(
     payload = json.loads(capsys.readouterr().out)
     assert payload["schema_version"] == "round-073-capture-supervisor-report-v1"
     assert payload["attempt_evidence_combined"] is False
-    assert observed["config"].duration_seconds == 30.0
+    assert observed["config"].duration_seconds == 180.0
     assert observed["config"].mode == "probe"
     assert observed["progress_interval_seconds"] == 30.0
 

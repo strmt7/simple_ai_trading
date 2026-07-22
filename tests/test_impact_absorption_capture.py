@@ -20,6 +20,7 @@ from simple_ai_trading.impact_absorption_capture import (
     _rejected_wire_message,
     _terminal_post_capture_failure_report,
     _tick_sizes,
+    _writer_resource_metrics,
     capture_round73_supervised,
 )
 from simple_ai_trading.impact_absorption_store import (
@@ -61,6 +62,14 @@ def _report(
         database_physical_bytes=0,
         database_size_cap_bytes=8 * 1024 * 1024 * 1024,
         database_size_cap_reached=False,
+        process_io_provider="test",
+        process_io_semantics="test counter",
+        process_io_start_write_bytes=0,
+        process_io_end_write_bytes=0,
+        process_io_delta_write_bytes=0,
+        process_io_write_bytes_per_message=None,
+        frames_per_stream_minute=0.0,
+        storage_efficiency_passed=False,
         event_counts={},
         symbol_event_counts={},
         negative_corrected_latency_fraction=None,
@@ -126,6 +135,12 @@ def _start_store(database) -> None:
 
 
 def test_capture_config_separates_bounded_probe_from_hour_qualification() -> None:
+    defaults = ImpactCaptureConfig()
+    assert defaults.duration_seconds == 180.0
+    assert defaults.frame_message_limit == 16_384
+    assert defaults.frame_uncompressed_limit_bytes == 32 * 1024 * 1024
+    assert defaults.frame_flush_seconds == 4.0
+
     ImpactCaptureConfig(mode="probe", duration_seconds=300).validate()
     ImpactCaptureConfig(mode="qualification", duration_seconds=3_600).validate()
 
@@ -143,6 +158,68 @@ def test_capture_config_separates_bounded_probe_from_hour_qualification() -> Non
         ImpactCaptureConfig(duckdb_memory_limit="unbounded").validate()
     with pytest.raises(ValueError, match="512 MiB safety reserve"):
         ImpactCaptureConfig(database_size_cap_bytes=512 * 1024 * 1024).validate()
+
+
+def test_storage_efficiency_gate_uses_frozen_process_io_and_queue_bounds(
+    tmp_path, monkeypatch
+) -> None:
+    writer = _ImpactFrameWriter(
+        ImpactCaptureConfig(database=str(tmp_path / "unused.duckdb")),
+        RUN_ID,
+    )
+    writer.frame_count = 75
+    writer.message_count = 1_000
+    writer.high_water_messages = 52_428
+    monkeypatch.setattr(
+        writer,
+        "process_io_metrics",
+        lambda: ("test", "process write bytes", 100, 4_096_100, 4_096_000),
+    )
+
+    metrics = _writer_resource_metrics(
+        writer,
+        elapsed_seconds=180.0,
+        queue_capacity_messages=65_536,
+    )
+    assert metrics[4] == 4_096_000
+    assert metrics[5] == 4_096.0
+    assert metrics[6] == 25.0
+    assert metrics[7] is True
+
+    writer.frame_count = 76
+    assert _writer_resource_metrics(
+        writer,
+        elapsed_seconds=180.0,
+        queue_capacity_messages=65_536,
+    )[7] is False
+    writer.frame_count = 75
+    writer.high_water_messages = 52_429
+    assert _writer_resource_metrics(
+        writer,
+        elapsed_seconds=180.0,
+        queue_capacity_messages=65_536,
+    )[7] is False
+    writer.high_water_messages = 52_428
+    monkeypatch.setattr(
+        writer,
+        "process_io_metrics",
+        lambda: ("test", "process write bytes", 100, 4_096_101, 4_096_001),
+    )
+    assert _writer_resource_metrics(
+        writer,
+        elapsed_seconds=180.0,
+        queue_capacity_messages=65_536,
+    )[7] is False
+    monkeypatch.setattr(
+        writer,
+        "process_io_metrics",
+        lambda: ("test", "process write bytes", 100, 4_096_100, 4_096_000),
+    )
+    assert _writer_resource_metrics(
+        writer,
+        elapsed_seconds=179.999,
+        queue_capacity_messages=65_536,
+    )[7] is False
 
 
 def test_stream_topology_is_three_symbols_only_and_uses_specific_liquidations() -> None:
@@ -292,7 +369,7 @@ def test_terminal_post_capture_failure_is_persisted_and_never_retried(tmp_path) 
             "WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()
-    assert stored[0] == "round-073-capture-report-v4"
+    assert stored[0] == "round-073-capture-report-v5"
     assert json.loads(stored[1])["failure_class"] == "post_capture"
     with ImpactAbsorptionStore(database, read_only=True) as store:
         assert store.audit_run(RUN_ID).passed is True

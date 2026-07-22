@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"d804b949739457337470ead87a9b1712771b5c047ef98609f98b4b95bbaf95eb";
+inline constexpr const wchar_t* kCommandContractSha256 = L"fcdb6a1279fe1088d67282c3ee657eca31afa1dda68de58cab1074689fd6ba62";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -277,7 +277,7 @@ inline constexpr CommandOptionSpec kOptions_impact_audit[] = {
 inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
     {L"--mode", L"mode", L"probe, qualification", L"probe", L"", L"1", false, true, false},
-    {L"--duration-seconds", L"duration_seconds", L"", L"", L"streaming duration; defaults to 30 for probe and 3600 for qualification", L"1", false, true, false},
+    {L"--duration-seconds", L"duration_seconds", L"", L"", L"streaming duration; defaults to 180 for probe and 3600 for qualification", L"1", false, true, false},
     {L"--compressed-payload-cap-bytes", L"compressed_payload_cap_bytes", L"", L"2147483648", L"", L"1", false, true, false},
     {L"--database-size-cap-bytes", L"database_size_cap_bytes", L"", L"8589934592", L"absolute DuckDB plus WAL cap; capture stops with a 512 MiB reserve", L"1", false, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},

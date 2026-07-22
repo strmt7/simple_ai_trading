@@ -15,6 +15,8 @@ from simple_ai_trading.impact_absorption import (
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_AGGREGATE_TRADE_TABLE,
     IMPACT_BOOK_TICKER_TABLE,
+    IMPACT_CAPTURE_SCHEMA_VERSION,
+    IMPACT_DEPTH_BAND_FLOW_TABLE,
     IMPACT_DEPTH_UPDATE_TABLE,
     IMPACT_EVENT_LINK_TABLE,
     IMPACT_L2_STATE_TABLE,
@@ -94,6 +96,34 @@ def _rewrite_single_frame_version(connection, schema: str, contract: str) -> str
     return frame_sha256
 
 
+def _legacy_typed_hashes(
+    store: ImpactAbsorptionStore,
+) -> dict[tuple[int, int], str]:
+    links = store.connect().execute(
+        f"SELECT frame_index, message_index, event_type "
+        f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
+        [RUN_ID],
+    ).fetchall()
+    output = {}
+    for frame_index, message_index, event_type in links:
+        typed_row, l2_row = store._stored_typed_rows(
+            store.connect(),
+            run_id=RUN_ID,
+            frame_index=int(frame_index),
+            message_index=int(message_index),
+            event_type=str(event_type),
+            schema_version=IMPACT_CAPTURE_SCHEMA_VERSION,
+        )
+        output[(int(frame_index), int(message_index))] = _canonical_sha256(
+            {
+                "event_type": str(event_type),
+                "typed_row": typed_row,
+                "l2_row": l2_row,
+            }
+        )
+    return output
+
+
 def _snapshot() -> dict[str, object]:
     return {
         "lastUpdateId": 100,
@@ -156,6 +186,7 @@ def _messages() -> tuple[ImpactCaptureMessage, ...]:
     }
     book = SynchronizedDepthBook("BTCUSDT", "0.1")
     book.initialize(_snapshot())
+    pre_state = book.state()
     depth = book.apply(depth_payload, receive_time_ns=100)
 
     ticker_payload = {
@@ -226,6 +257,7 @@ def _messages() -> tuple[ImpactCaptureMessage, ...]:
             ),
             event=depth,
             segment_id=SEGMENT_ID,
+            pre_l2_state=pre_state,
             l2_state=book.state(),
         ),
         ImpactCaptureMessage(
@@ -341,6 +373,19 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
             f"SELECT funding_rate FROM {IMPACT_MARK_PRICE_TABLE} WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()[0] == pytest.approx(-0.0001)
+        assert connection.execute(
+            f"SELECT count(*) FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} WHERE run_id = ?",
+            [RUN_ID],
+        ).fetchone()[0] == 1
+        band_values = connection.execute(
+            f"SELECT bid_added_quote_levels_1_5, "
+            "bid_removed_quote_levels_1_5, bid_change_count_levels_1_5, "
+            "ask_added_quote_levels_1_5, ask_removed_quote_levels_1_5, "
+            f"ask_change_count_levels_1_5 FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+            "WHERE run_id = ?",
+            [RUN_ID],
+        ).fetchone()
+        assert band_values == pytest.approx((200.0, 0.0, 1, 0.0, 200.2, 1))
         raw_digest, typed_digest = connection.execute(
             f"SELECT raw_payload_sha256, typed_event_sha256 "
             f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ? LIMIT 1",
@@ -376,6 +421,7 @@ def test_store_keeps_v2_rows_replay_auditable_without_rewriting_them(tmp_path) -
         messages = _messages()
         store.append_frame(run_id=RUN_ID, messages=messages)
         connection = store.connect()
+        legacy_hashes = _legacy_typed_hashes(store)
 
         table_pairs = (
             ("impact_depth_update", IMPACT_DEPTH_UPDATE_TABLE),
@@ -435,7 +481,7 @@ def test_store_keeps_v2_rows_replay_auditable_without_rewriting_them(tmp_path) -
                     event_time,
                     transaction_time,
                     update_id,
-                    bytes(link[11]).hex(),
+                    legacy_hashes[(int(link[0]), int(link[1]))],
                 )
             )
         connection.executemany(
@@ -466,6 +512,7 @@ def test_store_keeps_v3_compact_rows_replay_auditable(tmp_path) -> None:
         _start(store)
         store.append_frame(run_id=RUN_ID, messages=_messages())
         connection = store.connect()
+        legacy_hashes = _legacy_typed_hashes(store)
         connection.execute(
             f"""
             INSERT INTO impact_event_link_v3
@@ -477,6 +524,12 @@ def test_store_keeps_v3_compact_rows_replay_auditable(tmp_path) -> None:
             """,
             [RUN_ID],
         )
+        for (frame_index, message_index), digest in legacy_hashes.items():
+            connection.execute(
+                "UPDATE impact_event_link_v3 SET typed_event_sha256 = ? "
+                "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+                [bytes.fromhex(digest), RUN_ID, frame_index, message_index],
+            )
         _rewrite_single_frame_version(connection, v3_schema, v3_contract)
         connection.execute(
             f"DELETE FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?", [RUN_ID]
@@ -486,6 +539,45 @@ def test_store_keeps_v3_compact_rows_replay_auditable(tmp_path) -> None:
         assert audit.passed is True
         assert audit.errors == ()
         assert audit.capture_contract_sha256 == v3_contract
+
+
+def test_store_keeps_v4_event_time_rows_replay_auditable(tmp_path) -> None:
+    v4_schema = "round-073-prospective-evidence-v4"
+    v4_contract = "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529"
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+        legacy_hashes = _legacy_typed_hashes(store)
+        connection.execute(
+            f"""
+            INSERT INTO impact_event_link_v4
+            SELECT run_id, frame_index, message_index, segment_id, stream,
+                   connection_id, sequence_number, received_wall_ns,
+                   received_monotonic_ns, raw_payload_sha256, event_type, symbol,
+                   event_time_ms, typed_event_sha256
+            FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?
+            """,
+            [RUN_ID],
+        )
+        for (frame_index, message_index), digest in legacy_hashes.items():
+            connection.execute(
+                "UPDATE impact_event_link_v4 SET typed_event_sha256 = ? "
+                "WHERE run_id = ? AND frame_index = ? AND message_index = ?",
+                [bytes.fromhex(digest), RUN_ID, frame_index, message_index],
+            )
+        _rewrite_single_frame_version(connection, v4_schema, v4_contract)
+        connection.execute(
+            f"DELETE FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?", [RUN_ID]
+        )
+        connection.execute(
+            f"DELETE FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} WHERE run_id = ?", [RUN_ID]
+        )
+
+        audit = store.audit_run(RUN_ID)
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.capture_contract_sha256 == v4_contract
 
 
 def test_store_rejects_invalid_lane_or_segment_before_any_frame_commits(
@@ -614,6 +706,29 @@ def test_store_detects_compact_link_tampering_and_duplicate_rows(tmp_path) -> No
         duplicate_audit = store.audit_run(RUN_ID)
         assert duplicate_audit.passed is False
         assert f"event_index_count_mismatch:{frame_index}" in duplicate_audit.errors
+
+
+def test_store_detects_depth_band_flow_tampering(tmp_path) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        connection = store.connect()
+        connection.execute(
+            f"UPDATE {IMPACT_DEPTH_BAND_FLOW_TABLE} "
+            "SET bid_added_quote_levels_1_5 = bid_added_quote_levels_1_5 + 1 "
+            "WHERE run_id = ?",
+            [RUN_ID],
+        )
+        value_audit = store.audit_run(RUN_ID)
+        assert value_audit.passed is False
+        assert "typed_sha256_mismatch:0:0" in value_audit.errors
+
+        connection.execute(
+            f"DELETE FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} WHERE run_id = ?", [RUN_ID]
+        )
+        count_audit = store.audit_run(RUN_ID)
+        assert count_audit.passed is False
+        assert "typed_count_mismatch:depthBandFlow" in count_audit.errors
 
 
 def test_store_allows_one_bounded_cap_crossing_then_blocks_more_frames(
@@ -879,7 +994,7 @@ def test_terminal_capture_report_is_canonical_hash_bound_and_secret_free(
             ended_wall_ns=WALL_BASE + 2_000,
         )
         report = {
-            "schema_version": "round-073-capture-report-v4",
+            "schema_version": "round-073-capture-report-v5",
             "run_id": RUN_ID,
             "status": "stopped",
             "qualification_passed": False,

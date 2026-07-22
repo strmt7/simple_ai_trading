@@ -1,0 +1,135 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v5",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_capture_contract_sha256": "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529",
+  "capture_contract_sha256": "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b",
+  "frozen_before_first_v5_capture": true,
+  "amendment_scope": "Reduce full-path transaction frequency, persist causal depth-band primitives, and bind process-I/O telemetry. Exact wire, market scope, target, and model semantics remain unchanged.",
+  "evidence": {
+    "v4_qualification_artifact": "round-073-v4-capture-qualification-2026-07-22.json",
+    "v4_qualification_artifact_sha256": "a53a9d2f443359b0b7c38434e06753f73021df28720f4753191fb5677dcada5a",
+    "v4_feature_source_artifact": "round-073-v4-feature-source-diagnostic-2026-07-22.json",
+    "v4_feature_source_artifact_sha256": "4529f420e453088fa074258d6aecf71d686c08a7f34db557957630b788a72b6e",
+    "observed_v4_process_write_transfer_bytes_approximate": 59028013056,
+    "observed_v4_message_count": 3181236,
+    "observed_v4_frame_count": 11663,
+    "observed_v4_physical_growth_bytes": 660078592,
+    "isolated_checkpoint_benchmark": {
+      "real_event_link_rows": 100000,
+      "synthetic_market_data_used": false,
+      "default_process_write_transfer_bytes": 34678100,
+      "candidate_process_write_transfer_bytes": 34682519,
+      "candidate_to_default_ratio": 1.00012742912674,
+      "decision": "The isolated event-link benchmark did not support a checkpoint-threshold change. V5 changes transaction granularity while retaining the observed DuckDB defaults."
+    },
+    "v4_sixty_second_baseline": {
+      "run_id": "99449a7e8c83435395547f62097b9f53",
+      "elapsed_seconds": 62.625,
+      "message_count": 51256,
+      "frame_count": 210,
+      "mid_run_process_write_transfer_bytes_lower_bound": 745247814,
+      "limitation": "The process exited before a terminal process-I/O counter could be sampled, so this is a lower bound and not a final write total."
+    }
+  },
+  "inheritance": {
+    "base_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
+    "wire_correction_contract_sha256": "1b46f178e335b3473b86ee71a113e2538a9068e287c50f0867aab13f3230557c",
+    "compact_storage_contract_sha256": "9228f8243531e44a264d5f88cf8498282986d1b9cb4a6b64e12ee0cede47dc5b",
+    "event_time_contract_sha256": "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529",
+    "rule": "All v1 through v4 logical requirements remain binding except for the v5 frame, event-link, typed-hash, and telemetry amendments below.",
+    "historical_rows_rewritten": false,
+    "historical_v1_through_v4_audit_support_required": true
+  },
+  "frame_contract_v5": {
+    "format": "round-073-length-prefixed-utf8-receipts-v1",
+    "maximum_messages_per_frame": 16384,
+    "flush_message_count": 16384,
+    "maximum_uncompressed_frame_bytes": 67108864,
+    "flush_uncompressed_bytes": 33554432,
+    "flush_interval_milliseconds": 4000,
+    "writer_count": 1,
+    "queue_capacity_messages": 65536,
+    "transaction_scope": "one exact-wire frame, event links, unchanged typed rows, and causal depth-band rows commit atomically",
+    "maximum_uncommitted_wall_interval_seconds": 4,
+    "process_loss_policy": "The attempt is unusable and must restart from fresh snapshots. Uncommitted evidence is never inferred or pooled.",
+    "reason": "The v4 full path committed about 194 frames per minute. V5 reduces transaction frequency while keeping each frame bounded well below the queue and 64 MiB frame limits."
+  },
+  "event_link_v5": {
+    "table": "impact_event_link_v5",
+    "logical_columns_equal_v4": true,
+    "event_time_semantics_equal_v4": true,
+    "raw_and_typed_digest_bytes": 32,
+    "primary_key_index": false,
+    "v4_rows_migrated_or_reclassified": false
+  },
+  "depth_band_flow_v5": {
+    "table": "impact_depth_band_flow_v5",
+    "row_cardinality": "exactly one row per v5 depthUpdate, including an all-zero row for a stale update",
+    "band_clock": "synchronized local book immediately before the exact depth event is applied",
+    "prospective_rank": "one plus the number of strictly better-priced pre-event levels on the same side",
+    "bands": ["levels_1_5", "levels_6_10", "levels_11_20", "outside_20"],
+    "per_side_band_values": ["added_quote", "removed_quote", "change_count"],
+    "future_state_used": false,
+    "typed_event_hash_includes_band_row": true,
+    "database_audit_binds_stored_band_row_to_typed_event_hash": true,
+    "database_audit_reconstructs_band_row_from_exact_wire_and_snapshot": false,
+    "independent_exact_wire_feature_source_replay_required": true,
+    "independent_replay_reconciles_each_stored_band_row": true,
+    "required_feature_source_diagnostic_schema": "round-073-feature-source-diagnostic-v2",
+    "gross_flow_warning": "These are displayed book changes, not executions, fills, accessible capacity, spoofing labels, or market-maker identity."
+  },
+  "duckdb_policy": {
+    "checkpoint_threshold": "16.0 MiB observed default",
+    "auto_checkpoint_skip_wal_threshold_bytes": 100000,
+    "changed_by_v5": false,
+    "reason": "A 100,000-real-row isolated benchmark measured a candidate-to-default process-write ratio of 1.000127, so changing these settings is not evidence-supported."
+  },
+  "process_io_telemetry": {
+    "required_in_terminal_report": true,
+    "fields": ["provider", "semantics", "start_write_bytes", "end_write_bytes", "delta_write_bytes"],
+    "windows_provider": "GetProcessIoCounters.WriteTransferCount",
+    "linux_provider": "/proc/self/io write_bytes when available",
+    "cross_provider_comparison_permitted": false,
+    "physical_ssd_wear_claim_permitted": false
+  },
+  "v5_probe_gate": {
+    "minimum_stream_seconds": 180,
+    "fresh_process_read_only_replay_required": true,
+    "independent_exact_wire_feature_source_replay_required": true,
+    "required_feature_source_diagnostic_schema": "round-073-feature-source-diagnostic-v2",
+    "maximum_frames_per_stream_minute": 25,
+    "maximum_process_io_write_bytes_per_message": 4096,
+    "maximum_queue_utilization": 0.8,
+    "all_v4_feed_integrity_gates_inherited": true,
+    "failure_authorizes_v5_qualification_or_long_capture": false
+  },
+  "v5_qualification": {
+    "minimum_contiguous_minutes_per_symbol": 60,
+    "probe_gate_must_pass_first": true,
+    "fresh_process_read_only_replay_required": true,
+    "independent_exact_wire_feature_source_replay_required": true,
+    "required_feature_source_diagnostic_schema": "round-073-feature-source-diagnostic-v2",
+    "valid_hash_bound_terminal_report_required": true,
+    "storage_efficiency_gate_must_pass": true,
+    "failure_authorizes_long_capture_or_modeling": false
+  },
+  "version_isolation": {
+    "v5_run_reads_event_link_v5_and_depth_band_flow_v5": true,
+    "v5_independent_feature_source_replay_reconstructs_depth_bands_from_exact_wire": true,
+    "v4_run_reads_event_link_v4_and_reconstructs_depth_bands_from_exact_wire": true,
+    "v3_run_reads_event_link_v3": true,
+    "v1_or_v2_run_reads_legacy_event_index": true,
+    "cross_version_frame_pooling_permitted": false
+  },
+  "authorization": {
+    "v5_three_minute_probe": true,
+    "v5_one_hour_qualification": false,
+    "v5_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
