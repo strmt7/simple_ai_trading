@@ -50,6 +50,9 @@ V5_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V5_PROBE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v5-probe-failure-2026-07-22.json"
 )
+V5_STORAGE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v5-storage-probe-failure-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -328,6 +331,36 @@ def test_round73_v5_failed_probe_is_preserved_without_authority() -> None:
     assert evidence["root_cause"]["frame_format_changed"] is False
     authorization = evidence["authorization"]
     assert authorization["v5_probe_passed"] is False
+    assert authorization["v5_one_hour_qualification"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["profitability_claim"] is False
+    assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v5_storage_failure_rejects_unsupported_checkpoint_change() -> None:
+    evidence = json.loads(V5_STORAGE_FAILURE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["run"]["qualification_passed"] is False
+    assert evidence["fresh_process_read_only_audit"]["passed"] is True
+    storage = evidence["storage_observation"]
+    assert storage["database_physical_growth_bytes"] == 46_399_488
+    assert storage["process_io_write_bytes_per_message"] > 4_096
+    assert storage["storage_efficiency_passed"] is False
+    benchmark = evidence["bounded_full_path_checkpoint_benchmark"]
+    assert benchmark["synthetic_market_data_used"] is False
+    assert benchmark["message_count"] == 44_506
+    assert benchmark["signatures_equal"] is True
+    assert benchmark["candidate_to_default_process_write_ratio"] > 0.99
+    decision = evidence["decision"]
+    assert decision["root_cause_proven"] is False
+    assert decision["checkpoint_change_supported"] is False
+    assert decision["feature_source_replay_run"] is False
+    authorization = evidence["authorization"]
+    assert authorization["v6_telemetry_probe"] is True
     assert authorization["v5_one_hour_qualification"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
