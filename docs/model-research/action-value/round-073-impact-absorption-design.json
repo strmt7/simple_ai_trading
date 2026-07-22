@@ -1,0 +1,386 @@
+{
+  "schema_version": "round-073-impact-absorption-design-v1",
+  "round": 73,
+  "design_sha256": "15e170e7187442f6c7675ed0151a7554b68cfeeadf6a1032737425d6daf538ad",
+  "phase": "prospective_l2_impact_absorption_viability",
+  "research_question": "After an observed aggressive-flow shock in BTCUSDT, ETHUSDT, or SOLUSDT USD-M perpetual futures, do causal multi-level depth consumption, replenishment, cancellation, and impact-recovery features improve calibrated post-latency executable-payoff forecasts beyond the same shallow model using top-of-book and trade-tape features only?",
+  "governance": {
+    "freeze_before_modeling_capture": true,
+    "real_market_data_only": true,
+    "profitability_claim_permitted": false,
+    "trading_authority_permitted": false,
+    "testnet_or_live_authority_permitted": false,
+    "position_sizing_or_leverage_change_permitted": false,
+    "language_model_price_prediction_permitted": false,
+    "posthoc_feature_target_horizon_threshold_gate_or_sample_change_permitted": false,
+    "positive_pnl_may_rescue_predictive_failure": false,
+    "previously_consumed_periods_may_be_reused_for_selection": false
+  },
+  "closed_predecessor_controls": [
+    {
+      "round": 36,
+      "family": "static L1 and trade-tape taker direction",
+      "strongest_weighted_roc_auc": 0.6072574903425851,
+      "strongest_horizon_seconds": 5,
+      "maximum_gross_mean_bps": 0.4583631660401235,
+      "maximum_delayed_net_mean_bps": -11.578984700095054,
+      "decision": "May be used only as a frozen control. More thresholds or larger models on the same static inputs are prohibited."
+    },
+    {
+      "round": 58,
+      "family": "value-blind symmetric touch market making",
+      "decision": "May be used only as a structural control. Passive fills, queue priority, and hidden liquidity may not be assumed."
+    },
+    {
+      "round": 72,
+      "family": "one-second spot-perpetual aggregate-flow price discovery",
+      "passed_symbol_horizon_components": 0,
+      "tested_symbol_horizon_components": 9,
+      "decision": "Spot aggregate flow is not admitted as a directional feature without a separately frozen materially new hypothesis."
+    }
+  ],
+  "research_basis": [
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://arxiv.org/abs/1011.6402",
+      "adapted_elements": [
+        "signed additions cancellations and executions rather than trade volume alone",
+        "depth-conditioned order-flow impact"
+      ],
+      "non_equivalence": "Contemporaneous impact in U.S. equities is not a profitable forecast in crypto futures."
+    },
+    {
+      "title": "Multi-Level Order-Flow Imbalance in a Limit Order Book",
+      "url": "https://arxiv.org/abs/1907.06230",
+      "adapted_elements": [
+        "multiple price levels",
+        "separate flow at each level"
+      ],
+      "non_equivalence": "Its explanatory relationship is not evidence of post-latency executable value."
+    },
+    {
+      "title": "Order Flows and Limit Order Book Resiliency on the Meso-Scale",
+      "url": "https://arxiv.org/abs/1708.02715",
+      "adapted_elements": [
+        "relative additions and cancellations",
+        "book-shape and recovery features",
+        "state-dependent response to aggressive flow"
+      ],
+      "non_equivalence": "NASDAQ meso-scale resiliency must be re-established for each crypto perpetual."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "adapted_elements": [
+        "complete-transaction evaluation",
+        "forecast metrics cannot substitute for actionability"
+      ],
+      "non_equivalence": "Round 73 uses a prospective Binance event stream and a separately specified payoff gate."
+    },
+    {
+      "title": "TLOB",
+      "url": "https://arxiv.org/abs/2502.15757",
+      "adapted_elements": [
+        "simple-model control before temporal attention",
+        "cost-aware labels"
+      ],
+      "non_equivalence": "A transformer is not authorized unless the fixed shallow feature test passes."
+    },
+    {
+      "title": "When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures",
+      "url": "https://arxiv.org/abs/2607.09230",
+      "adapted_elements": [
+        "state-first staged ablation",
+        "asset-specific rather than pooled conclusions",
+        "proper-score and blocked inference"
+      ],
+      "non_equivalence": "The paper uses vendor minute snapshots for a liquidity-state target; Round 73 uses official prospective 100 ms diff depth for post-latency payoff targets."
+    }
+  ],
+  "source_contract": {
+    "provider": "Binance official public USD-M futures interfaces",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "market": "USD-M perpetual futures",
+    "market_calendar": "continuous except observed exchange status maintenance or disconnect",
+    "listed_etf_or_equity_close_feature": false,
+    "listed_product_context_rule": "Any later ETF, equity, or listed-futures context requires its actual venue calendar and timestamped source; it cannot create a Binance close.",
+    "public_websocket_streams": [
+      "depth@100ms",
+      "bookTicker"
+    ],
+    "market_websocket_streams": [
+      "aggTrade",
+      "markPrice@1s",
+      "forceOrder"
+    ],
+    "rest_endpoints": [
+      "server time",
+      "exchange information",
+      "depth snapshot",
+      "current open interest"
+    ],
+    "open_interest_poll_interval_seconds": 60,
+    "clock_probe_interval_seconds": 60,
+    "rate_limit_refresh_interval_seconds": 90,
+    "websocket_connection_rotation_before_hours": 23,
+    "stream_type_required": 1,
+    "public_product_symbol_must_equal_event_symbol": true,
+    "raw_event_receive_clock": "host monotonic nanoseconds plus wall-clock nanoseconds",
+    "exchange_clock_offset": "minimum-RTT estimator retained with every segment",
+    "single_evidence_database": "data/microstructure.duckdb",
+    "database_compression": "DuckDB compressed structured columns with bounded transactional batches",
+    "duplicate_raw_archive_permitted": false,
+    "synthetic_missing_event_permitted": false
+  },
+  "order_book_integrity_contract": {
+    "snapshot_depth_limit": 1000,
+    "buffer_before_snapshot": true,
+    "first_event_must_bridge_snapshot": true,
+    "subsequent_previous_update_id_must_equal_prior_final_update_id": true,
+    "zero_quantity_removes_level": true,
+    "crossed_or_empty_top_of_book_policy": "invalidate segment",
+    "sequence_gap_policy": "invalidate affected segment resnapshot and begin a new segment",
+    "queue_overflow_policy": "invalidate affected segment rather than drop silently",
+    "reconnect_policy": "bounded exponential backoff then fresh snapshot",
+    "post_reconnect_observation_cooldown_seconds": 60,
+    "late_or_regressing_exchange_timestamp_policy": "invalidate affected segment",
+    "stream_type_or_product_mismatch_policy": "fatal for the segment",
+    "rpi_liquidity_policy": "Normal depth excludes RPI liquidity. RPI or hidden liquidity is never counted as executable capacity unless separately observed and eligible for the account.",
+    "liquidation_stream_limit": "The force-order stream exposes at most the latest liquidation snapshot in each provider interval; absence is not zero liquidation activity."
+  },
+  "capture_qualification": {
+    "schema_probe_uses_modeling_sample": false,
+    "minimum_contiguous_qualification_minutes_per_symbol": 60,
+    "minimum_depth_messages_per_minute": 300,
+    "minimum_book_ticker_messages_per_minute": 1,
+    "minimum_aggregate_trade_messages_per_minute": 1,
+    "maximum_sequence_gaps": 0,
+    "maximum_crossed_books": 0,
+    "maximum_invalid_events": 0,
+    "maximum_writer_queue_utilization": 0.8,
+    "maximum_negative_corrected_feed_latency_fraction": 0.001,
+    "storage_rate_measured_before_long_capture": true,
+    "long_capture_hard_byte_cap_required": true,
+    "qualification_failure_authorizes_modeling": false
+  },
+  "modeling_capture_contract": {
+    "minimum_complete_utc_days_for_viability": 7,
+    "minimum_complete_utc_days_for_promotion": 30,
+    "minimum_complete_hours_per_utc_day": 23,
+    "all_three_symbols_required_in_each_eligible_segment": true,
+    "segment_crossing_examples_permitted": false,
+    "terminal_holdout_days": 7,
+    "terminal_holdout_may_be_read_before_primary_gate_passes": false,
+    "historical_multiyear_claim_permitted": false,
+    "reason": "Official reconstructable diff-depth history is not available in the repository. Coarse snapshots or fabricated depth cannot substitute for event-level L2.",
+    "ongoing_collection": "Append new verified segments prospectively; never relabel a short capture as multi-year evidence."
+  },
+  "anchor_contract": {
+    "base_grid_milliseconds": 1000,
+    "shock_window_milliseconds": 1000,
+    "shock_threshold": "training-fold symbol-specific 99th percentile of absolute signed aggressive quote notional divided by trailing 60-second median quote notional",
+    "shock_threshold_minimum": 3.0,
+    "shock_direction_minimum_taker_share": 0.7,
+    "refractory_period_seconds": 15,
+    "price_or_target_data_used_to_select_shocks": false,
+    "all_grid_anchors_retained_for_calibration_audit": true,
+    "primary_scored_population": "chronologically held-out shock anchors",
+    "same_segment_required_for_feature_entry_and_target": true
+  },
+  "feature_contract": {
+    "availability": "Only events fully received before the decision watermark may be used.",
+    "windows_milliseconds": [
+      100,
+      250,
+      500,
+      1000,
+      5000,
+      15000,
+      60000
+    ],
+    "frozen_control_layer": [
+      "spread and top-of-book sizes",
+      "L1 imbalance and microprice offset",
+      "signed aggregate-trade quote flow and count",
+      "short-horizon realized variation",
+      "event and receive latency",
+      "UTC periodic phase"
+    ],
+    "l2_state_layer": [
+      "top 5 10 and 20 level notional by side",
+      "distance-weighted depth and shape slope by side",
+      "multi-level imbalance",
+      "depth concentration and convexity",
+      "spread in ticks and basis points"
+    ],
+    "impact_absorption_layer": [
+      "signed additions cancellations and executions by level band",
+      "multi-level order-flow imbalance",
+      "depth consumed per signed aggressive quote notional",
+      "same-side and opposite-side replenishment ratios",
+      "cancellation-to-addition ratios",
+      "impact per signed notional",
+      "midprice and spread recovery fractions",
+      "estimated recovery half-life from strictly past shocks",
+      "flow-run persistence and reversal",
+      "mark-to-mid and index-to-mid basis",
+      "funding rate next funding time and open-interest change",
+      "observed liquidation snapshot flag and notional"
+    ],
+    "liquidation_absence_encoding": "unknown since last observed snapshot, never zero activity",
+    "open_interest_interpolation": "last observation carried forward only within 90 seconds with age included",
+    "funding_semantics": "actual stream value and next funding time; no fixed eight-hour assumption",
+    "identity_or_whale_inference_permitted": false,
+    "spoofing_or_manipulation_label_permitted": false,
+    "market_maker_inventory_inference_permitted": false,
+    "nonfinite_research_policy": "fatal",
+    "nonfinite_live_policy": "abstain and enter cooldown"
+  },
+  "target_contract": {
+    "decision_settlement_delay_milliseconds": 250,
+    "primary_entry_delay_milliseconds": 500,
+    "stress_entry_delay_milliseconds": 1000,
+    "horizons_seconds": [
+      1,
+      5,
+      15
+    ],
+    "notional_quote_buckets": [
+      100,
+      1000,
+      5000
+    ],
+    "entry_and_exit_price": "walk the synchronized visible L2 book at the first valid state at or after each delayed timestamp",
+    "long_payoff": "sell proceeds at exit bid ladder minus buy cost at entry ask ladder fees and stress charge",
+    "short_payoff": "sell proceeds at entry bid ladder minus buyback cost at exit ask ladder fees borrow-equivalent charge and stress charge",
+    "minimum_round_trip_fee_and_adverse_charge_bps": 12.0,
+    "runtime_fee_rule": "use the larger of the frozen 12 bps charge and two account-specific taker fees plus the frozen adverse charge",
+    "visible_capacity_exceeded_policy": "action ineligible",
+    "primary_binary_target": "strictly positive post-latency net payoff after all frozen charges",
+    "continuous_target": "post-latency net payoff in basis points",
+    "tail_targets": [
+      "maximum adverse excursion in basis points",
+      "maximum favorable excursion in basis points",
+      "spread and depth stress during holding interval"
+    ],
+    "counterfactual_fill_claim_permitted": false,
+    "reason": "A synchronized visible-book walk is a conservative quote-path counterfactual, not proof that an order would have filled."
+  },
+  "split_contract": {
+    "ordered_unit": "UTC day then integrity segment",
+    "minimum_training_days": 4,
+    "tuning_days": 1,
+    "test_days": 2,
+    "promotion_minimum_training_days": 16,
+    "promotion_tuning_days": 7,
+    "promotion_test_days": 7,
+    "training": "expanding",
+    "test_rows_may_control_training_calibration_thresholds_or_features": false,
+    "symbol_pooling_permitted": false,
+    "horizon_pooling_permitted": false,
+    "overlapping_shocks": "removed by the frozen refractory period",
+    "day_and_segment_blocks_preserve_dependence": true
+  },
+  "model_contract": {
+    "staged_models": [
+      "training-fold prevalence and zero-payoff controls",
+      "fixed logistic and Huber control on frozen L1 and tape features",
+      "fixed shallow LightGBM on the same frozen control layer",
+      "same fixed shallow LightGBM plus L2 state",
+      "same fixed shallow LightGBM plus impact absorption"
+    ],
+    "primary_comparison": "impact_absorption versus L2_state using identical rows model capacity splits and targets",
+    "closed_family_comparison": "every accepted layer must also beat the frozen L1 and tape control",
+    "maximum_depth": 4,
+    "maximum_leaves": 15,
+    "learning_rate": 0.03,
+    "maximum_boosting_iterations": 256,
+    "early_stopping_rounds": 30,
+    "minimum_data_in_leaf": 200,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_frequency": 1,
+    "seed": 20260722,
+    "compute_backend": "OpenCL GPU after deterministic capability preflight; bounded CPU fallback is recorded and cannot be described as GPU",
+    "serialized_artifact_sha256_required": true,
+    "reload_prediction_identity_required": true,
+    "temporal_neural_challenger_permitted": false,
+    "neural_open_condition": "At least two symbols must independently pass the shallow primary comparison on 30 promotion-quality days before a separately frozen TCN or TLOB challenger may be evaluated.",
+    "reinforcement_learning_permitted": false,
+    "ai_veto_permitted": false
+  },
+  "evaluation_contract": {
+    "binary_primary_metrics": [
+      "log_loss",
+      "brier_score"
+    ],
+    "binary_secondary_metrics": [
+      "balanced_accuracy",
+      "Matthews_correlation_coefficient",
+      "precision_recall_AUC",
+      "ROC_AUC",
+      "expected_calibration_error",
+      "positive_prevalence",
+      "fixed_coverage_selective_scores"
+    ],
+    "continuous_primary_metrics": [
+      "mean_squared_error",
+      "mean_absolute_error"
+    ],
+    "continuous_secondary_metrics": [
+      "Spearman_rank_correlation",
+      "sign_accuracy",
+      "lower_tail_pinball_loss"
+    ],
+    "inference": "paired day-and-integrity-segment blocked sign permutation and block bootstrap",
+    "permutation_draws": 10000,
+    "bootstrap_draws": 10000,
+    "multiple_testing": "Benjamini-Hochberg false discovery rate across symbol horizon target and primary loss",
+    "maximum_q_value": 0.05,
+    "minimum_relative_log_loss_improvement": 0.002,
+    "minimum_relative_brier_improvement": 0.002,
+    "minimum_continuous_mse_skill": 0.001,
+    "minimum_positive_proper_score_folds": 4,
+    "stress_delay_must_retain_positive_skill": true,
+    "primary_scores_must_be_finite": true,
+    "per_symbol_decision": true,
+    "minimum_symbols_for_portfolio_research": 2,
+    "unsupported_symbol_policy": "disabled rather than pooled or silently substituted",
+    "accuracy_interpretation": "Accuracy is mandatory but cannot pass without calibrated proper-score skill and stable after-cost value."
+  },
+  "economic_gate_after_predictive_pass": {
+    "same_frozen_predictions": true,
+    "threshold_selection_on_tuning_only": true,
+    "unlevered_only": true,
+    "minimum_trades_per_test_day_when_eligible_conditions_exist": 5,
+    "minimum_test_trades": 100,
+    "net_expectancy_lower_95_must_exceed_bps": 0.0,
+    "profit_factor_lower_95_must_exceed": 1.0,
+    "maximum_drawdown_and_expected_shortfall_reported": true,
+    "no_liquidation": true,
+    "symbol_day_and_single_trade_concentration_reported": true,
+    "capacity_reported_by_notional_bucket": true,
+    "no_trade_is_valid_when_risk_or_opportunity_gate_rejects": true,
+    "leverage_cannot_create_a_pass": true
+  },
+  "stopping_rule": {
+    "if_capture_qualification_fails": "Repair only the data contract. No model may run on incomplete or ambiguous events.",
+    "if_shallow_predictive_gate_fails": "Reject the impact-absorption feature family on the observed sample. Do not add a transformer AI leverage or post-hoc thresholds.",
+    "if_predictive_gate_passes_but_economic_gate_fails": "Retain the model only as a risk or execution-state candidate; do not claim edge or trading authority.",
+    "if_both_gates_pass_on_at_least_two_symbols": "Open a separately frozen 30-day prospective shadow and paired ML-only versus deterministic-veto study. No live-money authority is granted.",
+    "additional_unfrozen_search_after_result_permitted": false
+  },
+  "limitations": [
+    "Prospective event-level L2 cannot truthfully provide a multi-year result until it has actually been collected for years.",
+    "Displayed L2 omits hidden and RPI liquidity and does not reveal queue position or another participant's inventory.",
+    "The provider liquidation stream is throttled and cannot measure every liquidation.",
+    "Open interest and funding are slower state variables and cannot be interpolated into subsecond facts.",
+    "A quote-path counterfactual is not an exchange fill or a profitability result.",
+    "Binance crypto perpetuals have no formal daily close. UTC days are split and resampling units only; listed ETFs and securities use their actual venue calendars.",
+    "No model architecture can repair an input layer that fails the frozen incremental and after-cost gates."
+  ]
+}
