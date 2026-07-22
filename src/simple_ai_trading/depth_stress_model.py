@@ -420,8 +420,8 @@ def train_depth_stress_challenger(
     tuning = _row_indexes(tuning_rows, rows=len(matrix), label="tuning", minimum=30)
     if np.intersect1d(train, tuning).size:
         raise ValueError("depth-stress training and tuning rows overlap")
-    if len(np.unique(labels[train])) != _STATE_COUNT or len(np.unique(labels[tuning])) != _STATE_COUNT:
-        raise ValueError("depth-stress training and tuning require all states")
+    if len(np.unique(labels[train])) != _STATE_COUNT:
+        raise ValueError("depth-stress training requires all states")
     iterations = int(maximum_iterations)
     if not 32 <= iterations <= 2_048:
         raise ValueError("maximum_iterations must lie in [32, 2048]")
