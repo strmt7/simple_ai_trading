@@ -1,0 +1,77 @@
+{
+  "schema_version": "ollama-json-transport-probe-v1",
+  "artifact_sha256": "f4e9c1da7a60118c8082e803ff30fb4f19cdc248270199127e3b5ffc9eaf1044",
+  "artifact_sha256_contract": "sha256(canonical_json(root_without_artifact_sha256))",
+  "code_commit": "5ff78bdc517ba322423f16ebe8c38416218af6f7",
+  "started_at_ms": 1784725416532,
+  "started_at_utc": "2026-07-22T13:03:36.532000Z",
+  "ended_at_ms": 1784725422556,
+  "ended_at_utc": "2026-07-22T13:03:42.556000Z",
+  "purpose": "Live provider-compatibility probe for JSON mode after the v9 grammar failure.",
+  "benchmark_cases_consulted": false,
+  "qwen3_14b_inference_performed": false,
+  "request": {
+    "model": "qwen3:8b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Return JSON only."
+      },
+      {
+        "role": "user",
+        "content": "Transport capability probe only. Return exactly one JSON object with transport_ok set to true and probe_kind set to synthetic."
+      }
+    ],
+    "stream": false,
+    "think": false,
+    "format": "json",
+    "keep_alive": "1m",
+    "options": {
+      "temperature": 0.0,
+      "num_ctx": 512,
+      "num_predict": 64
+    }
+  },
+  "request_canonical_sha256": "8f5d92765e15b6539d3b50c1919f085c940b0d70e0ed3fb13a2212d9514ed633",
+  "response_canonical_sha256": "c0ad865dd9e091e6e26d4b81e9350baa6871fa77bbbee049d57ec5ef4ea5bece",
+  "validated_response_content": {
+    "probe_kind": "synthetic",
+    "transport_ok": true
+  },
+  "provider_usage": {
+    "total_duration": 6010589600,
+    "load_duration": 5697618700,
+    "prompt_eval_count": 48,
+    "prompt_eval_duration": 110389000,
+    "eval_count": 19,
+    "eval_duration": 197721000
+  },
+  "model_provenance": {
+    "model": "qwen3:8b",
+    "manifest_digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "metadata_sha256": "f0fc43a56f4ee22d3ed03806d5be485b43b0b9904bb61a55aadb393af8138c06"
+  },
+  "post_inference_residency": {
+    "status": "gpu_resident",
+    "gpu_resident": true,
+    "size_bytes": 5046051798,
+    "size_vram_bytes": 5046051798,
+    "vram_to_model_ratio": 1.0,
+    "host_gpu": "AMD Radeon RX 9070 XT"
+  },
+  "result": {
+    "transport_compatible": true,
+    "strict_synthetic_content_match": true,
+    "positive_provider_telemetry": true,
+    "fully_gpu_resident": true,
+    "governance_score_available": false,
+    "ai_uplift_tested": false,
+    "financial_edge_tested": false,
+    "trading_authority": false
+  },
+  "limitations": [
+    "The probe used the previously evaluated qwen3:8b model, not the protected qwen3:14b candidate.",
+    "The prompt was synthetic and unrelated to all v10 benchmark cases.",
+    "The probe establishes provider transport compatibility only."
+  ]
+}
