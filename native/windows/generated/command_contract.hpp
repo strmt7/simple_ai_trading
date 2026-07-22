@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"7fd8edb276a9a91e7e28998b6f78d6679d4ac8e1091829109f581ed8f51b5b11";
+inline constexpr const wchar_t* kCommandContractSha256 = L"bbefbdf9d3c48ae4b37742db1e218b676d0146617fd0f18364bb4d0ce33c373c";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -279,6 +279,7 @@ inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--mode", L"mode", L"probe, qualification", L"probe", L"", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"", L"streaming duration; defaults to 30 for probe and 3600 for qualification", L"1", false, true, false},
     {L"--compressed-payload-cap-bytes", L"compressed_payload_cap_bytes", L"", L"2147483648", L"", L"1", false, true, false},
+    {L"--database-size-cap-bytes", L"database_size_cap_bytes", L"", L"8589934592", L"absolute DuckDB plus WAL cap; capture stops with a 512 MiB reserve", L"1", false, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--maximum-reconnects", L"maximum_reconnects", L"", L"6", L"", L"1", false, true, false},
@@ -1006,7 +1007,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"evaluate", L"usage: simple-ai-trading evaluate [-h] [--input INPUT] [--model MODEL]                                   [--threshold THRESHOLD]                                   [--calibrate-threshold]", kOptions_evaluate, 4},
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
     {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
-    {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 9},
+    {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 10},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"microstructure-capture", L"usage: simple-ai-trading microstructure-capture [-h] [--symbols SYMBOLS]                                                 [--seconds SECONDS]                                                 [--output-root OUTPUT_ROOT]                                                 [--db DB] [--timeout TIMEOUT]                                                 [--no-convert] [--json]", kOptions_microstructure_capture, 7},

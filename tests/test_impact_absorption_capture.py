@@ -18,6 +18,7 @@ from simple_ai_trading.impact_absorption_capture import (
     _public_stream_url,
     _request_weight_limit,
     _rejected_wire_message,
+    _terminal_post_capture_failure_report,
     _tick_sizes,
     capture_round73_supervised,
 )
@@ -57,6 +58,9 @@ def _report(
         writer_message_count=0,
         writer_compressed_payload_bytes=0,
         payload_cap_reached=False,
+        database_physical_bytes=0,
+        database_size_cap_bytes=8 * 1024 * 1024 * 1024,
+        database_size_cap_reached=False,
         event_counts={},
         symbol_event_counts={},
         negative_corrected_latency_fraction=None,
@@ -137,6 +141,8 @@ def test_capture_config_separates_bounded_probe_from_hour_qualification() -> Non
         ImpactCaptureConfig(duckdb_threads=0).validate()
     with pytest.raises(ValueError, match="positive integer followed by a byte unit"):
         ImpactCaptureConfig(duckdb_memory_limit="unbounded").validate()
+    with pytest.raises(ValueError, match="512 MiB safety reserve"):
+        ImpactCaptureConfig(database_size_cap_bytes=512 * 1024 * 1024).validate()
 
 
 def test_stream_topology_is_three_symbols_only_and_uses_specific_liquidations() -> None:
@@ -210,6 +216,84 @@ def test_one_writer_flushes_atomically_without_blocking_the_caller(tmp_path) -> 
     assert writer.failed.is_set() is False
     assert writer.frame_count == 1
     assert writer.message_count == 1
+
+
+def test_writer_stops_at_database_size_reserve_without_silent_success(
+    tmp_path, monkeypatch
+) -> None:
+    database = tmp_path / "impact.duckdb"
+    _start_store(database)
+    calls = 0
+
+    def physical_size(_database: str) -> int:
+        nonlocal calls
+        calls += 1
+        return 0 if calls < 2 else 600 * 1024 * 1024
+
+    monkeypatch.setattr(impact_capture, "_database_physical_bytes", physical_size)
+    writer = _ImpactFrameWriter(
+        ImpactCaptureConfig(
+            database=str(database),
+            duration_seconds=1,
+            queue_capacity_messages=8,
+            frame_message_limit=1,
+            frame_flush_seconds=0.01,
+            database_size_cap_bytes=1024 * 1024 * 1024,
+        ),
+        RUN_ID,
+    )
+
+    writer.start()
+    writer.put(_message())
+    assert writer.stop(timeout_seconds=5.0) is True
+    assert writer.failed.is_set() is False
+    assert writer.database_cap_reached.is_set() is True
+
+
+def test_terminal_post_capture_failure_is_persisted_and_never_retried(tmp_path) -> None:
+    database = tmp_path / "impact.duckdb"
+    _start_store(database)
+    config = ImpactCaptureConfig(
+        database=str(database),
+        duration_seconds=1,
+        queue_capacity_messages=8,
+        frame_message_limit=1,
+        frame_flush_seconds=0.01,
+    )
+    writer = _ImpactFrameWriter(config, RUN_ID)
+    writer.start()
+    writer.put(_message())
+    assert writer.stop(timeout_seconds=5.0) is True
+    with ImpactAbsorptionStore(database) as store:
+        store.finish_segment(
+            run_id=RUN_ID,
+            segment_id=SEGMENT_ID,
+            status="valid",
+            ended_wall_ns=10,
+        )
+        store.finish_run(run_id=RUN_ID, status="completed", ended_wall_ns=11)
+
+    report = _terminal_post_capture_failure_report(
+        config,
+        run_id=RUN_ID,
+        error=RuntimeError("report materialization failed"),
+        writer=writer,
+    )
+
+    assert report is not None
+    assert report.status == "failed"
+    assert report.qualification_passed is False
+    assert report.failure_class == "post_capture"
+    assert report.audit_passed is True
+    assert _is_retriable_capture_failure(report.failure_class) is False
+    with ImpactAbsorptionStore(database, read_only=True) as store:
+        stored = store.connect().execute(
+            "SELECT schema_version, report_json FROM impact_capture_report "
+            "WHERE run_id = ?",
+            [RUN_ID],
+        ).fetchone()
+    assert stored[0] == "round-073-capture-report-v4"
+    assert json.loads(stored[1])["failure_class"] == "post_capture"
     with ImpactAbsorptionStore(database, read_only=True) as store:
         assert store.audit_run(RUN_ID).passed is True
 

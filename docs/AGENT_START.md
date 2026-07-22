@@ -67,7 +67,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   Read `round-073-capture-contract-v2.json`, the correction evidence, and
   `round-073-capture-qualification-2026-07-22.json`. This authorizes Round 73
   feature construction only. It is not predictive evidence, P&L, profitability,
-  AI uplift, or trading authority. Never pool disconnected attempts.
+  AI uplift, or trading authority. The indexed v2 layout is not approved for a
+  long capture. Compact contract v3 preserved replay but its live probe failed
+  during terminal latency reporting and is development-only. Contract v4 adds
+  causal provider event time and an 8 GiB default DuckDB-plus-WAL cap. Its
+  30-second and three-minute public-feed probes passed fresh-process replay and
+  authorize only a v4 one-hour qualification attempt. Read
+  `round-073-capture-contract-v4.json` and
+  `round-073-v4-probe-evidence-2026-07-22.json`; do not start a long capture or
+  evaluate a model yet. Never pool disconnected attempts.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.

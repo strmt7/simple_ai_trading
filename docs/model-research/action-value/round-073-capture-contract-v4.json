@@ -1,0 +1,99 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v4",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_capture_contract_sha256": "9228f8243531e44a264d5f88cf8498282986d1b9cb4a6b64e12ee0cede47dc5b",
+  "capture_contract_sha256": "c34687c5dff9a4eda98b2e50d6444a12ee1a4f5594806c2410e15cb0242d7529",
+  "frozen_before_first_v4_capture": true,
+  "amendment_scope": "Restore causal exchange event time to the compact event link and close terminal-report failure handling. Exact wire, typed-event, market, feature, target, and model semantics remain unchanged.",
+  "failure_evidence": {
+    "artifact": "round-073-v3-probe-failure-2026-07-22.json",
+    "artifact_sha256": "15e64642cdc033e7a772eba7b573fb3323b3c36a65da598a2a7c879e38dc6f4c",
+    "run_id": "feb1289d71884a23818be1b7f1de3b3e",
+    "failure": "The v3 post-capture latency query expected event_time_ms in the depth typed table. Replay passed, but no terminal report or qualification was produced.",
+    "v3_run_authorizes_reuse": false
+  },
+  "inheritance": {
+    "base_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
+    "wire_correction_contract_sha256": "1b46f178e335b3473b86ee71a113e2538a9068e287c50f0867aab13f3230557c",
+    "compact_storage_contract_sha256": "9228f8243531e44a264d5f88cf8498282986d1b9cb4a6b64e12ee0cede47dc5b",
+    "rule": "All v1 through v3 logical requirements remain binding except that v4 replaces the v3 event-link table and terminal failure classification below.",
+    "historical_v1_v2_or_v3_rows_rewritten": false,
+    "historical_v1_v2_and_v3_audit_support_required": true
+  },
+  "event_link_v4": {
+    "table": "impact_event_link_v4",
+    "columns": [
+      ["run_id", "VARCHAR"],
+      ["frame_index", "UINTEGER"],
+      ["message_index", "USMALLINT"],
+      ["segment_id", "VARCHAR"],
+      ["stream", "VARCHAR"],
+      ["connection_id", "VARCHAR"],
+      ["sequence_number", "UBIGINT"],
+      ["received_wall_ns", "UBIGINT"],
+      ["received_monotonic_ns", "UBIGINT"],
+      ["raw_payload_sha256", "BLOB(32 logical bytes)"],
+      ["event_type", "VARCHAR"],
+      ["symbol", "VARCHAR"],
+      ["event_time_ms", "BIGINT nullable"],
+      ["typed_event_sha256", "BLOB(32 logical bytes)"]
+    ],
+    "event_time_semantics": "Provider exchange event time exactly as parsed from the already persisted exact wire receipt; NULL only when that event type has no provider event time or rejected wire cannot support one.",
+    "event_time_is_availability_clock": false,
+    "availability_clock": "received_monotonic_ns within the capture host; received_wall_ns plus the causal retained server-time offset for cross-clock diagnostics",
+    "event_time_audit": "Replay must reproduce event_time_ms from exact wire and the typed row where available. Any mismatch fails the run.",
+    "message_id_per_row_stored": false,
+    "message_id_recomputed_during_replay": true,
+    "event_transaction_and_update_ids_duplicated": false,
+    "raw_payload_sha256_bytes": 32,
+    "typed_event_sha256_bytes": 32,
+    "primary_key_index": false
+  },
+  "typed_storage": {
+    "physical_layout": "The unchanged no-primary-key v3 typed tables are reused for v4 rows and are always filtered by the exact run ID.",
+    "logical_columns_equal_v2_and_v3": true,
+    "typed_hash_identity_changed": false,
+    "cross_run_query_without_exact_run_id_permitted": false,
+    "tables": [
+      "impact_depth_update_v3",
+      "impact_l2_state_v3",
+      "impact_book_ticker_v3",
+      "impact_aggregate_trade_v3",
+      "impact_mark_price_v3",
+      "impact_liquidation_snapshot_v3",
+      "impact_rest_event_v3",
+      "impact_rejected_wire_event_v3"
+    ]
+  },
+  "terminal_report_contract": {
+    "report_schema_version": "round-073-capture-report-v4",
+    "post_capture_materialization_exception_is_startup_error": false,
+    "post_capture_materialization_exception_action": "Persist or reconstruct a failed terminal report bound to the already terminal run; never retry or label it a startup failure.",
+    "missing_terminal_report_authorizes_qualification": false,
+    "negative_corrected_latency_scope": "All non-REST v4 event links with non-NULL provider event_time_ms.",
+    "database_and_wal_absolute_cap_required": true,
+    "database_cap_reserve_bytes": 536870912,
+    "database_cap_reached_authorizes_qualification": false
+  },
+  "version_isolation": {
+    "v4_run_reads_event_link_v4_only": true,
+    "v3_run_reads_event_link_v3_only": true,
+    "v1_or_v2_run_reads_legacy_event_index_only": true,
+    "typed_rows_always_filtered_by_exact_run_id": true,
+    "cross_version_frame_pooling_permitted": false,
+    "failed_v3_probe_reclassified_as_v4": false
+  },
+  "v4_qualification": {
+    "minimum_contiguous_minutes_per_symbol": 60,
+    "all_v2_feed_integrity_gates_inherited": true,
+    "fresh_process_read_only_replay_required": true,
+    "valid_hash_bound_terminal_report_required": true,
+    "measured_v4_storage_rate_required_before_long_capture": true,
+    "failure_authorizes_long_capture_or_modeling": false
+  },
+  "non_claims": [
+    "The v3 replay pass is infrastructure evidence only and does not qualify v3 or v4.",
+    "No model, edge, profitability, ROI, drawdown, leverage, paper, testnet, or live-trading authority is granted."
+  ]
+}

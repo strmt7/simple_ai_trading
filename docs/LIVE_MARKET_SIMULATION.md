@@ -91,7 +91,15 @@ Execution cost is symbol-specific where market data exists:
   places orders, or supplies model, P&L, or profitability evidence.
   Contract-v2 qualification run `5d89804a8f404d9b80b3a3ce2d796561`
   completed one uninterrupted hour and passed a separate full replay audit;
-  that qualifies this capture for Round 73 feature research only.
+  that qualifies this capture for Round 73 feature-pipeline diagnostics only.
+  The v2 indexed layout is not approved for long-duration capture. Compact v3
+  preserved exact-wire and typed-event replay but its first live probe failed
+  closed during terminal latency reporting and cannot be reused. Compact v4
+  restores provider event time, retains backward audit for v1-v3, and enforces
+  an absolute DuckDB-plus-WAL cap with a 512 MiB stopping reserve. Its 30-second
+  and three-minute public-feed probes passed fresh-process audit. Those probes
+  authorize only a v4 one-hour qualification attempt; they provide no feature,
+  model, execution, or trading evidence.
 - `data-health` is the pre-training database gate. It emits machine-readable
   row counts, UTC spans, expected rows, coverage ratio, gap count,
   archive-status counts, and checksum-status counts, and it exits nonzero when

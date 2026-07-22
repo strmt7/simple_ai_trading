@@ -1,0 +1,79 @@
+{
+  "schema_version": "round-073-storage-profile-v1",
+  "round": 73,
+  "artifact_sha256": "9259b38fabcc8e4fbcb6d03d58f071948cf3eb52b7df33185cea7c726879ef13",
+  "measured_at_utc": "2026-07-22T17:13:30Z",
+  "database": "data/microstructure.duckdb",
+  "read_only_measurement": true,
+  "synthetic_market_data_used": false,
+  "database_snapshot": {
+    "physical_bytes": 4655951872,
+    "block_size_bytes": 262144,
+    "used_blocks": 16856,
+    "free_blocks": 905,
+    "wal_bytes": 0
+  },
+  "round_073_observed_scope": {
+    "run_count": 7,
+    "message_count": 4355651,
+    "compressed_exact_wire_bytes": 163045392,
+    "sum_of_run_elapsed_seconds": 3936.3912063,
+    "note": "The elapsed denominator sums completed, failed, probe, and qualification run intervals. It is a storage-rate diagnostic, not a continuity or market-performance claim."
+  },
+  "round_073_allocated_storage": {
+    "unique_blocks": 3235,
+    "allocated_bytes": 848035840,
+    "allocated_gib": 0.789794921875,
+    "tables": [
+      {"table": "impact_event_index", "blocks": 2107, "allocated_bytes": 552337408},
+      {"table": "impact_capture_frame", "blocks": 650, "allocated_bytes": 170393600},
+      {"table": "impact_book_ticker", "blocks": 276, "allocated_bytes": 72351744},
+      {"table": "impact_l2_state", "blocks": 140, "allocated_bytes": 36700160},
+      {"table": "impact_depth_update", "blocks": 33, "allocated_bytes": 8650752},
+      {"table": "impact_aggregate_trade", "blocks": 17, "allocated_bytes": 4456448},
+      {"table": "other_round_073_tables", "blocks": 12, "allocated_bytes": 3145728}
+    ]
+  },
+  "dominant_write_amplification": {
+    "event_index_fraction_of_round_073_allocated_bytes": 0.6513161347031963,
+    "hex_digest_columns": {
+      "columns": ["message_id", "raw_payload_sha256", "typed_event_sha256"],
+      "allocated_blocks": 1816,
+      "allocated_bytes": 476053504,
+      "allocated_mib": 454.0
+    },
+    "book_ticker_messages_per_second_in_qualified_run": 1035.0795004533486
+  },
+  "real_row_memory_experiment": {
+    "source_rows": 500000,
+    "source": "Captured impact_event_index rows loaded into an in-memory DuckDB database",
+    "disk_database_written": false,
+    "current_incremental_memory_mib": 296.3,
+    "compact_incremental_memory_mib": 194.4,
+    "observed_reduction_fraction": 0.34390820114748566,
+    "compact_layout": {
+      "message_id_per_row_stored": false,
+      "event_time_transaction_time_update_id_duplicated_in_link": false,
+      "raw_payload_sha256": "32-byte BLOB",
+      "typed_event_sha256": "32-byte BLOB",
+      "message_index": "USMALLINT",
+      "primary_key_index": false
+    }
+  },
+  "linear_observed_rate_projection": {
+    "is_capacity_guarantee": false,
+    "assumes_future_message_mix_and_duckdb_allocation_rate_equal_observed_scope": true,
+    "observed_allocated_gib_per_elapsed_hour": 0.722301613264327,
+    "seven_day_gib": 121.34667102840693,
+    "thirty_day_gib": 520.0571615503154,
+    "warning": "These are arithmetic projections from a short, mixed-run observation. Market activity, checkpointing, compression, and schema changes make future realized storage uncertain."
+  },
+  "decision": {
+    "start_long_v2_capture": false,
+    "implement_lossless_compact_v3_before_long_capture": true,
+    "rewrite_historical_v1_or_v2_rows": false,
+    "drop_exact_wire_evidence": false,
+    "drop_required_raw_or_typed_hashes": false,
+    "model_or_trading_authority": false
+  }
+}

@@ -1,9 +1,10 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** feed qualification passed under capture contract v2. One qualified
-modeling capture now exists; no feature comparison, model, replay, or profit
-result exists yet. This round grants no AI, leverage, paper, testnet, or live
-authority.
+**Status:** feed qualification passed under capture contract v2. Compact v4
+storage has passed 30-second and three-minute live probes, but its required
+one-hour qualification has not run. No feature comparison, model, replay, or
+profit result exists. This round grants no AI, leverage, paper, testnet, or
+live authority.
 
 ## Why this is different
 
@@ -48,16 +49,28 @@ flowchart LR
 - Diff-depth quantity decreases are displayed removals, not observed
   cancellations. Aggregate trades and removals remain separate when their
   attribution is ambiguous; the software never invents an order-lifecycle fact.
-- The single evidence store is `data/microstructure.duckdb`. Qualification run
+- The single evidence store is `data/microstructure.duckdb`. Contract-v2 run
   `5d89804a8f404d9b80b3a3ce2d796561` passed one uninterrupted hour with
-  3,988,592 exact-wire messages and an independent full replay audit. This
-  authorizes feature construction only; the one-hour corpus is far below the
-  seven-day viability and thirty-day promotion gates. See
+  3,988,592 exact-wire messages and an independent full replay audit. It
+  authorizes feature-pipeline diagnostics only; the one-hour corpus is far
+  below the seven-day viability and thirty-day promotion gates. See
   `round-073-capture-qualification-2026-07-22.json`.
+- The v2 indexed row layout was measured before any long capture. Contract v3
+  removed redundant per-message strings and primary-key indexes without
+  weakening exact-wire replay, but probe `feb1289d71884a23818be1b7f1de3b3e`
+  exposed a terminal latency-query defect and is permanently development-only.
+  Contract v4 restores provider event time to the compact link and adds an
+  absolute DuckDB-plus-WAL cap. Live probes `7ffd4edbd2654b5997704c988802580d`
+  and `ec114dd2c28d4641b0158f4bd0b32c72` passed fresh-process replay. They
+  authorize only one v4 one-hour qualification attempt, not feature or model
+  evaluation. See `round-073-v4-probe-evidence-2026-07-22.json`.
 
-Crypto trades continuously. UTC days are statistical blocks, not closes. Any
-later ETF or listed-product context must use the product's actual venue calendar,
-including holidays, early closes, halts, and auctions.
+Native crypto spot and perpetual instruments trade continuously and have no
+formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or
+other exchange-traded products are separate listed instruments: any later ETF
+context must use that product's actual venue calendar, including holidays,
+early closes, halts, auctions, and verified extended-hours sessions. An ETF
+close must never be imputed as a Binance close.
 
 ## Gates
 
