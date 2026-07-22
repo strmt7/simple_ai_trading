@@ -10727,6 +10727,7 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
         MicrostructureWarehouse,
         SUPPORTED_TICK_ARCHIVES,
         TickArchiveIngestResult,
+        create_archive_http_session,
     )
 
     recoverable_errors = (
@@ -11034,12 +11035,15 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
     initial_inventory_ids: dict[tuple[str, str], str] = {}
     corpus_certificates: list[dict[str, object]] = []
     try:
-        with MicrostructureWarehouse(
-            str(getattr(args, "warehouse", "data/microstructure.duckdb")),
-            cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
-            memory_limit=str(getattr(args, "memory_limit", "8GB")),
-            threads=int(getattr(args, "threads", 8)),
-        ) as warehouse:
+        with (
+            MicrostructureWarehouse(
+                str(getattr(args, "warehouse", "data/microstructure.duckdb")),
+                cache_root=str(getattr(args, "cache_root", "data/archive-cache")),
+                memory_limit=str(getattr(args, "memory_limit", "8GB")),
+                threads=int(getattr(args, "threads", 8)),
+            ) as warehouse,
+            create_archive_http_session() as archive_session,
+        ):
             inventory_groups: dict[tuple[str, str], list[object]] = {}
             reusable_archives: dict[tuple[str, str, str], TickArchiveIngestResult] = {}
             for symbol, data_type, item in plan:
@@ -11113,6 +11117,7 @@ def command_tick_archive_sync(args: argparse.Namespace) -> int:
                             getattr(args, "no_retain_archive", False)
                         ),
                         progress=progress,
+                        session=archive_session,
                     )
                     results.append(result.asdict())
                 except recoverable_errors as exc:

@@ -4,6 +4,12 @@ import hashlib
 import json
 from pathlib import Path
 
+from tools.ingest_round62_depth_corpus import (
+    _frozen_contract,
+    _required_certificate_bounds,
+    main as ingest_main,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
@@ -78,3 +84,53 @@ def test_round62_cannot_claim_profit_or_authorize_trading() -> None:
     assert model["serialized_artifact_sha256_required"] is True
     assert model["artifact_must_encode_no_trading_authority"] is True
     assert model["artifact_must_encode_no_profitability_claim"] is True
+
+
+def test_round62_ingester_reconstructs_only_the_frozen_depth_inventory() -> None:
+    contract, snapshots = _frozen_contract(DESIGN_PATH, INVENTORY_PATH)
+
+    assert contract == {
+        "design_sha256": (
+            "9fc720f60b403d214d8558661e60eb18a5738d90c14d7c95700a979ff4836742"
+        ),
+        "inventory_file_sha256": (
+            "99385af0239e25ba5ea1d6687e2cbdab816c7e5f78c63a89e9817620bb56ecb1"
+        ),
+        "first_period": "2023-01-01",
+        "last_period": "2026-07-15",
+        "expected_files": 3866,
+        "expected_compressed_bytes": 1768172678,
+    }
+    assert set(snapshots) == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
+    assert sum(int(value["item_count"]) for value in snapshots.values()) == 3866
+    assert _required_certificate_bounds(contract) == (
+        1_672_531_200_000,
+        1_782_863_999_999,
+    )
+
+
+def test_round62_ingester_terminalizes_a_handled_failure(tmp_path: Path) -> None:
+    progress = tmp_path / "progress.json"
+
+    result = ingest_main(
+        [
+            "--design",
+            str(DESIGN_PATH),
+            "--inventory",
+            str(INVENTORY_PATH),
+            "--warehouse",
+            str(tmp_path / "warehouse.duckdb"),
+            "--output",
+            str(tmp_path / "report.json"),
+            "--progress",
+            str(progress),
+            "--network-retries",
+            "0",
+        ]
+    )
+
+    assert result == 2
+    terminal = _read(progress)
+    assert terminal["event"] == "round62_depth_corpus_failed"
+    assert terminal["details"]["previous_event"] is None
+    assert "runtime limits are invalid" in terminal["details"]["error"]
