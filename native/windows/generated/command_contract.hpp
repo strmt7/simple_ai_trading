@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"58d5866cb828228fb4ad6cbefa4f37a1ec604630a27680117721159d2ebd561a";
+inline constexpr const wchar_t* kCommandContractSha256 = L"7fd8edb276a9a91e7e28998b6f78d6679d4ac8e1091829109f581ed8f51b5b11";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -264,6 +264,26 @@ inline constexpr CommandOptionSpec kOptions_fetch[] = {
     {L"--limit", L"limit", L"", L"500", L"", L"1", false, true, false},
     {L"--batch-size", L"batch_size", L"", L"1000", L"klines per request (spot max 1000, futures max 1500)", L"1", false, true, false},
     {L"--output", L"output", L"", L"data/historical_market.json", L"", L"1", false, true, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_audit[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--run-id", L"run_id", L"", L"", L"terminal run ID; default selects the latest", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--mode", L"mode", L"probe, qualification", L"probe", L"", L"1", false, true, false},
+    {L"--duration-seconds", L"duration_seconds", L"", L"", L"streaming duration; defaults to 30 for probe and 3600 for qualification", L"1", false, true, false},
+    {L"--compressed-payload-cap-bytes", L"compressed_payload_cap_bytes", L"", L"2147483648", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--maximum-reconnects", L"maximum_reconnects", L"", L"6", L"", L"1", false, true, false},
+    {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30.0", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
 inline constexpr CommandOptionSpec kOptions_live[] = {
@@ -985,6 +1005,8 @@ inline constexpr CommandSpec kCommands[] = {
     {L"doctor", L"usage: simple-ai-trading doctor [-h] [--input INPUT] [--model MODEL]                                 [--online]", kOptions_doctor, 3},
     {L"evaluate", L"usage: simple-ai-trading evaluate [-h] [--input INPUT] [--model MODEL]                                   [--threshold THRESHOLD]                                   [--calibrate-threshold]", kOptions_evaluate, 4},
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
+    {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
+    {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 9},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"microstructure-capture", L"usage: simple-ai-trading microstructure-capture [-h] [--symbols SYMBOLS]                                                 [--seconds SECONDS]                                                 [--output-root OUTPUT_ROOT]                                                 [--db DB] [--timeout TIMEOUT]                                                 [--no-convert] [--json]", kOptions_microstructure_capture, 7},
@@ -1096,9 +1118,11 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Data", L"Market data", L"archive-sync"},
     {L"Data", L"Market data", L"tick-archive-sync"},
     {L"Data", L"Market data", L"microstructure-capture"},
+    {L"Data", L"Market data", L"impact-capture"},
     {L"Data", L"Market data", L"polymarket-record"},
     {L"Data", L"Integrity and outcomes", L"data-health"},
     {L"Data", L"Integrity and outcomes", L"tick-corpus-audit"},
+    {L"Data", L"Integrity and outcomes", L"impact-audit"},
     {L"Data", L"Integrity and outcomes", L"polymarket-resolve"},
     {L"System", L"Runtime health", L"status"},
     {L"System", L"Runtime health", L"doctor"},

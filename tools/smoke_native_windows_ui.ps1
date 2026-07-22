@@ -45,6 +45,7 @@ $LeverageId = 113
 $AiId = 114
 $ReinvestId = 115
 $ModeId = 116
+$QuickBaseId = 200
 
 function Wait-Until([scriptblock]$Predicate, [string]$Description, [int]$TimeoutMs = 15000) {
     $deadline = [DateTime]::UtcNow.AddMilliseconds($TimeoutMs)
@@ -205,6 +206,17 @@ try {
     Assert-Text $ai "AI on (gated)" "AI toggle restored before enabled model workflow"
     Click-Control (Get-Control $window $RunId)
     Assert-OutputContains $output "dry-run: simple-ai-trading polymarket-model --enable-ai" 5000
+
+    Select-Page $window $pageList 4
+    $dataCombo = Get-Control $window $CommandComboId
+    Select-Combo $window $dataCombo $CommandComboId "Market data / impact-capture"
+    Select-Combo $window $dataCombo $CommandComboId "Integrity and outcomes / impact-audit"
+    Assert-Text (Get-Control $window ($QuickBaseId + 2)) "L2 Feed Probe" "L2 probe quick action"
+    Assert-Text (Get-Control $window ($QuickBaseId + 3)) "L2 Evidence Audit" "L2 audit quick action"
+    Click-Control (Get-Control $window ($QuickBaseId + 2))
+    Assert-OutputContains $output "dry-run: simple-ai-trading impact-capture --mode probe --duration-seconds 30" 5000
+    Click-Control (Get-Control $window ($QuickBaseId + 3))
+    Assert-OutputContains $output "dry-run: simple-ai-trading impact-audit" 5000
 
     Select-Page $window $pageList 5
     $commandCombo = Get-Control $window $CommandComboId

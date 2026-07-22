@@ -64,6 +64,21 @@ _REST_ENDPOINTS = {
 }
 
 
+def validate_impact_store_resources(
+    memory_limit: object,
+    threads: object,
+) -> tuple[str, int]:
+    normalized_memory = str(memory_limit).strip().upper()
+    if not _MEMORY_LIMIT.fullmatch(normalized_memory):
+        raise ValueError(
+            "memory_limit must be a positive integer followed by a byte unit"
+        )
+    normalized_threads = int(threads)
+    if not 1 <= normalized_threads <= 8:
+        raise ValueError("impact store threads must be between 1 and 8")
+    return normalized_memory, normalized_threads
+
+
 def _canonical_json(value: object) -> str:
     return json.dumps(
         value,
@@ -415,13 +430,11 @@ class ImpactAbsorptionStore:
         threads: int = 2,
         read_only: bool = False,
     ) -> None:
-        if not _MEMORY_LIMIT.fullmatch(str(memory_limit).strip()):
-            raise ValueError(
-                "memory_limit must be a positive integer followed by a byte unit"
-            )
         self.path = str(path)
-        self.memory_limit = str(memory_limit).strip().upper()
-        self.threads = max(1, min(8, int(threads)))
+        self.memory_limit, self.threads = validate_impact_store_resources(
+            memory_limit,
+            threads,
+        )
         self.read_only = bool(read_only)
         self._connection: duckdb.DuckDBPyConnection | None = None
 
@@ -2083,4 +2096,5 @@ __all__ = [
     "ImpactCaptureMessage",
     "ImpactFrameWriteResult",
     "ImpactRestEvent",
+    "validate_impact_store_resources",
 ]

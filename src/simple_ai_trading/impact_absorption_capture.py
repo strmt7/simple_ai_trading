@@ -33,6 +33,7 @@ from .impact_absorption_store import (
     ImpactCaptureMessage,
     ImpactFrameWriteResult,
     ImpactRestEvent,
+    validate_impact_store_resources,
 )
 from .impact_capture_frame import (
     ImpactCaptureFrameRecord,
@@ -168,6 +169,7 @@ class ImpactCaptureConfig:
             raise ValueError("source stall timeout is outside the frozen bound")
         if not 0 <= int(self.maximum_reconnects) <= len(_RECONNECT_BACKOFF_SECONDS):
             raise ValueError("maximum reconnects is outside the frozen bound")
+        validate_impact_store_resources(self.duckdb_memory_limit, self.duckdb_threads)
 
 
 @dataclass(frozen=True)

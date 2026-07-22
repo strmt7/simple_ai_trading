@@ -101,6 +101,15 @@ from .external_signals import (
     render_external_signal_report,
 )
 from .intervals import interval_milliseconds
+from .impact_absorption_capture import (
+    ImpactCaptureConfig,
+    ImpactCaptureSupervisorReport,
+    capture_round73_supervised,
+)
+from .impact_absorption_store import (
+    IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    ImpactAbsorptionStore,
+)
 from .liquidity_session import (
     apply_liquidity_session_meta,
     liquidity_session_adjustment,
@@ -1289,6 +1298,53 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_microstructure.set_defaults(
         convert=True, func=command_microstructure_capture
     )
+
+    parser_impact_capture = subparsers.add_parser(
+        "impact-capture",
+        help="capture audited BTC/ETH/SOL futures L2 evidence for impact-absorption research",
+        description=(
+            "Capture exact public Binance USD-M wire evidence into one bounded "
+            "DuckDB database. This command never authenticates or places an order."
+        ),
+    )
+    parser_impact_capture.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_capture.add_argument(
+        "--mode", choices=["probe", "qualification"], default="probe"
+    )
+    parser_impact_capture.add_argument(
+        "--duration-seconds",
+        type=float,
+        default=None,
+        help="streaming duration; defaults to 30 for probe and 3600 for qualification",
+    )
+    parser_impact_capture.add_argument(
+        "--compressed-payload-cap-bytes",
+        type=int,
+        default=IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    )
+    parser_impact_capture.add_argument("--memory-limit", default="2GB")
+    parser_impact_capture.add_argument("--database-threads", type=int, default=2)
+    parser_impact_capture.add_argument("--maximum-reconnects", type=int, default=6)
+    parser_impact_capture.add_argument(
+        "--progress-interval-seconds", type=float, default=30.0
+    )
+    parser_impact_capture.add_argument("--json", action="store_true")
+    parser_impact_capture.set_defaults(func=command_impact_capture)
+
+    parser_impact_audit = subparsers.add_parser(
+        "impact-audit",
+        help="verify a terminal Round 73 exact-wire capture without network calls",
+    )
+    parser_impact_audit.add_argument("--database", default="data/microstructure.duckdb")
+    parser_impact_audit.add_argument(
+        "--run-id", default=None, help="terminal run ID; default selects the latest"
+    )
+    parser_impact_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_audit.add_argument("--database-threads", type=int, default=2)
+    parser_impact_audit.add_argument("--json", action="store_true")
+    parser_impact_audit.set_defaults(func=command_impact_audit)
 
     parser_tick_archive = subparsers.add_parser(
         "tick-archive-sync",
@@ -10744,6 +10800,180 @@ def command_microstructure_capture(args: argparse.Namespace) -> int:
                 print(f"warning: {error}", file=sys.stderr)
         print(f"manifest={result.manifest_path}")
     return 0 if result.status == "pass" else 2
+
+
+async def _run_impact_capture_with_progress(
+    config: ImpactCaptureConfig,
+    *,
+    progress_interval_seconds: float,
+) -> ImpactCaptureSupervisorReport:
+    task = asyncio.create_task(capture_round73_supervised(config))
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    try:
+        while not task.done():
+            done, _pending = await asyncio.wait(
+                (task,),
+                timeout=float(progress_interval_seconds),
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if done:
+                break
+            print(
+                "impact-capture-progress: "
+                f"mode={config.mode} wall_elapsed={loop.time() - started:.1f}s "
+                f"stream_target={config.duration_seconds:.1f}s "
+                f"database={config.database}",
+                file=sys.stderr,
+                flush=True,
+            )
+        return await task
+    except BaseException:
+        if not task.done():
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+        raise
+
+
+def command_impact_capture(args: argparse.Namespace) -> int:
+    mode = str(getattr(args, "mode", "probe"))
+    raw_duration = getattr(args, "duration_seconds", None)
+    duration_seconds = (
+        (3_600.0 if mode == "qualification" else 30.0)
+        if raw_duration is None
+        else float(raw_duration)
+    )
+    progress_interval = float(getattr(args, "progress_interval_seconds", 30.0) or 30.0)
+    if not 5.0 <= progress_interval <= 120.0:
+        print(
+            "impact-capture failed: progress interval must be between 5 and 120 seconds",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        config = ImpactCaptureConfig(
+            database=str(getattr(args, "database", "data/microstructure.duckdb")),
+            mode=mode,
+            duration_seconds=duration_seconds,
+            compressed_payload_cap_bytes=int(
+                getattr(
+                    args,
+                    "compressed_payload_cap_bytes",
+                    IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+                )
+            ),
+            duckdb_memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            duckdb_threads=int(getattr(args, "database_threads", 2)),
+            maximum_reconnects=int(getattr(args, "maximum_reconnects", 6)),
+        )
+        config.validate()
+        report = asyncio.run(
+            _run_impact_capture_with_progress(
+                config,
+                progress_interval_seconds=progress_interval,
+            )
+        )
+    except KeyboardInterrupt:
+        print("impact-capture cancelled by operator", file=sys.stderr)
+        return 130
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-capture failed: {exc}", file=sys.stderr)
+        return 2
+
+    payload = report.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-capture: "
+            f"status={report.status} selected_run={report.selected_run_id or 'none'} "
+            f"attempts={report.attempt_count} reconnects={report.reconnect_count} "
+            f"qualification_passed={str(report.qualification_passed).lower()}"
+        )
+        for attempt in report.attempts:
+            print(
+                f"  {attempt.run_id}: status={attempt.status} "
+                f"failure_class={attempt.failure_class} "
+                f"messages={attempt.writer_message_count} "
+                f"audit={str(attempt.audit_passed).lower()}"
+            )
+        for error in report.startup_errors:
+            print(f"warning: {error}", file=sys.stderr)
+        if report.terminal_error:
+            print(f"warning: {report.terminal_error}", file=sys.stderr)
+
+    if report.status != "completed":
+        return 2
+    if mode == "qualification" and not report.qualification_passed:
+        return 2
+    return 0
+
+
+def command_impact_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    database = Path(getattr(args, "database", "data/microstructure.duckdb"))
+    requested_run_id = str(getattr(args, "run_id", "") or "").strip().lower()
+    try:
+        with ImpactAbsorptionStore(
+            database,
+            read_only=True,
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        ) as store:
+            connection = store.connect()
+            if requested_run_id:
+                run_row = connection.execute(
+                    """
+                    SELECT run_id, status FROM impact_capture_run WHERE run_id = ?
+                    """,
+                    [requested_run_id],
+                ).fetchone()
+            else:
+                run_row = connection.execute(
+                    """
+                    SELECT run_id, status FROM impact_capture_run
+                    WHERE status <> 'running'
+                    ORDER BY started_wall_ns DESC, run_id DESC LIMIT 1
+                    """
+                ).fetchone()
+            if run_row is None:
+                raise ValueError("no matching terminal Round 73 capture run exists")
+            run_id, run_status = str(run_row[0]), str(run_row[1])
+            if run_status == "running":
+                raise ValueError("impact audit requires a terminal capture run")
+            audit = store.audit_run(run_id)
+            stored_report = connection.execute(
+                """
+                SELECT schema_version, report_sha256 FROM impact_capture_report
+                WHERE run_id = ?
+                """,
+                [run_id],
+            ).fetchone()
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-audit failed: {exc}", file=sys.stderr)
+        return 2
+
+    payload = audit.as_dict()
+    payload["run_status"] = run_status
+    payload["stored_report_schema_version"] = (
+        "" if stored_report is None else str(stored_report[0])
+    )
+    payload["stored_report_sha256"] = (
+        "" if stored_report is None else str(stored_report[1])
+    )
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-audit: "
+            f"passed={str(audit.passed).lower()} run={audit.run_id} "
+            f"status={run_status} frames={audit.frame_count} "
+            f"messages={audit.message_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
 
 
 def _parse_cli_utc_date(value: object, label: str):

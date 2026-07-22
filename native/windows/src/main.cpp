@@ -1396,8 +1396,8 @@ class MainWindow {
             quick_actions_ = {
                 {L"Data Health", {L"data-health --interval 1s --market spot --json"}},
                 {L"Rate Limit Detail", {L"api-budget --compact"}},
-                {L"Archive Sync Help", {L"archive-sync --help"}},
-                {L"Data Sync Help", {L"data-sync --help"}},
+                {L"L2 Feed Probe", {L"impact-capture --mode probe --duration-seconds 30"}},
+                {L"L2 Evidence Audit", {L"impact-audit"}},
             };
         } else if (page_index_ == 5) {
             quick_actions_ = {
