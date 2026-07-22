@@ -11,6 +11,7 @@ from simple_ai_trading.impact_absorption import (
     parse_book_ticker,
     parse_liquidation_snapshot,
     parse_mark_price,
+    validate_combined_stream_name,
 )
 
 
@@ -169,9 +170,10 @@ def test_liquidation_snapshot_is_observation_not_complete_flow() -> None:
         {
             "e": "forceOrder",
             "E": 2_000,
-            "st": 1,
             "o": {
                 "s": "BTCUSDT",
+                "ps": "BTCUSDT",
+                "st": 1,
                 "S": "SELL",
                 "o": "LIMIT",
                 "f": "IOC",
@@ -189,6 +191,60 @@ def test_liquidation_snapshot_is_observation_not_complete_flow() -> None:
     )
     assert event.side == "SELL"
     assert event.observed_filled_quote == pytest.approx(394.0)
+
+
+def test_live_force_order_shape_requires_nested_product_and_stream_type() -> None:
+    payload = {
+        "e": "forceOrder",
+        "E": 1_784_734_386_582,
+        "o": {
+            "s": "ETHUSDT",
+            "S": "SELL",
+            "o": "LIMIT",
+            "f": "IOC",
+            "q": "19.599",
+            "p": "1936.93",
+            "ap": "1944.11",
+            "X": "FILLED",
+            "l": "1.444",
+            "z": "19.599",
+            "T": 1_784_734_385_570,
+            "ps": "ETHUSDT",
+            "st": 1,
+        },
+    }
+
+    event = parse_liquidation_snapshot(
+        payload,
+        symbol="ETHUSDT",
+        receive_time_ns=5_000,
+    )
+    assert event.symbol == "ETHUSDT"
+
+    payload["o"]["st"] = 2
+    with pytest.raises(ImpactFeedIntegrityError, match="stream type mismatch"):
+        parse_liquidation_snapshot(payload, symbol="ETHUSDT", receive_time_ns=5_000)
+    payload["o"]["st"] = 1
+    payload["o"]["ps"] = "BTCUSDT"
+    with pytest.raises(ImpactFeedIntegrityError, match="product symbol"):
+        parse_liquidation_snapshot(payload, symbol="ETHUSDT", receive_time_ns=5_000)
+
+
+def test_combined_stream_name_is_bound_to_event_symbol_and_cadence() -> None:
+    assert (
+        validate_combined_stream_name(
+            "btcusdt@markPrice@1s",
+            event_type="markPriceUpdate",
+            symbol="BTCUSDT",
+        )
+        == "btcusdt@markPrice@1s"
+    )
+    with pytest.raises(ImpactFeedIntegrityError, match="combined stream mismatch"):
+        validate_combined_stream_name(
+            "btcusdt@markPrice",
+            event_type="markPriceUpdate",
+            symbol="BTCUSDT",
+        )
 
 
 def test_parsers_reject_wrong_stream_type_and_non_boolean_maker() -> None:

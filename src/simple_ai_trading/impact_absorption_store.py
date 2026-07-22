@@ -23,6 +23,7 @@ from .impact_absorption import (
     LiquidationSnapshotEvent,
     MarkPriceEvent,
     ROUND73_DESIGN_SHA256,
+    validate_combined_stream_name,
     parse_aggregate_trade,
     parse_book_ticker,
     parse_liquidation_snapshot,
@@ -36,13 +37,19 @@ from .impact_capture_frame import (
 )
 
 
-IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v1"
+IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v2"
 IMPACT_CAPTURE_CONTRACT_SHA256 = (
-    "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
+    "1b46f178e335b3473b86ee71a113e2538a9068e287c50f0867aab13f3230557c"
 )
+_LEGACY_CAPTURE_CONTRACTS = {
+    "round-073-prospective-evidence-v1": (
+        "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
+    ),
+}
 IMPACT_CAPTURE_COMPRESSION_LEVEL = 3
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
+_AUDIT_FRAME_BATCH_SIZE = 64
 
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
@@ -218,6 +225,18 @@ class ImpactRestEvent:
     used_weight_1m: int | None = None
 
 
+@dataclass(frozen=True)
+class ImpactRejectedWireEvent:
+    """An exact WebSocket receipt rejected before trusted event typing."""
+
+    observed_stream_name: str
+    observed_event_type: str
+    observed_symbol: str
+    rejection_class: str
+    rejection_reason: str
+    receive_time_ns: int
+
+
 ImpactParsedEvent: TypeAlias = (
     DepthUpdate
     | BookTickerEvent
@@ -225,6 +244,7 @@ ImpactParsedEvent: TypeAlias = (
     | MarkPriceEvent
     | LiquidationSnapshotEvent
     | ImpactRestEvent
+    | ImpactRejectedWireEvent
 )
 
 
@@ -259,10 +279,11 @@ class ImpactCaptureAudit:
     message_count: int
     compressed_payload_bytes: int
     last_frame_sha256: str
+    capture_contract_sha256: str
 
     def as_dict(self) -> dict[str, object]:
         return {
-            "schema_version": "round-073-capture-audit-v1",
+            "schema_version": "round-073-capture-audit-v2",
             "run_id": self.run_id,
             "passed": self.passed,
             "errors": list(self.errors),
@@ -270,7 +291,7 @@ class ImpactCaptureAudit:
             "message_count": self.message_count,
             "compressed_payload_bytes": self.compressed_payload_bytes,
             "last_frame_sha256": self.last_frame_sha256,
-            "capture_contract_sha256": IMPACT_CAPTURE_CONTRACT_SHA256,
+            "capture_contract_sha256": self.capture_contract_sha256,
         }
 
 
@@ -416,6 +437,18 @@ _REST_COLUMNS = (
     "exchange_time_ms",
     "update_id",
     "open_interest",
+)
+_REJECTED_WIRE_COLUMNS = (
+    "run_id",
+    "frame_index",
+    "message_index",
+    "segment_id",
+    "observed_stream_name",
+    "observed_event_type",
+    "observed_symbol",
+    "rejection_class",
+    "rejection_reason",
+    "receive_time_ns",
 )
 
 
@@ -654,6 +687,18 @@ class ImpactAbsorptionStore:
                 used_weight_1m UINTEGER,
                 exchange_time_ms BIGINT,
                 update_id UBIGINT, open_interest DOUBLE,
+                PRIMARY KEY (run_id, frame_index, message_index)
+            );
+
+            CREATE TABLE IF NOT EXISTS impact_rejected_wire_event (
+                run_id VARCHAR NOT NULL, frame_index UINTEGER NOT NULL,
+                message_index UINTEGER NOT NULL, segment_id VARCHAR NOT NULL,
+                observed_stream_name VARCHAR NOT NULL,
+                observed_event_type VARCHAR NOT NULL,
+                observed_symbol VARCHAR NOT NULL,
+                rejection_class VARCHAR NOT NULL,
+                rejection_reason VARCHAR NOT NULL,
+                receive_time_ns UBIGINT NOT NULL,
                 PRIMARY KEY (run_id, frame_index, message_index)
             );
 
@@ -1032,6 +1077,12 @@ class ImpactAbsorptionStore:
     def _event_identity(
         event: ImpactParsedEvent,
     ) -> tuple[str, str, int | None, int | None, int | None]:
+        if isinstance(event, ImpactRejectedWireEvent):
+            observed_symbol = normalize_symbol(event.observed_symbol, default="")
+            indexed_symbol = (
+                observed_symbol if observed_symbol in IMPACT_CAPTURE_SYMBOLS else ""
+            )
+            return "rejectedWire", indexed_symbol, None, None, None
         if isinstance(event, DepthUpdate):
             return (
                 "depthUpdate",
@@ -1093,9 +1144,72 @@ class ImpactAbsorptionStore:
         raise ValueError(f"unsupported impact event type: {event_type}")
 
     @staticmethod
+    def _validate_rejected_wire_event(
+        message: ImpactCaptureMessage,
+        event: ImpactRejectedWireEvent,
+    ) -> None:
+        if message.record.stream not in {
+            "binance_futures_public",
+            "binance_futures_market",
+        }:
+            raise ValueError(
+                "rejected wire evidence must originate from WebSocket data"
+            )
+        if not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", event.rejection_class):
+            raise ValueError("rejected wire class is invalid")
+        if not event.rejection_reason.strip() or len(event.rejection_reason) > 2_000:
+            raise ValueError(
+                "rejected wire reason must contain at most 2000 characters"
+            )
+        for label, value, limit in (
+            ("stream name", event.observed_stream_name, 256),
+            ("event type", event.observed_event_type, 128),
+            ("symbol", event.observed_symbol, 128),
+        ):
+            if len(value) > limit:
+                raise ValueError(f"rejected wire {label} exceeds its bound")
+        if int(event.receive_time_ns) != message.record.received_monotonic_ns:
+            raise ValueError("rejected wire receipt time differs from frame metadata")
+
+        try:
+            root = _strict_json_object(message.record.raw_text)
+        except ValueError:
+            if any(
+                (
+                    event.observed_stream_name,
+                    event.observed_event_type,
+                    event.observed_symbol,
+                )
+            ):
+                raise ValueError(
+                    "unparseable rejected wire evidence cannot claim an observed identity"
+                ) from None
+            return
+        stream_name = root.get("stream")
+        payload = root.get("data")
+        observed_stream = stream_name if isinstance(stream_name, str) else ""
+        observed_event = ""
+        observed_symbol = ""
+        if isinstance(payload, Mapping):
+            observed_event = str(payload.get("e", ""))
+            symbol_value = payload.get("s")
+            if observed_event == "forceOrder" and isinstance(payload.get("o"), Mapping):
+                symbol_value = payload["o"].get("s")
+            observed_symbol = normalize_symbol(symbol_value, default="")
+        if (
+            event.observed_stream_name,
+            event.observed_event_type,
+            event.observed_symbol,
+        ) != (observed_stream, observed_event, observed_symbol):
+            raise ValueError("rejected wire identity differs from exact evidence")
+
+    @staticmethod
     def _validate_raw_semantics(message: ImpactCaptureMessage) -> None:
-        root = _strict_json_object(message.record.raw_text)
         event = message.event
+        if isinstance(event, ImpactRejectedWireEvent):
+            ImpactAbsorptionStore._validate_rejected_wire_event(message, event)
+            return
+        root = _strict_json_object(message.record.raw_text)
         if isinstance(event, ImpactRestEvent):
             if message.record.stream != "binance_futures_rest":
                 raise ValueError(
@@ -1156,6 +1270,14 @@ class ImpactAbsorptionStore:
             )
         if not isinstance(payload, Mapping):
             raise ValueError("exact WebSocket evidence is missing its data object")
+        event_type, symbol, _event_time, _transaction_time, _update_id = (
+            ImpactAbsorptionStore._event_identity(event)
+        )
+        validate_combined_stream_name(
+            stream_name,
+            event_type=event_type,
+            symbol=symbol,
+        )
         received = message.record.received_monotonic_ns
         if isinstance(event, DepthUpdate):
             expected = (
@@ -1303,10 +1425,25 @@ class ImpactAbsorptionStore:
             event_type, symbol, event_time, transaction_time, update_id = (
                 self._event_identity(message.event)
             )
-            if message.record.stream != self._expected_stream(event_type):
+            if isinstance(message.event, ImpactRejectedWireEvent):
+                if message.record.stream not in {
+                    "binance_futures_public",
+                    "binance_futures_market",
+                }:
+                    raise ValueError(
+                        "rejected wire evidence does not belong to a WebSocket lane"
+                    )
+            elif message.record.stream != self._expected_stream(event_type):
                 raise ValueError("typed event does not match the exact-wire stream")
             segment_id = str(message.segment_id).strip().lower()
-            if event_type in {"serverTime", "exchangeInfo"}:
+            if isinstance(message.event, ImpactRejectedWireEvent):
+                if segment_id:
+                    segment_id = _validate_run_id(segment_id, "segment ID")
+                    if active_segments.get(segment_id) != symbol:
+                        raise ValueError(
+                            "rejected wire event does not belong to its claimed segment"
+                        )
+            elif event_type in {"serverTime", "exchangeInfo"}:
                 if segment_id:
                     raise ValueError(
                         "global REST evidence cannot belong to a symbol segment"
@@ -1382,6 +1519,7 @@ class ImpactAbsorptionStore:
         mark_rows: list[tuple[object, ...]] = []
         liquidation_rows: list[tuple[object, ...]] = []
         rest_rows: list[tuple[object, ...]] = []
+        rejected_wire_rows: list[tuple[object, ...]] = []
         stream_counts: dict[str, int] = {}
 
         for index, (message, item, identity) in enumerate(
@@ -1427,7 +1565,20 @@ class ImpactAbsorptionStore:
             key = (selected, frame_index, index, segment_id)
             typed_row_for_hash: tuple[object, ...] | None = None
             l2_row_for_hash: tuple[object, ...] | None = None
-            if isinstance(event, DepthUpdate):
+            if isinstance(event, ImpactRejectedWireEvent):
+                rejected_wire_rows.append(
+                    key
+                    + (
+                        event.observed_stream_name,
+                        event.observed_event_type,
+                        event.observed_symbol,
+                        event.rejection_class,
+                        event.rejection_reason,
+                        event.receive_time_ns,
+                    )
+                )
+                typed_row_for_hash = rejected_wire_rows[-1]
+            elif isinstance(event, DepthUpdate):
                 sums = {
                     ("bid", "added_qty"): 0.0,
                     ("bid", "removed_qty"): 0.0,
@@ -1681,6 +1832,11 @@ class ImpactAbsorptionStore:
                 ("impact_mark_price", _MARK_COLUMNS, mark_rows),
                 ("impact_liquidation_snapshot", _LIQUIDATION_COLUMNS, liquidation_rows),
                 ("impact_rest_event", _REST_COLUMNS, rest_rows),
+                (
+                    "impact_rejected_wire_event",
+                    _REJECTED_WIRE_COLUMNS,
+                    rejected_wire_rows,
+                ),
             ):
                 if rows:
                     insert_rows_columnar(
@@ -1780,6 +1936,10 @@ class ImpactAbsorptionStore:
             "exchangeInfo": ("impact_rest_event", _REST_COLUMNS),
             "depthSnapshot": ("impact_rest_event", _REST_COLUMNS),
             "openInterest": ("impact_rest_event", _REST_COLUMNS),
+            "rejectedWire": (
+                "impact_rejected_wire_event",
+                _REJECTED_WIRE_COLUMNS,
+            ),
         }
         contract = table_contract.get(event_type)
         if contract is None:
@@ -1821,11 +1981,18 @@ class ImpactAbsorptionStore:
         if run is None:
             raise ValueError("capture run was not found")
         errors: list[str] = []
-        if str(run[0]) != IMPACT_CAPTURE_SCHEMA_VERSION:
+        run_schema_version = str(run[0])
+        run_contract_sha256 = str(run[2])
+        expected_contract = (
+            IMPACT_CAPTURE_CONTRACT_SHA256
+            if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
+            else _LEGACY_CAPTURE_CONTRACTS.get(run_schema_version)
+        )
+        if expected_contract is None:
             errors.append("run_schema_mismatch")
         if str(run[1]) != ROUND73_DESIGN_SHA256:
             errors.append("run_design_mismatch")
-        if str(run[2]) != IMPACT_CAPTURE_CONTRACT_SHA256:
+        if expected_contract is not None and run_contract_sha256 != expected_contract:
             errors.append("run_capture_contract_mismatch")
         frames = connection.execute(
             """
@@ -1841,16 +2008,86 @@ class ImpactAbsorptionStore:
             """,
             [selected],
         ).fetchall()
+        typed_contracts: dict[str, tuple[str, tuple[str, ...]]] = {
+            "depthUpdate": ("impact_depth_update", _DEPTH_COLUMNS),
+            "bookTicker": ("impact_book_ticker", _BOOK_TICKER_COLUMNS),
+            "aggTrade": ("impact_aggregate_trade", _TRADE_COLUMNS),
+            "markPriceUpdate": ("impact_mark_price", _MARK_COLUMNS),
+            "forceOrder": ("impact_liquidation_snapshot", _LIQUIDATION_COLUMNS),
+            "serverTime": ("impact_rest_event", _REST_COLUMNS),
+            "exchangeInfo": ("impact_rest_event", _REST_COLUMNS),
+            "depthSnapshot": ("impact_rest_event", _REST_COLUMNS),
+            "openInterest": ("impact_rest_event", _REST_COLUMNS),
+        }
+        if run_schema_version == IMPACT_CAPTURE_SCHEMA_VERSION:
+            typed_contracts["rejectedWire"] = (
+                "impact_rejected_wire_event",
+                _REJECTED_WIRE_COLUMNS,
+            )
+        event_index_by_frame: dict[int, list[tuple[object, ...]]] = {}
+        typed_rows_by_event: dict[str, dict[tuple[int, int], tuple[object, ...]]] = {}
+        l2_rows: dict[tuple[int, int], tuple[object, ...]] = {}
         prior_frame_sha256 = ""
         total_messages = 0
         total_compressed = 0
         lane_state: dict[tuple[str, str], tuple[int, int]] = {}
         decompressor = zstandard.ZstdDecompressor()
         for expected_index, row in enumerate(frames):
+            if expected_index % _AUDIT_FRAME_BATCH_SIZE == 0:
+                batch = frames[
+                    expected_index : expected_index + _AUDIT_FRAME_BATCH_SIZE
+                ]
+                first_frame_index = int(batch[0][0])
+                last_frame_index = int(batch[-1][0])
+                event_index_by_frame = {}
+                for index_row in connection.execute(
+                    """
+                    SELECT frame_index, message_index, message_id, stream,
+                           connection_id, sequence_number, received_wall_ns,
+                           received_monotonic_ns, raw_payload_sha256, event_type,
+                           typed_event_sha256
+                    FROM impact_event_index
+                    WHERE run_id = ? AND frame_index BETWEEN ? AND ?
+                    ORDER BY frame_index, message_index
+                    """,
+                    [selected, first_frame_index, last_frame_index],
+                ).fetchall():
+                    event_index_by_frame.setdefault(int(index_row[0]), []).append(
+                        tuple(index_row[1:])
+                    )
+                typed_rows_by_event = {}
+                for event_type, (table, columns) in typed_contracts.items():
+                    parameters: list[object] = [
+                        selected,
+                        first_frame_index,
+                        last_frame_index,
+                    ]
+                    event_filter = ""
+                    if table == "impact_rest_event":
+                        event_filter = " AND event_type = ?"
+                        parameters.append(event_type)
+                    rows = connection.execute(
+                        f"SELECT {', '.join(columns)} FROM {table} "
+                        "WHERE run_id = ? AND frame_index BETWEEN ? AND ?"
+                        f"{event_filter}",
+                        parameters,
+                    ).fetchall()
+                    typed_rows_by_event[event_type] = {
+                        (int(typed_row[1]), int(typed_row[2])): tuple(typed_row)
+                        for typed_row in rows
+                    }
+                l2_rows = {
+                    (int(l2_row[1]), int(l2_row[2])): tuple(l2_row)
+                    for l2_row in connection.execute(
+                        f"SELECT {', '.join(_L2_COLUMNS)} FROM impact_l2_state "
+                        "WHERE run_id = ? AND frame_index BETWEEN ? AND ?",
+                        [selected, first_frame_index, last_frame_index],
+                    ).fetchall()
+                }
             frame_index = int(row[0])
             if frame_index != expected_index:
                 errors.append(f"frame_index_gap:{expected_index}:{frame_index}")
-            if str(row[1]) != IMPACT_CAPTURE_SCHEMA_VERSION:
+            if str(row[1]) != run_schema_version:
                 errors.append(f"frame_schema_mismatch:{frame_index}")
             if str(row[2]) != IMPACT_CAPTURE_FRAME_FORMAT:
                 errors.append(f"frame_format_mismatch:{frame_index}")
@@ -1884,16 +2121,7 @@ class ImpactAbsorptionStore:
             except ValueError as exc:
                 errors.append(f"frame_decode_failed:{frame_index}:{type(exc).__name__}")
                 continue
-            index_rows = connection.execute(
-                """
-                SELECT message_index, message_id, stream, connection_id,
-                       sequence_number, received_wall_ns, received_monotonic_ns,
-                       raw_payload_sha256, event_type, typed_event_sha256
-                FROM impact_event_index
-                WHERE run_id = ? AND frame_index = ? ORDER BY message_index
-                """,
-                [selected, frame_index],
-            ).fetchall()
+            index_rows = event_index_by_frame.get(frame_index, [])
             if len(index_rows) != message_count:
                 errors.append(f"event_index_count_mismatch:{frame_index}")
             message_ids: list[str] = []
@@ -1928,25 +2156,27 @@ class ImpactAbsorptionStore:
                         f"raw_to_index_mismatch:{frame_index}:{message_index}"
                     )
                 indexed_event_type = str(indexed[8])
-                try:
-                    root = _strict_json_object(record.raw_text)
-                    if record.stream != "binance_futures_rest":
-                        raw_payload = root.get("data")
-                        if (
-                            not isinstance(raw_payload, Mapping)
-                            or str(raw_payload.get("e", "")) != indexed_event_type
-                        ):
-                            errors.append(
-                                f"raw_event_type_mismatch:{frame_index}:{message_index}"
-                            )
-                except ValueError:
-                    errors.append(f"raw_json_invalid:{frame_index}:{message_index}")
-                typed_row, l2_row = self._stored_typed_rows(
-                    connection,
-                    run_id=selected,
-                    frame_index=frame_index,
-                    message_index=message_index,
-                    event_type=indexed_event_type,
+                if indexed_event_type != "rejectedWire":
+                    try:
+                        root = _strict_json_object(record.raw_text)
+                        if record.stream != "binance_futures_rest":
+                            raw_payload = root.get("data")
+                            if (
+                                not isinstance(raw_payload, Mapping)
+                                or str(raw_payload.get("e", "")) != indexed_event_type
+                            ):
+                                errors.append(
+                                    f"raw_event_type_mismatch:{frame_index}:{message_index}"
+                                )
+                    except ValueError:
+                        errors.append(f"raw_json_invalid:{frame_index}:{message_index}")
+                typed_row = typed_rows_by_event.get(indexed_event_type, {}).get(
+                    (frame_index, message_index)
+                )
+                l2_row = (
+                    l2_rows.get((frame_index, message_index))
+                    if indexed_event_type == "depthUpdate"
+                    else None
                 )
                 if typed_row is None:
                     errors.append(f"typed_row_missing:{frame_index}:{message_index}")
@@ -1989,8 +2219,8 @@ class ImpactAbsorptionStore:
             if str(row[16]) != stream_counts_json:
                 errors.append(f"frame_stream_counts_mismatch:{frame_index}")
             frame_identity = {
-                "schema_version": IMPACT_CAPTURE_SCHEMA_VERSION,
-                "capture_contract_sha256": IMPACT_CAPTURE_CONTRACT_SHA256,
+                "schema_version": run_schema_version,
+                "capture_contract_sha256": run_contract_sha256,
                 "run_id": selected,
                 "frame_index": frame_index,
                 "previous_frame_sha256": str(row[3]),
@@ -2015,17 +2245,6 @@ class ImpactAbsorptionStore:
             total_messages += message_count
             total_compressed += int(row[14])
 
-        typed_tables = {
-            "depthUpdate": "impact_depth_update",
-            "bookTicker": "impact_book_ticker",
-            "aggTrade": "impact_aggregate_trade",
-            "markPriceUpdate": "impact_mark_price",
-            "forceOrder": "impact_liquidation_snapshot",
-            "serverTime": "impact_rest_event",
-            "exchangeInfo": "impact_rest_event",
-            "depthSnapshot": "impact_rest_event",
-            "openInterest": "impact_rest_event",
-        }
         expected_counts = {
             str(event_type): int(count)
             for event_type, count in connection.execute(
@@ -2036,7 +2255,7 @@ class ImpactAbsorptionStore:
                 [selected],
             ).fetchall()
         }
-        for event_type, table in typed_tables.items():
+        for event_type, (table, _columns) in typed_contracts.items():
             if table == "impact_rest_event":
                 actual = int(
                     connection.execute(
@@ -2082,6 +2301,7 @@ class ImpactAbsorptionStore:
             message_count=total_messages,
             compressed_payload_bytes=total_compressed,
             last_frame_sha256=prior_frame_sha256,
+            capture_contract_sha256=run_contract_sha256,
         )
 
 
@@ -2095,6 +2315,7 @@ __all__ = [
     "ImpactCaptureAudit",
     "ImpactCaptureMessage",
     "ImpactFrameWriteResult",
+    "ImpactRejectedWireEvent",
     "ImpactRestEvent",
     "validate_impact_store_resources",
 ]

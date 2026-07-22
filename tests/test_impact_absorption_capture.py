@@ -12,10 +12,12 @@ from simple_ai_trading.impact_absorption_capture import (
     ImpactCaptureConfig,
     ImpactCaptureReport,
     _ImpactFrameWriter,
+    _best_effort_wire_identity,
     _is_retriable_capture_failure,
     _market_stream_url,
     _public_stream_url,
     _request_weight_limit,
+    _rejected_wire_message,
     _tick_sizes,
     capture_round73_supervised,
 )
@@ -23,6 +25,7 @@ from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SYMBOLS,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
+    ImpactRejectedWireEvent,
 )
 from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
@@ -148,6 +151,43 @@ def test_stream_topology_is_three_symbols_only_and_uses_specific_liquidations() 
         assert f"{lowered}@markPrice@1s" in market_url
         assert f"{lowered}@forceOrder" in market_url
     assert "!forceOrder@arr" not in market_url
+
+
+def test_rejected_wire_message_preserves_current_nested_liquidation_identity() -> None:
+    raw = (
+        '{"stream":"ethusdt@forceOrder","data":{"e":"forceOrder",'
+        '"E":1784734386582,"o":{"s":"ETHUSDT","S":"SELL",'
+        '"ps":"ETHUSDT","st":1}}}'
+    )
+    record = ImpactCaptureFrameRecord(
+        stream="binance_futures_market",
+        connection_id="binance-market:test",
+        sequence_number=0,
+        received_wall_ns=1_784_734_386_600_000_000,
+        received_monotonic_ns=123,
+        raw_text=raw,
+    )
+
+    message = _rejected_wire_message(
+        record=record,
+        error=impact_capture.ImpactFeedIntegrityError("test rejection"),
+        segment_ids={"ETHUSDT": SEGMENT_ID},
+    )
+
+    assert isinstance(message.event, ImpactRejectedWireEvent)
+    assert _best_effort_wire_identity(raw) == (
+        "ethusdt@forceOrder",
+        "forceOrder",
+        "ETHUSDT",
+    )
+    assert message.event.observed_symbol == "ETHUSDT"
+    assert message.event.rejection_class == "feed_integrity"
+    assert message.segment_id == SEGMENT_ID
+    assert _best_effort_wire_identity('{"stream":"one","stream":"two","data":{}}') == (
+        "",
+        "",
+        "",
+    )
 
 
 def test_one_writer_flushes_atomically_without_blocking_the_caller(tmp_path) -> None:

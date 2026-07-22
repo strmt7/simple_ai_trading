@@ -1,0 +1,118 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v2",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_capture_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
+  "frozen_before_restarted_qualification_capture": true,
+  "capture_contract_sha256": "1b46f178e335b3473b86ee71a113e2538a9068e287c50f0867aab13f3230557c",
+  "inheritance": {
+    "base_contract": "round-073-capture-contract.json",
+    "base_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
+    "rule": "All v1 requirements remain binding except the global stream_type_required rule replaced below.",
+    "historical_v1_evidence_rewritten": false
+  },
+  "amendment_reason": {
+    "failed_run_ids": [
+      "ea0306aa7f4046deb5b38adfa68b3c9f",
+      "9d751e69acb1420b91a4887ea43933a1"
+    ],
+    "failure": "The v1 parser incorrectly read forceOrder stream type from data.st.",
+    "live_observation": "Current /market forceOrder data carries symbol, product symbol, and stream type in data.o.s, data.o.ps, and data.o.st.",
+    "correction_evidence": "round-073-feed-contract-correction-evidence-2026-07-22.json"
+  },
+  "combined_stream_identity": {
+    "wrapper_required": true,
+    "wrapper_must_match_exact_subscription": true,
+    "subscriptions": {
+      "depthUpdate": "<lowercase-symbol>@depth@100ms",
+      "bookTicker": "<lowercase-symbol>@bookTicker",
+      "aggTrade": "<lowercase-symbol>@aggTrade",
+      "markPriceUpdate": "<lowercase-symbol>@markPrice@1s",
+      "forceOrder": "<lowercase-symbol>@forceOrder"
+    },
+    "unknown_or_mismatched_wrapper_policy": "persist exact rejected wire evidence, invalidate the run, and authorize no modeling"
+  },
+  "stream_specific_fields": {
+    "depthUpdate": {
+      "symbol_path": "data.s",
+      "product_symbol_path": "data.ps",
+      "stream_type_path": "data.st",
+      "required_stream_type": 1
+    },
+    "bookTicker": {
+      "symbol_path": "data.s",
+      "product_symbol_path": "data.ps",
+      "stream_type_path": "data.st",
+      "required_stream_type": 1
+    },
+    "aggTrade": {
+      "symbol_path": "data.s",
+      "stream_type_path": "data.st",
+      "required_stream_type": 1
+    },
+    "markPriceUpdate": {
+      "symbol_path": "data.s",
+      "stream_type_path": "data.st",
+      "required_stream_type": 1
+    },
+    "forceOrder": {
+      "symbol_path": "data.o.s",
+      "product_symbol_path": "data.o.ps",
+      "stream_type_path": "data.o.st",
+      "required_stream_type": 1,
+      "top_level_stream_type_permitted_as_substitute": false
+    }
+  },
+  "rejected_wire_evidence": {
+    "parse_before_persistence_permitted": false,
+    "exact_utf8_receipt_required": true,
+    "event_index_type": "rejectedWire",
+    "typed_table": "impact_rejected_wire_event",
+    "stored_metadata": [
+      "best-effort wrapper stream name",
+      "best-effort event type",
+      "best-effort symbol",
+      "failure class",
+      "bounded failure reason",
+      "monotonic receive time"
+    ],
+    "invalid_json_identity_rule": "identity fields remain empty because duplicate or malformed JSON cannot support a trusted identity",
+    "frame_hash_chain_required": true,
+    "raw_and_typed_hashes_required": true,
+    "qualification_invalid_event_limit": 0,
+    "rejected_event_authorizes_modeling": false
+  },
+  "backward_audit": {
+    "supported_schema_contract_pairs": {
+      "round-073-prospective-evidence-v1": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
+    },
+    "historical_frame_identity_uses_stored_schema_and_contract": true,
+    "cross_version_frame_pooling_permitted": false
+  },
+  "scope": {
+    "provider": "Binance official public USD-M futures interfaces",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "market_calendar": "continuous except observed provider maintenance or disconnect",
+    "utc_day_semantics": "partition and resampling boundary only, never a crypto market close",
+    "listed_product_rule": "ETF equity and listed-futures context must use the actual venue calendar and cannot create a Binance close"
+  },
+  "qualification": {
+    "minimum_contiguous_minutes_per_symbol": 60,
+    "maximum_invalid_events": 0,
+    "failed_or_retried_fragments_combined": false,
+    "failure_authorizes_modeling": false
+  },
+  "primary_sources": [
+    "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Liquidation-Order-Streams",
+    "https://github.com/binance/binance-futures-connector-python/blob/main/binance/websocket/um_futures/websocket_client.py"
+  ],
+  "non_claims": [
+    "This correction is feed-integrity evidence, not predictive evidence.",
+    "No qualification, model edge, profitability, ROI, leverage, paper, testnet, or live claim is authorized.",
+    "UTC midnight is not a Binance crypto market close."
+  ]
+}

@@ -16,6 +16,7 @@ import requests
 from websockets.asyncio.client import connect
 from websockets.exceptions import WebSocketException
 
+from .assets import normalize_symbol
 from .impact_absorption import (
     ImpactFeedIntegrityError,
     ROUND73_DESIGN_SHA256,
@@ -24,6 +25,7 @@ from .impact_absorption import (
     parse_book_ticker,
     parse_liquidation_snapshot,
     parse_mark_price,
+    validate_combined_stream_name,
 )
 from .impact_absorption_store import (
     IMPACT_CAPTURE_CONTRACT_SHA256,
@@ -32,6 +34,7 @@ from .impact_absorption_store import (
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactFrameWriteResult,
+    ImpactRejectedWireEvent,
     ImpactRestEvent,
     validate_impact_store_resources,
 )
@@ -116,6 +119,44 @@ def _combined_payload(raw_text: str) -> tuple[str, Mapping[str, object]]:
     if not isinstance(payload, Mapping):
         raise ValueError("combined stream data is missing")
     return stream, payload
+
+
+def _best_effort_wire_identity(raw_text: str) -> tuple[str, str, str]:
+    try:
+        wrapper = _strict_json_object(raw_text)
+    except (ValueError, TypeError, json.JSONDecodeError):
+        return "", "", ""
+    stream_value = wrapper.get("stream")
+    stream_name = stream_value if isinstance(stream_value, str) else ""
+    payload = wrapper.get("data")
+    if not isinstance(payload, Mapping):
+        return stream_name, "", ""
+    event_type = str(payload.get("e", ""))
+    symbol_value = payload.get("s")
+    if event_type == "forceOrder" and isinstance(payload.get("o"), Mapping):
+        symbol_value = payload["o"].get("s")
+    return stream_name, event_type, normalize_symbol(symbol_value, default="")
+
+
+def _rejected_wire_message(
+    *,
+    record: ImpactCaptureFrameRecord,
+    error: BaseException,
+    segment_ids: Mapping[str, str],
+) -> ImpactCaptureMessage:
+    stream_name, event_type, symbol = _best_effort_wire_identity(record.raw_text)
+    return ImpactCaptureMessage(
+        record=record,
+        event=ImpactRejectedWireEvent(
+            observed_stream_name=stream_name,
+            observed_event_type=event_type,
+            observed_symbol=symbol,
+            rejection_class=_failure_class_for_exception(error),
+            rejection_reason=f"{type(error).__name__}:{error}"[:2_000],
+            receive_time_ns=record.received_monotonic_ns,
+        ),
+        segment_id=segment_ids.get(symbol, ""),
+    )
 
 
 @dataclass(frozen=True)
@@ -779,24 +820,29 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                             )
                         except TimeoutError:
                             continue
+                        record = ImpactCaptureFrameRecord(
+                            stream="binance_futures_public",
+                            connection_id=f"binance-public:{run_id}",
+                            sequence_number=receipt.sequence_number,
+                            received_wall_ns=receipt.received_wall_ns,
+                            received_monotonic_ns=receipt.received_monotonic_ns,
+                            raw_text=receipt.raw_text,
+                        )
                         try:
-                            _stream, payload = _combined_payload(receipt.raw_text)
+                            stream_name, payload = _combined_payload(receipt.raw_text)
                             event_type = str(payload.get("e", ""))
-                            symbol = str(payload.get("s", ""))
+                            symbol = normalize_symbol(payload.get("s"), default="")
                             if symbol not in segment_ids:
                                 raise ImpactFeedIntegrityError(
                                     "public stream symbol is outside Round 73"
                                 )
+                            validate_combined_stream_name(
+                                stream_name,
+                                event_type=event_type,
+                                symbol=symbol,
+                            )
                             check_event_clock(
                                 "public", event_type, symbol, int(payload.get("E", 0))
-                            )
-                            record = ImpactCaptureFrameRecord(
-                                stream="binance_futures_public",
-                                connection_id=f"binance-public:{run_id}",
-                                sequence_number=receipt.sequence_number,
-                                received_wall_ns=receipt.received_wall_ns,
-                                received_monotonic_ns=receipt.received_monotonic_ns,
-                                raw_text=receipt.raw_text,
                             )
                             if event_type == "depthUpdate":
                                 event = books[symbol].apply(
@@ -824,6 +870,30 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                                 raise ImpactFeedIntegrityError(
                                     f"unsupported public event: {event_type or 'missing'}"
                                 )
+                        except asyncio.CancelledError:
+                            raise
+                        except BaseException as exc:
+                            try:
+                                writer.put(
+                                    _rejected_wire_message(
+                                        record=record,
+                                        error=exc,
+                                        segment_ids=segment_ids,
+                                    )
+                                )
+                            except BaseException as persistence_error:
+                                fail(
+                                    "public_rejection_persistence:"
+                                    f"{type(persistence_error).__name__}:"
+                                    f"{persistence_error}",
+                                    "writer",
+                                )
+                                return
+                            fail(
+                                f"public_processor:{type(exc).__name__}:{exc}",
+                                _failure_class_for_exception(exc),
+                            )
+                        else:
                             writer.put(message)
                         finally:
                             public_queue.task_done()
@@ -857,26 +927,8 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                             market_last_receipt = time.monotonic()
                             if not isinstance(raw, str):
                                 raw = bytes(raw).decode("utf-8", errors="strict")
-                            _stream, payload = _combined_payload(raw)
-                            event_type = str(payload.get("e", ""))
-                            symbol = (
-                                str(payload.get("s", ""))
-                                if event_type != "forceOrder"
-                                else str(
-                                    payload.get("o", {}).get("s", "")
-                                    if isinstance(payload.get("o"), Mapping)
-                                    else ""
-                                )
-                            )
                             sequence = market_sequence
                             market_sequence += 1
-                            if symbol not in segment_ids:
-                                raise ImpactFeedIntegrityError(
-                                    "market stream symbol is outside Round 73"
-                                )
-                            check_event_clock(
-                                "market", event_type, symbol, int(payload.get("E", 0))
-                            )
                             record = ImpactCaptureFrameRecord(
                                 stream="binance_futures_market",
                                 connection_id=f"binance-market:{run_id}",
@@ -885,35 +937,79 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                                 received_monotonic_ns=received_monotonic_ns,
                                 raw_text=raw,
                             )
-                            if event_type == "aggTrade":
-                                event = parse_aggregate_trade(
-                                    payload,
+                            try:
+                                stream_name, payload = _combined_payload(raw)
+                                event_type = str(payload.get("e", ""))
+                                symbol_value = payload.get("s")
+                                if event_type == "forceOrder" and isinstance(
+                                    payload.get("o"), Mapping
+                                ):
+                                    symbol_value = payload["o"].get("s")
+                                symbol = normalize_symbol(symbol_value, default="")
+                                if symbol not in segment_ids:
+                                    raise ImpactFeedIntegrityError(
+                                        "market stream symbol is outside Round 73"
+                                    )
+                                validate_combined_stream_name(
+                                    stream_name,
+                                    event_type=event_type,
                                     symbol=symbol,
-                                    receive_time_ns=received_monotonic_ns,
                                 )
-                            elif event_type == "markPriceUpdate":
-                                event = parse_mark_price(
-                                    payload,
-                                    symbol=symbol,
-                                    receive_time_ns=received_monotonic_ns,
+                                check_event_clock(
+                                    "market",
+                                    event_type,
+                                    symbol,
+                                    int(payload.get("E", 0)),
                                 )
-                            elif event_type == "forceOrder":
-                                event = parse_liquidation_snapshot(
-                                    payload,
-                                    symbol=symbol,
-                                    receive_time_ns=received_monotonic_ns,
-                                )
+                                if event_type == "aggTrade":
+                                    event = parse_aggregate_trade(
+                                        payload,
+                                        symbol=symbol,
+                                        receive_time_ns=received_monotonic_ns,
+                                    )
+                                elif event_type == "markPriceUpdate":
+                                    event = parse_mark_price(
+                                        payload,
+                                        symbol=symbol,
+                                        receive_time_ns=received_monotonic_ns,
+                                    )
+                                elif event_type == "forceOrder":
+                                    event = parse_liquidation_snapshot(
+                                        payload,
+                                        symbol=symbol,
+                                        receive_time_ns=received_monotonic_ns,
+                                    )
+                                else:
+                                    raise ImpactFeedIntegrityError(
+                                        "unsupported market event: "
+                                        f"{event_type or 'missing'}"
+                                    )
+                            except asyncio.CancelledError:
+                                raise
+                            except BaseException as exc:
+                                try:
+                                    writer.put(
+                                        _rejected_wire_message(
+                                            record=record,
+                                            error=exc,
+                                            segment_ids=segment_ids,
+                                        )
+                                    )
+                                except BaseException as persistence_error:
+                                    raise _ImpactWriterFault(
+                                        "could not persist rejected market wire evidence: "
+                                        f"{type(persistence_error).__name__}:"
+                                        f"{persistence_error}"
+                                    ) from persistence_error
+                                raise
                             else:
-                                raise ImpactFeedIntegrityError(
-                                    f"unsupported market event: {event_type or 'missing'}"
+                                writer.put(
+                                    ImpactCaptureMessage(
+                                        record=record,
+                                        event=event,
+                                        segment_id=segment_ids[symbol],
+                                    )
                                 )
-                            writer.put(
-                                ImpactCaptureMessage(
-                                    record=record,
-                                    event=event,
-                                    segment_id=segment_ids[symbol],
-                                )
-                            )
                 except asyncio.CancelledError:
                     raise
                 except BaseException as exc:

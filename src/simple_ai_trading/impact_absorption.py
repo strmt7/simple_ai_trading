@@ -16,6 +16,13 @@ ROUND73_DESIGN_SHA256 = (
 )
 ROUND73_EVENT_SCHEMA_VERSION = "round-073-prospective-l2-event-v1"
 EXPECTED_STREAM_TYPE = 1
+_COMBINED_STREAM_SUFFIXES = {
+    "depthUpdate": "depth@100ms",
+    "bookTicker": "bookTicker",
+    "aggTrade": "aggTrade",
+    "markPriceUpdate": "markPrice@1s",
+    "forceOrder": "forceOrder",
+}
 
 
 class ImpactFeedIntegrityError(ValueError):
@@ -83,6 +90,33 @@ def _normalized_symbol(value: object, label: str) -> str:
     if not symbol:
         raise ImpactFeedIntegrityError(f"{label} must be a valid exchange symbol")
     return symbol
+
+
+def expected_combined_stream_name(*, event_type: str, symbol: str) -> str:
+    """Return the exact combined-stream name frozen by the Round 73 capture."""
+
+    expected_symbol = _normalized_symbol(symbol, "expected stream symbol")
+    try:
+        suffix = _COMBINED_STREAM_SUFFIXES[str(event_type)]
+    except KeyError as exc:
+        raise ImpactFeedIntegrityError(
+            f"unsupported combined-stream event: {event_type or 'missing'}"
+        ) from exc
+    return f"{expected_symbol.lower()}@{suffix}"
+
+
+def validate_combined_stream_name(
+    stream_name: object, *, event_type: str, symbol: str
+) -> str:
+    """Bind a typed event to the exact stream that was subscribed for it."""
+
+    observed = str(stream_name)
+    expected = expected_combined_stream_name(event_type=event_type, symbol=symbol)
+    if observed != expected:
+        raise ImpactFeedIntegrityError(
+            f"combined stream mismatch: {observed or 'missing'} != {expected}"
+        )
+    return observed
 
 
 def _stream_symbol(payload: Mapping[str, object], expected_symbol: str) -> str:
@@ -588,7 +622,6 @@ def parse_liquidation_snapshot(
     expected = _normalized_symbol(symbol, "expected symbol")
     if str(payload.get("e", "")) != "forceOrder":
         raise ImpactFeedIntegrityError("expected forceOrder event")
-    _stream_type(payload)
     event_time_ms = _integer(payload.get("E"), "event time")
     order = payload.get("o")
     if not isinstance(order, Mapping):
@@ -596,6 +629,12 @@ def parse_liquidation_snapshot(
             "forceOrder payload must contain an order object"
         )
     _stream_symbol(order, expected)
+    _stream_type(order)
+    product_symbol = _normalized_symbol(order.get("ps"), "liquidation product symbol")
+    if product_symbol != expected:
+        raise ImpactFeedIntegrityError(
+            "liquidation product symbol does not match order symbol"
+        )
     side = str(order.get("S", "")).upper()
     if side not in {"BUY", "SELL"}:
         raise ImpactFeedIntegrityError("forceOrder side must be BUY or SELL")
@@ -639,8 +678,10 @@ __all__ = [
     "ROUND73_DESIGN_SHA256",
     "ROUND73_EVENT_SCHEMA_VERSION",
     "SynchronizedDepthBook",
+    "expected_combined_stream_name",
     "parse_aggregate_trade",
     "parse_book_ticker",
     "parse_liquidation_snapshot",
     "parse_mark_price",
+    "validate_combined_stream_name",
 ]
