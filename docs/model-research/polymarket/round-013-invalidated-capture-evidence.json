@@ -1,0 +1,212 @@
+{
+  "artifact_sha256": "ad44d776ec4152afbd2ac1912f2850db061a404d035efe9adc775021569d71f9",
+  "authority": {
+    "live_trading": false,
+    "model_selection": false,
+    "paper_trading": false,
+    "profitability_claim": false
+  },
+  "capture_manifest": {
+    "action_pipeline_implementation_sha256": "652b013238a1aab0c8bbdda7716bf82a1c503134d2409ba86548d9c986713c0e",
+    "capture_duration_seconds": 86400,
+    "capture_started_before_manifest": false,
+    "contract_repository_path": "docs/model-research/polymarket/round-013-sealed-confirmation-contract.json",
+    "contract_sha256": "9ace8092d26918b7621aafb7f008106b06c80049c314158e6a26fd5b70dd4325",
+    "created_at_ms": 1784415205526,
+    "labels_consulted": false,
+    "live_trading_authority": false,
+    "manifest_sha256": "67eb4820e1625e4375800f3a920cf6f34259dcefdfa908d3ebcb512e77098a66",
+    "model_scores_consulted": false,
+    "model_sha256": "16b5d82a483ec2ab86cdbadfbfde6038147d7a176c89bc11aad61c5648e2748f",
+    "outcome_endpoints_queried": false,
+    "paper_trading_authority": false,
+    "policy_sha256": "c8f518ad38e1b616f1b221f5373bb9f8ec9b6bd258ae1114b8fc74501a9e6db9",
+    "predecessor_repository_path": "docs/model-research/polymarket/round-011-single-leg-directional-value-artifact.json",
+    "reference_implementation_sha256": "17aaa8df63d9caf85c6c64fef7a7ca55e811cffc0f7f8e8db8e9fa0ea10ce9ee",
+    "repository_commit": "5ed694eac7f88a60d9d4a9a18dffbef1e9abd1a8",
+    "repository_tree": "06ddf9048b349e9bd77019429cd128947de20431",
+    "required_file_sha256": {
+      "docs/model-research/polymarket/round-011-single-leg-directional-value-artifact.json": "0f34ebc03f46c3fec88a77816119f81fdba976eb7ef7635539fea0de00ac6a31",
+      "docs/model-research/polymarket/round-013-sealed-confirmation-contract.json": "57b1a6566feecec82c43a710d6ec40434756c3de75873c39947b8559b2241b2a",
+      "native/windows/generated/command_contract.hpp": "3abbe86b56317d1cf181b473f508283359d06e4016b3ee785eebe42da23361ba",
+      "native/windows/src/main.cpp": "551699261ad97675e295fdcb380db36edbe703349e57d6f930d9f9b211386ecf",
+      "src/simple_ai_trading/cli.py": "cc84b750d8fb31ca29c99835778ff8a537db5ba62ca8b7667e290b082d7cd59b",
+      "src/simple_ai_trading/command_contract.py": "516c128ab57cdd8c2f532bb51527281e935e3beaee7e37f95a4d3c770eda4abd",
+      "src/simple_ai_trading/duckdb_batch.py": "81eb729ec8bf2b212a2cc2980308d90b3eacddee615a3dc201956254a8e0074c",
+      "src/simple_ai_trading/paper_execution.py": "7e5028f880b5d06b554148c5355edc9a0d6f1ea510b16f945d0902572de2dc5e",
+      "src/simple_ai_trading/polymarket.py": "8c0395b8fd0d79a6207c71c2d8a6483bd334e9362cf4ec22ebdcfc8f204c7aaa",
+      "src/simple_ai_trading/polymarket_action_pipeline.py": "10c8008c9cd2c83b96e83bc6f9010eaa8b3c5af75eb0a7d81daac3e088f8dcd2",
+      "src/simple_ai_trading/polymarket_action_value.py": "93fff745224023cb18cda116126536584c1e0380c19a933272d1c3954efc6fad",
+      "src/simple_ai_trading/polymarket_continuity.py": "b54b7721d6f0ab054a15c2a2d61bfc6e6943a7218a7b96a3c888dc9b0a0a11ae",
+      "src/simple_ai_trading/polymarket_coverage.py": "36fa6c5f0b3b09a511bc0e52c1ba4a362a50855f1f19eb9060447b41acccf7a3",
+      "src/simple_ai_trading/polymarket_features.py": "61c4d8a37a801ee4dfa20a933178d1906c4cf7b8189eaec60dfeb3b4b08b52c8",
+      "src/simple_ai_trading/polymarket_recorder.py": "9852afb3c0dceb015f23c94b9428129cb6a94e7661ecef8799657861a101ba24",
+      "src/simple_ai_trading/polymarket_replay.py": "a2b7fae14864e51596d724bd01ed6a56f58d09740f2e92b1e0aec8403b544bb2",
+      "src/simple_ai_trading/polymarket_repricing.py": "4ac7fc706ca52344d4e8aff5d9537bdfbc95eb21471bcaa3e81714ac19607d7b",
+      "src/simple_ai_trading/polymarket_resolution.py": "76ebf2dd66bd8a72fe8935ebe2fceacf7b82b4c4abd44ebe75920fd16edad98a",
+      "src/simple_ai_trading/polymarket_round12_admission.py": "ab2b7b2a95c003a06e258638b320924d67a264d9c8e42173177ff9164d6e7e7a",
+      "src/simple_ai_trading/polymarket_round12_reference.py": "0b90262dccfe1bf1db478f01c77e600b4817a8ae667921d3d855be42a3c07ccc",
+      "src/simple_ai_trading/polymarket_round13.py": "61aa065a9fbfb204fae41110634400450e1490f301e65bf3795a620060f2b46d",
+      "src/simple_ai_trading/polymarket_round13_capture.py": "68d48cfaf6b39fa039260529443c818aeff71cbd5785c3061204e632d4901fb9",
+      "src/simple_ai_trading/polymarket_round13_evaluation.py": "938d72438303b77c6f17f282cf8dd6154a123a4c3c3687b0b2e5225e6700639b",
+      "src/simple_ai_trading/polymarket_round13_publication.py": "0a75d3a2862a8904eec7b15482a1a107e938fd7219775fb29e8c05ad45f80f03",
+      "tests/test_ai_runtime_and_parity.py": "abd6f4126d469960db0aaa8037c98eeb0d6bbb260f3413c9e463efd7629359bb",
+      "tests/test_polymarket.py": "d1eaa6fcbc46b61dc7b12362a11c2cf8eaa2f457bd8130b1e873306551a4df87",
+      "tests/test_polymarket_recorder.py": "0747306a0cbb1cb0c9b43cb0d0e6b454f411e54ff55e6dd4f7f36691977e57ab",
+      "tests/test_polymarket_replay.py": "1d91e8b28c341162bec0e8fbb47ca7fbe1184c8342ffc88d62e5342bb97483b7",
+      "tests/test_polymarket_resolution.py": "fb7b759019ca4bc72d2cfd6be286d958626e2ed9e940d7ac82b25ef97fe5ef4a",
+      "tests/test_polymarket_round13.py": "99a2858cfc091c537851b5d959f2683b8ad0d52dee4ba37c6f8fd722cd7519b4",
+      "tests/test_polymarket_round13_capture.py": "379437441efd7d1546ba0a5f8874b5447cc1b6650746374e8260a3465e9169c7",
+      "tests/test_polymarket_round13_evaluation.py": "c2eb2f24abc4e318b047a7cdd7b08ebe32273c73daf47a0b58c857fec63d7171",
+      "tests/test_polymarket_round13_publication.py": "6d96e92fe69dd8634e0bc0ec9beb8b19ff65a17ff5d384b28dd073cdcc75f07e"
+    },
+    "round13_program_implementation_sha256": "ba8519d40abad897b599b0a46d05d55d83911612d9452422b92725cbb89a3892",
+    "run_id": "244baef7493041ef9de90d728dab153f",
+    "schema_version": "polymarket-round13-capture-preregistration-manifest-v1",
+    "source_hash_algorithm": "sha256_raw_committed_bytes"
+  },
+  "ended_at_ms": 1784417126848,
+  "frozen_capture_requirement": {
+    "contract_sha256": "9ace8092d26918b7621aafb7f008106b06c80049c314158e6a26fd5b70dd4325",
+    "duration_shortfall_seconds": 84478.678,
+    "observed_duration_seconds": 1921.322,
+    "required_duration_seconds": 86400,
+    "required_one_shot_capture_completed": false,
+    "stream_gap_count": 4
+  },
+  "limitations": [
+    "terminal_integrity_audit_incomplete",
+    "required_86400_second_one_shot_capture_not_completed",
+    "stream_interruptions_present",
+    "normalized_event_materialization_not_started",
+    "not_model_evidence",
+    "not_performance_evidence"
+  ],
+  "outcome_access_evidence": {
+    "capture_manifest_labels_consulted": false,
+    "capture_manifest_model_scores_consulted": false,
+    "capture_manifest_outcome_endpoints_queried": false,
+    "performance_labels_opened": false,
+    "persisted_public_event_rows": 0,
+    "persisted_resolution_evidence_rows": 0,
+    "round13_action_and_evaluation_tables_present": false
+  },
+  "persisted_table_counts": {
+    "polymarket_condition_message_frame": 0,
+    "polymarket_condition_message_manifest": 0,
+    "polymarket_market_snapshot": 24,
+    "polymarket_public_event": 0,
+    "polymarket_resolution_evidence": 0,
+    "polymarket_stream_gap": 4
+  },
+  "raw_chunk_evidence": {
+    "chunk_count": 3962,
+    "compressed_bytes": 87910210,
+    "message_count": 1281245,
+    "ordered_chunk_manifest_sha256": "ebdebd5f484d6a3b7200667b78fa29b3a995e4f1b424259ba0e7ba083ffb3479",
+    "uncompressed_bytes": 851963077
+  },
+  "recorder_report": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "conditions": [
+      "0x02c6c908b65e51f95a077b4780007604ab2437a61d27c89997c65739c3890305",
+      "0x05a8d800764dd83c759a95ab8dbcf1726dc3c84791b821d2f0c5d4497f6cca5d",
+      "0x15e3f6484e61945c805ca282332e82a404a5e16fb5dea5880c585f45c56c96ca",
+      "0x26a4794d8895191a92e58165e616a2c3204d03ed812bbd6a81a1f060262caf94",
+      "0x293ee9b48716eeccdbd3a95250f51c2eaeaf630a98e57d0f78555ff6b44b7c96",
+      "0x3b185dac9f0bd27a30bd72d9b2da05d1356df3898c9e166963bfd8ed4d74b7f2",
+      "0x41804fcc225ea451f2c1abc8f4ebf0d378fffef1eec3d1bbc67ab5769e72cafd",
+      "0x45ba1b04e06997fca2214eca192b7e681917bd1ebdcd99389d36eedc712885b2",
+      "0x58d71a6da094541a244cb454c8c02f80e541e16af44744fc8aefce239c7c5044",
+      "0x590835decef8a7da9e49e7021dd4326891be7990549d265eee9ca0b67dddb566",
+      "0x698cefed3a62bfe6bd0e6fd76e348b81140ab411b557a4c32d7e674feb0efdae",
+      "0x6c8e27d21b83f6f9b45f6851abbc5bbe050b4a8b61f4082b58e4801c25bd5603",
+      "0x7724962952f6ab7ec15c144a17bb27649987f7bb607852b682a520cd907fee21",
+      "0x7936d9f44f581b25d7d774483f435dfdb1079ca2b41336855a8d570fa8e4395e",
+      "0x8d4d562124fa5b3439171bca52cbe015bbf1bc1955b54dcf884e2126d71d2104",
+      "0x8f3d6cc2840b081e27cce5d4b4f7bed7386cbea276595cb562cb8d29857d92f7",
+      "0x994b7d39571e57ec254883da6c6137e51650e406bb147e718b8f7e274d157b30",
+      "0xa487ee83ea8229f8c3413ce7e278d6151663a69f73e6c8135f4e566ca95cf0e6",
+      "0xa81dc4ba0f17f2f313ff52f28b7b3f41e4aa41b65cbed61f6fee7c70e0714d6c",
+      "0xaf7772f660907baee1760458e07e7edcbe1082b714e7c8b992faed8978d63306",
+      "0xb267ff3c3443b5fbe208f374280dfecad915f025440b2979298cf8bbefe032d0",
+      "0xb6a3303630326f7fd3d279c909ebe6f86c4a98efe1c47a80d8c6f244edde90a5",
+      "0xf872609056b452a59152f52e1f07129f11f72818760abdc086ca0f1fbf0d9efb",
+      "0xfa20b03db5678500c190163059db45938cbe04306a46bf0c8cf4eb53faced845"
+    ],
+    "database": "C:\\trader\\simple_ai_trading\\data\\polymarket-round13-confirmation-20260718-225324Z.duckdb",
+    "duration_seconds": 1921.322,
+    "ended_at_ms": 1784417126848,
+    "errors": [
+      "operator_terminalized_abandoned_recorder_process_after_stale_nonterminal_progress",
+      "capture_duration_below_frozen_requirement:1921.322<86400",
+      "stream_interruptions_present:4"
+    ],
+    "evidence_manifest_sha256": "",
+    "integrity_errors": [
+      "terminal_integrity_audit_incomplete"
+    ],
+    "market_snapshot_count": 24,
+    "normalized_event_count": 0,
+    "raw_message_count": 1281245,
+    "report_sha256": "5853af1683b3c04eef0cf111ca14c235c070f44d69099fc50a9fc7f6ecf88f8a",
+    "run_id": "244baef7493041ef9de90d728dab153f",
+    "schema_version": "polymarket-public-recorder-v1",
+    "started_at_ms": 1784415205526,
+    "status": "failed",
+    "stream_counts": {
+      "binance_spot": 196395,
+      "clob_market": 1073337,
+      "clob_rest_book": 6,
+      "polymarket_rtds": 11507
+    },
+    "stream_gap_count": 4
+  },
+  "round": 13,
+  "run_id": "244baef7493041ef9de90d728dab153f",
+  "schema_version": "polymarket-round13-invalidated-capture-evidence-v1",
+  "source_file_evidence": {
+    "database": {
+      "bytes": 176697344,
+      "filename": "polymarket-round13-confirmation-20260718-225324Z.duckdb",
+      "sha256": "85b9eb1d00997f829684b06bec7b52772ad5cf3478f918edfaf9d5bf20be1f61"
+    },
+    "progress_sidecar": {
+      "bytes": 877,
+      "filename": "polymarket-round13-confirmation-20260718-225324Z.progress.json",
+      "sha256": "359b6c2a27eb418e4f4c4943bd6766953436551bc35aa5c3d80b894c2f079f00"
+    },
+    "stderr_log": {
+      "bytes": 7967,
+      "filename": "polymarket-round13-confirmation-20260718-225324Z.stderr.log",
+      "sha256": "f20fe96c2b0440e49550a192263e75b5259523c92c5f7e9ba8d0d16b49c576e9"
+    },
+    "stdout_log": {
+      "bytes": 0,
+      "filename": "polymarket-round13-confirmation-20260718-225324Z.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "stale_progress_evidence": {
+    "database_minus_sidecar_message_count": 715,
+    "database_raw_message_count": 1281245,
+    "elapsed_seconds": 1921.322,
+    "error_count": 0,
+    "observed_at_ms": 1784417126848,
+    "phase_before_terminalization": "capturing",
+    "queue_high_watermark": 847,
+    "sidecar_written_message_count": 1280530,
+    "written_gap_count": 4
+  },
+  "started_at_ms": 1784415205526,
+  "status": "failed_capture_ineligible_before_outcome_access",
+  "terminal_errors": [
+    "operator_terminalized_abandoned_recorder_process_after_stale_nonterminal_progress",
+    "capture_duration_below_frozen_requirement:1921.322<86400",
+    "stream_interruptions_present:4"
+  ]
+}

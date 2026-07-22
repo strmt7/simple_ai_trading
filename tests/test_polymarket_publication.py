@@ -65,7 +65,7 @@ def test_round_002_publication_is_internally_consistent() -> None:
     assert market_manifest["columns"] == list(markets[0])
 
 
-def test_latest_publication_reports_pending_round_13_without_invented_metrics() -> None:
+def test_latest_publication_reports_failed_round_13_without_invented_metrics() -> None:
     latest = RESEARCH / "latest"
     readme = (latest / "README.md").read_text(encoding="utf-8").lower()
     chart = (
@@ -78,12 +78,12 @@ def test_latest_publication_reports_pending_round_13_without_invented_metrics() 
     ) as handle:
         rows = {row["round"]: row for row in csv.DictReader(handle)}
 
-    assert "round 13 is frozen but has not started" in readme
+    assert "round 13 failed before outcome access" in readme
     assert "round 12 is not performance evidence" in readme
     assert "no profitability, roi, acceptable-drawdown" in readme
     assert "round 13" in chart
-    assert "n/a simulated fills | frozen; fresh capture not started" in chart
-    assert "neither has performance metrics" in chart
+    assert "n/a simulated fills | failed: 1,921.322 s of 86,400 s" in chart
+    assert "rounds 12 and 13 were invalidated before outcomes" in chart
     unavailable_metrics = {
         "independent_groups",
         "conditions",
@@ -97,7 +97,7 @@ def test_latest_publication_reports_pending_round_13_without_invented_metrics() 
         assert rows[round_number]["profitability_claim"] == "False"
 
 
-def test_pending_round_013_manifest_reconstructs_every_artifact() -> None:
+def test_failed_round_013_manifest_reconstructs_every_artifact() -> None:
     manifest = json.loads(
         (RESEARCH / "latest" / "publication-integrity.json").read_text(encoding="utf-8")
     )
@@ -111,9 +111,12 @@ def test_pending_round_013_manifest_reconstructs_every_artifact() -> None:
     )
 
     assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
-    assert manifest["schema_version"] == "polymarket-round13-pending-publication-v1"
+    assert (
+        manifest["schema_version"]
+        == "polymarket-round13-failed-capture-publication-v1"
+    )
     assert manifest["latest_round"] == 13
-    assert manifest["status"] == "round13_frozen_fresh_capture_not_started"
+    assert manifest["status"] == "round13_capture_failed_ineligible"
     assert manifest["profitability_claim"] is False
     assert manifest["roi_claim"] is False
     assert manifest["drawdown_claim"] is False
@@ -128,6 +131,40 @@ def test_pending_round_013_manifest_reconstructs_every_artifact() -> None:
         payload = path.read_bytes()
         assert len(payload) == entry["bytes"]
         assert hashlib.sha256(payload).hexdigest() == entry["sha256"]
+
+
+def test_round_013_failed_capture_evidence_is_hash_bound_and_ineligible() -> None:
+    evidence = json.loads(
+        (RESEARCH / "round-013-invalidated-capture-evidence.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    claimed = evidence.pop("artifact_sha256")
+    canonical = json.dumps(
+        evidence,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    )
+
+    assert hashlib.sha256(canonical.encode("ascii")).hexdigest() == claimed
+    assert evidence["status"] == "failed_capture_ineligible_before_outcome_access"
+    assert evidence["frozen_capture_requirement"] == {
+        "contract_sha256": (
+            "9ace8092d26918b7621aafb7f008106b06c80049c314158e6a26fd5b70dd4325"
+        ),
+        "duration_shortfall_seconds": 84478.678,
+        "observed_duration_seconds": 1921.322,
+        "required_duration_seconds": 86400,
+        "required_one_shot_capture_completed": False,
+        "stream_gap_count": 4,
+    }
+    assert evidence["outcome_access_evidence"]["performance_labels_opened"] is False
+    assert evidence["outcome_access_evidence"][
+        "round13_action_and_evaluation_tables_present"
+    ] is False
+    assert all(value is False for value in evidence["authority"].values())
 
 
 def test_round_008_publication_is_deterministic_and_refuses_tampering(

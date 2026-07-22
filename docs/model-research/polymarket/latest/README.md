@@ -4,11 +4,13 @@
 
 ## Current boundary
 
-Round 13 is frozen but has not started. It is a one-use prospective
-BTC/ETH/SOL five-minute confirmation of the unchanged Round 11 calibration,
-with explicit FOK worst-price limits, exact recorded fees and depth, seven
-latency/fee/tick/depth scenarios, a raw-market-prior control, and conjunctive
-activity, utility, uncertainty, drawdown, and exposure gates.
+Round 13 failed before outcome access. Its one-use BTC/ETH/SOL five-minute
+capture stopped at `1921.322` seconds
+of the required `86400` seconds,
+with `1281245` persisted source
+messages and `4` stream gaps. It never
+reached the frozen evaluation boundary, so every return, drawdown, fill, and
+model-comparison field is unavailable, not zero.
 
 Round 12 is not performance evidence. Its recorder captured
 `142494` messages, but the evaluator
@@ -27,6 +29,7 @@ AI-uplift, or trading claim exists.
 ## Evidence
 
 - [Round 13 frozen contract](../round-013-sealed-confirmation-contract.json)
+- [Round 13 invalidation](../round-013-invalidated-capture-evidence.json)
 - [Round 12 invalidation](../round-012-invalidated-capture-evidence.json)
 - [Round 11 contract](../round-011-single-leg-directional-value-contract.json)
 - [Round 11 report](../round-011-single-leg-directional-value-report.json)
@@ -35,7 +38,7 @@ AI-uplift, or trading claim exists.
 - [Publication integrity](publication-integrity.json)
 
 Regenerate these exact tables, charts, and hashes with
-`python tools/publish_polymarket_round11.py`. Round 13 can acquire no paper or
-live authority until its untouched capture passes every frozen gate and the
-authenticated order lifecycle, balance ownership, settlement delay, and
-redemption overhead are separately proven.
+`python tools/publish_polymarket_round11.py`. Round 13 cannot acquire paper or
+live authority. Any successor requires a new prospective contract and untouched
+capture, followed by separate proof of authenticated order lifecycle, balance
+ownership, settlement delay, and redemption overhead.
