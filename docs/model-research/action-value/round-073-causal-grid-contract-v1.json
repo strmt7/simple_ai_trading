@@ -1,6 +1,6 @@
 {
   "schema_version": "round-073-causal-grid-contract-v1",
-  "contract_sha256": "57573db05a176fc16883aa2a624eeed957ebbcd4d2188be68a4fe8aa595c90eb",
+  "contract_sha256": "cf7a222c2b94a5b274771f070b287c1d6ceb90f73edb9fdc0e7402e909271c75",
   "round": 73,
   "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
   "parent_corpus_contract_sha256": "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67",
@@ -147,11 +147,13 @@
     "aggressive_buy": "aggregate trade where buyer_is_maker is false",
     "aggressive_sell": "aggregate trade where buyer_is_maker is true",
     "order_flow_imbalance": "bid additions plus ask removals minus bid removals minus ask additions",
-    "order_flow_normalizer": "maximum of contemporaneous displayed depth for levels 1-5, 6-10, or 11-20 and a positive machine epsilon; outside-20 flow is never normalized because outside-20 depth is not retained in the typed state",
+    "order_flow_normalizer": "max(contemporaneous bid quote depth plus ask quote depth for the exact retained band, 1e-12); outside-20 flow is never normalized because outside-20 depth is not retained in the typed state",
     "microprice": "ask times bid quantity plus bid times ask quantity divided by total top quantity",
     "distance_weighted_depth": "sum of level quote notional divided by one-based level rank",
     "depth_concentration": "Herfindahl sum of squared level quote-notional shares",
-    "liquidation_zero": "no provider snapshot observed in the window, not proof of zero liquidations",
+    "zero_trade_window": "buy sell signed and absolute quote flow and trade count are zero; buyer_taker_share is zero and trade count disambiguates zero activity from sell-only activity",
+    "zero_bbo_update_window": "mid return realized variation and update count are zero; mean and maximum spread use the latest strictly prior BBO and update count disambiguates carried state from observed updates",
+    "liquidation_zero": "snapshot count and observed notional are zero when no provider snapshot was observed in the window; this is not proof of zero liquidations",
     "displayed_removal": "anonymous displayed quantity reduction; execution, cancellation, manipulation, and participant identity remain unresolved"
   },
   "validity_contract": {
