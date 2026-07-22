@@ -650,7 +650,7 @@ def _progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
         (
             f'<text transform="translate(25 {(top+metric_bottom)/2:.1f}) rotate(-90)" text-anchor="middle" fill="{COLORS["subtext"]}" font-family="Segoe UI,Arial,sans-serif" font-size="14">Recorded Spearman x 100</text>',
             f'<line x1="{x(54):.1f}" y1="{timeline_y}" x2="{x(72):.1f}" y2="{timeline_y}" stroke="{COLORS["grid"]}" stroke-width="3"/>',
-            f'<text x="{left}" y="{timeline_y-42}" fill="{COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="600">Rounds 54-72</text>',
+            f'<text x="{left}" y="{timeline_y-80}" fill="{COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="600">Rounds 54-72: gate status</text>',
         )
     )
     recent = {int(row["round"]): row for row in rows if int(row["round"]) >= 54}
@@ -669,14 +669,19 @@ def _progress_svg(rows: Sequence[Mapping[str, object]]) -> str:
                 f'<text x="{x(round_number):.1f}" y="{timeline_y+28}" text-anchor="middle" fill="{COLORS["subtext"]}" font-family="Segoe UI,Arial,sans-serif" font-size="11">{round_number}</text>',
             )
         )
-    for round_number, label, color in (
-        (60, "structural pass", COLORS["green"]),
-        (61, "economic reject", COLORS["red"]),
-        (62, "predictive pass", COLORS["green"]),
-        (72, "predictive reject", COLORS["red"]),
+    outcome_x = (365, 565, 755, 945)
+    for xx, round_number, label, color in zip(
+        outcome_x,
+        (60, 61, 62, 72),
+        ("structural pass", "economic reject", "predictive pass", "predictive reject"),
+        (COLORS["green"], COLORS["red"], COLORS["green"], COLORS["red"]),
+        strict=True,
     ):
-        lines.append(
-            f'<text x="{x(round_number):.1f}" y="{timeline_y-16}" text-anchor="middle" fill="{color}" font-family="Segoe UI,Arial,sans-serif" font-size="11">{html.escape(label)}</text>'
+        lines.extend(
+            (
+                f'<circle cx="{xx}" cy="{timeline_y-47}" r="5" fill="{color}"/>',
+                f'<text x="{xx+11}" y="{timeline_y-43}" fill="{COLORS["text"]}" font-family="Segoe UI,Arial,sans-serif" font-size="11"><tspan font-weight="700">R{round_number}</tspan><tspan fill="{COLORS["subtext"]}"> {html.escape(label)}</tspan></text>',
+            )
         )
     lines.extend(
         (
