@@ -1,0 +1,166 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v1",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "frozen_before_qualification_capture": true,
+  "capture_contract_sha256": "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b",
+  "scope": {
+    "provider": "Binance official public USD-M futures interfaces",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "market_calendar": "continuous except observed provider maintenance or disconnect",
+    "utc_day_semantics": "partition and resampling boundary only, never a crypto market close",
+    "listed_product_rule": "ETF equity and listed-futures context must use the actual venue calendar and cannot create a Binance close"
+  },
+  "wire_evidence": {
+    "websocket_payload": "exact UTF-8 combined-stream wrapper text as received",
+    "rest_payload": "exact UTF-8 public response body plus method endpoint parameters response status and receipt clocks",
+    "credentials_permitted": false,
+    "receive_clocks": [
+      "host wall-clock nanoseconds",
+      "host monotonic nanoseconds"
+    ],
+    "frame_format": "round-073-length-prefixed-utf8-receipts-v1",
+    "frame_magic_ascii": "SATIAF1",
+    "maximum_messages_per_frame": 1024,
+    "maximum_uncompressed_frame_bytes": 67108864,
+    "maximum_raw_message_bytes": 8388608,
+    "compression": "zstd level 3 with frame checksum and content size",
+    "frame_hash_chain": "SHA-256 over canonical frame identity including previous frame hash and both payload hashes",
+    "duplicate_raw_filesystem_archive_permitted": false
+  },
+  "writer": {
+    "database": "data/microstructure.duckdb",
+    "writer_count": 1,
+    "queue_capacity_messages": 65536,
+    "maximum_qualification_queue_utilization": 0.8,
+    "flush_message_count": 1024,
+    "flush_uncompressed_bytes": 8388608,
+    "flush_interval_milliseconds": 250,
+    "transaction_scope": "one raw frame event index and all typed rows commit atomically",
+    "queue_overflow": "invalidate all affected active segments and stop the capture without dropping evidence silently",
+    "hard_compressed_payload_cap_required": true,
+    "default_qualification_compressed_payload_cap_bytes": 2147483648,
+    "cap_action": "finish the current atomic frame then stop before accepting another frame",
+    "payload_cap_is_not_physical_database_size": true
+  },
+  "raw_to_typed_link": {
+    "key": [
+      "run_id",
+      "frame_index",
+      "message_index"
+    ],
+    "raw_payload_sha256_per_message": true,
+    "typed_event_sha256_per_message": true,
+    "append_semantic_validation": "strict duplicate-key-free JSON must agree with the typed event before either is committed",
+    "typed_event_without_raw_reference_permitted": false,
+    "raw_event_without_event_index_permitted": false,
+    "connection_first_sequence_number": 0,
+    "connection_sequence_rule": "increase by exactly one without gaps",
+    "connection_monotonic_receive_rule": "strictly increasing",
+    "wall_clock_regression_rule": "retain raw evidence and invalidate clock quality rather than silently rewrite receipt time",
+    "unknown_event_type_policy": "invalidate the affected segment",
+    "nonfinite_numeric_policy": "invalidate the affected segment"
+  },
+  "rest_typing": {
+    "request_clocks": "wall and monotonic nanoseconds immediately before request dispatch, paired with frame receipt clocks after the full response body",
+    "rate_limit_header": "non-negative X-MBX-USED-WEIGHT-1M when supplied; absence remains unknown",
+    "server_time": "exact serverTime integer",
+    "exchange_information": "exact raw response retained; symbol tick metadata is parsed before segment creation",
+    "depth_snapshot": "exact lastUpdateId plus raw bid and ask ladders",
+    "open_interest": "finite non-negative openInterest value and exact response time",
+    "unsupported_or_secret_bearing_parameter_policy": "reject before persistence"
+  },
+  "depth_state": {
+    "snapshot_limit": 1000,
+    "state_sample": "every accepted diff-depth event after atomic local-book application",
+    "stored_levels_per_side": 20,
+    "stored_arrays": [
+      "bid prices",
+      "bid quantities",
+      "ask prices",
+      "ask quantities"
+    ],
+    "target_state_lookup": "first same-segment state at or after the requested delayed timestamp",
+    "maximum_target_state_lag_milliseconds": 500,
+    "state_across_integrity_segment_permitted": false,
+    "crossed_or_empty_state_permitted": false,
+    "displayed_change_rank_bands": [
+      "1",
+      "2-5",
+      "6-10",
+      "11-20",
+      "outside-20"
+    ],
+    "displayed_removal_rank": "same-side rank immediately before the update",
+    "displayed_addition_rank": "same-side rank immediately after the update",
+    "removed_level_without_preupdate_rank": "outside-20",
+    "added_level_without_postupdate_rank": "outside-20",
+    "exact_cancellation_label_permitted": false
+  },
+  "trade_matching": {
+    "matching_clock": "local monotonic receive time",
+    "maximum_absolute_receive_time_difference_milliseconds": 250,
+    "aggressive_buy_consumes": "ask display",
+    "aggressive_sell_consumes": "bid display",
+    "price_match": "exact exchange tick after decimal normalization",
+    "quantity_allocation": "chronological bounded allocation without exceeding either observed aggregate execution or displayed removal",
+    "ambiguous_or_unmatched_quantity": "retained separately and never labeled cancellation"
+  },
+  "clock_contract": {
+    "server_time_probe_interval_seconds": 60,
+    "offset_estimator": "server time minus host wall-clock request midpoint from the minimum-RTT probe retained in the segment",
+    "rtt_nanoseconds": "response wall-clock nanoseconds minus request wall-clock nanoseconds",
+    "corrected_feed_latency": "host receive wall time plus retained offset minus exchange event time",
+    "event_time_regression": "invalidate the affected source segment",
+    "equal_event_time_permitted": true,
+    "negative_corrected_latency": "retained as a clock-quality failure observation and never clamped",
+    "maximum_negative_corrected_latency_fraction_for_qualification": 0.001
+  },
+  "connection_contract": {
+    "public_streams": [
+      "depth@100ms",
+      "bookTicker"
+    ],
+    "market_streams": [
+      "aggTrade",
+      "markPrice@1s",
+      "forceOrder"
+    ],
+    "stream_type_required": 1,
+    "public_product_symbol_must_match": true,
+    "rotation_before_hours": 23,
+    "reconnect_backoff_seconds": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      30
+    ],
+    "post_reconnect_cooldown_seconds": 60,
+    "reconnect_requires_fresh_depth_snapshot": true,
+    "source_task_stall_timeout_seconds": 15,
+    "writer_heartbeat_timeout_seconds": 5
+  },
+  "qualification": {
+    "minimum_contiguous_minutes_per_symbol": 60,
+    "minimum_depth_messages_per_minute": 300,
+    "minimum_book_ticker_messages_per_minute": 1,
+    "minimum_aggregate_trade_messages_per_minute": 1,
+    "maximum_sequence_gaps": 0,
+    "maximum_crossed_books": 0,
+    "maximum_invalid_events": 0,
+    "all_three_symbols_required": true,
+    "failure_authorizes_modeling": false
+  },
+  "non_claims": [
+    "Capture qualification is not predictive evidence.",
+    "A synchronized visible-book path is not an exchange fill.",
+    "UTC midnight is not a Binance market close.",
+    "No AI leverage trading profitability ROI or production claim is authorized."
+  ]
+}
