@@ -31,6 +31,10 @@ SUPPORTED_COMPUTE_BACKENDS = (
     "mps",
     "directml",
 )
+ACCELERATOR_COMPUTE_BACKENDS = frozenset(SUPPORTED_COMPUTE_BACKENDS) - {
+    "auto",
+    "cpu",
+}
 DEVICE_INDEX_ENV = "SIMPLE_AI_TRADING_DEVICE_INDEX"
 
 
@@ -64,7 +68,7 @@ class BackendInfo:
 
 def _probe_torch() -> tuple[Any | None, str]:
     try:
-        import torch  # type: ignore
+        torch = importlib.import_module("torch")
     except Exception as exc:  # pragma: no cover - environmental
         return None, f"torch not importable ({exc.__class__.__name__})"
     return torch, ""
@@ -455,6 +459,7 @@ def describe_backend(info: BackendInfo) -> str:
 
 
 __all__ = [
+    "ACCELERATOR_COMPUTE_BACKENDS",
     "BackendInfo",
     "BackendKind",
     "BackendUnavailableError",
