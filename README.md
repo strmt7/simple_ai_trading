@@ -99,7 +99,20 @@ python -m simple_ai_trading universe --symbols BTCUSDC,ETHUSDC,SOLUSDC
 
 The universe gate first enforces the hard BTC/ETH/SOL product scope, then measures exchange status, quote asset, structural leveraged-token patterns, 24h quote volume, trade count, bid/ask spread, likely pegged-pair behavior, and a combined liquidity score. Automatic ranking can adapt the volume/trade floors to the current leaders inside the selected major-asset quote market, but only above hard absolute liquidity floors and without relaxing spread, leveraged-token, pegged-pair, or major-scope filters. If fewer than the configured minimum assets qualify, the command exits nonzero.
 
-Out-of-market and low-liquidity handling is also data-probed, not a fixed clock rule. Backtests, `live`, and `autonomous start` compare each bar's volume against trailing per-symbol history and same UTC weekday/hour/minute-bucket history from prior bars. That means holidays, partial sessions, unusually thin periods, and changing market participation are detected from the actual exchange data available for that symbol and timestamp, then translated into stricter signal thresholds and smaller position sizes.
+Binance spot and perpetual markets have no formal daily close. Their
+low-liquidity handling is data-probed, not a fixed clock rule: backtests,
+`live`, and `autonomous start` compare each bar's volume with trailing
+per-symbol history and the same UTC weekday/hour/minute bucket from prior
+bars. Exchange maintenance, unusually thin periods, holidays in connected
+traditional markets, and changing participation therefore produce stricter
+signal thresholds and smaller position sizes without inventing a crypto
+opening or closing bell.
+
+Exchange-listed Bitcoin and Ether products are separate market context, not a
+Binance session. A model may use their open, close, auction, holiday, early-close,
+NAV, or settlement windows only from timestamped data and the actual listing
+venue's versioned calendar. Missing listed-market data stays missing; an ETF or
+futures close is never treated as a close of BTC, ETH, or SOL spot.
 
 Live entry risk also includes a deterministic market-regime unpredictability gate. Conservative, regular, and aggressive profiles set different `max_regime_unpredictability` thresholds and cooldown durations; volatile chop, mixed/low-separation regimes, short windows, insufficient data, or malformed/non-normalized regime scores can block fresh entries and force the bot to wait instead of trading into noise.
 
@@ -192,7 +205,11 @@ simple-ai-trading ai-uplift --starting-capital 1000 --market-db data/market_data
 
 `data-health` audits the SQLite market database before training or optimization. It reports row counts, UTC spans, span-years, expected rows, gap count, coverage ratio, archive-file status counts, and checksum-status counts for every stored symbol/market/interval or for an explicit symbol batch. It exits nonzero when minimum rows, span, coverage, gap, archive-error, checksum-mismatch, or `--require-verified-checksum` gates fail; bounded windows count missing bars at the requested UTC start and end boundaries, not only gaps between stored rows. Promotion-grade optimization now uses the single fail-closed contract `tools/optimization_round.py --promotion-grade`, which forces the exact BTC/ETH/SOL trio for the selected quote asset, forces `1s`, disables network backfill, requires verified archive checksums, requires zero missing-second gaps, enforces the configured minimum stored history span, and writes `promotion_grade_contract` to `report.json`. If that contract or the critical-analysis layer fails, the tool exits nonzero and the artifacts cannot be treated as performance evidence. Futures `1s` optimization is allowed only with prefilled `aggTrades`-derived candles; otherwise the tool fails instead of calling a nonexistent futures `1s` kline endpoint. The tool defaults to `--model-candidates 32`, evaluating the broad profitability-search prefix of cost-aware label horizon/target/model regularization candidates per symbol before the final holdout; pass a lower `--model-candidates` value only for smoke diagnostics. During multi-candidate rounds, the optimizer builds one advanced feature matrix per symbol/feature-shape, then relabels it per candidate so second-level backtests do not recompute the same features 32 times. `report.json` and `backtest-metrics.csv` record `model_candidate_count`, `model_selected_candidate`, and `model_selection_score`. Signed live startup and `risk --live --model` now require promoted `TrainedModel` artifacts to carry multi-candidate evidence; when the resolved runtime backend is DirectML/CUDA/ROCm/XPU/MPS, they also require accelerator evidence for training and probability calibration. The round writes `round-status.json` during long runs, including per-symbol phases for data health, SQLite load, feature cache generation/reuse, candidate relabeling, accelerator training, probability-temperature calibration, threshold calibration progress, holdout scoring, artifact streaming, and `data-health.json`. When hard data gates are active and symbols are not supplied explicitly, optimization over-samples the live liquidity-ranked universe and keeps the first requested count that pass local data health; skipped candidates are recorded. Deterministic SVGs summarize the source CSVs, and every round records configured and effective leverage so spot evidence cannot be misread as leveraged futures evidence.
 
-Liquidity-session controls do not assume that "day trading hours" are fixed forever. The active defaults use observed bar volume by symbol and historical clock bucket in backtests, the `live` command, and the autonomous decision function, so low-liquidity holidays, exchange maintenance, overnight crypto liquidity drops, and changing venue participation can be reflected by the data instead of a static UTC start/end hour.
+No static "day trading hours" are applied to continuous Binance markets. The
+active paths use observed volume by symbol and historical clock bucket, while
+any listed-product session feature must use its own verified exchange calendar.
+The frozen research boundary is documented in
+[Round 71](docs/model-research/action-value/round-071-institutional-microstructure-and-ai-research.md).
 
 `backtest-chart` writes an SVG performance chart from the actual mark-to-market equity path produced by the day-trading simulation. When timestamps are present, the chart labels the UTC start/end dates and the simulated duration in days/years instead of presenting an unlabeled sample index. The same command appears in the Windows app.
 
@@ -591,6 +608,11 @@ exchange-sourced backtests or signed testnet/paper artifacts with the provenance
 required by [docs/DATA_PROVENANCE_POLICY.md](docs/DATA_PROVENANCE_POLICY.md).
 The latest model-mechanism evidence is
 [`action-value/latest`](docs/model-research/action-value/latest/README.md).
+[Round 71](docs/model-research/action-value/round-071-institutional-microstructure-and-ai-research.md)
+defines the venue-aware institutional-flow, manipulation-defense, predictive
+accuracy, and paired-AI contract; it contains no performance result.
+[Round 70](docs/model-research/action-value/round-070-exact-case-ai-cadence.md)
+blocks AI inference when the market cadence cannot revisit the exact causal case;
 [Round 69](docs/model-research/action-value/round-069-complete-ai-uplift-cohort.md)
 records complete audited-proposal outcome coverage for AI uplift;
 [Round 68](docs/model-research/action-value/round-068-bounded-ai-context.md)

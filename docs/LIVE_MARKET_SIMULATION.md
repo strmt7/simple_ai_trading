@@ -118,13 +118,19 @@ Execution cost is symbol-specific where market data exists:
   current quote-asset leaders when static defaults exceed the available market,
   but it keeps hard minimum floors and never relaxes spread, structural
   leveraged-token, or likely pegged-pair filters.
-- Day-trading session risk is not a fixed UTC window. Backtests, `live`, and
-  the autonomous decision function compare the current bar against trailing
-  per-symbol volume and against same UTC weekday/hour/minute-bucket history
-  from prior bars. Holidays, partial days, low-liquidity overnight periods,
-  and schedule changes are therefore treated as measured low-liquidity
-  evidence for that symbol and timestamp, not as an assumption baked into the
-  code.
+- Binance spot and perpetual day-trading risk is not a fixed UTC window because
+  those markets have no formal daily close. Backtests, `live`, and the
+  autonomous decision function compare the current bar against trailing
+  per-symbol volume and the same UTC weekday/hour/minute bucket from prior
+  bars. Exchange maintenance, unusually thin periods, holidays in connected
+  traditional markets, and changing participation are measured as liquidity
+  evidence rather than encoded as a crypto opening or closing bell.
+- Exchange-listed Bitcoin and Ether products have real venue-specific sessions,
+  auctions, holidays, and early closes. They are not execution products in the
+  current Binance bot. A research model may use them only as external context
+  from timestamped data and the actual listing venue's versioned calendar;
+  missing observations cannot be synthesized, and their close never closes a
+  Binance position.
 
 Backtest fill price uses:
 
