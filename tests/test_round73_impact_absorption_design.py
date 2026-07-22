@@ -56,6 +56,12 @@ V5_STORAGE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V6_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-capture-contract-v6.json"
 )
+V6_TELEMETRY_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v6-telemetry-failure-2026-07-22.json"
+)
+V7_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-contract-v7.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -396,6 +402,64 @@ def test_round73_v6_contract_separates_capture_terminal_and_physical_io() -> Non
     assert authorization["v6_thirty_second_telemetry_diagnostic"] is True
     assert authorization["v6_180_second_capture_gate_attempt"] is False
     assert authorization["v6_one_hour_qualification"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["profitability_claim"] is False
+    assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v6_telemetry_rejects_capture_phase_write_amplification() -> None:
+    evidence = json.loads(V6_TELEMETRY_FAILURE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["run"]["capture_gate_passed"] is False
+    assert evidence["fresh_process_read_only_audit"]["passed"] is True
+    capture = evidence["capture_phase"]
+    assert capture["write_bytes_per_message"] > 4_096
+    assert capture["database_physical_growth_bytes"] == -262_144
+    assert capture["storage_efficiency_passed"] is False
+    assert evidence["terminal_phase"]["qualification_metric"] is False
+    analysis = evidence["critical_analysis"]
+    assert analysis["terminal_io_caused_v5_failure"] is False
+    assert analysis["root_cause_proven"] is False
+    decision = evidence["decision"]
+    assert decision["v6_180_second_capture_gate_authorized"] is False
+    assert decision["v7_512MiB_wal_telemetry_diagnostic_authorized"] is True
+    assert evidence["authorization"]["round_073_model_evaluation"] is False
+
+
+def test_round73_v7_contract_changes_only_bounded_checkpoint_policy() -> None:
+    failure = json.loads(V6_TELEMETRY_FAILURE_PATH.read_text(encoding="utf-8"))
+    failure_claimed = failure.pop("artifact_sha256")
+    contract = json.loads(V7_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("capture_contract_sha256")
+
+    assert failure_claimed == _canonical_sha256(failure)
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v7_capture"] is True
+    assert contract["failure_evidence"]["v6_telemetry_failure_artifact_sha256"] == (
+        failure_claimed
+    )
+    inheritance = contract["inheritance"]
+    assert inheritance["wire_frame_format_changed"] is False
+    assert inheritance["typed_event_hash_changed"] is False
+    assert inheritance["telemetry_or_gate_threshold_changed"] is False
+    policy = contract["duckdb_policy_v7"]
+    assert policy["checkpoint_threshold"] == "512MiB"
+    assert policy["auto_checkpoint_skip_wal_threshold_bytes"] == 512 * 1024 * 1024
+    assert policy["maximum_uncommitted_wall_interval_seconds"] == 4
+    gate = contract["unchanged_capture_gate"]
+    assert gate["maximum_capture_phase_process_write_bytes_per_message"] == 4_096
+    assert gate["maximum_database_physical_growth_bytes_per_message"] == 1_024
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_products_use_actual_venue_calendars"] is True
+    authorization = contract["authorization"]
+    assert authorization["v7_thirty_second_telemetry_diagnostic"] is True
+    assert authorization["v7_180_second_capture_gate_attempt"] is False
+    assert authorization["v7_one_hour_qualification"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
     assert authorization["live_trading_authority"] is False

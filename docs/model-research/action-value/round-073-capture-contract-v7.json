@@ -1,0 +1,80 @@
+{
+  "schema_version": "round-073-prospective-capture-contract-v7",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_capture_contract_sha256": "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021",
+  "capture_contract_sha256": "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1",
+  "frozen_before_first_v7_capture": true,
+  "amendment_scope": "Test a bounded WAL/checkpoint policy against the existing capture database. Wire, frame, event-time, depth-band, telemetry, gate, market, target, and model semantics remain unchanged.",
+  "failure_evidence": {
+    "v6_telemetry_failure_artifact": "round-073-v6-telemetry-failure-2026-07-22.json",
+    "v6_telemetry_failure_artifact_sha256": "6699583aac49a025115cc198a68b946ac57d01e5ef2693e357b0f83e4457be91",
+    "v6_run_id": "1c15790dc0cc4742bd91f87121899acd",
+    "v6_capture_phase_write_bytes_per_message": 24811.453735912062,
+    "v6_terminal_phase_write_bytes": 13114677,
+    "v6_database_physical_growth_bytes": -262144,
+    "v6_fresh_process_audit_passed": true
+  },
+  "inheritance": {
+    "v6_capture_contract_sha256": "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021",
+    "rule": "All v1 through v6 logical requirements remain binding except for the v7 run schema, report schema, and checkpoint policy below.",
+    "wire_frame_format_changed": false,
+    "event_link_or_typed_row_shape_changed": false,
+    "typed_event_hash_changed": false,
+    "telemetry_or_gate_threshold_changed": false,
+    "historical_rows_rewritten": false,
+    "historical_v1_through_v6_audit_support_required": true
+  },
+  "storage_schema_v7": {
+    "run_schema": "round-073-prospective-evidence-v7",
+    "report_schema": "round-073-capture-report-v7",
+    "event_link_table": "impact_event_link_v5",
+    "depth_band_table": "impact_depth_band_flow_v5",
+    "v6_rows_reclassified_as_v7": false,
+    "cross_version_frame_pooling_permitted": false
+  },
+  "duckdb_policy_v7": {
+    "checkpoint_threshold": "512MiB",
+    "auto_checkpoint_skip_wal_threshold_bytes": 536870912,
+    "maximum_uncompressed_frame_bytes": 33554432,
+    "maximum_uncommitted_wall_interval_seconds": 4,
+    "committed_frame_durability": "Each frame transaction commits to DuckDB before capture continues; a process-loss attempt remains invalid and must restart.",
+    "database_and_wal_size_cap_includes_both_files": true,
+    "database_cap_reserve_bytes": 536870912,
+    "reason": "Frames are bounded far below the skip-WAL threshold. This diagnostic tests whether WAL accumulation avoids repeated checkpoints against existing partial row groups while retaining committed-frame durability."
+  },
+  "unchanged_capture_gate": {
+    "minimum_stream_seconds": 180,
+    "maximum_frames_per_stream_minute": 25,
+    "maximum_capture_phase_process_write_bytes_per_message": 4096,
+    "maximum_database_physical_growth_bytes_per_message": 1024,
+    "maximum_queue_utilization": 0.8,
+    "fresh_process_read_only_audit_required": true,
+    "independent_exact_wire_feature_source_replay_required": true,
+    "all_v6_feed_integrity_gates_inherited": true
+  },
+  "telemetry_diagnostic": {
+    "minimum_stream_seconds": 30,
+    "must_use_existing_capture_database_context": true,
+    "candidate_pass_requires_capture_phase_write_bytes_per_message_at_or_below_4096": true,
+    "candidate_pass_requires_fresh_process_audit": true,
+    "failure_authorizes_180_second_gate_or_one_hour_qualification": false
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false
+  },
+  "authorization": {
+    "v7_thirty_second_telemetry_diagnostic": true,
+    "v7_180_second_capture_gate_attempt": false,
+    "v7_one_hour_qualification": false,
+    "v7_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

@@ -53,8 +53,13 @@ _V5_CAPTURE_CONTRACT_SHA256 = (
     "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
 )
 _V5_REPORT_SCHEMA_VERSION = "round-073-capture-report-v5"
+_V6_SCHEMA_VERSION = "round-073-prospective-evidence-v6"
+_V6_CAPTURE_CONTRACT_SHA256 = (
+    "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
+)
+_V6_REPORT_SCHEMA_VERSION = "round-073-capture-report-v6"
 _DEPTH_BAND_SCHEMAS = frozenset(
-    {IMPACT_CAPTURE_SCHEMA_VERSION, _V5_SCHEMA_VERSION}
+    {IMPACT_CAPTURE_SCHEMA_VERSION, _V6_SCHEMA_VERSION, _V5_SCHEMA_VERSION}
 )
 
 
@@ -249,7 +254,7 @@ def diagnose_round73_feature_source(
     memory_limit: str = "2GB",
     threads: int = 2,
 ) -> Round73FeatureSourceDiagnostic:
-    """Replay one gated v4-v6 run and reconcile causal depth-band primitives."""
+    """Replay one gated v4-v7 run and reconcile causal depth-band primitives."""
 
     selected = str(run_id).strip().lower()
     with ImpactAbsorptionStore(
@@ -271,6 +276,7 @@ def diagnose_round73_feature_source(
         run_schema = str(run[0])
         capture_contracts = {
             IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_CONTRACT_SHA256,
+            _V6_SCHEMA_VERSION: _V6_CAPTURE_CONTRACT_SHA256,
             _V5_SCHEMA_VERSION: _V5_CAPTURE_CONTRACT_SHA256,
             _V4_SCHEMA_VERSION: _V4_CAPTURE_CONTRACT_SHA256,
         }
@@ -278,7 +284,7 @@ def diagnose_round73_feature_source(
             expected_contract = capture_contracts[run_schema]
         except KeyError as exc:
             raise ValueError(
-                "Round 73 feature-source replay requires capture v4, v5, or v6"
+                "Round 73 feature-source replay requires capture v4 through v7"
             ) from exc
         if str(run[1]) != expected_contract:
             raise ValueError("Round 73 feature-source capture contract differs")
@@ -295,6 +301,7 @@ def diagnose_round73_feature_source(
             raise ValueError("Round 73 feature-source replay requires a terminal report")
         expected_report_schema = {
             IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+            _V6_SCHEMA_VERSION: _V6_REPORT_SCHEMA_VERSION,
             _V5_SCHEMA_VERSION: _V5_REPORT_SCHEMA_VERSION,
             _V4_SCHEMA_VERSION: _V4_REPORT_SCHEMA_VERSION,
         }[run_schema]

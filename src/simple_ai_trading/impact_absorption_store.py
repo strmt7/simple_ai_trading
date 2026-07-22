@@ -39,11 +39,11 @@ from .impact_capture_frame import (
 )
 
 
-IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v6"
+IMPACT_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v7"
 IMPACT_CAPTURE_CONTRACT_SHA256 = (
-    "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
+    "18013fc14bad234b241bf05122a6363ad94e6722a598319ae1059cde1941a9f1"
 )
-IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v6"
+IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v7"
 _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v1": (
         "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
@@ -60,13 +60,18 @@ _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v5": (
         "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b"
     ),
+    "round-073-prospective-evidence-v6": (
+        "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021"
+    ),
 }
+_V6_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v6"
 _V5_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v5"
 _V4_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v4"
 _V3_CAPTURE_SCHEMA_VERSION = "round-073-prospective-evidence-v3"
 _COMPACT_CAPTURE_SCHEMAS = frozenset(
     {
         IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V6_CAPTURE_SCHEMA_VERSION,
         _V5_CAPTURE_SCHEMA_VERSION,
         _V4_CAPTURE_SCHEMA_VERSION,
         _V3_CAPTURE_SCHEMA_VERSION,
@@ -75,13 +80,20 @@ _COMPACT_CAPTURE_SCHEMAS = frozenset(
 _EVENT_TIME_LINK_SCHEMAS = frozenset(
     {
         IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V6_CAPTURE_SCHEMA_VERSION,
         _V5_CAPTURE_SCHEMA_VERSION,
         _V4_CAPTURE_SCHEMA_VERSION,
     }
 )
 _DEPTH_BAND_SCHEMAS = frozenset(
-    {IMPACT_CAPTURE_SCHEMA_VERSION, _V5_CAPTURE_SCHEMA_VERSION}
+    {
+        IMPACT_CAPTURE_SCHEMA_VERSION,
+        _V6_CAPTURE_SCHEMA_VERSION,
+        _V5_CAPTURE_SCHEMA_VERSION,
+    }
 )
+IMPACT_CAPTURE_CHECKPOINT_THRESHOLD = "512MiB"
+IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 512 * 1024 * 1024
 IMPACT_CAPTURE_COMPRESSION_LEVEL = 3
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
@@ -626,9 +638,12 @@ class ImpactAbsorptionStore:
             self._connection.execute("SET TimeZone='UTC'")
             self._connection.execute("SET preserve_insertion_order=false")
             if not self.read_only:
-                self._connection.execute("SET checkpoint_threshold='16MiB'")
                 self._connection.execute(
-                    "SET auto_checkpoint_skip_wal_threshold=100000"
+                    f"SET checkpoint_threshold='{IMPACT_CAPTURE_CHECKPOINT_THRESHOLD}'"
+                )
+                self._connection.execute(
+                    "SET auto_checkpoint_skip_wal_threshold=?",
+                    [IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES],
                 )
                 self._init_schema()
         return self._connection
@@ -2836,6 +2851,8 @@ class ImpactAbsorptionStore:
 
 
 __all__ = [
+    "IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES",
+    "IMPACT_CAPTURE_CHECKPOINT_THRESHOLD",
     "IMPACT_CAPTURE_COMPRESSION_LEVEL",
     "IMPACT_CAPTURE_CONTRACT_SHA256",
     "IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES",

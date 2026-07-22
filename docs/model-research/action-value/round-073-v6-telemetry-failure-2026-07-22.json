@@ -1,0 +1,105 @@
+{
+  "schema_version": "round-073-v6-telemetry-failure-evidence-v1",
+  "artifact_sha256": "6699583aac49a025115cc198a68b946ac57d01e5ef2693e357b0f83e4457be91",
+  "recorded_utc_date": "2026-07-22",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "run": {
+    "run_id": "1c15790dc0cc4742bd91f87121899acd",
+    "capture_contract_sha256": "a256f16f1904d6c23b4563e7cbb603353dd7e0fe8253e3c3f2df4a67305da021",
+    "status": "completed",
+    "capture_gate_passed": false,
+    "qualification_passed": false,
+    "elapsed_seconds": 33.21799999999348,
+    "writer_frame_count": 8,
+    "writer_message_count": 14374,
+    "writer_compressed_payload_bytes": 728446,
+    "frames_per_stream_minute": 14.449996989586797,
+    "queue_high_water_messages": 61,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.0009307861328125,
+    "negative_corrected_latency_fraction": 0.0,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "reconnect_count": 0,
+    "event_counts": {
+      "aggTrade": 238,
+      "bookTicker": 12992,
+      "depthSnapshot": 3,
+      "depthUpdate": 1047,
+      "exchangeInfo": 1,
+      "markPriceUpdate": 87,
+      "openInterest": 3,
+      "serverTime": 3
+    }
+  },
+  "capture_phase": {
+    "process_io_provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "process_io_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "start_write_bytes": 11017409,
+    "end_write_bytes": 367657245,
+    "delta_write_bytes": 356639836,
+    "write_bytes_per_message": 24811.453735912062,
+    "frozen_maximum_write_bytes_per_message": 4096,
+    "database_physical_start_bytes": 5388644352,
+    "database_physical_end_bytes": 5388382208,
+    "database_physical_growth_bytes": -262144,
+    "database_physical_growth_bytes_per_message": -18.237373034645888,
+    "storage_efficiency_passed": false
+  },
+  "terminal_phase": {
+    "process_io_provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "start_write_bytes": 367657245,
+    "end_write_bytes": 380771922,
+    "delta_write_bytes": 13114677,
+    "qualification_metric": false
+  },
+  "fresh_process_read_only_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 8,
+    "message_count": 14374,
+    "compressed_payload_bytes": 728446,
+    "last_frame_sha256": "17062655aa39d2d738795c4b3944406919339f98debccf199bf00ac4fd468b02",
+    "stored_report_sha256": "1bcffc84aa52c1fadd504ff7c2239876c00ace476593831ef3bed4a8b18128f7"
+  },
+  "critical_analysis": {
+    "terminal_io_caused_v5_failure": false,
+    "capture_phase_process_write_amplification_observed": true,
+    "database_growth_caused_failure": false,
+    "root_cause_proven": false,
+    "existing_database_context_differs_from_empty_scratch_benchmark": true,
+    "inference": "Frequent checkpoints against existing partially filled columnar row groups are a plausible source of repeated writes, but the mechanism is not yet proven.",
+    "feature_source_replay_run": false,
+    "feature_source_replay_reason": "The capture gate failed, so the fail-closed feature replay correctly remained unavailable."
+  },
+  "research_sources": [
+    {
+      "url": "https://duckdb.org/docs/stable/configuration/overview",
+      "use": "DuckDB defines checkpoint_threshold and the auto_checkpoint_skip_wal_threshold behavior."
+    },
+    {
+      "url": "https://duckdb.org/docs/current/sql/statements/checkpoint",
+      "use": "DuckDB documents that checkpoints synchronize WAL data into the database file and happen automatically from WAL size."
+    }
+  ],
+  "decision": {
+    "v6_180_second_capture_gate_authorized": false,
+    "v6_one_hour_qualification_authorized": false,
+    "v7_512MiB_wal_telemetry_diagnostic_authorized": true,
+    "v7_180_second_capture_gate_authorized": false,
+    "checkpoint_candidate_is_promoted": false
+  },
+  "authorization": {
+    "v7_thirty_second_telemetry_diagnostic": true,
+    "v7_180_second_capture_gate_attempt": false,
+    "v7_one_hour_qualification": false,
+    "v7_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
