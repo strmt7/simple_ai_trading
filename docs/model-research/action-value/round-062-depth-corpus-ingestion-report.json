@@ -1,0 +1,240 @@
+{
+  "certificate_required_end_ms": 1782863999999,
+  "certificate_required_start_ms": 1672531200000,
+  "certificates": [
+    {
+      "allowed_official_gap_data_types": [
+        "bookDepth"
+      ],
+      "certificate_sha256": "3f45d3053ce7f92f8fcfb0edf8c80654f938cab83c495a40e50740d7375de172",
+      "common_calendar_gaps": [
+        "2023-02-08",
+        "2023-02-09",
+        "2024-04-18"
+      ],
+      "common_first_period": "2023-01-01",
+      "common_gap_missing_data_types": {
+        "2023-02-08": [
+          "bookDepth"
+        ],
+        "2023-02-09": [
+          "bookDepth"
+        ],
+        "2024-04-18": [
+          "bookDepth"
+        ]
+      },
+      "common_last_period": "2026-07-15",
+      "common_period_count": 1289,
+      "contract": "official-binance-corpus-certificate-v3",
+      "data_types": {
+        "bookDepth": {
+          "first_period": "2023-01-01",
+          "full_history": true,
+          "invalid_details": {},
+          "invalid_periods": [],
+          "last_period": "2026-07-15",
+          "listing_sha256": "32ead499d79b387b186c68f1bf08f7e8336953294af27c5523f945a20a54bd00",
+          "missing_periods": [],
+          "observed_at_ms": 1784247305486,
+          "official_archive_count": 1289,
+          "official_calendar_gaps": [
+            "2023-02-08",
+            "2023-02-09",
+            "2024-04-18"
+          ],
+          "reasons": [],
+          "requested_official_gap_periods": [
+            "2023-02-08",
+            "2023-02-09",
+            "2024-04-18"
+          ],
+          "scope_end_period": "2026-07-15",
+          "scope_start_period": "2023-01-01",
+          "snapshot_id": "2e076db7de1409178d005e0582723fa545a758c6b38359a3b8d15be5b6f2ba01",
+          "status": "pass",
+          "verified_scope_archive_count": 1274
+        }
+      },
+      "market_type": "futures",
+      "provider": "binance",
+      "reasons": [],
+      "require_full_history_inventory": true,
+      "required_data_types": [
+        "bookDepth"
+      ],
+      "required_first_period": "2023-01-01",
+      "required_last_period": "2026-06-30",
+      "schema_version": "binance-usdm-tick-v6",
+      "status": "pass",
+      "symbol": "BTCUSDT",
+      "truth_basis": "two_object_s3_inventory_plus_sha256_bound_daily_manifests_and_physical_partitions",
+      "unallowed_common_calendar_gaps": [],
+      "verified": true
+    },
+    {
+      "allowed_official_gap_data_types": [
+        "bookDepth"
+      ],
+      "certificate_sha256": "8851a88413c25a61fe29ae2e08e3b79d842e60d736f33f6d268c9bc617ef45bb",
+      "common_calendar_gaps": [
+        "2023-02-08",
+        "2023-02-09"
+      ],
+      "common_first_period": "2023-01-01",
+      "common_gap_missing_data_types": {
+        "2023-02-08": [
+          "bookDepth"
+        ],
+        "2023-02-09": [
+          "bookDepth"
+        ]
+      },
+      "common_last_period": "2026-07-15",
+      "common_period_count": 1290,
+      "contract": "official-binance-corpus-certificate-v3",
+      "data_types": {
+        "bookDepth": {
+          "first_period": "2023-01-01",
+          "full_history": true,
+          "invalid_details": {},
+          "invalid_periods": [],
+          "last_period": "2026-07-15",
+          "listing_sha256": "e4ff08913fa600f854fa08eca19fed1ecaedac8f70a7f3ef72190f4fedeb5cf0",
+          "missing_periods": [],
+          "observed_at_ms": 1784247306895,
+          "official_archive_count": 1290,
+          "official_calendar_gaps": [
+            "2023-02-08",
+            "2023-02-09"
+          ],
+          "reasons": [],
+          "requested_official_gap_periods": [
+            "2023-02-08",
+            "2023-02-09"
+          ],
+          "scope_end_period": "2026-07-15",
+          "scope_start_period": "2023-01-01",
+          "snapshot_id": "5bbdb19f52e7e1713e0b8cce3cff5f9eb192da40b9c3eaa74e0a5302d205561b",
+          "status": "pass",
+          "verified_scope_archive_count": 1275
+        }
+      },
+      "market_type": "futures",
+      "provider": "binance",
+      "reasons": [],
+      "require_full_history_inventory": true,
+      "required_data_types": [
+        "bookDepth"
+      ],
+      "required_first_period": "2023-01-01",
+      "required_last_period": "2026-06-30",
+      "schema_version": "binance-usdm-tick-v6",
+      "status": "pass",
+      "symbol": "ETHUSDT",
+      "truth_basis": "two_object_s3_inventory_plus_sha256_bound_daily_manifests_and_physical_partitions",
+      "unallowed_common_calendar_gaps": [],
+      "verified": true
+    },
+    {
+      "allowed_official_gap_data_types": [
+        "bookDepth"
+      ],
+      "certificate_sha256": "07172ad00e21c169b6a783c2f8ed5994e80d3679c2e1f3e1ae850f219c690029",
+      "common_calendar_gaps": [
+        "2023-02-08",
+        "2023-02-09",
+        "2023-11-13",
+        "2024-04-18",
+        "2026-01-14"
+      ],
+      "common_first_period": "2023-01-01",
+      "common_gap_missing_data_types": {
+        "2023-02-08": [
+          "bookDepth"
+        ],
+        "2023-02-09": [
+          "bookDepth"
+        ],
+        "2023-11-13": [
+          "bookDepth"
+        ],
+        "2024-04-18": [
+          "bookDepth"
+        ],
+        "2026-01-14": [
+          "bookDepth"
+        ]
+      },
+      "common_last_period": "2026-07-15",
+      "common_period_count": 1287,
+      "contract": "official-binance-corpus-certificate-v3",
+      "data_types": {
+        "bookDepth": {
+          "first_period": "2023-01-01",
+          "full_history": true,
+          "invalid_details": {},
+          "invalid_periods": [],
+          "last_period": "2026-07-15",
+          "listing_sha256": "9f4e5673b293793952505307cf9d7e742928237036171d31cc4756f4d2021eae",
+          "missing_periods": [],
+          "observed_at_ms": 1784247308106,
+          "official_archive_count": 1287,
+          "official_calendar_gaps": [
+            "2023-02-08",
+            "2023-02-09",
+            "2023-11-13",
+            "2024-04-18",
+            "2026-01-14"
+          ],
+          "reasons": [],
+          "requested_official_gap_periods": [
+            "2023-02-08",
+            "2023-02-09",
+            "2023-11-13",
+            "2024-04-18",
+            "2026-01-14"
+          ],
+          "scope_end_period": "2026-07-15",
+          "scope_start_period": "2023-01-01",
+          "snapshot_id": "982d96c08d5f261f957e7dc277439efdbd6871d285f9a8ee585515ab228d4f4c",
+          "status": "pass",
+          "verified_scope_archive_count": 1272
+        }
+      },
+      "market_type": "futures",
+      "provider": "binance",
+      "reasons": [],
+      "require_full_history_inventory": true,
+      "required_data_types": [
+        "bookDepth"
+      ],
+      "required_first_period": "2023-01-01",
+      "required_last_period": "2026-06-30",
+      "schema_version": "binance-usdm-tick-v6",
+      "status": "pass",
+      "symbol": "SOLUSDT",
+      "truth_basis": "two_object_s3_inventory_plus_sha256_bound_daily_manifests_and_physical_partitions",
+      "unallowed_common_calendar_gaps": [],
+      "verified": true
+    }
+  ],
+  "completed_at_utc": "2026-07-22T10:27:12.577628+00:00",
+  "completed_compressed_bytes": 1768172678,
+  "completed_files": 3866,
+  "database_bytes": 1577070592,
+  "design_sha256": "9fc720f60b403d214d8558661e60eb18a5738d90c14d7c95700a979ff4836742",
+  "ingested_files": 3866,
+  "inventory_file_sha256": "99385af0239e25ba5ea1d6687e2cbdab816c7e5f78c63a89e9817620bb56ecb1",
+  "planned_compressed_bytes": 1768172678,
+  "planned_files": 3866,
+  "profitability_claim": false,
+  "report_sha256": "4fd2a8c0e6020b54aa292b4d797046574ecdedbbec8cdb0d62f9323b615518bf",
+  "retained_archives": false,
+  "reused_files": 0,
+  "round": 62,
+  "schema_version": "round-062-frozen-depth-corpus-ingestion-v1",
+  "status": "complete",
+  "trading_authority": false,
+  "warehouse": "C:\\trader\\simple_ai_trading\\data\\microstructure.duckdb"
+}
