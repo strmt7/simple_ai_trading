@@ -1,9 +1,17 @@
 {
-  "schema_version": "round-073-impact-absorption-design-v1",
+  "schema_version": "round-073-impact-absorption-design-v2",
   "round": 73,
-  "design_sha256": "15e170e7187442f6c7675ed0151a7554b68cfeeadf6a1032737425d6daf538ad",
+  "design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
   "phase": "prospective_l2_impact_absorption_viability",
-  "research_question": "After an observed aggressive-flow shock in BTCUSDT, ETHUSDT, or SOLUSDT USD-M perpetual futures, do causal multi-level depth consumption, replenishment, cancellation, and impact-recovery features improve calibrated post-latency executable-payoff forecasts beyond the same shallow model using top-of-book and trade-tape features only?",
+  "research_question": "After an observed aggressive-flow shock in BTCUSDT, ETHUSDT, or SOLUSDT USD-M perpetual futures, do causal multi-level depth consumption, replenishment, displayed-removal, and impact-recovery features improve calibrated post-latency executable-payoff forecasts beyond the same shallow model using top-of-book and trade-tape features only?",
+  "revision": {
+    "supersedes_schema_version": "round-073-impact-absorption-design-v1",
+    "supersedes_design_sha256": "15e170e7187442f6c7675ed0151a7554b68cfeeadf6a1032737425d6daf538ad",
+    "supersedes_git_commit": "ec1dcfda5d0f94ccdbd8ee60584b531fe07d7b4f",
+    "modeling_capture_observed_before_revision": false,
+    "model_output_observed_before_revision": false,
+    "reason": "USD-M diff depth exposes absolute displayed-quantity updates. A decrease can combine executions and cancellations, and independent aggregate-trade delivery cannot identify exact cancellation volume. V2 freezes auditable displayed removals and bounded unmatched-removal proxies instead."
+  },
   "governance": {
     "freeze_before_modeling_capture": true,
     "real_market_data_only": true,
@@ -44,7 +52,7 @@
       "title": "The Price Impact of Order Book Events",
       "url": "https://arxiv.org/abs/1011.6402",
       "adapted_elements": [
-        "signed additions cancellations and executions rather than trade volume alone",
+        "signed displayed additions and removals alongside executions rather than trade volume alone",
         "depth-conditioned order-flow impact"
       ],
       "non_equivalence": "Contemporaneous impact in U.S. equities is not a profitable forecast in crypto futures."
@@ -62,7 +70,7 @@
       "title": "Order Flows and Limit Order Book Resiliency on the Meso-Scale",
       "url": "https://arxiv.org/abs/1708.02715",
       "adapted_elements": [
-        "relative additions and cancellations",
+        "relative displayed additions and removals",
         "book-shape and recovery features",
         "state-dependent response to aggressive flow"
       ],
@@ -152,6 +160,18 @@
     "rpi_liquidity_policy": "Normal depth excludes RPI liquidity. RPI or hidden liquidity is never counted as executable capacity unless separately observed and eligible for the account.",
     "liquidation_stream_limit": "The force-order stream exposes at most the latest liquidation snapshot in each provider interval; absence is not zero liquidation activity."
   },
+  "depth_change_semantics": {
+    "diff_depth_quantity": "absolute displayed quantity at one price after the update",
+    "displayed_addition": "positive change from the immediately prior synchronized local-book quantity",
+    "displayed_removal": "negative change from the immediately prior synchronized local-book quantity",
+    "exact_cancellation_observable": false,
+    "exact_execution_from_depth_observable": false,
+    "aggregate_trade_execution_observable": true,
+    "unmatched_removal_proxy": "max(displayed removal minus same-side aggressive executed quantity matched within the frozen receive-time tolerance, zero)",
+    "unmatched_removal_is_cancellation_label": false,
+    "matching_tolerance_milliseconds": 250,
+    "ambiguous_matching_policy": "retain displayed removal and aggregate execution separately; never force an attribution"
+  },
   "capture_qualification": {
     "schema_probe_uses_modeling_sample": false,
     "minimum_contiguous_qualification_minutes_per_symbol": 60,
@@ -218,11 +238,11 @@
       "spread in ticks and basis points"
     ],
     "impact_absorption_layer": [
-      "signed additions cancellations and executions by level band",
+      "signed displayed additions removals and aggregate executions by level band",
       "multi-level order-flow imbalance",
       "depth consumed per signed aggressive quote notional",
       "same-side and opposite-side replenishment ratios",
-      "cancellation-to-addition ratios",
+      "displayed-removal-to-addition and bounded-unmatched-removal ratios",
       "impact per signed notional",
       "midprice and spread recovery fractions",
       "estimated recovery half-life from strictly past shocks",

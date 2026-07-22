@@ -32,6 +32,8 @@ def test_round73_design_is_sealed_and_fail_closed() -> None:
 
     assert claimed == _canonical_sha256(design)
     assert design["round"] == 73
+    assert design["schema_version"] == "round-073-impact-absorption-design-v2"
+    assert design["revision"]["modeling_capture_observed_before_revision"] is False
     assert design["source_contract"]["symbols"] == [
         "BTCUSDT",
         "ETHUSDT",
@@ -45,6 +47,8 @@ def test_round73_design_is_sealed_and_fail_closed() -> None:
     assert design["order_book_integrity_contract"]["queue_overflow_policy"].startswith(
         "invalidate"
     )
+    assert design["depth_change_semantics"]["exact_cancellation_observable"] is False
+    assert design["depth_change_semantics"]["unmatched_removal_is_cancellation_label"] is False
     assert design["model_contract"]["temporal_neural_challenger_permitted"] is False
     assert design["model_contract"]["reinforcement_learning_permitted"] is False
     assert design["model_contract"]["ai_veto_permitted"] is False
