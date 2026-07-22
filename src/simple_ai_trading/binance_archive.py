@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import calendar
 import csv
+from decimal import Decimal, InvalidOperation
 from datetime import date, datetime, timezone
 import hashlib
 import io
@@ -451,11 +452,22 @@ def _parse_listing_keys(listing_text: str) -> tuple[list[str], str | None, bool]
     return keys, next_marker, truncated
 
 
-def _normalize_archive_timestamp(value: str | int | float) -> int:
-    parsed = int(float(value))
+def normalize_archive_timestamp_ms(value: str | int | float) -> int:
+    if isinstance(value, bool):
+        raise ValueError("archive timestamp must be numeric")
+    try:
+        numeric = Decimal(str(value).strip())
+    except (InvalidOperation, ValueError) as exc:
+        raise ValueError("archive timestamp must be numeric") from exc
+    if not numeric.is_finite() or numeric != numeric.to_integral_value():
+        raise ValueError("archive timestamp must be a finite integer")
+    parsed = int(numeric)
     # Binance public archive spot timestamps are documented as microseconds from
     # 2025-01-01 onward. Store all candles in millisecond time to match REST.
-    if abs(parsed) >= 10_000_000_000_000:
+    magnitude = abs(parsed)
+    if magnitude >= 100_000_000_000_000_000:
+        raise ValueError("archive timestamp unit is finer than microseconds")
+    if magnitude >= 10_000_000_000_000:
         parsed = parsed // 1000
     return parsed
 
@@ -465,13 +477,13 @@ def _parse_archive_row(row: Sequence[str]) -> Candle | None:
         return None
     try:
         return Candle(
-            open_time=_normalize_archive_timestamp(row[0]),
+            open_time=normalize_archive_timestamp_ms(row[0]),
             open=float(row[1]),
             high=float(row[2]),
             low=float(row[3]),
             close=float(row[4]),
             volume=float(row[5]),
-            close_time=_normalize_archive_timestamp(row[6]),
+            close_time=normalize_archive_timestamp_ms(row[6]),
             quote_volume=float(row[7]) if len(row) > 7 and row[7] != "" else 0.0,
             trade_count=int(float(row[8])) if len(row) > 8 and row[8] != "" else 0,
             taker_buy_base_volume=float(row[9]) if len(row) > 9 and row[9] != "" else 0.0,
@@ -526,7 +538,7 @@ def _parse_agg_trade_row(
         quantity = float(row[2])
         first_id = int(float(row[3])) if len(row) > 3 and row[3] != "" else 0
         last_id = int(float(row[4])) if len(row) > 4 and row[4] != "" else first_id
-        timestamp = _normalize_archive_timestamp(row[5])
+        timestamp = normalize_archive_timestamp_ms(row[5])
         buyer_is_maker = _parse_bool(row[6]) if len(row) > 6 else False
         best_match = _parse_bool(row[7]) if len(row) > 7 and str(row[7]).strip() else True
     except (TypeError, ValueError, OverflowError):
@@ -1165,5 +1177,6 @@ __all__ = [
     "ingest_archive_urls",
     "list_archive_items",
     "list_archive_urls",
+    "normalize_archive_timestamp_ms",
     "validate_archive_period_window",
 ]
