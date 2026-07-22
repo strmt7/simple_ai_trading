@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"123b6c97353d1cdcd4fb737f6607674046945b818cadda779fc36fb284035357";
+inline constexpr const wchar_t* kCommandContractSha256 = L"ccca4e4e20a86d52fad009f2e3b817859e9bb0f3c0b7052921baae6530d496e7";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -292,6 +292,26 @@ inline constexpr CommandOptionSpec kOptions_impact_corpus_audit[] = {
     {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
     {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_corpus_batch_audit[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--batch-id", L"batch_id", L"", L"", L"", L"1", true, true, false},
+    {L"--deep", L"deep", L"", L"false", L"repeat each underlying exact frame-chain manifest audit", L"0", false, false, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_corpus_collect[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--segments", L"segments", L"", L"1", L"one-hour segments to capture (0 recovers only; maximum 168)", L"1", false, true, false},
+    {L"--compressed-payload-cap-bytes", L"compressed_payload_cap_bytes", L"", L"2147483648", L"", L"1", false, true, false},
+    {L"--database-size-cap-bytes", L"database_size_cap_bytes", L"", L"8589934592", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30.0", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -1041,6 +1061,8 @@ inline constexpr CommandSpec kCommands[] = {
     {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
     {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 10},
     {L"impact-corpus-audit", L"usage: simple-ai-trading impact-corpus-audit [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_audit, 5},
+    {L"impact-corpus-batch-audit", L"usage: simple-ai-trading impact-corpus-batch-audit [-h] [--database DATABASE]                                                    --batch-id BATCH_ID                                                    [--deep]                                                    [--memory-limit MEMORY_LIMIT]                                                    [--database-threads DATABASE_THREADS]                                                    [--json]", kOptions_impact_corpus_batch_audit, 6},
+    {L"impact-corpus-collect", L"Recover qualified unindexed v8 runs, collect a bounded public-feed batch, then replay and audit each manifest. No credentials or orders.", kOptions_impact_corpus_collect, 8},
     {L"impact-corpus-day", L"usage: simple-ai-trading impact-corpus-day [-h] [--database DATABASE]                                            --utc-day UTC_DAY                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_corpus_day, 5},
     {L"impact-corpus-index", L"usage: simple-ai-trading impact-corpus-index [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_index, 5},
     {L"impact-feature-source", L"usage: simple-ai-trading impact-feature-source [-h] [--database DATABASE]                                                --run-id RUN_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_feature_source, 5},
@@ -1158,12 +1180,14 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Data", L"Market data", L"tick-archive-sync"},
     {L"Data", L"Market data", L"microstructure-capture"},
     {L"Data", L"Market data", L"impact-capture"},
+    {L"Data", L"Market data", L"impact-corpus-collect"},
     {L"Data", L"Market data", L"polymarket-record"},
     {L"Data", L"Integrity and outcomes", L"data-health"},
     {L"Data", L"Integrity and outcomes", L"tick-corpus-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-day"},
+    {L"Data", L"Integrity and outcomes", L"impact-corpus-batch-audit"},
     {L"Data", L"Integrity and outcomes", L"polymarket-resolve"},
     {L"System", L"Runtime health", L"status"},
     {L"System", L"Runtime health", L"doctor"},

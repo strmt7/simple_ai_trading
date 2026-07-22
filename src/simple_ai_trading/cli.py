@@ -112,6 +112,12 @@ from .impact_absorption_corpus import (
     index_round73_corpus_run,
     round73_corpus_day_coverage,
 )
+from .impact_absorption_rotation import (
+    Round73CorpusRotationConfig,
+    Round73CorpusRotationReport,
+    audit_round73_rotation_batch,
+    run_round73_corpus_rotation,
+)
 from .impact_absorption_features import diagnose_round73_feature_source
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
@@ -1414,6 +1420,65 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_corpus_day.add_argument("--database-threads", type=int, default=2)
     parser_impact_corpus_day.add_argument("--json", action="store_true")
     parser_impact_corpus_day.set_defaults(func=command_impact_corpus_day)
+
+    parser_impact_corpus_collect = subparsers.add_parser(
+        "impact-corpus-collect",
+        help="recover and collect a bounded batch of qualified one-hour segments",
+        description=(
+            "Recover qualified unindexed v8 runs, collect a bounded public-feed "
+            "batch, then replay and audit each manifest. No credentials or orders."
+        ),
+    )
+    parser_impact_corpus_collect.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_corpus_collect.add_argument(
+        "--segments",
+        type=int,
+        default=1,
+        help="one-hour segments to capture (0 recovers only; maximum 168)",
+    )
+    parser_impact_corpus_collect.add_argument(
+        "--compressed-payload-cap-bytes",
+        type=int,
+        default=IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    )
+    parser_impact_corpus_collect.add_argument(
+        "--database-size-cap-bytes",
+        type=int,
+        default=IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES,
+    )
+    parser_impact_corpus_collect.add_argument("--memory-limit", default="2GB")
+    parser_impact_corpus_collect.add_argument(
+        "--database-threads", type=int, default=2
+    )
+    parser_impact_corpus_collect.add_argument(
+        "--progress-interval-seconds", type=float, default=30.0
+    )
+    parser_impact_corpus_collect.add_argument("--json", action="store_true")
+    parser_impact_corpus_collect.set_defaults(func=command_impact_corpus_collect)
+
+    parser_impact_corpus_batch_audit = subparsers.add_parser(
+        "impact-corpus-batch-audit",
+        help="verify a terminal Round 73 rotation journal and optional raw manifests",
+    )
+    parser_impact_corpus_batch_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_corpus_batch_audit.add_argument("--batch-id", required=True)
+    parser_impact_corpus_batch_audit.add_argument(
+        "--deep",
+        action="store_true",
+        help="repeat each underlying exact frame-chain manifest audit",
+    )
+    parser_impact_corpus_batch_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_corpus_batch_audit.add_argument(
+        "--database-threads", type=int, default=2
+    )
+    parser_impact_corpus_batch_audit.add_argument("--json", action="store_true")
+    parser_impact_corpus_batch_audit.set_defaults(
+        func=command_impact_corpus_batch_audit
+    )
 
     parser_tick_archive = subparsers.add_parser(
         "tick-archive-sync",
@@ -11158,6 +11223,129 @@ def command_impact_corpus_day(args: argparse.Namespace) -> int:
             f"coverage_hours={diagnostic.coverage_ns / 3_600_000_000_000:.3f}"
         )
     return 0
+
+
+async def _run_impact_corpus_rotation_with_progress(
+    config: Round73CorpusRotationConfig,
+    *,
+    progress_interval_seconds: float,
+) -> Round73CorpusRotationReport:
+    task = asyncio.create_task(run_round73_corpus_rotation(config))
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    try:
+        while not task.done():
+            done, _pending = await asyncio.wait(
+                (task,),
+                timeout=float(progress_interval_seconds),
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if done:
+                break
+            print(
+                "impact-corpus-collect-progress: "
+                f"wall_elapsed={loop.time() - started:.1f}s "
+                f"requested_segments={config.segment_count} "
+                f"database={config.database}",
+                file=sys.stderr,
+                flush=True,
+            )
+        return await task
+    except BaseException:
+        if not task.done():
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+        raise
+
+
+def command_impact_corpus_collect(args: argparse.Namespace) -> int:
+    import duckdb
+
+    progress_interval = float(getattr(args, "progress_interval_seconds", 30.0) or 30.0)
+    if not 5.0 <= progress_interval <= 120.0:
+        print(
+            "impact-corpus-collect failed: progress interval must be between 5 and 120 seconds",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        config = Round73CorpusRotationConfig(
+            database=str(getattr(args, "database", "data/microstructure.duckdb")),
+            segment_count=int(getattr(args, "segments", 1)),
+            compressed_payload_cap_bytes=int(
+                getattr(
+                    args,
+                    "compressed_payload_cap_bytes",
+                    IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+                )
+            ),
+            database_size_cap_bytes=int(
+                getattr(
+                    args,
+                    "database_size_cap_bytes",
+                    IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES,
+                )
+            ),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            database_threads=int(getattr(args, "database_threads", 2)),
+        )
+        config.validate()
+        report = asyncio.run(
+            _run_impact_corpus_rotation_with_progress(
+                config,
+                progress_interval_seconds=progress_interval,
+            )
+        )
+    except KeyboardInterrupt:
+        print("impact-corpus-collect cancelled by operator", file=sys.stderr)
+        return 130
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-corpus-collect failed: {exc}", file=sys.stderr)
+        return 2
+    payload = report.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-corpus-collect: "
+            f"status={report.status} batch={report.batch_id} "
+            f"captured={report.qualified_capture_segment_count}/"
+            f"{report.requested_capture_segments} "
+            f"recovered={report.recovered_segment_count} "
+            f"indexed={report.indexed_segment_count}"
+        )
+        if report.error:
+            print(f"warning: {report.error}", file=sys.stderr)
+    return 0 if report.status == "completed" else 2
+
+
+def command_impact_corpus_batch_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_rotation_batch(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            batch_id=str(getattr(args, "batch_id", "")),
+            deep_manifest_audit=bool(getattr(args, "deep", False)),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-corpus-batch-audit failed: {exc}", file=sys.stderr)
+        return 2
+    payload = audit.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-corpus-batch-audit: "
+            f"passed={str(audit.passed).lower()} batch={audit.batch_id} "
+            f"status={audit.status} segments={audit.segment_count} "
+            f"deep_manifests={audit.deeply_audited_manifest_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
 
 
 def _parse_cli_utc_date(value: object, label: str):
