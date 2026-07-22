@@ -8,7 +8,10 @@ import json
 from typing import Sequence
 
 
-ROUND72_IMPLEMENTATION_SCHEMA = "round-072-price-discovery-implementation-v1"
+ROUND72_IMPLEMENTATION_SCHEMA = "round-072-price-discovery-implementation-v2"
+ROUND72_IMPLEMENTATION_V1_SHA256 = (
+    "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd"
+)
 WINDOWS_SECONDS = (1, 5, 15, 30, 60, 300, 900)
 HORIZONS_SECONDS = (30, 60, 300)
 ENTRY_DELAYS_SECONDS = (2, 5)
@@ -19,6 +22,10 @@ ANCHOR_SECOND_OFFSET = 29
 MAXIMUM_FEATURE_WINDOW_SECONDS = 900
 FEATURE_BURN_IN_SECONDS = 1_800
 FEATURE_LAYERS = ("perpetual_only", "spot_perpetual", "cross_asset")
+PRIMARY_LOSS_METRICS = {
+    "binary_direction": ("log_loss", "brier_score"),
+    "continuous_return_bps": ("mean_squared_error", "mean_absolute_error"),
+}
 MARKET_WINDOW_METRICS = (
     "log_return_bps",
     "path_variation_bps",
@@ -199,6 +206,13 @@ def build_round72_implementation_spec(
         "schema_version": ROUND72_IMPLEMENTATION_SCHEMA,
         "round": 72,
         "frozen_at_utc": _canonical_utc(frozen_at_utc),
+        "amendment": {
+            "predecessor_implementation_sha256": ROUND72_IMPLEMENTATION_V1_SHA256,
+            "reason": "pre-result clarification of already-declared design metrics, aggregation, resampling, stress, seed, and continuous-market semantics",
+            "round72_price_or_return_result_available_before_amendment": False,
+            "round72_model_result_available_before_amendment": False,
+            "data_feature_target_split_or_model_parameter_changed": False,
+        },
         "design_sha256": _require_sha256(design_sha256, "design_sha256"),
         "inventory_sha256": _require_sha256(inventory_sha256, "inventory_sha256"),
         "inventory_file_sha256": _require_sha256(
@@ -213,6 +227,8 @@ def build_round72_implementation_spec(
         },
         "anchor_contract": {
             "calendar": "UTC",
+            "market_session_semantics": "Binance spot and USD-M perpetual markets are continuous; a UTC day is only a sampling and resampling block, never a formal market close",
+            "listed_product_session_semantics": "ETF and listed-futures sessions are separate timestamped external context and are excluded from Round 72 features",
             "anchor_spacing_seconds": ANCHOR_SPACING_SECONDS,
             "anchor_second_offset_within_spacing": ANCHOR_SECOND_OFFSET,
             "anchor_rule": "second_ms modulo 30000 equals 29000; available_time_ms is second_ms plus 1000",
@@ -332,6 +348,11 @@ def build_round72_implementation_spec(
             "threshold_has_trading_authority": False,
         },
         "evaluation_contract": {
+            "primary_loss_metrics": {
+                head: list(metrics) for head, metrics in PRIMARY_LOSS_METRICS.items()
+            },
+            "fdr_family_cardinality": 36,
+            "fdr_family_order": "symbol BTC ETH SOL, then horizon 30 60 300, then head binary continuous, then each head's listed primary loss order",
             "permutation_draws": 10_000,
             "bootstrap_draws": 10_000,
             "permutation_unit": "UTC day",
@@ -341,6 +362,18 @@ def build_round72_implementation_spec(
             "bootstrap_lower_quantile": 0.025,
             "fdr_family": "all spot_perpetual primary loss comparisons across three symbols, three horizons, two heads, and each declared primary loss metric",
             "fdr_method": "Benjamini-Hochberg",
+            "loss_aggregation": "concatenate the six chronological out-of-sample test blocks and compute row-weighted losses",
+            "fold_score_rule": "for binary log loss and Brier separately, spot_perpetual must beat that fold's training-prevalence baseline in at least four of six test folds",
+            "prevalence_baseline": "positive-label fraction in that fold's primary training role, clipped to the probability bounds; the same value is reused for the five-second stress target",
+            "continuous_controls": {
+                "primary_gate": "zero return",
+                "diagnostic": "that fold's mean primary training return",
+            },
+            "accuracy_rule": "pooled out-of-sample threshold-0.5 accuracy must strictly exceed pooled majority-class accuracy",
+            "day_metric_rule": "compute each metric independently within each UTC day, discard only mathematically undefined day metrics, and take the unweighted mean across finite days",
+            "bootstrap_rule": "sample the finite UTC-day metric values independently with replacement for 10000 draws and use the empirical 0.025 quantile of draw means",
+            "stress_rule": "reuse each fitted and calibrated spot_perpetual primary model without refit; on stress-valid test rows, pooled log loss and Brier must each be strictly below the fold-specific primary-training-prevalence baseline",
+            "seed_derivation": "LightGBM always uses 20260722; resampling uses 20260722 plus the zero-based canonical family index",
             "maximum_q_value": 0.05,
             "minimum_relative_improvement_spot_perpetual_vs_perpetual_only": 0.001,
             "minimum_binary_relative_improvement_vs_prevalence": 0.002,
@@ -407,7 +440,9 @@ __all__ = [
     "MARKET_WINDOW_METRICS",
     "PAIR_WINDOW_METRICS",
     "PRIMARY_ENTRY_DELAY_SECONDS",
+    "PRIMARY_LOSS_METRICS",
     "ROUND72_IMPLEMENTATION_SCHEMA",
+    "ROUND72_IMPLEMENTATION_V1_SHA256",
     "SPOT_FLOW_LAGS_SECONDS",
     "STRESS_ENTRY_DELAY_SECONDS",
     "WINDOWS_SECONDS",

@@ -1,4 +1,11 @@
 {
+  "amendment": {
+    "data_feature_target_split_or_model_parameter_changed": false,
+    "predecessor_implementation_sha256": "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd",
+    "reason": "pre-result clarification of already-declared design metrics, aggregation, resampling, stress, seed, and continuous-market semantics",
+    "round72_model_result_available_before_amendment": false,
+    "round72_price_or_return_result_available_before_amendment": false
+  },
   "anchor_contract": {
     "anchor_rule": "second_ms modulo 30000 equals 29000; available_time_ms is second_ms plus 1000",
     "anchor_second_offset_within_spacing": 29,
@@ -6,6 +13,8 @@
     "burn_in_seconds": 1800,
     "calendar": "UTC",
     "day_boundary_windows_permitted": false,
+    "listed_product_session_semantics": "ETF and listed-futures sessions are separate timestamped external context and are excluded from Round 72 features",
+    "market_session_semantics": "Binance spot and USD-M perpetual markets are continuous; a UTC day is only a sampling and resampling block, never a formal market close",
     "maximum_window_seconds": 900,
     "peer_age_gate_for_optional_cross_asset_features": false,
     "target_symbol_perpetual_age_maximum_seconds": 2,
@@ -34,6 +43,7 @@
   },
   "design_sha256": "505818f74cdd9484f66b1a504de821d4d366ec35c7d7bf978ffa15d613104812",
   "evaluation_contract": {
+    "accuracy_rule": "pooled out-of-sample threshold-0.5 accuracy must strictly exceed pooled majority-class accuracy",
     "all_symbols_horizons_and_declared_primary_metrics_must_pass": true,
     "binary_day_block_lower_bounds": {
       "MCC": 0.0,
@@ -42,12 +52,22 @@
     "bootstrap_draws": 10000,
     "bootstrap_estimand": "unweighted mean of finite per-day balanced accuracy, MCC, or Spearman values",
     "bootstrap_lower_quantile": 0.025,
+    "bootstrap_rule": "sample the finite UTC-day metric values independently with replacement for 10000 draws and use the empirical 0.025 quantile of draw means",
     "bootstrap_unit": "UTC day",
+    "continuous_controls": {
+      "diagnostic": "that fold's mean primary training return",
+      "primary_gate": "zero return"
+    },
     "continuous_day_block_lower_bound": {
       "Spearman": 0.0
     },
+    "day_metric_rule": "compute each metric independently within each UTC day, discard only mathematically undefined day metrics, and take the unweighted mean across finite days",
     "fdr_family": "all spot_perpetual primary loss comparisons across three symbols, three horizons, two heads, and each declared primary loss metric",
+    "fdr_family_cardinality": 36,
+    "fdr_family_order": "symbol BTC ETH SOL, then horizon 30 60 300, then head binary continuous, then each head's listed primary loss order",
     "fdr_method": "Benjamini-Hochberg",
+    "fold_score_rule": "for binary log loss and Brier separately, spot_perpetual must beat that fold's training-prevalence baseline in at least four of six test folds",
+    "loss_aggregation": "concatenate the six chronological out-of-sample test blocks and compute row-weighted losses",
     "maximum_q_value": 0.05,
     "minimum_binary_relative_improvement_vs_prevalence": 0.002,
     "minimum_continuous_mse_skill_vs_zero": 0.001,
@@ -56,11 +76,24 @@
     "permutation_draws": 10000,
     "permutation_statistic": "row-weighted mean paired loss difference with one random sign per UTC day",
     "permutation_unit": "UTC day",
+    "prevalence_baseline": "positive-label fraction in that fold's primary training role, clipped to the probability bounds; the same value is reused for the five-second stress target",
+    "primary_loss_metrics": {
+      "binary_direction": [
+        "log_loss",
+        "brier_score"
+      ],
+      "continuous_return_bps": [
+        "mean_squared_error",
+        "mean_absolute_error"
+      ]
+    },
     "raw_accuracy_must_exceed_majority_prevalence": true,
+    "seed_derivation": "LightGBM always uses 20260722; resampling uses 20260722 plus the zero-based canonical family index",
     "stress_delay_binary_skill_vs_prevalence_must_be_positive": [
       "log_loss",
       "brier_score"
-    ]
+    ],
+    "stress_rule": "reuse each fitted and calibrated spot_perpetual primary model without refit; on stress-valid test rows, pooled log loss and Brier must each be strictly below the fold-specific primary-training-prevalence baseline"
   },
   "execution_or_fill_claim": false,
   "feature_contract": {
@@ -170,8 +203,8 @@
     "schema_smoke_used_for_feature_or_parameter_selection": false,
     "single_smallest_archive_schema_smoke_preceded_this_freeze": true
   },
-  "frozen_at_utc": "2026-07-22T09:42:45+00:00",
-  "implementation_sha256": "17428ce4109f7ffc827ea8b9aa545bc16a5aebb2bd05466de0ca93d540891fbd",
+  "frozen_at_utc": "2026-07-22T09:55:35.428895+00:00",
+  "implementation_sha256": "ebb30e8bebc00054d09d6046dd418ea9a0511bff6aebe863b8858f89de0930d3",
   "inventory_file_sha256": "055b5c5a3d975a092bae0c27253757c3be39535945d0aa6caaecdf31e9343b1b",
   "inventory_sha256": "e8c505132716c68ad753cbdd93b23094b778d9067c8a6c9381fad0e20cdd662c",
   "leverage_authority": false,
@@ -223,7 +256,7 @@
     "target_and_metric_dtype": "float64"
   },
   "round": 72,
-  "schema_version": "round-072-price-discovery-implementation-v1",
+  "schema_version": "round-072-price-discovery-implementation-v2",
   "split_contract": {
     "development_months": [
       "2020-10",
