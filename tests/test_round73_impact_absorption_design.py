@@ -80,6 +80,9 @@ V8_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-segmented-corpus-contract-v1.json"
 )
+FIRST_CORPUS_MANIFEST_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-first-corpus-manifest-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -704,6 +707,40 @@ def test_round73_segmented_corpus_contract_is_hash_bound_and_fail_closed() -> No
     assert modeling["model_evaluation_authorized"] is False
     assert modeling["profitability_claim"] is False
     assert modeling["live_trading_authority"] is False
+
+
+def test_round73_first_corpus_manifest_is_real_hash_bound_and_non_predictive() -> None:
+    evidence = json.loads(FIRST_CORPUS_MANIFEST_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["source"]["synthetic_market_data_used"] is False
+    manifest = evidence["manifest"]
+    assert manifest["run_id"] == "f3e92ba29e1e4d3188c3f309f5c160a2"
+    assert manifest["message_count"] == 1_294_128
+    assert manifest["coverage_duration_ns"] >= 3_600_000_000_000
+    replay = evidence["independent_replay"]
+    assert replay["capture_audit_passed"] is True
+    assert replay["stored_depth_band_rows_reconciled"] is True
+    assert replay["stored_depth_band_row_count"] == replay["depth_update_count"]
+    assert replay["future_or_target_data_used"] is False
+    assert evidence["post_write_manifest_audit"]["passed"] is True
+    storage = evidence["storage_observation"]
+    assert storage["physical_growth_bytes"] == 0
+    assert storage["ssd_or_nand_wear_inferred"] is False
+    day = evidence["utc_partition_diagnostic"]
+    assert day["eligible"] is False
+    assert day["crypto_formal_daily_close"] is False
+    assert day["listed_products_use_actual_venue_calendars"] is True
+    analysis = evidence["critical_analysis"]
+    assert analysis["complete_day_count"] == 0
+    assert analysis["predictive_edge_evidence"] is False
+    assert analysis["profitability_evidence"] is False
+    authorization = evidence["authorization"]
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
