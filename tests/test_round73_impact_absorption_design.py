@@ -47,6 +47,9 @@ V4_FEATURE_SOURCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V5_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-capture-contract-v5.json"
 )
+V5_PROBE_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v5-probe-failure-2026-07-22.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -303,6 +306,29 @@ def test_round73_v5_contract_separates_database_audit_from_wire_replay() -> None
     assert authorization["v5_three_minute_probe"] is True
     assert authorization["v5_one_hour_qualification"] is False
     assert authorization["v5_long_capture"] is False
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["profitability_claim"] is False
+    assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v5_failed_probe_is_preserved_without_authority() -> None:
+    evidence = json.loads(V5_PROBE_FAILURE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["attempt_evidence_combined"] is False
+    run = evidence["run"]
+    assert run["status"] == "failed"
+    assert run["writer_frame_count"] == 0
+    assert run["writer_message_count"] == 0
+    assert evidence["root_cause"]["frozen_v5_frame_message_limit"] == 16_384
+    assert evidence["root_cause"]["encoder_message_limit_before_remediation"] == 1_024
+    assert evidence["root_cause"]["frame_format_changed"] is False
+    authorization = evidence["authorization"]
+    assert authorization["v5_probe_passed"] is False
+    assert authorization["v5_one_hour_qualification"] is False
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["profitability_claim"] is False
     assert authorization["live_trading_authority"] is False

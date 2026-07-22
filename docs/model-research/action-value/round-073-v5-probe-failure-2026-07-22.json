@@ -1,0 +1,58 @@
+{
+  "schema_version": "round-073-v5-probe-failure-evidence-v1",
+  "artifact_sha256": "1cb48d4ca000a41d83e26825b120b42171dd5a6abf0ef7b74db640fee8440661",
+  "recorded_utc_date": "2026-07-22",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "run": {
+    "run_id": "02a42602b9f641da911e1ca45aaf2623",
+    "capture_contract_sha256": "63a440f1fb875db8ee78bab1631033f24850a65cc7ed80d4fd37078dd6ee9a1b",
+    "status": "failed",
+    "failure_class": "writer",
+    "elapsed_seconds": 9.328000000008615,
+    "error": "public_processor:_ImpactWriterFault:ValueError:impact capture frame has an invalid message count",
+    "writer_frame_count": 0,
+    "writer_message_count": 0,
+    "writer_compressed_payload_bytes": 0,
+    "queue_high_water_messages": 141,
+    "queue_capacity_messages": 65536,
+    "database_physical_bytes": 5342244864,
+    "database_size_cap_reached": false,
+    "payload_cap_reached": false,
+    "reconnect_count": 0,
+    "audit_passed": true,
+    "audit_errors": []
+  },
+  "process_io": {
+    "provider": "windows_GetProcessIoCounters_WriteTransferCount",
+    "semantics": "process I/O transfer bytes; not physical SSD writes",
+    "start_write_bytes": 4466338,
+    "end_write_bytes": 11814171,
+    "delta_write_bytes": 7347833,
+    "write_bytes_per_message": null,
+    "storage_efficiency_passed": false
+  },
+  "root_cause": {
+    "frozen_v5_frame_message_limit": 16384,
+    "encoder_message_limit_before_remediation": 1024,
+    "classification": "implementation did not match the already frozen v5 frame bound",
+    "frame_format_changed": false
+  },
+  "remediation": {
+    "encoder_and_decoder_message_limit": 16384,
+    "exact_upper_bound_test_added": true,
+    "one_over_bound_rejection_test_added": true,
+    "historical_v1_through_v4_decoding_preserved": true
+  },
+  "authorization": {
+    "v5_probe_passed": false,
+    "v5_one_hour_qualification": false,
+    "v5_long_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
