@@ -25,6 +25,7 @@ from .price_discovery_spec import (
     MARKET_WINDOW_METRICS,
     PAIR_WINDOW_METRICS,
     PRIMARY_ENTRY_DELAY_SECONDS,
+    ROUND72_IMPLEMENTATION_SCHEMA,
     SPOT_FLOW_LAGS_SECONDS,
     STRESS_ENTRY_DELAY_SECONDS,
     WINDOWS_SECONDS,
@@ -687,6 +688,7 @@ def _load_implementation(path: Path, contract: FrozenFlowContract) -> dict[str, 
     observed = str(canonical.pop("implementation_sha256", ""))
     if (
         observed != _canonical_sha256(canonical)
+        or value.get("schema_version") != ROUND72_IMPLEMENTATION_SCHEMA
         or value.get("inventory_sha256") != contract.inventory_sha256
         or value.get("design_sha256") != contract.design_sha256
         or value.get("profitability_claim") is not False

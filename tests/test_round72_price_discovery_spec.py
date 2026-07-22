@@ -7,6 +7,8 @@ from pathlib import Path
 from simple_ai_trading.price_discovery_spec import (
     FEATURE_LAYERS,
     HORIZONS_SECONDS,
+    PRIMARY_LOSS_METRICS,
+    ROUND72_IMPLEMENTATION_V1_SHA256,
     build_round72_implementation_spec,
     layer_feature_names,
     validate_layer_prefixes,
@@ -70,3 +72,25 @@ def test_round72_freeze_excludes_holdout_profit_and_leverage_authority() -> None
     assert artifact["trading_authority"] is False
     assert artifact["leverage_authority"] is False
     assert artifact["freeze_evidence"]["post_result_changes_permitted"] is False
+
+
+def test_round72_pre_result_amendment_removes_evaluation_and_session_ambiguity() -> None:
+    artifact = json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+    evaluation = artifact["evaluation_contract"]
+
+    assert artifact["amendment"] == {
+        "predecessor_implementation_sha256": ROUND72_IMPLEMENTATION_V1_SHA256,
+        "reason": "pre-result clarification of already-declared design metrics, aggregation, resampling, stress, seed, and continuous-market semantics",
+        "round72_price_or_return_result_available_before_amendment": False,
+        "round72_model_result_available_before_amendment": False,
+        "data_feature_target_split_or_model_parameter_changed": False,
+    }
+    assert evaluation["primary_loss_metrics"] == {
+        head: list(metrics) for head, metrics in PRIMARY_LOSS_METRICS.items()
+    }
+    assert evaluation["fdr_family_cardinality"] == 36
+    assert "continuous" in artifact["anchor_contract"]["market_session_semantics"]
+    assert "never a formal market close" in artifact["anchor_contract"][
+        "market_session_semantics"
+    ]
+    assert "ETF" in artifact["anchor_contract"]["listed_product_session_semantics"]
