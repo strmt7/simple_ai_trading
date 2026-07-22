@@ -25,11 +25,11 @@ from .price_discovery_spec import (
     MARKET_WINDOW_METRICS,
     PAIR_WINDOW_METRICS,
     PRIMARY_ENTRY_DELAY_SECONDS,
-    ROUND72_IMPLEMENTATION_SCHEMA,
     SPOT_FLOW_LAGS_SECONDS,
     STRESS_ENTRY_DELAY_SECONDS,
     WINDOWS_SECONDS,
     layer_feature_names,
+    load_round72_implementation,
     validate_layer_prefixes,
 )
 from .spot_perpetual_corpus import (
@@ -681,15 +681,9 @@ def _load_flow_day(
 
 
 def _load_implementation(path: Path, contract: FrozenFlowContract) -> dict[str, object]:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError("Round 72 implementation artifact is not an object")
-    canonical = dict(value)
-    observed = str(canonical.pop("implementation_sha256", ""))
+    value = load_round72_implementation(path)
     if (
-        observed != _canonical_sha256(canonical)
-        or value.get("schema_version") != ROUND72_IMPLEMENTATION_SCHEMA
-        or value.get("inventory_sha256") != contract.inventory_sha256
+        value.get("inventory_sha256") != contract.inventory_sha256
         or value.get("design_sha256") != contract.design_sha256
         or value.get("profitability_claim") is not False
         or value.get("trading_authority") is not False
