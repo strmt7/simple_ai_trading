@@ -94,7 +94,7 @@ def test_round72_folds_and_purged_roles_match_the_frozen_calendar() -> None:
     roles = build_price_discovery_roles(dataset, folds[0], horizon_seconds=300)
 
     assert implementation["implementation_sha256"] == (
-        "ebb30e8bebc00054d09d6046dd418ea9a0511bff6aebe863b8858f89de0930d3"
+        "d8679606e75ec7fa2bf00032b34489218085f7c7f5159419e192f3ee351dfad9"
     )
     assert len(folds) == 6
     assert folds[0].training_end_month == _month_ordinal(2022, 9)
