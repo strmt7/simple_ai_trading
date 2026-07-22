@@ -77,6 +77,18 @@ V8_CAPTURE_GATE_SUCCESS_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V8_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v8-capture-qualification-2026-07-22.json"
 )
+V8_REPEATED_APPEND_BENCHMARK_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v8-repeated-append-storage-benchmark-2026-07-23.json"
+)
+V8_REPEATED_APPEND_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v8-repeated-append-failure-2026-07-23.json"
+)
+REAL_FRAME_COMPRESSION_BENCHMARK_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-real-frame-compression-benchmark-2026-07-23.json"
+)
+V9_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-capture-contract-v9.json"
+)
 SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-segmented-corpus-contract-v1.json"
 )
@@ -673,6 +685,98 @@ def test_round73_v8_one_hour_qualification_authorizes_bounded_pipeline() -> None
     assert authorization["round_073_feature_construction"] is True
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_v8_repeated_append_failure_revokes_further_v8_capture() -> None:
+    benchmark = json.loads(
+        V8_REPEATED_APPEND_BENCHMARK_PATH.read_text(encoding="utf-8")
+    )
+    benchmark_claimed = benchmark.pop("artifact_sha256")
+    failure = json.loads(V8_REPEATED_APPEND_FAILURE_PATH.read_text(encoding="utf-8"))
+    failure_claimed = failure.pop("artifact_sha256")
+
+    assert benchmark_claimed == _canonical_sha256(benchmark)
+    assert failure_claimed == _canonical_sha256(failure)
+    assert benchmark["synthetic_market_data_used"] is False
+    assert benchmark["message_count"] == 99_143
+    assert benchmark["exact_frame_candidate_persists_typed_projection"] is False
+    assert benchmark["exact_frame_to_full_path_candidate_process_write_ratio"] < 0.14
+    observation = failure["capture_observation"]
+    assert observation["message_count"] == 1_825_610
+    assert observation["capture_phase_process_write_transfer_bytes_per_message"] > 4_096
+    assert observation["storage_efficiency_passed"] is False
+    assert failure["fresh_process_read_only_audit"]["passed"] is True
+    assert failure["critical_analysis"]["full_root_cause_proven"] is False
+    assert failure["decision"]["additional_v8_corpus_capture_authorized"] is False
+    assert failure["decision"]["round_073_model_evaluation"] is False
+
+
+def test_round73_real_frame_compression_benchmark_is_exact_and_nonfinancial() -> None:
+    evidence = json.loads(
+        REAL_FRAME_COMPRESSION_BENCHMARK_PATH.read_text(encoding="utf-8")
+    )
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["synthetic_market_data_used"] is False
+    assert evidence["scratch_files_written"] is False
+    assert evidence["financial_or_model_evidence"] is False
+    assert evidence["message_count"] == 52_682
+    assert all(item["exact_round_trip_passed"] for item in evidence["scenarios"])
+    per_frame_level_nine = next(
+        item
+        for item in evidence["scenarios"]
+        if item["chunk_frame_count"] == 1 and item["compression_level"] == 9
+    )
+    assert per_frame_level_nine["compression_ratio"] > 10.0
+
+
+def test_round73_v9_contract_removes_duplicate_live_typed_persistence() -> None:
+    failure = json.loads(V8_REPEATED_APPEND_FAILURE_PATH.read_text(encoding="utf-8"))
+    failure_claimed = failure.pop("artifact_sha256")
+    compression = json.loads(
+        REAL_FRAME_COMPRESSION_BENCHMARK_PATH.read_text(encoding="utf-8")
+    )
+    compression_claimed = compression.pop("artifact_sha256")
+    contract = json.loads(V9_CAPTURE_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("capture_contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v9_capture"] is True
+    assert (
+        contract["failure_evidence"]["v8_repeated_append_failure_artifact_sha256"]
+        == failure_claimed
+    )
+    assert (
+        contract["compression_policy_v9"]["benchmark_artifact_sha256"]
+        == compression_claimed
+    )
+    storage = contract["storage_schema_v9"]
+    assert storage["single_database_file_required"] is True
+    assert storage["frame_table"] == "impact_capture_frame_v9"
+    assert storage["rest_context_table"] == "impact_rest_event_v9"
+    assert storage["persisted_per_message_high_volume_event_link"] is False
+    assert storage["persisted_book_ticker_projection"] is False
+    assert storage["persisted_l2_state_projection"] is False
+    assert storage["atomic_frame_rest_lane_segment_and_run_commit_required"] is True
+    policy = contract["duckdb_policy_v9"]
+    assert policy["checkpoint_threshold"] == "512MiB"
+    assert policy["auto_checkpoint_skip_wal_threshold_bytes"] == 512 * 1024 * 1024
+    replay = contract["exact_replay_contract"]
+    assert replay["top_20_l2_rebuilt_from_snapshot_and_sequenced_depth_updates"] is True
+    assert replay["typed_projection_or_grid_may_be_trusted_without_raw_replay"] is False
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_products_use_actual_venue_calendars"] is True
+    assert calendar["listed_product_close_creates_crypto_close"] is False
+    assert (
+        calendar["listed_product_calendar_may_grant_crypto_execution_authority"]
+        is False
+    )
+    authority = contract["authorization"]
+    assert authority["v9_live_telemetry_diagnostic"] is False
+    assert authority["round_073_model_evaluation"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round73_segmented_corpus_contract_is_hash_bound_and_fail_closed() -> None:
