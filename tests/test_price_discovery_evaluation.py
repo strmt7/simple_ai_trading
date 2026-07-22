@@ -34,6 +34,26 @@ ROOT = Path(__file__).resolve().parents[1]
 IMPLEMENTATION = ROOT / "docs/model-research/action-value/round-072-price-discovery-implementation.json"
 
 
+def _certificate() -> dict[str, object]:
+    implementation = json.loads(IMPLEMENTATION.read_text(encoding="utf-8"))
+    return {
+        "schema_version": "spot-perpetual-corpus-certificate-v1",
+        "research_round": 72,
+        "inventory_sha256": implementation["inventory_sha256"],
+        "status": "complete",
+        "day_count": 69,
+        "source_count": 414,
+        "symbol_count": 3,
+        "flow_rows": 17_884_800,
+        "compressed_bytes": 5_964_131_852,
+        "uncompressed_bytes": 10_000_000_000,
+        "first_period": "2020-10-19",
+        "last_period": "2026-06-01",
+        "manifest_fingerprint": "b" * 64,
+        "source_fingerprint": "c" * 64,
+    }
+
+
 def _readonly(value: np.ndarray, dtype) -> np.ndarray:
     output = np.asarray(value, dtype=dtype)
     output.setflags(write=False)
@@ -180,7 +200,9 @@ def test_round72_metric_definitions_handle_ties_and_day_bootstrap() -> None:
 
 def test_round72_full_primary_gate_passes_only_real_feature_increment() -> None:
     passing = evaluate_price_discovery_primary(
-        _run(paired_improves=True), implementation_path=IMPLEMENTATION
+        _run(paired_improves=True),
+        implementation_path=IMPLEMENTATION,
+        corpus_certificate=_certificate(),
     )
 
     assert passing["primary_gate_passed"] is True
@@ -193,7 +215,9 @@ def test_round72_full_primary_gate_passes_only_real_feature_increment() -> None:
     assert passing["profitability_claim"] is False
 
     rejected = evaluate_price_discovery_primary(
-        _run(paired_improves=False), implementation_path=IMPLEMENTATION
+        _run(paired_improves=False),
+        implementation_path=IMPLEMENTATION,
+        corpus_certificate=_certificate(),
     )
 
     assert rejected["primary_gate_passed"] is False
