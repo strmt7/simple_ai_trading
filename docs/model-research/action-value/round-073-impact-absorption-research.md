@@ -263,12 +263,16 @@ Impact absorption must beat both L2 state and the frozen L1+tape control on held
 out log loss, Brier score, MSE, calibration, dependence-aware uncertainty, and a
 one-second stress-delay check. Acceptance is cumulative: a deeper layer cannot
 pass if any earlier prevalence-to-linear-to-L1-to-L2 comparison in its path
-fails.
+fails. Both the point improvement and the paired block-bootstrap lower bound
+must clear the frozen skill threshold; a significant but unstable point estimate
+cannot pass.
 
 The first seven complete days are only a bounded viability screen. Promotion
 requires at least 30 complete prospective days with the final seven sealed.
 Each symbol passes or fails independently; unsupported symbols are disabled.
-Portfolio research requires at least two independent symbol passes.
+Portfolio viability requires at least two symbols to pass their predictive,
+operational, and after-cost economic gates independently, and the combined
+portfolio must separately pass its operational and economic gates.
 
 Only the same frozen predictions may enter an unlevered quote-path replay. Entry
 and exit walk the synchronized visible book for `$100`, `$1,000`, and `$5,000`

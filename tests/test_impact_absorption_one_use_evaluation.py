@@ -268,7 +268,11 @@ def test_unresolved_position_blocks_same_symbol_and_fails_closed() -> None:
     assert combined["intratrade_portfolio_maximum_drawdown_reported"] is False
 
 
-def _predictive_report(*, stress_failure: bool = False) -> dict[str, object]:
+def _predictive_report(
+    *,
+    point_failure: bool = False,
+    uncertainty_failure: bool = False,
+) -> dict[str, object]:
     losses = (
         "log_loss",
         "brier_score",
@@ -284,9 +288,14 @@ def _predictive_report(*, stress_failure: bool = False) -> dict[str, object]:
                 "available": True,
                 "q_value": 0.01,
                 "relative_improvement": (
-                    -0.01 if stress_failure and index == 0 else 0.01
+                    -0.01 if point_failure and index == 0 else 0.01
                 ),
                 "positive_chronological_folds": 4,
+                "block_bootstrap_95_percent_interval": {
+                    "relative_improvement_lower": (
+                        -0.01 if uncertainty_failure and index == 0 else 0.005
+                    )
+                },
             }
         )
     return {
@@ -305,13 +314,50 @@ def test_predictive_gate_requires_primary_and_delay_stress_skill() -> None:
     )
     failed = subject._symbol_predictive_gate(
         _predictive_report(),
-        _predictive_report(stress_failure=True),
+        _predictive_report(point_failure=True),
+        selected_candidate="linear_l1_tape",
+    )
+    uncertain = subject._symbol_predictive_gate(
+        _predictive_report(uncertainty_failure=True),
+        _predictive_report(),
         selected_candidate="linear_l1_tape",
     )
 
     assert passed["passed"] is True
     assert failed["passed"] is False
     assert any("delay_stress" in reason for reason in failed["reasons"])
+    assert uncertain["passed"] is False
+    assert any("primary" in reason for reason in uncertain["reasons"])
+
+
+def test_independent_symbol_gate_requires_predictive_and_economic_passes() -> None:
+    predictive = {symbol: {"passed": True} for symbol in subject.IMPACT_CAPTURE_SYMBOLS}
+    economics = {
+        symbol: {
+            "operational_gate_passed": True,
+            "economic_gate_passed": symbol != "ETHUSDT",
+        }
+        for symbol in subject.IMPACT_CAPTURE_SYMBOLS
+    }
+
+    gates, count = subject._independent_symbol_viability_gates(
+        predictive_gates=predictive,
+        primary_economic_by_symbol=economics,
+        enabled_symbols=subject.IMPACT_CAPTURE_SYMBOLS,
+    )
+
+    assert count == 2
+    assert gates["BTCUSDT"]["passed"] is True
+    assert gates["ETHUSDT"]["passed"] is False
+    assert gates["SOLUSDT"]["passed"] is True
+
+    predictive["SOLUSDT"] = {"passed": False}
+    _gates, count = subject._independent_symbol_viability_gates(
+        predictive_gates=predictive,
+        primary_economic_by_symbol=economics,
+        enabled_symbols=subject.IMPACT_CAPTURE_SYMBOLS,
+    )
+    assert count == 1
 
 
 def test_deeper_candidates_require_the_complete_staged_comparison_chain() -> None:

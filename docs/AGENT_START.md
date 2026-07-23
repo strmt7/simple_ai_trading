@@ -188,8 +188,11 @@ After parser or taxonomy changes, regenerate the header through the native build
   fails if either frontend drifts.
   Evaluation now replays every claimed test source from exact wire before
   scoring, applies cumulative staged model gates, orders chronological folds by
-  first market-time occurrence, bounds scenario allocations, and distinguishes
-  real per-position excursions from realized-exit portfolio drawdown.
+  first market-time occurrence, requires paired block-bootstrap lower bounds,
+  bounds scenario allocations, and distinguishes real per-position excursions
+  from realized-exit portfolio drawdown. Viability requires at least two
+  symbols to pass predictive, operational, and economic gates independently as
+  well as a passing combined portfolio.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.

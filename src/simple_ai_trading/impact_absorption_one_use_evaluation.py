@@ -88,7 +88,7 @@ from .price_discovery_evaluation import (
 )
 
 
-ROUND73_ONE_USE_EVALUATION_IMPLEMENTATION_VERSION = "round-073-one-use-evaluator-v1"
+ROUND73_ONE_USE_EVALUATION_IMPLEMENTATION_VERSION = "round-073-one-use-evaluator-v2"
 ROUND73_EVALUATION_PERMUTATION_DRAWS = 10_000
 ROUND73_EVALUATION_BOOTSTRAP_DRAWS = 10_000
 ROUND73_EVALUATION_MAXIMUM_Q_VALUE = 0.05
@@ -1728,6 +1728,18 @@ def _comparison_by_stage_and_loss(
     return matching[0]
 
 
+def _bootstrap_relative_improvement_lower(
+    comparison: Mapping[str, object],
+) -> float | None:
+    interval = comparison.get("block_bootstrap_95_percent_interval")
+    if not isinstance(interval, Mapping):
+        return None
+    value = interval.get("relative_improvement_lower")
+    if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+        return None
+    return float(value)
+
+
 def _required_stages(selected_candidate: str) -> tuple[str, ...]:
     if selected_candidate == "linear_l1_tape":
         return ("linear_vs_controls",)
@@ -1790,6 +1802,11 @@ def _symbol_predictive_gate(
                 stage=stage,
                 loss=loss,
             )
+            bootstrap_lower = (
+                _bootstrap_relative_improvement_lower(comparison)
+                if isinstance(comparison, Mapping)
+                else None
+            )
             passed = bool(
                 isinstance(comparison, Mapping)
                 and comparison.get("available") is True
@@ -1800,6 +1817,8 @@ def _symbol_predictive_gate(
                     (int, float),
                 )
                 and float(comparison["relative_improvement"]) > minimum_improvement
+                and bootstrap_lower is not None
+                and bootstrap_lower > minimum_improvement
                 and int(comparison.get("positive_chronological_folds", 0)) >= 4
             )
             evidence.append(
@@ -1808,6 +1827,8 @@ def _symbol_predictive_gate(
                     "stage": stage,
                     "loss": loss,
                     "minimum_relative_improvement": minimum_improvement,
+                    "block_bootstrap_relative_improvement_lower": bootstrap_lower,
+                    "block_bootstrap_lower_bound_is_a_gate": True,
                     "passed": passed,
                 }
             )
@@ -1818,11 +1839,18 @@ def _symbol_predictive_gate(
                 stage=stage,
                 loss=loss,
             )
+            stress_bootstrap_lower = (
+                _bootstrap_relative_improvement_lower(stress)
+                if isinstance(stress, Mapping)
+                else None
+            )
             stress_passed = bool(
                 isinstance(stress, Mapping)
                 and stress.get("available") is True
                 and isinstance(stress.get("relative_improvement"), (int, float))
                 and float(stress["relative_improvement"]) > 0.0
+                and stress_bootstrap_lower is not None
+                and stress_bootstrap_lower > 0.0
             )
             evidence.append(
                 {
@@ -1830,6 +1858,10 @@ def _symbol_predictive_gate(
                     "stage": stage,
                     "loss": loss,
                     "minimum_relative_improvement": 0.0,
+                    "block_bootstrap_relative_improvement_lower": (
+                        stress_bootstrap_lower
+                    ),
+                    "block_bootstrap_lower_bound_is_a_gate": True,
                     "q_value_is_not_a_delay_stress_gate": True,
                     "passed": stress_passed,
                 }
@@ -1845,6 +1877,43 @@ def _symbol_predictive_gate(
         "accuracy_only_can_pass": False,
         "positive_pnl_only_can_pass": False,
     }
+
+
+def _independent_symbol_viability_gates(
+    *,
+    predictive_gates: Mapping[str, object],
+    primary_economic_by_symbol: Mapping[str, object],
+    enabled_symbols: Sequence[str],
+) -> tuple[Mapping[str, object], int]:
+    enabled = set(enabled_symbols)
+    output: dict[str, object] = {}
+    passed_count = 0
+    for symbol in IMPACT_CAPTURE_SYMBOLS:
+        predictive = predictive_gates.get(symbol)
+        economic = primary_economic_by_symbol.get(symbol)
+        if symbol not in enabled:
+            output[symbol] = {
+                "passed": False,
+                "reason": "symbol_disabled_before_test",
+                "predictive_gate_passed": False,
+                "operational_gate_passed": False,
+                "economic_gate_passed": False,
+            }
+            continue
+        if not isinstance(predictive, Mapping) or not isinstance(economic, Mapping):
+            raise ValueError("Round 73 independent symbol gate evidence is missing")
+        predictive_passed = predictive.get("passed") is True
+        operational_passed = economic.get("operational_gate_passed") is True
+        economic_passed = economic.get("economic_gate_passed") is True
+        passed = bool(predictive_passed and operational_passed and economic_passed)
+        output[symbol] = {
+            "passed": passed,
+            "predictive_gate_passed": predictive_passed,
+            "operational_gate_passed": operational_passed,
+            "economic_gate_passed": economic_passed,
+        }
+        passed_count += int(passed)
+    return output, passed_count
 
 
 def _claimed_test_seal_function(
@@ -2343,20 +2412,40 @@ def _evaluate_claimed_round73_study(
         )
         symbol_gates[symbol] = gate
         passed_symbols += gate["passed"] is True
-    predictive_gate_passed = (
-        passed_symbols >= ROUND73_EVALUATION_MINIMUM_INDEPENDENT_SYMBOLS
-    )
     primary_portfolio = primary.get("portfolio")
-    if not isinstance(primary_portfolio, Mapping) or not isinstance(
-        primary_portfolio.get("combined"),
-        Mapping,
+    if (
+        not isinstance(primary_portfolio, Mapping)
+        or not isinstance(
+            primary_portfolio.get("combined"),
+            Mapping,
+        )
+        or not isinstance(
+            primary_portfolio.get("by_symbol"),
+            Mapping,
+        )
     ):
         raise ValueError("Round 73 primary portfolio evidence is missing")
     combined = primary_portfolio["combined"]
+    independent_symbol_gates, independent_symbols_passed = (
+        _independent_symbol_viability_gates(
+            predictive_gates=symbol_gates,
+            primary_economic_by_symbol=primary_portfolio["by_symbol"],
+            enabled_symbols=enabled,
+        )
+    )
+    predictive_gate_passed = (
+        passed_symbols >= ROUND73_EVALUATION_MINIMUM_INDEPENDENT_SYMBOLS
+    )
+    independent_symbol_gate_passed = (
+        independent_symbols_passed >= ROUND73_EVALUATION_MINIMUM_INDEPENDENT_SYMBOLS
+    )
     operational_gate_passed = combined.get("operational_gate_passed") is True
     economic_gate_passed = combined.get("economic_gate_passed") is True
     viability_passed = bool(
-        predictive_gate_passed and operational_gate_passed and economic_gate_passed
+        predictive_gate_passed
+        and independent_symbol_gate_passed
+        and operational_gate_passed
+        and economic_gate_passed
     )
     status = "passed" if viability_passed else "failed"
     result: Mapping[str, object] = {
@@ -2378,11 +2467,14 @@ def _evaluate_claimed_round73_study(
         "models": model_reports,
         "multiple_testing": multiple_testing,
         "predictive_symbol_gates": symbol_gates,
-        "independent_symbols_passed": passed_symbols,
+        "predictive_symbols_passed": passed_symbols,
+        "independent_symbol_viability_gates": independent_symbol_gates,
+        "independent_symbols_passed": independent_symbols_passed,
         "minimum_independent_symbols_required": (
             ROUND73_EVALUATION_MINIMUM_INDEPENDENT_SYMBOLS
         ),
         "predictive_gate_passed": predictive_gate_passed,
+        "independent_symbol_gate_passed": independent_symbol_gate_passed,
         "economic_gate_passed": economic_gate_passed,
         "operational_gate_passed": operational_gate_passed,
         "seven_day_viability_gate_passed": viability_passed,
