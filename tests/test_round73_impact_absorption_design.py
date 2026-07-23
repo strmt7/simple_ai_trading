@@ -128,6 +128,9 @@ FIRST_CORPUS_MANIFEST_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 ROTATION_RUNNER_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-rotation-runner-contract-v1.json"
 )
+ROTATION_RUNNER_V2_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-rotation-runner-contract-v2.json"
+)
 ROTATION_RECOVERY_VALIDATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-rotation-recovery-validation-2026-07-22.json"
 )
@@ -1212,6 +1215,32 @@ def test_round73_rotation_runner_contract_is_bounded_and_recoverable() -> None:
     authority = contract["authority"]
     assert authority["round_073_model_evaluation"] is False
     assert authority["profitability_claim"] is False
+    assert authority["live_trading_authority"] is False
+
+
+def test_round73_rotation_runner_v2_is_v9_only_and_preserves_v1_history() -> None:
+    contract = json.loads(ROTATION_RUNNER_V2_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v2_rotation_run"] is True
+    revision = contract["revision"]
+    assert revision["v1_runner_contract_remains_immutable"] is True
+    assert revision["v1_terminal_batch_audit_remains_supported"] is True
+    capture = contract["capture_scope"]
+    assert capture["capture_schema_version"] == "round-073-prospective-evidence-v9"
+    assert capture["maximum_reconnects_per_segment"] == 0
+    assert capture["maximum_segments_per_invocation"] == 168
+    recovery = contract["recovery_policy"]
+    assert recovery["v8_candidate_auto_recovered_by_v2"] is False
+    assert contract["single_writer_lease"]["shared_with_v1_runner"] is True
+    calendar = contract["calendar_policy"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_products_use_actual_venue_calendars"] is True
+    authority = contract["authority"]
+    assert authority["one_v9_rotation_qualification_segment_after_tests"] is True
+    assert authority["multi_segment_collection_before_one_segment_gate"] is False
+    assert authority["round_073_model_evaluation"] is False
     assert authority["live_trading_authority"] is False
 
 
