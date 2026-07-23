@@ -239,29 +239,42 @@ def test_round13_program_is_host_neutral_and_exact() -> None:
     assert all(len(item["sha256"]) == 64 for item in semantics["source_files"])
 
 
-def test_round13_sealed_contract_is_relocatable_and_rejects_semantic_tamper(
+def test_round13_sealed_contract_is_archived_relocatable_and_tamper_evident(
     tmp_path: Path,
 ) -> None:
-    program = load_round13_confirmation_contract(SEALED_CONTRACT)
+    payload = json.loads(SEALED_CONTRACT.read_text(encoding="utf-8"))
+    claimed = payload.pop("contract_sha256")
+    assert claimed == "9ace8092d26918b7621aafb7f008106b06c80049c314158e6a26fd5b70dd4325"
+    assert _sha(payload) == claimed
+    assert (
+        payload["predecessor_evidence"]["artifact_file_sha256"]
+        == hashlib.sha256(ARTIFACT.read_bytes()).hexdigest()
+    )
+
+    with pytest.raises(ValueError, match="implementation differs"):
+        load_round13_confirmation_contract(SEALED_CONTRACT)
+
     relocated_contract = tmp_path / SEALED_CONTRACT.name
     relocated_predecessor = tmp_path / ARTIFACT.name
     relocated_contract.write_bytes(SEALED_CONTRACT.read_bytes())
     relocated_predecessor.write_bytes(ARTIFACT.read_bytes())
 
-    relocated = load_round13_confirmation_contract(relocated_contract)
-    assert relocated.contract_sha256 == program.contract_sha256
+    relocated_payload = json.loads(relocated_contract.read_text(encoding="utf-8"))
+    relocated_claimed = relocated_payload.pop("contract_sha256")
+    assert relocated_claimed == claimed
+    assert _sha(relocated_payload) == relocated_claimed
+    with pytest.raises(ValueError, match="implementation differs"):
+        load_round13_confirmation_contract(relocated_contract)
 
     payload = json.loads(relocated_contract.read_text(encoding="utf-8"))
-    payload.pop("contract_sha256")
     payload["authority"]["profitability_claim"] = True
-    payload["contract_sha256"] = _sha(payload)
     relocated_contract.write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
         newline="\n",
     )
 
-    with pytest.raises(ValueError, match="authority"):
+    with pytest.raises(ValueError, match="identity"):
         load_round13_confirmation_contract(relocated_contract)
 
 
