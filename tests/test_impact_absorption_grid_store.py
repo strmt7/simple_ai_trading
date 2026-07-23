@@ -21,7 +21,10 @@ from simple_ai_trading.impact_absorption_grid_store import (
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRestEvent,
@@ -70,7 +73,11 @@ def _record(
     )
 
 
-def _seed_qualified_run(database) -> None:
+def _seed_qualified_run(
+    database,
+    *,
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
+) -> None:
     messages: list[ImpactCaptureMessage] = []
     sequences: dict[str, int] = {}
 
@@ -97,6 +104,7 @@ def _seed_qualified_run(database) -> None:
             started_wall_ns=WALL_BASE,
             started_monotonic_ns=1,
             config={"purpose": "causal-grid-unit-test", "credentials": False},
+            schema_version=schema_version,
         )
         clock_received_mono = 20_000_000
         clock_started_mono = 18_000_000
@@ -365,7 +373,11 @@ def _seed_qualified_run(database) -> None:
         store.record_report(
             run_id=RUN_ID,
             report={
-                "schema_version": IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+                "schema_version": (
+                    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION
+                    if schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+                    else IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
+                ),
                 "run_id": RUN_ID,
                 "status": "completed",
                 "capture_gate_passed": True,
@@ -440,3 +452,17 @@ def test_grid_build_is_causal_idempotent_hash_bound_and_tamper_evident(
     anchor_audit = audit_round73_causal_grid(database, run_id=RUN_ID)
     assert anchor_audit.passed is False
     assert any("aggregate hash" in error for error in anchor_audit.errors)
+
+
+def test_v9_exact_wire_grid_matches_v8_feature_counts(tmp_path) -> None:
+    database = tmp_path / "impact-v9.duckdb"
+    _seed_qualified_run(database, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+    index_round73_corpus_run(database, run_id=RUN_ID)
+
+    report = build_round73_causal_grid(database, run_id=RUN_ID)
+    audit = audit_round73_causal_grid(database, run_id=RUN_ID)
+
+    assert report.anchor_count == 10_620
+    assert report.valid_anchor_count == 15
+    assert report.vector_count == 15
+    assert audit.passed is True

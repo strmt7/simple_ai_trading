@@ -11,9 +11,9 @@ import statistics
 from typing import Mapping, Sequence
 
 
-ROUND73_GRID_SCHEMA_VERSION = "round-073-causal-grid-v1"
+ROUND73_GRID_SCHEMA_VERSION = "round-073-causal-grid-v2"
 ROUND73_GRID_CONTRACT_SHA256 = (
-    "00e59f08b997a7e6bb499b2b75bef6a69c84da523bc6cc97d9a116bcc9056482"
+    "60371589c3b1c1ada3933ff6825aa08061ceb4f30262c427c61b1016e9daaf29"
 )
 ROUND73_GRID_WINDOWS_MS = (100, 250, 500, 1_000, 5_000, 15_000, 60_000)
 ROUND73_GRID_BANDS = (

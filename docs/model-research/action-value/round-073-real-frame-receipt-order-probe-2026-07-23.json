@@ -1,0 +1,18 @@
+{
+  "artifact_sha256": "fd077d15367e1129d1ad82f0c7f94113f988c34f582d3ccd8e8074fb6be0dd80",
+  "cross_frame_lagged_frame_count": 4,
+  "encoded_order_adjacent_inversion_count": 28865,
+  "financial_or_model_evidence": false,
+  "frame_count": 821,
+  "frame_sha256_manifest": "211fc4fe47fa4b74fbf1ade851a89cad142b6e1193f7506fa9525fd3c37bef92",
+  "frame_table": "impact_capture_frame_v8",
+  "lane_sequence_or_clock_violation_count": 0,
+  "maximum_backward_from_running_high_water_ns": 4773079200,
+  "maximum_cross_frame_lag_ns": 44700,
+  "message_count": 1825610,
+  "schema_version": "round-073-real-frame-receipt-order-probe-v1",
+  "scratch_files_written": false,
+  "source_run_id": "ff078d31000d4fa791ca97bd38144d6a",
+  "source_schema_version": "round-073-prospective-evidence-v8",
+  "synthetic_market_data_used": false
+}

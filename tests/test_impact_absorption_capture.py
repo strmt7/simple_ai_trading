@@ -26,7 +26,9 @@ from simple_ai_trading.impact_absorption_capture import (
     capture_round73_supervised,
 )
 from simple_ai_trading.impact_absorption_store import (
+    IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRejectedWireEvent,
@@ -48,6 +50,7 @@ def _report(
 ) -> ImpactCaptureReport:
     return ImpactCaptureReport(
         run_id=run_id,
+        capture_schema_version=IMPACT_CAPTURE_SCHEMA_VERSION,
         mode="probe",
         status=status,
         capture_gate_passed=False,
@@ -124,13 +127,18 @@ def _message() -> ImpactCaptureMessage:
     )
 
 
-def _start_store(database) -> None:
+def _start_store(
+    database,
+    *,
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
+) -> None:
     with ImpactAbsorptionStore(database) as store:
         store.start_run(
             run_id=RUN_ID,
             started_wall_ns=1,
             started_monotonic_ns=1,
             config={"mode": "probe"},
+            schema_version=schema_version,
         )
         store.start_segment(
             run_id=RUN_ID,
@@ -200,45 +208,100 @@ def test_storage_efficiency_gate_uses_frozen_process_io_and_queue_bounds(
     assert metrics.storage_efficiency_passed is True
 
     writer.frame_count = 76
-    assert _writer_resource_metrics(
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=180.0,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is False
+    )
+
+
+def test_v9_storage_efficiency_gate_uses_tighter_measured_bounds(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    writer = _ImpactFrameWriter(
+        ImpactCaptureConfig(
+            database=str(tmp_path / "unused-v9.duckdb"),
+            schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        ),
+        RUN_ID,
+    )
+    writer.frame_count = 75
+    writer.message_count = 1_000
+    writer.high_water_messages = 52_428
+    writer.database_physical_bytes = 512_000
+    monkeypatch.setattr(
         writer,
-        elapsed_seconds=180.0,
-        queue_capacity_messages=65_536,
-    ).storage_efficiency_passed is False
+        "process_io_metrics",
+        lambda: ("test", "process write bytes", 0, 1_024_000, 1_024_000),
+    )
+
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=180.0,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is True
+    )
+    writer.database_physical_bytes = 512_001
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=180.0,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is False
+    )
     writer.frame_count = 75
     writer.high_water_messages = 52_429
-    assert _writer_resource_metrics(
-        writer,
-        elapsed_seconds=180.0,
-        queue_capacity_messages=65_536,
-    ).storage_efficiency_passed is False
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=180.0,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is False
+    )
     writer.high_water_messages = 52_428
     monkeypatch.setattr(
         writer,
         "process_io_metrics",
         lambda: ("test", "process write bytes", 100, 4_096_101, 4_096_001),
     )
-    assert _writer_resource_metrics(
-        writer,
-        elapsed_seconds=180.0,
-        queue_capacity_messages=65_536,
-    ).storage_efficiency_passed is False
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=180.0,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is False
+    )
     monkeypatch.setattr(
         writer,
         "process_io_metrics",
         lambda: ("test", "process write bytes", 100, 4_096_100, 4_096_000),
     )
-    assert _writer_resource_metrics(
-        writer,
-        elapsed_seconds=179.999,
-        queue_capacity_messages=65_536,
-    ).storage_efficiency_passed is False
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=179.999,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is False
+    )
     writer.database_physical_bytes = 1_024_001
-    assert _writer_resource_metrics(
-        writer,
-        elapsed_seconds=180.0,
-        queue_capacity_messages=65_536,
-    ).storage_efficiency_passed is False
+    assert (
+        _writer_resource_metrics(
+            writer,
+            elapsed_seconds=180.0,
+            queue_capacity_messages=65_536,
+        ).storage_efficiency_passed
+        is False
+    )
 
 
 def test_process_io_interval_fails_closed_if_provider_changes() -> None:
@@ -398,15 +461,67 @@ def test_terminal_post_capture_failure_is_persisted_and_never_retried(tmp_path) 
     assert report.audit_passed is True
     assert _is_retriable_capture_failure(report.failure_class) is False
     with ImpactAbsorptionStore(database, read_only=True) as store:
-        stored = store.connect().execute(
-            "SELECT schema_version, report_json FROM impact_capture_report "
-            "WHERE run_id = ?",
-            [RUN_ID],
-        ).fetchone()
+        stored = (
+            store.connect()
+            .execute(
+                "SELECT schema_version, report_json FROM impact_capture_report "
+                "WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()
+        )
     assert stored[0] == "round-073-capture-report-v8"
     assert json.loads(stored[1])["failure_class"] == "post_capture"
     with ImpactAbsorptionStore(database, read_only=True) as store:
         assert store.audit_run(RUN_ID).passed is True
+
+
+def test_v9_terminal_post_capture_failure_replays_exact_wire_counts(tmp_path) -> None:
+    database = tmp_path / "impact-v9.duckdb"
+    _start_store(database, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+    config = ImpactCaptureConfig(
+        database=str(database),
+        schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        duration_seconds=1,
+        queue_capacity_messages=8,
+        frame_message_limit=1,
+        frame_flush_seconds=0.01,
+    )
+    writer = _ImpactFrameWriter(config, RUN_ID)
+    writer.start()
+    writer.put(_message())
+    assert writer.stop(timeout_seconds=5.0) is True
+    with ImpactAbsorptionStore(database) as store:
+        store.finish_segment(
+            run_id=RUN_ID,
+            segment_id=SEGMENT_ID,
+            status="valid",
+            ended_wall_ns=10,
+        )
+        store.finish_run(run_id=RUN_ID, status="completed", ended_wall_ns=11)
+
+    report = _terminal_post_capture_failure_report(
+        config,
+        run_id=RUN_ID,
+        error=RuntimeError("report materialization failed"),
+        writer=writer,
+    )
+
+    assert report is not None
+    assert report.event_counts == {"bookTicker": 1}
+    assert report.symbol_event_counts["BTCUSDT"]["bookTicker"] == 1
+    with ImpactAbsorptionStore(database, read_only=True) as store:
+        stored = (
+            store.connect()
+            .execute(
+                "SELECT schema_version, report_json FROM impact_capture_report "
+                "WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()
+        )
+    assert stored[0] == "round-073-capture-report-v9"
+    assert json.loads(stored[1])["event_counts"] == {"bookTicker": 1}
 
 
 def test_writer_queue_overflow_is_explicit_before_silent_drop(tmp_path) -> None:

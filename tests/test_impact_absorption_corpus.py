@@ -17,7 +17,10 @@ from simple_ai_trading.impact_absorption_corpus import (
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRestEvent,
@@ -56,7 +59,12 @@ def _record(
     )
 
 
-def _seed_terminal_run(database, *, qualified: bool = True) -> None:
+def _seed_terminal_run(
+    database,
+    *,
+    qualified: bool = True,
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
+) -> None:
     messages: list[ImpactCaptureMessage] = []
     with ImpactAbsorptionStore(database) as store:
         store.start_run(
@@ -64,6 +72,7 @@ def _seed_terminal_run(database, *, qualified: bool = True) -> None:
             started_wall_ns=WALL_BASE,
             started_monotonic_ns=1,
             config={"purpose": "corpus-unit-test", "credentials": False},
+            schema_version=schema_version,
         )
         for index, symbol in enumerate(IMPACT_CAPTURE_SYMBOLS, start=1):
             segment_id = format(index, "x") * 32
@@ -148,15 +157,23 @@ def _seed_terminal_run(database, *, qualified: bool = True) -> None:
             status="completed",
             ended_wall_ns=SEGMENT_END + 1,
         )
-        frame_count, message_count, compressed_bytes = store.connect().execute(
-            "SELECT frame_count, message_count, compressed_payload_bytes "
-            "FROM impact_capture_run WHERE run_id = ?",
-            [RUN_ID],
-        ).fetchone()
+        frame_count, message_count, compressed_bytes = (
+            store.connect()
+            .execute(
+                "SELECT frame_count, message_count, compressed_payload_bytes "
+                "FROM impact_capture_run WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()
+        )
         store.record_report(
             run_id=RUN_ID,
             report={
-                "schema_version": IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+                "schema_version": (
+                    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION
+                    if schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+                    else IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
+                ),
                 "run_id": RUN_ID,
                 "status": "completed",
                 "capture_gate_passed": qualified,
@@ -194,13 +211,47 @@ def test_corpus_indexes_audits_and_reuses_one_qualified_run(tmp_path) -> None:
     assert audit.passed is True
     assert audit.errors == ()
     with ImpactAbsorptionStore(database, read_only=True) as store:
-        row = store.connect().execute(
-            f"SELECT schema_version, contract_sha256, count(*) OVER () "
+        row = (
+            store.connect()
+            .execute(
+                f"SELECT schema_version, contract_sha256, count(*) OVER () "
+                f"FROM {ROUND73_CORPUS_RUN_TABLE} WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()
+        )
+    assert row == (ROUND73_CORPUS_SCHEMA_VERSION, ROUND73_CORPUS_CONTRACT_SHA256, 1)
+    assert manifest.as_dict()["authority"]["model_evaluated"] is False
+
+
+def test_corpus_indexes_v9_exact_wire_replay_without_typed_tables(tmp_path) -> None:
+    database = tmp_path / "impact.duckdb"
+    _seed_terminal_run(database, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+
+    manifest = index_round73_corpus_run(database, run_id=RUN_ID)
+    audit = audit_round73_corpus_manifest(database, run_id=RUN_ID)
+
+    assert audit.passed is True
+    assert manifest.frame_count == 1
+    with ImpactAbsorptionStore(database, read_only=True) as store:
+        connection = store.connect()
+        stored = connection.execute(
+            f"SELECT manifest_json, feature_source_json "
             f"FROM {ROUND73_CORPUS_RUN_TABLE} WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()
-    assert row == (ROUND73_CORPUS_SCHEMA_VERSION, ROUND73_CORPUS_CONTRACT_SHA256, 1)
-    assert manifest.as_dict()["authority"]["model_evaluated"] is False
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM impact_event_link_v8 WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 0
+        )
+    identity = json.loads(stored[0])
+    feature_source = json.loads(stored[1])
+    assert identity["capture_schema_version"] == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+    assert feature_source["exact_wire_depth_band_replay_passed"] is True
+    assert feature_source["stored_depth_band_row_count"] == 0
 
 
 def test_corpus_rejects_report_without_qualification_authority(tmp_path) -> None:
