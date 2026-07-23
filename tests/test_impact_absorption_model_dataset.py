@@ -18,6 +18,9 @@ from simple_ai_trading.impact_absorption_model_dataset import (
     build_round73_staged_operational_dataset,
     classify_round73_operational_outcome,
 )
+from simple_ai_trading.impact_absorption_model_slice import (
+    iter_round73_staged_symbol_slices,
+)
 
 
 STUDY_ID = "a" * 32
@@ -319,6 +322,68 @@ def test_staged_operational_dataset_never_crosses_role_scope(tmp_path: Path) -> 
             test_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
                 test_study_manifest_sha256=TEST_STUDY_SHA
             ),
+        )
+
+
+def test_symbol_model_slice_is_bounded_float32_and_role_scoped(tmp_path: Path) -> None:
+    database = tmp_path / "round73-model-slice.duckdb"
+    _seed(database)
+    common = {
+        "study_id": STUDY_ID,
+        "symbols": ("BTCUSDT",),
+        "memory_budget_bytes": 10_000_000,
+    }
+    development = next(
+        iter_round73_staged_symbol_slices(
+            database,
+            role_scope="development",
+            development_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
+                development_study_manifest_sha256=DEVELOPMENT_STUDY_SHA
+            ),
+            **common,
+        )
+    )
+    assert development.rows == 6
+    assert development.feature_values.dtype == np.float32
+    assert development.feature_values.flags.writeable is False
+    assert np.count_nonzero(development.role_mask("training")) == 4
+    assert np.count_nonzero(development.role_mask("tuning")) == 2
+    assert np.count_nonzero(development.model_label_mask) == 4
+    assert development.estimated_allocation_bytes < 10_000_000
+    development.validate()
+
+    test = next(
+        iter_round73_staged_symbol_slices(
+            database,
+            role_scope="test",
+            pretest_manifest_sha256="1" * 64,
+            test_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
+                test_study_manifest_sha256=TEST_STUDY_SHA
+            ),
+            **common,
+        )
+    )
+    assert test.rows == 2
+    assert np.all(test.outcome_status == ROUND73_RIGHT_CENSORED_STATUS)
+    test.validate()
+
+
+def test_symbol_model_slice_fails_before_over_budget_allocation(tmp_path: Path) -> None:
+    database = tmp_path / "round73-model-slice-budget.duckdb"
+    _seed(database)
+
+    with pytest.raises(MemoryError, match="explicit memory budget"):
+        next(
+            iter_round73_staged_symbol_slices(
+                database,
+                study_id=STUDY_ID,
+                role_scope="development",
+                symbols=("BTCUSDT",),
+                memory_budget_bytes=1,
+                development_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
+                    development_study_manifest_sha256=DEVELOPMENT_STUDY_SHA
+                ),
+            )
         )
 
 

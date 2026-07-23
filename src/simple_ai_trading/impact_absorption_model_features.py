@@ -296,6 +296,89 @@ def action_align_round73_features(
     return output
 
 
+def action_align_round73_feature_batch(
+    feature_values: np.ndarray,
+    *,
+    side: np.ndarray,
+    shock_ratio: np.ndarray,
+    shock_direction: np.ndarray,
+    shock_direction_taker_share: np.ndarray,
+    dtype: object = np.float32,
+) -> np.ndarray:
+    """Vectorize the exact scalar action transform for bounded model batches."""
+
+    output_dtype = np.dtype(dtype)
+    if output_dtype not in {np.dtype(np.float32), np.dtype(np.float64)}:
+        raise ValueError(
+            "Round 73 action feature batch dtype must be float32 or float64"
+        )
+    # Preserve the scalar contract's float64 operation order before the single
+    # requested output cast. Casting inputs first changes complement rounding.
+    values = np.asarray(feature_values, dtype=np.float64)
+    sides = np.asarray(side, dtype=np.int8)
+    ratios = np.asarray(shock_ratio, dtype=np.float64)
+    directions = np.asarray(shock_direction, dtype=np.int8)
+    direction_shares = np.asarray(
+        shock_direction_taker_share,
+        dtype=np.float64,
+    )
+    rows = len(values)
+    taker_share_indexes = tuple(
+        index
+        for index, name in enumerate(ROUND73_GRID_FEATURE_NAMES)
+        if name.endswith("buyer_taker_share")
+    )
+    if (
+        values.shape != (rows, len(ROUND73_GRID_FEATURE_NAMES))
+        or sides.shape != (rows,)
+        or ratios.shape != (rows,)
+        or directions.shape != (rows,)
+        or direction_shares.shape != (rows,)
+        or np.any((sides != 1) & (sides != -1))
+        or np.any((directions != 1) & (directions != -1))
+        or not np.all(np.isfinite(values))
+        or not np.all(np.isfinite(ratios))
+        or np.any(ratios < 0.0)
+        or not np.all(np.isfinite(direction_shares))
+        or np.any((direction_shares < 0.0) | (direction_shares > 1.0))
+        or np.any(
+            (values[:, taker_share_indexes] < 0.0)
+            | (values[:, taker_share_indexes] > 1.0)
+        )
+    ):
+        raise ValueError("Round 73 action feature batch is invalid")
+
+    output = np.empty(
+        (rows, len(ROUND73_ACTION_ALIGNED_FEATURE_NAMES)),
+        dtype=np.float64,
+    )
+    short_rows = sides == -1
+    for index, name in enumerate(ROUND73_GRID_FEATURE_NAMES):
+        paired = _paired_name(name)
+        if paired is not None:
+            counterpart = _counterpart_name(name, paired[0])
+            output[:, index] = values[:, index]
+            output[short_rows, index] = values[
+                short_rows, _RAW_NAME_TO_INDEX[counterpart]
+            ]
+        elif name.endswith("buyer_taker_share"):
+            output[:, index] = values[:, index]
+            output[short_rows, index] = 1.0 - values[short_rows, index]
+        elif _is_directional(name):
+            output[:, index] = values[:, index] * sides
+        else:
+            output[:, index] = values[:, index]
+    output[:, -4] = ratios
+    output[:, -3] = directions * sides
+    output[:, -2] = direction_shares
+    output[:, -1] = sides
+    if not np.all(np.isfinite(output)):
+        raise ValueError("Round 73 action-aligned feature batch is nonfinite")
+    result = np.ascontiguousarray(output, dtype=output_dtype)
+    result.setflags(write=False)
+    return result
+
+
 def select_round73_feature_layer(
     action_aligned_values: np.ndarray,
     *,
@@ -334,6 +417,7 @@ __all__ = [
     "ROUND73_MODEL_FEATURE_NAMES_BY_LAYER",
     "ROUND73_MODEL_RAW_FEATURE_NAMES_SHA256",
     "ROUND73_MODEL_FEATURE_SHA256_BY_LAYER",
+    "action_align_round73_feature_batch",
     "action_align_round73_features",
     "select_round73_feature_layer",
 ]

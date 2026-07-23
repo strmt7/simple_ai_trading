@@ -1,0 +1,262 @@
+{
+  "schema_version": "round-073-staged-holdout-contract-v4",
+  "contract_sha256": "f69de6122802a1e327a154f4571ae70c39a3547231409a05eb497a99398a2162",
+  "round": 73,
+  "parent_compact_target_contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
+  "parent_evaluation_contract_sha256": "1ac9b5fabd78138caddb296497d5b4885187198f3214338c323c3ed2fe2d388a",
+  "parent_feature_contract_sha256": "8f027cb2459baa0a864e31dc7ab26a287e07e7853e8e35cc73b474cbcdff1750",
+  "frozen_before_first_eligible_v2_or_v3_target_result": true,
+  "revision": {
+    "prior_contract_sha256": "54ec74e2d24d5873d6cfef3d1d3265c22829c05c15001051c10a86ad99fd6217",
+    "revised_before_first_eligible_target_result": true,
+    "target_feature_execution_or_split_mechanics_changed": false,
+    "reason": "Replace the final one-use-evaluator placeholder after bounded symbol-scoped fitting, actual OpenCL device pinning, append-only access and result storage, immutable test prediction artifacts, all-scenario scoring, and interrupted-evaluation closure passed focused tests. No eligible target or model result existed during this revision."
+  },
+  "supersedes": {
+    "qualification_sequence_only": "round-073-compact-shock-target-contract-v2",
+    "implementation_status_only": "round-073-staged-holdout-contract-v3",
+    "target_mechanics_changed": false,
+    "shock_cohort_changed": false,
+    "feature_rows_changed": false,
+    "execution_cost_delay_horizon_or_notional_changed": false,
+    "v2_implementation_may_generate_eligible_study_targets": false,
+    "reason": "The v2 sequence exposed test outcomes before model freeze. V3 fixed physical staging but still marked its evaluator incomplete. V4 closes that implementation gap without changing experimental mechanics."
+  },
+  "purpose": "Physically withhold day-six and day-seven targets until all training, tuning, preprocessing, model, and action-policy artifacts are immutable and hash-bound, then permit exactly one audited test replay and one terminal evaluation.",
+  "market_calendar_semantics": {
+    "btc_eth_and_sol_perpetuals_trade_continuously": true,
+    "crypto_formal_daily_close": false,
+    "utc_day_use": "statistical splitting, dependence-preserving resampling, and reporting only",
+    "listed_etf_etp_equity_or_futures_calendar_context": "permitted only through a separately frozen causal feature sourced from an authoritative venue calendar",
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_session_state_authorizes_or_blocks_crypto_execution": false,
+    "current_round_uses_listed_session_features": false
+  },
+  "unchanged_population": {
+    "cohort_table": "impact_shock_anchor_v1",
+    "roles": {
+      "development": [
+        "training",
+        "tuning"
+      ],
+      "test": [
+        "test"
+      ]
+    },
+    "training_day_ordinals": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "tuning_day_ordinals": [
+      5
+    ],
+    "test_day_ordinals": [
+      6,
+      7
+    ],
+    "mixed_role_source_run_policy": "Replay and manifest each role scope separately; a source run crossing a role boundary cannot cause early test replay or loss of development anchors.",
+    "same_selected_anchor_hashes_required": true
+  },
+  "unchanged_target_mechanics": {
+    "entry_delay_milliseconds": [
+      500,
+      1000
+    ],
+    "holding_horizon_milliseconds": [
+      15000,
+      60000,
+      300000
+    ],
+    "reference_quote_notional": [
+      100,
+      1000,
+      5000
+    ],
+    "sides": [
+      "long",
+      "short"
+    ],
+    "minimum_round_trip_fee_and_adverse_reserve_bps": 12.0,
+    "exact_wire_replay_required": true,
+    "visible_book_levels": 20,
+    "maximum_entry_or_exit_state_lateness_milliseconds": 250,
+    "leverage": 1.0,
+    "profit_reinvestment": false
+  },
+  "phase_a_development": {
+    "permitted_roles": [
+      "training",
+      "tuning"
+    ],
+    "test_anchor_passed_to_target_replay": false,
+    "test_target_row_or_manifest_exists_after_phase": false,
+    "development_target_table": "impact_target_option_v3",
+    "role_scoped_run_manifest_table": "impact_target_role_run_manifest_v3",
+    "development_study_manifest_table": "impact_target_development_study_manifest_v3",
+    "publication_unit": "one source run and development role scope in one transaction",
+    "zero_anchor_role_run_manifest_required": true,
+    "every_development_anchor_has_exactly_36_options": true,
+    "deep_exact_wire_audit_required_before_development_seal": true,
+    "development_exact_wire_audit_count_in_training_orchestration": 1,
+    "development_seal_reused_for_bounded_loading_and_publication": true,
+    "development_outcomes_may_fit_models": true,
+    "test_outcome_count_prevalence_payoff_or_eligibility_summary_permitted": false
+  },
+  "pretest_artifact": {
+    "table": "impact_pretest_model_manifest_v1",
+    "written_after_development_study_seal": true,
+    "required_hash_bound_inputs": [
+      "repository commit and dirty-state evidence",
+      "cohort and development target-study manifests",
+      "evaluation and feature contracts",
+      "exact feature names transforms and dropped zero-IQR columns",
+      "training and tuning row identities",
+      "actual compute backend platform device and library identity",
+      "serialized preprocessing and model bytes",
+      "best boosting iterations",
+      "training and tuning predictions",
+      "selected predictive model family per symbol",
+      "selected probability threshold per symbol",
+      "side choice concurrency and pre-entry revalidation rules"
+    ],
+    "test_feature_or_target_hash_included": false,
+    "test_target_or_payoff_read_before_publish": false,
+    "immutable_after_publish": true,
+    "single_manifest_per_study": true
+  },
+  "compute_and_resource_contract": {
+    "preferred_tree_backend": "LightGBM OpenCL GPU",
+    "opencl_enumeration": "stdlib OpenCL loader calls without vendor-specific Python packages",
+    "opencl_platform_and_device_are_explicitly_pinned_before_fit": true,
+    "opencl_platform_device_board_driver_memory_and_compute_units_recorded": true,
+    "tiny_real_tree_update_preflight_required": true,
+    "opencl_reproducibility_mitigation": "FP64 histogram accumulation",
+    "bounded_cpu_fallback_permitted": true,
+    "cpu_fallback_may_be_labeled_gpu": false,
+    "one_float32_symbol_matrix_materialized_at_a_time": true,
+    "default_symbol_matrix_allocation_cap_bytes": 3221225472,
+    "process_peak_working_set_and_wall_time_recorded": true,
+    "device_peak_memory_policy": "Report null with an explicit limitation because LightGBM's Python API exposes no per-fit device-allocation telemetry; do not estimate or fabricate it."
+  },
+  "phase_b_test_unlock": {
+    "unlock_table": "impact_test_unlock_v1",
+    "pretest_manifest_required": true,
+    "pretest_manifest_hash_must_match": true,
+    "repository_and_contract_identity_must_match_pretest_manifest": true,
+    "unlock_count_per_study": 1,
+    "unlock_is_append_only": true,
+    "test_only_target_replay_after_unlock": true,
+    "development_target_rewrite_after_unlock": false,
+    "publication_unit": "one source run and test role scope in one transaction",
+    "zero_anchor_role_run_manifest_required": true,
+    "test_build_output_before_complete_test_seal": "operational progress and row counts only; no class prevalence eligibility positive-payoff or PnL summary",
+    "deep_exact_wire_test_audit_required": true,
+    "complete_test_study_manifest_table": "impact_target_test_study_manifest_v3"
+  },
+  "one_use_evaluation": {
+    "access_table": "impact_model_evaluation_access_v1",
+    "prediction_table": "impact_model_test_prediction_v1",
+    "result_table": "impact_model_evaluation_result_v1",
+    "requires_complete_test_study_seal": true,
+    "requires_exact_pretest_manifest_hash": true,
+    "access_claim_committed_before_test_target_loading": true,
+    "test_predictions_generated_from_pretest_model_bytes": true,
+    "test_prediction_artifact_is_hash_bound_per_symbol": true,
+    "primary_and_all_17_frozen_stress_scenarios_reported": true,
+    "same_predictions_used_for_every_scenario": true,
+    "model_refit_recalibration_threshold_change_or_feature_change_permitted": false,
+    "paired_blocked_permutation_draws": 10000,
+    "paired_block_bootstrap_draws": 10000,
+    "multiple_testing": "Benjamini-Hochberg false discovery rate over every available symbol scenario staged comparison target and primary loss",
+    "economic_block_bootstrap_draws": 10000,
+    "result_count_per_study": 1,
+    "result_is_append_only": true,
+    "failed_mixed_single_class_zero_trade_and_unresolved_exit_results_persisted": true,
+    "interrupted_evaluation_is_terminal": true,
+    "interrupted_result_recovery_may_reread_test_targets": false,
+    "test_period_becomes_development_only_after_result": true,
+    "second_test_evaluation_permitted": false
+  },
+  "portfolio_semantics": {
+    "fixed_quote_notional_per_scenario": true,
+    "leverage": 1.0,
+    "profit_reinvestment": false,
+    "one_open_position_per_symbol": true,
+    "maximum_concurrent_positions": 3,
+    "pre_entry_abort_deploys_capital": false,
+    "post_entry_unresolved_position": "Consumes its symbol and portfolio slot through the end of the study and fails operational completeness.",
+    "profit_factor_uses_realized_quote_pnl": true,
+    "simultaneous_exit_pnl_aggregated_before_drawdown": true,
+    "annualized_roi_or_sharpe_from_seven_days": false
+  },
+  "access_controls": {
+    "ordinary_development_loader_queries_test_target_table": false,
+    "test_target_rows_exist_before_unlock": false,
+    "test_target_summary_exists_before_unlock": false,
+    "target_build_api_requires_explicit_role_scope": true,
+    "unscoped_all_role_target_build_permitted": false,
+    "v2_all_role_builder_rejected_for_eligible_cohort": true,
+    "database_constraint_or_transaction_check_revalidates_unlock": true,
+    "unknown_or_mixed_role_scope": "fatal",
+    "manual_SQL_can_defeat_application_controls": true,
+    "operator_warning": "DuckDB is a local file and cannot prevent a filesystem owner from bypassing application APIs. Reproducible evidence records repository state and every access manifest; production-grade secrecy requires a separately permissioned data service."
+  },
+  "resource_policy": {
+    "target_replay_is_per_source_run_and_role_scope": true,
+    "entire_study_held_in_python_memory": false,
+    "columnar_transactional_publication": true,
+    "temporary_disk_spill_for_python_rows": false,
+    "test_replay_starts_only_after_collection_and_model_fit_complete": true,
+    "test_evaluation_processes_one_symbol_and_one_scenario_at_a_time": true,
+    "prediction_artifacts_are_compressed": true,
+    "target_rows_are_not_duplicated_in_evaluation_artifacts": true
+  },
+  "fail_closed_conditions": [
+    "eligible v2 target manifest exists",
+    "test target row exists before test unlock",
+    "development target row has test role",
+    "pretest manifest omits any frozen model policy row or compute identity",
+    "pretest repository or contract identity drifts",
+    "OpenCL training device cannot be enumerated pinned and probe-fitted",
+    "test unlock already exists",
+    "test replay receives a development anchor",
+    "test study is partial or exact-wire audit fails",
+    "evaluation access claim already exists",
+    "scenario row identity differs from persisted prediction identity",
+    "evaluation attempts to refit retune or alter feature order",
+    "a selected post-entry outcome is unresolved",
+    "terminal result claims profitability AI uplift or trading authority",
+    "a second evaluation result is requested"
+  ],
+  "implementation_status": {
+    "contract_frozen": true,
+    "role_scoped_target_store_implemented": true,
+    "pretest_manifest_implemented": true,
+    "bounded_symbol_model_loader_implemented": true,
+    "frozen_shallow_model_family_implemented": true,
+    "actual_opencl_device_pinning_implemented": true,
+    "single_audit_training_publication_implemented": true,
+    "one_use_test_unlock_implemented": true,
+    "complete_test_study_seal_implemented": true,
+    "role_scoped_operational_dataset_implemented": true,
+    "one_use_evaluator_implemented": true,
+    "interrupted_evaluation_closure_implemented": true,
+    "focused_tests_passed": true,
+    "eligible_target_result_observed": false,
+    "model_result_observed": false,
+    "profitability_observed": false
+  },
+  "authority": {
+    "continue_prospective_v9_capture_and_feature_grids": true,
+    "build_eligible_targets_with_v2": false,
+    "build_v3_development_targets_after_complete_collection": true,
+    "model_training_after_complete_development_seal": true,
+    "single_test_unlock_seal_and_evaluation_after_pretest_publish": true,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_testnet_or_live_trading_authority": false
+  }
+}

@@ -14,7 +14,10 @@ import lightgbm as lgb
 import numpy as np
 from scipy.optimize import minimize_scalar
 
-from .lightgbm_backend import lightgbm_backend_parameters
+from .lightgbm_backend import (
+    SUPPORTED_LIGHTGBM_BACKEND_KINDS,
+    lightgbm_backend_parameters,
+)
 from .price_discovery_dataset import (
     PriceDiscoveryDatasetBundle,
     PriceDiscoverySymbolDataset,
@@ -55,7 +58,9 @@ def _canonical_sha256(value: object) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value or "")
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _array_digest(digest, value: np.ndarray) -> None:
@@ -224,7 +229,7 @@ class PriceDiscoveryFoldPrediction:
             or not _is_sha256(self.model_sha256)
             or not 0.0 <= self.reload_max_absolute_prediction_difference <= 1e-12
             or not self.backend_requested
-            or self.backend_kind not in {"cpu", "opencl", "cuda"}
+            or self.backend_kind not in SUPPORTED_LIGHTGBM_BACKEND_KINDS
             or not self.backend_device
             or not self.lightgbm_version
             or any(
@@ -392,7 +397,10 @@ def load_price_discovery_folds(
             training = raw["training_months"]
             tuning = raw["tuning_months"]
             test = raw["test_months"]
-            if any(not isinstance(value, list) or len(value) != 2 for value in (training, tuning, test)):
+            if any(
+                not isinstance(value, list) or len(value) != 2
+                for value in (training, tuning, test)
+            ):
                 raise ValueError("Round 72 fold range is invalid")
             fold = PriceDiscoveryFold(
                 fold=int(raw["fold"]),
@@ -440,9 +448,10 @@ def build_price_discovery_roles(
     test_month = (months >= fold.test_start_month) & (months <= fold.test_end_month)
     if not np.any(training_month) or not np.any(tuning_month) or not np.any(test_month):
         raise ValueError("Round 72 fold has an empty calendar role")
-    label_available = dataset.anchor_second_ms + (
-        PRIMARY_ENTRY_DELAY_SECONDS + int(horizon_seconds) + 1
-    ) * 1_000
+    label_available = (
+        dataset.anchor_second_ms
+        + (PRIMARY_ENTRY_DELAY_SECONDS + int(horizon_seconds) + 1) * 1_000
+    )
     first_tuning_available = int(np.min(dataset.available_time_ms[tuning_month]))
     first_test_available = int(np.min(dataset.available_time_ms[test_month]))
     valid = np.asarray(dataset.primary_valid[:, horizon_index], dtype=bool)
@@ -455,7 +464,9 @@ def build_price_discovery_roles(
             np.int64,
         ),
         tuning=_readonly(
-            np.flatnonzero(tuning_month & valid & (label_available < first_test_available)),
+            np.flatnonzero(
+                tuning_month & valid & (label_available < first_test_available)
+            ),
             np.int64,
         ),
         test=_readonly(np.flatnonzero(test_month & valid), np.int64),
@@ -465,10 +476,18 @@ def build_price_discovery_roles(
     if (
         np.any(label_available[roles.training] >= first_tuning_available)
         or np.any(label_available[roles.tuning] >= first_test_available)
-        or not np.all(np.isfinite(dataset.primary_target_bps[roles.training, horizon_index]))
-        or not np.all(np.isfinite(dataset.primary_target_bps[roles.tuning, horizon_index]))
-        or not np.all(np.isfinite(dataset.primary_target_bps[roles.test, horizon_index]))
-        or not np.all(np.isfinite(dataset.stress_target_bps[roles.stress_test, horizon_index]))
+        or not np.all(
+            np.isfinite(dataset.primary_target_bps[roles.training, horizon_index])
+        )
+        or not np.all(
+            np.isfinite(dataset.primary_target_bps[roles.tuning, horizon_index])
+        )
+        or not np.all(
+            np.isfinite(dataset.primary_target_bps[roles.test, horizon_index])
+        )
+        or not np.all(
+            np.isfinite(dataset.stress_target_bps[roles.stress_test, horizon_index])
+        )
     ):
         raise ValueError("Round 72 role target or purge contract differs")
     return roles
@@ -490,7 +509,9 @@ def binary_log_loss(target: np.ndarray, probability: np.ndarray) -> float:
         or not np.all((truth == 0.0) | (truth == 1.0))
     ):
         raise ValueError("binary log-loss inputs are invalid")
-    return float(-np.mean(truth * np.log(prediction) + (1.0 - truth) * np.log1p(-prediction)))
+    return float(
+        -np.mean(truth * np.log(prediction) + (1.0 - truth) * np.log1p(-prediction))
+    )
 
 
 def _temperature_scale(probability: np.ndarray, temperature: float) -> np.ndarray:
@@ -526,7 +547,11 @@ def fit_binary_temperature(
     )
     candidate = float(result.x)
     candidate_loss = float(result.fun)
-    if result.success and math.isfinite(candidate_loss) and before - candidate_loss > 1e-12:
+    if (
+        result.success
+        and math.isfinite(candidate_loss)
+        and before - candidate_loss > 1e-12
+    ):
         return candidate, True, before, candidate_loss
     return 1.0, False, before, before
 
@@ -549,7 +574,11 @@ def fit_continuous_slope(
         raise ValueError("continuous calibration inputs are invalid")
     before = float(np.mean(np.square(truth - raw)))
     denominator = float(np.dot(raw, raw))
-    candidate = float(np.clip(np.dot(raw, truth) / denominator, 0.0, 4.0)) if denominator > 0.0 else 1.0
+    candidate = (
+        float(np.clip(np.dot(raw, truth) / denominator, 0.0, 4.0))
+        if denominator > 0.0
+        else 1.0
+    )
     after = float(np.mean(np.square(truth - candidate * raw)))
     if math.isfinite(after) and before - after > 1e-12:
         return candidate, True, before, after
@@ -589,7 +618,11 @@ def _fit_fold_prediction(
     feature_names = layer_feature_names(feature_layer)
     width = len(feature_names)
     train_target_bps = _target_values(
-        dataset, roles.training, horizon_index, stress=False, head="continuous_return_bps"
+        dataset,
+        roles.training,
+        horizon_index,
+        stress=False,
+        head="continuous_return_bps",
     )
     training_prevalence = float(np.mean(train_target_bps > 0.0))
     training_mean = float(np.mean(train_target_bps))
@@ -634,7 +667,9 @@ def _fit_fold_prediction(
     }
     if head == "continuous_return_bps":
         parameters["alpha"] = float(model_parameters["huber_alpha"])
-    train_features = np.asarray(dataset.features[roles.training, :width], dtype=np.float32)
+    train_features = np.asarray(
+        dataset.features[roles.training, :width], dtype=np.float32
+    )
     tune_features = np.asarray(dataset.features[roles.tuning, :width], dtype=np.float32)
     train_set = lgb.Dataset(
         train_features,
@@ -799,9 +834,13 @@ def run_price_discovery_models(
     if backend_kind == "opencl" and backend.get("gpu_use_dp") is not True:
         raise RuntimeError("Round 72 OpenCL training requires FP64 accumulation")
     blocks: list[PriceDiscoveryFoldPrediction] = []
-    total = len(FLOW_SYMBOLS) * len(HORIZONS_SECONDS) * len(layers) * len(
-        PRICE_DISCOVERY_HEADS
-    ) * len(folds)
+    total = (
+        len(FLOW_SYMBOLS)
+        * len(HORIZONS_SECONDS)
+        * len(layers)
+        * len(PRICE_DISCOVERY_HEADS)
+        * len(folds)
+    )
     completed = 0
     datasets = {dataset.symbol: dataset for dataset in bundle.symbols}
     for symbol in FLOW_SYMBOLS:

@@ -8,6 +8,7 @@ from simple_ai_trading.impact_absorption_model_features import (
     ROUND73_ACTION_ALIGNED_FEATURE_NAMES,
     ROUND73_MODEL_FEATURE_LAYERS,
     ROUND73_MODEL_FEATURE_NAMES_BY_LAYER,
+    action_align_round73_feature_batch,
     action_align_round73_features,
     select_round73_feature_layer,
 )
@@ -96,6 +97,39 @@ def test_round73_model_feature_layers_are_nested_and_complete() -> None:
         assert not projected.flags.writeable
 
 
+def test_round73_batch_alignment_is_float32_scalar_equivalent() -> None:
+    raw = _raw_values()
+    batch = action_align_round73_feature_batch(
+        np.stack((raw, raw)),
+        side=np.asarray((1, -1), dtype=np.int8),
+        shock_ratio=np.asarray((5.0, 5.0)),
+        shock_direction=np.asarray((1, 1), dtype=np.int8),
+        shock_direction_taker_share=np.asarray((0.8, 0.8)),
+    )
+    expected = np.stack(
+        (
+            action_align_round73_features(
+                raw,
+                side="long",
+                shock_ratio=5.0,
+                shock_direction=1,
+                shock_direction_taker_share=0.8,
+            ),
+            action_align_round73_features(
+                raw,
+                side="short",
+                shock_ratio=5.0,
+                shock_direction=1,
+                shock_direction_taker_share=0.8,
+            ),
+        )
+    ).astype(np.float32)
+
+    assert batch.dtype == np.float32
+    assert batch.flags.writeable is False
+    np.testing.assert_array_equal(batch, expected)
+
+
 @pytest.mark.parametrize(
     ("mutation", "match"),
     [
@@ -140,9 +174,7 @@ def test_round73_action_alignment_rejects_bad_action_metadata() -> None:
             shock_direction_taker_share=0.8,
         )
     bad_share = raw.copy()
-    bad_share[
-        _index(ROUND73_GRID_FEATURE_NAMES, "w100ms_buyer_taker_share")
-    ] = 1.1
+    bad_share[_index(ROUND73_GRID_FEATURE_NAMES, "w100ms_buyer_taker_share")] = 1.1
     with pytest.raises(ValueError, match="buyer-taker share"):
         action_align_round73_features(
             bad_share,

@@ -12,8 +12,8 @@ no eligible seven-day cohort exists yet. Selected-anchor v2 replay validated the
 bounded mechanics API on pre-eligibility fixtures, but its all-role sealing
 sequence exposed test targets before model freeze. V3 now supersedes that
 sequence and blocks v2 on every eligible anchor. No prospective target has been
-observed. A new untouched seven-day v9 feature corpus is next while the staged
-development/pretest/test store is implemented. The evaluation keeps
+observed. A new untouched seven-day v9 feature corpus is next; the staged
+development/pretest/test store and one-use evaluator are implemented. The evaluation keeps
 source-boundary censoring deterministic, counts pre-entry safety aborts as
 attempted zero-return actions, and fails on a selected unresolved post-entry
 exit. Profitability, AI, leverage, paper, testnet, and live authority remain
@@ -135,10 +135,31 @@ flowchart LR
   fresh cohort/source audits, exact replay equality, complete dimensions, and
   no orphan rows. Those mechanics remain reusable, but the v2 public builder now
   rejects every anchor at or after the prospective eligibility timestamp.
-  `round-073-staged-holdout-contract-v3.json` requires development-role targets
+  `round-073-staged-holdout-contract-v4.json` requires development-role targets
   first, an immutable pretest model/policy manifest, then a one-time test unlock
-  and test-only replay. Its role-scoped store is not implemented yet, so no
-  eligible target construction is authorized.
+  and test-only replay. The role-scoped target store, bounded float32 symbol
+  loader, frozen linear/LightGBM family, explicit OpenCL platform/device pin,
+  single-audit publication, append-only access and prediction artifacts, and
+  one-use all-scenario evaluator are implemented. No eligible target or model
+  result exists; implementation is not performance evidence.
+
+The CLI and native Windows app expose the same non-alphabetic holdout sequence:
+
+```text
+impact-role-target-stage --role-scope development
+impact-model-fit
+impact-test-unlock --confirm-test-unlock
+impact-role-target-stage --role-scope test
+impact-test-seal
+impact-model-evaluate --confirm-one-use-evaluation
+```
+
+Every command requires the study identity; post-fit commands also require the
+immutable pretest hash. The unlock and evaluation acknowledgements are
+mandatory. Progress is emitted to stderr, test staging and sealing redact all
+outcome summaries, and an interrupted evaluation permanently closes the test.
+These commands are implemented but cannot run on eligible evidence until the
+prospective seven-day corpus exists.
 - `round-073-selected-anchor-evaluation-contract-v1.json` freezes the one-use
   viability analysis before an eligible v2 target result exists. It keeps
   BTC/ETH/SOL models separate, evaluates prevalence, linear L1+tape, shallow
@@ -148,7 +169,9 @@ flowchart LR
   censoring. Failed pre-entry revalidation remains an attempted zero-return
   action; a selected unresolved post-entry exit rejects the symbol's economic
   gate. The simulation uses fixed `$1,000` notional, `1x`, no reinvestment, and
-  one open position per symbol. This is a frozen design, not model evidence.
+  one open position per symbol. Failed, zero-trade, single-class, unresolved,
+  and interrupted outcomes are terminal and persisted; the test cannot reopen.
+  This is a frozen design, not model evidence.
 - `round-073-action-aligned-feature-contract-v1.json` and its implementation
   create two target-blind rows per anchor. Long and short views mirror bid/ask
   into support/opposing channels, mirror buy/sell flow into aligned/opposing
@@ -164,8 +187,8 @@ flowchart LR
   outcomes; pre-entry aborts become zero-return labels; deterministic run-end
   rows are censored before fitting; post-entry unresolved risk remains unlabeled
   and cannot later disappear from economic evaluation. No eligible study exists
-  yet, and the staged v3 store must replace its v2 input before eligible use, so
-  this path has only focused pre-eligibility contract tests, not model results.
+  yet. The staged v3 store is the only permitted eligible input and is now
+  implemented, so this path still has focused contract tests, not model results.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible
@@ -175,9 +198,13 @@ flowchart LR
   capture stops. V1 and v2 journals remain independently auditable. Unit and
   parity tests pass. Recovery-only v1 batch
   `6d8c31559bb044b3a83fdf9e771dda4a` then passed its real lease, discovery,
-  journal, release, and independent audit paths without database growth. This
-  authorizes one live runner segment, not a multi-segment collection. See
-  `round-073-rotation-recovery-validation-2026-07-22.json`.
+  journal, release, and independent audit paths without database growth.
+  Qualification batch `ca83202743254d7ebc0c2d42d27d9b12` subsequently passed
+  one complete v9 hour, independent deep audits, and the storage gate. It
+  authorizes one monitored 168-segment invocation beginning exactly at the
+  July 24 00:00 UTC prospective boundary with a 48 GiB hard cap; capture is
+  completed before serial indexing starts. See
+  `round-073-v9-qualification-capture-2026-07-23.json`.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or
@@ -186,13 +213,57 @@ context must use that product's actual venue calendar, including holidays,
 early closes, halts, auctions, and verified extended-hours sessions. An ETF
 close must never be imputed as a Binance close.
 
+## 2026 research audit
+
+Recent primary research reinforces the frozen test rather than authorizing a
+larger model:
+
+- Multi-year Binance work finds that order-flow imbalance, spread, and
+  VWAP-to-mid effects can be stable across assets, while maker and taker behavior
+  diverges under crash stress. Round 73 therefore keeps interpretable nested
+  controls, exact costed taker paths, and all-scenario latency checks.
+- Queueing research links fleeting liquidity and add/remove ratios to adverse
+  selection and high-frequency liquidity provision. This feed has no queue
+  position or order identity, so Round 73 retains raw displayed additions and
+  removals across causal windows; it does not rename them cancellations or infer
+  a market maker.
+- A Level-3 spoofability study finds order placement distance material. Round 73
+  has anonymous Level-2 deltas only. Its synchronized level bands and
+  distance-weighted depth may measure fragility, but they cannot identify a
+  spoofer, whale, institution, manipulation, or intent.
+- New hidden-liquidity preprints show that visible-book walks can misstate
+  realized impact, especially under stress. Their samples are narrow and their
+  parent-order reconstruction is not available from this public feed. The
+  software therefore calls its variables displayed-book absorption and recovery,
+  never hidden depth, and preserves pessimistic visible-book execution stress.
+- A preregistered 2026 study found no incremental short-horizon signal from LLM
+  bias, confidence, sampling dispersion, or model disagreement. Language-model
+  forecasting remains excluded; AI must pass a separate prospective matched
+  after-cost uplift gate before it may only veto or reduce risk.
+- U.S.-listed spot-Bitcoin ETFs have venue opens and closes even though bitcoin
+  itself trades continuously. Recent evidence suggests a distinct ETF-opening
+  volatility window, while the aggregate U.S.-hours effect was null. Any later
+  listed-product feature must therefore use the exact instrument and venue
+  calendar, not a fixed clock proxy, and remains context rather than crypto
+  execution authority.
+- A small one-day model comparison reports that inputs can matter more than
+  deeper networks, but its centered Savitzky-Golay formulation reads future
+  samples. Round 73 does not copy that noncausal preprocessing or treat its
+  reported accuracy as executable evidence.
+
+These are hypotheses and boundary checks, not evidence that Round 73 has an
+edge. The prospective contract, feature hashes, costs, and one-use holdout are
+unchanged by this literature review.
+
 ## Gates
 
 The staged comparison is prevalence/zero payoff, linear L1+tape, shallow L1+tape,
 L2 state, then L2 impact absorption. Model capacity and rows stay identical.
 Impact absorption must beat both L2 state and the frozen L1+tape control on held
 out log loss, Brier score, MSE, calibration, dependence-aware uncertainty, and a
-one-second stress-delay check.
+one-second stress-delay check. Acceptance is cumulative: a deeper layer cannot
+pass if any earlier prevalence-to-linear-to-L1-to-L2 comparison in its path
+fails.
 
 The first seven complete days are only a bounded viability screen. Promotion
 requires at least 30 complete prospective days with the final seven sealed.
@@ -214,6 +285,13 @@ model, preprocessing, and policy artifacts are hash-bound. Same-symbol signals
 are skipped while that symbol already has a simulated position. Seven-day
 annualized ROI or Sharpe claims are prohibited.
 
+After the append-only evaluation-access claim, every test role manifest is
+reconciled and exact-wire replayed again before scoring. Economic output reports
+the measured per-position adverse/favorable excursions, spread, and exit-side
+capacity. Portfolio drawdown and time under water are explicitly close-to-close
+realized-equity measures; no intratrade portfolio path is invented because the
+target contract does not preserve excursion timestamps.
+
 ## Model and AI boundary
 
 A fixed shallow LightGBM is the primary challenger. A TCN/TLOB-style temporal
@@ -231,6 +309,13 @@ capacity from hiding a failed financial mechanism.
 - [Deep Limit Order Book Forecasting / LOBFrame](https://arxiv.org/abs/2403.09267)
 - [TLOB](https://arxiv.org/abs/2502.15757)
 - [State-dependent L2 liquidity transitions](https://arxiv.org/abs/2607.09230)
+- [Explainable Patterns in Cryptocurrency Microstructure](https://arxiv.org/abs/2602.00776)
+- [Queuing Uncertainty of Limit Orders](https://doi.org/10.1287/mnsc.2023.03371)
+- [Learning the Spoofability of Limit Order Books](https://arxiv.org/abs/2504.15908)
+- [Hidden-Liquidity Absorption in Bitcoin Perpetual Futures](https://ssrn.com/abstract=6980158)
+- [Preregistered falsification of LLM microstructure signals](https://ssrn.com/abstract=6997818)
+- [Spot Bitcoin ETFs and Bitcoin's intraday risk profile](https://ssrn.com/abstract=6713392)
+- [Better Inputs Matter More Than Stacking Another Hidden Layer](https://arxiv.org/abs/2506.05764)
 - [CFTC disruptive-practices guidance](https://www.cftc.gov/LawRegulation/FederalRegister/FinalRules/2013-12365.html)
 
 These sources motivate the experiment. None establishes an edge for this

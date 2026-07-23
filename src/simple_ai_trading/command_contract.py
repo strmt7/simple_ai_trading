@@ -113,6 +113,17 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "Microstructure models",
         (
             "model-blueprint",
+            "microstructure-train",
+            "microstructure-refit",
+            "microstructure-prequential",
+            "microstructure-promote",
+            "microstructure-shadow",
+        ),
+    ),
+    (
+        "Research",
+        "Impact study preparation",
+        (
             "impact-feature-source",
             "impact-corpus-index",
             "impact-grid-build",
@@ -120,11 +131,17 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
             "impact-target-build",
             "impact-target-v2-build",
             "impact-target-v2-seal",
-            "microstructure-train",
-            "microstructure-refit",
-            "microstructure-prequential",
-            "microstructure-promote",
-            "microstructure-shadow",
+        ),
+    ),
+    (
+        "Research",
+        "Impact holdout confirmation",
+        (
+            "impact-role-target-stage",
+            "impact-model-fit",
+            "impact-test-unlock",
+            "impact-test-seal",
+            "impact-model-evaluate",
         ),
     ),
     (

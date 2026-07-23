@@ -124,10 +124,15 @@ from .impact_absorption_rotation import (
     run_round73_corpus_rotation,
 )
 from .impact_absorption_features import diagnose_round73_feature_source
+from .impact_absorption_holdout_store import unlock_round73_test_targets
 from .impact_absorption_grid_store import (
     audit_round73_causal_grid,
     build_round73_causal_grid,
 )
+from .impact_absorption_model_slice import (
+    ROUND73_MODEL_SLICE_DEFAULT_MEMORY_BUDGET_BYTES,
+)
+from .impact_absorption_one_use_evaluation import evaluate_round73_once
 from .impact_absorption_target_store import (
     audit_round73_executable_targets,
     build_round73_executable_targets,
@@ -138,6 +143,11 @@ from .impact_absorption_target_store_v2 import (
     build_round73_selected_anchor_targets,
     seal_round73_target_study,
 )
+from .impact_absorption_target_store_v3 import (
+    seal_round73_test_targets,
+    stage_round73_role_targets,
+)
+from .impact_absorption_training import train_and_publish_round73_pretest
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
     IMPACT_CAPTURE_SCHEMA_VERSION,
@@ -1488,6 +1498,138 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_target_v2_seal.add_argument("--database-threads", type=int, default=2)
     parser_impact_target_v2_seal.add_argument("--json", action="store_true")
     parser_impact_target_v2_seal.set_defaults(func=command_impact_target_v2_seal)
+
+    parser_impact_role_target_stage = subparsers.add_parser(
+        "impact-role-target-stage",
+        help="stage every Round 73 source for development or sealed-test use",
+        description=(
+            "Replay every cohort source for exactly one role scope. Development "
+            "and test targets can never be materialized by the same invocation."
+        ),
+    )
+    parser_impact_role_target_stage.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_role_target_stage.add_argument("--study-id", required=True)
+    parser_impact_role_target_stage.add_argument(
+        "--role-scope", choices=["development", "test"], required=True
+    )
+    parser_impact_role_target_stage.add_argument(
+        "--pretest-manifest-sha256",
+        default=None,
+        help="required only for test staging after the one-time unlock",
+    )
+    parser_impact_role_target_stage.add_argument("--memory-limit", default="2GB")
+    parser_impact_role_target_stage.add_argument(
+        "--database-threads", type=int, default=2
+    )
+    parser_impact_role_target_stage.add_argument("--json", action="store_true")
+    parser_impact_role_target_stage.set_defaults(func=command_impact_role_target_stage)
+
+    parser_impact_model_fit = subparsers.add_parser(
+        "impact-model-fit",
+        help="fit and immutably publish the Round 73 development-only model",
+        description=(
+            "Deep-audit and seal development targets once, fit bounded "
+            "symbol-scoped models, and publish immutable pretest bytes. Test "
+            "targets are neither materialized nor read."
+        ),
+    )
+    parser_impact_model_fit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_model_fit.add_argument("--study-id", required=True)
+    parser_impact_model_fit.add_argument("--repository-root", default=".")
+    parser_impact_model_fit.add_argument(
+        "--compute-backend", choices=SUPPORTED_COMPUTE_BACKENDS, default="auto"
+    )
+    parser_impact_model_fit.add_argument(
+        "--memory-budget-bytes",
+        type=int,
+        default=ROUND73_MODEL_SLICE_DEFAULT_MEMORY_BUDGET_BYTES,
+        help="hard in-memory feature-slice budget; one symbol is loaded at a time",
+    )
+    parser_impact_model_fit.add_argument("--memory-limit", default="2GB")
+    parser_impact_model_fit.add_argument("--database-threads", type=int, default=2)
+    parser_impact_model_fit.add_argument("--json", action="store_true")
+    parser_impact_model_fit.set_defaults(func=command_impact_model_fit)
+
+    parser_impact_test_unlock = subparsers.add_parser(
+        "impact-test-unlock",
+        help="append the one-time Round 73 sealed-test replay authorization",
+        description=(
+            "Revalidate the immutable pretest and repository identities, then "
+            "permit test-only target replay exactly once."
+        ),
+    )
+    parser_impact_test_unlock.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_test_unlock.add_argument("--study-id", required=True)
+    parser_impact_test_unlock.add_argument("--pretest-manifest-sha256", required=True)
+    parser_impact_test_unlock.add_argument("--repository-root", default=".")
+    parser_impact_test_unlock.add_argument(
+        "--confirm-test-unlock",
+        action="store_true",
+        required=True,
+        help="acknowledge that the immutable pretest is final before test replay",
+    )
+    parser_impact_test_unlock.add_argument("--memory-limit", default="2GB")
+    parser_impact_test_unlock.add_argument("--database-threads", type=int, default=2)
+    parser_impact_test_unlock.add_argument("--json", action="store_true")
+    parser_impact_test_unlock.set_defaults(func=command_impact_test_unlock)
+
+    parser_impact_test_seal = subparsers.add_parser(
+        "impact-test-seal",
+        help="deep-audit and seal all staged Round 73 test targets",
+        description=(
+            "Verify complete test-only replay and persist a redacted immutable "
+            "study seal without evaluating or reporting outcomes."
+        ),
+    )
+    parser_impact_test_seal.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_test_seal.add_argument("--study-id", required=True)
+    parser_impact_test_seal.add_argument("--pretest-manifest-sha256", required=True)
+    parser_impact_test_seal.add_argument("--memory-limit", default="2GB")
+    parser_impact_test_seal.add_argument("--database-threads", type=int, default=2)
+    parser_impact_test_seal.add_argument("--json", action="store_true")
+    parser_impact_test_seal.set_defaults(func=command_impact_test_seal)
+
+    parser_impact_model_evaluate = subparsers.add_parser(
+        "impact-model-evaluate",
+        help="consume the sealed Round 73 test once and persist its sole result",
+        description=(
+            "Irreversibly claim the sealed test, score only frozen pretest bytes, "
+            "run all preregistered predictive and economic gates, and persist one "
+            "terminal result. An interruption also consumes the test."
+        ),
+    )
+    parser_impact_model_evaluate.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_model_evaluate.add_argument("--study-id", required=True)
+    parser_impact_model_evaluate.add_argument(
+        "--pretest-manifest-sha256", required=True
+    )
+    parser_impact_model_evaluate.add_argument("--repository-root", default=".")
+    parser_impact_model_evaluate.add_argument(
+        "--memory-budget-bytes",
+        type=int,
+        default=ROUND73_MODEL_SLICE_DEFAULT_MEMORY_BUDGET_BYTES,
+        help="hard in-memory test-slice budget; one symbol is loaded at a time",
+    )
+    parser_impact_model_evaluate.add_argument(
+        "--confirm-one-use-evaluation",
+        action="store_true",
+        required=True,
+        help="acknowledge that this permanently consumes the sealed test",
+    )
+    parser_impact_model_evaluate.add_argument("--memory-limit", default="2GB")
+    parser_impact_model_evaluate.add_argument("--database-threads", type=int, default=2)
+    parser_impact_model_evaluate.add_argument("--json", action="store_true")
+    parser_impact_model_evaluate.set_defaults(func=command_impact_model_evaluate)
 
     parser_impact_corpus_audit = subparsers.add_parser(
         "impact-corpus-audit",
@@ -11511,6 +11653,201 @@ def command_impact_target_v2_seal(args: argparse.Namespace) -> int:
             f"anchors={report.selected_anchor_count} options={report.option_count}"
         )
     return 0
+
+
+def _round73_cli_progress(command: str) -> Callable[[str, Mapping[str, object]], None]:
+    def report(event: str, details: Mapping[str, object]) -> None:
+        payload = {"event": event, **dict(details)}
+        print(
+            f"{command}-progress: "
+            + json.dumps(
+                payload,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+            flush=True,
+        )
+
+    return report
+
+
+def command_impact_role_target_stage(args: argparse.Namespace) -> int:
+    selected_pretest = getattr(args, "pretest_manifest_sha256", None)
+    try:
+        report = stage_round73_role_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            role_scope=str(getattr(args, "role_scope", "")),
+            pretest_manifest_sha256=(
+                None if selected_pretest is None else str(selected_pretest)
+            ),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+            progress_callback=_round73_cli_progress("impact-role-target-stage"),
+        )
+    except KeyboardInterrupt:
+        print("impact-role-target-stage cancelled by operator", file=sys.stderr)
+        return 130
+    except Exception as exc:  # The CLI/UI boundary must fail closed consistently.
+        print(f"impact-role-target-stage failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-role-target-stage: "
+            f"scope={report.role_scope} study={report.study_id} "
+            f"runs={report.source_run_count} "
+            f"anchors={report.selected_anchor_count} options={report.option_count}"
+        )
+    return 0
+
+
+def command_impact_model_fit(args: argparse.Namespace) -> int:
+    try:
+        report = train_and_publish_round73_pretest(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            repository_root=Path(getattr(args, "repository_root", ".")),
+            compute_backend=str(getattr(args, "compute_backend", "auto")),
+            memory_budget_bytes=int(
+                getattr(
+                    args,
+                    "memory_budget_bytes",
+                    ROUND73_MODEL_SLICE_DEFAULT_MEMORY_BUDGET_BYTES,
+                )
+            ),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+            progress_callback=_round73_cli_progress("impact-model-fit"),
+        )
+    except KeyboardInterrupt:
+        print("impact-model-fit cancelled by operator", file=sys.stderr)
+        return 130
+    except Exception as exc:  # The CLI/UI boundary must fail closed consistently.
+        print(f"impact-model-fit failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        compute = report.prepared.model_manifest.get("compute_backend", {})
+        backend = (
+            compute.get("resolved_backend", "unknown")
+            if isinstance(compute, Mapping)
+            else "unknown"
+        )
+        print(
+            "impact-model-fit: "
+            f"study={report.publication.study_id} backend={backend} "
+            f"artifacts={report.publication.artifact_count} "
+            f"pretest={report.publication.pretest_manifest_sha256} "
+            "test_read=false trading_authority=false"
+        )
+    return 0
+
+
+def command_impact_test_unlock(args: argparse.Namespace) -> int:
+    if bool(getattr(args, "confirm_test_unlock", False)) is not True:
+        print(
+            "impact-test-unlock failed: --confirm-test-unlock is required",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        report = unlock_round73_test_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            pretest_manifest_sha256=str(getattr(args, "pretest_manifest_sha256", "")),
+            repository_root=Path(getattr(args, "repository_root", ".")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except Exception as exc:  # The CLI/UI boundary must fail closed consistently.
+        print(f"impact-test-unlock failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-test-unlock: "
+            f"study={report.study_id} pretest={report.pretest_manifest_sha256} "
+            "test_replay_permitted=true model_evaluated=false"
+        )
+    return 0
+
+
+def command_impact_test_seal(args: argparse.Namespace) -> int:
+    try:
+        report = seal_round73_test_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            pretest_manifest_sha256=str(getattr(args, "pretest_manifest_sha256", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except KeyboardInterrupt:
+        print("impact-test-seal cancelled by operator", file=sys.stderr)
+        return 130
+    except Exception as exc:  # The CLI/UI boundary must fail closed consistently.
+        print(f"impact-test-seal failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-test-seal: "
+            f"study={report.study_id} runs={report.source_run_count} "
+            f"anchors={report.selected_anchor_count} options={report.option_count} "
+            f"seal={report.test_study_manifest_sha256} outcomes_redacted=true"
+        )
+    return 0
+
+
+def command_impact_model_evaluate(args: argparse.Namespace) -> int:
+    if bool(getattr(args, "confirm_one_use_evaluation", False)) is not True:
+        print(
+            "impact-model-evaluate failed: --confirm-one-use-evaluation is required",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        report = evaluate_round73_once(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            pretest_manifest_sha256=str(getattr(args, "pretest_manifest_sha256", "")),
+            repository_root=Path(getattr(args, "repository_root", ".")),
+            memory_budget_bytes=int(
+                getattr(
+                    args,
+                    "memory_budget_bytes",
+                    ROUND73_MODEL_SLICE_DEFAULT_MEMORY_BUDGET_BYTES,
+                )
+            ),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+            progress_callback=_round73_cli_progress("impact-model-evaluate"),
+        )
+    except KeyboardInterrupt:
+        print(
+            "impact-model-evaluate interrupted; the sealed test remains consumed",
+            file=sys.stderr,
+        )
+        return 130
+    except Exception as exc:  # The evaluator persists an interrupted terminal result.
+        print(f"impact-model-evaluate failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-model-evaluate: "
+            f"status={report.status} study={report.stored.study_id} "
+            f"result={report.stored.result_sha256} "
+            "profitability_claim=false trading_authority=false"
+        )
+    return 0 if report.status == "passed" else 2
 
 
 def command_impact_corpus_audit(args: argparse.Namespace) -> int:
