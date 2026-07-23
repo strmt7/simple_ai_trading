@@ -65,9 +65,18 @@ After parser or taxonomy changes, regenerate the header through the native build
   4,096 limit. A fresh process audited every frame. Independent exact-wire
   replay reconciled all 104,305 depth-band rows and reconstructed 4,459,493
   level changes without future data. Read `round-073-capture-contract-v8.json`
-  and `round-073-v8-capture-qualification-2026-07-22.json`. Storage headroom is
-  only 14.2%, so only bounded segmented-corpus implementation and feature
-  construction are open. Unbounded capture, model evaluation, P&L,
+  and `round-073-v8-capture-qualification-2026-07-22.json`. V9 retains exact
+  frames and low-rate REST context, removes duplicate live typed projections,
+  and passed its 180-second public-feed gate in run
+  `c096c88375e24bfdba560c7f32f8a121`. Its first one-hour attempt
+  `bc032079846b40b58fbcfe8786afab64` is permanently failed and excluded: the
+  writer connection inherited the 16 MiB default instead of the persisted
+  512 MiB run policy. All three segments are invalid, the fresh exact audit
+  passes, no corpus manifest exists, and the WAL recovered cleanly. The writer
+  now binds and verifies the persisted policy before readiness and before every
+  frame append; the affected 138-test Round 73 checkpoint passes. Read
+  `round-073-v9-one-hour-qualification-failure-2026-07-23.json`. Only one clean
+  v9 one-hour retry is open. Multi-segment capture, model evaluation, P&L,
   profitability, AI uplift, leverage, and trading authority remain closed.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour

@@ -392,6 +392,57 @@ def test_one_writer_flushes_atomically_without_blocking_the_caller(tmp_path) -> 
     assert writer.message_count == 1
 
 
+def test_writer_binds_v9_storage_policy_before_ready(tmp_path) -> None:
+    database = tmp_path / "impact.duckdb"
+    _start_store(database, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+    writer = _ImpactFrameWriter(
+        ImpactCaptureConfig(
+            database=str(database),
+            schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+            duration_seconds=1,
+            queue_capacity_messages=8,
+            frame_message_limit=1,
+            frame_flush_seconds=0.01,
+        ),
+        RUN_ID,
+    )
+
+    writer.start()
+    assert writer.applied_storage_policy == {
+        "schema_version": IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        "checkpoint_threshold": "512.0 MiB",
+        "auto_checkpoint_skip_wal_threshold_bytes": 512 * 1024 * 1024,
+    }
+    writer.put(_message())
+    assert writer.stop(timeout_seconds=5.0) is True
+    assert writer.failed.is_set() is False
+    assert writer.frame_count == 1
+
+
+def test_writer_rejects_schema_mismatch_before_ready(tmp_path) -> None:
+    database = tmp_path / "impact.duckdb"
+    _start_store(database, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+    writer = _ImpactFrameWriter(
+        ImpactCaptureConfig(
+            database=str(database),
+            schema_version=IMPACT_CAPTURE_SCHEMA_VERSION,
+            duration_seconds=1,
+            queue_capacity_messages=8,
+            frame_message_limit=1,
+            frame_flush_seconds=0.01,
+        ),
+        RUN_ID,
+    )
+
+    with pytest.raises(
+        impact_capture._ImpactWriterFault,
+        match="writer schema differs from persisted capture run",
+    ):
+        writer.start()
+    assert writer.failed.is_set() is True
+    assert writer.frame_count == 0
+
+
 def test_writer_stops_at_database_size_reserve_without_silent_success(
     tmp_path, monkeypatch
 ) -> None:

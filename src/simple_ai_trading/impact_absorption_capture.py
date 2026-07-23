@@ -525,6 +525,7 @@ class _ImpactFrameWriter:
         self.frame_count = 0
         self.message_count = 0
         self.compressed_payload_bytes = 0
+        self.applied_storage_policy: dict[str, object] | None = None
         self.database_physical_start_bytes = _database_physical_bytes(config.database)
         self.database_physical_bytes = self.database_physical_start_bytes
         self.process_io_start = _process_io_snapshot()
@@ -646,6 +647,10 @@ class _ImpactFrameWriter:
                 memory_limit=self.config.duckdb_memory_limit,
                 threads=self.config.duckdb_threads,
             ) as store:
+                self.applied_storage_policy = store.bind_run_storage_policy(
+                    self.run_id,
+                    expected_schema_version=self.config.schema_version,
+                )
                 self.started.set()
                 while True:
                     timeout = max(0.0, flush_deadline - time.monotonic())
