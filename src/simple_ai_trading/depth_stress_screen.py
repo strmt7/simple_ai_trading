@@ -54,7 +54,9 @@ def _array_digest(digest: object, name: str, values: np.ndarray) -> None:
 
 
 def _month_ordinals(timestamp_ms: np.ndarray) -> np.ndarray:
-    return timestamp_ms.astype("datetime64[ms]").astype("datetime64[M]").astype(np.int64)
+    return (
+        timestamp_ms.astype("datetime64[ms]").astype("datetime64[M]").astype(np.int64)
+    )
 
 
 def utc_month_label(month_ordinal: int) -> str:
@@ -83,10 +85,14 @@ class DepthStressPanel:
             or len(timestamps) < 30
             or np.any(timestamps <= 0)
             or np.any(np.diff(timestamps) <= 0)
-            or descriptors.shape != (len(timestamps), len(DEPTH_STRESS_DESCRIPTOR_NAMES))
+            or descriptors.shape
+            != (len(timestamps), len(DEPTH_STRESS_DESCRIPTOR_NAMES))
             or not np.all(np.isfinite(descriptors))
             or len(self.source_fingerprint) != 64
-            or any(character not in "0123456789abcdef" for character in self.source_fingerprint)
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.source_fingerprint
+            )
         ):
             raise ValueError("depth-stress panel contract is invalid")
         object.__setattr__(self, "symbol", symbol)
@@ -148,9 +154,14 @@ class DepthStressExamples:
             or np.any(pre < 0)
             or np.any(post <= pre)
             or len(self.panel_sha256) != 64
-            or any(character not in "0123456789abcdef" for character in self.panel_sha256)
+            or any(
+                character not in "0123456789abcdef" for character in self.panel_sha256
+            )
             or len(self.examples_sha256) != 64
-            or any(character not in "0123456789abcdef" for character in self.examples_sha256)
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.examples_sha256
+            )
         ):
             raise ValueError("depth-stress examples contract is invalid")
         object.__setattr__(self, "anchor_time_ms", anchors)
@@ -182,7 +193,9 @@ class DepthStressExamples:
         rows: Sequence[int] | np.ndarray | None = None,
     ) -> np.ndarray:
         states = np.asarray(pre_states, dtype=np.int8)
-        if states.shape != (len(self.anchor_time_ms),) or np.any((states < 0) | (states > 2)):
+        if states.shape != (len(self.anchor_time_ms),) or np.any(
+            (states < 0) | (states > 2)
+        ):
             raise ValueError("depth-stress pre-state feature is invalid")
         indexes = (
             np.arange(len(states), dtype=np.int64)
@@ -299,12 +312,7 @@ def build_depth_stress_examples(
     lag_60 = np.searchsorted(timestamps, lag_60_target, side="right") - 1
     lag_300 = np.searchsorted(timestamps, lag_300_target, side="right") - 1
     immediate = pre - 1
-    in_bounds = (
-        (pre >= 1)
-        & (post < len(timestamps))
-        & (lag_60 >= 0)
-        & (lag_300 >= 0)
-    )
+    in_bounds = (pre >= 1) & (post < len(timestamps)) & (lag_60 >= 0) & (lag_300 >= 0)
     anchors = anchors[in_bounds]
     pre = pre[in_bounds]
     post = post[in_bounds]
@@ -335,7 +343,9 @@ def build_depth_stress_examples(
     if not len(anchors):
         raise ValueError("depth-stress panel has no complete causal examples")
     current = panel.descriptors[pre]
-    hour_angle = 2.0 * np.pi * ((anchors % _MILLISECONDS_PER_DAY) / _MILLISECONDS_PER_DAY)
+    hour_angle = (
+        2.0 * np.pi * ((anchors % _MILLISECONDS_PER_DAY) / _MILLISECONDS_PER_DAY)
+    )
     utc_day = anchors // _MILLISECONDS_PER_DAY
     day_of_week = (utc_day + 3) % 7
     weekday_angle = 2.0 * np.pi * day_of_week / 7.0
