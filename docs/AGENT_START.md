@@ -146,7 +146,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   byte-equivalent target rows. They inherit the v1 book walk, quantity, funding,
   path-risk, and 12 bps charge logic while changing only the preregistered
   anchor population and 15/60/300 second horizons. No eligible seven-day cohort
-  or v2 target result exists yet.
+  or v2 target result exists yet. The one-use evaluation is separately frozen
+  in `round-073-selected-anchor-evaluation-contract-v1.json`. Only deterministic
+  source-boundary censoring may be removed. Pre-entry safety aborts remain
+  attempted zero-return actions, while any selected unresolved post-entry exit
+  fails that symbol's economic gate. The primary simulation is fixed at 500 ms,
+  60 seconds, `$1,000`, `1x`, no reinvestment, and one open position per symbol.
+  Models, transforms, tuning thresholds, and the action rule must be hash-bound
+  before test rows are read. The seven-day result cannot authorize annualized
+  claims, AI, leverage, or trading.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.

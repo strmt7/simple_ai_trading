@@ -1,0 +1,374 @@
+{
+  "schema_version": "round-073-selected-anchor-evaluation-contract-v1",
+  "contract_sha256": "1ac9b5fabd78138caddb296497d5b4885187198f3214338c323c3ed2fe2d388a",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "parent_target_contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
+  "frozen_before_first_eligible_v2_target_result": true,
+  "purpose": "Evaluate whether causal L2 impact-absorption features improve calibrated post-latency action-value forecasts and a fixed-notional after-cost policy on the untouched seven-day cohort without treating missing exits, execution failures, leverage, or repeated test inspection as alpha.",
+  "research_basis": [
+    {
+      "title": "When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures",
+      "url": "https://arxiv.org/abs/2607.09230",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Order-flow value can be asset- and liquidity-state-dependent, so the evaluation is staged by feature layer and decided per symbol with blocked chronological inference."
+    },
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Spread, order-flow imbalance, depth, volatility, and execution style must be evaluated jointly; predictive importance alone does not establish executable value."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Forecast metrics and incomplete markouts cannot substitute for complete-transaction operational evaluation."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Frozen hypotheses, bounded tuning, and untouched chronological tests are required because repeated strategy selection creates backtest overfitting."
+    },
+    {
+      "title": "GPU SDK Correspondence and Device Targeting Table",
+      "url": "https://lightgbm.readthedocs.io/en/stable/GPU-Targets.html",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "LightGBM's GPU backend uses OpenCL platform and device identities and can target AMD, NVIDIA, or Intel devices when the corresponding runtime is available."
+    },
+    {
+      "title": "CFTC Orders New York Trader to Pay $200,000 for Spoofing",
+      "url": "https://www.cftc.gov/PressRoom/PressReleases/9227-26",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Displayed liquidity can include orders intended for cancellation, so aggregate L2 depth is treated as fragile observable capacity rather than actor identity or guaranteed fill."
+    },
+    {
+      "title": "NYSE Holidays and Trading Hours",
+      "url": "https://www.nyse.com/trade/hours-calendars",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Exchange-listed securities have venue-defined sessions, holidays, and early closes; those timestamps may provide context but cannot create a close in continuous crypto markets."
+    }
+  ],
+  "authority": {
+    "contract_design": true,
+    "target_results_observed": false,
+    "model_training_permitted_after_complete_study_seal": true,
+    "seven_day_viability_evaluation_permitted_once": true,
+    "promotion_claim_from_seven_days_permitted": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_testnet_or_live_trading_authority": false
+  },
+  "sealed_input_contract": {
+    "study_manifest_schema_version": "round-073-impact-shock-study-v1",
+    "target_study_manifest_schema_version": "round-073-impact-target-study-v2",
+    "target_contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
+    "complete_target_study_seal_required": true,
+    "fresh_deep_cohort_source_grid_target_and_exact_wire_audits_required": true,
+    "manifest_or_hash_mismatch_policy": "fail closed",
+    "test_rows_read_before_fitted_models_preprocessors_and_action_rule_are_hash_bound": false,
+    "synthetic_labels_prices_fills_or_missing_market_states_permitted": false
+  },
+  "market_and_calendar_scope": {
+    "instruments": [
+      "BTCUSDT USD-M perpetual",
+      "ETHUSDT USD-M perpetual",
+      "SOLUSDT USD-M perpetual"
+    ],
+    "crypto_formal_daily_close": false,
+    "utc_day_use": "statistical splitting, block resampling, and reporting only",
+    "listed_etf_etp_equity_or_futures_session_context_permitted": "only from a timestamped authoritative venue calendar and a separately frozen causal feature contract",
+    "listed_product_holiday_early_close_and_session_boundaries_are_venue_specific": true,
+    "fixed_weekday_or_clock_proxy_for_listed_session_permitted": false,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_session_state_may_block_or_authorize_crypto_execution": false,
+    "current_round_has_listed_product_session_feature": false
+  },
+  "population_and_roles": {
+    "population": "every feature-only selected anchor in the sealed v2 cohort",
+    "roles": {
+      "training": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "tuning": [
+        5
+      ],
+      "test": [
+        6,
+        7
+      ]
+    },
+    "role_boundary_embargo_seconds": 302,
+    "same_anchor_long_and_short_rows_share_role_and_resampling_block": true,
+    "symbol_models_are_separate": true,
+    "unsupported_symbol_is_disabled_not_pooled": true,
+    "test_reuse_after_first_read": "The observed seven-day study becomes development-only and cannot be relabeled as a fresh test."
+  },
+  "primary_action_value_target": {
+    "entry_delay_milliseconds": 500,
+    "holding_horizon_milliseconds": 60000,
+    "reference_quote_notional": 1000.0,
+    "candidate_actions": [
+      "long",
+      "short"
+    ],
+    "binary_target": "positive_net_payoff after the frozen 12 bps reserve",
+    "continuous_target": "net_payoff_bps after the frozen 12 bps reserve",
+    "action_alignment": "For a candidate action, multiply direction-sensitive signed inputs by +1 for long and -1 for short; preserve unsigned state inputs and add an explicit action-side indicator.",
+    "one_candidate_row_per_anchor_and_side": true,
+    "same_model_capacity_for_every_feature_ablation": true,
+    "stress_scenarios_are_reported_not_selected": {
+      "entry_delay_milliseconds": [
+        1000
+      ],
+      "holding_horizon_milliseconds": [
+        15000,
+        300000
+      ],
+      "reference_quote_notional": [
+        100.0,
+        5000.0
+      ]
+    }
+  },
+  "outcome_status_policy": {
+    "experimental_right_censoring": {
+      "reasons": [
+        "coverage_end"
+      ],
+      "policy": "Remove before fitting, thresholding, or scoring using only the sealed source-run coverage bound and requested exit time; report counts by role symbol and scenario.",
+      "model_or_payoff_may_decide_censoring": false
+    },
+    "pre_entry_safety_abort": {
+      "reasons": [
+        "quantity_filter",
+        "entry_state_late",
+        "entry_capacity",
+        "entry_minimum_notional",
+        "funding_boundary"
+      ],
+      "operational_semantics": "The candidate action is aborted before capital is deployed because the frozen order-time safety revalidation fails.",
+      "binary_operational_target": false,
+      "continuous_operational_target_bps": 0.0,
+      "attempted_action_counted": true,
+      "completed_trade_counted": false,
+      "silently_excluded_from_policy_evaluation": false,
+      "abort_rate_reported_by_reason_role_symbol_and_scenario": true
+    },
+    "post_entry_unresolved_risk": {
+      "reasons": [
+        "path_capacity",
+        "exit_state_late",
+        "exit_capacity"
+      ],
+      "operational_semantics": "Capital was notionally deployed but the evidence cannot establish a complete controlled exit under the frozen mechanics.",
+      "imputed_as_zero_or_removed_from_selected_trades": false,
+      "selected_action_causes_symbol_economic_gate_failure": true,
+      "selected_action_causes_complete_transaction_claim_failure": true,
+      "counts_reported_by_reason_role_symbol_and_scenario": true
+    },
+    "unknown_reason_policy": "fatal"
+  },
+  "feature_layers": {
+    "prevalence_and_zero_controls": true,
+    "linear_control": "L1 and aggregate-trade tape only",
+    "shallow_control": "fixed shallow LightGBM on the same L1 and tape features",
+    "state_model": "same LightGBM plus L2 state",
+    "impact_absorption_model": "same LightGBM plus causal depth consumption replenishment removal fragility and recovery features",
+    "staged_decision_order": [
+      "prevalence and zero controls",
+      "linear L1 and tape control",
+      "shallow L1 and tape control",
+      "L2 state",
+      "impact absorption"
+    ],
+    "impact_absorption_primary_comparison": "impact absorption versus L2 state on identical rows targets splits preprocessing and model capacity",
+    "every_accepted_layer_must_beat_l1_and_tape_control": true,
+    "order_flow_overlay_is_symbol_and_state_specific_not_assumed_universal": true,
+    "whale_identity_market_maker_inventory_spoofing_or_manipulation_labels_permitted": false,
+    "displayed_depth_interpretation": "observable and cancellable displayed capacity with persistence and removal-fragility features, never guaranteed liquidity"
+  },
+  "preprocessing_and_fit": {
+    "train_role_only_fit": true,
+    "feature_order_name_dtype_and_transform_manifest_hash_required": true,
+    "nonfinite_input_policy": "fatal before fitting or scoring",
+    "feature_scaler": "training-role median and interquartile range for the linear control only",
+    "zero_iqr_policy": "drop the feature from every split and record it before target access",
+    "tree_missing_value_policy": "no implicit missing values; causal age and availability indicators remain explicit features",
+    "sample_or_class_reweighting_permitted": false,
+    "hyperparameter_search_permitted": false,
+    "lightgbm_contract_inherited_from_parent_design": true,
+    "early_stopping_uses_tuning_role_only": true,
+    "best_iteration_frozen_before_test_read": true,
+    "random_seed": 20260722,
+    "serialized_model_preprocessor_and_prediction_manifest_sha256_required": true,
+    "reload_prediction_bit_identity_required": true
+  },
+  "compute_contract": {
+    "preferred_backend": "LightGBM OpenCL GPU",
+    "opencl_platform_and_device_identity_recorded": true,
+    "discrete_gpu_preferred_over_integrated_or_cpu_opencl_device": true,
+    "deterministic_capability_and_tiny_fit_parity_preflight_required": true,
+    "gpu_claim_requires_observed_opencl_device_and_successful_training": true,
+    "bounded_cpu_fallback_permitted": true,
+    "cpu_fallback_labeled_as_gpu": false,
+    "backend_choice_may_change_rows_features_targets_or_model_capacity": false,
+    "peak_host_and_device_memory_wall_time_and_model_size_reported": true
+  },
+  "predictive_evaluation": {
+    "binary_primary_metrics": [
+      "log_loss",
+      "brier_score"
+    ],
+    "binary_accuracy_metrics_required": [
+      "accuracy_at_0.5",
+      "balanced_accuracy",
+      "Matthews_correlation_coefficient",
+      "precision_recall_AUC",
+      "ROC_AUC",
+      "expected_calibration_error",
+      "positive_prevalence"
+    ],
+    "continuous_primary_metrics": [
+      "mean_squared_error",
+      "mean_absolute_error"
+    ],
+    "continuous_secondary_metrics": [
+      "Spearman_rank_correlation",
+      "sign_accuracy",
+      "lower_tail_pinball_loss"
+    ],
+    "accuracy_only_may_establish_edge": false,
+    "positive_pnl_only_may_establish_predictive_edge": false,
+    "paired_block_unit": "UTC day plus integrity segment plus anchor identity",
+    "inference": "paired blocked sign permutation and block bootstrap",
+    "permutation_draws": 10000,
+    "bootstrap_draws": 10000,
+    "multiple_testing": "Benjamini-Hochberg false discovery rate across symbol scenario target and primary loss",
+    "maximum_q_value": 0.05,
+    "minimum_relative_log_loss_improvement": 0.002,
+    "minimum_relative_brier_improvement": 0.002,
+    "minimum_continuous_mse_skill": 0.001,
+    "minimum_positive_proper_score_folds": 4,
+    "stress_delay_must_retain_positive_skill": true,
+    "primary_scores_must_be_finite": true,
+    "all_confidence_intervals_and_denominators_reported": true
+  },
+  "tuning_only_action_rule": {
+    "model_family": "best predictively admissible staged model; test economic outcomes cannot select the family",
+    "candidate_probability_thresholds": [
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9
+    ],
+    "candidate_requires_predicted_net_bps_above": 0.0,
+    "minimum_completed_tuning_trades": 25,
+    "threshold_objective": "maximum day-and-segment blocked bootstrap lower 95 percent bound of after-cost net expectancy",
+    "threshold_tie_break": "higher threshold then lower completed trade count",
+    "no_admissible_threshold_policy": "freeze no-trade and fail the economic activity gate",
+    "candidate_side_choice": "Among long and short candidates passing the frozen probability threshold and positive predicted net-payoff requirement, choose the side with greater predicted net bps.",
+    "exact_side_score_tie_policy": "no trade",
+    "test_threshold_or_side_rule_retuning_permitted": false
+  },
+  "portfolio_simulation": {
+    "test_events_processed_in_receive-time_order": true,
+    "fixed_quote_notional_per_completed_trade": 1000.0,
+    "profit_reinvestment": false,
+    "leverage": 1.0,
+    "one_open_position_per_symbol": true,
+    "same_symbol_signal_while_position_open": "skip and report",
+    "opposite_same_symbol_hedge_permitted": false,
+    "different_symbols_may_overlap": true,
+    "maximum_concurrent_positions": 3,
+    "entry_revalidation_uses_only_frozen_pre_entry_safety_abort_reasons": true,
+    "no_trade_is_valid": true,
+    "transaction_ordering_tie_break": "anchor wall time then run id then anchor index then symbol",
+    "fees_latency_book_walk_and_adverse_reserve_inherited_without_reduction": true,
+    "funding_cash_flow_assumed": false,
+    "own_market_impact_queue_priority_hidden_liquidity_or_fill_assumed": false
+  },
+  "economic_gate": {
+    "same_frozen_predictions_used_for_predictive_evaluation": true,
+    "minimum_completed_test_trades": 100,
+    "minimum_completed_test_trades_per_day_when_eligible_conditions_exist": 5,
+    "net_expectancy_block_bootstrap_lower_95_percent_bound_must_exceed_bps": 0.0,
+    "profit_factor_block_bootstrap_lower_95_percent_bound_must_exceed": 1.0,
+    "selected_post_entry_unresolved_risk_count_must_equal": 0,
+    "complete_transaction_fraction_must_equal": 1.0,
+    "reported_metrics": [
+      "attempted actions",
+      "pre-entry aborts by reason",
+      "completed trades",
+      "net expectancy bps",
+      "profit factor",
+      "win rate",
+      "mean win and mean loss bps",
+      "maximum drawdown",
+      "time under water",
+      "annualization-free test-period return",
+      "expected shortfall at 95 percent",
+      "turnover",
+      "exposure time",
+      "concurrent exposure",
+      "symbol day and single-trade concentration",
+      "capacity by notional scenario"
+    ],
+    "annualized_roi_or_sharpe_from_seven_days_permitted": false,
+    "leverage_compounding_or_profit_reinvestment_may_create_pass": false,
+    "positive_point_estimate_with_nonpositive_lower_bound_may_pass": false
+  },
+  "test_access_and_publication": {
+    "pre_test_artifacts_hash_bound": [
+      "sealed input manifests",
+      "exact feature schema and transforms",
+      "fitted model bytes and best iterations",
+      "tuning predictions",
+      "selected model family",
+      "selected probability thresholds",
+      "action and concurrency rules"
+    ],
+    "test_read_count": 1,
+    "failed_or_mixed_result_published": true,
+    "zero_trades_or_single_class_result_published_as_failure": true,
+    "per_symbol_and_combined_denominators_required": true,
+    "machine_readable_rows_and_aggregate_tables_required": true,
+    "graphs_generated_only_from_hash-bound machine-readable results": true,
+    "manual_graph_value_editing_permitted": false,
+    "result_artifact_must_distinguish_predictive_economic_and_operational_gates": true,
+    "seven_day_result_language": "viability evidence only, never production readiness or durable profitability"
+  },
+  "ai_and_promotion_gate": {
+    "language_model_or_neural_challenger_in_this_evaluation": false,
+    "ai_challenger_open_condition": "At least two symbols independently pass the shallow predictive and economic gates on a separately sealed minimum 30-day promotion cohort.",
+    "ai_contract_must_be_frozen_before_ai_reads_promotion_test_targets": true,
+    "ai_must_use_the_same_rows_execution_costs_action_constraints_and_untouched_test": true,
+    "ai_baseline": "best frozen shallow model",
+    "ai_uplift_requires_paired_proper_score_and_after-cost economic improvement": true,
+    "multibillion_parameter_size_is_not_evidence_of_financial_edge": true,
+    "ai_failure_cannot_change_shallow_test_or unlock trading": true
+  },
+  "fail_closed_conditions": [
+    "incomplete or unauditable study seal",
+    "feature target role or source hash mismatch",
+    "test read before preprocessing model and action artifacts are sealed",
+    "nonfinite feature prediction target or metric",
+    "unknown target ineligibility reason",
+    "selected post-entry unresolved risk",
+    "missing complete-transaction denominator",
+    "unadjusted multiple comparisons",
+    "test-driven model threshold feature or policy change",
+    "backend-dependent rows features targets or model capacity",
+    "profitability leverage AI or trading claim not authorized by every prior gate"
+  ]
+}

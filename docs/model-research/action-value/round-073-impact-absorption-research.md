@@ -11,8 +11,12 @@ deterministic cohort builder and independent deep auditor are implemented, but
 no eligible seven-day cohort exists yet. Selected-anchor v2 replay and audit are
 implemented one source run per transaction, including zero-anchor manifests and
 an all-source study seal. No prospective v2 target has been observed. A new
-untouched seven-day v9 feature corpus is next. Profitability, AI, leverage,
-paper, testnet, and live authority remain closed.
+untouched seven-day v9 feature corpus is next. The selected-anchor evaluation is
+also frozen before those outcomes: source-boundary censoring is deterministic,
+pre-entry safety aborts count as attempted zero-return actions, and a selected
+post-entry unresolved exit fails the economic gate rather than disappearing
+from the sample. Profitability, AI, leverage, paper, testnet, and live authority
+remain closed.
 
 ## Why this is different
 
@@ -130,6 +134,16 @@ flowchart LR
   fresh cohort/source audits, exact replay equality, complete dimensions, and
   no orphan rows. These are implementation properties, not target or
   profitability results.
+- `round-073-selected-anchor-evaluation-contract-v1.json` freezes the one-use
+  viability analysis before an eligible v2 target result exists. It keeps
+  BTC/ETH/SOL models separate, evaluates prevalence, linear L1+tape, shallow
+  L1+tape, L2 state, and impact absorption in that order, and requires accuracy,
+  calibrated proper scores, continuous loss, blocked uncertainty, and an
+  unchanged after-cost policy. It removes only deterministic source-boundary
+  censoring. Failed pre-entry revalidation remains an attempted zero-return
+  action; a selected unresolved post-entry exit rejects the symbol's economic
+  gate. The simulation uses fixed `$1,000` notional, `1x`, no reinvestment, and
+  one open position per symbol. This is a frozen design, not model evidence.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible
@@ -169,6 +183,14 @@ notionals and apply at least `12 bps` of round-trip fees and adverse charge. A
 positive point estimate is insufficient: the blocked lower confidence bound of
 net expectancy and profit factor must clear zero and one, with at least 100 test
 trades and bounded tail risk. The result is still not a fill claim.
+
+The primary action is fixed at a 500 ms delay, 60-second holding horizon, and
+`$1,000` quote notional. Both long and short action values are predicted before
+the higher admissible side is selected. Probability thresholds are chosen once
+on day five from a fixed grid; days six and seven are read once only after the
+model, preprocessing, and policy artifacts are hash-bound. Same-symbol signals
+are skipped while that symbol already has a simulated position. Seven-day
+annualized ROI or Sharpe claims are prohibited.
 
 ## Model and AI boundary
 
