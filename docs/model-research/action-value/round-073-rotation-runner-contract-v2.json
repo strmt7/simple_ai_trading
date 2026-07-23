@@ -1,0 +1,150 @@
+{
+  "schema_version": "round-073-rotation-runner-contract-v2",
+  "contract_sha256": "ab67b8678c07e2797aae6f922ef4a57f82db9124b7aadba45f1b3293815df59f",
+  "round": 73,
+  "supersedes_contract_sha256": "8f20a25adfc2d33a43d0a8acd0ad55361956d4443e85cc7b1740f882bfc5b9ea",
+  "parent_corpus_contract_sha256": "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b",
+  "parent_compact_target_contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
+  "frozen_before_first_v2_rotation_run": true,
+  "purpose": "Collect bounded, reconnect-free, exact-wire v9 one-hour BTCUSDT, ETHUSDT, and SOLUSDT public-feed segments for the untouched Round 73 study, with durable recovery, one writer lease, visible progress, and no trading authority.",
+  "revision": {
+    "v1_runner_capture_schema_version": "round-073-prospective-evidence-v8",
+    "v1_runner_contract_remains_immutable": true,
+    "v1_terminal_batch_audit_remains_supported": true,
+    "reason": "The compact prospective study admits exact-wire v9 only; silently retaining the v8 default would collect an ineligible seven-day corpus.",
+    "target_or_market_outcome_used_for_revision": false,
+    "historical_v1_batch_or_capture_row_rewritten": false
+  },
+  "source_basis": [
+    {
+      "title": "Binance API documentation",
+      "url": "https://developers.binance.com/en/docs/introduction",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Production integrations must monitor connection health, reconnect behavior, endpoint limits, and product-specific changes."
+    },
+    {
+      "title": "DuckDB concurrency",
+      "url": "https://duckdb.org/docs/current/connect/concurrency",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "A native DuckDB file is operated by one intentional read-write process; the durable lease supplements the database file lock."
+    },
+    {
+      "title": "DuckDB transactions",
+      "url": "https://duckdb.org/docs/current/sql/statements/transactions",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Lease, journal, and terminal report transitions use explicit atomic transactions."
+    }
+  ],
+  "capture_scope": {
+    "venue": "Binance USD-M Futures public market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+    "capture_report_schema_version": "round-073-capture-report-v9",
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "segment_duration_seconds": 3600,
+    "maximum_reconnects_per_segment": 0,
+    "minimum_segments_per_invocation": 0,
+    "maximum_segments_per_invocation": 168,
+    "default_segments_per_invocation": 1,
+    "zero_segments_means_recovery_only": true,
+    "unbounded_loop_permitted": false
+  },
+  "single_writer_lease": {
+    "table": "impact_corpus_runner_lease_v1",
+    "singleton_key": "round-073-corpus-collector",
+    "shared_with_v1_runner": true,
+    "lease_ttl_seconds": 7200,
+    "renew_before_each_capture_or_index_operation": true,
+    "second_owner_policy": "fail before public-feed capture",
+    "expired_lease_takeover_permitted": true,
+    "duckdb_file_lock_remains_authoritative": true
+  },
+  "durable_journal": {
+    "batch_table": "impact_corpus_batch_v1",
+    "segment_table": "impact_corpus_batch_segment_v1",
+    "tables_are_append_only_multi_contract_journals": true,
+    "each_batch_row_binds_its_schema_and_contract_sha256": true,
+    "batch_id_format": "32 lowercase hexadecimal characters",
+    "terminal_supervisor_json_hash_required": true,
+    "manifest_hash_required": true,
+    "manifest_audit_result_required": true,
+    "running_batch_without_live_lease_status": "interrupted",
+    "terminal_report_json_hash_required": true,
+    "existing_terminal_rows_overwritten": false
+  },
+  "recovery_policy": {
+    "run_before_new_capture": true,
+    "candidate_scope": "terminal v9 runs whose stored report states qualification_passed true and which have no corpus manifest",
+    "v8_candidate_auto_recovered_by_v2": false,
+    "exact_index_admission_reapplied": true,
+    "post_index_manifest_audit_required": true,
+    "recovery_failure_policy": "stop before new capture",
+    "unqualified_historical_or_cross_schema_run_auto_promoted": false
+  },
+  "capture_policy": {
+    "segments_collected_sequentially": true,
+    "fresh_snapshot_per_segment": true,
+    "next_segment_starts_only_after_terminal_capture_report": true,
+    "stop_after_first_nonqualified_or_reconnected_segment": true,
+    "database_and_wal_cap_enforced_each_segment": true,
+    "payload_cap_enforced_each_segment": true,
+    "source_and_writer_heartbeat_enforced": true,
+    "cli_progress_interval_seconds_default": 30,
+    "rate_limit_start_guard_fraction": 0.8,
+    "capture_reports_combined_for_admission": false
+  },
+  "index_policy": {
+    "exact_feature_replay_concurrent_with_live_capture": false,
+    "reason": "Avoid replay CPU, memory, and database read pressure during latency-sensitive public-feed capture.",
+    "qualified_runs_indexed_after_capture_phase": true,
+    "previously_qualified_v9_runs_indexed_after_a_later_capture_failure": true,
+    "index_order": "capture start time then run ID",
+    "index_parallelism": 1,
+    "post_write_manifest_audit_required": true,
+    "stop_after_first_index_or_manifest_audit_failure": true,
+    "idempotent_resume_required": true
+  },
+  "prospective_study_boundary": {
+    "eligible_anchor_wall_utc_not_before": "2026-07-24T00:00:00Z",
+    "capture_may_start_before_boundary": true,
+    "cohort_builder_clips_anchors_before_boundary": true,
+    "earliest_seven_consecutive_integrity_complete_days_selected_automatically": true,
+    "feature_target_or_return_used_to_choose_collection_days": false
+  },
+  "calendar_policy": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_statistical_partition_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "qualification_sequence": [
+    "focused v2 schema recovery lease journal and interruption tests",
+    "generated CLI and Windows command-contract parity tests",
+    "one real one-hour v9 rotation segment",
+    "fresh deep rotation batch and underlying corpus audit",
+    "only then a bounded multi-segment prospective collection"
+  ],
+  "authority": {
+    "runner_v2_implementation": true,
+    "one_v9_rotation_qualification_segment_after_tests": true,
+    "multi_segment_collection_before_one_segment_gate": false,
+    "round_073_feature_construction": true,
+    "round_073_cohort_construction_after_seven_complete_days": true,
+    "round_073_target_construction_before_cohort_freeze": false,
+    "round_073_model_evaluation": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "leverage_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
