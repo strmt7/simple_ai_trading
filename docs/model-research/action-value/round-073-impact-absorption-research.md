@@ -8,9 +8,11 @@ no model was trained. Compact target v2 is now preregistered before collection:
 it uses only feature-selected shocks from new v9 data, retains the cost floor,
 and evaluates 15, 60, and 300-second paths one source run at a time. Its
 deterministic cohort builder and independent deep auditor are implemented, but
-no eligible seven-day cohort exists yet. A new untouched seven-day v9 feature
-corpus is next. Profitability, AI, leverage, paper, testnet, and live authority
-remain closed.
+no eligible seven-day cohort exists yet. Selected-anchor v2 replay and audit are
+implemented one source run per transaction, including zero-anchor manifests and
+an all-source study seal. No prospective v2 target has been observed. A new
+untouched seven-day v9 feature corpus is next. Profitability, AI, leverage,
+paper, testnet, and live authority remain closed.
 
 ## Why this is different
 
@@ -119,6 +121,15 @@ flowchart LR
   symbol's shock threshold from the first four days only, and freezes days five,
   six, and seven as tuning and test. UTC midnight remains a partition, not a
   crypto market close. Exchange-listed ETF/ETP sessions remain context only.
+- The v2 target store materializes only selected cohort anchors, with 36 frozen
+  long/short scenarios per anchor across 500/1,000 ms delays, 15/60/300 second
+  horizons, and $100/$1,000/$5,000 reference notionals. Every option binds the
+  original mechanics hash, cohort ID, and selected-anchor hash. Per-run writes
+  are atomic and bounded. Independent audits reconstruct every target from the
+  source's exact-wire frames. The final study seal requires every source run,
+  fresh cohort/source audits, exact replay equality, complete dimensions, and
+  no orphan rows. These are implementation properties, not target or
+  profitability results.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible

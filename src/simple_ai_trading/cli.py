@@ -132,6 +132,12 @@ from .impact_absorption_target_store import (
     audit_round73_executable_targets,
     build_round73_executable_targets,
 )
+from .impact_absorption_target_store_v2 import (
+    audit_round73_selected_anchor_targets,
+    audit_round73_target_study,
+    build_round73_selected_anchor_targets,
+    seal_round73_target_study,
+)
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
     IMPACT_CAPTURE_SCHEMA_VERSION,
@@ -1454,6 +1460,35 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_target_build.add_argument("--json", action="store_true")
     parser_impact_target_build.set_defaults(func=command_impact_target_build)
 
+    parser_impact_target_v2_build = subparsers.add_parser(
+        "impact-target-v2-build",
+        help="build bounded targets for one frozen shock-cohort source run",
+    )
+    parser_impact_target_v2_build.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_target_v2_build.add_argument("--study-id", required=True)
+    parser_impact_target_v2_build.add_argument("--run-id", required=True)
+    parser_impact_target_v2_build.add_argument("--memory-limit", default="2GB")
+    parser_impact_target_v2_build.add_argument(
+        "--database-threads", type=int, default=2
+    )
+    parser_impact_target_v2_build.add_argument("--json", action="store_true")
+    parser_impact_target_v2_build.set_defaults(func=command_impact_target_v2_build)
+
+    parser_impact_target_v2_seal = subparsers.add_parser(
+        "impact-target-v2-seal",
+        help="seal a complete audited Round 73 target study",
+    )
+    parser_impact_target_v2_seal.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_target_v2_seal.add_argument("--study-id", required=True)
+    parser_impact_target_v2_seal.add_argument("--memory-limit", default="2GB")
+    parser_impact_target_v2_seal.add_argument("--database-threads", type=int, default=2)
+    parser_impact_target_v2_seal.add_argument("--json", action="store_true")
+    parser_impact_target_v2_seal.set_defaults(func=command_impact_target_v2_seal)
+
     parser_impact_corpus_audit = subparsers.add_parser(
         "impact-corpus-audit",
         help="reconcile one immutable Round 73 corpus manifest",
@@ -1505,6 +1540,39 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_target_audit.add_argument("--database-threads", type=int, default=2)
     parser_impact_target_audit.add_argument("--json", action="store_true")
     parser_impact_target_audit.set_defaults(func=command_impact_target_audit)
+
+    parser_impact_target_v2_audit = subparsers.add_parser(
+        "impact-target-v2-audit",
+        help="independently replay and audit one selected-anchor target run",
+    )
+    parser_impact_target_v2_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_target_v2_audit.add_argument("--study-id", required=True)
+    parser_impact_target_v2_audit.add_argument("--run-id", required=True)
+    parser_impact_target_v2_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_target_v2_audit.add_argument(
+        "--database-threads", type=int, default=2
+    )
+    parser_impact_target_v2_audit.add_argument("--json", action="store_true")
+    parser_impact_target_v2_audit.set_defaults(func=command_impact_target_v2_audit)
+
+    parser_impact_target_v2_study_audit = subparsers.add_parser(
+        "impact-target-v2-study-audit",
+        help="audit a sealed target study and replay every source run",
+    )
+    parser_impact_target_v2_study_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_target_v2_study_audit.add_argument("--study-id", required=True)
+    parser_impact_target_v2_study_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_target_v2_study_audit.add_argument(
+        "--database-threads", type=int, default=2
+    )
+    parser_impact_target_v2_study_audit.add_argument("--json", action="store_true")
+    parser_impact_target_v2_study_audit.set_defaults(
+        func=command_impact_target_v2_study_audit
+    )
 
     parser_impact_corpus_day = subparsers.add_parser(
         "impact-corpus-day",
@@ -11394,6 +11462,57 @@ def command_impact_target_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_impact_target_v2_build(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        report = build_round73_selected_anchor_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-target-v2-build failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-target-v2-build: "
+            f"study={report.study_id} run={report.run_id} "
+            f"anchors={report.selected_anchor_count} options={report.option_count} "
+            f"eligible={report.eligible_option_count} "
+            f"positive={report.positive_option_count}"
+        )
+    return 0
+
+
+def command_impact_target_v2_seal(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        report = seal_round73_target_study(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-target-v2-seal failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-target-v2-seal: "
+            f"study={report.study_id} runs={report.source_run_count} "
+            f"anchors={report.selected_anchor_count} options={report.option_count}"
+        )
+    return 0
+
+
 def command_impact_corpus_audit(args: argparse.Namespace) -> int:
     import duckdb
 
@@ -11499,6 +11618,61 @@ def command_impact_target_audit(args: argparse.Namespace) -> int:
             "impact-target-audit: "
             f"passed={str(audit.passed).lower()} run={audit.run_id} "
             f"options={audit.option_count} eligible={audit.eligible_option_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
+
+
+def command_impact_target_v2_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_selected_anchor_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-target-v2-audit failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(audit.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-target-v2-audit: "
+            f"passed={str(audit.passed).lower()} study={audit.study_id} "
+            f"run={audit.run_id} anchors={audit.selected_anchor_count} "
+            f"options={audit.option_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
+
+
+def command_impact_target_v2_study_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_target_study(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-target-v2-study-audit failed: {exc}", file=sys.stderr)
+        return 2
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(audit.as_dict(), indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-target-v2-study-audit: "
+            f"passed={str(audit.passed).lower()} study={audit.study_id} "
+            f"runs={audit.audited_target_run_count}/{audit.source_run_count} "
+            f"options={audit.option_count}"
         )
         for error in audit.errors:
             print(f"warning: {error}", file=sys.stderr)

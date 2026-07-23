@@ -135,7 +135,7 @@ def _ineligible_mask(reason: str) -> int:
 
 
 @dataclass(frozen=True)
-class _Anchor:
+class Round73TargetReplayAnchor:
     symbol: str
     anchor_index: int
     decision_monotonic_ns: int
@@ -145,7 +145,7 @@ class _Anchor:
 
 @dataclass(frozen=True)
 class _Decision:
-    anchor: _Anchor
+    anchor: Round73TargetReplayAnchor
     book_received_monotonic_ns: int
     book_state: L2BookState
     quantities: tuple[tuple[float, float | None], ...]
@@ -264,7 +264,14 @@ _OUTCOME_FIELDS = (
 )
 
 
-def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
+def round73_target_option_invariant_errors(
+    option: Round73TargetOption,
+    *,
+    entry_delays_ms: Sequence[int] = ROUND73_TARGET_ENTRY_DELAYS_MS,
+    horizons_ms: Sequence[int] = ROUND73_TARGET_HORIZONS_MS,
+    reference_notionals: Sequence[float] = ROUND73_TARGET_REFERENCE_NOTIONALS,
+    sides: Sequence[str] = ROUND73_TARGET_SIDES,
+) -> tuple[str, ...]:
     errors: list[str] = []
 
     def require(condition: bool, label: str) -> None:
@@ -274,13 +281,13 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
     require(option.run_id == option.run_id.strip().lower(), "run_id")
     require(option.symbol in IMPACT_CAPTURE_SYMBOLS, "symbol")
     require(option.anchor_index >= 0, "anchor_index")
-    require(option.entry_delay_ms in ROUND73_TARGET_ENTRY_DELAYS_MS, "entry_delay")
-    require(option.horizon_ms in ROUND73_TARGET_HORIZONS_MS, "horizon")
+    require(option.entry_delay_ms in entry_delays_ms, "entry_delay")
+    require(option.horizon_ms in horizons_ms, "horizon")
     require(
-        option.reference_quote_notional in ROUND73_TARGET_REFERENCE_NOTIONALS,
+        option.reference_quote_notional in reference_notionals,
         "reference_notional",
     )
-    require(option.side in ROUND73_TARGET_SIDES, "side")
+    require(option.side in sides, "side")
     require(
         option.decision_book_received_monotonic_ns < option.decision_monotonic_ns,
         "decision_book_future",
@@ -293,7 +300,9 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
     require(math.isfinite(option.decision_mid) and option.decision_mid > 0, "mid")
     reasons = json.loads(option.ineligible_reasons_json)
     decoded = [
-        name for name, bit in _INELIGIBLE_BITS.items() if option.ineligible_reason_mask & bit
+        name
+        for name, bit in _INELIGIBLE_BITS.items()
+        if option.ineligible_reason_mask & bit
     ]
     require(reasons == decoded, "reason_identity")
     require(option.eligible == (option.ineligible_reason_mask == 0), "eligibility")
@@ -309,8 +318,7 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
         require(option.entry_state_lateness_ms is not None, "entry_lateness_missing")
         if option.entry_state_lateness_ms is not None:
             expected_entry_lateness = (
-                option.actual_entry_monotonic_ns
-                - option.requested_entry_monotonic_ns
+                option.actual_entry_monotonic_ns - option.requested_entry_monotonic_ns
             ) / 1_000_000.0
             require(
                 math.isclose(
@@ -326,7 +334,10 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
             math.isfinite(option.base_quantity) and option.base_quantity > 0,
             "base_quantity",
         )
-    if option.entry_average_price is not None or option.entry_quote_notional is not None:
+    if (
+        option.entry_average_price is not None
+        or option.entry_quote_notional is not None
+    ):
         require(
             option.entry_average_price is not None
             and option.entry_quote_notional is not None
@@ -339,8 +350,7 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
             and option.base_quantity is not None
         ):
             require(
-                option.entry_average_price > 0.0
-                and option.entry_quote_notional > 0.0,
+                option.entry_average_price > 0.0 and option.entry_quote_notional > 0.0,
                 "entry_walk_nonpositive",
             )
             require(
@@ -420,8 +430,7 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
                 "eligible_exit_lateness",
             )
             require(
-                option.exit_average_price > 0.0
-                and option.exit_quote_notional > 0.0,
+                option.exit_average_price > 0.0 and option.exit_quote_notional > 0.0,
                 "exit_walk_nonpositive",
             )
             require(
@@ -502,7 +511,7 @@ def _option_invariant_errors(option: Round73TargetOption) -> tuple[str, ...]:
     return tuple(errors)
 
 
-def _quantity_invariant_errors(
+def round73_target_quantity_invariant_errors(
     option: Round73TargetOption,
     rules: Round73MarketQuantityRules,
 ) -> tuple[str, ...]:
@@ -529,10 +538,11 @@ def _quantity_invariant_errors(
     ):
         return ("quantity_identity",)
     if option.entry_quote_notional is not None:
-        below_minimum = Decimal(str(option.entry_quote_notional)) < rules.minimum_notional
+        below_minimum = (
+            Decimal(str(option.entry_quote_notional)) < rules.minimum_notional
+        )
         if below_minimum != (
-            option.ineligible_reason_mask
-            == _INELIGIBLE_BITS["entry_minimum_notional"]
+            option.ineligible_reason_mask == _INELIGIBLE_BITS["entry_minimum_notional"]
         ):
             return ("entry_minimum_notional_identity",)
     return ()
@@ -590,11 +600,15 @@ class _TargetReplay:
         self,
         *,
         run_id: str,
-        anchors: Mapping[str, Sequence[_Anchor]],
+        anchors: Mapping[str, Sequence[Round73TargetReplayAnchor]],
         quantity_rules: Mapping[str, Round73MarketQuantityRules],
         run_started_wall_ns: int,
         run_started_monotonic_ns: int,
         coverage_end_monotonic_ns: int,
+        entry_delays_ms: Sequence[int] = ROUND73_TARGET_ENTRY_DELAYS_MS,
+        horizons_ms: Sequence[int] = ROUND73_TARGET_HORIZONS_MS,
+        reference_notionals: Sequence[float] = ROUND73_TARGET_REFERENCE_NOTIONALS,
+        sides: Sequence[str] = ROUND73_TARGET_SIDES,
     ) -> None:
         self.run_id = run_id
         self.anchors = {
@@ -604,6 +618,34 @@ class _TargetReplay:
         self.run_started_wall_ns = int(run_started_wall_ns)
         self.run_started_monotonic_ns = int(run_started_monotonic_ns)
         self.coverage_end_monotonic_ns = int(coverage_end_monotonic_ns)
+        self.entry_delays_ms = tuple(int(value) for value in entry_delays_ms)
+        self.horizons_ms = tuple(int(value) for value in horizons_ms)
+        self.reference_notionals = tuple(float(value) for value in reference_notionals)
+        self.sides = tuple(str(value) for value in sides)
+        if (
+            not self.entry_delays_ms
+            or len(set(self.entry_delays_ms)) != len(self.entry_delays_ms)
+            or any(value <= 0 for value in self.entry_delays_ms)
+            or not self.horizons_ms
+            or len(set(self.horizons_ms)) != len(self.horizons_ms)
+            or any(value <= 0 for value in self.horizons_ms)
+            or not self.reference_notionals
+            or len(set(self.reference_notionals)) != len(self.reference_notionals)
+            or any(
+                not math.isfinite(value) or value <= 0
+                for value in self.reference_notionals
+            )
+            or not self.sides
+            or len(set(self.sides)) != len(self.sides)
+            or any(value not in ROUND73_TARGET_SIDES for value in self.sides)
+        ):
+            raise ValueError("Round 73 target replay dimensions are invalid")
+        self.expected_options_per_anchor = (
+            len(self.entry_delays_ms)
+            * len(self.horizons_ms)
+            * len(self.reference_notionals)
+            * len(self.sides)
+        )
         self.latest_state: dict[str, tuple[int, L2BookState]] = {}
         self.latest_next_funding_ms: dict[str, int] = {}
         self.pending_entries: dict[str, deque[_PendingEntry]] = {
@@ -666,10 +708,8 @@ class _TargetReplay:
         )
         exit_lateness = (
             None
-            if actual_exit_monotonic_ns is None
-            or requested_exit_monotonic_ns is None
-            else (actual_exit_monotonic_ns - requested_exit_monotonic_ns)
-            / 1_000_000.0
+            if actual_exit_monotonic_ns is None or requested_exit_monotonic_ns is None
+            else (actual_exit_monotonic_ns - requested_exit_monotonic_ns) / 1_000_000.0
         )
         option = _make_option(
             run_id=self.run_id,
@@ -683,9 +723,7 @@ class _TargetReplay:
             ineligible_reason_mask=mask,
             ineligible_reasons_json=_canonical_json([reason]),
             decision_monotonic_ns=decision.anchor.decision_monotonic_ns,
-            decision_book_received_monotonic_ns=(
-                decision.book_received_monotonic_ns
-            ),
+            decision_book_received_monotonic_ns=(decision.book_received_monotonic_ns),
             requested_entry_monotonic_ns=int(requested_entry_monotonic_ns),
             actual_entry_monotonic_ns=actual_entry_monotonic_ns,
             entry_state_lateness_ms=entry_lateness,
@@ -694,7 +732,9 @@ class _TargetReplay:
             exit_state_lateness_ms=exit_lateness,
             base_quantity=base_quantity,
             decision_mid=decision.book_state.mid,
-            entry_average_price=(None if entry_walk is None else entry_walk.average_price),
+            entry_average_price=(
+                None if entry_walk is None else entry_walk.average_price
+            ),
             entry_quote_notional=(
                 None if entry_walk is None else entry_walk.quote_notional
             ),
@@ -712,14 +752,20 @@ class _TargetReplay:
             entry_update_id=entry_update_id,
             exit_update_id=None,
         )
-        errors = _option_invariant_errors(option)
+        errors = round73_target_option_invariant_errors(
+            option,
+            entry_delays_ms=self.entry_delays_ms,
+            horizons_ms=self.horizons_ms,
+            reference_notionals=self.reference_notionals,
+            sides=self.sides,
+        )
         if errors:
             raise ValueError(
                 "Round 73 ineligible target invariant failed: " + ",".join(errors)
             )
         self.rows.append(option)
 
-    def _schedule_anchor(self, anchor: _Anchor) -> None:
+    def _schedule_anchor(self, anchor: Round73TargetReplayAnchor) -> None:
         latest = self.latest_state.get(anchor.symbol)
         if latest is None:
             raise ValueError("Round 73 target decision has no synchronized book")
@@ -738,7 +784,7 @@ class _TargetReplay:
                     decision_mid=state.mid,
                 ),
             )
-            for reference in ROUND73_TARGET_REFERENCE_NOTIONALS
+            for reference in self.reference_notionals
         )
         decision = _Decision(
             anchor=anchor,
@@ -746,13 +792,13 @@ class _TargetReplay:
             book_state=state,
             quantities=quantities,
         )
-        for delay_ms in ROUND73_TARGET_ENTRY_DELAYS_MS:
+        for delay_ms in self.entry_delays_ms:
             requested_entry = anchor.decision_monotonic_ns + delay_ms * 1_000_000
             for reference, quantity in quantities:
                 if quantity is not None:
                     continue
-                for horizon_ms in ROUND73_TARGET_HORIZONS_MS:
-                    for side in ROUND73_TARGET_SIDES:
+                for horizon_ms in self.horizons_ms:
+                    for side in self.sides:
                         self._record_ineligible(
                             decision=decision,
                             entry_delay_ms=delay_ms,
@@ -795,8 +841,8 @@ class _TargetReplay:
         for reference, quantity in pending.decision.quantities:
             if quantity is None:
                 continue
-            for horizon_ms in ROUND73_TARGET_HORIZONS_MS:
-                for side in ROUND73_TARGET_SIDES:
+            for horizon_ms in self.horizons_ms:
+                for side in self.sides:
                     self._record_ineligible(
                         decision=pending.decision,
                         entry_delay_ms=pending.entry_delay_ms,
@@ -886,13 +932,10 @@ class _TargetReplay:
         pending_queue = self.pending_entries[symbol]
         while (
             pending_queue
-            and pending_queue[0].requested_entry_monotonic_ns
-            <= received_monotonic_ns
+            and pending_queue[0].requested_entry_monotonic_ns <= received_monotonic_ns
         ):
             pending = pending_queue.popleft()
-            lateness = (
-                received_monotonic_ns - pending.requested_entry_monotonic_ns
-            )
+            lateness = received_monotonic_ns - pending.requested_entry_monotonic_ns
             if lateness > ROUND73_TARGET_MAX_STATE_LATENESS_NS:
                 self._pending_entry_failure(
                     pending,
@@ -904,7 +947,7 @@ class _TargetReplay:
             for reference, quantity in pending.decision.quantities:
                 if quantity is None:
                     continue
-                for side in ROUND73_TARGET_SIDES:
+                for side in self.sides:
                     entry_walk = self._walk_for_action(
                         state,
                         side=side,
@@ -912,7 +955,7 @@ class _TargetReplay:
                         base_quantity=quantity,
                     )
                     if entry_walk is None:
-                        for horizon_ms in ROUND73_TARGET_HORIZONS_MS:
+                        for horizon_ms in self.horizons_ms:
                             self._record_ineligible(
                                 decision=pending.decision,
                                 entry_delay_ms=pending.entry_delay_ms,
@@ -928,7 +971,7 @@ class _TargetReplay:
                             )
                         continue
                     if Decimal(str(entry_walk.quote_notional)) < rules.minimum_notional:
-                        for horizon_ms in ROUND73_TARGET_HORIZONS_MS:
+                        for horizon_ms in self.horizons_ms:
                             self._record_ineligible(
                                 decision=pending.decision,
                                 entry_delay_ms=pending.entry_delay_ms,
@@ -952,7 +995,7 @@ class _TargetReplay:
                         base_quantity=quantity,
                     )
                     if close_walk is None:
-                        for horizon_ms in ROUND73_TARGET_HORIZONS_MS:
+                        for horizon_ms in self.horizons_ms:
                             self._record_ineligible(
                                 decision=pending.decision,
                                 entry_delay_ms=pending.entry_delay_ms,
@@ -969,7 +1012,7 @@ class _TargetReplay:
                                 entry_update_id=state.update_id,
                             )
                         continue
-                    for horizon_ms in ROUND73_TARGET_HORIZONS_MS:
+                    for horizon_ms in self.horizons_ms:
                         self._start_position(
                             pending=pending,
                             state_received_monotonic_ns=received_monotonic_ns,
@@ -1099,15 +1142,11 @@ class _TargetReplay:
                 eligible=True,
                 ineligible_reason_mask=0,
                 ineligible_reasons_json="[]",
-                decision_monotonic_ns=(
-                    position.decision.anchor.decision_monotonic_ns
-                ),
+                decision_monotonic_ns=(position.decision.anchor.decision_monotonic_ns),
                 decision_book_received_monotonic_ns=(
                     position.decision.book_received_monotonic_ns
                 ),
-                requested_entry_monotonic_ns=(
-                    position.requested_entry_monotonic_ns
-                ),
+                requested_entry_monotonic_ns=(position.requested_entry_monotonic_ns),
                 actual_entry_monotonic_ns=position.actual_entry_monotonic_ns,
                 entry_state_lateness_ms=(
                     position.actual_entry_monotonic_ns
@@ -1128,12 +1167,8 @@ class _TargetReplay:
                 net_payoff_quote=payoff.net_payoff_quote,
                 net_payoff_bps=payoff.net_payoff_bps,
                 positive_net_payoff=payoff.positive_net_payoff,
-                maximum_adverse_excursion_bps=(
-                    position.minimum_net_payoff_bps
-                ),
-                maximum_favorable_excursion_bps=(
-                    position.maximum_net_payoff_bps
-                ),
+                maximum_adverse_excursion_bps=(position.minimum_net_payoff_bps),
+                maximum_favorable_excursion_bps=(position.maximum_net_payoff_bps),
                 maximum_spread_bps=position.maximum_spread_bps,
                 minimum_exit_side_capacity_ratio=(
                     position.minimum_exit_side_capacity_ratio
@@ -1141,11 +1176,16 @@ class _TargetReplay:
                 entry_update_id=position.entry_update_id,
                 exit_update_id=state.update_id,
             )
-            errors = _option_invariant_errors(option)
+            errors = round73_target_option_invariant_errors(
+                option,
+                entry_delays_ms=self.entry_delays_ms,
+                horizons_ms=self.horizons_ms,
+                reference_notionals=self.reference_notionals,
+                sides=self.sides,
+            )
             if errors:
                 raise ValueError(
-                    "Round 73 eligible target invariant failed: "
-                    + ",".join(errors)
+                    "Round 73 eligible target invariant failed: " + ",".join(errors)
                 )
             self.rows.append(option)
 
@@ -1184,7 +1224,7 @@ class _TargetReplay:
                 self._record_position_ineligible(position, reason="coverage_end")
             self.active[symbol].clear()
             self.exit_heap[symbol].clear()
-        expected = self.scheduled_anchor_count * _EXPECTED_OPTIONS_PER_ANCHOR
+        expected = self.scheduled_anchor_count * self.expected_options_per_anchor
         if len(self.rows) != expected:
             raise ValueError(
                 "Round 73 target option count differs: "
@@ -1197,7 +1237,7 @@ class _TargetReplay:
         return self.rows
 
 
-def _parse_quantity_rules(
+def parse_round73_target_quantity_rules(
     connection: duckdb.DuckDBPyConnection,
     *,
     run_id: str,
@@ -1266,17 +1306,21 @@ def _parse_quantity_rules(
     return selected
 
 
-def _target_rows_v9(
+def replay_round73_target_rows_v9(
     connection: duckdb.DuckDBPyConnection,
     *,
     run_id: str,
-    anchors: Mapping[str, Sequence[_Anchor]],
+    anchors: Mapping[str, Sequence[Round73TargetReplayAnchor]],
     quantity_rules: Mapping[str, Round73MarketQuantityRules],
     run_started_wall_ns: int,
     run_started_monotonic_ns: int,
     coverage_start_wall_ns: int,
     coverage_end_wall_ns: int,
     segments: Sequence[tuple[object, ...]],
+    entry_delays_ms: Sequence[int] = ROUND73_TARGET_ENTRY_DELAYS_MS,
+    horizons_ms: Sequence[int] = ROUND73_TARGET_HORIZONS_MS,
+    reference_notionals: Sequence[float] = ROUND73_TARGET_REFERENCE_NOTIONALS,
+    sides: Sequence[str] = ROUND73_TARGET_SIDES,
 ) -> list[Round73TargetOption]:
     preflight = load_impact_capture_v9_preflight(connection, run_id=run_id)
     if coverage_start_wall_ns < preflight.ready_wall_ns:
@@ -1303,6 +1347,10 @@ def _target_rows_v9(
         run_started_wall_ns=run_started_wall_ns,
         run_started_monotonic_ns=run_started_monotonic_ns,
         coverage_end_monotonic_ns=coverage_end_mono,
+        entry_delays_ms=entry_delays_ms,
+        horizons_ms=horizons_ms,
+        reference_notionals=reference_notionals,
+        sides=sides,
     )
     observed_snapshots: set[str] = set()
     for frame_index, message_index, record in iter_impact_capture_v9_records(
@@ -1619,8 +1667,7 @@ def _insert_option_batch(
                     dtype=np.float64,
                 )
                 projection = (
-                    f"CASE WHEN isnan({view}.column0) THEN NULL "
-                    f"ELSE {view}.column0 END"
+                    f"CASE WHEN isnan({view}.column0) THEN NULL ELSE {view}.column0 END"
                 )
             elif all(isinstance(value, str) for value in values):
                 array = np.asarray(values, dtype=np.str_)
@@ -1641,7 +1688,7 @@ def _insert_option_batch(
             connection.unregister(view)
 
 
-def _option_from_row(row: Sequence[object]) -> Round73TargetOption:
+def round73_target_option_from_row(row: Sequence[object]) -> Round73TargetOption:
     if len(row) != len(_OPTION_COLUMNS):
         raise ValueError("Round 73 target row width differs")
     raw = dict(zip(_OPTION_COLUMNS, row, strict=True))
@@ -1792,11 +1839,11 @@ def build_round73_executable_targets(
             """,
             [selected],
         ).fetchall()
-        anchors: dict[str, list[_Anchor]] = {
+        anchors: dict[str, list[Round73TargetReplayAnchor]] = {
             symbol: [] for symbol in IMPACT_CAPTURE_SYMBOLS
         }
         for row in anchor_rows:
-            anchor = _Anchor(
+            anchor = Round73TargetReplayAnchor(
                 symbol=str(row[0]),
                 anchor_index=int(row[1]),
                 decision_monotonic_ns=int(row[2]),
@@ -1804,10 +1851,15 @@ def build_round73_executable_targets(
                 source_max_received_monotonic_ns=int(row[4]),
             )
             anchors[anchor.symbol].append(anchor)
-        if sum(len(values) for values in anchors.values()) != grid_audit.valid_anchor_count:
+        if (
+            sum(len(values) for values in anchors.values())
+            != grid_audit.valid_anchor_count
+        ):
             raise ValueError("Round 73 target valid-anchor count differs")
-        quantity_rules = _parse_quantity_rules(connection, run_id=selected)
-        options = _target_rows_v9(
+        quantity_rules = parse_round73_target_quantity_rules(
+            connection, run_id=selected
+        )
+        options = replay_round73_target_rows_v9(
             connection,
             run_id=selected,
             anchors=anchors,
@@ -1820,8 +1872,10 @@ def build_round73_executable_targets(
         )
     for option in options:
         errors = (
-            *_option_invariant_errors(option),
-            *_quantity_invariant_errors(option, quantity_rules[option.symbol]),
+            *round73_target_option_invariant_errors(option),
+            *round73_target_quantity_invariant_errors(
+                option, quantity_rules[option.symbol]
+            ),
         )
         if errors:
             raise ValueError(
@@ -1834,8 +1888,12 @@ def build_round73_executable_targets(
         source_grid_manifest_sha256=grid_audit.build_manifest_sha256,
         options=options,
         valid_anchor_count=grid_audit.valid_anchor_count,
-        first_decision_wall_ns=min(anchor.decision_wall_ns for values in anchors.values() for anchor in values),
-        last_decision_wall_ns=max(anchor.decision_wall_ns for values in anchors.values() for anchor in values),
+        first_decision_wall_ns=min(
+            anchor.decision_wall_ns for values in anchors.values() for anchor in values
+        ),
+        last_decision_wall_ns=max(
+            anchor.decision_wall_ns for values in anchors.values() for anchor in values
+        ),
     )
     manifest_text = _canonical_json(identity)
     manifest_sha256 = _sha256_text(manifest_text)
@@ -1989,7 +2047,9 @@ def audit_round73_executable_targets(
                 or identity.get("trading_authority") is not False
             ):
                 raise ValueError("target manifest fields differ")
-            quantity_rules = _parse_quantity_rules(connection, run_id=selected)
+            quantity_rules = parse_round73_target_quantity_rules(
+                connection, run_id=selected
+            )
             query = (
                 "SELECT "
                 + ", ".join(_OPTION_COLUMNS)
@@ -2027,10 +2087,10 @@ def audit_round73_executable_targets(
             try:
                 while batch := cursor.fetchmany(_FETCH_BATCH_SIZE):
                     for raw_row in batch:
-                        option = _option_from_row(raw_row)
+                        option = round73_target_option_from_row(raw_row)
                         invariant_errors = (
-                            *_option_invariant_errors(option),
-                            *_quantity_invariant_errors(
+                            *round73_target_option_invariant_errors(option),
+                            *round73_target_quantity_invariant_errors(
                                 option,
                                 quantity_rules[option.symbol],
                             ),
@@ -2132,12 +2192,25 @@ def audit_round73_executable_targets(
     )
 
 
+# Preserve the internal test seam while v2 uses the named replay API.
+_Anchor = Round73TargetReplayAnchor
+_option_from_row = round73_target_option_from_row
+_option_invariant_errors = round73_target_option_invariant_errors
+_quantity_invariant_errors = round73_target_quantity_invariant_errors
+
+
 __all__ = [
     "ROUND73_TARGET_MANIFEST_TABLE",
     "ROUND73_TARGET_OPTION_TABLE",
     "Round73TargetAudit",
     "Round73TargetBuildReport",
     "Round73TargetOption",
+    "Round73TargetReplayAnchor",
     "audit_round73_executable_targets",
     "build_round73_executable_targets",
+    "parse_round73_target_quantity_rules",
+    "replay_round73_target_rows_v9",
+    "round73_target_option_from_row",
+    "round73_target_option_invariant_errors",
+    "round73_target_quantity_invariant_errors",
 ]
