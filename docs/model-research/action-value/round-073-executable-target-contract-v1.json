@@ -1,0 +1,200 @@
+{
+  "schema_version": "round-073-executable-target-contract-v1",
+  "contract_sha256": "3c4c6f0f10505897f71930245ae3252eccfe1ccac90217e6c07151a2416e2253",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "parent_grid_contract_sha256": "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2",
+  "grid_qualification_sha256": "71cc28c3b7f3bba2b41625fe8a465ecb9c94d504a194d57b86ece4c2945b3231",
+  "frozen_before_first_target_replay": true,
+  "purpose": "Materialize event-time, post-latency, visible-book long and short quote-path outcomes for every valid Round 73 v4 feature anchor without selecting shocks, models, thresholds, or profitable rows.",
+  "source_basis": [
+    {
+      "title": "Binance USD-M Futures: How to manage a local order book correctly",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "The snapshot is bridged to buffered diff events, each subsequent pu must equal the prior u, event quantities are absolute, and zero removes a level."
+    },
+    {
+      "title": "Binance USD-M Futures REST Market Data: Order Book",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#order-book",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "The public order book exposes price and quantity levels, supports a 1000-level snapshot, and excludes RPI liquidity."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Forecast quality does not imply actionability; complete-transaction operational evaluation is required."
+    }
+  ],
+  "source_admission": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "capture_schema_versions": [
+      "round-073-prospective-evidence-v8",
+      "round-073-prospective-evidence-v9"
+    ],
+    "corpus_manifest_schema_version": "round-073-segmented-corpus-v3",
+    "grid_schema_version": "round-073-causal-grid-v4",
+    "grid_manifest_and_independent_audit_required": true,
+    "failed_v3_grid_permitted": false,
+    "cross_run_or_cross_integrity_segment_target_permitted": false,
+    "synthetic_or_interpolated_book_state_permitted": false
+  },
+  "population": {
+    "all_valid_v4_feature_anchors_materialized": true,
+    "invalid_anchor_option_written": false,
+    "shock_threshold_applied_during_target_replay": false,
+    "price_target_or_payoff_used_to_select_anchors": false,
+    "expected_options_per_valid_anchor": 36,
+    "dimensions": {
+      "entry_delay_milliseconds": [
+        500,
+        1000
+      ],
+      "holding_horizon_milliseconds": [
+        1000,
+        5000,
+        15000
+      ],
+      "reference_quote_notional": [
+        100.0,
+        1000.0,
+        5000.0
+      ],
+      "side": [
+        "long",
+        "short"
+      ]
+    }
+  },
+  "time_contract": {
+    "clock": "run-local host monotonic nanoseconds",
+    "decision_time": "persisted v4 anchor_monotonic_ns",
+    "feature_source_max_receipt_strictly_precedes_decision": true,
+    "decision_settlement_delay_milliseconds": 250,
+    "target_state_may_precede_decision_plus_settlement_delay": false,
+    "requested_entry_time": "decision time plus entry delay",
+    "actual_entry_state": "first non-stale synchronized depth state whose receipt is at or after requested entry time",
+    "maximum_entry_state_lateness_milliseconds": 250,
+    "requested_exit_time": "actual entry-state receipt time plus holding horizon",
+    "actual_exit_state": "first non-stale synchronized depth state whose receipt is at or after requested exit time",
+    "maximum_exit_state_lateness_milliseconds": 250,
+    "state_after_lateness_limit_policy": "option ineligible",
+    "coverage_end_before_complete_exit_policy": "option ineligible",
+    "target_or_future_state_entering_feature_vector_permitted": false
+  },
+  "instrument_contract": {
+    "instrument": "Binance USD-M perpetual futures",
+    "exchange_info_recorded_in_same_run_required": true,
+    "symbol_status_must_be": "TRADING",
+    "quantity_filter": "MARKET_LOT_SIZE",
+    "minimum_notional_filter_required": true,
+    "quantity_reference": "reference quote notional divided by the last synchronized pre-decision book mid",
+    "quantity_rounding": "floor to captured market quantity step so reference exposure is never rounded upward",
+    "minimum_and_maximum_market_quantity_enforced": true,
+    "entry_minimum_notional_enforced_on_walked_quote_value": true,
+    "same_quantized_base_quantity_used_for_long_and_short": true,
+    "same_quantized_base_quantity_closed_at_exit": true,
+    "spot_borrow_fee_applies_to_perpetual_short": false,
+    "funding_boundary_crossing_policy": "option ineligible until exact settlement cash-flow evidence is implemented"
+  },
+  "book_walk": {
+    "levels_per_side": 20,
+    "long_entry": "buy base quantity by walking entry asks from best to worst",
+    "long_exit": "sell the same base quantity by walking exit bids from best to worst",
+    "short_entry": "sell base quantity by walking entry bids from best to worst",
+    "short_exit": "buy back the same base quantity by walking exit asks from best to worst",
+    "partial_capacity_policy": "option ineligible; partial quantity is never scaled into a full-fill result",
+    "rpi_hidden_or_unobserved_liquidity_counted": false,
+    "own_order_market_impact_modeled": false,
+    "queue_position_or_fill_claim_permitted": false,
+    "interpretation": "Conservative observable quote-path counterfactual only"
+  },
+  "cost_contract": {
+    "public_research_uses_credentials": false,
+    "minimum_round_trip_fee_and_adverse_reserve_bps": 12.0,
+    "charge_base": "average of absolute entry and exit walked quote notionals",
+    "charge_quote_formula": "12 / 10000 times the average of entry and exit quote notional",
+    "net_payoff_formula_long": "exit bid proceeds minus entry ask cost minus charge quote",
+    "net_payoff_formula_short": "entry bid proceeds minus exit ask cost minus charge quote",
+    "net_payoff_bps_denominator": "absolute entry walked quote notional",
+    "runtime_fee_policy": "Use the larger of this frozen reserve and verified account-specific round-trip taker fees plus the separately frozen adverse reserve.",
+    "leverage_applied": false,
+    "liquidation_or_margin_model_used": false
+  },
+  "path_risk_contract": {
+    "path_states": "every non-stale synchronized depth state from actual entry through actual exit",
+    "mark_to_liquidation_value": "walk the then-current closing side for the fixed base quantity and apply the same round-trip charge formula",
+    "maximum_adverse_excursion_bps": "minimum net mark-to-liquidation payoff bps on the path",
+    "maximum_favorable_excursion_bps": "maximum net mark-to-liquidation payoff bps on the path",
+    "maximum_spread_bps": "maximum top-of-book spread observed on the path",
+    "minimum_exit_side_capacity_ratio": "minimum top-20 closing-side quote capacity divided by required closing quote value",
+    "missing_or_nonfinite_path_state_policy": "option ineligible"
+  },
+  "financial_invariants": {
+    "all_finite_eligible_fields": true,
+    "base_quantity_positive_and_step_aligned": true,
+    "entry_and_exit_filled_base_quantity_equal": true,
+    "walked_quote_notionals_positive": true,
+    "charge_quote_nonnegative": true,
+    "gross_and_net_payoff_identities_recomputed": true,
+    "positive_binary_target_equals_strictly_positive_net_payoff": true,
+    "maximum_adverse_excursion_not_above_maximum_favorable_excursion": true,
+    "final_net_payoff_within_excursion_bounds": true,
+    "ineligible_outcome_fields_null": true,
+    "eligible_reason_mask_zero": true
+  },
+  "persistence": {
+    "option_table": "impact_target_option_v1",
+    "manifest_table": "impact_target_run_manifest_v1",
+    "single_atomic_publish_transaction": true,
+    "all_option_rows_hash_bound": true,
+    "manifest_binds_capture_corpus_grid_contract_and_every_row": true,
+    "existing_manifest_mismatch_policy": "fail without overwrite",
+    "temporary_disk_spill_for_python_rows_permitted": false,
+    "columnar_batch_ingestion_required": true
+  },
+  "downstream_split_and_selection": {
+    "target_table_may_be_joined_to_features_before_split_identity_is_frozen": false,
+    "shock_threshold_source": "training fold only",
+    "shock_ratio_threshold": "maximum of 3.0 and the training-fold symbol-specific 99th percentile",
+    "shock_direction_minimum_taker_share": 0.7,
+    "refractory_period_seconds": 15,
+    "tuning_or_test_payoff_may_change_shock_selection": false,
+    "one_hour_target_diagnostic_may_train_or_score_model": false,
+    "minimum_complete_utc_days_for_viability": 7,
+    "minimum_complete_utc_days_for_promotion": 30
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_statistical_partition_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "qualification_gate": {
+    "focused_book_walk_quantity_cost_and_scheduler_tests_required": true,
+    "one_target_replay_on_qualified_one_hour_v9_run_authorized_after_tests": true,
+    "fresh_persisted_audit_required": true,
+    "expected_option_count_reconciled": true,
+    "eligible_and_ineligible_reason_counts_reported": true,
+    "per_symbol_delay_horizon_notional_side_counts_reported": true,
+    "no_target_value_or_eligibility_gate_may_be_weakened_after_observation": true
+  },
+  "authority": {
+    "target_replay_implementation": true,
+    "one_hour_target_mechanics_diagnostic": true,
+    "target_result_observed": false,
+    "model_evaluation": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

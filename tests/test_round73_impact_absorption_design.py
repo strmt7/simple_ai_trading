@@ -149,6 +149,9 @@ V3_GRID_NUMERICAL_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V4_GRID_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v4-grid-qualification-2026-07-23.json"
 )
+EXECUTABLE_TARGET_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-executable-target-contract-v1.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1443,6 +1446,46 @@ def test_round73_v4_grid_qualification_is_hash_bound_and_non_predictive() -> Non
     assert authorization["round_073_target_contract_design"] is True
     assert authorization["round_073_target_construction"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_executable_target_contract_is_causal_symmetric_and_unlevered() -> None:
+    contract = json.loads(EXECUTABLE_TARGET_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_target_replay"] is True
+    assert contract["grid_qualification_sha256"] == (
+        "71cc28c3b7f3bba2b41625fe8a465ecb9c94d504a194d57b86ece4c2945b3231"
+    )
+    population = contract["population"]
+    assert population["all_valid_v4_feature_anchors_materialized"] is True
+    assert population["shock_threshold_applied_during_target_replay"] is False
+    assert population["expected_options_per_valid_anchor"] == 36
+    timing = contract["time_contract"]
+    assert timing["feature_source_max_receipt_strictly_precedes_decision"] is True
+    assert timing["maximum_entry_state_lateness_milliseconds"] == 250
+    assert timing["maximum_exit_state_lateness_milliseconds"] == 250
+    instrument = contract["instrument_contract"]
+    assert instrument["quantity_filter"] == "MARKET_LOT_SIZE"
+    assert instrument["same_quantized_base_quantity_used_for_long_and_short"] is True
+    assert instrument["spot_borrow_fee_applies_to_perpetual_short"] is False
+    walk = contract["book_walk"]
+    assert walk["levels_per_side"] == 20
+    assert walk["partial_capacity_policy"].startswith("option ineligible")
+    assert walk["queue_position_or_fill_claim_permitted"] is False
+    costs = contract["cost_contract"]
+    assert costs["minimum_round_trip_fee_and_adverse_reserve_bps"] == 12.0
+    assert costs["leverage_applied"] is False
+    downstream = contract["downstream_split_and_selection"]
+    assert downstream["shock_threshold_source"] == "training fold only"
+    assert downstream["one_hour_target_diagnostic_may_train_or_score_model"] is False
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_products_use_actual_venue_calendars"] is True
+    authority = contract["authority"]
+    assert authority["one_hour_target_mechanics_diagnostic"] is True
+    assert authority["model_evaluation"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
