@@ -152,6 +152,9 @@ V4_GRID_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 EXECUTABLE_TARGET_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-executable-target-contract-v1.json"
 )
+TARGET_MECHANICS_DIAGNOSTIC_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v1-target-mechanics-diagnostic-2026-07-23.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1486,6 +1489,42 @@ def test_round73_executable_target_contract_is_causal_symmetric_and_unlevered() 
     assert authority["one_hour_target_mechanics_diagnostic"] is True
     assert authority["model_evaluation"] is False
     assert authority["live_trading_authority"] is False
+
+
+def test_round73_target_mechanics_diagnostic_is_hash_bound_and_single_class() -> None:
+    evidence = json.loads(TARGET_MECHANICS_DIAGNOSTIC_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["target_outcomes_observed"] is True
+    build = evidence["target_build"]
+    assert build["option_count"] == 382_284
+    assert build["eligible_option_count"] == 380_483
+    assert build["positive_after_cost_option_count"] == 0
+    audit = evidence["independent_persisted_audit"]
+    assert audit["passed"] is True
+    assert audit["errors"] == []
+    hurdle = evidence["economic_hurdle_diagnostic"]
+    assert hurdle["gross_positive_option_count"] == 82_504
+    assert hurdle["positive_after_cost_option_count"] == 0
+    assert hurdle["binary_target_has_both_classes"] is False
+    assert max(group["maximum_gross_bps"] for group in hurdle["groups"]) < 12.0
+    resources = evidence["resource_observation"]
+    assert resources["physical_database_growth_bytes"] == 40_370_176
+    assert resources["wal_exists_after_clean_close"] is False
+    analysis = evidence["critical_analysis"]
+    assert analysis["target_mechanics_validated"] is True
+    assert analysis["round_073_financial_hypothesis_rejected"] is False
+    assert analysis["predictive_edge_evidence"] is False
+    future = evidence["future_evidence_policy"]
+    assert future["this_run_permitted_in_future_model_selection_or_scoring"] is False
+    assert future["repeat_v1_all_anchor_targets_for_each_future_segment"] is False
+    authorization = evidence["authorization"]
+    assert authorization["storage_efficient_target_v2_contract_design"] is True
+    assert authorization["round_073_model_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
