@@ -21,6 +21,7 @@ from simple_ai_trading.api import BinanceAPIError, Candle, CommissionRates, Symb
 from simple_ai_trading.assets import DEFAULT_AGGRESSIVE_LEVERAGE
 from simple_ai_trading.autonomous import AutonomousControl, STATE_RUNNING
 from simple_ai_trading.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
+from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.model import (
     ModelFeatureMismatchError,
     ModelLoadError,
@@ -3734,6 +3735,25 @@ def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_
 
 def test_command_compute_shows_and_saves_backend(tmp_path, monkeypatch, capsys) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
+
+    def fake_resolve_backend(requested: str) -> BackendInfo:
+        if requested == "directml":
+            return BackendInfo(
+                requested="directml",
+                kind="directml",
+                device="privateuseone:0",
+                vendor="Test DirectML",
+                reason="",
+            )
+        return BackendInfo(
+            requested=requested,
+            kind="cpu",
+            device="cpu",
+            vendor="Test CPU",
+            reason="",
+        )
+
+    monkeypatch.setattr(cli, "resolve_backend", fake_resolve_backend)
     save_runtime(RuntimeConfig(compute_backend="cpu"))
     assert cli.command_compute(argparse.Namespace(backend=None)) == 0
     assert "compute=cpu" in capsys.readouterr().out
@@ -3746,7 +3766,9 @@ def test_command_compute_shows_and_saves_backend(tmp_path, monkeypatch, capsys) 
     assert "Unknown compute backend" in capsys.readouterr().err
 
 
-def test_command_configure_validation_failure_returns_nonzero(tmp_path, monkeypatch, capsys) -> None:
+def test_command_configure_validation_failure_returns_nonzero(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _BadClient(_FakeClient):
         def ensure_btcusdc(self):
             raise BinanceAPIError("no symbol")
@@ -4818,7 +4840,20 @@ def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, 
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, leverage=20.0, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=0,
+                paper=False,
+                leverage=20.0,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 0
+    )
     assert "Leverage override is spot-inactive" in capsys.readouterr().out
 
 
@@ -4856,11 +4891,11 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> 
             weights=[0.0] * 13,
             bias=0.0,
             feature_dim=13,
-                epochs=5,
-                feature_means=[0.0] * 13,
-                feature_stds=[1.0] * 13,
-                feature_signature=cli._strategy_feature_signature(StrategyConfig()),
-            ),
+            epochs=5,
+            feature_means=[0.0] * 13,
+            feature_stds=[1.0] * 13,
+            feature_signature=cli._strategy_feature_signature(StrategyConfig()),
+        ),
         model_file,
     )
 
@@ -4905,11 +4940,22 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> 
             closed_trades=0,
             gross_exposure=0.0,
             scoring_backend_requested="directml",
-            scoring_backend_kind="cpu",
-            scoring_backend_device="cpu",
-            scoring_backend_reason="DirectML unavailable in test",
+            scoring_backend_kind="directml",
+            scoring_backend_device="privateuseone:0",
+            scoring_backend_reason="",
         )
 
+    monkeypatch.setattr(
+        cli,
+        "resolve_backend",
+        lambda requested: BackendInfo(
+            requested=requested,
+            kind="directml",
+            device="privateuseone:0",
+            vendor="Test DirectML",
+            reason="",
+        ),
+    )
     monkeypatch.setattr(cli, "run_backtest", fake_run_backtest)
     assert (
         cli.command_backtest(
@@ -4923,10 +4969,12 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> 
         )
         == 0
     )
-    assert "scoring_backend_reason: DirectML unavailable in test" in capsys.readouterr().out
+    assert "scoring_backend: directml device=privateuseone:0" in capsys.readouterr().out
 
 
-def test_command_backtest_uses_top_of_book_execution_db(tmp_path, monkeypatch, capsys) -> None:
+def test_command_backtest_uses_top_of_book_execution_db(
+    tmp_path, monkeypatch, capsys
+) -> None:
     from simple_ai_trading.market_store import MarketDataStore
     from simple_ai_trading.model import serialize_model
 

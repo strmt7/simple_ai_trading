@@ -2165,7 +2165,13 @@ def test_threshold_calibration_reuses_one_probability_pass(monkeypatch: pytest.M
         liquidity_calls["count"] += 1
         return [(0.0, 1.0, False, False) for _ in scored_rows]
 
+    def fail_backend_reprobe(*_args, **_kwargs):
+        raise AssertionError(
+            "precomputed scoring metadata must prevent a backend re-probe"
+        )
+
     monkeypatch.setattr(backtest_module, "_backtest_probabilities", fake_probabilities)
+    monkeypatch.setattr(backtest_module, "resolve_backend", fail_backend_reprobe)
     monkeypatch.setattr(backtest_module, "precompute_backtest_regime_scores", fake_regime_scores)
     monkeypatch.setattr(backtest_module, "precompute_backtest_liquidity_adjustments", fake_liquidity_adjustments)
 

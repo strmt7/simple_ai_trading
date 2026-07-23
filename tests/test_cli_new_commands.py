@@ -224,6 +224,11 @@ def test_command_train_suite_passes_gpu_options(tmp_path, monkeypatch):
         "simple_ai_trading.training_suite.run_training_suite",
         fake_run,
     )
+    monkeypatch.setattr(
+        cli,
+        "_workflow_compute_backend",
+        lambda *_args, **_kwargs: ("directml", SimpleNamespace()),
+    )
     args = argparse.Namespace(
         input=str(input_path),
         output_dir=str(tmp_path / "out"),
@@ -258,6 +263,11 @@ def test_command_train_suite_uses_saved_compute_backend_without_cli_override(tmp
     monkeypatch.setattr(
         "simple_ai_trading.training_suite.run_training_suite",
         fake_run,
+    )
+    monkeypatch.setattr(
+        cli,
+        "_workflow_compute_backend",
+        lambda *_args, **_kwargs: ("directml", SimpleNamespace()),
     )
     args = argparse.Namespace(
         input=str(input_path),

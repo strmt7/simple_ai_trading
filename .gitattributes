@@ -20,6 +20,7 @@ docs/optimization/round-broad-rule-alpha-1d-smoke/**/*.csv.gz -text
 
 # These immutable legacy manifests bind mixed line-ending contracts.
 docs/model-research/action-value/latest/*.csv text eol=crlf
+docs/model-research/action-value/latest/metrics.csv text eol=lf
 docs/model-research/action-value/latest/*.json text eol=lf
 docs/model-research/action-value/latest/*.md text eol=lf
 docs/model-research/action-value/latest/charts/*.svg text eol=lf

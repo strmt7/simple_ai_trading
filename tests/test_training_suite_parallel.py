@@ -43,6 +43,28 @@ def _lenient_default_objective() -> ObjectiveSpec:
     )
 
 
+def _passing_terminal_gate(rows, *_args, **_kwargs):
+    terminal_rows = list(rows)
+    return 100.0, {
+        "schema_version": "terminal-holdout-v1",
+        "passed": True,
+        "reason": None,
+        "evaluation_count": 1,
+        "rows": len(terminal_rows),
+        "start_timestamp": int(terminal_rows[0].timestamp),
+        "end_timestamp": int(terminal_rows[-1].timestamp),
+        "purge_gap": 1,
+        "dataset_fingerprint": training_suite._model_rows_fingerprint(terminal_rows),
+        "score": 100.0,
+        "result": {
+            "accepted": True,
+            "realized_pnl": 10.0,
+            "stopped_by_liquidation": False,
+            "liquidation_events": 0,
+        },
+    }
+
+
 def test_resolve_workers_branches():
     # Empty candidates â†’ 1 worker no matter what
     assert training_suite._resolve_workers(8, 0) == 1
@@ -106,6 +128,9 @@ def test_train_for_objective_serial_path(tmp_path, monkeypatch):
     strategy = load_strategy()
     objective = _lenient_default_objective()
     monkeypatch.setattr(training_suite, "get_objective", lambda _name: objective)
+    monkeypatch.setattr(
+        training_suite, "_terminal_holdout_gate", _passing_terminal_gate
+    )
     outcome = training_suite.train_for_objective(
         _candles(240),
         strategy,
@@ -155,6 +180,9 @@ def test_train_for_objective_parallel_path_via_mocked_pool(tmp_path, monkeypatch
     strategy = load_strategy()
     objective = _lenient_default_objective()
     monkeypatch.setattr(training_suite, "get_objective", lambda _name: objective)
+    monkeypatch.setattr(
+        training_suite, "_terminal_holdout_gate", _passing_terminal_gate
+    )
     outcome = training_suite.train_for_objective(
         _candles(240),
         strategy,
