@@ -114,6 +114,13 @@ def test_ci_enforces_financial_terminology_audit() -> None:
     assert "token: ${{ env.CODECOV_TOKEN }}" in workflow
 
 
+def test_posix_launchers_start_with_bom_free_shebangs() -> None:
+    for relative in ("run-shell.sh", "run-gui.sh"):
+        payload = (ROOT / relative).read_bytes()
+        assert payload.startswith(b"#!/usr/bin/env sh\n")
+        assert not payload.startswith(b"\xef\xbb\xbf")
+
+
 def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:
     text = _read(".github/workflows/ruff.yml")
     assert "pull_request:" in text
