@@ -152,6 +152,14 @@ flowchart LR
   L1+tape (90), L2 state (107), and full impact absorption (261) are strictly
   nested. No fitted statistic, clipping, invented ratio, target, or future state
   enters this transform.
+- `impact_absorption_model_dataset.py` implements the sealed operational target
+  adapter. It requires a passing complete target-study audit, independently
+  rehashes each 257-value source vector, creates immutable action rows, and
+  hash-binds the resulting arrays. Complete transactions retain measured net
+  outcomes; pre-entry aborts become zero-return labels; deterministic run-end
+  rows are censored before fitting; post-entry unresolved risk remains unlabeled
+  and cannot later disappear from economic evaluation. No eligible study exists
+  yet, so this path has only focused synthetic contract tests, not model results.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible
