@@ -18,6 +18,7 @@ from simple_ai_trading.impact_absorption_grid_store import (
     audit_round73_causal_grid,
     build_round73_causal_grid,
     _CausalClockTimeline,
+    _vector_sha256,
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
@@ -468,11 +469,37 @@ def test_grid_build_is_causal_idempotent_hash_bound_and_tamper_evident(
 
     with ImpactAbsorptionStore(database) as store:
         connection = store.connect()
-        original_vector_sha256 = connection.execute(
-            f"SELECT vector_sha256 FROM {ROUND73_GRID_VECTOR_TABLE} "
+        original_values, original_vector_sha256 = connection.execute(
+            f"SELECT feature_values, vector_sha256 FROM {ROUND73_GRID_VECTOR_TABLE} "
             "WHERE run_id = ? ORDER BY symbol, anchor_index LIMIT 1",
             [RUN_ID],
-        ).fetchone()[0]
+        ).fetchone()
+        impossible_values = list(original_values)
+        impossible_values[134] = 2.0
+        impossible_sha256 = _vector_sha256(
+            RUN_ID,
+            "BTCUSDT",
+            3535,
+            tuple(impossible_values),
+        )
+        connection.execute(
+            f"UPDATE {ROUND73_GRID_VECTOR_TABLE} "
+            "SET feature_values = ?, vector_sha256 = ? "
+            "WHERE run_id = ? AND symbol = 'BTCUSDT' AND anchor_index = 3535",
+            [impossible_values, impossible_sha256, RUN_ID],
+        )
+    semantic_audit = audit_round73_causal_grid(database, run_id=RUN_ID)
+    assert semantic_audit.passed is False
+    assert any("financial invariants" in error for error in semantic_audit.errors)
+
+    with ImpactAbsorptionStore(database) as store:
+        connection = store.connect()
+        connection.execute(
+            f"UPDATE {ROUND73_GRID_VECTOR_TABLE} "
+            "SET feature_values = ?, vector_sha256 = ? "
+            "WHERE run_id = ? AND symbol = 'BTCUSDT' AND anchor_index = 3535",
+            [original_values, original_vector_sha256, RUN_ID],
+        )
         connection.execute(
             f"UPDATE {ROUND73_GRID_VECTOR_TABLE} SET vector_sha256 = ? "
             "WHERE run_id = ? AND symbol = 'BTCUSDT' AND anchor_index = 3535",
@@ -497,7 +524,7 @@ def test_grid_build_is_causal_idempotent_hash_bound_and_tamper_evident(
         )
     anchor_audit = audit_round73_causal_grid(database, run_id=RUN_ID)
     assert anchor_audit.passed is False
-    assert any("aggregate hash" in error for error in anchor_audit.errors)
+    assert any("anchor financial invariants" in error for error in anchor_audit.errors)
 
 
 def test_v9_exact_wire_grid_matches_v8_feature_counts(tmp_path) -> None:

@@ -44,6 +44,7 @@ from .impact_absorption_grid import (
     Round73L2State,
     Round73MarkState,
     Round73OpenInterestState,
+    round73_grid_feature_invariant_errors,
     round73_grid_invalid_reasons,
 )
 from .impact_absorption_store import (
@@ -68,9 +69,9 @@ from .impact_absorption_store import (
 )
 
 
-ROUND73_GRID_ANCHOR_TABLE = "impact_feature_anchor_v3"
-ROUND73_GRID_VECTOR_TABLE = "impact_feature_vector_v3"
-ROUND73_GRID_MANIFEST_TABLE = "impact_feature_run_manifest_v3"
+ROUND73_GRID_ANCHOR_TABLE = "impact_feature_anchor_v4"
+ROUND73_GRID_VECTOR_TABLE = "impact_feature_vector_v4"
+ROUND73_GRID_MANIFEST_TABLE = "impact_feature_run_manifest_v4"
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _FETCH_BATCH_SIZE = 8_192
@@ -174,6 +175,70 @@ def _vector_rows_sha256(rows: list[tuple[object, ...]]) -> str:
         digest.update(_canonical_json(identity).encode("ascii"))
         digest.update(b"\n")
     return digest.hexdigest()
+
+
+def _anchor_row_invariant_errors(row: tuple[object, ...]) -> tuple[str, ...]:
+    errors: list[str] = []
+    invalid_mask = int(row[7])
+    try:
+        invalid_reasons = json.loads(str(row[8]))
+    except json.JSONDecodeError:
+        invalid_reasons = None
+    signed_quote = float(row[9])
+    absolute_quote = float(row[10])
+    median_quote = None if row[11] is None else float(row[11])
+    shock_ratio = None if row[12] is None else float(row[12])
+    direction = int(row[13])
+    direction_share = float(row[14])
+    expected_direction = 1 if signed_quote > 0 else -1 if signed_quote < 0 else 0
+    expected_direction_share = (
+        (absolute_quote + abs(signed_quote)) / (2.0 * absolute_quote)
+        if absolute_quote > 0.0
+        else 0.0
+    )
+    if bool(row[6]) != (invalid_mask == 0):
+        errors.append("valid_mask_identity")
+    if not isinstance(invalid_reasons, list) or tuple(
+        invalid_reasons
+    ) != round73_grid_invalid_reasons(invalid_mask):
+        errors.append("invalid_reason_identity")
+    if not math.isfinite(signed_quote) or not math.isfinite(absolute_quote):
+        errors.append("nonfinite_aggressive_quote")
+    if absolute_quote < 0.0:
+        errors.append("negative_absolute_aggressive_quote")
+    if abs(signed_quote) > absolute_quote + max(1e-9, absolute_quote * 1e-12):
+        errors.append("signed_aggressive_quote_bound")
+    if median_quote is not None and (
+        not math.isfinite(median_quote) or median_quote < 0.0
+    ):
+        errors.append("invalid_trailing_median")
+    if shock_ratio is not None and (
+        not math.isfinite(shock_ratio) or shock_ratio < 0.0
+    ):
+        errors.append("invalid_shock_ratio")
+    if direction != expected_direction:
+        errors.append("shock_direction_identity")
+    if not math.isfinite(direction_share) or not 0.0 <= direction_share <= 1.0:
+        errors.append("shock_direction_share_domain")
+    elif not math.isclose(
+        direction_share,
+        expected_direction_share,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    ):
+        errors.append("shock_direction_share_identity")
+    return tuple(errors)
+
+
+def _vector_row_invariant_errors(
+    run_id: str,
+    row: tuple[object, ...],
+) -> tuple[str, ...]:
+    values = tuple(float(value) for value in row[3])
+    errors = list(round73_grid_feature_invariant_errors(values))
+    if _vector_sha256(run_id, str(row[1]), int(row[2]), values) != str(row[4]):
+        errors.append("vector_sha256")
+    return tuple(errors)
 
 
 @dataclass(frozen=True)
@@ -1387,6 +1452,20 @@ def build_round73_causal_grid(
     anchor_counts = {values["anchors"] for values in per_symbol.values()}
     if len(anchor_counts) != 1 or not anchor_counts or min(anchor_counts) < 1:
         raise ValueError("Round 73 grid symbols do not share a nonempty anchor grid")
+    for row in anchor_rows:
+        invariant_errors = _anchor_row_invariant_errors(row)
+        if invariant_errors:
+            raise ValueError(
+                "Round 73 grid anchor financial invariants failed: "
+                f"{row[1]}:{row[2]}:{','.join(invariant_errors)}"
+            )
+    for row in vector_rows:
+        invariant_errors = _vector_row_invariant_errors(selected, row)
+        if invariant_errors:
+            raise ValueError(
+                "Round 73 grid vector financial invariants failed: "
+                f"{row[1]}:{row[2]}:{','.join(invariant_errors)}"
+            )
     identity = _build_identity(
         run_id=selected,
         source_manifest_sha256=source_manifest_sha256,
@@ -1582,36 +1661,12 @@ def audit_round73_causal_grid(
             if any(int(item[5]) >= int(item[3]) for item in anchors):
                 raise ValueError("grid anchor uses a future receipt")
             for item in anchors:
-                invalid_mask = int(item[7])
-                invalid_reasons = json.loads(str(item[8]))
-                optional_values = (item[11], item[12])
-                signed_quote = float(item[9])
-                absolute_quote = float(item[10])
-                expected_direction = (
-                    1 if signed_quote > 0 else -1 if signed_quote < 0 else 0
-                )
-                if (
-                    bool(item[6]) != (invalid_mask == 0)
-                    or not isinstance(invalid_reasons, list)
-                    or tuple(invalid_reasons)
-                    != round73_grid_invalid_reasons(invalid_mask)
-                    or not all(math.isfinite(float(value)) for value in item[9:11])
-                    or absolute_quote < 0
-                    or abs(signed_quote)
-                    > absolute_quote + max(1e-9, absolute_quote * 1e-12)
-                    or any(
-                        value is not None and not math.isfinite(float(value))
-                        for value in optional_values
+                invariant_errors = _anchor_row_invariant_errors(item)
+                if invariant_errors:
+                    raise ValueError(
+                        "grid anchor financial invariants differ: "
+                        f"{item[1]}:{item[2]}:{','.join(invariant_errors)}"
                     )
-                    or any(
-                        value is not None and float(value) < 0
-                        for value in optional_values
-                    )
-                    or int(item[13]) != expected_direction
-                    or not math.isfinite(float(item[14]))
-                    or not 0 <= float(item[14]) <= 1
-                ):
-                    raise ValueError("grid anchor validity fields differ")
             grouped: dict[str, list[tuple[int, int, int, int]]] = {
                 symbol: [] for symbol in IMPACT_CAPTURE_SYMBOLS
             }
@@ -1647,17 +1702,16 @@ def audit_round73_causal_grid(
                 elif observed_grid != reference_grid:
                     raise ValueError("grid symbols do not share identical anchors")
             vector_keys = set()
-            for _run_id, symbol, anchor_index, raw_values, claimed_sha256 in vectors:
-                values = tuple(float(value) for value in raw_values)
+            for item in vectors:
+                _run_id, symbol, anchor_index, _raw_values, _claimed_sha256 = item
                 key = (str(symbol), int(anchor_index))
                 vector_keys.add(key)
-                if (
-                    len(values) != len(ROUND73_GRID_FEATURE_NAMES)
-                    or not all(math.isfinite(value) for value in values)
-                    or _vector_sha256(selected, key[0], key[1], values)
-                    != str(claimed_sha256)
-                ):
-                    raise ValueError("grid feature vector hash or width differs")
+                invariant_errors = _vector_row_invariant_errors(selected, item)
+                if invariant_errors:
+                    raise ValueError(
+                        "grid feature vector hash or financial invariants differ: "
+                        f"{symbol}:{anchor_index}:{','.join(invariant_errors)}"
+                    )
             if vector_keys != valid_keys:
                 raise ValueError("grid valid anchors and vectors differ")
             if identity.get("anchor_rows_sha256") != _anchor_rows_sha256(

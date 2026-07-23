@@ -99,6 +99,19 @@ After parser or taxonomy changes, regenerate the header through the native build
   success artifact, no v3 corpus or grid row existed. Multi-segment capture,
   model evaluation, P&L, profitability, AI uplift, leverage, and all trading
   authority remain closed.
+  The subsequent v3 corpus manifest passed its independent audit, but the first
+  v3 grid is permanently rejected. Its post-write audit found impossible
+  rolling values; a full read-only scan found at least one financial invariant
+  failure in 10,538 of 10,619 vectors. Repeated binary64 addition/subtraction
+  had left cancellation residuals in nonnegative quote, depth-flow, and
+  liquidation totals, producing buyer-share values from -8192 to 64.34. Keep
+  all v3 grid rows as failure evidence only. V4 uses compensated nonnegative
+  totals, exact zero reset only when no nonzero term remains, and shared
+  pre-write/post-write vector invariants; it never clips residuals. Read
+  `round-073-v3-grid-numerical-failure-2026-07-23.json` and
+  `round-073-causal-grid-contract-v4.json`. The v4 tables were empty when the
+  contract was frozen. One replacement v4 grid is authorized after focused
+  tests; model evaluation remains closed until its independent audit passes.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.

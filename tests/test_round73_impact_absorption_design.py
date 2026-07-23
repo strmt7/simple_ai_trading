@@ -140,6 +140,12 @@ CAUSAL_GRID_V2_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 CAUSAL_GRID_V3_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-causal-grid-contract-v3.json"
 )
+CAUSAL_GRID_V4_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-causal-grid-contract-v4.json"
+)
+V3_GRID_NUMERICAL_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v3-grid-numerical-failure-2026-07-23.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1337,6 +1343,59 @@ def test_round73_causal_grid_v3_excludes_pre_ready_receipts() -> None:
     assert persistence["anchor_table"] == "impact_feature_anchor_v3"
     assert persistence["vector_table"] == "impact_feature_vector_v3"
     assert persistence["run_manifest_table"] == "impact_feature_run_manifest_v3"
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_etf_etp_or_security_sessions_are_context_only"] is True
+    assert calendar["listed_product_calendar_may_grant_crypto_execution_authority"] is False
+    assert contract["authority"]["model_evaluated"] is False
+
+
+def test_round73_v3_grid_numerical_failure_is_hash_bound_and_quarantined() -> None:
+    evidence = json.loads(V3_GRID_NUMERICAL_FAILURE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["independent_audit"]["passed"] is False
+    scan = evidence["full_read_only_invariant_scan"]
+    assert scan["vector_count"] == 10_619
+    assert scan["vector_rows_with_at_least_one_violation"] == 10_538
+    assert scan["predicate_violation_count"] == 64_417
+    assert scan["buyer_taker_share_minimum"] == -8_192.0
+    assert scan["buyer_taker_share_maximum"] > 64.0
+    assert evidence["root_cause"]["proven"] is True
+    quarantine = evidence["quarantine"]
+    assert quarantine["v3_grid_rows_deleted_or_overwritten"] is False
+    assert quarantine["v3_grid_eligible_for_model_evaluation"] is False
+    assert quarantine["v3_corpus_manifest_remains_admissible"] is True
+    assert evidence["critical_analysis"]["profitability_evidence"] is False
+
+
+def test_round73_causal_grid_v4_freezes_numerical_financial_invariants() -> None:
+    contract = json.loads(CAUSAL_GRID_V4_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v4_grid_write"] is True
+    assert contract["failure_evidence_sha256"] == (
+        "be97836287038d6b630cf776076a33d2c10b39fd484ca21eaae94f759285d70a"
+    )
+    revision = contract["revision"]
+    assert revision["first_v3_grid_write_observed_before_revision"] is True
+    assert revision["v3_post_write_audit_passed"] is False
+    assert revision["v3_grid_permanently_excluded"] is True
+    numerical = contract["numerical_accumulator_contract"]
+    assert numerical["correction_update_uses_math_fsum"] is True
+    assert numerical["exact_zero_reset_when_active_nonzero_term_count_reaches_zero"] is True
+    assert numerical["epsilon_floor_or_silent_clipping_permitted"] is False
+    invariants = contract["feature_invariant_contract"]
+    assert invariants["evaluated_before_feature_vector_publication"] is True
+    assert invariants["reevaluated_during_independent_grid_audit"] is True
+    assert invariants["buyer_taker_share_interval"] == [0.0, 1.0]
+    assert invariants["invalid_vector_persisted"] is False
+    persistence = contract["persistence"]
+    assert persistence["anchor_table"] == "impact_feature_anchor_v4"
+    assert persistence["vector_table"] == "impact_feature_vector_v4"
+    assert persistence["run_manifest_table"] == "impact_feature_run_manifest_v4"
     calendar = contract["market_and_calendar_scope"]
     assert calendar["crypto_formal_daily_close"] is False
     assert calendar["listed_etf_etp_or_security_sessions_are_context_only"] is True
