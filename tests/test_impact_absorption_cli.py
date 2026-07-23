@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from pathlib import Path
 
 from simple_ai_trading import cli
 from simple_ai_trading.command_contract import command_specs, workflow_commands
@@ -12,6 +13,7 @@ from simple_ai_trading.impact_absorption_capture import (
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
 
@@ -88,6 +90,7 @@ def _capture_args(**overrides) -> argparse.Namespace:
     values = {
         "database": "data/microstructure.duckdb",
         "mode": "probe",
+        "schema_version": "v8",
         "duration_seconds": None,
         "compressed_payload_cap_bytes": 2_147_483_648,
         "database_size_cap_bytes": 8 * 1024 * 1024 * 1024,
@@ -107,6 +110,8 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
             "impact-capture",
             "--mode",
             "qualification",
+            "--schema-version",
+            "v9",
             "--duration-seconds",
             "3660",
             "--maximum-reconnects",
@@ -126,6 +131,7 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     )
 
     assert capture.duration_seconds == 3660.0
+    assert capture.schema_version == "v9"
     assert capture.maximum_reconnects == 2
     assert capture.database_size_cap_bytes == 8 * 1024 * 1024 * 1024
     assert audit.run_id == "a" * 32
@@ -513,7 +519,24 @@ def test_impact_capture_handler_uses_mode_default_and_machine_report(
     assert payload["attempt_evidence_combined"] is False
     assert observed["config"].duration_seconds == 180.0
     assert observed["config"].mode == "probe"
+    assert observed["config"].schema_version == IMPACT_CAPTURE_SCHEMA_VERSION
     assert observed["progress_interval_seconds"] == 30.0
+
+
+def test_impact_capture_handler_selects_v9_exact_frame_schema(
+    monkeypatch, capsys
+) -> None:
+    observed = {}
+
+    async def fake_run(config, *, progress_interval_seconds):
+        observed["config"] = config
+        return _supervisor()
+
+    monkeypatch.setattr(cli, "_run_impact_capture_with_progress", fake_run)
+
+    assert cli.command_impact_capture(_capture_args(schema_version="v9")) == 0
+    assert observed["config"].schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+    assert json.loads(capsys.readouterr().out)["status"] == "completed"
 
 
 def test_impact_capture_qualification_fails_exit_without_qualification(
@@ -535,23 +558,34 @@ def test_impact_capture_rejects_progress_interval_before_start(capsys) -> None:
     assert "between 5 and 120" in capsys.readouterr().err
 
 
+def test_impact_capture_rejects_unknown_schema_before_start(capsys) -> None:
+    assert cli.command_impact_capture(_capture_args(schema_version="v10")) == 2
+    assert "schema version must be v8 or v9" in capsys.readouterr().err
+
+
 def test_impact_capture_progress_monitor_reports_without_blocking(
-    monkeypatch, capsys
+    tmp_path, monkeypatch, capsys
 ) -> None:
     async def delayed_capture(_config):
         await asyncio.sleep(0.02)
         return _supervisor()
 
     monkeypatch.setattr(cli, "capture_round73_supervised", delayed_capture)
+    database = tmp_path / "impact.duckdb"
+    database.write_bytes(b"database")
+    Path(f"{database}.wal").write_bytes(b"wal")
     result = asyncio.run(
         cli._run_impact_capture_with_progress(
-            cli.ImpactCaptureConfig(duration_seconds=1),
+            cli.ImpactCaptureConfig(database=str(database), duration_seconds=1),
             progress_interval_seconds=0.001,
         )
     )
 
     assert result.status == "completed"
-    assert "impact-capture-progress:" in capsys.readouterr().err
+    progress = capsys.readouterr().err
+    assert "impact-capture-progress: state=starting" in progress
+    assert "database_bytes=8" in progress
+    assert "wal_bytes=3" in progress
 
 
 def test_impact_audit_selects_latest_terminal_run(tmp_path, capsys) -> None:

@@ -75,9 +75,17 @@ After parser or taxonomy changes, regenerate the header through the native build
   passes, no corpus manifest exists, and the WAL recovered cleanly. The writer
   now binds and verifies the persisted policy before readiness and before every
   frame append; the affected 138-test Round 73 checkpoint passes. Read
-  `round-073-v9-one-hour-qualification-failure-2026-07-23.json`. Only one clean
-  v9 one-hour retry is open. Multi-segment capture, model evaluation, P&L,
-  profitability, AI uplift, leverage, and trading authority remain closed.
+  `round-073-v9-one-hour-qualification-failure-2026-07-23.json`. Immediate retry
+  `676d219ba329445f85645b2fae50a60f` is also permanently failed and excluded:
+  an ad hoc PowerShell wrapper buffered progress and monitored the wrong WAL
+  filename, so the operator stopped an otherwise unqualified run. Its 138,216
+  messages pass exact audit, but all segments are invalid and no corpus manifest
+  exists. The CLI now selects v9 directly, reports the correct `.duckdb.wal`
+  bytes, and remains synchronized with the generated Windows contract. Read
+  `round-073-v9-qualification-operator-abort-2026-07-23.json`. Only one
+  replacement v9 one-hour retry is open. Multi-segment capture, model
+  evaluation, P&L, profitability, AI uplift, leverage, and trading authority
+  remain closed.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.

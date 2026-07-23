@@ -1,0 +1,118 @@
+{
+  "schema_version": "round-073-v9-qualification-operator-abort-evidence-v1",
+  "artifact_sha256": "62ef83822d45f63ed5dc72ef2e7b9f1090ac141f0c180c1613f0ba52f4677b4f",
+  "recorded_utc_date": "2026-07-23",
+  "supersedes_retry_authorization_artifact_sha256": "347d93f5eb498301ff97ed3375cc76f176db98414756ac6f1868b55c4f9cb3fb",
+  "source_commit_before_monitor_remediation": "44bd70e121045dd7f4c0fa468e15d6bbea9a2c86",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "source": {
+    "venue": "Binance USD-M public futures market data",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_used": false,
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254"
+  },
+  "run": {
+    "run_id": "676d219ba329445f85645b2fae50a60f",
+    "requested_mode": "qualification",
+    "requested_duration_seconds": 3600.0,
+    "terminal_status": "failed",
+    "started_wall_ns": 1784769872703513500,
+    "ended_wall_ns": 1784770145618125900,
+    "terminal_elapsed_seconds": 272.9146124,
+    "frame_count": 48,
+    "message_count": 138216,
+    "compressed_payload_bytes": 4483276,
+    "last_frame_sha256": "dffaaddb18c9f108041b069df8823f026bdd138c6192fce3f71b3ef76f6d818c",
+    "terminal_error": "operator_monitor_path_error_forced_termination"
+  },
+  "operator_monitor_failure": {
+    "capture_application_failure_proven": false,
+    "asyncio_control_loop_stall_proven": false,
+    "launch_wrapper": "PowerShell here-string piped to python standard input",
+    "progress_lines_generated_during_capture": true,
+    "progress_lines_visible_to_operator_before_process_exit": false,
+    "progress_output_was_released_after_process_exit": true,
+    "incorrect_wal_path_monitored": "data/microstructure.duckdb-wal",
+    "correct_duckdb_wal_path": "data/microstructure.duckdb.wal",
+    "incorrect_path_reported_zero_bytes": true,
+    "process_was_force_stopped_by_operator": true,
+    "qualification_result_observed_before_stop": false,
+    "monitor_process_write_delta_samples_bytes": [
+      9653382,
+      10394154,
+      10813864,
+      11617008,
+      12174632,
+      12870151
+    ]
+  },
+  "primary_source_verification": {
+    "retrieved_utc_date": "2026-07-23",
+    "duckdb_configuration": "https://duckdb.org/docs/stable/configuration/overview",
+    "duckdb_crash_recovery": "https://duckdb.org/docs/lts/guides/troubleshooting/crashes",
+    "verified_facts": [
+      "checkpoint_threshold is the WAL-size checkpoint trigger and defaults to 16.0 MiB",
+      "auto_checkpoint_skip_wal_threshold controls when DuckDB skips WAL writing and checkpoints directly",
+      "a persistent database WAL is named database_filename.wal",
+      "a normal shutdown checkpoints and removes the WAL"
+    ]
+  },
+  "terminal_quarantine": {
+    "segment_count": 3,
+    "invalid_segment_count": 3,
+    "valid_segment_count": 0,
+    "capture_report_schema_version": "round-073-capture-report-v9",
+    "capture_report_sha256": "507072e3b49d5e56472d97a9ade860c359dc289d5e00aa077cbc96be877eb0ae",
+    "capture_report_status": "failed",
+    "capture_gate_passed": false,
+    "qualification_passed": false,
+    "fresh_read_only_audit_passed": true,
+    "fresh_read_only_audit_errors": [],
+    "corpus_manifest_count": 0,
+    "wal_present_after_recovery": false,
+    "eligible_for_training_or_model_evaluation": false
+  },
+  "monitor_remediation": {
+    "private_python_capture_invocation_replaced": true,
+    "cli_v9_schema_selection_added": true,
+    "generated_windows_command_contract_updated": true,
+    "immediate_starting_heartbeat_added": true,
+    "heartbeat_uses_database_filename_dot_wal": true,
+    "heartbeat_reports_database_and_wal_bytes": true,
+    "direct_unbuffered_process_launch_required": true,
+    "focused_cli_tests_passed": true,
+    "native_cli_contract_parity_tests_passed": true,
+    "live_requalification_completed": false
+  },
+  "critical_analysis": {
+    "aborted_run_is_capture_qualification_evidence": false,
+    "aborted_run_is_model_evidence": false,
+    "aborted_run_is_profitability_evidence": false,
+    "aborted_run_may_be_pooled_with_any_attempt": false,
+    "capture_code_regression_inferred_from_operator_wrapper": false,
+    "next_attempt_must_start_a_new_run": true,
+    "next_attempt_must_stream_progress_without_a_stdin_pipeline": true,
+    "next_attempt_must_observe_the_correct_dot_wal_path": true,
+    "next_attempt_must_complete_full_3600_seconds": true,
+    "next_attempt_must_receive_fresh_terminal_audit": true
+  },
+  "authorization": {
+    "one_replacement_v9_one_hour_qualification_after_monitor_remediation": true,
+    "reuse_aborted_run": false,
+    "v9_multi_segment_capture": false,
+    "round_073_corpus_admission": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
