@@ -4945,6 +4945,18 @@ def test_command_backtest_artifact_is_emitted(tmp_path, monkeypatch, capsys) -> 
             scoring_backend_reason="",
         )
 
+    original_backtest_rows_for_model = cli._backtest_rows_for_model
+
+    def cpu_prepared_rows(candles_arg, strategy_arg, model_arg, *, compute_backend):
+        assert compute_backend == "directml"
+        return original_backtest_rows_for_model(
+            candles_arg,
+            strategy_arg,
+            model_arg,
+            compute_backend="cpu",
+        )
+
+    monkeypatch.setattr(cli, "_backtest_rows_for_model", cpu_prepared_rows)
     monkeypatch.setattr(
         cli,
         "resolve_backend",

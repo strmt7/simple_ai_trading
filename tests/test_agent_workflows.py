@@ -124,7 +124,10 @@ def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:
     assert "version: 0.15.22" in text
     assert "run: ruff check ." in text
     assert "git diff --name-only --diff-filter=ACMR -z" in text
-    assert "xargs -0 ruff format --check --" in text
+    assert 'cp -- "${file}" "${formatted}"' in text
+    assert "ruff format --config pyproject.toml --" in text
+    assert "git diff --no-index --unified=0" in text
+    assert 'comm -12 "${changed_lines}" "${format_lines}"' in text
 
 
 def test_pre_commit_toolchain_matches_reviewed_ruff_release() -> None:
