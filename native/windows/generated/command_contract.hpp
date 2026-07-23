@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"23f1b82f3a7cf00212b62c99f0f3ff50cd18e3b386998f3d30403a38fe917e3a";
+inline constexpr const wchar_t* kCommandContractSha256 = L"470a19c84fda380179ccc367ceae609aa7f616296e17327dec7c95ffb56875a6";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -285,6 +285,21 @@ inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--maximum-reconnects", L"maximum_reconnects", L"", L"6", L"", L"1", false, true, false},
     {L"--progress-interval-seconds", L"progress_interval_seconds", L"", L"30.0", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_cohort_audit[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_cohort_build[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -1093,9 +1108,11 @@ inline constexpr CommandSpec kCommands[] = {
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
     {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
     {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 11},
+    {L"impact-cohort-audit", L"usage: simple-ai-trading impact-cohort-audit [-h] [--database DATABASE]                                              --study-id STUDY_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_cohort_audit, 5},
+    {L"impact-cohort-build", L"usage: simple-ai-trading impact-cohort-build [-h] [--database DATABASE]                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_cohort_build, 4},
     {L"impact-corpus-audit", L"usage: simple-ai-trading impact-corpus-audit [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_audit, 5},
     {L"impact-corpus-batch-audit", L"usage: simple-ai-trading impact-corpus-batch-audit [-h] [--database DATABASE]                                                    --batch-id BATCH_ID                                                    [--deep]                                                    [--memory-limit MEMORY_LIMIT]                                                    [--database-threads DATABASE_THREADS]                                                    [--json]", kOptions_impact_corpus_batch_audit, 6},
-    {L"impact-corpus-collect", L"Recover qualified unindexed v8 runs, collect a bounded public-feed batch, then replay and audit each manifest. No credentials or orders.", kOptions_impact_corpus_collect, 8},
+    {L"impact-corpus-collect", L"Recover qualified unindexed v9 runs, collect a bounded public-feed batch, then replay and audit each manifest. No credentials or orders.", kOptions_impact_corpus_collect, 8},
     {L"impact-corpus-day", L"usage: simple-ai-trading impact-corpus-day [-h] [--database DATABASE]                                            --utc-day UTC_DAY                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_corpus_day, 5},
     {L"impact-corpus-index", L"usage: simple-ai-trading impact-corpus-index [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_index, 5},
     {L"impact-feature-source", L"usage: simple-ai-trading impact-feature-source [-h] [--database DATABASE]                                                --run-id RUN_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_feature_source, 5},
@@ -1183,6 +1200,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"Microstructure models", L"impact-feature-source"},
     {L"Research", L"Microstructure models", L"impact-corpus-index"},
     {L"Research", L"Microstructure models", L"impact-grid-build"},
+    {L"Research", L"Microstructure models", L"impact-cohort-build"},
     {L"Research", L"Microstructure models", L"impact-target-build"},
     {L"Research", L"Microstructure models", L"microstructure-train"},
     {L"Research", L"Microstructure models", L"microstructure-refit"},
@@ -1226,6 +1244,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Data", L"Integrity and outcomes", L"impact-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-grid-audit"},
+    {L"Data", L"Integrity and outcomes", L"impact-cohort-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-target-audit"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-day"},
     {L"Data", L"Integrity and outcomes", L"impact-corpus-batch-audit"},

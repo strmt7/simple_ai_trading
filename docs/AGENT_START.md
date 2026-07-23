@@ -137,13 +137,18 @@ After parser or taxonomy changes, regenerate the header through the native build
   contract is now frozen in `round-073-compact-shock-target-contract-v2.json`.
   It admits untouched v9 anchors from 2026-07-24 UTC, freezes a 4/1/2-day
   train/tune/test split, derives shock thresholds from training features only,
-  and permits target replay only after the selected cohort is hash-bound. New
-  prospective feature collection and focused v2 implementation are open;
-  target results, model evaluation, and all trading authority remain closed.
+  and permits target replay only after the selected cohort is hash-bound. The
+  deterministic cohort builder and deep auditor are implemented, including
+  source-overlap, pre-labeled-source, threshold, embargo, refractory, and hash
+  checks. No eligible seven-day cohort exists yet. Prospective v9 feature
+  collection and selected-anchor target v2 implementation remain open; target
+  results, model evaluation, and all trading authority remain closed.
   One hour is not a model-evaluation corpus.
-  The segmented-corpus and rotation-runner contracts are now frozen. The runner
-  uses one lease owner, terminal batch journals, zero reconnects, one-hour
-  segments, recovery-before-capture, and serial exact replay after capture.
+  The segmented-corpus and rotation-runner contracts are now frozen. Historical
+  runner v1 rows remain independently auditable, while current runner v2 admits
+  v9 capture, reports, and recovery only. It uses one lease owner, terminal
+  batch journals, zero reconnects, one-hour segments, recovery-before-capture,
+  and serial exact replay after capture.
   Recovery-only batch `6d8c31559bb044b3a83fdf9e771dda4a` passed its real
   lease, discovery, terminal-journal, release, and independent audit paths with
   zero database growth. This authorizes one live runner segment. Do not start a

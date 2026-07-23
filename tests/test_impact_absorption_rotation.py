@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 import time
 
 import pytest
@@ -11,6 +12,8 @@ from simple_ai_trading.impact_absorption_rotation import (
     ROUND73_ROTATION_LEASE_TABLE,
     ROUND73_ROTATION_SCHEMA_VERSION,
     ROUND73_ROTATION_SEGMENT_TABLE,
+    ROUND73_ROTATION_V1_CONTRACT_SHA256,
+    ROUND73_ROTATION_V1_SCHEMA_VERSION,
     Round73CorpusRotationConfig,
     _acquire_lease,
     _release_lease,
@@ -18,7 +21,8 @@ from simple_ai_trading.impact_absorption_rotation import (
     run_round73_corpus_rotation,
 )
 from simple_ai_trading.impact_absorption_store import (
-    IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
 
@@ -27,12 +31,14 @@ class _Attempt:
     def __init__(self, run_id: str, *, qualified: bool) -> None:
         self.run_id = run_id
         self.status = "completed" if qualified else "failed"
+        self.capture_schema_version = IMPACT_CAPTURE_V9_SCHEMA_VERSION
         self.qualification_passed = qualified
 
     def as_dict(self) -> dict[str, object]:
         return {
             "run_id": self.run_id,
             "status": self.status,
+            "capture_schema_version": self.capture_schema_version,
             "qualification_passed": self.qualification_passed,
         }
 
@@ -40,6 +46,7 @@ class _Attempt:
 class _Supervisor:
     def __init__(self, run_id: str, *, qualified: bool = True) -> None:
         self.status = "completed" if qualified else "failed"
+        self.capture_schema_version = IMPACT_CAPTURE_V9_SCHEMA_VERSION
         self.qualification_passed = qualified
         self.selected_run_id = run_id if qualified else ""
         self.attempt_count = 1
@@ -50,6 +57,7 @@ class _Supervisor:
     def as_dict(self) -> dict[str, object]:
         return {
             "status": self.status,
+            "capture_schema_version": self.capture_schema_version,
             "qualification_passed": self.qualification_passed,
             "selected_run_id": self.selected_run_id,
             "attempt_count": self.attempt_count,
@@ -89,6 +97,7 @@ def test_rotation_defers_replay_until_every_capture_is_terminal(tmp_path) -> Non
     async def capture(capture_config):
         assert capture_config.duration_seconds == 3_600
         assert capture_config.maximum_reconnects == 0
+        assert capture_config.schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
         run_id = next(run_ids)
         events.append(f"capture:{run_id}")
         return _Supervisor(run_id)
@@ -130,8 +139,7 @@ def test_rotation_defers_replay_until_every_capture_is_terminal(tmp_path) -> Non
             [report.batch_id],
         ).fetchone()
         segment_count = connection.execute(
-            f"SELECT count(*) FROM {ROUND73_ROTATION_SEGMENT_TABLE} "
-            "WHERE batch_id = ?",
+            f"SELECT count(*) FROM {ROUND73_ROTATION_SEGMENT_TABLE} WHERE batch_id = ?",
             [report.batch_id],
         ).fetchone()[0]
         lease_count = connection.execute(
@@ -242,12 +250,13 @@ def test_rotation_recovers_qualified_unindexed_run_before_capture(tmp_path) -> N
             started_wall_ns=1,
             started_monotonic_ns=1,
             config={"mode": "qualification"},
+            schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
         )
         store.finish_run(run_id=run_id, status="completed", ended_wall_ns=2)
         store.record_report(
             run_id=run_id,
             report={
-                "schema_version": IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+                "schema_version": IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
                 "run_id": run_id,
                 "qualification_passed": True,
             },
@@ -295,9 +304,7 @@ def test_rotation_rejects_second_live_lease_before_capture(tmp_path) -> None:
 
     try:
         with pytest.raises(RuntimeError, match="owns the active lease"):
-            asyncio.run(
-                run_round73_corpus_rotation(config, capture_function=capture)
-            )
+            asyncio.run(run_round73_corpus_rotation(config, capture_function=capture))
     finally:
         _release_lease(config, owner_id=owner_id)
 
@@ -323,6 +330,49 @@ def test_rotation_batch_audit_rejects_report_tampering(tmp_path) -> None:
 
     assert audit.passed is False
     assert any(error.startswith("journal:ValueError") for error in audit.errors)
+
+
+def test_rotation_batch_audit_preserves_historical_v1_protocol(tmp_path) -> None:
+    config = _config(tmp_path, segments=0)
+    report = asyncio.run(run_round73_corpus_rotation(config))
+    identity = report._identity()
+    identity["schema_version"] = ROUND73_ROTATION_V1_SCHEMA_VERSION
+    identity["contract_sha256"] = ROUND73_ROTATION_V1_CONTRACT_SHA256
+    report_text = json.dumps(
+        identity,
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    report_sha = hashlib.sha256(report_text.encode("ascii")).hexdigest()
+    with ImpactAbsorptionStore(config.database) as store:
+        store.connect().execute(
+            f"""
+            UPDATE {ROUND73_ROTATION_BATCH_TABLE}
+            SET schema_version = ?, contract_sha256 = ?,
+                report_json = ?, report_sha256 = ?
+            WHERE batch_id = ?
+            """,
+            [
+                ROUND73_ROTATION_V1_SCHEMA_VERSION,
+                ROUND73_ROTATION_V1_CONTRACT_SHA256,
+                report_text,
+                report_sha,
+                report.batch_id,
+            ],
+        )
+
+    audit = audit_round73_rotation_batch(
+        config.database,
+        batch_id=report.batch_id,
+        memory_limit="1GB",
+        threads=1,
+    )
+
+    assert audit.passed is True
+    assert audit.runner_schema_version == ROUND73_ROTATION_V1_SCHEMA_VERSION
+    assert audit.runner_contract_sha256 == ROUND73_ROTATION_V1_CONTRACT_SHA256
 
 
 @pytest.mark.parametrize("segment_count", [-1, 169, True, 1.5])

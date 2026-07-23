@@ -29,18 +29,22 @@ from .impact_absorption_corpus import (
     index_round73_corpus_run,
 )
 from .impact_absorption_store import (
-    IMPACT_CAPTURE_CONTRACT_SHA256,
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
-    IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
-    IMPACT_CAPTURE_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     validate_impact_store_resources,
 )
 
 
-ROUND73_ROTATION_SCHEMA_VERSION = "round-073-rotation-runner-v1"
-ROUND73_ROTATION_CONTRACT_SHA256 = (
+ROUND73_ROTATION_V1_SCHEMA_VERSION = "round-073-rotation-runner-v1"
+ROUND73_ROTATION_V1_CONTRACT_SHA256 = (
     "8f20a25adfc2d33a43d0a8acd0ad55361956d4443e85cc7b1740f882bfc5b9ea"
+)
+ROUND73_ROTATION_SCHEMA_VERSION = "round-073-rotation-runner-v2"
+ROUND73_ROTATION_CONTRACT_SHA256 = (
+    "ab67b8678c07e2797aae6f922ef4a57f82db9124b7aadba45f1b3293815df59f"
 )
 ROUND73_ROTATION_LEASE_TABLE = "impact_corpus_runner_lease_v1"
 ROUND73_ROTATION_BATCH_TABLE = "impact_corpus_batch_v1"
@@ -122,6 +126,7 @@ class Round73CorpusRotationConfig:
     def capture_config(self) -> ImpactCaptureConfig:
         return ImpactCaptureConfig(
             database=self.database,
+            schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
             mode="qualification",
             duration_seconds=3_600.0,
             compressed_payload_cap_bytes=int(self.compressed_payload_cap_bytes),
@@ -214,11 +219,13 @@ class Round73CorpusRotationAudit:
     segment_count: int
     deeply_audited_manifest_count: int
     report_sha256: str
+    runner_schema_version: str
+    runner_contract_sha256: str
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
         payload["schema_version"] = "round-073-rotation-batch-audit-v1"
-        payload["contract_sha256"] = ROUND73_ROTATION_CONTRACT_SHA256
+        payload["audit_contract_sha256"] = ROUND73_ROTATION_CONTRACT_SHA256
         payload["errors"] = list(self.errors)
         payload["model_evaluated"] = False
         payload["profitability_claim"] = False
@@ -569,10 +576,10 @@ def qualified_unindexed_round73_runs(
             ORDER BY r.started_wall_ns, r.run_id
             """,
             [
-                IMPACT_CAPTURE_SCHEMA_VERSION,
-                IMPACT_CAPTURE_CONTRACT_SHA256,
-                IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
-                IMPACT_CAPTURE_CONTRACT_SHA256,
+                IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+                IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+                IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+                IMPACT_CAPTURE_V9_CONTRACT_SHA256,
             ],
         ).fetchall()
         for run_id, report_text, report_sha256 in rows:
@@ -609,6 +616,8 @@ def audit_round73_rotation_batch(
     errors: list[str] = []
     status = ""
     report_sha256 = ""
+    runner_schema_version = ""
+    runner_contract_sha256 = ""
     segment_count = 0
     deep_candidates: list[tuple[str, str]] = []
     with ImpactAbsorptionStore(
@@ -632,14 +641,23 @@ def audit_round73_rotation_batch(
         if row is None:
             raise ValueError("Round 73 rotation batch was not found")
         status = str(row[2])
+        runner_schema_version = str(row[0])
+        runner_contract_sha256 = str(row[1])
         report_text = str(row[6])
         report_sha256 = str(row[7])
         try:
+            supported_protocols = {
+                ROUND73_ROTATION_V1_SCHEMA_VERSION: (
+                    ROUND73_ROTATION_V1_CONTRACT_SHA256
+                ),
+                ROUND73_ROTATION_SCHEMA_VERSION: ROUND73_ROTATION_CONTRACT_SHA256,
+            }
+            expected_contract = supported_protocols.get(runner_schema_version)
             if status not in {"completed", "failed", "cancelled"}:
                 raise ValueError("rotation batch is not terminal")
             if (
-                str(row[0]) != ROUND73_ROTATION_SCHEMA_VERSION
-                or str(row[1]) != ROUND73_ROTATION_CONTRACT_SHA256
+                expected_contract is None
+                or runner_contract_sha256 != expected_contract
                 or _SHA256.fullmatch(report_sha256) is None
                 or _sha256_text(report_text) != report_sha256
             ):
@@ -647,9 +665,8 @@ def audit_round73_rotation_batch(
             report = _strict_json_object(report_text, "rotation batch report")
             authority = report.get("authority")
             if (
-                report.get("schema_version") != ROUND73_ROTATION_SCHEMA_VERSION
-                or report.get("contract_sha256")
-                != ROUND73_ROTATION_CONTRACT_SHA256
+                report.get("schema_version") != runner_schema_version
+                or report.get("contract_sha256") != runner_contract_sha256
                 or report.get("batch_id") != selected
                 or report.get("status") != status
                 or report.get("requested_capture_segments") != int(row[3])
@@ -774,6 +791,8 @@ def audit_round73_rotation_batch(
         segment_count=segment_count,
         deeply_audited_manifest_count=deeply_audited,
         report_sha256=report_sha256,
+        runner_schema_version=runner_schema_version,
+        runner_contract_sha256=runner_contract_sha256,
     )
 
 
@@ -785,6 +804,7 @@ def _qualified_supervisor_run(
     supervisor_sha256 = _sha256_text(supervisor_text)
     if (
         supervisor.status != "completed"
+        or supervisor.capture_schema_version != IMPACT_CAPTURE_V9_SCHEMA_VERSION
         or supervisor.qualification_passed is not True
         or supervisor.attempt_count != 1
         or supervisor.reconnect_count != 0
@@ -903,8 +923,8 @@ async def run_round73_corpus_rotation(
                     failed_phase = "capture"
                     error = f"{type(exc).__name__}:{exc}"[:2_000]
                     break
-                run_id, supervisor_text, supervisor_sha256 = (
-                    _qualified_supervisor_run(supervisor)
+                run_id, supervisor_text, supervisor_sha256 = _qualified_supervisor_run(
+                    supervisor
                 )
                 ordinal += 1
                 segment = Round73CorpusRotationSegment(
@@ -1045,6 +1065,8 @@ __all__ = [
     "ROUND73_ROTATION_MAXIMUM_SEGMENTS",
     "ROUND73_ROTATION_SCHEMA_VERSION",
     "ROUND73_ROTATION_SEGMENT_TABLE",
+    "ROUND73_ROTATION_V1_CONTRACT_SHA256",
+    "ROUND73_ROTATION_V1_SCHEMA_VERSION",
     "Round73CorpusRotationConfig",
     "Round73CorpusRotationAudit",
     "Round73CorpusRotationReport",

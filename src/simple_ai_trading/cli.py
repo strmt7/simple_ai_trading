@@ -112,6 +112,11 @@ from .impact_absorption_corpus import (
     index_round73_corpus_run,
     round73_corpus_day_coverage,
 )
+from .impact_absorption_cohort import (
+    Round73ShockCohortNotReady,
+    audit_round73_shock_cohort,
+    build_round73_shock_cohort,
+)
 from .impact_absorption_rotation import (
     Round73CorpusRotationConfig,
     Round73CorpusRotationReport,
@@ -1424,6 +1429,18 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_grid_build.add_argument("--json", action="store_true")
     parser_impact_grid_build.set_defaults(func=command_impact_grid_build)
 
+    parser_impact_cohort_build = subparsers.add_parser(
+        "impact-cohort-build",
+        help="freeze the first eligible seven-day Round 73 shock cohort",
+    )
+    parser_impact_cohort_build.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_cohort_build.add_argument("--memory-limit", default="2GB")
+    parser_impact_cohort_build.add_argument("--database-threads", type=int, default=2)
+    parser_impact_cohort_build.add_argument("--json", action="store_true")
+    parser_impact_cohort_build.set_defaults(func=command_impact_cohort_build)
+
     parser_impact_target_build = subparsers.add_parser(
         "impact-target-build",
         help="build hash-bound post-latency Round 73 quote-path targets",
@@ -1463,6 +1480,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_grid_audit.add_argument("--json", action="store_true")
     parser_impact_grid_audit.set_defaults(func=command_impact_grid_audit)
 
+    parser_impact_cohort_audit = subparsers.add_parser(
+        "impact-cohort-audit",
+        help="recompute a frozen Round 73 shock cohort and every source audit",
+    )
+    parser_impact_cohort_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_cohort_audit.add_argument("--study-id", required=True)
+    parser_impact_cohort_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_cohort_audit.add_argument("--database-threads", type=int, default=2)
+    parser_impact_cohort_audit.add_argument("--json", action="store_true")
+    parser_impact_cohort_audit.set_defaults(func=command_impact_cohort_audit)
+
     parser_impact_target_audit = subparsers.add_parser(
         "impact-target-audit",
         help="reconcile Round 73 target hashes and financial identities",
@@ -1493,7 +1523,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "impact-corpus-collect",
         help="recover and collect a bounded batch of qualified one-hour segments",
         description=(
-            "Recover qualified unindexed v8 runs, collect a bounded public-feed "
+            "Recover qualified unindexed v9 runs, collect a bounded public-feed "
             "batch, then replay and audit each manifest. No credentials or orders."
         ),
     )
@@ -11295,6 +11325,49 @@ def command_impact_grid_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_impact_cohort_build(args: argparse.Namespace) -> int:
+    import duckdb
+
+    use_json = bool(getattr(args, "json", False))
+    try:
+        report = build_round73_shock_cohort(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except Round73ShockCohortNotReady as exc:
+        payload = {
+            "schema_version": "round-073-shock-cohort-readiness-v1",
+            "ready": False,
+            "examined_days": [day.as_dict() for day in exc.examined_days],
+            "target_observed": False,
+            "model_evaluated": False,
+            "trading_authority": False,
+        }
+        if use_json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(
+                "impact-cohort-build: ready=false "
+                f"examined_days={len(exc.examined_days)}",
+                file=sys.stderr,
+            )
+        return 2
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-cohort-build failed: {exc}", file=sys.stderr)
+        return 2
+    payload = report.as_dict()
+    if use_json:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-cohort-build: "
+            f"study={report.study_id} days={','.join(report.selected_utc_days)} "
+            f"sources={report.source_run_count} anchors={report.selected_anchor_count}"
+        )
+    return 0
+
+
 def command_impact_target_build(args: argparse.Namespace) -> int:
     import duckdb
 
@@ -11370,6 +11443,35 @@ def command_impact_grid_audit(args: argparse.Namespace) -> int:
             f"passed={str(audit.passed).lower()} run={audit.run_id} "
             f"anchors={audit.anchor_count} valid={audit.valid_anchor_count} "
             f"vectors={audit.vector_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
+
+
+def command_impact_cohort_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_shock_cohort(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            study_id=str(getattr(args, "study_id", "")),
+            deep_source_audit=True,
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-cohort-audit failed: {exc}", file=sys.stderr)
+        return 2
+    payload = audit.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-cohort-audit: "
+            f"passed={str(audit.passed).lower()} study={audit.study_id} "
+            f"sources={audit.source_run_count} anchors={audit.selected_anchor_count} "
+            f"deep_sources={audit.deeply_audited_source_count}"
         )
         for error in audit.errors:
             print(f"warning: {error}", file=sys.stderr)

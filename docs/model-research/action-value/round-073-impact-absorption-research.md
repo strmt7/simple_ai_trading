@@ -6,9 +6,11 @@ quote-path options, 380,483 were mechanically eligible and none cleared the
 12 bps round-trip reserve. This hour is development-only after outcome access;
 no model was trained. Compact target v2 is now preregistered before collection:
 it uses only feature-selected shocks from new v9 data, retains the cost floor,
-and evaluates 15, 60, and 300-second paths one source run at a time. A new
-untouched seven-day feature corpus is next. Profitability, AI, leverage, paper,
-testnet, and live authority remain closed.
+and evaluates 15, 60, and 300-second paths one source run at a time. Its
+deterministic cohort builder and independent deep auditor are implemented, but
+no eligible seven-day cohort exists yet. A new untouched seven-day v9 feature
+corpus is next. Profitability, AI, leverage, paper, testnet, and live authority
+remain closed.
 
 ## Why this is different
 
@@ -117,11 +119,14 @@ flowchart LR
   symbol's shock threshold from the first four days only, and freezes days five,
   six, and seven as tuning and test. UTC midnight remains a partition, not a
   crypto market close. Exchange-listed ETF/ETP sessions remain context only.
-- `round-073-rotation-runner-contract-v1.json` freezes a bounded collector
-  before its first run. It admits at most 168 one-hour segments per invocation,
-  uses one DuckDB writer lease, journals each terminal supervisor result,
-  recovers qualified unindexed v8 runs before capture, and defers exact replay
-  until capture stops. Unit and parity tests pass. Recovery-only batch
+- `round-073-rotation-runner-contract-v1.json` preserves the original bounded
+  v8 collector and its historical journals. Current
+  `round-073-rotation-runner-contract-v2.json` was frozen before eligible
+  collection and admits v9 capture, reports, and recovery only. It admits at
+  most 168 one-hour segments per invocation, uses one DuckDB writer lease,
+  journals each terminal supervisor result, and defers exact replay until
+  capture stops. V1 and v2 journals remain independently auditable. Unit and
+  parity tests pass. Recovery-only v1 batch
   `6d8c31559bb044b3a83fdf9e771dda4a` then passed its real lease, discovery,
   journal, release, and independent audit paths without database growth. This
   authorizes one live runner segment, not a multi-segment collection. See
