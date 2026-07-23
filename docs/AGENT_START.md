@@ -159,7 +159,11 @@ After parser or taxonomy changes, regenerate the header through the native build
   `impact_absorption_model_features.py`: it creates symmetric long/short views
   and strictly nested 90/107/261-feature layers without targets, fitted
   statistics, clipping, or invented ratios. This is feature plumbing, not a
-  trained model or edge result.
+  trained model or edge result. `impact_absorption_model_dataset.py` now adapts
+  a fully audited sealed study into immutable, hash-bound action rows and
+  enforces the frozen censor/abort/unresolved-exit semantics. Its tests use
+  synthetic contract fixtures only; no prospective model dataset or result has
+  been produced.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.
