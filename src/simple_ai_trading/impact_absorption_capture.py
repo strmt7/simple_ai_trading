@@ -1485,17 +1485,6 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 memory_limit=config.duckdb_memory_limit,
                 threads=config.duckdb_threads,
             ) as store:
-                store_connection = store.connect()
-                checkpoint_threshold = str(
-                    store_connection.execute(
-                        "SELECT current_setting('checkpoint_threshold')"
-                    ).fetchone()[0]
-                )
-                skip_wal_threshold = int(
-                    store_connection.execute(
-                        "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
-                    ).fetchone()[0]
-                )
                 store.start_run(
                     run_id=run_id,
                     started_wall_ns=started_wall_ns,
@@ -1511,8 +1500,6 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                         "database_size_cap_bytes": config.database_size_cap_bytes,
                         "duckdb_memory_limit": config.duckdb_memory_limit,
                         "duckdb_threads": config.duckdb_threads,
-                        "checkpoint_threshold": checkpoint_threshold,
-                        "auto_checkpoint_skip_wal_threshold_bytes": skip_wal_threshold,
                     },
                     compressed_payload_cap_bytes=config.compressed_payload_cap_bytes,
                     schema_version=config.schema_version,

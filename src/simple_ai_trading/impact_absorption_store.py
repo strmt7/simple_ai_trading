@@ -1305,7 +1305,6 @@ class ImpactAbsorptionStore:
         if normalized != IMPACT_CAPTURE_SYMBOLS:
             raise ValueError("Round 73 capture requires BTCUSDT, ETHUSDT, and SOLUSDT")
         _reject_secret_fields(config)
-        config_json = _canonical_json(config)
         cap = _positive_integer(compressed_payload_cap_bytes, "payload cap")
         selected_schema = str(schema_version)
         contracts = {
@@ -1333,6 +1332,26 @@ class ImpactAbsorptionStore:
                 "SET auto_checkpoint_skip_wal_threshold=?",
                 [IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES],
             )
+        checkpoint_threshold = str(
+            connection.execute(
+                "SELECT current_setting('checkpoint_threshold')"
+            ).fetchone()[0]
+        )
+        skip_wal_threshold = int(
+            connection.execute(
+                "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
+            ).fetchone()[0]
+        )
+        config_payload = dict(config)
+        applied_policy = {
+            "checkpoint_threshold": checkpoint_threshold,
+            "auto_checkpoint_skip_wal_threshold_bytes": skip_wal_threshold,
+        }
+        for key, observed in applied_policy.items():
+            if key in config_payload and config_payload[key] != observed:
+                raise ValueError(f"capture config {key} differs from applied policy")
+            config_payload[key] = observed
+        config_json = _canonical_json(config_payload)
         connection.execute(
             """
             INSERT INTO impact_capture_run VALUES (

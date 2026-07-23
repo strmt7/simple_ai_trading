@@ -572,6 +572,17 @@ def test_v9_store_persists_exact_frames_and_only_low_rate_rest_context(
         assert audit.errors == ()
         assert audit.message_count == written.message_count == 6
         assert ordered_receipts == sorted(ordered_receipts)
+        stored_config = json.loads(
+            connection.execute(
+                "SELECT config_json FROM impact_capture_run WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+        )
+        assert stored_config["checkpoint_threshold"] == "512.0 MiB"
+        assert (
+            stored_config["auto_checkpoint_skip_wal_threshold_bytes"]
+            == 512 * 1024 * 1024
+        )
         assert (
             connection.execute(
                 "SELECT current_setting('checkpoint_threshold')"
@@ -666,6 +677,29 @@ def test_v9_reorders_bounded_cross_frame_receipts_and_rejects_later_lag(
                 ),
             )
         assert store.audit_run(RUN_ID).passed is True
+
+
+def test_store_rejects_claimed_policy_that_differs_from_applied_policy(
+    tmp_path,
+) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        with pytest.raises(ValueError, match="differs from applied policy"):
+            store.start_run(
+                run_id=RUN_ID,
+                started_wall_ns=WALL_BASE,
+                started_monotonic_ns=1,
+                config={"checkpoint_threshold": "16.0 MiB"},
+                schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+            )
+        assert (
+            store.connect()
+            .execute(
+                "SELECT count(*) FROM impact_capture_run WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()[0]
+            == 0
+        )
 
 
 def test_v9_audit_detects_rest_context_tampering(tmp_path) -> None:
