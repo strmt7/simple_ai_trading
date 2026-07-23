@@ -1,0 +1,102 @@
+{
+  "schema_version": "round-073-v9-live-telemetry-diagnostic-v1",
+  "artifact_sha256": "783a0821153db21fe1b3d2b8acba488a6ad7906eef3b8917bb24f9b51beabf11",
+  "round": 73,
+  "git_commit": "4bc6397",
+  "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+  "database": "data/microstructure.duckdb",
+  "source": {
+    "provider": "Binance USD-M public production market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_used": false,
+    "credentials_used": false,
+    "authenticated_endpoint_used": false,
+    "orders_submitted": false
+  },
+  "stage": {
+    "name": "v9 30-second live telemetry diagnostic",
+    "configured_duration_seconds": 30.0,
+    "mode": "probe",
+    "maximum_reconnects": 0,
+    "database_size_cap_bytes": 8589934592,
+    "memory_limit": "2GB",
+    "database_threads": 2
+  },
+  "capture": {
+    "run_id": "221d66ff5edf4a559ed0088f624a4fe6",
+    "report_sha256": "854019b171cab97d1d2d25b9ed6e7193f342e3686059b1124fce494d651fa312",
+    "status": "completed",
+    "elapsed_seconds": 32.280999999988126,
+    "reconnect_count": 0,
+    "frame_count": 8,
+    "message_count": 10871,
+    "compressed_payload_bytes": 526585,
+    "last_frame_sha256": "521bbc46fa5fdb4140fd54210a0b9a5d83aa5c880783645816639c25b7b39718",
+    "queue_high_water_messages": 566,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.008636474609375,
+    "frames_per_stream_minute": 14.869427836813498,
+    "negative_corrected_latency_fraction": 0.0,
+    "process_io_write_bytes_per_message": 895.3681354061264,
+    "database_physical_growth_bytes_per_message": 0.0,
+    "maximum_wal_bytes_observed_by_heartbeat": 481576,
+    "main_database_start_bytes": 5769539584,
+    "main_database_end_bytes": 5769539584,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "applied_checkpoint_threshold": "512.0 MiB",
+    "applied_auto_checkpoint_skip_wal_threshold_bytes": 536870912
+  },
+  "event_counts": {
+    "aggTrade": 330,
+    "bookTicker": 9424,
+    "depthSnapshot": 3,
+    "depthUpdate": 1020,
+    "exchangeInfo": 1,
+    "markPriceUpdate": 87,
+    "openInterest": 3,
+    "serverTime": 3
+  },
+  "synchronized_depth_update_counts": {
+    "BTCUSDT": 321,
+    "ETHUSDT": 311,
+    "SOLUSDT": 292
+  },
+  "fresh_process_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 8,
+    "message_count": 10871,
+    "compressed_payload_bytes": 526585,
+    "last_frame_sha256": "521bbc46fa5fdb4140fd54210a0b9a5d83aa5c880783645816639c25b7b39718",
+    "wal_exists_after_clean_close": false
+  },
+  "gate_analysis": {
+    "telemetry_diagnostic_passed": true,
+    "capture_gate_passed": false,
+    "storage_efficiency_passed": false,
+    "qualification_passed": false,
+    "capture_gate_failure_reasons": [
+      "elapsed_seconds below the frozen 180-second capture and storage-efficiency minimum",
+      "SOLUSDT synchronized depth count 292 below the short-stage gate minimum 300"
+    ],
+    "resource_limits_observed_passed": true,
+    "exact_wire_audit_passed": true,
+    "critical_note": "The zero final database growth reflects allocation state after checkpoint and does not prove zero physical SSD writes. Process I/O transfer bytes are not NAND-write telemetry. No profitability, predictiveness, or execution inference is permitted."
+  },
+  "authorization": {
+    "v9_180_second_capture_gate_attempt": true,
+    "v9_one_hour_qualification": false,
+    "v9_multi_segment_capture": false,
+    "round_073_grid_write_from_v9": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

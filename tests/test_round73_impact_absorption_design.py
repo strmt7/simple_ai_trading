@@ -92,6 +92,9 @@ REAL_FRAME_RECEIPT_ORDER_PROBE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V9_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-capture-contract-v9.json"
 )
+V9_LIVE_TELEMETRY_DIAGNOSTIC_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v9-live-telemetry-diagnostic-2026-07-23.json"
+)
 SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-segmented-corpus-contract-v1.json"
 )
@@ -794,6 +797,36 @@ def test_round73_v9_contract_removes_duplicate_live_typed_persistence() -> None:
     )
     authority = contract["authorization"]
     assert authority["v9_live_telemetry_diagnostic"] is False
+    assert authority["round_073_model_evaluation"] is False
+    assert authority["live_trading_authority"] is False
+
+
+def test_round73_v9_live_telemetry_is_real_hash_bound_and_narrow() -> None:
+    evidence = json.loads(V9_LIVE_TELEMETRY_DIAGNOSTIC_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    source = evidence["source"]
+    assert source["synthetic_market_data_used"] is False
+    assert source["credentials_used"] is False
+    assert source["orders_submitted"] is False
+    capture = evidence["capture"]
+    assert capture["message_count"] == 10_871
+    assert capture["process_io_write_bytes_per_message"] <= 1_024
+    assert capture["queue_maximum_utilization"] <= 0.8
+    assert capture["applied_checkpoint_threshold"] == "512.0 MiB"
+    audit = evidence["fresh_process_audit"]
+    assert audit["passed"] is True
+    assert audit["errors"] == []
+    assert audit["wal_exists_after_clean_close"] is False
+    gate = evidence["gate_analysis"]
+    assert gate["telemetry_diagnostic_passed"] is True
+    assert gate["capture_gate_passed"] is False
+    assert gate["qualification_passed"] is False
+    assert len(gate["capture_gate_failure_reasons"]) == 2
+    authority = evidence["authorization"]
+    assert authority["v9_180_second_capture_gate_attempt"] is True
+    assert authority["v9_one_hour_qualification"] is False
     assert authority["round_073_model_evaluation"] is False
     assert authority["live_trading_authority"] is False
 
