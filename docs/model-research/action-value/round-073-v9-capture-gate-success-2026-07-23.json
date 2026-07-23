@@ -1,0 +1,100 @@
+{
+  "schema_version": "round-073-v9-capture-gate-evidence-v1",
+  "artifact_sha256": "b06993efe3794fd6ed28a2cb18ad46357484d9266e11624a291f81d6552368d7",
+  "round": 73,
+  "git_commit": "c14cb29",
+  "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+  "telemetry_predecessor_artifact_sha256": "783a0821153db21fe1b3d2b8acba488a6ad7906eef3b8917bb24f9b51beabf11",
+  "database": "data/microstructure.duckdb",
+  "source": {
+    "provider": "Binance USD-M public production market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_used": false,
+    "credentials_used": false,
+    "authenticated_endpoint_used": false,
+    "orders_submitted": false
+  },
+  "stage": {
+    "name": "v9 180-second capture gate",
+    "configured_duration_seconds": 180.0,
+    "mode": "probe",
+    "maximum_reconnects": 0,
+    "database_size_cap_bytes": 8589934592,
+    "memory_limit": "2GB",
+    "database_threads": 2
+  },
+  "capture": {
+    "run_id": "c096c88375e24bfdba560c7f32f8a121",
+    "report_sha256": "cc5ccc56a6c19ab54552961ed1d1e530dfbf0ec90b222b1a34940c16e0cffcea",
+    "status": "completed",
+    "elapsed_seconds": 182.4220000000205,
+    "reconnect_count": 0,
+    "frame_count": 44,
+    "message_count": 89504,
+    "compressed_payload_bytes": 3125577,
+    "last_frame_sha256": "6fa0cc06564ed80280e6d898aee92694634a0d691619418145574bbac19322a9",
+    "queue_high_water_messages": 514,
+    "queue_capacity_messages": 65536,
+    "queue_maximum_utilization": 0.007843017578125,
+    "frames_per_stream_minute": 14.471938691603555,
+    "negative_corrected_latency_fraction": 0.0,
+    "process_io_write_bytes_per_message": 177.15293171254916,
+    "database_physical_growth_bytes_per_message": 0.0,
+    "maximum_wal_bytes_observed_by_heartbeat": 2925084,
+    "main_database_start_bytes": 5769539584,
+    "main_database_end_bytes": 5769539584,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "applied_checkpoint_threshold": "512.0 MiB",
+    "applied_auto_checkpoint_skip_wal_threshold_bytes": 536870912
+  },
+  "event_counts": {
+    "aggTrade": 3357,
+    "bookTicker": 80232,
+    "depthSnapshot": 3,
+    "depthUpdate": 5356,
+    "exchangeInfo": 1,
+    "forceOrder": 4,
+    "markPriceUpdate": 537,
+    "openInterest": 9,
+    "serverTime": 5
+  },
+  "synchronized_depth_update_counts": {
+    "BTCUSDT": 1790,
+    "ETHUSDT": 1774,
+    "SOLUSDT": 1708
+  },
+  "fresh_process_audit": {
+    "passed": true,
+    "errors": [],
+    "frame_count": 44,
+    "message_count": 89504,
+    "compressed_payload_bytes": 3125577,
+    "last_frame_sha256": "6fa0cc06564ed80280e6d898aee92694634a0d691619418145574bbac19322a9",
+    "wal_exists_after_clean_close": false
+  },
+  "gate_analysis": {
+    "capture_gate_passed": true,
+    "storage_efficiency_passed": true,
+    "qualification_passed": false,
+    "qualification_false_reason": "The frozen qualification gate requires qualification mode and at least 3600 seconds; this stage was a 180-second probe.",
+    "resource_limits_observed_passed": true,
+    "feed_gates_passed": true,
+    "exact_wire_audit_passed": true,
+    "critical_note": "The zero final database growth reflects allocation state after checkpoint and does not prove zero physical SSD writes. Process I/O transfer bytes are not NAND-write telemetry. This evidence establishes capture viability only, not prediction, execution quality, or profitability."
+  },
+  "authorization": {
+    "v9_one_hour_qualification_attempt": true,
+    "v9_multi_segment_capture": false,
+    "round_073_grid_write_from_v9": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
