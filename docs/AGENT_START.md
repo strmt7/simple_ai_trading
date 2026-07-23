@@ -140,9 +140,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   and permits target replay only after the selected cohort is hash-bound. The
   deterministic cohort builder and deep auditor are implemented, including
   source-overlap, pre-labeled-source, threshold, embargo, refractory, and hash
-  checks. No eligible seven-day cohort exists yet. Prospective v9 feature
-  collection and selected-anchor target v2 implementation remain open; target
-  results, model evaluation, and all trading authority remain closed.
+  checks. The selected-anchor v2 replay, per-run atomic manifests, row/source
+  audits, zero-anchor handling, and all-source study seal are also implemented.
+  Each audit independently replays its source's exact-wire frames and requires
+  byte-equivalent target rows. They inherit the v1 book walk, quantity, funding,
+  path-risk, and 12 bps charge logic while changing only the preregistered
+  anchor population and 15/60/300 second horizons. No eligible seven-day cohort
+  or v2 target result exists yet.
+  Prospective v9 feature collection remains open; model evaluation and all
+  trading authority remain closed.
   One hour is not a model-evaluation corpus.
   The segmented-corpus and rotation-runner contracts are now frozen. Historical
   runner v1 rows remain independently auditable, while current runner v2 admits

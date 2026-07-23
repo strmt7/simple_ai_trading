@@ -124,10 +124,32 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     grid_build = cli._parse_args(["impact-grid-build", "--run-id", "b" * 32])
     cohort_build = cli._parse_args(["impact-cohort-build"])
     target_build = cli._parse_args(["impact-target-build", "--run-id", "b" * 32])
+    target_v2_build = cli._parse_args(
+        [
+            "impact-target-v2-build",
+            "--study-id",
+            "d" * 32,
+            "--run-id",
+            "b" * 32,
+        ]
+    )
+    target_v2_seal = cli._parse_args(["impact-target-v2-seal", "--study-id", "d" * 32])
     corpus_audit = cli._parse_args(["impact-corpus-audit", "--run-id", "b" * 32])
     grid_audit = cli._parse_args(["impact-grid-audit", "--run-id", "b" * 32])
     cohort_audit = cli._parse_args(["impact-cohort-audit", "--study-id", "d" * 32])
     target_audit = cli._parse_args(["impact-target-audit", "--run-id", "b" * 32])
+    target_v2_audit = cli._parse_args(
+        [
+            "impact-target-v2-audit",
+            "--study-id",
+            "d" * 32,
+            "--run-id",
+            "b" * 32,
+        ]
+    )
+    target_v2_study_audit = cli._parse_args(
+        ["impact-target-v2-study-audit", "--study-id", "d" * 32]
+    )
     corpus_day = cli._parse_args(["impact-corpus-day", "--utc-day", "2026-07-22"])
     corpus_collect = cli._parse_args(["impact-corpus-collect", "--segments", "0"])
     corpus_batch_audit = cli._parse_args(
@@ -144,10 +166,16 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert grid_build.run_id == "b" * 32
     assert cohort_build.database == "data/microstructure.duckdb"
     assert target_build.run_id == "b" * 32
+    assert target_v2_build.study_id == "d" * 32
+    assert target_v2_build.run_id == "b" * 32
+    assert target_v2_seal.study_id == "d" * 32
     assert corpus_audit.run_id == "b" * 32
     assert grid_audit.run_id == "b" * 32
     assert cohort_audit.study_id == "d" * 32
     assert target_audit.run_id == "b" * 32
+    assert target_v2_audit.study_id == "d" * 32
+    assert target_v2_audit.run_id == "b" * 32
+    assert target_v2_study_audit.study_id == "d" * 32
     assert corpus_day.utc_day == "2026-07-22"
     assert corpus_collect.segments == 0
     assert corpus_batch_audit.batch_id == "c" * 32
@@ -161,10 +189,14 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "impact-grid-build",
         "impact-cohort-build",
         "impact-target-build",
+        "impact-target-v2-build",
+        "impact-target-v2-seal",
         "impact-corpus-audit",
         "impact-grid-audit",
         "impact-cohort-audit",
         "impact-target-audit",
+        "impact-target-v2-audit",
+        "impact-target-v2-study-audit",
         "impact-corpus-day",
         "impact-corpus-collect",
         "impact-corpus-batch-audit",
@@ -183,10 +215,26 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "Research",
         "Microstructure models",
     )
+    assert workflow["impact-target-v2-build"] == (
+        "Research",
+        "Microstructure models",
+    )
+    assert workflow["impact-target-v2-seal"] == (
+        "Research",
+        "Microstructure models",
+    )
     assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-grid-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-cohort-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-target-audit"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-target-v2-audit"] == (
+        "Data",
+        "Integrity and outcomes",
+    )
+    assert workflow["impact-target-v2-study-audit"] == (
+        "Data",
+        "Integrity and outcomes",
+    )
     assert workflow["impact-corpus-day"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-collect"] == ("Data", "Market data")
     assert workflow["impact-corpus-batch-audit"] == (
@@ -420,6 +468,125 @@ def test_impact_target_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
             "audit",
             "corpus.duckdb",
             {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+    ]
+
+
+def test_impact_target_v2_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
+    class RunReport:
+        study_id = "d" * 32
+        run_id = "b" * 32
+        selected_anchor_count = 10
+        option_count = 360
+        eligible_option_count = 300
+        positive_option_count = 120
+
+        def as_dict(self):
+            return {"target_constructed": True, "model_evaluated": False}
+
+    class StudyReport:
+        study_id = "d" * 32
+        source_run_count = 168
+        selected_anchor_count = 1000
+        option_count = 36000
+
+        def as_dict(self):
+            return {"target_study_sealed": True, "model_evaluated": False}
+
+    class RunAudit:
+        study_id = "d" * 32
+        run_id = "b" * 32
+        passed = True
+        errors = ()
+        selected_anchor_count = 10
+        option_count = 360
+
+        def as_dict(self):
+            return {"passed": True, "profitability_claim": False}
+
+    class StudyAudit:
+        study_id = "d" * 32
+        passed = True
+        errors = ()
+        audited_target_run_count = 168
+        source_run_count = 168
+        option_count = 36000
+
+        def as_dict(self):
+            return {"passed": True, "profitability_claim": False}
+
+    observed = []
+
+    def fake_build(database, **kwargs):
+        observed.append(("build", str(database), kwargs))
+        return RunReport()
+
+    def fake_seal(database, **kwargs):
+        observed.append(("seal", str(database), kwargs))
+        return StudyReport()
+
+    def fake_audit(database, **kwargs):
+        observed.append(("audit", str(database), kwargs))
+        return RunAudit()
+
+    def fake_study_audit(database, **kwargs):
+        observed.append(("study-audit", str(database), kwargs))
+        return StudyAudit()
+
+    monkeypatch.setattr(cli, "build_round73_selected_anchor_targets", fake_build)
+    monkeypatch.setattr(cli, "seal_round73_target_study", fake_seal)
+    monkeypatch.setattr(cli, "audit_round73_selected_anchor_targets", fake_audit)
+    monkeypatch.setattr(cli, "audit_round73_target_study", fake_study_audit)
+    common = {
+        "database": "corpus.duckdb",
+        "study_id": "d" * 32,
+        "run_id": "b" * 32,
+        "memory_limit": "1GB",
+        "database_threads": 1,
+        "json": True,
+    }
+    study_only = {key: value for key, value in common.items() if key != "run_id"}
+
+    assert cli.command_impact_target_v2_build(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["target_constructed"] is True
+    assert cli.command_impact_target_v2_audit(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert cli.command_impact_target_v2_seal(argparse.Namespace(**study_only)) == 0
+    assert json.loads(capsys.readouterr().out)["target_study_sealed"] is True
+    assert (
+        cli.command_impact_target_v2_study_audit(argparse.Namespace(**study_only)) == 0
+    )
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert observed == [
+        (
+            "build",
+            "corpus.duckdb",
+            {
+                "study_id": "d" * 32,
+                "run_id": "b" * 32,
+                "memory_limit": "1GB",
+                "threads": 1,
+            },
+        ),
+        (
+            "audit",
+            "corpus.duckdb",
+            {
+                "study_id": "d" * 32,
+                "run_id": "b" * 32,
+                "memory_limit": "1GB",
+                "threads": 1,
+            },
+        ),
+        (
+            "seal",
+            "corpus.duckdb",
+            {"study_id": "d" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+        (
+            "study-audit",
+            "corpus.duckdb",
+            {"study_id": "d" * 32, "memory_limit": "1GB", "threads": 1},
         ),
     ]
 
