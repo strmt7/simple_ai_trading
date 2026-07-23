@@ -389,7 +389,7 @@ def paired_blocked_permutation_test(
     draws: int = 10_000,
     seed: int = 20260717,
 ) -> PairedLossComparison:
-    """Test whether challenger loss is lower while preserving UTC-day blocks."""
+    """Test whether challenger loss is lower within caller-supplied blocks."""
 
     baseline = np.asarray(baseline_loss, dtype=np.float64)
     challenger = np.asarray(challenger_loss, dtype=np.float64)

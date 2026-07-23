@@ -26,6 +26,8 @@ from .impact_absorption_model_dataset import (
     ROUND73_OBSERVED_STATUS,
     ROUND73_POST_ENTRY_UNRESOLVED_STATUS,
     ROUND73_PRE_ENTRY_ABORT_STATUS,
+    ROUND73_PRIMARY_ENTRY_DELAY_MS,
+    ROUND73_PRIMARY_HORIZON_MS,
     ROUND73_RIGHT_CENSORED_STATUS,
 )
 from .impact_absorption_model_features import (
@@ -42,6 +44,7 @@ from .impact_absorption_target_store_v2 import _stream_hash
 from .impact_absorption_target_store_v3 import (
     ROUND73_STAGED_HOLDOUT_CONTRACT_SHA256,
 )
+from .impact_absorption_targets import ROUND73_TARGET_MAX_STATE_LATENESS_NS
 from .lightgbm_backend import (
     lightgbm_backend_parameters,
     selected_opencl_gpu_device,
@@ -74,6 +77,9 @@ _MODEL_SELECTION_MINIMUM_RELATIVE_IMPROVEMENT = 0.002
 _BOOTSTRAP_DRAWS = 10_000
 _BOOTSTRAP_LOWER_QUANTILE = 0.05
 _MINIMUM_COMPLETED_TUNING_TRADES = 25
+_TUNING_MAXIMUM_POSITION_NS = (
+    ROUND73_PRIMARY_ENTRY_DELAY_MS + ROUND73_PRIMARY_HORIZON_MS
+) * 1_000_000 + 2 * ROUND73_TARGET_MAX_STATE_LATENESS_NS
 
 CandidatePredictions = Mapping[str, tuple[np.ndarray, np.ndarray]]
 ProgressCallback = Callable[[str, Mapping[str, object]], None]
@@ -615,11 +621,12 @@ def _evaluate_tuning_threshold(
             continue
         if status == ROUND73_POST_ENTRY_UNRESOLVED_STATUS:
             unresolved += 1
+            active_until_wall_ns = np.iinfo(np.int64).max
             continue
         if status != ROUND73_OBSERVED_STATUS:
             raise ValueError("Round 73 tuning policy encountered an unknown status")
         accepted.append(int(row_index))
-        active_until_wall_ns = wall_ns + 60_500_000_000
+        active_until_wall_ns = wall_ns + _TUNING_MAXIMUM_POSITION_NS
     accepted_indexes = np.asarray(accepted, dtype=np.int64)
     lower = (
         _bootstrap_expectancy_lower(
@@ -661,6 +668,7 @@ def _select_threshold(
         if item.completed_trades >= _MINIMUM_COMPLETED_TUNING_TRADES
         and item.unresolved_risk_count == 0
         and math.isfinite(item.lower_expectancy_bps)
+        and item.lower_expectancy_bps > 0.0
     ]
     selected = (
         max(
@@ -687,6 +695,7 @@ def _select_threshold(
                 if math.isfinite(item.lower_expectancy_bps)
                 else None
             ),
+            "positive_lower_expectancy_required": True,
             "admissible": item.threshold in admissible_thresholds,
         }
         for item in results

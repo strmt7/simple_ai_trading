@@ -192,7 +192,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   bounds scenario allocations, and distinguishes real per-position excursions
   from realized-exit portfolio drawdown. Viability requires at least two
   symbols to pass predictive, operational, and economic gates independently as
-  well as a passing combined portfolio.
+  well as a passing combined portfolio. Tuning now enables an action threshold
+  only when its bootstrap lower expectancy is strictly positive, reserves both
+  execution-lateness budgets in its overlap guard, and leaves an unresolved
+  symbol occupied for the rest of tuning.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.

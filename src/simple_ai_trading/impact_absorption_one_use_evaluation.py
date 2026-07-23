@@ -1696,6 +1696,9 @@ def _apply_multiple_testing(
             comparison["q_value"] = float(q_value)
     return {
         "method": "Benjamini-Hochberg false discovery rate",
+        "resampling_block": "one-hour integrity segment identified by run_id",
+        "adjacent_segment_dependence_fully_preserved": False,
+        "day_level_or_durable_inference_claimed": False,
         "family": (
             "all available symbol, scenario, staged-comparison, target, "
             "and primary-loss hypotheses"
