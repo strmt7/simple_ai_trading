@@ -122,8 +122,10 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     features = cli._parse_args(["impact-feature-source", "--run-id", "a" * 32])
     corpus_index = cli._parse_args(["impact-corpus-index", "--run-id", "b" * 32])
     grid_build = cli._parse_args(["impact-grid-build", "--run-id", "b" * 32])
+    target_build = cli._parse_args(["impact-target-build", "--run-id", "b" * 32])
     corpus_audit = cli._parse_args(["impact-corpus-audit", "--run-id", "b" * 32])
     grid_audit = cli._parse_args(["impact-grid-audit", "--run-id", "b" * 32])
+    target_audit = cli._parse_args(["impact-target-audit", "--run-id", "b" * 32])
     corpus_day = cli._parse_args(["impact-corpus-day", "--utc-day", "2026-07-22"])
     corpus_collect = cli._parse_args(["impact-corpus-collect", "--segments", "0"])
     corpus_batch_audit = cli._parse_args(
@@ -138,8 +140,10 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert features.run_id == "a" * 32
     assert corpus_index.run_id == "b" * 32
     assert grid_build.run_id == "b" * 32
+    assert target_build.run_id == "b" * 32
     assert corpus_audit.run_id == "b" * 32
     assert grid_audit.run_id == "b" * 32
+    assert target_audit.run_id == "b" * 32
     assert corpus_day.utc_day == "2026-07-22"
     assert corpus_collect.segments == 0
     assert corpus_batch_audit.batch_id == "c" * 32
@@ -151,8 +155,10 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "impact-feature-source",
         "impact-corpus-index",
         "impact-grid-build",
+        "impact-target-build",
         "impact-corpus-audit",
         "impact-grid-audit",
+        "impact-target-audit",
         "impact-corpus-day",
         "impact-corpus-collect",
         "impact-corpus-batch-audit",
@@ -163,8 +169,13 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert workflow["impact-feature-source"] == ("Research", "Microstructure models")
     assert workflow["impact-corpus-index"] == ("Research", "Microstructure models")
     assert workflow["impact-grid-build"] == ("Research", "Microstructure models")
+    assert workflow["impact-target-build"] == (
+        "Research",
+        "Microstructure models",
+    )
     assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-grid-audit"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-target-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-day"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-collect"] == ("Data", "Market data")
     assert workflow["impact-corpus-batch-audit"] == (
@@ -322,6 +333,71 @@ def test_impact_grid_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
     assert cli.command_impact_grid_build(argparse.Namespace(**common)) == 0
     assert json.loads(capsys.readouterr().out)["target_constructed"] is False
     assert cli.command_impact_grid_audit(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert observed == [
+        (
+            "build",
+            "corpus.duckdb",
+            {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+        (
+            "audit",
+            "corpus.duckdb",
+            {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
+        ),
+    ]
+
+
+def test_impact_target_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
+    class Report:
+        run_id = "b" * 32
+        option_count = 360
+        eligible_option_count = 300
+        positive_option_count = 120
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-executable-target-v1",
+                "run_id": self.run_id,
+                "model_evaluated": False,
+            }
+
+    class Audit:
+        run_id = "b" * 32
+        passed = True
+        errors = ()
+        option_count = 360
+        eligible_option_count = 300
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-target-audit-v1",
+                "passed": True,
+            }
+
+    observed = []
+
+    def fake_build(database, **kwargs):
+        observed.append(("build", str(database), kwargs))
+        return Report()
+
+    def fake_audit(database, **kwargs):
+        observed.append(("audit", str(database), kwargs))
+        return Audit()
+
+    monkeypatch.setattr(cli, "build_round73_executable_targets", fake_build)
+    monkeypatch.setattr(cli, "audit_round73_executable_targets", fake_audit)
+    common = {
+        "database": "corpus.duckdb",
+        "run_id": "b" * 32,
+        "memory_limit": "1GB",
+        "database_threads": 1,
+        "json": True,
+    }
+
+    assert cli.command_impact_target_build(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["model_evaluated"] is False
+    assert cli.command_impact_target_audit(argparse.Namespace(**common)) == 0
     assert json.loads(capsys.readouterr().out)["passed"] is True
     assert observed == [
         (

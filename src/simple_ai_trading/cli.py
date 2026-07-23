@@ -123,6 +123,10 @@ from .impact_absorption_grid_store import (
     audit_round73_causal_grid,
     build_round73_causal_grid,
 )
+from .impact_absorption_target_store import (
+    audit_round73_executable_targets,
+    build_round73_executable_targets,
+)
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
     IMPACT_CAPTURE_SCHEMA_VERSION,
@@ -1420,6 +1424,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_grid_build.add_argument("--json", action="store_true")
     parser_impact_grid_build.set_defaults(func=command_impact_grid_build)
 
+    parser_impact_target_build = subparsers.add_parser(
+        "impact-target-build",
+        help="build hash-bound post-latency Round 73 quote-path targets",
+    )
+    parser_impact_target_build.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_target_build.add_argument("--run-id", required=True)
+    parser_impact_target_build.add_argument("--memory-limit", default="2GB")
+    parser_impact_target_build.add_argument("--database-threads", type=int, default=2)
+    parser_impact_target_build.add_argument("--json", action="store_true")
+    parser_impact_target_build.set_defaults(func=command_impact_target_build)
+
     parser_impact_corpus_audit = subparsers.add_parser(
         "impact-corpus-audit",
         help="reconcile one immutable Round 73 corpus manifest",
@@ -1445,6 +1462,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_grid_audit.add_argument("--database-threads", type=int, default=2)
     parser_impact_grid_audit.add_argument("--json", action="store_true")
     parser_impact_grid_audit.set_defaults(func=command_impact_grid_audit)
+
+    parser_impact_target_audit = subparsers.add_parser(
+        "impact-target-audit",
+        help="reconcile Round 73 target hashes and financial identities",
+    )
+    parser_impact_target_audit.add_argument(
+        "--database", default="data/microstructure.duckdb"
+    )
+    parser_impact_target_audit.add_argument("--run-id", required=True)
+    parser_impact_target_audit.add_argument("--memory-limit", default="2GB")
+    parser_impact_target_audit.add_argument("--database-threads", type=int, default=2)
+    parser_impact_target_audit.add_argument("--json", action="store_true")
+    parser_impact_target_audit.set_defaults(func=command_impact_target_audit)
 
     parser_impact_corpus_day = subparsers.add_parser(
         "impact-corpus-day",
@@ -11265,6 +11295,32 @@ def command_impact_grid_build(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_impact_target_build(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        report = build_round73_executable_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-target-build failed: {exc}", file=sys.stderr)
+        return 2
+    payload = report.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-target-build: "
+            f"run={report.run_id} options={report.option_count} "
+            f"eligible={report.eligible_option_count} "
+            f"positive={report.positive_option_count}"
+        )
+    return 0
+
+
 def command_impact_corpus_audit(args: argparse.Namespace) -> int:
     import duckdb
 
@@ -11314,6 +11370,33 @@ def command_impact_grid_audit(args: argparse.Namespace) -> int:
             f"passed={str(audit.passed).lower()} run={audit.run_id} "
             f"anchors={audit.anchor_count} valid={audit.valid_anchor_count} "
             f"vectors={audit.vector_count}"
+        )
+        for error in audit.errors:
+            print(f"warning: {error}", file=sys.stderr)
+    return 0 if audit.passed else 2
+
+
+def command_impact_target_audit(args: argparse.Namespace) -> int:
+    import duckdb
+
+    try:
+        audit = audit_round73_executable_targets(
+            Path(getattr(args, "database", "data/microstructure.duckdb")),
+            run_id=str(getattr(args, "run_id", "")),
+            memory_limit=str(getattr(args, "memory_limit", "2GB")),
+            threads=int(getattr(args, "database_threads", 2)),
+        )
+    except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
+        print(f"impact-target-audit failed: {exc}", file=sys.stderr)
+        return 2
+    payload = audit.as_dict()
+    if bool(getattr(args, "json", False)):
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    else:
+        print(
+            "impact-target-audit: "
+            f"passed={str(audit.passed).lower()} run={audit.run_id} "
+            f"options={audit.option_count} eligible={audit.eligible_option_count}"
         )
         for error in audit.errors:
             print(f"warning: {error}", file=sys.stderr)
