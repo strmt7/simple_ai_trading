@@ -150,9 +150,14 @@ After parser or taxonomy changes, regenerate the header through the native build
   or v2 target result exists. The v2 builder now rejects every eligible anchor.
   `round-073-staged-holdout-contract-v3.json` requires role-scoped development
   replay, an immutable pretest model/policy manifest, a one-time test unlock,
-  and test-only replay. That store is not implemented yet; do not work around
-  the block or query held-out outcomes. The one-use evaluation is separately frozen
-  in `round-073-selected-anchor-evaluation-contract-v1.json`. Only deterministic
+  and test-only replay. The v3 target store, byte-persisted pretest artifacts,
+  clean-Git identity check, fitting-row reconciliation, one-time unlock, test
+  seal, and role-scoped operational dataset loader are implemented. Focused
+  tests prove that no test target exists before unlock and that target,
+  artifact, repository, or role drift fails closed. The one-use evaluator is
+  not implemented, so no eligible target or model run may start yet and held-out
+  outcomes must not be queried. The evaluation is separately frozen in
+  `round-073-selected-anchor-evaluation-contract-v1.json`. Only deterministic
   source-boundary censoring may be removed. Pre-entry safety aborts remain
   attempted zero-return actions, while any selected unresolved post-entry exit
   fails that symbol's economic gate. The primary simulation is fixed at 500 ms,
@@ -165,10 +170,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   and strictly nested 90/107/261-feature layers without targets, fitted
   statistics, clipping, or invented ratios. This is feature plumbing, not a
   trained model or edge result. `impact_absorption_model_dataset.py` now adapts
-  pre-eligibility fixtures into immutable, hash-bound action rows and
-  enforces the frozen censor/abort/unresolved-exit semantics. Its tests use
-  synthetic contract fixtures only; no prospective model dataset or result has
-  been produced. It must consume the staged v3 store before eligible use.
+  both pre-eligibility fixtures and explicitly staged v3 development/test rows
+  into immutable, hash-bound action datasets while enforcing the frozen
+  censor/abort/unresolved-exit semantics. Its tests use synthetic contract
+  fixtures only; no prospective model dataset or result has been produced.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.
@@ -177,10 +182,20 @@ After parser or taxonomy changes, regenerate the header through the native build
   v9 capture, reports, and recovery only. It uses one lease owner, terminal
   batch journals, zero reconnects, one-hour segments, recovery-before-capture,
   and serial exact replay after capture.
+  Qualification batch `ca83202743254d7ebc0c2d42d27d9b12` and run
+  `cdac34967698498fbe27cfb299230fa8` completed one accepted hour with 857
+  frames and 1,596,509 real public messages. Independent deep batch and run
+  audits passed with zero errors; all three symbols had zero invalid events,
+  sequence gaps, and crossed books. Physical database growth was 155,451,392
+  bytes, proving the old 8 GiB cap has only about 16.9 measured-rate hours left.
+  The next seven-day collection cap is 48 GiB, with actual per-segment cap
+  enforcement retained. Read
+  `round-073-v9-qualification-capture-2026-07-23.json`; the run started before
+  the July 24 prospective boundary and is qualification-only, not model data.
   Recovery-only batch `6d8c31559bb044b3a83fdf9e771dda4a` passed its real
   lease, discovery, terminal-journal, release, and independent audit paths with
-  zero database growth. This authorizes one live runner segment. Do not start a
-  multi-segment collection until that segment and its deep batch audit pass.
+  zero database growth. The required live runner segment and its deep batch
+  audit now pass as documented above; this does not authorize model evaluation.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.
