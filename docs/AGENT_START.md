@@ -118,9 +118,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   `round-073-v3-grid-numerical-failure-2026-07-23.json`,
   `round-073-causal-grid-contract-v4.json`, and
   `round-073-v4-grid-qualification-2026-07-23.json`. V3 remains preserved and
-  excluded. Target-contract design is now open; target construction, model
-  evaluation, and every profitability or trading claim remain closed. One hour
-  is not a model-evaluation corpus.
+  excluded. The executable-target v1 contract was frozen before target replay.
+  It materializes every valid anchor before training-fold shock selection,
+  quantizes symmetric long/short quantities from causal decision prices, walks
+  only observed top-20 depth after 500 ms and 1,000 ms delays, applies a 12 bps
+  minimum round-trip fee/adverse reserve, and fails closed on late states,
+  insufficient capacity, invalid exchange filters, and funding boundaries.
+  Read `round-073-executable-target-contract-v1.json`. One target-mechanics
+  replay is open; model evaluation and every profitability or trading claim
+  remain closed. One hour is not a model-evaluation corpus.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.
