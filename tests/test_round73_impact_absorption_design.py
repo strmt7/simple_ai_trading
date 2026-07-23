@@ -161,6 +161,9 @@ TARGET_MECHANICS_DIAGNOSTIC_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 COMPACT_TARGET_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-compact-shock-target-contract-v2.json"
 )
+SELECTED_ANCHOR_EVALUATION_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-selected-anchor-evaluation-contract-v1.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1607,6 +1610,52 @@ def test_round73_compact_target_contract_is_prospective_bounded_and_closed() -> 
     assert authority["target_result_observed"] is False
     assert authority["model_evaluation"] is False
     assert authority["live_trading_authority"] is False
+
+
+def test_round73_selected_anchor_evaluation_is_frozen_complete_and_fail_closed() -> None:
+    contract = json.loads(
+        SELECTED_ANCHOR_EVALUATION_CONTRACT_PATH.read_text(encoding="utf-8")
+    )
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_eligible_v2_target_result"] is True
+    assert contract["parent_target_contract_sha256"] == (
+        "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92"
+    )
+    authority = contract["authority"]
+    assert authority["target_results_observed"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["paper_testnet_or_live_trading_authority"] is False
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_product_holiday_early_close_and_session_boundaries_are_venue_specific"] is True
+    assert calendar["fixed_weekday_or_clock_proxy_for_listed_session_permitted"] is False
+    assert calendar["listed_product_close_creates_crypto_close"] is False
+    status = contract["outcome_status_policy"]
+    assert status["experimental_right_censoring"]["reasons"] == ["coverage_end"]
+    assert status["experimental_right_censoring"]["model_or_payoff_may_decide_censoring"] is False
+    pre_entry = status["pre_entry_safety_abort"]
+    assert pre_entry["continuous_operational_target_bps"] == 0.0
+    assert pre_entry["silently_excluded_from_policy_evaluation"] is False
+    post_entry = status["post_entry_unresolved_risk"]
+    assert post_entry["imputed_as_zero_or_removed_from_selected_trades"] is False
+    assert post_entry["selected_action_causes_symbol_economic_gate_failure"] is True
+    assert contract["preprocessing_and_fit"]["hyperparameter_search_permitted"] is False
+    predictive = contract["predictive_evaluation"]
+    assert "accuracy_at_0.5" in predictive["binary_accuracy_metrics_required"]
+    assert predictive["accuracy_only_may_establish_edge"] is False
+    simulation = contract["portfolio_simulation"]
+    assert simulation["one_open_position_per_symbol"] is True
+    assert simulation["profit_reinvestment"] is False
+    assert simulation["leverage"] == 1.0
+    economic = contract["economic_gate"]
+    assert economic["selected_post_entry_unresolved_risk_count_must_equal"] == 0
+    assert economic["complete_transaction_fraction_must_equal"] == 1.0
+    assert economic["annualized_roi_or_sharpe_from_seven_days_permitted"] is False
+    ai = contract["ai_and_promotion_gate"]
+    assert ai["language_model_or_neural_challenger_in_this_evaluation"] is False
+    assert ai["ai_failure_cannot_change_shallow_test_or unlock trading"] is True
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
