@@ -144,6 +144,14 @@ flowchart LR
   action; a selected unresolved post-entry exit rejects the symbol's economic
   gate. The simulation uses fixed `$1,000` notional, `1x`, no reinvestment, and
   one open position per symbol. This is a frozen design, not model evidence.
+- `round-073-action-aligned-feature-contract-v1.json` and its implementation
+  create two target-blind rows per anchor. Long and short views mirror bid/ask
+  into support/opposing channels, mirror buy/sell flow into aligned/opposing
+  channels, and sign-align directional flow, imbalance, basis, and return. The
+  257 raw features remain lossless; four causal anchor/action fields are added.
+  L1+tape (90), L2 state (107), and full impact absorption (261) are strictly
+  nested. No fitted statistic, clipping, invented ratio, target, or future state
+  enters this transform.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible

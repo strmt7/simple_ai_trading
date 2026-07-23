@@ -1,0 +1,148 @@
+{
+  "schema_version": "round-073-action-aligned-feature-contract-v1",
+  "contract_sha256": "8f027cb2459baa0a864e31dc7ab26a287e07e7853e8e35cc73b474cbcdff1750",
+  "round": 73,
+  "parent_evaluation_contract_sha256": "1ac9b5fabd78138caddb296497d5b4885187198f3214338c323c3ed2fe2d388a",
+  "parent_grid_contract_sha256": "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2",
+  "frozen_before_first_eligible_v2_target_result": true,
+  "purpose": "Create side-symmetric long and short model rows from the sealed causal grid without target access, post-hoc ratios, future state, or directional information loss.",
+  "raw_grid": {
+    "schema_version": "round-073-causal-grid-v4",
+    "feature_count": 257,
+    "feature_names_sha256": "3dfbf7de2edf7c5859d2fa042f71c124acd528a93db1fda3b8ab945b67cb1f19",
+    "all_values_must_be_finite": true,
+    "input_mutation_permitted": false
+  },
+  "candidate_action_rows": {
+    "actions": [
+      "long",
+      "short"
+    ],
+    "rows_per_anchor": 2,
+    "same_anchor_actions_share_split_and_resampling_block": true,
+    "long_action_sign": 1,
+    "short_action_sign": -1,
+    "target_or_outcome_used": false
+  },
+  "side_symmetry": {
+    "book_pairs": {
+      "long_support_source": "bid",
+      "long_opposing_source": "ask",
+      "short_support_source": "ask",
+      "short_opposing_source": "bid",
+      "applies_to": [
+        "top-of-book quote notional",
+        "depth at 5 10 and 20 levels",
+        "depth shares distance weighting and concentration",
+        "displayed additions and removals in every level band and window"
+      ]
+    },
+    "aggressive_trade_pairs": {
+      "long_aligned_source": "buy",
+      "long_opposing_source": "sell",
+      "short_aligned_source": "sell",
+      "short_opposing_source": "buy"
+    },
+    "buyer_taker_share": {
+      "long": "buyer_taker_share",
+      "short": "1 minus buyer_taker_share",
+      "output_name": "aligned_taker_share",
+      "input_domain": [
+        0.0,
+        1.0
+      ]
+    },
+    "multiply_by_action_sign": [
+      "L1 imbalance",
+      "microprice offset",
+      "L2 imbalance at 5 10 and 20 levels",
+      "mark-to-mid basis",
+      "index-to-mid basis",
+      "signed aggressive quote flow in every window",
+      "normalized order-flow imbalance in every level band and window",
+      "mid log return in every window"
+    ],
+    "preserve_without_sign_change": "all remaining scalar state count age latency spread variance absolute-flow funding open-interest liquidation and UTC phase features",
+    "pair_or_direction_rule_applied_exactly_once": true
+  },
+  "causal_anchor_features_appended": [
+    {
+      "name": "shock_ratio",
+      "transform": "unchanged"
+    },
+    {
+      "name": "aligned_shock_direction",
+      "transform": "shock direction multiplied by action sign"
+    },
+    {
+      "name": "shock_direction_taker_share",
+      "transform": "unchanged"
+    },
+    {
+      "name": "action_side",
+      "transform": "+1 long and -1 short"
+    }
+  ],
+  "output": {
+    "feature_count": 261,
+    "feature_names_sha256": "0ab1bc3adb57c605c0a624e8f843a5975222edfc787263510b166fb826f58e6b",
+    "dtype": "binary64",
+    "contiguous": true,
+    "read_only": true,
+    "all_values_must_be_finite": true,
+    "names_must_be_unique": true
+  },
+  "nested_layers": {
+    "l1_tape": {
+      "feature_count": 90,
+      "feature_names_sha256": "99da0c93411beaab7430a13f92c8c960c23cc14e4bb3fc6f98dfa7e43b7106bd",
+      "contents": "top-of-book state, UTC phase, aggressive-trade tape, returns, realized variance, BBO update count, and spread summaries, plus the four causal anchor/action fields"
+    },
+    "l2_state": {
+      "feature_count": 107,
+      "feature_names_sha256": "7884a5c26777879139caddb71e03e65dab42d2bfa4119e9e8573f132f2b19e05",
+      "contents": "the complete L1 and tape layer plus current multi-level depth shape imbalance age and latency"
+    },
+    "impact_absorption": {
+      "feature_count": 261,
+      "feature_names_sha256": "0ab1bc3adb57c605c0a624e8f843a5975222edfc787263510b166fb826f58e6b",
+      "contents": "the complete L2-state layer plus displayed additions removals normalized multi-level flow funding basis open interest and observed liquidation context"
+    },
+    "strictly_nested": true,
+    "same_rows_targets_and_model_capacity_required": true
+  },
+  "numerical_policy": {
+    "hand_made_division_or_epsilon_ratio_added": false,
+    "log_transform_added": false,
+    "winsorization_or_clipping_added": false,
+    "reason": "The causal grid already stores financially defined normalized flow features. Further ratios or clipping would introduce denominator and tail assumptions that have not earned prospective evidence; the fixed shallow nonlinear challenger receives the observable numerator depth and state components directly.",
+    "linear_control_scaling_in_this_transform": false,
+    "tree_model_scaling_in_this_transform": false,
+    "fit_or_sample_statistic_used": false
+  },
+  "interpretation_limits": {
+    "displayed_addition_or_removal_is_order_identity": false,
+    "displayed_removal_is_exact_cancellation": false,
+    "displayed_depth_is_guaranteed_fill": false,
+    "market_maker_whale_spoofer_or_manipulator_identity_inferred": false,
+    "post-shock_future_recovery_used": false,
+    "the_output_is_a_feature_view_not_a_model_or_edge": true
+  },
+  "implementation": {
+    "module": "simple_ai_trading.impact_absorption_model_features",
+    "primary_function": "action_align_round73_features",
+    "layer_projection_function": "select_round73_feature_layer",
+    "deterministic_for_equal_inputs": true,
+    "backend_independent": true,
+    "target_database_read_required": false
+  },
+  "authority": {
+    "feature_transform_implementation": true,
+    "model_training": false,
+    "test_result_observed": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "trading_authority": false
+  }
+}
