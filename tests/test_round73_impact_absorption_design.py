@@ -170,6 +170,9 @@ ACTION_ALIGNED_FEATURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 STAGED_HOLDOUT_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-staged-holdout-contract-v3.json"
 )
+V9_QUALIFICATION_CAPTURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v9-qualification-capture-2026-07-23.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -996,9 +999,7 @@ def test_round73_v9_qualification_and_replay_failure_are_separately_bound() -> N
         V9_QUALIFICATION_SUCCESS_PATH.read_text(encoding="utf-8")
     )
     qualification_sha256 = qualification.pop("artifact_sha256")
-    failure = json.loads(
-        V9_FEATURE_PREFLIGHT_FAILURE_PATH.read_text(encoding="utf-8")
-    )
+    failure = json.loads(V9_FEATURE_PREFLIGHT_FAILURE_PATH.read_text(encoding="utf-8"))
     failure_sha256 = failure.pop("artifact_sha256")
 
     assert qualification_sha256 == _canonical_sha256(qualification)
@@ -1006,7 +1007,10 @@ def test_round73_v9_qualification_and_replay_failure_are_separately_bound() -> N
     assert qualification["run"]["qualification_passed"] is True
     assert qualification["run"]["writer_message_count"] == 2_277_593
     assert qualification["fresh_process_read_only_audit"]["passed"] is True
-    assert qualification["downstream_feature_gate"]["feature_source_replay_passed"] is False
+    assert (
+        qualification["downstream_feature_gate"]["feature_source_replay_passed"]
+        is False
+    )
     assert qualification["downstream_feature_gate"]["failure_artifact_sha256"] == (
         failure_sha256
     )
@@ -1015,9 +1019,12 @@ def test_round73_v9_qualification_and_replay_failure_are_separately_bound() -> N
         item["first_depth_precedes_snapshot"] is True
         for item in failure["causal_order_proof"]["symbols"].values()
     )
-    assert failure["contract_amendment"][
-        "pre_ready_flow_or_state_entering_features_permitted"
-    ] is False
+    assert (
+        failure["contract_amendment"][
+            "pre_ready_flow_or_state_entering_features_permitted"
+        ]
+        is False
+    )
     assert failure["authorization"]["repeat_full_one_hour_capture"] is False
     assert failure["authorization"]["live_trading_authority"] is False
 
@@ -1050,7 +1057,10 @@ def test_round73_v9_feature_success_is_causal_hash_bound_and_non_predictive() ->
     calendar = evidence["market_and_calendar_scope"]
     assert calendar["crypto_formal_daily_close"] is False
     assert calendar["listed_etf_etp_or_security_sessions_are_context_only"] is True
-    assert calendar["listed_product_calendar_may_grant_crypto_execution_authority"] is False
+    assert (
+        calendar["listed_product_calendar_may_grant_crypto_execution_authority"]
+        is False
+    )
 
 
 def test_round73_segmented_corpus_contract_is_hash_bound_and_fail_closed() -> None:
@@ -1126,9 +1136,7 @@ def test_round73_segmented_corpus_v2_binds_v8_and_v9_source_identities() -> None
 
 
 def test_round73_segmented_corpus_v3_binds_feature_ready_causality() -> None:
-    contract = json.loads(
-        SEGMENTED_CORPUS_V3_CONTRACT_PATH.read_text(encoding="utf-8")
-    )
+    contract = json.loads(SEGMENTED_CORPUS_V3_CONTRACT_PATH.read_text(encoding="utf-8"))
     claimed = contract.pop("contract_sha256")
 
     assert claimed == _canonical_sha256(contract)
@@ -1145,7 +1153,9 @@ def test_round73_segmented_corpus_v3_binds_feature_ready_causality() -> None:
     )
     ready = contract["feature_ready_contract"]
     assert ready["immutable_depth_snapshots_preloaded_for_state_reconstruction"] is True
-    assert ready["pre_ready_depth_receipts_applied_for_sequence_synchronization"] is True
+    assert (
+        ready["pre_ready_depth_receipts_applied_for_sequence_synchronization"] is True
+    )
     assert ready["pre_ready_depth_flow_entering_feature_aggregates_permitted"] is False
     assert contract["manifest_storage"]["run_manifest_table"] == (
         "impact_corpus_run_manifest_v3"
@@ -1396,7 +1406,10 @@ def test_round73_causal_grid_v3_excludes_pre_ready_receipts() -> None:
     calendar = contract["market_and_calendar_scope"]
     assert calendar["crypto_formal_daily_close"] is False
     assert calendar["listed_etf_etp_or_security_sessions_are_context_only"] is True
-    assert calendar["listed_product_calendar_may_grant_crypto_execution_authority"] is False
+    assert (
+        calendar["listed_product_calendar_may_grant_crypto_execution_authority"]
+        is False
+    )
     assert contract["authority"]["model_evaluated"] is False
 
 
@@ -1435,7 +1448,10 @@ def test_round73_causal_grid_v4_freezes_numerical_financial_invariants() -> None
     assert revision["v3_grid_permanently_excluded"] is True
     numerical = contract["numerical_accumulator_contract"]
     assert numerical["correction_update_uses_math_fsum"] is True
-    assert numerical["exact_zero_reset_when_active_nonzero_term_count_reaches_zero"] is True
+    assert (
+        numerical["exact_zero_reset_when_active_nonzero_term_count_reaches_zero"]
+        is True
+    )
     assert numerical["epsilon_floor_or_silent_clipping_permitted"] is False
     invariants = contract["feature_invariant_contract"]
     assert invariants["evaluated_before_feature_vector_publication"] is True
@@ -1449,7 +1465,10 @@ def test_round73_causal_grid_v4_freezes_numerical_financial_invariants() -> None
     calendar = contract["market_and_calendar_scope"]
     assert calendar["crypto_formal_daily_close"] is False
     assert calendar["listed_etf_etp_or_security_sessions_are_context_only"] is True
-    assert calendar["listed_product_calendar_may_grant_crypto_execution_authority"] is False
+    assert (
+        calendar["listed_product_calendar_may_grant_crypto_execution_authority"]
+        is False
+    )
     assert contract["authority"]["model_evaluated"] is False
 
 
@@ -1581,7 +1600,10 @@ def test_round73_compact_target_contract_is_prospective_bounded_and_closed() -> 
     admission = contract["prospective_source_admission"]
     assert admission["capture_schema_version"] == "round-073-prospective-evidence-v9"
     assert admission["v8_source_permitted"] is False
-    assert admission["source_run_with_any_preexisting_v1_or_v2_target_manifest_permitted"] is False
+    assert (
+        admission["source_run_with_any_preexisting_v1_or_v2_target_manifest_permitted"]
+        is False
+    )
     days = contract["study_day_contract"]
     assert days["crypto_formal_daily_close"] is False
     assert days["required_consecutive_complete_utc_days"] == 7
@@ -1594,7 +1616,10 @@ def test_round73_compact_target_contract_is_prospective_bounded_and_closed() -> 
     cohort = contract["outcome_blind_shock_cohort"]
     assert cohort["threshold_source_role"] == "training only"
     assert cohort["minimum_shock_ratio"] == 3.0
-    assert cohort["target_price_payoff_eligibility_or_future_state_used_for_selection"] is False
+    assert (
+        cohort["target_price_payoff_eligibility_or_future_state_used_for_selection"]
+        is False
+    )
     population = contract["target_population"]
     assert population["only_selected_cohort_anchors_materialized"] is True
     assert population["expected_options_per_selected_anchor"] == 36
@@ -1611,14 +1636,19 @@ def test_round73_compact_target_contract_is_prospective_bounded_and_closed() -> 
     assert persistence["all_anchor_v1_rows_repeated_for_future_runs"] is False
     evaluation = contract["evaluation_gate"]
     assert evaluation["seven_days_is_viability_only"] is True
-    assert evaluation["ai_challenger_opens_before_shallow_predictive_and_economic_pass"] is False
+    assert (
+        evaluation["ai_challenger_opens_before_shallow_predictive_and_economic_pass"]
+        is False
+    )
     authority = contract["authority"]
     assert authority["target_result_observed"] is False
     assert authority["model_evaluation"] is False
     assert authority["live_trading_authority"] is False
 
 
-def test_round73_selected_anchor_evaluation_is_frozen_complete_and_fail_closed() -> None:
+def test_round73_selected_anchor_evaluation_is_frozen_complete_and_fail_closed() -> (
+    None
+):
     contract = json.loads(
         SELECTED_ANCHOR_EVALUATION_CONTRACT_PATH.read_text(encoding="utf-8")
     )
@@ -1635,12 +1665,22 @@ def test_round73_selected_anchor_evaluation_is_frozen_complete_and_fail_closed()
     assert authority["paper_testnet_or_live_trading_authority"] is False
     calendar = contract["market_and_calendar_scope"]
     assert calendar["crypto_formal_daily_close"] is False
-    assert calendar["listed_product_holiday_early_close_and_session_boundaries_are_venue_specific"] is True
-    assert calendar["fixed_weekday_or_clock_proxy_for_listed_session_permitted"] is False
+    assert (
+        calendar[
+            "listed_product_holiday_early_close_and_session_boundaries_are_venue_specific"
+        ]
+        is True
+    )
+    assert (
+        calendar["fixed_weekday_or_clock_proxy_for_listed_session_permitted"] is False
+    )
     assert calendar["listed_product_close_creates_crypto_close"] is False
     status = contract["outcome_status_policy"]
     assert status["experimental_right_censoring"]["reasons"] == ["coverage_end"]
-    assert status["experimental_right_censoring"]["model_or_payoff_may_decide_censoring"] is False
+    assert (
+        status["experimental_right_censoring"]["model_or_payoff_may_decide_censoring"]
+        is False
+    )
     pre_entry = status["pre_entry_safety_abort"]
     assert pre_entry["continuous_operational_target_bps"] == 0.0
     assert pre_entry["silently_excluded_from_policy_evaluation"] is False
@@ -1664,7 +1704,9 @@ def test_round73_selected_anchor_evaluation_is_frozen_complete_and_fail_closed()
     assert ai["ai_failure_cannot_change_shallow_test_or unlock trading"] is True
 
 
-def test_round73_action_aligned_features_are_symmetric_nested_and_target_blind() -> None:
+def test_round73_action_aligned_features_are_symmetric_nested_and_target_blind() -> (
+    None
+):
     contract = json.loads(
         ACTION_ALIGNED_FEATURE_CONTRACT_PATH.read_text(encoding="utf-8")
     )
@@ -1681,14 +1723,19 @@ def test_round73_action_aligned_features_are_symmetric_nested_and_target_blind()
     assert symmetry["pair_or_direction_rule_applied_exactly_once"] is True
     assert contract["output"]["feature_count"] == 261
     layers = contract["nested_layers"]
-    assert [layers[name]["feature_count"] for name in ("l1_tape", "l2_state", "impact_absorption")] == [90, 107, 261]
+    assert [
+        layers[name]["feature_count"]
+        for name in ("l1_tape", "l2_state", "impact_absorption")
+    ] == [90, 107, 261]
     assert layers["strictly_nested"] is True
     numerical = contract["numerical_policy"]
     assert numerical["hand_made_division_or_epsilon_ratio_added"] is False
     assert numerical["fit_or_sample_statistic_used"] is False
     limits = contract["interpretation_limits"]
     assert limits["displayed_depth_is_guaranteed_fill"] is False
-    assert limits["market_maker_whale_spoofer_or_manipulator_identity_inferred"] is False
+    assert (
+        limits["market_maker_whale_spoofer_or_manipulator_identity_inferred"] is False
+    )
     authority = contract["authority"]
     assert authority["model_training"] is False
     assert authority["profitability_claim"] is False
@@ -1714,19 +1761,60 @@ def test_round73_staged_holdout_physically_withholds_test_targets() -> None:
     assert unlock["unlock_count_per_study"] == 1
     assert unlock["test_only_target_replay_after_unlock"] is True
     evaluation = contract["one_use_evaluation"]
-    assert evaluation["model_refit_recalibration_threshold_change_or_feature_change_permitted"] is False
+    assert (
+        evaluation[
+            "model_refit_recalibration_threshold_change_or_feature_change_permitted"
+        ]
+        is False
+    )
     assert evaluation["second_test_evaluation_permitted"] is False
     controls = contract["access_controls"]
     assert controls["test_target_rows_exist_before_unlock"] is False
     assert controls["unscoped_all_role_target_build_permitted"] is False
     assert controls["v2_all_role_builder_rejected_for_eligible_cohort"] is True
     status = contract["implementation_status"]
-    assert status["role_scoped_target_store_implemented"] is False
+    assert status["role_scoped_target_store_implemented"] is True
+    assert status["pretest_manifest_implemented"] is True
+    assert status["one_use_test_unlock_implemented"] is True
+    assert status["complete_test_study_seal_implemented"] is True
+    assert status["role_scoped_operational_dataset_implemented"] is True
+    assert status["one_use_evaluator_implemented"] is False
     assert status["eligible_target_result_observed"] is False
     authority = contract["authority"]
     assert authority["build_eligible_targets_with_v2"] is False
     assert authority["model_training"] is False
     assert authority["paper_testnet_or_live_trading_authority"] is False
+
+
+def test_round73_v9_qualification_capture_is_hash_bound_and_non_model() -> None:
+    evidence = json.loads(V9_QUALIFICATION_CAPTURE_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["independent_audits"]["deep_batch_audit_passed"] is True
+    assert evidence["independent_audits"]["run_manifest_audit_passed"] is True
+    assert evidence["observed_capture"]["message_count"] == 1_596_509
+    assert (
+        evidence["observed_capture"]["feature_source"]["future_or_target_data_used"]
+        is False
+    )
+    assert all(
+        values["invalid_event_count"] == 0
+        and values["sequence_gap_count"] == 0
+        and values["crossed_book_count"] == 0
+        for values in evidence["symbol_integrity"].values()
+    )
+    capacity = evidence["capacity_decision"]
+    assert capacity["current_cap_sufficient_for_seven_days"] is False
+    assert capacity["projection_is_observed_result"] is False
+    eligibility = evidence["prospective_eligibility"]
+    assert eligibility["eligible_for_round_073_model_cohort"] is False
+    calendar = evidence["market_calendar_semantics"]
+    assert calendar["crypto_has_formal_daily_close"] is False
+    assert (
+        calendar["etf_session_may_create_crypto_close_or_execution_authority"] is False
+    )
+    assert not any(evidence["authority"].values())
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

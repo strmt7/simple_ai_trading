@@ -15,6 +15,7 @@ from simple_ai_trading.impact_absorption_model_dataset import (
     ROUND73_PRE_ENTRY_ABORT_STATUS,
     ROUND73_RIGHT_CENSORED_STATUS,
     build_round73_operational_dataset,
+    build_round73_staged_operational_dataset,
     classify_round73_operational_outcome,
 )
 
@@ -23,6 +24,8 @@ STUDY_ID = "a" * 32
 RUN_ID = "b" * 32
 COHORT_SHA = "c" * 64
 TARGET_STUDY_SHA = "d" * 64
+DEVELOPMENT_STUDY_SHA = "e" * 64
+TEST_STUDY_SHA = "f" * 64
 
 
 def _vector_sha(values: np.ndarray, anchor_index: int) -> str:
@@ -144,8 +147,7 @@ def _seed(database: Path) -> None:
                 ],
             )
             connection.execute(
-                "INSERT INTO impact_feature_vector_v4 VALUES "
-                "(?, 'BTCUSDT', ?, ?, ?)",
+                "INSERT INTO impact_feature_vector_v4 VALUES (?, 'BTCUSDT', ?, ?, ?)",
                 [RUN_ID, anchor_index, values.tolist(), vector_sha],
             )
             for side_index, side in enumerate(("long", "short")):
@@ -172,6 +174,28 @@ def _seed(database: Path) -> None:
                         cohort_option_sha,
                     ],
                 )
+        connection.execute(
+            "CREATE TABLE impact_target_option_v3 AS "
+            "SELECT * FROM impact_target_option_v2"
+        )
+        connection.execute(
+            "CREATE TABLE impact_target_development_study_manifest_v3 "
+            "(study_id VARCHAR, cohort_manifest_sha256 VARCHAR, "
+            "manifest_sha256 VARCHAR)"
+        )
+        connection.execute(
+            "INSERT INTO impact_target_development_study_manifest_v3 VALUES (?, ?, ?)",
+            [STUDY_ID, COHORT_SHA, DEVELOPMENT_STUDY_SHA],
+        )
+        connection.execute(
+            "CREATE TABLE impact_target_test_study_manifest_v3 "
+            "(study_id VARCHAR, cohort_manifest_sha256 VARCHAR, "
+            "manifest_sha256 VARCHAR)"
+        )
+        connection.execute(
+            "INSERT INTO impact_target_test_study_manifest_v3 VALUES (?, ?, ?)",
+            [STUDY_ID, COHORT_SHA, TEST_STUDY_SHA],
+        )
 
 
 def _audit(*_args: object, **_kwargs: object) -> SimpleNamespace:
@@ -240,8 +264,7 @@ def test_operational_dataset_is_audited_hash_bound_and_status_complete(
 
     with duckdb.connect(str(database)) as connection:
         values = connection.execute(
-            "SELECT feature_values FROM impact_feature_vector_v4 "
-            "WHERE anchor_index = 0"
+            "SELECT feature_values FROM impact_feature_vector_v4 WHERE anchor_index = 0"
         ).fetchone()[0]
         values[0] += 1.0
         connection.execute(
@@ -254,6 +277,48 @@ def test_operational_dataset_is_audited_hash_bound_and_status_complete(
             database,
             study_id=STUDY_ID,
             target_study_audit_function=_audit,
+        )
+
+
+def test_staged_operational_dataset_never_crosses_role_scope(tmp_path: Path) -> None:
+    database = tmp_path / "round73-staged-model-dataset.duckdb"
+    _seed(database)
+
+    development = build_round73_staged_operational_dataset(
+        database,
+        study_id=STUDY_ID,
+        role_scope="development",
+        development_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
+            development_study_manifest_sha256=DEVELOPMENT_STUDY_SHA
+        ),
+    )
+    assert development.rows == 6
+    assert set(development.role) == {"training", "tuning"}
+    assert "test" not in development.role
+
+    test = build_round73_staged_operational_dataset(
+        database,
+        study_id=STUDY_ID,
+        role_scope="test",
+        pretest_manifest_sha256="1" * 64,
+        test_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
+            test_study_manifest_sha256=TEST_STUDY_SHA
+        ),
+    )
+    assert test.rows == 2
+    assert set(test.role) == {"test"}
+    assert test.outcome_status.tolist() == [
+        ROUND73_RIGHT_CENSORED_STATUS,
+        ROUND73_RIGHT_CENSORED_STATUS,
+    ]
+    with pytest.raises(ValueError, match="requires a pretest hash"):
+        build_round73_staged_operational_dataset(
+            database,
+            study_id=STUDY_ID,
+            role_scope="test",
+            test_seal_function=lambda *_args, **_kwargs: SimpleNamespace(
+                test_study_manifest_sha256=TEST_STUDY_SHA
+            ),
         )
 
 

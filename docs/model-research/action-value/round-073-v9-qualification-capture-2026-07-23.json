@@ -1,0 +1,155 @@
+{
+  "schema_version": "round-073-v9-qualification-capture-evidence-v1",
+  "artifact_sha256": "a4ec6df0416744c8a773499f65cf1452dfca9a52109c2867f5b35785f0d231df",
+  "round": 73,
+  "evidence_date_utc": "2026-07-23",
+  "source": {
+    "venue": "Binance USD-M public market data",
+    "credentials_used": false,
+    "orders_submitted": false,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "batch_id": "ca83202743254d7ebc0c2d42d27d9b12",
+    "run_id": "cdac34967698498fbe27cfb299230fa8",
+    "capture_started_wall_ns": 1784784073993158300,
+    "capture_started_utc": "2026-07-23T05:21:13.993Z",
+    "feature_coverage_start_wall_ns": 1784784080524509000,
+    "feature_coverage_start_utc": "2026-07-23T05:21:20.524Z",
+    "coverage_end_wall_ns": 1784787683226746700,
+    "coverage_end_utc": "2026-07-23T06:21:23.226Z",
+    "coverage_duration_ns": 3602702237700,
+    "capture_elapsed_seconds": 3602.4219999999914,
+    "capture_mode": "qualification"
+  },
+  "hash_bound_evidence": {
+    "rotation_runner_report_sha256": "78009f543b8b096071ffed174159cf69f071a13574da6b7f8ff8afbc707a65e3",
+    "capture_report_sha256": "9700413ccce4e1d149abd45ac5a9c4fc743d6a6e6bb7545886be800acb32ac18",
+    "corpus_manifest_sha256": "91d8567d03b9283b246612ca6a4c6b9a37fd10c6ca8062ea5d486cc2c0d8d320",
+    "feature_source_sha256": "f863a228e5368f1ec10d49fd560f43d283403a6e6d46dced4abe3619e564ffc2",
+    "last_frame_sha256": "3bd91a85a1183f30231b59001fe3ad8d3ed46a5a2ea5821631b9c58ef149d7c7",
+    "batch_audit_contract_sha256": "ab67b8678c07e2797aae6f922ef4a57f82db9124b7aadba45f1b3293815df59f"
+  },
+  "independent_audits": {
+    "rotation_segment_qualification_passed": true,
+    "capture_report_audit_passed": true,
+    "deep_batch_audit_passed": true,
+    "deeply_audited_manifest_count": 1,
+    "run_manifest_audit_passed": true,
+    "batch_audit_errors": [],
+    "run_audit_errors": []
+  },
+  "observed_capture": {
+    "frame_count": 857,
+    "message_count": 1596509,
+    "messages_per_coverage_second": 443.142090204831,
+    "uncompressed_frame_bytes": 558446225,
+    "compressed_payload_bytes": 55684965,
+    "uncompressed_to_compressed_ratio": 10.0286715633205,
+    "queue_capacity_messages": 65536,
+    "queue_high_water_messages": 7123,
+    "queue_maximum_utilization": 0.1086883544921875,
+    "payload_cap_reached": false,
+    "database_size_cap_reached": false,
+    "event_counts": {
+      "aggTrade": 45043,
+      "bookTicker": 1436163,
+      "depthSnapshot": 3,
+      "depthUpdate": 104239,
+      "exchangeInfo": 1,
+      "forceOrder": 29,
+      "markPriceUpdate": 10797,
+      "openInterest": 174,
+      "serverTime": 60
+    },
+    "stream_counts": {
+      "binance_futures_market": 55869,
+      "binance_futures_public": 1540402,
+      "binance_futures_rest": 238
+    },
+    "feature_source": {
+      "depth_snapshot_count": 3,
+      "depth_update_count": 104239,
+      "synchronized_depth_update_count": 104134,
+      "feature_eligible_depth_update_count": 104089,
+      "pre_ready_depth_update_count": 150,
+      "stale_depth_update_count": 105,
+      "level_change_count": 5206182,
+      "future_or_target_data_used": false,
+      "identity_whale_or_manipulation_inference": false
+    }
+  },
+  "symbol_integrity": {
+    "BTCUSDT": {
+      "depth_message_count": 35322,
+      "feature_eligible_depth_updates": 35296,
+      "invalid_event_count": 0,
+      "sequence_gap_count": 0,
+      "crossed_book_count": 0
+    },
+    "ETHUSDT": {
+      "depth_message_count": 35139,
+      "feature_eligible_depth_updates": 35124,
+      "invalid_event_count": 0,
+      "sequence_gap_count": 0,
+      "crossed_book_count": 0
+    },
+    "SOLUSDT": {
+      "depth_message_count": 33673,
+      "feature_eligible_depth_updates": 33669,
+      "invalid_event_count": 0,
+      "sequence_gap_count": 0,
+      "crossed_book_count": 0
+    }
+  },
+  "storage_observation": {
+    "database_physical_start_bytes": 5812531200,
+    "database_physical_end_bytes": 5967982592,
+    "database_physical_growth_bytes": 155451392,
+    "database_physical_growth_bytes_per_message": 97.36956822667457,
+    "capture_process_io_transfer_bytes": 218109389,
+    "terminal_process_io_transfer_bytes": 7085380,
+    "process_io_is_not_physical_ssd_write_measurement": true,
+    "storage_efficiency_gate_passed": true
+  },
+  "capacity_decision": {
+    "current_database_cap_bytes": 8589934592,
+    "remaining_cap_bytes_after_capture": 2621952000,
+    "measured_physical_growth_bytes_per_hour": 155346878.072586,
+    "remaining_hours_at_this_single_run_rate": 16.8780475831313,
+    "seven_day_projected_raw_growth_bytes_at_this_rate": 26098275516.1944,
+    "seven_day_projected_database_bytes_before_derived_grids": 32066258108.1944,
+    "current_cap_sufficient_for_seven_days": false,
+    "next_collection_cap_bytes": 51539607552,
+    "next_collection_cap_gibibytes": 48,
+    "reserve_after_single_rate_raw_projection_bytes": 19473349443.8056,
+    "reserve_purpose": "Derived causal grids, target rows, activity variation, and transaction checkpoints.",
+    "projection_is_observed_result": false,
+    "projection_limitation": "This is a capacity budget from one accepted hour, not a claim that future event rates or physical growth will be constant. Every segment must continue to report actual growth and stop before the cap."
+  },
+  "prospective_eligibility": {
+    "study_not_before_wall_ns": 1784851200000000000,
+    "study_not_before_utc": "2026-07-24T00:00:00Z",
+    "run_started_before_study_threshold": true,
+    "eligible_for_round_073_model_cohort": false,
+    "use": "Capture, storage, exact-wire, and audit qualification only"
+  },
+  "market_calendar_semantics": {
+    "crypto_has_formal_daily_close": false,
+    "crypto_execution_clock": "continuous venue timestamps and observed liquidity state",
+    "exchange_traded_etf_sessions": "actual venue calendar context only",
+    "etf_session_may_create_crypto_close_or_execution_authority": false
+  },
+  "authority": {
+    "target_constructed": false,
+    "model_evaluated": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

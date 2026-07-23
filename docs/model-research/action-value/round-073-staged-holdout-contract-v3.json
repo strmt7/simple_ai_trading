@@ -1,11 +1,17 @@
 {
   "schema_version": "round-073-staged-holdout-contract-v3",
-  "contract_sha256": "a3db9ec7c48c8e2960a6186eb5ad051bfc0ef937cf604d7f85be2433a3f6a5bc",
+  "contract_sha256": "54ec74e2d24d5873d6cfef3d1d3265c22829c05c15001051c10a86ad99fd6217",
   "round": 73,
   "parent_compact_target_contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
   "parent_evaluation_contract_sha256": "1ac9b5fabd78138caddb296497d5b4885187198f3214338c323c3ed2fe2d388a",
   "parent_feature_contract_sha256": "8f027cb2459baa0a864e31dc7ab26a287e07e7853e8e35cc73b474cbcdff1750",
   "frozen_before_first_eligible_v2_or_v3_target_result": true,
+  "revision": {
+    "prior_contract_sha256": "a3db9ec7c48c8e2960a6186eb5ad051bfc0ef937cf604d7f85be2433a3f6a5bc",
+    "revised_before_first_eligible_target_result": true,
+    "target_feature_execution_or_split_mechanics_changed": false,
+    "reason": "Replace stale implementation placeholders after the staged target, model-freeze, unlock, test-seal, and role-scoped dataset paths passed focused tests. The one-use evaluator remains incomplete."
+  },
   "supersedes": {
     "qualification_sequence_only": "round-073-compact-shock-target-contract-v2",
     "target_mechanics_changed": false,
@@ -168,9 +174,11 @@
   ],
   "implementation_status": {
     "contract_frozen": true,
-    "role_scoped_target_store_implemented": false,
-    "pretest_manifest_implemented": false,
-    "one_use_test_unlock_implemented": false,
+    "role_scoped_target_store_implemented": true,
+    "pretest_manifest_implemented": true,
+    "one_use_test_unlock_implemented": true,
+    "complete_test_study_seal_implemented": true,
+    "role_scoped_operational_dataset_implemented": true,
     "one_use_evaluator_implemented": false,
     "eligible_target_result_observed": false,
     "model_result_observed": false

@@ -33,6 +33,13 @@ from .impact_absorption_target_store_v2 import (
     ROUND73_TARGET_V2_STUDY_TABLE,
     audit_round73_target_study,
 )
+from .impact_absorption_target_store_v3 import (
+    ROUND73_TARGET_V3_DEVELOPMENT_STUDY_TABLE,
+    ROUND73_TARGET_V3_OPTION_TABLE,
+    ROUND73_TARGET_V3_TEST_STUDY_TABLE,
+    seal_round73_development_targets,
+    seal_round73_test_targets,
+)
 from .impact_absorption_targets import ROUND73_TARGET_MAX_STATE_LATENESS_NS
 
 
@@ -60,15 +67,14 @@ _PRE_ENTRY_REASONS = frozenset(
         "funding_boundary",
     }
 )
-_POST_ENTRY_REASONS = frozenset(
-    {"path_capacity", "exit_state_late", "exit_capacity"}
-)
+_POST_ENTRY_REASONS = frozenset({"path_capacity", "exit_state_late", "exit_capacity"})
 _KNOWN_REASONS = _PRE_ENTRY_REASONS | _POST_ENTRY_REASONS | {"coverage_end"}
 _ROLE_NAMES = frozenset({"training", "tuning", "test"})
 _STUDY_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 TargetStudyAuditFunction = Callable[..., object]
+TargetStudySealFunction = Callable[..., object]
 
 
 def _canonical_json(value: object) -> str:
@@ -134,7 +140,9 @@ def classify_round73_operational_outcome(
         parsed = json.loads(str(ineligible_reasons_json))
     except json.JSONDecodeError as exc:
         raise ValueError("Round 73 target reason JSON is invalid") from exc
-    if not isinstance(parsed, list) or any(not isinstance(item, str) for item in parsed):
+    if not isinstance(parsed, list) or any(
+        not isinstance(item, str) for item in parsed
+    ):
         raise ValueError("Round 73 target reasons must be a string list")
     reasons = tuple(parsed)
     if len(reasons) != len(set(reasons)) or any(
@@ -257,8 +265,7 @@ class Round73OperationalDataset:
             or _STUDY_ID.fullmatch(self.study_id) is None
             or _SHA256.fullmatch(self.cohort_manifest_sha256) is None
             or _SHA256.fullmatch(self.target_study_manifest_sha256) is None
-            or self.feature_names_sha256
-            != ROUND73_ACTION_ALIGNED_FEATURE_NAMES_SHA256
+            or self.feature_names_sha256 != ROUND73_ACTION_ALIGNED_FEATURE_NAMES_SHA256
             or rows == 0
             or any(len(values) != rows for values in strings)
             or any(value.shape != (rows,) for value in arrays)
@@ -347,13 +354,9 @@ def _dataset_sha256(dataset: Round73OperationalDataset) -> str:
                 "schema_version": dataset.schema_version,
                 "study_id": dataset.study_id,
                 "cohort_manifest_sha256": dataset.cohort_manifest_sha256,
-                "target_study_manifest_sha256": (
-                    dataset.target_study_manifest_sha256
-                ),
+                "target_study_manifest_sha256": (dataset.target_study_manifest_sha256),
                 "feature_names_sha256": dataset.feature_names_sha256,
-                "evaluation_contract_sha256": (
-                    ROUND73_EVALUATION_CONTRACT_SHA256
-                ),
+                "evaluation_contract_sha256": (ROUND73_EVALUATION_CONTRACT_SHA256),
                 "feature_contract_sha256": ROUND73_MODEL_FEATURE_CONTRACT_SHA256,
                 "primary_entry_delay_ms": ROUND73_PRIMARY_ENTRY_DELAY_MS,
                 "primary_horizon_ms": ROUND73_PRIMARY_HORIZON_MS,
@@ -402,89 +405,13 @@ def _readonly_array(values: Sequence[object], dtype: object) -> np.ndarray:
     return output
 
 
-def build_round73_operational_dataset(
-    database: str | Path,
+def _operational_dataset_from_rows(
+    rows: Sequence[Sequence[object]],
     *,
-    study_id: str,
-    memory_limit: str = "2GB",
-    threads: int = 2,
-    target_study_audit_function: TargetStudyAuditFunction = (
-        audit_round73_target_study
-    ),
+    selected_study: str,
+    cohort_manifest_sha256: str,
+    target_study_manifest_sha256: str,
 ) -> Round73OperationalDataset:
-    """Audit and adapt the sealed primary-scenario target study exactly once."""
-
-    selected_study = str(study_id).strip().lower()
-    if _STUDY_ID.fullmatch(selected_study) is None:
-        raise ValueError("Round 73 operational dataset study ID is invalid")
-    audit = target_study_audit_function(
-        database,
-        study_id=selected_study,
-        memory_limit=memory_limit,
-        threads=threads,
-    )
-    if getattr(audit, "passed", False) is not True:
-        raise ValueError("Round 73 target-study audit did not pass")
-    target_study_manifest_sha256 = str(
-        getattr(audit, "target_study_manifest_sha256", "")
-    )
-    if _SHA256.fullmatch(target_study_manifest_sha256) is None:
-        raise ValueError("Round 73 target-study audit hash is invalid")
-    with ImpactAbsorptionStore(
-        database,
-        read_only=True,
-        memory_limit=memory_limit,
-        threads=threads,
-    ) as store:
-        connection = store.connect()
-        study_row = connection.execute(
-            f"SELECT manifest_sha256 FROM {ROUND73_SHOCK_STUDY_TABLE} "
-            "WHERE study_id = ?",
-            [selected_study],
-        ).fetchone()
-        target_study_row = connection.execute(
-            f"SELECT target_study_manifest_sha256 "
-            f"FROM {ROUND73_TARGET_V2_STUDY_TABLE} WHERE study_id = ?",
-            [selected_study],
-        ).fetchone()
-        if study_row is None or target_study_row is None:
-            raise ValueError("Round 73 sealed study manifests are missing")
-        cohort_manifest_sha256 = str(study_row[0])
-        if (
-            _SHA256.fullmatch(cohort_manifest_sha256) is None
-            or str(target_study_row[0]) != target_study_manifest_sha256
-        ):
-            raise ValueError("Round 73 sealed study manifest identity differs")
-        rows = connection.execute(
-            f"""
-            SELECT s.run_id, s.symbol, s.anchor_index, s.anchor_monotonic_ns,
-                   s.anchor_wall_ns, s.utc_day, s.role, s.shock_ratio,
-                   s.shock_direction, s.shock_direction_taker_share,
-                   s.feature_vector_sha256, s.selected_anchor_sha256,
-                   c.coverage_end_wall_ns, v.feature_values, v.vector_sha256,
-                   o.side, o.eligible, o.ineligible_reasons_json,
-                   o.positive_net_payoff, o.net_payoff_bps,
-                   o.option_sha256, o.selected_anchor_sha256,
-                   o.cohort_option_sha256
-            FROM {ROUND73_SHOCK_ANCHOR_TABLE} s
-            JOIN {ROUND73_CORPUS_RUN_TABLE} c USING (run_id)
-            JOIN {ROUND73_GRID_VECTOR_TABLE} v
-              USING (run_id, symbol, anchor_index)
-            JOIN {ROUND73_TARGET_V2_OPTION_TABLE} o
-              ON o.study_id = s.study_id AND o.run_id = s.run_id
-             AND o.symbol = s.symbol AND o.anchor_index = s.anchor_index
-            WHERE s.study_id = ? AND o.entry_delay_ms = ?
-              AND o.horizon_ms = ? AND o.reference_quote_notional = ?
-            ORDER BY s.anchor_wall_ns, s.run_id, s.symbol, s.anchor_index,
-                     CASE o.side WHEN 'long' THEN 0 WHEN 'short' THEN 1 ELSE 2 END
-            """,
-            [
-                selected_study,
-                ROUND73_PRIMARY_ENTRY_DELAY_MS,
-                ROUND73_PRIMARY_HORIZON_MS,
-                ROUND73_PRIMARY_REFERENCE_NOTIONAL,
-            ],
-        ).fetchall()
     if not rows or len(rows) % 2:
         raise ValueError("Round 73 primary operational target rows are incomplete")
 
@@ -602,6 +529,224 @@ def build_round73_operational_dataset(
     return dataset
 
 
+def build_round73_operational_dataset(
+    database: str | Path,
+    *,
+    study_id: str,
+    memory_limit: str = "2GB",
+    threads: int = 2,
+    target_study_audit_function: TargetStudyAuditFunction = (
+        audit_round73_target_study
+    ),
+) -> Round73OperationalDataset:
+    """Audit and adapt the sealed primary-scenario target study exactly once."""
+
+    selected_study = str(study_id).strip().lower()
+    if _STUDY_ID.fullmatch(selected_study) is None:
+        raise ValueError("Round 73 operational dataset study ID is invalid")
+    audit = target_study_audit_function(
+        database,
+        study_id=selected_study,
+        memory_limit=memory_limit,
+        threads=threads,
+    )
+    if getattr(audit, "passed", False) is not True:
+        raise ValueError("Round 73 target-study audit did not pass")
+    target_study_manifest_sha256 = str(
+        getattr(audit, "target_study_manifest_sha256", "")
+    )
+    if _SHA256.fullmatch(target_study_manifest_sha256) is None:
+        raise ValueError("Round 73 target-study audit hash is invalid")
+    with ImpactAbsorptionStore(
+        database,
+        read_only=True,
+        memory_limit=memory_limit,
+        threads=threads,
+    ) as store:
+        connection = store.connect()
+        study_row = connection.execute(
+            f"SELECT manifest_sha256 FROM {ROUND73_SHOCK_STUDY_TABLE} "
+            "WHERE study_id = ?",
+            [selected_study],
+        ).fetchone()
+        target_study_row = connection.execute(
+            f"SELECT target_study_manifest_sha256 "
+            f"FROM {ROUND73_TARGET_V2_STUDY_TABLE} WHERE study_id = ?",
+            [selected_study],
+        ).fetchone()
+        if study_row is None or target_study_row is None:
+            raise ValueError("Round 73 sealed study manifests are missing")
+        cohort_manifest_sha256 = str(study_row[0])
+        if (
+            _SHA256.fullmatch(cohort_manifest_sha256) is None
+            or str(target_study_row[0]) != target_study_manifest_sha256
+        ):
+            raise ValueError("Round 73 sealed study manifest identity differs")
+        rows = connection.execute(
+            f"""
+            SELECT s.run_id, s.symbol, s.anchor_index, s.anchor_monotonic_ns,
+                   s.anchor_wall_ns, s.utc_day, s.role, s.shock_ratio,
+                   s.shock_direction, s.shock_direction_taker_share,
+                   s.feature_vector_sha256, s.selected_anchor_sha256,
+                   c.coverage_end_wall_ns, v.feature_values, v.vector_sha256,
+                   o.side, o.eligible, o.ineligible_reasons_json,
+                   o.positive_net_payoff, o.net_payoff_bps,
+                   o.option_sha256, o.selected_anchor_sha256,
+                   o.cohort_option_sha256
+            FROM {ROUND73_SHOCK_ANCHOR_TABLE} s
+            JOIN {ROUND73_CORPUS_RUN_TABLE} c USING (run_id)
+            JOIN {ROUND73_GRID_VECTOR_TABLE} v
+              USING (run_id, symbol, anchor_index)
+            JOIN {ROUND73_TARGET_V2_OPTION_TABLE} o
+              ON o.study_id = s.study_id AND o.run_id = s.run_id
+             AND o.symbol = s.symbol AND o.anchor_index = s.anchor_index
+            WHERE s.study_id = ? AND o.entry_delay_ms = ?
+              AND o.horizon_ms = ? AND o.reference_quote_notional = ?
+            ORDER BY s.anchor_wall_ns, s.run_id, s.symbol, s.anchor_index,
+                     CASE o.side WHEN 'long' THEN 0 WHEN 'short' THEN 1 ELSE 2 END
+            """,
+            [
+                selected_study,
+                ROUND73_PRIMARY_ENTRY_DELAY_MS,
+                ROUND73_PRIMARY_HORIZON_MS,
+                ROUND73_PRIMARY_REFERENCE_NOTIONAL,
+            ],
+        ).fetchall()
+    return _operational_dataset_from_rows(
+        rows,
+        selected_study=selected_study,
+        cohort_manifest_sha256=cohort_manifest_sha256,
+        target_study_manifest_sha256=target_study_manifest_sha256,
+    )
+
+
+def build_round73_staged_operational_dataset(
+    database: str | Path,
+    *,
+    study_id: str,
+    role_scope: str,
+    pretest_manifest_sha256: str | None = None,
+    memory_limit: str = "2GB",
+    threads: int = 2,
+    development_seal_function: TargetStudySealFunction = (
+        seal_round73_development_targets
+    ),
+    test_seal_function: TargetStudySealFunction = seal_round73_test_targets,
+) -> Round73OperationalDataset:
+    """Build one physically staged dataset after its exact target seal passes."""
+
+    selected_study = str(study_id).strip().lower()
+    selected_scope = str(role_scope).strip().lower()
+    if _STUDY_ID.fullmatch(selected_study) is None:
+        raise ValueError("Round 73 staged dataset study ID is invalid")
+    if selected_scope == "development":
+        if pretest_manifest_sha256 is not None:
+            raise ValueError(
+                "Round 73 development dataset cannot receive a pretest hash"
+            )
+        seal = development_seal_function(
+            database,
+            study_id=selected_study,
+            memory_limit=memory_limit,
+            threads=threads,
+        )
+        target_study_manifest_sha256 = str(
+            getattr(seal, "development_study_manifest_sha256", "")
+        )
+        seal_table = ROUND73_TARGET_V3_DEVELOPMENT_STUDY_TABLE
+        roles = ("training", "tuning")
+    elif selected_scope == "test":
+        selected_pretest = str(pretest_manifest_sha256 or "").strip().lower()
+        if _SHA256.fullmatch(selected_pretest) is None:
+            raise ValueError("Round 73 test dataset requires a pretest hash")
+        seal = test_seal_function(
+            database,
+            study_id=selected_study,
+            pretest_manifest_sha256=selected_pretest,
+            memory_limit=memory_limit,
+            threads=threads,
+        )
+        target_study_manifest_sha256 = str(
+            getattr(seal, "test_study_manifest_sha256", "")
+        )
+        seal_table = ROUND73_TARGET_V3_TEST_STUDY_TABLE
+        roles = ("test",)
+    else:
+        raise ValueError(
+            "Round 73 staged dataset role scope must be development or test"
+        )
+    if _SHA256.fullmatch(target_study_manifest_sha256) is None:
+        raise ValueError("Round 73 staged target-study seal hash is invalid")
+    with ImpactAbsorptionStore(
+        database,
+        read_only=True,
+        memory_limit=memory_limit,
+        threads=threads,
+    ) as store:
+        connection = store.connect()
+        study_row = connection.execute(
+            f"SELECT manifest_sha256 FROM {ROUND73_SHOCK_STUDY_TABLE} "
+            "WHERE study_id = ?",
+            [selected_study],
+        ).fetchone()
+        target_study_row = connection.execute(
+            f"SELECT cohort_manifest_sha256, manifest_sha256 FROM {seal_table} "
+            "WHERE study_id = ?",
+            [selected_study],
+        ).fetchone()
+        if study_row is None or target_study_row is None:
+            raise ValueError("Round 73 staged study manifests are missing")
+        cohort_manifest_sha256 = str(study_row[0])
+        if (
+            _SHA256.fullmatch(cohort_manifest_sha256) is None
+            or str(target_study_row[0]) != cohort_manifest_sha256
+            or str(target_study_row[1]) != target_study_manifest_sha256
+        ):
+            raise ValueError("Round 73 staged study manifest identity differs")
+        rows = connection.execute(
+            f"""
+            SELECT s.run_id, s.symbol, s.anchor_index, s.anchor_monotonic_ns,
+                   s.anchor_wall_ns, s.utc_day, s.role, s.shock_ratio,
+                   s.shock_direction, s.shock_direction_taker_share,
+                   s.feature_vector_sha256, s.selected_anchor_sha256,
+                   c.coverage_end_wall_ns, v.feature_values, v.vector_sha256,
+                   o.side, o.eligible, o.ineligible_reasons_json,
+                   o.positive_net_payoff, o.net_payoff_bps,
+                   o.option_sha256, o.selected_anchor_sha256,
+                   o.cohort_option_sha256
+            FROM {ROUND73_SHOCK_ANCHOR_TABLE} s
+            JOIN {ROUND73_CORPUS_RUN_TABLE} c USING (run_id)
+            JOIN {ROUND73_GRID_VECTOR_TABLE} v
+              USING (run_id, symbol, anchor_index)
+            JOIN {ROUND73_TARGET_V3_OPTION_TABLE} o
+              ON o.study_id = s.study_id AND o.run_id = s.run_id
+             AND o.symbol = s.symbol AND o.anchor_index = s.anchor_index
+            WHERE s.study_id = ? AND s.role IN (
+                {",".join("?" for _ in roles)}
+            ) AND o.entry_delay_ms = ? AND o.horizon_ms = ?
+              AND o.reference_quote_notional = ?
+            ORDER BY s.anchor_wall_ns, s.run_id, s.symbol, s.anchor_index,
+                     CASE o.side WHEN 'long' THEN 0 WHEN 'short' THEN 1 ELSE 2 END
+            """,
+            [
+                selected_study,
+                *roles,
+                ROUND73_PRIMARY_ENTRY_DELAY_MS,
+                ROUND73_PRIMARY_HORIZON_MS,
+                ROUND73_PRIMARY_REFERENCE_NOTIONAL,
+            ],
+        ).fetchall()
+    dataset = _operational_dataset_from_rows(
+        rows,
+        selected_study=selected_study,
+        cohort_manifest_sha256=cohort_manifest_sha256,
+        target_study_manifest_sha256=target_study_manifest_sha256,
+    )
+    if set(dataset.role) - set(roles):
+        raise ValueError("Round 73 staged dataset crossed its role scope")
+    return dataset
+
+
 __all__ = [
     "ROUND73_OBSERVED_STATUS",
     "ROUND73_OPERATIONAL_DATASET_SCHEMA_VERSION",
@@ -615,5 +760,6 @@ __all__ = [
     "Round73OperationalDataset",
     "Round73OperationalOutcome",
     "build_round73_operational_dataset",
+    "build_round73_staged_operational_dataset",
     "classify_round73_operational_outcome",
 ]

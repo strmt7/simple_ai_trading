@@ -27,6 +27,10 @@ from simple_ai_trading.impact_absorption_grid import (
     ROUND73_GRID_CONTRACT_SHA256,
     ROUND73_GRID_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_model_features import (
+    ROUND73_ACTION_ALIGNED_FEATURE_NAMES,
+    ROUND73_ACTION_ALIGNED_FEATURE_NAMES_SHA256,
+)
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SYMBOLS,
     IMPACT_CAPTURE_V9_CONTRACT_SHA256,
@@ -40,6 +44,20 @@ from simple_ai_trading.impact_absorption_target_store_v2 import (
     audit_round73_target_study,
     build_round73_selected_anchor_targets,
     seal_round73_target_study,
+)
+from simple_ai_trading.impact_absorption_holdout_store import (
+    publish_round73_pretest_manifest,
+    round73_development_row_identities,
+    unlock_round73_test_targets,
+)
+from simple_ai_trading.impact_absorption_target_store_v3 import (
+    ROUND73_PRETEST_MODEL_ARTIFACT_TABLE,
+    ROUND73_TARGET_V3_OPTION_TABLE,
+    ROUND73_TARGET_V3_TEST_STUDY_TABLE,
+    audit_round73_role_targets,
+    build_round73_role_targets,
+    seal_round73_development_targets,
+    seal_round73_test_targets,
 )
 from simple_ai_trading.impact_absorption_targets import Round73MarketQuantityRules
 
@@ -154,6 +172,7 @@ def _seed(
     *,
     start_wall_ns: int = START_WALL_NS,
     utc_day: str = "2026-07-23",
+    include_test_anchor: bool = False,
 ) -> tuple[dict[str, str], dict[str, str]]:
     corpus_hashes = {run_id: _sha(f"corpus-{run_id}") for run_id in RUN_IDS}
     grid_hashes = {run_id: _sha(f"grid-{run_id}") for run_id in RUN_IDS}
@@ -253,34 +272,60 @@ def _seed(
                 }
             )
         _create_cohort_tables(connection)
-        anchor_values = {
-            "study_id": STUDY_ID,
-            "run_id": RUN_IDS[0],
-            "symbol": "BTCUSDT",
-            "anchor_index": 0,
-            "anchor_monotonic_ns": START_MONOTONIC_NS + 1_000_000_000,
-            "anchor_wall_ns": start_wall_ns + 1_000_000_000,
-            "source_max_received_monotonic_ns": (START_MONOTONIC_NS + 900_000_000),
-            "utc_day": utc_day,
-            "day_ordinal": 1,
-            "role": "training",
-            "shock_ratio": 5.0,
-            "shock_direction": 1,
-            "shock_direction_taker_share": 0.8,
-            "feature_vector_sha256": _sha("vector"),
-        }
-        anchor_hash = _sha(_canonical_json(list(anchor_values.values())))
-        anchor = Round73ShockAnchor(
-            **anchor_values,  # type: ignore[arg-type]
-            selected_anchor_sha256=anchor_hash,
-        )
-        connection.execute(
-            f"INSERT INTO {ROUND73_SHOCK_ANCHOR_TABLE} VALUES "
-            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            list(anchor.as_row()),
-        )
+        anchor_inputs = [
+            {
+                "study_id": STUDY_ID,
+                "run_id": RUN_IDS[0],
+                "symbol": "BTCUSDT",
+                "anchor_index": 0,
+                "anchor_monotonic_ns": START_MONOTONIC_NS + 1_000_000_000,
+                "anchor_wall_ns": start_wall_ns + 1_000_000_000,
+                "source_max_received_monotonic_ns": (START_MONOTONIC_NS + 900_000_000),
+                "utc_day": utc_day,
+                "day_ordinal": 1,
+                "role": "training",
+                "shock_ratio": 5.0,
+                "shock_direction": 1,
+                "shock_direction_taker_share": 0.8,
+                "feature_vector_sha256": _sha("vector-training"),
+            }
+        ]
+        if include_test_anchor:
+            anchor_inputs.append(
+                {
+                    "study_id": STUDY_ID,
+                    "run_id": RUN_IDS[1],
+                    "symbol": "BTCUSDT",
+                    "anchor_index": 0,
+                    "anchor_monotonic_ns": START_MONOTONIC_NS + 1_000_000_000,
+                    "anchor_wall_ns": start_wall_ns + 501_000_000_000,
+                    "source_max_received_monotonic_ns": (
+                        START_MONOTONIC_NS + 900_000_000
+                    ),
+                    "utc_day": "2026-07-29",
+                    "day_ordinal": 6,
+                    "role": "test",
+                    "shock_ratio": 5.0,
+                    "shock_direction": -1,
+                    "shock_direction_taker_share": 0.8,
+                    "feature_vector_sha256": _sha("vector-test"),
+                }
+            )
+        anchor_hashes: list[str] = []
+        for anchor_values in anchor_inputs:
+            anchor_hash = _sha(_canonical_json(list(anchor_values.values())))
+            anchor_hashes.append(anchor_hash)
+            anchor = Round73ShockAnchor(
+                **anchor_values,  # type: ignore[arg-type]
+                selected_anchor_sha256=anchor_hash,
+            )
+            connection.execute(
+                f"INSERT INTO {ROUND73_SHOCK_ANCHOR_TABLE} VALUES "
+                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                list(anchor.as_row()),
+            )
         source_hash = _sha(_canonical_json(sources))
-        anchor_rows_hash = _stream_hash([anchor_hash])
+        anchor_rows_hash = _stream_hash(anchor_hashes)
         identity = {
             "schema_version": ROUND73_SHOCK_STUDY_SCHEMA_VERSION,
             "contract_sha256": ROUND73_COMPACT_TARGET_CONTRACT_SHA256,
@@ -289,7 +334,7 @@ def _seed(
             "source_runs_sha256": source_hash,
             "source_run_count": len(sources),
             "selected_anchor_rows_sha256": anchor_rows_hash,
-            "selected_anchor_count": 1,
+            "selected_anchor_count": len(anchor_inputs),
             "target_observed": False,
             "model_evaluated": False,
             "trading_authority": False,
@@ -308,7 +353,7 @@ def _seed(
                 _sha("identity-rows"),
                 anchor_rows_hash,
                 len(sources),
-                1,
+                len(anchor_inputs),
                 start_wall_ns,
                 start_wall_ns + 7 * 86_400_000_000_000,
                 start_wall_ns + 8 * 86_400_000_000_000,
@@ -494,3 +539,241 @@ def test_v2_builder_rejects_the_prospective_eligible_holdout(tmp_path: Path) -> 
             run_id=RUN_IDS[0],
             verify_cohort=False,
         )
+
+
+def test_v3_physically_stages_development_pretest_and_one_time_test(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    database = tmp_path / "targets-v3.duckdb"
+    corpus_hashes, grid_hashes = _seed(
+        database,
+        start_wall_ns=ROUND73_STUDY_NOT_BEFORE_WALL_NS,
+        utc_day="2026-07-24",
+        include_test_anchor=True,
+    )
+
+    def cohort_audit(*_args: object, **_kwargs: object):
+        return SimpleNamespace(passed=True)
+
+    def corpus_audit(_database: object, *, run_id: str, **_kwargs: object):
+        return SimpleNamespace(passed=True, manifest_sha256=corpus_hashes[run_id])
+
+    def grid_audit(_database: object, *, run_id: str, **_kwargs: object):
+        return SimpleNamespace(
+            passed=True,
+            build_manifest_sha256=grid_hashes[run_id],
+        )
+
+    repository_state = {
+        "commit_sha": "1" * 40,
+        "tree_sha": "2" * 40,
+        "clean": True,
+        "dirty": False,
+        "status_sha256": hashlib.sha256(b"").hexdigest(),
+    }
+    monkeypatch.setattr(
+        "simple_ai_trading.impact_absorption_target_store_v3."
+        "parse_round73_target_quantity_rules",
+        lambda *_args, **_kwargs: _rules(),
+    )
+    common = {
+        "study_id": STUDY_ID,
+        "cohort_audit_function": cohort_audit,
+        "corpus_audit_function": corpus_audit,
+        "grid_audit_function": grid_audit,
+        "replay_function": _replay,
+    }
+    first = build_round73_role_targets(
+        database,
+        run_id=RUN_IDS[0],
+        role_scope="development",
+        **common,
+    )
+    second = build_round73_role_targets(
+        database,
+        run_id=RUN_IDS[1],
+        role_scope="development",
+        **common,
+    )
+    assert first.option_count == 36
+    assert second.option_count == 0
+    with duckdb.connect(str(database), read_only=True) as connection:
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {ROUND73_TARGET_V3_OPTION_TABLE} o "
+                "JOIN impact_shock_anchor_v1 a "
+                "ON a.study_id = o.study_id AND a.run_id = o.run_id "
+                "AND a.symbol = o.symbol AND a.anchor_index = o.anchor_index "
+                "WHERE a.role = 'test'"
+            ).fetchone()[0]
+            == 0
+        )
+    with pytest.raises(ValueError, match="locked"):
+        build_round73_role_targets(
+            database,
+            run_id=RUN_IDS[1],
+            role_scope="test",
+            pretest_manifest_sha256="3" * 64,
+            **common,
+        )
+
+    development = seal_round73_development_targets(database, **common)
+    assert development.selected_anchor_count == 1
+    development_rows = round73_development_row_identities(
+        database,
+        study_id=STUDY_ID,
+    )
+    artifacts = {
+        "btcusdt-model.bin": b"frozen model bytes",
+        "btcusdt-preprocessor.bin": b"frozen preprocessor bytes",
+        "btcusdt-training-predictions.bin": b"frozen training predictions",
+        "btcusdt-tuning-predictions.bin": b"frozen tuning predictions",
+    }
+    model_manifest = {
+        "feature_schema": {
+            "feature_names": list(ROUND73_ACTION_ALIGNED_FEATURE_NAMES),
+            "feature_names_sha256": ROUND73_ACTION_ALIGNED_FEATURE_NAMES_SHA256,
+            "transforms": {"action_alignment": "frozen-v1"},
+            "dropped_zero_iqr_columns": {
+                symbol: [] for symbol in IMPACT_CAPTURE_SYMBOLS
+            },
+        },
+        "row_identities": development_rows,
+        "compute_backend": {
+            "resolved_backend": "cpu",
+            "device_name": "unit-test CPU",
+            "platform_name": "unit-test",
+            "device_type": "cpu",
+            "gpu_accelerated": False,
+            "library_versions": {"lightgbm": "test"},
+        },
+        "symbol_models": {
+            "BTCUSDT": {
+                "status": "enabled",
+                "model_family": "lightgbm",
+                "selected_feature_layer": "impact_absorption",
+                "best_boosting_iteration": 7,
+                "probability_threshold": 0.7,
+                "artifact_names": {
+                    "model": "btcusdt-model.bin",
+                    "preprocessor": "btcusdt-preprocessor.bin",
+                    "training_predictions": ("btcusdt-training-predictions.bin"),
+                    "tuning_predictions": "btcusdt-tuning-predictions.bin",
+                },
+            },
+            "ETHUSDT": {"status": "disabled", "reason": "unit-test fixture"},
+            "SOLUSDT": {"status": "disabled", "reason": "unit-test fixture"},
+        },
+        "action_policy": {
+            "candidate_probability_thresholds": [
+                0.5,
+                0.55,
+                0.6,
+                0.65,
+                0.7,
+                0.75,
+                0.8,
+                0.85,
+                0.9,
+            ],
+            "one_active_position_per_symbol": True,
+            "pre_entry_revalidation": True,
+            "exact_side_score_tie_policy": "no_trade",
+            "profit_reinvestment": False,
+            "leverage": 1.0,
+        },
+    }
+    pretest = publish_round73_pretest_manifest(
+        database,
+        model_manifest=model_manifest,
+        artifacts=artifacts,
+        repository_root=tmp_path,
+        repository_state_function=lambda _root: repository_state,
+        **common,
+    )
+    assert pretest.artifact_count == 4
+    with duckdb.connect(str(database), read_only=True) as connection:
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {ROUND73_PRETEST_MODEL_ARTIFACT_TABLE}"
+            ).fetchone()[0]
+            == 4
+        )
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {ROUND73_TARGET_V3_OPTION_TABLE} o "
+                "JOIN impact_shock_anchor_v1 a "
+                "ON a.study_id = o.study_id AND a.run_id = o.run_id "
+                "AND a.symbol = o.symbol AND a.anchor_index = o.anchor_index "
+                "WHERE a.role = 'test'"
+            ).fetchone()[0]
+            == 0
+        )
+
+    unlock = unlock_round73_test_targets(
+        database,
+        study_id=STUDY_ID,
+        pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+        repository_root=tmp_path,
+        repository_state_function=lambda _root: repository_state,
+    )
+    assert unlock.pretest_manifest_sha256 == pretest.pretest_manifest_sha256
+    with pytest.raises(ValueError, match="already exists"):
+        unlock_round73_test_targets(
+            database,
+            study_id=STUDY_ID,
+            pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+            repository_root=tmp_path,
+            repository_state_function=lambda _root: repository_state,
+        )
+
+    test_zero = build_round73_role_targets(
+        database,
+        run_id=RUN_IDS[0],
+        role_scope="test",
+        pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+        **common,
+    )
+    test_rows = build_round73_role_targets(
+        database,
+        run_id=RUN_IDS[1],
+        role_scope="test",
+        pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+        **common,
+    )
+    assert test_zero.option_count == 0
+    assert test_rows.option_count == 36
+    assert test_rows.eligible_option_count is None
+    test_study = seal_round73_test_targets(
+        database,
+        pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+        **common,
+    )
+    assert test_study.option_count == 36
+    assert "eligible_option_count" not in test_study.as_dict()
+    with duckdb.connect(str(database), read_only=True) as connection:
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {ROUND73_TARGET_V3_TEST_STUDY_TABLE}"
+            ).fetchone()[0]
+            == 1
+        )
+
+    with duckdb.connect(str(database)) as connection:
+        connection.execute(
+            f"UPDATE {ROUND73_TARGET_V3_OPTION_TABLE} "
+            "SET cohort_option_sha256 = ? WHERE study_id = ? AND run_id = ? "
+            "AND entry_delay_ms = 500 AND horizon_ms = 15000 "
+            "AND reference_quote_notional = 100 AND side = 'long'",
+            ["0" * 64, STUDY_ID, RUN_IDS[1]],
+        )
+    tampered = audit_round73_role_targets(
+        database,
+        run_id=RUN_IDS[1],
+        role_scope="test",
+        pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+        **common,
+    )
+    assert not tampered.passed
+    assert "role manifest aggregate differs" in " ".join(tampered.errors)

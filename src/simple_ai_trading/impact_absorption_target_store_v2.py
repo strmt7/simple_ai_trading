@@ -619,6 +619,8 @@ def _insert_option_batch(
     options: Sequence[Round73CohortTargetOption],
     *,
     batch_index: int,
+    table_name: str = ROUND73_TARGET_V2_OPTION_TABLE,
+    view_namespace: str = "v2",
 ) -> None:
     if not options:
         return
@@ -628,7 +630,7 @@ def _insert_option_batch(
     try:
         for index, column in enumerate(zip(*rows, strict=True)):
             values = tuple(column)
-            view = f"_round73_target_v2_{batch_index}_{index}"
+            view = f"_round73_target_{view_namespace}_{batch_index}_{index}"
             if all(isinstance(value, bool) for value in values):
                 array = np.asarray(values, dtype=np.bool_)
                 projection = f"{view}.column0"
@@ -678,7 +680,7 @@ def _insert_option_batch(
             views.append(view)
             projections.append(projection)
         connection.execute(
-            f"INSERT INTO {ROUND73_TARGET_V2_OPTION_TABLE} SELECT "
+            f"INSERT INTO {table_name} SELECT "
             + ", ".join(projections)
             + " FROM "
             + " POSITIONAL JOIN ".join(views)
