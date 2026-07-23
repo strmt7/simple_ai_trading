@@ -154,7 +154,12 @@ After parser or taxonomy changes, regenerate the header through the native build
   60 seconds, `$1,000`, `1x`, no reinvestment, and one open position per symbol.
   Models, transforms, tuning thresholds, and the action rule must be hash-bound
   before test rows are read. The seven-day result cannot authorize annualized
-  claims, AI, leverage, or trading.
+  claims, AI, leverage, or trading. The first transform is now frozen and
+  implemented in `round-073-action-aligned-feature-contract-v1.json` and
+  `impact_absorption_model_features.py`: it creates symmetric long/short views
+  and strictly nested 90/107/261-feature layers without targets, fitted
+  statistics, clipping, or invented ratios. This is feature plumbing, not a
+  trained model or edge result.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.

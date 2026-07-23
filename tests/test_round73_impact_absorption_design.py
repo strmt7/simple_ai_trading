@@ -164,6 +164,9 @@ COMPACT_TARGET_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 SELECTED_ANCHOR_EVALUATION_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-selected-anchor-evaluation-contract-v1.json"
 )
+ACTION_ALIGNED_FEATURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-action-aligned-feature-contract-v1.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1656,6 +1659,37 @@ def test_round73_selected_anchor_evaluation_is_frozen_complete_and_fail_closed()
     ai = contract["ai_and_promotion_gate"]
     assert ai["language_model_or_neural_challenger_in_this_evaluation"] is False
     assert ai["ai_failure_cannot_change_shallow_test_or unlock trading"] is True
+
+
+def test_round73_action_aligned_features_are_symmetric_nested_and_target_blind() -> None:
+    contract = json.loads(
+        ACTION_ALIGNED_FEATURE_CONTRACT_PATH.read_text(encoding="utf-8")
+    )
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_eligible_v2_target_result"] is True
+    assert contract["raw_grid"]["feature_count"] == 257
+    assert contract["candidate_action_rows"]["rows_per_anchor"] == 2
+    assert contract["candidate_action_rows"]["target_or_outcome_used"] is False
+    symmetry = contract["side_symmetry"]
+    assert symmetry["book_pairs"]["short_support_source"] == "ask"
+    assert symmetry["aggressive_trade_pairs"]["short_aligned_source"] == "sell"
+    assert symmetry["pair_or_direction_rule_applied_exactly_once"] is True
+    assert contract["output"]["feature_count"] == 261
+    layers = contract["nested_layers"]
+    assert [layers[name]["feature_count"] for name in ("l1_tape", "l2_state", "impact_absorption")] == [90, 107, 261]
+    assert layers["strictly_nested"] is True
+    numerical = contract["numerical_policy"]
+    assert numerical["hand_made_division_or_epsilon_ratio_added"] is False
+    assert numerical["fit_or_sample_statistic_used"] is False
+    limits = contract["interpretation_limits"]
+    assert limits["displayed_depth_is_guaranteed_fill"] is False
+    assert limits["market_maker_whale_spoofer_or_manipulator_identity_inferred"] is False
+    authority = contract["authority"]
+    assert authority["model_training"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
