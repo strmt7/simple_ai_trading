@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"090cf5334da4675064007fbf7a6a40713b059d26ae800d9e255f33e4bd117b49";
+inline constexpr const wchar_t* kCommandContractSha256 = L"11e209a6a9065d5c495d09b9941eb930690f0c2a97125d70883c8883b7562c8b";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -277,6 +277,7 @@ inline constexpr CommandOptionSpec kOptions_impact_audit[] = {
 inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
     {L"--mode", L"mode", L"probe, qualification", L"probe", L"", L"1", false, true, false},
+    {L"--schema-version", L"schema_version", L"v8, v9", L"v8", L"capture storage schema; v9 is the exact-frame research path", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"", L"streaming duration; defaults to 180 for probe and 3600 for qualification", L"1", false, true, false},
     {L"--compressed-payload-cap-bytes", L"compressed_payload_cap_bytes", L"", L"2147483648", L"", L"1", false, true, false},
     {L"--database-size-cap-bytes", L"database_size_cap_bytes", L"", L"8589934592", L"absolute DuckDB plus WAL cap; capture stops with a 512 MiB reserve", L"1", false, true, false},
@@ -1075,7 +1076,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"evaluate", L"usage: simple-ai-trading evaluate [-h] [--input INPUT] [--model MODEL]                                   [--threshold THRESHOLD]                                   [--calibrate-threshold]", kOptions_evaluate, 4},
     {L"fetch", L"usage: simple-ai-trading fetch [-h] [--symbol SYMBOL] [--interval INTERVAL]                                [--limit LIMIT] [--batch-size BATCH_SIZE]                                [--output OUTPUT]", kOptions_fetch, 5},
     {L"impact-audit", L"usage: simple-ai-trading impact-audit [-h] [--database DATABASE]                                       [--run-id RUN_ID]                                       [--memory-limit MEMORY_LIMIT]                                       [--database-threads DATABASE_THREADS]                                       [--json]", kOptions_impact_audit, 5},
-    {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 10},
+    {L"impact-capture", L"Capture exact public Binance USD-M wire evidence into one bounded DuckDB database. This command never authenticates or places an order.", kOptions_impact_capture, 11},
     {L"impact-corpus-audit", L"usage: simple-ai-trading impact-corpus-audit [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_corpus_audit, 5},
     {L"impact-corpus-batch-audit", L"usage: simple-ai-trading impact-corpus-batch-audit [-h] [--database DATABASE]                                                    --batch-id BATCH_ID                                                    [--deep]                                                    [--memory-limit MEMORY_LIMIT]                                                    [--database-threads DATABASE_THREADS]                                                    [--json]", kOptions_impact_corpus_batch_audit, 6},
     {L"impact-corpus-collect", L"Recover qualified unindexed v8 runs, collect a bounded public-feed batch, then replay and audit each manifest. No credentials or orders.", kOptions_impact_corpus_collect, 8},

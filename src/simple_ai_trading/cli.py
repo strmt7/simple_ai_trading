@@ -125,6 +125,8 @@ from .impact_absorption_grid_store import (
 )
 from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    IMPACT_CAPTURE_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
 from .liquidity_session import (
@@ -1329,6 +1331,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_impact_capture.add_argument(
         "--mode", choices=["probe", "qualification"], default="probe"
+    )
+    parser_impact_capture.add_argument(
+        "--schema-version",
+        choices=["v8", "v9"],
+        default="v8",
+        help="capture storage schema; v9 is the exact-frame research path",
     )
     parser_impact_capture.add_argument(
         "--duration-seconds",
@@ -10969,6 +10977,23 @@ async def _run_impact_capture_with_progress(
     *,
     progress_interval_seconds: float,
 ) -> ImpactCaptureSupervisorReport:
+    database = Path(config.database)
+    wal = Path(f"{database}.wal")
+
+    def path_bytes(path: Path) -> int:
+        try:
+            return path.stat().st_size
+        except FileNotFoundError:
+            return 0
+
+    print(
+        "impact-capture-progress: "
+        f"state=starting mode={config.mode} schema={config.schema_version} "
+        f"stream_target={config.duration_seconds:.1f}s database={config.database} "
+        f"database_bytes={path_bytes(database)} wal_bytes={path_bytes(wal)}",
+        file=sys.stderr,
+        flush=True,
+    )
     task = asyncio.create_task(capture_round73_supervised(config))
     loop = asyncio.get_running_loop()
     started = loop.time()
@@ -10983,9 +11008,11 @@ async def _run_impact_capture_with_progress(
                 break
             print(
                 "impact-capture-progress: "
-                f"mode={config.mode} wall_elapsed={loop.time() - started:.1f}s "
+                f"state=running mode={config.mode} schema={config.schema_version} "
+                f"wall_elapsed={loop.time() - started:.1f}s "
                 f"stream_target={config.duration_seconds:.1f}s "
-                f"database={config.database}",
+                f"database={config.database} database_bytes={path_bytes(database)} "
+                f"wal_bytes={path_bytes(wal)}",
                 file=sys.stderr,
                 flush=True,
             )
@@ -10999,6 +11026,17 @@ async def _run_impact_capture_with_progress(
 
 def command_impact_capture(args: argparse.Namespace) -> int:
     mode = str(getattr(args, "mode", "probe"))
+    schema_alias = str(getattr(args, "schema_version", "v8"))
+    schema_versions = {
+        "v8": IMPACT_CAPTURE_SCHEMA_VERSION,
+        "v9": IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    }
+    if schema_alias not in schema_versions:
+        print(
+            "impact-capture failed: schema version must be v8 or v9",
+            file=sys.stderr,
+        )
+        return 2
     raw_duration = getattr(args, "duration_seconds", None)
     duration_seconds = (
         (3_600.0 if mode == "qualification" else 180.0)
@@ -11015,6 +11053,7 @@ def command_impact_capture(args: argparse.Namespace) -> int:
     try:
         config = ImpactCaptureConfig(
             database=str(getattr(args, "database", "data/microstructure.duckdb")),
+            schema_version=schema_versions[schema_alias],
             mode=mode,
             duration_seconds=duration_seconds,
             compressed_payload_cap_bytes=int(

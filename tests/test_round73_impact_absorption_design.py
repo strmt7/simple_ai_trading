@@ -101,6 +101,9 @@ V9_CAPTURE_GATE_SUCCESS_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V9_ONE_HOUR_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v9-one-hour-qualification-failure-2026-07-23.json"
 )
+V9_OPERATOR_ABORT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v9-qualification-operator-abort-2026-07-23.json"
+)
 SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-segmented-corpus-contract-v1.json"
 )
@@ -870,6 +873,44 @@ def test_round73_v9_failed_qualification_is_quarantined_and_hash_bound() -> None
     assert authority["one_new_v9_one_hour_qualification_retry_after_remediation"]
     assert authority["reuse_failed_run"] is False
     assert authority["round_073_corpus_admission"] is False
+    assert authority["round_073_model_evaluation"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["live_trading_authority"] is False
+
+
+def test_round73_v9_operator_abort_is_quarantined_and_hash_bound() -> None:
+    evidence = json.loads(V9_OPERATOR_ABORT_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["attempt_evidence_combined"] is False
+    run = evidence["run"]
+    assert run["terminal_status"] == "failed"
+    assert run["message_count"] == 138_216
+    monitor = evidence["operator_monitor_failure"]
+    assert monitor["capture_application_failure_proven"] is False
+    assert monitor["asyncio_control_loop_stall_proven"] is False
+    assert monitor["correct_duckdb_wal_path"].endswith(".duckdb.wal")
+    assert monitor["process_was_force_stopped_by_operator"] is True
+    quarantine = evidence["terminal_quarantine"]
+    assert quarantine["invalid_segment_count"] == 3
+    assert quarantine["capture_gate_passed"] is False
+    assert quarantine["qualification_passed"] is False
+    assert quarantine["fresh_read_only_audit_passed"] is True
+    assert quarantine["corpus_manifest_count"] == 0
+    assert quarantine["eligible_for_training_or_model_evaluation"] is False
+    remediation = evidence["monitor_remediation"]
+    assert remediation["cli_v9_schema_selection_added"] is True
+    assert remediation["generated_windows_command_contract_updated"] is True
+    assert remediation["heartbeat_uses_database_filename_dot_wal"] is True
+    assert remediation["live_requalification_completed"] is False
+    authority = evidence["authorization"]
+    assert authority[
+        "one_replacement_v9_one_hour_qualification_after_monitor_remediation"
+    ]
+    assert authority["reuse_aborted_run"] is False
     assert authority["round_073_model_evaluation"] is False
     assert authority["profitability_claim"] is False
     assert authority["live_trading_authority"] is False
