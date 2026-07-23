@@ -155,6 +155,9 @@ EXECUTABLE_TARGET_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 TARGET_MECHANICS_DIAGNOSTIC_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v1-target-mechanics-diagnostic-2026-07-23.json"
 )
+COMPACT_TARGET_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-compact-shock-target-contract-v2.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1525,6 +1528,56 @@ def test_round73_target_mechanics_diagnostic_is_hash_bound_and_single_class() ->
     assert authorization["storage_efficient_target_v2_contract_design"] is True
     assert authorization["round_073_model_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round73_compact_target_contract_is_prospective_bounded_and_closed() -> None:
+    contract = json.loads(COMPACT_TARGET_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v2_cohort_or_target_write"] is True
+    response = contract["v1_diagnostic_response"]
+    assert response["v1_target_outcomes_already_observed"] is True
+    assert response["v1_source_run_permitted_in_v2_cohort"] is False
+    assert response["v1_cost_delay_or_book_walk_weakened"] is False
+    admission = contract["prospective_source_admission"]
+    assert admission["capture_schema_version"] == "round-073-prospective-evidence-v9"
+    assert admission["v8_source_permitted"] is False
+    assert admission["source_run_with_any_preexisting_v1_or_v2_target_manifest_permitted"] is False
+    days = contract["study_day_contract"]
+    assert days["crypto_formal_daily_close"] is False
+    assert days["required_consecutive_complete_utc_days"] == 7
+    assert days["ordered_roles"] == {
+        "training": [1, 2, 3, 4],
+        "tuning": [5],
+        "test": [6, 7],
+    }
+    assert days["listed_products_use_actual_venue_calendars"] is True
+    cohort = contract["outcome_blind_shock_cohort"]
+    assert cohort["threshold_source_role"] == "training only"
+    assert cohort["minimum_shock_ratio"] == 3.0
+    assert cohort["target_price_payoff_eligibility_or_future_state_used_for_selection"] is False
+    population = contract["target_population"]
+    assert population["only_selected_cohort_anchors_materialized"] is True
+    assert population["expected_options_per_selected_anchor"] == 36
+    assert population["dimensions"]["holding_horizon_milliseconds"] == [
+        15_000,
+        60_000,
+        300_000,
+    ]
+    execution = contract["execution_and_cost_inheritance"]
+    assert execution["minimum_round_trip_fee_and_adverse_reserve_bps"] == 12.0
+    assert execution["leverage_applied"] is False
+    persistence = contract["bounded_persistence"]
+    assert persistence["entire_seven_day_target_set_held_in_python_memory"] is False
+    assert persistence["all_anchor_v1_rows_repeated_for_future_runs"] is False
+    evaluation = contract["evaluation_gate"]
+    assert evaluation["seven_days_is_viability_only"] is True
+    assert evaluation["ai_challenger_opens_before_shallow_predictive_and_economic_pass"] is False
+    authority = contract["authority"]
+    assert authority["target_result_observed"] is False
+    assert authority["model_evaluation"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

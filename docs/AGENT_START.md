@@ -134,9 +134,13 @@ After parser or taxonomy changes, regenerate the header through the native build
   and excluded from future selection or scoring. Do not weaken the cost, delay,
   horizon, or population after this result. Read
   `round-073-v1-target-mechanics-diagnostic-2026-07-23.json`. A compact v2
-  target-contract design and new untouched prospective feature collection are
-  open; target labels, model evaluation, and all trading authority remain
-  closed. One hour is not a model-evaluation corpus.
+  contract is now frozen in `round-073-compact-shock-target-contract-v2.json`.
+  It admits untouched v9 anchors from 2026-07-24 UTC, freezes a 4/1/2-day
+  train/tune/test split, derives shock thresholds from training features only,
+  and permits target replay only after the selected cohort is hash-bound. New
+  prospective feature collection and focused v2 implementation are open;
+  target results, model evaluation, and all trading authority remain closed.
+  One hour is not a model-evaluation corpus.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.
