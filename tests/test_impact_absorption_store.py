@@ -629,6 +629,94 @@ def test_v9_store_persists_exact_frames_and_only_low_rate_rest_context(
             )
 
 
+def test_v9_fresh_writer_connection_rebinds_persisted_storage_policy(
+    tmp_path,
+) -> None:
+    database = tmp_path / "impact.duckdb"
+    with ImpactAbsorptionStore(database) as setup_store:
+        _start(setup_store, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+
+    with ImpactAbsorptionStore(database) as writer_store:
+        connection = writer_store.connect()
+        assert (
+            connection.execute(
+                "SELECT current_setting('checkpoint_threshold')"
+            ).fetchone()[0]
+            == "16.0 MiB"
+        )
+
+        applied = writer_store.bind_run_storage_policy(
+            RUN_ID,
+            expected_schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        )
+        written = writer_store.append_frame(run_id=RUN_ID, messages=_messages())
+
+        assert applied == {
+            "schema_version": IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+            "checkpoint_threshold": "512.0 MiB",
+            "auto_checkpoint_skip_wal_threshold_bytes": 512 * 1024 * 1024,
+        }
+        assert written.message_count == 6
+        assert (
+            connection.execute(
+                "SELECT current_setting('checkpoint_threshold')"
+            ).fetchone()[0]
+            == "512.0 MiB"
+        )
+        assert (
+            connection.execute(
+                "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
+            ).fetchone()[0]
+            == 512 * 1024 * 1024
+        )
+
+
+def test_writer_policy_binding_rejects_config_hash_mismatch(tmp_path) -> None:
+    database = tmp_path / "impact.duckdb"
+    with ImpactAbsorptionStore(database) as setup_store:
+        _start(setup_store, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+        setup_store.connect().execute(
+            "UPDATE impact_capture_run SET config_json = '{}' WHERE run_id = ?",
+            [RUN_ID],
+        )
+
+    with ImpactAbsorptionStore(database) as writer_store:
+        with pytest.raises(ValueError, match="capture run config hash mismatch"):
+            writer_store.bind_run_storage_policy(RUN_ID)
+
+
+def test_writer_policy_binding_rejects_rehashed_incompatible_policy(
+    tmp_path,
+) -> None:
+    database = tmp_path / "impact.duckdb"
+    with ImpactAbsorptionStore(database) as setup_store:
+        _start(setup_store, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+        config = json.loads(
+            setup_store.connect()
+            .execute(
+                "SELECT config_json FROM impact_capture_run WHERE run_id = ?",
+                [RUN_ID],
+            )
+            .fetchone()[0]
+        )
+        config["checkpoint_threshold"] = "16.0 MiB"
+        config_json = json.dumps(config, separators=(",", ":"), sort_keys=True)
+        setup_store.connect().execute(
+            """
+            UPDATE impact_capture_run SET config_json = ?, config_sha256 = ?
+            WHERE run_id = ?
+            """,
+            [config_json, _canonical_sha256(config), RUN_ID],
+        )
+
+    with ImpactAbsorptionStore(database) as writer_store:
+        with pytest.raises(
+            ValueError,
+            match="persisted checkpoint threshold differs",
+        ):
+            writer_store.bind_run_storage_policy(RUN_ID)
+
+
 def test_v9_reorders_bounded_cross_frame_receipts_and_rejects_later_lag(
     tmp_path,
 ) -> None:

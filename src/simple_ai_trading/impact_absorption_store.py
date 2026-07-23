@@ -126,6 +126,10 @@ _AUDIT_FRAME_BATCH_SIZE = 64
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _MEMORY_LIMIT = re.compile(r"[1-9][0-9]*(?:KB|MB|GB|TB)", re.IGNORECASE)
+_DUCKDB_BYTE_SETTING = re.compile(
+    r"(?P<amount>[0-9]+(?:\.[0-9]+)?)\s*(?P<unit>B|KiB|MiB|GiB|TiB)",
+    re.IGNORECASE,
+)
 _SECRET_KEYS = (
     "api_key",
     "apikey",
@@ -217,6 +221,41 @@ def _positive_integer(value: object, label: str, *, allow_zero: bool = False) ->
         qualifier = "non-negative" if allow_zero else "positive"
         raise ValueError(f"{label} must be {qualifier}")
     return parsed
+
+
+def _duckdb_byte_setting_bytes(value: object) -> int:
+    candidate = str(value).strip()
+    match = _DUCKDB_BYTE_SETTING.fullmatch(candidate)
+    if match is None:
+        raise ValueError("DuckDB byte setting has an unsupported format")
+    unit_multipliers = {
+        "b": 1,
+        "kib": 1024,
+        "mib": 1024**2,
+        "gib": 1024**3,
+        "tib": 1024**4,
+    }
+    byte_value = (
+        float(match.group("amount")) * unit_multipliers[match.group("unit").lower()]
+    )
+    if not math.isfinite(byte_value) or not byte_value.is_integer():
+        raise ValueError("DuckDB byte setting does not resolve to whole bytes")
+    return int(byte_value)
+
+
+def _capture_storage_policy_request(schema_version: object) -> tuple[str, int]:
+    selected = str(schema_version)
+    if selected == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+        return (
+            IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD,
+            IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES,
+        )
+    if selected == IMPACT_CAPTURE_SCHEMA_VERSION:
+        return (
+            IMPACT_CAPTURE_CHECKPOINT_THRESHOLD,
+            IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES,
+        )
+    raise ValueError("capture run schema version is unsupported")
 
 
 def _signed_integer(value: object, label: str) -> int:
@@ -841,6 +880,110 @@ class ImpactAbsorptionStore:
                 self._init_schema()
         return self._connection
 
+    def _current_storage_policy(self) -> dict[str, object]:
+        connection = self.connect()
+        checkpoint_threshold, skip_wal_threshold = connection.execute(
+            """
+            SELECT current_setting('checkpoint_threshold'),
+                   current_setting('auto_checkpoint_skip_wal_threshold')
+            """
+        ).fetchone()
+        return {
+            "checkpoint_threshold": str(checkpoint_threshold),
+            "auto_checkpoint_skip_wal_threshold_bytes": int(skip_wal_threshold),
+        }
+
+    def _apply_storage_policy(self, schema_version: object) -> dict[str, object]:
+        requested_checkpoint, requested_skip_wal = _capture_storage_policy_request(
+            schema_version
+        )
+        requested_checkpoint_bytes = _duckdb_byte_setting_bytes(requested_checkpoint)
+        observed = self._current_storage_policy()
+        try:
+            policy_matches = (
+                _duckdb_byte_setting_bytes(observed["checkpoint_threshold"])
+                == requested_checkpoint_bytes
+                and observed["auto_checkpoint_skip_wal_threshold_bytes"]
+                == requested_skip_wal
+            )
+        except ValueError:
+            policy_matches = False
+        if not policy_matches:
+            connection = self.connect()
+            connection.execute(f"SET checkpoint_threshold='{requested_checkpoint}'")
+            connection.execute(
+                "SET auto_checkpoint_skip_wal_threshold=?",
+                [requested_skip_wal],
+            )
+            observed = self._current_storage_policy()
+        if (
+            _duckdb_byte_setting_bytes(observed["checkpoint_threshold"])
+            != requested_checkpoint_bytes
+            or observed["auto_checkpoint_skip_wal_threshold_bytes"]
+            != requested_skip_wal
+        ):
+            raise RuntimeError("DuckDB capture storage policy did not apply")
+        return observed
+
+    def bind_run_storage_policy(
+        self,
+        run_id: str,
+        *,
+        expected_schema_version: str | None = None,
+    ) -> dict[str, object]:
+        """Bind this connection to the persisted policy of one active run."""
+
+        selected = _validate_run_id(run_id)
+        connection = self.connect()
+        row = connection.execute(
+            """
+            SELECT schema_version, status, config_json, config_sha256
+            FROM impact_capture_run WHERE run_id = ?
+            """,
+            [selected],
+        ).fetchone()
+        if row is None or str(row[1]) != "running":
+            raise ValueError("capture run is missing or not running")
+        schema_version = str(row[0])
+        _capture_storage_policy_request(schema_version)
+        if expected_schema_version is not None and schema_version != str(
+            expected_schema_version
+        ):
+            raise ValueError("writer schema differs from persisted capture run")
+        config_json = str(row[2])
+        config_sha256 = _validate_sha256(row[3], "capture config SHA-256")
+        try:
+            observed_config_sha256 = hashlib.sha256(
+                config_json.encode("ascii")
+            ).hexdigest()
+        except UnicodeEncodeError as exc:
+            raise ValueError("persisted capture run config must be ASCII") from exc
+        if observed_config_sha256 != config_sha256:
+            raise ValueError("persisted capture run config hash mismatch")
+        try:
+            config = _strict_json_object(config_json)
+        except ValueError as exc:
+            raise ValueError("persisted capture run config is invalid") from exc
+        applied = self._apply_storage_policy(schema_version)
+        if (
+            not isinstance(config.get("checkpoint_threshold"), str)
+            or config.get("checkpoint_threshold") != applied["checkpoint_threshold"]
+        ):
+            raise ValueError(
+                "persisted checkpoint threshold differs from applied writer policy"
+            )
+        configured_skip_wal = config.get("auto_checkpoint_skip_wal_threshold_bytes")
+        if (
+            isinstance(configured_skip_wal, bool)
+            or not isinstance(configured_skip_wal, int)
+            or configured_skip_wal
+            != applied["auto_checkpoint_skip_wal_threshold_bytes"]
+        ):
+            raise ValueError(
+                "persisted WAL threshold differs from applied writer policy"
+            )
+        return {"schema_version": schema_version, **applied}
+
     def close(self) -> None:
         if self._connection is not None:
             self._connection.close()
@@ -1316,37 +1459,8 @@ class ImpactAbsorptionStore:
         except KeyError as exc:
             raise ValueError("capture run schema version is unsupported") from exc
         connection = self.connect()
-        if selected_schema == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
-            connection.execute(
-                f"SET checkpoint_threshold='{IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD}'"
-            )
-            connection.execute(
-                "SET auto_checkpoint_skip_wal_threshold=?",
-                [IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES],
-            )
-        else:
-            connection.execute(
-                f"SET checkpoint_threshold='{IMPACT_CAPTURE_CHECKPOINT_THRESHOLD}'"
-            )
-            connection.execute(
-                "SET auto_checkpoint_skip_wal_threshold=?",
-                [IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES],
-            )
-        checkpoint_threshold = str(
-            connection.execute(
-                "SELECT current_setting('checkpoint_threshold')"
-            ).fetchone()[0]
-        )
-        skip_wal_threshold = int(
-            connection.execute(
-                "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
-            ).fetchone()[0]
-        )
+        applied_policy = self._apply_storage_policy(selected_schema)
         config_payload = dict(config)
-        applied_policy = {
-            "checkpoint_threshold": checkpoint_threshold,
-            "auto_checkpoint_skip_wal_threshold_bytes": skip_wal_threshold,
-        }
         for key, observed in applied_policy.items():
             if key in config_payload and config_payload[key] != observed:
                 raise ValueError(f"capture config {key} differs from applied policy")
@@ -2018,6 +2132,7 @@ class ImpactAbsorptionStore:
         selected = _validate_run_id(run_id)
         if not messages:
             raise ValueError("impact frame cannot be empty")
+        self.bind_run_storage_policy(selected)
         connection = self.connect()
         run = connection.execute(
             """

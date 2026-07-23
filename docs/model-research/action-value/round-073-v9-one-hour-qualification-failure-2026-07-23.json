@@ -1,0 +1,113 @@
+{
+  "schema_version": "round-073-v9-one-hour-qualification-failure-evidence-v1",
+  "artifact_sha256": "347d93f5eb498301ff97ed3375cc76f176db98414756ac6f1868b55c4f9cb3fb",
+  "recorded_utc_date": "2026-07-23",
+  "source_commit_before_remediation": "ec14440a851ff8b657b6607ee69ef95326dbcbf2",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "source": {
+    "venue": "Binance USD-M public futures market data",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_used": false,
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254"
+  },
+  "run": {
+    "run_id": "bc032079846b40b58fbcfe8786afab64",
+    "requested_mode": "qualification",
+    "requested_duration_seconds": 3600.0,
+    "terminal_status": "failed",
+    "started_wall_ns": 1784768005290142000,
+    "ended_wall_ns": 1784768864625014300,
+    "terminal_elapsed_seconds": 859.3348723,
+    "frame_count": 194,
+    "message_count": 522289,
+    "compressed_payload_bytes": 16810404,
+    "last_frame_sha256": "cd7c5be187c0926d214bf4915e82f65594e4fde9df190df7b410671aeb1a745f",
+    "terminal_error": "writer_connection_policy_mismatch_checkpoint_detected",
+    "persisted_config_sha256": "3bacd7f2b1d291ff0ff26b051f408bc1d941fbfcb5297899bb1f866ee8b5bca0",
+    "persisted_checkpoint_threshold": "512.0 MiB",
+    "persisted_auto_checkpoint_skip_wal_threshold_bytes": 536870912
+  },
+  "live_monitor_observation": {
+    "maximum_wal_bytes_before_unexpected_checkpoint": 16145672,
+    "wal_reset_observed": true,
+    "main_database_write_time_advanced_at_reset": true,
+    "capture_was_stopped_after_detection": true,
+    "physical_ssd_or_nand_wear_inferred": false,
+    "interpretation": "The reset near the default 16 MiB checkpoint boundary contradicted the persisted 512 MiB run policy and triggered fail-closed termination."
+  },
+  "root_cause": {
+    "proven": true,
+    "scope": "session-scoped DuckDB storage policy ownership",
+    "setup_connection_behavior_before_fix": "start_run applied and persisted the v9 512 MiB policy on the setup connection",
+    "writer_connection_behavior_before_fix": "the independently opened writer connection applied the store-wide v8 16 MiB default and did not rebind the active run policy",
+    "checkpoint_consistent_with_writer_default": true,
+    "wire_capture_semantics_changed": false,
+    "event_parser_or_financial_model_semantics_changed": false,
+    "market_edge_or_profitability_result": false
+  },
+  "terminal_quarantine": {
+    "segment_count": 3,
+    "invalid_segment_count": 3,
+    "valid_segment_count": 0,
+    "segment_terminal_reason": "writer_connection_policy_mismatch_checkpoint_detected",
+    "capture_report_schema_version": "round-073-capture-report-v9",
+    "capture_report_sha256": "1e482443310f335b61a399c052a635e7c2b60cb403bd9e38ba200c5b3a03c315",
+    "capture_report_status": "failed",
+    "capture_gate_passed": false,
+    "qualification_passed": false,
+    "fresh_read_only_audit_passed": true,
+    "fresh_read_only_audit_errors": [],
+    "corpus_manifest_count": 0,
+    "wal_present_after_recovery": false,
+    "eligible_for_training_or_model_evaluation": false
+  },
+  "remediation": {
+    "writer_connection_binds_persisted_run_policy_before_ready": true,
+    "writer_schema_mismatch_fails_before_ready": true,
+    "persisted_policy_mismatch_fails_before_write": true,
+    "every_frame_append_rechecks_connection_policy": true,
+    "v8_policy_preserved": true,
+    "v9_policy_preserved": true,
+    "focused_regressions": [
+      "test_v9_fresh_writer_connection_rebinds_persisted_storage_policy",
+      "test_writer_policy_binding_rejects_config_hash_mismatch",
+      "test_writer_policy_binding_rejects_rehashed_incompatible_policy",
+      "test_writer_binds_v9_storage_policy_before_ready",
+      "test_writer_rejects_schema_mismatch_before_ready"
+    ],
+    "affected_round73_test_count": 138,
+    "affected_round73_tests_passed": true,
+    "ruff_passed": true,
+    "live_requalification_completed": false
+  },
+  "critical_analysis": {
+    "failed_run_is_qualification_evidence": false,
+    "failed_run_is_model_evidence": false,
+    "failed_run_is_profitability_evidence": false,
+    "prior_180_second_v9_gate_reinterpreted_as_one_hour_evidence": false,
+    "earlier_attempts_pooled": false,
+    "next_attempt_must_start_a_new_run": true,
+    "next_attempt_must_cross_prior_checkpoint_boundary_without_reset": true,
+    "next_attempt_must_complete_full_3600_seconds": true,
+    "next_attempt_must_receive_fresh_terminal_audit": true
+  },
+  "authorization": {
+    "one_new_v9_one_hour_qualification_retry_after_remediation": true,
+    "reuse_failed_run": false,
+    "v9_multi_segment_capture": false,
+    "round_073_corpus_admission": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
