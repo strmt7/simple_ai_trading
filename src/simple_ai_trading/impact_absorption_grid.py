@@ -11,9 +11,9 @@ import statistics
 from typing import Mapping, Sequence
 
 
-ROUND73_GRID_SCHEMA_VERSION = "round-073-causal-grid-v3"
+ROUND73_GRID_SCHEMA_VERSION = "round-073-causal-grid-v4"
 ROUND73_GRID_CONTRACT_SHA256 = (
-    "9dd830896de053fded1468040011fde618c990ad98a5807007c46f2e22553c4a"
+    "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2"
 )
 ROUND73_GRID_WINDOWS_MS = (100, 250, 500, 1_000, 5_000, 15_000, 60_000)
 ROUND73_GRID_BANDS = (
@@ -126,12 +126,143 @@ _INVALID_BITS = {
     "future_state": 1 << 15,
     "nonfinite_feature": 1 << 16,
     "invalid_l2_geometry": 1 << 17,
+    "invalid_feature_semantics": 1 << 18,
 }
 
 
 def round73_grid_invalid_reasons(mask: int) -> tuple[str, ...]:
     selected = int(mask)
     return tuple(name for name, bit in _INVALID_BITS.items() if selected & bit)
+
+
+def round73_grid_feature_invariant_errors(
+    values: Sequence[float],
+) -> tuple[str, ...]:
+    """Validate financial identities and domains for one complete feature vector."""
+
+    if len(values) != len(ROUND73_GRID_FEATURE_NAMES):
+        return ("feature_count",)
+    selected = tuple(float(value) for value in values)
+    if not all(math.isfinite(value) for value in selected):
+        return ("nonfinite",)
+    errors: list[str] = []
+
+    def require(condition: bool, label: str) -> None:
+        if not condition:
+            errors.append(label)
+
+    require(selected[0] >= 0.0, "state_spread_negative")
+    require(selected[1] > 0.0 and selected[2] > 0.0, "state_quote_nonpositive")
+    require(-1.0 <= selected[3] <= 1.0, "state_l1_imbalance_outside")
+    require(selected[5] >= 0.0 and selected[6] >= 0.0, "state_bbo_time_negative")
+    require(all(value > 0.0 for value in selected[7:13]), "state_depth_nonpositive")
+    require(
+        all(-1.0 <= value <= 1.0 for value in selected[13:16]),
+        "state_depth_imbalance_outside",
+    )
+    require(
+        all(0.0 <= value <= 1.0 for value in selected[16:18]),
+        "state_depth_share_outside",
+    )
+    require(
+        selected[18] > 0.0 and selected[19] > 0.0,
+        "state_weighted_depth_nonpositive",
+    )
+    require(
+        all(0.0 <= value <= 1.0 for value in selected[20:22]),
+        "state_depth_concentration_outside",
+    )
+    require(selected[22] >= 0.0 and selected[23] >= 0.0, "state_l2_time_negative")
+    require(selected[27] >= 0.0, "state_seconds_to_funding_negative")
+    require(selected[28] >= 0.0, "state_mark_age_negative")
+    require(selected[29] > 0.0, "state_open_interest_nonpositive")
+    require(selected[30] >= 0.0, "state_open_interest_age_negative")
+    require(
+        -1.0 <= selected[31] <= 1.0 and -1.0 <= selected[32] <= 1.0,
+        "state_utc_cycle_outside",
+    )
+
+    window_width = len(_window_feature_names(ROUND73_GRID_WINDOWS_MS[0]))
+    for window_index, window_ms in enumerate(ROUND73_GRID_WINDOWS_MS):
+        start = len(_STATE_FEATURE_NAMES) + window_index * window_width
+        window = selected[start : start + window_width]
+        prefix = f"w{window_ms}ms"
+        buy_quote, sell_quote, signed_quote, absolute_quote = window[:4]
+        trade_count, buyer_share = window[4:6]
+        expected_absolute = math.fsum((buy_quote, sell_quote))
+        expected_signed = math.fsum((buy_quote, -sell_quote))
+        expected_share = buy_quote / expected_absolute if expected_absolute > 0 else 0.0
+        require(buy_quote >= 0.0, f"{prefix}_buy_negative")
+        require(sell_quote >= 0.0, f"{prefix}_sell_negative")
+        require(absolute_quote >= 0.0, f"{prefix}_absolute_negative")
+        require(
+            math.isclose(
+                absolute_quote,
+                expected_absolute,
+                rel_tol=1e-12,
+                abs_tol=1e-9,
+            ),
+            f"{prefix}_absolute_identity",
+        )
+        require(
+            math.isclose(
+                signed_quote,
+                expected_signed,
+                rel_tol=1e-12,
+                abs_tol=1e-9,
+            ),
+            f"{prefix}_signed_identity",
+        )
+        require(
+            abs(signed_quote)
+            <= absolute_quote + max(1e-9, absolute_quote * 1e-12),
+            f"{prefix}_signed_bound",
+        )
+        require(
+            trade_count >= 0.0 and trade_count.is_integer(),
+            f"{prefix}_trade_count",
+        )
+        require(0.0 <= buyer_share <= 1.0, f"{prefix}_buyer_share_domain")
+        require(
+            math.isclose(
+                buyer_share,
+                expected_share,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            ),
+            f"{prefix}_buyer_share_identity",
+        )
+        require(
+            (trade_count == 0.0 and absolute_quote == 0.0)
+            or (trade_count > 0.0 and absolute_quote > 0.0),
+            f"{prefix}_trade_notional_count_identity",
+        )
+        require(
+            all(value >= 0.0 for value in window[6:22]),
+            f"{prefix}_depth_flow_negative",
+        )
+        require(window[26] >= 0.0, f"{prefix}_variance_negative")
+        require(
+            window[27] >= 0.0 and window[27].is_integer(),
+            f"{prefix}_bbo_count",
+        )
+        require(window[28] >= 0.0, f"{prefix}_mean_spread_negative")
+        require(window[29] >= 0.0, f"{prefix}_maximum_spread_negative")
+        require(
+            window[29] + max(1e-12, abs(window[28]) * 1e-12) >= window[28],
+            f"{prefix}_maximum_spread_below_mean",
+        )
+        require(
+            window[30] >= 0.0 and window[30].is_integer(),
+            f"{prefix}_liquidation_count",
+        )
+        require(window[31] >= 0.0, f"{prefix}_liquidation_quote_negative")
+        require(
+            (window[30] == 0.0 and window[31] == 0.0)
+            or (window[30] > 0.0 and window[31] > 0.0),
+            f"{prefix}_liquidation_notional_count_identity",
+        )
+    return tuple(errors)
 
 
 @dataclass(frozen=True)
@@ -223,33 +354,108 @@ class Round73GridAnchor:
         }
 
 
+class _CompensatedNonnegativeTotal:
+    """Maintain a nonnegative active-term sum without expiry cancellation drift."""
+
+    __slots__ = ("_correction", "_nonzero_terms", "_sum")
+
+    def __init__(self) -> None:
+        self._sum = 0.0
+        self._correction = 0.0
+        self._nonzero_terms = 0
+
+    @staticmethod
+    def _term(value: float) -> float:
+        selected = float(value)
+        if not math.isfinite(selected) or selected < 0.0:
+            raise ValueError("Round 73 rolling total term must be finite and nonnegative")
+        return selected
+
+    def _accumulate(self, value: float) -> None:
+        updated = self._sum + value
+        if abs(self._sum) >= abs(value):
+            correction = (self._sum - updated) + value
+        else:
+            correction = (value - updated) + self._sum
+        self._sum = updated
+        self._correction = math.fsum((self._correction, correction))
+
+    def add(self, value: float) -> None:
+        selected = self._term(value)
+        if selected == 0.0:
+            return
+        self._accumulate(selected)
+        self._nonzero_terms += 1
+
+    def remove(self, value: float) -> None:
+        selected = self._term(value)
+        if selected == 0.0:
+            return
+        if self._nonzero_terms < 1:
+            raise RuntimeError("Round 73 rolling total removed an untracked term")
+        self._accumulate(-selected)
+        self._nonzero_terms -= 1
+        if self._nonzero_terms == 0:
+            self._sum = 0.0
+            self._correction = 0.0
+
+    @property
+    def value(self) -> float:
+        result = math.fsum((self._sum, self._correction))
+        if not math.isfinite(result) or result < 0.0:
+            raise RuntimeError("Round 73 compensated nonnegative total is invalid")
+        return 0.0 if result == 0.0 else result
+
+
 class _WindowState:
     def __init__(self, window_ns: int) -> None:
         self.window_ns = int(window_ns)
         self.trades: deque[tuple[int, float, float]] = deque()
-        self.buy_quote = 0.0
-        self.sell_quote = 0.0
+        self._buy_quote = _CompensatedNonnegativeTotal()
+        self._sell_quote = _CompensatedNonnegativeTotal()
         self.depth: deque[tuple[int, tuple[float, ...]]] = deque()
-        self.depth_sums = [0.0] * 16
+        self._depth_sums = tuple(
+            _CompensatedNonnegativeTotal() for _index in range(16)
+        )
         self.bbo: deque[tuple[int, float, float, float]] = deque()
-        self.spread_sum = 0.0
+        self._spread_sum = _CompensatedNonnegativeTotal()
         self.spread_max: deque[tuple[int, float]] = deque()
         self.liquidations: deque[tuple[int, float]] = deque()
-        self.liquidation_quote = 0.0
+        self._liquidation_quote = _CompensatedNonnegativeTotal()
+
+    @property
+    def buy_quote(self) -> float:
+        return self._buy_quote.value
+
+    @property
+    def sell_quote(self) -> float:
+        return self._sell_quote.value
+
+    @property
+    def depth_sums(self) -> tuple[float, ...]:
+        return tuple(total.value for total in self._depth_sums)
+
+    @property
+    def spread_sum(self) -> float:
+        return self._spread_sum.value
+
+    @property
+    def liquidation_quote(self) -> float:
+        return self._liquidation_quote.value
 
     def observe_trade(
         self, timestamp_ns: int, buy_quote: float, sell_quote: float
     ) -> None:
         self.trades.append((timestamp_ns, buy_quote, sell_quote))
-        self.buy_quote += buy_quote
-        self.sell_quote += sell_quote
+        self._buy_quote.add(buy_quote)
+        self._sell_quote.add(sell_quote)
 
     def observe_depth(self, timestamp_ns: int, values: tuple[float, ...]) -> None:
         if len(values) != 16:
             raise ValueError("Round 73 depth-band event width must be 16")
         self.depth.append((timestamp_ns, values))
         for index, value in enumerate(values):
-            self.depth_sums[index] += value
+            self._depth_sums[index].add(value)
 
     def observe_bbo(
         self,
@@ -259,33 +465,33 @@ class _WindowState:
         spread_bps: float,
     ) -> None:
         self.bbo.append((timestamp_ns, log_mid, cumulative_variation, spread_bps))
-        self.spread_sum += spread_bps
+        self._spread_sum.add(spread_bps)
         while self.spread_max and self.spread_max[-1][1] <= spread_bps:
             self.spread_max.pop()
         self.spread_max.append((timestamp_ns, spread_bps))
 
     def observe_liquidation(self, timestamp_ns: int, quote_notional: float) -> None:
         self.liquidations.append((timestamp_ns, quote_notional))
-        self.liquidation_quote += quote_notional
+        self._liquidation_quote.add(quote_notional)
 
     def prune(self, anchor_ns: int) -> None:
         cutoff = int(anchor_ns) - self.window_ns
         while self.trades and self.trades[0][0] < cutoff:
             _timestamp, buy_quote, sell_quote = self.trades.popleft()
-            self.buy_quote -= buy_quote
-            self.sell_quote -= sell_quote
+            self._buy_quote.remove(buy_quote)
+            self._sell_quote.remove(sell_quote)
         while self.depth and self.depth[0][0] < cutoff:
             _timestamp, values = self.depth.popleft()
             for index, value in enumerate(values):
-                self.depth_sums[index] -= value
+                self._depth_sums[index].remove(value)
         while self.bbo and self.bbo[0][0] < cutoff:
             _timestamp, _log_mid, _variation, spread = self.bbo.popleft()
-            self.spread_sum -= spread
+            self._spread_sum.remove(spread)
         while self.spread_max and self.spread_max[0][0] < cutoff:
             self.spread_max.popleft()
         while self.liquidations and self.liquidations[0][0] < cutoff:
             _timestamp, quote_notional = self.liquidations.popleft()
-            self.liquidation_quote -= quote_notional
+            self._liquidation_quote.remove(quote_notional)
 
     def feature_values(
         self,
@@ -293,24 +499,29 @@ class _WindowState:
         latest_spread_bps: float,
         band_depths: Sequence[float],
     ) -> tuple[float, ...]:
-        absolute_quote = self.buy_quote + self.sell_quote
-        signed_quote = self.buy_quote - self.sell_quote
-        buyer_share = self.buy_quote / absolute_quote if absolute_quote > 0 else 0.0
+        buy_quote = self.buy_quote
+        sell_quote = self.sell_quote
+        absolute_quote = math.fsum((buy_quote, sell_quote))
+        signed_quote = math.fsum((buy_quote, -sell_quote))
+        buyer_share = buy_quote / absolute_quote if absolute_quote > 0 else 0.0
+        depth_sums = self.depth_sums
         output = [
-            self.buy_quote,
-            self.sell_quote,
+            buy_quote,
+            sell_quote,
             signed_quote,
             absolute_quote,
             float(len(self.trades)),
             buyer_share,
-            *self.depth_sums,
+            *depth_sums,
         ]
         for band_index in range(3):
-            bid_added = self.depth_sums[band_index]
-            bid_removed = self.depth_sums[4 + band_index]
-            ask_added = self.depth_sums[8 + band_index]
-            ask_removed = self.depth_sums[12 + band_index]
-            imbalance = bid_added + ask_removed - bid_removed - ask_added
+            bid_added = depth_sums[band_index]
+            bid_removed = depth_sums[4 + band_index]
+            ask_added = depth_sums[8 + band_index]
+            ask_removed = depth_sums[12 + band_index]
+            imbalance = math.fsum(
+                (bid_added, ask_removed, -bid_removed, -ask_added)
+            )
             output.append(imbalance / max(float(band_depths[band_index]), 1e-12))
         if len(self.bbo) >= 2:
             mid_return = self.bbo[-1][1] - self.bbo[0][1]
@@ -660,8 +871,10 @@ class Round73CausalGridAccumulator:
         for window in self.windows.values():
             window.prune(anchor_ns)
         one_second = self.windows[1_000]
-        signed_quote = one_second.buy_quote - one_second.sell_quote
-        absolute_quote = one_second.buy_quote + one_second.sell_quote
+        buy_quote = one_second.buy_quote
+        sell_quote = one_second.sell_quote
+        signed_quote = math.fsum((buy_quote, -sell_quote))
+        absolute_quote = math.fsum((buy_quote, sell_quote))
         prior_median = (
             float(statistics.median(self._prior_anchor_absolute_quote))
             if len(self._prior_anchor_absolute_quote) == 60
@@ -710,6 +923,8 @@ class Round73CausalGridAccumulator:
                 math.isfinite(value) for value in values
             ):
                 invalid_mask |= _INVALID_BITS["nonfinite_feature"]
+            elif round73_grid_feature_invariant_errors(values):
+                invalid_mask |= _INVALID_BITS["invalid_feature_semantics"]
             else:
                 feature_values = tuple(values)
         self._prior_anchor_absolute_quote.append(absolute_quote)
@@ -748,5 +963,6 @@ __all__ = [
     "Round73L2State",
     "Round73MarkState",
     "Round73OpenInterestState",
+    "round73_grid_feature_invariant_errors",
     "round73_grid_invalid_reasons",
 ]
