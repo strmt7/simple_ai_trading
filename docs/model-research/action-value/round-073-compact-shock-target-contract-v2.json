@@ -1,0 +1,272 @@
+{
+  "schema_version": "round-073-compact-shock-target-contract-v2",
+  "contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "parent_grid_contract_sha256": "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2",
+  "parent_target_contract_sha256": "3c4c6f0f10505897f71930245ae3252eccfe1ccac90217e6c07151a2416e2253",
+  "v1_mechanics_diagnostic_sha256": "c5e9356edf641bfc5706e5e5842231c507d5fef5c6ff877271d4ecb64b208f4d",
+  "frozen_before_first_v2_cohort_or_target_write": true,
+  "purpose": "Create one outcome-blind, chronologically split shock cohort from untouched prospective v9 features, then replay exact-wire executable targets only for selected anchors without weakening the observed v1 cost hurdle or materializing unselected target rows.",
+  "source_basis": [
+    {
+      "title": "Binance USD-M Futures: How to manage a local order book correctly",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "A reconstructable book requires a bridged snapshot, continuous diff sequence, absolute quantities, and removal of zero-quantity levels."
+    },
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://arxiv.org/abs/1011.6402",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Short-horizon price changes are related to order-flow imbalance relative to available depth, while raw trade volume alone is noisier."
+    },
+    {
+      "title": "Multi-Level Order-Flow Imbalance in a Limit Order Book",
+      "url": "https://arxiv.org/abs/1907.06230",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Deeper order-flow imbalance can improve out-of-sample fit, but correlated levels require regularization and out-of-sample evaluation."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "High forecasting scores do not establish actionable trading value; complete-transaction operational evaluation is required."
+    },
+    {
+      "title": "Bridging the Reality Gap in Limit Order Book Simulation",
+      "url": "https://arxiv.org/abs/2603.24137",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Execution results are sensitive to event timing, latency, market impact, and post-trade reversion, so these assumptions must remain explicit and stressed."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Repeated strategy selection on backtests creates material selection bias, requiring frozen hypotheses and untouched chronological evaluation."
+    },
+    {
+      "title": "DuckDB Python Client API",
+      "url": "https://duckdb.org/docs/stable/clients/python/reference/",
+      "retrieved_utc_date": "2026-07-23",
+      "used_fact": "Registered NumPy or Arrow relations, explicit transactions, and checkpoints support bounded columnar publication without row-at-a-time insertion."
+    }
+  ],
+  "v1_diagnostic_response": {
+    "v1_target_outcomes_already_observed": true,
+    "v1_source_run_permitted_in_v2_cohort": false,
+    "v1_source_run_permitted_in_model_selection_or_scoring": false,
+    "v1_mechanics_audit_passed": true,
+    "v1_after_cost_positive_option_count": 0,
+    "v1_binary_target_had_both_classes": false,
+    "v1_cost_delay_or_book_walk_weakened": false,
+    "v2_change_is_evaluated_only_on_new_untouched_data": true,
+    "reason_for_population_change": "The all-anchor replay validated exact-wire mechanics but used approximately 2.79 GB of observed private process memory and wrote 382284 options for one hour before any outcome-blind shock cohort existed.",
+    "reason_for_horizon_change": "The observed one-hour gross maximum remained below 12 bps through 15 seconds. V2 retains 15 seconds as a short-horizon stress and preregisters 60-second and 300-second horizons on new data instead of reducing costs after observing outcomes.",
+    "hypothesis_or_profitability_conclusion_from_v1": false
+  },
+  "prospective_source_admission": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "instrument": "Binance USD-M perpetual futures",
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+    "corpus_manifest_schema_version": "round-073-segmented-corpus-v3",
+    "corpus_contract_sha256": "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b",
+    "grid_schema_version": "round-073-causal-grid-v4",
+    "grid_contract_sha256": "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2",
+    "eligible_anchor_wall_ns_not_before": 1784851200000000000,
+    "eligible_anchor_wall_utc_not_before": "2026-07-24T00:00:00Z",
+    "capture_corpus_grid_and_independent_audits_required": true,
+    "all_three_symbols_and_common_feature_ready_interval_required": true,
+    "source_run_with_any_preexisting_v1_or_v2_target_manifest_permitted": false,
+    "failed_quarantined_or_development_run_permitted": false,
+    "v8_source_permitted": false,
+    "synthetic_interpolated_or_backfilled_market_state_permitted": false,
+    "raw_capture_rows_rewritten_or_duplicated": false
+  },
+  "study_day_contract": {
+    "clock": "UTC used only as a statistical split and resampling boundary",
+    "crypto_formal_daily_close": false,
+    "eligible_search_start_utc_day": "2026-07-24",
+    "required_consecutive_complete_utc_days": 7,
+    "minimum_union_coverage_hours_per_day": 23,
+    "day_must_be_finalized_before_selection": true,
+    "selection_rule": "Choose the earliest seven consecutive finalized UTC days at or after the search start for which every day passes the frozen corpus integrity and coverage gates; after an ineligible day, restart at the next UTC day.",
+    "feature_value_target_value_or_market_return_used_to_choose_days": false,
+    "every_examined_day_and_exclusion_reason_persisted": true,
+    "ordered_roles": {
+      "training": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "tuning": [
+        5
+      ],
+      "test": [
+        6,
+        7
+      ]
+    },
+    "role_boundary_label_embargo_seconds": 302,
+    "target_path_crossing_a_role_or_source_run_boundary_permitted": false,
+    "listed_etf_etp_or_security_calendars_are_context_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "outcome_blind_shock_cohort": {
+    "source_rows": "valid v4 causal feature anchors only",
+    "threshold_source_role": "training only",
+    "threshold_per_symbol": true,
+    "threshold_statistic": "nearest-rank empirical 99th percentile of finite shock_ratio, using sorted ascending values and rank ceiling(0.99 times n)",
+    "minimum_shock_ratio": 3.0,
+    "effective_threshold": "maximum of 3.0 and the symbol training threshold",
+    "candidate_requires_shock_ratio_at_or_above_threshold": true,
+    "candidate_requires_nonzero_shock_direction": true,
+    "candidate_minimum_directional_taker_share": 0.7,
+    "target_price_payoff_eligibility_or_future_state_used_for_selection": false,
+    "threshold_reestimated_on_tuning_or_test": false,
+    "refractory_period_seconds": 15,
+    "refractory_algorithm": "For each symbol, sort candidates by anchor_wall_ns then run_id then anchor_index; retain the first candidate and then retain a candidate only when at least 15 seconds follow the previously retained candidate, across run and role boundaries.",
+    "overlapping_source_runs_permitted": false,
+    "selected_anchor_feature_vector_hash_bound": true,
+    "training_thresholds_split_identity_source_manifest_hashes_grid_manifest_hashes_and_every_selected_anchor_bound_before_target_replay": true
+  },
+  "target_population": {
+    "only_selected_cohort_anchors_materialized": true,
+    "unselected_anchor_target_replay_permitted": false,
+    "expected_options_per_selected_anchor": 36,
+    "dimensions": {
+      "entry_delay_milliseconds": [
+        500,
+        1000
+      ],
+      "holding_horizon_milliseconds": [
+        15000,
+        60000,
+        300000
+      ],
+      "reference_quote_notional": [
+        100.0,
+        1000.0,
+        5000.0
+      ],
+      "side": [
+        "long",
+        "short"
+      ]
+    },
+    "primary_economic_scenario": {
+      "entry_delay_milliseconds": 500,
+      "holding_horizon_milliseconds": 60000,
+      "reference_quote_notional": 1000.0
+    },
+    "remaining_dimensions_are_preregistered_stress_or_capacity_scenarios": true,
+    "side_or_scenario_selected_from_target_payoff": false
+  },
+  "execution_and_cost_inheritance": {
+    "exact_v1_quantity_filter_and_flooring_inherited": true,
+    "first_valid_synchronized_depth_state_at_or_after_requested_time": true,
+    "maximum_entry_or_exit_state_lateness_milliseconds": 250,
+    "visible_levels_per_side": 20,
+    "long_entry_walks_asks_and_exit_walks_bids": true,
+    "short_entry_walks_bids_and_exit_walks_asks": true,
+    "same_quantized_base_quantity_enters_and_exits": true,
+    "partial_visible_capacity_policy": "ineligible",
+    "minimum_round_trip_fee_and_adverse_reserve_bps": 12.0,
+    "charge_base": "average of absolute entry and exit walked quote notionals",
+    "funding_boundary_crossing_policy": "ineligible until exact settlement cash-flow evidence exists",
+    "spot_borrow_fee_applies_to_usd_m_perpetual_short": false,
+    "rpi_hidden_or_unobserved_liquidity_counted": false,
+    "own_order_impact_queue_position_or_fill_claim_permitted": false,
+    "leverage_applied": false,
+    "liquidation_or_margin_model_used": false,
+    "interpretation": "conservative observable quote-path counterfactual, not an exchange fill"
+  },
+  "path_risk_contract": {
+    "every_nonstale_synchronized_depth_state_from_entry_through_exit_used": true,
+    "maximum_adverse_excursion_bps_recorded": true,
+    "maximum_favorable_excursion_bps_recorded": true,
+    "maximum_spread_bps_recorded": true,
+    "minimum_exit_side_capacity_ratio_recorded": true,
+    "missing_nonfinite_late_or_incomplete_path_policy": "option ineligible",
+    "final_net_payoff_must_lie_within_excursion_bounds": true
+  },
+  "bounded_persistence": {
+    "study_manifest_table": "impact_shock_study_v1",
+    "selected_anchor_table": "impact_shock_anchor_v1",
+    "target_option_table": "impact_target_option_v2",
+    "target_run_manifest_table": "impact_target_run_manifest_v2",
+    "target_study_manifest_table": "impact_target_study_manifest_v2",
+    "cohort_published_atomically_before_any_target_write": true,
+    "target_publication_unit": "one source run in one transaction",
+    "entire_seven_day_target_set_held_in_python_memory": false,
+    "all_anchor_v1_rows_repeated_for_future_runs": false,
+    "columnar_batch_ingestion_required": true,
+    "temporary_disk_spill_for_python_rows_permitted": false,
+    "every_cohort_target_and_manifest_row_hash_bound": true,
+    "manifest_mismatch_or_partial_study_policy": "fail closed without overwrite",
+    "final_study_manifest_requires_every_selected_source_run_target_manifest_and_fresh audit": true
+  },
+  "leakage_and_reuse_controls": {
+    "cohort_threshold_and_split_frozen_before_target_replay": true,
+    "target_table_joined_before_split_freeze": false,
+    "training_labels_crossing_training_tuning_boundary_permitted": false,
+    "tuning_labels_crossing_tuning_test_boundary_permitted": false,
+    "test_features_or_labels_used_for_training_threshold_scaler_feature_model_or_action_threshold": false,
+    "test_reuse_after_result_permitted": false,
+    "observed_test_period_becomes_development_only": true,
+    "additional_unfrozen_model_or_threshold_search_after_test_permitted": false
+  },
+  "evaluation_gate": {
+    "seven_days_is_viability_only": true,
+    "minimum_complete_days_for_promotion": 30,
+    "binary_model_requires_both_training_classes": true,
+    "continuous_model_requires_nonconstant_finite_training_target": true,
+    "shallow_regularized_controls_run_before_complex_models": true,
+    "proper_score_and_calibration_skill_required": true,
+    "after_cost_economic_gate_uses_unchanged_predictions": true,
+    "multiple_testing_adjustment_required": true,
+    "day_and_integrity_segment_blocked_inference_required": true,
+    "minimum_test_trades": 100,
+    "minimum_test_trades_per_day_when_eligible_conditions_exist": 5,
+    "net_expectancy_lower_95_percent_bound_must_exceed_bps": 0.0,
+    "profit_factor_lower_95_percent_bound_must_exceed": 1.0,
+    "drawdown_expected_shortfall_and_concentration_reported": true,
+    "leverage_cannot_create_a_pass": true,
+    "ai_challenger_opens_before_shallow_predictive_and_economic_pass": false,
+    "profitability_target_or_trade_frequency_guaranteed": false
+  },
+  "qualification_sequence": [
+    "freeze and hash this contract",
+    "implement and focused-test cohort construction and audit without target access",
+    "implement and focused-test selected-anchor exact-wire target replay and audit",
+    "validate one bounded prospective v9 segment and the rotation journal",
+    "collect enough untouched segments for the first seven consecutive complete UTC days",
+    "build and independently audit every v4 feature grid",
+    "atomically freeze the feature-only chronological cohort",
+    "replay and independently audit v2 targets one source run at a time",
+    "seal the complete target-study manifest",
+    "run the frozen shallow viability evaluation once"
+  ],
+  "authority": {
+    "contract_design": true,
+    "cohort_implementation": true,
+    "target_v2_implementation": true,
+    "new_untouched_feature_collection": true,
+    "target_result_observed": false,
+    "model_evaluation": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

@@ -4,9 +4,11 @@
 audited v4 causal grid and v1 executable-target diagnostic. Of 382,284 frozen
 quote-path options, 380,483 were mechanically eligible and none cleared the
 12 bps round-trip reserve. This hour is development-only after outcome access;
-no model was trained. A new untouched seven-day feature corpus and compact
-target-v2 design are next. Profitability, AI, leverage, paper, testnet, and live
-authority remain closed.
+no model was trained. Compact target v2 is now preregistered before collection:
+it uses only feature-selected shocks from new v9 data, retains the cost floor,
+and evaluates 15, 60, and 300-second paths one source run at a time. A new
+untouched seven-day feature corpus is next. Profitability, AI, leverage, paper,
+testnet, and live authority remain closed.
 
 ## Why this is different
 
@@ -108,6 +110,13 @@ flowchart LR
   every after-cost binary label was negative. This is mechanics evidence, not
   a model result or a reason to reduce costs post hoc. See the v4 grid
   qualification and v1 target-mechanics diagnostic dated 2026-07-23.
+- `round-073-compact-shock-target-contract-v2.json` freezes the response to that
+  diagnostic before any new eligible target is observed. It excludes the
+  diagnostic hour, admits v9 only from 2026-07-24 UTC, deterministically selects
+  the earliest seven consecutive integrity-complete UTC days, learns each
+  symbol's shock threshold from the first four days only, and freezes days five,
+  six, and seven as tuning and test. UTC midnight remains a partition, not a
+  crypto market close. Exchange-listed ETF/ETP sessions remain context only.
 - `round-073-rotation-runner-contract-v1.json` freezes a bounded collector
   before its first run. It admits at most 168 one-hour segments per invocation,
   uses one DuckDB writer lease, journals each terminal supervisor result,
