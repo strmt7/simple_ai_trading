@@ -7,12 +7,15 @@ import pytest
 from simple_ai_trading.impact_absorption import SynchronizedDepthBook
 from simple_ai_trading.impact_absorption_features import (
     ROUND73_FEATURE_SOURCE_SCHEMA_VERSION,
+    ROUND73_FEATURE_SOURCE_V9_SCHEMA_VERSION,
     diagnose_round73_feature_source,
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     IMPACT_DEPTH_BAND_FLOW_TABLE,
     IMPACT_EVENT_LINK_TABLE,
     ImpactAbsorptionStore,
@@ -52,7 +55,11 @@ def _record(
     )
 
 
-def _seed_qualified_current_run(database) -> None:
+def _seed_qualified_current_run(
+    database,
+    *,
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
+) -> None:
     messages: list[ImpactCaptureMessage] = []
     with ImpactAbsorptionStore(database) as store:
         store.start_run(
@@ -60,6 +67,7 @@ def _seed_qualified_current_run(database) -> None:
             started_wall_ns=WALL_BASE,
             started_monotonic_ns=1,
             config={"purpose": "feature-replay-unit-test", "credentials": False},
+            schema_version=schema_version,
         )
         for index, symbol in enumerate(IMPACT_CAPTURE_SYMBOLS, start=1):
             segment_id = format(index, "x") * 32
@@ -148,7 +156,11 @@ def _seed_qualified_current_run(database) -> None:
         store.record_report(
             run_id=RUN_ID,
             report={
-                "schema_version": IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+                "schema_version": (
+                    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION
+                    if schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+                    else IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
+                ),
                 "run_id": RUN_ID,
                 "qualification_passed": True,
             },
@@ -156,7 +168,9 @@ def _seed_qualified_current_run(database) -> None:
         )
 
 
-def test_current_feature_replay_reconciles_every_stored_depth_band_row(tmp_path) -> None:
+def test_current_feature_replay_reconciles_every_stored_depth_band_row(
+    tmp_path,
+) -> None:
     database = tmp_path / "impact.duckdb"
     _seed_qualified_current_run(database)
 
@@ -170,7 +184,31 @@ def test_current_feature_replay_reconciles_every_stored_depth_band_row(tmp_path)
     assert diagnostic.stored_depth_band_rows_reconciled is True
 
 
-def test_current_feature_replay_rejects_hash_consistent_false_band_row(tmp_path) -> None:
+def test_v9_feature_replay_rebuilds_depth_bands_without_typed_duplicates(
+    tmp_path,
+) -> None:
+    database = tmp_path / "impact.duckdb"
+    _seed_qualified_current_run(
+        database,
+        schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    )
+
+    diagnostic = diagnose_round73_feature_source(database, run_id=RUN_ID)
+    payload = diagnostic.as_dict()
+
+    assert payload["schema_version"] == ROUND73_FEATURE_SOURCE_V9_SCHEMA_VERSION
+    assert diagnostic.depth_update_count == 3
+    assert diagnostic.synchronized_depth_update_count == 3
+    assert diagnostic.stored_depth_band_row_count == 0
+    assert diagnostic.stored_depth_band_rows_reconciled is False
+    assert diagnostic.depth_band_projection_source == "exact_wire_replay"
+    assert diagnostic.exact_wire_depth_band_replay_passed is True
+    assert payload["authority"]["exact_wire_depth_band_replay_passed"] is True
+
+
+def test_current_feature_replay_rejects_hash_consistent_false_band_row(
+    tmp_path,
+) -> None:
     database = tmp_path / "impact.duckdb"
     _seed_qualified_current_run(database)
     with ImpactAbsorptionStore(database) as store:

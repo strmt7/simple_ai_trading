@@ -17,6 +17,7 @@ import duckdb
 from .impact_absorption import ROUND73_DESIGN_SHA256
 from .impact_absorption_features import (
     ROUND73_FEATURE_SOURCE_SCHEMA_VERSION,
+    ROUND73_FEATURE_SOURCE_V9_SCHEMA_VERSION,
     diagnose_round73_feature_source,
 )
 from .impact_absorption_store import (
@@ -24,23 +25,41 @@ from .impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
 
 
-ROUND73_CORPUS_SCHEMA_VERSION = "round-073-segmented-corpus-v1"
+ROUND73_CORPUS_SCHEMA_VERSION = "round-073-segmented-corpus-v2"
 ROUND73_CORPUS_CONTRACT_SHA256 = (
-    "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67"
+    "054ca4296a66a2d2a905b3946e80aadaea4bf5f50fb2811ce5a9b3d1b50e5b6d"
 )
-ROUND73_CORPUS_RUN_TABLE = "impact_corpus_run_manifest_v1"
+ROUND73_CORPUS_RUN_TABLE = "impact_corpus_run_manifest_v2"
 ROUND73_CORPUS_MINIMUM_SEGMENT_NS = 3_600_000_000_000
 ROUND73_CORPUS_MINIMUM_DAY_COVERAGE_NS = 23 * 3_600_000_000_000
-_MAXIMUM_WRITE_BYTES_PER_MESSAGE = 4_096.0
-_MAXIMUM_PHYSICAL_GROWTH_BYTES_PER_MESSAGE = 1_024.0
 _MAXIMUM_QUEUE_UTILIZATION = 0.8
 _MAXIMUM_NEGATIVE_LATENCY_FRACTION = 0.001
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+
+_CAPTURE_IDENTITIES = {
+    IMPACT_CAPTURE_SCHEMA_VERSION: (
+        IMPACT_CAPTURE_CONTRACT_SHA256,
+        IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+        ROUND73_FEATURE_SOURCE_SCHEMA_VERSION,
+        4_096.0,
+        1_024.0,
+    ),
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION: (
+        IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+        IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+        ROUND73_FEATURE_SOURCE_V9_SCHEMA_VERSION,
+        1_024.0,
+        512.0,
+    ),
+}
 
 
 def _canonical_json(value: object) -> str:
@@ -193,10 +212,20 @@ def _capture_metadata(
     ).fetchone()
     if run is None:
         raise ValueError("Round 73 corpus capture run was not found")
+    capture_schema_version = str(run[0])
+    try:
+        (
+            capture_contract_sha256,
+            capture_report_schema_version,
+            feature_source_schema_version,
+            maximum_write_bytes_per_message,
+            maximum_physical_growth_bytes_per_message,
+        ) = _CAPTURE_IDENTITIES[capture_schema_version]
+    except KeyError as exc:
+        raise ValueError("Round 73 corpus capture schema is not admissible") from exc
     if (
-        str(run[0]) != IMPACT_CAPTURE_SCHEMA_VERSION
-        or str(run[1]) != ROUND73_DESIGN_SHA256
-        or str(run[2]) != IMPACT_CAPTURE_CONTRACT_SHA256
+        str(run[1]) != ROUND73_DESIGN_SHA256
+        or str(run[2]) != capture_contract_sha256
         or str(run[3]) != "completed"
     ):
         raise ValueError("Round 73 corpus capture identity is not admissible")
@@ -214,8 +243,8 @@ def _capture_metadata(
     report_text = str(report_row[2])
     report_sha256 = str(report_row[3])
     if (
-        str(report_row[0]) != IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
-        or str(report_row[1]) != IMPACT_CAPTURE_CONTRACT_SHA256
+        str(report_row[0]) != capture_report_schema_version
+        or str(report_row[1]) != capture_contract_sha256
         or _SHA256.fullmatch(report_sha256) is None
         or _sha256_text(report_text) != report_sha256
     ):
@@ -223,7 +252,7 @@ def _capture_metadata(
     report = dict(_strict_json_object(report_text, "capture report"))
     if (
         report.get("run_id") != run_id
-        or report.get("schema_version") != IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
+        or report.get("schema_version") != capture_report_schema_version
         or report.get("status") != "completed"
         or report.get("capture_gate_passed") is not True
         or report.get("qualification_passed") is not True
@@ -241,12 +270,12 @@ def _capture_metadata(
             report.get("process_io_write_bytes_per_message"),
             "capture process I/O bytes per message",
         )
-        > _MAXIMUM_WRITE_BYTES_PER_MESSAGE
+        > maximum_write_bytes_per_message
         or _finite_number(
             report.get("database_physical_growth_bytes_per_message"),
             "capture physical growth bytes per message",
         )
-        > _MAXIMUM_PHYSICAL_GROWTH_BYTES_PER_MESSAGE
+        > maximum_physical_growth_bytes_per_message
         or _finite_number(
             report.get("queue_maximum_utilization"),
             "capture queue utilization",
@@ -294,6 +323,10 @@ def _capture_metadata(
     if coverage_duration < ROUND73_CORPUS_MINIMUM_SEGMENT_NS:
         raise ValueError("Round 73 corpus all-symbol coverage is shorter than one hour")
     metadata = {
+        "capture_schema_version": capture_schema_version,
+        "capture_contract_sha256": capture_contract_sha256,
+        "capture_report_schema_version": capture_report_schema_version,
+        "feature_source_schema_version": feature_source_schema_version,
         "coverage_start_wall_ns": coverage_start,
         "coverage_end_wall_ns": coverage_end,
         "coverage_duration_ns": coverage_duration,
@@ -318,7 +351,6 @@ def _manifest_identity(
         "schema_version": ROUND73_CORPUS_SCHEMA_VERSION,
         "contract_sha256": ROUND73_CORPUS_CONTRACT_SHA256,
         "design_sha256": ROUND73_DESIGN_SHA256,
-        "capture_contract_sha256": IMPACT_CAPTURE_CONTRACT_SHA256,
         "run_id": run_id,
         "symbols": list(IMPACT_CAPTURE_SYMBOLS),
         "capture_report_sha256": capture_report_sha256,
@@ -411,24 +443,42 @@ def _validated_manifest_row(
     feature = _strict_json_object(feature_text, "feature-source diagnostic")
     feature_semantics = feature.get("feature_semantics")
     feature_authority = feature.get("authority")
+    capture_schema_version = identity.get("capture_schema_version")
+    try:
+        (
+            expected_capture_contract,
+            expected_report_schema,
+            expected_feature_schema,
+            _maximum_write_bytes,
+            _maximum_physical_growth,
+        ) = _CAPTURE_IDENTITIES[str(capture_schema_version)]
+    except KeyError as exc:
+        raise ValueError("Round 73 corpus manifest capture schema differs") from exc
+    stored_depth_reconciled = feature.get("stored_depth_band_rows_reconciled") is True
+    exact_wire_replayed = feature.get("exact_wire_depth_band_replay_passed") is True
+    expected_projection_gate = (
+        exact_wire_replayed
+        if capture_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+        else stored_depth_reconciled
+    )
     if (
         identity.get("schema_version") != ROUND73_CORPUS_SCHEMA_VERSION
         or identity.get("contract_sha256") != ROUND73_CORPUS_CONTRACT_SHA256
         or identity.get("design_sha256") != ROUND73_DESIGN_SHA256
-        or identity.get("capture_contract_sha256")
-        != IMPACT_CAPTURE_CONTRACT_SHA256
+        or identity.get("capture_contract_sha256") != expected_capture_contract
+        or identity.get("capture_report_schema_version") != expected_report_schema
+        or identity.get("feature_source_schema_version") != expected_feature_schema
         or identity.get("run_id") != run_id
         or identity.get("capture_report_sha256") != capture_report_sha256
         or identity.get("feature_source_sha256") != feature_sha256
-        or feature.get("schema_version") != ROUND73_FEATURE_SOURCE_SCHEMA_VERSION
+        or feature.get("schema_version") != expected_feature_schema
         or feature.get("run_id") != run_id
-        or feature.get("capture_contract_sha256")
-        != IMPACT_CAPTURE_CONTRACT_SHA256
+        or feature.get("capture_contract_sha256") != expected_capture_contract
         or feature.get("stored_report_sha256") != capture_report_sha256
         or feature.get("frame_count") != identity.get("frame_count")
         or feature.get("message_count") != identity.get("message_count")
         or feature.get("capture_audit_passed") is not True
-        or feature.get("stored_depth_band_rows_reconciled") is not True
+        or not expected_projection_gate
         or not isinstance(feature_semantics, Mapping)
         or feature_semantics.get("future_or_target_data_used") is not False
         or feature_semantics.get("identity_whale_or_manipulation_inference")
@@ -449,7 +499,7 @@ def index_round73_corpus_run(
     memory_limit: str = "2GB",
     threads: int = 2,
 ) -> Round73CorpusRunManifest:
-    """Replay and immutably catalog one independently qualified v8 run."""
+    """Replay and immutably catalog one independently qualified v8/v9 run."""
 
     selected = _validated_run_id(run_id)
     with ImpactAbsorptionStore(
@@ -468,8 +518,8 @@ def index_round73_corpus_run(
         )
         if not audit.passed:
             raise ValueError("Round 73 existing corpus manifest audit failed")
-        identity, manifest_sha256, _report_sha, _feature_sha = (
-            _validated_manifest_row(existing, selected)
+        identity, manifest_sha256, _report_sha, _feature_sha = _validated_manifest_row(
+            existing, selected
         )
         return _manifest_from_identity(identity, manifest_sha256)
 
@@ -489,9 +539,19 @@ def index_round73_corpus_run(
         threads=threads,
     )
     feature_payload = diagnostic.as_dict()
+    capture_schema_version = str(metadata["capture_schema_version"])
+    projection_gate = (
+        feature_payload["exact_wire_depth_band_replay_passed"] is True
+        if capture_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+        else feature_payload["stored_depth_band_rows_reconciled"] is True
+    )
     if (
         feature_payload["capture_audit_passed"] is not True
-        or feature_payload["stored_depth_band_rows_reconciled"] is not True
+        or feature_payload["schema_version"]
+        != metadata["feature_source_schema_version"]
+        or feature_payload["capture_contract_sha256"]
+        != metadata["capture_contract_sha256"]
+        or not projection_gate
         or feature_payload["message_count"] != metadata["message_count"]
         or feature_payload["frame_count"] != metadata["frame_count"]
     ):

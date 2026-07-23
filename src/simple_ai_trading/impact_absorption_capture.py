@@ -36,6 +36,10 @@ from .impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     IMPACT_DEPTH_UPDATE_TABLE,
     IMPACT_EVENT_LINK_TABLE,
     IMPACT_REST_EVENT_TABLE,
@@ -45,6 +49,7 @@ from .impact_absorption_store import (
     ImpactFrameWriteResult,
     ImpactRejectedWireEvent,
     ImpactRestEvent,
+    iter_impact_capture_v9_records,
     validate_impact_store_resources,
 )
 from .impact_capture_frame import (
@@ -72,8 +77,20 @@ IMPACT_CAPTURE_DEFAULT_DATABASE_SIZE_CAP_BYTES = 8 * 1024 * 1024 * 1024
 _DATABASE_SIZE_CAP_RESERVE_BYTES = 512 * 1024 * 1024
 _STORAGE_EFFICIENCY_MINIMUM_SECONDS = 180.0
 _STORAGE_EFFICIENCY_MAXIMUM_FRAMES_PER_MINUTE = 25.0
-_STORAGE_EFFICIENCY_MAXIMUM_WRITE_BYTES_PER_MESSAGE = 4096.0
-_STORAGE_EFFICIENCY_MAXIMUM_PHYSICAL_GROWTH_BYTES_PER_MESSAGE = 1024.0
+_CAPTURE_PROTOCOLS = {
+    IMPACT_CAPTURE_SCHEMA_VERSION: (
+        IMPACT_CAPTURE_CONTRACT_SHA256,
+        IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+        4_096.0,
+        1_024.0,
+    ),
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION: (
+        IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+        IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+        1_024.0,
+        512.0,
+    ),
+}
 
 CaptureFailureClass = Literal[
     "none",
@@ -87,6 +104,13 @@ CaptureFailureClass = Literal[
     "audit",
     "post_capture",
 ]
+
+
+def _capture_protocol(schema_version: str) -> tuple[str, str, float, float]:
+    try:
+        return _CAPTURE_PROTOCOLS[str(schema_version)]
+    except KeyError as exc:
+        raise ValueError("impact capture schema version is unsupported") from exc
 
 
 class _ImpactRateLimitGuardError(RuntimeError):
@@ -199,9 +223,9 @@ def _process_io_snapshot() -> _ProcessIoSnapshot:
                 key.strip(): int(value.strip())
                 for key, value in (
                     line.split(":", 1)
-                    for line in Path("/proc/self/io").read_text(
-                        encoding="ascii"
-                    ).splitlines()
+                    for line in Path("/proc/self/io")
+                    .read_text(encoding="ascii")
+                    .splitlines()
                     if ":" in line
                 )
             }
@@ -309,6 +333,7 @@ class ImpactCaptureConfig:
     """Resource and authority bounds for one prospective capture."""
 
     database: str = "data/microstructure.duckdb"
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION
     mode: Literal["probe", "qualification"] = "probe"
     duration_seconds: float = 180.0
     request_timeout_seconds: float = 10.0
@@ -325,6 +350,7 @@ class ImpactCaptureConfig:
     maximum_reconnects: int = len(_RECONNECT_BACKOFF_SECONDS)
 
     def validate(self) -> None:
+        _capture_protocol(self.schema_version)
         if self.mode not in {"probe", "qualification"}:
             raise ValueError("impact capture mode must be probe or qualification")
         duration = float(self.duration_seconds)
@@ -379,6 +405,7 @@ class _RestEvidence:
 @dataclass(frozen=True)
 class ImpactCaptureReport:
     run_id: str
+    capture_schema_version: str
     mode: str
     status: str
     capture_gate_passed: bool
@@ -422,10 +449,14 @@ class ImpactCaptureReport:
     failure_class: CaptureFailureClass
 
     def as_dict(self) -> dict[str, object]:
+        capture_contract, report_schema, _write_limit, _growth_limit = (
+            _capture_protocol(self.capture_schema_version)
+        )
         result = asdict(self)
-        result["schema_version"] = IMPACT_CAPTURE_REPORT_SCHEMA_VERSION
+        result.pop("capture_schema_version")
+        result["schema_version"] = report_schema
         result["design_sha256"] = ROUND73_DESIGN_SHA256
-        result["capture_contract_sha256"] = IMPACT_CAPTURE_CONTRACT_SHA256
+        result["capture_contract_sha256"] = capture_contract
         result["audit_errors"] = list(self.audit_errors)
         return result
 
@@ -435,6 +466,7 @@ class ImpactCaptureSupervisorReport:
     """Bounded recovery result without combining evidence across attempts."""
 
     status: Literal["completed", "failed"]
+    capture_schema_version: str
     qualification_passed: bool
     selected_run_id: str
     attempt_count: int
@@ -445,10 +477,14 @@ class ImpactCaptureSupervisorReport:
     terminal_error: str
 
     def as_dict(self) -> dict[str, object]:
+        capture_contract, _report_schema, _write_limit, _growth_limit = (
+            _capture_protocol(self.capture_schema_version)
+        )
         return {
             "schema_version": "round-073-capture-supervisor-report-v1",
             "design_sha256": ROUND73_DESIGN_SHA256,
-            "capture_contract_sha256": IMPACT_CAPTURE_CONTRACT_SHA256,
+            "capture_schema_version": self.capture_schema_version,
+            "capture_contract_sha256": capture_contract,
             "status": self.status,
             "qualification_passed": self.qualification_passed,
             "selected_run_id": self.selected_run_id,
@@ -522,9 +558,8 @@ class _ImpactFrameWriter:
         )
 
     def start(self, timeout_seconds: float = 5.0) -> None:
-        if (
-            self.database_physical_bytes + _DATABASE_SIZE_CAP_RESERVE_BYTES
-            >= int(self.config.database_size_cap_bytes)
+        if self.database_physical_bytes + _DATABASE_SIZE_CAP_RESERVE_BYTES >= int(
+            self.config.database_size_cap_bytes
         ):
             raise _ImpactDatabaseSizeCapReached(
                 "Round 73 database is already inside its 512 MiB cap reserve"
@@ -599,9 +634,8 @@ class _ImpactFrameWriter:
             self.database_physical_bytes = _database_physical_bytes(
                 self.config.database
             )
-            if (
-                self.database_physical_bytes + _DATABASE_SIZE_CAP_RESERVE_BYTES
-                >= int(self.config.database_size_cap_bytes)
+            if self.database_physical_bytes + _DATABASE_SIZE_CAP_RESERVE_BYTES >= int(
+                self.config.database_size_cap_bytes
             ):
                 self.database_cap_reached.set()
             return result
@@ -693,9 +727,7 @@ def _writer_resource_metrics(
         else delta_bytes / writer.message_count
     )
     frames_per_minute = (
-        0.0
-        if elapsed_seconds <= 0.0
-        else writer.frame_count * 60.0 / elapsed_seconds
+        0.0 if elapsed_seconds <= 0.0 else writer.frame_count * 60.0 / elapsed_seconds
     )
     queue_utilization = writer.high_water_messages / queue_capacity_messages
     physical_growth_bytes = (
@@ -706,15 +738,16 @@ def _writer_resource_metrics(
         if writer.message_count == 0
         else physical_growth_bytes / writer.message_count
     )
+    _contract, _report_schema, write_limit, physical_growth_limit = _capture_protocol(
+        writer.config.schema_version
+    )
     passed = (
         elapsed_seconds >= _STORAGE_EFFICIENCY_MINIMUM_SECONDS
         and frames_per_minute <= _STORAGE_EFFICIENCY_MAXIMUM_FRAMES_PER_MINUTE
         and write_bytes_per_message is not None
-        and write_bytes_per_message
-        <= _STORAGE_EFFICIENCY_MAXIMUM_WRITE_BYTES_PER_MESSAGE
+        and write_bytes_per_message <= write_limit
         and physical_growth_bytes_per_message is not None
-        and physical_growth_bytes_per_message
-        <= _STORAGE_EFFICIENCY_MAXIMUM_PHYSICAL_GROWTH_BYTES_PER_MESSAGE
+        and physical_growth_bytes_per_message <= physical_growth_limit
         and queue_utilization <= 0.8
         and not writer.cap_reached.is_set()
         and not writer.database_cap_reached.is_set()
@@ -730,12 +763,130 @@ def _writer_resource_metrics(
         database_physical_start_bytes=writer.database_physical_start_bytes,
         database_physical_end_bytes=writer.database_physical_bytes,
         database_physical_growth_bytes=physical_growth_bytes,
-        database_physical_growth_bytes_per_message=(
-            physical_growth_bytes_per_message
-        ),
+        database_physical_growth_bytes_per_message=(physical_growth_bytes_per_message),
         frames_per_stream_minute=frames_per_minute,
         storage_efficiency_passed=passed,
     )
+
+
+def _v9_terminal_event_analysis(
+    connection,
+    *,
+    run_id: str,
+) -> tuple[dict[str, int], dict[str, dict[str, int]], float | None]:
+    rest_context = {
+        (int(row[0]), int(row[1])): tuple(row[2:])
+        for row in connection.execute(
+            f"""
+            SELECT frame_index, message_index, event_type, symbol,
+                   request_started_wall_ns, request_started_monotonic_ns,
+                   exchange_time_ms
+            FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE}
+            WHERE run_id = ?
+            """,
+            [run_id],
+        ).fetchall()
+    }
+    event_counts: dict[str, int] = {}
+    symbol_event_counts: dict[str, dict[str, int]] = {
+        symbol: {} for symbol in IMPACT_CAPTURE_SYMBOLS
+    }
+    best_rtt: int | None = None
+    active_offset: int | None = None
+    pending_offset: int | None = None
+    pending_receipt_ns = 0
+    negative_count = 0
+    latency_with_clock_count = 0
+    consumed_rest_keys: set[tuple[int, int]] = set()
+    for frame_index, message_index, record in iter_impact_capture_v9_records(
+        connection,
+        run_id=run_id,
+    ):
+        receipt_ns = record.received_monotonic_ns
+        if pending_offset is not None and receipt_ns > pending_receipt_ns:
+            active_offset = pending_offset
+        key = (frame_index, message_index)
+        if record.stream == "binance_futures_rest":
+            try:
+                (
+                    event_type_value,
+                    symbol_value,
+                    request_started_wall_ns,
+                    request_started_monotonic_ns,
+                    exchange_time_ms,
+                ) = rest_context[key]
+            except KeyError as exc:
+                raise ValueError(
+                    "Round 73 v9 terminal REST context is missing"
+                ) from exc
+            consumed_rest_keys.add(key)
+            event_type = str(event_type_value)
+            symbol = str(symbol_value)
+            if event_type == "serverTime":
+                if exchange_time_ms is None:
+                    raise ValueError("Round 73 v9 server-time context is incomplete")
+                rtt_ns = receipt_ns - int(request_started_monotonic_ns)
+                if rtt_ns < 0:
+                    raise ValueError("Round 73 v9 server-time RTT is negative")
+                if best_rtt is None or rtt_ns < best_rtt:
+                    best_rtt = rtt_ns
+                    midpoint_wall_ns = (
+                        int(request_started_wall_ns) + record.received_wall_ns
+                    ) // 2
+                    pending_offset = (
+                        int(exchange_time_ms) * 1_000_000 - midpoint_wall_ns
+                    )
+                    pending_receipt_ns = receipt_ns
+        else:
+            event_type = ImpactAbsorptionStore._v9_websocket_event_type(record)
+            symbol = ""
+            event_time_ms: int | None = None
+            if event_type != "rejectedWire":
+                root = _strict_json_object(record.raw_text)
+                payload = root.get("data")
+                if not isinstance(payload, Mapping):
+                    raise ValueError("Round 73 v9 terminal payload is missing")
+                symbol_value = payload.get("s")
+                if event_type == "forceOrder" and isinstance(payload.get("o"), Mapping):
+                    symbol_value = payload["o"].get("s")
+                symbol = normalize_symbol(symbol_value, default="")
+                event_time_value = payload.get("E")
+                if (
+                    isinstance(event_time_value, bool)
+                    or not isinstance(event_time_value, int)
+                    or event_time_value < 1
+                ):
+                    raise ValueError("Round 73 v9 event time is invalid")
+                event_time_ms = event_time_value
+            if active_offset is not None and event_time_ms is not None:
+                latency_with_clock_count += 1
+                if record.received_wall_ns + active_offset < event_time_ms * 1_000_000:
+                    negative_count += 1
+        event_counts[event_type] = event_counts.get(event_type, 0) + 1
+        if symbol:
+            if symbol not in symbol_event_counts:
+                raise ValueError("Round 73 v9 terminal symbol differs")
+            symbol_counts = symbol_event_counts[symbol]
+            symbol_counts[event_type] = symbol_counts.get(event_type, 0) + 1
+    if consumed_rest_keys != set(rest_context):
+        raise ValueError("Round 73 v9 terminal REST context has orphan rows")
+    for symbol, depth_message_count in connection.execute(
+        "SELECT symbol, depth_message_count FROM impact_capture_segment "
+        "WHERE run_id = ? ORDER BY symbol",
+        [run_id],
+    ).fetchall():
+        selected_symbol = str(symbol)
+        if selected_symbol not in symbol_event_counts:
+            raise ValueError("Round 73 v9 terminal segment symbol differs")
+        symbol_event_counts[selected_symbol]["synchronizedDepthUpdate"] = int(
+            depth_message_count
+        )
+    negative_fraction = (
+        None
+        if latency_with_clock_count == 0
+        else negative_count / latency_with_clock_count
+    )
+    return event_counts, symbol_event_counts, negative_fraction
 
 
 def _terminal_read_only_analysis(
@@ -756,6 +907,22 @@ def _terminal_read_only_analysis(
     ) as store:
         audit = store.audit_run(run_id)
         connection = store.connect()
+        run_schema_row = connection.execute(
+            "SELECT schema_version FROM impact_capture_run WHERE run_id = ?",
+            [run_id],
+        ).fetchone()
+        if run_schema_row is None:
+            raise ValueError("Round 73 terminal capture run is missing")
+        if str(run_schema_row[0]) == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+            event_counts, symbol_event_counts, negative_latency_fraction = (
+                _v9_terminal_event_analysis(connection, run_id=run_id)
+            )
+            return (
+                audit,
+                event_counts,
+                symbol_event_counts,
+                negative_latency_fraction,
+            )
         event_counts = {
             str(event_type): int(count)
             for event_type, count in connection.execute(
@@ -812,9 +979,7 @@ def _terminal_read_only_analysis(
             rtt = int(received_monotonic_ns) - int(request_started_monotonic_ns)
             if best_rtt is None or rtt < best_rtt:
                 best_rtt = rtt
-                midpoint = (
-                    int(request_started_wall_ns) + int(received_wall_ns)
-                ) // 2
+                midpoint = (int(request_started_wall_ns) + int(received_wall_ns)) // 2
                 best_offset = int(exchange_time_ms) * 1_000_000 - midpoint
             causal_clock.append((int(received_wall_ns), best_offset))
         negative_count = 0
@@ -822,10 +987,9 @@ def _terminal_read_only_analysis(
         clock_index = 0
         active_offset: int | None = None
         for received_wall_ns, event_time_ms in latency_rows:
-            while (
-                clock_index < len(causal_clock)
-                and causal_clock[clock_index][0] <= int(received_wall_ns)
-            ):
+            while clock_index < len(causal_clock) and causal_clock[clock_index][
+                0
+            ] <= int(received_wall_ns):
                 active_offset = causal_clock[clock_index][1]
                 clock_index += 1
             if active_offset is not None:
@@ -1006,6 +1170,9 @@ def _terminal_post_capture_failure_report(
 ) -> ImpactCaptureReport | None:
     """Bind a non-retriable failed report to an already terminal current run."""
 
+    capture_contract, _report_schema, _write_limit, _growth_limit = _capture_protocol(
+        config.schema_version
+    )
     with ImpactAbsorptionStore(
         config.database,
         memory_limit=config.duckdb_memory_limit,
@@ -1021,8 +1188,8 @@ def _terminal_post_capture_failure_report(
             """,
             [
                 run_id,
-                IMPACT_CAPTURE_SCHEMA_VERSION,
-                IMPACT_CAPTURE_CONTRACT_SHA256,
+                config.schema_version,
+                capture_contract,
             ],
         ).fetchone()
         if run is None or str(run[0]) == "running" or run[2] is None:
@@ -1036,30 +1203,33 @@ def _terminal_post_capture_failure_report(
         ):
             return None
         audit = store.audit_run(run_id)
-        event_counts = {
-            str(event_type): int(count)
-            for event_type, count in connection.execute(
-                f"SELECT event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
-                "WHERE run_id = ? GROUP BY event_type ORDER BY event_type",
+        if config.schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+            event_counts, symbol_event_counts, _negative_fraction = (
+                _v9_terminal_event_analysis(connection, run_id=run_id)
+            )
+        else:
+            event_counts = {
+                str(event_type): int(count)
+                for event_type, count in connection.execute(
+                    f"SELECT event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
+                    "WHERE run_id = ? GROUP BY event_type ORDER BY event_type",
+                    [run_id],
+                ).fetchall()
+            }
+            symbol_event_counts = {symbol: {} for symbol in IMPACT_CAPTURE_SYMBOLS}
+            for symbol, event_type, count in connection.execute(
+                f"SELECT symbol, event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
+                "WHERE run_id = ? AND symbol <> '' "
+                "GROUP BY symbol, event_type ORDER BY symbol, event_type",
                 [run_id],
-            ).fetchall()
-        }
-        symbol_event_counts: dict[str, dict[str, int]] = {
-            symbol: {} for symbol in IMPACT_CAPTURE_SYMBOLS
-        }
-        for symbol, event_type, count in connection.execute(
-            f"SELECT symbol, event_type, count(*) FROM {IMPACT_EVENT_LINK_TABLE} "
-            "WHERE run_id = ? AND symbol <> '' "
-            "GROUP BY symbol, event_type ORDER BY symbol, event_type",
-            [run_id],
-        ).fetchall():
-            symbol_event_counts[str(symbol)][str(event_type)] = int(count)
-        for symbol, count in connection.execute(
-            f"SELECT symbol, count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE} "
-            "WHERE run_id = ? AND stale = false GROUP BY symbol ORDER BY symbol",
-            [run_id],
-        ).fetchall():
-            symbol_event_counts[str(symbol)]["synchronizedDepthUpdate"] = int(count)
+            ).fetchall():
+                symbol_event_counts[str(symbol)][str(event_type)] = int(count)
+            for symbol, count in connection.execute(
+                f"SELECT symbol, count(*) FROM {IMPACT_DEPTH_UPDATE_TABLE} "
+                "WHERE run_id = ? AND stale = false GROUP BY symbol ORDER BY symbol",
+                [run_id],
+            ).fetchall():
+                symbol_event_counts[str(symbol)]["synchronizedDepthUpdate"] = int(count)
         elapsed_seconds = max(
             0.0,
             (int(run[2]) - int(run[1])) / 1_000_000_000,
@@ -1073,6 +1243,7 @@ def _terminal_post_capture_failure_report(
         database_end = _database_physical_bytes(config.database)
         report = ImpactCaptureReport(
             run_id=run_id,
+            capture_schema_version=config.schema_version,
             mode=config.mode,
             status="failed",
             capture_gate_passed=False,
@@ -1139,10 +1310,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
     """Capture one bounded prospective run; never place or authenticate an order."""
 
     config.validate()
-    if (
-        _database_physical_bytes(config.database) + _DATABASE_SIZE_CAP_RESERVE_BYTES
-        >= int(config.database_size_cap_bytes)
-    ):
+    if _database_physical_bytes(
+        config.database
+    ) + _DATABASE_SIZE_CAP_RESERVE_BYTES >= int(config.database_size_cap_bytes):
         raise _ImpactDatabaseSizeCapReached(
             "Round 73 database is already inside its 512 MiB cap reserve"
         )
@@ -1345,6 +1515,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                         "auto_checkpoint_skip_wal_threshold_bytes": skip_wal_threshold,
                     },
                     compressed_payload_cap_bytes=config.compressed_payload_cap_bytes,
+                    schema_version=config.schema_version,
                 )
                 cooldown_until = time.time_ns() + 60_000_000_000
                 for symbol in IMPACT_CAPTURE_SYMBOLS:
@@ -1727,6 +1898,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 terminal_snapshot = _process_io_snapshot()
                 return ImpactCaptureReport(
                     run_id=run_id,
+                    capture_schema_version=config.schema_version,
                     mode=config.mode,
                     status="failed",
                     capture_gate_passed=False,
@@ -1758,13 +1930,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     process_io_scope="capture phase through writer connection close",
                     process_io_provider=metrics.process_io_provider,
                     process_io_semantics=metrics.process_io_semantics,
-                    process_io_start_write_bytes=(
-                        metrics.process_io_start_write_bytes
-                    ),
+                    process_io_start_write_bytes=(metrics.process_io_start_write_bytes),
                     process_io_end_write_bytes=metrics.process_io_end_write_bytes,
-                    process_io_delta_write_bytes=(
-                        metrics.process_io_delta_write_bytes
-                    ),
+                    process_io_delta_write_bytes=(metrics.process_io_delta_write_bytes),
                     process_io_write_bytes_per_message=(
                         metrics.process_io_write_bytes_per_message
                     ),
@@ -1773,9 +1941,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     terminal_process_io_provider=terminal_snapshot.provider,
                     terminal_process_io_semantics=terminal_snapshot.semantics,
                     terminal_process_io_start_write_bytes=None,
-                    terminal_process_io_end_write_bytes=(
-                        terminal_snapshot.write_bytes
-                    ),
+                    terminal_process_io_end_write_bytes=(terminal_snapshot.write_bytes),
                     terminal_process_io_delta_write_bytes=None,
                     event_counts={},
                     symbol_event_counts={},
@@ -1865,6 +2031,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 terminal_failure_class = "audit"
             report = ImpactCaptureReport(
                 run_id=run_id,
+                capture_schema_version=config.schema_version,
                 mode=config.mode,
                 status=status,
                 capture_gate_passed=capture_gate_passed,
@@ -1897,21 +2064,15 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                 process_io_start_write_bytes=(
                     capture_metrics.process_io_start_write_bytes
                 ),
-                process_io_end_write_bytes=(
-                    capture_metrics.process_io_end_write_bytes
-                ),
+                process_io_end_write_bytes=(capture_metrics.process_io_end_write_bytes),
                 process_io_delta_write_bytes=(
                     capture_metrics.process_io_delta_write_bytes
                 ),
                 process_io_write_bytes_per_message=(
                     capture_metrics.process_io_write_bytes_per_message
                 ),
-                frames_per_stream_minute=(
-                    capture_metrics.frames_per_stream_minute
-                ),
-                storage_efficiency_passed=(
-                    capture_metrics.storage_efficiency_passed
-                ),
+                frames_per_stream_minute=(capture_metrics.frames_per_stream_minute),
+                storage_efficiency_passed=(capture_metrics.storage_efficiency_passed),
                 terminal_process_io_provider=terminal_io.provider,
                 terminal_process_io_semantics=terminal_io.semantics,
                 terminal_process_io_start_write_bytes=terminal_io.start_write_bytes,
@@ -1940,7 +2101,9 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
             stop.set()
             public_task.cancel()
             await asyncio.gather(public_task, return_exceptions=True)
-            if not isinstance(exc, asyncio.CancelledError | KeyboardInterrupt | SystemExit):
+            if not isinstance(
+                exc, asyncio.CancelledError | KeyboardInterrupt | SystemExit
+            ):
                 try:
                     recovered = _terminal_post_capture_failure_report(
                         config,
@@ -2010,6 +2173,7 @@ async def capture_round73_supervised(
             if report.status == "completed":
                 return ImpactCaptureSupervisorReport(
                     status="completed",
+                    capture_schema_version=config.schema_version,
                     qualification_passed=report.qualification_passed,
                     selected_run_id=report.run_id,
                     attempt_count=attempt_index + 1,
@@ -2031,6 +2195,7 @@ async def capture_round73_supervised(
 
     return ImpactCaptureSupervisorReport(
         status="failed",
+        capture_schema_version=config.schema_version,
         qualification_passed=False,
         selected_run_id="",
         attempt_count=len(attempts) + len(startup_errors),

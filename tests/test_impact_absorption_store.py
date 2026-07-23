@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -25,10 +28,15 @@ from simple_ai_trading.impact_absorption_store import (
     IMPACT_MARK_PRICE_TABLE,
     IMPACT_REJECTED_WIRE_EVENT_TABLE,
     IMPACT_REST_EVENT_TABLE,
+    IMPACT_CAPTURE_V9_FRAME_TABLE,
+    IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS,
+    IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRejectedWireEvent,
     ImpactRestEvent,
+    iter_impact_capture_v9_records,
 )
 from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
@@ -141,11 +149,15 @@ def _copy_current_rows_to_v5_layout(connection) -> None:
 def _legacy_typed_hashes(
     store: ImpactAbsorptionStore,
 ) -> dict[tuple[int, int], str]:
-    links = store.connect().execute(
-        f"SELECT frame_index, message_index, event_type "
-        f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
-        [RUN_ID],
-    ).fetchall()
+    links = (
+        store.connect()
+        .execute(
+            f"SELECT frame_index, message_index, event_type "
+            f"FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
+            [RUN_ID],
+        )
+        .fetchall()
+    )
     output = {}
     for frame_index, message_index, event_type in links:
         typed_row, l2_row = store._stored_typed_rows(
@@ -190,13 +202,19 @@ def _record(
     )
 
 
-def _start(store: ImpactAbsorptionStore, *, cap: int = 1_000_000) -> None:
+def _start(
+    store: ImpactAbsorptionStore,
+    *,
+    cap: int = 1_000_000,
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
+) -> None:
     store.start_run(
         run_id=RUN_ID,
         started_wall_ns=WALL_BASE,
         started_monotonic_ns=1,
         config={"purpose": "unit-test", "credentials": False},
         compressed_payload_cap_bytes=cap,
+        schema_version=schema_version,
     )
     store.start_segment(
         run_id=RUN_ID,
@@ -375,6 +393,37 @@ def _messages() -> tuple[ImpactCaptureMessage, ...]:
     )
 
 
+def _server_time_message(
+    *,
+    connection_id: str,
+    monotonic_ns: int,
+) -> ImpactCaptureMessage:
+    exchange_time_ms = (WALL_BASE + monotonic_ns) // 1_000_000
+    return ImpactCaptureMessage(
+        record=ImpactCaptureFrameRecord(
+            stream="binance_futures_rest",
+            connection_id=connection_id,
+            sequence_number=0,
+            received_wall_ns=WALL_BASE + monotonic_ns,
+            received_monotonic_ns=monotonic_ns,
+            raw_text=json.dumps(
+                {"serverTime": exchange_time_ms},
+                separators=(",", ":"),
+                ensure_ascii=True,
+            ),
+        ),
+        event=ImpactRestEvent(
+            event_type="serverTime",
+            request_path="/fapi/v1/time",
+            request_parameters={},
+            response_status=200,
+            request_started_wall_ns=WALL_BASE + monotonic_ns - 1,
+            request_started_monotonic_ns=monotonic_ns - 1,
+            exchange_time_ms=exchange_time_ms,
+        ),
+    )
+
+
 def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
     tmp_path,
 ) -> None:
@@ -391,12 +440,18 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
         assert audit.errors == ()
         assert audit.last_frame_sha256 == written.frame_sha256
         connection = store.connect()
-        assert connection.execute(
-            "SELECT current_setting('checkpoint_threshold')"
-        ).fetchone()[0] == "16.0 MiB"
-        assert connection.execute(
-            "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
-        ).fetchone()[0] == 100_000
+        assert (
+            connection.execute(
+                "SELECT current_setting('checkpoint_threshold')"
+            ).fetchone()[0]
+            == "16.0 MiB"
+        )
+        assert (
+            connection.execute(
+                "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
+            ).fetchone()[0]
+            == 100_000
+        )
         assert (
             connection.execute(
                 f"SELECT count(*) FROM {IMPACT_EVENT_LINK_TABLE} WHERE run_id = ?",
@@ -421,10 +476,13 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
             f"SELECT funding_rate FROM {IMPACT_MARK_PRICE_TABLE} WHERE run_id = ?",
             [RUN_ID],
         ).fetchone()[0] == pytest.approx(-0.0001)
-        assert connection.execute(
-            f"SELECT count(*) FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} WHERE run_id = ?",
-            [RUN_ID],
-        ).fetchone()[0] == 1
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {IMPACT_DEPTH_BAND_FLOW_TABLE} WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 1
+        )
         band_values = connection.execute(
             f"SELECT bid_added_quote_levels_1_5, "
             "bid_removed_quote_levels_1_5, bid_change_count_levels_1_5, "
@@ -460,22 +518,237 @@ def test_store_atomically_links_exact_frames_typed_rows_and_top20_state(
             == 0
         )
         assert IMPACT_CAPTURE_FRAME_TABLE == "impact_capture_frame_v8"
-        assert connection.execute(
-            "SELECT count(*) FROM impact_capture_frame WHERE run_id = ?", [RUN_ID]
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT count(*) FROM impact_depth_update_v3 WHERE run_id = ?", [RUN_ID]
-        ).fetchone()[0] == 0
-        assert connection.execute(
-            "SELECT count(*) FROM duckdb_constraints() "
-            "WHERE table_name = ? AND constraint_type = 'PRIMARY KEY'",
-            [IMPACT_CAPTURE_FRAME_TABLE],
-        ).fetchone()[0] == 1
-        assert connection.execute(
-            "SELECT count(*) FROM duckdb_constraints() "
-            "WHERE table_name = ? AND constraint_type = 'CHECK'",
-            [IMPACT_EVENT_LINK_TABLE],
-        ).fetchone()[0] == 2
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM impact_capture_frame WHERE run_id = ?", [RUN_ID]
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM impact_depth_update_v3 WHERE run_id = ?", [RUN_ID]
+            ).fetchone()[0]
+            == 0
+        )
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM duckdb_constraints() "
+                "WHERE table_name = ? AND constraint_type = 'PRIMARY KEY'",
+                [IMPACT_CAPTURE_FRAME_TABLE],
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                "SELECT count(*) FROM duckdb_constraints() "
+                "WHERE table_name = ? AND constraint_type = 'CHECK'",
+                [IMPACT_EVENT_LINK_TABLE],
+            ).fetchone()[0]
+            == 2
+        )
+
+
+def test_v9_store_persists_exact_frames_and_only_low_rate_rest_context(
+    tmp_path,
+) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+
+        written = store.append_frame(
+            run_id=RUN_ID,
+            messages=tuple(reversed(_messages())),
+        )
+        audit = store.audit_run(RUN_ID)
+        connection = store.connect()
+        ordered_receipts = [
+            record.received_monotonic_ns
+            for _frame, _message, record in iter_impact_capture_v9_records(
+                connection,
+                run_id=RUN_ID,
+            )
+        ]
+
+        assert audit.passed is True
+        assert audit.errors == ()
+        assert audit.message_count == written.message_count == 6
+        assert ordered_receipts == sorted(ordered_receipts)
+        assert (
+            connection.execute(
+                "SELECT current_setting('checkpoint_threshold')"
+            ).fetchone()[0]
+            == "512.0 MiB"
+        )
+        assert (
+            connection.execute(
+                "SELECT current_setting('auto_checkpoint_skip_wal_threshold')"
+            ).fetchone()[0]
+            == 512 * 1024 * 1024
+        )
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {IMPACT_CAPTURE_V9_FRAME_TABLE} WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE} "
+                "WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 1
+        )
+        for table in (
+            IMPACT_EVENT_LINK_TABLE,
+            IMPACT_DEPTH_UPDATE_TABLE,
+            IMPACT_DEPTH_BAND_FLOW_TABLE,
+            IMPACT_L2_STATE_TABLE,
+            IMPACT_BOOK_TICKER_TABLE,
+            IMPACT_AGGREGATE_TRADE_TABLE,
+            IMPACT_MARK_PRICE_TABLE,
+            IMPACT_LIQUIDATION_SNAPSHOT_TABLE,
+            IMPACT_REJECTED_WIRE_EVENT_TABLE,
+        ):
+            assert (
+                connection.execute(
+                    f"SELECT count(*) FROM {table} WHERE run_id = ?", [RUN_ID]
+                ).fetchone()[0]
+                == 0
+            )
+
+
+def test_v9_reorders_bounded_cross_frame_receipts_and_rejects_later_lag(
+    tmp_path,
+) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+        high_water = IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS * 2
+        store.append_frame(
+            run_id=RUN_ID,
+            messages=(
+                _server_time_message(
+                    connection_id="rest:high-water",
+                    monotonic_ns=high_water,
+                ),
+            ),
+        )
+        store.append_frame(
+            run_id=RUN_ID,
+            messages=(
+                _server_time_message(
+                    connection_id="rest:bounded-lag",
+                    monotonic_ns=high_water - 1_000_000,
+                ),
+            ),
+        )
+
+        ordered_receipts = [
+            record.received_monotonic_ns
+            for _frame, _message, record in iter_impact_capture_v9_records(
+                store.connect(),
+                run_id=RUN_ID,
+            )
+        ]
+        assert ordered_receipts == [high_water - 1_000_000, high_water]
+        with pytest.raises(ValueError, match="cross-frame receipt reorder lag"):
+            store.append_frame(
+                run_id=RUN_ID,
+                messages=(
+                    _server_time_message(
+                        connection_id="rest:excessive-lag",
+                        monotonic_ns=(
+                            high_water
+                            - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                            - 1
+                        ),
+                    ),
+                ),
+            )
+        assert store.audit_run(RUN_ID).passed is True
+
+
+def test_v9_audit_detects_rest_context_tampering(tmp_path) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact.duckdb") as store:
+        _start(store, schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+        store.append_frame(run_id=RUN_ID, messages=_messages())
+        store.connect().execute(
+            f"UPDATE {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE} "
+            "SET request_path = '/fapi/v1/time' WHERE run_id = ?",
+            [RUN_ID],
+        )
+
+        audit = store.audit_run(RUN_ID)
+
+        assert audit.passed is False
+        assert "rest_context_mismatch:0:5" in audit.errors
+
+
+def test_v9_committed_wal_recovers_after_abrupt_process_exit(tmp_path) -> None:
+    database = tmp_path / "impact.duckdb"
+    source = f"""
+import json
+import os
+from simple_ai_trading.impact_absorption_store import (
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    ImpactAbsorptionStore,
+    ImpactCaptureMessage,
+    ImpactRestEvent,
+)
+from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
+
+path = {str(database)!r}
+store = ImpactAbsorptionStore(path)
+store.start_run(
+    run_id={RUN_ID!r},
+    started_wall_ns={WALL_BASE},
+    started_monotonic_ns=1,
+    config={{"purpose": "wal-recovery-test"}},
+    schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+)
+raw = json.dumps({{"serverTime": 1234}}, separators=(",", ":"))
+store.append_frame(
+    run_id={RUN_ID!r},
+    messages=(ImpactCaptureMessage(
+        record=ImpactCaptureFrameRecord(
+            stream="binance_futures_rest",
+            connection_id="rest:test",
+            sequence_number=0,
+            received_wall_ns={WALL_BASE + 100},
+            received_monotonic_ns=100,
+            raw_text=raw,
+        ),
+        event=ImpactRestEvent(
+            event_type="serverTime",
+            request_path="/fapi/v1/time",
+            request_parameters={{}},
+            response_status=200,
+            request_started_wall_ns={WALL_BASE + 90},
+            request_started_monotonic_ns=90,
+            exchange_time_ms=1234,
+        ),
+    ),),
+)
+os._exit(0)
+"""
+    completed = subprocess.run(
+        [sys.executable, "-c", source],
+        cwd=Path(__file__).resolve().parents[1],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert Path(f"{database}.wal").is_file()
+
+    with ImpactAbsorptionStore(database) as recovered:
+        audit = recovered.audit_run(RUN_ID)
+
+    assert audit.passed is True
+    assert audit.frame_count == 1
+    assert audit.message_count == 1
+    assert not Path(f"{database}.wal").exists()
 
 
 def test_store_keeps_v2_rows_replay_auditable_without_rewriting_them(tmp_path) -> None:
@@ -751,8 +1024,7 @@ def test_store_detects_payload_and_typed_row_tampering(tmp_path) -> None:
         assert "typed_count_mismatch:aggTrade" in typed_audit.errors
 
         store.connect().execute(
-            f"UPDATE {IMPACT_MARK_PRICE_TABLE} SET funding_rate = 0.5 "
-            "WHERE run_id = ?",
+            f"UPDATE {IMPACT_MARK_PRICE_TABLE} SET funding_rate = 0.5 WHERE run_id = ?",
             [RUN_ID],
         )
         value_audit = store.audit_run(RUN_ID)

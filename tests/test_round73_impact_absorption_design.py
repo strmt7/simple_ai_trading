@@ -86,11 +86,17 @@ V8_REPEATED_APPEND_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 REAL_FRAME_COMPRESSION_BENCHMARK_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-real-frame-compression-benchmark-2026-07-23.json"
 )
+REAL_FRAME_RECEIPT_ORDER_PROBE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-real-frame-receipt-order-probe-2026-07-23.json"
+)
 V9_CAPTURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-capture-contract-v9.json"
 )
 SEGMENTED_CORPUS_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-segmented-corpus-contract-v1.json"
+)
+SEGMENTED_CORPUS_V2_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-segmented-corpus-contract-v2.json"
 )
 FIRST_CORPUS_MANIFEST_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-first-corpus-manifest-2026-07-22.json"
@@ -103,6 +109,9 @@ ROTATION_RECOVERY_VALIDATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 )
 CAUSAL_GRID_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-causal-grid-contract-v1.json"
+)
+CAUSAL_GRID_V2_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-causal-grid-contract-v2.json"
 )
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
@@ -765,6 +774,16 @@ def test_round73_v9_contract_removes_duplicate_live_typed_persistence() -> None:
     replay = contract["exact_replay_contract"]
     assert replay["top_20_l2_rebuilt_from_snapshot_and_sequenced_depth_updates"] is True
     assert replay["typed_projection_or_grid_may_be_trusted_without_raw_replay"] is False
+    receipt = contract["receipt_order_policy_v9"]
+    order_probe = json.loads(
+        REAL_FRAME_RECEIPT_ORDER_PROBE_PATH.read_text(encoding="utf-8")
+    )
+    order_claimed = order_probe.pop("artifact_sha256")
+    assert order_claimed == _canonical_sha256(order_probe)
+    assert receipt["probe_artifact_sha256"] == order_claimed
+    assert receipt["probe_message_count"] == 1_825_610
+    assert receipt["maximum_cross_frame_reorder_lag_ns"] == 10_000_000
+    assert receipt["feature_replay_uses_bounded_heap_watermark"] is True
     calendar = contract["market_and_calendar_scope"]
     assert calendar["crypto_formal_daily_close"] is False
     assert calendar["listed_products_use_actual_venue_calendars"] is True
@@ -816,6 +835,39 @@ def test_round73_segmented_corpus_contract_is_hash_bound_and_fail_closed() -> No
     assert modeling["model_evaluation_authorized"] is False
     assert modeling["profitability_claim"] is False
     assert modeling["live_trading_authority"] is False
+
+
+def test_round73_segmented_corpus_v2_binds_v8_and_v9_source_identities() -> None:
+    contract = json.loads(SEGMENTED_CORPUS_V2_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v2_manifest_write"] is True
+    assert contract["supersedes_contract_sha256"] == (
+        "5abd0ce47a2df1d944c905111b6a821d3339a2e62ce712df7b9c9e1b8913ce67"
+    )
+    sources = contract["source_contracts"]
+    assert set(sources) == {
+        "round-073-prospective-evidence-v8",
+        "round-073-prospective-evidence-v9",
+    }
+    assert (
+        sources["round-073-prospective-evidence-v9"]["feature_projection_gate"]
+        == "exact_wire_depth_band_replay_passed"
+    )
+    assert (
+        sources["round-073-prospective-evidence-v9"][
+            "maximum_process_io_write_bytes_per_message"
+        ]
+        == 1_024
+    )
+    assert contract["manifest_storage"]["run_manifest_table"] == (
+        "impact_corpus_run_manifest_v2"
+    )
+    day = contract["day_contract"]
+    assert day["crypto_formal_daily_close"] is False
+    assert day["listed_products_use_actual_venue_calendars"] is True
+    assert day["listed_product_calendar_may_grant_crypto_execution_authority"] is False
 
 
 def test_round73_first_corpus_manifest_is_real_hash_bound_and_non_predictive() -> None:
@@ -980,6 +1032,35 @@ def test_round73_causal_grid_contract_has_no_future_or_actor_labels() -> None:
     assert authority["one_hour_grid_diagnostic_after_tests"] is True
     assert authority["round_073_model_evaluation"] is False
     assert authority["live_trading_authority"] is False
+
+
+def test_round73_causal_grid_v2_binds_exact_wire_replay_and_fast_ingestion() -> None:
+    contract = json.loads(CAUSAL_GRID_V2_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_v2_grid_write"] is True
+    assert contract["parent_corpus_contract_sha256"] == (
+        "054ca4296a66a2d2a905b3946e80aadaea4bf5f50fb2811ce5a9b3d1b50e5b6d"
+    )
+    admission = contract["source_admission"]
+    assert admission["capture_schema_versions"] == [
+        "round-073-prospective-evidence-v8",
+        "round-073-prospective-evidence-v9",
+    ]
+    replay = contract["v9_exact_wire_replay"]
+    assert replay["maximum_cross_frame_reorder_lag_ns"] == 10_000_000
+    assert replay["global_receipt_order_uses_bounded_heap_watermark"] is True
+    assert replay["unbounded_memory_or_ssd_event_sort_permitted"] is False
+    persistence = contract["persistence"]
+    assert persistence["anchor_table"] == "impact_feature_anchor_v2"
+    assert persistence["numpy_replacement_scan_ingestion"] is True
+    assert persistence["python_scalar_parameter_expansion_permitted"] is False
+    calendar = contract["market_and_calendar_scope"]
+    assert calendar["crypto_formal_daily_close"] is False
+    assert calendar["listed_products_use_actual_venue_calendars"] is True
+    assert calendar["listed_product_close_creates_crypto_close"] is False
+    assert contract["authority"]["model_evaluated"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

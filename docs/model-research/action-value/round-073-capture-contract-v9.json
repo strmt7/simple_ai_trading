@@ -3,7 +3,7 @@
   "round": 73,
   "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
   "supersedes_capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
-  "capture_contract_sha256": "2285b8edf33e1541f02932e73841453474b8650974d53109515ffce8be139c2c",
+  "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
   "frozen_before_first_v9_capture": true,
   "amendment_scope": "Remove high-volume duplicate event-link and typed-table writes from the live transaction while preserving every exact wire frame, low-rate REST request context, receipt clock, lane sequence, segment state, and hash chain in the same DuckDB file. Reconstruct and independently validate typed market state from immutable frames during audit and causal-grid construction.",
   "failure_evidence": {
@@ -74,6 +74,21 @@
     "bounded_real_data_level_9_throughput_mib_per_second_observed": 141.6916182162067,
     "observation_is_not_a_long_run_capacity_guarantee": true
   },
+  "receipt_order_policy_v9": {
+    "probe_artifact": "round-073-real-frame-receipt-order-probe-2026-07-23.json",
+    "probe_artifact_sha256": "fd077d15367e1129d1ad82f0c7f94113f988c34f582d3ccd8e8074fb6be0dd80",
+    "probe_message_count": 1825610,
+    "probe_encoded_order_adjacent_inversion_count": 28865,
+    "probe_maximum_backward_from_running_high_water_ns": 4773079200,
+    "probe_cross_frame_lagged_frame_count": 4,
+    "probe_maximum_cross_frame_lag_ns": 44700,
+    "probe_lane_sequence_or_clock_violation_count": 0,
+    "writer_sorts_each_frame_by_receipt_then_lane_identity": true,
+    "maximum_cross_frame_reorder_lag_ns": 10000000,
+    "later_frame_beyond_reorder_lag_policy": "fail frame transaction and invalidate capture",
+    "feature_replay_uses_bounded_heap_watermark": true,
+    "unbounded_in_memory_or_ssd_backed_event_sort_permitted": false
+  },
   "duckdb_policy_v9": {
     "checkpoint_threshold": "512MiB",
     "auto_checkpoint_skip_wal_threshold_bytes": 536870912,
@@ -88,6 +103,7 @@
     "every_frame_checksum_and_content_size_verified": true,
     "every_frame_and_message_hash_recomputed": true,
     "every_lane_sequence_and_monotonic_receipt_recomputed": true,
+    "bounded_cross_lane_receipt_order_reconstructed": true,
     "every_websocket_event_identity_reparsed_from_raw_json": true,
     "every_rest_response_reconciled_to_persisted_request_context": true,
     "top_20_l2_rebuilt_from_snapshot_and_sequenced_depth_updates": true,

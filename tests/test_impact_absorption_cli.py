@@ -10,7 +10,10 @@ from simple_ai_trading.impact_absorption_capture import (
     ImpactCaptureReport,
     ImpactCaptureSupervisorReport,
 )
-from simple_ai_trading.impact_absorption_store import ImpactAbsorptionStore
+from simple_ai_trading.impact_absorption_store import (
+    IMPACT_CAPTURE_SCHEMA_VERSION,
+    ImpactAbsorptionStore,
+)
 
 
 def _attempt(
@@ -20,6 +23,7 @@ def _attempt(
 ) -> ImpactCaptureReport:
     return ImpactCaptureReport(
         run_id=run_id,
+        capture_schema_version=IMPACT_CAPTURE_SCHEMA_VERSION,
         mode="probe",
         status="completed",
         capture_gate_passed=False,
@@ -68,6 +72,7 @@ def _supervisor(*, qualification_passed: bool = False) -> ImpactCaptureSuperviso
     attempt = _attempt(qualification_passed=qualification_passed)
     return ImpactCaptureSupervisorReport(
         status="completed",
+        capture_schema_version=IMPACT_CAPTURE_SCHEMA_VERSION,
         qualification_passed=qualification_passed,
         selected_run_id=attempt.run_id,
         attempt_count=1,
@@ -171,7 +176,7 @@ def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
 
         def as_dict(self):
             return {
-                "schema_version": "round-073-segmented-corpus-v1",
+                "schema_version": "round-073-segmented-corpus-v2",
                 "run_id": self.run_id,
             }
 
@@ -269,7 +274,7 @@ def test_impact_grid_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
 
         def as_dict(self):
             return {
-                "schema_version": "round-073-causal-grid-v1",
+                "schema_version": "round-073-causal-grid-v2",
                 "run_id": self.run_id,
                 "target_constructed": False,
             }

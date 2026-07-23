@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields, is_dataclass
 import hashlib
+import heapq
 import json
 import math
 from pathlib import Path
 import re
-from typing import Literal, Mapping, Sequence, TypeAlias
+from typing import Iterator, Literal, Mapping, Sequence, TypeAlias
 
 import duckdb
 import zstandard
@@ -44,6 +45,11 @@ IMPACT_CAPTURE_CONTRACT_SHA256 = (
     "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462"
 )
 IMPACT_CAPTURE_REPORT_SCHEMA_VERSION = "round-073-capture-report-v8"
+IMPACT_CAPTURE_V9_SCHEMA_VERSION = "round-073-prospective-evidence-v9"
+IMPACT_CAPTURE_V9_CONTRACT_SHA256 = (
+    "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254"
+)
+IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION = "round-073-capture-report-v9"
 _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v1": (
         "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
@@ -109,6 +115,10 @@ _LEGACY_DEPTH_BAND_SCHEMAS = frozenset(
 IMPACT_CAPTURE_CHECKPOINT_THRESHOLD = "16MiB"
 IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 100_000
 IMPACT_CAPTURE_COMPRESSION_LEVEL = 3
+IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD = "512MiB"
+IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 512 * 1024 * 1024
+IMPACT_CAPTURE_V9_COMPRESSION_LEVEL = 9
+IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS = 10_000_000
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
 _AUDIT_FRAME_BATCH_SIZE = 64
@@ -578,6 +588,8 @@ IMPACT_LIQUIDATION_SNAPSHOT_TABLE = "impact_liquidation_snapshot_v8"
 IMPACT_REST_EVENT_TABLE = "impact_rest_event_v8"
 IMPACT_REJECTED_WIRE_EVENT_TABLE = "impact_rejected_wire_event_v8"
 IMPACT_DEPTH_BAND_FLOW_TABLE = "impact_depth_band_flow_v8"
+IMPACT_CAPTURE_V9_FRAME_TABLE = "impact_capture_frame_v9"
+IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE = "impact_rest_event_v9"
 
 _LEGACY_TYPED_TABLES = {
     "depthUpdate": ("impact_depth_update", _DEPTH_COLUMNS),
@@ -644,9 +656,7 @@ def _ensure_isolated_table(
     primary_key: tuple[str, ...] = (),
     digest_length_check_columns: tuple[str, ...] = (),
 ) -> None:
-    source_info = connection.execute(
-        f"PRAGMA table_info('{source_table}')"
-    ).fetchall()
+    source_info = connection.execute(f"PRAGMA table_info('{source_table}')").fetchall()
     if not source_info:
         raise RuntimeError(f"source table is missing: {source_table}")
     target_exists = bool(
@@ -677,9 +687,7 @@ def _ensure_isolated_table(
                 [target_table],
             ).fetchall()
         }
-        expected_digest_checks = {
-            (column,) for column in digest_length_check_columns
-        }
+        expected_digest_checks = {(column,) for column in digest_length_check_columns}
         if (
             source_signature != target_signature
             or target_primary_key != primary_key
@@ -710,6 +718,82 @@ def _ensure_isolated_table(
         + ", ".join((*definitions, *constraints))
         + ")"
     )
+
+
+def iter_impact_capture_v9_records(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+) -> Iterator[tuple[int, int, ImpactCaptureFrameRecord]]:
+    """Yield v9 exact-wire records in bounded global receipt order."""
+
+    selected = _validate_run_id(run_id)
+    cursor = connection.cursor()
+    cursor.execute(
+        f"""
+        SELECT frame_index, message_count, uncompressed_bytes, compressed_payload
+        FROM {IMPACT_CAPTURE_V9_FRAME_TABLE}
+        WHERE run_id = ? ORDER BY frame_index
+        """,
+        [selected],
+    )
+    decompressor = zstandard.ZstdDecompressor()
+    heap: list[tuple[int, int, int, ImpactCaptureFrameRecord]] = []
+    running_high_water = 0
+    prior_frame_high_water = 0
+    try:
+        while frame_rows := cursor.fetchmany(_AUDIT_FRAME_BATCH_SIZE):
+            for (
+                frame_index_value,
+                message_count,
+                uncompressed_bytes,
+                blob,
+            ) in frame_rows:
+                frame_index = int(frame_index_value)
+                decoded = decode_impact_capture_frame(
+                    decompressor.decompress(
+                        bytes(blob),
+                        max_output_size=int(uncompressed_bytes),
+                    ),
+                    expected_message_count=int(message_count),
+                )
+                receipts = [item.record.received_monotonic_ns for item in decoded]
+                if receipts != sorted(receipts):
+                    raise ValueError("Round 73 v9 frame receipt order differs")
+                frame_low_water = receipts[0]
+                frame_high_water = receipts[-1]
+                if frame_low_water < (
+                    prior_frame_high_water
+                    - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                ):
+                    raise ValueError("Round 73 v9 cross-frame reorder lag exceeded")
+                prior_frame_high_water = max(
+                    prior_frame_high_water,
+                    frame_high_water,
+                )
+                running_high_water = max(running_high_water, frame_high_water)
+                for item in decoded:
+                    heapq.heappush(
+                        heap,
+                        (
+                            item.record.received_monotonic_ns,
+                            frame_index,
+                            item.message_index,
+                            item.record,
+                        ),
+                    )
+                watermark = (
+                    running_high_water
+                    - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                )
+                while heap and heap[0][0] <= watermark:
+                    _receipt, source_frame, message_index, record = heapq.heappop(heap)
+                    yield source_frame, message_index, record
+        while heap:
+            _receipt, source_frame, message_index, record = heapq.heappop(heap)
+            yield source_frame, message_index, record
+    finally:
+        cursor.close()
 
 
 class ImpactAbsorptionStore:
@@ -1193,6 +1277,17 @@ class ImpactAbsorptionStore:
                 source_table=source_table,
                 target_table=target_table,
             )
+        _ensure_isolated_table(
+            self.connect(),
+            source_table="impact_capture_frame",
+            target_table=IMPACT_CAPTURE_V9_FRAME_TABLE,
+            primary_key=("run_id", "frame_index"),
+        )
+        _ensure_isolated_table(
+            self.connect(),
+            source_table="impact_rest_event_v3",
+            target_table=IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
+        )
 
     def start_run(
         self,
@@ -1203,6 +1298,7 @@ class ImpactAbsorptionStore:
         config: Mapping[str, object],
         symbols: Sequence[str] = IMPACT_CAPTURE_SYMBOLS,
         compressed_payload_cap_bytes: int = IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+        schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
     ) -> None:
         selected = _validate_run_id(run_id)
         normalized = tuple(normalize_symbol(value, default="") for value in symbols)
@@ -1211,7 +1307,33 @@ class ImpactAbsorptionStore:
         _reject_secret_fields(config)
         config_json = _canonical_json(config)
         cap = _positive_integer(compressed_payload_cap_bytes, "payload cap")
-        self.connect().execute(
+        selected_schema = str(schema_version)
+        contracts = {
+            IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_CONTRACT_SHA256,
+            IMPACT_CAPTURE_V9_SCHEMA_VERSION: IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+        }
+        try:
+            selected_contract = contracts[selected_schema]
+        except KeyError as exc:
+            raise ValueError("capture run schema version is unsupported") from exc
+        connection = self.connect()
+        if selected_schema == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+            connection.execute(
+                f"SET checkpoint_threshold='{IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD}'"
+            )
+            connection.execute(
+                "SET auto_checkpoint_skip_wal_threshold=?",
+                [IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES],
+            )
+        else:
+            connection.execute(
+                f"SET checkpoint_threshold='{IMPACT_CAPTURE_CHECKPOINT_THRESHOLD}'"
+            )
+            connection.execute(
+                "SET auto_checkpoint_skip_wal_threshold=?",
+                [IMPACT_CAPTURE_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES],
+            )
+        connection.execute(
             """
             INSERT INTO impact_capture_run VALUES (
                 ?, ?, ?, ?, 'running', ?, ?, NULL, ?, ?, ?, ?, 0, false,
@@ -1220,9 +1342,9 @@ class ImpactAbsorptionStore:
             """,
             [
                 selected,
-                IMPACT_CAPTURE_SCHEMA_VERSION,
+                selected_schema,
                 ROUND73_DESIGN_SHA256,
-                IMPACT_CAPTURE_CONTRACT_SHA256,
+                selected_contract,
                 _positive_integer(started_wall_ns, "run wall clock"),
                 _positive_integer(started_monotonic_ns, "run monotonic clock"),
                 _canonical_json(list(normalized)),
@@ -1414,17 +1536,27 @@ class ImpactAbsorptionStore:
         _reject_secret_fields(report, "capture report")
         if str(report.get("run_id", "")) != selected:
             raise ValueError("capture report run ID does not match its storage key")
-        if str(report.get("schema_version", "")) != IMPACT_CAPTURE_REPORT_SCHEMA_VERSION:
-            raise ValueError("capture report schema version is invalid")
         run = (
             self.connect()
             .execute(
-                "SELECT status FROM impact_capture_run WHERE run_id = ?", [selected]
+                "SELECT status, schema_version, capture_contract_sha256 "
+                "FROM impact_capture_run WHERE run_id = ?",
+                [selected],
             )
             .fetchone()
         )
         if run is None or str(run[0]) == "running":
             raise ValueError("capture report requires a terminal run")
+        report_schemas = {
+            IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+            IMPACT_CAPTURE_V9_SCHEMA_VERSION: IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+        }
+        try:
+            expected_report_schema = report_schemas[str(run[1])]
+        except KeyError as exc:
+            raise ValueError("capture report run schema is unsupported") from exc
+        if str(report.get("schema_version", "")) != expected_report_schema:
+            raise ValueError("capture report schema version is invalid")
         report_json = _canonical_json(report)
         report_sha256 = hashlib.sha256(report_json.encode("ascii")).hexdigest()
         self.connect().execute(
@@ -1433,8 +1565,8 @@ class ImpactAbsorptionStore:
             """,
             [
                 selected,
-                IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
-                IMPACT_CAPTURE_CONTRACT_SHA256,
+                expected_report_schema,
+                str(run[2]),
                 report_json,
                 report_sha256,
                 _positive_integer(recorded_at_wall_ns, "report wall clock"),
@@ -1879,12 +2011,57 @@ class ImpactAbsorptionStore:
         ).fetchone()
         if run is None or str(run[1]) != "running":
             raise ValueError("capture run is missing or not running")
-        if str(run[0]) != IMPACT_CAPTURE_SCHEMA_VERSION:
+        run_schema_version = str(run[0])
+        if run_schema_version not in {
+            IMPACT_CAPTURE_SCHEMA_VERSION,
+            IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        }:
             raise ValueError("legacy capture runs cannot accept current frame appends")
+        compact_exact_frame = run_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+        capture_contract_sha256 = (
+            IMPACT_CAPTURE_V9_CONTRACT_SHA256
+            if compact_exact_frame
+            else IMPACT_CAPTURE_CONTRACT_SHA256
+        )
+        frame_table = (
+            IMPACT_CAPTURE_V9_FRAME_TABLE
+            if compact_exact_frame
+            else IMPACT_CAPTURE_FRAME_TABLE
+        )
         if bool(run[4]):
             raise ValueError("capture compressed-payload cap has already been reached")
         frame_index = int(run[5])
         previous_frame_sha256 = str(run[6])
+        if compact_exact_frame:
+            messages = tuple(
+                sorted(
+                    messages,
+                    key=lambda message: (
+                        message.record.received_monotonic_ns,
+                        message.record.stream,
+                        message.record.connection_id,
+                        message.record.sequence_number,
+                        message.record.received_wall_ns,
+                    ),
+                )
+            )
+            if frame_index:
+                prior_high_water = connection.execute(
+                    f"SELECT max(last_received_monotonic_ns) FROM "
+                    f"{IMPACT_CAPTURE_V9_FRAME_TABLE} "
+                    "WHERE run_id = ?",
+                    [selected],
+                ).fetchone()
+                if prior_high_water is None or prior_high_water[0] is None:
+                    raise RuntimeError("v9 prior frame is missing")
+                current_low_water = min(
+                    message.record.received_monotonic_ns for message in messages
+                )
+                if current_low_water < (
+                    int(prior_high_water[0])
+                    - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                ):
+                    raise ValueError("v9 cross-frame receipt reorder lag exceeded")
         active_segments = self._active_segments(selected)
         lane_rows = connection.execute(
             """
@@ -1996,7 +2173,11 @@ class ImpactAbsorptionStore:
         uncompressed, located = encode_impact_capture_frame(records)
         uncompressed_sha256 = hashlib.sha256(uncompressed).hexdigest()
         compressed = zstandard.ZstdCompressor(
-            level=IMPACT_CAPTURE_COMPRESSION_LEVEL,
+            level=(
+                IMPACT_CAPTURE_V9_COMPRESSION_LEVEL
+                if compact_exact_frame
+                else IMPACT_CAPTURE_COMPRESSION_LEVEL
+            ),
             write_checksum=True,
             write_content_size=True,
             threads=0,
@@ -2291,8 +2472,8 @@ class ImpactAbsorptionStore:
             record.received_monotonic_ns for record in records
         )
         frame_identity = {
-            "schema_version": IMPACT_CAPTURE_SCHEMA_VERSION,
-            "capture_contract_sha256": IMPACT_CAPTURE_CONTRACT_SHA256,
+            "schema_version": run_schema_version,
+            "capture_contract_sha256": capture_contract_sha256,
             "run_id": selected,
             "frame_index": frame_index,
             "previous_frame_sha256": previous_frame_sha256,
@@ -2322,14 +2503,14 @@ class ImpactAbsorptionStore:
         try:
             connection.execute(
                 f"""
-                INSERT INTO {IMPACT_CAPTURE_FRAME_TABLE} VALUES (
+                INSERT INTO {frame_table} VALUES (
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 )
                 """,
                 [
                     selected,
                     frame_index,
-                    IMPACT_CAPTURE_SCHEMA_VERSION,
+                    run_schema_version,
                     IMPACT_CAPTURE_FRAME_FORMAT,
                     previous_frame_sha256,
                     len(messages),
@@ -2349,30 +2530,35 @@ class ImpactAbsorptionStore:
                     frame_sha256,
                 ],
             )
-            for table, columns, rows in (
-                (IMPACT_EVENT_LINK_TABLE, _EVENT_LINK_V5_COLUMNS, event_rows),
-                (IMPACT_DEPTH_UPDATE_TABLE, _DEPTH_COLUMNS, depth_rows),
-                (
-                    IMPACT_DEPTH_BAND_FLOW_TABLE,
-                    _DEPTH_BAND_FLOW_COLUMNS,
-                    depth_band_rows,
-                ),
-                (IMPACT_L2_STATE_TABLE, _L2_COLUMNS, l2_rows),
-                (IMPACT_BOOK_TICKER_TABLE, _BOOK_TICKER_COLUMNS, ticker_rows),
-                (IMPACT_AGGREGATE_TRADE_TABLE, _TRADE_COLUMNS, trade_rows),
-                (IMPACT_MARK_PRICE_TABLE, _MARK_COLUMNS, mark_rows),
-                (
-                    IMPACT_LIQUIDATION_SNAPSHOT_TABLE,
-                    _LIQUIDATION_COLUMNS,
-                    liquidation_rows,
-                ),
-                (IMPACT_REST_EVENT_TABLE, _REST_COLUMNS, rest_rows),
-                (
-                    IMPACT_REJECTED_WIRE_EVENT_TABLE,
-                    _REJECTED_WIRE_COLUMNS,
-                    rejected_wire_rows,
-                ),
-            ):
+            persistence_batches = (
+                ((IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE, _REST_COLUMNS, rest_rows),)
+                if compact_exact_frame
+                else (
+                    (IMPACT_EVENT_LINK_TABLE, _EVENT_LINK_V5_COLUMNS, event_rows),
+                    (IMPACT_DEPTH_UPDATE_TABLE, _DEPTH_COLUMNS, depth_rows),
+                    (
+                        IMPACT_DEPTH_BAND_FLOW_TABLE,
+                        _DEPTH_BAND_FLOW_COLUMNS,
+                        depth_band_rows,
+                    ),
+                    (IMPACT_L2_STATE_TABLE, _L2_COLUMNS, l2_rows),
+                    (IMPACT_BOOK_TICKER_TABLE, _BOOK_TICKER_COLUMNS, ticker_rows),
+                    (IMPACT_AGGREGATE_TRADE_TABLE, _TRADE_COLUMNS, trade_rows),
+                    (IMPACT_MARK_PRICE_TABLE, _MARK_COLUMNS, mark_rows),
+                    (
+                        IMPACT_LIQUIDATION_SNAPSHOT_TABLE,
+                        _LIQUIDATION_COLUMNS,
+                        liquidation_rows,
+                    ),
+                    (IMPACT_REST_EVENT_TABLE, _REST_COLUMNS, rest_rows),
+                    (
+                        IMPACT_REJECTED_WIRE_EVENT_TABLE,
+                        _REJECTED_WIRE_COLUMNS,
+                        rejected_wire_rows,
+                    ),
+                )
+            )
+            for table, columns, rows in persistence_batches:
                 if rows:
                     insert_rows_columnar(
                         connection,
@@ -2494,6 +2680,396 @@ class ImpactAbsorptionStore:
             None if l2_row is None else tuple(l2_row),
         )
 
+    @staticmethod
+    def _v9_websocket_event_type(record: ImpactCaptureFrameRecord) -> str:
+        """Reparse one v9 WebSocket record or classify it as rejected wire."""
+
+        try:
+            root = _strict_json_object(record.raw_text)
+            stream_name = root.get("stream")
+            payload = root.get("data")
+            if not isinstance(stream_name, str) or not isinstance(payload, Mapping):
+                raise ValueError("WebSocket wrapper is incomplete")
+            event_type = str(payload.get("e", ""))
+            symbol_value = payload.get("s")
+            if event_type == "forceOrder" and isinstance(payload.get("o"), Mapping):
+                symbol_value = payload["o"].get("s")
+            symbol = normalize_symbol(symbol_value, default="")
+            if symbol not in IMPACT_CAPTURE_SYMBOLS:
+                raise ValueError("WebSocket symbol is outside the capture universe")
+            if record.stream != ImpactAbsorptionStore._expected_stream(event_type):
+                raise ValueError("WebSocket event is on the wrong capture lane")
+            validate_combined_stream_name(
+                stream_name,
+                event_type=event_type,
+                symbol=symbol,
+            )
+            if event_type == "bookTicker":
+                parse_book_ticker(
+                    payload,
+                    symbol=symbol,
+                    receive_time_ns=record.received_monotonic_ns,
+                )
+            elif event_type == "aggTrade":
+                parse_aggregate_trade(
+                    payload,
+                    symbol=symbol,
+                    receive_time_ns=record.received_monotonic_ns,
+                )
+            elif event_type == "markPriceUpdate":
+                parse_mark_price(
+                    payload,
+                    symbol=symbol,
+                    receive_time_ns=record.received_monotonic_ns,
+                )
+            elif event_type == "forceOrder":
+                parse_liquidation_snapshot(
+                    payload,
+                    symbol=symbol,
+                    receive_time_ns=record.received_monotonic_ns,
+                )
+            elif event_type == "depthUpdate":
+                for key in ("E", "T", "U", "u", "pu"):
+                    _positive_integer(payload.get(key), f"raw depth {key}")
+                if _positive_integer(payload.get("st"), "raw depth stream type") != 1:
+                    raise ValueError("raw depth stream type differs")
+                if normalize_symbol(payload.get("ps"), default="") != symbol:
+                    raise ValueError("raw depth parent symbol differs")
+                for key in ("b", "a"):
+                    levels = payload.get(key)
+                    if not isinstance(levels, Sequence) or isinstance(
+                        levels, (str, bytes, bytearray)
+                    ):
+                        raise ValueError("raw depth levels are malformed")
+                    for level in levels:
+                        if (
+                            not isinstance(level, Sequence)
+                            or isinstance(level, (str, bytes, bytearray))
+                            or len(level) < 2
+                        ):
+                            raise ValueError("raw depth level is malformed")
+                        _finite_float(level[0], "raw depth price", positive=True)
+                        quantity = _finite_float(level[1], "raw depth quantity")
+                        if quantity < 0.0:
+                            raise ValueError("raw depth quantity is negative")
+            else:
+                raise ValueError("WebSocket event type is unsupported")
+            return event_type
+        except (TypeError, ValueError):
+            return "rejectedWire"
+
+    def _audit_v9_run(
+        self,
+        *,
+        run_id: str,
+        run: tuple[object, ...],
+    ) -> ImpactCaptureAudit:
+        connection = self.connect()
+        errors: list[str] = []
+        run_contract_sha256 = str(run[2])
+        if str(run[1]) != ROUND73_DESIGN_SHA256:
+            errors.append("run_design_mismatch")
+        if run_contract_sha256 != IMPACT_CAPTURE_V9_CONTRACT_SHA256:
+            errors.append("run_capture_contract_mismatch")
+        frames = connection.execute(
+            f"""
+            SELECT frame_index, schema_version, frame_format,
+                   previous_frame_sha256, message_count, first_message_id,
+                   last_message_id, message_manifest_sha256,
+                   first_received_wall_ns, last_received_wall_ns,
+                   first_received_monotonic_ns, last_received_monotonic_ns,
+                   uncompressed_bytes, uncompressed_sha256,
+                   compressed_bytes, compressed_sha256, stream_counts_json,
+                   compressed_payload, frame_sha256
+            FROM {IMPACT_CAPTURE_V9_FRAME_TABLE}
+            WHERE run_id = ? ORDER BY frame_index
+            """,
+            [run_id],
+        ).fetchall()
+        rest_source_rows = connection.execute(
+            f"""
+            SELECT frame_index, message_index, segment_id, event_type, symbol,
+                   request_path, request_parameters_json, response_status,
+                   request_started_wall_ns, request_started_monotonic_ns,
+                   used_weight_1m, exchange_time_ms, update_id, open_interest
+            FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE}
+            WHERE run_id = ? ORDER BY frame_index, message_index
+            """,
+            [run_id],
+        ).fetchall()
+        rest_rows = {
+            (int(row[0]), int(row[1])): tuple(row[2:]) for row in rest_source_rows
+        }
+        if len(rest_rows) != len(rest_source_rows):
+            errors.append("rest_context_duplicate_key")
+        segment_symbols = {
+            str(segment_id): str(symbol)
+            for segment_id, symbol in connection.execute(
+                "SELECT segment_id, symbol FROM impact_capture_segment WHERE run_id = ?",
+                [run_id],
+            ).fetchall()
+        }
+        decompressor = zstandard.ZstdDecompressor()
+        lane_state: dict[tuple[str, str], tuple[int, int]] = {}
+        prior_frame_sha256 = ""
+        total_messages = 0
+        total_compressed = 0
+        consumed_rest_keys: set[tuple[int, int]] = set()
+        event_counts: dict[str, int] = {}
+        prior_receipt_high_water = 0
+        for expected_index, row in enumerate(frames):
+            frame_index = int(row[0])
+            if frame_index != expected_index:
+                errors.append(f"frame_index_gap:{expected_index}:{frame_index}")
+            if str(row[1]) != IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+                errors.append(f"frame_schema_mismatch:{frame_index}")
+            if str(row[2]) != IMPACT_CAPTURE_FRAME_FORMAT:
+                errors.append(f"frame_format_mismatch:{frame_index}")
+            if str(row[3]) != prior_frame_sha256:
+                errors.append(f"frame_chain_mismatch:{frame_index}")
+            compressed = bytes(row[17])
+            if len(compressed) != int(row[14]):
+                errors.append(f"compressed_size_mismatch:{frame_index}")
+            if hashlib.sha256(compressed).hexdigest() != str(row[15]):
+                errors.append(f"compressed_sha256_mismatch:{frame_index}")
+            try:
+                uncompressed = decompressor.decompress(
+                    compressed,
+                    max_output_size=int(row[12]),
+                )
+            except zstandard.ZstdError as exc:
+                errors.append(
+                    f"frame_decompression_failed:{frame_index}:{type(exc).__name__}"
+                )
+                continue
+            if len(uncompressed) != int(row[12]):
+                errors.append(f"uncompressed_size_mismatch:{frame_index}")
+            if hashlib.sha256(uncompressed).hexdigest() != str(row[13]):
+                errors.append(f"uncompressed_sha256_mismatch:{frame_index}")
+            try:
+                decoded = decode_impact_capture_frame(
+                    uncompressed,
+                    expected_message_count=int(row[4]),
+                )
+            except ValueError as exc:
+                errors.append(f"frame_decode_failed:{frame_index}:{type(exc).__name__}")
+                continue
+            receipt_order = [
+                (
+                    item.record.received_monotonic_ns,
+                    item.record.stream,
+                    item.record.connection_id,
+                    item.record.sequence_number,
+                    item.record.received_wall_ns,
+                )
+                for item in decoded
+            ]
+            if receipt_order != sorted(receipt_order):
+                errors.append(f"frame_receipt_order_mismatch:{frame_index}")
+            frame_low_water = min(item[0] for item in receipt_order)
+            frame_high_water = max(item[0] for item in receipt_order)
+            if frame_low_water < (
+                prior_receipt_high_water
+                - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+            ):
+                errors.append(f"frame_cross_frame_reorder_lag:{frame_index}")
+            prior_receipt_high_water = max(
+                prior_receipt_high_water,
+                frame_high_water,
+            )
+            message_ids: list[str] = []
+            stream_counts: dict[str, int] = {}
+            for message_index, item in enumerate(decoded):
+                record = item.record
+                raw_sha256 = hashlib.sha256(record.raw_text.encode("utf-8")).hexdigest()
+                message_ids.append(
+                    _canonical_sha256(
+                        {
+                            "run_id": run_id,
+                            "stream": record.stream,
+                            "connection_id": record.connection_id,
+                            "sequence_number": record.sequence_number,
+                            "raw_payload_sha256": raw_sha256,
+                        }
+                    )
+                )
+                stream_counts[record.stream] = stream_counts.get(record.stream, 0) + 1
+                lane = (record.stream, record.connection_id)
+                prior_lane = lane_state.get(lane)
+                expected_sequence = 0 if prior_lane is None else prior_lane[0] + 1
+                if record.sequence_number != expected_sequence:
+                    errors.append(
+                        f"lane_sequence_mismatch:{frame_index}:{message_index}"
+                    )
+                if (
+                    prior_lane is not None
+                    and record.received_monotonic_ns <= prior_lane[1]
+                ):
+                    errors.append(
+                        f"lane_monotonic_mismatch:{frame_index}:{message_index}"
+                    )
+                lane_state[lane] = (
+                    record.sequence_number,
+                    record.received_monotonic_ns,
+                )
+                key = (frame_index, message_index)
+                if record.stream == "binance_futures_rest":
+                    context = rest_rows.get(key)
+                    if context is None:
+                        errors.append(
+                            f"rest_context_missing:{frame_index}:{message_index}"
+                        )
+                        continue
+                    consumed_rest_keys.add(key)
+                    try:
+                        parameters = _strict_json_object(str(context[4]))
+                        event = ImpactRestEvent(
+                            event_type=str(context[1]),  # type: ignore[arg-type]
+                            request_path=str(context[3]),
+                            request_parameters=parameters,
+                            response_status=int(context[5]),
+                            request_started_wall_ns=int(context[6]),
+                            request_started_monotonic_ns=int(context[7]),
+                            symbol=str(context[2]),
+                            used_weight_1m=(
+                                None if context[8] is None else int(context[8])
+                            ),
+                            exchange_time_ms=(
+                                None if context[9] is None else int(context[9])
+                            ),
+                            update_id=(
+                                None if context[10] is None else int(context[10])
+                            ),
+                            open_interest=(
+                                None if context[11] is None else float(context[11])
+                            ),
+                        )
+                        segment_id = str(context[0])
+                        if event.symbol:
+                            if segment_symbols.get(segment_id) != event.symbol:
+                                raise ValueError("REST segment context differs")
+                        elif segment_id:
+                            raise ValueError("global REST context has a segment")
+                        self._validate_raw_semantics(
+                            ImpactCaptureMessage(
+                                record=record,
+                                event=event,
+                                segment_id=segment_id,
+                            )
+                        )
+                        event_type = event.event_type
+                    except (TypeError, ValueError):
+                        errors.append(
+                            f"rest_context_mismatch:{frame_index}:{message_index}"
+                        )
+                        continue
+                else:
+                    event_type = self._v9_websocket_event_type(record)
+                event_counts[event_type] = event_counts.get(event_type, 0) + 1
+            manifest_sha256 = _canonical_sha256(message_ids)
+            if message_ids and (
+                str(row[5]) != message_ids[0] or str(row[6]) != message_ids[-1]
+            ):
+                errors.append(f"frame_message_bounds_mismatch:{frame_index}")
+            if str(row[7]) != manifest_sha256:
+                errors.append(f"frame_message_manifest_mismatch:{frame_index}")
+            if int(row[8]) != min(item.record.received_wall_ns for item in decoded):
+                errors.append(f"frame_first_wall_mismatch:{frame_index}")
+            if int(row[9]) != max(item.record.received_wall_ns for item in decoded):
+                errors.append(f"frame_last_wall_mismatch:{frame_index}")
+            if int(row[10]) != min(
+                item.record.received_monotonic_ns for item in decoded
+            ):
+                errors.append(f"frame_first_monotonic_mismatch:{frame_index}")
+            if int(row[11]) != max(
+                item.record.received_monotonic_ns for item in decoded
+            ):
+                errors.append(f"frame_last_monotonic_mismatch:{frame_index}")
+            stream_counts_json = _canonical_json(dict(sorted(stream_counts.items())))
+            if str(row[16]) != stream_counts_json:
+                errors.append(f"frame_stream_counts_mismatch:{frame_index}")
+            frame_identity = {
+                "schema_version": IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+                "capture_contract_sha256": run_contract_sha256,
+                "run_id": run_id,
+                "frame_index": frame_index,
+                "previous_frame_sha256": str(row[3]),
+                "message_count": int(row[4]),
+                "first_message_id": str(row[5]),
+                "last_message_id": str(row[6]),
+                "message_manifest_sha256": str(row[7]),
+                "first_received_wall_ns": int(row[8]),
+                "last_received_wall_ns": int(row[9]),
+                "first_received_monotonic_ns": int(row[10]),
+                "last_received_monotonic_ns": int(row[11]),
+                "uncompressed_bytes": int(row[12]),
+                "uncompressed_sha256": str(row[13]),
+                "compressed_bytes": int(row[14]),
+                "compressed_sha256": str(row[15]),
+                "stream_counts_json": str(row[16]),
+            }
+            if _canonical_sha256(frame_identity) != str(row[18]):
+                errors.append(f"frame_identity_mismatch:{frame_index}")
+            prior_frame_sha256 = str(row[18])
+            total_messages += int(row[4])
+            total_compressed += int(row[14])
+        if consumed_rest_keys != set(rest_rows):
+            errors.append("rest_context_orphan_rows")
+        stored_lanes = {
+            (str(stream), str(connection_id)): (int(sequence), int(monotonic))
+            for stream, connection_id, sequence, monotonic in connection.execute(
+                """
+                SELECT stream, connection_id, last_sequence_number,
+                       last_received_monotonic_ns
+                FROM impact_capture_lane_state WHERE run_id = ?
+                """,
+                [run_id],
+            ).fetchall()
+        }
+        if stored_lanes != lane_state:
+            errors.append("lane_terminal_state_mismatch")
+        if int(run[3]) != len(frames):
+            errors.append("run_frame_count_mismatch")
+        if int(run[4]) != total_messages:
+            errors.append("run_message_count_mismatch")
+        if int(run[5]) != total_compressed:
+            errors.append("run_compressed_payload_bytes_mismatch")
+        if str(run[6]) != prior_frame_sha256:
+            errors.append("run_last_frame_sha256_mismatch")
+        report_row = connection.execute(
+            "SELECT schema_version, capture_contract_sha256, report_json, "
+            "report_sha256 FROM impact_capture_report WHERE run_id = ?",
+            [run_id],
+        ).fetchone()
+        if report_row is not None:
+            report_text = str(report_row[2])
+            if (
+                str(report_row[0]) != IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION
+                or str(report_row[1]) != IMPACT_CAPTURE_V9_CONTRACT_SHA256
+                or hashlib.sha256(report_text.encode("ascii")).hexdigest()
+                != str(report_row[3])
+            ):
+                errors.append("stored_report_identity_mismatch")
+            else:
+                report = _strict_json_object(report_text)
+                reported_counts = report.get("event_counts")
+                if (
+                    isinstance(reported_counts, Mapping)
+                    and {str(key): int(value) for key, value in reported_counts.items()}
+                    != event_counts
+                ):
+                    errors.append("stored_report_event_counts_mismatch")
+        return ImpactCaptureAudit(
+            run_id=run_id,
+            passed=not errors,
+            errors=tuple(errors),
+            frame_count=len(frames),
+            message_count=total_messages,
+            compressed_payload_bytes=total_compressed,
+            last_frame_sha256=prior_frame_sha256,
+            capture_contract_sha256=run_contract_sha256,
+        )
+
     def audit_run(self, run_id: str) -> ImpactCaptureAudit:
         selected = _validate_run_id(run_id)
         connection = self.connect()
@@ -2508,6 +3084,8 @@ class ImpactAbsorptionStore:
         ).fetchone()
         if run is None:
             raise ValueError("capture run was not found")
+        if str(run[0]) == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+            return self._audit_v9_run(run_id=selected, run=tuple(run))
         errors: list[str] = []
         run_schema_version = str(run[0])
         run_contract_sha256 = str(run[2])
@@ -2627,11 +3205,7 @@ class ImpactAbsorptionStore:
                 for index_row in index_rows:
                     if compact_schema:
                         raw_digest = bytes(index_row[8])
-                        typed_digest_index = (
-                            12
-                            if event_time_link_schema
-                            else 11
-                        )
+                        typed_digest_index = 12 if event_time_link_schema else 11
                         typed_digest = bytes(index_row[typed_digest_index])
                         if len(raw_digest) != 32:
                             errors.append(
@@ -2843,8 +3417,7 @@ class ImpactAbsorptionStore:
                 )
                 depth_band_row = (
                     depth_band_rows.get((frame_index, message_index))
-                    if indexed_event_type == "depthUpdate"
-                    and depth_band_schema
+                    if indexed_event_type == "depthUpdate" and depth_band_schema
                     else None
                 )
                 if typed_row is None:
@@ -2875,10 +3448,7 @@ class ImpactAbsorptionStore:
                         "typed_row": typed_row,
                         "l2_row": l2_row,
                     }
-                    if (
-                        depth_band_schema
-                        and indexed_event_type == "depthUpdate"
-                    ):
+                    if depth_band_schema and indexed_event_type == "depthUpdate":
                         typed_payload["depth_band_row"] = depth_band_row
                     typed_sha256 = _canonical_sha256(typed_payload)
                     if typed_sha256 != indexed.typed_event_sha256:
@@ -2967,8 +3537,7 @@ class ImpactAbsorptionStore:
         if depth_band_schema:
             band_count = int(
                 connection.execute(
-                    f"SELECT count(*) FROM {depth_band_table} "
-                    "WHERE run_id = ?",
+                    f"SELECT count(*) FROM {depth_band_table} WHERE run_id = ?",
                     [selected],
                 ).fetchone()[0]
             )
@@ -3018,6 +3587,15 @@ __all__ = [
     "IMPACT_CAPTURE_REPORT_SCHEMA_VERSION",
     "IMPACT_CAPTURE_SCHEMA_VERSION",
     "IMPACT_CAPTURE_SYMBOLS",
+    "IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES",
+    "IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD",
+    "IMPACT_CAPTURE_V9_COMPRESSION_LEVEL",
+    "IMPACT_CAPTURE_V9_CONTRACT_SHA256",
+    "IMPACT_CAPTURE_V9_FRAME_TABLE",
+    "IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS",
+    "IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION",
+    "IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE",
+    "IMPACT_CAPTURE_V9_SCHEMA_VERSION",
     "IMPACT_AGGREGATE_TRADE_TABLE",
     "IMPACT_BOOK_TICKER_TABLE",
     "IMPACT_DEPTH_BAND_FLOW_TABLE",
@@ -3034,5 +3612,6 @@ __all__ = [
     "ImpactFrameWriteResult",
     "ImpactRejectedWireEvent",
     "ImpactRestEvent",
+    "iter_impact_capture_v9_records",
     "validate_impact_store_resources",
 ]

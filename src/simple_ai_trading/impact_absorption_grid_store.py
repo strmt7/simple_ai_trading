@@ -15,6 +15,17 @@ import struct
 import time
 
 import duckdb
+import numpy as np
+
+from .impact_absorption import (
+    SynchronizedDepthBook,
+    parse_aggregate_trade,
+    parse_book_ticker,
+    parse_liquidation_snapshot,
+    parse_mark_price,
+    pre_event_level_band,
+    validate_combined_stream_name,
+)
 
 from .impact_absorption_corpus import (
     ROUND73_CORPUS_RUN_TABLE,
@@ -48,13 +59,17 @@ from .impact_absorption_store import (
     IMPACT_LIQUIDATION_SNAPSHOT_TABLE,
     IMPACT_MARK_PRICE_TABLE,
     IMPACT_REST_EVENT_TABLE,
+    IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
+    iter_impact_capture_v9_records,
 )
 
 
-ROUND73_GRID_ANCHOR_TABLE = "impact_feature_anchor_v1"
-ROUND73_GRID_VECTOR_TABLE = "impact_feature_vector_v1"
-ROUND73_GRID_MANIFEST_TABLE = "impact_feature_run_manifest_v1"
+ROUND73_GRID_ANCHOR_TABLE = "impact_feature_anchor_v2"
+ROUND73_GRID_VECTOR_TABLE = "impact_feature_vector_v2"
+ROUND73_GRID_MANIFEST_TABLE = "impact_feature_run_manifest_v2"
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _FETCH_BATCH_SIZE = 8_192
@@ -128,7 +143,7 @@ def _vector_sha256(
 
 def _anchor_rows_sha256(rows: list[tuple[object, ...]]) -> str:
     digest = hashlib.sha256()
-    for row in rows:
+    for row in sorted(rows, key=lambda item: (str(item[1]), int(item[2]))):
         identity = [
             str(row[0]),
             str(row[1]),
@@ -153,7 +168,7 @@ def _anchor_rows_sha256(rows: list[tuple[object, ...]]) -> str:
 
 def _vector_rows_sha256(rows: list[tuple[object, ...]]) -> str:
     digest = hashlib.sha256()
-    for row in rows:
+    for row in sorted(rows, key=lambda item: (str(item[1]), int(item[2]))):
         identity = [str(row[0]), str(row[1]), int(row[2]), str(row[4])]
         digest.update(_canonical_json(identity).encode("ascii"))
         digest.update(b"\n")
@@ -328,9 +343,59 @@ def _insert_rows_columnar(
 ) -> None:
     if not rows:
         return
-    columns = [list(column) for column in zip(*rows, strict=True)]
-    projections = ", ".join("unnest(?)" for _column in columns)
-    connection.execute(f"INSERT INTO {table} SELECT {projections}", columns)
+    views: list[str] = []
+    projections: list[str] = []
+    try:
+        for index, column in enumerate(zip(*rows, strict=True)):
+            values = tuple(column)
+            view = f"_round73_{table}_{index}"
+            if all(isinstance(value, bool) for value in values):
+                array = np.asarray(values, dtype=np.bool_)
+                projection = f"{view}.column0"
+            elif all(
+                isinstance(value, int) and not isinstance(value, bool)
+                for value in values
+            ):
+                array = np.asarray(values, dtype=np.int64)
+                projection = f"{view}.column0"
+            elif all(
+                value is None or isinstance(value, (int, float)) for value in values
+            ):
+                array = np.asarray(
+                    [np.nan if value is None else value for value in values],
+                    dtype=np.float64,
+                )
+                projection = (
+                    f"CASE WHEN isnan({view}.column0) THEN NULL ELSE {view}.column0 END"
+                )
+            elif all(isinstance(value, str) for value in values):
+                array = np.asarray(values, dtype=np.str_)
+                projection = f"{view}.column0"
+            elif all(isinstance(value, (list, tuple)) for value in values):
+                widths = {len(value) for value in values}
+                if len(widths) != 1 or not widths or min(widths) < 1:
+                    raise ValueError("Round 73 nested insert width differs")
+                array = np.asarray(values, dtype=np.float64).T
+                projection = (
+                    "list_value("
+                    + ", ".join(
+                        f"{view}.column{nested_index}"
+                        for nested_index in range(array.shape[0])
+                    )
+                    + ")"
+                )
+            else:
+                raise TypeError("Round 73 grid insert column type is unsupported")
+            connection.register(view, array)
+            views.append(view)
+            projections.append(projection)
+        sources = " POSITIONAL JOIN ".join(views)
+        connection.execute(
+            f"INSERT INTO {table} SELECT {', '.join(projections)} FROM {sources}"
+        )
+    finally:
+        for view in views:
+            connection.unregister(view)
 
 
 def _cursor_rows(
@@ -519,6 +584,87 @@ def _causal_clock_timeline(
         receipt_times.append(received_monotonic_ns)
         offsets.append(best_offset)
     return _CausalClockTimeline(tuple(receipt_times), tuple(offsets))
+
+
+def _v9_rest_context(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+) -> dict[tuple[int, int], dict[str, object]]:
+    rows = connection.execute(
+        f"""
+        SELECT frame_index, message_index, event_type, symbol,
+               request_started_wall_ns, request_started_monotonic_ns,
+               exchange_time_ms, open_interest
+        FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE}
+        WHERE run_id = ?
+        """,
+        [run_id],
+    ).fetchall()
+    result = {
+        (int(row[0]), int(row[1])): {
+            "event_type": str(row[2]),
+            "symbol": str(row[3]),
+            "request_started_wall_ns": int(row[4]),
+            "request_started_monotonic_ns": int(row[5]),
+            "exchange_time_ms": None if row[6] is None else int(row[6]),
+            "open_interest": None if row[7] is None else float(row[7]),
+        }
+        for row in rows
+    }
+    if len(result) != len(rows):
+        raise ValueError("Round 73 v9 REST context contains duplicate keys")
+    return result
+
+
+def _v9_causal_clock_timeline(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+    rest_context: Mapping[tuple[int, int], Mapping[str, object]],
+) -> _CausalClockTimeline:
+    receipt_times: list[int] = []
+    offsets: list[int] = []
+    best_rtt: int | None = None
+    best_offset = 0
+    for frame_index, message_index, record in iter_impact_capture_v9_records(
+        connection,
+        run_id=run_id,
+    ):
+        context = rest_context.get((frame_index, message_index))
+        if context is None or context.get("event_type") != "serverTime":
+            continue
+        exchange_time_ms = context.get("exchange_time_ms")
+        if exchange_time_ms is None:
+            raise ValueError("Round 73 v9 server-time context is incomplete")
+        request_started_monotonic_ns = int(context["request_started_monotonic_ns"])
+        request_started_wall_ns = int(context["request_started_wall_ns"])
+        rtt_ns = record.received_monotonic_ns - request_started_monotonic_ns
+        if rtt_ns < 0 or record.received_wall_ns < request_started_wall_ns:
+            raise ValueError("Round 73 v9 server-time probe clocks are reversed")
+        if best_rtt is None or rtt_ns < best_rtt:
+            best_rtt = rtt_ns
+            midpoint_wall_ns = (request_started_wall_ns + record.received_wall_ns) // 2
+            best_offset = int(exchange_time_ms) * 1_000_000 - midpoint_wall_ns
+        receipt_times.append(record.received_monotonic_ns)
+        offsets.append(best_offset)
+    return _CausalClockTimeline(tuple(receipt_times), tuple(offsets))
+
+
+def _v9_depth_band_flow(pre_state, changes) -> dict[str, dict[str, dict[str, float]]]:
+    flow = {
+        side: {
+            band: {"added_quote": 0.0, "removed_quote": 0.0}
+            for band in ROUND73_GRID_BANDS
+        }
+        for side in ("bid", "ask")
+    }
+    for change in changes:
+        band = pre_event_level_band(pre_state, change)
+        bucket = flow[change.side][band]
+        bucket["added_quote"] += change.added_quote
+        bucket["removed_quote"] += change.removed_quote
+    return flow
 
 
 def _merged_events(
@@ -779,6 +925,264 @@ def _symbol_grid_rows(
     )
 
 
+def _v9_grid_rows(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+    segments: list[tuple[object, ...]],
+    run_started_wall_ns: int,
+    run_started_monotonic_ns: int,
+    coverage_start_wall_ns: int,
+    coverage_end_wall_ns: int,
+) -> tuple[
+    list[tuple[object, ...]],
+    list[tuple[object, ...]],
+    dict[str, dict[str, int]],
+]:
+    coverage_start_mono = run_started_monotonic_ns + (
+        coverage_start_wall_ns - run_started_wall_ns
+    )
+    coverage_end_mono = run_started_monotonic_ns + (
+        coverage_end_wall_ns - run_started_wall_ns
+    )
+    first_anchor = (
+        coverage_start_mono // ROUND73_GRID_STEP_NS + 1
+    ) * ROUND73_GRID_STEP_NS
+    first_persisted_anchor = first_anchor + ROUND73_GRID_WARMUP_NS
+    accumulators = {
+        str(symbol): Round73CausalGridAccumulator(str(symbol))
+        for symbol, _status, _clock_offset, _tick_size in segments
+    }
+    books = {
+        str(symbol): SynchronizedDepthBook(str(symbol), float(tick_size))
+        for symbol, _status, _clock_offset, tick_size in segments
+    }
+    fallback_offsets = {
+        str(symbol): int(clock_offset)
+        for symbol, _status, clock_offset, _tick_size in segments
+    }
+    rest_context = _v9_rest_context(connection, run_id=run_id)
+    clock_timeline = _v9_causal_clock_timeline(
+        connection,
+        run_id=run_id,
+        rest_context=rest_context,
+    )
+    anchor_rows: list[tuple[object, ...]] = []
+    vector_rows: list[tuple[object, ...]] = []
+    per_symbol = {
+        symbol: {"anchors": 0, "valid_anchors": 0, "invalid_anchors": 0}
+        for symbol in accumulators
+    }
+    anchor_indices = {symbol: 0 for symbol in accumulators}
+    anchor = first_anchor
+
+    def emit_anchor() -> None:
+        for symbol in IMPACT_CAPTURE_SYMBOLS:
+            accumulator = accumulators[symbol]
+            anchor_wall_ns = run_started_wall_ns + (anchor - run_started_monotonic_ns)
+            result = accumulator.emit(
+                anchor_monotonic_ns=anchor,
+                anchor_wall_ns=anchor_wall_ns,
+            )
+            if anchor < first_persisted_anchor:
+                continue
+            anchor_index = anchor_indices[symbol]
+            anchor_rows.append(
+                (
+                    run_id,
+                    symbol,
+                    anchor_index,
+                    result.anchor_monotonic_ns,
+                    result.anchor_wall_ns,
+                    result.source_max_received_monotonic_ns,
+                    result.valid,
+                    result.invalid_reason_mask,
+                    _canonical_json(list(result.invalid_reasons)),
+                    result.signed_aggressive_quote_1s,
+                    result.absolute_aggressive_quote_1s,
+                    result.trailing_median_absolute_aggressive_quote_60s,
+                    result.shock_ratio,
+                    result.shock_direction,
+                    result.shock_direction_taker_share,
+                )
+            )
+            per_symbol[symbol]["anchors"] += 1
+            if result.feature_values is not None:
+                vector_rows.append(
+                    (
+                        run_id,
+                        symbol,
+                        anchor_index,
+                        list(result.feature_values),
+                        _vector_sha256(
+                            run_id,
+                            symbol,
+                            anchor_index,
+                            result.feature_values,
+                        ),
+                    )
+                )
+                per_symbol[symbol]["valid_anchors"] += 1
+            else:
+                per_symbol[symbol]["invalid_anchors"] += 1
+            anchor_indices[symbol] += 1
+
+    for frame_index, message_index, record in iter_impact_capture_v9_records(
+        connection,
+        run_id=run_id,
+    ):
+        event_mono = int(record.received_monotonic_ns)
+        if event_mono >= coverage_start_mono:
+            while anchor <= coverage_end_mono and anchor <= event_mono:
+                emit_anchor()
+                anchor += ROUND73_GRID_STEP_NS
+        if event_mono >= coverage_end_mono:
+            break
+        key = (frame_index, message_index)
+        context = rest_context.get(key)
+        if record.stream == "binance_futures_rest":
+            if context is None:
+                raise ValueError("Round 73 v9 grid REST context is missing")
+            event_type = str(context["event_type"])
+            symbol = str(context["symbol"])
+            if event_type == "depthSnapshot":
+                if symbol not in books:
+                    raise ValueError("Round 73 v9 grid snapshot symbol differs")
+                books[symbol].initialize(
+                    _strict_json_object(record.raw_text, "v9 depth snapshot")
+                )
+            elif event_type == "openInterest" and event_mono >= coverage_start_mono:
+                value = context.get("open_interest")
+                if symbol not in accumulators or value is None:
+                    raise ValueError("Round 73 v9 grid open interest is incomplete")
+                accumulators[symbol].observe_open_interest(
+                    Round73OpenInterestState(
+                        received_monotonic_ns=event_mono,
+                        open_interest=float(value),
+                    )
+                )
+            continue
+        if ImpactAbsorptionStore._v9_websocket_event_type(record) == "rejectedWire":
+            continue
+        root = _strict_json_object(record.raw_text, "v9 WebSocket event")
+        payload = root.get("data")
+        if not isinstance(payload, Mapping):
+            raise ValueError("Round 73 v9 grid WebSocket payload is missing")
+        event_type = str(payload.get("e", ""))
+        symbol_value = payload.get("s")
+        if event_type == "forceOrder" and isinstance(payload.get("o"), Mapping):
+            symbol_value = payload["o"].get("s")
+        symbol = str(symbol_value).strip().upper()
+        if symbol not in accumulators:
+            raise ValueError("Round 73 v9 grid symbol differs")
+        validate_combined_stream_name(
+            str(root.get("stream", "")),
+            event_type=event_type,
+            symbol=symbol,
+        )
+        if event_type == "depthUpdate":
+            book = books[symbol]
+            pre_state = book.state(20)
+            event = book.apply(payload, receive_time_ns=event_mono)
+            if event.stale or event_mono < coverage_start_mono:
+                continue
+            rebuilt = book.state(20)
+            accumulators[symbol].observe_l2(
+                state=Round73L2State(
+                    received_monotonic_ns=event_mono,
+                    bid_prices=tuple(price for price, _qty in rebuilt.bid_levels),
+                    bid_quantities=tuple(qty for _price, qty in rebuilt.bid_levels),
+                    ask_prices=tuple(price for price, _qty in rebuilt.ask_levels),
+                    ask_quantities=tuple(qty for _price, qty in rebuilt.ask_levels),
+                    bid_depth_quote_5=rebuilt.bid_depth_quote_5,
+                    ask_depth_quote_5=rebuilt.ask_depth_quote_5,
+                    bid_depth_quote_10=rebuilt.bid_depth_quote_10,
+                    ask_depth_quote_10=rebuilt.ask_depth_quote_10,
+                    bid_depth_quote_20=rebuilt.bid_depth_quote_20,
+                    ask_depth_quote_20=rebuilt.ask_depth_quote_20,
+                    imbalance_5=rebuilt.imbalance_5,
+                    imbalance_10=rebuilt.imbalance_10,
+                    imbalance_20=rebuilt.imbalance_20,
+                    corrected_event_latency_ms=_corrected_latency_ms(
+                        received_wall_ns=record.received_wall_ns,
+                        event_time_ms=event.event_time_ms,
+                        clock_offset_ns=clock_timeline.offset_strictly_before(
+                            event_mono,
+                            fallback_offsets[symbol],
+                        ),
+                    ),
+                ),
+                depth_band_flow=_v9_depth_band_flow(pre_state, event.changes),
+            )
+            continue
+        if event_mono < coverage_start_mono:
+            continue
+        if event_type == "bookTicker":
+            event = parse_book_ticker(
+                payload,
+                symbol=symbol,
+                receive_time_ns=event_mono,
+            )
+            accumulators[symbol].observe_bbo(
+                received_monotonic_ns=event_mono,
+                bid=event.bid,
+                bid_qty=event.bid_qty,
+                ask=event.ask,
+                ask_qty=event.ask_qty,
+                corrected_event_latency_ms=_corrected_latency_ms(
+                    received_wall_ns=record.received_wall_ns,
+                    event_time_ms=event.event_time_ms,
+                    clock_offset_ns=clock_timeline.offset_strictly_before(
+                        event_mono,
+                        fallback_offsets[symbol],
+                    ),
+                ),
+            )
+        elif event_type == "aggTrade":
+            event = parse_aggregate_trade(
+                payload,
+                symbol=symbol,
+                receive_time_ns=event_mono,
+            )
+            accumulators[symbol].observe_trade(
+                received_monotonic_ns=event_mono,
+                price=event.price,
+                quantity=event.normalized_qty,
+                buyer_is_maker=event.buyer_is_maker,
+            )
+        elif event_type == "markPriceUpdate":
+            event = parse_mark_price(
+                payload,
+                symbol=symbol,
+                receive_time_ns=event_mono,
+            )
+            accumulators[symbol].observe_mark(
+                Round73MarkState(
+                    received_monotonic_ns=event_mono,
+                    mark_price=event.mark_price,
+                    index_price=event.index_price,
+                    funding_rate=event.funding_rate,
+                    next_funding_time_ms=event.next_funding_time_ms,
+                )
+            )
+        elif event_type == "forceOrder":
+            event = parse_liquidation_snapshot(
+                payload,
+                symbol=symbol,
+                receive_time_ns=event_mono,
+            )
+            price = event.average_price if event.average_price > 0 else event.price
+            accumulators[symbol].observe_liquidation(
+                received_monotonic_ns=event_mono,
+                price=price,
+                last_filled_quantity=event.last_filled_qty,
+            )
+    while anchor <= coverage_end_mono:
+        emit_anchor()
+        anchor += ROUND73_GRID_STEP_NS
+    return anchor_rows, vector_rows, per_symbol
+
+
 def _build_identity(
     *,
     run_id: str,
@@ -900,11 +1304,15 @@ def build_round73_causal_grid(
         if source is None:
             raise ValueError("Round 73 grid source corpus manifest is missing")
         source_manifest_sha256 = str(source[0])
+        source_schema_version = str(source[3])
+        admissible_capture_contracts = {
+            IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_CONTRACT_SHA256,
+            IMPACT_CAPTURE_V9_SCHEMA_VERSION: IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+        }
         if (
             source_manifest_sha256 != source_audit.manifest_sha256
             or _SHA256.fullmatch(source_manifest_sha256) is None
-            or str(source[3]) != IMPACT_CAPTURE_SCHEMA_VERSION
-            or str(source[4]) != IMPACT_CAPTURE_CONTRACT_SHA256
+            or admissible_capture_contracts.get(source_schema_version) != str(source[4])
         ):
             raise ValueError("Round 73 grid source identity differs")
         coverage_start_wall_ns = int(source[1])
@@ -913,7 +1321,7 @@ def build_round73_causal_grid(
         run_started_monotonic_ns = int(source[6])
         segments = connection.execute(
             """
-            SELECT symbol, status, clock_offset_ns
+            SELECT symbol, status, clock_offset_ns, tick_size
             FROM impact_capture_segment WHERE run_id = ? ORDER BY symbol
             """,
             [selected],
@@ -925,22 +1333,33 @@ def build_round73_causal_grid(
         anchor_rows: list[tuple[object, ...]] = []
         vector_rows: list[tuple[object, ...]] = []
         per_symbol: dict[str, dict[str, int]] = {}
-        clock_timeline = _causal_clock_timeline(connection, run_id=selected)
-        for symbol, _status, clock_offset_ns in segments:
-            symbol_anchors, symbol_vectors, diagnostic = _symbol_grid_rows(
+        if source_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+            anchor_rows, vector_rows, per_symbol = _v9_grid_rows(
                 connection,
                 run_id=selected,
-                symbol=str(symbol),
-                clock_timeline=clock_timeline,
-                fallback_clock_offset_ns=int(clock_offset_ns),
+                segments=segments,
                 run_started_wall_ns=run_started_wall_ns,
                 run_started_monotonic_ns=run_started_monotonic_ns,
                 coverage_start_wall_ns=coverage_start_wall_ns,
                 coverage_end_wall_ns=coverage_end_wall_ns,
             )
-            anchor_rows.extend(symbol_anchors)
-            vector_rows.extend(symbol_vectors)
-            per_symbol[str(symbol)] = diagnostic
+        else:
+            clock_timeline = _causal_clock_timeline(connection, run_id=selected)
+            for symbol, _status, clock_offset_ns, _tick_size in segments:
+                symbol_anchors, symbol_vectors, diagnostic = _symbol_grid_rows(
+                    connection,
+                    run_id=selected,
+                    symbol=str(symbol),
+                    clock_timeline=clock_timeline,
+                    fallback_clock_offset_ns=int(clock_offset_ns),
+                    run_started_wall_ns=run_started_wall_ns,
+                    run_started_monotonic_ns=run_started_monotonic_ns,
+                    coverage_start_wall_ns=coverage_start_wall_ns,
+                    coverage_end_wall_ns=coverage_end_wall_ns,
+                )
+                anchor_rows.extend(symbol_anchors)
+                vector_rows.extend(symbol_vectors)
+                per_symbol[str(symbol)] = diagnostic
     anchor_counts = {values["anchors"] for values in per_symbol.values()}
     if len(anchor_counts) != 1 or not anchor_counts or min(anchor_counts) < 1:
         raise ValueError("Round 73 grid symbols do not share a nonempty anchor grid")
