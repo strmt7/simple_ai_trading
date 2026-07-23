@@ -122,9 +122,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     features = cli._parse_args(["impact-feature-source", "--run-id", "a" * 32])
     corpus_index = cli._parse_args(["impact-corpus-index", "--run-id", "b" * 32])
     grid_build = cli._parse_args(["impact-grid-build", "--run-id", "b" * 32])
+    cohort_build = cli._parse_args(["impact-cohort-build"])
     target_build = cli._parse_args(["impact-target-build", "--run-id", "b" * 32])
     corpus_audit = cli._parse_args(["impact-corpus-audit", "--run-id", "b" * 32])
     grid_audit = cli._parse_args(["impact-grid-audit", "--run-id", "b" * 32])
+    cohort_audit = cli._parse_args(["impact-cohort-audit", "--study-id", "d" * 32])
     target_audit = cli._parse_args(["impact-target-audit", "--run-id", "b" * 32])
     corpus_day = cli._parse_args(["impact-corpus-day", "--utc-day", "2026-07-22"])
     corpus_collect = cli._parse_args(["impact-corpus-collect", "--segments", "0"])
@@ -140,9 +142,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert features.run_id == "a" * 32
     assert corpus_index.run_id == "b" * 32
     assert grid_build.run_id == "b" * 32
+    assert cohort_build.database == "data/microstructure.duckdb"
     assert target_build.run_id == "b" * 32
     assert corpus_audit.run_id == "b" * 32
     assert grid_audit.run_id == "b" * 32
+    assert cohort_audit.study_id == "d" * 32
     assert target_audit.run_id == "b" * 32
     assert corpus_day.utc_day == "2026-07-22"
     assert corpus_collect.segments == 0
@@ -155,9 +159,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "impact-feature-source",
         "impact-corpus-index",
         "impact-grid-build",
+        "impact-cohort-build",
         "impact-target-build",
         "impact-corpus-audit",
         "impact-grid-audit",
+        "impact-cohort-audit",
         "impact-target-audit",
         "impact-corpus-day",
         "impact-corpus-collect",
@@ -169,12 +175,17 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert workflow["impact-feature-source"] == ("Research", "Microstructure models")
     assert workflow["impact-corpus-index"] == ("Research", "Microstructure models")
     assert workflow["impact-grid-build"] == ("Research", "Microstructure models")
+    assert workflow["impact-cohort-build"] == (
+        "Research",
+        "Microstructure models",
+    )
     assert workflow["impact-target-build"] == (
         "Research",
         "Microstructure models",
     )
     assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-grid-audit"] == ("Data", "Integrity and outcomes")
+    assert workflow["impact-cohort-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-target-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-day"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-corpus-collect"] == ("Data", "Market data")
@@ -411,6 +422,108 @@ def test_impact_target_handlers_emit_machine_reports(monkeypatch, capsys) -> Non
             {"run_id": "b" * 32, "memory_limit": "1GB", "threads": 1},
         ),
     ]
+
+
+def test_impact_cohort_handlers_emit_machine_reports(monkeypatch, capsys) -> None:
+    class Report:
+        study_id = "d" * 32
+        selected_utc_days = ("2026-07-24",) * 7
+        source_run_count = 168
+        selected_anchor_count = 123
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-shock-study-v1",
+                "study_id": self.study_id,
+                "target_observed": False,
+            }
+
+    class Audit:
+        study_id = "d" * 32
+        passed = True
+        errors = ()
+        source_run_count = 168
+        selected_anchor_count = 123
+        deeply_audited_source_count = 168
+
+        def as_dict(self):
+            return {
+                "schema_version": "round-073-shock-study-audit-v1",
+                "passed": True,
+            }
+
+    observed = []
+
+    def fake_build(database, **kwargs):
+        observed.append(("build", str(database), kwargs))
+        return Report()
+
+    def fake_audit(database, **kwargs):
+        observed.append(("audit", str(database), kwargs))
+        return Audit()
+
+    monkeypatch.setattr(cli, "build_round73_shock_cohort", fake_build)
+    monkeypatch.setattr(cli, "audit_round73_shock_cohort", fake_audit)
+    common = {
+        "database": "corpus.duckdb",
+        "memory_limit": "1GB",
+        "database_threads": 1,
+        "json": True,
+    }
+
+    assert cli.command_impact_cohort_build(argparse.Namespace(**common)) == 0
+    assert json.loads(capsys.readouterr().out)["target_observed"] is False
+    assert (
+        cli.command_impact_cohort_audit(argparse.Namespace(**common, study_id="d" * 32))
+        == 0
+    )
+    assert json.loads(capsys.readouterr().out)["passed"] is True
+    assert observed == [
+        (
+            "build",
+            "corpus.duckdb",
+            {"memory_limit": "1GB", "threads": 1},
+        ),
+        (
+            "audit",
+            "corpus.duckdb",
+            {
+                "study_id": "d" * 32,
+                "deep_source_audit": True,
+                "memory_limit": "1GB",
+                "threads": 1,
+            },
+        ),
+    ]
+
+
+def test_impact_cohort_build_reports_not_ready_without_writing_targets(
+    monkeypatch, capsys
+) -> None:
+    class Day:
+        def as_dict(self):
+            return {
+                "utc_day": "2026-07-24",
+                "eligible": False,
+                "reason": "insufficient_integrity_coverage",
+            }
+
+    def fake_build(*_args, **_kwargs):
+        raise cli.Round73ShockCohortNotReady((Day(),))
+
+    monkeypatch.setattr(cli, "build_round73_shock_cohort", fake_build)
+    args = argparse.Namespace(
+        database="corpus.duckdb",
+        memory_limit="1GB",
+        database_threads=1,
+        json=True,
+    )
+
+    assert cli.command_impact_cohort_build(args) == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ready"] is False
+    assert payload["target_observed"] is False
+    assert payload["examined_days"][0]["reason"] == "insufficient_integrity_coverage"
 
 
 def test_impact_corpus_collect_handler_uses_bounded_rotation(
