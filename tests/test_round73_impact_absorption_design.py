@@ -167,6 +167,9 @@ SELECTED_ANCHOR_EVALUATION_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 ACTION_ALIGNED_FEATURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-action-aligned-feature-contract-v1.json"
 )
+STAGED_HOLDOUT_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-staged-holdout-contract-v3.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1690,6 +1693,40 @@ def test_round73_action_aligned_features_are_symmetric_nested_and_target_blind()
     assert authority["model_training"] is False
     assert authority["profitability_claim"] is False
     assert authority["trading_authority"] is False
+
+
+def test_round73_staged_holdout_physically_withholds_test_targets() -> None:
+    contract = json.loads(STAGED_HOLDOUT_CONTRACT_PATH.read_text(encoding="utf-8"))
+    claimed = contract.pop("contract_sha256")
+
+    assert claimed == _canonical_sha256(contract)
+    assert contract["frozen_before_first_eligible_v2_or_v3_target_result"] is True
+    supersedes = contract["supersedes"]
+    assert supersedes["target_mechanics_changed"] is False
+    assert supersedes["v2_implementation_may_generate_eligible_study_targets"] is False
+    phase_a = contract["phase_a_development"]
+    assert phase_a["test_anchor_passed_to_target_replay"] is False
+    assert phase_a["test_target_row_or_manifest_exists_after_phase"] is False
+    pretest = contract["pretest_artifact"]
+    assert pretest["test_target_or_payoff_read_before_publish"] is False
+    assert pretest["immutable_after_publish"] is True
+    unlock = contract["phase_b_test_unlock"]
+    assert unlock["unlock_count_per_study"] == 1
+    assert unlock["test_only_target_replay_after_unlock"] is True
+    evaluation = contract["one_use_evaluation"]
+    assert evaluation["model_refit_recalibration_threshold_change_or_feature_change_permitted"] is False
+    assert evaluation["second_test_evaluation_permitted"] is False
+    controls = contract["access_controls"]
+    assert controls["test_target_rows_exist_before_unlock"] is False
+    assert controls["unscoped_all_role_target_build_permitted"] is False
+    assert controls["v2_all_role_builder_rejected_for_eligible_cohort"] is True
+    status = contract["implementation_status"]
+    assert status["role_scoped_target_store_implemented"] is False
+    assert status["eligible_target_result_observed"] is False
+    authority = contract["authority"]
+    assert authority["build_eligible_targets_with_v2"] is False
+    assert authority["model_training"] is False
+    assert authority["paper_testnet_or_live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:

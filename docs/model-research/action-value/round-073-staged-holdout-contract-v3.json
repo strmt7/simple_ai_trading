@@ -1,0 +1,188 @@
+{
+  "schema_version": "round-073-staged-holdout-contract-v3",
+  "contract_sha256": "a3db9ec7c48c8e2960a6186eb5ad051bfc0ef937cf604d7f85be2433a3f6a5bc",
+  "round": 73,
+  "parent_compact_target_contract_sha256": "3a6e4ea172bc12c76cd5f86888bd04f1e407ee9e593aaf1f2009b10db5095c92",
+  "parent_evaluation_contract_sha256": "1ac9b5fabd78138caddb296497d5b4885187198f3214338c323c3ed2fe2d388a",
+  "parent_feature_contract_sha256": "8f027cb2459baa0a864e31dc7ab26a287e07e7853e8e35cc73b474cbcdff1750",
+  "frozen_before_first_eligible_v2_or_v3_target_result": true,
+  "supersedes": {
+    "qualification_sequence_only": "round-073-compact-shock-target-contract-v2",
+    "target_mechanics_changed": false,
+    "shock_cohort_changed": false,
+    "feature_rows_changed": false,
+    "execution_cost_delay_horizon_or_notional_changed": false,
+    "v2_implementation_may_generate_eligible_study_targets": false,
+    "reason": "The v2 sequence required every target row and a complete target-study audit before fitting. That made held-out test outcomes physically queryable before model, preprocessing, and policy artifacts were frozen. No eligible v2 target result existed when this defect was found."
+  },
+  "purpose": "Physically withhold day-six and day-seven targets until all training, tuning, preprocessing, model, and action-policy artifacts are immutable and hash-bound, then permit exactly one audited test replay and evaluation.",
+  "unchanged_population": {
+    "cohort_table": "impact_shock_anchor_v1",
+    "roles": {
+      "development": [
+        "training",
+        "tuning"
+      ],
+      "test": [
+        "test"
+      ]
+    },
+    "training_day_ordinals": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "tuning_day_ordinals": [
+      5
+    ],
+    "test_day_ordinals": [
+      6,
+      7
+    ],
+    "mixed_role_source_run_policy": "Replay and manifest each role scope separately; a source run crossing a role boundary cannot cause early test replay or loss of development anchors.",
+    "same_selected_anchor_hashes_required": true
+  },
+  "unchanged_target_mechanics": {
+    "entry_delay_milliseconds": [
+      500,
+      1000
+    ],
+    "holding_horizon_milliseconds": [
+      15000,
+      60000,
+      300000
+    ],
+    "reference_quote_notional": [
+      100,
+      1000,
+      5000
+    ],
+    "sides": [
+      "long",
+      "short"
+    ],
+    "minimum_round_trip_fee_and_adverse_reserve_bps": 12.0,
+    "exact_wire_replay_required": true,
+    "visible_book_levels": 20,
+    "maximum_entry_or_exit_state_lateness_milliseconds": 250,
+    "leverage": 1.0,
+    "profit_reinvestment": false
+  },
+  "phase_a_development": {
+    "permitted_roles": [
+      "training",
+      "tuning"
+    ],
+    "test_anchor_passed_to_target_replay": false,
+    "test_target_row_or_manifest_exists_after_phase": false,
+    "development_target_table": "impact_target_option_v3",
+    "role_scoped_run_manifest_table": "impact_target_role_run_manifest_v3",
+    "development_study_manifest_table": "impact_target_development_study_manifest_v3",
+    "publication_unit": "one source run and development role scope in one transaction",
+    "zero_anchor_role_run_manifest_required": true,
+    "every_development_anchor_has_exactly_36_options": true,
+    "deep_exact_wire_audit_required_before_development_seal": true,
+    "development_outcomes_may_fit_models": true,
+    "test_outcome_count_prevalence_payoff_or_eligibility_summary_permitted": false
+  },
+  "pretest_artifact": {
+    "table": "impact_pretest_model_manifest_v1",
+    "written_after_development_study_seal": true,
+    "required_hash_bound_inputs": [
+      "repository commit and dirty-state evidence",
+      "cohort and development target-study manifests",
+      "evaluation and feature contracts",
+      "exact feature names transforms and dropped zero-IQR columns",
+      "training and tuning row identities",
+      "compute backend identity",
+      "serialized preprocessing and model bytes",
+      "best boosting iterations",
+      "training and tuning predictions",
+      "selected predictive model family per symbol",
+      "selected probability threshold per symbol",
+      "side choice concurrency and pre-entry revalidation rules"
+    ],
+    "test_feature_or_target_hash_included": false,
+    "test_target_or_payoff_read_before_publish": false,
+    "immutable_after_publish": true,
+    "single_manifest_per_study": true
+  },
+  "phase_b_test_unlock": {
+    "unlock_table": "impact_test_unlock_v1",
+    "pretest_manifest_required": true,
+    "pretest_manifest_hash_must_match": true,
+    "repository_and_contract_identity_must_match_pretest_manifest": true,
+    "unlock_count_per_study": 1,
+    "unlock_is_append_only": true,
+    "test_only_target_replay_after_unlock": true,
+    "development_target_rewrite_after_unlock": false,
+    "publication_unit": "one source run and test role scope in one transaction",
+    "zero_anchor_role_run_manifest_required": true,
+    "test_build_output_before_complete_test_seal": "operational progress and row counts only; no class prevalence eligibility positive-payoff or PnL summary",
+    "deep_exact_wire_test_audit_required": true,
+    "complete_test_study_manifest_table": "impact_target_test_study_manifest_v3"
+  },
+  "one_use_evaluation": {
+    "result_table": "impact_model_evaluation_result_v1",
+    "requires_complete_test_study_seal": true,
+    "requires_exact_pretest_manifest_hash": true,
+    "test_predictions_generated_from_pretest_model_bytes": true,
+    "model_refit_recalibration_threshold_change_or_feature_change_permitted": false,
+    "result_count_per_study": 1,
+    "result_is_append_only": true,
+    "failed_mixed_single_class_zero_trade_and_unresolved_exit_results_persisted": true,
+    "test_period_becomes_development_only_after_result": true,
+    "second_test_evaluation_permitted": false
+  },
+  "access_controls": {
+    "ordinary_development_loader_queries_test_target_table": false,
+    "test_target_rows_exist_before_unlock": false,
+    "test_target_summary_exists_before_unlock": false,
+    "target_build_api_requires_explicit_role_scope": true,
+    "unscoped_all_role_target_build_permitted": false,
+    "v2_all_role_builder_rejected_for_eligible_cohort": true,
+    "database_constraint_or_transaction_check_revalidates_unlock": true,
+    "unknown_or_mixed_role_scope": "fatal",
+    "manual SQL can defeat_application_controls": true,
+    "operator_warning": "DuckDB is a local file and cannot prevent a filesystem owner from bypassing application APIs. Reproducible evidence therefore also records repository state and every access manifest; production-grade secrecy would require a separately permissioned data service."
+  },
+  "resource_policy": {
+    "target_replay_is_per_source_run_and_role_scope": true,
+    "entire_study_held_in_python_memory": false,
+    "columnar_transactional_publication": true,
+    "temporary_disk_spill_for_python_rows": false,
+    "test_replay_starts_only_after_collection_and_model_fit_complete": true
+  },
+  "fail_closed_conditions": [
+    "eligible v2 target manifest exists",
+    "test target row exists before test unlock",
+    "development target row has test role",
+    "pretest manifest omits any frozen model or policy identity",
+    "pretest repository or contract identity drifts",
+    "test unlock already exists",
+    "test replay receives a development anchor",
+    "test study is partial or exact-wire audit fails",
+    "evaluation attempts to refit or retune",
+    "a second evaluation result is requested"
+  ],
+  "implementation_status": {
+    "contract_frozen": true,
+    "role_scoped_target_store_implemented": false,
+    "pretest_manifest_implemented": false,
+    "one_use_test_unlock_implemented": false,
+    "one_use_evaluator_implemented": false,
+    "eligible_target_result_observed": false,
+    "model_result_observed": false
+  },
+  "authority": {
+    "continue_prospective_v9_capture_and_feature_grids": true,
+    "build_eligible_targets_with_v2": false,
+    "build_eligible_targets_before_v3_implementation_passes": false,
+    "model_training": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_testnet_or_live_trading_authority": false
+  }
+}

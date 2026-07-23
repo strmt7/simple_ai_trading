@@ -8,15 +8,16 @@ no model was trained. Compact target v2 is now preregistered before collection:
 it uses only feature-selected shocks from new v9 data, retains the cost floor,
 and evaluates 15, 60, and 300-second paths one source run at a time. Its
 deterministic cohort builder and independent deep auditor are implemented, but
-no eligible seven-day cohort exists yet. Selected-anchor v2 replay and audit are
-implemented one source run per transaction, including zero-anchor manifests and
-an all-source study seal. No prospective v2 target has been observed. A new
-untouched seven-day v9 feature corpus is next. The selected-anchor evaluation is
-also frozen before those outcomes: source-boundary censoring is deterministic,
-pre-entry safety aborts count as attempted zero-return actions, and a selected
-post-entry unresolved exit fails the economic gate rather than disappearing
-from the sample. Profitability, AI, leverage, paper, testnet, and live authority
-remain closed.
+no eligible seven-day cohort exists yet. Selected-anchor v2 replay validated the
+bounded mechanics API on pre-eligibility fixtures, but its all-role sealing
+sequence exposed test targets before model freeze. V3 now supersedes that
+sequence and blocks v2 on every eligible anchor. No prospective target has been
+observed. A new untouched seven-day v9 feature corpus is next while the staged
+development/pretest/test store is implemented. The evaluation keeps
+source-boundary censoring deterministic, counts pre-entry safety aborts as
+attempted zero-return actions, and fails on a selected unresolved post-entry
+exit. Profitability, AI, leverage, paper, testnet, and live authority remain
+closed.
 
 ## Why this is different
 
@@ -132,8 +133,12 @@ flowchart LR
   are atomic and bounded. Independent audits reconstruct every target from the
   source's exact-wire frames. The final study seal requires every source run,
   fresh cohort/source audits, exact replay equality, complete dimensions, and
-  no orphan rows. These are implementation properties, not target or
-  profitability results.
+  no orphan rows. Those mechanics remain reusable, but the v2 public builder now
+  rejects every anchor at or after the prospective eligibility timestamp.
+  `round-073-staged-holdout-contract-v3.json` requires development-role targets
+  first, an immutable pretest model/policy manifest, then a one-time test unlock
+  and test-only replay. Its role-scoped store is not implemented yet, so no
+  eligible target construction is authorized.
 - `round-073-selected-anchor-evaluation-contract-v1.json` freezes the one-use
   viability analysis before an eligible v2 target result exists. It keeps
   BTC/ETH/SOL models separate, evaluates prevalence, linear L1+tape, shallow
@@ -152,14 +157,15 @@ flowchart LR
   L1+tape (90), L2 state (107), and full impact absorption (261) are strictly
   nested. No fitted statistic, clipping, invented ratio, target, or future state
   enters this transform.
-- `impact_absorption_model_dataset.py` implements the sealed operational target
+- `impact_absorption_model_dataset.py` implements the operational status and
   adapter. It requires a passing complete target-study audit, independently
   rehashes each 257-value source vector, creates immutable action rows, and
   hash-binds the resulting arrays. Complete transactions retain measured net
   outcomes; pre-entry aborts become zero-return labels; deterministic run-end
   rows are censored before fitting; post-entry unresolved risk remains unlabeled
   and cannot later disappear from economic evaluation. No eligible study exists
-  yet, so this path has only focused synthetic contract tests, not model results.
+  yet, and the staged v3 store must replace its v2 input before eligible use, so
+  this path has only focused pre-eligibility contract tests, not model results.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible

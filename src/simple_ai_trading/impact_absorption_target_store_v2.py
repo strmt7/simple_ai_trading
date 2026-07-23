@@ -19,6 +19,7 @@ from .impact_absorption_cohort import (
     ROUND73_SHOCK_ANCHOR_TABLE,
     ROUND73_SHOCK_STUDY_SCHEMA_VERSION,
     ROUND73_SHOCK_STUDY_TABLE,
+    ROUND73_STUDY_NOT_BEFORE_WALL_NS,
     Round73ShockAnchor,
     audit_round73_shock_cohort,
 )
@@ -894,6 +895,14 @@ def build_round73_selected_anchor_targets(
         threads=threads,
     ) as store:
         connection = store.connect()
+        context = _load_study_context(connection, study_id=selected_study)
+        if any(
+            anchor.anchor_wall_ns >= ROUND73_STUDY_NOT_BEFORE_WALL_NS
+            for anchor in context.anchors
+        ):
+            raise ValueError(
+                "Round 73 eligible targets require the staged v3 holdout store"
+            )
         if _table_exists(connection, ROUND73_TARGET_V2_MANIFEST_TABLE):
             existing = connection.execute(
                 f"SELECT target_manifest_json, target_manifest_sha256 "
@@ -1616,6 +1625,14 @@ def seal_round73_target_study(
         threads=threads,
     ) as store:
         connection = store.connect()
+        context = _load_study_context(connection, study_id=selected_study)
+        if any(
+            anchor.anchor_wall_ns >= ROUND73_STUDY_NOT_BEFORE_WALL_NS
+            for anchor in context.anchors
+        ):
+            raise ValueError(
+                "Round 73 eligible targets require the staged v3 holdout store"
+            )
         if _table_exists(connection, ROUND73_TARGET_V2_STUDY_TABLE):
             existing = connection.execute(
                 f"SELECT target_study_manifest_json, target_study_manifest_sha256 "

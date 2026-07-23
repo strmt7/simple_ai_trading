@@ -7,6 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import duckdb
+import pytest
 
 from simple_ai_trading.impact_absorption import L2BookState
 from simple_ai_trading.impact_absorption_cohort import (
@@ -14,6 +15,7 @@ from simple_ai_trading.impact_absorption_cohort import (
     ROUND73_SHOCK_ANCHOR_TABLE,
     ROUND73_SHOCK_STUDY_SCHEMA_VERSION,
     ROUND73_SHOCK_STUDY_TABLE,
+    ROUND73_STUDY_NOT_BEFORE_WALL_NS,
     Round73ShockAnchor,
     _create_tables as _create_cohort_tables,
 )
@@ -44,7 +46,7 @@ from simple_ai_trading.impact_absorption_targets import Round73MarketQuantityRul
 
 STUDY_ID = "b" * 32
 RUN_IDS = ("1" * 32, "2" * 32)
-START_WALL_NS = int(datetime(2026, 7, 24, tzinfo=UTC).timestamp()) * 1_000_000_000
+START_WALL_NS = int(datetime(2026, 7, 23, tzinfo=UTC).timestamp()) * 1_000_000_000
 START_MONOTONIC_NS = 1_000_000_000_000
 
 
@@ -147,7 +149,12 @@ def _replay(_connection: object, **kwargs: object):
     return replay.finish()
 
 
-def _seed(database: Path) -> tuple[dict[str, str], dict[str, str]]:
+def _seed(
+    database: Path,
+    *,
+    start_wall_ns: int = START_WALL_NS,
+    utc_day: str = "2026-07-23",
+) -> tuple[dict[str, str], dict[str, str]]:
     corpus_hashes = {run_id: _sha(f"corpus-{run_id}") for run_id in RUN_IDS}
     grid_hashes = {run_id: _sha(f"grid-{run_id}") for run_id in RUN_IDS}
     sources: list[dict[str, object]] = []
@@ -197,7 +204,7 @@ def _seed(database: Path) -> tuple[dict[str, str], dict[str, str]]:
             """
         )
         for index, run_id in enumerate(RUN_IDS):
-            started_wall = START_WALL_NS + index * 500_000_000_000
+            started_wall = start_wall_ns + index * 500_000_000_000
             coverage_start = started_wall
             coverage_end = started_wall + 400_000_000_000
             connection.execute(
@@ -252,9 +259,9 @@ def _seed(database: Path) -> tuple[dict[str, str], dict[str, str]]:
             "symbol": "BTCUSDT",
             "anchor_index": 0,
             "anchor_monotonic_ns": START_MONOTONIC_NS + 1_000_000_000,
-            "anchor_wall_ns": START_WALL_NS + 1_000_000_000,
+            "anchor_wall_ns": start_wall_ns + 1_000_000_000,
             "source_max_received_monotonic_ns": (START_MONOTONIC_NS + 900_000_000),
-            "utc_day": "2026-07-24",
+            "utc_day": utc_day,
             "day_ordinal": 1,
             "role": "training",
             "shock_ratio": 5.0,
@@ -302,9 +309,9 @@ def _seed(database: Path) -> tuple[dict[str, str], dict[str, str]]:
                 anchor_rows_hash,
                 len(sources),
                 1,
-                START_WALL_NS,
-                START_WALL_NS + 7 * 86_400_000_000_000,
-                START_WALL_NS + 8 * 86_400_000_000_000,
+                start_wall_ns,
+                start_wall_ns + 7 * 86_400_000_000_000,
+                start_wall_ns + 8 * 86_400_000_000_000,
             ],
         )
     return corpus_hashes, grid_hashes
@@ -470,3 +477,20 @@ def test_v2_manifest_table_is_per_run(tmp_path: Path) -> None:
             if bool(row[5])
         ]
     assert primary_key_columns == ["study_id", "run_id"]
+
+
+def test_v2_builder_rejects_the_prospective_eligible_holdout(tmp_path: Path) -> None:
+    database = tmp_path / "v2-holdout-block.duckdb"
+    _seed(
+        database,
+        start_wall_ns=ROUND73_STUDY_NOT_BEFORE_WALL_NS,
+        utc_day="2026-07-24",
+    )
+
+    with pytest.raises(ValueError, match="staged v3 holdout store"):
+        build_round73_selected_anchor_targets(
+            database,
+            study_id=STUDY_ID,
+            run_id=RUN_IDS[0],
+            verify_cohort=False,
+        )

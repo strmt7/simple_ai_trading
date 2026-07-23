@@ -141,12 +141,17 @@ After parser or taxonomy changes, regenerate the header through the native build
   deterministic cohort builder and deep auditor are implemented, including
   source-overlap, pre-labeled-source, threshold, embargo, refractory, and hash
   checks. The selected-anchor v2 replay, per-run atomic manifests, row/source
-  audits, zero-anchor handling, and all-source study seal are also implemented.
+  audits, zero-anchor handling, and all-source study seal were implemented as
+  mechanics, but their all-role sequence is superseded for eligible data.
   Each audit independently replays its source's exact-wire frames and requires
   byte-equivalent target rows. They inherit the v1 book walk, quantity, funding,
   path-risk, and 12 bps charge logic while changing only the preregistered
   anchor population and 15/60/300 second horizons. No eligible seven-day cohort
-  or v2 target result exists yet. The one-use evaluation is separately frozen
+  or v2 target result exists. The v2 builder now rejects every eligible anchor.
+  `round-073-staged-holdout-contract-v3.json` requires role-scoped development
+  replay, an immutable pretest model/policy manifest, a one-time test unlock,
+  and test-only replay. That store is not implemented yet; do not work around
+  the block or query held-out outcomes. The one-use evaluation is separately frozen
   in `round-073-selected-anchor-evaluation-contract-v1.json`. Only deterministic
   source-boundary censoring may be removed. Pre-entry safety aborts remain
   attempted zero-return actions, while any selected unresolved post-entry exit
@@ -160,10 +165,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   and strictly nested 90/107/261-feature layers without targets, fitted
   statistics, clipping, or invented ratios. This is feature plumbing, not a
   trained model or edge result. `impact_absorption_model_dataset.py` now adapts
-  a fully audited sealed study into immutable, hash-bound action rows and
+  pre-eligibility fixtures into immutable, hash-bound action rows and
   enforces the frozen censor/abort/unresolved-exit semantics. Its tests use
   synthetic contract fixtures only; no prospective model dataset or result has
-  been produced.
+  been produced. It must consume the staged v3 store before eligible use.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.
