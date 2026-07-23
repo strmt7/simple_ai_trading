@@ -33,6 +33,7 @@ from .impact_absorption import (
 from .impact_absorption_store import (
     IMPACT_CAPTURE_CONTRACT_SHA256,
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
+    IMPACT_CAPTURE_INITIAL_COOLDOWN_NS,
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
@@ -1509,7 +1510,7 @@ async def capture_round73(config: ImpactCaptureConfig) -> ImpactCaptureReport:
                     compressed_payload_cap_bytes=config.compressed_payload_cap_bytes,
                     schema_version=config.schema_version,
                 )
-                cooldown_until = time.time_ns() + 60_000_000_000
+                cooldown_until = time.time_ns() + IMPACT_CAPTURE_INITIAL_COOLDOWN_NS
                 for symbol in IMPACT_CAPTURE_SYMBOLS:
                     store.start_segment(
                         run_id=run_id,

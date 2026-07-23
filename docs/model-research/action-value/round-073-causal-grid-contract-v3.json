@@ -1,0 +1,104 @@
+{
+  "schema_version": "round-073-causal-grid-contract-v3",
+  "contract_sha256": "9dd830896de053fded1468040011fde618c990ad98a5807007c46f2e22553c4a",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "parent_corpus_contract_sha256": "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b",
+  "supersedes_contract_sha256": "60371589c3b1c1ada3933ff6825aa08061ceb4f30262c427c61b1016e9daaf29",
+  "failure_evidence_sha256": "6aa9cf2dc7cd87fc91ebfbaf5d9e1f48e17db89194bc0ae399d2336abfee0155",
+  "frozen_before_first_v3_grid_write": true,
+  "purpose": "Construct deterministic target-free one-second BTCUSDT, ETHUSDT, and SOLUSDT causal feature grids from an admitted v3 corpus after the all-symbol feature-ready boundary, without actor labels, fabricated values, or future receipts.",
+  "revision": {
+    "first_v2_grid_write_observed_before_revision": false,
+    "reason": "V9 receipt ordering exposed buffered public events before snapshot records; v3 separates state synchronization from feature availability.",
+    "v2_grid_from_affected_v9_run_permitted": false,
+    "feature_names_and_financial_definitions_changed": false,
+    "target_or_label_definition_changed": false
+  },
+  "inheritance": {
+    "v2_feature_names_and_financial_definitions_unchanged": true,
+    "v2_window_bounds_and_anchor_clock_unchanged": true,
+    "v2_invalid_anchor_and_freshness_rules_unchanged": true,
+    "v2_target_and_authority_prohibitions_unchanged": true,
+    "historical_v1_or_v2_rows_rewritten": false,
+    "cross_version_grid_pooling_permitted": false
+  },
+  "source_admission": {
+    "corpus_manifest_schema_version": "round-073-segmented-corpus-v3",
+    "corpus_manifest_contract_sha256": "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b",
+    "corpus_manifest_audit_required": true,
+    "capture_schema_versions": [
+      "round-073-prospective-evidence-v8",
+      "round-073-prospective-evidence-v9"
+    ],
+    "all_symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "all_symbol_common_feature_ready_interval_only": true,
+    "failed_or_unmanifested_run_permitted": false,
+    "cross_run_or_cross_segment_windows_permitted": false
+  },
+  "v9_exact_wire_replay": {
+    "typed_high_volume_tables_required": false,
+    "exact_frames_and_low_rate_rest_context_required": true,
+    "global_receipt_order_uses_bounded_heap_watermark": true,
+    "maximum_cross_frame_reorder_lag_ns": 10000000,
+    "immutable_snapshots_preloaded_before_depth_sequence_replay": true,
+    "snapshot_preload_purpose": "state reconstruction only",
+    "pre_ready_depth_receipts_applied_to_book": true,
+    "pre_ready_depth_flow_observed_by_accumulator": false,
+    "pre_ready_non_depth_events_observed_by_accumulator": false,
+    "snapshot_record_reinitializes_replayed_book": false,
+    "first_anchor_must_not_precede_feature_ready_marker": true,
+    "server_clock_uses_best_round_trip_probe_available_strictly_before_event": true,
+    "raw_event_reparse_failure_policy": "fail closed",
+    "unbounded_memory_or_ssd_event_sort_permitted": false
+  },
+  "anchor_contract": {
+    "base_grid_milliseconds": 1000,
+    "anchor_clock": "run-local host monotonic nanoseconds",
+    "availability_predicate": "received_monotonic_ns strictly less than anchor_monotonic_ns and event wall receipt not before feature-ready wall clock",
+    "window_interval": "[anchor_monotonic_ns minus window_ns, anchor_monotonic_ns)",
+    "tie_order": [
+      "received_monotonic_ns",
+      "frame_index",
+      "message_index"
+    ],
+    "warmup_seconds": 60,
+    "all_anchors_retained": true,
+    "invalid_anchor_feature_vector_written": false,
+    "anchor_selection_uses_price_or_target": false
+  },
+  "persistence": {
+    "anchor_table": "impact_feature_anchor_v3",
+    "vector_table": "impact_feature_vector_v3",
+    "run_manifest_table": "impact_feature_run_manifest_v3",
+    "single_atomic_publish_transaction": true,
+    "canonical_hash_order": "symbol then anchor_index independent of insertion order",
+    "numpy_replacement_scan_ingestion": true,
+    "python_scalar_parameter_expansion_permitted": false,
+    "temporary_disk_spill_for_python_row_conversion_permitted": false,
+    "manifest_mismatch_policy": "fail without overwrite"
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "crypto_trades_continuously_except_venue_interruptions": true,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authority": {
+    "one_hour_grid_diagnostic_after_tests": true,
+    "target_constructed": false,
+    "model_evaluated": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

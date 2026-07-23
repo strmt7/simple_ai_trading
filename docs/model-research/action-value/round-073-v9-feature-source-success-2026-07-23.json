@@ -1,0 +1,125 @@
+{
+  "schema_version": "round-073-v9-feature-source-success-evidence-v1",
+  "artifact_sha256": "3157805b355b42af7a566249bca21c3cc91b6ef068bbaa60f8b4e333d3a0d450",
+  "recorded_utc_date": "2026-07-23",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "synthetic_market_data_used": false,
+  "attempt_evidence_combined": false,
+  "source": {
+    "run_id": "0aabddb515794668a8a54129aa6e1d47",
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+    "capture_report_sha256": "698efcd5a1ee98f0ba0e5b476ecdacb3dccb09d12ecabe3aba0e8031dc8499a1",
+    "capture_qualification_artifact_sha256": "e625de13ed03c6992e622be5dc9dc1464d645b8b57612007c3e027b870e94856",
+    "preflight_failure_artifact_sha256": "6aa9cf2dc7cd87fc91ebfbaf5d9e1f48e17db89194bc0ae399d2336abfee0155",
+    "frame_count": 856,
+    "message_count": 2277593
+  },
+  "implementation": {
+    "impact_absorption_store_py_sha256": "2b10560b80fa5c280b5620545ac229ec2cc6305e1b56e9412cbcbb28a3b8bad6",
+    "impact_absorption_features_py_sha256": "8a5c18d1006dd21232b4b4fe2174da3f8c11d9a57552e6207fd54ae072e9b64d",
+    "impact_absorption_corpus_py_sha256": "5d6c52fb79300b6b2e220d1c107578a0f95748101ba52166e1823ee9f27f672e",
+    "impact_absorption_grid_store_py_sha256": "f32cbbb62a0cde61c302d4381c67bcff317bd3206bd64df3147818d340f84d48",
+    "segmented_corpus_contract_v3_file_sha256": "9a2aca683ce21fd06219f2545a2ae4ea4a2f8b08f56e526eee6eb676050505ac",
+    "causal_grid_contract_v3_file_sha256": "bec50f4e99aefbe84ace83adaed97dbf2d2eaddc7789b435428c8018fa2a921c"
+  },
+  "replay": {
+    "command_surface": "impact-feature-source",
+    "wall_time_seconds": 178.1,
+    "schema_version": "round-073-feature-source-diagnostic-v4",
+    "capture_audit_passed": true,
+    "depth_snapshot_count": 3,
+    "depth_update_count": 104385,
+    "pre_ready_depth_update_count": 123,
+    "feature_eligible_depth_update_count": 104262,
+    "synchronized_depth_update_count": 104299,
+    "pre_ready_synchronized_depth_update_count": 37,
+    "stale_depth_update_count": 86,
+    "feature_eligible_synchronized_depth_update_count": 104262,
+    "feature_ready_wall_ns": 1784770528357250000,
+    "level_change_count": 5996765,
+    "exact_wire_depth_band_replay_passed": true,
+    "causal_exact_wire_depth_band_replay_passed": true,
+    "stored_depth_band_rows_reconciled": false,
+    "per_symbol": {
+      "BTCUSDT": {
+        "depth_updates": 35337,
+        "pre_ready_depth_updates": 41,
+        "feature_eligible_depth_updates": 35296,
+        "feature_eligible_synchronized_depth_updates": 35296,
+        "stale_depth_updates": 20,
+        "level_changes": 3032238
+      },
+      "ETHUSDT": {
+        "depth_updates": 35172,
+        "pre_ready_depth_updates": 41,
+        "feature_eligible_depth_updates": 35131,
+        "feature_eligible_synchronized_depth_updates": 35131,
+        "stale_depth_updates": 29,
+        "level_changes": 2442551
+      },
+      "SOLUSDT": {
+        "depth_updates": 33876,
+        "pre_ready_depth_updates": 41,
+        "feature_eligible_depth_updates": 33835,
+        "feature_eligible_synchronized_depth_updates": 33835,
+        "stale_depth_updates": 37,
+        "level_changes": 521976
+      }
+    }
+  },
+  "causal_interpretation": {
+    "immutable_snapshots_preloaded_for_state_reconstruction": true,
+    "snapshot_records_reinitialized_books_during_replay": false,
+    "pre_ready_depth_applied_for_sequence_synchronization": true,
+    "pre_ready_depth_entered_feature_aggregates": false,
+    "pre_ready_non_depth_entered_feature_aggregates": false,
+    "future_or_target_data_used": false,
+    "identity_whale_or_manipulation_inference": false,
+    "actual_pre_ready_synchronized_updates_proved": true
+  },
+  "verification": {
+    "focused_affected_domain_tests_passed": 125,
+    "focused_affected_domain_tests_failed": 0,
+    "ruff_passed": true,
+    "regression_contains_public_depth_before_snapshot": true,
+    "regression_contains_valid_pre_ready_sequence_bridge": true,
+    "v3_corpus_manifest_count_before_first_write": 0,
+    "v3_grid_manifest_count_before_first_write": 0,
+    "v3_anchor_count_before_first_write": 0,
+    "v3_vector_count_before_first_write": 0,
+    "wal_exists_after_read_only_replay": false
+  },
+  "critical_analysis": {
+    "capture_to_feature_reconstruction_passed": true,
+    "one_hour_causal_grid_constructed": false,
+    "target_constructed": false,
+    "model_evaluated": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false,
+    "drawdown_evidence": false,
+    "leverage_evidence": false
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "crypto_trades_continuously_except_venue_interruptions": true,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authorization": {
+    "v3_corpus_manifest_write": true,
+    "v3_causal_grid_write_after_manifest_audit": true,
+    "repeat_v9_one_hour_capture": false,
+    "multi_segment_capture": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

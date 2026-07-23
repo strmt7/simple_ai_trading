@@ -82,10 +82,23 @@ After parser or taxonomy changes, regenerate the header through the native build
   messages pass exact audit, but all segments are invalid and no corpus manifest
   exists. The CLI now selects v9 directly, reports the correct `.duckdb.wal`
   bytes, and remains synchronized with the generated Windows contract. Read
-  `round-073-v9-qualification-operator-abort-2026-07-23.json`. Only one
-  replacement v9 one-hour retry is open. Multi-segment capture, model
-  evaluation, P&L, profitability, AI uplift, leverage, and trading authority
-  remain closed.
+  `round-073-v9-qualification-operator-abort-2026-07-23.json`. Replacement run
+  `0aabddb515794668a8a54129aa6e1d47` then passed the one-hour v9 qualification:
+  2,277,593 real public Binance messages, 856 frames, zero reconnects, zero
+  negative corrected latency, 5.16% peak queue use, and 79.07 process-I/O bytes
+  per message. A fresh process audited the entire chain. Its first downstream
+  replay failed closed because buffered public depth receipts legitimately
+  preceded REST snapshot records; this did not revoke capture qualification.
+  V3 corpus/grid contracts now preload the immutable snapshots only for state,
+  apply pre-ready depth only for sequence continuity, and exclude every
+  pre-ready receipt from feature aggregates. The repaired v4 replay passed all
+  2,277,593 messages: 123 of 104,385 depth updates were pre-ready, including 37
+  valid sequence advances, and 104,262 were feature-eligible. The affected
+  125-test checkpoint and Ruff pass. Read the v9 qualification, preflight
+  failure, and feature-source-success artifacts dated 2026-07-23. At that
+  success artifact, no v3 corpus or grid row existed. Multi-segment capture,
+  model evaluation, P&L, profitability, AI uplift, leverage, and all trading
+  authority remain closed.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.

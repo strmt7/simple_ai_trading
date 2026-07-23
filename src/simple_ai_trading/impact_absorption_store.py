@@ -119,6 +119,7 @@ IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD = "512MiB"
 IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 512 * 1024 * 1024
 IMPACT_CAPTURE_V9_COMPRESSION_LEVEL = 9
 IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS = 10_000_000
+IMPACT_CAPTURE_INITIAL_COOLDOWN_NS = 60_000_000_000
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
 _AUDIT_FRAME_BATCH_SIZE = 64
@@ -405,6 +406,12 @@ class ImpactCaptureAudit:
             "last_frame_sha256": self.last_frame_sha256,
             "capture_contract_sha256": self.capture_contract_sha256,
         }
+
+
+@dataclass(frozen=True)
+class ImpactCaptureV9Preflight:
+    ready_wall_ns: int
+    snapshot_records: tuple[tuple[str, ImpactCaptureFrameRecord], ...]
 
 
 @dataclass(frozen=True)
@@ -833,6 +840,79 @@ def iter_impact_capture_v9_records(
             yield source_frame, message_index, record
     finally:
         cursor.close()
+
+
+def load_impact_capture_v9_preflight(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+) -> ImpactCaptureV9Preflight:
+    """Load immutable snapshots and the persisted all-symbol ready boundary."""
+
+    selected = _validate_run_id(run_id)
+    segments = connection.execute(
+        """
+        SELECT symbol, started_wall_ns, cooldown_until_wall_ns, snapshot_update_id
+        FROM impact_capture_segment WHERE run_id = ? ORDER BY symbol
+        """,
+        [selected],
+    ).fetchall()
+    if tuple(str(row[0]) for row in segments) != IMPACT_CAPTURE_SYMBOLS:
+        raise ValueError("Round 73 v9 preflight symbol segments are incomplete")
+    ready_markers = tuple(
+        int(row[2]) - IMPACT_CAPTURE_INITIAL_COOLDOWN_NS for row in segments
+    )
+    if len(set(ready_markers)) != 1 or any(
+        ready <= int(row[1]) for ready, row in zip(ready_markers, segments, strict=True)
+    ):
+        raise ValueError("Round 73 v9 feature-ready marker is invalid")
+    ready_wall_ns = ready_markers[0]
+    expected_update_ids = {str(row[0]): int(row[3]) for row in segments}
+    context_rows = connection.execute(
+        f"""
+        SELECT frame_index, message_index, symbol
+        FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE}
+        WHERE run_id = ? AND event_type = 'depthSnapshot'
+        ORDER BY symbol
+        """,
+        [selected],
+    ).fetchall()
+    if (
+        tuple(str(row[2]) for row in context_rows) != IMPACT_CAPTURE_SYMBOLS
+        or len({(int(row[0]), int(row[1])) for row in context_rows})
+        != len(IMPACT_CAPTURE_SYMBOLS)
+    ):
+        raise ValueError("Round 73 v9 snapshot context is incomplete")
+    expected_keys = {
+        (int(frame_index), int(message_index)): str(symbol)
+        for frame_index, message_index, symbol in context_rows
+    }
+    snapshots: dict[str, ImpactCaptureFrameRecord] = {}
+    for frame_index, message_index, record in iter_impact_capture_v9_records(
+        connection,
+        run_id=selected,
+    ):
+        symbol = expected_keys.get((frame_index, message_index))
+        if symbol is None:
+            continue
+        if record.stream != "binance_futures_rest":
+            raise ValueError("Round 73 v9 snapshot stream differs")
+        snapshot = _strict_json_object(record.raw_text)
+        if int(snapshot.get("lastUpdateId", -1)) != expected_update_ids[symbol]:
+            raise ValueError("Round 73 v9 snapshot update ID differs")
+        if record.received_wall_ns > ready_wall_ns:
+            raise ValueError("Round 73 v9 snapshot follows feature-ready marker")
+        snapshots[symbol] = record
+        if len(snapshots) == len(IMPACT_CAPTURE_SYMBOLS):
+            break
+    if tuple(sorted(snapshots)) != IMPACT_CAPTURE_SYMBOLS:
+        raise ValueError("Round 73 v9 exact snapshot records are incomplete")
+    return ImpactCaptureV9Preflight(
+        ready_wall_ns=ready_wall_ns,
+        snapshot_records=tuple(
+            (symbol, snapshots[symbol]) for symbol in IMPACT_CAPTURE_SYMBOLS
+        ),
+    )
 
 
 class ImpactAbsorptionStore:
@@ -3718,6 +3798,7 @@ __all__ = [
     "IMPACT_CAPTURE_CONTRACT_SHA256",
     "IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES",
     "IMPACT_CAPTURE_FRAME_TABLE",
+    "IMPACT_CAPTURE_INITIAL_COOLDOWN_NS",
     "IMPACT_CAPTURE_REPORT_SCHEMA_VERSION",
     "IMPACT_CAPTURE_SCHEMA_VERSION",
     "IMPACT_CAPTURE_SYMBOLS",
@@ -3743,9 +3824,11 @@ __all__ = [
     "ImpactAbsorptionStore",
     "ImpactCaptureAudit",
     "ImpactCaptureMessage",
+    "ImpactCaptureV9Preflight",
     "ImpactFrameWriteResult",
     "ImpactRejectedWireEvent",
     "ImpactRestEvent",
     "iter_impact_capture_v9_records",
+    "load_impact_capture_v9_preflight",
     "validate_impact_store_resources",
 ]

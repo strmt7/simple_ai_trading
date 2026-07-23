@@ -1,0 +1,99 @@
+{
+  "schema_version": "round-073-v9-feature-replay-preflight-failure-evidence-v1",
+  "artifact_sha256": "6aa9cf2dc7cd87fc91ebfbaf5d9e1f48e17db89194bc0ae399d2336abfee0155",
+  "recorded_utc_date": "2026-07-23",
+  "source_commit": "e2a1d92f911e7ab54c2cc202acefa8caa6de3a8d",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "attempt_evidence_combined": false,
+  "qualification_run": {
+    "run_id": "0aabddb515794668a8a54129aa6e1d47",
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+    "capture_report_sha256": "698efcd5a1ee98f0ba0e5b476ecdacb3dccb09d12ecabe3aba0e8031dc8499a1",
+    "capture_status": "completed",
+    "capture_gate_passed": true,
+    "qualification_passed": true,
+    "fresh_exact_audit_passed": true,
+    "frame_count": 856,
+    "message_count": 2277593
+  },
+  "failed_stage": {
+    "command": "impact-feature-source",
+    "terminal_error": "local order book side is empty",
+    "feature_source_diagnostic_published": false,
+    "corpus_manifest_written": false,
+    "causal_grid_written": false,
+    "model_evaluated": false
+  },
+  "causal_order_proof": {
+    "run_started_monotonic_ns": 157845398555200,
+    "capture_ready_wall_ns": 1784770528357250000,
+    "capture_ready_monotonic_ns_from_run_clock_mapping": 157850904448600,
+    "initial_rest_preflight_last_receipt_monotonic_ns": 157850749792500,
+    "symbols": {
+      "BTCUSDT": {
+        "first_depth_receipt_monotonic_ns": 157846821528000,
+        "first_depth_final_update_id": 11111085450224,
+        "snapshot_receipt_monotonic_ns": 157848571847300,
+        "snapshot_update_id": 11111085785100,
+        "first_depth_precedes_snapshot": true
+      },
+      "ETHUSDT": {
+        "first_depth_receipt_monotonic_ns": 157846559734800,
+        "first_depth_final_update_id": 11111085443009,
+        "snapshot_receipt_monotonic_ns": 157849450765000,
+        "snapshot_update_id": 11111085933383,
+        "first_depth_precedes_snapshot": true
+      },
+      "SOLUSDT": {
+        "first_depth_receipt_monotonic_ns": 157846557626500,
+        "first_depth_final_update_id": 11111085442070,
+        "snapshot_receipt_monotonic_ns": 157850314443100,
+        "snapshot_update_id": 11111086040479,
+        "first_depth_precedes_snapshot": true
+      }
+    }
+  },
+  "root_cause": {
+    "proven": true,
+    "capture_behavior": "The public receiver starts before REST preflight, buffers wire receipts, initializes all three books from snapshots, then processes the buffered queue.",
+    "replay_behavior_before_fix": "Global receipt replay encountered buffered public depth records before the later REST snapshot records and requested pre-event L2 state from an uninitialized book.",
+    "capture_ready_marker": "segment cooldown_until_wall_ns minus the frozen 60 second startup cooldown",
+    "pre_ready_events_are_inference_available_at_their_wire_receipt": false,
+    "pre_ready_events_required_for_book_synchronization": true,
+    "pre_ready_events_permitted_in_feature_windows": false,
+    "future_snapshot_permitted_as_a_pre_ready_feature": false
+  },
+  "contract_amendment": {
+    "v2_corpus_or_grid_write_from_this_run_permitted": false,
+    "v3_corpus_contract_required_before_first_manifest": true,
+    "v3_grid_contract_required_before_first_grid_write": true,
+    "snapshots_preloaded_only_for_state_reconstruction": true,
+    "pre_ready_wire_events_applied_only_for_sequence_synchronization": true,
+    "feature_coverage_starts_at_or_after_capture_ready_marker": true,
+    "pre_ready_flow_or_state_entering_features_permitted": false,
+    "regression_fixture_must_place_public_depth_before_snapshot": true
+  },
+  "critical_analysis": {
+    "capture_qualification_revoked": false,
+    "capture_qualification_reason": "Exact capture integrity, resource gates, and terminal feed gates passed; the failure is downstream causal feature reconstruction.",
+    "feature_pipeline_passed": false,
+    "model_evidence": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false,
+    "failed_result_may_be_silently_retried": false
+  },
+  "authorization": {
+    "preflight_replay_remediation": true,
+    "focused_causal_regression_tests": true,
+    "repeat_full_one_hour_capture": false,
+    "v3_corpus_manifest_write": false,
+    "v3_causal_grid_write": false,
+    "round_073_model_evaluation": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

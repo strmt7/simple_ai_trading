@@ -17,6 +17,7 @@ from simple_ai_trading.impact_absorption_corpus import (
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_INITIAL_COOLDOWN_NS,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
     IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
@@ -30,8 +31,9 @@ from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
 RUN_ID = "a" * 32
 WALL_BASE = 1_784_058_600_000_000_000
-SEGMENT_START = WALL_BASE + 1_000_000_000
-SEGMENT_END = SEGMENT_START + ROUND73_CORPUS_MINIMUM_SEGMENT_NS
+SEGMENT_START = WALL_BASE + 1
+FEATURE_READY_WALL_NS = WALL_BASE + 400
+SEGMENT_END = FEATURE_READY_WALL_NS + ROUND73_CORPUS_MINIMUM_SEGMENT_NS
 
 
 def _snapshot() -> dict[str, object]:
@@ -86,7 +88,9 @@ def _seed_terminal_run(
                 tick_size=0.1,
                 clock_offset_ns=0,
                 clock_rtt_ns=1,
-                cooldown_until_wall_ns=0,
+                cooldown_until_wall_ns=(
+                    FEATURE_READY_WALL_NS + IMPACT_CAPTURE_INITIAL_COOLDOWN_NS
+                ),
             )
             snapshot = _snapshot()
             messages.append(
@@ -126,13 +130,14 @@ def _seed_terminal_run(
             book = SynchronizedDepthBook(symbol, "0.1")
             book.initialize(snapshot)
             pre_state = book.state()
-            depth = book.apply(payload, receive_time_ns=index * 100 + 1)
+            eligible_mono = 400 + index
+            depth = book.apply(payload, receive_time_ns=eligible_mono)
             messages.append(
                 ImpactCaptureMessage(
                     record=_record(
                         stream="binance_futures_public",
                         connection_id=f"public:{symbol}",
-                        monotonic_ns=index * 100 + 1,
+                        monotonic_ns=eligible_mono,
                         payload={
                             "stream": f"{symbol.lower()}@depth@100ms",
                             "data": payload,
@@ -206,6 +211,7 @@ def test_corpus_indexes_audits_and_reuses_one_qualified_run(tmp_path) -> None:
 
     assert manifest == repeated
     assert manifest.coverage_duration_ns == ROUND73_CORPUS_MINIMUM_SEGMENT_NS
+    assert manifest.feature_ready_wall_ns == FEATURE_READY_WALL_NS
     assert manifest.frame_count == 1
     assert manifest.message_count == 6
     assert audit.passed is True
@@ -250,6 +256,8 @@ def test_corpus_indexes_v9_exact_wire_replay_without_typed_tables(tmp_path) -> N
     identity = json.loads(stored[0])
     feature_source = json.loads(stored[1])
     assert identity["capture_schema_version"] == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+    assert identity["feature_ready_wall_ns"] == FEATURE_READY_WALL_NS
+    assert feature_source["causal_exact_wire_depth_band_replay_passed"] is True
     assert feature_source["exact_wire_depth_band_replay_passed"] is True
     assert feature_source["stored_depth_band_row_count"] == 0
 

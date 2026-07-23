@@ -1,0 +1,108 @@
+{
+  "schema_version": "round-073-segmented-corpus-contract-v3",
+  "contract_sha256": "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b",
+  "round": 73,
+  "parent_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "supersedes_contract_sha256": "054ca4296a66a2d2a905b3946e80aadaea4bf5f50fb2811ce5a9b3d1b50e5b6d",
+  "failure_evidence_sha256": "6aa9cf2dc7cd87fc91ebfbaf5d9e1f48e17db89194bc0ae399d2336abfee0155",
+  "frozen_before_first_v3_manifest_write": true,
+  "purpose": "Catalog independently qualified one-hour BTCUSDT, ETHUSDT, and SOLUSDT exact-wire captures only after the all-symbol feature-ready boundary, without pooling failed attempts, duplicating raw payloads, or granting model or trading authority.",
+  "revision": {
+    "first_v2_manifest_write_observed_before_revision": false,
+    "reason": "The first real v9 feature replay proved that globally ordered public receipts precede REST snapshots while live capture buffers those receipts until all books are initialized.",
+    "v2_manifest_from_affected_v9_run_permitted": false,
+    "historical_capture_rows_rewritten": false,
+    "capture_qualification_reinterpreted": false
+  },
+  "source_contracts": {
+    "round-073-prospective-evidence-v8": {
+      "capture_contract_sha256": "b64feb9c4b686b00d1a6a9c464e50e397e258d9f07abbd84702199b387a54462",
+      "report_schema_version": "round-073-capture-report-v8",
+      "feature_source_schema_version": "round-073-feature-source-diagnostic-v2",
+      "feature_projection_gate": "stored_depth_band_rows_reconciled",
+      "maximum_process_io_write_bytes_per_message": 4096,
+      "maximum_database_physical_growth_bytes_per_message": 1024
+    },
+    "round-073-prospective-evidence-v9": {
+      "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+      "report_schema_version": "round-073-capture-report-v9",
+      "feature_source_schema_version": "round-073-feature-source-diagnostic-v4",
+      "feature_projection_gate": "causal_exact_wire_depth_band_replay_passed",
+      "maximum_process_io_write_bytes_per_message": 1024,
+      "maximum_database_physical_growth_bytes_per_message": 512
+    }
+  },
+  "feature_ready_contract": {
+    "startup_cooldown_nanoseconds": 60000000000,
+    "marker": "impact_capture_segment.cooldown_until_wall_ns minus startup_cooldown_nanoseconds",
+    "all_three_symbol_markers_must_match": true,
+    "marker_must_follow_every_segment_start": true,
+    "immutable_depth_snapshots_preloaded_for_state_reconstruction": true,
+    "pre_ready_depth_receipts_applied_for_sequence_synchronization": true,
+    "pre_ready_depth_flow_entering_feature_aggregates_permitted": false,
+    "pre_ready_bbo_trade_mark_liquidation_or_open_interest_entering_features_permitted": false,
+    "snapshot_receipt_replayed_as_a_feature_event": false,
+    "future_snapshot_used_at_or_after_feature_ready_marker": false
+  },
+  "segment_admission": {
+    "minimum_elapsed_seconds": 3600,
+    "required_run_status": "completed",
+    "capture_gate_passed_required": true,
+    "qualification_passed_required": true,
+    "stored_report_sha256_required": true,
+    "exact_frame_chain_audit_required": true,
+    "independent_exact_wire_feature_replay_required": true,
+    "all_symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "all_symbol_segments_valid_required": true,
+    "coverage_interval": "intersection of the three valid symbol intervals clipped to the common feature-ready wall clock",
+    "minimum_coverage_seconds": 3600,
+    "attempt_evidence_combined": false,
+    "failed_run_admitted": false,
+    "historical_v1_through_v7_run_admitted": false
+  },
+  "common_resource_admission": {
+    "maximum_queue_utilization": 0.8,
+    "maximum_negative_corrected_latency_fraction": 0.001,
+    "payload_cap_reached_permitted": false,
+    "database_size_cap_reached_permitted": false,
+    "storage_efficiency_passed_required": true,
+    "nonfinite_metric_permitted": false
+  },
+  "manifest_storage": {
+    "single_database_file": "data/microstructure.duckdb",
+    "run_manifest_table": "impact_corpus_run_manifest_v3",
+    "manifest_primary_key": "run_id",
+    "capture_schema_contract_report_feature_schema_and_ready_marker_bound": true,
+    "canonical_feature_diagnostic_json_retained": true,
+    "manifest_sha256_required": true,
+    "existing_manifest_mismatch_policy": "fail without overwrite",
+    "underlying_capture_rows_rewritten": false,
+    "duplicate_raw_payload_storage_permitted": false
+  },
+  "day_contract": {
+    "boundary": "UTC day used only as a split and resampling block",
+    "crypto_formal_daily_close": false,
+    "minimum_complete_hours": 23,
+    "coverage_measure": "union of admitted all-symbol feature-ready intervals clipped to the UTC day",
+    "overlap_double_counted": false,
+    "day_finalized_before_utc_end": false,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "modeling_gate": {
+    "minimum_complete_days_for_viability": 7,
+    "minimum_complete_days_for_promotion": 30,
+    "terminal_holdout_days": 7,
+    "model_evaluation_authorized": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

@@ -25,6 +25,7 @@ from .impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
+    IMPACT_CAPTURE_INITIAL_COOLDOWN_NS,
     IMPACT_CAPTURE_V9_CONTRACT_SHA256,
     IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
     IMPACT_CAPTURE_V9_SCHEMA_VERSION,
@@ -32,11 +33,11 @@ from .impact_absorption_store import (
 )
 
 
-ROUND73_CORPUS_SCHEMA_VERSION = "round-073-segmented-corpus-v2"
+ROUND73_CORPUS_SCHEMA_VERSION = "round-073-segmented-corpus-v3"
 ROUND73_CORPUS_CONTRACT_SHA256 = (
-    "054ca4296a66a2d2a905b3946e80aadaea4bf5f50fb2811ce5a9b3d1b50e5b6d"
+    "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b"
 )
-ROUND73_CORPUS_RUN_TABLE = "impact_corpus_run_manifest_v2"
+ROUND73_CORPUS_RUN_TABLE = "impact_corpus_run_manifest_v3"
 ROUND73_CORPUS_MINIMUM_SEGMENT_NS = 3_600_000_000_000
 ROUND73_CORPUS_MINIMUM_DAY_COVERAGE_NS = 23 * 3_600_000_000_000
 _MAXIMUM_QUEUE_UTILIZATION = 0.8
@@ -132,6 +133,7 @@ class Round73CorpusRunManifest:
     capture_report_sha256: str
     feature_source_sha256: str
     last_frame_sha256: str
+    feature_ready_wall_ns: int
     coverage_start_wall_ns: int
     coverage_end_wall_ns: int
     coverage_duration_ns: int
@@ -301,7 +303,8 @@ def _capture_metadata(
     segments = connection.execute(
         """
         SELECT symbol, status, started_wall_ns, ended_wall_ns,
-               invalid_event_count, sequence_gap_count, crossed_book_count
+               cooldown_until_wall_ns, invalid_event_count,
+               sequence_gap_count, crossed_book_count
         FROM impact_capture_segment WHERE run_id = ? ORDER BY symbol
         """,
         [run_id],
@@ -311,13 +314,25 @@ def _capture_metadata(
     if any(
         str(row[1]) != "valid"
         or row[3] is None
-        or int(row[4]) != 0
         or int(row[5]) != 0
         or int(row[6]) != 0
+        or int(row[7]) != 0
         for row in segments
     ):
         raise ValueError("Round 73 corpus contains an invalid symbol segment")
-    coverage_start = max(int(row[2]) for row in segments)
+    ready_markers = tuple(
+        int(row[4]) - IMPACT_CAPTURE_INITIAL_COOLDOWN_NS for row in segments
+    )
+    if len(set(ready_markers)) != 1 or any(
+        ready <= int(row[2]) or ready >= int(row[3])
+        for ready, row in zip(ready_markers, segments, strict=True)
+    ):
+        raise ValueError("Round 73 corpus feature-ready marker is invalid")
+    feature_ready_wall_ns = ready_markers[0]
+    coverage_start = max(
+        feature_ready_wall_ns,
+        *(int(row[2]) for row in segments),
+    )
     coverage_end = min(int(row[3]) for row in segments)
     coverage_duration = coverage_end - coverage_start
     if coverage_duration < ROUND73_CORPUS_MINIMUM_SEGMENT_NS:
@@ -327,6 +342,7 @@ def _capture_metadata(
         "capture_contract_sha256": capture_contract_sha256,
         "capture_report_schema_version": capture_report_schema_version,
         "feature_source_schema_version": feature_source_schema_version,
+        "feature_ready_wall_ns": feature_ready_wall_ns,
         "coverage_start_wall_ns": coverage_start,
         "coverage_end_wall_ns": coverage_end,
         "coverage_duration_ns": coverage_duration,
@@ -368,6 +384,7 @@ def _manifest_from_identity(
         capture_report_sha256=str(identity["capture_report_sha256"]),
         feature_source_sha256=str(identity["feature_source_sha256"]),
         last_frame_sha256=str(identity["last_frame_sha256"]),
+        feature_ready_wall_ns=int(identity["feature_ready_wall_ns"]),
         coverage_start_wall_ns=int(identity["coverage_start_wall_ns"]),
         coverage_end_wall_ns=int(identity["coverage_end_wall_ns"]),
         coverage_duration_ns=int(identity["coverage_duration_ns"]),
@@ -390,6 +407,7 @@ def _create_manifest_table(connection: duckdb.DuckDBPyConnection) -> None:
             capture_report_sha256 VARCHAR NOT NULL,
             feature_source_json VARCHAR NOT NULL,
             feature_source_sha256 VARCHAR NOT NULL,
+            feature_ready_wall_ns UBIGINT NOT NULL,
             coverage_start_wall_ns UBIGINT NOT NULL,
             coverage_end_wall_ns UBIGINT NOT NULL,
             coverage_duration_ns UBIGINT NOT NULL,
@@ -415,7 +433,10 @@ def _stored_manifest_row(
     return connection.execute(
         f"""
         SELECT manifest_json, manifest_sha256, capture_report_sha256,
-               feature_source_json, feature_source_sha256
+               feature_source_json, feature_source_sha256,
+               feature_ready_wall_ns, coverage_start_wall_ns,
+               coverage_end_wall_ns, coverage_duration_ns, frame_count,
+               message_count, compressed_payload_bytes
         FROM {ROUND73_CORPUS_RUN_TABLE} WHERE run_id = ?
         """,
         [run_id],
@@ -455,11 +476,58 @@ def _validated_manifest_row(
     except KeyError as exc:
         raise ValueError("Round 73 corpus manifest capture schema differs") from exc
     stored_depth_reconciled = feature.get("stored_depth_band_rows_reconciled") is True
-    exact_wire_replayed = feature.get("exact_wire_depth_band_replay_passed") is True
+    causal_exact_wire_replayed = (
+        feature.get("causal_exact_wire_depth_band_replay_passed") is True
+    )
     expected_projection_gate = (
-        exact_wire_replayed
+        causal_exact_wire_replayed
         if capture_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
         else stored_depth_reconciled
+    )
+    indexed_values = (
+        "feature_ready_wall_ns",
+        "coverage_start_wall_ns",
+        "coverage_end_wall_ns",
+        "coverage_duration_ns",
+        "frame_count",
+        "message_count",
+        "compressed_payload_bytes",
+    )
+    if len(row) != 12:
+        raise ValueError("Round 73 corpus indexed columns differ from manifest")
+    for index, name in enumerate(indexed_values, start=5):
+        if _integer(identity.get(name), f"manifest {name}") != int(row[index]):
+            raise ValueError("Round 73 corpus indexed columns differ from manifest")
+    if capture_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+        pre_ready_depth_updates = _integer(
+            feature.get("pre_ready_depth_update_count"),
+            "feature pre-ready depth count",
+        )
+        eligible_depth_updates = _integer(
+            feature.get("feature_eligible_depth_update_count"),
+            "feature eligible depth count",
+            minimum=1,
+        )
+        replayed_depth_updates = _integer(
+            feature.get("depth_update_count"),
+            "feature replayed depth count",
+            minimum=1,
+        )
+    else:
+        pre_ready_depth_updates = 0
+        eligible_depth_updates = 0
+        replayed_depth_updates = 0
+    v9_ready_semantics_valid = (
+        capture_schema_version != IMPACT_CAPTURE_V9_SCHEMA_VERSION
+        or (
+            feature.get("feature_ready_wall_ns")
+            == identity.get("feature_ready_wall_ns")
+            and pre_ready_depth_updates + eligible_depth_updates
+            == replayed_depth_updates
+            and isinstance(feature_semantics, Mapping)
+            and feature_semantics.get("v9_pre_ready_receipts_enter_feature_aggregates")
+            is False
+        )
     )
     if (
         identity.get("schema_version") != ROUND73_CORPUS_SCHEMA_VERSION
@@ -479,6 +547,7 @@ def _validated_manifest_row(
         or feature.get("message_count") != identity.get("message_count")
         or feature.get("capture_audit_passed") is not True
         or not expected_projection_gate
+        or not v9_ready_semantics_valid
         or not isinstance(feature_semantics, Mapping)
         or feature_semantics.get("future_or_target_data_used") is not False
         or feature_semantics.get("identity_whale_or_manipulation_inference")
@@ -541,7 +610,7 @@ def index_round73_corpus_run(
     feature_payload = diagnostic.as_dict()
     capture_schema_version = str(metadata["capture_schema_version"])
     projection_gate = (
-        feature_payload["exact_wire_depth_band_replay_passed"] is True
+        feature_payload["causal_exact_wire_depth_band_replay_passed"] is True
         if capture_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
         else feature_payload["stored_depth_band_rows_reconciled"] is True
     )
@@ -554,6 +623,11 @@ def index_round73_corpus_run(
         or not projection_gate
         or feature_payload["message_count"] != metadata["message_count"]
         or feature_payload["frame_count"] != metadata["frame_count"]
+        or (
+            capture_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
+            and feature_payload["feature_ready_wall_ns"]
+            != metadata["feature_ready_wall_ns"]
+        )
     ):
         raise ValueError("Round 73 corpus feature-source replay differs")
     feature_text = _canonical_json(feature_payload)
@@ -579,7 +653,7 @@ def index_round73_corpus_run(
             if concurrent is None:
                 connection.execute(
                     f"INSERT INTO {ROUND73_CORPUS_RUN_TABLE} VALUES "
-                    "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [
                         selected,
                         ROUND73_CORPUS_SCHEMA_VERSION,
@@ -589,6 +663,7 @@ def index_round73_corpus_run(
                         capture_report_sha256,
                         feature_text,
                         feature_sha256,
+                        int(metadata["feature_ready_wall_ns"]),
                         int(metadata["coverage_start_wall_ns"]),
                         int(metadata["coverage_end_wall_ns"]),
                         int(metadata["coverage_duration_ns"]),
@@ -700,10 +775,12 @@ def round73_corpus_day_coverage(
         if _table_exists(connection, ROUND73_CORPUS_RUN_TABLE):
             rows = connection.execute(
                 f"""
-                SELECT run_id, coverage_start_wall_ns, coverage_end_wall_ns,
-                       coverage_duration_ns, manifest_json, manifest_sha256,
+                SELECT run_id, manifest_json, manifest_sha256,
                        capture_report_sha256, feature_source_json,
-                       feature_source_sha256
+                       feature_source_sha256, feature_ready_wall_ns,
+                       coverage_start_wall_ns, coverage_end_wall_ns,
+                       coverage_duration_ns, frame_count, message_count,
+                       compressed_payload_bytes
                 FROM {ROUND73_CORPUS_RUN_TABLE}
                 WHERE coverage_end_wall_ns > ? AND coverage_start_wall_ns < ?
                 ORDER BY coverage_start_wall_ns, run_id
@@ -712,14 +789,11 @@ def round73_corpus_day_coverage(
             ).fetchall()
             for row in rows:
                 run_id = str(row[0])
-                start_ns = int(row[1])
-                end_ns = int(row[2])
-                duration_ns = int(row[3])
+                start_ns = int(row[7])
+                end_ns = int(row[8])
+                duration_ns = int(row[9])
                 identity, _manifest_sha, _report_sha, _feature_sha = (
-                    _validated_manifest_row(
-                        (row[4], row[5], row[6], row[7], row[8]),
-                        run_id,
-                    )
+                    _validated_manifest_row(tuple(row[1:]), run_id)
                 )
                 if (
                     identity.get("coverage_start_wall_ns") != start_ns
