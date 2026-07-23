@@ -198,6 +198,58 @@ def validated_compute_backend(raw: object) -> dict[str, object]:
     }
     if backend == "cpu" and output["gpu_accelerated"]:
         raise ValueError("Round 73 CPU fallback cannot be labeled GPU accelerated")
+    opencl_device = raw.get("opencl_device")
+    if backend == "opencl":
+        if not isinstance(opencl_device, Mapping):
+            raise ValueError("Round 73 OpenCL device identity is missing")
+        platform_id = opencl_device.get("platform_id")
+        device_id = opencl_device.get("device_id")
+        global_memory = opencl_device.get("global_memory_bytes")
+        compute_units = opencl_device.get("maximum_compute_units")
+        if (
+            isinstance(platform_id, bool)
+            or not isinstance(platform_id, int)
+            or platform_id < 0
+            or isinstance(device_id, bool)
+            or not isinstance(device_id, int)
+            or device_id < 0
+            or opencl_device.get("platform_name") != output["platform_name"]
+            or opencl_device.get("display_name") != output["device_name"]
+            or any(
+                not str(opencl_device.get(name, "")).strip()
+                for name in (
+                    "platform_vendor",
+                    "platform_version",
+                    "device_vendor",
+                    "device_version",
+                    "driver_version",
+                )
+            )
+            or isinstance(global_memory, bool)
+            or not isinstance(global_memory, int)
+            or global_memory <= 0
+            or isinstance(compute_units, bool)
+            or not isinstance(compute_units, int)
+            or compute_units <= 0
+        ):
+            raise ValueError("Round 73 OpenCL device identity differs")
+        output["opencl_device"] = {
+            "platform_id": platform_id,
+            "device_id": device_id,
+            "platform_name": output["platform_name"],
+            "platform_vendor": str(opencl_device["platform_vendor"]),
+            "platform_version": str(opencl_device["platform_version"]),
+            "device_name": output["device_name"],
+            "raw_device_name": str(opencl_device["device_name"]),
+            "board_name": str(opencl_device.get("board_name", "")),
+            "device_vendor": str(opencl_device["device_vendor"]),
+            "device_version": str(opencl_device["device_version"]),
+            "driver_version": str(opencl_device["driver_version"]),
+            "global_memory_bytes": global_memory,
+            "maximum_compute_units": compute_units,
+        }
+    elif opencl_device is not None:
+        raise ValueError("Round 73 non-OpenCL backend has an OpenCL identity")
     return output
 
 

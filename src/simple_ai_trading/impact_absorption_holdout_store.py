@@ -86,6 +86,7 @@ _POST_ENTRY_UNRESOLVED_REASONS = frozenset(
 
 AuditFunction = Callable[..., object]
 ReplayFunction = Callable[..., list[Round73TargetOption]]
+DevelopmentSealFunction = Callable[..., object]
 
 
 @dataclass(frozen=True)
@@ -260,11 +261,14 @@ def publish_round73_pretest_manifest(
     corpus_audit_function: AuditFunction = audit_round73_corpus_manifest,
     grid_audit_function: AuditFunction = audit_round73_causal_grid,
     replay_function: ReplayFunction = replay_round73_target_rows_v9,
+    development_seal_function: DevelopmentSealFunction = (
+        seal_round73_development_targets
+    ),
 ) -> Round73PretestManifestReport:
     """Freeze model, preprocessing, predictions, and policy before test replay."""
 
     selected_study = _validated_identifier(study_id, _STUDY_ID, "study ID")
-    development = seal_round73_development_targets(
+    development = development_seal_function(
         database,
         study_id=selected_study,
         memory_limit=memory_limit,

@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"8bc0c643c7a4be176d3d20be0b06803091faf00ef9e63b163d9259b8d9945429";
+inline constexpr const wchar_t* kCommandContractSha256 = L"0d50ae029de40cd993a30357d3830d9f37a10ac318a11f39e00b456822b95451";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -371,6 +371,39 @@ inline constexpr CommandOptionSpec kOptions_impact_grid_build[] = {
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_impact_model_evaluate[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--pretest-manifest-sha256", L"pretest_manifest_sha256", L"", L"", L"", L"1", true, true, false},
+    {L"--repository-root", L"repository_root", L"", L".", L"", L"1", false, true, false},
+    {L"--memory-budget-bytes", L"memory_budget_bytes", L"", L"3221225472", L"hard in-memory test-slice budget; one symbol is loaded at a time", L"1", false, true, false},
+    {L"--confirm-one-use-evaluation", L"confirm_one_use_evaluation", L"", L"false", L"acknowledge that this permanently consumes the sealed test", L"0", true, false, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_model_fit[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--repository-root", L"repository_root", L"", L".", L"", L"1", false, true, false},
+    {L"--compute-backend", L"compute_backend", L"auto, cpu, cuda, rocm, xpu, mps, directml", L"auto", L"", L"1", false, true, false},
+    {L"--memory-budget-bytes", L"memory_budget_bytes", L"", L"3221225472", L"hard in-memory feature-slice budget; one symbol is loaded at a time", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_role_target_stage[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--role-scope", L"role_scope", L"development, test", L"", L"", L"1", true, true, false},
+    {L"--pretest-manifest-sha256", L"pretest_manifest_sha256", L"", L"", L"required only for test staging after the one-time unlock", L"1", false, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_impact_target_audit[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
     {L"--run-id", L"run_id", L"", L"", L"", L"1", true, true, false},
@@ -416,6 +449,26 @@ inline constexpr CommandOptionSpec kOptions_impact_target_v2_seal[] = {
 inline constexpr CommandOptionSpec kOptions_impact_target_v2_study_audit[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
     {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_test_seal[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--pretest-manifest-sha256", L"pretest_manifest_sha256", L"", L"", L"", L"1", true, true, false},
+    {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
+    {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_impact_test_unlock[] = {
+    {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
+    {L"--study-id", L"study_id", L"", L"", L"", L"1", true, true, false},
+    {L"--pretest-manifest-sha256", L"pretest_manifest_sha256", L"", L"", L"", L"1", true, true, false},
+    {L"--repository-root", L"repository_root", L"", L".", L"", L"1", false, true, false},
+    {L"--confirm-test-unlock", L"confirm_test_unlock", L"", L"false", L"acknowledge that the immutable pretest is final before test replay", L"0", true, false, false},
     {L"--memory-limit", L"memory_limit", L"", L"2GB", L"", L"1", false, true, false},
     {L"--database-threads", L"database_threads", L"", L"2", L"", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
@@ -1152,12 +1205,17 @@ inline constexpr CommandSpec kCommands[] = {
     {L"impact-feature-source", L"usage: simple-ai-trading impact-feature-source [-h] [--database DATABASE]                                                --run-id RUN_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_feature_source, 5},
     {L"impact-grid-audit", L"usage: simple-ai-trading impact-grid-audit [-h] [--database DATABASE] --run-id                                            RUN_ID                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_grid_audit, 5},
     {L"impact-grid-build", L"usage: simple-ai-trading impact-grid-build [-h] [--database DATABASE] --run-id                                            RUN_ID                                            [--memory-limit MEMORY_LIMIT]                                            [--database-threads DATABASE_THREADS]                                            [--json]", kOptions_impact_grid_build, 5},
+    {L"impact-model-evaluate", L"Irreversibly claim the sealed test, score only frozen pretest bytes, run all preregistered predictive and economic gates, and persist one terminal result. An interruption also consumes the test.", kOptions_impact_model_evaluate, 9},
+    {L"impact-model-fit", L"Deep-audit and seal development targets once, fit bounded symbol-scoped models, and publish immutable pretest bytes. Test targets are neither materialized nor read.", kOptions_impact_model_fit, 8},
+    {L"impact-role-target-stage", L"Replay every cohort source for exactly one role scope. Development and test targets can never be materialized by the same invocation.", kOptions_impact_role_target_stage, 7},
     {L"impact-target-audit", L"usage: simple-ai-trading impact-target-audit [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_target_audit, 5},
     {L"impact-target-build", L"usage: simple-ai-trading impact-target-build [-h] [--database DATABASE]                                              --run-id RUN_ID                                              [--memory-limit MEMORY_LIMIT]                                              [--database-threads DATABASE_THREADS]                                              [--json]", kOptions_impact_target_build, 5},
     {L"impact-target-v2-audit", L"usage: simple-ai-trading impact-target-v2-audit [-h] [--database DATABASE]                                                 --study-id STUDY_ID --run-id                                                 RUN_ID                                                 [--memory-limit MEMORY_LIMIT]                                                 [--database-threads DATABASE_THREADS]                                                 [--json]", kOptions_impact_target_v2_audit, 6},
     {L"impact-target-v2-build", L"usage: simple-ai-trading impact-target-v2-build [-h] [--database DATABASE]                                                 --study-id STUDY_ID --run-id                                                 RUN_ID                                                 [--memory-limit MEMORY_LIMIT]                                                 [--database-threads DATABASE_THREADS]                                                 [--json]", kOptions_impact_target_v2_build, 6},
     {L"impact-target-v2-seal", L"usage: simple-ai-trading impact-target-v2-seal [-h] [--database DATABASE]                                                --study-id STUDY_ID                                                [--memory-limit MEMORY_LIMIT]                                                [--database-threads DATABASE_THREADS]                                                [--json]", kOptions_impact_target_v2_seal, 5},
     {L"impact-target-v2-study-audit", L"usage: simple-ai-trading impact-target-v2-study-audit [-h]                                                       [--database DATABASE]                                                       --study-id STUDY_ID                                                       [--memory-limit MEMORY_LIMIT]                                                       [--database-threads DATABASE_THREADS]                                                       [--json]", kOptions_impact_target_v2_study_audit, 5},
+    {L"impact-test-seal", L"Verify complete test-only replay and persist a redacted immutable study seal without evaluating or reporting outcomes.", kOptions_impact_test_seal, 6},
+    {L"impact-test-unlock", L"Revalidate the immutable pretest and repository identities, then permit test-only target replay exactly once.", kOptions_impact_test_unlock, 8},
     {L"live", L"usage: simple-ai-trading live [-h] [--model MODEL] [--steps STEPS]                               [--sleep SLEEP] [--leverage LEVERAGE]                               [--retrain-interval RETRAIN_INTERVAL]                               [--retrain-window RETRAIN_WINDOW]                               [--retrain-min-rows RETRAIN_MIN_ROWS]                               [--compute-backend {auto,cpu,cuda,rocm,xpu,mps,directml}]                               [--batch-size BATCH_SIZE] [--paper] [--live]                               [--external-signals] [--no-external-signals]", kOptions_live, 13},
     {L"menu", L"usage: simple-ai-trading menu [-h]", nullptr, 0},
     {L"microstructure-capture", L"usage: simple-ai-trading microstructure-capture [-h] [--symbols SYMBOLS]                                                 [--seconds SECONDS]                                                 [--output-root OUTPUT_ROOT]                                                 [--db DB] [--timeout TIMEOUT]                                                 [--no-convert] [--json]", kOptions_microstructure_capture, 7},
@@ -1235,18 +1293,23 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Research", L"AI validation", L"ai-review"},
     {L"Research", L"AI validation", L"ai-uplift"},
     {L"Research", L"Microstructure models", L"model-blueprint"},
-    {L"Research", L"Microstructure models", L"impact-feature-source"},
-    {L"Research", L"Microstructure models", L"impact-corpus-index"},
-    {L"Research", L"Microstructure models", L"impact-grid-build"},
-    {L"Research", L"Microstructure models", L"impact-cohort-build"},
-    {L"Research", L"Microstructure models", L"impact-target-build"},
-    {L"Research", L"Microstructure models", L"impact-target-v2-build"},
-    {L"Research", L"Microstructure models", L"impact-target-v2-seal"},
     {L"Research", L"Microstructure models", L"microstructure-train"},
     {L"Research", L"Microstructure models", L"microstructure-refit"},
     {L"Research", L"Microstructure models", L"microstructure-prequential"},
     {L"Research", L"Microstructure models", L"microstructure-promote"},
     {L"Research", L"Microstructure models", L"microstructure-shadow"},
+    {L"Research", L"Impact study preparation", L"impact-feature-source"},
+    {L"Research", L"Impact study preparation", L"impact-corpus-index"},
+    {L"Research", L"Impact study preparation", L"impact-grid-build"},
+    {L"Research", L"Impact study preparation", L"impact-cohort-build"},
+    {L"Research", L"Impact study preparation", L"impact-target-build"},
+    {L"Research", L"Impact study preparation", L"impact-target-v2-build"},
+    {L"Research", L"Impact study preparation", L"impact-target-v2-seal"},
+    {L"Research", L"Impact holdout confirmation", L"impact-role-target-stage"},
+    {L"Research", L"Impact holdout confirmation", L"impact-model-fit"},
+    {L"Research", L"Impact holdout confirmation", L"impact-test-unlock"},
+    {L"Research", L"Impact holdout confirmation", L"impact-test-seal"},
+    {L"Research", L"Impact holdout confirmation", L"impact-model-evaluate"},
     {L"Research", L"Tape and depth models", L"tape-depth-design"},
     {L"Research", L"Tape and depth models", L"tape-depth-study"},
     {L"Research", L"Tape and depth models", L"tape-depth-train"},

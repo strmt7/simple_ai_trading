@@ -148,15 +148,19 @@ After parser or taxonomy changes, regenerate the header through the native build
   path-risk, and 12 bps charge logic while changing only the preregistered
   anchor population and 15/60/300 second horizons. No eligible seven-day cohort
   or v2 target result exists. The v2 builder now rejects every eligible anchor.
-  `round-073-staged-holdout-contract-v3.json` requires role-scoped development
+  `round-073-staged-holdout-contract-v4.json` requires role-scoped development
   replay, an immutable pretest model/policy manifest, a one-time test unlock,
   and test-only replay. The v3 target store, byte-persisted pretest artifacts,
   clean-Git identity check, fitting-row reconciliation, one-time unlock, test
   seal, and role-scoped operational dataset loader are implemented. Focused
   tests prove that no test target exists before unlock and that target,
-  artifact, repository, or role drift fails closed. The one-use evaluator is
-  not implemented, so no eligible target or model run may start yet and held-out
-  outcomes must not be queried. The evaluation is separately frozen in
+  artifact, repository, or role drift fails closed. The bounded symbol loader,
+  shallow model family, actual OpenCL device pinning, single-audit training
+  publication, append-only access/prediction/result tables, all-scenario
+  evaluator, and terminal interruption path are implemented and focused tests
+  pass. No eligible target or model result exists. Held-out outcomes must not be
+  queried before the immutable pretest publication and one-time unlock. The
+  evaluation is separately frozen in
   `round-073-selected-anchor-evaluation-contract-v1.json`. Only deterministic
   source-boundary censoring may be removed. Pre-entry safety aborts remain
   attempted zero-return actions, while any selected unresolved post-entry exit
@@ -172,8 +176,20 @@ After parser or taxonomy changes, regenerate the header through the native build
   trained model or edge result. `impact_absorption_model_dataset.py` now adapts
   both pre-eligibility fixtures and explicitly staged v3 development/test rows
   into immutable, hash-bound action datasets while enforcing the frozen
-  censor/abort/unresolved-exit semantics. Its tests use synthetic contract
-  fixtures only; no prospective model dataset or result has been produced.
+  censor/abort/unresolved-exit semantics. `impact_absorption_model_slice.py`,
+  `impact_absorption_training.py`, and
+  `impact_absorption_one_use_evaluation.py` now complete the bounded fit and
+  one-use evaluation path. Their tests use contract fixtures only; no
+  prospective model dataset or result has been produced.
+  The generated CLI/native workflow now orders this path as role-target stage,
+  model fit, acknowledged test unlock, test-only stage, test seal, and
+  acknowledged one-use evaluation. Both irreversible commands require explicit
+  flags, every long phase emits progress, and the command-contract parity test
+  fails if either frontend drifts.
+  Evaluation now replays every claimed test source from exact wire before
+  scoring, applies cumulative staged model gates, orders chronological folds by
+  first market-time occurrence, bounds scenario allocations, and distinguishes
+  real per-position excursions from realized-exit portfolio drawdown.
   Prospective v9 feature collection remains open; model evaluation and all
   trading authority remain closed.
   One hour is not a model-evaluation corpus.

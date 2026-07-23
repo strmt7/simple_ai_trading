@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from simple_ai_trading import cli
 from simple_ai_trading.command_contract import command_specs, workflow_commands
@@ -134,6 +135,45 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         ]
     )
     target_v2_seal = cli._parse_args(["impact-target-v2-seal", "--study-id", "d" * 32])
+    role_target_stage = cli._parse_args(
+        [
+            "impact-role-target-stage",
+            "--study-id",
+            "d" * 32,
+            "--role-scope",
+            "development",
+        ]
+    )
+    model_fit = cli._parse_args(["impact-model-fit", "--study-id", "d" * 32])
+    test_unlock = cli._parse_args(
+        [
+            "impact-test-unlock",
+            "--study-id",
+            "d" * 32,
+            "--pretest-manifest-sha256",
+            "e" * 64,
+            "--confirm-test-unlock",
+        ]
+    )
+    test_seal = cli._parse_args(
+        [
+            "impact-test-seal",
+            "--study-id",
+            "d" * 32,
+            "--pretest-manifest-sha256",
+            "e" * 64,
+        ]
+    )
+    model_evaluate = cli._parse_args(
+        [
+            "impact-model-evaluate",
+            "--study-id",
+            "d" * 32,
+            "--pretest-manifest-sha256",
+            "e" * 64,
+            "--confirm-one-use-evaluation",
+        ]
+    )
     corpus_audit = cli._parse_args(["impact-corpus-audit", "--run-id", "b" * 32])
     grid_audit = cli._parse_args(["impact-grid-audit", "--run-id", "b" * 32])
     cohort_audit = cli._parse_args(["impact-cohort-audit", "--study-id", "d" * 32])
@@ -169,6 +209,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     assert target_v2_build.study_id == "d" * 32
     assert target_v2_build.run_id == "b" * 32
     assert target_v2_seal.study_id == "d" * 32
+    assert role_target_stage.role_scope == "development"
+    assert model_fit.memory_budget_bytes == 3 * 1024**3
+    assert test_unlock.confirm_test_unlock is True
+    assert test_seal.pretest_manifest_sha256 == "e" * 64
+    assert model_evaluate.confirm_one_use_evaluation is True
     assert corpus_audit.run_id == "b" * 32
     assert grid_audit.run_id == "b" * 32
     assert cohort_audit.study_id == "d" * 32
@@ -191,6 +236,11 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "impact-target-build",
         "impact-target-v2-build",
         "impact-target-v2-seal",
+        "impact-role-target-stage",
+        "impact-model-fit",
+        "impact-test-unlock",
+        "impact-test-seal",
+        "impact-model-evaluate",
         "impact-corpus-audit",
         "impact-grid-audit",
         "impact-cohort-audit",
@@ -204,25 +254,45 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
     workflow = {item.name: (item.page, item.group) for item in workflow_commands()}
     assert workflow["impact-capture"] == ("Data", "Market data")
     assert workflow["impact-audit"] == ("Data", "Integrity and outcomes")
-    assert workflow["impact-feature-source"] == ("Research", "Microstructure models")
-    assert workflow["impact-corpus-index"] == ("Research", "Microstructure models")
-    assert workflow["impact-grid-build"] == ("Research", "Microstructure models")
+    assert workflow["impact-feature-source"] == (
+        "Research",
+        "Impact study preparation",
+    )
+    assert workflow["impact-corpus-index"] == (
+        "Research",
+        "Impact study preparation",
+    )
+    assert workflow["impact-grid-build"] == (
+        "Research",
+        "Impact study preparation",
+    )
     assert workflow["impact-cohort-build"] == (
         "Research",
-        "Microstructure models",
+        "Impact study preparation",
     )
     assert workflow["impact-target-build"] == (
         "Research",
-        "Microstructure models",
+        "Impact study preparation",
     )
     assert workflow["impact-target-v2-build"] == (
         "Research",
-        "Microstructure models",
+        "Impact study preparation",
     )
     assert workflow["impact-target-v2-seal"] == (
         "Research",
-        "Microstructure models",
+        "Impact study preparation",
     )
+    for command in (
+        "impact-role-target-stage",
+        "impact-model-fit",
+        "impact-test-unlock",
+        "impact-test-seal",
+        "impact-model-evaluate",
+    ):
+        assert workflow[command] == (
+            "Research",
+            "Impact holdout confirmation",
+        )
     assert workflow["impact-corpus-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-grid-audit"] == ("Data", "Integrity and outcomes")
     assert workflow["impact-cohort-audit"] == ("Data", "Integrity and outcomes")
@@ -241,6 +311,176 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         "Data",
         "Integrity and outcomes",
     )
+
+
+def test_round73_holdout_handlers_preserve_sequence_and_machine_reports(
+    monkeypatch,
+    capsys,
+) -> None:
+    calls: dict[str, object] = {}
+
+    def stage(_database: Path, **kwargs: object):
+        calls["stage"] = kwargs
+        kwargs["progress_callback"]("run", {"run_index": 1})
+        return SimpleNamespace(
+            role_scope="development",
+            study_id="d" * 32,
+            source_run_count=2,
+            selected_anchor_count=3,
+            option_count=108,
+            as_dict=lambda: {"role_scope": "development"},
+        )
+
+    def fit(_database: Path, **kwargs: object):
+        calls["fit"] = kwargs
+        kwargs["progress_callback"]("fit", {"symbol": "BTCUSDT"})
+        return SimpleNamespace(
+            prepared=SimpleNamespace(
+                model_manifest={"compute_backend": {"resolved_backend": "opencl"}}
+            ),
+            publication=SimpleNamespace(
+                study_id="d" * 32,
+                artifact_count=12,
+                pretest_manifest_sha256="e" * 64,
+            ),
+            as_dict=lambda: {"status": "published"},
+        )
+
+    def unlock(_database: Path, **kwargs: object):
+        calls["unlock"] = kwargs
+        return SimpleNamespace(
+            study_id="d" * 32,
+            pretest_manifest_sha256="e" * 64,
+            as_dict=lambda: {"status": "unlocked"},
+        )
+
+    def seal(_database: Path, **kwargs: object):
+        calls["seal"] = kwargs
+        return SimpleNamespace(
+            study_id="d" * 32,
+            source_run_count=2,
+            selected_anchor_count=3,
+            option_count=108,
+            test_study_manifest_sha256="f" * 64,
+            as_dict=lambda: {"status": "sealed"},
+        )
+
+    def evaluate(_database: Path, **kwargs: object):
+        calls["evaluate"] = kwargs
+        kwargs["progress_callback"]("evaluate", {"scenario_index": 1})
+        return SimpleNamespace(
+            status="failed",
+            stored=SimpleNamespace(
+                study_id="d" * 32,
+                result_sha256="a" * 64,
+            ),
+            as_dict=lambda: {"status": "failed"},
+        )
+
+    monkeypatch.setattr(cli, "stage_round73_role_targets", stage)
+    monkeypatch.setattr(cli, "train_and_publish_round73_pretest", fit)
+    monkeypatch.setattr(cli, "unlock_round73_test_targets", unlock)
+    monkeypatch.setattr(cli, "seal_round73_test_targets", seal)
+    monkeypatch.setattr(cli, "evaluate_round73_once", evaluate)
+
+    assert (
+        cli.command_impact_role_target_stage(
+            argparse.Namespace(
+                database="study.duckdb",
+                study_id="d" * 32,
+                role_scope="development",
+                pretest_manifest_sha256=None,
+                memory_limit="2GB",
+                database_threads=2,
+                json=True,
+            )
+        )
+        == 0
+    )
+    assert (
+        cli.command_impact_model_fit(
+            argparse.Namespace(
+                database="study.duckdb",
+                study_id="d" * 32,
+                repository_root=".",
+                compute_backend="auto",
+                memory_budget_bytes=1024,
+                memory_limit="2GB",
+                database_threads=2,
+                json=True,
+            )
+        )
+        == 0
+    )
+    assert (
+        cli.command_impact_test_unlock(
+            argparse.Namespace(
+                database="study.duckdb",
+                study_id="d" * 32,
+                pretest_manifest_sha256="e" * 64,
+                repository_root=".",
+                confirm_test_unlock=True,
+                memory_limit="2GB",
+                database_threads=2,
+                json=True,
+            )
+        )
+        == 0
+    )
+    assert (
+        cli.command_impact_test_seal(
+            argparse.Namespace(
+                database="study.duckdb",
+                study_id="d" * 32,
+                pretest_manifest_sha256="e" * 64,
+                memory_limit="2GB",
+                database_threads=2,
+                json=True,
+            )
+        )
+        == 0
+    )
+    assert (
+        cli.command_impact_model_evaluate(
+            argparse.Namespace(
+                database="study.duckdb",
+                study_id="d" * 32,
+                pretest_manifest_sha256="e" * 64,
+                repository_root=".",
+                memory_budget_bytes=1024,
+                confirm_one_use_evaluation=True,
+                memory_limit="2GB",
+                database_threads=2,
+                json=True,
+            )
+        )
+        == 2
+    )
+    assert calls.keys() == {"stage", "fit", "unlock", "seal", "evaluate"}
+    assert calls["stage"]["pretest_manifest_sha256"] is None
+    assert calls["fit"]["memory_budget_bytes"] == 1024
+    assert calls["evaluate"]["memory_budget_bytes"] == 1024
+    streams = capsys.readouterr()
+    assert "impact-role-target-stage-progress:" in streams.err
+    assert "impact-model-fit-progress:" in streams.err
+    assert "impact-model-evaluate-progress:" in streams.err
+    assert '"status": "failed"' in streams.out
+
+
+def test_round73_irreversible_handlers_require_explicit_acknowledgement(capsys) -> None:
+    assert (
+        cli.command_impact_test_unlock(argparse.Namespace(confirm_test_unlock=False))
+        == 2
+    )
+    assert (
+        cli.command_impact_model_evaluate(
+            argparse.Namespace(confirm_one_use_evaluation=False)
+        )
+        == 2
+    )
+    errors = capsys.readouterr().err
+    assert "--confirm-test-unlock is required" in errors
+    assert "--confirm-one-use-evaluation is required" in errors
 
 
 def test_impact_corpus_handlers_emit_machine_reports(monkeypatch, capsys) -> None:

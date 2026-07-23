@@ -57,7 +57,7 @@ from .impact_absorption_pretest_contract import sha256_bytes as _sha256_bytes
 
 
 ROUND73_STAGED_HOLDOUT_CONTRACT_SHA256 = (
-    "54ec74e2d24d5873d6cfef3d1d3265c22829c05c15001051c10a86ad99fd6217"
+    "f69de6122802a1e327a154f4571ae70c39a3547231409a05eb497a99398a2162"
 )
 ROUND73_TARGET_V3_SCHEMA_VERSION = "round-073-role-staged-target-v3"
 ROUND73_DEVELOPMENT_STUDY_V3_SCHEMA_VERSION = "round-073-development-target-study-v3"
@@ -81,6 +81,7 @@ _INSERT_BATCH_SIZE = 32_768
 
 AuditFunction = Callable[..., object]
 ReplayFunction = Callable[..., list[Round73TargetOption]]
+ProgressCallback = Callable[[str, Mapping[str, object]], None]
 
 
 @dataclass(frozen=True)
@@ -181,6 +182,32 @@ class Round73TestTargetStudyReport:
                 "schema_version": ROUND73_TEST_STUDY_V3_SCHEMA_VERSION,
                 "contract_sha256": ROUND73_STAGED_HOLDOUT_CONTRACT_SHA256,
                 "test_outcomes_redacted": True,
+                "model_evaluated": False,
+                "profitability_claim": False,
+                "trading_authority": False,
+            }
+        )
+        return payload
+
+
+@dataclass(frozen=True)
+class Round73RoleTargetStageReport:
+    study_id: str
+    role_scope: str
+    source_run_count: int
+    selected_anchor_count: int
+    option_count: int
+    eligible_option_count: int | None
+    positive_option_count: int | None
+    role_run_manifests_sha256: str
+
+    def as_dict(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload.update(
+            {
+                "schema_version": "round-073-role-target-stage-v1",
+                "contract_sha256": ROUND73_STAGED_HOLDOUT_CONTRACT_SHA256,
+                "test_outcomes_redacted": self.role_scope == "test",
                 "model_evaluated": False,
                 "profitability_claim": False,
                 "trading_authority": False,
@@ -995,6 +1022,135 @@ def build_round73_role_targets(
     return _report_from_identity(identity, manifest_sha)
 
 
+def stage_round73_role_targets(
+    database: str | Path,
+    *,
+    study_id: str,
+    role_scope: str,
+    pretest_manifest_sha256: str | None = None,
+    memory_limit: str = "2GB",
+    threads: int = 2,
+    progress_callback: ProgressCallback | None = None,
+    cohort_audit_function: AuditFunction = audit_round73_shock_cohort,
+    corpus_audit_function: AuditFunction = audit_round73_corpus_manifest,
+    grid_audit_function: AuditFunction = audit_round73_causal_grid,
+    replay_function: ReplayFunction = replay_round73_target_rows_v9,
+) -> Round73RoleTargetStageReport:
+    """Stage every cohort source for one role without crossing the holdout."""
+
+    selected_study = _validated_identifier(study_id, _STUDY_ID, "study ID")
+    selected_scope = str(role_scope).strip().lower()
+    _scope_roles(selected_scope)
+    selected_pretest = (
+        None
+        if pretest_manifest_sha256 is None
+        else str(pretest_manifest_sha256).strip().lower()
+    )
+    if selected_scope == "development" and selected_pretest is not None:
+        raise ValueError("Round 73 development staging cannot receive a pretest hash")
+    if selected_scope == "test" and (
+        selected_pretest is None or _SHA256.fullmatch(selected_pretest) is None
+    ):
+        raise ValueError("Round 73 test staging requires a pretest manifest hash")
+    cohort = cohort_audit_function(
+        database,
+        study_id=selected_study,
+        deep_source_audit=False,
+        memory_limit=memory_limit,
+        threads=threads,
+    )
+    if getattr(cohort, "passed", False) is not True:
+        raise ValueError("Round 73 role staging cohort audit failed")
+    with ImpactAbsorptionStore(
+        database,
+        read_only=True,
+        memory_limit=memory_limit,
+        threads=threads,
+    ) as store:
+        connection = store.connect()
+        context = _load_study_context(connection, study_id=selected_study)
+        _require_prospective_context(context)
+        _reject_v2_contamination(connection, selected_study)
+        source_run_ids = tuple(sorted(source.run_id for source in context.sources))
+
+    def reuse_cohort_audit(*_args: object, **_kwargs: object) -> object:
+        return cohort
+
+    reports: list[Round73RoleTargetBuildReport] = []
+    for index, run_id in enumerate(source_run_ids, start=1):
+        if progress_callback is not None:
+            progress_callback(
+                "role_target_run_started",
+                {
+                    "study_id": selected_study,
+                    "role_scope": selected_scope,
+                    "run_id": run_id,
+                    "run_index": index,
+                    "source_run_count": len(source_run_ids),
+                },
+            )
+        report = build_round73_role_targets(
+            database,
+            study_id=selected_study,
+            run_id=run_id,
+            role_scope=selected_scope,
+            pretest_manifest_sha256=selected_pretest,
+            memory_limit=memory_limit,
+            threads=threads,
+            cohort_audit_function=reuse_cohort_audit,
+            corpus_audit_function=corpus_audit_function,
+            grid_audit_function=grid_audit_function,
+            replay_function=replay_function,
+        )
+        reports.append(report)
+        if progress_callback is not None:
+            progress_callback(
+                "role_target_run_completed",
+                {
+                    "study_id": selected_study,
+                    "role_scope": selected_scope,
+                    "run_id": run_id,
+                    "run_index": index,
+                    "source_run_count": len(source_run_ids),
+                    "selected_anchor_count": report.selected_anchor_count,
+                    "option_count": report.option_count,
+                },
+            )
+    test_scope = selected_scope == "test"
+    result = Round73RoleTargetStageReport(
+        study_id=selected_study,
+        role_scope=selected_scope,
+        source_run_count=len(reports),
+        selected_anchor_count=sum(item.selected_anchor_count for item in reports),
+        option_count=sum(item.option_count for item in reports),
+        eligible_option_count=(
+            None
+            if test_scope
+            else sum(int(item.eligible_option_count or 0) for item in reports)
+        ),
+        positive_option_count=(
+            None
+            if test_scope
+            else sum(int(item.positive_option_count or 0) for item in reports)
+        ),
+        role_run_manifests_sha256=_stream_hash(
+            [item.target_manifest_sha256 for item in reports]
+        ),
+    )
+    if progress_callback is not None:
+        progress_callback(
+            "role_target_stage_completed",
+            {
+                "study_id": selected_study,
+                "role_scope": selected_scope,
+                "source_run_count": result.source_run_count,
+                "selected_anchor_count": result.selected_anchor_count,
+                "option_count": result.option_count,
+            },
+        )
+    return result
+
+
 def audit_round73_role_targets(
     database: str | Path,
     *,
@@ -1699,9 +1855,11 @@ __all__ = [
     "Round73DevelopmentTargetStudyReport",
     "Round73RoleTargetAudit",
     "Round73RoleTargetBuildReport",
+    "Round73RoleTargetStageReport",
     "Round73TestTargetStudyReport",
     "audit_round73_role_targets",
     "build_round73_role_targets",
     "seal_round73_development_targets",
     "seal_round73_test_targets",
+    "stage_round73_role_targets",
 ]

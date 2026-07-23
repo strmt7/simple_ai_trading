@@ -58,6 +58,7 @@ from simple_ai_trading.impact_absorption_target_store_v3 import (
     build_round73_role_targets,
     seal_round73_development_targets,
     seal_round73_test_targets,
+    stage_round73_role_targets,
 )
 from simple_ai_trading.impact_absorption_targets import Round73MarketQuantityRules
 
@@ -598,6 +599,18 @@ def test_v3_physically_stages_development_pretest_and_one_time_test(
     )
     assert first.option_count == 36
     assert second.option_count == 0
+    progress: list[tuple[str, object]] = []
+    staged_development = stage_round73_role_targets(
+        database,
+        role_scope="development",
+        progress_callback=lambda event, details: progress.append((event, details)),
+        **common,
+    )
+    assert staged_development.source_run_count == 2
+    assert staged_development.option_count == 36
+    assert staged_development.eligible_option_count == first.eligible_option_count
+    assert staged_development.positive_option_count == first.positive_option_count
+    assert progress[-1][0] == "role_target_stage_completed"
     with duckdb.connect(str(database), read_only=True) as connection:
         assert (
             connection.execute(
@@ -745,6 +758,16 @@ def test_v3_physically_stages_development_pretest_and_one_time_test(
     assert test_zero.option_count == 0
     assert test_rows.option_count == 36
     assert test_rows.eligible_option_count is None
+    staged_test = stage_round73_role_targets(
+        database,
+        role_scope="test",
+        pretest_manifest_sha256=pretest.pretest_manifest_sha256,
+        **common,
+    )
+    assert staged_test.source_run_count == 2
+    assert staged_test.option_count == 36
+    assert staged_test.eligible_option_count is None
+    assert staged_test.positive_option_count is None
     test_study = seal_round73_test_targets(
         database,
         pretest_manifest_sha256=pretest.pretest_manifest_sha256,

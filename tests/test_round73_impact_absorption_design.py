@@ -168,7 +168,7 @@ ACTION_ALIGNED_FEATURE_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-action-aligned-feature-contract-v1.json"
 )
 STAGED_HOLDOUT_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
-    "round-073-staged-holdout-contract-v3.json"
+    "round-073-staged-holdout-contract-v4.json"
 )
 V9_QUALIFICATION_CAPTURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v9-qualification-capture-2026-07-23.json"
@@ -1778,11 +1778,14 @@ def test_round73_staged_holdout_physically_withholds_test_targets() -> None:
     assert status["one_use_test_unlock_implemented"] is True
     assert status["complete_test_study_seal_implemented"] is True
     assert status["role_scoped_operational_dataset_implemented"] is True
-    assert status["one_use_evaluator_implemented"] is False
+    assert status["one_use_evaluator_implemented"] is True
+    assert status["actual_opencl_device_pinning_implemented"] is True
+    assert status["single_audit_training_publication_implemented"] is True
+    assert status["interrupted_evaluation_closure_implemented"] is True
     assert status["eligible_target_result_observed"] is False
     authority = contract["authority"]
     assert authority["build_eligible_targets_with_v2"] is False
-    assert authority["model_training"] is False
+    assert authority["model_training_after_complete_development_seal"] is True
     assert authority["paper_testnet_or_live_trading_authority"] is False
 
 
