@@ -146,6 +146,9 @@ CAUSAL_GRID_V4_CONTRACT_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
 V3_GRID_NUMERICAL_FAILURE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-v3-grid-numerical-failure-2026-07-23.json"
 )
+V4_GRID_QUALIFICATION_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
+    "round-073-v4-grid-qualification-2026-07-23.json"
+)
 CORRECTION_EVIDENCE_PATH = BASE_CAPTURE_CONTRACT_PATH.with_name(
     "round-073-feed-contract-correction-evidence-2026-07-22.json"
 )
@@ -1401,6 +1404,45 @@ def test_round73_causal_grid_v4_freezes_numerical_financial_invariants() -> None
     assert calendar["listed_etf_etp_or_security_sessions_are_context_only"] is True
     assert calendar["listed_product_calendar_may_grant_crypto_execution_authority"] is False
     assert contract["authority"]["model_evaluated"] is False
+
+
+def test_round73_v4_grid_qualification_is_hash_bound_and_non_predictive() -> None:
+    evidence = json.loads(V4_GRID_QUALIFICATION_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["credentials_used"] is False
+    assert evidence["orders_submitted"] is False
+    assert evidence["source"]["grid_contract_sha256"] == (
+        "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2"
+    )
+    assert evidence["grid_build"]["valid_anchor_count"] == 10_619
+    assert evidence["independent_persisted_audit"]["passed"] is True
+    scan = evidence["independent_financial_scan"]
+    assert scan["shared_validator_called"] is False
+    assert scan["vector_rows_with_financial_violation"] == 0
+    assert scan["financial_predicate_violation_count"] == 0
+    assert scan["anchor_primitive_violation_count"] == 0
+    assert scan["minimum_value_in_nonnegative_feature_class"] == 0.0
+    rejected = scan["rejected_probe_assumption"]
+    assert rejected["apparent_predicate_violations"] == 52_027
+    assert rejected["all_apparent_violations_explained_by_rejected_assumption"] is True
+    turnover = scan["order_flow_turnover_identity"]
+    assert turnover["outside_unit_interval_count"] == 52_027
+    assert turnover["unit_interval_is_financial_constraint"] is False
+    assert turnover["identity_failure_count"] == 0
+    quarantine = evidence["version_quarantine"]
+    assert quarantine["v3_rows_deleted_or_overwritten"] is False
+    assert quarantine["v3_grid_eligible_for_model_evaluation"] is False
+    assert evidence["storage_observation"]["physical_database_growth_bytes"] == 0
+    analysis = evidence["critical_analysis"]
+    assert analysis["causal_feature_grid_evidence"] is True
+    assert analysis["one_hour_corpus_sufficient_for_model_evaluation"] is False
+    assert analysis["profitability_evidence"] is False
+    authorization = evidence["authorization"]
+    assert authorization["round_073_target_contract_design"] is True
+    assert authorization["round_073_target_construction"] is False
+    assert authorization["live_trading_authority"] is False
 
 
 def test_round73_feed_contract_correction_evidence_is_hash_bound() -> None:
