@@ -1,0 +1,154 @@
+{
+  "schema_version": "round-073-v4-grid-qualification-evidence-v1",
+  "artifact_sha256": "71cc28c3b7f3bba2b41625fe8a465ecb9c94d504a194d57b86ece4c2945b3231",
+  "recorded_utc_date": "2026-07-23",
+  "source_commit": "5865e3e",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "synthetic_market_data_used": false,
+  "attempt_evidence_combined": false,
+  "source": {
+    "run_id": "0aabddb515794668a8a54129aa6e1d47",
+    "capture_report_sha256": "698efcd5a1ee98f0ba0e5b476ecdacb3dccb09d12ecabe3aba0e8031dc8499a1",
+    "corpus_schema_version": "round-073-segmented-corpus-v3",
+    "corpus_contract_sha256": "a7e067c7e55fe0ebe43ec085464f7a1faeddfd9fb41ac2ccb0f714879bea902b",
+    "corpus_manifest_sha256": "6cb6cbb451f802b7776488ed05ce7280f39b09569a75b1c241d2ad7bfb5c5f21",
+    "corpus_post_write_audit_passed": true,
+    "feature_source_sha256": "4c4d8b2bd895ca3335b14e3989789494b56f1eb17c0cef845ac4f8ed11c5618d",
+    "grid_schema_version": "round-073-causal-grid-v4",
+    "grid_contract_sha256": "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2",
+    "feature_names_sha256": "3dfbf7de2edf7c5859d2fa042f71c124acd528a93db1fda3b8ab945b67cb1f19",
+    "grid_build_manifest_sha256": "f7ba3b4671046a70a447802c94f8a534a95b6e227268402c3731b1fe2546d89f"
+  },
+  "grid_build": {
+    "passed": true,
+    "elapsed_seconds": 276.2,
+    "anchor_count": 10629,
+    "valid_anchor_count": 10619,
+    "invalid_anchor_count": 10,
+    "vector_count": 10619,
+    "feature_count": 257,
+    "first_anchor_wall_ns": 1784770588452801400,
+    "last_anchor_wall_ns": 1784774130452801400,
+    "per_symbol": {
+      "BTCUSDT": {
+        "anchors": 3543,
+        "valid_anchors": 3540,
+        "invalid_anchors": 3
+      },
+      "ETHUSDT": {
+        "anchors": 3543,
+        "valid_anchors": 3540,
+        "invalid_anchors": 3
+      },
+      "SOLUSDT": {
+        "anchors": 3543,
+        "valid_anchors": 3539,
+        "invalid_anchors": 4
+      }
+    }
+  },
+  "independent_persisted_audit": {
+    "passed": true,
+    "errors": [],
+    "anchor_count": 10629,
+    "valid_anchor_count": 10619,
+    "vector_count": 10619,
+    "build_manifest_sha256": "f7ba3b4671046a70a447802c94f8a534a95b6e227268402c3731b1fe2546d89f",
+    "source_corpus_manifest_sha256": "6cb6cbb451f802b7776488ed05ce7280f39b09569a75b1c241d2ad7bfb5c5f21"
+  },
+  "independent_financial_scan": {
+    "shared_validator_called": false,
+    "all_10619_vectors_read": true,
+    "all_10629_anchors_read": true,
+    "manifest_counts_match": true,
+    "symbols_exact": true,
+    "nonfinite_feature_value_count": 0,
+    "vector_rows_with_financial_violation": 0,
+    "financial_predicate_violation_count": 0,
+    "anchor_rows_with_primitive_violation": 0,
+    "anchor_primitive_violation_count": 0,
+    "orphan_or_invalid_vector_count": 0,
+    "minimum_value_in_nonnegative_feature_class": 0.0,
+    "buyer_taker_share_minimum": 0.0,
+    "buyer_taker_share_maximum": 1.0,
+    "all_bounded_share_minimum": 0.0,
+    "all_bounded_share_maximum": 1.0,
+    "rejected_probe_assumption": {
+      "assumption": "normalized order-flow imbalance must lie in [-1, 1]",
+      "classification": "not a valid financial invariant for this feature definition",
+      "reason": "The feature is signed cumulative displayed-depth flow divided by contemporaneous displayed band depth. It measures turnover relative to current depth and is not a probability or share.",
+      "apparent_predicate_violations": 52027,
+      "apparent_vector_rows_with_violation": 8182,
+      "all_apparent_violations_explained_by_rejected_assumption": true
+    },
+    "order_flow_turnover_identity": {
+      "value_count": 222999,
+      "minimum": -4569.4880569407,
+      "maximum": 4546.313393871566,
+      "outside_unit_interval_count": 52027,
+      "unit_interval_is_financial_constraint": false,
+      "identity_failure_count": 0,
+      "rows_with_identity_failure": 0,
+      "maximum_absolute_identity_error": 0.0
+    }
+  },
+  "invalid_anchor_analysis": {
+    "middle_of_coverage_invalid_anchor_count": 0,
+    "leading_missing_open_interest": {
+      "BTCUSDT": 2,
+      "ETHUSDT": 2,
+      "SOLUSDT": 3
+    },
+    "terminal_stale_bbo_and_l2": {
+      "BTCUSDT": 1,
+      "ETHUSDT": 1,
+      "SOLUSDT": 1
+    },
+    "interpretation": "The grid failed closed while initial REST open-interest context became available and after the final public-feed receipts became stale. No invalid anchor has a feature vector."
+  },
+  "version_quarantine": {
+    "v3_anchor_count_preserved": 10629,
+    "v3_vector_count_preserved": 10619,
+    "v3_manifest_count_preserved": 1,
+    "v3_build_manifest_sha256_preserved": "908f430273aa59b90ca172f9823581ee4f939a9d1a338812d36e33cc2671570a",
+    "v3_rows_deleted_or_overwritten": false,
+    "v3_grid_eligible_for_target_construction": false,
+    "v3_grid_eligible_for_model_evaluation": false,
+    "cross_version_pooling_permitted": false,
+    "v4_anchor_count": 10629,
+    "v4_vector_count": 10619,
+    "v4_manifest_count": 1
+  },
+  "storage_observation": {
+    "database_bytes_before_build": 5769539584,
+    "database_bytes_after_clean_close": 5769539584,
+    "physical_database_growth_bytes": 0,
+    "wal_exists_after_clean_close": false,
+    "physical_ssd_or_nand_wear_inferred": false
+  },
+  "critical_analysis": {
+    "causal_feature_grid_evidence": true,
+    "target_constructed": false,
+    "model_evaluated": false,
+    "one_hour_corpus_sufficient_for_model_evaluation": false,
+    "multi_segment_or_seven_day_corpus_complete": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false,
+    "drawdown_evidence": false,
+    "leverage_evidence": false,
+    "ai_uplift_evidence": false
+  },
+  "authorization": {
+    "replacement_v4_grid_consumed": true,
+    "round_073_target_contract_design": true,
+    "round_073_target_construction": false,
+    "round_073_model_evaluation": false,
+    "repeat_one_hour_grid_build": false,
+    "profitability_claim": false,
+    "predictive_edge_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

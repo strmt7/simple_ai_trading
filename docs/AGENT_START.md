@@ -107,11 +107,20 @@ After parser or taxonomy changes, regenerate the header through the native build
   liquidation totals, producing buyer-share values from -8192 to 64.34. Keep
   all v3 grid rows as failure evidence only. V4 uses compensated nonnegative
   totals, exact zero reset only when no nonzero term remains, and shared
-  pre-write/post-write vector invariants; it never clips residuals. Read
-  `round-073-v3-grid-numerical-failure-2026-07-23.json` and
-  `round-073-causal-grid-contract-v4.json`. The v4 tables were empty when the
-  contract was frozen. One replacement v4 grid is authorized after focused
-  tests; model evaluation remains closed until its independent audit passes.
+  pre-write/post-write vector invariants; it never clips residuals. The one
+  authorized replacement v4 grid then passed its independent persisted audit
+  and a separate full financial scan: 10,619 valid vectors, zero financial or
+  anchor-primitive violations, bounded shares in `[0, 1]`, and no negative
+  nonnegative-class values. A rejected diagnostic had incorrectly treated
+  normalized order-flow turnover as a share; all 222,999 values instead
+  reconciled exactly to signed cumulative displayed-depth flow divided by
+  contemporaneous displayed depth. Read
+  `round-073-v3-grid-numerical-failure-2026-07-23.json`,
+  `round-073-causal-grid-contract-v4.json`, and
+  `round-073-v4-grid-qualification-2026-07-23.json`. V3 remains preserved and
+  excluded. Target-contract design is now open; target construction, model
+  evaluation, and every profitability or trading claim remain closed. One hour
+  is not a model-evaluation corpus.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.
