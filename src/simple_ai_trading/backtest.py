@@ -2648,12 +2648,20 @@ def run_backtest(
     precomputed_probabilities: Sequence[float] | None = None,
     precomputed_score_backend: BackendInfo | None = None,
     precomputed_regime_scores: Sequence[float] | None = None,
-    precomputed_liquidity_adjustments: Sequence[tuple[float, float, bool, bool]] | None = None,
+    precomputed_liquidity_adjustments: Sequence[tuple[float, float, bool, bool]]
+    | None = None,
 ) -> BacktestResult:
-    score_backend = require_backend(
-        resolve_backend(effective_training_backend_name(compute_backend))
+    score_backend = (
+        require_backend(precomputed_score_backend)
+        if precomputed_probabilities is not None
+        and precomputed_score_backend is not None
+        else None
     )
     if not rows:
+        if score_backend is None:
+            score_backend = require_backend(
+                resolve_backend(effective_training_backend_name(compute_backend))
+            )
         return BacktestResult(
             starting_cash=starting_cash,
             ending_cash=starting_cash,
@@ -2711,9 +2719,13 @@ def run_backtest(
     last_close_timestamp: int | None = None
     cooldown_ms = max(0, int(cfg.cooldown_minutes)) * 60 * 1000
     min_position_hold_bars = max(0, int(getattr(cfg, "min_position_hold_bars", 0) or 0))
-    flat_signal_exit_grace_bars = max(0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0))
+    flat_signal_exit_grace_bars = max(
+        0, int(getattr(cfg, "flat_signal_exit_grace_bars", 0) or 0)
+    )
     max_position_hold_bars = max(0, int(getattr(cfg, "max_position_hold_bars", 0) or 0))
-    unpredictability_cooldown_ms = max(0, int(cfg.unpredictability_cooldown_minutes)) * 60 * 1000
+    unpredictability_cooldown_ms = (
+        max(0, int(cfg.unpredictability_cooldown_minutes)) * 60 * 1000
+    )
     regime_cooldown_until: int | None = None
     final_mark_price = rows[-1].close
 
@@ -2724,7 +2736,9 @@ def run_backtest(
     if market_type == "futures" and leverage > MAX_AUTONOMOUS_LEVERAGE:
         leverage = MAX_AUTONOMOUS_LEVERAGE
     decision_threshold = model_decision_threshold(model, cfg.signal_threshold)
-    long_threshold, short_threshold = model_direction_thresholds(model, cfg.signal_threshold, market_type=market_type)
+    long_threshold, short_threshold = model_direction_thresholds(
+        model, cfg.signal_threshold, market_type=market_type
+    )
 
     daily_trade_count: Dict[int, int] = {}
     max_daily: int | None = int(cfg.max_trades_per_day)
@@ -2739,8 +2753,10 @@ def run_backtest(
             raise ValueError(
                 f"precomputed_probabilities length mismatch: {len(probabilities)}/{len(rows)}"
             )
-        if precomputed_score_backend is not None:
-            score_backend = precomputed_score_backend
+        if score_backend is None:
+            score_backend = require_backend(
+                resolve_backend(effective_training_backend_name(compute_backend))
+            )
     else:
         probabilities, score_backend = _backtest_probabilities(
             rows,

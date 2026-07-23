@@ -213,9 +213,16 @@ def test_make_rows_accelerated_path_falls_back_to_cpu(monkeypatch) -> None:
         raise RuntimeError("accelerator unavailable in test")
 
     monkeypatch.setattr(features_mod, "_make_rows_tensor", fail_tensor)
+    monkeypatch.setattr(
+        features_mod,
+        "resolve_backend",
+        lambda _requested: features_mod.BackendInfo(
+            "auto", "directml", "privateuseone:0", "Test DirectML", ""
+        ),
+    )
     cpu_rows = make_rows(_fake_candles(), short_window=10, long_window=30)
     fallback_rows = make_rows(
-        _fake_candles(), short_window=10, long_window=30, compute_backend="directml"
+        _fake_candles(), short_window=10, long_window=30, compute_backend="auto"
     )
 
     assert fallback_rows == cpu_rows

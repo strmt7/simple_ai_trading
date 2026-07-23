@@ -2318,6 +2318,11 @@ def test_train_for_objective_gpu_backend_forces_sequential_workers(
     )
     monkeypatch.setattr(training_suite, "_candidate_grid", lambda _training: [candidate])
     monkeypatch.setattr(training_suite, "_local_refinement_candidates", lambda _candidate: [])
+    monkeypatch.setattr(
+        training_suite,
+        "make_advanced_rows",
+        lambda *_args, **_kwargs: _rows(220),
+    )
     observed: list[tuple[str, int, int]] = []
 
     def fake_evaluate(payload):

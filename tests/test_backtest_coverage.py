@@ -6,6 +6,7 @@ import pytest
 
 from simple_ai_trading import backtest as backtest_mod
 from simple_ai_trading.backtest import calibrate_threshold_for_backtest, run_backtest, trade_activity_satisfies
+from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.features import ModelRow
 from simple_ai_trading.model import TrainedModel
 from simple_ai_trading.types import StrategyConfig
@@ -609,6 +610,15 @@ def test_backtest_records_drawdown_after_same_day_capped_close() -> None:
 def test_threshold_calibration_passes_gpu_scoring_options(monkeypatch) -> None:
     calls: list[dict[str, object]] = []
 
+    def fake_probabilities(scored_rows, *_args, **_kwargs):
+        return [0.95 for _row in scored_rows], BackendInfo(
+            requested="directml",
+            kind="directml",
+            device="privateuseone:0",
+            vendor="Test DirectML",
+            reason="",
+        )
+
     def fake_run_backtest(*_args, **kwargs):
         calls.append(dict(kwargs))
         return SimpleNamespace(
@@ -621,6 +631,7 @@ def test_threshold_calibration_passes_gpu_scoring_options(monkeypatch) -> None:
             stopped_by_drawdown=False,
         )
 
+    monkeypatch.setattr(backtest_mod, "_backtest_probabilities", fake_probabilities)
     monkeypatch.setattr(backtest_mod, "run_backtest", fake_run_backtest)
     result = calibrate_threshold_for_backtest(
         [_flat_row(0, 100.0, 10.0, 1)],

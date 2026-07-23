@@ -34,7 +34,7 @@ jobs:
       - name: Ruff check
         run: ruff check .
 
-      - name: Ruff format changed Python files
+      - name: Ruff format changed Python ranges
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         shell: bash
@@ -44,12 +44,54 @@ jobs:
           if [[ -z "${base}" || "${base}" =~ ^0+$ ]] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
             base="$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)"
           fi
-          # Check only files in the current change so legacy modules outside the
-          # affected surface do not force unrelated formatting churn.
+          # Check new files in full and only changed ranges in legacy files so
+          # unrelated formatting debt cannot force repository-wide churn.
           changed="${RUNNER_TEMP}/ruff-python-files"
           git diff --name-only --diff-filter=ACMR -z "${base}" HEAD -- '*.py' > "${changed}"
-          if [[ -s "${changed}" ]]; then
-            xargs -0 ruff format --check -- < "${changed}"
-          else
+          if [[ ! -s "${changed}" ]]; then
             echo "No changed Python files."
+            exit 0
           fi
+          emit_lines() {
+            local start count last
+            while read -r start count; do
+              [[ -n "${start}" ]] || continue
+              count="${count:-1}"
+              if (( count == 0 )); then
+                printf '%s\n' "${start}"
+              else
+                last=$((start + count - 1))
+                seq "${start}" "${last}"
+              fi
+            done
+          }
+          while IFS= read -r -d '' file; do
+            if ! git cat-file -e "${base}:${file}" 2>/dev/null; then
+              ruff format --check -- "${file}"
+              continue
+            fi
+            changed_diff="${RUNNER_TEMP}/ruff-changed.diff"
+            changed_lines="${RUNNER_TEMP}/ruff-changed.lines"
+            formatted="${RUNNER_TEMP}/ruff-formatted.py"
+            format_diff="${RUNNER_TEMP}/ruff-format.diff"
+            format_lines="${RUNNER_TEMP}/ruff-format.lines"
+            git diff --unified=0 --no-color "${base}" HEAD -- "${file}" > "${changed_diff}"
+            sed -nE 's/^@@ -[0-9]+(,[0-9]+)? \+([0-9]+)(,([0-9]+))? @@.*/\2 \4/p' "${changed_diff}" |
+              emit_lines | sort -n -u > "${changed_lines}"
+            ruff format --stdin-filename "${file}" - < "${file}" > "${formatted}"
+            diff_status=0
+            git diff --no-index --unified=0 --no-color -- "${file}" "${formatted}" > "${format_diff}" || diff_status=$?
+            if (( diff_status > 1 )); then
+              echo "Could not compare Ruff output for ${file}." >&2
+              exit "${diff_status}"
+            fi
+            sed -nE 's/^@@ -([0-9]+)(,([0-9]+))? \+[0-9]+(,[0-9]+)? @@.*/\1 \3/p' "${format_diff}" |
+              emit_lines | sort -n -u > "${format_lines}"
+            overlap="$(comm -12 "${changed_lines}" "${format_lines}" | sed -n '1p')"
+            if [[ -n "${overlap}" ]]; then
+              echo "Ruff would reformat changed line ${overlap} in ${file}." >&2
+              git diff --no-index --unified=3 --no-color -- "${file}" "${formatted}" |
+                sed -n '1,120p' || true
+              exit 1
+            fi
+          done < "${changed}"
