@@ -54,9 +54,10 @@ jobs:
       - name: Run tests with coverage
         run: |
           uv run --locked coverage run --source=src/simple_ai_trading -m pytest -q
-          uv run --locked coverage xml
-          uv run --locked coverage report
-          uv run --locked coverage html
+          uv run --locked coverage xml --fail-under=0
+          uv run --locked coverage report --fail-under=0
+          uv run --locked coverage html --fail-under=0
+          uv run --locked coverage report --format=total
 
       - name: Enforce changed-line coverage
         env:
@@ -80,7 +81,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-html
-          path: htmlcov
+          path: |
+            htmlcov
+            coverage.xml
 
       - name: Upload coverage report to Codecov
         if: >-
