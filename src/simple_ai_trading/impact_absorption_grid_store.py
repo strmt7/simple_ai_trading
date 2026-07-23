@@ -64,12 +64,13 @@ from .impact_absorption_store import (
     IMPACT_CAPTURE_V9_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     iter_impact_capture_v9_records,
+    load_impact_capture_v9_preflight,
 )
 
 
-ROUND73_GRID_ANCHOR_TABLE = "impact_feature_anchor_v2"
-ROUND73_GRID_VECTOR_TABLE = "impact_feature_vector_v2"
-ROUND73_GRID_MANIFEST_TABLE = "impact_feature_run_manifest_v2"
+ROUND73_GRID_ANCHOR_TABLE = "impact_feature_anchor_v3"
+ROUND73_GRID_VECTOR_TABLE = "impact_feature_vector_v3"
+ROUND73_GRID_MANIFEST_TABLE = "impact_feature_run_manifest_v3"
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _FETCH_BATCH_SIZE = 8_192
@@ -939,6 +940,9 @@ def _v9_grid_rows(
     list[tuple[object, ...]],
     dict[str, dict[str, int]],
 ]:
+    preflight = load_impact_capture_v9_preflight(connection, run_id=run_id)
+    if coverage_start_wall_ns < preflight.ready_wall_ns:
+        raise ValueError("Round 73 v9 grid coverage precedes feature-ready marker")
     coverage_start_mono = run_started_monotonic_ns + (
         coverage_start_wall_ns - run_started_wall_ns
     )
@@ -957,6 +961,14 @@ def _v9_grid_rows(
         str(symbol): SynchronizedDepthBook(str(symbol), float(tick_size))
         for symbol, _status, _clock_offset, tick_size in segments
     }
+    snapshot_records = dict(preflight.snapshot_records)
+    for symbol in IMPACT_CAPTURE_SYMBOLS:
+        books[symbol].initialize(
+            _strict_json_object(
+                snapshot_records[symbol].raw_text,
+                "v9 preloaded depth snapshot",
+            )
+        )
     fallback_offsets = {
         str(symbol): int(clock_offset)
         for symbol, _status, clock_offset, _tick_size in segments
@@ -975,6 +987,7 @@ def _v9_grid_rows(
     }
     anchor_indices = {symbol: 0 for symbol in accumulators}
     anchor = first_anchor
+    observed_snapshot_symbols: set[str] = set()
 
     def emit_anchor() -> None:
         for symbol in IMPACT_CAPTURE_SYMBOLS:
@@ -1048,10 +1061,13 @@ def _v9_grid_rows(
             if event_type == "depthSnapshot":
                 if symbol not in books:
                     raise ValueError("Round 73 v9 grid snapshot symbol differs")
-                books[symbol].initialize(
-                    _strict_json_object(record.raw_text, "v9 depth snapshot")
-                )
-            elif event_type == "openInterest" and event_mono >= coverage_start_mono:
+                if record != snapshot_records[symbol]:
+                    raise ValueError("Round 73 v9 grid preloaded snapshot differs")
+                observed_snapshot_symbols.add(symbol)
+            elif (
+                event_type == "openInterest"
+                and record.received_wall_ns >= coverage_start_wall_ns
+            ):
                 value = context.get("open_interest")
                 if symbol not in accumulators or value is None:
                     raise ValueError("Round 73 v9 grid open interest is incomplete")
@@ -1082,10 +1098,13 @@ def _v9_grid_rows(
         )
         if event_type == "depthUpdate":
             book = books[symbol]
-            pre_state = book.state(20)
+            feature_eligible = record.received_wall_ns >= coverage_start_wall_ns
+            pre_state = book.state(20) if feature_eligible else None
             event = book.apply(payload, receive_time_ns=event_mono)
-            if event.stale or event_mono < coverage_start_mono:
+            if event.stale or not feature_eligible:
                 continue
+            if pre_state is None:
+                raise RuntimeError("Round 73 v9 eligible pre-event L2 is missing")
             rebuilt = book.state(20)
             accumulators[symbol].observe_l2(
                 state=Round73L2State(
@@ -1115,7 +1134,7 @@ def _v9_grid_rows(
                 depth_band_flow=_v9_depth_band_flow(pre_state, event.changes),
             )
             continue
-        if event_mono < coverage_start_mono:
+        if record.received_wall_ns < coverage_start_wall_ns:
             continue
         if event_type == "bookTicker":
             event = parse_book_ticker(
@@ -1177,6 +1196,8 @@ def _v9_grid_rows(
                 price=price,
                 last_filled_quantity=event.last_filled_qty,
             )
+    if tuple(sorted(observed_snapshot_symbols)) != IMPACT_CAPTURE_SYMBOLS:
+        raise ValueError("Round 73 v9 grid snapshot replay is incomplete")
     while anchor <= coverage_end_mono:
         emit_anchor()
         anchor += ROUND73_GRID_STEP_NS
@@ -1294,7 +1315,7 @@ def build_round73_causal_grid(
             SELECT c.manifest_sha256, c.coverage_start_wall_ns,
                    c.coverage_end_wall_ns, r.schema_version,
                    r.capture_contract_sha256, r.started_wall_ns,
-                   r.started_monotonic_ns
+                   r.started_monotonic_ns, c.feature_ready_wall_ns
             FROM {ROUND73_CORPUS_RUN_TABLE} c
             JOIN impact_capture_run r ON r.run_id = c.run_id
             WHERE c.run_id = ?
@@ -1317,6 +1338,9 @@ def build_round73_causal_grid(
             raise ValueError("Round 73 grid source identity differs")
         coverage_start_wall_ns = int(source[1])
         coverage_end_wall_ns = int(source[2])
+        feature_ready_wall_ns = int(source[7])
+        if coverage_start_wall_ns < feature_ready_wall_ns:
+            raise ValueError("Round 73 grid source precedes feature-ready marker")
         run_started_wall_ns = int(source[5])
         run_started_monotonic_ns = int(source[6])
         segments = connection.execute(

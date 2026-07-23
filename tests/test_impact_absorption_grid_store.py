@@ -21,6 +21,7 @@ from simple_ai_trading.impact_absorption_grid_store import (
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_INITIAL_COOLDOWN_NS,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
     IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
@@ -35,7 +36,8 @@ from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 RUN_ID = "d" * 32
 WALL_BASE = 1_784_058_600_000_000_000
 SEGMENT_START = WALL_BASE + 1
-SEGMENT_END = SEGMENT_START + ROUND73_CORPUS_MINIMUM_SEGMENT_NS
+FEATURE_READY_WALL_NS = WALL_BASE + 1_000
+SEGMENT_END = FEATURE_READY_WALL_NS + ROUND73_CORPUS_MINIMUM_SEGMENT_NS
 
 
 def test_clock_timeline_never_uses_a_probe_at_or_after_an_event() -> None:
@@ -142,11 +144,51 @@ def _seed_qualified_run(
                 tick_size=0.1,
                 clock_offset_ns=0,
                 clock_rtt_ns=1,
-                cooldown_until_wall_ns=0,
+                cooldown_until_wall_ns=(
+                    FEATURE_READY_WALL_NS + IMPACT_CAPTURE_INITIAL_COOLDOWN_NS
+                ),
             )
             book = SynchronizedDepthBook(symbol, "0.1")
             snapshot = _snapshot(price)
             book.initialize(snapshot)
+            if schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+                stale_mono = 50 + symbol_index
+                stale_time_ms = (WALL_BASE + stale_mono) // 1_000_000
+                pre_ready_payload = {
+                    "e": "depthUpdate",
+                    "E": stale_time_ms,
+                    "T": stale_time_ms,
+                    "s": symbol,
+                    "U": 101,
+                    "u": 101,
+                    "pu": 100,
+                    "b": [[f"{price:.1f}", "5"]],
+                    "a": [[f"{price + 0.1:.1f}", "4"]],
+                    "st": 1,
+                    "ps": symbol,
+                }
+                pre_ready_state = book.state()
+                pre_ready = book.apply(
+                    pre_ready_payload,
+                    receive_time_ns=stale_mono,
+                )
+                messages.append(
+                    ImpactCaptureMessage(
+                        record=record(
+                            "binance_futures_public",
+                            f"public:{symbol}:depth",
+                            stale_mono,
+                            {
+                                "stream": f"{symbol.lower()}@depth@100ms",
+                                "data": pre_ready_payload,
+                            },
+                        ),
+                        event=pre_ready,
+                        segment_id=segment_id,
+                        pre_l2_state=pre_ready_state,
+                        l2_state=book.state(),
+                    )
+                )
             snapshot_mono = 100 + symbol_index
             messages.append(
                 ImpactCaptureMessage(
@@ -211,7 +253,11 @@ def _seed_qualified_run(
                         )
                     )
 
-                update_id = 101 + second_index
+                update_id = (
+                    101
+                    + second_index
+                    + int(schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION)
+                )
                 depth_time_ms = (WALL_BASE + depth_mono) // 1_000_000
                 depth_payload = {
                     "e": "depthUpdate",

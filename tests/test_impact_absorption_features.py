@@ -12,6 +12,7 @@ from simple_ai_trading.impact_absorption_features import (
 )
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
+    IMPACT_CAPTURE_INITIAL_COOLDOWN_NS,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
     IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
@@ -28,6 +29,7 @@ from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
 RUN_ID = "f" * 32
 WALL_BASE = 1_784_058_600_000_000_000
+FEATURE_READY_WALL_NS = WALL_BASE + 400
 
 
 def _snapshot() -> dict[str, object]:
@@ -44,11 +46,12 @@ def _record(
     connection_id: str,
     monotonic_ns: int,
     payload: object,
+    sequence_number: int = 0,
 ) -> ImpactCaptureFrameRecord:
     return ImpactCaptureFrameRecord(
         stream=stream,
         connection_id=connection_id,
-        sequence_number=0,
+        sequence_number=sequence_number,
         received_wall_ns=WALL_BASE + monotonic_ns,
         received_monotonic_ns=monotonic_ns,
         raw_text=json.dumps(payload, separators=(",", ":"), ensure_ascii=True),
@@ -59,6 +62,7 @@ def _seed_qualified_current_run(
     database,
     *,
     schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
+    include_pre_ready_depth: bool = False,
 ) -> None:
     messages: list[ImpactCaptureMessage] = []
     with ImpactAbsorptionStore(database) as store:
@@ -81,9 +85,49 @@ def _seed_qualified_current_run(
                 tick_size=0.1,
                 clock_offset_ns=0,
                 clock_rtt_ns=1,
-                cooldown_until_wall_ns=0,
+                cooldown_until_wall_ns=(
+                    FEATURE_READY_WALL_NS + IMPACT_CAPTURE_INITIAL_COOLDOWN_NS
+                ),
             )
             snapshot = _snapshot()
+            book = SynchronizedDepthBook(symbol, "0.1")
+            book.initialize(snapshot)
+            if include_pre_ready_depth:
+                pre_ready_payload = {
+                    "e": "depthUpdate",
+                    "E": 901 + index,
+                    "T": 900 + index,
+                    "s": symbol,
+                    "U": 101,
+                    "u": 101,
+                    "pu": 100,
+                    "b": [["100.0", "5"]],
+                    "a": [["100.1", "4"]],
+                    "st": 1,
+                    "ps": symbol,
+                }
+                pre_ready_state = book.state()
+                pre_ready = book.apply(
+                    pre_ready_payload,
+                    receive_time_ns=50 + index,
+                )
+                messages.append(
+                    ImpactCaptureMessage(
+                        record=_record(
+                            stream="binance_futures_public",
+                            connection_id=f"public:{symbol}",
+                            monotonic_ns=50 + index,
+                            payload={
+                                "stream": f"{symbol.lower()}@depth@100ms",
+                                "data": pre_ready_payload,
+                            },
+                        ),
+                        event=pre_ready,
+                        segment_id=segment_id,
+                        pre_l2_state=pre_ready_state,
+                        l2_state=book.state(),
+                    )
+                )
             messages.append(
                 ImpactCaptureMessage(
                     record=_record(
@@ -110,28 +154,28 @@ def _seed_qualified_current_run(
                 "E": 1_001 + index,
                 "T": 1_000 + index,
                 "s": symbol,
-                "U": 101,
-                "u": 101,
-                "pu": 100,
+                "U": 102 if include_pre_ready_depth else 101,
+                "u": 102 if include_pre_ready_depth else 101,
+                "pu": 101 if include_pre_ready_depth else 100,
                 "b": [["100.0", "4"]],
                 "a": [["100.1", "1"]],
                 "st": 1,
                 "ps": symbol,
             }
-            book = SynchronizedDepthBook(symbol, "0.1")
-            book.initialize(snapshot)
             pre_state = book.state()
-            depth = book.apply(payload, receive_time_ns=index * 100 + 1)
+            eligible_mono = 400 + index
+            depth = book.apply(payload, receive_time_ns=eligible_mono)
             messages.append(
                 ImpactCaptureMessage(
                     record=_record(
                         stream="binance_futures_public",
                         connection_id=f"public:{symbol}",
-                        monotonic_ns=index * 100 + 1,
+                        monotonic_ns=eligible_mono,
                         payload={
                             "stream": f"{symbol.lower()}@depth@100ms",
                             "data": payload,
                         },
+                        sequence_number=1 if include_pre_ready_depth else 0,
                     ),
                     event=depth,
                     segment_id=segment_id,
@@ -191,19 +235,33 @@ def test_v9_feature_replay_rebuilds_depth_bands_without_typed_duplicates(
     _seed_qualified_current_run(
         database,
         schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        include_pre_ready_depth=True,
     )
 
     diagnostic = diagnose_round73_feature_source(database, run_id=RUN_ID)
     payload = diagnostic.as_dict()
 
     assert payload["schema_version"] == ROUND73_FEATURE_SOURCE_V9_SCHEMA_VERSION
-    assert diagnostic.depth_update_count == 3
-    assert diagnostic.synchronized_depth_update_count == 3
+    assert diagnostic.depth_update_count == 6
+    assert diagnostic.pre_ready_depth_update_count == 3
+    assert diagnostic.feature_eligible_depth_update_count == 3
+    assert diagnostic.feature_ready_wall_ns == FEATURE_READY_WALL_NS
+    assert diagnostic.synchronized_depth_update_count == 6
+    assert diagnostic.level_change_count == 6
     assert diagnostic.stored_depth_band_row_count == 0
     assert diagnostic.stored_depth_band_rows_reconciled is False
     assert diagnostic.depth_band_projection_source == "exact_wire_replay"
     assert diagnostic.exact_wire_depth_band_replay_passed is True
+    assert diagnostic.causal_exact_wire_depth_band_replay_passed is True
     assert payload["authority"]["exact_wire_depth_band_replay_passed"] is True
+    assert payload["authority"]["causal_exact_wire_depth_band_replay_passed"] is True
+    assert all(
+        state["pre_ready_depth_updates"] == 1
+        and state["feature_eligible_depth_updates"] == 1
+        and state["feature_eligible_synchronized_depth_updates"] == 1
+        and state["level_changes"] == 2
+        for state in diagnostic.symbols.values()
+    )
 
 
 def test_current_feature_replay_rejects_hash_consistent_false_band_row(

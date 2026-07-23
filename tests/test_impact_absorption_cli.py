@@ -576,7 +576,7 @@ def test_impact_capture_progress_monitor_reports_without_blocking(
     Path(f"{database}.wal").write_bytes(b"wal")
     result = asyncio.run(
         cli._run_impact_capture_with_progress(
-            cli.ImpactCaptureConfig(database=str(database), duration_seconds=1),
+            cli.ImpactCaptureConfig(database=str(database), duration_seconds=0.001),
             progress_interval_seconds=0.001,
         )
     )
@@ -584,6 +584,7 @@ def test_impact_capture_progress_monitor_reports_without_blocking(
     assert result.status == "completed"
     progress = capsys.readouterr().err
     assert "impact-capture-progress: state=starting" in progress
+    assert "impact-capture-progress: state=finalizing" in progress
     assert "database_bytes=8" in progress
     assert "wal_bytes=3" in progress
 

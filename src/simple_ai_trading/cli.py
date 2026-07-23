@@ -1387,7 +1387,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_impact_features.add_argument(
         "--run-id",
         required=True,
-        help="v4-v8 run ID with a passed capture or qualification gate",
+        help="v4-v9 run ID with a passed capture or qualification gate",
     )
     parser_impact_features.add_argument("--memory-limit", default="2GB")
     parser_impact_features.add_argument("--database-threads", type=int, default=2)
@@ -11006,10 +11006,12 @@ async def _run_impact_capture_with_progress(
             )
             if done:
                 break
+            elapsed = loop.time() - started
+            state = "finalizing" if elapsed >= config.duration_seconds else "running"
             print(
                 "impact-capture-progress: "
-                f"state=running mode={config.mode} schema={config.schema_version} "
-                f"wall_elapsed={loop.time() - started:.1f}s "
+                f"state={state} mode={config.mode} schema={config.schema_version} "
+                f"wall_elapsed={elapsed:.1f}s "
                 f"stream_target={config.duration_seconds:.1f}s "
                 f"database={config.database} database_bytes={path_bytes(database)} "
                 f"wal_bytes={path_bytes(wal)}",
