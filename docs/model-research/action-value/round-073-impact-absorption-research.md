@@ -160,6 +160,7 @@ mandatory. Progress is emitted to stderr, test staging and sealing redact all
 outcome summaries, and an interrupted evaluation permanently closes the test.
 These commands are implemented but cannot run on eligible evidence until the
 prospective seven-day corpus exists.
+
 - `round-073-selected-anchor-evaluation-contract-v1.json` freezes the one-use
   viability analysis before an eligible v2 target result exists. It keeps
   BTC/ETH/SOL models separate, evaluates prevalence, linear L1+tape, shallow
@@ -288,6 +289,21 @@ on day five from a fixed grid; days six and seven are read once only after the
 model, preprocessing, and policy artifacts are hash-bound. Same-symbol signals
 are skipped while that symbol already has a simulated position. Seven-day
 annualized ROI or Sharpe claims are prohibited.
+
+A tuning threshold is deployable only when its integrity-segment bootstrap
+lower bound is strictly positive. Finite support alone is not enough. The
+tuning overlap guard also reserves the full requested entry delay and holding
+horizon plus both 250 ms state-lateness budgets; an unresolved position blocks
+that symbol for the remainder of tuning. These rules prevent threshold
+selection from benefiting from a known-negative lower bound or impossible
+overlapping capital use.
+
+The seven-day screen resamples one-hour integrity segments and keeps every row
+from a segment together. Adjacent segments can still be serially dependent, so
+this screen cannot establish day-level independence or durable edge. The
+minimum 30-day promotion study must separately freeze a longer dependence block
+after examining development-only autocorrelation, before its terminal holdout
+is opened.
 
 After the append-only evaluation-access claim, every test role manifest is
 reconciled and exact-wire replayed again before scoring. Economic output reports

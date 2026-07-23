@@ -360,6 +360,16 @@ def test_independent_symbol_gate_requires_predictive_and_economic_passes() -> No
     assert count == 1
 
 
+def test_multiple_testing_report_discloses_integrity_segment_limit() -> None:
+    report = subject._apply_multiple_testing([])
+
+    assert report["resampling_block"] == (
+        "one-hour integrity segment identified by run_id"
+    )
+    assert report["adjacent_segment_dependence_fully_preserved"] is False
+    assert report["day_level_or_durable_inference_claimed"] is False
+
+
 def test_deeper_candidates_require_the_complete_staged_comparison_chain() -> None:
     assert subject._required_stages("linear_l1_tape") == ("linear_vs_controls",)
     assert subject._required_stages("l1_tape") == (
