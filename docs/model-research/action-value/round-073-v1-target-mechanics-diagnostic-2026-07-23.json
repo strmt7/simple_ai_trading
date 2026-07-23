@@ -1,0 +1,212 @@
+{
+  "schema_version": "round-073-v1-target-mechanics-diagnostic-v1",
+  "artifact_sha256": "c5e9356edf641bfc5706e5e5842231c507d5fef5c6ff877271d4ecb64b208f4d",
+  "recorded_utc_date": "2026-07-23",
+  "source_commit": "0674a2f",
+  "credentials_used": false,
+  "orders_submitted": false,
+  "synthetic_market_data_used": false,
+  "target_outcomes_observed": true,
+  "source": {
+    "run_id": "0aabddb515794668a8a54129aa6e1d47",
+    "capture_report_sha256": "698efcd5a1ee98f0ba0e5b476ecdacb3dccb09d12ecabe3aba0e8031dc8499a1",
+    "corpus_manifest_sha256": "6cb6cbb451f802b7776488ed05ce7280f39b09569a75b1c241d2ad7bfb5c5f21",
+    "grid_contract_sha256": "8114a2990b8346c924aa8da6ceaa165ca3dcd13bab28118136e47ab8cd5e39c2",
+    "grid_qualification_sha256": "71cc28c3b7f3bba2b41625fe8a465ecb9c94d504a194d57b86ece4c2945b3231",
+    "grid_manifest_sha256": "f7ba3b4671046a70a447802c94f8a534a95b6e227268402c3731b1fe2546d89f",
+    "target_contract_sha256": "3c4c6f0f10505897f71930245ae3252eccfe1ccac90217e6c07151a2416e2253",
+    "target_manifest_sha256": "955247082803dcdbb93723ce8e5f48d769f3b4d3670d9bb736cb3e1089897b5b"
+  },
+  "target_build": {
+    "elapsed_seconds": 284.3,
+    "valid_anchor_count": 10619,
+    "expected_options_per_valid_anchor": 36,
+    "option_count": 382284,
+    "eligible_option_count": 380483,
+    "ineligible_option_count": 1801,
+    "positive_after_cost_option_count": 0,
+    "first_decision_wall_ns": 1784770590452801400,
+    "last_decision_wall_ns": 1784774129452801400,
+    "per_symbol": {
+      "BTCUSDT": {
+        "options": 127440,
+        "eligible": 126563,
+        "ineligible": 877,
+        "positive_after_cost": 0
+      },
+      "ETHUSDT": {
+        "options": 127440,
+        "eligible": 127032,
+        "ineligible": 408,
+        "positive_after_cost": 0
+      },
+      "SOLUSDT": {
+        "options": 127404,
+        "eligible": 126888,
+        "ineligible": 516,
+        "positive_after_cost": 0
+      }
+    },
+    "ineligible_reason_counts": {
+      "quantity_filter": 0,
+      "entry_state_late": 198,
+      "entry_capacity": 6,
+      "entry_minimum_notional": 0,
+      "funding_boundary": 0,
+      "path_capacity": 322,
+      "exit_state_late": 303,
+      "exit_capacity": 0,
+      "coverage_end": 972
+    }
+  },
+  "independent_persisted_audit": {
+    "elapsed_seconds": 101.9,
+    "passed": true,
+    "errors": [],
+    "option_count": 382284,
+    "eligible_option_count": 380483,
+    "positive_after_cost_option_count": 0,
+    "source_bound_market_quantity_filters_recomputed": true,
+    "every_option_hash_recomputed": true,
+    "every_payoff_and_path_risk_identity_recomputed": true
+  },
+  "economic_hurdle_diagnostic": {
+    "minimum_round_trip_fee_and_adverse_reserve_bps": 12.0,
+    "gross_positive_option_count": 82504,
+    "gross_positive_option_fraction": 0.21684017419963572,
+    "option_rows_are_statistically_independent": false,
+    "positive_after_cost_option_count": 0,
+    "binary_target_has_both_classes": false,
+    "groups": [
+      {
+        "symbol": "BTCUSDT",
+        "horizon_ms": 1000,
+        "eligible_options": 42382,
+        "maximum_gross_bps": 4.537598879305763,
+        "gross_bps_p99": 1.3691523881819925,
+        "maximum_net_bps": -7.459678561366653
+      },
+      {
+        "symbol": "BTCUSDT",
+        "horizon_ms": 5000,
+        "eligible_options": 42223,
+        "maximum_gross_bps": 5.52437420863063,
+        "gross_bps_p99": 2.76702977597715,
+        "maximum_net_bps": -6.478940415894546
+      },
+      {
+        "symbol": "BTCUSDT",
+        "horizon_ms": 15000,
+        "eligible_options": 41958,
+        "maximum_gross_bps": 8.083914380539962,
+        "gross_bps_p99": 5.108400179682894,
+        "maximum_net_bps": -3.9112352708317117
+      },
+      {
+        "symbol": "ETHUSDT",
+        "horizon_ms": 1000,
+        "eligible_options": 42420,
+        "maximum_gross_bps": 5.296335143782422,
+        "gross_bps_p99": 1.7124595662192903,
+        "maximum_net_bps": -6.706842657303846
+      },
+      {
+        "symbol": "ETHUSDT",
+        "horizon_ms": 5000,
+        "eligible_options": 42384,
+        "maximum_gross_bps": 6.711409395974001,
+        "gross_bps_p99": 3.4246753044585776,
+        "maximum_net_bps": -5.284563758388414
+      },
+      {
+        "symbol": "ETHUSDT",
+        "horizon_ms": 15000,
+        "eligible_options": 42228,
+        "maximum_gross_bps": 11.52474445696175,
+        "gross_bps_p99": 5.9269595148938246,
+        "maximum_net_bps": -0.4821703897124278
+      },
+      {
+        "symbol": "SOLUSDT",
+        "horizon_ms": 1000,
+        "eligible_options": 42384,
+        "maximum_gross_bps": 3.868471953579342,
+        "gross_bps_p99": 1.283861856464265,
+        "maximum_net_bps": -8.131701030927648
+      },
+      {
+        "symbol": "SOLUSDT",
+        "horizon_ms": 5000,
+        "eligible_options": 42312,
+        "maximum_gross_bps": 7.717041800643806,
+        "gross_bps_p99": 2.578316359418448,
+        "maximum_net_bps": -4.278327974275807
+      },
+      {
+        "symbol": "SOLUSDT",
+        "horizon_ms": 15000,
+        "eligible_options": 42192,
+        "maximum_gross_bps": 10.286742960010487,
+        "gross_bps_p99": 5.163955589982823,
+        "maximum_net_bps": -1.707084994213506
+      }
+    ],
+    "best_observed_option": {
+      "symbol": "ETHUSDT",
+      "anchor_index": 1692,
+      "entry_delay_ms": 500,
+      "horizon_ms": 15000,
+      "side": "long",
+      "maximum_gross_bps": 11.52474445696175,
+      "effective_charge_bps": 12.006914846674176,
+      "net_bps": -0.4821703897124278,
+      "maximum_adverse_excursion_bps": -12.051882115361359,
+      "maximum_favorable_excursion_bps": -0.4821703897124278
+    }
+  },
+  "resource_observation": {
+    "database_bytes_before_target_build": 5769539584,
+    "database_bytes_after_clean_close": 5809909760,
+    "physical_database_growth_bytes": 40370176,
+    "physical_database_growth_bytes_per_option": 105.602578187944,
+    "wal_exists_after_clean_close": false,
+    "observed_private_memory_peak_lower_bound_bytes": 2789841306,
+    "exact_process_memory_peak_measured": false,
+    "physical_ssd_or_nand_wear_inferred": false
+  },
+  "critical_analysis": {
+    "target_mechanics_validated": true,
+    "one_hour_period_sufficient_for_model_evaluation": false,
+    "model_training_on_single_class_binary_target_permitted": false,
+    "continuous_target_model_evaluated": false,
+    "round_073_financial_hypothesis_rejected": false,
+    "reason_hypothesis_not_rejected": "The preregistered evaluation requires seven complete untouched UTC days; this hour validates mechanics and shows only that no observed 1-15 second taker path cleared the frozen reserve.",
+    "cost_delay_horizon_or_population_weakened_after_observation": false,
+    "predictive_edge_evidence": false,
+    "profitability_evidence": false,
+    "drawdown_evidence": false,
+    "leverage_evidence": false,
+    "ai_uplift_evidence": false
+  },
+  "future_evidence_policy": {
+    "this_run_is_development_only_after_target_observation": true,
+    "this_run_permitted_in_future_model_selection_or_scoring": false,
+    "new_untouched_prospective_period_required": true,
+    "repeat_v1_all_anchor_targets_for_each_future_segment": false,
+    "reason_not_to_repeat": "The diagnostic proved the mechanics; repeating 36 options per second would duplicate unselected rows, add avoidable storage and memory load, and inspect outcomes before the feature-only shock cohort and chronological split are frozen.",
+    "storage_efficient_target_v2_contract_required_before_future_target_labels": true,
+    "feature_only_training_fold_shock_selection_must_remain_frozen": true
+  },
+  "authorization": {
+    "target_v1_mechanics_diagnostic_consumed": true,
+    "target_v1_repeat_on_this_run": false,
+    "storage_efficient_target_v2_contract_design": true,
+    "new_untouched_prospective_feature_collection": true,
+    "round_073_model_evaluation": false,
+    "predictive_edge_claim": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

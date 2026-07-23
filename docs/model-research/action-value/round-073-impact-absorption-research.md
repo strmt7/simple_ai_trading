@@ -1,10 +1,12 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** capture contract v8 passed its 30-second telemetry diagnostic,
-180-second capture gate, one-hour qualification, fresh-process audits, and
-independent exact-wire feature replay. Bounded segmented-corpus implementation
-and feature construction are authorized. An unbounded capture and every model,
-profitability, AI, leverage, paper, testnet, or live claim remain closed.
+**Status:** a qualified one-hour v9 exact-wire run now has an independently
+audited v4 causal grid and v1 executable-target diagnostic. Of 382,284 frozen
+quote-path options, 380,483 were mechanically eligible and none cleared the
+12 bps round-trip reserve. This hour is development-only after outcome access;
+no model was trained. A new untouched seven-day feature corpus and compact
+target-v2 design are next. Profitability, AI, leverage, paper, testnet, and live
+authority remain closed.
 
 ## Why this is different
 
@@ -97,6 +99,15 @@ flowchart LR
   3,608.934 seconds to the 2026-07-22 UTC statistical partition. No complete
   day exists, so target construction and model evaluation remain closed. See
   `round-073-first-corpus-manifest-2026-07-22.json`.
+- V9 run `0aabddb515794668a8a54129aa6e1d47` passed one hour with 2,277,593
+  real public messages. Its v4 grid retained 10,629 one-second anchors and
+  10,619 financially valid vectors; independent scans found zero vector or
+  anchor-primitive violations. The frozen target replay then produced 382,284
+  long/short options across two delays, three horizons, and three notionals.
+  The best gross path was 11.52 bps, below the approximately 12 bps charge, so
+  every after-cost binary label was negative. This is mechanics evidence, not
+  a model result or a reason to reduce costs post hoc. See the v4 grid
+  qualification and v1 target-mechanics diagnostic dated 2026-07-23.
 - `round-073-rotation-runner-contract-v1.json` freezes a bounded collector
   before its first run. It admits at most 168 one-hour segments per invocation,
   uses one DuckDB writer lease, journals each terminal supervisor result,

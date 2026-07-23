@@ -126,7 +126,17 @@ After parser or taxonomy changes, regenerate the header through the native build
   insufficient capacity, invalid exchange filters, and funding boundaries.
   Read `round-073-executable-target-contract-v1.json`. One target-mechanics
   replay is open; model evaluation and every profitability or trading claim
-  remain closed. One hour is not a model-evaluation corpus.
+  remain closed. That replay is now consumed and independently audited: 380,483
+  of 382,284 options were mechanically eligible, but none cleared the frozen
+  12 bps round-trip reserve. Best gross paths were 8.08 bps BTC, 11.52 bps ETH,
+  and 10.29 bps SOL. This validates target mechanics but leaves a single-class
+  binary target, so no model was trained. The observed hour is development-only
+  and excluded from future selection or scoring. Do not weaken the cost, delay,
+  horizon, or population after this result. Read
+  `round-073-v1-target-mechanics-diagnostic-2026-07-23.json`. A compact v2
+  target-contract design and new untouched prospective feature collection are
+  open; target labels, model evaluation, and all trading authority remain
+  closed. One hour is not a model-evaluation corpus.
   The segmented-corpus and rotation-runner contracts are now frozen. The runner
   uses one lease owner, terminal batch journals, zero reconnects, one-hour
   segments, recovery-before-capture, and serial exact replay after capture.
