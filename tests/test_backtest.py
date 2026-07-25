@@ -343,7 +343,7 @@ def test_backtest_downsizes_entries_after_measured_low_liquidity_signal() -> Non
     assert "low_liquidity_requires_stronger_signal" in str(adjusted.trade_log[0]["meta_label_reason"])
 
 
-def test_backtest_does_not_apply_fixed_utc_session_penalty() -> None:
+def test_backtest_has_no_fixed_utc_crypto_session_penalty() -> None:
     base_ts = 1_767_578_400_000  # 2026-01-05 02:00:00 UTC.
     rows = [
         ModelRow(
@@ -373,9 +373,12 @@ def test_backtest_does_not_apply_fixed_utc_session_penalty() -> None:
         taker_fee_bps=0.0,
         slippage_bps=0.0,
         liquidity_lookback_bars=8,
-        off_session_signal_threshold_add=0.10,
-        off_session_size_multiplier=0.10,
     )
+
+    assert not hasattr(cfg, "preferred_utc_session_start_hour")
+    assert not hasattr(cfg, "preferred_utc_session_end_hour")
+    assert not hasattr(cfg, "off_session_signal_threshold_add")
+    assert not hasattr(cfg, "off_session_size_multiplier")
 
     result = run_backtest(rows, model, cfg, starting_cash=1000.0)
 

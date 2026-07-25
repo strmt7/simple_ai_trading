@@ -209,6 +209,9 @@ simple-ai-trading ai-uplift --starting-capital 1000 --market-db data/market_data
 No static "day trading hours" are applied to continuous Binance markets. The
 active paths use observed volume by symbol and historical clock bucket, while
 any listed-product session feature must use its own verified exchange calendar.
+Exchange-traded BTC, ETH, or SOL products can have formal venue closes,
+holidays, and auctions; those are contextual features only and never create a
+close, opening permission, or execution authority for the underlying crypto.
 The frozen research boundary is documented in
 [Round 71](docs/model-research/action-value/round-071-institutional-microstructure-and-ai-research.md).
 

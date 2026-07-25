@@ -216,6 +216,34 @@ def test_load_strategy_ignores_method_name_payload_keys(tmp_path: Path, monkeypa
     assert loaded.risk_per_trade == 0.003
 
 
+def test_load_strategy_ignores_retired_fixed_crypto_session_fields(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    cfg_file = config_paths()["strategy"]
+    cfg_file.parent.mkdir(parents=True, exist_ok=True)
+    cfg_file.write_text(
+        json.dumps(
+            {
+                "risk_per_trade": 0.002,
+                "preferred_utc_session_start_hour": 13,
+                "preferred_utc_session_end_hour": 21,
+                "off_session_signal_threshold_add": 0.10,
+                "off_session_size_multiplier": 0.10,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    loaded = load_strategy()
+
+    assert loaded.risk_per_trade == 0.002
+    assert not hasattr(loaded, "preferred_utc_session_start_hour")
+    assert not hasattr(loaded, "preferred_utc_session_end_hour")
+    assert not hasattr(loaded, "off_session_signal_threshold_add")
+    assert not hasattr(loaded, "off_session_size_multiplier")
+
+
 def test_read_config_json_rejects_non_dict_payload(tmp_path: Path) -> None:
     path = tmp_path / "payload.json"
     path.write_text("[1, 2, 3]", encoding="utf-8")
