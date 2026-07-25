@@ -146,3 +146,35 @@ def test_round74_live_probe_evidence_is_hash_bound_and_authorizes_one_hour() -> 
     assert authorization["v10_rotation"] is False
     assert authorization["round_074_model_training_or_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round74_one_hour_qualification_is_hash_bound_without_hindsight_label() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH
+            / "round-074-v10-one-hour-qualification-success-2026-07-25.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["execution_git_commit"] == (
+        "c2ff589ab74589efae6dfe12d6e2a94d363f135f"
+    )
+    capture = artifact["capture"]
+    audit = artifact["fresh_process_audit"]
+    assert capture["status"] == "completed"
+    assert capture["reconnect_count"] == 0
+    assert capture["elapsed_seconds"] >= 3600.0
+    assert capture["message_count"] == audit["message_count"] == 1_001_776
+    assert capture["last_frame_sha256"] == audit["last_frame_sha256"]
+    assert artifact["gate_analysis"]["qualification_passed"] is True
+    activity = artifact["market_activity_interpretation"]
+    assert activity["quiet_or_active_classifier_frozen_before_capture"] is False
+    assert activity["activity_label"] == "unclassified"
+    assert activity["may_retroactively_satisfy_quiet_or_active_qualification"] is False
+    authorization = artifact["authorization"]
+    assert authorization["round_074_nonselective_period_qualification_design"] is True
+    assert authorization["additional_v10_capture_before_period_contract"] is False
+    assert authorization["round_074_model_training_or_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
