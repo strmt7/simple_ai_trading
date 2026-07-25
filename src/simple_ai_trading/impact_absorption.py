@@ -14,6 +14,9 @@ from .assets import normalize_symbol
 ROUND73_DESIGN_SHA256 = (
     "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe"
 )
+ROUND74_CAPTURE_DESIGN_SHA256 = (
+    "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136"
+)
 ROUND73_EVENT_SCHEMA_VERSION = "round-073-prospective-l2-event-v1"
 EXPECTED_STREAM_TYPE = 1
 ROUND73_LEVEL_BANDS = (
@@ -710,6 +713,7 @@ __all__ = [
     "MarkPriceEvent",
     "ROUND73_DESIGN_SHA256",
     "ROUND73_EVENT_SCHEMA_VERSION",
+    "ROUND74_CAPTURE_DESIGN_SHA256",
     "SynchronizedDepthBook",
     "expected_combined_stream_name",
     "parse_aggregate_trade",

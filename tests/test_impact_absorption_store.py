@@ -32,11 +32,16 @@ from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS,
     IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
     IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V10_FRAME_TABLE,
+    IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRejectedWireEvent,
     ImpactRestEvent,
     iter_impact_capture_v9_records,
+    iter_impact_capture_v10_records,
 )
 from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
@@ -627,6 +632,63 @@ def test_v9_store_persists_exact_frames_and_only_low_rate_rest_context(
                 ).fetchone()[0]
                 == 0
             )
+
+
+def test_v10_store_is_version_isolated_and_independently_auditable(tmp_path) -> None:
+    with ImpactAbsorptionStore(tmp_path / "impact-v10.duckdb") as store:
+        _start(store, schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION)
+        written = store.append_frame(
+            run_id=RUN_ID,
+            messages=tuple(reversed(_messages())),
+        )
+        audit = store.audit_run(RUN_ID)
+        connection = store.connect()
+        run = connection.execute(
+            "SELECT schema_version, design_sha256, capture_contract_sha256 "
+            "FROM impact_capture_run WHERE run_id = ?",
+            [RUN_ID],
+        ).fetchone()
+        ordered_receipts = [
+            record.received_monotonic_ns
+            for _frame, _message, record in iter_impact_capture_v10_records(
+                connection,
+                run_id=RUN_ID,
+            )
+        ]
+
+        assert audit.passed is True
+        assert audit.message_count == written.message_count == 6
+        assert audit.capture_contract_sha256 == IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        assert audit.as_dict()["schema_version"] == "round-074-capture-audit-v1"
+        assert run == (
+            IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+            "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+            IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+        )
+        assert ordered_receipts == sorted(ordered_receipts)
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {IMPACT_CAPTURE_V10_FRAME_TABLE} "
+                "WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE} "
+                "WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            connection.execute(
+                f"SELECT count(*) FROM {IMPACT_CAPTURE_V9_FRAME_TABLE} WHERE run_id = ?",
+                [RUN_ID],
+            ).fetchone()[0]
+            == 0
+        )
 
 
 def test_v9_fresh_writer_connection_rebinds_persisted_storage_policy(

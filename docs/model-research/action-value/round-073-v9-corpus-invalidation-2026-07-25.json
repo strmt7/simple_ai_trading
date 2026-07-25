@@ -1,0 +1,122 @@
+{
+  "schema_version": "round-073-v9-corpus-invalidation-v1",
+  "artifact_sha256": "c6bf1061fc1e3e43293eaf385f3156ec41d14b377f4a966bc28ab941be06ff91",
+  "round": 73,
+  "git_commit": "42f8a3bedc1c5a4d6140ed68d35ff9ef384428c5",
+  "observed_at_utc": "2026-07-25T00:30:00Z",
+  "source": {
+    "database": "data/microstructure.duckdb",
+    "capture_schema_version": "round-073-prospective-evidence-v9",
+    "capture_contract_sha256": "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254",
+    "selection_boundary_wall_ns": 1784851200000000000,
+    "provider": "Binance USD-M public production market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_used": false,
+    "credentials_used": false,
+    "authenticated_endpoint_used": false,
+    "orders_submitted": false
+  },
+  "campaign": {
+    "requested_qualification_hours": 168,
+    "qualified_and_indexed_hours_before_invalidation": 18,
+    "completed_but_resource_rejected_hours": 2,
+    "failed_capture_attempts": 5,
+    "target_rows_opened": false,
+    "model_fit_or_evaluation_started": false
+  },
+  "accepted_completed_runs": [
+    {"run_id":"ea9b86d7143d4eb1babe3c56e90d8c73","message_count":2638736,"process_io_write_bytes_per_message":125.78465977649905,"report_sha256":"45398091cfe5dfce086f1ea316cd7399c7f58b149552b8d9dcc70169f84e4f92"},
+    {"run_id":"fe770247effd425b898f2d2f44f1b3b8","message_count":2529883,"process_io_write_bytes_per_message":183.31163140746034,"report_sha256":"a5868a1cc2c08d15333a277eaee73d95871f587a3608c3503eaf0a502bbec2b1"},
+    {"run_id":"9fad820e3efa4c309615ddff194c6477","message_count":2500025,"process_io_write_bytes_per_message":216.56725112748873,"report_sha256":"812b83157e6618b0345533070b42f58683ca80fb803f154b7618f3a4ea9c7436"},
+    {"run_id":"a761c5de745a40da80c1af56d9523c16","message_count":1644138,"process_io_write_bytes_per_message":350.5429988236997,"report_sha256":"00239c9b18e860d385ddd471886ef93611f61de97ac30248d40bf6c207a1d58f"},
+    {"run_id":"f8ae38a6e5244d729131f81a3cbc38ed","message_count":1837307,"process_io_write_bytes_per_message":358.54160573056106,"report_sha256":"bc5e6d16b64d47daf71b57c876279483d93401e25ef9fe73d7ed8043b7307a55"},
+    {"run_id":"9caae95810384cfa8877f0b60fcef2b9","message_count":3242690,"process_io_write_bytes_per_message":242.9940537023274,"report_sha256":"59ba12e40802378f63948e4341f21efcd939e9f16ba9b78fb1cf413a9cece4d3"},
+    {"run_id":"5435963a495648dca332f1a496940256","message_count":1839225,"process_io_write_bytes_per_message":443.61331974065166,"report_sha256":"12391d78bb5b83bdde6cb1287d1fa9f2a0e0714107d94eb0b2183ed4603e1838"},
+    {"run_id":"d99ca4d71f284670828b34b11e2a3c8f","message_count":2477739,"process_io_write_bytes_per_message":365.9383893945246,"report_sha256":"4ab6f9b74200875839e087aefa8f07b58a35bafec8428ab3da31ead39a9801a3"},
+    {"run_id":"09d06476fd524260aa9e767cacb8ebff","message_count":1743853,"process_io_write_bytes_per_message":543.1948759442453,"report_sha256":"c299214a29c2e854d799ff774952e726c215170076ec8861cddb4abb83f85055"},
+    {"run_id":"653cbd90e93c48e382f1947f45d7a6af","message_count":2200501,"process_io_write_bytes_per_message":466.45983891850085,"report_sha256":"adffbb139e90acb065cacbe6e35ef03af76c3b1afe12fe27a2fa809c5bd5755a"},
+    {"run_id":"e505462033fc48d2bf88fea717e0c084","message_count":2564603,"process_io_write_bytes_per_message":433.72020113834384,"report_sha256":"d947e0ec69aea10f247e06b9a8b6ba119b1271d2b1495cb34d65056586269d15"},
+    {"run_id":"6df709b6d83a446385adac599f7078ea","message_count":6638158,"process_io_write_bytes_per_message":207.6778797672487,"report_sha256":"da9ed965ce32b81beb2d5c825373389a85ea498efabd4282fb84cc632f1e9deb"},
+    {"run_id":"82ddd39752c14f6781a40af92fc19d60","message_count":6239005,"process_io_write_bytes_per_message":245.61782591935733,"report_sha256":"bd2a3e389f60daabc96bf924a53bae60ffff55382202d772b1bee63ed74a805c"},
+    {"run_id":"9682b063793c4312bf61f7b630344ff0","message_count":4700298,"process_io_write_bytes_per_message":346.03352808694257,"report_sha256":"2fecb494208ca36c903aecd934d31197b8df83a2aba79d1f6ee3430bd365d821"},
+    {"run_id":"8ce70f8ad331488f899ab089fe133635","message_count":2688772,"process_io_write_bytes_per_message":616.9288864953965,"report_sha256":"340b2c2dccfc1aa24ec093de9c688e02a972dfc71b22656aea0bbdfd21e13bc7"},
+    {"run_id":"9a003e0f59cb418aa60762459b14bde7","message_count":2049334,"process_io_write_bytes_per_message":834.6032735513098,"report_sha256":"9b60040eec5084fac2e64b9af47679c9924f6213640e585c9c619751035aaad8"},
+    {"run_id":"d168e165eb184b26b496722103c878c5","message_count":1954434,"process_io_write_bytes_per_message":906.7766233088454,"report_sha256":"33193448fd56b485c75cbb8db277233e8f651b5bcca2a4176d4e8aa662c567fe"},
+    {"run_id":"5fb4257ab80143e2bea3fda26780ede8","message_count":1846711,"process_io_write_bytes_per_message":991.1224512119113,"report_sha256":"3502f18b9752c882bc97138dcc2887223de4508ad2447421e0968584f62b5648"}
+  ],
+  "completed_resource_rejections": [
+    {
+      "run_id": "d115ae615d3b41ba84f1e4b1ae57a206",
+      "elapsed_seconds": 3604.954000000027,
+      "message_count": 1374444,
+      "audit_passed": true,
+      "capture_error": "",
+      "process_io_delta_write_bytes": 1864940133,
+      "process_io_write_bytes_per_message": 1356.868765115203,
+      "database_physical_growth_bytes": 108527616,
+      "database_physical_growth_bytes_per_message": 78.96110427198198,
+      "queue_maximum_utilization": 0.0992889404296875,
+      "storage_efficiency_passed": false,
+      "report_sha256": "b428dcfbaaf6e809912bceea4f07c0682e13fd7b714427f22bb0e57bae71c84b"
+    },
+    {
+      "run_id": "4a7f9f5a3d77434ba4b8cbd70dbe2702",
+      "elapsed_seconds": 3604.969000000041,
+      "message_count": 952891,
+      "audit_passed": true,
+      "capture_error": "",
+      "process_io_delta_write_bytes": 1924190950,
+      "process_io_write_bytes_per_message": 2019.3190511821394,
+      "database_physical_growth_bytes": 52690944,
+      "database_physical_growth_bytes_per_message": 55.29587749280873,
+      "queue_maximum_utilization": 0.180877685546875,
+      "storage_efficiency_passed": false,
+      "report_sha256": "677dcba91fd94e704c72581544c1d9cd8bc823eead612a4c7cf7355dad9449ee"
+    }
+  ],
+  "failed_runs": [
+    {"run_id":"6d7988062b454000b55aae34b44eeeb2","failure_class":"transport","error":"public_source:ConnectionClosedError:sent 1011 (internal error) keepalive ping timeout; no close frame received","report_sha256":"dff23ea67770298c773b313e50296bf3433b8dbd2eeeb69856b9c35cf307c7a4"},
+    {"run_id":"b3d4ccc083a2480ea6389759c13f62c0","failure_class":"rest_transport","error":"REST server-time DNS resolution failed","report_sha256":"bc8c10d9622c3aac7eb2dac9d50dbe7a80c5a7b1e4f740b16c586cbba16bed1c"},
+    {"run_id":"ba5130902d294308a3e3352065f0d349","failure_class":"feed_integrity","error":"depth previous-update sequence gap","report_sha256":"ff955263f94609ba1861677b1a385ec21d04884e63c3f2df98be9245ce668a6e"},
+    {"run_id":"35ff8dc7292b4d66990439fc9545057c","failure_class":"transport","error":"public_source:ConnectionClosedError:no close frame received or sent","report_sha256":"6aba261c56b4a45039dff7365cba973fa24f0ec81b761699479d88a991fe4d66"},
+    {"run_id":"b6c372b4789c4d41a4ba1ac1c7a0078e","failure_class":"transport","error":"public_source:ConnectionClosedError:no close frame received or sent","report_sha256":"75ee18b73e2c5eaadd2ed4682bde8f54b4ff4a2ec658310625969d731039f124"}
+  ],
+  "invalidated_gate": {
+    "formula": "process_io_delta_write_bytes divided by writer_message_count",
+    "maximum_bytes_per_message": 1024,
+    "counter_semantics": "process I/O transfer bytes; not physical SSD writes",
+    "observed_completed_hour_process_io_delta_range_bytes": [331912510, 1924190950],
+    "finding": "The denominator is endogenous market-message activity while the numerator includes substantial time-based DuckDB and checkpoint traffic. Two reconnect-free, audit-passing hours were rejected only after message activity declined, despite physical database growth remaining below the v9 per-message ceiling.",
+    "inference": "Continuing would condition corpus admission on market activity and create a systematically unrepresentative sample.",
+    "inference_is_observed_market_result": false
+  },
+  "decision": {
+    "round_073_v9_campaign_status": "invalidated_before_target_or_model_access",
+    "all_18_indexed_v9_hours_eligible_for_modeling": false,
+    "resume_v9_rotation_permitted": false,
+    "profitability_or_predictive_inference_permitted": false,
+    "remediation": "Freeze a new protocol before any v10 capture. Separate data qualification from host resource safety, use only activity-independent absolute resource ceilings, and halt rather than skip an hour when host safety fails."
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_require_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authority": {
+    "target_generation": false,
+    "model_training": false,
+    "model_evaluation": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

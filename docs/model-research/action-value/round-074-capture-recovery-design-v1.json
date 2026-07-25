@@ -1,0 +1,54 @@
+{
+  "schema_version": "round-074-capture-recovery-design-v1",
+  "design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+  "round": 74,
+  "parent_model_design_sha256": "84b5e6c942d03ebd97b7e120951ed576e3fd8161d65755734c359b7261d6b1fe",
+  "round_073_invalidation_artifact": "round-073-v9-corpus-invalidation-2026-07-25.json",
+  "round_073_invalidation_artifact_sha256": "c6bf1061fc1e3e43293eaf385f3156ec41d14b377f4a966bc28ab941be06ff91",
+  "frozen_before_first_round_074_capture": true,
+  "purpose": "Recover a representative prospective exact-wire BTCUSDT, ETHUSDT, and SOLUSDT corpus without changing the frozen impact-absorption model hypothesis, feature definitions, targets, splits, or economic gates.",
+  "changes_from_round_073": [
+    "Replace market-message-normalized resource admission with activity-independent absolute host-safety ceilings.",
+    "Separate data qualification from host resource safety in every capture report.",
+    "Use Binance server-driven WebSocket heartbeat handling without redundant client keepalive pings.",
+    "Halt a collection campaign after a host-safety failure instead of skipping the observed market interval.",
+    "Exclude every Round 73 v9 campaign hour from Round 74 model selection and evaluation."
+  ],
+  "unchanged_modeling_semantics": {
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "market": "Binance USD-M perpetual futures",
+    "real_market_data_only": true,
+    "event_and_l2_semantics": "inherited from round-073-impact-absorption-design-v2",
+    "feature_contract_changed": false,
+    "target_contract_changed": false,
+    "model_family_or_hyperparameter_changed": false,
+    "holdout_or_economic_gate_changed": false,
+    "round_073_rows_may_enter_round_074_models": false
+  },
+  "stopping_rules": {
+    "data_qualification_failure": "Invalidate the run; bounded retry may begin only as a new run with a new snapshot and no evidence combination.",
+    "host_resource_safety_failure": "Stop the campaign and require operator review; do not skip the hour and continue.",
+    "audit_failure": "Invalidate the run and stop the campaign.",
+    "modeling_before_representative_capture_passes": false
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "crypto_trades_continuously_except_observed_venue_interruptions": true,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_use_actual_venue_calendars": true,
+    "listed_product_holidays_early_closes_and_auctions_are_venue_specific": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authority": {
+    "v10_implementation_and_tests": true,
+    "v10_live_probe": false,
+    "v10_one_hour_qualification": false,
+    "round_074_modeling": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

@@ -1,23 +1,16 @@
 # Round 73: Impact absorption and liquidity recovery
 
-**Status:** a qualified one-hour v9 exact-wire run now has an independently
-audited v4 causal grid and v1 executable-target diagnostic. Of 382,284 frozen
-quote-path options, 380,483 were mechanically eligible and none cleared the
-12 bps round-trip reserve. This hour is development-only after outcome access;
-no model was trained. Compact target v2 is now preregistered before collection:
-it uses only feature-selected shocks from new v9 data, retains the cost floor,
-and evaluates 15, 60, and 300-second paths one source run at a time. Its
-deterministic cohort builder and independent deep auditor are implemented, but
-no eligible seven-day cohort exists yet. Selected-anchor v2 replay validated the
-bounded mechanics API on pre-eligibility fixtures, but its all-role sealing
-sequence exposed test targets before model freeze. V3 now supersedes that
-sequence and blocks v2 on every eligible anchor. No prospective target has been
-observed. A new untouched seven-day v9 feature corpus is next; the staged
-development/pretest/test store and one-use evaluator are implemented. The evaluation keeps
-source-boundary censoring deterministic, counts pre-entry safety aborts as
-attempted zero-return actions, and fails on a selected unresolved post-entry
-exit. Profitability, AI, leverage, paper, testnet, and live authority remain
-closed.
+**Status:** Round 73 is invalidated before prospective target or model access.
+Its first development-only hour still documents target mechanics: none of
+380,483 mechanically eligible quote paths cleared the frozen 12 bps reserve,
+and no model was trained. The later v9 campaign indexed 18 hours, but the frozen
+resource gate then rejected two reconnect-free, exact-audit-passing hours only
+because lower market-message counts inflated a process-I/O-per-message ratio.
+Using the admitted subset would select higher-activity periods. V9 collection
+is closed and all 18 campaign hours are excluded from modeling. Round 74/v10 is
+the separately hash-bound recovery path; it changes capture admission only,
+not the model hypothesis, targets, costs, split, or economic gates.
+Profitability, AI, leverage, paper, testnet, and live authority remain closed.
 
 ## Why this is different
 
@@ -193,7 +186,7 @@ prospective seven-day corpus exists.
 - `round-073-rotation-runner-contract-v1.json` preserves the original bounded
   v8 collector and its historical journals. Current
   `round-073-rotation-runner-contract-v2.json` was frozen before eligible
-  collection and admits v9 capture, reports, and recovery only. It admits at
+  collection and admitted v9 capture, reports, and recovery only. It admitted at
   most 168 one-hour segments per invocation, uses one DuckDB writer lease,
   journals each terminal supervisor result, and defers exact replay until
   capture stops. V1 and v2 journals remain independently auditable. Unit and
@@ -201,11 +194,18 @@ prospective seven-day corpus exists.
   `6d8c31559bb044b3a83fdf9e771dda4a` then passed its real lease, discovery,
   journal, release, and independent audit paths without database growth.
   Qualification batch `ca83202743254d7ebc0c2d42d27d9b12` subsequently passed
-  one complete v9 hour, independent deep audits, and the storage gate. It
-  authorizes one monitored 168-segment invocation beginning exactly at the
-  July 24 00:00 UTC prospective boundary with a 48 GiB hard cap; capture is
-  completed before serial indexing starts. See
-  `round-073-v9-qualification-capture-2026-07-23.json`.
+  one complete v9 hour, independent deep audits, and the old storage gate. The
+  subsequent 168-hour campaign is invalidated by
+  `round-073-v9-corpus-invalidation-2026-07-25.json`: 18 indexed hours cannot
+  enter models, v9 may not resume, and no performance inference is permitted.
+- `round-074-capture-recovery-design-v1.json` and
+  `round-074-capture-contract-v10.json` freeze the replacement before its first
+  capture. V10 writes separate exact-frame and REST-context tables, disables
+  redundant client-originated keepalive while retaining automatic provider
+  pong handling, reports data qualification independently from host safety,
+  and uses absolute process-I/O and database-growth ceilings that do not depend
+  on message count. A host-safety failure halts the campaign; it cannot silently
+  skip that market interval and continue.
 
 Native crypto spot and perpetual instruments trade continuously and have no
 formal daily close. UTC days are statistical blocks only. Bitcoin, ether, or

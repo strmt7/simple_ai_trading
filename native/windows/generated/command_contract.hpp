@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"0d50ae029de40cd993a30357d3830d9f37a10ac318a11f39e00b456822b95451";
+inline constexpr const wchar_t* kCommandContractSha256 = L"2d7754ad8d971826e4b8a7c663624aa1baef497c22c5866ed01c31b06710c558";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -277,7 +277,7 @@ inline constexpr CommandOptionSpec kOptions_impact_audit[] = {
 inline constexpr CommandOptionSpec kOptions_impact_capture[] = {
     {L"--database", L"database", L"", L"data/microstructure.duckdb", L"", L"1", false, true, false},
     {L"--mode", L"mode", L"probe, qualification", L"probe", L"", L"1", false, true, false},
-    {L"--schema-version", L"schema_version", L"v8, v9", L"v8", L"capture storage schema; v9 is the exact-frame research path", L"1", false, true, false},
+    {L"--schema-version", L"schema_version", L"v8, v9, v10", L"v10", L"capture storage schema; v10 is the unbiased exact-frame research path", L"1", false, true, false},
     {L"--duration-seconds", L"duration_seconds", L"", L"", L"streaming duration; defaults to 180 for probe and 3600 for qualification", L"1", false, true, false},
     {L"--compressed-payload-cap-bytes", L"compressed_payload_cap_bytes", L"", L"2147483648", L"", L"1", false, true, false},
     {L"--database-size-cap-bytes", L"database_size_cap_bytes", L"", L"8589934592", L"absolute DuckDB plus WAL cap; capture stops with a 512 MiB reserve", L"1", false, true, false},

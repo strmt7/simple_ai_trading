@@ -1,4 +1,4 @@
-"""Transactional Round 73 prospective evidence storage and audit."""
+"""Transactional prospective impact-absorption evidence storage and audit."""
 
 from __future__ import annotations
 
@@ -25,6 +25,7 @@ from .impact_absorption import (
     MarkPriceEvent,
     ROUND73_LEVEL_BANDS,
     ROUND73_DESIGN_SHA256,
+    ROUND74_CAPTURE_DESIGN_SHA256,
     pre_event_level_band,
     validate_combined_stream_name,
     parse_aggregate_trade,
@@ -50,6 +51,11 @@ IMPACT_CAPTURE_V9_CONTRACT_SHA256 = (
     "3c105ac411ca4b2cf5469f065f507a21a2442bbcbdf39257239203261586f254"
 )
 IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION = "round-073-capture-report-v9"
+IMPACT_CAPTURE_V10_SCHEMA_VERSION = "round-074-prospective-evidence-v10"
+IMPACT_CAPTURE_V10_CONTRACT_SHA256 = (
+    "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0"
+)
+IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION = "round-074-capture-report-v10"
 _LEGACY_CAPTURE_CONTRACTS = {
     "round-073-prospective-evidence-v1": (
         "f379b53b86d20f16b686132ef8fe4dc5eb47b6a0910e6ba85c38ddf0caa01c7b"
@@ -119,6 +125,14 @@ IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD = "512MiB"
 IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = 512 * 1024 * 1024
 IMPACT_CAPTURE_V9_COMPRESSION_LEVEL = 9
 IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS = 10_000_000
+IMPACT_CAPTURE_V10_CHECKPOINT_THRESHOLD = IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD
+IMPACT_CAPTURE_V10_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES = (
+    IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES
+)
+IMPACT_CAPTURE_V10_COMPRESSION_LEVEL = IMPACT_CAPTURE_V9_COMPRESSION_LEVEL
+IMPACT_CAPTURE_V10_MAX_CROSS_FRAME_REORDER_LAG_NS = (
+    IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+)
 IMPACT_CAPTURE_INITIAL_COOLDOWN_NS = 60_000_000_000
 IMPACT_CAPTURE_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES = 2_147_483_648
@@ -246,7 +260,10 @@ def _duckdb_byte_setting_bytes(value: object) -> int:
 
 def _capture_storage_policy_request(schema_version: object) -> tuple[str, int]:
     selected = str(schema_version)
-    if selected == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+    if selected in {
+        IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+    }:
         return (
             IMPACT_CAPTURE_V9_CHECKPOINT_THRESHOLD,
             IMPACT_CAPTURE_V9_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES,
@@ -395,8 +412,13 @@ class ImpactCaptureAudit:
     capture_contract_sha256: str
 
     def as_dict(self) -> dict[str, object]:
+        schema_version = (
+            "round-074-capture-audit-v1"
+            if self.capture_contract_sha256 == IMPACT_CAPTURE_V10_CONTRACT_SHA256
+            else "round-073-capture-audit-v2"
+        )
         return {
-            "schema_version": "round-073-capture-audit-v2",
+            "schema_version": schema_version,
             "run_id": self.run_id,
             "passed": self.passed,
             "errors": list(self.errors),
@@ -636,6 +658,56 @@ IMPACT_REJECTED_WIRE_EVENT_TABLE = "impact_rejected_wire_event_v8"
 IMPACT_DEPTH_BAND_FLOW_TABLE = "impact_depth_band_flow_v8"
 IMPACT_CAPTURE_V9_FRAME_TABLE = "impact_capture_frame_v9"
 IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE = "impact_rest_event_v9"
+IMPACT_CAPTURE_V10_FRAME_TABLE = "impact_capture_frame_v10"
+IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE = "impact_rest_event_v10"
+
+
+@dataclass(frozen=True)
+class _ExactCaptureProtocol:
+    schema_version: str
+    design_sha256: str
+    contract_sha256: str
+    report_schema_version: str
+    frame_table: str
+    rest_context_table: str
+    compression_level: int
+    maximum_cross_frame_reorder_lag_ns: int
+
+
+_EXACT_CAPTURE_PROTOCOLS = {
+    IMPACT_CAPTURE_V9_SCHEMA_VERSION: _ExactCaptureProtocol(
+        schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        design_sha256=ROUND73_DESIGN_SHA256,
+        contract_sha256=IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+        report_schema_version=IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+        frame_table=IMPACT_CAPTURE_V9_FRAME_TABLE,
+        rest_context_table=IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
+        compression_level=IMPACT_CAPTURE_V9_COMPRESSION_LEVEL,
+        maximum_cross_frame_reorder_lag_ns=(
+            IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+        ),
+    ),
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION: _ExactCaptureProtocol(
+        schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+        design_sha256=ROUND74_CAPTURE_DESIGN_SHA256,
+        contract_sha256=IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+        report_schema_version=IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION,
+        frame_table=IMPACT_CAPTURE_V10_FRAME_TABLE,
+        rest_context_table=IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE,
+        compression_level=IMPACT_CAPTURE_V10_COMPRESSION_LEVEL,
+        maximum_cross_frame_reorder_lag_ns=(
+            IMPACT_CAPTURE_V10_MAX_CROSS_FRAME_REORDER_LAG_NS
+        ),
+    ),
+}
+
+
+def _exact_capture_protocol(schema_version: object) -> _ExactCaptureProtocol:
+    try:
+        return _EXACT_CAPTURE_PROTOCOLS[str(schema_version)]
+    except KeyError as exc:
+        raise ValueError("exact capture schema version is unsupported") from exc
+
 
 _LEGACY_TYPED_TABLES = {
     "depthUpdate": ("impact_depth_update", _DEPTH_COLUMNS),
@@ -766,19 +838,21 @@ def _ensure_isolated_table(
     )
 
 
-def iter_impact_capture_v9_records(
+def iter_impact_capture_exact_records(
     connection: duckdb.DuckDBPyConnection,
     *,
     run_id: str,
+    schema_version: str,
 ) -> Iterator[tuple[int, int, ImpactCaptureFrameRecord]]:
-    """Yield v9 exact-wire records in bounded global receipt order."""
+    """Yield exact-wire records in bounded global receipt order."""
 
     selected = _validate_run_id(run_id)
+    protocol = _exact_capture_protocol(schema_version)
     cursor = connection.cursor()
     cursor.execute(
         f"""
         SELECT frame_index, message_count, uncompressed_bytes, compressed_payload
-        FROM {IMPACT_CAPTURE_V9_FRAME_TABLE}
+        FROM {protocol.frame_table}
         WHERE run_id = ? ORDER BY frame_index
         """,
         [selected],
@@ -805,14 +879,13 @@ def iter_impact_capture_v9_records(
                 )
                 receipts = [item.record.received_monotonic_ns for item in decoded]
                 if receipts != sorted(receipts):
-                    raise ValueError("Round 73 v9 frame receipt order differs")
+                    raise ValueError("exact capture frame receipt order differs")
                 frame_low_water = receipts[0]
                 frame_high_water = receipts[-1]
                 if frame_low_water < (
-                    prior_frame_high_water
-                    - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                    prior_frame_high_water - protocol.maximum_cross_frame_reorder_lag_ns
                 ):
-                    raise ValueError("Round 73 v9 cross-frame reorder lag exceeded")
+                    raise ValueError("exact capture cross-frame reorder lag exceeded")
                 prior_frame_high_water = max(
                     prior_frame_high_water,
                     frame_high_water,
@@ -829,8 +902,7 @@ def iter_impact_capture_v9_records(
                         ),
                     )
                 watermark = (
-                    running_high_water
-                    - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                    running_high_water - protocol.maximum_cross_frame_reorder_lag_ns
                 )
                 while heap and heap[0][0] <= watermark:
                     _receipt, source_frame, message_index, record = heapq.heappop(heap)
@@ -842,14 +914,50 @@ def iter_impact_capture_v9_records(
         cursor.close()
 
 
-def load_impact_capture_v9_preflight(
+def iter_impact_capture_v9_records(
     connection: duckdb.DuckDBPyConnection,
     *,
     run_id: str,
+) -> Iterator[tuple[int, int, ImpactCaptureFrameRecord]]:
+    """Yield v9 exact-wire records without changing its historical contract."""
+
+    yield from iter_impact_capture_exact_records(
+        connection,
+        run_id=run_id,
+        schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    )
+
+
+def iter_impact_capture_v10_records(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+) -> Iterator[tuple[int, int, ImpactCaptureFrameRecord]]:
+    """Yield v10 exact-wire records in bounded global receipt order."""
+
+    yield from iter_impact_capture_exact_records(
+        connection,
+        run_id=run_id,
+        schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+    )
+
+
+def load_impact_capture_exact_preflight(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+    schema_version: str,
 ) -> ImpactCaptureV9Preflight:
     """Load immutable snapshots and the persisted all-symbol ready boundary."""
 
+    protocol = _exact_capture_protocol(schema_version)
     selected = _validate_run_id(run_id)
+    run_schema = connection.execute(
+        "SELECT schema_version FROM impact_capture_run WHERE run_id = ?",
+        [selected],
+    ).fetchone()
+    if run_schema is None or str(run_schema[0]) != protocol.schema_version:
+        raise ValueError("exact capture preflight run schema differs")
     segments = connection.execute(
         """
         SELECT symbol, started_wall_ns, cooldown_until_wall_ns, snapshot_update_id
@@ -858,60 +966,85 @@ def load_impact_capture_v9_preflight(
         [selected],
     ).fetchall()
     if tuple(str(row[0]) for row in segments) != IMPACT_CAPTURE_SYMBOLS:
-        raise ValueError("Round 73 v9 preflight symbol segments are incomplete")
+        raise ValueError("exact capture preflight symbol segments are incomplete")
     ready_markers = tuple(
         int(row[2]) - IMPACT_CAPTURE_INITIAL_COOLDOWN_NS for row in segments
     )
     if len(set(ready_markers)) != 1 or any(
         ready <= int(row[1]) for ready, row in zip(ready_markers, segments, strict=True)
     ):
-        raise ValueError("Round 73 v9 feature-ready marker is invalid")
+        raise ValueError("exact capture feature-ready marker is invalid")
     ready_wall_ns = ready_markers[0]
     expected_update_ids = {str(row[0]): int(row[3]) for row in segments}
     context_rows = connection.execute(
         f"""
         SELECT frame_index, message_index, symbol
-        FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE}
+        FROM {protocol.rest_context_table}
         WHERE run_id = ? AND event_type = 'depthSnapshot'
         ORDER BY symbol
         """,
         [selected],
     ).fetchall()
-    if (
-        tuple(str(row[2]) for row in context_rows) != IMPACT_CAPTURE_SYMBOLS
-        or len({(int(row[0]), int(row[1])) for row in context_rows})
-        != len(IMPACT_CAPTURE_SYMBOLS)
-    ):
-        raise ValueError("Round 73 v9 snapshot context is incomplete")
+    if tuple(str(row[2]) for row in context_rows) != IMPACT_CAPTURE_SYMBOLS or len(
+        {(int(row[0]), int(row[1])) for row in context_rows}
+    ) != len(IMPACT_CAPTURE_SYMBOLS):
+        raise ValueError("exact capture snapshot context is incomplete")
     expected_keys = {
         (int(frame_index), int(message_index)): str(symbol)
         for frame_index, message_index, symbol in context_rows
     }
     snapshots: dict[str, ImpactCaptureFrameRecord] = {}
-    for frame_index, message_index, record in iter_impact_capture_v9_records(
+    for frame_index, message_index, record in iter_impact_capture_exact_records(
         connection,
         run_id=selected,
+        schema_version=protocol.schema_version,
     ):
         symbol = expected_keys.get((frame_index, message_index))
         if symbol is None:
             continue
         if record.stream != "binance_futures_rest":
-            raise ValueError("Round 73 v9 snapshot stream differs")
+            raise ValueError("exact capture snapshot stream differs")
         snapshot = _strict_json_object(record.raw_text)
         if int(snapshot.get("lastUpdateId", -1)) != expected_update_ids[symbol]:
-            raise ValueError("Round 73 v9 snapshot update ID differs")
+            raise ValueError("exact capture snapshot update ID differs")
         if record.received_wall_ns > ready_wall_ns:
-            raise ValueError("Round 73 v9 snapshot follows feature-ready marker")
+            raise ValueError("exact capture snapshot follows feature-ready marker")
         snapshots[symbol] = record
         if len(snapshots) == len(IMPACT_CAPTURE_SYMBOLS):
             break
     if tuple(sorted(snapshots)) != IMPACT_CAPTURE_SYMBOLS:
-        raise ValueError("Round 73 v9 exact snapshot records are incomplete")
+        raise ValueError("exact capture snapshot records are incomplete")
     return ImpactCaptureV9Preflight(
         ready_wall_ns=ready_wall_ns,
         snapshot_records=tuple(
             (symbol, snapshots[symbol]) for symbol in IMPACT_CAPTURE_SYMBOLS
         ),
+    )
+
+
+def load_impact_capture_v9_preflight(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+) -> ImpactCaptureV9Preflight:
+    return load_impact_capture_exact_preflight(
+        connection,
+        run_id=run_id,
+        schema_version=IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    )
+
+
+def load_impact_capture_v10_preflight(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+) -> ImpactCaptureV9Preflight:
+    """Load immutable v10 snapshots and the feature-ready boundary."""
+
+    return load_impact_capture_exact_preflight(
+        connection,
+        run_id=run_id,
+        schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     )
 
 
@@ -1511,6 +1644,17 @@ class ImpactAbsorptionStore:
             source_table="impact_rest_event_v3",
             target_table=IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE,
         )
+        _ensure_isolated_table(
+            self.connect(),
+            source_table="impact_capture_frame",
+            target_table=IMPACT_CAPTURE_V10_FRAME_TABLE,
+            primary_key=("run_id", "frame_index"),
+        )
+        _ensure_isolated_table(
+            self.connect(),
+            source_table="impact_rest_event_v3",
+            target_table=IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE,
+        )
 
     def start_run(
         self,
@@ -1533,7 +1677,13 @@ class ImpactAbsorptionStore:
         contracts = {
             IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_CONTRACT_SHA256,
             IMPACT_CAPTURE_V9_SCHEMA_VERSION: IMPACT_CAPTURE_V9_CONTRACT_SHA256,
+            IMPACT_CAPTURE_V10_SCHEMA_VERSION: IMPACT_CAPTURE_V10_CONTRACT_SHA256,
         }
+        design_sha256 = (
+            ROUND74_CAPTURE_DESIGN_SHA256
+            if selected_schema == IMPACT_CAPTURE_V10_SCHEMA_VERSION
+            else ROUND73_DESIGN_SHA256
+        )
         try:
             selected_contract = contracts[selected_schema]
         except KeyError as exc:
@@ -1556,7 +1706,7 @@ class ImpactAbsorptionStore:
             [
                 selected,
                 selected_schema,
-                ROUND73_DESIGN_SHA256,
+                design_sha256,
                 selected_contract,
                 _positive_integer(started_wall_ns, "run wall clock"),
                 _positive_integer(started_monotonic_ns, "run monotonic clock"),
@@ -1763,6 +1913,9 @@ class ImpactAbsorptionStore:
         report_schemas = {
             IMPACT_CAPTURE_SCHEMA_VERSION: IMPACT_CAPTURE_REPORT_SCHEMA_VERSION,
             IMPACT_CAPTURE_V9_SCHEMA_VERSION: IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION,
+            IMPACT_CAPTURE_V10_SCHEMA_VERSION: (
+                IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
+            ),
         }
         try:
             expected_report_schema = report_schemas[str(run[1])]
@@ -2229,24 +2382,23 @@ class ImpactAbsorptionStore:
         if run_schema_version not in {
             IMPACT_CAPTURE_SCHEMA_VERSION,
             IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+            IMPACT_CAPTURE_V10_SCHEMA_VERSION,
         }:
             raise ValueError("legacy capture runs cannot accept current frame appends")
-        compact_exact_frame = run_schema_version == IMPACT_CAPTURE_V9_SCHEMA_VERSION
-        capture_contract_sha256 = (
-            IMPACT_CAPTURE_V9_CONTRACT_SHA256
-            if compact_exact_frame
-            else IMPACT_CAPTURE_CONTRACT_SHA256
-        )
-        frame_table = (
-            IMPACT_CAPTURE_V9_FRAME_TABLE
-            if compact_exact_frame
-            else IMPACT_CAPTURE_FRAME_TABLE
-        )
+        exact_protocol = _EXACT_CAPTURE_PROTOCOLS.get(run_schema_version)
+        if exact_protocol is None:
+            capture_contract_sha256 = IMPACT_CAPTURE_CONTRACT_SHA256
+            frame_table = IMPACT_CAPTURE_FRAME_TABLE
+            compression_level = IMPACT_CAPTURE_COMPRESSION_LEVEL
+        else:
+            capture_contract_sha256 = exact_protocol.contract_sha256
+            frame_table = exact_protocol.frame_table
+            compression_level = exact_protocol.compression_level
         if bool(run[4]):
             raise ValueError("capture compressed-payload cap has already been reached")
         frame_index = int(run[5])
         previous_frame_sha256 = str(run[6])
-        if compact_exact_frame:
+        if exact_protocol is not None:
             messages = tuple(
                 sorted(
                     messages,
@@ -2262,20 +2414,22 @@ class ImpactAbsorptionStore:
             if frame_index:
                 prior_high_water = connection.execute(
                     f"SELECT max(last_received_monotonic_ns) FROM "
-                    f"{IMPACT_CAPTURE_V9_FRAME_TABLE} "
+                    f"{exact_protocol.frame_table} "
                     "WHERE run_id = ?",
                     [selected],
                 ).fetchone()
                 if prior_high_water is None or prior_high_water[0] is None:
-                    raise RuntimeError("v9 prior frame is missing")
+                    raise RuntimeError("exact-capture prior frame is missing")
                 current_low_water = min(
                     message.record.received_monotonic_ns for message in messages
                 )
                 if current_low_water < (
                     int(prior_high_water[0])
-                    - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                    - exact_protocol.maximum_cross_frame_reorder_lag_ns
                 ):
-                    raise ValueError("v9 cross-frame receipt reorder lag exceeded")
+                    raise ValueError(
+                        "exact-capture cross-frame receipt reorder lag exceeded"
+                    )
         active_segments = self._active_segments(selected)
         lane_rows = connection.execute(
             """
@@ -2387,11 +2541,7 @@ class ImpactAbsorptionStore:
         uncompressed, located = encode_impact_capture_frame(records)
         uncompressed_sha256 = hashlib.sha256(uncompressed).hexdigest()
         compressed = zstandard.ZstdCompressor(
-            level=(
-                IMPACT_CAPTURE_V9_COMPRESSION_LEVEL
-                if compact_exact_frame
-                else IMPACT_CAPTURE_COMPRESSION_LEVEL
-            ),
+            level=compression_level,
             write_checksum=True,
             write_content_size=True,
             threads=0,
@@ -2744,10 +2894,12 @@ class ImpactAbsorptionStore:
                     frame_sha256,
                 ],
             )
-            persistence_batches = (
-                ((IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE, _REST_COLUMNS, rest_rows),)
-                if compact_exact_frame
-                else (
+            if exact_protocol is not None:
+                persistence_batches = (
+                    (exact_protocol.rest_context_table, _REST_COLUMNS, rest_rows),
+                )
+            else:
+                persistence_batches = (
                     (IMPACT_EVENT_LINK_TABLE, _EVENT_LINK_V5_COLUMNS, event_rows),
                     (IMPACT_DEPTH_UPDATE_TABLE, _DEPTH_COLUMNS, depth_rows),
                     (
@@ -2771,7 +2923,6 @@ class ImpactAbsorptionStore:
                         rejected_wire_rows,
                     ),
                 )
-            )
             for table, columns, rows in persistence_batches:
                 if rows:
                     insert_rows_columnar(
@@ -2972,7 +3123,7 @@ class ImpactAbsorptionStore:
         except (TypeError, ValueError):
             return "rejectedWire"
 
-    def _audit_v9_run(
+    def _audit_exact_run(
         self,
         *,
         run_id: str,
@@ -2980,10 +3131,11 @@ class ImpactAbsorptionStore:
     ) -> ImpactCaptureAudit:
         connection = self.connect()
         errors: list[str] = []
+        protocol = _exact_capture_protocol(run[0])
         run_contract_sha256 = str(run[2])
-        if str(run[1]) != ROUND73_DESIGN_SHA256:
+        if str(run[1]) != protocol.design_sha256:
             errors.append("run_design_mismatch")
-        if run_contract_sha256 != IMPACT_CAPTURE_V9_CONTRACT_SHA256:
+        if run_contract_sha256 != protocol.contract_sha256:
             errors.append("run_capture_contract_mismatch")
         frames = connection.execute(
             f"""
@@ -2995,7 +3147,7 @@ class ImpactAbsorptionStore:
                    uncompressed_bytes, uncompressed_sha256,
                    compressed_bytes, compressed_sha256, stream_counts_json,
                    compressed_payload, frame_sha256
-            FROM {IMPACT_CAPTURE_V9_FRAME_TABLE}
+            FROM {protocol.frame_table}
             WHERE run_id = ? ORDER BY frame_index
             """,
             [run_id],
@@ -3006,7 +3158,7 @@ class ImpactAbsorptionStore:
                    request_path, request_parameters_json, response_status,
                    request_started_wall_ns, request_started_monotonic_ns,
                    used_weight_1m, exchange_time_ms, update_id, open_interest
-            FROM {IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE}
+            FROM {protocol.rest_context_table}
             WHERE run_id = ? ORDER BY frame_index, message_index
             """,
             [run_id],
@@ -3035,7 +3187,7 @@ class ImpactAbsorptionStore:
             frame_index = int(row[0])
             if frame_index != expected_index:
                 errors.append(f"frame_index_gap:{expected_index}:{frame_index}")
-            if str(row[1]) != IMPACT_CAPTURE_V9_SCHEMA_VERSION:
+            if str(row[1]) != protocol.schema_version:
                 errors.append(f"frame_schema_mismatch:{frame_index}")
             if str(row[2]) != IMPACT_CAPTURE_FRAME_FORMAT:
                 errors.append(f"frame_format_mismatch:{frame_index}")
@@ -3083,8 +3235,7 @@ class ImpactAbsorptionStore:
             frame_low_water = min(item[0] for item in receipt_order)
             frame_high_water = max(item[0] for item in receipt_order)
             if frame_low_water < (
-                prior_receipt_high_water
-                - IMPACT_CAPTURE_V9_MAX_CROSS_FRAME_REORDER_LAG_NS
+                prior_receipt_high_water - protocol.maximum_cross_frame_reorder_lag_ns
             ):
                 errors.append(f"frame_cross_frame_reorder_lag:{frame_index}")
             prior_receipt_high_water = max(
@@ -3203,7 +3354,7 @@ class ImpactAbsorptionStore:
             if str(row[16]) != stream_counts_json:
                 errors.append(f"frame_stream_counts_mismatch:{frame_index}")
             frame_identity = {
-                "schema_version": IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+                "schema_version": protocol.schema_version,
                 "capture_contract_sha256": run_contract_sha256,
                 "run_id": run_id,
                 "frame_index": frame_index,
@@ -3258,8 +3409,8 @@ class ImpactAbsorptionStore:
         if report_row is not None:
             report_text = str(report_row[2])
             if (
-                str(report_row[0]) != IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION
-                or str(report_row[1]) != IMPACT_CAPTURE_V9_CONTRACT_SHA256
+                str(report_row[0]) != protocol.report_schema_version
+                or str(report_row[1]) != protocol.contract_sha256
                 or hashlib.sha256(report_text.encode("ascii")).hexdigest()
                 != str(report_row[3])
             ):
@@ -3298,8 +3449,8 @@ class ImpactAbsorptionStore:
         ).fetchone()
         if run is None:
             raise ValueError("capture run was not found")
-        if str(run[0]) == IMPACT_CAPTURE_V9_SCHEMA_VERSION:
-            return self._audit_v9_run(run_id=selected, run=tuple(run))
+        if str(run[0]) in _EXACT_CAPTURE_PROTOCOLS:
+            return self._audit_exact_run(run_id=selected, run=tuple(run))
         errors: list[str] = []
         run_schema_version = str(run[0])
         run_contract_sha256 = str(run[2])
@@ -3811,6 +3962,15 @@ __all__ = [
     "IMPACT_CAPTURE_V9_REPORT_SCHEMA_VERSION",
     "IMPACT_CAPTURE_V9_REST_CONTEXT_TABLE",
     "IMPACT_CAPTURE_V9_SCHEMA_VERSION",
+    "IMPACT_CAPTURE_V10_AUTO_CHECKPOINT_SKIP_WAL_THRESHOLD_BYTES",
+    "IMPACT_CAPTURE_V10_CHECKPOINT_THRESHOLD",
+    "IMPACT_CAPTURE_V10_COMPRESSION_LEVEL",
+    "IMPACT_CAPTURE_V10_CONTRACT_SHA256",
+    "IMPACT_CAPTURE_V10_FRAME_TABLE",
+    "IMPACT_CAPTURE_V10_MAX_CROSS_FRAME_REORDER_LAG_NS",
+    "IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION",
+    "IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE",
+    "IMPACT_CAPTURE_V10_SCHEMA_VERSION",
     "IMPACT_AGGREGATE_TRADE_TABLE",
     "IMPACT_BOOK_TICKER_TABLE",
     "IMPACT_DEPTH_BAND_FLOW_TABLE",
@@ -3828,7 +3988,11 @@ __all__ = [
     "ImpactFrameWriteResult",
     "ImpactRejectedWireEvent",
     "ImpactRestEvent",
+    "iter_impact_capture_exact_records",
+    "iter_impact_capture_v10_records",
     "iter_impact_capture_v9_records",
+    "load_impact_capture_exact_preflight",
+    "load_impact_capture_v10_preflight",
     "load_impact_capture_v9_preflight",
     "validate_impact_store_resources",
 ]

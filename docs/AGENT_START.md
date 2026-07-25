@@ -52,6 +52,18 @@ After parser or taxonomy changes, regenerate the header through the native build
 - The compact cross-round ledger is
   `docs/model-research/action-value/latest/progress.csv`. Read its header and
   only the last few rows unless a task names an older mechanism.
+- **Current capture boundary:** Round 73 v9 is invalidated before target or
+  model access. Eighteen indexed hours passed the old gate, but two later
+  reconnect-free, exact-audit-passing hours were rejected solely because the
+  process-I/O counter was divided by lower market-message counts. Continuing
+  would select higher-activity hours. Never resume v9, pool its 18 hours, or
+  use them for a model or profitability claim. Read
+  `round-073-v9-corpus-invalidation-2026-07-25.json`. Round 74/v10 is the only
+  open capture path: it uses separate tables and hashes, provider-driven
+  heartbeat handling, independent data/resource verdicts, and absolute
+  activity-independent host ceilings. Read
+  `round-074-capture-recovery-design-v1.json` and
+  `round-074-capture-contract-v10.json` before touching capture code.
 - Round 72 rejected aggregate spot/perpetual price discovery: all 9 components
   and all 36 incremental comparisons failed their frozen gates. Round 73 is a
   prospective multi-level impact-absorption hypothesis, not a model result.
@@ -196,12 +208,13 @@ After parser or taxonomy changes, regenerate the header through the native build
   only when its bootstrap lower expectancy is strictly positive, reserves both
   execution-lateness budgets in its overlap guard, and leaves an unresolved
   symbol occupied for the rest of tuning.
-  Prospective v9 feature collection remains open; model evaluation and all
-  trading authority remain closed.
+  This historical implementation remains auditable, but prospective v9
+  collection is closed by the hash-bound Round 73 invalidation. Model
+  evaluation and all trading authority remain closed.
   One hour is not a model-evaluation corpus.
   The segmented-corpus and rotation-runner contracts are now frozen. Historical
-  runner v1 rows remain independently auditable, while current runner v2 admits
-  v9 capture, reports, and recovery only. It uses one lease owner, terminal
+  runner v1 rows remain independently auditable, while runner v2 admitted v9
+  capture, reports, and recovery only. It uses one lease owner, terminal
   batch journals, zero reconnects, one-hour segments, recovery-before-capture,
   and serial exact replay after capture.
   Qualification batch `ca83202743254d7ebc0c2d42d27d9b12` and run
@@ -210,14 +223,16 @@ After parser or taxonomy changes, regenerate the header through the native build
   audits passed with zero errors; all three symbols had zero invalid events,
   sequence gaps, and crossed books. Physical database growth was 155,451,392
   bytes, proving the old 8 GiB cap has only about 16.9 measured-rate hours left.
-  The next seven-day collection cap is 48 GiB, with actual per-segment cap
-  enforcement retained. Read
+  The planned seven-day collection cap was 48 GiB, with per-segment cap
+  enforcement. That authorization is revoked because the later v9 campaign
+  exposed activity-conditioned admission. Read
   `round-073-v9-qualification-capture-2026-07-23.json`; the run started before
   the July 24 prospective boundary and is qualification-only, not model data.
   Recovery-only batch `6d8c31559bb044b3a83fdf9e771dda4a` passed its real
   lease, discovery, terminal-journal, release, and independent audit paths with
   zero database growth. The required live runner segment and its deep batch
-  audit now pass as documented above; this does not authorize model evaluation.
+  audit passed as documented above; this does not authorize model evaluation or
+  any further v9 collection.
 - Round 61 rejected elevated-funding spot/perpetual carry on capacity, median
   after-cost return, and lower-confidence-bound gates. Do not tune or retrain
   that family.

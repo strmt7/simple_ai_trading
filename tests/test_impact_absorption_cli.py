@@ -15,6 +15,7 @@ from simple_ai_trading.impact_absorption_capture import (
 from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
 
@@ -106,6 +107,7 @@ def _capture_args(**overrides) -> argparse.Namespace:
 
 
 def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
+    default_capture = cli._parse_args(["impact-capture"])
     capture = cli._parse_args(
         [
             "impact-capture",
@@ -196,6 +198,7 @@ def test_impact_commands_have_parser_and_windows_taxonomy_parity() -> None:
         ["impact-corpus-batch-audit", "--batch-id", "c" * 32, "--deep"]
     )
 
+    assert default_capture.schema_version == "v10"
     assert capture.duration_seconds == 3660.0
     assert capture.schema_version == "v9"
     assert capture.maximum_reconnects == 2
@@ -1135,6 +1138,22 @@ def test_impact_capture_handler_selects_v9_exact_frame_schema(
     assert json.loads(capsys.readouterr().out)["status"] == "completed"
 
 
+def test_impact_capture_handler_selects_v10_unbiased_exact_frame_schema(
+    monkeypatch, capsys
+) -> None:
+    observed = {}
+
+    async def fake_run(config, *, progress_interval_seconds):
+        observed["config"] = config
+        return _supervisor()
+
+    monkeypatch.setattr(cli, "_run_impact_capture_with_progress", fake_run)
+
+    assert cli.command_impact_capture(_capture_args(schema_version="v10")) == 0
+    assert observed["config"].schema_version == IMPACT_CAPTURE_V10_SCHEMA_VERSION
+    assert json.loads(capsys.readouterr().out)["status"] == "completed"
+
+
 def test_impact_capture_qualification_fails_exit_without_qualification(
     monkeypatch, capsys
 ) -> None:
@@ -1155,8 +1174,8 @@ def test_impact_capture_rejects_progress_interval_before_start(capsys) -> None:
 
 
 def test_impact_capture_rejects_unknown_schema_before_start(capsys) -> None:
-    assert cli.command_impact_capture(_capture_args(schema_version="v10")) == 2
-    assert "schema version must be v8 or v9" in capsys.readouterr().err
+    assert cli.command_impact_capture(_capture_args(schema_version="v11")) == 2
+    assert "schema version must be v8, v9, or v10" in capsys.readouterr().err
 
 
 def test_impact_capture_progress_monitor_reports_without_blocking(

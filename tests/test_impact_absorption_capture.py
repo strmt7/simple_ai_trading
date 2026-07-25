@@ -22,6 +22,7 @@ from simple_ai_trading.impact_absorption_capture import (
     _rejected_wire_message,
     _terminal_post_capture_failure_report,
     _tick_sizes,
+    _websocket_heartbeat,
     _writer_resource_metrics,
     capture_round73_supervised,
 )
@@ -29,6 +30,7 @@ from simple_ai_trading.impact_absorption_store import (
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_SYMBOLS,
     IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     ImpactAbsorptionStore,
     ImpactCaptureMessage,
     ImpactRejectedWireEvent,
@@ -47,10 +49,11 @@ def _report(
     error: str = "",
     qualification_passed: bool = False,
     failure_class: CaptureFailureClass = "none",
+    schema_version: str = IMPACT_CAPTURE_SCHEMA_VERSION,
 ) -> ImpactCaptureReport:
     return ImpactCaptureReport(
         run_id=run_id,
-        capture_schema_version=IMPACT_CAPTURE_SCHEMA_VERSION,
+        capture_schema_version=schema_version,
         mode="probe",
         status=status,
         capture_gate_passed=False,
@@ -302,6 +305,107 @@ def test_v9_storage_efficiency_gate_uses_tighter_measured_bounds(
         ).storage_efficiency_passed
         is False
     )
+
+
+def test_v10_resource_gate_is_invariant_to_market_message_count(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    def measured_writer(message_count: int) -> _ImpactFrameWriter:
+        writer = _ImpactFrameWriter(
+            ImpactCaptureConfig(
+                database=str(tmp_path / f"v10-{message_count}.duckdb"),
+                schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+            ),
+            RUN_ID,
+        )
+        writer.frame_count = 900
+        writer.message_count = message_count
+        writer.high_water_messages = 52_428
+        writer.database_physical_start_bytes = 0
+        writer.database_physical_bytes = 512 * 1024 * 1024
+        monkeypatch.setattr(
+            writer,
+            "process_io_metrics",
+            lambda: (
+                "test",
+                "process I/O transfer bytes",
+                0,
+                4 * 1024 * 1024 * 1024,
+                4 * 1024 * 1024 * 1024,
+            ),
+        )
+        return writer
+
+    quiet = _writer_resource_metrics(
+        measured_writer(1_000),
+        elapsed_seconds=3_600.0,
+        queue_capacity_messages=65_536,
+    )
+    active = _writer_resource_metrics(
+        measured_writer(10_000_000),
+        elapsed_seconds=3_600.0,
+        queue_capacity_messages=65_536,
+    )
+
+    assert quiet.process_io_write_bytes_per_message != (
+        active.process_io_write_bytes_per_message
+    )
+    assert quiet.process_io_write_limit_bytes == 4 * 1024 * 1024 * 1024
+    assert quiet.database_physical_growth_limit_bytes == 512 * 1024 * 1024
+    assert quiet.resource_safety_passed is True
+    assert active.resource_safety_passed is True
+    assert quiet.resource_safety_errors == active.resource_safety_errors == ()
+
+
+def test_v10_resource_gate_fails_on_absolute_io_not_message_rate(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    writer = _ImpactFrameWriter(
+        ImpactCaptureConfig(
+            database=str(tmp_path / "v10-over-limit.duckdb"),
+            schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+        ),
+        RUN_ID,
+    )
+    writer.message_count = 100_000_000
+    monkeypatch.setattr(
+        writer,
+        "process_io_metrics",
+        lambda: ("test", "process I/O transfer bytes", 0, 4_294_967_297, 4_294_967_297),
+    )
+
+    metrics = _writer_resource_metrics(
+        writer,
+        elapsed_seconds=3_600.0,
+        queue_capacity_messages=65_536,
+    )
+
+    assert metrics.process_io_write_bytes_per_message < 1024.0
+    assert metrics.resource_safety_passed is False
+    assert metrics.resource_safety_errors == ("process_io_absolute_limit_exceeded",)
+
+
+def test_v10_uses_provider_heartbeat_without_changing_v9() -> None:
+    assert _websocket_heartbeat(IMPACT_CAPTURE_V10_SCHEMA_VERSION) == (None, None)
+    assert _websocket_heartbeat(IMPACT_CAPTURE_V9_SCHEMA_VERSION) == (20.0, 20.0)
+
+
+def test_v10_report_exposes_separate_verdicts_without_changing_v8_shape() -> None:
+    legacy = _report(RUN_ID, status="completed").as_dict()
+    current = _report(
+        RUN_ID,
+        status="completed",
+        schema_version=IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+    ).as_dict()
+
+    assert "data_qualification_passed" not in legacy
+    assert "resource_safety_passed" not in legacy
+    assert current["schema_version"] == "round-074-capture-report-v10"
+    assert current["data_qualification_passed"] is False
+    assert current["resource_safety_passed"] is False
+    assert current["resource_safety_errors"] == []
 
 
 def test_process_io_interval_fails_closed_if_provider_changes() -> None:
