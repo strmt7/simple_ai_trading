@@ -152,6 +152,7 @@ from .impact_absorption_store import (
     IMPACT_CAPTURE_DEFAULT_PAYLOAD_CAP_BYTES,
     IMPACT_CAPTURE_SCHEMA_VERSION,
     IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     ImpactAbsorptionStore,
 )
 from .liquidity_session import (
@@ -1359,9 +1360,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_impact_capture.add_argument(
         "--schema-version",
-        choices=["v8", "v9"],
-        default="v8",
-        help="capture storage schema; v9 is the exact-frame research path",
+        choices=["v8", "v9", "v10"],
+        default="v10",
+        help="capture storage schema; v10 is the unbiased exact-frame research path",
     )
     parser_impact_capture.add_argument(
         "--duration-seconds",
@@ -1391,7 +1392,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser_impact_audit = subparsers.add_parser(
         "impact-audit",
-        help="verify a terminal Round 73 exact-wire capture without network calls",
+        help="verify a terminal exact-wire capture without network calls",
     )
     parser_impact_audit.add_argument("--database", default="data/microstructure.duckdb")
     parser_impact_audit.add_argument(
@@ -11298,14 +11299,15 @@ async def _run_impact_capture_with_progress(
 
 def command_impact_capture(args: argparse.Namespace) -> int:
     mode = str(getattr(args, "mode", "probe"))
-    schema_alias = str(getattr(args, "schema_version", "v8"))
+    schema_alias = str(getattr(args, "schema_version", "v10"))
     schema_versions = {
         "v8": IMPACT_CAPTURE_SCHEMA_VERSION,
         "v9": IMPACT_CAPTURE_V9_SCHEMA_VERSION,
+        "v10": IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     }
     if schema_alias not in schema_versions:
         print(
-            "impact-capture failed: schema version must be v8 or v9",
+            "impact-capture failed: schema version must be v8, v9, or v10",
             file=sys.stderr,
         )
         return 2
