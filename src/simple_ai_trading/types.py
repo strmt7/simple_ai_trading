@@ -220,10 +220,6 @@ class StrategyConfig:
     low_session_liquidity_volume_ratio: float = 0.45
     low_session_signal_threshold_add: float = 0.01
     low_session_size_multiplier: float = 0.85
-    preferred_utc_session_start_hour: int = 13
-    preferred_utc_session_end_hour: int = 21
-    off_session_signal_threshold_add: float = 0.0
-    off_session_size_multiplier: float = 1.0
     label_threshold: float = 0.001
     feature_version: str = FEATURE_VERSION
     enabled_features: tuple[str, ...] = FEATURE_NAMES
@@ -316,10 +312,6 @@ class StrategyConfig:
         self.low_session_liquidity_volume_ratio = min(1.0, max(0.01, _finite_float(self.low_session_liquidity_volume_ratio, 0.45)))
         self.low_session_signal_threshold_add = min(0.10, max(0.0, _finite_float(self.low_session_signal_threshold_add, 0.01)))
         self.low_session_size_multiplier = min(1.0, max(0.10, _finite_float(self.low_session_size_multiplier, 0.85)))
-        self.preferred_utc_session_start_hour = max(0, min(23, _coerce_int(self.preferred_utc_session_start_hour, 13)))
-        self.preferred_utc_session_end_hour = max(0, min(24, _coerce_int(self.preferred_utc_session_end_hour, 21)))
-        self.off_session_signal_threshold_add = min(0.10, max(0.0, _finite_float(self.off_session_signal_threshold_add, 0.0)))
-        self.off_session_size_multiplier = min(1.0, max(0.10, _finite_float(self.off_session_size_multiplier, 1.0)))
         self.label_threshold = _finite_nonnegative(self.label_threshold, 0.001)
         self.feature_version = str(self.feature_version or FEATURE_VERSION)
         self.order_type = str(self.order_type or "MARKET").upper()
