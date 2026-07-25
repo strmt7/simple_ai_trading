@@ -251,3 +251,50 @@ def test_round74_quiet_qualification_is_hash_bound_and_predeclared() -> None:
     assert authority["round_074_active_regime_preflight_design"] is True
     assert authority["v10_active_regime_qualification_attempt"] is False
     assert authority["round_074_model_training_or_evaluation"] is False
+
+
+def test_round74_active_preflight_is_fixed_and_calendar_safe() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH
+            / "round-074-v10-active-regime-qualification-preflight-2026-07-25.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    window = artifact["fixed_execution_window"]
+    assert window["earliest_start_utc"] == "2026-07-25T12:55:00Z"
+    assert window["latest_start_utc"] == "2026-07-25T12:57:00Z"
+    assert window["duration_seconds"] == 3600
+    assert window["maximum_reconnects"] == 0
+    assert window["automatic_retry_permitted"] is False
+    assert window["reschedule_after_observing_market_activity_permitted"] is False
+    calendar = artifact["market_calendar_semantics"]
+    assert calendar["binance_crypto_trading_is_continuous"] is True
+    assert calendar["crypto_has_formal_daily_close"] is False
+    assert (
+        calendar["listed_etf_etp_or_security_venues_have_formal_sessions_and_closes"]
+        is True
+    )
+    assert calendar["scheduled_date_is_saturday"] is True
+    assert calendar["listed_venue_weekend_closure_is_context_only"] is True
+    assert calendar["listed_product_close_creates_crypto_close"] is False
+    assert (
+        calendar["listed_product_calendar_may_grant_crypto_execution_authority"]
+        is False
+    )
+    classification = artifact["frozen_classification"]
+    assert classification["active_minimum_messages_per_second"] == (
+        735.8503256619431
+    )
+    assert classification["middle_or_quiet_attempt_is_retained"] is True
+    assert classification["middle_or_quiet_attempt_may_be_retried"] is False
+    assert classification["message_count_used_in_resource_verdict"] is False
+    authorization = artifact["authorization"]
+    assert authorization[
+        "one_v10_active_regime_qualification_attempt_in_fixed_window"
+    ] is True
+    assert authorization["round_074_model_training_or_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
+    assert authorization["profitability_or_edge_claim"] is False
