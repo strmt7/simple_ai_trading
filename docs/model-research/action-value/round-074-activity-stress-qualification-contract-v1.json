@@ -1,0 +1,101 @@
+{
+  "schema_version": "round-074-activity-stress-qualification-contract-v1",
+  "artifact_sha256": "a81a4ec365bbba0ce04dec9c27d16a7edd1746a8d5e8a5b37ce2d4e2ea5db1fa",
+  "round": 74,
+  "frozen_at_utc": "2026-07-25T02:25:00Z",
+  "frozen_before_first_activity_labeled_v10_capture": true,
+  "capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+  "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+  "round_073_invalidation_artifact_sha256": "c6bf1061fc1e3e43293eaf385f3156ec41d14b377f4a966bc28ab941be06ff91",
+  "one_hour_qualification_artifact_sha256": "6ee35fb97ca520c57560444b7a5dbccbf4fcd2e475a1cf786a9f0ccf0fc786ee",
+  "purpose": "Qualify v10 capture integrity and host safety under predeclared low- and high-message-activity conditions without selecting model evidence by market activity.",
+  "calibration": {
+    "source": "All 20 terminal completed Round 73 v9 campaign hours, including both hours rejected by the invalidated resource gate.",
+    "use_for_modeling_permitted": false,
+    "use_for_profitability_or_predictive_inference_permitted": false,
+    "same_stream_subscription_as_v10": true,
+    "rows_sha256": "99bf9fb7300ce69a2985a9a0663c2aa1e6c301edcaa5170b57c510758ff27e95",
+    "rows": [
+      {"run_id":"4a7f9f5a3d77434ba4b8cbd70dbe2702","message_count":952891,"elapsed_seconds":3604.969000000041,"messages_per_second":264.32709962276766},
+      {"run_id":"d115ae615d3b41ba84f1e4b1ae57a206","message_count":1374444,"elapsed_seconds":3604.954000000027,"messages_per_second":381.26533653411104},
+      {"run_id":"a761c5de745a40da80c1af56d9523c16","message_count":1644138,"elapsed_seconds":3602.780999999988,"messages_per_second":456.35246771868884},
+      {"run_id":"09d06476fd524260aa9e767cacb8ebff","message_count":1743853,"elapsed_seconds":3603.9379999999655,"messages_per_second":483.8743063837438},
+      {"run_id":"f8ae38a6e5244d729131f81a3cbc38ed","message_count":1837307,"elapsed_seconds":3603.3439999999828,"messages_per_second":509.8894249341747},
+      {"run_id":"5435963a495648dca332f1a496940256","message_count":1839225,"elapsed_seconds":3603.530999999959,"messages_per_second":510.3952206877146},
+      {"run_id":"5fb4257ab80143e2bea3fda26780ede8","message_count":1846711,"elapsed_seconds":3604.9220000000205,"messages_per_second":512.2748841722482},
+      {"run_id":"d168e165eb184b26b496722103c878c5","message_count":1954434,"elapsed_seconds":3604.875,"messages_per_second":542.164152709872},
+      {"run_id":"9a003e0f59cb418aa60762459b14bde7","message_count":2049334,"elapsed_seconds":3604.6880000000237,"messages_per_second":568.5191062305494},
+      {"run_id":"653cbd90e93c48e382f1947f45d7a6af","message_count":2200501,"elapsed_seconds":3603.890000000014,"messages_per_second":610.590500819945},
+      {"run_id":"d99ca4d71f284670828b34b11e2a3c8f","message_count":2477739,"elapsed_seconds":3603.6720000000205,"messages_per_second":687.5595226202568},
+      {"run_id":"9fad820e3efa4c309615ddff194c6477","message_count":2500025,"elapsed_seconds":3602.8589999999967,"messages_per_second":693.900316387625},
+      {"run_id":"fe770247effd425b898f2d2f44f1b3b8","message_count":2529883,"elapsed_seconds":3602.5629999999946,"messages_per_second":702.2453181249027},
+      {"run_id":"e505462033fc48d2bf88fea717e0c084","message_count":2564603,"elapsed_seconds":3603.9839999999967,"messages_per_second":711.602215770104},
+      {"run_id":"ea9b86d7143d4eb1babe3c56e90d8c73","message_count":2638736,"elapsed_seconds":3602.469000000012,"messages_per_second":732.4798631160993},
+      {"run_id":"8ce70f8ad331488f899ab089fe133635","message_count":2688772,"elapsed_seconds":3604.4369999999763,"messages_per_second":745.9617132994745},
+      {"run_id":"9caae95810384cfa8877f0b60fcef2b9","message_count":3242690,"elapsed_seconds":3603.4679999999935,"messages_per_second":899.8803374971017},
+      {"run_id":"9682b063793c4312bf61f7b630344ff0","message_count":4700298,"elapsed_seconds":3604.4529999999795,"messages_per_second":1304.025326450373},
+      {"run_id":"82ddd39752c14f6781a40af92fc19d60","message_count":6239005,"elapsed_seconds":3604.5,"messages_per_second":1730.8933277847136},
+      {"run_id":"6df709b6d83a446385adac599f7078ea","message_count":6638158,"elapsed_seconds":3604.5929999999935,"messages_per_second":1841.5832245138388}
+    ],
+    "quantile_method": "Hyndman-Fan type 7 linear interpolation, h=(n-1)q",
+    "quiet_maximum_messages_per_second": 510.26877174932963,
+    "active_minimum_messages_per_second": 735.8503256619431,
+    "middle_activity_interval": "strictly above quiet maximum and strictly below active minimum"
+  },
+  "classification": {
+    "metric": "writer_message_count divided by elapsed_seconds",
+    "quiet": "metric less than or equal to quiet_maximum_messages_per_second",
+    "active": "metric greater than or equal to active_minimum_messages_per_second",
+    "middle": "metric between the two frozen thresholds",
+    "classification_changes_data_qualification": false,
+    "classification_changes_resource_safety": false,
+    "classification_can_discard_a_completed_run": false,
+    "classification_can_grant_model_authority": false,
+    "message_count_used_in_resource_verdict": false
+  },
+  "hindsight_control": {
+    "prior_v10_probe_activity_label": "unclassified",
+    "prior_v10_one_hour_activity_label": "unclassified",
+    "prior_v10_one_hour_messages_per_second": 278.0961422882582,
+    "prior_v10_one_hour_would_meet_new_quiet_threshold": true,
+    "prior_v10_one_hour_may_satisfy_quiet_qualification": false
+  },
+  "next_stage": {
+    "name": "one predeclared quiet-regime qualification attempt",
+    "mode": "qualification",
+    "duration_seconds": 3600,
+    "maximum_reconnects": 0,
+    "required_capture_gate_passed": true,
+    "required_qualification_passed": true,
+    "required_activity_classification": "quiet",
+    "middle_or_active_result_retained_as_truthful_qualification_evidence": true,
+    "middle_or_active_result_triggers_automatic_retry": false,
+    "result_eligible_for_round_074_model_corpus": false
+  },
+  "active_stage": {
+    "authorized_now": false,
+    "reason": "A separate hash-bound preflight must follow the quiet-stage outcome. Its capture time may use actual listed-venue sessions as context, but final active status depends only on the frozen observed event-rate threshold.",
+    "fixed_crypto_market_open_or_close_assumed": false
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "crypto_trades_continuously_except_observed_venue_interruptions": true,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_require_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authorization": {
+    "one_v10_quiet_regime_qualification_attempt": true,
+    "v10_active_regime_qualification_attempt": false,
+    "v10_rotation": false,
+    "round_074_target_generation": false,
+    "round_074_model_training_or_evaluation": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
