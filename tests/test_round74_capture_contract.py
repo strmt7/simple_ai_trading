@@ -27,6 +27,13 @@ def _canonical_sha256(value: object) -> str:
     ).hexdigest()
 
 
+def _linear_quantile(ordered: list[float], quantile: float) -> float:
+    position = (len(ordered) - 1) * quantile
+    lower = int(position)
+    fraction = position - lower
+    return ordered[lower] + fraction * (ordered[lower + 1] - ordered[lower])
+
+
 def test_round73_v9_campaign_invalidation_is_hash_bound_and_pre_model() -> None:
     artifact = json.loads(
         (RESEARCH / "round-073-v9-corpus-invalidation-2026-07-25.json").read_text(
@@ -178,3 +185,38 @@ def test_round74_one_hour_qualification_is_hash_bound_without_hindsight_label() 
     assert authorization["additional_v10_capture_before_period_contract"] is False
     assert authorization["round_074_model_training_or_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round74_activity_stress_contract_freezes_nonselective_thresholds() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH / "round-074-activity-stress-qualification-contract-v1.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    calibration = artifact["calibration"]
+    rows = calibration["rows"]
+    assert len(rows) == 20
+    assert calibration["rows_sha256"] == _canonical_sha256(rows)
+    rates = [float(row["messages_per_second"]) for row in rows]
+    assert rates == sorted(rates)
+    assert calibration["quiet_maximum_messages_per_second"] == _linear_quantile(
+        rates, 0.25
+    )
+    assert calibration["active_minimum_messages_per_second"] == _linear_quantile(
+        rates, 0.75
+    )
+    classification = artifact["classification"]
+    assert classification["classification_changes_data_qualification"] is False
+    assert classification["classification_changes_resource_safety"] is False
+    assert classification["classification_can_discard_a_completed_run"] is False
+    assert classification["message_count_used_in_resource_verdict"] is False
+    hindsight = artifact["hindsight_control"]
+    assert hindsight["prior_v10_one_hour_would_meet_new_quiet_threshold"] is True
+    assert hindsight["prior_v10_one_hour_may_satisfy_quiet_qualification"] is False
+    authorization = artifact["authorization"]
+    assert authorization["one_v10_quiet_regime_qualification_attempt"] is True
+    assert authorization["v10_active_regime_qualification_attempt"] is False
+    assert authorization["round_074_model_training_or_evaluation"] is False
