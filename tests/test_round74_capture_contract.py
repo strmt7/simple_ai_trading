@@ -90,3 +90,26 @@ def test_round74_design_and_v10_contract_are_hash_bound_and_nonselective() -> No
         is False
     )
     assert contract["authorization"]["round_074_model_training_or_evaluation"] is False
+
+
+def test_round74_live_probe_preflight_is_hash_bound_and_narrow() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH / "round-074-v10-live-probe-preflight-2026-07-25.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["implementation_git_commit"] == (
+        "8457134cadcb859648375c35c8072e54e5ab99d2"
+    )
+    assert artifact["verification"]["focused_pytest_tests_passed"] == 82
+    assert artifact["host_preflight"]["active_python_capture_processes"] == 0
+    authorization = artifact["authorization"]
+    assert authorization["one_v10_live_probe"] is True
+    assert authorization["maximum_duration_seconds"] == 180
+    assert authorization["maximum_reconnects"] == 0
+    assert authorization["v10_one_hour_qualification"] is False
+    assert authorization["round_074_model_training_or_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
