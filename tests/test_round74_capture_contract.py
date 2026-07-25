@@ -113,3 +113,36 @@ def test_round74_live_probe_preflight_is_hash_bound_and_narrow() -> None:
     assert authorization["v10_one_hour_qualification"] is False
     assert authorization["round_074_model_training_or_evaluation"] is False
     assert authorization["live_trading_authority"] is False
+
+
+def test_round74_live_probe_evidence_is_hash_bound_and_authorizes_one_hour() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH / "round-074-v10-live-probe-success-2026-07-25.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["execution_git_commit"] == (
+        "1e398d97b3f7ca6df3be61d9a09f912a8d9ba601"
+    )
+    capture = artifact["capture"]
+    assert capture["status"] == "completed"
+    assert capture["reconnect_count"] == 0
+    assert capture["message_count"] == artifact["fresh_process_audit"][
+        "message_count"
+    ]
+    gate = artifact["gate_analysis"]
+    assert gate["capture_gate_passed"] is True
+    assert gate["data_qualification_passed"] is True
+    assert gate["resource_safety_passed"] is True
+    assert gate["qualification_passed"] is False
+    assert gate["message_count_used_in_resource_verdict"] is False
+    authorization = artifact["authorization"]
+    assert authorization["one_v10_one_hour_qualification_attempt"] is True
+    assert authorization["maximum_qualification_duration_seconds"] == 3600
+    assert authorization["maximum_reconnects"] == 0
+    assert authorization["v10_rotation"] is False
+    assert authorization["round_074_model_training_or_evaluation"] is False
+    assert authorization["live_trading_authority"] is False
