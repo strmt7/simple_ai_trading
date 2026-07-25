@@ -220,3 +220,34 @@ def test_round74_activity_stress_contract_freezes_nonselective_thresholds() -> N
     assert authorization["one_v10_quiet_regime_qualification_attempt"] is True
     assert authorization["v10_active_regime_qualification_attempt"] is False
     assert authorization["round_074_model_training_or_evaluation"] is False
+
+
+def test_round74_quiet_qualification_is_hash_bound_and_predeclared() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH
+            / "round-074-v10-quiet-regime-qualification-success-2026-07-25.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    capture = artifact["capture"]
+    audit = artifact["fresh_process_audit"]
+    assert capture["status"] == "completed"
+    assert capture["reconnect_count"] == 0
+    assert capture["message_count"] == audit["message_count"] == 881_173
+    assert capture["last_frame_sha256"] == audit["last_frame_sha256"]
+    assert artifact["gate_analysis"]["qualification_passed"] is True
+    activity = artifact["activity_classification"]
+    assert activity["threshold_frozen_before_capture"] is True
+    assert activity["classification"] == "quiet"
+    assert activity["messages_per_second"] <= activity[
+        "quiet_maximum_messages_per_second"
+    ]
+    assert activity["quiet_regime_qualification_passed"] is True
+    assert activity["classification_grants_model_authority"] is False
+    authority = artifact["authority"]
+    assert authority["round_074_active_regime_preflight_design"] is True
+    assert authority["v10_active_regime_qualification_attempt"] is False
+    assert authority["round_074_model_training_or_evaluation"] is False
