@@ -1,0 +1,81 @@
+{
+  "schema_version": "round-074-v10-live-probe-preflight-v1",
+  "artifact_sha256": "6510fcb9e34928582f66cc7e613bf01690ccd9e92c1978b844c0a882309139dd",
+  "round": 74,
+  "observed_at_utc": "2026-07-25T01:08:14.5056382Z",
+  "implementation_git_commit": "8457134cadcb859648375c35c8072e54e5ab99d2",
+  "origin_main_git_commit": "8457134cadcb859648375c35c8072e54e5ab99d2",
+  "working_tree_clean_before_preflight_artifact": true,
+  "capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+  "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+  "round_073_invalidation_artifact_sha256": "c6bf1061fc1e3e43293eaf385f3156ec41d14b377f4a966bc28ab941be06ff91",
+  "implementation_scope": {
+    "capture_schema_version": "round-074-prospective-evidence-v10",
+    "report_schema_version": "round-074-capture-report-v10",
+    "frame_table": "impact_capture_frame_v10",
+    "rest_context_table": "impact_rest_event_v10",
+    "client_originated_keepalive_disabled": true,
+    "automatic_provider_pong_handling_retained": true,
+    "data_and_resource_verdicts_separate": true,
+    "resource_verdict_depends_on_message_count": false,
+    "round_073_rows_or_semantics_modified": false
+  },
+  "verification": {
+    "focused_pytest_command": ".venv\\Scripts\\python.exe -m pytest -q tests/test_impact_absorption_capture.py tests/test_impact_absorption_store.py tests/test_impact_absorption_cli.py tests/test_round74_capture_contract.py",
+    "focused_pytest_tests_passed": 82,
+    "focused_pytest_failures": 0,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "windows_command_contract_regenerated": true,
+    "canonical_document_hashes_match": true,
+    "round_073_database_metadata_runs_reconciled": 25,
+    "round_073_database_metadata_reconciliation_errors": 0,
+    "historical_v9_compatibility_regression_passed": true
+  },
+  "host_preflight": {
+    "database": "data/microstructure.duckdb",
+    "database_bytes": 9433526272,
+    "wal_bytes": 0,
+    "free_bytes_on_database_volume": 2429855256576,
+    "active_python_capture_processes": 0,
+    "database_size_cap_bytes_for_probe": 51539607552,
+    "memory_limit": "2GB",
+    "database_threads": 2
+  },
+  "source": {
+    "provider": "Binance USD-M public production market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "synthetic_market_data_permitted": false,
+    "credentials_permitted": false,
+    "authenticated_endpoints_permitted": false,
+    "orders_permitted": false
+  },
+  "market_and_calendar_scope": {
+    "crypto_formal_daily_close": false,
+    "crypto_trades_continuously_except_observed_venue_interruptions": true,
+    "utc_day_is_only_a_partition_or_resampling_boundary": true,
+    "listed_etf_etp_or_security_sessions_are_context_only": true,
+    "listed_products_require_actual_venue_calendars": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authorization": {
+    "one_v10_live_probe": true,
+    "probe_mode": "probe",
+    "maximum_duration_seconds": 180,
+    "maximum_reconnects": 0,
+    "v10_one_hour_qualification": false,
+    "v10_rotation": false,
+    "round_074_target_generation": false,
+    "round_074_model_training_or_evaluation": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
