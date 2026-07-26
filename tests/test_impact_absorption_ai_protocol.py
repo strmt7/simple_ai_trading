@@ -26,7 +26,8 @@ def _manifest() -> Round74AIModelManifest:
     return Round74AIModelManifest(
         model_id="example/finance-8b",
         model_revision="a" * 40,
-        weights_sha256="b" * 64,
+        model_artifact_sha256="b" * 64,
+        model_artifact_kind="ollama_manifest",
         parameter_count=8_000_000_000,
         quantization="int4",
         runtime_backend="windows-ml",
@@ -113,9 +114,11 @@ def test_ai_manifest_rejects_unpinned_or_cpu_only_models() -> None:
 
 def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     request = _request()
+    restored = Round74AIReviewRequest.from_dict(request.as_dict())
     system, user = build_round74_ai_review_prompt(request)
     payload = json.loads(user)
 
+    assert restored == request
     assert len(request.request_sha256) == 64
     assert payload["asset"] == "asset_0"
     assert payload["horizon_seconds"] == 30

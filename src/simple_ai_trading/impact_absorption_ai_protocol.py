@@ -61,6 +61,11 @@ ROUND74_AI_QUANTIZATION_FORMATS = (
     "int8",
     "fp16",
 )
+ROUND74_AI_MODEL_ARTIFACT_KINDS = (
+    "ollama_manifest",
+    "onnx_bundle",
+    "gguf",
+)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _REVISION = re.compile(r"[0-9a-f]{40}")
@@ -151,7 +156,8 @@ class Round74AIModelManifest:
 
     model_id: str
     model_revision: str
-    weights_sha256: str
+    model_artifact_sha256: str
+    model_artifact_kind: str
     parameter_count: int
     quantization: str
     runtime_backend: str
@@ -169,6 +175,8 @@ class Round74AIModelManifest:
             != ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
             or _MODEL_ID.fullmatch(self.model_id) is None
             or _REVISION.fullmatch(self.model_revision) is None
+            or self.model_artifact_kind
+            not in ROUND74_AI_MODEL_ARTIFACT_KINDS
             or self.quantization not in ROUND74_AI_QUANTIZATION_FORMATS
             or self.runtime_backend not in ROUND74_AI_RUNTIME_BACKENDS
             or not self.runtime_version.strip()
@@ -186,7 +194,7 @@ class Round74AIModelManifest:
             or not isinstance(self.finance_specialized, bool)
         ):
             raise ValueError("Round 74 AI model manifest differs")
-        _require_sha256(self.weights_sha256, "weights")
+        _require_sha256(self.model_artifact_sha256, "model artifact")
 
     @property
     def manifest_sha256(self) -> str:
@@ -199,7 +207,8 @@ class Round74AIModelManifest:
             "schema_version": self.schema_version,
             "model_id": self.model_id,
             "model_revision": self.model_revision,
-            "weights_sha256": self.weights_sha256,
+            "model_artifact_sha256": self.model_artifact_sha256,
+            "model_artifact_kind": self.model_artifact_kind,
             "parameter_count": self.parameter_count,
             "quantization": self.quantization,
             "runtime_backend": self.runtime_backend,
@@ -229,7 +238,10 @@ class Round74AIModelManifest:
             selected = cls(
                 model_id=str(payload["model_id"]),
                 model_revision=str(payload["model_revision"]),
-                weights_sha256=str(payload["weights_sha256"]),
+                model_artifact_sha256=str(
+                    payload["model_artifact_sha256"]
+                ),
+                model_artifact_kind=str(payload["model_artifact_kind"]),
                 parameter_count=int(payload["parameter_count"]),
                 quantization=str(payload["quantization"]),
                 runtime_backend=str(payload["runtime_backend"]),
@@ -397,6 +409,72 @@ class Round74AIReviewRequest:
         if include_sha256:
             payload["request_sha256"] = _canonical_sha256(payload)
         return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74AIReviewRequest:
+        payload = dict(value)
+        claimed = str(payload.pop("request_sha256", ""))
+        if claimed != _canonical_sha256(payload):
+            raise ValueError("Round 74 AI review request digest differs")
+        try:
+            selected = cls(
+                pretest_policy_sha256=str(
+                    payload["pretest_policy_sha256"]
+                ),
+                sample_sha256=str(payload["sample_sha256"]),
+                deterministic_risk_state_sha256=str(
+                    payload["deterministic_risk_state_sha256"]
+                ),
+                asset_slot=int(payload["asset_slot"]),
+                side=str(payload["side"]),
+                horizon_seconds=int(payload["horizon_seconds"]),
+                requested_wall_ns=int(payload["requested_wall_ns"]),
+                expires_wall_ns=int(payload["expires_wall_ns"]),
+                proposed_risk_size_bps=int(
+                    payload["proposed_risk_size_bps"]
+                ),
+                feature_last=tuple(
+                    float(item) for item in payload["feature_last"]
+                ),
+                feature_mean=tuple(
+                    float(item) for item in payload["feature_mean"]
+                ),
+                feature_standard_deviation=tuple(
+                    float(item)
+                    for item in payload["feature_standard_deviation"]
+                ),
+                payoff_quantiles_bps=tuple(
+                    float(item)
+                    for item in payload["payoff_quantiles_bps"]
+                ),
+                maximum_adverse_excursion_quantiles_bps=tuple(
+                    float(item)
+                    for item in payload[
+                        "maximum_adverse_excursion_quantiles_bps"
+                    ]
+                ),
+                positive_payoff_probability=float(
+                    payload["positive_payoff_probability"]
+                ),
+                adverse_selection_probability=float(
+                    payload["adverse_selection_probability"]
+                ),
+                regime_unpredictability_probability=float(
+                    payload["regime_unpredictability_probability"]
+                ),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 AI review request payload differs"
+            ) from exc
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError("Round 74 AI review request policy differs")
+        selected.validate()
+        return selected
 
     def prompt_payload(self) -> dict[str, object]:
         """Return only the anonymized numeric projection visible to the LLM."""
@@ -603,6 +681,7 @@ def apply_round74_ai_risk_modifier(
 
 __all__ = [
     "ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION",
+    "ROUND74_AI_MODEL_ARTIFACT_KINDS",
     "ROUND74_AI_QUANTIZATION_FORMATS",
     "ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION",
     "ROUND74_AI_REVIEW_HORIZONS_SECONDS",
