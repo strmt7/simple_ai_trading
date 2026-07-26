@@ -1,0 +1,183 @@
+from __future__ import annotations
+
+from dataclasses import replace
+
+import pytest
+import torch
+
+from simple_ai_trading.impact_absorption_ai_bridge import (
+    build_round74_ai_review_request,
+)
+from simple_ai_trading.impact_absorption_event_model import (
+    Round74EventModelOutput,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_QUANTILES,
+    ROUND74_EVENT_PAYOFF_SIDES,
+    ROUND74_EVENT_SEQUENCE_LENGTH,
+)
+
+
+WALL_NS = 1_800_000_000_000_000_000
+
+
+def _features() -> torch.Tensor:
+    values = torch.zeros(
+        (
+            2,
+            ROUND74_EVENT_SEQUENCE_LENGTH,
+            len(ROUND74_EVENT_FEATURE_NAMES),
+        ),
+        dtype=torch.float32,
+    )
+    btc = ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_btcusdt")
+    eth = ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_ethusdt")
+    values[0, :, btc] = 1.0
+    values[1, :, eth] = 1.0
+    values[0, :, 10] = torch.linspace(
+        -1.0,
+        1.0,
+        ROUND74_EVENT_SEQUENCE_LENGTH,
+    )
+    return values
+
+
+def _output() -> Round74EventModelOutput:
+    batch = 2
+    horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    sides = len(ROUND74_EVENT_PAYOFF_SIDES)
+    quantiles = len(ROUND74_EVENT_PAYOFF_QUANTILES)
+    payoff = torch.tensor(
+        [-5.0, -1.0, 2.0, 4.0, 7.0],
+        dtype=torch.float32,
+    ).expand(batch, horizons, sides, quantiles)
+    adverse = torch.tensor(
+        [1.0, 2.0, 3.0, 5.0, 8.0],
+        dtype=torch.float32,
+    ).expand(batch, horizons, sides, quantiles)
+    return Round74EventModelOutput(
+        payoff_quantiles_bps=payoff,
+        maximum_adverse_excursion_quantiles_bps=adverse,
+        positive_payoff_logits=torch.zeros(
+            (batch, horizons, sides),
+            dtype=torch.float32,
+        ),
+        adverse_selection_logits=torch.full(
+            (batch, horizons, sides),
+            -1.0,
+            dtype=torch.float32,
+        ),
+        regime_unpredictability_logits=torch.full(
+            (batch, horizons),
+            -2.0,
+            dtype=torch.float32,
+        ),
+    )
+
+
+def _build(**changes: object):
+    values: dict[str, object] = {
+        "model_output": _output(),
+        "scaled_feature_values": _features(),
+        "row_index": 0,
+        "asset_slot": 0,
+        "side": "long",
+        "horizon_seconds": 30,
+        "pretest_policy_sha256": "1" * 64,
+        "sample_sha256": "2" * 64,
+        "deterministic_risk_state_sha256": "3" * 64,
+        "requested_wall_ns": WALL_NS,
+        "expires_wall_ns": WALL_NS + 10_000_000_000,
+        "proposed_risk_size_bps": 2_500,
+    }
+    values.update(changes)
+    return build_round74_ai_review_request(**values)
+
+
+def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
+    request = _build()
+
+    assert request.asset_slot == 0
+    assert request.side == "long"
+    assert request.horizon_seconds == 30
+    assert request.payoff_quantiles_bps == (-5.0, -1.0, 2.0, 4.0, 7.0)
+    assert request.maximum_adverse_excursion_quantiles_bps == (
+        1.0,
+        2.0,
+        3.0,
+        5.0,
+        8.0,
+    )
+    assert request.positive_payoff_probability == 0.5
+    assert request.adverse_selection_probability == pytest.approx(0.26894143)
+    assert request.regime_unpredictability_probability == pytest.approx(0.11920292)
+    assert (
+        request.feature_last[ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_btcusdt")]
+        == 1.0
+    )
+    assert request.feature_mean[10] == pytest.approx(0.0, abs=1e-7)
+    assert request.feature_standard_deviation[10] > 0.0
+
+
+def test_bridge_does_not_require_realized_target_arrays() -> None:
+    request = _build()
+    payload = request.as_dict()
+
+    assert "net_payoff_bps" not in payload
+    assert "realized" not in str(payload)
+    assert "target_context_sha256" not in payload
+    assert payload["future_outcome_exposed_to_ai"] is False
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"row_index": 2},
+        {"asset_slot": 3},
+        {"side": "flat"},
+        {"horizon_seconds": 5},
+    ],
+)
+def test_bridge_rejects_invalid_selection(
+    changes: dict[str, object],
+) -> None:
+    with pytest.raises(ValueError, match="Round 74 AI bridge"):
+        _build(**changes)
+
+
+def test_bridge_rejects_asset_identity_mismatch() -> None:
+    with pytest.raises(ValueError, match="asset identity differs"):
+        _build(asset_slot=1)
+
+
+def test_bridge_rejects_nonfinite_features_or_predictions() -> None:
+    features = _features()
+    features[0, 2, 10] = float("nan")
+    with pytest.raises(ValueError, match="feature context differs"):
+        _build(scaled_feature_values=features)
+
+    output = _output()
+    logits = output.positive_payoff_logits.clone()
+    logits[0, 2, 0] = float("inf")
+    with pytest.raises(ValueError, match="model output contains nonfinite"):
+        _build(
+            model_output=replace(
+                output,
+                positive_payoff_logits=logits,
+            )
+        )
+
+
+def test_bridge_detaches_model_tensors_before_serialization() -> None:
+    output = _output()
+    logits = output.positive_payoff_logits.clone().requires_grad_(True)
+    request = _build(
+        model_output=replace(
+            output,
+            positive_payoff_logits=logits,
+        )
+    )
+
+    assert isinstance(request.positive_payoff_probability, float)
