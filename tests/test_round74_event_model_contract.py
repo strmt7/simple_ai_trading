@@ -4,6 +4,10 @@ import hashlib
 import json
 from pathlib import Path
 
+from simple_ai_trading.impact_absorption_event_cohort import (
+    ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION,
+    ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_event_dataset import (
     ROUND74_EVENT_DATASET_SCHEMA_VERSION,
     ROUND74_EVENT_PARTITION_SCHEMA_VERSION,
@@ -28,7 +32,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v3.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v4.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -83,6 +87,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_dataset_sha256"] == _file_sha256(
         source["event_dataset_path"]
     )
+    assert source["event_cohort_sha256"] == _file_sha256(
+        source["event_cohort_path"]
+    )
     assert source["event_training_sha256"] == _file_sha256(
         source["event_training_path"]
     )
@@ -108,6 +115,14 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         == ROUND74_EVENT_PARTITION_SCHEMA_VERSION
     )
     assert (
+        source["event_cohort_plan_schema_version"]
+        == ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION
+    )
+    assert (
+        source["event_cohort_binding_schema_version"]
+        == ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION
+    )
+    assert (
         source["event_training_schema_version"]
         == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
     )
@@ -124,6 +139,20 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert data_scope["exact_local_receipt_order_required"] is True
     assert data_scope["one_second_or_minute_collapse_permitted"] is False
     assert data_scope["listed_venue_calendar_may_create_crypto_close"] is False
+    cohort = design["cohort_admission_contract"]
+    assert cohort["implemented_now"] is True
+    assert cohort["plan_sha256"] == (
+        "c724663d7502fc387caa8a4f49e61da28c7934c13e293472c450970ffcca124d"
+    )
+    assert cohort["role_counts"] == {
+        "training": 120,
+        "tuning": 24,
+        "test": 24,
+    }
+    assert cohort["active_prerequisite_passed_now"] is False
+    assert cohort["failed_or_missed_slot_replacement_permitted"] is False
+    assert cohort["partition_hash_must_bind_plan_sha256"] is True
+    assert cohort["representative_market_data_collected_now"] is False
     features = design["causal_feature_contract"]
     assert features["per_event_asset_identity_retained"] is True
     assert features["window_may_cross_long_gap"] is False
@@ -193,6 +222,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert dataset["implemented_now"] is True
     assert dataset["representative_market_dataset_built_now"] is False
     assert dataset["database_access"] == "read only"
+    assert dataset["cohort_plan_digest_must_match_partition"] is True
     assert dataset["split_unit"] == "whole capture run"
     assert dataset["random_row_split_permitted"] is False
     assert dataset["minimum_purge_seconds"] == 300
@@ -234,6 +264,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["leak_resistant_dataset_implementation"] is True
     assert authority["development_trainer_implementation"] is True
     assert authority["immutable_pretest_policy_implementation"] is True
+    assert authority["predeclared_cohort_admission_implementation"] is True
+    assert authority["predeclared_cohort_plan"] is True
     for key in (
         "target_generation",
         "model_training",
@@ -355,6 +387,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     ]
     assert source["event_model_sha256"] == design["source_binding"][
         "event_model_sha256"
+    ]
+    assert source["event_cohort_sha256"] == design["source_binding"][
+        "event_cohort_sha256"
     ]
     backend = evidence["backend"]
     assert backend["requested"] == backend["kind"] == "directml"
