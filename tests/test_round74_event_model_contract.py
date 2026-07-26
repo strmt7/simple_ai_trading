@@ -58,7 +58,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v8.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v9.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -337,6 +337,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         ]
         is True
     )
+    assert (
+        dataset["assembled_test_batch_retains_single_one_use_access_digest"]
+        is True
+    )
+    assert dataset["development_batch_may_carry_test_access_digest"] is False
     action = design["action_policy_contract"]
     assert action["implemented_now"] is True
     assert action["representative_market_policy_selected_now"] is False
