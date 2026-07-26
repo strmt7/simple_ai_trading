@@ -1,0 +1,185 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_FEATURE_NAMES_SHA256,
+    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
+)
+
+
+REPOSITORY = Path(__file__).resolve().parents[1]
+RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v2.json"
+DIRECTML_PATH = (
+    RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
+)
+REPLAY_PATH = (
+    RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
+)
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            value,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+            allow_nan=False,
+        ).encode("ascii")
+    ).hexdigest()
+
+
+def _load_hash_bound(path: Path, field: str) -> dict[str, object]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    claimed = value.pop(field)
+    assert claimed == _canonical_sha256(value)
+    value[field] = claimed
+    return value
+
+
+def _file_sha256(relative_path: str) -> str:
+    return hashlib.sha256((REPOSITORY / relative_path).read_bytes()).hexdigest()
+
+
+def test_round74_event_model_design_is_source_bound_and_causal() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+
+    assert source["event_sequence_sha256"] == _file_sha256(
+        source["event_sequence_path"]
+    )
+    assert source["event_model_sha256"] == _file_sha256(
+        source["event_model_path"]
+    )
+    assert (
+        source["event_sequence_schema_version"]
+        == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+    )
+    assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 43
+    assert source["feature_names_sha256"] == (
+        ROUND74_EVENT_FEATURE_NAMES_SHA256
+    )
+    data_scope = design["data_scope"]
+    assert data_scope["symbols"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
+    assert data_scope["exact_local_receipt_order_required"] is True
+    assert data_scope["one_second_or_minute_collapse_permitted"] is False
+    assert data_scope["listed_venue_calendar_may_create_crypto_close"] is False
+    features = design["causal_feature_contract"]
+    assert features["per_event_asset_identity_retained"] is True
+    assert features["window_may_cross_long_gap"] is False
+    scaler = features["feature_scaler"]
+    assert scaler["fit_on_training_partition_only"] is True
+    assert scaler["validation_or_test_statistics_permitted"] is False
+    assert scaler["model_bundle_must_bind_scaler_hash"] is True
+
+
+def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    targets = design["prospective_target_contract"]
+    assert targets["implemented_now"] is False
+    latency = targets["decision_submission_and_execution_latency"]
+    assert latency["must_be_measured_on_the_execution_host"] is True
+    assert latency["fixed_unverified_latency_assumption_permitted"] is False
+    entry = targets["entry_and_exit"]
+    assert entry["initial_supported_execution"] == "marketable orders only"
+    assert entry["passive_maker_fill_target_permitted_from_l2"] is False
+    assert entry["insufficient_visible_depth_policy"] == (
+        "censor target and forbid action"
+    )
+    costs = targets["costs"]
+    assert costs["missing_account_fee_policy"] == "fail closed"
+    assert costs["runtime_fee_mismatch_policy"] == (
+        "model bundle is incompatible and cannot trade"
+    )
+    assert targets["leverage"][
+        "leverage_is_applied_only_by_independent_risk_controller"
+    ] is True
+    evaluation = design["prospective_evaluation_contract"]
+    assert "design-consumed" in evaluation["quiet_qualification_run_status"]
+    assert evaluation["random_row_split_permitted"] is False
+    assert evaluation["sealed_test_may_be_used_once"] is True
+    assert evaluation["profitability_required_by_assertion_or_data_filter"] is False
+    assert design["ai_comparison_contract"][
+        "ai_may_bypass_data_risk_or_execution_gate"
+    ] is False
+    authority = design["authority"]
+    for key in (
+        "target_generation",
+        "model_training",
+        "model_selection",
+        "financial_edge_tested",
+        "profitability_claim",
+        "ai_uplift_claim",
+        "paper_trading_authority",
+        "testnet_trading_authority",
+        "live_trading_authority",
+    ):
+        assert authority[key] is False
+
+
+def test_round74_event_replay_evidence_is_exact_read_only_and_pre_target() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    replay = _load_hash_bound(REPLAY_PATH, "artifact_sha256")
+
+    assert replay["execution_git_commit"] == design["implementation_git_commit"]
+    assert replay["event_sequence_source_sha256"] == design["source_binding"][
+        "event_sequence_sha256"
+    ]
+    evidence = replay["replay"]
+    assert evidence["token_count"] == evidence["token_limit"] == 50_000
+    assert sum(evidence["event_counts"].values()) == 50_000
+    assert sum(evidence["symbol_counts"].values()) == 50_000
+    assert set(evidence["symbol_counts"]) == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
+    assert evidence["canonical_length_prefixed_token_sha256"] == (
+        "03f52996078dbd514570b83434ae1bb15d713103448a624ddd82edc4be677f02"
+    )
+    storage = replay["storage_safety"]
+    assert storage["database_open_mode"] == "read_only"
+    assert storage["database_size_before_bytes"] == (
+        storage["database_size_after_bytes"]
+    )
+    assert storage["wal_size_before_bytes"] == storage["wal_size_after_bytes"] == 0
+    assert storage["database_write_detected"] is False
+    limitations = replay["observed_sample_limitations"]
+    assert limitations["liquidation_event_count"] == 0
+    assert limitations["sample_validates_liquidation_path"] is False
+    assert limitations["sample_is_financially_representative"] is False
+    interpretation = replay["interpretation"]
+    assert interpretation["targets_constructed"] is False
+    assert interpretation["models_evaluated"] is False
+    assert interpretation["financial_edge_tested"] is False
+
+
+def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    evidence = _load_hash_bound(DIRECTML_PATH, "artifact_sha256")
+
+    assert evidence["execution_git_commit"] == design["implementation_git_commit"]
+    assert evidence["event_model_source_sha256"] == design["source_binding"][
+        "event_model_sha256"
+    ]
+    backend = evidence["backend"]
+    assert backend["requested"] == backend["kind"] == "directml"
+    assert backend["vendor"] == "AMD Radeon RX 9070 XT"
+    assert backend["accelerated"] is True
+    verification = evidence["verification"]
+    assert verification["forward_completed"] is True
+    assert verification["backward_completed"] is True
+    assert verification["parameter_update_completed"] is True
+    assert verification["warning_count"] == 0
+    assert verification["cpu_fallback_warning_count"] == 0
+    for candidate_id, candidate in evidence["candidates"].items():
+        assert candidate["parameter_count"] == design["candidate_panel"][
+            candidate_id
+        ]["parameter_count"]
+        assert candidate["parameter_max_abs_change"] > 0.0
+    interpretation = evidence["interpretation"]
+    assert interpretation["real_market_targets_used"] is False
+    assert interpretation["model_fit_performed"] is False
+    assert interpretation["financial_edge_tested"] is False
+    assert interpretation["profitability_claim"] is False
