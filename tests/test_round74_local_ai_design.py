@@ -10,6 +10,13 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_HORIZONS_SECONDS,
     ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_bridge import (
+    ROUND74_AI_BRIDGE_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
@@ -25,7 +32,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v2.json"
+    / "round-074-local-ai-review-design-v3.json"
 )
 
 
@@ -47,7 +54,13 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
 
     assert claimed == _canonical_sha256(artifact)
     source = artifact["source_binding"]
-    for label in ("protocol", "worker", "runtime"):
+    for label in (
+        "protocol",
+        "bridge",
+        "calibration",
+        "worker",
+        "runtime",
+    ):
         assert source[f"{label}_sha256"] == hashlib.sha256(
             (REPOSITORY / source[f"{label}_path"]).read_bytes()
         ).hexdigest()
@@ -68,6 +81,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["runtime_outcome_schema_version"] == (
         ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION
+    )
+    assert source["bridge_schema_version"] == (
+        ROUND74_AI_BRIDGE_SCHEMA_VERSION
+    )
+    assert source["tuning_subpartition_schema_version"] == (
+        ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION
+    )
+    assert source["temperature_calibration_schema_version"] == (
+        ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
     )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
@@ -142,6 +164,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["candidate_manifest_hash_verified"] is True
     assert status["isolated_worker_implemented"] is True
     assert status["fail_closed_parent_runtime_implemented"] is True
+    assert status["causal_calibrated_bridge_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
 

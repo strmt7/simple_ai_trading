@@ -9,6 +9,9 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_bridge import (
+    ROUND74_AI_BRIDGE_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
@@ -19,6 +22,10 @@ from simple_ai_trading.impact_absorption_ai_worker import (
 from simple_ai_trading.impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION,
     ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
+    ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
     ROUND74_EVENT_DATASET_SCHEMA_VERSION,
@@ -44,7 +51,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v6.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v7.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -53,6 +60,10 @@ REPLAY_PATH = (
 )
 TRAINING_PATH = (
     RESEARCH / "round-074-event-training-directml-preflight-2026-07-26.json"
+)
+CALIBRATION_PATH = (
+    RESEARCH
+    / "round-074-temperature-calibration-directml-preflight-2026-07-26.json"
 )
 
 
@@ -104,6 +115,12 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert source["ai_protocol_sha256"] == _file_sha256(
         source["ai_protocol_path"]
+    )
+    assert source["ai_bridge_sha256"] == _file_sha256(
+        source["ai_bridge_path"]
+    )
+    assert source["event_calibration_sha256"] == _file_sha256(
+        source["event_calibration_path"]
     )
     assert source["ai_worker_sha256"] == _file_sha256(
         source["ai_worker_path"]
@@ -166,6 +183,18 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["ai_runtime_outcome_schema_version"]
         == ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_bridge_schema_version"]
+        == ROUND74_AI_BRIDGE_SCHEMA_VERSION
+    )
+    assert (
+        source["tuning_subpartition_schema_version"]
+        == ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION
+    )
+    assert (
+        source["temperature_calibration_schema_version"]
+        == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
     )
     assert (
         source["event_training_schema_version"]
@@ -268,6 +297,14 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert dataset["representative_market_dataset_built_now"] is False
     assert dataset["database_access"] == "read only"
     assert dataset["cohort_plan_digest_must_match_partition"] is True
+    tuning = dataset["tuning_subpartition"]
+    assert tuning["implemented_now"] is True
+    assert tuning["expected_tuning_runs"] == 24
+    assert tuning["model_selection_runs"] == 12
+    assert tuning["probability_calibration_runs"] == 6
+    assert tuning["action_policy_selection_runs"] == 6
+    assert tuning["run_reuse_permitted"] is False
+    assert tuning["sealed_test_accessed"] is False
     assert dataset["split_unit"] == "whole capture run"
     assert dataset["random_row_split_permitted"] is False
     assert dataset["minimum_purge_seconds"] == 300
@@ -311,6 +348,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["host_resource_preflight_passed_now"] is False
     assert ai["actual_model_inference_attempted_now"] is False
     assert ai["post_inference_full_gpu_residency_required"] is True
+    assert ai["causal_calibrated_model_bridge_implemented_now"] is True
+    assert ai["bridge_may_access_realized_targets"] is False
+    assert ai["raw_uncalibrated_probability_permitted"] is False
+    assert ai["request_binds_probability_calibration_sha256"] is True
     assert ai["actual_multibillion_parameter_inference_completed_now"] is False
     assert ai["supported_review_horizons_seconds"] == [30, 300]
     assert ai["one_and_five_second_ml_paths_wait_for_ai"] is False
@@ -327,6 +368,13 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["predeclared_cohort_admission_implementation"] is True
     assert authority["predeclared_cohort_plan"] is True
     assert authority["local_ai_review_protocol_implementation"] is True
+    assert authority["tuning_subpartition_implementation"] is True
+    assert authority["probability_calibration_implementation"] is True
+    assert authority["causal_calibrated_ai_bridge_implementation"] is True
+    assert (
+        authority["probability_calibration_directml_compute_preflight"]
+        is True
+    )
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
     assert authority["local_ai_host_resource_preflight"] is True
@@ -479,5 +527,35 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert interpretation["candidate_loss_has_financial_meaning"] is False
     assert interpretation["representative_market_training_performed"] is False
     assert interpretation["sealed_test_evaluated"] is False
+    assert interpretation["financial_edge_tested"] is False
+    assert interpretation["profitability_claim"] is False
+
+
+def test_round74_calibration_preflight_is_amd_compute_only() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    evidence = _load_hash_bound(CALIBRATION_PATH, "artifact_sha256")
+    binding = design["host_evidence_binding"]
+
+    assert evidence["execution_git_commit"] == binding[
+        "temperature_calibration_directml_execution_git_commit"
+    ]
+    assert evidence["artifact_sha256"] == binding[
+        "temperature_calibration_directml_artifact_sha256"
+    ]
+    assert evidence["source_binding"]["sha256"] == design[
+        "source_binding"
+    ]["event_calibration_sha256"]
+    backend = evidence["backend"]
+    assert backend["requested"] == backend["kind"] == "directml"
+    assert backend["vendor"] == "AMD Radeon RX 9070 XT"
+    assert backend["accelerated"] is True
+    assert backend["warning_count"] == 0
+    assert backend["cpu_fallback_warning_count"] == 0
+    verification = evidence["verification"]
+    assert verification["candidate_temperature_count"] == 257
+    assert verification["all_three_temperature_searches_completed"] is True
+    assert verification["hidden_cpu_fallback_detected"] is False
+    interpretation = evidence["interpretation"]
+    assert interpretation["representative_market_calibration_performed"] is False
     assert interpretation["financial_edge_tested"] is False
     assert interpretation["profitability_claim"] is False
