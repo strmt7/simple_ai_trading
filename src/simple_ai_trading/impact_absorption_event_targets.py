@@ -28,6 +28,7 @@ from .impact_absorption_targets import (
 
 ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v1"
 ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS = 5_000_000_000
+ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE = 1_000.0
 ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS = 250_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_DECISION_STATE_AGE_NS = 250_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_PATH_STATE_GAP_NS = 250_000_000
@@ -167,10 +168,12 @@ class Round74EventTargetSpec:
             for _symbol, fee in fees
         ):
             raise ValueError("Round 74 target fee is invalid")
-        _finite_nonnegative(
+        slippage = _finite_nonnegative(
             self.additional_slippage_bps_per_side,
             "target additional slippage",
         )
+        if slippage > ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE:
+            raise ValueError("Round 74 target additional slippage is too large")
         _sha256_digest(
             self.commission_evidence_sha256,
             "commission evidence",
@@ -637,8 +640,11 @@ class Round74EventTargetEngine:
         self.anchors: dict[str, deque[Round74EventTargetAnchor]] = {
             symbol: deque() for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         }
-        prior_by_symbol: dict[str, int] = {}
-        keys: set[tuple[str, int]] = set()
+        self._anchor_prior_by_symbol: dict[str, int] = {}
+        self._anchor_keys: set[tuple[str, int]] = set()
+        self._anchor_count = 0
+        self._global_prior_order_key: ReceiptOrderKey | None = None
+        self._finished = False
         for anchor in sorted(
             anchors,
             key=lambda item: (
@@ -647,26 +653,25 @@ class Round74EventTargetEngine:
                 item.anchor_index,
             ),
         ):
-            anchor.validate()
-            key = (anchor.symbol, int(anchor.anchor_index))
-            if key in keys:
-                raise ValueError("Round 74 target anchor key is duplicated")
-            keys.add(key)
-            prior = prior_by_symbol.get(anchor.symbol)
-            if (
-                prior is not None
-                and anchor.decision_monotonic_ns - prior
-                < self.spec.minimum_anchor_spacing_ns
-            ):
-                raise ValueError("Round 74 target anchors are oversampled")
-            prior_by_symbol[anchor.symbol] = anchor.decision_monotonic_ns
-            self.anchors[anchor.symbol].append(anchor)
-        rules = {str(symbol).upper(): value for symbol, value in quantity_rules.items()}
+            self.add_anchor(anchor)
+        rules = {
+            str(symbol).upper(): value for symbol, value in quantity_rules.items()
+        }
         if tuple(sorted(rules)) != ROUND74_EVENT_TARGET_SYMBOLS or any(
             rules[symbol].symbol != symbol for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         ):
             raise ValueError("Round 74 target quantity-rule universe differs")
-        self.quantity_rules = rules
+        validated_rules = {
+            symbol: Round73MarketQuantityRules.create(
+                symbol=symbol,
+                step_size=rules[symbol].step_size,
+                minimum_quantity=rules[symbol].minimum_quantity,
+                maximum_quantity=rules[symbol].maximum_quantity,
+                minimum_notional=rules[symbol].minimum_notional,
+            )
+            for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+        }
+        self.quantity_rules = validated_rules
         boundaries = funding_boundaries_monotonic_ns or {}
         self.funding_boundaries = {
             symbol: tuple(sorted(int(value) for value in boundaries.get(symbol, ())))
@@ -678,22 +683,30 @@ class Round74EventTargetEngine:
             for value in rows
         ):
             raise ValueError("Round 74 target funding boundary is negative")
+        if any(
+            len(rows) != len(set(rows))
+            for rows in self.funding_boundaries.values()
+        ):
+            raise ValueError("Round 74 target funding boundary is duplicated")
         self.target_context_sha256 = _canonical_sha256(
             {
                 "target_spec_sha256": self.spec.spec_sha256,
                 "quantity_rules": {
                     symbol: {
-                        "step_size": format(rules[symbol].step_size, "f"),
+                        "step_size": format(
+                            validated_rules[symbol].step_size,
+                            "f",
+                        ),
                         "minimum_quantity": format(
-                            rules[symbol].minimum_quantity,
+                            validated_rules[symbol].minimum_quantity,
                             "f",
                         ),
                         "maximum_quantity": format(
-                            rules[symbol].maximum_quantity,
+                            validated_rules[symbol].maximum_quantity,
                             "f",
                         ),
                         "minimum_notional": format(
-                            rules[symbol].minimum_notional,
+                            validated_rules[symbol].minimum_notional,
                             "f",
                         ),
                     }
@@ -717,8 +730,10 @@ class Round74EventTargetEngine:
         }
         self.outcomes: list[Round74EventTargetOutcome] = []
         self._next_identifier = 0
-        self._global_prior_order_key: ReceiptOrderKey | None = None
-        self._anchor_count = len(anchors)
+
+    @property
+    def anchor_count(self) -> int:
+        return self._anchor_count
 
     @staticmethod
     def _walk(
@@ -734,6 +749,37 @@ class Round74EventTargetEngine:
             base_quantity=base_quantity,
             ascending_prices=buy,
         )
+
+    def add_anchor(self, anchor: Round74EventTargetAnchor) -> None:
+        """Append one causal anchor before any later receipt is observed."""
+
+        if self._finished:
+            raise ValueError("Round 74 target engine is already finished")
+        anchor.validate()
+        key = (anchor.symbol, int(anchor.anchor_index))
+        if key in self._anchor_keys:
+            raise ValueError("Round 74 target anchor key is duplicated")
+        prior = self._anchor_prior_by_symbol.get(anchor.symbol)
+        if (
+            prior is not None
+            and anchor.decision_monotonic_ns - prior
+            < self.spec.minimum_anchor_spacing_ns
+        ):
+            raise ValueError("Round 74 target anchors are oversampled")
+        if (
+            self._global_prior_order_key is not None
+            and anchor.decision_order_key < self._global_prior_order_key
+        ):
+            raise ValueError("Round 74 target anchor was added after its receipt")
+        queue = self.anchors[anchor.symbol]
+        if queue and anchor.decision_order_key <= queue[-1].decision_order_key:
+            raise ValueError("Round 74 target anchor order did not advance")
+        self._anchor_keys.add(key)
+        self._anchor_prior_by_symbol[anchor.symbol] = (
+            anchor.decision_monotonic_ns
+        )
+        queue.append(anchor)
+        self._anchor_count += 1
 
     def _record_ineligible(
         self,
@@ -1219,6 +1265,8 @@ class Round74EventTargetEngine:
         message_index: int,
         state: L2BookState,
     ) -> None:
+        if self._finished:
+            raise ValueError("Round 74 target engine is already finished")
         received = int(received_monotonic_ns)
         order_key = (received, int(frame_index), int(message_index))
         if min(order_key) < 0:
@@ -1252,6 +1300,8 @@ class Round74EventTargetEngine:
         )
 
     def finish(self) -> tuple[Round74EventTargetOutcome, ...]:
+        if self._finished:
+            return tuple(sorted(self.outcomes, key=lambda outcome: outcome.key))
         for symbol in ROUND74_EVENT_TARGET_SYMBOLS:
             while self.anchors[symbol]:
                 anchor = self.anchors[symbol].popleft()
@@ -1305,19 +1355,21 @@ class Round74EventTargetEngine:
                 "Round 74 target outcome count differs: "
                 f"expected={expected} actual={len(self.outcomes)}"
             )
-        self.outcomes.sort(key=lambda outcome: outcome.key)
-        keys = [outcome.key for outcome in self.outcomes]
+        ordered = sorted(self.outcomes, key=lambda outcome: outcome.key)
+        keys = [outcome.key for outcome in ordered]
         if len(keys) != len(set(keys)):
             raise ValueError("Round 74 target outcome keys are duplicated")
-        for outcome in self.outcomes:
+        for outcome in ordered:
             outcome.validate()
-        return tuple(self.outcomes)
+        self._finished = True
+        return tuple(ordered)
 
 
 __all__ = [
     "ROUND74_EVENT_TARGET_INELIGIBLE_REASONS",
     "ROUND74_EVENT_TARGET_MAXIMUM_DECISION_STATE_AGE_NS",
     "ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS",
+    "ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE",
     "ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS",
     "ROUND74_EVENT_TARGET_MINIMUM_ANCHOR_SPACING_NS",
     "ROUND74_EVENT_TARGET_SCHEMA_VERSION",

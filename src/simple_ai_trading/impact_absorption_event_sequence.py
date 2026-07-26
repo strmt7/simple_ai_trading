@@ -31,6 +31,7 @@ from .impact_capture_frame import ImpactCaptureFrameRecord
 
 ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v2"
 ROUND74_EVENT_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+ROUND74_EVENT_SEQUENCE_LENGTH = 128
 ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS = (1, 5, 30, 300)
 ROUND74_EVENT_PAYOFF_SIDES = ("long", "short")
 ROUND74_EVENT_PAYOFF_QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
@@ -256,6 +257,53 @@ class Round74EventToken:
         }
 
 
+@dataclass(frozen=True)
+class Round74ReplayObservation:
+    """One exact replay result with optional causal token and depth state."""
+
+    symbol: str
+    event_type: str
+    frame_index: int
+    message_index: int
+    received_monotonic_ns: int
+    received_wall_ns: int
+    token: Round74EventToken | None
+    depth_state: L2BookState | None
+    depth_update_is_stale: bool
+
+    def validate(self) -> None:
+        if self.symbol not in ROUND74_EVENT_SYMBOLS:
+            raise ValueError("Round 74 observation symbol differs")
+        if self.event_type not in ROUND74_EVENT_TYPES:
+            raise ValueError("Round 74 observation event type differs")
+        if min(
+            self.frame_index,
+            self.message_index,
+            self.received_monotonic_ns,
+            self.received_wall_ns,
+        ) < 0:
+            raise ValueError("Round 74 observation metadata is negative")
+        is_depth = self.event_type == "depthUpdate"
+        if is_depth != (self.depth_state is not None):
+            raise ValueError("Round 74 observation depth state differs")
+        if not is_depth and self.depth_update_is_stale:
+            raise ValueError("Round 74 non-depth observation is marked stale")
+        if self.depth_state is not None and self.depth_state.symbol != self.symbol:
+            raise ValueError("Round 74 observation depth symbol differs")
+        if self.token is not None:
+            self.token.validate()
+            if (
+                self.token.symbol != self.symbol
+                or self.token.event_type != self.event_type
+                or self.token.frame_index != self.frame_index
+                or self.token.message_index != self.message_index
+                or self.token.received_monotonic_ns
+                != self.received_monotonic_ns
+                or self.token.received_wall_ns != self.received_wall_ns
+            ):
+                raise ValueError("Round 74 observation token identity differs")
+
+
 class Round74EventSequenceEncoder:
     """Replay one symbol's exact receipts into causal event-time tokens."""
 
@@ -283,6 +331,7 @@ class Round74EventSequenceEncoder:
         self._bid_qty = float(initial.bid_levels[0][1])
         self._ask_qty = float(initial.ask_levels[0][1])
         self._mark: MarkPriceEvent | None = None
+        self._last_depth_update_is_stale = False
         self._prior_record_ns: int | None = None
         self._prior_mid: float | None = None
         self._last_event_ns: dict[str, int | None] = {
@@ -368,6 +417,7 @@ class Round74EventSequenceEncoder:
             depth_event = self.book.apply(payload, receive_time_ns=received_ns)
             exchange_event_time_ms = int(depth_event.event_time_ms)
             stale_depth = 1.0 if depth_event.stale else 0.0
+            self._last_depth_update_is_stale = depth_event.stale
             for change in depth_event.changes:
                 band = pre_event_level_band(pre_state, change)
                 signed = (
@@ -514,6 +564,14 @@ class Round74EventSequenceEncoder:
             return None
         return token
 
+    @property
+    def latest_l2_state(self) -> L2BookState:
+        return self._l2_state
+
+    @property
+    def last_depth_update_is_stale(self) -> bool:
+        return self._last_depth_update_is_stale
+
 
 class Round74MultiSymbolEventReplay:
     """Route one globally ordered exact stream into per-symbol encoders."""
@@ -548,6 +606,20 @@ class Round74MultiSymbolEventReplay:
         message_index: int,
         record: ImpactCaptureFrameRecord,
     ) -> Round74EventToken | None:
+        observation = self.consume_observation(
+            frame_index=frame_index,
+            message_index=message_index,
+            record=record,
+        )
+        return None if observation is None else observation.token
+
+    def consume_observation(
+        self,
+        *,
+        frame_index: int,
+        message_index: int,
+        record: ImpactCaptureFrameRecord,
+    ) -> Round74ReplayObservation | None:
         received_ns = int(record.received_monotonic_ns)
         if received_ns < self._prior_received_monotonic_ns:
             raise ValueError("Round 74 exact replay global receipt order regressed")
@@ -558,7 +630,7 @@ class Round74MultiSymbolEventReplay:
         encoder = self._encoders.get(symbol)
         if encoder is None:
             raise ValueError("Round 74 exact replay symbol is unsupported")
-        return encoder._consume_decoded(
+        token = encoder._consume_decoded(
             frame_index=frame_index,
             message_index=message_index,
             record=record,
@@ -566,6 +638,27 @@ class Round74MultiSymbolEventReplay:
             symbol=symbol,
             payload=payload,
         )
+        observation = Round74ReplayObservation(
+            symbol=symbol,
+            event_type=event_type,
+            frame_index=int(frame_index),
+            message_index=int(message_index),
+            received_monotonic_ns=received_ns,
+            received_wall_ns=int(record.received_wall_ns),
+            token=token,
+            depth_state=(
+                encoder.latest_l2_state
+                if event_type == "depthUpdate"
+                else None
+            ),
+            depth_update_is_stale=(
+                encoder.last_depth_update_is_stale
+                if event_type == "depthUpdate"
+                else False
+            ),
+        )
+        observation.validate()
+        return observation
 
 
 @dataclass(frozen=True)
@@ -641,12 +734,12 @@ def iter_round74_event_windows(
         since_yield[token.symbol] = selected_stride - 1
 
 
-def iter_round74_v10_event_tokens(
+def iter_round74_v10_event_observations(
     store: object,
     *,
     run_id: str,
-) -> Iterator[Round74EventToken]:
-    """Audit and stream feature-only tokens from one qualified v10 run.
+) -> Iterator[Round74ReplayObservation]:
+    """Audit and stream exact observations from one qualified v10 run.
 
     The stored capture report and a fresh exact-frame audit must both pass.
     This function still grants no target, model, deployment, or order authority.
@@ -664,6 +757,8 @@ def iter_round74_v10_event_tokens(
 
     if not isinstance(store, ImpactAbsorptionStore):
         raise TypeError("Round 74 v10 replay requires an ImpactAbsorptionStore")
+    if not store.read_only:
+        raise ValueError("Round 74 v10 replay requires a read-only store")
     audit = store.audit_run(run_id)
     if not audit.passed:
         raise ValueError("Round 74 v10 replay requires a passing fresh frame audit")
@@ -739,13 +834,28 @@ def iter_round74_v10_event_tokens(
         connection,
         run_id=run_id,
     ):
-        token = replay.consume(
+        observation = replay.consume_observation(
             frame_index=frame_index,
             message_index=message_index,
             record=record,
         )
-        if token is not None:
-            yield token
+        if observation is not None:
+            yield observation
+
+
+def iter_round74_v10_event_tokens(
+    store: object,
+    *,
+    run_id: str,
+) -> Iterator[Round74EventToken]:
+    """Stream feature tokens while retaining the exact observation audit."""
+
+    for observation in iter_round74_v10_event_observations(
+        store,
+        run_id=run_id,
+    ):
+        if observation.token is not None:
+            yield observation.token
 
 
 __all__ = [
@@ -758,12 +868,15 @@ __all__ = [
     "ROUND74_EVENT_PAYOFF_QUANTILES",
     "ROUND74_EVENT_PAYOFF_SIDES",
     "ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION",
+    "ROUND74_EVENT_SEQUENCE_LENGTH",
     "ROUND74_EVENT_SYMBOLS",
     "ROUND74_EVENT_TYPES",
     "Round74MultiSymbolEventReplay",
+    "Round74ReplayObservation",
     "Round74EventSequenceEncoder",
     "Round74EventToken",
     "Round74EventWindow",
     "iter_round74_event_windows",
+    "iter_round74_v10_event_observations",
     "iter_round74_v10_event_tokens",
 ]

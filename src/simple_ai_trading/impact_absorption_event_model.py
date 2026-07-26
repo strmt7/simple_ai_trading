@@ -23,12 +23,12 @@ from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
+    ROUND74_EVENT_SEQUENCE_LENGTH,
 )
 
 
 ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v2"
 ROUND74_EVENT_MODEL_CANDIDATES = ("event_pooling_mlp", "causal_event_tcn")
-ROUND74_EVENT_SEQUENCE_LENGTH = 128
 ROUND74_EVENT_HIDDEN_CHANNELS = 64
 ROUND74_EVENT_TCN_DILATIONS = (1, 2, 4, 8)
 ROUND74_EVENT_TCN_KERNEL_SIZE = 3
@@ -318,6 +318,8 @@ def round74_event_model_loss(
     maximum_adverse_excursion_bps: torch.Tensor,
     adverse_selection: torch.Tensor,
     regime_unpredictable: torch.Tensor,
+    action_eligibility: torch.Tensor | None = None,
+    regime_unpredictability_eligibility: torch.Tensor | None = None,
     maximum_adverse_excursion_weight: float = 0.35,
     positive_weight: float = 0.25,
     adverse_weight: float = 0.20,
@@ -345,11 +347,26 @@ def round74_event_model_loss(
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
     ):
         raise ValueError("Round 74 unpredictability target shape differs")
+    if action_eligibility is None:
+        action_eligibility = torch.ones_like(net_payoff_bps)
+    if regime_unpredictability_eligibility is None:
+        regime_unpredictability_eligibility = (
+            action_eligibility.sum(dim=2) > 0.0
+        ).to(net_payoff_bps.dtype)
+    if action_eligibility.shape != expected_action_shape:
+        raise ValueError("Round 74 action-eligibility shape differs")
+    if regime_unpredictability_eligibility.shape != (
+        batch_size,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+    ):
+        raise ValueError("Round 74 unpredictability-eligibility shape differs")
     targets = (
         net_payoff_bps,
         maximum_adverse_excursion_bps,
         adverse_selection,
         regime_unpredictable,
+        action_eligibility,
+        regime_unpredictability_eligibility,
     )
     if not all(bool(torch.isfinite(value).all()) for value in targets):
         raise ValueError("Round 74 event-model targets contain nonfinite values")
@@ -359,6 +376,25 @@ def round74_event_model_loss(
         raise ValueError("Round 74 adverse-selection targets are outside [0, 1]")
     if bool(((regime_unpredictable < 0.0) | (regime_unpredictable > 1.0)).any()):
         raise ValueError("Round 74 unpredictability targets are outside [0, 1]")
+    if bool(
+        (
+            (action_eligibility != 0.0)
+            & (action_eligibility != 1.0)
+        ).any()
+    ) or bool(
+        (
+            (regime_unpredictability_eligibility != 0.0)
+            & (regime_unpredictability_eligibility != 1.0)
+        ).any()
+    ):
+        raise ValueError("Round 74 event-model eligibility is not binary")
+    action_weight = action_eligibility.sum()
+    regime_weight = regime_unpredictability_eligibility.sum()
+    if (
+        float(action_weight.detach().cpu()) <= 0.0
+        or float(regime_weight.detach().cpu()) <= 0.0
+    ):
+        raise ValueError("Round 74 event-model batch has no eligible targets")
     loss_weights = (
         float(maximum_adverse_excursion_weight),
         float(positive_weight),
@@ -375,32 +411,48 @@ def round74_event_model_loss(
     payoff_errors = (
         net_payoff_bps.unsqueeze(3) - output.payoff_quantiles_bps
     )
-    payoff_pinball = torch.maximum(
+    payoff_pinball_values = torch.maximum(
         quantile_levels * payoff_errors,
         (quantile_levels - 1.0) * payoff_errors,
-    ).mean()
+    )
+    payoff_pinball = (
+        payoff_pinball_values * action_eligibility.unsqueeze(3)
+    ).sum() / (
+        action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES)
+    )
     adverse_excursion_errors = maximum_adverse_excursion_bps.unsqueeze(3) - (
         output.maximum_adverse_excursion_quantiles_bps
     )
-    adverse_excursion_pinball = torch.maximum(
+    adverse_excursion_pinball_values = torch.maximum(
         quantile_levels * adverse_excursion_errors,
         (quantile_levels - 1.0) * adverse_excursion_errors,
-    ).mean()
+    )
+    adverse_excursion_pinball = (
+        adverse_excursion_pinball_values
+        * action_eligibility.unsqueeze(3)
+    ).sum() / (
+        action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES)
+    )
     positive_targets = (net_payoff_bps > 0.0).to(net_payoff_bps.dtype)
     # BCE(logits) = softplus(logits) - target * logits. Keeping this explicit
     # avoids torch-directml's silent CPU fallback through log_sigmoid_forward.
-    positive = (
+    positive_values = (
         F.softplus(output.positive_payoff_logits)
         - positive_targets * output.positive_payoff_logits
-    ).mean()
-    adverse = (
+    )
+    positive = (positive_values * action_eligibility).sum() / action_weight
+    adverse_values = (
         F.softplus(output.adverse_selection_logits)
         - adverse_selection * output.adverse_selection_logits
-    ).mean()
-    unpredictability = (
+    )
+    adverse = (adverse_values * action_eligibility).sum() / action_weight
+    unpredictability_values = (
         F.softplus(output.regime_unpredictability_logits)
         - regime_unpredictable * output.regime_unpredictability_logits
-    ).mean()
+    )
+    unpredictability = (
+        unpredictability_values * regime_unpredictability_eligibility
+    ).sum() / regime_weight
     total = (
         payoff_pinball
         + loss_weights[0] * adverse_excursion_pinball
@@ -476,6 +528,12 @@ def round74_event_model_preflight(
             size=(4, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)),
         ).astype(np.float32)
     ).to(device)
+    action_eligibility = torch.ones(action_shape, device=device)
+    action_eligibility[0, 0, 0] = 0.0
+    unpredictability_eligibility = torch.ones(
+        (4, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)),
+        device=device,
+    )
     evidence: dict[str, object] = {
         "schema_version": ROUND74_EVENT_MODEL_SCHEMA_VERSION,
         "backend_requested": backend.requested,
@@ -508,6 +566,10 @@ def round74_event_model_preflight(
                 maximum_adverse_excursion_bps=maximum_adverse_excursion,
                 adverse_selection=adverse,
                 regime_unpredictable=unpredictable,
+                action_eligibility=action_eligibility,
+                regime_unpredictability_eligibility=(
+                    unpredictability_eligibility
+                ),
             )
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -549,6 +611,7 @@ def round74_event_model_preflight(
     evidence["warning_count"] = len(messages)
     evidence["cpu_fallback_warning_count"] = 0
     evidence["target_source"] = "synthetic_preflight_only"
+    evidence["masked_action_targets"] = 1
     evidence["financial_edge_tested"] = False
     evidence["profitability_claim"] = False
     return device, evidence

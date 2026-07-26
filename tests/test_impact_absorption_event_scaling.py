@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pytest
 
 from simple_ai_trading.impact_absorption_event_scaling import (
     Round74EventFeatureScaler,
     fit_round74_event_feature_scaler,
+    fit_round74_event_feature_scaler_stream,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
@@ -104,6 +107,14 @@ def test_round74_scaler_sampling_and_serialization_are_deterministic() -> None:
         restored.transform(training[:5]),
         first.transform(training[:5]),
     )
+    chunked = fit_round74_event_feature_scaler_stream(
+        (training[:13], training[13:201], training[201:]),
+        partition_role="training",
+        maximum_fit_rows=31,
+    )
+    assert chunked.scaler_sha256 == first.scaler_sha256
+    with pytest.raises(ValueError, match="sampling contract"):
+        replace(first, fit_sampling_seed=first.fit_sampling_seed + 1)
 
 
 def test_round74_scaler_rejects_nontraining_or_malformed_input() -> None:
@@ -126,4 +137,15 @@ def test_round74_scaler_rejects_nontraining_or_malformed_input() -> None:
         fit_round74_event_feature_scaler(
             nonfinite,
             partition_role="training",
+        )
+    with pytest.raises(ValueError, match="at least two"):
+        fit_round74_event_feature_scaler_stream(
+            (),
+            partition_role="training",
+        )
+    with pytest.raises(ValueError, match="maximum fit rows"):
+        fit_round74_event_feature_scaler(
+            training,
+            partition_role="training",
+            maximum_fit_rows=2.5,
         )

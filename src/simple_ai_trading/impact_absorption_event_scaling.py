@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
-from typing import Mapping
+from typing import Iterable, Mapping
 
 import numpy as np
 
@@ -16,11 +16,15 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_SCALER_SCHEMA_VERSION = "round-074-event-feature-scaler-v1"
+ROUND74_EVENT_SCALER_SCHEMA_VERSION = "round-074-event-feature-scaler-v2"
 ROUND74_EVENT_BINARY_FEATURE_COUNT = 8
 ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS = 250_000
 ROUND74_EVENT_SCALER_STANDARDIZED_CLIP = 12.0
 ROUND74_EVENT_SCALER_MINIMUM_SCALE = 1e-6
+ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM = (
+    "splitmix64-smallest-priority-v1"
+)
+ROUND74_EVENT_SCALER_SAMPLING_SEED = 7404
 
 
 def _canonical_sha256(value: object) -> str:
@@ -56,6 +60,8 @@ class Round74EventFeatureScaler:
     fit_input_rows: int
     fit_sample_rows: int
     fit_sample_index_sha256: str
+    fit_sampling_algorithm: str = ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM
+    fit_sampling_seed: int = ROUND74_EVENT_SCALER_SAMPLING_SEED
     feature_names_sha256: str = ROUND74_EVENT_FEATURE_NAMES_SHA256
     schema_version: str = ROUND74_EVENT_SCALER_SCHEMA_VERSION
 
@@ -75,6 +81,13 @@ class Round74EventFeatureScaler:
             raise ValueError("Round 74 scaler feature schema differs")
         if self.schema_version != ROUND74_EVENT_SCALER_SCHEMA_VERSION:
             raise ValueError("Round 74 scaler schema differs")
+        if (
+            self.fit_sampling_algorithm
+            != ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM
+            or int(self.fit_sampling_seed)
+            != ROUND74_EVENT_SCALER_SAMPLING_SEED
+        ):
+            raise ValueError("Round 74 scaler sampling contract differs")
         if (
             int(self.fit_input_rows) < 1
             or int(self.fit_sample_rows) < 1
@@ -141,6 +154,8 @@ class Round74EventFeatureScaler:
             "fit_input_rows": int(self.fit_input_rows),
             "fit_sample_rows": int(self.fit_sample_rows),
             "fit_sample_index_sha256": self.fit_sample_index_sha256,
+            "fit_sampling_algorithm": self.fit_sampling_algorithm,
+            "fit_sampling_seed": int(self.fit_sampling_seed),
             "median": self.median.tolist(),
             "scale": self.scale.tolist(),
             "lower_clip": self.lower_clip.tolist(),
@@ -162,74 +177,103 @@ class Round74EventFeatureScaler:
             raise ValueError("Round 74 scaler fit role differs")
         if payload.get("validation_or_test_statistics_used") is not False:
             raise ValueError("Round 74 scaler payload reports leakage")
-        return cls(
+        selected = cls(
             schema_version=str(payload["schema_version"]),
             feature_names_sha256=str(payload["feature_names_sha256"]),
             fit_input_rows=int(payload["fit_input_rows"]),
             fit_sample_rows=int(payload["fit_sample_rows"]),
             fit_sample_index_sha256=str(payload["fit_sample_index_sha256"]),
+            fit_sampling_algorithm=str(payload["fit_sampling_algorithm"]),
+            fit_sampling_seed=int(payload["fit_sampling_seed"]),
             median=np.asarray(payload["median"], dtype=np.float64),
             scale=np.asarray(payload["scale"], dtype=np.float64),
             lower_clip=np.asarray(payload["lower_clip"], dtype=np.float64),
             upper_clip=np.asarray(payload["upper_clip"], dtype=np.float64),
             constant_mask=np.asarray(payload["constant_mask"], dtype=np.bool_),
         )
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError("Round 74 scaler static policy differs")
+        return selected
 
 
-def _uniform_sample_indices(rows: int, maximum_rows: int) -> np.ndarray:
-    selected_rows = min(int(rows), int(maximum_rows))
-    if selected_rows < 1:
-        raise ValueError("Round 74 scaler sample size must be positive")
-    if selected_rows == rows:
-        return np.arange(rows, dtype=np.int64)
-    indices = (
-        np.arange(selected_rows, dtype=np.uint64) * np.uint64(rows)
-        // np.uint64(selected_rows)
-    ).astype(np.int64)
-    if indices.size != np.unique(indices).size or indices[-1] >= rows:
-        raise ArithmeticError("Round 74 scaler sample indices are invalid")
-    return indices
+def _splitmix64_priorities(indices: np.ndarray) -> np.ndarray:
+    values = np.asarray(indices, dtype=np.uint64)
+    with np.errstate(over="ignore"):
+        values = (
+            values
+            + np.uint64(ROUND74_EVENT_SCALER_SAMPLING_SEED)
+            + np.uint64(0x9E3779B97F4A7C15)
+        )
+        values = (values ^ (values >> np.uint64(30))) * np.uint64(
+            0xBF58476D1CE4E5B9
+        )
+        values = (values ^ (values >> np.uint64(27))) * np.uint64(
+            0x94D049BB133111EB
+        )
+    return values ^ (values >> np.uint64(31))
 
 
-def fit_round74_event_feature_scaler(
-    training_event_features: np.ndarray,
-    *,
-    partition_role: str,
-    maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
-) -> Round74EventFeatureScaler:
-    """Fit bounded robust statistics from unique training events only."""
+def _smallest_priority_positions(
+    priorities: np.ndarray,
+    indices: np.ndarray,
+    maximum_rows: int,
+) -> np.ndarray:
+    if priorities.size <= maximum_rows:
+        return np.arange(priorities.size, dtype=np.int64)
+    cutoff = np.partition(priorities, maximum_rows - 1)[maximum_rows - 1]
+    lower = np.flatnonzero(priorities < cutoff)
+    equal = np.flatnonzero(priorities == cutoff)
+    remaining = maximum_rows - lower.size
+    if remaining < 1 or equal.size < remaining:
+        raise ArithmeticError("Round 74 scaler priority selection differs")
+    selected_equal = equal[np.argsort(indices[equal], kind="stable")[:remaining]]
+    selected = np.concatenate((lower, selected_equal))
+    if selected.size != maximum_rows:
+        raise ArithmeticError("Round 74 scaler reservoir size differs")
+    return selected
 
-    if str(partition_role) != "training":
-        raise ValueError("Round 74 scaler may only fit the training partition")
-    values = np.asarray(training_event_features)
-    if values.ndim != 2 or values.shape[1] != len(ROUND74_EVENT_FEATURE_NAMES):
+
+def _validate_training_chunk(value: object) -> np.ndarray:
+    selected = np.asarray(value)
+    if selected.ndim != 2 or selected.shape[1] != len(
+        ROUND74_EVENT_FEATURE_NAMES
+    ):
         raise ValueError("Round 74 scaler training matrix dimensions differ")
-    if values.shape[0] < 2:
-        raise ValueError("Round 74 scaler requires at least two training events")
-    if not math.isfinite(float(maximum_fit_rows)) or int(maximum_fit_rows) < 2:
-        raise ValueError("Round 74 scaler maximum fit rows are invalid")
-    if not np.isfinite(values).all():
-        raise ValueError("Round 74 scaler training matrix contains nonfinite values")
-    binary = values[:, :ROUND74_EVENT_BINARY_FEATURE_COUNT]
+    if not np.isfinite(selected).all():
+        raise ValueError(
+            "Round 74 scaler training matrix contains nonfinite values"
+        )
+    binary = selected[:, :ROUND74_EVENT_BINARY_FEATURE_COUNT]
     if np.any((binary != 0.0) & (binary != 1.0)):
         raise ValueError("Round 74 scaler training binary features are invalid")
     if np.any(binary[:, :5].sum(axis=1) != 1.0) or np.any(
         binary[:, 5:8].sum(axis=1) != 1.0
     ):
         raise ValueError("Round 74 scaler training one-hot groups are invalid")
+    return np.asarray(selected, dtype=np.float64)
 
-    indices = _uniform_sample_indices(values.shape[0], int(maximum_fit_rows))
-    sample = np.asarray(values[indices], dtype=np.float64)
+
+def _scaler_from_sample(
+    *,
+    sample: np.ndarray,
+    sample_indices: np.ndarray,
+    input_rows: int,
+    observed_minimum: np.ndarray,
+    observed_maximum: np.ndarray,
+) -> Round74EventFeatureScaler:
+    order = np.argsort(sample_indices, kind="stable")
+    indices = np.ascontiguousarray(sample_indices[order], dtype=np.int64)
+    selected = np.ascontiguousarray(sample[order], dtype=np.float64)
+    if indices.size != np.unique(indices).size:
+        raise ArithmeticError("Round 74 scaler sampled duplicate events")
     quantiles = np.quantile(
-        sample,
+        selected,
         (0.001, 0.25, 0.5, 0.75, 0.999),
         axis=0,
         method="linear",
     )
     lower, q25, median, q75, upper = quantiles
-    standard_deviation = sample.std(axis=0, dtype=np.float64)
-    observed_minimum = values.min(axis=0).astype(np.float64)
-    observed_maximum = values.max(axis=0).astype(np.float64)
+    standard_deviation = selected.std(axis=0, dtype=np.float64)
     constant = observed_minimum == observed_maximum
     scale = np.maximum.reduce(
         (
@@ -256,18 +300,115 @@ def fit_round74_event_feature_scaler(
     lower[binary_slice] = 0.0
     upper[binary_slice] = 1.0
     constant[binary_slice] = False
-    sample_index_sha256 = hashlib.sha256(
-        np.ascontiguousarray(indices, dtype=np.int64).tobytes()
-    ).hexdigest()
     return Round74EventFeatureScaler(
         median=median,
         scale=scale,
         lower_clip=lower,
         upper_clip=upper,
         constant_mask=constant,
-        fit_input_rows=int(values.shape[0]),
+        fit_input_rows=int(input_rows),
         fit_sample_rows=int(indices.size),
-        fit_sample_index_sha256=sample_index_sha256,
+        fit_sample_index_sha256=hashlib.sha256(indices.tobytes()).hexdigest(),
+    )
+
+
+def fit_round74_event_feature_scaler_stream(
+    training_event_feature_chunks: Iterable[np.ndarray],
+    *,
+    partition_role: str,
+    maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+) -> Round74EventFeatureScaler:
+    """Fit one bounded, chunk-invariant sample from unique training events."""
+
+    if str(partition_role) != "training":
+        raise ValueError("Round 74 scaler may only fit the training partition")
+    if (
+        not math.isfinite(float(maximum_fit_rows))
+        or float(maximum_fit_rows) != int(maximum_fit_rows)
+        or int(maximum_fit_rows) < 2
+    ):
+        raise ValueError("Round 74 scaler maximum fit rows are invalid")
+    maximum = int(maximum_fit_rows)
+    sampled_values = np.empty(
+        (0, len(ROUND74_EVENT_FEATURE_NAMES)),
+        dtype=np.float64,
+    )
+    sampled_indices = np.empty(0, dtype=np.int64)
+    sampled_priorities = np.empty(0, dtype=np.uint64)
+    observed_minimum: np.ndarray | None = None
+    observed_maximum: np.ndarray | None = None
+    input_rows = 0
+    for chunk_value in training_event_feature_chunks:
+        chunk = _validate_training_chunk(chunk_value)
+        if chunk.shape[0] == 0:
+            continue
+        chunk_minimum = chunk.min(axis=0)
+        chunk_maximum = chunk.max(axis=0)
+        observed_minimum = (
+            chunk_minimum
+            if observed_minimum is None
+            else np.minimum(observed_minimum, chunk_minimum)
+        )
+        observed_maximum = (
+            chunk_maximum
+            if observed_maximum is None
+            else np.maximum(observed_maximum, chunk_maximum)
+        )
+        chunk_indices = np.arange(
+            input_rows,
+            input_rows + chunk.shape[0],
+            dtype=np.int64,
+        )
+        chunk_priorities = _splitmix64_priorities(chunk_indices)
+        candidate_values = np.concatenate((sampled_values, chunk), axis=0)
+        candidate_indices = np.concatenate(
+            (sampled_indices, chunk_indices),
+            axis=0,
+        )
+        candidate_priorities = np.concatenate(
+            (sampled_priorities, chunk_priorities),
+            axis=0,
+        )
+        positions = _smallest_priority_positions(
+            candidate_priorities,
+            candidate_indices,
+            maximum,
+        )
+        sampled_values = np.ascontiguousarray(candidate_values[positions])
+        sampled_indices = np.ascontiguousarray(candidate_indices[positions])
+        sampled_priorities = np.ascontiguousarray(
+            candidate_priorities[positions]
+        )
+        input_rows += int(chunk.shape[0])
+    if (
+        input_rows < 2
+        or observed_minimum is None
+        or observed_maximum is None
+        or sampled_values.shape[0] < 2
+    ):
+        raise ValueError("Round 74 scaler requires at least two training events")
+    return _scaler_from_sample(
+        sample=sampled_values,
+        sample_indices=sampled_indices,
+        input_rows=input_rows,
+        observed_minimum=observed_minimum,
+        observed_maximum=observed_maximum,
+    )
+
+
+def fit_round74_event_feature_scaler(
+    training_event_features: np.ndarray,
+    *,
+    partition_role: str,
+    maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+) -> Round74EventFeatureScaler:
+    """Fit bounded robust statistics from unique training events only."""
+
+    values = np.asarray(training_event_features)
+    return fit_round74_event_feature_scaler_stream(
+        (values,),
+        partition_role=partition_role,
+        maximum_fit_rows=maximum_fit_rows,
     )
 
 
@@ -275,8 +416,11 @@ __all__ = [
     "ROUND74_EVENT_BINARY_FEATURE_COUNT",
     "ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS",
     "ROUND74_EVENT_SCALER_MINIMUM_SCALE",
+    "ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM",
+    "ROUND74_EVENT_SCALER_SAMPLING_SEED",
     "ROUND74_EVENT_SCALER_SCHEMA_VERSION",
     "ROUND74_EVENT_SCALER_STANDARDIZED_CLIP",
     "Round74EventFeatureScaler",
     "fit_round74_event_feature_scaler",
+    "fit_round74_event_feature_scaler_stream",
 ]

@@ -268,6 +268,97 @@ def test_round74_target_engine_builds_complete_pathwise_panel() -> None:
     assert one_second_short.adverse_selection is True
 
 
+def test_round74_target_engine_accepts_only_causal_streamed_anchors() -> None:
+    engine = Round74EventTargetEngine(
+        spec=_spec(),
+        anchors=[],
+        quantity_rules=_rules(),
+    )
+    engine.observe_depth(
+        received_monotonic_ns=900_000_000,
+        frame_index=1,
+        message_index=0,
+        state=_state(update_id=1),
+    )
+    engine.observe_depth(
+        received_monotonic_ns=NS,
+        frame_index=2,
+        message_index=0,
+        state=_state(update_id=2),
+    )
+    engine.add_anchor(
+        Round74EventTargetAnchor(
+            symbol="BTCUSDT",
+            anchor_index=0,
+            decision_monotonic_ns=NS,
+            decision_wall_ns=1_784_000_000_000_000_000 + NS,
+            endpoint_frame_index=2,
+            endpoint_message_index=0,
+            feature_window_sha256="c" * 64,
+        )
+    )
+    with pytest.raises(ValueError, match="duplicated"):
+        engine.add_anchor(
+            Round74EventTargetAnchor(
+                symbol="BTCUSDT",
+                anchor_index=0,
+                decision_monotonic_ns=2 * NS,
+                decision_wall_ns=1_784_000_000_000_000_000 + 2 * NS,
+                endpoint_frame_index=3,
+                endpoint_message_index=0,
+                feature_window_sha256="d" * 64,
+            )
+        )
+    engine.observe_depth(
+        received_monotonic_ns=1_100_000_000,
+        frame_index=3,
+        message_index=0,
+        state=_state(update_id=3),
+    )
+    _observe_dense_path(
+        engine,
+        start_ns=1_100_000_000,
+        checkpoints=(
+            (2_100_000_000, 101.0),
+            (6_100_000_000, 102.0),
+            (31_100_000_000, 103.0),
+            (301_100_000_000, 104.0),
+        ),
+    )
+
+    outcomes = engine.finish()
+
+    assert len(outcomes) == 8
+    assert all(outcome.eligible for outcome in outcomes)
+    assert engine.finish() == outcomes
+    with pytest.raises(ValueError, match="already finished"):
+        engine.add_anchor(_anchor(index=1, decision_ns=400 * NS))
+
+    late_engine = Round74EventTargetEngine(
+        spec=_spec(),
+        anchors=[],
+        quantity_rules=_rules(),
+    )
+    late_engine.observe_depth(
+        received_monotonic_ns=NS,
+        frame_index=2,
+        message_index=0,
+        state=_state(update_id=1),
+    )
+    with pytest.raises(ValueError, match="added after"):
+        late_engine.add_anchor(
+            Round74EventTargetAnchor(
+                symbol="BTCUSDT",
+                anchor_index=0,
+                decision_monotonic_ns=900_000_000,
+                decision_wall_ns=1_784_000_000_900_000_000,
+                endpoint_frame_index=1,
+                endpoint_message_index=0,
+                feature_window_sha256="c" * 64,
+            )
+        )
+
+
 def test_round74_path_risk_uses_intervening_books_not_only_endpoint() -> None:
     engine = Round74EventTargetEngine(
         spec=_spec(),
@@ -550,4 +641,30 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
                 _anchor(index=1, decision_ns=NS + 500_000_000),
             ],
             quantity_rules=_rules(),
+        )
+    with pytest.raises(ValueError, match="slippage is too large"):
+        _spec(slippage_bps=1_001.0)
+
+    invalid_rules = _rules()
+    invalid_rules["BTCUSDT"] = Round73MarketQuantityRules(
+        symbol="BTCUSDT",
+        step_size=Decimal("0.001"),
+        minimum_quantity=Decimal("2"),
+        maximum_quantity=Decimal("1"),
+        minimum_notional=Decimal("10"),
+    )
+    with pytest.raises(ValueError, match="minimum market quantity exceeds"):
+        Round74EventTargetEngine(
+            spec=_spec(),
+            anchors=[],
+            quantity_rules=invalid_rules,
+        )
+    with pytest.raises(ValueError, match="funding boundary is duplicated"):
+        Round74EventTargetEngine(
+            spec=_spec(),
+            anchors=[],
+            quantity_rules=_rules(),
+            funding_boundaries_monotonic_ns={
+                "BTCUSDT": (3 * NS, 3 * NS),
+            },
         )
