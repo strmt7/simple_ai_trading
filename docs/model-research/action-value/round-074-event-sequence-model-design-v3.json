@@ -1,9 +1,9 @@
 {
-  "schema_version": "round-074-event-sequence-model-design-v2",
-  "design_sha256": "4ca9752112858d9c7dc98aafb89818e9384cc6a4fef574767704d5f9d8bd4245",
+  "schema_version": "round-074-event-sequence-model-design-v3",
+  "design_sha256": "cb70b27d37709b703376d0e9e603360e1f53583ad08a640647a14348122930d5",
   "round": 74,
-  "frozen_at_utc": "2026-07-26T21:26:57Z",
-  "implementation_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
+  "frozen_at_utc": "2026-07-26T21:50:32Z",
+  "implementation_git_commit": "0d258f236b982360183e7760cef64cb3ba89d869",
   "parent_capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
   "parent_capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
   "source_binding": {
@@ -16,15 +16,33 @@
     "event_target_path": "src/simple_ai_trading/impact_absorption_event_targets.py",
     "event_target_sha256": "4e6d2dca8def15c114aa8e6aec4c2d2c9ac85c75ec3072d0e95b6ea2869cb130",
     "event_dataset_path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
-    "event_dataset_sha256": "6b31995b1a17e78afb95723552be6b4b1a79c94a12810b756d634457031775b7",
+    "event_dataset_sha256": "711a42e110db89ec1f6366f3b42d8b15eafd3bda18f178d4ac27a082420c8f81",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "0620b93d0251c17c0baf1b81df4bb48800d9a3bdaae00b43f9d3fa1b990d4a7e",
+    "storage_path": "src/simple_ai_trading/storage.py",
+    "storage_sha256": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610",
     "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
     "event_model_schema_version": "round-074-event-payoff-model-v2",
     "event_scaler_schema_version": "round-074-event-feature-scaler-v2",
     "event_target_schema_version": "round-074-executable-event-target-v1",
     "event_dataset_schema_version": "round-074-event-dataset-v1",
     "event_partition_schema_version": "round-074-run-partition-v1",
+    "event_training_schema_version": "round-074-event-training-v1",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v1",
     "feature_count": 43,
     "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340"
+  },
+  "host_evidence_binding": {
+    "event_sequence_replay_path": "docs/model-research/action-value/round-074-event-sequence-host-replay-2026-07-26.json",
+    "event_sequence_replay_artifact_sha256": "f37655c58270c3fb18bf6096e72d12b7fe3dc535731e632204c5765edbb9aca3",
+    "event_sequence_replay_execution_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
+    "event_model_directml_path": "docs/model-research/action-value/round-074-event-model-directml-preflight-2026-07-26.json",
+    "event_model_directml_artifact_sha256": "f938d776c36a8b23af282ff1de7ac8275818ec77929ef2ea6abb6abc0616a95c",
+    "event_model_directml_execution_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
+    "event_training_directml_path": "docs/model-research/action-value/round-074-event-training-directml-preflight-2026-07-26.json",
+    "event_training_directml_artifact_sha256": "612c97e8382bfd6e0c3ff3e3704ed0b05c5d2535f1e96149cfc9ded92e7e9c98",
+    "event_training_directml_execution_git_commit": "0d258f236b982360183e7760cef64cb3ba89d869",
+    "prior_compute_evidence_reused_only_where_bound_source_sha256_is_unchanged": true
   },
   "research_sources": [
     {
@@ -288,7 +306,44 @@
     "test_target_access_requires_pretest_model_policy_digest": true,
     "test_target_access_requires_unlock_digest": true,
     "sample_hash_binds_raw_feature_window_and_all_target_outcomes": true,
-    "batch_hash_binds_scaler_samples_target_contexts_and_masks": true
+    "batch_hash_binds_scaler_samples_target_contexts_and_masks": true,
+    "batch_hash_binds_run_symbol_and_exact_decision_order": true
+  },
+  "development_training_contract": {
+    "implemented_now": true,
+    "representative_market_training_run_completed_now": false,
+    "accepted_roles": [
+      "training",
+      "tuning"
+    ],
+    "test_role_rejected_before_backend_initialization": true,
+    "training_and_tuning_sample_overlap_permitted": false,
+    "minimum_role_transition_purge_seconds": 300,
+    "mixed_partition_scaler_or_target_context_permitted": false,
+    "candidate_panel": [
+      "event_pooling_mlp",
+      "causal_event_tcn"
+    ],
+    "default_seed_panel": [
+      7411,
+      7423,
+      7433
+    ],
+    "training_order": "chronological without shuffle",
+    "tuning_order": "chronological without shuffle",
+    "early_stopping_objective": "masked proper probabilistic tuning loss",
+    "backtest_roi_used_for_gradient_or_model_selection": false,
+    "seed_ensemble_method": "equal-weight arithmetic mean of output tensors",
+    "candidate_selection": "minimum ensemble chronological tuning loss; then parameter count; then candidate id",
+    "checkpoint_storage": "best peer states retained in volatile memory only",
+    "serialization": "sorted CPU tensors in deterministic metadata-free safetensors bytes",
+    "pickle_permitted": false,
+    "publication_order": "reload-verify model state and predictions before atomically publishing model then canonical policy",
+    "policy_binds_entire_causal_source_chain": true,
+    "source_or_artifact_drift_policy": "reject",
+    "duplicate_json_key_policy": "reject",
+    "cross_platform_bitwise_reproducibility_claim": false,
+    "directml_cpu_fallback_warning_policy": "reject"
   },
   "prospective_evaluation_contract": {
     "quiet_qualification_run_id": "892d1a3b74634d14b7db4d143f810079",
@@ -337,6 +392,8 @@
     "training_only_scaler_implementation": true,
     "prospective_target_engine_implementation": true,
     "leak_resistant_dataset_implementation": true,
+    "development_trainer_implementation": true,
+    "immutable_pretest_policy_implementation": true,
     "synthetic_compute_preflight": true,
     "target_generation": false,
     "model_training": false,
