@@ -1,24 +1,28 @@
 {
   "schema_version": "round-074-event-sequence-model-design-v2",
-  "design_sha256": "4522c4f4cf8810703e027442534565ad5ad28430456ea297529cd5c508027a53",
+  "design_sha256": "4ca9752112858d9c7dc98aafb89818e9384cc6a4fef574767704d5f9d8bd4245",
   "round": 74,
-  "frozen_at_utc": "2026-07-26T20:43:30Z",
-  "implementation_git_commit": "75ed4363e8f0815758b7198f815a0c4210f0ea62",
+  "frozen_at_utc": "2026-07-26T21:26:57Z",
+  "implementation_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
   "parent_capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
   "parent_capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
   "source_binding": {
     "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
-    "event_sequence_sha256": "d55066b3a20004ac70d6fc15bb8b3a50fbee0887108280c62cb257441791bf57",
+    "event_sequence_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
     "event_model_path": "src/simple_ai_trading/impact_absorption_event_model.py",
-    "event_model_sha256": "8fd24c92fda6ab8463d3b507f05eec5ca024bf37388ac3e203004b7c9175b72e",
+    "event_model_sha256": "636250cca313a7fe472aa5e8da55d4149e2773c86721508b659e689bbc31d75a",
     "event_scaler_path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
-    "event_scaler_sha256": "645eabb0be8a0b037e355d7a1c2189af9960b57b709186cbc12fa35a0284e381",
+    "event_scaler_sha256": "c42d614cee0edf877af501ea4a77b78e5a7f3f2135423eb2336d8ace78c86986",
     "event_target_path": "src/simple_ai_trading/impact_absorption_event_targets.py",
-    "event_target_sha256": "00ce6973b2a26b8621991a23863c96a6071fbb6199348f6323bb48821cd28fd8",
+    "event_target_sha256": "4e6d2dca8def15c114aa8e6aec4c2d2c9ac85c75ec3072d0e95b6ea2869cb130",
+    "event_dataset_path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+    "event_dataset_sha256": "6b31995b1a17e78afb95723552be6b4b1a79c94a12810b756d634457031775b7",
     "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
     "event_model_schema_version": "round-074-event-payoff-model-v2",
-    "event_scaler_schema_version": "round-074-event-feature-scaler-v1",
+    "event_scaler_schema_version": "round-074-event-feature-scaler-v2",
     "event_target_schema_version": "round-074-executable-event-target-v1",
+    "event_dataset_schema_version": "round-074-event-dataset-v1",
+    "event_partition_schema_version": "round-074-run-partition-v1",
     "feature_count": 43,
     "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340"
   },
@@ -72,6 +76,16 @@
       "title": "Bridging the Reality Gap in Limit Order Book Simulation",
       "url": "https://arxiv.org/abs/2603.24137",
       "used_for": "fine event timing, latency-race sensitivity, feedback, impact, and execution-parameter stress requirements"
+    },
+    {
+      "title": "Backtest Overfitting in the Machine Learning Era: A Comparison of Out-of-Sample Testing Methods in a Synthetic Controlled Environment",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4778909",
+      "used_for": "whole-run chronological validation, purging, embargo, and explicit overfitting controls"
+    },
+    {
+      "title": "Quantifying Backtest Overfitting from Information Leakage: A Walk-Forward and Embargo-Based Diagnostic Framework Applied to Deep Learning Return Forecasts",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7029819",
+      "used_for": "training-only transforms and embargo at least as long as the maximum prediction horizon"
     }
   ],
   "data_scope": {
@@ -124,7 +138,9 @@
       "implemented_now": true,
       "fit_on_training_partition_only": true,
       "validation_or_test_statistics_permitted": false,
-      "method": "deterministic uniformly sampled training-only median, interquartile range, 0.1/99.9 percentiles, and standard deviation with a 250000-event fit ceiling",
+      "method": "one-pass chunk-invariant SplitMix64 smallest-priority sample of unique training events; median, interquartile range, 0.1/99.9 percentiles, and standard deviation with a 250000-event fit ceiling",
+      "sampling_algorithm": "splitmix64-smallest-priority-v1",
+      "sampling_seed": 7404,
       "sample_indices_hash_bound": true,
       "full_training_minimum_and_maximum_used_only_to_preserve_nonconstant_rare_features_missed_by_the_bounded_sample": true,
       "zero_or_near_zero_training_scale_policy": "leave binary features unchanged and set constant continuous features to zero",
@@ -185,6 +201,9 @@
       "payoff": "pinball",
       "maximum_adverse_excursion": "pinball",
       "probability_heads": "numerically stable binary cross entropy from logits",
+      "censored_action_targets": "neutral zero plus exact binary eligibility mask",
+      "censored_target_gradient_contribution": 0,
+      "all_censored_batch_policy": "fail closed",
       "backtest_metric_used_as_gradient_objective": false
     }
   },
@@ -237,6 +256,7 @@
       "endpoint_only_drawdown_proxy_permitted": false,
       "maximum_path_state_gap_nanoseconds": 250000000,
       "excessive_path_state_gap_policy": "censor target",
+      "stale_depth_receipt_policy": "retain stale feature flag and sequence continuity but never treat its book as fresh target state",
       "sequence_gap_crossed_book_stale_book_or_invalid_event_policy": "censor target",
       "interpolation_over_missing_market_events_permitted": false
     },
@@ -245,6 +265,30 @@
       "leverage_may_change_model_target": false,
       "leverage_is_applied_only_by_independent_risk_controller": true
     }
+  },
+  "dataset_assembly_contract": {
+    "implemented_now": true,
+    "representative_market_dataset_built_now": false,
+    "database_access": "read only",
+    "capture_report_digest_must_match_partition": true,
+    "single_exact_replay_for_features_and_targets": true,
+    "overlapping_windows_materialized_in_database": false,
+    "pending_memory_bound": "only unresolved windows through the 300 second maximum horizon",
+    "split_unit": "whole capture run",
+    "role_order": [
+      "training",
+      "tuning",
+      "test"
+    ],
+    "all_roles_required": true,
+    "random_row_split_permitted": false,
+    "minimum_purge_seconds": 300,
+    "minimum_embargo_seconds": 300,
+    "maximum_target_span_seconds_including_latency_ceiling": 305,
+    "test_target_access_requires_pretest_model_policy_digest": true,
+    "test_target_access_requires_unlock_digest": true,
+    "sample_hash_binds_raw_feature_window_and_all_target_outcomes": true,
+    "batch_hash_binds_scaler_samples_target_contexts_and_masks": true
   },
   "prospective_evaluation_contract": {
     "quiet_qualification_run_id": "892d1a3b74634d14b7db4d143f810079",
@@ -292,6 +336,7 @@
     "candidate_architecture_implementation": true,
     "training_only_scaler_implementation": true,
     "prospective_target_engine_implementation": true,
+    "leak_resistant_dataset_implementation": true,
     "synthetic_compute_preflight": true,
     "target_generation": false,
     "model_training": false,
