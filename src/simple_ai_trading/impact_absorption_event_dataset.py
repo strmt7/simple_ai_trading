@@ -34,7 +34,7 @@ from .impact_absorption_event_targets import (
 
 
 ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v1"
-ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v1"
+ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v2"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS = 300_000_000_000
 ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS = 300_000_000_000
@@ -116,6 +116,7 @@ class Round74EventRunPartition:
     """Whole-run chronological roles with explicit transition purges."""
 
     entries: tuple[Round74EventRunPartitionEntry, ...]
+    cohort_plan_sha256: str
     purge_ns: int = ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
     embargo_ns: int = ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
     schema_version: str = ROUND74_EVENT_PARTITION_SCHEMA_VERSION
@@ -123,6 +124,7 @@ class Round74EventRunPartition:
     def validate(self) -> None:
         if self.schema_version != ROUND74_EVENT_PARTITION_SCHEMA_VERSION:
             raise ValueError("Round 74 partition schema differs")
+        _require_sha256(self.cohort_plan_sha256, "cohort plan")
         if (
             int(self.purge_ns) < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
             or int(self.embargo_ns) < ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
@@ -164,6 +166,7 @@ class Round74EventRunPartition:
         self.validate()
         value: dict[str, object] = {
             "schema_version": self.schema_version,
+            "cohort_plan_sha256": self.cohort_plan_sha256,
             "split_unit": "whole_capture_run",
             "random_row_split_permitted": False,
             "purge_ns": int(self.purge_ns),
@@ -208,6 +211,7 @@ class Round74EventRunPartition:
             raise ValueError("Round 74 partition entry payload differs")
         selected = cls(
             entries=entries,
+            cohort_plan_sha256=str(payload["cohort_plan_sha256"]),
             purge_ns=int(payload["purge_ns"]),
             embargo_ns=int(payload["embargo_ns"]),
             schema_version=str(payload["schema_version"]),

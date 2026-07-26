@@ -307,6 +307,7 @@ def test_complete_admitted_cohort_builds_leak_resistant_partition() -> None:
         "test",
     ]
     assert len(partition.partition_sha256) == 64
+    assert partition.cohort_plan_sha256 == plan.plan_sha256
     assert (
         partition.entries[2].eligible_anchor_start_wall_ns
         == bindings[2].capture_start_wall_ns
