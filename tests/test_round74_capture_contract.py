@@ -298,3 +298,75 @@ def test_round74_active_preflight_is_fixed_and_calendar_safe() -> None:
     assert authorization["round_074_model_training_or_evaluation"] is False
     assert authorization["live_trading_authority"] is False
     assert authorization["profitability_or_edge_claim"] is False
+
+
+def test_round74_missed_active_window_records_zero_market_observation() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH
+            / "round-074-v10-active-regime-window-missed-2026-07-25.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    evidence = artifact["authoritative_evidence"]
+    assert evidence["impact_capture_run_rows_in_window"] == 0
+    assert evidence["collector_running_at_audit"] is False
+    classification = artifact["classification"]
+    assert classification["capture_attempt_started"] is False
+    assert classification["market_stream_observed"] is False
+    assert classification["messages_per_second_observed"] is False
+    assert classification["quiet_middle_or_active_label_permitted"] is False
+    assert classification["outcome"] == (
+        "operational_window_missed_without_market_observation"
+    )
+    hindsight = artifact["anti_hindsight_controls"]
+    assert hindsight["observed_activity_used_to_choose_later_window"] is False
+    assert hindsight["fresh_fixed_preflight_required_before_any_later_attempt"] is True
+    assert artifact["authority"]["active_regime_qualified"] is False
+    assert artifact["authority"]["round_074_model_training_or_evaluation"] is False
+
+
+def test_round74_fresh_active_preflight_does_not_select_on_missed_window() -> None:
+    artifact = json.loads(
+        (
+            RESEARCH
+            / "round-074-v10-active-regime-qualification-preflight-2026-07-27.json"
+        ).read_text(encoding="utf-8")
+    )
+    claimed = artifact.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(artifact)
+    basis = artifact["fresh_attempt_basis"]
+    assert basis["prior_attempt_started"] is False
+    assert basis["prior_market_stream_observed"] is False
+    assert basis["prior_activity_classification_observed"] is False
+    assert basis["selection_on_prior_market_outcome"] is False
+    window = artifact["fixed_execution_window"]
+    assert window["earliest_start_utc"] == "2026-07-27T12:55:00Z"
+    assert window["latest_start_utc"] == "2026-07-27T12:57:00Z"
+    assert window["automatic_retry_permitted"] is False
+    calendar = artifact["market_calendar_semantics"]
+    assert calendar["binance_crypto_trading_is_continuous"] is True
+    assert calendar["listed_venue_status_not_used_to_select_or_admit_capture"] is True
+    assert calendar["listed_product_close_creates_crypto_close"] is False
+    assert (
+        calendar["listed_product_calendar_may_grant_crypto_execution_authority"]
+        is False
+    )
+    classification = artifact["frozen_classification"]
+    assert classification["active_minimum_messages_per_second"] == (
+        735.8503256619431
+    )
+    assert classification["middle_or_quiet_attempt_may_be_retried"] is False
+    invocation = artifact["capture_invocation"]
+    assert "--schema-version" in invocation["arguments"]
+    assert "v10" in invocation["arguments"]
+    assert invocation["operator_progress_check_interval_maximum_seconds"] == 120
+    authorization = artifact["authorization"]
+    assert authorization[
+        "one_v10_active_regime_qualification_attempt_in_fixed_window"
+    ] is True
+    assert authorization["round_074_model_training_or_evaluation"] is False
+    assert authorization["live_trading_authority"] is False

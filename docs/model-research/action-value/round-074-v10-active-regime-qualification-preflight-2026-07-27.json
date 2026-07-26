@@ -1,0 +1,113 @@
+{
+  "artifact_schema_version": "round-074-v10-active-regime-qualification-preflight-v2",
+  "artifact_sha256": "1f54db7e1ecae8f479bfe0c3d3b959fde1b96397b0850a96ac806b28cf278191",
+  "created_at_utc": "2026-07-26T19:16:54Z",
+  "implementation_git_commit": "a986a2e3d6c69abe9d6f497b432645545c6825e6",
+  "supersedes_missed_preflight_artifact_sha256": "64d196d7a16bcff5c47fef41d2ea3717b67ab95de4a4088a51dc592cda36ba12",
+  "missed_window_evidence_artifact_sha256": "d53cc2b399c0a9844fc8795b47db23c1a440f461686eaec17c050fd5376fece7",
+  "fresh_attempt_basis": {
+    "prior_attempt_started": false,
+    "prior_market_stream_observed": false,
+    "prior_activity_classification_observed": false,
+    "selection_on_prior_market_outcome": false,
+    "reason": "The prior fixed operational window elapsed without a capture process or DuckDB run. This is a fresh preregistration, not a retry after an observed quiet, middle, or active outcome."
+  },
+  "scope": {
+    "venue": "Binance USD-M public production market data",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "capture_schema_version": "round-074-prospective-evidence-v10",
+    "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+    "activity_contract_sha256": "a81a4ec365bbba0ce04dec9c27d16a7edd1746a8d5e8a5b37ce2d4e2ea5db1fa",
+    "quiet_qualification_artifact_sha256": "bd87c95660eb748b35a5112bee480f5d14fb41108b31e41c30f530a3ed9231ca",
+    "qualification_only": true,
+    "order_submission_permitted": false
+  },
+  "fixed_execution_window": {
+    "earliest_start_utc": "2026-07-27T12:55:00Z",
+    "latest_start_utc": "2026-07-27T12:57:00Z",
+    "duration_seconds": 3600,
+    "maximum_reconnects": 0,
+    "automatic_retry_permitted": false,
+    "reschedule_after_observing_market_activity_permitted": false,
+    "selection_basis": "The UTC window was frozen before the attempt from the same pre-existing v9 infrastructure-calibration time pattern used by the missed preflight. It is a stress-test scheduling prior only."
+  },
+  "market_calendar_semantics": {
+    "binance_crypto_trading_is_continuous": true,
+    "crypto_has_formal_daily_close": false,
+    "utc_day_is_partition_only": true,
+    "listed_etf_etp_or_security_venues_have_formal_sessions_and_closes": true,
+    "listed_product_holidays_early_closes_and_auctions_are_venue_specific": true,
+    "listed_venue_status_not_used_to_select_or_admit_capture": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false,
+    "listed_product_session_may_change_capture_admission": false,
+    "fixed_clock_proxy_for_listed_venue_calendar_permitted": false
+  },
+  "frozen_classification": {
+    "metric": "completed capture message_count / elapsed_seconds",
+    "active_minimum_messages_per_second": 735.8503256619431,
+    "quiet_maximum_messages_per_second": 510.26877174932963,
+    "active_qualification_rule": "capture and independent exact-frame audit pass, reconnect_count equals zero, and observed messages_per_second is at least the frozen active minimum",
+    "middle_or_quiet_attempt_is_retained": true,
+    "middle_or_quiet_attempt_may_be_retried": false,
+    "classification_changes_data_qualification": false,
+    "classification_changes_resource_safety": false,
+    "classification_can_discard_a_completed_run": false,
+    "message_count_used_in_resource_verdict": false
+  },
+  "capture_invocation": {
+    "executable": ".venv/Scripts/python.exe",
+    "arguments": [
+      "-m",
+      "simple_ai_trading",
+      "impact-capture",
+      "--database",
+      "data/microstructure.duckdb",
+      "--mode",
+      "qualification",
+      "--schema-version",
+      "v10",
+      "--duration-seconds",
+      "3600",
+      "--maximum-reconnects",
+      "0",
+      "--progress-interval-seconds",
+      "30",
+      "--json"
+    ],
+    "stdout_and_stderr_must_be_persisted": true,
+    "operator_progress_check_interval_maximum_seconds": 120
+  },
+  "resource_contract": {
+    "process_io_transfer_limit_bytes_per_hour": 4294967296,
+    "database_and_wal_growth_limit_bytes_per_hour": 536870912,
+    "short_run_minimum_process_io_limit_bytes": 4294967296,
+    "short_run_minimum_database_and_wal_growth_limit_bytes": 536870912,
+    "bytes_per_message_is_telemetry_only": true,
+    "frames_per_minute_is_telemetry_only": true,
+    "preflight_free_space_minimum_bytes": 107374182400,
+    "new_model_fit_during_capture_permitted": false
+  },
+  "post_capture_requirements": {
+    "fresh_process_exact_frame_audit": true,
+    "capture_report_sha256_required": true,
+    "final_frame_sha256_required": true,
+    "observed_classification_recorded_even_if_not_active": true,
+    "all_failures_and_non_active_outcomes_recorded": true,
+    "result_commit_and_push_required": true
+  },
+  "authorization": {
+    "one_v10_active_regime_qualification_attempt_in_fixed_window": true,
+    "v10_rotation": false,
+    "round_074_representative_cohort_capture": false,
+    "round_074_model_training_or_evaluation": false,
+    "paper_order_authority": false,
+    "testnet_order_authority": false,
+    "live_trading_authority": false,
+    "profitability_or_edge_claim": false
+  }
+}

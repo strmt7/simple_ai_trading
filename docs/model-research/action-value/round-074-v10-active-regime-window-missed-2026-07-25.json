@@ -1,0 +1,59 @@
+{
+  "artifact_schema_version": "round-074-v10-active-regime-window-missed-v1",
+  "artifact_sha256": "d53cc2b399c0a9844fc8795b47db23c1a440f461686eaec17c050fd5376fece7",
+  "recorded_at_utc": "2026-07-26T19:16:54Z",
+  "recording_git_commit": "a986a2e3d6c69abe9d6f497b432645545c6825e6",
+  "preflight_artifact_sha256": "64d196d7a16bcff5c47fef41d2ea3717b67ab95de4a4088a51dc592cda36ba12",
+  "fixed_window": {
+    "earliest_start_utc": "2026-07-25T12:55:00Z",
+    "latest_start_utc": "2026-07-25T12:57:00Z",
+    "duration_seconds": 3600
+  },
+  "authoritative_evidence": {
+    "database": "data/microstructure.duckdb",
+    "database_bytes_at_audit": 9433526272,
+    "query_lower_bound_wall_ns": 1784984100000000000,
+    "query_upper_bound_wall_ns": 1784984400000000000,
+    "query_upper_bound_utc": "2026-07-25T13:00:00Z",
+    "impact_capture_run_rows_in_window": 0,
+    "collector_running_at_audit": false,
+    "result_artifact_present_before_audit": false,
+    "latest_capture_run_id": "892d1a3b74634d14b7db4d143f810079",
+    "latest_capture_schema_version": "round-074-prospective-evidence-v10",
+    "latest_capture_started_wall_ns": 1784946229683501900,
+    "latest_capture_message_count": 881173
+  },
+  "classification": {
+    "capture_attempt_started": false,
+    "market_stream_observed": false,
+    "messages_per_second_observed": false,
+    "quiet_middle_or_active_label_permitted": false,
+    "active_regime_qualification_passed": false,
+    "active_regime_qualification_failed_from_market_evidence": false,
+    "outcome": "operational_window_missed_without_market_observation"
+  },
+  "anti_hindsight_controls": {
+    "missed_window_may_be_reclassified_as_quiet": false,
+    "missed_window_may_be_reclassified_as_middle": false,
+    "missed_window_may_be_reclassified_as_active": false,
+    "observed_activity_used_to_choose_later_window": false,
+    "fresh_fixed_preflight_required_before_any_later_attempt": true,
+    "later_attempt_may_reuse_the_frozen_activity_thresholds": true
+  },
+  "market_calendar_semantics": {
+    "binance_crypto_trading_is_continuous": true,
+    "crypto_has_formal_daily_close": false,
+    "listed_etf_etp_or_security_venues_have_formal_sessions_and_closes": true,
+    "listed_product_close_creates_crypto_close": false,
+    "listed_product_calendar_may_grant_crypto_execution_authority": false
+  },
+  "authority": {
+    "active_regime_qualified": false,
+    "representative_rotation_authorized": false,
+    "round_074_model_training_or_evaluation": false,
+    "paper_order_authority": false,
+    "testnet_order_authority": false,
+    "live_trading_authority": false,
+    "profitability_or_edge_claim": false
+  }
+}
