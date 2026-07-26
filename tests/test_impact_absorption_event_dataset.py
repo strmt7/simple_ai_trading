@@ -123,7 +123,10 @@ def _partition() -> Round74EventRunPartition:
                 ),
             )
         )
-    return Round74EventRunPartition(entries=tuple(entries))
+    return Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256="d" * 64,
+    )
 
 
 def _token(*, index: int, monotonic_ns: int) -> Round74EventToken:
@@ -192,7 +195,10 @@ def test_round74_partition_is_whole_run_chronological_and_hash_bound() -> None:
         eligible_anchor_start_wall_ns=(entries[1].capture_start_wall_ns + 100 * NS),
     )
     with pytest.raises(ValueError, match="transition is not purged"):
-        Round74EventRunPartition(entries=tuple(entries)).validate()
+        Round74EventRunPartition(
+            entries=tuple(entries),
+            cohort_plan_sha256=partition.cohort_plan_sha256,
+        ).validate()
 
     validate_round74_capture_report_binding(
         partition.entries[0],

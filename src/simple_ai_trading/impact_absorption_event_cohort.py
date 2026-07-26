@@ -725,7 +725,10 @@ def build_round74_event_run_partition(
             )
         )
         prior_role = binding.role
-    partition = Round74EventRunPartition(entries=tuple(entries))
+    partition = Round74EventRunPartition(
+        entries=tuple(entries),
+        cohort_plan_sha256=plan.plan_sha256,
+    )
     partition.validate()
     return partition
 
