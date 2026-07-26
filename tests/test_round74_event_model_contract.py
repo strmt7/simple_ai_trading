@@ -27,6 +27,13 @@ from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_action_policy import (
+    ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
+    ROUND74_ACTION_DEFAULT_PROFILE,
+    ROUND74_ACTION_HORIZONS_SECONDS,
+    ROUND74_ACTION_POLICY_SCHEMA_VERSION,
+    ROUND74_ACTION_PROFILES,
+)
 from simple_ai_trading.impact_absorption_event_dataset import (
     ROUND74_EVENT_DATASET_SCHEMA_VERSION,
     ROUND74_EVENT_PARTITION_SCHEMA_VERSION,
@@ -51,7 +58,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v7.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v8.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -110,6 +117,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_dataset_sha256"] == _file_sha256(
         source["event_dataset_path"]
     )
+    assert source["event_action_policy_sha256"] == _file_sha256(
+        source["event_action_policy_path"]
+    )
     assert source["event_cohort_sha256"] == _file_sha256(
         source["event_cohort_path"]
     )
@@ -151,6 +161,14 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_partition_schema_version"]
         == ROUND74_EVENT_PARTITION_SCHEMA_VERSION
+    )
+    assert (
+        source["event_action_context_schema_version"]
+        == ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
+    )
+    assert (
+        source["event_action_policy_schema_version"]
+        == ROUND74_ACTION_POLICY_SCHEMA_VERSION
     )
     assert (
         source["event_cohort_plan_schema_version"]
@@ -313,6 +331,41 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         305
     )
     assert dataset["batch_hash_binds_run_symbol_and_exact_decision_order"] is True
+    assert (
+        dataset[
+            "batch_hash_binds_exact_target_entry_and_exit_monotonic_times"
+        ]
+        is True
+    )
+    action = design["action_policy_contract"]
+    assert action["implemented_now"] is True
+    assert action["representative_market_policy_selected_now"] is False
+    assert action["profiles"] == list(ROUND74_ACTION_PROFILES)
+    assert action["default_profile"] == ROUND74_ACTION_DEFAULT_PROFILE
+    assert action["candidate_horizons_seconds"] == list(
+        ROUND74_ACTION_HORIZONS_SECONDS
+    )
+    assert action["candidate_derivation_receives_realized_targets"] is False
+    assert (
+        action["candidate_input_context_contains_realized_target_fields"]
+        is False
+    )
+    assert action["calibrated_probabilities_required"] is True
+    assert action["maximum_candidates_per_row"] == 1
+    assert (
+        action["threshold_selection_data"]
+        == "six whole chronological policy-selection tuning runs only"
+    )
+    assert action["sealed_test_accessed"] is False
+    assert (
+        action[
+            "replay_uses_exact_captured_entry_and_exit_monotonic_times"
+        ]
+        is True
+    )
+    assert action["horizon_duration_used_as_exit_time_proxy"] is False
+    assert action["diversification_requires_all_btc_eth_sol_symbols"] is True
+    assert action["position_sizing_or_leverage_applied_here"] is False
     training = design["development_training_contract"]
     assert training["implemented_now"] is True
     assert training["representative_market_training_run_completed_now"] is False
@@ -355,6 +408,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["actual_multibillion_parameter_inference_completed_now"] is False
     assert ai["supported_review_horizons_seconds"] == [30, 300]
     assert ai["one_and_five_second_ml_paths_wait_for_ai"] is False
+    assert ai["ai_receives_only_a_preexisting_target_free_ml_candidate"] is True
+    assert ai["ai_may_revive_an_ml_abstention"] is False
     assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
     assert ai[
         "ai_may_create_side_increase_size_set_leverage_or_touch_orders"
@@ -370,6 +425,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["local_ai_review_protocol_implementation"] is True
     assert authority["tuning_subpartition_implementation"] is True
     assert authority["probability_calibration_implementation"] is True
+    assert authority["selective_action_policy_implementation"] is True
     assert authority["causal_calibrated_ai_bridge_implementation"] is True
     assert (
         authority["probability_calibration_directml_compute_preflight"]
@@ -503,6 +559,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert source["event_cohort_sha256"] == design["source_binding"][
         "event_cohort_sha256"
     ]
+    assert source["preflight_runner_sha256"] == _file_sha256(
+        source["preflight_runner_path"]
+    )
     backend = evidence["backend"]
     assert backend["requested"] == backend["kind"] == "directml"
     assert backend["vendor"] == "AMD Radeon RX 9070 XT"
@@ -523,6 +582,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["cross_execution_model_sha256_equal"] is True
     assert verification["cross_execution_prediction_sha256_equal"] is True
     assert verification["cross_execution_candidate_metrics_equal"] is True
+    assert verification["temporary_artifacts_removed_after_each_execution"] is True
     interpretation = evidence["interpretation"]
     assert interpretation["candidate_loss_has_financial_meaning"] is False
     assert interpretation["representative_market_training_performed"] is False

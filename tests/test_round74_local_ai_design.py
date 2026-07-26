@@ -17,6 +17,10 @@ from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_action_policy import (
+    ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
+    ROUND74_ACTION_POLICY_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
@@ -32,7 +36,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v3.json"
+    / "round-074-local-ai-review-design-v4.json"
 )
 
 
@@ -58,6 +62,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "protocol",
         "bridge",
         "calibration",
+        "action_policy",
         "worker",
         "runtime",
     ):
@@ -91,6 +96,12 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["temperature_calibration_schema_version"] == (
         ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
     )
+    assert source["action_context_schema_version"] == (
+        ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
+    )
+    assert source["action_policy_schema_version"] == (
+        ROUND74_ACTION_POLICY_SCHEMA_VERSION
+    )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -100,6 +111,8 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["absolute_date_exposed_to_ai"] is False
     assert architecture["real_symbol_exposed_to_ai"] is False
     assert architecture["future_outcome_exposed_to_ai"] is False
+    assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
+    assert architecture["ai_may_revive_ml_abstention"] is False
     for key in (
         "ai_may_create_trade_side",
         "ai_may_increase_risk",
@@ -165,6 +178,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["isolated_worker_implemented"] is True
     assert status["fail_closed_parent_runtime_implemented"] is True
     assert status["causal_calibrated_bridge_implemented"] is True
+    assert status["target_free_action_preselection_implemented"] is True
+    assert status["paired_uplift_evaluator_implemented"] is False
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
 
@@ -174,8 +189,16 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     evaluation = artifact["paired_evaluation_contract"]
 
     assert evaluation["same_events_targets_costs_and_timing"] is True
+    assert evaluation["same_frozen_risk_profile_and_action_threshold"] is True
     assert evaluation["historical_symbol_and_absolute_date_masked"] is True
     assert evaluation["ai_can_only_preserve_reduce_veto_or_abstain"] is True
+    assert (
+        evaluation[
+            "missing_timeout_blocked_or_invalid_ai_review_is_a_fail_closed_veto_not_a_dropped_observation"
+        ]
+        is True
+    )
+    assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
     assert evaluation["accuracy_ignored"] is False
     assert evaluation["profitability_required_by_data_filter_or_test_assertion"] is False
