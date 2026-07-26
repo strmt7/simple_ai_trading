@@ -31,7 +31,7 @@ def _manifest() -> Round74AIModelManifest:
         quantization="int4",
         runtime_backend="windows-ml",
         runtime_version="1.0.0",
-        license_spdx="Apache-2.0",
+        license_id="Apache-2.0",
         model_card_url="https://example.invalid/finance-8b",
         minimum_vram_bytes=8 * 1024**3,
         finance_specialized=True,

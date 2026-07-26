@@ -65,7 +65,7 @@ ROUND74_AI_QUANTIZATION_FORMATS = (
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _REVISION = re.compile(r"[0-9a-f]{40}")
 _MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{2,159}")
-_SPDX = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+-]{1,63}")
+_LICENSE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+-]{1,63}")
 _MAXIMUM_ABSOLUTE_INPUT = 1_000_000_000.0
 _AI_PROMPT_FEATURE_NAMES = tuple(
     f"asset_identity_{index - 5}"
@@ -156,7 +156,7 @@ class Round74AIModelManifest:
     quantization: str
     runtime_backend: str
     runtime_version: str
-    license_spdx: str
+    license_id: str
     model_card_url: str
     minimum_vram_bytes: int
     finance_specialized: bool
@@ -172,7 +172,7 @@ class Round74AIModelManifest:
             or self.quantization not in ROUND74_AI_QUANTIZATION_FORMATS
             or self.runtime_backend not in ROUND74_AI_RUNTIME_BACKENDS
             or not self.runtime_version.strip()
-            or _SPDX.fullmatch(self.license_spdx) is None
+            or _LICENSE_ID.fullmatch(self.license_id) is None
             or parsed.scheme != "https"
             or not parsed.netloc
             or isinstance(self.parameter_count, bool)
@@ -204,7 +204,7 @@ class Round74AIModelManifest:
             "quantization": self.quantization,
             "runtime_backend": self.runtime_backend,
             "runtime_version": self.runtime_version,
-            "license_spdx": self.license_spdx,
+            "license_id": self.license_id,
             "model_card_url": self.model_card_url,
             "minimum_vram_bytes": self.minimum_vram_bytes,
             "finance_specialized": self.finance_specialized,
@@ -234,7 +234,7 @@ class Round74AIModelManifest:
                 quantization=str(payload["quantization"]),
                 runtime_backend=str(payload["runtime_backend"]),
                 runtime_version=str(payload["runtime_version"]),
-                license_spdx=str(payload["license_spdx"]),
+                license_id=str(payload["license_id"]),
                 model_card_url=str(payload["model_card_url"]),
                 minimum_vram_bytes=int(payload["minimum_vram_bytes"]),
                 finance_specialized=payload["finance_specialized"],
