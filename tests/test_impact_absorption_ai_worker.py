@@ -48,6 +48,7 @@ def _request() -> Round74AIReviewRequest:
     count = len(ROUND74_EVENT_FEATURE_NAMES)
     return Round74AIReviewRequest(
         pretest_policy_sha256="1" * 64,
+        probability_calibration_sha256="4" * 64,
         sample_sha256="2" * 64,
         deterministic_risk_state_sha256="3" * 64,
         asset_slot=0,

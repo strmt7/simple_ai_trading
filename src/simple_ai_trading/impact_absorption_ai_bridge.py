@@ -6,6 +6,9 @@ import math
 
 import torch
 
+from .impact_absorption_event_calibration import (
+    Round74ProbabilityCalibration,
+)
 from .impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_HORIZONS_SECONDS,
     Round74AIReviewRequest,
@@ -30,8 +33,12 @@ _ASSET_FEATURE_INDICES = tuple(
 )
 
 
-def _finite_probability(value: torch.Tensor, label: str) -> float:
-    selected = float(torch.sigmoid(value.detach()).item())
+def _finite_probability(
+    value: torch.Tensor,
+    temperature: float,
+    label: str,
+) -> float:
+    selected = float(torch.sigmoid(value.detach() / float(temperature)).item())
     if not math.isfinite(selected) or not 0.0 <= selected <= 1.0:
         raise ValueError(f"Round 74 AI bridge {label} differs")
     return selected
@@ -95,6 +102,7 @@ def build_round74_ai_review_request(
     pretest_policy_sha256: str,
     sample_sha256: str,
     deterministic_risk_state_sha256: str,
+    probability_calibration: Round74ProbabilityCalibration,
     requested_wall_ns: int,
     expires_wall_ns: int,
     proposed_risk_size_bps: int,
@@ -105,6 +113,9 @@ def build_round74_ai_review_request(
         raise ValueError("Round 74 AI bridge feature dimensions differ")
     batch_size = int(scaled_feature_values.shape[0])
     model_output.validate(batch_size)
+    probability_calibration.validate()
+    if probability_calibration.pretest_policy_sha256 != pretest_policy_sha256:
+        raise ValueError("Round 74 AI bridge calibration policy differs")
     selected = _validate_feature_values(
         scaled_feature_values,
         batch_size=batch_size,
@@ -154,6 +165,7 @@ def build_round74_ai_review_request(
     )
     request = Round74AIReviewRequest(
         pretest_policy_sha256=pretest_policy_sha256,
+        probability_calibration_sha256=(probability_calibration.calibration_sha256),
         sample_sha256=sample_sha256,
         deterministic_risk_state_sha256=(deterministic_risk_state_sha256),
         asset_slot=asset_slot,
@@ -173,6 +185,7 @@ def build_round74_ai_review_request(
                 horizon_index,
                 side_index,
             ],
+            probability_calibration.positive_payoff.temperature,
             "positive-payoff probability",
         ),
         adverse_selection_probability=_finite_probability(
@@ -181,6 +194,7 @@ def build_round74_ai_review_request(
                 horizon_index,
                 side_index,
             ],
+            probability_calibration.adverse_selection.temperature,
             "adverse-selection probability",
         ),
         regime_unpredictability_probability=_finite_probability(
@@ -188,6 +202,7 @@ def build_round74_ai_review_request(
                 row_index,
                 horizon_index,
             ],
+            probability_calibration.regime_unpredictability.temperature,
             "regime-unpredictability probability",
         ),
     )
