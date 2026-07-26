@@ -19,16 +19,24 @@ from simple_ai_trading.impact_absorption_event_sequence import (
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_training import (
+    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
+    ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
+    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v2.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v3.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
 REPLAY_PATH = (
     RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
+)
+TRAINING_PATH = (
+    RESEARCH / "round-074-event-training-directml-preflight-2026-07-26.json"
 )
 
 
@@ -75,6 +83,10 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_dataset_sha256"] == _file_sha256(
         source["event_dataset_path"]
     )
+    assert source["event_training_sha256"] == _file_sha256(
+        source["event_training_path"]
+    )
+    assert source["storage_sha256"] == _file_sha256(source["storage_path"])
     assert (
         source["event_sequence_schema_version"]
         == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
@@ -94,6 +106,14 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_partition_schema_version"]
         == ROUND74_EVENT_PARTITION_SCHEMA_VERSION
+    )
+    assert (
+        source["event_training_schema_version"]
+        == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
+    )
+    assert (
+        source["pretest_policy_schema_version"]
+        == ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
     )
     assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 43
     assert source["feature_names_sha256"] == (
@@ -180,6 +200,26 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert dataset["maximum_target_span_seconds_including_latency_ceiling"] == (
         305
     )
+    assert dataset["batch_hash_binds_run_symbol_and_exact_decision_order"] is True
+    training = design["development_training_contract"]
+    assert training["implemented_now"] is True
+    assert training["representative_market_training_run_completed_now"] is False
+    assert training["accepted_roles"] == ["training", "tuning"]
+    assert training["test_role_rejected_before_backend_initialization"] is True
+    assert training["training_and_tuning_sample_overlap_permitted"] is False
+    assert training["minimum_role_transition_purge_seconds"] == 300
+    assert training["mixed_partition_scaler_or_target_context_permitted"] is False
+    assert training["candidate_panel"] == [
+        "event_pooling_mlp",
+        "causal_event_tcn",
+    ]
+    assert training["default_seed_panel"] == list(
+        ROUND74_EVENT_TRAINING_DEFAULT_SEEDS
+    )
+    assert training["backtest_roi_used_for_gradient_or_model_selection"] is False
+    assert training["pickle_permitted"] is False
+    assert training["policy_binds_entire_causal_source_chain"] is True
+    assert training["cross_platform_bitwise_reproducibility_claim"] is False
     evaluation = design["prospective_evaluation_contract"]
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
@@ -192,6 +232,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["training_only_scaler_implementation"] is True
     assert authority["prospective_target_engine_implementation"] is True
     assert authority["leak_resistant_dataset_implementation"] is True
+    assert authority["development_trainer_implementation"] is True
+    assert authority["immutable_pretest_policy_implementation"] is True
     for key in (
         "target_generation",
         "model_training",
@@ -210,7 +252,13 @@ def test_round74_event_replay_evidence_is_exact_read_only_and_pre_target() -> No
     design = _load_hash_bound(DESIGN_PATH, "design_sha256")
     replay = _load_hash_bound(REPLAY_PATH, "artifact_sha256")
 
-    assert replay["execution_git_commit"] == design["implementation_git_commit"]
+    binding = design["host_evidence_binding"]
+    assert replay["execution_git_commit"] == binding[
+        "event_sequence_replay_execution_git_commit"
+    ]
+    assert replay["artifact_sha256"] == binding[
+        "event_sequence_replay_artifact_sha256"
+    ]
     assert replay["event_sequence_source_sha256"] == design["source_binding"][
         "event_sequence_sha256"
     ]
@@ -253,7 +301,13 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
     design = _load_hash_bound(DESIGN_PATH, "design_sha256")
     evidence = _load_hash_bound(DIRECTML_PATH, "artifact_sha256")
 
-    assert evidence["execution_git_commit"] == design["implementation_git_commit"]
+    binding = design["host_evidence_binding"]
+    assert evidence["execution_git_commit"] == binding[
+        "event_model_directml_execution_git_commit"
+    ]
+    assert evidence["artifact_sha256"] == binding[
+        "event_model_directml_artifact_sha256"
+    ]
     assert evidence["event_model_source_sha256"] == design["source_binding"][
         "event_model_sha256"
     ]
@@ -276,5 +330,55 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
     interpretation = evidence["interpretation"]
     assert interpretation["real_market_targets_used"] is False
     assert interpretation["model_fit_performed"] is False
+    assert interpretation["financial_edge_tested"] is False
+    assert interpretation["profitability_claim"] is False
+
+
+def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    evidence = _load_hash_bound(TRAINING_PATH, "artifact_sha256")
+    binding = design["host_evidence_binding"]
+
+    assert evidence["execution_git_commit"] == design["implementation_git_commit"]
+    assert evidence["execution_git_commit"] == binding[
+        "event_training_directml_execution_git_commit"
+    ]
+    assert evidence["artifact_sha256"] == binding[
+        "event_training_directml_artifact_sha256"
+    ]
+    source = evidence["source_binding"]
+    assert source["event_training_sha256"] == design["source_binding"][
+        "event_training_sha256"
+    ]
+    assert source["event_dataset_sha256"] == design["source_binding"][
+        "event_dataset_sha256"
+    ]
+    assert source["event_model_sha256"] == design["source_binding"][
+        "event_model_sha256"
+    ]
+    backend = evidence["backend"]
+    assert backend["requested"] == backend["kind"] == "directml"
+    assert backend["vendor"] == "AMD Radeon RX 9070 XT"
+    assert backend["accelerated"] is True
+    assert backend["safetensors_version"] == "0.8.0"
+    assert backend["warning_count_per_execution"] == 0
+    assert backend["cpu_fallback_warning_count_per_execution"] == 0
+    inputs = evidence["input_contract"]
+    assert inputs["real_market_events_used"] is False
+    assert inputs["real_market_targets_used"] is False
+    assert inputs["test_batches_consumed"] == 0
+    assert inputs["candidate_ids"] == ["event_pooling_mlp", "causal_event_tcn"]
+    assert inputs["seeds"] == list(ROUND74_EVENT_TRAINING_DEFAULT_SEEDS)
+    verification = evidence["verification"]
+    assert verification["fresh_process_execution_count"] == 2
+    assert verification["all_six_peer_updates_completed"] is True
+    assert verification["cross_execution_policy_sha256_equal"] is True
+    assert verification["cross_execution_model_sha256_equal"] is True
+    assert verification["cross_execution_prediction_sha256_equal"] is True
+    assert verification["cross_execution_candidate_metrics_equal"] is True
+    interpretation = evidence["interpretation"]
+    assert interpretation["candidate_loss_has_financial_meaning"] is False
+    assert interpretation["representative_market_training_performed"] is False
+    assert interpretation["sealed_test_evaluated"] is False
     assert interpretation["financial_edge_tested"] is False
     assert interpretation["profitability_claim"] is False

@@ -1,0 +1,106 @@
+{
+  "schema_version": "round-074-event-training-directml-preflight-evidence-v1",
+  "artifact_sha256": "612c97e8382bfd6e0c3ff3e3704ed0b05c5d2535f1e96149cfc9ded92e7e9c98",
+  "round": 74,
+  "executed_at_utc": "2026-07-26T21:52:28Z",
+  "execution_git_commit": "0d258f236b982360183e7760cef64cb3ba89d869",
+  "source_binding": {
+    "event_sequence_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
+    "event_scaling_sha256": "c42d614cee0edf877af501ea4a77b78e5a7f3f2135423eb2336d8ace78c86986",
+    "event_targets_sha256": "4e6d2dca8def15c114aa8e6aec4c2d2c9ac85c75ec3072d0e95b6ea2869cb130",
+    "event_dataset_sha256": "711a42e110db89ec1f6366f3b42d8b15eafd3bda18f178d4ac27a082420c8f81",
+    "event_model_sha256": "636250cca313a7fe472aa5e8da55d4149e2773c86721508b659e689bbc31d75a",
+    "event_training_sha256": "0620b93d0251c17c0baf1b81df4bb48800d9a3bdaae00b43f9d3fa1b990d4a7e",
+    "storage_sha256": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610",
+    "preflight_fixture_sha256": "b377f3cbf9c956fc6873eaf3745c881fe5131220409e955b3c4b0a8f9fd2a975"
+  },
+  "backend": {
+    "requested": "directml",
+    "kind": "directml",
+    "device": "privateuseone:0",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "selection": "runtime_current_device",
+    "accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "safetensors_version": "0.8.0",
+    "deterministic_algorithms_requested": true,
+    "warning_count_per_execution": 0,
+    "cpu_fallback_warning_count_per_execution": 0
+  },
+  "input_contract": {
+    "source": "deterministic constructed tensor contract from the focused test fixture",
+    "real_market_events_used": false,
+    "real_market_targets_used": false,
+    "training_rows": 2,
+    "tuning_rows": 2,
+    "training_batch_sha256": "02bada52d5df19228f458e5da8f382acc4cf6c5c3decad6a31c582e22f8e8f1f",
+    "tuning_batch_sha256": "a8358c3a4fca41d52f27a84b5d69e9b9586bb83a7c6961ffc38116459c8212c7",
+    "training_eligible_action_targets": 15,
+    "tuning_eligible_action_targets": 15,
+    "training_eligible_regime_targets": 8,
+    "tuning_eligible_regime_targets": 8,
+    "candidate_ids": [
+      "event_pooling_mlp",
+      "causal_event_tcn"
+    ],
+    "seeds": [
+      7411,
+      7423,
+      7433
+    ],
+    "epochs": 1,
+    "minibatch_rows": 2,
+    "test_batches_consumed": 0
+  },
+  "verification": {
+    "fresh_process_execution_count": 2,
+    "both_candidates_trained": true,
+    "all_six_peer_updates_completed": true,
+    "chronological_tuning_completed": true,
+    "safe_tensor_state_reload_verified": true,
+    "prediction_reload_verified": true,
+    "atomic_policy_reload_verified": true,
+    "temporary_artifacts_removed_after_each_execution": true,
+    "cross_execution_policy_sha256_equal": true,
+    "cross_execution_model_sha256_equal": true,
+    "cross_execution_prediction_sha256_equal": true,
+    "cross_execution_candidate_metrics_equal": true
+  },
+  "repeated_result": {
+    "policy_sha256": "d8f61c52fae2a296d2ca4b653be0794ea2509c77f2a6d85f81fa6f6fc414f5c0",
+    "model_sha256": "f4d530434ec4f2872676d3862a91b96b9bc9b5b8242b1c2d2a3f0a5f81544380",
+    "model_byte_count": 962888,
+    "prediction_sha256": "a9a833645bd67832704621cb638a8dfac3de35321bc25d406f58707ca0d90e62",
+    "selected_candidate_id": "causal_event_tcn",
+    "candidate_tuning_proper_loss": {
+      "event_pooling_mlp": 0.8463847920298576,
+      "causal_event_tcn": 0.8400415137410164
+    },
+    "peer_best_tuning_proper_loss": {
+      "event_pooling_mlp": [
+        0.8419364243745803,
+        0.842772988975048,
+        0.8557772114872934
+      ],
+      "causal_event_tcn": [
+        0.835280866920948,
+        0.84583610445261,
+        0.8399527028203011
+      ]
+    }
+  },
+  "interpretation": {
+    "result_type": "compute serialization and governance preflight only",
+    "candidate_loss_has_financial_meaning": false,
+    "representative_market_training_performed": false,
+    "sealed_test_evaluated": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false,
+    "cross_platform_bitwise_reproducibility_claim": false
+  }
+}
