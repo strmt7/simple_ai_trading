@@ -1,0 +1,82 @@
+{
+  "schema_version": "round-074-event-model-directml-preflight-evidence-v1",
+  "artifact_sha256": "7d3a9b937c56d0947284e814476ee59e7e4afe92cdba6c5942d6e185794d980e",
+  "round": 74,
+  "observed_at_utc": "2026-07-26T19:47:21.407817+00:00",
+  "execution_git_commit": "af32999356c9891fabcb108e97258033a66ef71f",
+  "event_sequence_source_sha256": "bf54ae88f99a7a8a35a504380f946312ddad87ea1af1d33c60a5f93225f898c4",
+  "event_model_source_sha256": "40b76902a3bacd23af908986db66b93a4d6fcd8808b416080ca0a7e60dfb23de",
+  "event_model_schema_version": "round-074-event-payoff-model-v2",
+  "backend": {
+    "requested": "directml",
+    "kind": "directml",
+    "device": "privateuseone:0",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "selection": "runtime_current_device",
+    "accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "torch_version_note": "The torch-directml plugin uses a CPU-tagged PyTorch wheel while dispatching supported operators through DirectML; device execution and fallback warnings are checked separately."
+  },
+  "input_contract": {
+    "target_source": "synthetic_preflight_only",
+    "feature_count": 43,
+    "sequence_length": 128,
+    "payoff_horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "batch_size": 4
+  },
+  "candidates": {
+    "event_pooling_mlp": {
+      "parameter_count": 31396,
+      "loss": 0.8752974271774292,
+      "components": {
+        "payoff_pinball": 0.42048293352127075,
+        "maximum_adverse_excursion_pinball": 0.21476535499095917,
+        "positive_bce": 0.67768394947052,
+        "adverse_bce": 0.7014378309249878,
+        "unpredictability_bce": 0.69938063621521
+      },
+      "parameter_max_abs_change": 4.470348358154297e-07
+    },
+    "causal_event_tcn": {
+      "parameter_count": 79524,
+      "loss": 0.8799590468406677,
+      "components": {
+        "payoff_pinball": 0.4238381087779999,
+        "maximum_adverse_excursion_pinball": 0.21414104104042053,
+        "positive_bce": 0.6995865702629089,
+        "adverse_bce": 0.6893284320831299,
+        "unpredictability_bce": 0.6840927600860596
+      },
+      "parameter_max_abs_change": 9.98377799987793e-07
+    }
+  },
+  "verification": {
+    "forward_completed": true,
+    "backward_completed": true,
+    "gradient_clipping_completed": true,
+    "parameter_update_completed": true,
+    "warning_count": 0,
+    "cpu_fallback_warning_count": 0
+  },
+  "interpretation": {
+    "compute_path_viable_on_observed_amd_host": true,
+    "real_market_targets_used": false,
+    "model_fit_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "host_agnostic_acceleration_proven": false
+  },
+  "authority": {
+    "target_generation": false,
+    "model_training": false,
+    "model_selection": false,
+    "paper_trading": false,
+    "testnet_trading": false,
+    "live_trading": false
+  }
+}

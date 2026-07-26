@@ -1,0 +1,277 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v2",
+  "design_sha256": "2bb02ace0d1f747585d960e2095c087b4493274ff95d532675a9a671b32ccb67",
+  "round": 74,
+  "frozen_at_utc": "2026-07-26T19:48:00Z",
+  "implementation_git_commit": "af32999356c9891fabcb108e97258033a66ef71f",
+  "parent_capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+  "parent_capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+  "source_binding": {
+    "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
+    "event_sequence_sha256": "bf54ae88f99a7a8a35a504380f946312ddad87ea1af1d33c60a5f93225f898c4",
+    "event_model_path": "src/simple_ai_trading/impact_absorption_event_model.py",
+    "event_model_sha256": "40b76902a3bacd23af908986db66b93a4d6fcd8808b416080ca0a7e60dfb23de",
+    "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
+    "event_model_schema_version": "round-074-event-payoff-model-v2",
+    "feature_count": 43,
+    "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340"
+  },
+  "research_sources": [
+    {
+      "title": "The Price Impact of Order Book Events",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=1712822",
+      "used_for": "best-level order-flow imbalance, inverse-depth scaling, and adverse-selection rationale"
+    },
+    {
+      "title": "Multi-Level Order-Flow Imbalance in a Limit Order Book",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3479741",
+      "used_for": "retaining flow and imbalance from multiple depth bands rather than only L1"
+    },
+    {
+      "title": "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1808.03668",
+      "used_for": "shared temporal representation and cross-instrument model rationale"
+    },
+    {
+      "title": "BDLOB: Bayesian Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1811.10041",
+      "used_for": "uncertainty-aware abstention and position-sizing rationale"
+    },
+    {
+      "title": "Deep Learning for Digital Asset Limit Order Books",
+      "url": "https://arxiv.org/abs/2010.01241",
+      "used_for": "causal temporal convolution as a bounded digital-asset candidate"
+    },
+    {
+      "title": "TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data",
+      "url": "https://arxiv.org/abs/2502.15757",
+      "used_for": "simple-model control, horizon-aware outputs, and explicit transaction-cost skepticism"
+    },
+    {
+      "title": "Market Simulation under Adverse Selection",
+      "url": "https://arxiv.org/abs/2409.12721",
+      "used_for": "separate adverse-fill targets and prohibition on independent price and fill assumptions"
+    },
+    {
+      "title": "Dynamics of Order Positions and Related Queues in a Limit Order Book",
+      "url": "https://arxiv.org/abs/1505.04810",
+      "used_for": "recognizing queue position as necessary for passive-fill claims"
+    },
+    {
+      "title": "Learning the Spoofability of Limit Order Books With Interpretable Probabilistic Neural Networks",
+      "url": "https://arxiv.org/abs/2504.15908",
+      "used_for": "distance-banded flow and the explicit limitation that true order identity needs L3 data"
+    },
+    {
+      "title": "Bridging the Reality Gap in Limit Order Book Simulation",
+      "url": "https://arxiv.org/abs/2603.24137",
+      "used_for": "fine event timing, latency-race sensitivity, feedback, impact, and execution-parameter stress requirements"
+    }
+  ],
+  "data_scope": {
+    "provider": "Binance USD-M public production market-data endpoints",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "event_types": [
+      "depthUpdate",
+      "bookTicker",
+      "aggTrade",
+      "markPriceUpdate",
+      "forceOrder"
+    ],
+    "exact_local_receipt_order_required": true,
+    "one_second_or_minute_collapse_permitted": false,
+    "top_20_synchronized_l2_required": true,
+    "utc_used_only_as_continuous_market_cyclic_covariate": true,
+    "listed_venue_calendar_may_create_crypto_close": false,
+    "listed_venue_calendar_may_grant_crypto_execution_authority": false
+  },
+  "causal_feature_contract": {
+    "sequence_length_events": 128,
+    "maximum_gap_nanoseconds": 5000000000,
+    "window_may_cross_long_gap": false,
+    "per_event_asset_identity_retained": true,
+    "event_type_one_hot_retained": true,
+    "asset_one_hot_retained": true,
+    "l1_microprice_and_imbalance_retained": true,
+    "l2_imbalance_levels": [
+      5,
+      10,
+      20
+    ],
+    "distance_bands": [
+      "levels_1_5",
+      "levels_6_10",
+      "levels_11_20",
+      "outside_20"
+    ],
+    "aggressive_trade_flow_retained": true,
+    "mark_index_basis_funding_and_liquidation_context_retained": true,
+    "stale_or_regressing_sequence_policy": "fail closed",
+    "duplicate_json_key_policy": "fail closed",
+    "raw_absolute_asset_price_used_as_feature": false,
+    "feature_scaler": {
+      "required_before_training": true,
+      "fit_on_training_partition_only": true,
+      "validation_or_test_statistics_permitted": false,
+      "method": "per-feature robust centering and scaling with training-partition median and interquartile range",
+      "zero_or_near_zero_training_scale_policy": "leave binary features unchanged and set constant continuous features to zero",
+      "clip_limits_source": "training partition only",
+      "model_bundle_must_bind_scaler_hash": true
+    }
+  },
+  "candidate_panel": {
+    "complexity_has_promotion_privilege": false,
+    "event_pooling_mlp": {
+      "parameter_count": 31396,
+      "summary": "last event, causal-window mean, and causal-window dispersion",
+      "role": "simple nonlinear baseline and complexity control"
+    },
+    "causal_event_tcn": {
+      "parameter_count": 79524,
+      "hidden_channels": 64,
+      "kernel_size": 3,
+      "dilations": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "strict_left_padding": true,
+      "role": "bounded causal temporal candidate preserving subsecond event order"
+    },
+    "shared_training_dropout": 0.1,
+    "payoff_horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "sides": [
+      "long",
+      "short"
+    ],
+    "payoff_quantiles": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9
+    ],
+    "heads": [
+      "after-cost-payoff quantiles by horizon and side",
+      "maximum-adverse-excursion quantiles by horizon and side",
+      "positive-after-cost-payoff probability by horizon and side",
+      "adverse-selection probability by horizon and side",
+      "regime-unpredictability probability by horizon"
+    ],
+    "payoff_and_excursion_quantile_crossing_permitted": false,
+    "negative_maximum_adverse_excursion_permitted": false,
+    "training_loss": {
+      "payoff": "pinball",
+      "maximum_adverse_excursion": "pinball",
+      "probability_heads": "numerically stable binary cross entropy from logits",
+      "backtest_metric_used_as_gradient_objective": false
+    }
+  },
+  "prospective_target_contract": {
+    "implemented_now": false,
+    "target_clock": "local monotonic receipt time",
+    "horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "decision_submission_and_execution_latency": {
+      "must_be_measured_on_the_execution_host": true,
+      "fixed_unverified_latency_assumption_permitted": false,
+      "missing_latency_evidence_policy": "fail closed"
+    },
+    "entry_and_exit": {
+      "initial_supported_execution": "marketable orders only",
+      "walk_observed_synchronized_l2_at_configured_notional": true,
+      "insufficient_visible_depth_policy": "censor target and forbid action",
+      "passive_maker_fill_target_permitted_from_l2": false,
+      "reason": "L2 does not identify own queue position, cancellation priority, or hidden liquidity"
+    },
+    "costs": {
+      "opening_and_closing_commission_required": true,
+      "spread_required": true,
+      "observed_book_walk_required": true,
+      "funding_required_when_horizon_crosses_funding_timestamp": true,
+      "account_fee_source": "authenticated read-only account commission evidence or hash-bound operator configuration",
+      "missing_account_fee_policy": "fail closed",
+      "runtime_fee_mismatch_policy": "model bundle is incompatible and cannot trade"
+    },
+    "path_risk": {
+      "maximum_adverse_excursion_uses_every_valid_intervening_bbo": true,
+      "endpoint_only_drawdown_proxy_permitted": false,
+      "sequence_gap_crossed_book_stale_book_or_invalid_event_policy": "censor target",
+      "interpolation_over_missing_market_events_permitted": false
+    },
+    "leverage": {
+      "model_predicts_unlevered_after-cost_payoff_and_path_risk": true,
+      "leverage_may_change_model_target": false,
+      "leverage_is_applied_only_by_independent_risk_controller": true
+    }
+  },
+  "prospective_evaluation_contract": {
+    "quiet_qualification_run_id": "892d1a3b74634d14b7db4d143f810079",
+    "quiet_qualification_run_status": "design-consumed feature diagnostic; permanently ineligible as sealed financial confirmation",
+    "active_qualification_capture_is_financial_test_set": false,
+    "capture_mechanism_qualification_runs_are_model_test_set": false,
+    "fresh_representative_rotation_required": true,
+    "split_unit": "whole contiguous capture runs",
+    "random_row_split_permitted": false,
+    "minimum_purge_seconds": 300,
+    "embargo_includes_maximum_horizon_and_measured_latency": true,
+    "scaler_and_all_hyperparameters_fit_before_sealed_test": true,
+    "sealed_test_may_be_used_once": true,
+    "required_model_metrics": [
+      "pinball loss by horizon, side, symbol, and activity regime",
+      "quantile interval coverage and calibration",
+      "Brier score and calibration for probability heads",
+      "directional balanced accuracy and Matthews correlation coefficient",
+      "after-cost executable trade count",
+      "after-cost net return, annualized return, Sharpe, Sortino, Calmar, maximum drawdown, expected shortfall, profit factor, and turnover",
+      "performance sensitivity to fees, latency, spread, depth, slippage, and missed fills"
+    ],
+    "promotion_requires": [
+      "nonzero executable trades",
+      "positive after-cost lower confidence bound on the sealed aggregate",
+      "no symbol or activity regime with an unacceptable loss concentration",
+      "calibrated uncertainty that supports abstention",
+      "drawdown and expected-shortfall gates for the selected risk profile",
+      "the simplest candidate when evidence is statistically indistinguishable"
+    ],
+    "roi_or_accuracy_target_used_to_tune_sealed_test": false,
+    "profitability_required_by_assertion_or_data_filter": false
+  },
+  "ai_comparison_contract": {
+    "implemented_now": false,
+    "same_events_targets_costs_splits_and_actions_required": true,
+    "paired_comparison_required": true,
+    "ai_may_bypass_data_risk_or_execution_gate": false,
+    "ai_promotion_requires_after_cost_uplift": true,
+    "ai_promotion_requires_noninferior_calibration_and_drawdown": true,
+    "model_size_or_finance_brand_is_not_evidence_of_edge": true
+  },
+  "authority": {
+    "feature_implementation": true,
+    "candidate_architecture_implementation": true,
+    "synthetic_compute_preflight": true,
+    "target_generation": false,
+    "model_training": false,
+    "model_selection": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

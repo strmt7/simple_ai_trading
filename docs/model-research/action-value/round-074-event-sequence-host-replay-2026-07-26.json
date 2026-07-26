@@ -1,0 +1,98 @@
+{
+  "schema_version": "round-074-event-sequence-host-replay-evidence-v1",
+  "artifact_sha256": "96801bac2c94b915cbf5a07ff75ec1c37861b7cd194ba2b2ed4d5fab5c88a9bc",
+  "round": 74,
+  "observed_at_utc": "2026-07-26T19:47:11.872627+00:00",
+  "execution_git_commit": "af32999356c9891fabcb108e97258033a66ef71f",
+  "event_sequence_source_sha256": "bf54ae88f99a7a8a35a504380f946312ddad87ea1af1d33c60a5f93225f898c4",
+  "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
+  "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340",
+  "source": {
+    "provider": "Binance USD-M public production market-data endpoints",
+    "database": "data/microstructure.duckdb",
+    "run_id": "892d1a3b74634d14b7db4d143f810079",
+    "capture_report_sha256": "84b0422886a7e60f26e1f8cc6156b3bc35d527caa68cfa96faba5c3832abecfa",
+    "quiet_qualification_artifact_sha256": "bd87c95660eb748b35a5112bee480f5d14fb41108b31e41c30f530a3ed9231ca",
+    "fresh_exact_audit_required_before_streaming": true,
+    "credentials_used": false,
+    "authenticated_endpoint_used": false,
+    "orders_submitted": false,
+    "synthetic_market_data_used": false
+  },
+  "replay": {
+    "token_limit": 50000,
+    "token_count": 50000,
+    "elapsed_seconds": 23.707441499980632,
+    "tokens_per_second": 2109.042428726054,
+    "canonical_encoding": "eight-byte big-endian token length followed by canonical ASCII JSON for each token",
+    "canonical_length_prefixed_token_sha256": "03f52996078dbd514570b83434ae1bb15d713103448a624ddd82edc4be677f02",
+    "first_token": {
+      "frame_index": 0,
+      "message_index": 454,
+      "received_monotonic_ns": 333558547566000,
+      "received_wall_ns": 1784946236043009400,
+      "symbol": "BTCUSDT",
+      "event_type": "depthUpdate"
+    },
+    "last_token": {
+      "frame_index": 41,
+      "message_index": 575,
+      "received_monotonic_ns": 333729778624200,
+      "received_wall_ns": 1784946407273586000,
+      "symbol": "BTCUSDT",
+      "event_type": "bookTicker"
+    },
+    "event_counts": {
+      "aggTrade": 1577,
+      "bookTicker": 43058,
+      "depthUpdate": 4855,
+      "markPriceUpdate": 510
+    },
+    "symbol_counts": {
+      "BTCUSDT": 15499,
+      "ETHUSDT": 23894,
+      "SOLUSDT": 10607
+    },
+    "global_receipt_regression_detected": false,
+    "nonfinite_feature_detected": false,
+    "feature_count": 43
+  },
+  "observed_sample_limitations": {
+    "liquidation_event_count": 0,
+    "stale_depth_event_count": 0,
+    "features_constant_because_no_liquidation_was_observed": [
+      "event_is_liquidation",
+      "liquidation_signed_quote_scaled",
+      "log1p_ms_since_liquidation"
+    ],
+    "sample_validates_liquidation_path": false,
+    "synthetic_unit_test_covers_liquidation_sign_and_state_retention": true,
+    "sample_is_financially_representative": false,
+    "sample_is_eligible_for_sealed_financial_confirmation": false
+  },
+  "storage_safety": {
+    "database_open_mode": "read_only",
+    "database_size_before_bytes": 9433526272,
+    "database_size_after_bytes": 9433526272,
+    "wal_size_before_bytes": 0,
+    "wal_size_after_bytes": 0,
+    "database_write_detected": false
+  },
+  "interpretation": {
+    "exact_event_feature_replay_completed": true,
+    "all_three_symbols_observed": true,
+    "targets_constructed": false,
+    "models_evaluated": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "target_generation": false,
+    "model_training": false,
+    "model_selection": false,
+    "paper_trading": false,
+    "testnet_trading": false,
+    "live_trading": false
+  }
+}
