@@ -1,20 +1,21 @@
 {
-  "schema_version": "round-074-event-training-directml-preflight-evidence-v2",
-  "artifact_sha256": "8179d54e9b4fba59dc150e720b4e968cb6636ea5c05f01ad2809c69acc73130b",
-  "supersedes_artifact_sha256": "612c97e8382bfd6e0c3ff3e3704ed0b05c5d2535f1e96149cfc9ded92e7e9c98",
+  "schema_version": "round-074-event-training-directml-preflight-evidence-v3",
+  "artifact_sha256": "8dd893205ec0a0ee8ae5e9bbd9a60ee22a87943c28449b23b5a588f5884c116c",
+  "supersedes_artifact_sha256": "8179d54e9b4fba59dc150e720b4e968cb6636ea5c05f01ad2809c69acc73130b",
   "round": 74,
-  "executed_at_utc": "2026-07-26T22:16:47Z",
-  "execution_git_commit": "005e2c13805f95a6d9bcaceb3ec5697cbb78c9fc",
+  "executed_at_utc": "2026-07-26T23:39:31Z",
+  "execution_git_commit": "4bcb1434bf811927b915638770e65e692c21377e",
   "source_binding": {
     "event_sequence_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
     "event_scaling_sha256": "c42d614cee0edf877af501ea4a77b78e5a7f3f2135423eb2336d8ace78c86986",
     "event_targets_sha256": "4e6d2dca8def15c114aa8e6aec4c2d2c9ac85c75ec3072d0e95b6ea2869cb130",
-    "event_dataset_sha256": "0aeb0ccc2088f6b3c0bcef39c40e59574eeaebabd6f4b6063655a560f6e9b316",
+    "event_dataset_sha256": "ebfe059313ab7d3048795619f79b1bc1aa0491eb2ad9cc34073c0576a9dbc5e7",
     "event_model_sha256": "636250cca313a7fe472aa5e8da55d4149e2773c86721508b659e689bbc31d75a",
     "event_training_sha256": "0620b93d0251c17c0baf1b81df4bb48800d9a3bdaae00b43f9d3fa1b990d4a7e",
     "event_cohort_sha256": "b35a67f41995dd701acfced91d7464f4a49e25b047dd1ec063651cc1f1673a4b",
     "storage_sha256": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610",
-    "preflight_fixture_sha256": "b377f3cbf9c956fc6873eaf3745c881fe5131220409e955b3c4b0a8f9fd2a975"
+    "preflight_runner_path": "tools/run_round74_event_training_preflight.py",
+    "preflight_runner_sha256": "0b657c4d0e596ebd969536368f2a6a99f4af5b35932d145a4b104a84b7a387a7"
   },
   "backend": {
     "requested": "directml",
@@ -31,13 +32,13 @@
     "cpu_fallback_warning_count_per_execution": 0
   },
   "input_contract": {
-    "source": "deterministic constructed tensor contract from the focused test fixture",
+    "source": "deterministic constructed tensor contract from the hash-bound preflight runner",
     "real_market_events_used": false,
     "real_market_targets_used": false,
     "training_rows": 2,
     "tuning_rows": 2,
-    "training_batch_sha256": "02bada52d5df19228f458e5da8f382acc4cf6c5c3decad6a31c582e22f8e8f1f",
-    "tuning_batch_sha256": "a8358c3a4fca41d52f27a84b5d69e9b9586bb83a7c6961ffc38116459c8212c7",
+    "training_batch_sha256": "4b56f07154f54fe26a6efa6a4e350c743ddc584d3c3e0da2952d8a0e9f29352e",
+    "tuning_batch_sha256": "ef5b0402afb783a1f6c15f4d48ffce7c05ef3407767b70af5ece0abd21a9362b",
     "training_eligible_action_targets": 15,
     "tuning_eligible_action_targets": 15,
     "training_eligible_regime_targets": 8,
@@ -56,11 +57,9 @@
     "test_batches_consumed": 0
   },
   "verification": {
-    "operator_process_invocation_count": 3,
+    "operator_process_invocation_count": 2,
     "fresh_process_execution_count": 2,
     "successful_execution_count": 2,
-    "preparatory_result_extraction_failure_count": 1,
-    "preparatory_failure_scope": "post-training script requested an absent selection.reload_prediction_sha256 key; temporary artifacts were removed and no model or trainer fault occurred",
     "both_candidates_trained": true,
     "all_six_peer_updates_completed": true,
     "chronological_tuning_completed": true,
@@ -74,7 +73,7 @@
     "cross_execution_candidate_metrics_equal": true
   },
   "repeated_result": {
-    "policy_sha256": "9cd15bb6ebd50582606d4d91908968dd0affc711c236fb2409b6acf14bee3d3a",
+    "policy_sha256": "be5dd4432bf38bcab07efabf79dc008e05cd9204a3ec16764be5c46b620a5ae0",
     "model_sha256": "f4d530434ec4f2872676d3862a91b96b9bc9b5b8242b1c2d2a3f0a5f81544380",
     "model_byte_count": 962888,
     "prediction_sha256": "a9a833645bd67832704621cb638a8dfac3de35321bc25d406f58707ca0d90e62",
