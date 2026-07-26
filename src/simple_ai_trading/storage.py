@@ -54,3 +54,37 @@ def write_json_atomic(
         except OSError:
             pass
         raise
+
+
+def write_bytes_atomic(
+    path: str | Path,
+    payload: bytes,
+    *,
+    mode: int | None = None,
+) -> None:
+    """Write bytes through one flushed same-directory temporary file."""
+
+    if not isinstance(payload, bytes):
+        raise TypeError("atomic byte payload must be bytes")
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        prefix=f".{target.name}.", suffix=".tmp", dir=target.parent
+    )
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if mode is not None:
+            os.chmod(tmp_path, mode)
+        _replace_with_transient_lock_retries(tmp_path, target)
+        if mode is not None:
+            os.chmod(target, mode)
+    except Exception:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+        raise
