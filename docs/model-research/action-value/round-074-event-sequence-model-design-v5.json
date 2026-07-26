@@ -1,9 +1,9 @@
 {
-  "schema_version": "round-074-event-sequence-model-design-v4",
-  "design_sha256": "e9ac0c29a122e673a2cf5475eb5e47543aaabdc03b6c5fb9467688dba398e72b",
+  "schema_version": "round-074-event-sequence-model-design-v5",
+  "design_sha256": "b55aa4d6c970f4ca082e676519e4b8844780eca8c0fdecb87f56057879300e63",
   "round": 74,
-  "frozen_at_utc": "2026-07-26T22:18:14Z",
-  "implementation_git_commit": "005e2c13805f95a6d9bcaceb3ec5697cbb78c9fc",
+  "frozen_at_utc": "2026-07-26T22:29:42Z",
+  "implementation_git_commit": "c97f2033e1b5a3814000cb0816ccca5666e49a1e",
   "parent_capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
   "parent_capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
   "source_binding": {
@@ -19,6 +19,8 @@
     "event_dataset_sha256": "0aeb0ccc2088f6b3c0bcef39c40e59574eeaebabd6f4b6063655a560f6e9b316",
     "event_cohort_path": "src/simple_ai_trading/impact_absorption_event_cohort.py",
     "event_cohort_sha256": "b35a67f41995dd701acfced91d7464f4a49e25b047dd1ec063651cc1f1673a4b",
+    "ai_protocol_path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+    "ai_protocol_sha256": "ebdab44c2a49f276cbdbf3786b29e89b612be7e1e14ae16a1eb54ad15aa793a6",
     "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
     "event_training_sha256": "0620b93d0251c17c0baf1b81df4bb48800d9a3bdaae00b43f9d3fa1b990d4a7e",
     "storage_path": "src/simple_ai_trading/storage.py",
@@ -31,6 +33,9 @@
     "event_partition_schema_version": "round-074-run-partition-v2",
     "event_cohort_plan_schema_version": "round-074-event-cohort-plan-v1",
     "event_cohort_binding_schema_version": "round-074-event-cohort-binding-v1",
+    "ai_model_manifest_schema_version": "round-074-ai-model-manifest-v1",
+    "ai_review_request_schema_version": "round-074-ai-review-request-v1",
+    "ai_review_decision_schema_version": "round-074-ai-review-decision-v1",
     "event_training_schema_version": "round-074-event-training-v1",
     "pretest_policy_schema_version": "round-074-event-pretest-policy-v1",
     "feature_count": 43,
@@ -46,6 +51,9 @@
     "event_training_directml_path": "docs/model-research/action-value/round-074-event-training-directml-preflight-2026-07-26.json",
     "event_training_directml_artifact_sha256": "8179d54e9b4fba59dc150e720b4e968cb6636ea5c05f01ad2809c69acc73130b",
     "event_training_directml_execution_git_commit": "005e2c13805f95a6d9bcaceb3ec5697cbb78c9fc",
+    "local_ai_review_design_path": "docs/model-research/action-value/round-074-local-ai-review-design-v1.json",
+    "local_ai_review_design_artifact_sha256": "8445492171e9c9de286617bfacecbe30a820da3e52616fe3d9780cd2cc3d7459",
+    "local_ai_review_implementation_git_commit": "c97f2033e1b5a3814000cb0816ccca5666e49a1e",
     "prior_compute_evidence_reused_only_where_bound_source_sha256_is_unchanged": true
   },
   "research_sources": [
@@ -404,7 +412,18 @@
     "profitability_required_by_assertion_or_data_filter": false
   },
   "ai_comparison_contract": {
-    "implemented_now": false,
+    "protocol_implemented_now": true,
+    "actual_multibillion_parameter_inference_completed_now": false,
+    "finance_candidate": "TheFinAI/Fino1-8B",
+    "general_control": "Qwen/Qwen3-8B",
+    "supported_review_horizons_seconds": [
+      30,
+      300
+    ],
+    "one_and_five_second_ml_paths_wait_for_ai": false,
+    "absolute_date_or_real_symbol_exposed_to_ai": false,
+    "ai_may_create_side_increase_size_set_leverage_or_touch_orders": false,
+    "timeout_invalid_or_expired_review_policy": "deny new entry without blocking exits or independent risk control",
     "same_events_targets_costs_splits_and_actions_required": true,
     "paired_comparison_required": true,
     "ai_may_bypass_data_risk_or_execution_gate": false,
@@ -422,6 +441,8 @@
     "immutable_pretest_policy_implementation": true,
     "predeclared_cohort_admission_implementation": true,
     "predeclared_cohort_plan": true,
+    "local_ai_review_protocol_implementation": true,
+    "actual_multibillion_parameter_ai_inference": false,
     "synthetic_compute_preflight": true,
     "target_generation": false,
     "model_training": false,
