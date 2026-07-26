@@ -10,8 +10,11 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     Round74EventSequenceEncoder,
+    Round74MultiSymbolEventReplay,
     iter_round74_event_windows,
+    iter_round74_v10_event_tokens,
 )
+from simple_ai_trading.impact_absorption_store import ImpactAbsorptionStore
 from simple_ai_trading.impact_capture_frame import ImpactCaptureFrameRecord
 
 
@@ -152,6 +155,69 @@ def _encoder(*, ready_offset_ns: int = 150) -> Round74EventSequenceEncoder:
 
 def _feature(token, name: str) -> float:
     return token.feature_values[ROUND74_EVENT_FEATURE_NAMES.index(name)]
+
+
+def test_event_observation_retains_preready_and_stale_depth_state() -> None:
+    replay = Round74MultiSymbolEventReplay(
+        tick_sizes={
+            "BTCUSDT": "0.1",
+            "ETHUSDT": "0.1",
+            "SOLUSDT": "0.1",
+        },
+        depth_snapshots={
+            "BTCUSDT": _snapshot(),
+            "ETHUSDT": _snapshot(),
+            "SOLUSDT": _snapshot(),
+        },
+        feature_ready_wall_ns=WALL_BASE + 150,
+    )
+    preready = replay.consume_observation(
+        frame_index=0,
+        message_index=0,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=0,
+            monotonic_ns=100,
+            stream_name="btcusdt@depth@100ms",
+            payload=_depth(
+                first=101,
+                final=102,
+                previous=100,
+                event_time_ms=1_001,
+                bid_qty="4",
+                ask_qty="1",
+            ),
+        ),
+    )
+    stale = replay.consume_observation(
+        frame_index=0,
+        message_index=1,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=1,
+            monotonic_ns=200,
+            stream_name="btcusdt@depth@100ms",
+            payload=_depth(
+                first=102,
+                final=102,
+                previous=101,
+                event_time_ms=1_002,
+                bid_qty="9",
+                ask_qty="9",
+            ),
+        ),
+    )
+
+    assert preready is not None and stale is not None
+    assert preready.token is None
+    assert preready.depth_state is not None
+    assert preready.depth_state.update_id == 102
+    assert preready.depth_update_is_stale is False
+    assert stale.token is not None
+    assert stale.depth_state is not None
+    assert stale.depth_state.update_id == 102
+    assert stale.depth_update_is_stale is True
+    assert _feature(stale.token, "depth_update_is_stale") == 1.0
 
 
 def test_event_sequence_preserves_subsecond_order_and_financial_signs() -> None:
@@ -428,3 +494,9 @@ def test_event_window_rejects_global_receipt_regression() -> None:
                 stride=1,
             )
         )
+
+
+def test_round74_v10_replay_requires_read_only_store() -> None:
+    store = ImpactAbsorptionStore(":memory:")
+    with pytest.raises(ValueError, match="read-only store"):
+        list(iter_round74_v10_event_tokens(store, run_id="a" * 32))

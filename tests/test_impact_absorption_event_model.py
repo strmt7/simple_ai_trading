@@ -138,6 +138,68 @@ def test_round74_loss_is_finite_and_backpropagates() -> None:
     )
 
 
+def test_round74_loss_excludes_censored_actions_and_rejects_empty_batches() -> None:
+    output = Round74EventPoolingMLP(dropout=0.0)(_inputs())
+    action_shape = (
+        3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    payoff = torch.zeros(action_shape)
+    maximum_adverse_excursion = torch.zeros(action_shape)
+    adverse = torch.zeros(action_shape)
+    unpredictable = torch.zeros(
+        3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+    )
+    eligibility = torch.ones(action_shape)
+    eligibility[0, 0, 0] = 0.0
+    first, _ = round74_event_model_loss(
+        output,
+        net_payoff_bps=payoff,
+        maximum_adverse_excursion_bps=maximum_adverse_excursion,
+        adverse_selection=adverse,
+        regime_unpredictable=unpredictable,
+        action_eligibility=eligibility,
+    )
+    changed_payoff = payoff.clone()
+    changed_payoff[0, 0, 0] = 1e9
+    changed_excursion = maximum_adverse_excursion.clone()
+    changed_excursion[0, 0, 0] = 1e9
+    changed_adverse = adverse.clone()
+    changed_adverse[0, 0, 0] = 1.0
+    second, _ = round74_event_model_loss(
+        output,
+        net_payoff_bps=changed_payoff,
+        maximum_adverse_excursion_bps=changed_excursion,
+        adverse_selection=changed_adverse,
+        regime_unpredictable=unpredictable,
+        action_eligibility=eligibility,
+    )
+
+    torch.testing.assert_close(first, second)
+    with pytest.raises(ValueError, match="no eligible targets"):
+        round74_event_model_loss(
+            output,
+            net_payoff_bps=payoff,
+            maximum_adverse_excursion_bps=maximum_adverse_excursion,
+            adverse_selection=adverse,
+            regime_unpredictable=unpredictable,
+            action_eligibility=torch.zeros(action_shape),
+        )
+    fractional = torch.ones(action_shape)
+    fractional[0, 0, 0] = 0.5
+    with pytest.raises(ValueError, match="not binary"):
+        round74_event_model_loss(
+            output,
+            net_payoff_bps=payoff,
+            maximum_adverse_excursion_bps=maximum_adverse_excursion,
+            adverse_selection=adverse,
+            regime_unpredictable=unpredictable,
+            action_eligibility=fractional,
+        )
+
+
 @pytest.mark.parametrize(
     ("target_name", "invalid_kind"),
     (
