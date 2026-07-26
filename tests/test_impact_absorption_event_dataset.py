@@ -286,6 +286,7 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
     assert batch.endpoint_frame_index.tolist() == [sample.endpoint_frame_index]
     assert batch.endpoint_message_index.tolist() == [sample.endpoint_message_index]
     assert batch.anchor_index.tolist() == [sample.anchor_index]
+    assert batch.test_access_sha256 == ("",)
     assert float(batch.action_eligibility.sum()) == 8.0
     assert len(batch.batch_sha256) == 64
     assert not batch.feature_values.flags.writeable

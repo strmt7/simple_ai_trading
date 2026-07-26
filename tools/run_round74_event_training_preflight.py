@@ -103,6 +103,7 @@ def _batch(
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{identity * 100 + row:064x}" for row in range(rows)),
         target_context_sha256=("3" * 64, "3" * 64),
+        test_access_sha256=("", ""),
         feature_values=_readonly(features),
         actual_entry_monotonic_ns=_readonly(actual_entry),
         actual_exit_monotonic_ns=_readonly(actual_exit),
