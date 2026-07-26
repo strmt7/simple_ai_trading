@@ -4,10 +4,16 @@ import hashlib
 import json
 from pathlib import Path
 
+from simple_ai_trading.impact_absorption_event_scaling import (
+    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_targets import (
+    ROUND74_EVENT_TARGET_SCHEMA_VERSION,
 )
 
 
@@ -56,9 +62,23 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_model_sha256"] == _file_sha256(
         source["event_model_path"]
     )
+    assert source["event_scaler_sha256"] == _file_sha256(
+        source["event_scaler_path"]
+    )
+    assert source["event_target_sha256"] == _file_sha256(
+        source["event_target_path"]
+    )
     assert (
         source["event_sequence_schema_version"]
         == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+    )
+    assert (
+        source["event_scaler_schema_version"]
+        == ROUND74_EVENT_SCALER_SCHEMA_VERSION
+    )
+    assert (
+        source["event_target_schema_version"]
+        == ROUND74_EVENT_TARGET_SCHEMA_VERSION
     )
     assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 43
     assert source["feature_names_sha256"] == (
@@ -73,15 +93,36 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert features["per_event_asset_identity_retained"] is True
     assert features["window_may_cross_long_gap"] is False
     scaler = features["feature_scaler"]
+    assert scaler["implemented_now"] is True
     assert scaler["fit_on_training_partition_only"] is True
     assert scaler["validation_or_test_statistics_permitted"] is False
+    assert scaler["sample_indices_hash_bound"] is True
+    assert scaler["serialized_scaler_digest_verified_on_load"] is True
     assert scaler["model_bundle_must_bind_scaler_hash"] is True
 
 
 def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     design = _load_hash_bound(DESIGN_PATH, "design_sha256")
     targets = design["prospective_target_contract"]
-    assert targets["implemented_now"] is False
+    assert targets["implemented_now"] is True
+    assert targets["real_market_targets_generated_now"] is False
+    assert targets["decision_order_key"] == [
+        "received_monotonic_ns",
+        "frame_index",
+        "message_index",
+    ]
+    assert (
+        targets[
+            "later_messages_with_the_same_receipt_timestamp_permitted_in_decision_state"
+        ]
+        is False
+    )
+    assert (
+        targets[
+            "target_context_hash_binds_spec_quantity_filters_and_funding_schedule"
+        ]
+        is True
+    )
     latency = targets["decision_submission_and_execution_latency"]
     assert latency["must_be_measured_on_the_execution_host"] is True
     assert latency["fixed_unverified_latency_assumption_permitted"] is False
@@ -92,6 +133,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         "censor target and forbid action"
     )
     costs = targets["costs"]
+    assert costs["commission_evidence_digest_required"] is True
+    assert (
+        costs["additional_residual_slippage_evidence_digest_required"]
+        is True
+    )
     assert costs["missing_account_fee_policy"] == "fail closed"
     assert costs["runtime_fee_mismatch_policy"] == (
         "model bundle is incompatible and cannot trade"
@@ -99,6 +145,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert targets["leverage"][
         "leverage_is_applied_only_by_independent_risk_controller"
     ] is True
+    assert targets["path_risk"]["maximum_path_state_gap_nanoseconds"] == (
+        250_000_000
+    )
+    assert targets["path_risk"]["excessive_path_state_gap_policy"] == (
+        "censor target"
+    )
     evaluation = design["prospective_evaluation_contract"]
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
@@ -108,6 +160,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         "ai_may_bypass_data_risk_or_execution_gate"
     ] is False
     authority = design["authority"]
+    assert authority["training_only_scaler_implementation"] is True
+    assert authority["prospective_target_engine_implementation"] is True
     for key in (
         "target_generation",
         "model_training",
