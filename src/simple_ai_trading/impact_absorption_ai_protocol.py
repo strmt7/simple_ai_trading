@@ -58,6 +58,7 @@ ROUND74_AI_QUANTIZATION_FORMATS = (
     "int4",
     "q4_k_m",
     "q5_k_m",
+    "q6_k",
     "int8",
     "fp16",
 )
@@ -73,9 +74,7 @@ _MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{2,159}")
 _LICENSE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+-]{1,63}")
 _MAXIMUM_ABSOLUTE_INPUT = 1_000_000_000.0
 _AI_PROMPT_FEATURE_NAMES = tuple(
-    f"asset_identity_{index - 5}"
-    if 5 <= index <= 7
-    else name
+    f"asset_identity_{index - 5}" if 5 <= index <= 7 else name
     for index, name in enumerate(ROUND74_EVENT_FEATURE_NAMES)
 )
 
@@ -108,9 +107,7 @@ def _strict_json_object(raw_text: str) -> dict[str, object]:
         output: dict[str, object] = {}
         for key, value in pairs:
             if key in output:
-                raise ValueError(
-                    "Round 74 AI decision has duplicate JSON keys"
-                )
+                raise ValueError("Round 74 AI decision has duplicate JSON keys")
             output[key] = value
         return output
 
@@ -138,9 +135,7 @@ def _finite_tuple(
         for item in selected
     ):
         raise ValueError(f"Round 74 AI {label} values differ")
-    if ordered and any(
-        right < left for left, right in zip(selected, selected[1:])
-    ):
+    if ordered and any(right < left for left, right in zip(selected, selected[1:])):
         raise ValueError(f"Round 74 AI {label} order differs")
     return selected
 
@@ -171,12 +166,10 @@ class Round74AIModelManifest:
     def validate(self) -> None:
         parsed = urlparse(self.model_card_url)
         if (
-            self.schema_version
-            != ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
+            self.schema_version != ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
             or _MODEL_ID.fullmatch(self.model_id) is None
             or _REVISION.fullmatch(self.model_revision) is None
-            or self.model_artifact_kind
-            not in ROUND74_AI_MODEL_ARTIFACT_KINDS
+            or self.model_artifact_kind not in ROUND74_AI_MODEL_ARTIFACT_KINDS
             or self.quantization not in ROUND74_AI_QUANTIZATION_FORMATS
             or self.runtime_backend not in ROUND74_AI_RUNTIME_BACKENDS
             or not self.runtime_version.strip()
@@ -238,9 +231,7 @@ class Round74AIModelManifest:
             selected = cls(
                 model_id=str(payload["model_id"]),
                 model_revision=str(payload["model_revision"]),
-                model_artifact_sha256=str(
-                    payload["model_artifact_sha256"]
-                ),
+                model_artifact_sha256=str(payload["model_artifact_sha256"]),
                 model_artifact_kind=str(payload["model_artifact_kind"]),
                 parameter_count=int(payload["parameter_count"]),
                 quantization=str(payload["quantization"]),
@@ -253,9 +244,7 @@ class Round74AIModelManifest:
                 schema_version=str(payload["schema_version"]),
             )
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(
-                "Round 74 AI model manifest payload differs"
-            ) from exc
+            raise ValueError("Round 74 AI model manifest payload differs") from exc
         if selected.as_dict(include_sha256=False) != payload:
             raise ValueError("Round 74 AI model manifest policy differs")
         selected.validate()
@@ -336,8 +325,7 @@ class Round74AIReviewRequest:
                 0
                 < self.requested_wall_ns
                 < self.expires_wall_ns
-                <= self.requested_wall_ns
-                + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS
+                <= self.requested_wall_ns + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS
             )
             or isinstance(self.proposed_risk_size_bps, bool)
             or not isinstance(self.proposed_risk_size_bps, int)
@@ -353,8 +341,7 @@ class Round74AIReviewRequest:
             or feature_mean != self.feature_mean
             or feature_std != self.feature_standard_deviation
             or payoff != self.payoff_quantiles_bps
-            or adverse
-            != self.maximum_adverse_excursion_quantiles_bps
+            or adverse != self.maximum_adverse_excursion_quantiles_bps
         ):
             raise ValueError("Round 74 AI review request differs")
         _require_sha256(self.pretest_policy_sha256, "pretest policy")
@@ -375,9 +362,7 @@ class Round74AIReviewRequest:
             "schema_version": self.schema_version,
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "sample_sha256": self.sample_sha256,
-            "deterministic_risk_state_sha256": (
-                self.deterministic_risk_state_sha256
-            ),
+            "deterministic_risk_state_sha256": (self.deterministic_risk_state_sha256),
             "asset_slot": self.asset_slot,
             "side": self.side,
             "horizon_seconds": self.horizon_seconds,
@@ -386,19 +371,13 @@ class Round74AIReviewRequest:
             "proposed_risk_size_bps": self.proposed_risk_size_bps,
             "feature_last": list(self.feature_last),
             "feature_mean": list(self.feature_mean),
-            "feature_standard_deviation": list(
-                self.feature_standard_deviation
-            ),
+            "feature_standard_deviation": list(self.feature_standard_deviation),
             "payoff_quantiles_bps": list(self.payoff_quantiles_bps),
             "maximum_adverse_excursion_quantiles_bps": list(
                 self.maximum_adverse_excursion_quantiles_bps
             ),
-            "positive_payoff_probability": (
-                self.positive_payoff_probability
-            ),
-            "adverse_selection_probability": (
-                self.adverse_selection_probability
-            ),
+            "positive_payoff_probability": (self.positive_payoff_probability),
+            "adverse_selection_probability": (self.adverse_selection_probability),
             "regime_unpredictability_probability": (
                 self.regime_unpredictability_probability
             ),
@@ -421,9 +400,7 @@ class Round74AIReviewRequest:
             raise ValueError("Round 74 AI review request digest differs")
         try:
             selected = cls(
-                pretest_policy_sha256=str(
-                    payload["pretest_policy_sha256"]
-                ),
+                pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
                 sample_sha256=str(payload["sample_sha256"]),
                 deterministic_risk_state_sha256=str(
                     payload["deterministic_risk_state_sha256"]
@@ -433,28 +410,18 @@ class Round74AIReviewRequest:
                 horizon_seconds=int(payload["horizon_seconds"]),
                 requested_wall_ns=int(payload["requested_wall_ns"]),
                 expires_wall_ns=int(payload["expires_wall_ns"]),
-                proposed_risk_size_bps=int(
-                    payload["proposed_risk_size_bps"]
-                ),
-                feature_last=tuple(
-                    float(item) for item in payload["feature_last"]
-                ),
-                feature_mean=tuple(
-                    float(item) for item in payload["feature_mean"]
-                ),
+                proposed_risk_size_bps=int(payload["proposed_risk_size_bps"]),
+                feature_last=tuple(float(item) for item in payload["feature_last"]),
+                feature_mean=tuple(float(item) for item in payload["feature_mean"]),
                 feature_standard_deviation=tuple(
-                    float(item)
-                    for item in payload["feature_standard_deviation"]
+                    float(item) for item in payload["feature_standard_deviation"]
                 ),
                 payoff_quantiles_bps=tuple(
-                    float(item)
-                    for item in payload["payoff_quantiles_bps"]
+                    float(item) for item in payload["payoff_quantiles_bps"]
                 ),
                 maximum_adverse_excursion_quantiles_bps=tuple(
                     float(item)
-                    for item in payload[
-                        "maximum_adverse_excursion_quantiles_bps"
-                    ]
+                    for item in payload["maximum_adverse_excursion_quantiles_bps"]
                 ),
                 positive_payoff_probability=float(
                     payload["positive_payoff_probability"]
@@ -468,9 +435,7 @@ class Round74AIReviewRequest:
                 schema_version=str(payload["schema_version"]),
             )
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(
-                "Round 74 AI review request payload differs"
-            ) from exc
+            raise ValueError("Round 74 AI review request payload differs") from exc
         if selected.as_dict(include_sha256=False) != payload:
             raise ValueError("Round 74 AI review request policy differs")
         selected.validate()
@@ -494,17 +459,13 @@ class Round74AIReviewRequest:
             "side": self.side,
             "horizon_seconds": self.horizon_seconds,
             "proposed_risk_size_bps": self.proposed_risk_size_bps,
-            "feature_contract_sha256": (
-                ROUND74_EVENT_FEATURE_NAMES_SHA256
-            ),
+            "feature_contract_sha256": (ROUND74_EVENT_FEATURE_NAMES_SHA256),
             "anonymized_feature_names_sha256": _canonical_sha256(
                 list(_AI_PROMPT_FEATURE_NAMES)
             ),
             "standardized_feature_summary": feature_summary,
             "summary_value_order": ["last", "mean", "standard_deviation"],
-            "payoff_quantile_levels": list(
-                ROUND74_EVENT_PAYOFF_QUANTILES
-            ),
+            "payoff_quantile_levels": list(ROUND74_EVENT_PAYOFF_QUANTILES),
             "payoff_quantiles_bps": [
                 _rounded(value, 6) for value in self.payoff_quantiles_bps
             ],
@@ -552,15 +513,13 @@ class Round74AIReviewDecision:
             or not self.reason_codes
             or tuple(sorted(set(self.reason_codes))) != self.reason_codes
             or any(
-                code not in ROUND74_AI_REVIEW_REASON_CODES
-                for code in self.reason_codes
+                code not in ROUND74_AI_REVIEW_REASON_CODES for code in self.reason_codes
             )
         ):
             raise ValueError("Round 74 AI review decision differs")
         if self.verdict == "allow_unchanged":
-            valid = (
-                self.size_multiplier_bps == 10_000
-                and self.reason_codes == ("none",)
+            valid = self.size_multiplier_bps == 10_000 and self.reason_codes == (
+                "none",
             )
         elif self.verdict == "reduce":
             valid = (
@@ -568,10 +527,7 @@ class Round74AIReviewDecision:
                 and "none" not in self.reason_codes
             )
         else:
-            valid = (
-                self.size_multiplier_bps == 0
-                and "none" not in self.reason_codes
-            )
+            valid = self.size_multiplier_bps == 0 and "none" not in self.reason_codes
         if not valid:
             raise ValueError("Round 74 AI verdict semantics differ")
 
@@ -639,7 +595,7 @@ def build_round74_ai_review_prompt(
         "reason_codes. schema_version must be "
         f"{ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION}. verdict must be one of "
         "allow_unchanged, reduce, veto, abstain. allow_unchanged requires "
-        "size_multiplier_bps=10000 and reason_codes=[\"none\"]. reduce "
+        'size_multiplier_bps=10000 and reason_codes=["none"]. reduce '
         "requires 1..9999 and one or more sorted reason codes other than "
         "none. veto or abstain requires 0. Valid reason codes are: "
         + ", ".join(ROUND74_AI_REVIEW_REASON_CODES)
@@ -672,11 +628,7 @@ def apply_round74_ai_risk_modifier(
     ):
         return 0
     decision.validate()
-    return (
-        request.proposed_risk_size_bps
-        * decision.size_multiplier_bps
-        // 10_000
-    )
+    return request.proposed_risk_size_bps * decision.size_multiplier_bps // 10_000
 
 
 __all__ = [

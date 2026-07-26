@@ -1,0 +1,353 @@
+from __future__ import annotations
+
+import json
+import subprocess
+from typing import Any
+
+import pytest
+
+from simple_ai_trading.ai_runtime import (
+    AICapabilityReport,
+    AIRuntimeConfig,
+    OllamaResidencyReport,
+)
+from simple_ai_trading.impact_absorption_ai_protocol import (
+    Round74AIModelManifest,
+    Round74AIReviewDecision,
+    Round74AIReviewRequest,
+)
+from simple_ai_trading.impact_absorption_ai_runtime import (
+    Round74AIRuntimeConfig,
+    review_round74_ai_candidate,
+)
+from simple_ai_trading.impact_absorption_ai_worker import (
+    Round74AIWorkerEnvelope,
+    Round74AIWorkerResult,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+)
+
+
+WALL_NS = 1_800_000_000_000_000_000
+MODEL_DIGEST = "d" * 64
+METADATA_DIGEST = "e" * 64
+
+
+def _manifest() -> Round74AIModelManifest:
+    return Round74AIModelManifest(
+        model_id="TheFinAI/Fino1-8B",
+        model_revision="a" * 40,
+        model_artifact_sha256=MODEL_DIGEST,
+        model_artifact_kind="ollama_manifest",
+        parameter_count=8_000_000_000,
+        quantization="q6_k",
+        runtime_backend="llama.cpp-vulkan",
+        runtime_version="0.12.3",
+        license_id="llama3.1",
+        model_card_url="https://huggingface.co/TheFinAI/Fino1-8B",
+        minimum_vram_bytes=8 * 1024**3,
+        finance_specialized=True,
+    )
+
+
+def _request() -> Round74AIReviewRequest:
+    count = len(ROUND74_EVENT_FEATURE_NAMES)
+    return Round74AIReviewRequest(
+        pretest_policy_sha256="1" * 64,
+        sample_sha256="2" * 64,
+        deterministic_risk_state_sha256="3" * 64,
+        asset_slot=0,
+        side="long",
+        horizon_seconds=30,
+        requested_wall_ns=WALL_NS,
+        expires_wall_ns=WALL_NS + 20_000_000_000,
+        proposed_risk_size_bps=2_500,
+        feature_last=tuple(0.0 for _ in range(count)),
+        feature_mean=tuple(0.1 for _ in range(count)),
+        feature_standard_deviation=tuple(0.2 for _ in range(count)),
+        payoff_quantiles_bps=(-5.0, -1.0, 2.0, 4.0, 7.0),
+        maximum_adverse_excursion_quantiles_bps=(
+            1.0,
+            2.0,
+            3.0,
+            5.0,
+            8.0,
+        ),
+        positive_payoff_probability=0.61,
+        adverse_selection_probability=0.27,
+        regime_unpredictability_probability=0.18,
+    )
+
+
+def _capability(ok: bool = True) -> AICapabilityReport:
+    return AICapabilityReport(
+        ok=ok,
+        provider="ollama",
+        model="fino1:8b",
+        gpu_vendor="amd",
+        compute_backend_requested="directml",
+        compute_backend_kind="directml",
+        compute_backend_device="AMD Radeon RX 9070 XT",
+        compute_backend_reason="",
+        free_vram_gb=10.0,
+        free_ram_gb=20.0 if ok else 8.0,
+        model_parameters_b=8.0,
+        messages=() if ok else ("free system RAM is below required",),
+        warnings=(),
+        provider_available=True,
+        model_available=True,
+        model_local=True,
+    )
+
+
+def _worker_result(envelope: Round74AIWorkerEnvelope) -> Round74AIWorkerResult:
+    return Round74AIWorkerResult(
+        envelope_sha256=envelope.envelope_sha256,
+        manifest_sha256=envelope.model_manifest.manifest_sha256,
+        request_sha256=envelope.review_request.request_sha256,
+        model_name=envelope.model_name,
+        model_digest=MODEL_DIGEST,
+        model_metadata_sha256=METADATA_DIGEST,
+        system_prompt_sha256="4" * 64,
+        user_prompt_sha256="5" * 64,
+        raw_response_sha256="6" * 64,
+        decision=Round74AIReviewDecision(
+            verdict="reduce",
+            size_multiplier_bps=5_000,
+            confidence_bps=7_500,
+            reason_codes=("forecast_uncertainty",),
+        ),
+        residency=OllamaResidencyReport(
+            requested_model=envelope.model_name,
+            status="gpu_resident",
+            loaded_model=envelope.model_name,
+            digest=MODEL_DIGEST,
+            size_bytes=1_000,
+            size_vram_bytes=1_000,
+            vram_to_model_ratio=1.0,
+        ),
+        prompt_eval_count=200,
+        eval_count=40,
+        total_duration_ns=1_000,
+        load_duration_ns=100,
+        prompt_eval_duration_ns=300,
+        eval_duration_ns=600,
+    )
+
+
+class _Process:
+    def __init__(
+        self,
+        output: str | None = None,
+        *,
+        returncode: int = 0,
+        timeout: bool = False,
+    ) -> None:
+        self.output = output
+        self.returncode = returncode
+        self.timeout = timeout
+        self.terminated = False
+        self.killed = False
+
+    def communicate(
+        self,
+        input: str | None = None,
+        timeout: float | None = None,
+    ) -> tuple[str, str]:
+        if self.timeout and not self.terminated and not self.killed:
+            raise subprocess.TimeoutExpired("worker", timeout)
+        if self.timeout:
+            return "", ""
+        if self.output is not None:
+            return self.output, ""
+        assert input is not None
+        envelope = Round74AIWorkerEnvelope.from_dict(json.loads(input))
+        return json.dumps(_worker_result(envelope).as_dict()), ""
+
+    def terminate(self) -> None:
+        self.terminated = True
+
+    def kill(self) -> None:
+        self.killed = True
+
+
+def _factory(process: _Process) -> Any:
+    def create(*_args: object, **_kwargs: object) -> _Process:
+        return process
+
+    return create
+
+
+def _review(
+    *,
+    process: _Process,
+    capability_ok: bool = True,
+    deterministic_gate: bool = True,
+    wall_times: list[int] | None = None,
+):
+    selected_times = iter(
+        wall_times
+        or [
+            WALL_NS + 1,
+            WALL_NS + 2,
+            WALL_NS + 3,
+        ]
+    )
+    return review_round74_ai_candidate(
+        Round74AIRuntimeConfig(
+            model_name="fino1:8b",
+            timeout_seconds=10.0,
+        ),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=deterministic_gate,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(capability_ok),
+        provenance_resolver=lambda *_: (
+            MODEL_DIGEST,
+            METADATA_DIGEST,
+        ),
+        popen_factory=_factory(process),
+        worker_command=("python", "-m", "isolated-worker"),
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: next(selected_times),
+    )
+
+
+def test_runtime_accepts_bound_worker_and_only_reduces_risk() -> None:
+    outcome = _review(process=_Process())
+
+    assert outcome.status == "accepted"
+    assert outcome.approved_risk_size_bps == 1_250
+    assert outcome.worker_result is not None
+    assert outcome.as_dict()["remote_inference_used"] is False
+    assert outcome.as_dict()["execution_authority"] is False
+    assert outcome.as_dict()["protective_exit_path_blocked"] is False
+
+
+def test_runtime_blocks_before_spawn_when_capability_or_risk_gate_fails() -> None:
+    capability_process = _Process()
+    outcome = _review(
+        process=capability_process,
+        capability_ok=False,
+    )
+    assert outcome.status == "blocked_capability"
+    assert outcome.approved_risk_size_bps == 0
+    assert capability_process.output is None
+
+    gate_process = _Process()
+    outcome = _review(
+        process=gate_process,
+        deterministic_gate=False,
+    )
+    assert outcome.status == "blocked_deterministic_gate"
+    assert outcome.approved_risk_size_bps == 0
+
+
+def test_runtime_terminates_timed_out_worker_and_fails_closed() -> None:
+    process = _Process(timeout=True)
+    outcome = _review(process=process)
+
+    assert outcome.status == "worker_timeout"
+    assert outcome.approved_risk_size_bps == 0
+    assert process.terminated is True
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "{}",
+        '{"result_sha256":"a","result_sha256":"b"}',
+        "not-json",
+    ],
+)
+def test_runtime_rejects_malformed_worker_output(output: str) -> None:
+    outcome = _review(process=_Process(output=output))
+
+    assert outcome.status == "worker_output_invalid"
+    assert outcome.approved_risk_size_bps == 0
+    assert outcome.worker_result is None
+
+
+def test_runtime_rejects_provenance_drift_without_spawning() -> None:
+    spawned = False
+
+    def spawn(*_args: object, **_kwargs: object) -> _Process:
+        nonlocal spawned
+        spawned = True
+        return _Process()
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(),
+        provenance_resolver=lambda *_: ("f" * 64, METADATA_DIGEST),
+        popen_factory=spawn,
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "blocked_provenance"
+    assert outcome.approved_risk_size_bps == 0
+    assert spawned is False
+
+
+def test_runtime_rechecks_request_expiry_after_worker() -> None:
+    outcome = _review(
+        process=_Process(),
+        wall_times=[
+            WALL_NS + 1,
+            WALL_NS + 2,
+            WALL_NS + 20_000_000_001,
+        ],
+    )
+
+    assert outcome.status == "blocked_expired"
+    assert outcome.approved_risk_size_bps == 0
+    assert outcome.worker_result is None
+
+
+def test_runtime_capability_policy_requires_declared_headroom() -> None:
+    captured: list[AIRuntimeConfig] = []
+
+    def detect(config: AIRuntimeConfig) -> AICapabilityReport:
+        captured.append(config)
+        return _capability(False)
+
+    review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=detect,
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert captured[0].require_gpu is False
+    assert captured[0].min_free_ram_gb == 16.0
+    assert captured[0].min_free_vram_gb == 8.0
+    assert captured[0].allow_paper_fallback is False
+
+
+def test_runtime_rejects_non_loopback_or_relaxed_resource_policy() -> None:
+    with pytest.raises(ValueError, match="configuration differs"):
+        Round74AIRuntimeConfig(
+            model_name="fino1:8b",
+            endpoint="http://localhost:11434",
+        ).validate()
+    with pytest.raises(ValueError, match="configuration differs"):
+        Round74AIRuntimeConfig(
+            model_name="fino1:8b",
+            minimum_free_ram_gb=15.9,
+        ).validate()
+    with pytest.raises(ValueError, match="configuration differs"):
+        Round74AIRuntimeConfig(
+            model_name="fino1:8b",
+            minimum_free_vram_gb=7.9,
+        ).validate()
