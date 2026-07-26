@@ -226,6 +226,9 @@ def test_event_sequence_preserves_subsecond_order_and_financial_signs() -> None:
     ]
     assert len({item.received_wall_ns // 1_000_000_000 for item in (ticker, trade, depth)}) == 1
     assert _feature(trade, "event_is_aggregate_trade") == 1.0
+    assert _feature(trade, "symbol_is_btcusdt") == 1.0
+    assert _feature(trade, "symbol_is_ethusdt") == 0.0
+    assert _feature(trade, "symbol_is_solusdt") == 0.0
     assert _feature(trade, "trade_signed_quote_scaled") > 0.0
     assert _feature(trade, "trade_absolute_quote_scaled") > 0.0
     assert _feature(depth, "depth_signed_pressure_levels_1_5_scaled") > 0.0

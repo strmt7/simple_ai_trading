@@ -12,6 +12,7 @@ torch = pytest.importorskip("torch")
 
 from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     ROUND74_EVENT_MODEL_CANDIDATES,
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
     Round74CausalEventTCN,
@@ -26,12 +27,18 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 
 def _inputs(batch_size: int = 3, sequence_length: int = 32) -> torch.Tensor:
     generator = torch.Generator().manual_seed(7402)
-    return torch.randn(
+    values = torch.randn(
         batch_size,
         sequence_length,
         len(ROUND74_EVENT_FEATURE_NAMES),
         generator=generator,
     )
+    values[:, :, :8] = 0.0
+    for batch_index in range(batch_size):
+        for event_index in range(sequence_length):
+            values[batch_index, event_index, event_index % 5] = 1.0
+            values[batch_index, event_index, 5 + batch_index % 3] = 1.0
+    return values
 
 
 @pytest.mark.parametrize(
@@ -47,14 +54,19 @@ def test_round74_candidate_outputs_are_finite_and_monotone(model: object) -> Non
 
     assert output.payoff_quantiles_bps.shape == (
         3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
         len(ROUND74_EVENT_PAYOFF_SIDES),
         len(ROUND74_EVENT_PAYOFF_QUANTILES),
     )
-    differences = (
-        output.payoff_quantiles_bps[:, :, 1:]
-        - output.payoff_quantiles_bps[:, :, :-1]
+    for quantiles in (
+        output.payoff_quantiles_bps,
+        output.maximum_adverse_excursion_quantiles_bps,
+    ):
+        differences = quantiles[..., 1:] - quantiles[..., :-1]
+        assert bool((differences >= 0.0).all())
+    assert bool(
+        (output.maximum_adverse_excursion_quantiles_bps >= 0.0).all()
     )
-    assert bool((differences >= 0.0).all())
 
 
 def test_round74_tcn_is_strictly_causal() -> None:
@@ -77,13 +89,34 @@ def test_round74_tcn_is_strictly_causal() -> None:
 def test_round74_loss_is_finite_and_backpropagates() -> None:
     model = Round74CausalEventTCN(dropout=0.0)
     output = model(_inputs())
-    payoff = torch.tensor(((1.0, -2.0), (0.5, 0.2), (-0.7, 1.3)))
-    adverse = torch.tensor(((0.0, 1.0), (0.0, 0.0), (1.0, 0.0)))
-    unpredictable = torch.tensor(((0.0,), (1.0,), (0.0,)))
+    generator = torch.Generator().manual_seed(7403)
+    action_shape = (
+        3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    payoff = torch.randn(action_shape, generator=generator)
+    maximum_adverse_excursion = torch.rand(
+        action_shape,
+        generator=generator,
+    )
+    adverse = torch.randint(
+        0,
+        2,
+        action_shape,
+        generator=generator,
+    ).float()
+    unpredictable = torch.randint(
+        0,
+        2,
+        (3, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)),
+        generator=generator,
+    ).float()
 
     loss, components = round74_event_model_loss(
         output,
         net_payoff_bps=payoff,
+        maximum_adverse_excursion_bps=maximum_adverse_excursion,
         adverse_selection=adverse,
         regime_unpredictable=unpredictable,
     )
@@ -91,7 +124,8 @@ def test_round74_loss_is_finite_and_backpropagates() -> None:
 
     assert bool(torch.isfinite(loss))
     assert set(components) == {
-        "pinball",
+        "payoff_pinball",
+        "maximum_adverse_excursion_pinball",
         "positive_bce",
         "adverse_bce",
         "unpredictability_bce",
@@ -105,23 +139,38 @@ def test_round74_loss_is_finite_and_backpropagates() -> None:
 
 
 @pytest.mark.parametrize(
-    ("target_name", "target"),
+    ("target_name", "invalid_kind"),
     (
-        ("adverse_selection", torch.tensor(((0.0, 1.1),) * 3)),
-        ("regime_unpredictable", torch.tensor(((0.0, 0.0),) * 3)),
+        ("maximum_adverse_excursion_bps", "negative"),
+        ("adverse_selection", "outside_probability"),
+        ("regime_unpredictable", "wrong_shape"),
     ),
 )
 def test_round74_loss_rejects_invalid_targets(
     target_name: str,
-    target: torch.Tensor,
+    invalid_kind: str,
 ) -> None:
     output = Round74EventPoolingMLP(dropout=0.0)(_inputs())
+    action_shape = (
+        3,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
     arguments = {
-        "net_payoff_bps": torch.zeros(3, 2),
-        "adverse_selection": torch.zeros(3, 2),
-        "regime_unpredictable": torch.zeros(3, 1),
+        "net_payoff_bps": torch.zeros(action_shape),
+        "maximum_adverse_excursion_bps": torch.zeros(action_shape),
+        "adverse_selection": torch.zeros(action_shape),
+        "regime_unpredictable": torch.zeros(
+            3,
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        ),
     }
-    arguments[target_name] = target
+    if invalid_kind == "negative":
+        arguments[target_name][0, 0, 0] = -1.0
+    elif invalid_kind == "outside_probability":
+        arguments[target_name][0, 0, 0] = 1.1
+    else:
+        arguments[target_name] = torch.zeros(action_shape)
 
     with pytest.raises(ValueError):
         round74_event_model_loss(output, **arguments)
