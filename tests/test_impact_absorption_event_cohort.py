@@ -48,6 +48,7 @@ def _canonical_sha256(value: object) -> str:
 def _plan() -> Round74EventCohortPlan:
     return Round74EventCohortPlan(
         scheduled_start_wall_ns=2_000_000_000_000_000_000,
+        implementation_git_commit="c" * 40,
         training_slots=2,
         tuning_slots=1,
         test_slots=1,
@@ -171,6 +172,7 @@ def test_plan_is_compact_deterministic_and_strictly_loadable() -> None:
 
     assert loaded == plan
     assert loaded.plan_sha256 == payload["plan_sha256"]
+    assert loaded.implementation_git_commit == "c" * 40
     assert loaded.total_slots == 4
     assert [loaded.slot(index).role for index in range(4)] == [
         "training",
