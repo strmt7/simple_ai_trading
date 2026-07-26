@@ -33,7 +33,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v2"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v3"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v2"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS = 300_000_000_000
@@ -377,6 +377,7 @@ class Round74EventTrainingBatch:
     anchor_index: np.ndarray
     sample_sha256: tuple[str, ...]
     target_context_sha256: tuple[str, ...]
+    test_access_sha256: tuple[str, ...]
     feature_values: np.ndarray
     actual_entry_monotonic_ns: np.ndarray
     actual_exit_monotonic_ns: np.ndarray
@@ -435,12 +436,24 @@ class Round74EventTrainingBatch:
             or len(self.run_id) != self.rows
             or len(self.symbol) != self.rows
             or len(self.target_context_sha256) != self.rows
+            or len(self.test_access_sha256) != self.rows
             or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
             or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
             or any(_SHA256.fullmatch(value) is None for value in self.sample_sha256)
             or any(
                 _SHA256.fullmatch(value) is None for value in self.target_context_sha256
             )
+            or (
+                self.role == "test"
+                and (
+                    len(set(self.test_access_sha256)) != 1
+                    or any(
+                        _SHA256.fullmatch(value) is None
+                        for value in self.test_access_sha256
+                    )
+                )
+            )
+            or (self.role != "test" and any(self.test_access_sha256))
             or _SHA256.fullmatch(self.partition_sha256) is None
             or _SHA256.fullmatch(self.scaler_sha256) is None
             or self.feature_values.shape
@@ -529,6 +542,7 @@ class Round74EventTrainingBatch:
             "symbol": list(self.symbol),
             "sample_sha256": list(self.sample_sha256),
             "target_context_sha256": list(self.target_context_sha256),
+            "test_access_sha256": list(self.test_access_sha256),
         }
         digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
         for value in (
@@ -690,6 +704,9 @@ def build_round74_event_training_batch(
         ),
         sample_sha256=tuple(sample.sample_sha256 for sample in selected),
         target_context_sha256=tuple(contexts),
+        test_access_sha256=tuple(
+            sample.test_access_sha256 for sample in selected
+        ),
         feature_values=_readonly(feature_values),
         actual_entry_monotonic_ns=_readonly(actual_entry),
         actual_exit_monotonic_ns=_readonly(actual_exit),
