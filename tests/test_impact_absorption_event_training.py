@@ -75,6 +75,10 @@ def _batch(
     ).astype(np.float32)
     eligibility = np.ones(action_shape, dtype=np.float32)
     eligibility[0, 0, 0] = 0.0
+    actual_entry = np.full(action_shape, 10, dtype=np.int64)
+    actual_exit = np.full(action_shape, 20, dtype=np.int64)
+    actual_entry[0, 0, 0] = -1
+    actual_exit[0, 0, 0] = -1
     payoff[0, 0, 0] = 0.0
     adverse_excursion[0, 0, 0] = 0.0
     adverse[0, 0, 0] = 0.0
@@ -93,6 +97,8 @@ def _batch(
         sample_sha256=tuple(f"{identity * 100 + row:064x}" for row in range(rows)),
         target_context_sha256=tuple("3" * 64 for _ in range(rows)),
         feature_values=_readonly(features),
+        actual_entry_monotonic_ns=_readonly(actual_entry),
+        actual_exit_monotonic_ns=_readonly(actual_exit),
         net_payoff_bps=_readonly(payoff),
         maximum_adverse_excursion_bps=_readonly(adverse_excursion),
         adverse_selection=_readonly(adverse),

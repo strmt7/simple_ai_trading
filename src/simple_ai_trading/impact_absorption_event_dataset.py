@@ -33,7 +33,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v1"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v2"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v2"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS = 300_000_000_000
@@ -378,6 +378,8 @@ class Round74EventTrainingBatch:
     sample_sha256: tuple[str, ...]
     target_context_sha256: tuple[str, ...]
     feature_values: np.ndarray
+    actual_entry_monotonic_ns: np.ndarray
+    actual_exit_monotonic_ns: np.ndarray
     net_payoff_bps: np.ndarray
     maximum_adverse_excursion_bps: np.ndarray
     adverse_selection: np.ndarray
@@ -405,6 +407,10 @@ class Round74EventTrainingBatch:
             self.maximum_adverse_excursion_bps,
             self.adverse_selection,
             self.action_eligibility,
+        )
+        action_timing_arrays = (
+            self.actual_entry_monotonic_ns,
+            self.actual_exit_monotonic_ns,
         )
         regime_arrays = (
             self.regime_unpredictability,
@@ -448,6 +454,12 @@ class Round74EventTrainingBatch:
             or any(value.flags.writeable for value in identity_arrays)
             or any(np.any(value < 0) for value in identity_arrays)
             or any(value.shape != action_shape for value in action_arrays)
+            or any(
+                value.shape != action_shape
+                or value.dtype != np.int64
+                or value.flags.writeable
+                for value in action_timing_arrays
+            )
             or any(value.shape != regime_shape for value in regime_arrays)
             or any(value.dtype != np.float32 for value in model_arrays)
             or any(value.flags.writeable for value in model_arrays)
@@ -490,6 +502,18 @@ class Round74EventTrainingBatch:
                 )
             )
             or np.any(self.regime_unpredictability[regime_mask == 0.0] != 0.0)
+            or any(
+                np.any(value[action_mask == 0.0] != -1)
+                for value in action_timing_arrays
+            )
+            or any(
+                np.any(value[action_mask == 1.0] < 0)
+                for value in action_timing_arrays
+            )
+            or np.any(
+                self.actual_exit_monotonic_ns[action_mask == 1.0]
+                < self.actual_entry_monotonic_ns[action_mask == 1.0]
+            )
         ):
             raise ValueError("Round 74 event training batch targets differ")
 
@@ -514,6 +538,8 @@ class Round74EventTrainingBatch:
             self.endpoint_message_index,
             self.anchor_index,
             self.feature_values,
+            self.actual_entry_monotonic_ns,
+            self.actual_exit_monotonic_ns,
             self.net_payoff_bps,
             self.maximum_adverse_excursion_bps,
             self.adverse_selection,
@@ -556,6 +582,8 @@ def build_round74_event_training_batch(
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
     )
     payoff = np.zeros(action_shape, dtype=np.float32)
+    actual_entry = np.full(action_shape, -1, dtype=np.int64)
+    actual_exit = np.full(action_shape, -1, dtype=np.int64)
     adverse_excursion = np.zeros(action_shape, dtype=np.float32)
     adverse_selection = np.zeros(action_shape, dtype=np.float32)
     unpredictability = np.zeros(regime_shape, dtype=np.float32)
@@ -578,11 +606,23 @@ def build_round74_event_training_batch(
             )
             side_index = ROUND74_EVENT_PAYOFF_SIDES.index(outcome.side)
             assert (
-                outcome.net_payoff_bps is not None
+                outcome.actual_entry_monotonic_ns is not None
+                and outcome.actual_exit_monotonic_ns is not None
+                and outcome.net_payoff_bps is not None
                 and outcome.maximum_adverse_excursion_bps is not None
                 and outcome.adverse_selection is not None
                 and outcome.regime_unpredictability is not None
             )
+            actual_entry[
+                sample_index,
+                horizon_index,
+                side_index,
+            ] = outcome.actual_entry_monotonic_ns
+            actual_exit[
+                sample_index,
+                horizon_index,
+                side_index,
+            ] = outcome.actual_exit_monotonic_ns
             payoff[sample_index, horizon_index, side_index] = outcome.net_payoff_bps
             adverse_excursion[sample_index, horizon_index, side_index] = (
                 outcome.maximum_adverse_excursion_bps
@@ -651,6 +691,8 @@ def build_round74_event_training_batch(
         sample_sha256=tuple(sample.sample_sha256 for sample in selected),
         target_context_sha256=tuple(contexts),
         feature_values=_readonly(feature_values),
+        actual_entry_monotonic_ns=_readonly(actual_entry),
+        actual_exit_monotonic_ns=_readonly(actual_exit),
         net_payoff_bps=_readonly(payoff),
         maximum_adverse_excursion_bps=_readonly(adverse_excursion),
         adverse_selection=_readonly(adverse_selection),
