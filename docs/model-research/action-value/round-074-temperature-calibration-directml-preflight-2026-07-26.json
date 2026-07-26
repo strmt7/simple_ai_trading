@@ -1,0 +1,57 @@
+{
+  "schema_version": "round-074-temperature-calibration-directml-preflight-v1",
+  "artifact_sha256": "0fe8cd9eedc06a962efb4700ba0c87e508ca06a813b85800f421d88d17e9ca58",
+  "round": 74,
+  "executed_at_utc": "2026-07-26T23:13:24Z",
+  "execution_git_commit": "19db39403fc8b6a64d60c80dafd179b20eca9a41",
+  "source_binding": {
+    "path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+    "sha256": "6bf00f6c93f57f9192dbfe65fdd843f8df8da5104a56bfd45117f64f6ad2ae38",
+    "tuning_subpartition_schema_version": "round-074-tuning-subpartition-v1",
+    "temperature_calibration_schema_version": "round-074-temperature-calibration-v1"
+  },
+  "backend": {
+    "requested": "directml",
+    "kind": "directml",
+    "device": "privateuseone:0",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "warning_count": 0,
+    "cpu_fallback_warning_count": 0
+  },
+  "input_contract": {
+    "synthetic_logits_and_binary_labels": true,
+    "positive_payoff_observations": 6,
+    "adverse_selection_observations": 6,
+    "regime_unpredictability_observations": 4,
+    "both_classes_present_per_head": true,
+    "real_market_features_used": false,
+    "real_market_targets_used": false,
+    "sealed_test_accessed": false
+  },
+  "verification": {
+    "candidate_temperature_count": 257,
+    "temperature_minimum": 0.05,
+    "temperature_maximum": 20.0,
+    "positive_payoff_temperature": 1.4886515140533447,
+    "adverse_selection_temperature": 1.4886515140533447,
+    "regime_unpredictability_temperature": 2.216083288192749,
+    "calibration_sha256": "acc03fd7b82ee22a65b24bbe314558ed192c9d1c2c4f9b296e46a39a54d94725",
+    "canonical_stdout_sha256": "6177af401c21c50e05143c4977755dd2c24028b265581a7f894a9fb7dafcef96",
+    "all_three_temperature_searches_completed": true,
+    "hidden_cpu_fallback_detected": false
+  },
+  "interpretation": {
+    "directml_calibration_compute_path_verified": true,
+    "calibration_quality_established": false,
+    "representative_market_calibration_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

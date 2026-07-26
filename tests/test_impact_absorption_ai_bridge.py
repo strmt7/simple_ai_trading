@@ -8,6 +8,10 @@ import torch
 from simple_ai_trading.impact_absorption_ai_bridge import (
     build_round74_ai_review_request,
 )
+from simple_ai_trading.impact_absorption_event_calibration import (
+    Round74ProbabilityCalibration,
+    Round74TemperatureFit,
+)
 from simple_ai_trading.impact_absorption_event_model import (
     Round74EventModelOutput,
 )
@@ -77,6 +81,34 @@ def _output() -> Round74EventModelOutput:
     )
 
 
+def _fit(temperature: float) -> Round74TemperatureFit:
+    return Round74TemperatureFit(
+        temperature=temperature,
+        eligible_observations=2,
+        positive_observations=1,
+        uncalibrated_nll=0.5,
+        calibrated_nll=0.5,
+        uncalibrated_brier=0.2,
+        calibrated_brier=0.2,
+        uncalibrated_ece=0.1,
+        calibrated_ece=0.1,
+    )
+
+
+def _calibration() -> Round74ProbabilityCalibration:
+    return Round74ProbabilityCalibration(
+        pretest_policy_sha256="1" * 64,
+        tuning_subpartition_sha256="4" * 64,
+        calibration_source_sha256="5" * 64,
+        calibration_data_sha256="6" * 64,
+        positive_payoff=_fit(2.0),
+        adverse_selection=_fit(3.0),
+        regime_unpredictability=_fit(4.0),
+        backend_kind="cpu",
+        backend_device="test",
+    )
+
+
 def _build(**changes: object):
     values: dict[str, object] = {
         "model_output": _output(),
@@ -88,6 +120,7 @@ def _build(**changes: object):
         "pretest_policy_sha256": "1" * 64,
         "sample_sha256": "2" * 64,
         "deterministic_risk_state_sha256": "3" * 64,
+        "probability_calibration": _calibration(),
         "requested_wall_ns": WALL_NS,
         "expires_wall_ns": WALL_NS + 10_000_000_000,
         "proposed_risk_size_bps": 2_500,
@@ -111,8 +144,9 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
         8.0,
     )
     assert request.positive_payoff_probability == 0.5
-    assert request.adverse_selection_probability == pytest.approx(0.26894143)
-    assert request.regime_unpredictability_probability == pytest.approx(0.11920292)
+    assert request.adverse_selection_probability == pytest.approx(0.4174298)
+    assert request.regime_unpredictability_probability == pytest.approx(0.37754067)
+    assert request.probability_calibration_sha256 == (_calibration().calibration_sha256)
     assert (
         request.feature_last[ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_btcusdt")]
         == 1.0
@@ -150,6 +184,15 @@ def test_bridge_rejects_invalid_selection(
 def test_bridge_rejects_asset_identity_mismatch() -> None:
     with pytest.raises(ValueError, match="asset identity differs"):
         _build(asset_slot=1)
+
+
+def test_bridge_rejects_calibration_from_another_policy() -> None:
+    calibration = replace(
+        _calibration(),
+        pretest_policy_sha256="9" * 64,
+    )
+    with pytest.raises(ValueError, match="calibration policy differs"):
+        _build(probability_calibration=calibration)
 
 
 def test_bridge_rejects_nonfinite_features_or_predictions() -> None:

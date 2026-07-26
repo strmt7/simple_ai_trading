@@ -24,7 +24,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
-ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v1"
+ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v2"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v1"
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
@@ -256,6 +256,7 @@ class Round74AIReviewRequest:
     """An anonymized, causal request for veto-only local-AI review."""
 
     pretest_policy_sha256: str
+    probability_calibration_sha256: str
     sample_sha256: str
     deterministic_risk_state_sha256: str
     asset_slot: int
@@ -345,6 +346,10 @@ class Round74AIReviewRequest:
         ):
             raise ValueError("Round 74 AI review request differs")
         _require_sha256(self.pretest_policy_sha256, "pretest policy")
+        _require_sha256(
+            self.probability_calibration_sha256,
+            "probability calibration",
+        )
         _require_sha256(self.sample_sha256, "sample")
         _require_sha256(
             self.deterministic_risk_state_sha256,
@@ -361,6 +366,7 @@ class Round74AIReviewRequest:
         payload: dict[str, object] = {
             "schema_version": self.schema_version,
             "pretest_policy_sha256": self.pretest_policy_sha256,
+            "probability_calibration_sha256": (self.probability_calibration_sha256),
             "sample_sha256": self.sample_sha256,
             "deterministic_risk_state_sha256": (self.deterministic_risk_state_sha256),
             "asset_slot": self.asset_slot,
@@ -401,6 +407,9 @@ class Round74AIReviewRequest:
         try:
             selected = cls(
                 pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
+                probability_calibration_sha256=str(
+                    payload["probability_calibration_sha256"]
+                ),
                 sample_sha256=str(payload["sample_sha256"]),
                 deterministic_risk_state_sha256=str(
                     payload["deterministic_risk_state_sha256"]

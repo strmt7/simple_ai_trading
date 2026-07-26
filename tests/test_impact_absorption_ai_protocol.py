@@ -46,6 +46,7 @@ def _request() -> Round74AIReviewRequest:
     last[10] = 1.5
     return Round74AIReviewRequest(
         pretest_policy_sha256="1" * 64,
+        probability_calibration_sha256="4" * 64,
         sample_sha256="2" * 64,
         deterministic_risk_state_sha256="3" * 64,
         asset_slot=0,
@@ -138,11 +139,7 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     "changed",
     [
         {"horizon_seconds": 5},
-        {
-            "expires_wall_ns": (
-                WALL_NS + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS + 1
-            )
-        },
+        {"expires_wall_ns": (WALL_NS + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS + 1)},
         {"proposed_risk_size_bps": 10_001},
         {"positive_payoff_probability": float("nan")},
         {"payoff_quantiles_bps": (-5.0, 0.0, -1.0, 4.0, 7.0)},
@@ -243,39 +240,57 @@ def test_ai_modifier_can_only_preserve_reduce_or_veto() -> None:
     request = _request()
     now = request.requested_wall_ns + 1
 
-    assert apply_round74_ai_risk_modifier(
-        request,
-        _decision("allow_unchanged", 10_000, ("none",)),
-        deterministic_risk_gate_passed=True,
-        observed_wall_ns=now,
-    ) == 2_500
-    assert apply_round74_ai_risk_modifier(
-        request,
-        _decision("reduce", 5_000, ("forecast_uncertainty",)),
-        deterministic_risk_gate_passed=True,
-        observed_wall_ns=now,
-    ) == 1_250
-    assert apply_round74_ai_risk_modifier(
-        request,
-        _decision("veto", 0, ("adverse_selection",)),
-        deterministic_risk_gate_passed=True,
-        observed_wall_ns=now,
-    ) == 0
-    assert apply_round74_ai_risk_modifier(
-        request,
-        None,
-        deterministic_risk_gate_passed=True,
-        observed_wall_ns=now,
-    ) == 0
-    assert apply_round74_ai_risk_modifier(
-        request,
-        _decision("allow_unchanged", 10_000, ("none",)),
-        deterministic_risk_gate_passed=False,
-        observed_wall_ns=now,
-    ) == 0
-    assert apply_round74_ai_risk_modifier(
-        request,
-        _decision("allow_unchanged", 10_000, ("none",)),
-        deterministic_risk_gate_passed=True,
-        observed_wall_ns=request.expires_wall_ns + 1,
-    ) == 0
+    assert (
+        apply_round74_ai_risk_modifier(
+            request,
+            _decision("allow_unchanged", 10_000, ("none",)),
+            deterministic_risk_gate_passed=True,
+            observed_wall_ns=now,
+        )
+        == 2_500
+    )
+    assert (
+        apply_round74_ai_risk_modifier(
+            request,
+            _decision("reduce", 5_000, ("forecast_uncertainty",)),
+            deterministic_risk_gate_passed=True,
+            observed_wall_ns=now,
+        )
+        == 1_250
+    )
+    assert (
+        apply_round74_ai_risk_modifier(
+            request,
+            _decision("veto", 0, ("adverse_selection",)),
+            deterministic_risk_gate_passed=True,
+            observed_wall_ns=now,
+        )
+        == 0
+    )
+    assert (
+        apply_round74_ai_risk_modifier(
+            request,
+            None,
+            deterministic_risk_gate_passed=True,
+            observed_wall_ns=now,
+        )
+        == 0
+    )
+    assert (
+        apply_round74_ai_risk_modifier(
+            request,
+            _decision("allow_unchanged", 10_000, ("none",)),
+            deterministic_risk_gate_passed=False,
+            observed_wall_ns=now,
+        )
+        == 0
+    )
+    assert (
+        apply_round74_ai_risk_modifier(
+            request,
+            _decision("allow_unchanged", 10_000, ("none",)),
+            deterministic_risk_gate_passed=True,
+            observed_wall_ns=request.expires_wall_ns + 1,
+        )
+        == 0
+    )
