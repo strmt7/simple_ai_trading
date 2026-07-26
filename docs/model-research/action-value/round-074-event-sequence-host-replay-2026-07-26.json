@@ -1,10 +1,11 @@
 {
-  "schema_version": "round-074-event-sequence-host-replay-evidence-v1",
-  "artifact_sha256": "62bd0db2d2a2cc1340dc8d091d32944f75d7c062dbe02d7ebcb3450189a8b795",
+  "schema_version": "round-074-event-sequence-host-replay-evidence-v2",
+  "artifact_sha256": "f37655c58270c3fb18bf6096e72d12b7fe3dc535731e632204c5765edbb9aca3",
   "round": 74,
-  "observed_at_utc": "2026-07-26T20:43:30.707678+00:00",
-  "execution_git_commit": "75ed4363e8f0815758b7198f815a0c4210f0ea62",
-  "event_sequence_source_sha256": "d55066b3a20004ac70d6fc15bb8b3a50fbee0887108280c62cb257441791bf57",
+  "observed_at_utc": "2026-07-26T21:26:57.417834+00:00",
+  "execution_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
+  "event_sequence_source_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
+  "event_scaler_source_sha256": "c42d614cee0edf877af501ea4a77b78e5a7f3f2135423eb2336d8ace78c86986",
   "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
   "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340",
   "source": {
@@ -20,10 +21,12 @@
     "synthetic_market_data_used": false
   },
   "replay": {
+    "observation_count": 50444,
     "token_limit": 50000,
     "token_count": 50000,
-    "elapsed_seconds": 22.40948319999734,
-    "tokens_per_second": 2231.198263421172,
+    "synchronized_depth_state_count": 4984,
+    "elapsed_seconds": 26.255206000001635,
+    "tokens_per_second": 1904.384220028473,
     "canonical_encoding": "eight-byte big-endian token length followed by canonical ASCII JSON for each token",
     "canonical_length_prefixed_token_sha256": "03f52996078dbd514570b83434ae1bb15d713103448a624ddd82edc4be677f02",
     "first_token": {
@@ -57,9 +60,25 @@
     "nonfinite_feature_detected": false,
     "feature_count": 43
   },
+  "diagnostic_scaler": {
+    "schema_version": "round-074-event-feature-scaler-v2",
+    "scaler_sha256": "d5c5d5cdce846384242521e36596e1a817bc17828b8000da2945c08804a55dd4",
+    "input_event_rows": 50000,
+    "bounded_sample_rows": 10000,
+    "constant_feature_count": 3,
+    "sampling_algorithm": "splitmix64-smallest-priority-v1",
+    "chunk_layouts_compared": 2,
+    "chunk_invariance_verified": true,
+    "fit_role": "design-consumed diagnostic only",
+    "eligible_for_model_bundle": false,
+    "reason": "the quiet qualification run was already consumed by feature and dataset design"
+  },
   "observed_sample_limitations": {
     "liquidation_event_count": 0,
-    "stale_depth_event_count": 0,
+    "feature_ready_stale_depth_event_count": 0,
+    "all_observation_stale_depth_event_count": 90,
+    "pre_feature_ready_stale_depth_event_count": 90,
+    "stale_depth_used_as_fresh_target_state": false,
     "features_constant_because_no_liquidation_was_observed": [
       "event_is_liquidation",
       "liquidation_signed_quote_scaled",
@@ -80,7 +99,11 @@
   },
   "interpretation": {
     "exact_event_feature_replay_completed": true,
+    "exact_observation_replay_completed": true,
+    "synchronized_depth_state_path_exercised": true,
+    "streaming_scaler_path_exercised": true,
     "all_three_symbols_observed": true,
+    "representative_partition_built": false,
     "targets_constructed": false,
     "models_evaluated": false,
     "financial_edge_tested": false,

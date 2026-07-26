@@ -1,11 +1,11 @@
 {
   "schema_version": "round-074-event-model-directml-preflight-evidence-v1",
-  "artifact_sha256": "632e566cb727790ebb1878264cc2c6b513ca268f280987df4a254b4ea929f3b4",
+  "artifact_sha256": "f938d776c36a8b23af282ff1de7ac8275818ec77929ef2ea6abb6abc0616a95c",
   "round": 74,
-  "observed_at_utc": "2026-07-26T20:43:30.707678+00:00",
-  "execution_git_commit": "75ed4363e8f0815758b7198f815a0c4210f0ea62",
-  "event_sequence_source_sha256": "d55066b3a20004ac70d6fc15bb8b3a50fbee0887108280c62cb257441791bf57",
-  "event_model_source_sha256": "8fd24c92fda6ab8463d3b507f05eec5ca024bf37388ac3e203004b7c9175b72e",
+  "observed_at_utc": "2026-07-26T21:26:57.417834+00:00",
+  "execution_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
+  "event_sequence_source_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
+  "event_model_source_sha256": "636250cca313a7fe472aa5e8da55d4149e2773c86721508b659e689bbc31d75a",
   "event_model_schema_version": "round-074-event-payoff-model-v2",
   "backend": {
     "requested": "directml",
@@ -27,32 +27,33 @@
       30,
       300
     ],
+    "masked_action_targets": 1,
     "batch_size": 4
   },
   "candidates": {
     "event_pooling_mlp": {
       "parameter_count": 31396,
-      "loss": 0.8752974271774292,
+      "loss": 0.8843494653701782,
       "components": {
-        "payoff_pinball": 0.42048293352127075,
-        "maximum_adverse_excursion_pinball": 0.21476535499095917,
-        "positive_bce": 0.67768394947052,
-        "adverse_bce": 0.7014378309249878,
+        "payoff_pinball": 0.4297472834587097,
+        "maximum_adverse_excursion_pinball": 0.21594449877738953,
+        "positive_bce": 0.6765231490135193,
+        "adverse_bce": 0.6997635364532471,
         "unpredictability_bce": 0.69938063621521
       },
-      "parameter_max_abs_change": 4.470348358154297e-07
+      "parameter_max_abs_change": 4.246830940246582e-07
     },
     "causal_event_tcn": {
       "parameter_count": 79524,
-      "loss": 0.8799590468406677,
+      "loss": 0.8893337845802307,
       "components": {
-        "payoff_pinball": 0.4238381087779999,
-        "maximum_adverse_excursion_pinball": 0.21414104104042053,
-        "positive_bce": 0.6995865702629089,
-        "adverse_bce": 0.6893284320831299,
+        "payoff_pinball": 0.4323843717575073,
+        "maximum_adverse_excursion_pinball": 0.2153799682855606,
+        "positive_bce": 0.7003870606422424,
+        "adverse_bce": 0.6903018355369568,
         "unpredictability_bce": 0.6840927600860596
       },
-      "parameter_max_abs_change": 9.98377799987793e-07
+      "parameter_max_abs_change": 9.834766387939453e-07
     }
   },
   "verification": {

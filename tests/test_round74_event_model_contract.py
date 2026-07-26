@@ -4,6 +4,10 @@ import hashlib
 import json
 from pathlib import Path
 
+from simple_ai_trading.impact_absorption_event_dataset import (
+    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
+    ROUND74_EVENT_PARTITION_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
@@ -68,6 +72,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_target_sha256"] == _file_sha256(
         source["event_target_path"]
     )
+    assert source["event_dataset_sha256"] == _file_sha256(
+        source["event_dataset_path"]
+    )
     assert (
         source["event_sequence_schema_version"]
         == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
@@ -79,6 +86,14 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_target_schema_version"]
         == ROUND74_EVENT_TARGET_SCHEMA_VERSION
+    )
+    assert (
+        source["event_dataset_schema_version"]
+        == ROUND74_EVENT_DATASET_SCHEMA_VERSION
+    )
+    assert (
+        source["event_partition_schema_version"]
+        == ROUND74_EVENT_PARTITION_SCHEMA_VERSION
     )
     assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 43
     assert source["feature_names_sha256"] == (
@@ -97,6 +112,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert scaler["fit_on_training_partition_only"] is True
     assert scaler["validation_or_test_statistics_permitted"] is False
     assert scaler["sample_indices_hash_bound"] is True
+    assert scaler["sampling_algorithm"] == (
+        "splitmix64-smallest-priority-v1"
+    )
     assert scaler["serialized_scaler_digest_verified_on_load"] is True
     assert scaler["model_bundle_must_bind_scaler_hash"] is True
 
@@ -151,6 +169,17 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert targets["path_risk"]["excessive_path_state_gap_policy"] == (
         "censor target"
     )
+    dataset = design["dataset_assembly_contract"]
+    assert dataset["implemented_now"] is True
+    assert dataset["representative_market_dataset_built_now"] is False
+    assert dataset["database_access"] == "read only"
+    assert dataset["split_unit"] == "whole capture run"
+    assert dataset["random_row_split_permitted"] is False
+    assert dataset["minimum_purge_seconds"] == 300
+    assert dataset["minimum_embargo_seconds"] == 300
+    assert dataset["maximum_target_span_seconds_including_latency_ceiling"] == (
+        305
+    )
     evaluation = design["prospective_evaluation_contract"]
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
@@ -162,6 +191,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     authority = design["authority"]
     assert authority["training_only_scaler_implementation"] is True
     assert authority["prospective_target_engine_implementation"] is True
+    assert authority["leak_resistant_dataset_implementation"] is True
     for key in (
         "target_generation",
         "model_training",
@@ -185,7 +215,9 @@ def test_round74_event_replay_evidence_is_exact_read_only_and_pre_target() -> No
         "event_sequence_sha256"
     ]
     evidence = replay["replay"]
+    assert evidence["observation_count"] == 50_444
     assert evidence["token_count"] == evidence["token_limit"] == 50_000
+    assert evidence["synchronized_depth_state_count"] == 4_984
     assert sum(evidence["event_counts"].values()) == 50_000
     assert sum(evidence["symbol_counts"].values()) == 50_000
     assert set(evidence["symbol_counts"]) == {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
@@ -201,8 +233,16 @@ def test_round74_event_replay_evidence_is_exact_read_only_and_pre_target() -> No
     assert storage["database_write_detected"] is False
     limitations = replay["observed_sample_limitations"]
     assert limitations["liquidation_event_count"] == 0
+    assert limitations["all_observation_stale_depth_event_count"] == 90
+    assert limitations["feature_ready_stale_depth_event_count"] == 0
+    assert limitations["stale_depth_used_as_fresh_target_state"] is False
     assert limitations["sample_validates_liquidation_path"] is False
     assert limitations["sample_is_financially_representative"] is False
+    scaler = replay["diagnostic_scaler"]
+    assert scaler["input_event_rows"] == 50_000
+    assert scaler["bounded_sample_rows"] == 10_000
+    assert scaler["chunk_invariance_verified"] is True
+    assert scaler["eligible_for_model_bundle"] is False
     interpretation = replay["interpretation"]
     assert interpretation["targets_constructed"] is False
     assert interpretation["models_evaluated"] is False
@@ -227,6 +267,7 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
     assert verification["parameter_update_completed"] is True
     assert verification["warning_count"] == 0
     assert verification["cpu_fallback_warning_count"] == 0
+    assert evidence["input_contract"]["masked_action_targets"] == 1
     for candidate_id, candidate in evidence["candidates"].items():
         assert candidate["parameter_count"] == design["candidate_panel"][
             candidate_id
