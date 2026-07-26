@@ -43,6 +43,7 @@ ROUND74_EVENT_COHORT_MAXIMUM_SLOTS = 720
 
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
+_GIT_COMMIT = re.compile(r"[0-9a-f]{40}")
 _GLOBAL_EVENT_TYPES = frozenset(
     {
         "aggTrade",
@@ -155,6 +156,7 @@ class Round74EventCohortPlan:
     """Compact deterministic schedule frozen before any cohort event exists."""
 
     scheduled_start_wall_ns: int
+    implementation_git_commit: str
     training_slots: int = 120
     tuning_slots: int = 24
     test_slots: int = 24
@@ -175,6 +177,7 @@ class Round74EventCohortPlan:
             or not isinstance(self.scheduled_start_wall_ns, int)
             or self.scheduled_start_wall_ns <= 0
             or self.scheduled_start_wall_ns % 1_000_000_000 != 0
+            or _GIT_COMMIT.fullmatch(self.implementation_git_commit) is None
             or any(
                 isinstance(value, bool)
                 or not isinstance(value, int)
@@ -237,6 +240,7 @@ class Round74EventCohortPlan:
         self.validate()
         payload: dict[str, object] = {
             "schema_version": self.schema_version,
+            "implementation_git_commit": self.implementation_git_commit,
             "scheduled_start_wall_ns": self.scheduled_start_wall_ns,
             "role_counts": {
                 "training": self.training_slots,
@@ -332,6 +336,9 @@ class Round74EventCohortPlan:
         try:
             selected = cls(
                 scheduled_start_wall_ns=int(payload["scheduled_start_wall_ns"]),
+                implementation_git_commit=str(
+                    payload["implementation_git_commit"]
+                ),
                 training_slots=int(roles["training"]),
                 tuning_slots=int(roles["tuning"]),
                 test_slots=int(roles["test"]),
