@@ -1,18 +1,24 @@
 {
   "schema_version": "round-074-event-sequence-model-design-v2",
-  "design_sha256": "2bb02ace0d1f747585d960e2095c087b4493274ff95d532675a9a671b32ccb67",
+  "design_sha256": "4522c4f4cf8810703e027442534565ad5ad28430456ea297529cd5c508027a53",
   "round": 74,
-  "frozen_at_utc": "2026-07-26T19:48:00Z",
-  "implementation_git_commit": "af32999356c9891fabcb108e97258033a66ef71f",
+  "frozen_at_utc": "2026-07-26T20:43:30Z",
+  "implementation_git_commit": "75ed4363e8f0815758b7198f815a0c4210f0ea62",
   "parent_capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
   "parent_capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
   "source_binding": {
     "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
-    "event_sequence_sha256": "bf54ae88f99a7a8a35a504380f946312ddad87ea1af1d33c60a5f93225f898c4",
+    "event_sequence_sha256": "d55066b3a20004ac70d6fc15bb8b3a50fbee0887108280c62cb257441791bf57",
     "event_model_path": "src/simple_ai_trading/impact_absorption_event_model.py",
-    "event_model_sha256": "40b76902a3bacd23af908986db66b93a4d6fcd8808b416080ca0a7e60dfb23de",
+    "event_model_sha256": "8fd24c92fda6ab8463d3b507f05eec5ca024bf37388ac3e203004b7c9175b72e",
+    "event_scaler_path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
+    "event_scaler_sha256": "645eabb0be8a0b037e355d7a1c2189af9960b57b709186cbc12fa35a0284e381",
+    "event_target_path": "src/simple_ai_trading/impact_absorption_event_targets.py",
+    "event_target_sha256": "00ce6973b2a26b8621991a23863c96a6071fbb6199348f6323bb48821cd28fd8",
     "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
     "event_model_schema_version": "round-074-event-payoff-model-v2",
+    "event_scaler_schema_version": "round-074-event-feature-scaler-v1",
+    "event_target_schema_version": "round-074-executable-event-target-v1",
     "feature_count": 43,
     "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340"
   },
@@ -115,12 +121,17 @@
     "raw_absolute_asset_price_used_as_feature": false,
     "feature_scaler": {
       "required_before_training": true,
+      "implemented_now": true,
       "fit_on_training_partition_only": true,
       "validation_or_test_statistics_permitted": false,
-      "method": "per-feature robust centering and scaling with training-partition median and interquartile range",
+      "method": "deterministic uniformly sampled training-only median, interquartile range, 0.1/99.9 percentiles, and standard deviation with a 250000-event fit ceiling",
+      "sample_indices_hash_bound": true,
+      "full_training_minimum_and_maximum_used_only_to_preserve_nonconstant_rare_features_missed_by_the_bounded_sample": true,
       "zero_or_near_zero_training_scale_policy": "leave binary features unchanged and set constant continuous features to zero",
       "clip_limits_source": "training partition only",
-      "model_bundle_must_bind_scaler_hash": true
+      "standardized_absolute_clip": 12.0,
+      "model_bundle_must_bind_scaler_hash": true,
+      "serialized_scaler_digest_verified_on_load": true
     }
   },
   "candidate_panel": {
@@ -178,8 +189,17 @@
     }
   },
   "prospective_target_contract": {
-    "implemented_now": false,
+    "implemented_now": true,
+    "real_market_targets_generated_now": false,
     "target_clock": "local monotonic receipt time",
+    "decision_order_key": [
+      "received_monotonic_ns",
+      "frame_index",
+      "message_index"
+    ],
+    "later_messages_with_the_same_receipt_timestamp_permitted_in_decision_state": false,
+    "target_context_hash_binds_spec_quantity_filters_and_funding_schedule": true,
+    "minimum_anchor_spacing_seconds": 1,
     "horizons_seconds": [
       1,
       5,
@@ -189,27 +209,34 @@
     "decision_submission_and_execution_latency": {
       "must_be_measured_on_the_execution_host": true,
       "fixed_unverified_latency_assumption_permitted": false,
+      "latency_evidence_digest_required": true,
       "missing_latency_evidence_policy": "fail closed"
     },
     "entry_and_exit": {
       "initial_supported_execution": "marketable orders only",
       "walk_observed_synchronized_l2_at_configured_notional": true,
       "insufficient_visible_depth_policy": "censor target and forbid action",
+      "exchange_quantity_filters_bound_into_target_context": true,
       "passive_maker_fill_target_permitted_from_l2": false,
       "reason": "L2 does not identify own queue position, cancellation priority, or hidden liquidity"
     },
     "costs": {
       "opening_and_closing_commission_required": true,
+      "commission_evidence_digest_required": true,
       "spread_required": true,
       "observed_book_walk_required": true,
+      "additional_residual_slippage_evidence_digest_required": true,
       "funding_required_when_horizon_crosses_funding_timestamp": true,
+      "funding_crossing_policy": "censor until an account-specific funding target is implemented",
       "account_fee_source": "authenticated read-only account commission evidence or hash-bound operator configuration",
       "missing_account_fee_policy": "fail closed",
       "runtime_fee_mismatch_policy": "model bundle is incompatible and cannot trade"
     },
     "path_risk": {
-      "maximum_adverse_excursion_uses_every_valid_intervening_bbo": true,
+      "maximum_adverse_excursion_uses_every_valid_intervening_synchronized_l2_state": true,
       "endpoint_only_drawdown_proxy_permitted": false,
+      "maximum_path_state_gap_nanoseconds": 250000000,
+      "excessive_path_state_gap_policy": "censor target",
       "sequence_gap_crossed_book_stale_book_or_invalid_event_policy": "censor target",
       "interpolation_over_missing_market_events_permitted": false
     },
@@ -263,6 +290,8 @@
   "authority": {
     "feature_implementation": true,
     "candidate_architecture_implementation": true,
+    "training_only_scaler_implementation": true,
+    "prospective_target_engine_implementation": true,
     "synthetic_compute_preflight": true,
     "target_generation": false,
     "model_training": false,

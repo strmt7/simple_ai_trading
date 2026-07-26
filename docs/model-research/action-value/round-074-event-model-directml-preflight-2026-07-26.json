@@ -1,11 +1,11 @@
 {
   "schema_version": "round-074-event-model-directml-preflight-evidence-v1",
-  "artifact_sha256": "7d3a9b937c56d0947284e814476ee59e7e4afe92cdba6c5942d6e185794d980e",
+  "artifact_sha256": "632e566cb727790ebb1878264cc2c6b513ca268f280987df4a254b4ea929f3b4",
   "round": 74,
-  "observed_at_utc": "2026-07-26T19:47:21.407817+00:00",
-  "execution_git_commit": "af32999356c9891fabcb108e97258033a66ef71f",
-  "event_sequence_source_sha256": "bf54ae88f99a7a8a35a504380f946312ddad87ea1af1d33c60a5f93225f898c4",
-  "event_model_source_sha256": "40b76902a3bacd23af908986db66b93a4d6fcd8808b416080ca0a7e60dfb23de",
+  "observed_at_utc": "2026-07-26T20:43:30.707678+00:00",
+  "execution_git_commit": "75ed4363e8f0815758b7198f815a0c4210f0ea62",
+  "event_sequence_source_sha256": "d55066b3a20004ac70d6fc15bb8b3a50fbee0887108280c62cb257441791bf57",
+  "event_model_source_sha256": "8fd24c92fda6ab8463d3b507f05eec5ca024bf37388ac3e203004b7c9175b72e",
   "event_model_schema_version": "round-074-event-payoff-model-v2",
   "backend": {
     "requested": "directml",

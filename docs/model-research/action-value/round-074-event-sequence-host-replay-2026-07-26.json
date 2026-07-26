@@ -1,10 +1,10 @@
 {
   "schema_version": "round-074-event-sequence-host-replay-evidence-v1",
-  "artifact_sha256": "96801bac2c94b915cbf5a07ff75ec1c37861b7cd194ba2b2ed4d5fab5c88a9bc",
+  "artifact_sha256": "62bd0db2d2a2cc1340dc8d091d32944f75d7c062dbe02d7ebcb3450189a8b795",
   "round": 74,
-  "observed_at_utc": "2026-07-26T19:47:11.872627+00:00",
-  "execution_git_commit": "af32999356c9891fabcb108e97258033a66ef71f",
-  "event_sequence_source_sha256": "bf54ae88f99a7a8a35a504380f946312ddad87ea1af1d33c60a5f93225f898c4",
+  "observed_at_utc": "2026-07-26T20:43:30.707678+00:00",
+  "execution_git_commit": "75ed4363e8f0815758b7198f815a0c4210f0ea62",
+  "event_sequence_source_sha256": "d55066b3a20004ac70d6fc15bb8b3a50fbee0887108280c62cb257441791bf57",
   "event_sequence_schema_version": "round-074-causal-event-sequence-v2",
   "feature_names_sha256": "cad1c346e3eef80b0a153ff8e6a4d1ab0fb7d257c5ffe1f92b5a9abcbbbf4340",
   "source": {
@@ -22,8 +22,8 @@
   "replay": {
     "token_limit": 50000,
     "token_count": 50000,
-    "elapsed_seconds": 23.707441499980632,
-    "tokens_per_second": 2109.042428726054,
+    "elapsed_seconds": 22.40948319999734,
+    "tokens_per_second": 2231.198263421172,
     "canonical_encoding": "eight-byte big-endian token length followed by canonical ASCII JSON for each token",
     "canonical_length_prefixed_token_sha256": "03f52996078dbd514570b83434ae1bb15d713103448a624ddd82edc4be677f02",
     "first_token": {
