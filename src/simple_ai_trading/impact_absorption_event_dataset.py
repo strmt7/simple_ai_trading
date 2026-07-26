@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
 import hashlib
+from itertools import pairwise
 import json
 import math
 import re
@@ -44,9 +45,7 @@ ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
 
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
 _SHA256 = re.compile(r"[0-9a-f]{64}")
-_ROLE_CODE = {
-    role: index for index, role in enumerate(ROUND74_EVENT_PARTITION_ROLES)
-}
+_ROLE_CODE = {role: index for index, role in enumerate(ROUND74_EVENT_PARTITION_ROLES)}
 
 
 def _canonical_json(value: object) -> str:
@@ -94,17 +93,10 @@ class Round74EventRunPartitionEntry:
             int(self.eligible_anchor_start_wall_ns),
             int(self.eligible_anchor_end_wall_ns),
         )
-        if min(times) <= 0 or not (
-            times[0] <= times[2] <= times[3] <= times[1]
-        ):
+        if min(times) <= 0 or not (times[0] <= times[2] <= times[3] <= times[1]):
             raise ValueError("Round 74 partition interval is invalid")
-        if (
-            times[3] + ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
-            > times[1]
-        ):
-            raise ValueError(
-                "Round 74 partition leaves insufficient target coverage"
-            )
+        if times[3] + ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS > times[1]:
+            raise ValueError("Round 74 partition leaves insufficient target coverage")
 
     def as_dict(self) -> dict[str, object]:
         self.validate()
@@ -114,9 +106,7 @@ class Round74EventRunPartitionEntry:
             "capture_report_sha256": self.capture_report_sha256,
             "capture_start_wall_ns": self.capture_start_wall_ns,
             "capture_end_wall_ns": self.capture_end_wall_ns,
-            "eligible_anchor_start_wall_ns": (
-                self.eligible_anchor_start_wall_ns
-            ),
+            "eligible_anchor_start_wall_ns": (self.eligible_anchor_start_wall_ns),
             "eligible_anchor_end_wall_ns": self.eligible_anchor_end_wall_ns,
         }
 
@@ -135,8 +125,7 @@ class Round74EventRunPartition:
             raise ValueError("Round 74 partition schema differs")
         if (
             int(self.purge_ns) < ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
-            or int(self.embargo_ns)
-            < ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
+            or int(self.embargo_ns) < ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
         ):
             raise ValueError("Round 74 partition purge or embargo is too short")
         if len(self.entries) < len(ROUND74_EVENT_PARTITION_ROLES):
@@ -161,9 +150,7 @@ class Round74EventRunPartition:
                     or entry.eligible_anchor_start_wall_ns
                     < entry.capture_start_wall_ns + int(self.embargo_ns)
                 ):
-                    raise ValueError(
-                        "Round 74 partition transition is not purged"
-                    )
+                    raise ValueError("Round 74 partition transition is not purged")
             prior = entry
         if observed_roles != set(ROUND74_EVENT_PARTITION_ROLES):
             raise ValueError("Round 74 partition roles are incomplete")
@@ -181,9 +168,7 @@ class Round74EventRunPartition:
             "random_row_split_permitted": False,
             "purge_ns": int(self.purge_ns),
             "embargo_ns": int(self.embargo_ns),
-            "maximum_target_span_ns": (
-                ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
-            ),
+            "maximum_target_span_ns": (ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS),
             "entries": [entry.as_dict() for entry in self.entries],
         }
         if include_sha256:
@@ -213,12 +198,8 @@ class Round74EventRunPartition:
                 capture_report_sha256=str(row["capture_report_sha256"]),
                 capture_start_wall_ns=int(row["capture_start_wall_ns"]),
                 capture_end_wall_ns=int(row["capture_end_wall_ns"]),
-                eligible_anchor_start_wall_ns=int(
-                    row["eligible_anchor_start_wall_ns"]
-                ),
-                eligible_anchor_end_wall_ns=int(
-                    row["eligible_anchor_end_wall_ns"]
-                ),
+                eligible_anchor_start_wall_ns=int(row["eligible_anchor_start_wall_ns"]),
+                eligible_anchor_end_wall_ns=int(row["eligible_anchor_end_wall_ns"]),
             )
             for row in rows
             if isinstance(row, Mapping)
@@ -316,8 +297,7 @@ class Round74LabeledEventWindow:
         }
         if (
             len(self.outcomes) != len(expected)
-            or {(row.horizon_seconds, row.side) for row in self.outcomes}
-            != expected
+            or {(row.horizon_seconds, row.side) for row in self.outcomes} != expected
         ):
             raise ValueError("Round 74 labeled window target panel differs")
         for outcome in self.outcomes:
@@ -325,8 +305,7 @@ class Round74LabeledEventWindow:
             if (
                 outcome.symbol != self.symbol
                 or outcome.anchor_index != self.anchor_index
-                or outcome.feature_window_sha256
-                != self.feature_window_sha256
+                or outcome.feature_window_sha256 != self.feature_window_sha256
             ):
                 raise ValueError("Round 74 labeled window outcome identity differs")
         contexts = {outcome.target_context_sha256 for outcome in self.outcomes}
@@ -349,9 +328,7 @@ class Round74LabeledEventWindow:
             "endpoint_frame_index": self.endpoint_frame_index,
             "endpoint_message_index": self.endpoint_message_index,
             "feature_window_sha256": self.feature_window_sha256,
-            "outcome_sha256": [
-                outcome.outcome_sha256 for outcome in self.outcomes
-            ],
+            "outcome_sha256": [outcome.outcome_sha256 for outcome in self.outcomes],
         }
         values = np.ascontiguousarray(self.feature_values, dtype="<f8")
         digest = hashlib.sha256(_canonical_json(metadata).encode("ascii"))
@@ -387,6 +364,13 @@ class Round74EventTrainingBatch:
     role: str
     partition_sha256: str
     scaler_sha256: str
+    run_id: tuple[str, ...]
+    symbol: tuple[str, ...]
+    decision_monotonic_ns: np.ndarray
+    decision_wall_ns: np.ndarray
+    endpoint_frame_index: np.ndarray
+    endpoint_message_index: np.ndarray
+    anchor_index: np.ndarray
     sample_sha256: tuple[str, ...]
     target_context_sha256: tuple[str, ...]
     feature_values: np.ndarray
@@ -422,20 +406,30 @@ class Round74EventTrainingBatch:
             self.regime_unpredictability,
             self.regime_unpredictability_eligibility,
         )
-        all_arrays = (
+        model_arrays = (
             self.feature_values,
             *action_arrays,
             *regime_arrays,
+        )
+        identity_arrays = (
+            self.decision_monotonic_ns,
+            self.decision_wall_ns,
+            self.endpoint_frame_index,
+            self.endpoint_message_index,
+            self.anchor_index,
         )
         if (
             self.schema_version != ROUND74_EVENT_DATASET_SCHEMA_VERSION
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
             or self.rows < 1
+            or len(self.run_id) != self.rows
+            or len(self.symbol) != self.rows
             or len(self.target_context_sha256) != self.rows
+            or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
+            or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
             or any(_SHA256.fullmatch(value) is None for value in self.sample_sha256)
             or any(
-                _SHA256.fullmatch(value) is None
-                for value in self.target_context_sha256
+                _SHA256.fullmatch(value) is None for value in self.target_context_sha256
             )
             or _SHA256.fullmatch(self.partition_sha256) is None
             or _SHA256.fullmatch(self.scaler_sha256) is None
@@ -445,13 +439,31 @@ class Round74EventTrainingBatch:
                 ROUND74_EVENT_SEQUENCE_LENGTH,
                 len(ROUND74_EVENT_FEATURE_NAMES),
             )
+            or any(value.shape != (self.rows,) for value in identity_arrays)
+            or any(value.dtype != np.int64 for value in identity_arrays)
+            or any(value.flags.writeable for value in identity_arrays)
+            or any(np.any(value < 0) for value in identity_arrays)
             or any(value.shape != action_shape for value in action_arrays)
             or any(value.shape != regime_shape for value in regime_arrays)
-            or any(value.dtype != np.float32 for value in all_arrays)
-            or any(value.flags.writeable for value in all_arrays)
-            or not all(np.isfinite(value).all() for value in all_arrays)
+            or any(value.dtype != np.float32 for value in model_arrays)
+            or any(value.flags.writeable for value in model_arrays)
+            or not all(np.isfinite(value).all() for value in model_arrays)
         ):
             raise ValueError("Round 74 event training batch contract differs")
+        order_keys = tuple(
+            (
+                int(self.decision_wall_ns[index]),
+                self.run_id[index],
+                int(self.decision_monotonic_ns[index]),
+                int(self.endpoint_frame_index[index]),
+                int(self.endpoint_message_index[index]),
+                self.symbol[index],
+                int(self.anchor_index[index]),
+            )
+            for index in range(self.rows)
+        )
+        if any(current <= prior for prior, current in pairwise(order_keys)):
+            raise ValueError("Round 74 event training batch order regressed")
         action_mask = self.action_eligibility
         regime_mask = self.regime_unpredictability_eligibility
         if (
@@ -460,10 +472,7 @@ class Round74EventTrainingBatch:
             or float(action_mask.sum()) <= 0.0
             or float(regime_mask.sum()) <= 0.0
             or np.any(self.maximum_adverse_excursion_bps < 0.0)
-            or np.any(
-                (self.adverse_selection < 0.0)
-                | (self.adverse_selection > 1.0)
-            )
+            or np.any((self.adverse_selection < 0.0) | (self.adverse_selection > 1.0))
             or np.any(
                 (self.regime_unpredictability < 0.0)
                 | (self.regime_unpredictability > 1.0)
@@ -476,9 +485,7 @@ class Round74EventTrainingBatch:
                     self.adverse_selection,
                 )
             )
-            or np.any(
-                self.regime_unpredictability[regime_mask == 0.0] != 0.0
-            )
+            or np.any(self.regime_unpredictability[regime_mask == 0.0] != 0.0)
         ):
             raise ValueError("Round 74 event training batch targets differ")
 
@@ -490,11 +497,18 @@ class Round74EventTrainingBatch:
             "role": self.role,
             "partition_sha256": self.partition_sha256,
             "scaler_sha256": self.scaler_sha256,
+            "run_id": list(self.run_id),
+            "symbol": list(self.symbol),
             "sample_sha256": list(self.sample_sha256),
             "target_context_sha256": list(self.target_context_sha256),
         }
         digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
         for value in (
+            self.decision_monotonic_ns,
+            self.decision_wall_ns,
+            self.endpoint_frame_index,
+            self.endpoint_message_index,
+            self.anchor_index,
             self.feature_values,
             self.net_payoff_bps,
             self.maximum_adverse_excursion_bps,
@@ -545,9 +559,7 @@ def build_round74_event_training_batch(
     unpredictability_eligibility = np.zeros(regime_shape, dtype=np.float32)
     contexts: list[str] = []
     for sample_index, sample in enumerate(selected):
-        context_values = {
-            outcome.target_context_sha256 for outcome in sample.outcomes
-        }
+        context_values = {outcome.target_context_sha256 for outcome in sample.outcomes}
         if len(context_values) != 1:
             raise ValueError("Round 74 sample target context differs")
         contexts.append(next(iter(context_values)))
@@ -567,9 +579,7 @@ def build_round74_event_training_batch(
                 and outcome.adverse_selection is not None
                 and outcome.regime_unpredictability is not None
             )
-            payoff[sample_index, horizon_index, side_index] = (
-                outcome.net_payoff_bps
-            )
+            payoff[sample_index, horizon_index, side_index] = outcome.net_payoff_bps
             adverse_excursion[sample_index, horizon_index, side_index] = (
                 outcome.maximum_adverse_excursion_bps
             )
@@ -580,9 +590,7 @@ def build_round74_event_training_batch(
             regime_values[outcome.horizon_seconds].append(
                 outcome.regime_unpredictability
             )
-        for horizon_index, horizon in enumerate(
-            ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
-        ):
+        for horizon_index, horizon in enumerate(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS):
             values = regime_values[horizon]
             if not values:
                 continue
@@ -595,9 +603,7 @@ def build_round74_event_training_batch(
                 )
                 for value in values[1:]
             ):
-                raise ValueError(
-                    "Round 74 side-independent regime target differs"
-                )
+                raise ValueError("Round 74 side-independent regime target differs")
             unpredictability[sample_index, horizon_index] = values[0]
             unpredictability_eligibility[sample_index, horizon_index] = 1.0
     if float(action_eligibility.sum()) <= 0.0:
@@ -606,6 +612,38 @@ def build_round74_event_training_batch(
         role=next(iter(roles)),
         partition_sha256=next(iter(partitions)),
         scaler_sha256=scaler.scaler_sha256,
+        run_id=tuple(sample.run_id for sample in selected),
+        symbol=tuple(sample.symbol for sample in selected),
+        decision_monotonic_ns=_readonly(
+            np.asarray(
+                [sample.decision_monotonic_ns for sample in selected],
+                dtype=np.int64,
+            )
+        ),
+        decision_wall_ns=_readonly(
+            np.asarray(
+                [sample.decision_wall_ns for sample in selected],
+                dtype=np.int64,
+            )
+        ),
+        endpoint_frame_index=_readonly(
+            np.asarray(
+                [sample.endpoint_frame_index for sample in selected],
+                dtype=np.int64,
+            )
+        ),
+        endpoint_message_index=_readonly(
+            np.asarray(
+                [sample.endpoint_message_index for sample in selected],
+                dtype=np.int64,
+            )
+        ),
+        anchor_index=_readonly(
+            np.asarray(
+                [sample.anchor_index for sample in selected],
+                dtype=np.int64,
+            )
+        ),
         sample_sha256=tuple(sample.sample_sha256 for sample in selected),
         target_context_sha256=tuple(contexts),
         feature_values=_readonly(feature_values),
@@ -614,9 +652,7 @@ def build_round74_event_training_batch(
         adverse_selection=_readonly(adverse_selection),
         regime_unpredictability=_readonly(unpredictability),
         action_eligibility=_readonly(action_eligibility),
-        regime_unpredictability_eligibility=_readonly(
-            unpredictability_eligibility
-        ),
+        regime_unpredictability_eligibility=_readonly(unpredictability_eligibility),
     )
     batch.validate()
     return batch
@@ -675,9 +711,7 @@ class Round74EventDatasetAssembler:
         target_engine: Round74EventTargetEngine,
         pretest_model_policy_sha256: str | None = None,
         test_unlock_sha256: str | None = None,
-        maximum_window_gap_ns: int = (
-            ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS
-        ),
+        maximum_window_gap_ns: int = (ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS),
     ) -> None:
         partition.validate()
         self.partition = partition
@@ -700,10 +734,7 @@ class Round74EventDatasetAssembler:
                     "test_unlock_sha256": unlock,
                 }
             )
-        elif (
-            pretest_model_policy_sha256 is not None
-            or test_unlock_sha256 is not None
-        ):
+        elif pretest_model_policy_sha256 is not None or test_unlock_sha256 is not None:
             raise ValueError(
                 "Round 74 development assembly received test authorization"
             )
@@ -715,9 +746,7 @@ class Round74EventDatasetAssembler:
         }
         self._prior_token_ns: dict[str, int] = {}
         self._last_anchor_ns: dict[str, int] = {}
-        self._next_anchor_index = {
-            symbol: 0 for symbol in ROUND74_EVENT_SYMBOLS
-        }
+        self._next_anchor_index = {symbol: 0 for symbol in ROUND74_EVENT_SYMBOLS}
         self._pending: dict[str, _PendingWindow] = {}
         self._outcome_cursor = 0
         self._prior_observation_key: tuple[int, int, int] | None = None
@@ -762,8 +791,7 @@ class Round74EventDatasetAssembler:
         buffer = self._buffers[symbol]
         if (
             prior is not None
-            and token.received_monotonic_ns - prior
-            > self.maximum_window_gap_ns
+            and token.received_monotonic_ns - prior > self.maximum_window_gap_ns
         ):
             buffer.clear()
         self._prior_token_ns[symbol] = token.received_monotonic_ns
@@ -922,12 +950,16 @@ def iter_round74_labeled_event_windows(
     if not store.read_only:
         raise ValueError("Round 74 labeled replay requires a read-only store")
     entry = partition.entry(str(run_id))
-    report_row = store.connect().execute(
-        """
+    report_row = (
+        store.connect()
+        .execute(
+            """
         SELECT report_sha256 FROM impact_capture_report WHERE run_id = ?
         """,
-        [entry.run_id],
-    ).fetchone()
+            [entry.run_id],
+        )
+        .fetchone()
+    )
     if report_row is None:
         raise ValueError("Round 74 partition capture report is missing")
     validate_round74_capture_report_binding(

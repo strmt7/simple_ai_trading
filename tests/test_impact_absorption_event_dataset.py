@@ -152,9 +152,7 @@ def _observation(
     token: bool,
     stale: bool = False,
 ) -> Round74ReplayObservation:
-    selected_token = (
-        _token(index=index, monotonic_ns=monotonic_ns) if token else None
-    )
+    selected_token = _token(index=index, monotonic_ns=monotonic_ns) if token else None
     observation = Round74ReplayObservation(
         symbol="BTCUSDT",
         event_type="depthUpdate",
@@ -191,9 +189,7 @@ def test_round74_partition_is_whole_run_chronological_and_hash_bound() -> None:
     entries = list(partition.entries)
     entries[1] = replace(
         entries[1],
-        eligible_anchor_start_wall_ns=(
-            entries[1].capture_start_wall_ns + 100 * NS
-        ),
+        eligible_anchor_start_wall_ns=(entries[1].capture_start_wall_ns + 100 * NS),
     )
     with pytest.raises(ValueError, match="transition is not purged"):
         Round74EventRunPartition(entries=tuple(entries)).validate()
@@ -277,6 +273,13 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
         128,
         len(ROUND74_EVENT_FEATURE_NAMES),
     )
+    assert batch.run_id == (sample.run_id,)
+    assert batch.symbol == (sample.symbol,)
+    assert batch.decision_wall_ns.tolist() == [sample.decision_wall_ns]
+    assert batch.decision_monotonic_ns.tolist() == [sample.decision_monotonic_ns]
+    assert batch.endpoint_frame_index.tolist() == [sample.endpoint_frame_index]
+    assert batch.endpoint_message_index.tolist() == [sample.endpoint_message_index]
+    assert batch.anchor_index.tolist() == [sample.anchor_index]
     assert float(batch.action_eligibility.sum()) == 8.0
     assert len(batch.batch_sha256) == 64
     assert not batch.feature_values.flags.writeable
@@ -314,9 +317,9 @@ def test_round74_streaming_assembler_never_uses_stale_depth_as_state() -> None:
 
     assert len(completed) == 1
     assert completed[0].eligible_action_count == 0
-    assert {
-        outcome.ineligible_reason for outcome in completed[0].outcomes
-    } == {"decision_state_missing"}
+    assert {outcome.ineligible_reason for outcome in completed[0].outcomes} == {
+        "decision_state_missing"
+    }
     scaler = fit_round74_event_feature_scaler(
         np.asarray(completed[0].feature_values, dtype=np.float64),
         partition_role="training",

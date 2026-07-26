@@ -23,9 +23,11 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = [
+    "safetensors==0.8.0",
     "torch==2.13.0",
 ]
 directml = [
+    "safetensors==0.8.0",
     "torch==2.4.1; (platform_system == 'Windows' or platform_system == 'Linux') and python_version < '3.13'",
     "torch-directml==0.2.5.dev240914; (platform_system == 'Windows' or platform_system == 'Linux') and python_version < '3.13'",
 ]
