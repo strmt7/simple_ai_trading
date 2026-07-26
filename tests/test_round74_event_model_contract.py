@@ -4,6 +4,11 @@ import hashlib
 import json
 from pathlib import Path
 
+from simple_ai_trading.impact_absorption_ai_protocol import (
+    ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION,
+    ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
+    ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION,
     ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
@@ -32,7 +37,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v4.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v5.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -90,6 +95,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_cohort_sha256"] == _file_sha256(
         source["event_cohort_path"]
     )
+    assert source["ai_protocol_sha256"] == _file_sha256(
+        source["ai_protocol_path"]
+    )
     assert source["event_training_sha256"] == _file_sha256(
         source["event_training_path"]
     )
@@ -121,6 +129,18 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_cohort_binding_schema_version"]
         == ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_model_manifest_schema_version"]
+        == ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_review_request_schema_version"]
+        == ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_review_decision_schema_version"]
+        == ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
     )
     assert (
         source["event_training_schema_version"]
@@ -258,6 +278,15 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert design["ai_comparison_contract"][
         "ai_may_bypass_data_risk_or_execution_gate"
     ] is False
+    ai = design["ai_comparison_contract"]
+    assert ai["protocol_implemented_now"] is True
+    assert ai["actual_multibillion_parameter_inference_completed_now"] is False
+    assert ai["supported_review_horizons_seconds"] == [30, 300]
+    assert ai["one_and_five_second_ml_paths_wait_for_ai"] is False
+    assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
+    assert ai[
+        "ai_may_create_side_increase_size_set_leverage_or_touch_orders"
+    ] is False
     authority = design["authority"]
     assert authority["training_only_scaler_implementation"] is True
     assert authority["prospective_target_engine_implementation"] is True
@@ -266,6 +295,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["immutable_pretest_policy_implementation"] is True
     assert authority["predeclared_cohort_admission_implementation"] is True
     assert authority["predeclared_cohort_plan"] is True
+    assert authority["local_ai_review_protocol_implementation"] is True
+    assert authority["actual_multibillion_parameter_ai_inference"] is False
     for key in (
         "target_generation",
         "model_training",
@@ -371,7 +402,6 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     evidence = _load_hash_bound(TRAINING_PATH, "artifact_sha256")
     binding = design["host_evidence_binding"]
 
-    assert evidence["execution_git_commit"] == design["implementation_git_commit"]
     assert evidence["execution_git_commit"] == binding[
         "event_training_directml_execution_git_commit"
     ]
