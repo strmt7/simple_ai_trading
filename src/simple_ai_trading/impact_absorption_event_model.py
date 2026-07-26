@@ -21,8 +21,9 @@ from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_event_sequence import ROUND74_EVENT_FEATURE_NAMES
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v1"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v2"
 ROUND74_EVENT_MODEL_CANDIDATES = ("event_pooling_mlp", "causal_event_tcn")
+ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS = (1, 5, 30, 300)
 ROUND74_EVENT_PAYOFF_SIDES = ("long", "short")
 ROUND74_EVENT_PAYOFF_QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
 ROUND74_EVENT_SEQUENCE_LENGTH = 128
@@ -33,41 +34,64 @@ ROUND74_EVENT_TCN_KERNEL_SIZE = 3
 
 @dataclass(frozen=True)
 class Round74EventModelOutput:
-    """Distributional payoff and risk heads for long and short candidates."""
+    """Multi-horizon distributions and path-risk heads for both trade sides."""
 
     payoff_quantiles_bps: torch.Tensor
+    maximum_adverse_excursion_quantiles_bps: torch.Tensor
     positive_payoff_logits: torch.Tensor
     adverse_selection_logits: torch.Tensor
-    regime_unpredictability_logit: torch.Tensor
+    regime_unpredictability_logits: torch.Tensor
 
     def validate(self, batch_size: int) -> None:
         expected_quantiles = (
             int(batch_size),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
             len(ROUND74_EVENT_PAYOFF_SIDES),
             len(ROUND74_EVENT_PAYOFF_QUANTILES),
         )
-        expected_sides = (int(batch_size), len(ROUND74_EVENT_PAYOFF_SIDES))
+        expected_sides = (
+            int(batch_size),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+        )
         if self.payoff_quantiles_bps.shape != expected_quantiles:
             raise ValueError("Round 74 payoff-quantile output shape differs")
+        if (
+            self.maximum_adverse_excursion_quantiles_bps.shape
+            != expected_quantiles
+        ):
+            raise ValueError("Round 74 adverse-excursion output shape differs")
         if self.positive_payoff_logits.shape != expected_sides:
             raise ValueError("Round 74 positive-payoff output shape differs")
         if self.adverse_selection_logits.shape != expected_sides:
             raise ValueError("Round 74 adverse-selection output shape differs")
-        if self.regime_unpredictability_logit.shape != (int(batch_size), 1):
+        if self.regime_unpredictability_logits.shape != (
+            int(batch_size),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        ):
             raise ValueError("Round 74 unpredictability output shape differs")
         tensors = (
             self.payoff_quantiles_bps,
+            self.maximum_adverse_excursion_quantiles_bps,
             self.positive_payoff_logits,
             self.adverse_selection_logits,
-            self.regime_unpredictability_logit,
+            self.regime_unpredictability_logits,
         )
         if not all(bool(torch.isfinite(value).all()) for value in tensors):
             raise ValueError("Round 74 model output contains nonfinite values")
-        differences = self.payoff_quantiles_bps[:, :, 1:] - (
-            self.payoff_quantiles_bps[:, :, :-1]
+        payoff_differences = self.payoff_quantiles_bps[..., 1:] - (
+            self.payoff_quantiles_bps[..., :-1]
         )
-        if bool((differences < 0.0).any()):
+        adverse_differences = (
+            self.maximum_adverse_excursion_quantiles_bps[..., 1:]
+            - self.maximum_adverse_excursion_quantiles_bps[..., :-1]
+        )
+        if bool((payoff_differences < 0.0).any()) or bool(
+            (adverse_differences < 0.0).any()
+        ):
             raise ValueError("Round 74 payoff quantiles cross")
+        if bool((self.maximum_adverse_excursion_quantiles_bps < 0.0).any()):
+            raise ValueError("Round 74 adverse excursion is negative")
 
 
 class _Round74DistributionalHeads(nn.Module):
@@ -75,49 +99,94 @@ class _Round74DistributionalHeads(nn.Module):
         super().__init__()
         self.payoff = nn.Linear(
             hidden_channels,
-            len(ROUND74_EVENT_PAYOFF_SIDES)
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            * len(ROUND74_EVENT_PAYOFF_SIDES)
+            * len(ROUND74_EVENT_PAYOFF_QUANTILES),
+        )
+        self.maximum_adverse_excursion = nn.Linear(
+            hidden_channels,
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            * len(ROUND74_EVENT_PAYOFF_SIDES)
             * len(ROUND74_EVENT_PAYOFF_QUANTILES),
         )
         self.positive = nn.Linear(
             hidden_channels,
-            len(ROUND74_EVENT_PAYOFF_SIDES),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            * len(ROUND74_EVENT_PAYOFF_SIDES),
         )
         self.adverse = nn.Linear(
             hidden_channels,
-            len(ROUND74_EVENT_PAYOFF_SIDES),
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+            * len(ROUND74_EVENT_PAYOFF_SIDES),
         )
-        self.unpredictability = nn.Linear(hidden_channels, 1)
+        self.unpredictability = nn.Linear(
+            hidden_channels,
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        )
         with torch.no_grad():
             reshaped = self.payoff.bias.reshape(
+                len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
                 len(ROUND74_EVENT_PAYOFF_SIDES),
                 len(ROUND74_EVENT_PAYOFF_QUANTILES),
             )
-            reshaped[:, 0] = 0.0
-            reshaped[:, 1:] = -2.0
+            reshaped[:, :, 0] = 0.0
+            reshaped[:, :, 1:] = -2.0
+            self.maximum_adverse_excursion.bias.fill_(-2.0)
 
     def forward(self, encoded: torch.Tensor) -> Round74EventModelOutput:
         raw = self.payoff(encoded).reshape(
             encoded.shape[0],
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
             len(ROUND74_EVENT_PAYOFF_SIDES),
             len(ROUND74_EVENT_PAYOFF_QUANTILES),
         )
-        median = raw[:, :, 0]
-        lower_near = F.softplus(raw[:, :, 1])
-        lower_far = F.softplus(raw[:, :, 2])
-        upper_near = F.softplus(raw[:, :, 3])
-        upper_far = F.softplus(raw[:, :, 4])
+        median = raw[..., 0]
+        lower_near = F.softplus(raw[..., 1])
+        lower_far = F.softplus(raw[..., 2])
+        upper_near = F.softplus(raw[..., 3])
+        upper_far = F.softplus(raw[..., 4])
         q25 = median - lower_near
         q10 = q25 - lower_far
         q75 = median + upper_near
         q90 = q75 + upper_far
+        adverse_raw = self.maximum_adverse_excursion(encoded).reshape(
+            encoded.shape[0],
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+            len(ROUND74_EVENT_PAYOFF_QUANTILES),
+        )
+        adverse_q10 = F.softplus(adverse_raw[..., 0])
+        adverse_q25 = adverse_q10 + F.softplus(adverse_raw[..., 1])
+        adverse_q50 = adverse_q25 + F.softplus(adverse_raw[..., 2])
+        adverse_q75 = adverse_q50 + F.softplus(adverse_raw[..., 3])
+        adverse_q90 = adverse_q75 + F.softplus(adverse_raw[..., 4])
+        expected_sides = (
+            encoded.shape[0],
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+        )
         output = Round74EventModelOutput(
             payoff_quantiles_bps=torch.stack(
                 (q10, q25, median, q75, q90),
-                dim=2,
+                dim=3,
             ),
-            positive_payoff_logits=self.positive(encoded),
-            adverse_selection_logits=self.adverse(encoded),
-            regime_unpredictability_logit=self.unpredictability(encoded),
+            maximum_adverse_excursion_quantiles_bps=torch.stack(
+                (
+                    adverse_q10,
+                    adverse_q25,
+                    adverse_q50,
+                    adverse_q75,
+                    adverse_q90,
+                ),
+                dim=3,
+            ),
+            positive_payoff_logits=self.positive(encoded).reshape(
+                expected_sides
+            ),
+            adverse_selection_logits=self.adverse(encoded).reshape(
+                expected_sides
+            ),
+            regime_unpredictability_logits=self.unpredictability(encoded),
         )
         output.validate(encoded.shape[0])
         return output
@@ -244,35 +313,52 @@ def round74_event_model_loss(
     output: Round74EventModelOutput,
     *,
     net_payoff_bps: torch.Tensor,
+    maximum_adverse_excursion_bps: torch.Tensor,
     adverse_selection: torch.Tensor,
     regime_unpredictable: torch.Tensor,
+    maximum_adverse_excursion_weight: float = 0.35,
     positive_weight: float = 0.25,
     adverse_weight: float = 0.20,
     unpredictability_weight: float = 0.10,
 ) -> tuple[torch.Tensor, Mapping[str, torch.Tensor]]:
     """Use proper probabilistic losses without optimizing a backtest metric."""
 
-    if net_payoff_bps.ndim != 2:
+    if net_payoff_bps.ndim != 3:
         raise ValueError("Round 74 net-payoff target dimensions differ")
     batch_size = int(net_payoff_bps.shape[0])
     output.validate(batch_size)
-    if net_payoff_bps.shape != (
+    expected_action_shape = (
         batch_size,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
         len(ROUND74_EVENT_PAYOFF_SIDES),
-    ):
+    )
+    if net_payoff_bps.shape != expected_action_shape:
         raise ValueError("Round 74 net-payoff target shape differs")
+    if maximum_adverse_excursion_bps.shape != expected_action_shape:
+        raise ValueError("Round 74 adverse-excursion target shape differs")
     if adverse_selection.shape != net_payoff_bps.shape:
         raise ValueError("Round 74 adverse-selection target shape differs")
-    if regime_unpredictable.shape != (batch_size, 1):
+    if regime_unpredictable.shape != (
+        batch_size,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+    ):
         raise ValueError("Round 74 unpredictability target shape differs")
-    targets = (net_payoff_bps, adverse_selection, regime_unpredictable)
+    targets = (
+        net_payoff_bps,
+        maximum_adverse_excursion_bps,
+        adverse_selection,
+        regime_unpredictable,
+    )
     if not all(bool(torch.isfinite(value).all()) for value in targets):
         raise ValueError("Round 74 event-model targets contain nonfinite values")
+    if bool((maximum_adverse_excursion_bps < 0.0).any()):
+        raise ValueError("Round 74 adverse-excursion target is negative")
     if bool(((adverse_selection < 0.0) | (adverse_selection > 1.0)).any()):
         raise ValueError("Round 74 adverse-selection targets are outside [0, 1]")
     if bool(((regime_unpredictable < 0.0) | (regime_unpredictable > 1.0)).any()):
         raise ValueError("Round 74 unpredictability targets are outside [0, 1]")
     loss_weights = (
+        float(maximum_adverse_excursion_weight),
         float(positive_weight),
         float(adverse_weight),
         float(unpredictability_weight),
@@ -283,11 +369,20 @@ def round74_event_model_loss(
         ROUND74_EVENT_PAYOFF_QUANTILES,
         dtype=output.payoff_quantiles_bps.dtype,
         device=output.payoff_quantiles_bps.device,
-    ).reshape(1, 1, -1)
-    errors = net_payoff_bps.unsqueeze(2) - output.payoff_quantiles_bps
-    pinball = torch.maximum(
-        quantile_levels * errors,
-        (quantile_levels - 1.0) * errors,
+    ).reshape(1, 1, 1, -1)
+    payoff_errors = (
+        net_payoff_bps.unsqueeze(3) - output.payoff_quantiles_bps
+    )
+    payoff_pinball = torch.maximum(
+        quantile_levels * payoff_errors,
+        (quantile_levels - 1.0) * payoff_errors,
+    ).mean()
+    adverse_excursion_errors = maximum_adverse_excursion_bps.unsqueeze(3) - (
+        output.maximum_adverse_excursion_quantiles_bps
+    )
+    adverse_excursion_pinball = torch.maximum(
+        quantile_levels * adverse_excursion_errors,
+        (quantile_levels - 1.0) * adverse_excursion_errors,
     ).mean()
     positive_targets = (net_payoff_bps > 0.0).to(net_payoff_bps.dtype)
     # BCE(logits) = softplus(logits) - target * logits. Keeping this explicit
@@ -301,19 +396,21 @@ def round74_event_model_loss(
         - adverse_selection * output.adverse_selection_logits
     ).mean()
     unpredictability = (
-        F.softplus(output.regime_unpredictability_logit)
-        - regime_unpredictable * output.regime_unpredictability_logit
+        F.softplus(output.regime_unpredictability_logits)
+        - regime_unpredictable * output.regime_unpredictability_logits
     ).mean()
     total = (
-        pinball
-        + loss_weights[0] * positive
-        + loss_weights[1] * adverse
-        + loss_weights[2] * unpredictability
+        payoff_pinball
+        + loss_weights[0] * adverse_excursion_pinball
+        + loss_weights[1] * positive
+        + loss_weights[2] * adverse
+        + loss_weights[3] * unpredictability
     )
     if not bool(torch.isfinite(total)):
         raise ValueError("Round 74 event-model loss is nonfinite")
     return total, {
-        "pinball": pinball,
+        "payoff_pinball": payoff_pinball,
+        "maximum_adverse_excursion_pinball": adverse_excursion_pinball,
         "positive_bce": positive,
         "adverse_bce": adverse,
         "unpredictability_bce": unpredictability,
@@ -337,29 +434,45 @@ def round74_event_model_preflight(
     backend = require_backend(resolve_backend(compute_backend))
     device = torch_device_for_backend(backend)
     generator = np.random.default_rng(7401)
-    values = torch.from_numpy(
-        generator.normal(
-            size=(
-                4,
-                ROUND74_EVENT_SEQUENCE_LENGTH,
-                len(ROUND74_EVENT_FEATURE_NAMES),
-            )
-        ).astype(np.float32)
-    ).to(device)
-    payoff = torch.from_numpy(
-        generator.normal(size=(4, len(ROUND74_EVENT_PAYOFF_SIDES))).astype(
-            np.float32
+    values_array = generator.normal(
+        size=(
+            4,
+            ROUND74_EVENT_SEQUENCE_LENGTH,
+            len(ROUND74_EVENT_FEATURE_NAMES),
         )
+    ).astype(np.float32)
+    values_array[:, :, :8] = 0.0
+    for batch_index in range(values_array.shape[0]):
+        for event_index in range(values_array.shape[1]):
+            values_array[batch_index, event_index, event_index % 5] = 1.0
+            values_array[batch_index, event_index, 5 + batch_index % 3] = 1.0
+    values = torch.from_numpy(
+        values_array
+    ).to(device)
+    action_shape = (
+        4,
+        len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        len(ROUND74_EVENT_PAYOFF_SIDES),
+    )
+    payoff = torch.from_numpy(
+        generator.normal(size=action_shape).astype(np.float32)
+    ).to(device)
+    maximum_adverse_excursion = torch.from_numpy(
+        np.abs(generator.normal(size=action_shape)).astype(np.float32)
     ).to(device)
     adverse = torch.from_numpy(
         generator.integers(
             0,
             2,
-            size=(4, len(ROUND74_EVENT_PAYOFF_SIDES)),
+            size=action_shape,
         ).astype(np.float32)
     ).to(device)
     unpredictable = torch.from_numpy(
-        generator.integers(0, 2, size=(4, 1)).astype(np.float32)
+        generator.integers(
+            0,
+            2,
+            size=(4, len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)),
+        ).astype(np.float32)
     ).to(device)
     evidence: dict[str, object] = {
         "schema_version": ROUND74_EVENT_MODEL_SCHEMA_VERSION,
@@ -372,6 +485,9 @@ def round74_event_model_preflight(
         "torch_version": str(torch.__version__),
         "sequence_length": ROUND74_EVENT_SEQUENCE_LENGTH,
         "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
+        "payoff_horizons_seconds": list(
+            ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
+        ),
         "candidates": {},
     }
     messages: list[str] = []
@@ -387,6 +503,7 @@ def round74_event_model_preflight(
             loss, components = round74_event_model_loss(
                 output,
                 net_payoff_bps=payoff,
+                maximum_adverse_excursion_bps=maximum_adverse_excursion,
                 adverse_selection=adverse,
                 regime_unpredictable=unpredictable,
             )
@@ -439,6 +556,7 @@ __all__ = [
     "ROUND74_EVENT_HIDDEN_CHANNELS",
     "ROUND74_EVENT_MODEL_CANDIDATES",
     "ROUND74_EVENT_MODEL_SCHEMA_VERSION",
+    "ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS",
     "ROUND74_EVENT_PAYOFF_QUANTILES",
     "ROUND74_EVENT_PAYOFF_SIDES",
     "ROUND74_EVENT_SEQUENCE_LENGTH",

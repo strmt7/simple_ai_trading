@@ -29,7 +29,8 @@ from .impact_absorption import (
 from .impact_capture_frame import ImpactCaptureFrameRecord
 
 
-ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v1"
+ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v2"
+ROUND74_EVENT_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 ROUND74_EVENT_TYPES = (
     "depthUpdate",
     "bookTicker",
@@ -52,6 +53,9 @@ ROUND74_EVENT_FEATURE_NAMES = (
     "event_is_aggregate_trade",
     "event_is_mark_price",
     "event_is_liquidation",
+    "symbol_is_btcusdt",
+    "symbol_is_ethusdt",
+    "symbol_is_solusdt",
     "depth_update_is_stale",
     "log1p_interarrival_us",
     "spread_bps",
@@ -223,6 +227,12 @@ class Round74EventToken:
             value not in {0.0, 1.0} for value in one_hot
         ):
             raise ValueError("Round 74 event token event encoding is invalid")
+        symbol_one_hot = self.feature_values[5:8]
+        expected_symbol_index = ROUND74_EVENT_SYMBOLS.index(self.symbol)
+        if any(value not in {0.0, 1.0} for value in symbol_one_hot) or tuple(
+            index for index, value in enumerate(symbol_one_hot) if value == 1.0
+        ) != (expected_symbol_index,):
+            raise ValueError("Round 74 event token symbol encoding is invalid")
 
     def as_dict(self) -> dict[str, object]:
         self.validate()
@@ -333,6 +343,10 @@ class Round74EventSequenceEncoder:
         event_flags = tuple(
             1.0 if event_type == candidate else 0.0
             for candidate in ROUND74_EVENT_TYPES
+        )
+        symbol_flags = tuple(
+            1.0 if self.symbol == candidate else 0.0
+            for candidate in ROUND74_EVENT_SYMBOLS
         )
         stale_depth = 0.0
         depth_signed = {band: 0.0 for band in ROUND74_EVENT_BANDS}
@@ -448,6 +462,7 @@ class Round74EventSequenceEncoder:
         angle = 2.0 * math.pi * second_of_day / 86_400.0
         values = (
             *event_flags,
+            *symbol_flags,
             stale_depth,
             math.log1p(interarrival_us),
             spread_bps,
@@ -507,7 +522,7 @@ class Round74MultiSymbolEventReplay:
         depth_snapshots: Mapping[str, Mapping[str, object]],
         feature_ready_wall_ns: int,
     ) -> None:
-        symbols = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+        symbols = ROUND74_EVENT_SYMBOLS
         if tuple(sorted(tick_sizes)) != symbols:
             raise ValueError("Round 74 replay tick-size universe differs")
         if tuple(sorted(depth_snapshots)) != symbols:
@@ -737,6 +752,7 @@ __all__ = [
     "ROUND74_EVENT_FEATURE_NAMES_SHA256",
     "ROUND74_EVENT_MAX_TIME_SINCE_MS",
     "ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION",
+    "ROUND74_EVENT_SYMBOLS",
     "ROUND74_EVENT_TYPES",
     "Round74MultiSymbolEventReplay",
     "Round74EventSequenceEncoder",
