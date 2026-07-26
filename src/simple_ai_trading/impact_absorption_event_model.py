@@ -18,14 +18,16 @@ from torch import nn
 from torch.nn import functional as F
 
 from .compute import require_backend, resolve_backend, torch_device_for_backend
-from .impact_absorption_event_sequence import ROUND74_EVENT_FEATURE_NAMES
+from .impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_QUANTILES,
+    ROUND74_EVENT_PAYOFF_SIDES,
+)
 
 
 ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v2"
 ROUND74_EVENT_MODEL_CANDIDATES = ("event_pooling_mlp", "causal_event_tcn")
-ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS = (1, 5, 30, 300)
-ROUND74_EVENT_PAYOFF_SIDES = ("long", "short")
-ROUND74_EVENT_PAYOFF_QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
 ROUND74_EVENT_SEQUENCE_LENGTH = 128
 ROUND74_EVENT_HIDDEN_CHANNELS = 64
 ROUND74_EVENT_TCN_DILATIONS = (1, 2, 4, 8)
