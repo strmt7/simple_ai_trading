@@ -1,0 +1,1511 @@
+"""Target-free Round 74 action scoring and tuning-only policy selection.
+
+Forecasts become research candidates here, not orders. Candidate derivation
+cannot receive realized targets. A separate selector may replay candidates only
+on the predeclared policy-selection runs and uses exact captured entry/exit
+times to prevent same-symbol overlap.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import hashlib
+import json
+import math
+import re
+
+import numpy as np
+import torch
+
+from .impact_absorption_event_calibration import (
+    Round74ProbabilityCalibration,
+    Round74TuningSubpartition,
+    apply_round74_probability_calibration,
+)
+from .impact_absorption_event_dataset import (
+    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
+    ROUND74_EVENT_PARTITION_ROLES,
+    Round74EventTrainingBatch,
+)
+from .impact_absorption_event_model import Round74EventModelOutput
+from .impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_QUANTILES,
+    ROUND74_EVENT_PAYOFF_SIDES,
+    ROUND74_EVENT_SEQUENCE_LENGTH,
+    ROUND74_EVENT_SYMBOLS,
+)
+
+
+ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v1"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v1"
+ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
+ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
+ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
+
+_SHA256 = re.compile(r"[0-9a-f]{64}")
+_RUN_ID = re.compile(r"[0-9a-f]{32}")
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _require_sha256(value: object, label: str) -> str:
+    selected = str(value)
+    if _SHA256.fullmatch(selected) is None:
+        raise ValueError(f"Round 74 action {label} digest differs")
+    return selected
+
+
+def _readonly(value: np.ndarray) -> np.ndarray:
+    value.setflags(write=False)
+    return value
+
+
+def _update_array_digest(digest: object, value: np.ndarray) -> None:
+    array = np.asarray(value)
+    canonical = np.ascontiguousarray(
+        array.astype(array.dtype.newbyteorder("<"), copy=False)
+    )
+    digest.update(canonical.dtype.str.encode("ascii"))
+    digest.update(int(canonical.ndim).to_bytes(2, "little", signed=False))
+    for size in canonical.shape:
+        digest.update(int(size).to_bytes(8, "little", signed=False))
+    digest.update(memoryview(canonical).cast("B"))
+
+
+def _tensor_array(value: torch.Tensor) -> np.ndarray:
+    return np.ascontiguousarray(
+        value.detach().to(device="cpu", dtype=torch.float32).numpy()
+    )
+
+
+def _model_output_sha256(output: Round74EventModelOutput) -> str:
+    digest = hashlib.sha256(b"round-074-model-output-v1")
+    for value in (
+        output.payoff_quantiles_bps,
+        output.maximum_adverse_excursion_quantiles_bps,
+        output.positive_payoff_logits,
+        output.adverse_selection_logits,
+        output.regime_unpredictability_logits,
+    ):
+        _update_array_digest(digest, _tensor_array(value))
+    return digest.hexdigest()
+
+
+@dataclass(frozen=True)
+class Round74ActionProfileSpec:
+    """Predeclared selectivity and tuning gates for one risk appetite."""
+
+    profile: str
+    downside_penalty: float
+    adverse_excursion_penalty: float
+    minimum_positive_probability: float
+    maximum_adverse_probability: float
+    maximum_unpredictability_probability: float
+    lower_quartile_mae_tolerance: float
+    maximum_mae_to_median_ratio: float
+    threshold_quantiles: tuple[float, ...]
+    minimum_trades: int
+    minimum_active_runs: int
+    minimum_profitable_run_ratio: float
+    minimum_profit_factor: float
+    maximum_drawdown_to_gross_profit: float
+    maximum_adverse_selection_rate: float
+    maximum_symbol_trade_share: float
+    objective_drawdown_penalty: float
+    objective_adverse_excursion_penalty: float
+
+    def validate(self) -> None:
+        probabilities = (
+            self.minimum_positive_probability,
+            self.maximum_adverse_probability,
+            self.maximum_unpredictability_probability,
+            self.minimum_profitable_run_ratio,
+            self.maximum_adverse_selection_rate,
+            self.maximum_symbol_trade_share,
+        )
+        nonnegative = (
+            self.downside_penalty,
+            self.adverse_excursion_penalty,
+            self.lower_quartile_mae_tolerance,
+            self.objective_drawdown_penalty,
+            self.objective_adverse_excursion_penalty,
+        )
+        if (
+            self.profile not in ROUND74_ACTION_PROFILES
+            or any(
+                not math.isfinite(float(value))
+                for value in (*probabilities, *nonnegative)
+            )
+            or any(not 0.0 <= float(value) <= 1.0 for value in probabilities)
+            or any(float(value) < 0.0 for value in nonnegative)
+            or not math.isfinite(float(self.maximum_mae_to_median_ratio))
+            or self.maximum_mae_to_median_ratio <= 0.0
+            or not self.threshold_quantiles
+            or tuple(sorted(set(self.threshold_quantiles))) != self.threshold_quantiles
+            or any(
+                not math.isfinite(float(value)) or not 0.0 < value < 1.0
+                for value in self.threshold_quantiles
+            )
+            or isinstance(self.minimum_trades, bool)
+            or int(self.minimum_trades) < 1
+            or isinstance(self.minimum_active_runs, bool)
+            or not 1 <= int(self.minimum_active_runs) <= 6
+            or not math.isfinite(float(self.minimum_profit_factor))
+            or self.minimum_profit_factor < 1.0
+            or not math.isfinite(float(self.maximum_drawdown_to_gross_profit))
+            or self.maximum_drawdown_to_gross_profit <= 0.0
+        ):
+            raise ValueError("Round 74 action profile differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "profile": self.profile,
+            "downside_penalty": self.downside_penalty,
+            "adverse_excursion_penalty": self.adverse_excursion_penalty,
+            "minimum_positive_probability": self.minimum_positive_probability,
+            "maximum_adverse_probability": self.maximum_adverse_probability,
+            "maximum_unpredictability_probability": (
+                self.maximum_unpredictability_probability
+            ),
+            "lower_quartile_mae_tolerance": (self.lower_quartile_mae_tolerance),
+            "maximum_mae_to_median_ratio": (self.maximum_mae_to_median_ratio),
+            "threshold_quantiles": list(self.threshold_quantiles),
+            "minimum_trades": self.minimum_trades,
+            "minimum_active_runs": self.minimum_active_runs,
+            "minimum_profitable_run_ratio": (self.minimum_profitable_run_ratio),
+            "minimum_profit_factor": self.minimum_profit_factor,
+            "maximum_drawdown_to_gross_profit": (self.maximum_drawdown_to_gross_profit),
+            "maximum_adverse_selection_rate": (self.maximum_adverse_selection_rate),
+            "maximum_symbol_trade_share": self.maximum_symbol_trade_share,
+            "objective_drawdown_penalty": self.objective_drawdown_penalty,
+            "objective_adverse_excursion_penalty": (
+                self.objective_adverse_excursion_penalty
+            ),
+        }
+
+
+_PROFILE_SPECS = {
+    "conservative": Round74ActionProfileSpec(
+        profile="conservative",
+        downside_penalty=0.80,
+        adverse_excursion_penalty=0.65,
+        minimum_positive_probability=0.62,
+        maximum_adverse_probability=0.28,
+        maximum_unpredictability_probability=0.30,
+        lower_quartile_mae_tolerance=0.0,
+        maximum_mae_to_median_ratio=0.75,
+        threshold_quantiles=(0.50, 0.70, 0.85, 0.95),
+        minimum_trades=12,
+        minimum_active_runs=5,
+        minimum_profitable_run_ratio=4.0 / 6.0,
+        minimum_profit_factor=1.25,
+        maximum_drawdown_to_gross_profit=0.45,
+        maximum_adverse_selection_rate=0.30,
+        maximum_symbol_trade_share=0.60,
+        objective_drawdown_penalty=2.0,
+        objective_adverse_excursion_penalty=0.50,
+    ),
+    "regular": Round74ActionProfileSpec(
+        profile="regular",
+        downside_penalty=0.55,
+        adverse_excursion_penalty=0.45,
+        minimum_positive_probability=0.57,
+        maximum_adverse_probability=0.38,
+        maximum_unpredictability_probability=0.40,
+        lower_quartile_mae_tolerance=0.50,
+        maximum_mae_to_median_ratio=1.25,
+        threshold_quantiles=(0.35, 0.55, 0.75, 0.90),
+        minimum_trades=9,
+        minimum_active_runs=4,
+        minimum_profitable_run_ratio=0.50,
+        minimum_profit_factor=1.15,
+        maximum_drawdown_to_gross_profit=0.65,
+        maximum_adverse_selection_rate=0.40,
+        maximum_symbol_trade_share=0.70,
+        objective_drawdown_penalty=1.5,
+        objective_adverse_excursion_penalty=0.35,
+    ),
+    "aggressive": Round74ActionProfileSpec(
+        profile="aggressive",
+        downside_penalty=0.35,
+        adverse_excursion_penalty=0.30,
+        minimum_positive_probability=0.53,
+        maximum_adverse_probability=0.48,
+        maximum_unpredictability_probability=0.50,
+        lower_quartile_mae_tolerance=1.0,
+        maximum_mae_to_median_ratio=2.0,
+        threshold_quantiles=(0.20, 0.40, 0.60, 0.80),
+        minimum_trades=6,
+        minimum_active_runs=3,
+        minimum_profitable_run_ratio=0.50,
+        minimum_profit_factor=1.05,
+        maximum_drawdown_to_gross_profit=0.85,
+        maximum_adverse_selection_rate=0.50,
+        maximum_symbol_trade_share=0.80,
+        objective_drawdown_penalty=1.0,
+        objective_adverse_excursion_penalty=0.20,
+    ),
+}
+for _profile_spec in _PROFILE_SPECS.values():
+    _profile_spec.validate()
+
+
+def round74_action_profile(
+    profile: str = ROUND74_ACTION_DEFAULT_PROFILE,
+) -> Round74ActionProfileSpec:
+    """Return one immutable risk profile; conservative is the default."""
+
+    try:
+        return _PROFILE_SPECS[str(profile)]
+    except KeyError as exc:
+        raise ValueError("Round 74 action profile is unsupported") from exc
+
+
+@dataclass(frozen=True)
+class Round74ActionInferenceContext:
+    """Causal model input and row identity with no realized target fields."""
+
+    role: str
+    partition_sha256: str
+    scaler_sha256: str
+    run_id: tuple[str, ...]
+    symbol: tuple[str, ...]
+    decision_monotonic_ns: np.ndarray
+    decision_wall_ns: np.ndarray
+    endpoint_frame_index: np.ndarray
+    endpoint_message_index: np.ndarray
+    anchor_index: np.ndarray
+    feature_values: np.ndarray
+    feature_row_sha256: tuple[str, ...]
+    schema_version: str = ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
+
+    @property
+    def rows(self) -> int:
+        return len(self.run_id)
+
+    def validate(self) -> None:
+        identity_arrays = (
+            self.decision_monotonic_ns,
+            self.decision_wall_ns,
+            self.endpoint_frame_index,
+            self.endpoint_message_index,
+            self.anchor_index,
+        )
+        if (
+            self.schema_version != ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
+            or self.role not in ROUND74_EVENT_PARTITION_ROLES
+            or self.rows < 1
+            or len(self.symbol) != self.rows
+            or len(self.feature_row_sha256) != self.rows
+            or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
+            or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
+            or any(
+                _SHA256.fullmatch(value) is None for value in self.feature_row_sha256
+            )
+            or _SHA256.fullmatch(self.partition_sha256) is None
+            or _SHA256.fullmatch(self.scaler_sha256) is None
+            or self.feature_values.shape
+            != (
+                self.rows,
+                ROUND74_EVENT_SEQUENCE_LENGTH,
+                len(ROUND74_EVENT_FEATURE_NAMES),
+            )
+            or self.feature_values.dtype != np.float32
+            or self.feature_values.flags.writeable
+            or not np.isfinite(self.feature_values).all()
+            or any(value.shape != (self.rows,) for value in identity_arrays)
+            or any(value.dtype != np.int64 for value in identity_arrays)
+            or any(value.flags.writeable for value in identity_arrays)
+            or any(np.any(value < 0) for value in identity_arrays)
+        ):
+            raise ValueError("Round 74 action inference context differs")
+        keys = tuple(
+            (
+                int(self.decision_wall_ns[index]),
+                self.run_id[index],
+                int(self.decision_monotonic_ns[index]),
+                int(self.endpoint_frame_index[index]),
+                int(self.endpoint_message_index[index]),
+                self.symbol[index],
+                int(self.anchor_index[index]),
+            )
+            for index in range(self.rows)
+        )
+        if any(current <= prior for prior, current in zip(keys, keys[1:])):
+            raise ValueError("Round 74 action inference order regressed")
+        if self.feature_row_sha256 != tuple(
+            _feature_row_sha256(self, index) for index in range(self.rows)
+        ):
+            raise ValueError("Round 74 action feature-row identity differs")
+
+    @property
+    def context_sha256(self) -> str:
+        self.validate()
+        identity = {
+            "schema_version": self.schema_version,
+            "source_dataset_schema_version": (ROUND74_EVENT_DATASET_SCHEMA_VERSION),
+            "role": self.role,
+            "partition_sha256": self.partition_sha256,
+            "scaler_sha256": self.scaler_sha256,
+            "run_id": list(self.run_id),
+            "symbol": list(self.symbol),
+            "feature_row_sha256": list(self.feature_row_sha256),
+            "contains_realized_targets": False,
+        }
+        digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
+        for value in (
+            self.decision_monotonic_ns,
+            self.decision_wall_ns,
+            self.endpoint_frame_index,
+            self.endpoint_message_index,
+            self.anchor_index,
+            self.feature_values,
+        ):
+            _update_array_digest(digest, value)
+        return digest.hexdigest()
+
+
+def _feature_row_sha256(
+    context: Round74ActionInferenceContext,
+    index: int,
+) -> str:
+    identity = {
+        "schema_version": ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
+        "partition_sha256": context.partition_sha256,
+        "scaler_sha256": context.scaler_sha256,
+        "role": context.role,
+        "run_id": context.run_id[index],
+        "symbol": context.symbol[index],
+        "decision_monotonic_ns": int(context.decision_monotonic_ns[index]),
+        "decision_wall_ns": int(context.decision_wall_ns[index]),
+        "endpoint_frame_index": int(context.endpoint_frame_index[index]),
+        "endpoint_message_index": int(context.endpoint_message_index[index]),
+        "anchor_index": int(context.anchor_index[index]),
+    }
+    digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
+    _update_array_digest(digest, context.feature_values[index])
+    return digest.hexdigest()
+
+
+def build_round74_action_inference_context(
+    batch: Round74EventTrainingBatch,
+) -> Round74ActionInferenceContext:
+    """Copy only causal identity/features out of a labeled research batch."""
+
+    batch.validate()
+    provisional = Round74ActionInferenceContext(
+        role=batch.role,
+        partition_sha256=batch.partition_sha256,
+        scaler_sha256=batch.scaler_sha256,
+        run_id=tuple(batch.run_id),
+        symbol=tuple(batch.symbol),
+        decision_monotonic_ns=_readonly(
+            np.array(batch.decision_monotonic_ns, dtype=np.int64, copy=True)
+        ),
+        decision_wall_ns=_readonly(
+            np.array(batch.decision_wall_ns, dtype=np.int64, copy=True)
+        ),
+        endpoint_frame_index=_readonly(
+            np.array(batch.endpoint_frame_index, dtype=np.int64, copy=True)
+        ),
+        endpoint_message_index=_readonly(
+            np.array(batch.endpoint_message_index, dtype=np.int64, copy=True)
+        ),
+        anchor_index=_readonly(np.array(batch.anchor_index, dtype=np.int64, copy=True)),
+        feature_values=_readonly(
+            np.array(batch.feature_values, dtype=np.float32, copy=True)
+        ),
+        feature_row_sha256=(),
+    )
+    context = Round74ActionInferenceContext(
+        **{
+            **provisional.__dict__,
+            "feature_row_sha256": tuple(
+                _feature_row_sha256(provisional, index)
+                for index in range(provisional.rows)
+            ),
+        }
+    )
+    context.validate()
+    return context
+
+
+@dataclass(frozen=True)
+class Round74ActionCandidateBatch:
+    """One target-free, risk-profile candidate or abstention per row."""
+
+    profile: str
+    context_sha256: str
+    model_output_sha256: str
+    pretest_policy_sha256: str
+    probability_calibration_sha256: str
+    tuning_subpartition_sha256: str
+    run_id: tuple[str, ...]
+    symbol: tuple[str, ...]
+    feature_row_sha256: tuple[str, ...]
+    horizon_seconds: np.ndarray
+    side: np.ndarray
+    risk_adjusted_strength_bps: np.ndarray
+    quality_score: np.ndarray
+    positive_payoff_probability: np.ndarray
+    adverse_selection_probability: np.ndarray
+    regime_unpredictability_probability: np.ndarray
+    payoff_quantiles_bps: np.ndarray
+    maximum_adverse_excursion_quantiles_bps: np.ndarray
+    eligible: np.ndarray
+    schema_version: str = ROUND74_ACTION_POLICY_SCHEMA_VERSION
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    @property
+    def rows(self) -> int:
+        return len(self.run_id)
+
+    def validate(self) -> None:
+        row_shape = (self.rows,)
+        float_arrays = (
+            self.risk_adjusted_strength_bps,
+            self.quality_score,
+            self.positive_payoff_probability,
+            self.adverse_selection_probability,
+            self.regime_unpredictability_probability,
+        )
+        quantile_shape = (self.rows, len(ROUND74_EVENT_PAYOFF_QUANTILES))
+        if (
+            self.schema_version != ROUND74_ACTION_POLICY_SCHEMA_VERSION
+            or self.profile not in ROUND74_ACTION_PROFILES
+            or self.rows < 1
+            or len(self.symbol) != self.rows
+            or len(self.feature_row_sha256) != self.rows
+            or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
+            or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
+            or any(
+                _SHA256.fullmatch(value) is None for value in self.feature_row_sha256
+            )
+            or any(
+                _SHA256.fullmatch(value) is None
+                for value in (
+                    self.context_sha256,
+                    self.model_output_sha256,
+                    self.pretest_policy_sha256,
+                    self.probability_calibration_sha256,
+                    self.tuning_subpartition_sha256,
+                )
+            )
+            or self.horizon_seconds.shape != row_shape
+            or self.horizon_seconds.dtype != np.int64
+            or self.horizon_seconds.flags.writeable
+            or self.side.shape != row_shape
+            or self.side.dtype != np.int8
+            or self.side.flags.writeable
+            or self.eligible.shape != row_shape
+            or self.eligible.dtype != np.bool_
+            or self.eligible.flags.writeable
+            or any(value.shape != row_shape for value in float_arrays)
+            or any(value.dtype != np.float64 for value in float_arrays)
+            or any(value.flags.writeable for value in float_arrays)
+            or any(not np.isfinite(value).all() for value in float_arrays)
+            or self.payoff_quantiles_bps.shape != quantile_shape
+            or self.maximum_adverse_excursion_quantiles_bps.shape != quantile_shape
+            or self.payoff_quantiles_bps.dtype != np.float64
+            or self.maximum_adverse_excursion_quantiles_bps.dtype != np.float64
+            or self.payoff_quantiles_bps.flags.writeable
+            or self.maximum_adverse_excursion_quantiles_bps.flags.writeable
+            or not np.isfinite(self.payoff_quantiles_bps).all()
+            or not np.isfinite(self.maximum_adverse_excursion_quantiles_bps).all()
+            or any(
+                (
+                    self.trading_authority,
+                    self.execution_claim,
+                    self.profitability_claim,
+                    self.portfolio_claim,
+                    self.leverage_applied,
+                )
+            )
+        ):
+            raise ValueError("Round 74 action candidate contract differs")
+        active = self.eligible
+        inactive = ~active
+        probabilities = (
+            self.positive_payoff_probability,
+            self.adverse_selection_probability,
+            self.regime_unpredictability_probability,
+        )
+        if (
+            np.any(
+                ~np.isin(self.horizon_seconds, (0, *ROUND74_ACTION_HORIZONS_SECONDS))
+            )
+            or np.any(~np.isin(self.side, (-1, 0, 1)))
+            or np.any((self.horizon_seconds > 0) != active)
+            or np.any((self.side != 0) != active)
+            or np.any(self.risk_adjusted_strength_bps < 0.0)
+            or np.any(self.quality_score < 0.0)
+            or np.any(self.risk_adjusted_strength_bps[inactive] != 0.0)
+            or np.any(self.quality_score[inactive] != 0.0)
+            or any(np.any((value < 0.0) | (value > 1.0)) for value in probabilities)
+            or any(np.any(value[inactive] != 0.0) for value in probabilities)
+            or np.any(self.payoff_quantiles_bps[inactive] != 0.0)
+            or np.any(self.maximum_adverse_excursion_quantiles_bps[inactive] != 0.0)
+            or np.any(np.diff(self.payoff_quantiles_bps[active], axis=1) < 0.0)
+            or np.any(
+                np.diff(
+                    self.maximum_adverse_excursion_quantiles_bps[active],
+                    axis=1,
+                )
+                < 0.0
+            )
+            or np.any(self.maximum_adverse_excursion_quantiles_bps[active] < 0.0)
+        ):
+            raise ValueError("Round 74 action candidate values differ")
+
+    @property
+    def candidate_sha256(self) -> str:
+        self.validate()
+        identity = {
+            "schema_version": self.schema_version,
+            "profile_spec": round74_action_profile(self.profile).as_dict(),
+            "context_sha256": self.context_sha256,
+            "model_output_sha256": self.model_output_sha256,
+            "pretest_policy_sha256": self.pretest_policy_sha256,
+            "probability_calibration_sha256": (self.probability_calibration_sha256),
+            "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
+            "run_id": list(self.run_id),
+            "symbol": list(self.symbol),
+            "feature_row_sha256": list(self.feature_row_sha256),
+            "target_fields_consumed": False,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
+        digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
+        for value in (
+            self.horizon_seconds,
+            self.side,
+            self.risk_adjusted_strength_bps,
+            self.quality_score,
+            self.positive_payoff_probability,
+            self.adverse_selection_probability,
+            self.regime_unpredictability_probability,
+            self.payoff_quantiles_bps,
+            self.maximum_adverse_excursion_quantiles_bps,
+            self.eligible,
+        ):
+            _update_array_digest(digest, value)
+        return digest.hexdigest()
+
+
+def derive_round74_action_candidates(
+    model_output: Round74EventModelOutput,
+    context: Round74ActionInferenceContext,
+    probability_calibration: Round74ProbabilityCalibration,
+    *,
+    pretest_policy_sha256: str,
+    profile: str = ROUND74_ACTION_DEFAULT_PROFILE,
+) -> Round74ActionCandidateBatch:
+    """Derive at most one target-free 30/300-second candidate per row."""
+
+    context.validate()
+    model_output.validate(context.rows)
+    probability_calibration.validate()
+    policy_sha256 = _require_sha256(
+        pretest_policy_sha256,
+        "pretest policy",
+    )
+    if probability_calibration.pretest_policy_sha256 != policy_sha256:
+        raise ValueError("Round 74 action calibration policy differs")
+    spec = round74_action_profile(profile)
+    positive, adverse, unpredictable = apply_round74_probability_calibration(
+        probability_calibration,
+        positive_payoff_logits=model_output.positive_payoff_logits,
+        adverse_selection_logits=model_output.adverse_selection_logits,
+        regime_unpredictability_logits=(model_output.regime_unpredictability_logits),
+    )
+    payoff = _tensor_array(model_output.payoff_quantiles_bps).astype(np.float64)
+    mae = _tensor_array(model_output.maximum_adverse_excursion_quantiles_bps).astype(
+        np.float64
+    )
+    positive_values = _tensor_array(positive).astype(np.float64)
+    adverse_values = _tensor_array(adverse).astype(np.float64)
+    unpredictable_values = _tensor_array(unpredictable).astype(np.float64)
+    horizons = np.zeros(context.rows, dtype=np.int64)
+    sides = np.zeros(context.rows, dtype=np.int8)
+    strengths = np.zeros(context.rows, dtype=np.float64)
+    quality = np.zeros(context.rows, dtype=np.float64)
+    selected_positive = np.zeros(context.rows, dtype=np.float64)
+    selected_adverse = np.zeros(context.rows, dtype=np.float64)
+    selected_unpredictable = np.zeros(context.rows, dtype=np.float64)
+    selected_payoff = np.zeros(
+        (context.rows, len(ROUND74_EVENT_PAYOFF_QUANTILES)),
+        dtype=np.float64,
+    )
+    selected_mae = np.zeros_like(selected_payoff)
+    eligible = np.zeros(context.rows, dtype=np.bool_)
+    for row_index in range(context.rows):
+        choices: list[tuple[tuple[float, float, int, int], int, int, float, float]] = []
+        for horizon in ROUND74_ACTION_HORIZONS_SECONDS:
+            horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(horizon)
+            regime_probability = unpredictable_values[row_index, horizon_index]
+            for side_index, _side_name in enumerate(ROUND74_EVENT_PAYOFF_SIDES):
+                quantiles = payoff[row_index, horizon_index, side_index]
+                adverse_quantiles = mae[row_index, horizon_index, side_index]
+                q10, q25, q50 = (
+                    float(quantiles[0]),
+                    float(quantiles[1]),
+                    float(quantiles[2]),
+                )
+                mae_q90 = float(adverse_quantiles[4])
+                positive_probability = positive_values[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+                adverse_probability = adverse_values[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+                downside = max(0.0, -q10)
+                strength = (
+                    q50
+                    - spec.downside_penalty * downside
+                    - spec.adverse_excursion_penalty * mae_q90
+                )
+                lower_tail_gate = (
+                    q25 + spec.lower_quartile_mae_tolerance * mae_q90
+                ) >= 0.0
+                mae_ratio = mae_q90 / max(q50, np.finfo(np.float64).eps)
+                passes = (
+                    q50 > 0.0
+                    and strength > 0.0
+                    and positive_probability >= spec.minimum_positive_probability
+                    and adverse_probability <= spec.maximum_adverse_probability
+                    and regime_probability <= spec.maximum_unpredictability_probability
+                    and lower_tail_gate
+                    and mae_ratio <= spec.maximum_mae_to_median_ratio
+                )
+                if not passes:
+                    continue
+                candidate_quality = (
+                    strength
+                    * positive_probability
+                    * (1.0 - adverse_probability)
+                    * (1.0 - regime_probability)
+                    / max(mae_q90, 0.25)
+                )
+                choices.append(
+                    (
+                        (
+                            float(candidate_quality),
+                            -mae_q90,
+                            -horizon,
+                            -side_index,
+                        ),
+                        horizon_index,
+                        side_index,
+                        float(strength),
+                        float(candidate_quality),
+                    )
+                )
+        if not choices:
+            continue
+        _rank, horizon_index, side_index, strength, candidate_quality = max(
+            choices,
+            key=lambda value: value[0],
+        )
+        horizon = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS[horizon_index]
+        eligible[row_index] = True
+        horizons[row_index] = horizon
+        sides[row_index] = 1 if side_index == 0 else -1
+        strengths[row_index] = strength
+        quality[row_index] = candidate_quality
+        selected_positive[row_index] = positive_values[
+            row_index,
+            horizon_index,
+            side_index,
+        ]
+        selected_adverse[row_index] = adverse_values[
+            row_index,
+            horizon_index,
+            side_index,
+        ]
+        selected_unpredictable[row_index] = unpredictable_values[
+            row_index,
+            horizon_index,
+        ]
+        selected_payoff[row_index] = payoff[
+            row_index,
+            horizon_index,
+            side_index,
+        ]
+        selected_mae[row_index] = mae[
+            row_index,
+            horizon_index,
+            side_index,
+        ]
+    result = Round74ActionCandidateBatch(
+        profile=spec.profile,
+        context_sha256=context.context_sha256,
+        model_output_sha256=_model_output_sha256(model_output),
+        pretest_policy_sha256=policy_sha256,
+        probability_calibration_sha256=(probability_calibration.calibration_sha256),
+        tuning_subpartition_sha256=(probability_calibration.tuning_subpartition_sha256),
+        run_id=context.run_id,
+        symbol=context.symbol,
+        feature_row_sha256=context.feature_row_sha256,
+        horizon_seconds=_readonly(horizons),
+        side=_readonly(sides),
+        risk_adjusted_strength_bps=_readonly(strengths),
+        quality_score=_readonly(quality),
+        positive_payoff_probability=_readonly(selected_positive),
+        adverse_selection_probability=_readonly(selected_adverse),
+        regime_unpredictability_probability=_readonly(selected_unpredictable),
+        payoff_quantiles_bps=_readonly(selected_payoff),
+        maximum_adverse_excursion_quantiles_bps=_readonly(selected_mae),
+        eligible=_readonly(eligible),
+    )
+    result.validate()
+    return result
+
+
+@dataclass(frozen=True)
+class Round74ActionTraceMetrics:
+    trades: int
+    active_runs: int
+    distinct_symbols: int
+    total_net_bps: float
+    mean_net_bps: float
+    median_net_bps: float
+    win_rate: float
+    profit_factor: float | None
+    maximum_drawdown_bps: float
+    gross_profit_bps: float
+    gross_loss_bps: float
+    worst_trade_bps: float
+    mean_maximum_adverse_excursion_bps: float
+    adverse_selection_rate: float
+    profitable_run_ratio: float
+    maximum_symbol_trade_share: float
+
+    def validate(self) -> None:
+        finite = (
+            self.total_net_bps,
+            self.mean_net_bps,
+            self.median_net_bps,
+            self.win_rate,
+            self.maximum_drawdown_bps,
+            self.gross_profit_bps,
+            self.gross_loss_bps,
+            self.worst_trade_bps,
+            self.mean_maximum_adverse_excursion_bps,
+            self.adverse_selection_rate,
+            self.profitable_run_ratio,
+            self.maximum_symbol_trade_share,
+        )
+        if (
+            isinstance(self.trades, bool)
+            or self.trades < 0
+            or isinstance(self.active_runs, bool)
+            or not 0 <= self.active_runs <= 6
+            or isinstance(self.distinct_symbols, bool)
+            or not 0 <= self.distinct_symbols <= len(ROUND74_EVENT_SYMBOLS)
+            or any(not math.isfinite(float(value)) for value in finite)
+            or any(
+                not 0.0 <= float(value) <= 1.0
+                for value in (
+                    self.win_rate,
+                    self.adverse_selection_rate,
+                    self.profitable_run_ratio,
+                    self.maximum_symbol_trade_share,
+                )
+            )
+            or min(
+                self.maximum_drawdown_bps,
+                self.gross_profit_bps,
+                self.gross_loss_bps,
+                self.mean_maximum_adverse_excursion_bps,
+            )
+            < 0.0
+            or (
+                self.profit_factor is not None
+                and (
+                    not math.isfinite(float(self.profit_factor))
+                    or self.profit_factor < 0.0
+                )
+            )
+        ):
+            raise ValueError("Round 74 action trace metrics differ")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {key: value for key, value in self.__dict__.items()}
+
+
+@dataclass(frozen=True)
+class Round74ActionTrace:
+    """Exact, unlevered research replay with one open trade per symbol."""
+
+    threshold_score: float
+    expected_run_ids: tuple[str, ...]
+    row_index: tuple[int, ...]
+    run_id: tuple[str, ...]
+    symbol: tuple[str, ...]
+    feature_row_sha256: tuple[str, ...]
+    horizon_seconds: tuple[int, ...]
+    side: tuple[int, ...]
+    entry_monotonic_ns: tuple[int, ...]
+    exit_monotonic_ns: tuple[int, ...]
+    net_payoff_bps: tuple[float, ...]
+    maximum_adverse_excursion_bps: tuple[float, ...]
+    adverse_selection: tuple[int, ...]
+    skipped_target_ineligible: int
+    skipped_same_symbol_overlap: int
+    metrics: Round74ActionTraceMetrics
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    def validate(self) -> None:
+        rows = len(self.row_index)
+        vectors = (
+            self.run_id,
+            self.symbol,
+            self.feature_row_sha256,
+            self.horizon_seconds,
+            self.side,
+            self.entry_monotonic_ns,
+            self.exit_monotonic_ns,
+            self.net_payoff_bps,
+            self.maximum_adverse_excursion_bps,
+            self.adverse_selection,
+        )
+        if (
+            not math.isfinite(float(self.threshold_score))
+            or self.threshold_score < 0.0
+            or len(self.expected_run_ids) != 6
+            or len(set(self.expected_run_ids)) != 6
+            or any(_RUN_ID.fullmatch(value) is None for value in self.expected_run_ids)
+            or any(len(value) != rows for value in vectors)
+            or any(value < 0 for value in self.row_index)
+            or any(
+                current <= prior
+                for prior, current in zip(self.row_index, self.row_index[1:])
+            )
+            or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
+            or any(value not in self.expected_run_ids for value in self.run_id)
+            or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
+            or any(
+                _SHA256.fullmatch(value) is None for value in self.feature_row_sha256
+            )
+            or any(
+                value not in ROUND74_ACTION_HORIZONS_SECONDS
+                for value in self.horizon_seconds
+            )
+            or any(value not in (-1, 1) for value in self.side)
+            or any(
+                exit_value < entry_value
+                for entry_value, exit_value in zip(
+                    self.entry_monotonic_ns,
+                    self.exit_monotonic_ns,
+                )
+            )
+            or any(
+                not math.isfinite(float(value))
+                for value in (
+                    *self.net_payoff_bps,
+                    *self.maximum_adverse_excursion_bps,
+                )
+            )
+            or any(value < 0.0 for value in self.maximum_adverse_excursion_bps)
+            or any(value not in (0, 1) for value in self.adverse_selection)
+            or self.skipped_target_ineligible < 0
+            or self.skipped_same_symbol_overlap < 0
+            or any(
+                (
+                    self.trading_authority,
+                    self.execution_claim,
+                    self.profitability_claim,
+                    self.portfolio_claim,
+                    self.leverage_applied,
+                )
+            )
+        ):
+            raise ValueError("Round 74 action trace differs")
+        open_until: dict[tuple[str, str], int] = {}
+        for run_id, symbol, entry, exit_value in zip(
+            self.run_id,
+            self.symbol,
+            self.entry_monotonic_ns,
+            self.exit_monotonic_ns,
+            strict=True,
+        ):
+            key = (run_id, symbol)
+            if entry < open_until.get(key, -1):
+                raise ValueError("Round 74 action trace overlaps")
+            open_until[key] = exit_value
+        self.metrics.validate()
+        if self.metrics.trades != rows:
+            raise ValueError("Round 74 action trace count differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "threshold_score": self.threshold_score,
+            "expected_run_ids": list(self.expected_run_ids),
+            "row_index": list(self.row_index),
+            "run_id": list(self.run_id),
+            "symbol": list(self.symbol),
+            "feature_row_sha256": list(self.feature_row_sha256),
+            "horizon_seconds": list(self.horizon_seconds),
+            "side": list(self.side),
+            "entry_monotonic_ns": list(self.entry_monotonic_ns),
+            "exit_monotonic_ns": list(self.exit_monotonic_ns),
+            "net_payoff_bps": list(self.net_payoff_bps),
+            "maximum_adverse_excursion_bps": list(self.maximum_adverse_excursion_bps),
+            "adverse_selection": list(self.adverse_selection),
+            "skipped_target_ineligible": self.skipped_target_ineligible,
+            "skipped_same_symbol_overlap": (self.skipped_same_symbol_overlap),
+            "metrics": self.metrics.as_dict(),
+            "replay_semantics": "one_open_trade_per_run_and_symbol",
+            "exact_target_entry_exit_times_used": True,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
+
+
+def _trace_metrics(
+    *,
+    run_ids: tuple[str, ...],
+    symbols: tuple[str, ...],
+    net_payoff_bps: tuple[float, ...],
+    maximum_adverse_excursion_bps: tuple[float, ...],
+    adverse_selection: tuple[int, ...],
+    expected_run_ids: tuple[str, ...],
+) -> Round74ActionTraceMetrics:
+    values = np.asarray(net_payoff_bps, dtype=np.float64)
+    adverse_excursion = np.asarray(
+        maximum_adverse_excursion_bps,
+        dtype=np.float64,
+    )
+    adverse = np.asarray(adverse_selection, dtype=np.float64)
+    if values.size:
+        cumulative = np.cumsum(values)
+        peaks = np.maximum.accumulate(np.concatenate(([0.0], cumulative)))
+        drawdowns = peaks[1:] - cumulative
+        gross_profit = float(values[values > 0.0].sum())
+        gross_loss = float(-values[values < 0.0].sum())
+        profit_factor = gross_profit / gross_loss if gross_loss > 0.0 else None
+        symbol_counts = {
+            symbol: symbols.count(symbol) for symbol in ROUND74_EVENT_SYMBOLS
+        }
+        maximum_symbol_share = max(symbol_counts.values()) / len(symbols)
+    else:
+        drawdowns = np.zeros(1, dtype=np.float64)
+        gross_profit = 0.0
+        gross_loss = 0.0
+        profit_factor = None
+        maximum_symbol_share = 0.0
+    run_pnl = {run_id: 0.0 for run_id in expected_run_ids}
+    run_trades = {run_id: 0 for run_id in expected_run_ids}
+    for run_id, value in zip(run_ids, values, strict=True):
+        run_pnl[run_id] += float(value)
+        run_trades[run_id] += 1
+    result = Round74ActionTraceMetrics(
+        trades=int(values.size),
+        active_runs=sum(count > 0 for count in run_trades.values()),
+        distinct_symbols=len(set(symbols)),
+        total_net_bps=float(values.sum()) if values.size else 0.0,
+        mean_net_bps=float(values.mean()) if values.size else 0.0,
+        median_net_bps=float(np.median(values)) if values.size else 0.0,
+        win_rate=float(np.mean(values > 0.0)) if values.size else 0.0,
+        profit_factor=profit_factor,
+        maximum_drawdown_bps=float(drawdowns.max()),
+        gross_profit_bps=gross_profit,
+        gross_loss_bps=gross_loss,
+        worst_trade_bps=float(values.min()) if values.size else 0.0,
+        mean_maximum_adverse_excursion_bps=(
+            float(adverse_excursion.mean()) if values.size else 0.0
+        ),
+        adverse_selection_rate=(float(adverse.mean()) if values.size else 0.0),
+        profitable_run_ratio=float(
+            np.mean(np.asarray(tuple(run_pnl.values()), dtype=np.float64) > 0.0)
+        ),
+        maximum_symbol_trade_share=float(maximum_symbol_share),
+    )
+    result.validate()
+    return result
+
+
+def simulate_round74_action_trace(
+    batch: Round74EventTrainingBatch,
+    candidates: Round74ActionCandidateBatch,
+    *,
+    threshold_score: float,
+    expected_run_ids: tuple[str, ...],
+) -> Round74ActionTrace:
+    """Replay selected actions against exact outcomes without cross-run clocks."""
+
+    batch.validate()
+    candidates.validate()
+    threshold = float(threshold_score)
+    expected = tuple(expected_run_ids)
+    context = build_round74_action_inference_context(batch)
+    if (
+        batch.role != "tuning"
+        or not math.isfinite(threshold)
+        or threshold < 0.0
+        or candidates.context_sha256 != context.context_sha256
+        or candidates.run_id != context.run_id
+        or candidates.symbol != context.symbol
+        or candidates.feature_row_sha256 != context.feature_row_sha256
+        or len(expected) != 6
+        or len(set(expected)) != len(expected)
+        or any(_RUN_ID.fullmatch(value) is None for value in expected)
+        or set(batch.run_id) != set(expected)
+    ):
+        raise ValueError("Round 74 action replay identity differs")
+    selected_rows: list[int] = []
+    selected_runs: list[str] = []
+    selected_symbols: list[str] = []
+    selected_features: list[str] = []
+    selected_horizons: list[int] = []
+    selected_sides: list[int] = []
+    entries: list[int] = []
+    exits: list[int] = []
+    payoffs: list[float] = []
+    adverse_excursions: list[float] = []
+    adverse_selections: list[int] = []
+    open_until: dict[tuple[str, str], int] = {}
+    skipped_target_ineligible = 0
+    skipped_overlap = 0
+    for row_index in range(batch.rows):
+        if (
+            not candidates.eligible[row_index]
+            or candidates.quality_score[row_index] < threshold
+        ):
+            continue
+        horizon = int(candidates.horizon_seconds[row_index])
+        horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(horizon)
+        side = int(candidates.side[row_index])
+        side_index = 0 if side == 1 else 1
+        if batch.action_eligibility[row_index, horizon_index, side_index] != 1.0:
+            skipped_target_ineligible += 1
+            continue
+        entry = int(
+            batch.actual_entry_monotonic_ns[
+                row_index,
+                horizon_index,
+                side_index,
+            ]
+        )
+        exit_value = int(
+            batch.actual_exit_monotonic_ns[
+                row_index,
+                horizon_index,
+                side_index,
+            ]
+        )
+        position_key = (batch.run_id[row_index], batch.symbol[row_index])
+        if entry < open_until.get(position_key, -1):
+            skipped_overlap += 1
+            continue
+        open_until[position_key] = exit_value
+        selected_rows.append(row_index)
+        selected_runs.append(batch.run_id[row_index])
+        selected_symbols.append(batch.symbol[row_index])
+        selected_features.append(candidates.feature_row_sha256[row_index])
+        selected_horizons.append(horizon)
+        selected_sides.append(side)
+        entries.append(entry)
+        exits.append(exit_value)
+        payoffs.append(
+            float(
+                batch.net_payoff_bps[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+            )
+        )
+        adverse_excursions.append(
+            float(
+                batch.maximum_adverse_excursion_bps[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+            )
+        )
+        adverse_selections.append(
+            int(
+                batch.adverse_selection[
+                    row_index,
+                    horizon_index,
+                    side_index,
+                ]
+            )
+        )
+    run_tuple = tuple(selected_runs)
+    symbol_tuple = tuple(selected_symbols)
+    payoff_tuple = tuple(payoffs)
+    adverse_excursion_tuple = tuple(adverse_excursions)
+    adverse_selection_tuple = tuple(adverse_selections)
+    result = Round74ActionTrace(
+        threshold_score=threshold,
+        expected_run_ids=expected,
+        row_index=tuple(selected_rows),
+        run_id=run_tuple,
+        symbol=symbol_tuple,
+        feature_row_sha256=tuple(selected_features),
+        horizon_seconds=tuple(selected_horizons),
+        side=tuple(selected_sides),
+        entry_monotonic_ns=tuple(entries),
+        exit_monotonic_ns=tuple(exits),
+        net_payoff_bps=payoff_tuple,
+        maximum_adverse_excursion_bps=adverse_excursion_tuple,
+        adverse_selection=adverse_selection_tuple,
+        skipped_target_ineligible=skipped_target_ineligible,
+        skipped_same_symbol_overlap=skipped_overlap,
+        metrics=_trace_metrics(
+            run_ids=run_tuple,
+            symbols=symbol_tuple,
+            net_payoff_bps=payoff_tuple,
+            maximum_adverse_excursion_bps=adverse_excursion_tuple,
+            adverse_selection=adverse_selection_tuple,
+            expected_run_ids=expected,
+        ),
+    )
+    result.validate()
+    return result
+
+
+def _trace_gate_reasons(
+    trace: Round74ActionTrace,
+    spec: Round74ActionProfileSpec,
+) -> tuple[str, ...]:
+    metrics = trace.metrics
+    reasons: list[str] = []
+    if metrics.trades < spec.minimum_trades:
+        reasons.append("minimum_trades_not_met")
+    if metrics.active_runs < spec.minimum_active_runs:
+        reasons.append("minimum_active_runs_not_met")
+    if metrics.distinct_symbols != len(ROUND74_EVENT_SYMBOLS):
+        reasons.append("asset_diversification_not_met")
+    if metrics.total_net_bps <= 0.0 or metrics.mean_net_bps <= 0.0:
+        reasons.append("positive_after_cost_payoff_not_met")
+    if metrics.profitable_run_ratio < spec.minimum_profitable_run_ratio:
+        reasons.append("profitable_run_ratio_not_met")
+    if metrics.gross_loss_bps > 0.0 and (
+        metrics.profit_factor is None
+        or metrics.profit_factor < spec.minimum_profit_factor
+    ):
+        reasons.append("profit_factor_not_met")
+    drawdown_ratio = (
+        metrics.maximum_drawdown_bps / metrics.gross_profit_bps
+        if metrics.gross_profit_bps > 0.0
+        else math.inf
+    )
+    if drawdown_ratio > spec.maximum_drawdown_to_gross_profit:
+        reasons.append("drawdown_to_gross_profit_not_met")
+    if metrics.adverse_selection_rate > spec.maximum_adverse_selection_rate:
+        reasons.append("adverse_selection_rate_not_met")
+    if metrics.maximum_symbol_trade_share > spec.maximum_symbol_trade_share:
+        reasons.append("symbol_concentration_not_met")
+    return tuple(reasons)
+
+
+@dataclass(frozen=True)
+class Round74ActionThresholdEvaluation:
+    quantile: float
+    threshold_score: float
+    objective_bps: float
+    accepted: bool
+    rejection_reasons: tuple[str, ...]
+    trace: Round74ActionTrace
+
+    def validate(self) -> None:
+        self.trace.validate()
+        if (
+            not math.isfinite(float(self.quantile))
+            or not 0.0 < self.quantile < 1.0
+            or not math.isfinite(float(self.threshold_score))
+            or self.threshold_score < 0.0
+            or not math.isfinite(float(self.objective_bps))
+            or self.trace.threshold_score != self.threshold_score
+            or self.accepted == bool(self.rejection_reasons)
+        ):
+            raise ValueError("Round 74 action threshold evaluation differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "quantile": self.quantile,
+            "threshold_score": self.threshold_score,
+            "objective_bps": self.objective_bps,
+            "accepted": self.accepted,
+            "rejection_reasons": list(self.rejection_reasons),
+            "trace": self.trace.as_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class Round74ActionPolicySelection:
+    """Hash-bound tuning result that may validly choose to abstain."""
+
+    profile: str
+    pretest_policy_sha256: str
+    probability_calibration_sha256: str
+    tuning_subpartition_sha256: str
+    target_batch_sha256: str
+    candidate_sha256: str
+    accepted: bool
+    selected_quantile: float | None
+    selected_threshold_score: float | None
+    evaluations: tuple[Round74ActionThresholdEvaluation, ...]
+    rejection_reasons: tuple[str, ...]
+    schema_version: str = ROUND74_ACTION_POLICY_SCHEMA_VERSION
+    sealed_test_accessed: bool = False
+    trading_authority: bool = False
+    execution_claim: bool = False
+    profitability_claim: bool = False
+    portfolio_claim: bool = False
+    leverage_applied: bool = False
+
+    def validate(self) -> None:
+        spec = round74_action_profile(self.profile)
+        if (
+            self.schema_version != ROUND74_ACTION_POLICY_SCHEMA_VERSION
+            or any(
+                _SHA256.fullmatch(value) is None
+                for value in (
+                    self.pretest_policy_sha256,
+                    self.probability_calibration_sha256,
+                    self.tuning_subpartition_sha256,
+                    self.target_batch_sha256,
+                    self.candidate_sha256,
+                )
+            )
+            or len(self.evaluations) != len(spec.threshold_quantiles)
+            or tuple(value.quantile for value in self.evaluations)
+            != spec.threshold_quantiles
+            or any(
+                value.trace.expected_run_ids
+                != self.evaluations[0].trace.expected_run_ids
+                for value in self.evaluations
+            )
+            or any(
+                (
+                    self.sealed_test_accessed,
+                    self.trading_authority,
+                    self.execution_claim,
+                    self.profitability_claim,
+                    self.portfolio_claim,
+                    self.leverage_applied,
+                )
+            )
+        ):
+            raise ValueError("Round 74 action policy selection differs")
+        for evaluation in self.evaluations:
+            evaluation.validate()
+        if self.accepted:
+            if (
+                self.selected_quantile is None
+                or self.selected_threshold_score is None
+                or self.rejection_reasons
+                or not any(
+                    value.accepted
+                    and value.quantile == self.selected_quantile
+                    and value.threshold_score == self.selected_threshold_score
+                    for value in self.evaluations
+                )
+            ):
+                raise ValueError("Round 74 accepted action policy differs")
+        elif (
+            self.selected_quantile is not None
+            or self.selected_threshold_score is not None
+            or not self.rejection_reasons
+        ):
+            raise ValueError("Round 74 rejected action policy differs")
+
+    @property
+    def selection_sha256(self) -> str:
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        value: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "profile": self.profile,
+            "profile_spec": round74_action_profile(self.profile).as_dict(),
+            "pretest_policy_sha256": self.pretest_policy_sha256,
+            "probability_calibration_sha256": (self.probability_calibration_sha256),
+            "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
+            "target_batch_sha256": self.target_batch_sha256,
+            "candidate_sha256": self.candidate_sha256,
+            "accepted": self.accepted,
+            "selected_quantile": self.selected_quantile,
+            "selected_threshold_score": self.selected_threshold_score,
+            "evaluations": [evaluation.as_dict() for evaluation in self.evaluations],
+            "rejection_reasons": list(self.rejection_reasons),
+            "selection_data_role": "policy_selection_tuning_runs_only",
+            "sealed_test_accessed": False,
+            "trading_authority": False,
+            "execution_claim": False,
+            "profitability_claim": False,
+            "portfolio_claim": False,
+            "leverage_applied": False,
+        }
+        if include_sha256:
+            value["selection_sha256"] = _canonical_sha256(value)
+        return value
+
+
+def select_round74_action_policy(
+    batch: Round74EventTrainingBatch,
+    candidates: Round74ActionCandidateBatch,
+    tuning_subpartition: Round74TuningSubpartition,
+) -> Round74ActionPolicySelection:
+    """Select a threshold using only the six fixed policy-selection runs."""
+
+    batch.validate()
+    candidates.validate()
+    tuning_subpartition.validate()
+    context = build_round74_action_inference_context(batch)
+    expected_runs = tuning_subpartition.policy_selection_run_ids
+    if (
+        batch.role != "tuning"
+        or candidates.context_sha256 != context.context_sha256
+        or candidates.tuning_subpartition_sha256
+        != tuning_subpartition.subpartition_sha256
+        or set(batch.run_id) != set(expected_runs)
+        or any(run_id not in expected_runs for run_id in batch.run_id)
+    ):
+        raise ValueError("Round 74 action policy data role differs")
+    spec = round74_action_profile(candidates.profile)
+    active_scores = candidates.quality_score[candidates.eligible]
+    evaluations: list[Round74ActionThresholdEvaluation] = []
+    if active_scores.size:
+        for quantile in spec.threshold_quantiles:
+            threshold = float(np.quantile(active_scores, quantile, method="linear"))
+            trace = simulate_round74_action_trace(
+                batch,
+                candidates,
+                threshold_score=threshold,
+                expected_run_ids=expected_runs,
+            )
+            reasons = _trace_gate_reasons(trace, spec)
+            metrics = trace.metrics
+            objective = float(
+                metrics.total_net_bps
+                - spec.objective_drawdown_penalty * metrics.maximum_drawdown_bps
+                - spec.objective_adverse_excursion_penalty
+                * metrics.mean_maximum_adverse_excursion_bps
+            )
+            evaluations.append(
+                Round74ActionThresholdEvaluation(
+                    quantile=quantile,
+                    threshold_score=threshold,
+                    objective_bps=objective,
+                    accepted=not reasons,
+                    rejection_reasons=reasons,
+                    trace=trace,
+                )
+            )
+    else:
+        for quantile in spec.threshold_quantiles:
+            trace = simulate_round74_action_trace(
+                batch,
+                candidates,
+                threshold_score=np.finfo(np.float64).max,
+                expected_run_ids=expected_runs,
+            )
+            evaluations.append(
+                Round74ActionThresholdEvaluation(
+                    quantile=quantile,
+                    threshold_score=np.finfo(np.float64).max,
+                    objective_bps=0.0,
+                    accepted=False,
+                    rejection_reasons=("no_target_free_candidates",),
+                    trace=trace,
+                )
+            )
+    accepted = [value for value in evaluations if value.accepted]
+    if accepted:
+        selected = max(
+            accepted,
+            key=lambda value: (
+                value.objective_bps,
+                -value.trace.metrics.maximum_drawdown_bps,
+                -value.trace.metrics.adverse_selection_rate,
+                value.quantile,
+            ),
+        )
+        rejection_reasons: tuple[str, ...] = ()
+        selected_quantile: float | None = selected.quantile
+        selected_threshold: float | None = selected.threshold_score
+        did_accept = True
+    else:
+        rejection_reasons = ("no_policy_threshold_passed_risk_gates",)
+        selected_quantile = None
+        selected_threshold = None
+        did_accept = False
+    result = Round74ActionPolicySelection(
+        profile=spec.profile,
+        pretest_policy_sha256=candidates.pretest_policy_sha256,
+        probability_calibration_sha256=(candidates.probability_calibration_sha256),
+        tuning_subpartition_sha256=tuning_subpartition.subpartition_sha256,
+        target_batch_sha256=batch.batch_sha256,
+        candidate_sha256=candidates.candidate_sha256,
+        accepted=did_accept,
+        selected_quantile=selected_quantile,
+        selected_threshold_score=selected_threshold,
+        evaluations=tuple(evaluations),
+        rejection_reasons=rejection_reasons,
+    )
+    result.validate()
+    return result
+
+
+__all__ = [
+    "ROUND74_ACTION_CONTEXT_SCHEMA_VERSION",
+    "ROUND74_ACTION_DEFAULT_PROFILE",
+    "ROUND74_ACTION_HORIZONS_SECONDS",
+    "ROUND74_ACTION_POLICY_SCHEMA_VERSION",
+    "ROUND74_ACTION_PROFILES",
+    "Round74ActionCandidateBatch",
+    "Round74ActionInferenceContext",
+    "Round74ActionPolicySelection",
+    "Round74ActionProfileSpec",
+    "Round74ActionThresholdEvaluation",
+    "Round74ActionTrace",
+    "Round74ActionTraceMetrics",
+    "build_round74_action_inference_context",
+    "derive_round74_action_candidates",
+    "round74_action_profile",
+    "select_round74_action_policy",
+    "simulate_round74_action_trace",
+]
