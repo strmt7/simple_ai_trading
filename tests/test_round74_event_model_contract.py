@@ -9,6 +9,13 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_runtime import (
+    ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_ai_worker import (
+    ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
+    ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION,
     ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
@@ -37,7 +44,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v5.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v6.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -98,6 +105,12 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["ai_protocol_sha256"] == _file_sha256(
         source["ai_protocol_path"]
     )
+    assert source["ai_worker_sha256"] == _file_sha256(
+        source["ai_worker_path"]
+    )
+    assert source["ai_runtime_sha256"] == _file_sha256(
+        source["ai_runtime_path"]
+    )
     assert source["event_training_sha256"] == _file_sha256(
         source["event_training_path"]
     )
@@ -141,6 +154,18 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["ai_review_decision_schema_version"]
         == ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_worker_envelope_schema_version"]
+        == ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_worker_result_schema_version"]
+        == ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_runtime_outcome_schema_version"]
+        == ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION
     )
     assert (
         source["event_training_schema_version"]
@@ -280,6 +305,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     ] is False
     ai = design["ai_comparison_contract"]
     assert ai["protocol_implemented_now"] is True
+    assert ai["isolated_worker_implemented_now"] is True
+    assert ai["fail_closed_parent_runtime_implemented_now"] is True
+    assert ai["host_resource_preflight_completed_now"] is True
+    assert ai["host_resource_preflight_passed_now"] is False
+    assert ai["actual_model_inference_attempted_now"] is False
+    assert ai["post_inference_full_gpu_residency_required"] is True
     assert ai["actual_multibillion_parameter_inference_completed_now"] is False
     assert ai["supported_review_horizons_seconds"] == [30, 300]
     assert ai["one_and_five_second_ml_paths_wait_for_ai"] is False
@@ -296,6 +327,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["predeclared_cohort_admission_implementation"] is True
     assert authority["predeclared_cohort_plan"] is True
     assert authority["local_ai_review_protocol_implementation"] is True
+    assert authority["local_ai_isolated_worker_implementation"] is True
+    assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
+    assert authority["local_ai_host_resource_preflight"] is True
     assert authority["actual_multibillion_parameter_ai_inference"] is False
     for key in (
         "target_generation",

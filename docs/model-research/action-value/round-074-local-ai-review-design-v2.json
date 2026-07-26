@@ -1,18 +1,30 @@
 {
-  "schema_version": "round-074-local-ai-review-design-v1",
-  "artifact_sha256": "8445492171e9c9de286617bfacecbe30a820da3e52616fe3d9780cd2cc3d7459",
+  "schema_version": "round-074-local-ai-review-design-v2",
+  "artifact_sha256": "3b2056f01b289d5c0433282658c22fa04d805825ec65559d8e1192cd29fce74b",
   "round": 74,
-  "researched_at_utc": "2026-07-26T22:29:42Z",
-  "implementation_git_commit": "c97f2033e1b5a3814000cb0816ccca5666e49a1e",
+  "researched_at_utc": "2026-07-26T22:57:17Z",
+  "implementation_git_commit": "91022551eb382d3886dfb7972e42e9180b94e58f",
   "source_binding": {
-    "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
-    "sha256": "ebdab44c2a49f276cbdbf3786b29e89b612be7e1e14ae16a1eb54ad15aa793a6",
+    "protocol_path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+    "protocol_sha256": "9a72a9d6d874e2de863f5b8b82cfdc7e25aca2954e1d7558a8fcab45e3430233",
+    "worker_path": "src/simple_ai_trading/impact_absorption_ai_worker.py",
+    "worker_sha256": "7e170ecfaecfc4a749e0501ff27498bb3666f653c6da4d8f2d4e04737c8b99ee",
+    "runtime_path": "src/simple_ai_trading/impact_absorption_ai_runtime.py",
+    "runtime_sha256": "c5245150d9aa6d033f3cab2550ed80b41be4b112d8fe84eb8b5b242375b8358c",
     "model_manifest_schema_version": "round-074-ai-model-manifest-v1",
     "review_request_schema_version": "round-074-ai-review-request-v1",
-    "review_decision_schema_version": "round-074-ai-review-decision-v1"
+    "review_decision_schema_version": "round-074-ai-review-decision-v1",
+    "worker_envelope_schema_version": "round-074-ai-worker-envelope-v1",
+    "worker_result_schema_version": "round-074-ai-worker-result-v1",
+    "runtime_outcome_schema_version": "round-074-ai-runtime-outcome-v1"
   },
   "architecture": {
     "role": "isolated asynchronous veto-and-downsize reviewer",
+    "isolated_subprocess_worker_implemented": true,
+    "parent_timeout_termination_and_kill_fallback_implemented": true,
+    "strict_duplicate_key_and_nonfinite_json_rejection_implemented": true,
+    "exact_model_manifest_checked_before_generation": true,
+    "exact_full_gpu_residency_checked_after_generation": true,
     "event_by_event_execution_loop_member": false,
     "supported_review_horizons_seconds": [
       30,
@@ -40,7 +52,20 @@
       "model_card_url": "https://huggingface.co/TheFinAI/Fino1-8B",
       "research_basis": "finance-specific chain-of-thought and reinforcement-learning adaptation with published financial reasoning comparisons",
       "trading_edge_established": false,
-      "pinned_quantized_artifact_ready": false,
+      "pinned_quantized_artifact_ready": true,
+      "local_ollama_artifact": {
+        "model_name": "fino1:8b",
+        "ollama_version": "0.32.4",
+        "manifest_sha256": "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+        "metadata_sha256": "f170a767d32e869d3953e4dcc401f31311521ef9b3bb5b1922e6ca3848132240",
+        "gguf_blob_content_address": "b2f2960af9c7e7c548803ccf9bcae9fcda781d441e46b4a9362efe19bec5096b",
+        "gguf_blob_observed_bytes": 6596011616,
+        "quantization": "Q6_K",
+        "parameter_size_reported_by_runtime": "8.03B",
+        "manifest_digest_verified_through_local_api": true,
+        "blob_path_and_size_verified": true,
+        "blob_bytes_independently_rehashed_now": false
+      },
       "host_runtime_preflight_passed": false
     },
     "general_control": {
@@ -50,6 +75,19 @@
       "license_id": "Apache-2.0",
       "repository_gated": false,
       "model_card_url": "https://huggingface.co/Qwen/Qwen3-8B",
+      "local_ollama_control_artifact": {
+        "model_name": "qwen3:8b",
+        "ollama_version": "0.32.4",
+        "manifest_sha256": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+        "metadata_sha256": "a4bd34a2eb2250447f416732d4228a18c2e4d3014a76affe27902bcdc199c978",
+        "gguf_blob_content_address": "a3de86cd1c132c822487ededd47a324c50491393e6565cd14bafa40d0b8e686f",
+        "gguf_blob_observed_bytes": 5225374496,
+        "quantization": "Q4_K_M",
+        "parameter_size_reported_by_runtime": "8.2B",
+        "manifest_digest_verified_through_local_api": true,
+        "blob_path_and_size_verified": true,
+        "blob_bytes_independently_rehashed_now": false
+      },
       "pinned_onnx_conversion": {
         "model_id": "onnx-community/Qwen3-8B-ONNX",
         "repository_revision": "eab7c5b1ac4637f6745e5e1d21ffa0bec4228186",
@@ -74,7 +112,7 @@
   },
   "runtime_research": {
     "windows_preferred_direction": "Windows ML with dynamically selected execution provider",
-    "windows_current_preflight_candidate": "ONNX Runtime GenAI DirectML in an isolated worker process",
+    "windows_current_preflight_candidate": "Ollama 0.32.4 with its llama.cpp Vulkan provider in an isolated worker process",
     "cross_platform_fallback_candidates": [
       "llama.cpp Vulkan",
       "llama.cpp HIP",
@@ -87,6 +125,27 @@
     "remote_inference_permitted": false,
     "backend_equivalence_assumed": false,
     "each_promoted_backend_requires_own_latency_output_and_uplift_evidence": true
+  },
+  "host_preflight": {
+    "observed_at_utc": "2026-07-26T22:54:58Z",
+    "model_name": "fino1:8b",
+    "model_manifest_resolved": true,
+    "model_manifest_sha256": "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+    "free_vram_gib": 10.25954818725586,
+    "minimum_free_vram_gib": 8.0,
+    "free_system_ram_gib": 6.0784149169921875,
+    "minimum_free_system_ram_gib": 16.0,
+    "python_training_backend": "cpu",
+    "python_training_backend_is_ollama_provider_residency_evidence": false,
+    "post_inference_ollama_full_gpu_residency_required": true,
+    "post_inference_ollama_full_gpu_residency_verified_now": false,
+    "status": "blocked_capability",
+    "failure_class": "AICapabilityGate",
+    "failure_reason": "free system RAM 6.1 GiB is below required 16.0 GiB",
+    "approved_risk_size_bps": 0,
+    "actual_model_inference_attempted": false,
+    "host_runtime_preflight_passed": false,
+    "outcome_sha256": "0a8300f53b28dffcb942d75a05d24d5686d45d9777819571f50a55c549240d4f"
   },
   "resource_policy": {
     "minimum_free_vram_bytes": 8589934592,
@@ -180,9 +239,13 @@
   ],
   "status": {
     "protocol_implemented": true,
-    "candidate_weights_downloaded": false,
+    "isolated_worker_implemented": true,
+    "fail_closed_parent_runtime_implemented": true,
+    "candidate_weights_downloaded": true,
+    "candidate_manifest_hash_verified": true,
     "candidate_weight_hash_verified": false,
     "actual_multibillion_parameter_inference_completed": false,
+    "host_resource_capability_preflight_completed": true,
     "host_latency_preflight_completed": false,
     "representative_market_ai_evaluation_completed": false,
     "ai_uplift_established": false,
