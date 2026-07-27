@@ -81,7 +81,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v20.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v21.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -485,6 +485,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert training["classification_mean_logit_pooling_permitted"] is False
     assert training["run_balanced_loss_primary"] is True
+    assert training["checkpoint_selection_metric"] == "run_balanced_loss"
+    assert training["checkpoint_reload_verification_metric"] == (
+        "run_balanced_loss"
+    )
+    assert training["pooled_loss_used_for_checkpoint_reload_verification"] is False
+    assert training["unequal_tuning_run_size_regression_tested"] is True
     assert training["high_activity_run_receives_extra_selection_weight"] is False
     assert training["worst_run_loss_is_reported"] is True
     assert training["worst_run_loss_is_primary_optimization_objective"] is False
@@ -780,6 +786,12 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["synthetic_tuning_run_count"] == 1
     assert verification["each_tuning_run_has_equal_selection_weight"] is True
     assert verification["mixed_or_repeated_capture_run_policy"] == "fail closed"
+    assert verification["checkpoint_selection_metric"] == "run_balanced_loss"
+    assert verification["checkpoint_reload_verification_metric"] == (
+        "run_balanced_loss"
+    )
+    assert verification["pooled_loss_used_for_checkpoint_reload_verification"] is False
+    assert verification["unequal_tuning_run_size_regression_test_passed"] is True
     assert verification["tcn_receptive_field_events"] == (
         ROUND74_EVENT_TCN_RECEPTIVE_FIELD
     )
