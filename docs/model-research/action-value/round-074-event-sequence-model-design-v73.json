@@ -1,0 +1,94 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v73",
+  "created_at_utc": "2026-07-27T20:20:02Z",
+  "implementation_git_commit": "66c022bc150573de3016000ad7056734cb6c6935",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v72.json",
+    "normalized_lf_sha256": "2b43cb0171f717769b5ece137a9cfc9044cc449e448c71becd443e28b5aeeb4a",
+    "design_sha256": "09fae398029b37e8a4929ddf33145081a96bd25b8e03c269313668a07d3261df",
+    "composition_rule": "v72 remains the target-free cross-asset hypothesis; v73 makes per-symbol versus global cross-asset representation identity explicit from replay assembly through immutable pretest policy and target-free inference"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
+    "event_sequence_normalized_lf_sha256": "753b41208d891a923a5e0a2fb604bd3db88014dfb79e93d7be3960ad322301bb",
+    "event_dataset_path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+    "event_dataset_normalized_lf_sha256": "c027c8a39c031ea0f050d86200e931413c8ce0aed460ae058225cfe4833229cf",
+    "model_operator_path": "src/simple_ai_trading/round74_event_model_operator.py",
+    "model_operator_normalized_lf_sha256": "241c9cd86d10244215bbb7d54877d27fd3054cb06f58eb3b66437062d34c7ed6",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_normalized_lf_sha256": "d9294f7fcbfd1cad71faccad8b4dc74a55d7262cd18759363eb911024a73ef68",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_normalized_lf_sha256": "b46ca691ec3f945cef76bc40489c7dc3d2d2bbca31109093b4cf5e5ae0b35916",
+    "sealed_evaluation_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluation_normalized_lf_sha256": "757c93fdba871800a979ca78f252ea7270f34cc2f8280614cdbdb48123cda762",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_normalized_lf_sha256": "405fabf91954ec1abf7b9ab967ebc4c476b312140936f24090911714b840f5aa",
+    "online_latency_path": "src/simple_ai_trading/round74_online_decision_latency.py",
+    "online_latency_normalized_lf_sha256": "1050781d77a9060116b899ca671e508cb3e091a9af40acea286addd01b44a69b"
+  },
+  "representation_contract": {
+    "supported_representations": [
+      "per_symbol",
+      "global_cross_asset"
+    ],
+    "default_representation": "per_symbol",
+    "btc_eth_sol_only": true,
+    "representation_bound_in_feature_window_digest": true,
+    "representation_bound_in_sample_digest": true,
+    "representation_bound_in_training_batch_digest": true,
+    "mixed_training_or_tuning_representations_rejected": true,
+    "representation_bound_in_pretest_policy": true,
+    "representation_bound_in_target_free_context_digest": true,
+    "development_calibration_representation_mismatch_rejected": true,
+    "sealed_inference_representation_mismatch_rejected": true,
+    "online_single_row_context_preserves_representation": true
+  },
+  "matched_comparison_policy": {
+    "endpoint_and_target_panel_must_match": true,
+    "capture_run_partition_must_match": true,
+    "training_only_scaler_policy_must_match": true,
+    "architecture_panel_and_seed_panel_must_match": true,
+    "proper_probabilistic_loss_compared_before_policy_economics": true,
+    "independently_delayed_after_cost_policy_economics_required": true,
+    "representation_selected_from_sealed_test_permitted": false,
+    "complexity_or_cross_asset_promotion_without_matched_evidence_permitted": false
+  },
+  "verification": {
+    "training_mixed_representation_rejection_passed": true,
+    "pretest_policy_round_trip_and_tamper_rejection_passed": true,
+    "target_free_context_representation_hash_test_passed": true,
+    "development_coordinator_binding_tests_passed": true,
+    "online_latency_context_tests_passed": true,
+    "sealed_evaluator_bound_identity_test_passed": true,
+    "historical_design_contract_tests_passed": true,
+    "ruff_passed": true,
+    "production_database_scanned_during_implementation": false,
+    "prospective_representation_comparison_run": false
+  },
+  "active_evidence_boundary": {
+    "active_cohort_contract_changed": false,
+    "development_schema_changes_merged_to_active_main": false,
+    "active_slot_000_training_capture_completed": false,
+    "representative_market_training_completed": false,
+    "model_or_ai_outcome_available": false
+  },
+  "remaining_integration_block": {
+    "one_pass_matched_dual_representation_replay_implemented": false,
+    "representation_complexity_gate_implemented": false,
+    "matched_development_comparison_executed": false,
+    "reason": "the active prospective cohort must complete and be audited before any representation is trained or promoted"
+  },
+  "authority": {
+    "cross_asset_predictive_uplift_established": false,
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "a63c73e605f8cdeede5abe490b3e7883a8d8dbd1719d369779721ff5efb25edd"
+}
