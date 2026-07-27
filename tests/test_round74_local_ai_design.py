@@ -104,6 +104,13 @@ INTEGRATION_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v49.json"
 )
+CURRENT_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v50.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -280,6 +287,67 @@ def test_round74_ai_design_binds_current_model_integration_without_authority() -
     assert integration["ai_uplift_claim"] is False
     assert status["financial_edge_established"] is False
     assert status["profitability_claim"] is False
+
+
+def test_round74_ai_design_delta_binds_exact_two_model_family() -> None:
+    previous = _load_json(INTEGRATION_ARTIFACT_PATH)
+    artifact = _load_json(CURRENT_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    family = artifact["sealed_ai_family_delta"]
+    inherited = artifact["inherited_executable_contract"]
+    verification = artifact["verification"]
+    status = artifact["status"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v50"
+    assert artifact["artifact_kind"] == "compact_contract_delta"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in (
+        "sealed_evaluator",
+        "ai_uplift",
+        "ai_review_panel",
+        "event_model",
+        "model_operator",
+        "training",
+        "dataset",
+        "representation_comparison",
+    ):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    model_design = source["event_model_design"]
+    assert model_design["file_sha256"] == _source_file_sha256_at(
+        commit,
+        model_design["path"],
+    )
+    design = _load_json(REPOSITORY / model_design["path"])
+    assert design.pop("design_sha256") == model_design["design_sha256"]
+    assert model_design["design_sha256"] == _canonical_sha256(design)
+    assert source["sealed_evaluator"]["schema_version"] == (
+        "round-074-sealed-evaluation-v10"
+    )
+    assert family["predeclared_model_count"] == ROUND74_SEALED_AI_MODEL_COUNT
+    assert family["exactly_two_unique_manifests_required_before_test_reservation"]
+    assert not family["incomplete_family_may_consume_one_use_test_access"]
+    assert not family["duplicate_overlay_may_validate_as_two_models"]
+    assert family["report_requires_exactly_two_unique_model_overlays"]
+    assert family["paired_delta_bonferroni_denominator"] == (
+        ROUND74_SEALED_AI_MODEL_COUNT
+    )
+    assert not inherited["ai_may_create_or_replace_ml_actions"]
+    assert inherited["same_entry_latency_is_diagnostic_only"]
+    assert not inherited["late_accepted_review_may_inherit_baseline_fill"]
+    assert inherited["late_accepted_review_requires_exact_delayed_l2_replay"]
+    assert verification["focused_tests_passed"] == 18
+    assert verification["incomplete_family_rejected_before_ledger_creation"]
+    assert verification["duplicate_overlay_tamper_rejected"]
+    assert not verification["sealed_test_accessed"]
+    assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in status.values())
 
 
 def _file_sha256(relative_path: str) -> str:
