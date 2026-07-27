@@ -8,6 +8,8 @@ import pytest
 from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS,
+    ROUND74_AI_TEMPORAL_BLOCK_COUNT,
+    ROUND74_AI_TEMPORAL_FEATURE_NAMES,
     Round74AIModelManifest,
     Round74AIReviewDecision,
     Round74AIReviewRequest,
@@ -60,6 +62,10 @@ def _request() -> Round74AIReviewRequest:
         feature_mean=tuple(0.1 for _ in range(count)),
         feature_standard_deviation=tuple(0.2 for _ in range(count)),
         feature_recent_change=tuple(0.05 for _ in range(count)),
+        feature_recent_block_means=tuple(
+            tuple(0.05 * block for _ in ROUND74_AI_TEMPORAL_FEATURE_NAMES)
+            for block in range(ROUND74_AI_TEMPORAL_BLOCK_COUNT)
+        ),
         payoff_quantiles_bps=(-5.0, -1.0, 2.0, 4.0, 7.0),
         maximum_adverse_excursion_quantiles_bps=(
             1.0,
@@ -135,6 +141,12 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "asset_identity_0" in payload["standardized_feature_summary"]
     assert payload["summary_value_order"][-1] == ("recent_16_minus_prior_16_mean")
     assert len(payload["standardized_feature_summary"]["asset_identity_0"]) == 4
+    assert payload["recent_causal_block_order"] == "oldest_to_newest"
+    assert payload["recent_causal_block_events"] == 16
+    assert len(payload["recent_causal_block_means"]) == 4
+    assert payload["recent_causal_block_feature_names"] == list(
+        ROUND74_AI_TEMPORAL_FEATURE_NAMES
+    )
     assert "symbol_is_btcusdt" not in user
     assert "BTCUSDT" not in user
     assert str(WALL_NS) not in user
@@ -146,6 +158,7 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "first 8 feature-summary values are zero-or-one indicators" in system
     assert "dimensionless training-scaler normalized values" in system
     assert "Only forecast and adverse-excursion arrays are in basis points" in system
+    assert "contain no future observations" in system
     assert "increase size" in system
     assert "propose an order" in system
 
@@ -175,6 +188,7 @@ def test_ai_risk_profile_is_hash_bound_and_changes_only_review_tolerance() -> No
         {"expires_wall_ns": (WALL_NS + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS + 1)},
         {"proposed_risk_size_bps": 10_001},
         {"positive_payoff_probability": float("nan")},
+        {"feature_recent_block_means": ((0.0,),)},
         {"payoff_quantiles_bps": (-5.0, 0.0, -1.0, 4.0, 7.0)},
         {
             "maximum_adverse_excursion_quantiles_bps": (

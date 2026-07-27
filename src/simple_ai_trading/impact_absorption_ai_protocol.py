@@ -26,9 +26,27 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
-ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v4"
+ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v5"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v5"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v6"
+ROUND74_AI_TEMPORAL_BLOCK_COUNT = 4
+ROUND74_AI_TEMPORAL_BLOCK_EVENTS = 16
+ROUND74_AI_TEMPORAL_FEATURE_NAMES = (
+    "spread_bps",
+    "l1_imbalance",
+    "microprice_offset_bps",
+    "l2_imbalance_5",
+    "log1p_bid_depth_quote_20",
+    "log1p_ask_depth_quote_20",
+    "mid_log_return_bps",
+    "trade_signed_quote_scaled",
+    "liquidation_signed_quote_scaled",
+    "mark_to_mid_bps",
+    "ewm_realized_volatility_5s_bps",
+    "ewm_signed_trade_pressure_per_second_5s",
+    "ewm_signed_depth_pressure_per_second_5s",
+    "ewm_spread_5s_bps",
+)
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_MINIMUM_PARAMETER_COUNT = 2_000_000_000
@@ -290,6 +308,7 @@ class Round74AIReviewRequest:
     feature_mean: tuple[float, ...]
     feature_standard_deviation: tuple[float, ...]
     feature_recent_change: tuple[float, ...]
+    feature_recent_block_means: tuple[tuple[float, ...], ...]
     payoff_quantiles_bps: tuple[float, ...]
     maximum_adverse_excursion_quantiles_bps: tuple[float, ...]
     positive_payoff_probability: float
@@ -319,6 +338,16 @@ class Round74AIReviewRequest:
             self.feature_recent_change,
             expected_length=feature_count,
             label="recent feature changes",
+        )
+        if len(self.feature_recent_block_means) != ROUND74_AI_TEMPORAL_BLOCK_COUNT:
+            raise ValueError("Round 74 AI recent block count differs")
+        feature_recent_block_means = tuple(
+            _finite_tuple(
+                row,
+                expected_length=len(ROUND74_AI_TEMPORAL_FEATURE_NAMES),
+                label="recent block features",
+            )
+            for row in self.feature_recent_block_means
         )
         payoff = _finite_tuple(
             self.payoff_quantiles_bps,
@@ -370,6 +399,7 @@ class Round74AIReviewRequest:
             or feature_mean != self.feature_mean
             or feature_std != self.feature_standard_deviation
             or feature_recent_change != self.feature_recent_change
+            or feature_recent_block_means != self.feature_recent_block_means
             or payoff != self.payoff_quantiles_bps
             or adverse != self.maximum_adverse_excursion_quantiles_bps
         ):
@@ -409,6 +439,9 @@ class Round74AIReviewRequest:
             "feature_mean": list(self.feature_mean),
             "feature_standard_deviation": list(self.feature_standard_deviation),
             "feature_recent_change": list(self.feature_recent_change),
+            "feature_recent_block_means": [
+                list(row) for row in self.feature_recent_block_means
+            ],
             "payoff_quantiles_bps": list(self.payoff_quantiles_bps),
             "maximum_adverse_excursion_quantiles_bps": list(
                 self.maximum_adverse_excursion_quantiles_bps
@@ -459,6 +492,10 @@ class Round74AIReviewRequest:
                 ),
                 feature_recent_change=tuple(
                     float(item) for item in payload["feature_recent_change"]
+                ),
+                feature_recent_block_means=tuple(
+                    tuple(float(item) for item in row)
+                    for row in payload["feature_recent_block_means"]
                 ),
                 payoff_quantiles_bps=tuple(
                     float(item) for item in payload["payoff_quantiles_bps"]
@@ -520,6 +557,15 @@ class Round74AIReviewRequest:
                 "mean",
                 "standard_deviation",
                 "recent_16_minus_prior_16_mean",
+            ],
+            "recent_causal_block_feature_names": list(
+                ROUND74_AI_TEMPORAL_FEATURE_NAMES
+            ),
+            "recent_causal_block_events": ROUND74_AI_TEMPORAL_BLOCK_EVENTS,
+            "recent_causal_block_order": "oldest_to_newest",
+            "recent_causal_block_means": [
+                [_rounded(value, 8) for value in row]
+                for row in self.feature_recent_block_means
             ],
             "payoff_quantile_levels": list(ROUND74_EVENT_PAYOFF_QUANTILES),
             "forecast_value_units": "basis_points",
@@ -658,6 +704,8 @@ def build_round74_ai_review_prompt(
         "are dimensionless training-scaler normalized values, even when a "
         "feature name describes an underlying basis-point or quantity measure. "
         "Only forecast and adverse-excursion arrays are in basis points. "
+        "Recent causal blocks are ordered oldest to newest and contain no "
+        "future observations. "
         "Assess only the "
         "causal numeric packet. You may preserve, reduce, veto, or abstain. "
         "Never infer an identity or date, choose a side, increase size, set "
@@ -716,6 +764,9 @@ __all__ = [
     "ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION",
     "ROUND74_AI_REVIEW_VERDICTS",
     "ROUND74_AI_RUNTIME_BACKENDS",
+    "ROUND74_AI_TEMPORAL_BLOCK_COUNT",
+    "ROUND74_AI_TEMPORAL_BLOCK_EVENTS",
+    "ROUND74_AI_TEMPORAL_FEATURE_NAMES",
     "Round74AIModelManifest",
     "Round74AIReviewDecision",
     "Round74AIReviewRequest",

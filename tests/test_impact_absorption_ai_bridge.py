@@ -8,6 +8,9 @@ import torch
 from simple_ai_trading.impact_absorption_ai_bridge import (
     build_round74_ai_review_request,
 )
+from simple_ai_trading.impact_absorption_ai_protocol import (
+    ROUND74_AI_TEMPORAL_FEATURE_NAMES,
+)
 from simple_ai_trading.impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
     Round74TemperatureFit,
@@ -145,6 +148,12 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
     assert request.risk_profile == "conservative"
     assert request.side == "long"
     assert request.horizon_seconds == 30
+    spread_slot = ROUND74_AI_TEMPORAL_FEATURE_NAMES.index("spread_bps")
+    spread_blocks = tuple(
+        block[spread_slot] for block in request.feature_recent_block_means
+    )
+    assert spread_blocks == tuple(sorted(spread_blocks))
+    assert len(set(spread_blocks)) == 4
     assert request.payoff_quantiles_bps == (-5.0, -1.0, 2.0, 4.0, 7.0)
     assert request.maximum_adverse_excursion_quantiles_bps == (
         1.0,
