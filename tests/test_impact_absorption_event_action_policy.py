@@ -16,6 +16,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     select_round74_action_policy_batches,
     simulate_round74_action_trace,
     simulate_round74_action_trace_batches,
+    _equal_run_score_threshold,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
@@ -324,6 +325,36 @@ def test_default_profile_is_conservative_and_profiles_relax_monotonically() -> N
     )
 
 
+def test_threshold_grid_is_invariant_to_busy_run_row_duplication() -> None:
+    runs = _subpartition().policy_selection_run_ids
+    base = {
+        runs[0]: (100.0,),
+        runs[1]: (1.0,),
+        runs[2]: (2.0,),
+        runs[3]: (3.0,),
+        runs[4]: (4.0,),
+        runs[5]: (5.0,),
+    }
+    duplicated = {
+        **base,
+        runs[0]: (100.0,) * 100,
+    }
+
+    expected = _equal_run_score_threshold(
+        base,
+        quantile=0.5,
+        expected_run_ids=runs,
+    )
+    observed = _equal_run_score_threshold(
+        duplicated,
+        quantile=0.5,
+        expected_run_ids=runs,
+    )
+
+    assert expected == 3.5
+    assert observed == expected
+
+
 def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     positive_batch = _batch(payoff_sign=1.0)
     negative_batch = _batch(payoff_sign=-1.0)
@@ -405,6 +436,20 @@ def test_policy_selection_accepts_only_profitable_diversified_tuning_trace() -> 
     accepted = [value for value in selection.evaluations if value.accepted]
     assert accepted
     assert all(value.trace.metrics.total_net_bps > 0.0 for value in accepted)
+    for evaluation in selection.evaluations:
+        metrics = evaluation.trace.metrics
+        expected_objective = (
+            metrics.mean_run_net_bps
+            - round74_action_profile().objective_drawdown_penalty
+            * metrics.maximum_drawdown_bps
+            - round74_action_profile().objective_adverse_excursion_penalty
+            * metrics.mean_run_maximum_adverse_excursion_bps
+        )
+        assert evaluation.objective_bps == pytest.approx(expected_objective)
+        assert metrics.mean_run_net_bps == pytest.approx(
+            metrics.total_net_bps
+            / len(_subpartition().policy_selection_run_ids)
+        )
 
 
 def test_batch_panel_selection_matches_single_batch_without_feature_copy() -> None:
