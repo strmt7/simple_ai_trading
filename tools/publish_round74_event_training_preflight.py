@@ -175,7 +175,7 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         or len(candidate_ids) != len(set(candidate_ids))
         or not all(isinstance(value, str) and value for value in candidate_ids)
         or not isinstance(candidate_parameter_counts, dict)
-        or list(candidate_parameter_counts) != candidate_ids
+        or set(candidate_parameter_counts) != set(candidate_ids)
         or any(
             isinstance(value, bool) or not isinstance(value, int) or value <= 0
             for value in candidate_parameter_counts.values()
@@ -183,8 +183,14 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         or any(
             later <= earlier
             for earlier, later in zip(
-                candidate_parameter_counts.values(),
-                tuple(candidate_parameter_counts.values())[1:],
+                tuple(
+                    candidate_parameter_counts[candidate_id]
+                    for candidate_id in candidate_ids
+                ),
+                tuple(
+                    candidate_parameter_counts[candidate_id]
+                    for candidate_id in candidate_ids
+                )[1:],
             )
         )
         or inputs.get("feature_count") != len(ROUND74_EVENT_FEATURE_NAMES)
