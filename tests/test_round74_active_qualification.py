@@ -76,9 +76,7 @@ def test_round74_host_schedule_is_truthful_and_does_not_claim_execution() -> Non
     assert scheduler["next_run_time_utc"] == "2026-07-27T12:55:00Z"
     assert scheduler["start_when_available"] is False
     assert scheduler["last_task_result_hex"] == "0x41303"
-    assert evidence["post_install_readiness"][
-        "capture_executable_passed"
-    ] is True
+    assert evidence["post_install_readiness"]["capture_executable_passed"] is True
     limitations = evidence["limitations"]
     assert limitations["future_execution_proven_now"] is False
     assert limitations["active_regime_qualification_proven_now"] is False
@@ -105,9 +103,7 @@ def test_round74_active_preflight_binds_corrected_cap_and_exact_command() -> Non
 def test_round74_active_readiness_before_window_does_not_reserve() -> None:
     preflight = load_round74_active_preflight(REPOSITORY)
     database_bytes = (
-        preflight.database.stat().st_size
-        if preflight.database.is_file()
-        else 0
+        preflight.database.stat().st_size if preflight.database.is_file() else 0
     )
     if (
         not preflight.executable.is_file()
