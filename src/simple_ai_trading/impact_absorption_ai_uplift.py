@@ -37,8 +37,9 @@ from .impact_absorption_event_financial_metrics import (
 from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v3"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v4"
 ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE = 0.99
+ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
     "conservative": 0.60,
     "regular": 0.50,
@@ -86,6 +87,9 @@ class Round74AIPairedReviewEvidence:
     runtime_outcome_sha256: str
     model_manifest_sha256: str
     runtime_status: str
+    runtime_elapsed_ns: int
+    same_entry_latency_budget_ns: int
+    same_entry_latency_eligible: bool
     size_multiplier_bps: int
     decision: Round74AIReviewDecision | None
 
@@ -108,16 +112,34 @@ class Round74AIPairedReviewEvidence:
             or self.side not in (-1, 1)
             or self.horizon_seconds not in (30, 300)
             or self.runtime_status not in ROUND74_AI_RUNTIME_STATUSES
+            or isinstance(self.runtime_elapsed_ns, bool)
+            or not isinstance(self.runtime_elapsed_ns, int)
+            or self.runtime_elapsed_ns < 0
+            or isinstance(self.same_entry_latency_budget_ns, bool)
+            or not isinstance(self.same_entry_latency_budget_ns, int)
+            or self.same_entry_latency_budget_ns <= 0
+            or not isinstance(self.same_entry_latency_eligible, bool)
             or isinstance(self.size_multiplier_bps, bool)
             or not isinstance(self.size_multiplier_bps, int)
             or not 0 <= self.size_multiplier_bps <= 10_000
         ):
             raise ValueError("Round 74 AI paired review differs")
+        expected_latency_eligible = (
+            self.runtime_status == "accepted"
+            and self.runtime_elapsed_ns <= self.same_entry_latency_budget_ns
+        )
+        if self.same_entry_latency_eligible != expected_latency_eligible:
+            raise ValueError("Round 74 AI same-entry latency eligibility differs")
         if self.runtime_status == "accepted":
             if self.decision is None:
                 raise ValueError("Round 74 AI accepted review lacks a decision")
             self.decision.validate()
-            if self.size_multiplier_bps != self.decision.size_multiplier_bps:
+            expected_multiplier = (
+                self.decision.size_multiplier_bps
+                if self.same_entry_latency_eligible
+                else 0
+            )
+            if self.size_multiplier_bps != expected_multiplier:
                 raise ValueError("Round 74 AI paired decision size differs")
         elif self.decision is not None or self.size_multiplier_bps != 0:
             raise ValueError("Round 74 AI failed review did not veto")
@@ -142,12 +164,19 @@ class Round74AIPairedReviewEvidence:
             "runtime_outcome_sha256": self.runtime_outcome_sha256,
             "model_manifest_sha256": self.model_manifest_sha256,
             "runtime_status": self.runtime_status,
+            "runtime_elapsed_ns": self.runtime_elapsed_ns,
+            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
+            "same_entry_latency_eligible": self.same_entry_latency_eligible,
             "size_multiplier_bps": self.size_multiplier_bps,
             "decision": (
                 self.decision.as_dict() if self.decision is not None else None
             ),
             "realized_target_exposed_to_ai": False,
             "may_change_side_entry_exit_or_overlap_order": False,
+            "late_accepted_review_policy": (
+                "retain_audit_decision_but_apply_zero_same_entry_exposure"
+            ),
+            "latency_adjusted_replay_performed": False,
         }
         if include_sha256:
             value["review_sha256"] = _canonical_sha256(value)
@@ -165,6 +194,7 @@ class Round74AIPairedReviewEvidence:
         horizon_seconds: int,
         request: Round74AIReviewRequest,
         outcome: Round74AIRuntimeOutcome,
+        same_entry_latency_budget_ns: int,
     ) -> Round74AIPairedReviewEvidence:
         """Validate parent/worker evidence before reducing it to paired data."""
 
@@ -180,14 +210,28 @@ class Round74AIPairedReviewEvidence:
             or request.horizon_seconds != horizon_seconds
         ):
             raise ValueError("Round 74 AI runtime review identity differs")
+        if (
+            isinstance(same_entry_latency_budget_ns, bool)
+            or not isinstance(same_entry_latency_budget_ns, int)
+            or same_entry_latency_budget_ns <= 0
+        ):
+            raise ValueError("Round 74 AI same-entry latency budget differs")
         decision: Round74AIReviewDecision | None = None
         multiplier = 0
+        latency_eligible = (
+            outcome.status == "accepted"
+            and outcome.elapsed_ns <= same_entry_latency_budget_ns
+        )
         if outcome.status == "accepted":
             assert outcome.worker_result is not None
             worker = Round74AIWorkerResult.from_dict(outcome.worker_result)
             decision = worker.decision
-            multiplier = decision.size_multiplier_bps
-            expected_approved = request.proposed_risk_size_bps * multiplier // 10_000
+            multiplier = decision.size_multiplier_bps if latency_eligible else 0
+            expected_approved = (
+                request.proposed_risk_size_bps
+                * decision.size_multiplier_bps
+                // 10_000
+            )
             if outcome.approved_risk_size_bps != expected_approved:
                 raise ValueError("Round 74 AI approved risk size differs")
         selected = cls(
@@ -206,6 +250,9 @@ class Round74AIPairedReviewEvidence:
             runtime_outcome_sha256=outcome.outcome_sha256,
             model_manifest_sha256=outcome.manifest_sha256,
             runtime_status=outcome.status,
+            runtime_elapsed_ns=outcome.elapsed_ns,
+            same_entry_latency_budget_ns=same_entry_latency_budget_ns,
+            same_entry_latency_eligible=latency_eligible,
             size_multiplier_bps=multiplier,
             decision=decision,
         )
@@ -223,6 +270,8 @@ class Round74AIOverlayMetrics:
     reduced_trades: int
     runtime_accepted_reviews: int
     runtime_success_rate: float
+    same_entry_latency_eligible_reviews: int
+    same_entry_latency_eligibility_rate: float
     retained_trade_ratio: float
     distinct_retained_symbols: int
     maximum_retained_symbol_share: float
@@ -239,10 +288,12 @@ class Round74AIOverlayMetrics:
             self.vetoed_trades,
             self.reduced_trades,
             self.runtime_accepted_reviews,
+            self.same_entry_latency_eligible_reviews,
             self.distinct_retained_symbols,
         )
         ratios = (
             self.runtime_success_rate,
+            self.same_entry_latency_eligibility_rate,
             self.retained_trade_ratio,
             self.maximum_retained_symbol_share,
             self.profitable_run_ratio,
@@ -262,6 +313,7 @@ class Round74AIOverlayMetrics:
             or self.retained_trades + self.vetoed_trades != self.baseline_trades
             or self.reduced_trades > self.retained_trades
             or self.runtime_accepted_reviews > self.baseline_trades
+            or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
             or self.distinct_retained_symbols > len(ROUND74_EVENT_SYMBOLS)
             or any(not math.isfinite(float(value)) for value in finite)
             or any(not 0.0 <= float(value) <= 1.0 for value in ratios)
@@ -270,6 +322,29 @@ class Round74AIOverlayMetrics:
                 self.mean_maximum_adverse_excursion_bps,
             )
             < 0.0
+            or (
+                self.baseline_trades > 0
+                and (
+                    not math.isclose(
+                        self.runtime_success_rate,
+                        self.runtime_accepted_reviews / self.baseline_trades,
+                        rel_tol=1e-12,
+                        abs_tol=1e-12,
+                    )
+                    or not math.isclose(
+                        self.same_entry_latency_eligibility_rate,
+                        self.same_entry_latency_eligible_reviews / self.baseline_trades,
+                        rel_tol=1e-12,
+                        abs_tol=1e-12,
+                    )
+                    or not math.isclose(
+                        self.retained_trade_ratio,
+                        self.retained_trades / self.baseline_trades,
+                        rel_tol=1e-12,
+                        abs_tol=1e-12,
+                    )
+                )
+            )
         ):
             raise ValueError("Round 74 AI overlay metrics differ")
 
@@ -340,6 +415,12 @@ def _scaled_metrics(
         runtime_success_rate=float(
             np.mean([review.runtime_status == "accepted" for review in reviews])
         ),
+        same_entry_latency_eligible_reviews=sum(
+            review.same_entry_latency_eligible for review in reviews
+        ),
+        same_entry_latency_eligibility_rate=float(
+            np.mean([review.same_entry_latency_eligible for review in reviews])
+        ),
         retained_trade_ratio=float(retained.mean()),
         distinct_retained_symbols=len(set(retained_symbols)),
         maximum_retained_symbol_share=float(maximum_symbol_share),
@@ -373,6 +454,7 @@ class Round74AIUpliftDevelopmentReport:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     model_manifest_sha256: str
+    same_entry_latency_budget_ns: int
     baseline_trace: Round74ActionTrace
     review_sha256: tuple[str, ...]
     ai_scaled_net_payoff_bps: tuple[float, ...]
@@ -440,6 +522,9 @@ class Round74AIUpliftDevelopmentReport:
                 )
             )
             or not self.candidate_sha256
+            or isinstance(self.same_entry_latency_budget_ns, bool)
+            or not isinstance(self.same_entry_latency_budget_ns, int)
+            or self.same_entry_latency_budget_ns <= 0
             or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or len(self.review_sha256) != self.baseline_trace.metrics.trades
             or len(set(self.review_sha256)) != len(self.review_sha256)
@@ -498,6 +583,7 @@ class Round74AIUpliftDevelopmentReport:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "model_manifest_sha256": self.model_manifest_sha256,
+            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
             "baseline_trace": self.baseline_trace.as_dict(),
             "review_sha256": list(self.review_sha256),
             "ai_scaled_net_payoff_bps": list(self.ai_scaled_net_payoff_bps),
@@ -513,6 +599,8 @@ class Round74AIUpliftDevelopmentReport:
             ),
             "missing_review_policy": "invalidate_entire_evaluation",
             "same_side_entry_exit_and_overlap_order": True,
+            "same_entry_fill_requires_measured_latency_eligibility": True,
+            "latency_adjusted_replay_performed": False,
             "sealed_test_accessed": False,
             "ai_model_selection_permitted": False,
             "promotion_authority": False,
@@ -553,6 +641,9 @@ def evaluate_round74_ai_overlay_development(
     manifest_values = {review.model_manifest_sha256 for review in review_rows}
     if len(manifest_values) != 1:
         raise ValueError("Round 74 AI paired model identity differs")
+    latency_budgets = {review.same_entry_latency_budget_ns for review in review_rows}
+    if len(latency_budgets) != 1:
+        raise ValueError("Round 74 AI paired latency budget differs")
     for index, review in enumerate(review_rows):
         if (
             review.feature_row_sha256 != trace.feature_row_sha256[index]
@@ -573,6 +664,11 @@ def evaluate_round74_ai_overlay_development(
     reasons: list[str] = []
     if metrics.runtime_success_rate < ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE:
         reasons.append("runtime_success_rate_not_met")
+    if (
+        metrics.same_entry_latency_eligibility_rate
+        < ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE
+    ):
+        reasons.append("same_entry_latency_eligibility_rate_not_met")
     if (
         metrics.retained_trade_ratio
         < ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO[profile.profile]
@@ -601,6 +697,7 @@ def evaluate_round74_ai_overlay_development(
             action_selection.probability_calibration_sha256
         ),
         model_manifest_sha256=next(iter(manifest_values)),
+        same_entry_latency_budget_ns=next(iter(latency_budgets)),
         baseline_trace=trace,
         review_sha256=tuple(review.review_sha256 for review in review_rows),
         ai_scaled_net_payoff_bps=scaled,
@@ -617,6 +714,7 @@ def evaluate_round74_ai_overlay_development(
 __all__ = [
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
     "ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE",
+    "ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE",
     "ROUND74_AI_UPLIFT_SCHEMA_VERSION",
     "Round74AIOverlayMetrics",
     "Round74AIPairedReviewEvidence",

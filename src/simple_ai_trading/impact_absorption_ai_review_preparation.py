@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v1"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v2"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
@@ -200,6 +200,7 @@ class Round74AIReviewPanel:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     profile: str
+    same_entry_latency_budget_ns: int
     rows: tuple[Round74TargetFreeReviewRow, ...]
     model_bindings: tuple[Round74AIReviewModelBinding, ...]
     reviews: tuple[tuple[Round74AIPairedReviewEvidence, ...], ...]
@@ -220,6 +221,9 @@ class Round74AIReviewPanel:
                 )
             )
             or self.profile not in ("conservative", "regular", "aggressive")
+            or isinstance(self.same_entry_latency_budget_ns, bool)
+            or not isinstance(self.same_entry_latency_budget_ns, int)
+            or self.same_entry_latency_budget_ns <= 0
             or not self.model_bindings
             or len(self.model_bindings) != len(self.reviews)
             or self.target_fields_accessed
@@ -249,12 +253,13 @@ class Round74AIReviewPanel:
             if (
                 len(reviews) != len(self.rows)
                 or tuple(review.row_index for review in reviews) != expected_rows
+                or any(review.model_manifest_sha256 != manifest for review in reviews)
                 or any(
-                    review.model_manifest_sha256 != manifest
+                    review.same_entry_latency_budget_ns
+                    != self.same_entry_latency_budget_ns
                     for review in reviews
                 )
-                or len({review.review_sha256 for review in reviews})
-                != len(reviews)
+                or len({review.review_sha256 for review in reviews}) != len(reviews)
             ):
                 raise ValueError("Round 74 AI review evidence coverage differs")
             for row, review in zip(self.rows, reviews, strict=True):
@@ -264,8 +269,7 @@ class Round74AIReviewPanel:
                     or review.symbol != row.symbol
                     or review.side != row.side
                     or review.horizon_seconds != row.horizon_seconds
-                    or review.pretest_policy_sha256
-                    != self.pretest_policy_sha256
+                    or review.pretest_policy_sha256 != self.pretest_policy_sha256
                     or review.probability_calibration_sha256
                     != self.probability_calibration_sha256
                 ):
@@ -282,19 +286,20 @@ class Round74AIReviewPanel:
             "candidate_inference_sha256": self.candidate_inference_sha256,
             "action_selection_sha256": self.action_selection_sha256,
             "pretest_policy_sha256": self.pretest_policy_sha256,
-            "probability_calibration_sha256": (
-                self.probability_calibration_sha256
-            ),
+            "probability_calibration_sha256": (self.probability_calibration_sha256),
             "profile": self.profile,
+            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
             "rows": [row.as_dict() for row in self.rows],
-            "model_bindings": [
-                binding.as_dict() for binding in self.model_bindings
-            ],
+            "model_bindings": [binding.as_dict() for binding in self.model_bindings],
             "reviews": [
                 [review.as_dict() for review in model_reviews]
                 for model_reviews in self.reviews
             ],
             "review_coverage_defined_before_target_scoring": True,
+            "same_entry_latency_budget_policy": (
+                "externally_measured_signal_to_entry_slack"
+            ),
+            "latency_adjusted_replay_performed": False,
             "target_fields_accessed": False,
             "trading_authority": False,
         }
@@ -321,17 +326,11 @@ def _row_output(
     row_index: int,
 ) -> Round74EventModelOutput:
     result = Round74EventModelOutput(
-        payoff_quantiles_bps=output.payoff_quantiles_bps[
-            row_index : row_index + 1
-        ],
+        payoff_quantiles_bps=output.payoff_quantiles_bps[row_index : row_index + 1],
         maximum_adverse_excursion_quantiles_bps=(
-            output.maximum_adverse_excursion_quantiles_bps[
-                row_index : row_index + 1
-            ]
+            output.maximum_adverse_excursion_quantiles_bps[row_index : row_index + 1]
         ),
-        positive_payoff_logits=output.positive_payoff_logits[
-            row_index : row_index + 1
-        ],
+        positive_payoff_logits=output.positive_payoff_logits[row_index : row_index + 1],
         adverse_selection_logits=output.adverse_selection_logits[
             row_index : row_index + 1
         ],
@@ -364,14 +363,10 @@ def _review_rows(
                 {
                     "schema_version": ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
                     "candidate_inference_sha256": inference.inference_sha256,
-                    "action_selection_sha256": (
-                        inference.action_selection_sha256
-                    ),
+                    "action_selection_sha256": (inference.action_selection_sha256),
                     "profile": inference.profile,
                     "row_index": row_index,
-                    "feature_row_sha256": (
-                        candidates.feature_row_sha256[local_index]
-                    ),
+                    "feature_row_sha256": (candidates.feature_row_sha256[local_index]),
                     "candidate_sha256": candidates.candidate_sha256,
                     "paired_evaluation_unit_risk_bps": (
                         ROUND74_AI_REVIEW_UNIT_RISK_BPS
@@ -384,15 +379,11 @@ def _review_rows(
                     row_index=row_index,
                     panel_index=panel_index,
                     local_row_index=local_index,
-                    feature_row_sha256=(
-                        candidates.feature_row_sha256[local_index]
-                    ),
+                    feature_row_sha256=(candidates.feature_row_sha256[local_index]),
                     run_id=context.run_id[local_index],
                     symbol=context.symbol[local_index],
                     side=int(candidates.side[local_index]),
-                    horizon_seconds=int(
-                        candidates.horizon_seconds[local_index]
-                    ),
+                    horizon_seconds=int(candidates.horizon_seconds[local_index]),
                     candidate_sha256=candidates.candidate_sha256,
                     deterministic_risk_state_sha256=risk_state,
                 )
@@ -409,6 +400,7 @@ def prepare_round74_target_free_ai_reviews(
     *,
     action_selection: Round74ActionPolicySelection,
     probability_calibration: Round74ProbabilityCalibration,
+    same_entry_latency_budget_ns: int,
     model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
     review_runner: ReviewRunner = review_round74_ai_candidate,
     progress_callback: ProgressCallback | None = None,
@@ -420,12 +412,13 @@ def prepare_round74_target_free_ai_reviews(
     action_selection.validate()
     probability_calibration.validate()
     if (
-        not action_selection.accepted
+        isinstance(same_entry_latency_budget_ns, bool)
+        or not isinstance(same_entry_latency_budget_ns, int)
+        or same_entry_latency_budget_ns <= 0
+        or not action_selection.accepted
         or action_selection.selected_threshold_score is None
-        or inference.action_selection_sha256
-        != action_selection.selection_sha256
-        or inference.pretest_policy_sha256
-        != action_selection.pretest_policy_sha256
+        or inference.action_selection_sha256 != action_selection.selection_sha256
+        or inference.pretest_policy_sha256 != action_selection.pretest_policy_sha256
         or inference.probability_calibration_sha256
         != probability_calibration.calibration_sha256
         or inference.profile != action_selection.profile
@@ -478,14 +471,10 @@ def prepare_round74_target_free_ai_reviews(
                 horizon_seconds=row.horizon_seconds,
                 pretest_policy_sha256=inference.pretest_policy_sha256,
                 sample_sha256=row.feature_row_sha256,
-                deterministic_risk_state_sha256=(
-                    row.deterministic_risk_state_sha256
-                ),
+                deterministic_risk_state_sha256=(row.deterministic_risk_state_sha256),
                 probability_calibration=probability_calibration,
                 requested_wall_ns=requested_wall_ns,
-                expires_wall_ns=(
-                    requested_wall_ns + ROUND74_AI_REVIEW_VALIDITY_NS
-                ),
+                expires_wall_ns=(requested_wall_ns + ROUND74_AI_REVIEW_VALIDITY_NS),
                 proposed_risk_size_bps=ROUND74_AI_REVIEW_UNIT_RISK_BPS,
             )
             outcome = review_runner(
@@ -505,6 +494,7 @@ def prepare_round74_target_free_ai_reviews(
                 horizon_seconds=row.horizon_seconds,
                 request=request,
                 outcome=outcome,
+                same_entry_latency_budget_ns=same_entry_latency_budget_ns,
             )
             reviews.append(evidence)
             completed += 1
@@ -514,11 +504,13 @@ def prepare_round74_target_free_ai_reviews(
                         "completed_reviews": completed,
                         "total_reviews": total,
                         "model_role": binding.role,
-                        "model_manifest_sha256": (
-                            binding.manifest.manifest_sha256
-                        ),
+                        "model_manifest_sha256": (binding.manifest.manifest_sha256),
                         "row_index": row.row_index,
                         "runtime_status": outcome.status,
+                        "runtime_elapsed_ns": outcome.elapsed_ns,
+                        "same_entry_latency_eligible": (
+                            evidence.same_entry_latency_eligible
+                        ),
                     }
                 )
         all_reviews.append(tuple(reviews))
@@ -526,10 +518,9 @@ def prepare_round74_target_free_ai_reviews(
         candidate_inference_sha256=inference.inference_sha256,
         action_selection_sha256=action_selection.selection_sha256,
         pretest_policy_sha256=action_selection.pretest_policy_sha256,
-        probability_calibration_sha256=(
-            probability_calibration.calibration_sha256
-        ),
+        probability_calibration_sha256=(probability_calibration.calibration_sha256),
         profile=action_selection.profile,
+        same_entry_latency_budget_ns=same_entry_latency_budget_ns,
         rows=rows,
         model_bindings=bindings,
         reviews=tuple(all_reviews),
