@@ -697,6 +697,15 @@ def calibrate_and_select_round74_development_policy(
         or not isinstance(tuning_batch_sha256, list)
         or tuning_batch_sha256
         != [batch.batch_sha256 for batch in tuning_roles.model_selection_batches]
+        or {
+            batch.window_representation
+            for batch in (
+                *tuning_roles.model_selection_batches,
+                *tuning_roles.calibration_batches,
+                *tuning_roles.policy_selection_batches,
+            )
+        }
+        != {development.get("window_representation")}
         or development.get("representative_window_policy_applied") is not True
         or development.get("test_batches_consumed") != 0
         or authority.get("sealed_test_evaluated") is not False
@@ -925,6 +934,7 @@ def train_round74_development_policy_from_inputs(
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
+    window_representation: str = "per_symbol",
 ) -> Round74DevelopmentPolicyArtifact:
     """Prepare, train, calibrate, and select from a sealed-input-safe panel."""
 
@@ -933,6 +943,7 @@ def train_round74_development_policy_from_inputs(
         store,
         partition=inputs.partition,
         target_assembly_by_run_id=inputs.target_assembly_by_run_id(),
+        window_representation=window_representation,
     )
     subpartition = build_round74_tuning_subpartition(inputs.partition)
     roles = split_round74_prepared_tuning_roles(

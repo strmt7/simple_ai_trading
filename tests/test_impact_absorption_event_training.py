@@ -532,6 +532,24 @@ def test_round74_trainer_requires_order_purge_and_per_run_context(
             config=_config(),
         )
 
+    global_tuning = replace(
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+            identity=2,
+        ),
+        window_representation="global_cross_asset",
+    )
+    global_tuning.validate()
+    with pytest.raises(ValueError, match="window representation differs"):
+        train_and_seal_round74_pretest_policy(
+            [training],
+            [global_tuning],
+            output_directory=tmp_path,
+            compute_backend="cpu",
+            config=_config(),
+        )
+
 
 def test_round74_trainer_rejects_mixed_or_repeated_capture_runs(
     tmp_path: object,
@@ -754,6 +772,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert policy["model_artifact"]["pickle_permitted"] is False
     assert policy["development_data"]["test_batches_consumed"] == 0
     development = policy["development_data"]
+    assert development["window_representation"] == "per_symbol"
     assert development["target_context_panel_schema_version"] == (
         ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
     )
@@ -832,6 +851,17 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     )
     with pytest.raises(ValueError, match="target-context panel differs"):
         load_round74_pretest_policy(changed_context_path)
+
+    changed_representation = json.loads(
+        artifact.policy_path.read_text(encoding="ascii")
+    )
+    changed_representation["development_data"]["window_representation"] = "unbound"
+    changed_representation_path = _write_rehashed_policy(
+        tmp_path,
+        changed_representation,
+    )
+    with pytest.raises(ValueError, match="data identity differs"):
+        load_round74_pretest_policy(changed_representation_path)
 
     changed_promotion = json.loads(artifact.policy_path.read_text(encoding="ascii"))
     changed_promotion["selection"]["promotion_reports"][0]["promoted"] = True

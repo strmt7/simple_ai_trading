@@ -489,6 +489,7 @@ def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     negative = _candidates(negative_batch)
 
     assert np.shares_memory(context.feature_values, positive_batch.feature_values)
+    assert context.window_representation == "per_symbol"
     assert np.shares_memory(
         context.decision_wall_ns,
         positive_batch.decision_wall_ns,
@@ -500,6 +501,15 @@ def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     assert set(positive.side) == {1}
     assert positive.trading_authority is False
     assert positive.leverage_applied is False
+
+    global_batch = replace(
+        positive_batch,
+        window_representation="global_cross_asset",
+    )
+    global_batch.validate()
+    global_context = build_round74_action_inference_context(global_batch)
+    assert global_context.window_representation == "global_cross_asset"
+    assert global_context.context_sha256 != context.context_sha256
 
 
 def test_candidate_derivation_rejects_calibration_from_other_policy() -> None:

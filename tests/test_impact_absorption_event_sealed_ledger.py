@@ -663,6 +663,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         "development_data": {
             "partition_sha256": batch.partition_sha256,
             "scaler_sha256": batch.scaler_sha256,
+            "window_representation": batch.window_representation,
         },
     }
     monkeypatch.setattr(
