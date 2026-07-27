@@ -91,7 +91,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v34.json"
+    / "round-074-local-ai-review-design-v35.json"
 )
 
 

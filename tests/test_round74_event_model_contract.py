@@ -111,12 +111,12 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v48.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v49.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-ai-exact-replay-v4-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-ai-exact-replay-v5-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
