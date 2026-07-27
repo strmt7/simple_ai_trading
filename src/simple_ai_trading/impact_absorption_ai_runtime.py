@@ -580,23 +580,21 @@ def review_round74_ai_candidate(
         cold_capability.free_vram_gb is not None
         and cold_capability.free_vram_gb >= required_vram_gb
     )
-    requires_warm_residency_check = (
-        not cold_capability.ok or not cold_vram_headroom_passed
-    )
-    if requires_warm_residency_check:
-        try:
-            warm_residency = residency_inspector(
-                config.endpoint,
-                config.model_name,
-                min(config.timeout_seconds, 2.0),
-                expected_digest=manifest.model_artifact_sha256,
-            ).validated()
-        except Exception as exc:  # noqa: BLE001 - gate converts to deny
-            warm_residency_error_type = type(exc).__name__
+    try:
+        warm_residency = residency_inspector(
+            config.endpoint,
+            config.model_name,
+            min(config.timeout_seconds, 2.0),
+            expected_digest=manifest.model_artifact_sha256,
+        ).validated()
+    except Exception as exc:  # noqa: BLE001 - gate converts to deny
+        warm_residency_error_type = type(exc).__name__
     exact_model_already_fully_gpu_resident = bool(
         warm_residency is not None
         and warm_residency.fully_gpu_resident
         and warm_residency.digest == manifest.model_artifact_sha256
+        and _normalized_model_reference(warm_residency.loaded_model)
+        == _normalized_model_reference(config.model_name)
     )
     capability_config = _capability_config(
         config,
@@ -608,11 +606,28 @@ def review_round74_ai_candidate(
         if exact_model_already_fully_gpu_resident
         else cold_capability
     )
-    capability_messages = _provider_capability_messages(
-        capability,
-        minimum_free_vram_gb=required_vram_gb,
-        exact_model_already_fully_gpu_resident=(exact_model_already_fully_gpu_resident),
+    capability_messages = list(
+        _provider_capability_messages(
+            capability,
+            minimum_free_vram_gb=required_vram_gb,
+            exact_model_already_fully_gpu_resident=(
+                exact_model_already_fully_gpu_resident
+            ),
+        )
     )
+    if warm_residency_error_type is not None:
+        capability_messages.append(
+            "pre-inference provider residency could not be verified"
+        )
+    elif (
+        warm_residency is not None
+        and warm_residency.loaded
+        and not (exact_model_already_fully_gpu_resident)
+    ):
+        capability_messages.append(
+            "pre-inference provider residency is not the exact fully GPU-resident "
+            "declared model"
+        )
     capability_payload = {
         **capability.asdict(),
         "minimum_free_vram_gb": required_vram_gb,
@@ -620,7 +635,11 @@ def review_round74_ai_candidate(
         "minimum_warm_free_ram_gb": ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB,
         "pre_inference_cold_capability_passed": cold_capability.ok,
         "pre_inference_cold_load_headroom_passed": cold_vram_headroom_passed,
-        "pre_inference_warm_residency_check_required": (requires_warm_residency_check),
+        "pre_inference_residency_check_required": True,
+        "pre_inference_residency_check_performed": (
+            warm_residency is not None and warm_residency_error_type is None
+        ),
+        "pre_inference_warm_residency_check_required": True,
         "pre_inference_warm_residency": (
             warm_residency.asdict() if warm_residency is not None else None
         ),
