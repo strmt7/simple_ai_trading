@@ -1,0 +1,58 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v53",
+  "artifact_kind": "compact_correction_delta",
+  "supersedes_artifact_sha256": "b3be9d0f575f82728024f99f2691deb285925dc4b86de629b543896e045dd9ff",
+  "implementation_git_commit": "a02f43e2221d30061b5f69428d8392085a73d5ea",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "737712ad34ec4e658cbcad09e5c5def5af8f86189ca5c74b5266e338f164e9e5",
+      "review_request_schema_version": "round-074-ai-review-request-v4",
+      "prompt_payload_schema_version": "round-074-ai-prompt-payload-v5"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "fd5bd5d1c1ba52280e1b043e28204d38b2a838ec2e29d4176ae7fc64ce4a43a9",
+      "schema_version": "round-074-ai-review-panel-v7"
+    },
+    "event_scaler": {
+      "path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
+      "sha256": "d737d1cbcb3e5ad9ab65e5887d759761b58c1912fb277c19eab2bd9a94d4eb47",
+      "schema_version": "round-074-event-feature-scaler-v4"
+    }
+  },
+  "correction": {
+    "superseded_claim": "all feature-summary values are dimensionless training-scaler z-scores",
+    "superseded_claim_is_correct": false,
+    "binary_feature_count": 8,
+    "binary_feature_value_units": "zero_or_one_indicator",
+    "continuous_feature_value_units": "dimensionless_training_scaler_normalized_values",
+    "continuous_values_are_strict_standard_deviation_z_scores": false,
+    "continuous_scaling_uses_training_only_robust_location_scale_and_clipping": true,
+    "forecast_value_units": "basis_points",
+    "maximum_adverse_excursion_value_units": "basis_points",
+    "prompt_payload_hash_binds_corrected_unit_metadata": true,
+    "system_prompt_states_binary_and_continuous_contracts_separately": true,
+    "financial_uplift_assumed": false
+  },
+  "verification": {
+    "focused_tests_passed": 98,
+    "binary_indicator_metadata_asserted": true,
+    "continuous_normalized_metadata_asserted": true,
+    "system_instruction_asserted": true,
+    "ruff_passed": true,
+    "sealed_test_accessed": false,
+    "gpu_model_workload_executed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "a8b71adb49e5709e725dfbae3aa6d5154cf6235f7d11c08d21b0f2a9440d5b61"
+}
