@@ -822,6 +822,66 @@ class Round74EventWindow:
             raise ValueError("Round 74 event window features are invalid")
 
 
+class Round74EventWindowAccumulator:
+    """Incrementally assemble the same causal windows offline and online."""
+
+    def __init__(
+        self,
+        *,
+        sequence_length: int = 128,
+        stride: int = 16,
+        maximum_gap_ns: int = ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
+    ) -> None:
+        self.sequence_length = int(sequence_length)
+        self.stride = int(stride)
+        self.maximum_gap_ns = int(maximum_gap_ns)
+        if self.sequence_length < 2:
+            raise ValueError("Round 74 event window requires at least two tokens")
+        if self.stride < 1:
+            raise ValueError("Round 74 event window stride must be positive")
+        if self.maximum_gap_ns < 1:
+            raise ValueError("Round 74 event window gap limit must be positive")
+        self._buffers: dict[str, deque[Round74EventToken]] = {}
+        self._prior_receipts: dict[str, int] = {}
+        self._since_yield: dict[str, int] = {}
+        self._global_prior = -1
+
+    def consume(self, token: Round74EventToken) -> Round74EventWindow | None:
+        token.validate()
+        if token.received_monotonic_ns < self._global_prior:
+            raise ValueError("Round 74 global event token order regressed")
+        self._global_prior = token.received_monotonic_ns
+        buffer = self._buffers.setdefault(
+            token.symbol,
+            deque(maxlen=self.sequence_length),
+        )
+        prior = self._prior_receipts.get(token.symbol)
+        if (
+            prior is not None
+            and token.received_monotonic_ns - prior > self.maximum_gap_ns
+        ):
+            buffer.clear()
+            self._since_yield[token.symbol] = 0
+        self._prior_receipts[token.symbol] = token.received_monotonic_ns
+        buffer.append(token)
+        if len(buffer) < self.sequence_length:
+            return None
+        counter = self._since_yield.get(token.symbol, 0)
+        if counter:
+            self._since_yield[token.symbol] = counter - 1
+            return None
+        window = Round74EventWindow(
+            symbol=token.symbol,
+            endpoint_frame_index=token.frame_index,
+            endpoint_message_index=token.message_index,
+            endpoint_received_monotonic_ns=token.received_monotonic_ns,
+            feature_values=tuple(item.feature_values for item in buffer),
+        )
+        window.validate(self.sequence_length)
+        self._since_yield[token.symbol] = self.stride - 1
+        return window
+
+
 def iter_round74_event_windows(
     tokens: Sequence[Round74EventToken] | Iterator[Round74EventToken],
     *,
@@ -831,47 +891,15 @@ def iter_round74_event_windows(
 ) -> Iterator[Round74EventWindow]:
     """Yield per-symbol windows without crossing a long receipt gap."""
 
-    length = int(sequence_length)
-    selected_stride = int(stride)
-    gap_limit = int(maximum_gap_ns)
-    if length < 2:
-        raise ValueError("Round 74 event window requires at least two tokens")
-    if selected_stride < 1:
-        raise ValueError("Round 74 event window stride must be positive")
-    if gap_limit < 1:
-        raise ValueError("Round 74 event window gap limit must be positive")
-    buffers: dict[str, deque[Round74EventToken]] = {}
-    prior_receipts: dict[str, int] = {}
-    since_yield: dict[str, int] = {}
-    global_prior = -1
+    accumulator = Round74EventWindowAccumulator(
+        sequence_length=sequence_length,
+        stride=stride,
+        maximum_gap_ns=maximum_gap_ns,
+    )
     for token in tokens:
-        token.validate()
-        if token.received_monotonic_ns < global_prior:
-            raise ValueError("Round 74 global event token order regressed")
-        global_prior = token.received_monotonic_ns
-        buffer = buffers.setdefault(token.symbol, deque(maxlen=length))
-        prior = prior_receipts.get(token.symbol)
-        if prior is not None and token.received_monotonic_ns - prior > gap_limit:
-            buffer.clear()
-            since_yield[token.symbol] = 0
-        prior_receipts[token.symbol] = token.received_monotonic_ns
-        buffer.append(token)
-        if len(buffer) < length:
-            continue
-        counter = since_yield.get(token.symbol, 0)
-        if counter:
-            since_yield[token.symbol] = counter - 1
-            continue
-        window = Round74EventWindow(
-            symbol=token.symbol,
-            endpoint_frame_index=token.frame_index,
-            endpoint_message_index=token.message_index,
-            endpoint_received_monotonic_ns=token.received_monotonic_ns,
-            feature_values=tuple(item.feature_values for item in buffer),
-        )
-        window.validate(length)
-        yield window
-        since_yield[token.symbol] = selected_stride - 1
+        window = accumulator.consume(token)
+        if window is not None:
+            yield window
 
 
 def iter_round74_v10_event_observations(
@@ -1015,6 +1043,7 @@ __all__ = [
     "Round74EventSequenceEncoder",
     "Round74EventToken",
     "Round74EventWindow",
+    "Round74EventWindowAccumulator",
     "iter_round74_event_windows",
     "iter_round74_v10_event_observations",
     "iter_round74_v10_event_tokens",

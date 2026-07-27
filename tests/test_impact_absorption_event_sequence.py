@@ -11,6 +11,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
     Round74EventSequenceEncoder,
+    Round74EventWindowAccumulator,
     Round74MultiSymbolEventReplay,
     iter_round74_event_windows,
     iter_round74_v10_event_tokens,
@@ -570,6 +571,47 @@ def test_event_windows_are_per_symbol_causal_and_break_on_long_gap() -> None:
         )
         == []
     )
+
+
+def test_incremental_event_windows_are_identical_to_offline_iteration() -> None:
+    encoder = _encoder(ready_offset_ns=1)
+    tokens = []
+    for index, monotonic_ns in enumerate((100, 200, 300, 400, 500)):
+        token = encoder.consume(
+            frame_index=0,
+            message_index=index,
+            record=_record(
+                lane="binance_futures_market",
+                sequence=index,
+                monotonic_ns=monotonic_ns,
+                stream_name="btcusdt@aggTrade",
+                payload=_trade(1_020 + index),
+            ),
+        )
+        assert token is not None
+        tokens.append(token)
+
+    expected = list(
+        iter_round74_event_windows(
+            tokens,
+            sequence_length=2,
+            stride=2,
+            maximum_gap_ns=1_000,
+        )
+    )
+    accumulator = Round74EventWindowAccumulator(
+        sequence_length=2,
+        stride=2,
+        maximum_gap_ns=1_000,
+    )
+    observed = [
+        window
+        for token in tokens
+        if (window := accumulator.consume(token)) is not None
+    ]
+
+    assert observed == expected
+    assert [window.endpoint_message_index for window in observed] == [1, 3]
 
 
 def test_event_sequence_fails_closed_on_regression_lane_and_duplicate_json() -> None:
