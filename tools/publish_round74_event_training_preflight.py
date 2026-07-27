@@ -229,6 +229,9 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
             "fully_censored_minibatches_contribute_gradients": False,
             "fully_censored_capture_run_policy": "reject",
             "row_pooled_optimizer_steps_permitted": False,
+            "cohort_training_capture_runs": 120,
+            "cohort_model_selection_capture_runs": 12,
+            "calibration_or_policy_selection_runs_used_for_candidate_fit": False,
         }
     ):
         raise RuntimeError("Round 74 preflight candidate or seed panel differs")
