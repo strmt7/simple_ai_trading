@@ -1,0 +1,31 @@
+{
+  "schema_version": "round-074-event-cohort-operator-supersession-v5",
+  "observed_at_utc": "2026-07-27T11:29:39Z",
+  "cohort_plan_sha256": "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb",
+  "superseded_operator": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-operator-v5.json",
+    "artifact_sha256": "d2fefe5424e56c1e9090729c682228bb48f282104ee9c7f4ca008196f658bd08",
+    "dataset_schema_version": "round-074-event-dataset-v8"
+  },
+  "replacement_operator": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-operator-v6.json",
+    "artifact_sha256": "aebd0c3d30e9273df423175135d96df0193dd3b3d430776cb9fec31e678e2a91",
+    "dataset_schema_version": "round-074-event-dataset-v9"
+  },
+  "correction_basis": {
+    "reason": "Bind the prospective post-capture pipeline to the causal multi-timescale feature and dataset schemas before slot zero.",
+    "raw_capture_plan_changed": false,
+    "task_schedule_changed": false,
+    "roles_or_slot_times_changed": false,
+    "selected_from_market_model_or_target_outcome": false,
+    "slot_zero_started": false,
+    "cohort_market_data_collected": false
+  },
+  "authority": {
+    "credentials_used": false,
+    "orders_submitted": false,
+    "model_training_or_evaluation_performed": false,
+    "profitability_or_edge_claim": false
+  },
+  "artifact_sha256": "0cf39515612933ee39fd6999df5ffc62d2909833b3aa35eaf89d2aeb90f5d5c9"
+}
