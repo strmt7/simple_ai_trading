@@ -341,6 +341,13 @@ After parser or taxonomy changes, regenerate the header through the native build
   120/24/24 roles. Read `round-074-event-sequence-model-design-v64.json`, which
   composes the complete unchanged v63 model contract with the corrected plan,
   operator, execution-evidence, and research bindings, then
+  `round-074-event-sequence-model-design-v65.json`. V65 adds the only guarded
+  development runner: it requires all 168 run bindings and exactly 144
+  development target assemblies before opening the database, reads DuckDB only,
+  rechecks capture-process and WAL absence, emits bounded-silence heartbeats,
+  and never reads a sealed-test assembly. The complete cohort and target panel
+  do not exist yet, so no representative training or financial result exists.
+  Then read
   `round-074-local-ai-review-design-v49.json`. The model now uses an exact,
   target-blind 768-window sample per capture run, disjoint 12/6/6 tuning roles,
   and bounded equal-run DirectML groups. It also adds causal
