@@ -15,6 +15,8 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIModelManifest,
     Round74AIReviewDecision,
     Round74AIReviewRequest,
+    ROUND74_AI_TEMPORAL_BLOCK_COUNT,
+    ROUND74_AI_TEMPORAL_FEATURE_NAMES,
 )
 from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
@@ -70,6 +72,10 @@ def _request() -> Round74AIReviewRequest:
         feature_mean=tuple(0.1 for _ in range(count)),
         feature_standard_deviation=tuple(0.2 for _ in range(count)),
         feature_recent_change=tuple(0.0 for _ in range(count)),
+        feature_recent_block_means=tuple(
+            tuple(0.0 for _ in ROUND74_AI_TEMPORAL_FEATURE_NAMES)
+            for _ in range(ROUND74_AI_TEMPORAL_BLOCK_COUNT)
+        ),
         payoff_quantiles_bps=(-5.0, -1.0, 2.0, 4.0, 7.0),
         maximum_adverse_excursion_quantiles_bps=(
             1.0,

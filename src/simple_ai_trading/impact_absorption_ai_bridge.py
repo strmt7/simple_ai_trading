@@ -11,6 +11,9 @@ from .impact_absorption_event_calibration import (
 )
 from .impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_HORIZONS_SECONDS,
+    ROUND74_AI_TEMPORAL_BLOCK_COUNT,
+    ROUND74_AI_TEMPORAL_BLOCK_EVENTS,
+    ROUND74_AI_TEMPORAL_FEATURE_NAMES,
     Round74AIReviewRequest,
 )
 from .impact_absorption_event_model import Round74EventModelOutput
@@ -22,7 +25,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v3"
+ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v4"
 ROUND74_AI_RECENT_BLOCK_EVENTS = 16
 _ASSET_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name)
@@ -31,6 +34,10 @@ _ASSET_FEATURE_INDICES = tuple(
         "symbol_is_ethusdt",
         "symbol_is_solusdt",
     )
+)
+_TEMPORAL_FEATURE_INDICES = tuple(
+    ROUND74_EVENT_FEATURE_NAMES.index(name)
+    for name in ROUND74_AI_TEMPORAL_FEATURE_NAMES
 )
 
 
@@ -155,6 +162,23 @@ def build_round74_ai_review_request(
         expected_length=feature_count,
         label="recent feature changes",
     )
+    temporal_event_count = (
+        ROUND74_AI_TEMPORAL_BLOCK_COUNT * ROUND74_AI_TEMPORAL_BLOCK_EVENTS
+    )
+    temporal = selected[-temporal_event_count:, list(_TEMPORAL_FEATURE_INDICES)]
+    temporal = temporal.reshape(
+        ROUND74_AI_TEMPORAL_BLOCK_COUNT,
+        ROUND74_AI_TEMPORAL_BLOCK_EVENTS,
+        len(_TEMPORAL_FEATURE_INDICES),
+    ).mean(dim=1)
+    feature_recent_block_means = tuple(
+        _finite_tuple(
+            temporal[index],
+            expected_length=len(_TEMPORAL_FEATURE_INDICES),
+            label="recent block features",
+        )
+        for index in range(ROUND74_AI_TEMPORAL_BLOCK_COUNT)
+    )
     quantile_count = int(model_output.payoff_quantiles_bps.shape[-1])
     payoff_quantiles = _finite_tuple(
         model_output.payoff_quantiles_bps[
@@ -190,6 +214,7 @@ def build_round74_ai_review_request(
         feature_mean=feature_mean,
         feature_standard_deviation=feature_standard_deviation,
         feature_recent_change=feature_recent_change,
+        feature_recent_block_means=feature_recent_block_means,
         payoff_quantiles_bps=payoff_quantiles,
         maximum_adverse_excursion_quantiles_bps=(adverse_excursion_quantiles),
         positive_payoff_probability=_finite_probability(
