@@ -42,15 +42,15 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 
 RESEARCH = Path("docs/model-research/action-value")
-PREVIOUS_MODEL_DESIGN = RESEARCH / "round-074-event-sequence-model-design-v58.json"
-PREVIOUS_AI_DESIGN = RESEARCH / "round-074-local-ai-review-design-v44.json"
+PREVIOUS_MODEL_DESIGN = RESEARCH / "round-074-event-sequence-model-design-v59.json"
+PREVIOUS_AI_DESIGN = RESEARCH / "round-074-local-ai-review-design-v45.json"
 PREVIOUS_OPERATOR = RESEARCH / "round-074-event-cohort-operator-v4.json"
 TRAINING_PREFLIGHT = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-multi-timescale-v9-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-format-bound-v10-2026-07-27.json"
 )
-MODEL_DESIGN_OUTPUT = RESEARCH / "round-074-event-sequence-model-design-v59.json"
-AI_DESIGN_OUTPUT = RESEARCH / "round-074-local-ai-review-design-v45.json"
+MODEL_DESIGN_OUTPUT = RESEARCH / "round-074-event-sequence-model-design-v60.json"
+AI_DESIGN_OUTPUT = RESEARCH / "round-074-local-ai-review-design-v46.json"
 OPERATOR_OUTPUT = RESEARCH / "round-074-event-cohort-operator-v5.json"
 OPERATOR_SUPERSESSION_OUTPUT = (
     RESEARCH / "round-074-event-cohort-operator-v4-supersession-2026-07-27.json"
@@ -302,7 +302,7 @@ def _update_model_design(
 ) -> dict[str, Any]:
     value = deepcopy(previous)
     value.pop("design_sha256")
-    value["schema_version"] = "round-074-event-sequence-model-design-v59"
+    value["schema_version"] = "round-074-event-sequence-model-design-v60"
     value["frozen_at_utc"] = now
     value["implementation_git_commit"] = commit
     value["research_git_basis_commit"] = commit
@@ -456,7 +456,7 @@ def _update_ai_design(
 ) -> dict[str, Any]:
     value = deepcopy(previous)
     value.pop("artifact_sha256")
-    value["schema_version"] = "round-074-local-ai-review-design-v45"
+    value["schema_version"] = "round-074-local-ai-review-design-v46"
     value["researched_at_utc"] = now
     value["implementation_git_commit"] = commit
     value["research_git_basis_commit"] = commit
@@ -561,6 +561,14 @@ def main() -> int:
         repository / PREVIOUS_OPERATOR,
         "artifact_sha256",
     )
+    operator = _load_hash_bound(
+        repository / OPERATOR_OUTPUT,
+        "artifact_sha256",
+    )
+    supersession = _load_hash_bound(
+        repository / OPERATOR_SUPERSESSION_OUTPUT,
+        "artifact_sha256",
+    )
     previous_model = _load_hash_bound(
         repository / PREVIOUS_MODEL_DESIGN,
         "design_sha256",
@@ -574,23 +582,31 @@ def main() -> int:
         "artifact_sha256",
     )
     counts = _parameter_counts(preflight)
-    operator = _operator_contract(
+    projected_operator = _operator_contract(
         repository,
         commit=commit,
         now=now,
         previous=previous_operator,
     )
-    _write_new(repository / OPERATOR_OUTPUT, operator, "artifact_sha256")
-    supersession = _operator_supersession(
+    for field in (
+        "cohort_plan_sha256",
+        "source_binding",
+        "slot_execution_contract",
+        "partition_contract",
+        "resource_contract",
+        "authority",
+        "supersession_scope",
+    ):
+        if projected_operator[field] != operator[field]:
+            raise ValueError(f"reused cohort operator {field} differs")
+    projected_supersession = _operator_supersession(
         now=now,
         previous=previous_operator,
         replacement=operator,
     )
-    _write_new(
-        repository / OPERATOR_SUPERSESSION_OUTPUT,
-        supersession,
-        "artifact_sha256",
-    )
+    for field in ("cohort_plan_sha256", "correction_basis", "authority"):
+        if projected_supersession[field] != supersession[field]:
+            raise ValueError(f"reused operator supersession {field} differs")
     model_design = _update_model_design(
         repository,
         commit=commit,
@@ -618,8 +634,8 @@ def main() -> int:
                 "ai_design_sha256": ai_design["artifact_sha256"],
                 "execution_git_commit": commit,
                 "model_design_sha256": model_design["design_sha256"],
-                "operator_contract_sha256": operator["artifact_sha256"],
-                "operator_supersession_sha256": supersession["artifact_sha256"],
+                "reused_operator_contract_sha256": operator["artifact_sha256"],
+                "reused_operator_supersession_sha256": supersession["artifact_sha256"],
             },
             allow_nan=False,
             ensure_ascii=True,
