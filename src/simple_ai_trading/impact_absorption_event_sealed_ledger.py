@@ -25,6 +25,9 @@ from .types import config_paths
 
 ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v1"
 ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v1"
+ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = (
+    "round-074-sealed-dataset-identity-v1"
+)
 ROUND74_SEALED_RESULT_OUTCOMES = (
     "candidate_passed_predeclared_gates",
     "candidate_failed_predeclared_gates",
@@ -280,9 +283,10 @@ class Round74SealedEvaluationClaim:
 
 
 @dataclass(frozen=True)
-class _Round74SealedDatasetIdentity:
+class Round74SealedDatasetIdentity:
+    """Metadata-only identity that can be reserved before loading test targets."""
+
     test_access_sha256: str
-    dataset_sha256: str
     partition_sha256: str
     scaler_sha256: str
     test_run_ids: tuple[str, ...]
@@ -290,11 +294,56 @@ class _Round74SealedDatasetIdentity:
     rows: int
     first_wall_ns: int
     last_wall_ns: int
+    schema_version: str = ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        expected_runs = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
+        if (
+            self.schema_version
+            != ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
+            or _SHA256.fullmatch(self.test_access_sha256) is None
+            or _SHA256.fullmatch(self.partition_sha256) is None
+            or _SHA256.fullmatch(self.scaler_sha256) is None
+            or len(self.test_run_ids) != expected_runs
+            or len(set(self.test_run_ids)) != expected_runs
+            or any(_RUN_ID.fullmatch(value) is None for value in self.test_run_ids)
+            or not self.batch_sha256
+            or len(set(self.batch_sha256)) != len(self.batch_sha256)
+            or any(_SHA256.fullmatch(value) is None for value in self.batch_sha256)
+            or isinstance(self.rows, bool)
+            or not isinstance(self.rows, int)
+            or self.rows < 1
+            or isinstance(self.first_wall_ns, bool)
+            or not isinstance(self.first_wall_ns, int)
+            or self.first_wall_ns <= 0
+            or isinstance(self.last_wall_ns, bool)
+            or not isinstance(self.last_wall_ns, int)
+            or self.last_wall_ns < self.first_wall_ns
+        ):
+            raise ValueError("Round 74 sealed dataset identity differs")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "test_access_sha256": self.test_access_sha256,
+            "partition_sha256": self.partition_sha256,
+            "scaler_sha256": self.scaler_sha256,
+            "test_run_ids": list(self.test_run_ids),
+            "batch_sha256": list(self.batch_sha256),
+            "rows": self.rows,
+            "first_wall_ns": self.first_wall_ns,
+            "last_wall_ns": self.last_wall_ns,
+        }
+
+    @property
+    def dataset_sha256(self) -> str:
+        return _canonical_sha256(self.as_dict())
 
 
-def _sealed_dataset_identity(
+def build_round74_sealed_dataset_identity(
     batches: Sequence[Round74EventTrainingBatch],
-) -> _Round74SealedDatasetIdentity:
+) -> Round74SealedDatasetIdentity:
     selected = tuple(batches)
     if not selected:
         raise ValueError("Round 74 sealed test batches are missing")
@@ -343,28 +392,18 @@ def _sealed_dataset_identity(
     ):
         raise ValueError("Round 74 sealed dataset identity differs")
     batch_hashes = tuple(batch.batch_sha256 for batch in selected)
-    identity = {
-        "schema_version": ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
-        "test_access_sha256": next(iter(access)),
-        "partition_sha256": next(iter(partitions)),
-        "scaler_sha256": next(iter(scalers)),
-        "test_run_ids": run_ids,
-        "batch_sha256": batch_hashes,
-        "rows": rows,
-        "first_wall_ns": int(selected[0].decision_wall_ns[0]),
-        "last_wall_ns": int(selected[-1].decision_wall_ns[-1]),
-    }
-    return _Round74SealedDatasetIdentity(
-        test_access_sha256=str(identity["test_access_sha256"]),
-        dataset_sha256=_canonical_sha256(identity),
-        partition_sha256=str(identity["partition_sha256"]),
-        scaler_sha256=str(identity["scaler_sha256"]),
+    identity = Round74SealedDatasetIdentity(
+        test_access_sha256=next(iter(access)),
+        partition_sha256=next(iter(partitions)),
+        scaler_sha256=next(iter(scalers)),
         test_run_ids=tuple(run_ids),
         batch_sha256=batch_hashes,
         rows=rows,
-        first_wall_ns=int(identity["first_wall_ns"]),
-        last_wall_ns=int(identity["last_wall_ns"]),
+        first_wall_ns=int(selected[0].decision_wall_ns[0]),
+        last_wall_ns=int(selected[-1].decision_wall_ns[-1]),
     )
+    identity.validate()
+    return identity
 
 
 class Round74SealedEvaluationLedger:
@@ -537,12 +576,28 @@ class Round74SealedEvaluationLedger:
         action_selection: Round74ActionPolicySelection,
         ai_manifest_sha256: Sequence[str],
     ) -> Round74SealedEvaluationClaim:
-        """Atomically consume the test access before any target is scored."""
+        """Reserve an already loaded panel for low-level callers and tests."""
+
+        return self.reserve_identity(
+            test_identity=build_round74_sealed_dataset_identity(test_batches),
+            action_selection=action_selection,
+            ai_manifest_sha256=ai_manifest_sha256,
+        )
+
+    def reserve_identity(
+        self,
+        *,
+        test_identity: Round74SealedDatasetIdentity,
+        action_selection: Round74ActionPolicySelection,
+        ai_manifest_sha256: Sequence[str],
+    ) -> Round74SealedEvaluationClaim:
+        """Atomically consume metadata-only test access before target loading."""
 
         action_selection.validate()
         if not action_selection.accepted:
             raise ValueError("Round 74 sealed action policy is not accepted")
-        identity = _sealed_dataset_identity(test_batches)
+        test_identity.validate()
+        identity = test_identity
         manifests = tuple(
             _require_sha256(value, "AI manifest") for value in ai_manifest_sha256
         )
@@ -755,11 +810,14 @@ class Round74SealedEvaluationLedger:
 
 __all__ = [
     "ROUND74_SEALED_CLAIM_SCHEMA_VERSION",
+    "ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION",
     "ROUND74_SEALED_LEDGER_SCHEMA_VERSION",
     "ROUND74_SEALED_RESULT_OUTCOMES",
+    "Round74SealedDatasetIdentity",
     "Round74SealedEvaluationClaim",
     "Round74SealedEvaluationLedger",
     "Round74SealedLedgerError",
     "Round74SealedReuseError",
+    "build_round74_sealed_dataset_identity",
     "default_round74_sealed_ledger_path",
 ]
