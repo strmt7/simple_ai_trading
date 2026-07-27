@@ -265,6 +265,26 @@ class _Batch:
             self.decision_wall_ns = np.asarray([WALL], dtype=np.int64)
 
 
+@dataclass(frozen=True)
+class _Subpartition:
+    parent_partition_sha256: str
+    model_selection_run_ids: tuple[str, ...]
+    calibration_run_ids: tuple[str, ...]
+    policy_selection_run_ids: tuple[str, ...]
+
+    def validate(self) -> None:
+        if (
+            len(self.model_selection_run_ids) != 12
+            or len(self.calibration_run_ids) != 6
+            or len(self.policy_selection_run_ids) != 6
+        ):
+            raise ValueError("subpartition differs")
+
+    @property
+    def subpartition_sha256(self) -> str:
+        return "f" * 64
+
+
 def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -541,4 +561,84 @@ def test_development_preparation_rejects_identity_drift() -> None:
             target_assembly_by_run_id={
                 entry.run_id: assembly for entry in partition.entries
             },
+        )
+
+
+def test_tuning_roles_are_disjoint_and_model_selection_gets_only_twelve_runs() -> None:
+    scaler_values = np.zeros((3, len(ROUND74_EVENT_FEATURE_NAMES)))
+    scaler_values[:, 0] = 1.0
+    scaler_values[:, 5] = 1.0
+    scaler = fit_round74_event_feature_scaler(
+        scaler_values,
+        partition_role="training",
+    )
+    partition_sha256 = "d" * 64
+    tuning_run_ids = tuple(f"{index + 2:032x}" for index in range(24))
+    subpartition = _Subpartition(
+        parent_partition_sha256=partition_sha256,
+        model_selection_run_ids=tuning_run_ids[:12],
+        calibration_run_ids=tuning_run_ids[12:18],
+        policy_selection_run_ids=tuning_run_ids[18:],
+    )
+    training = _Batch(
+        role="training",
+        run_id=("1" * 32,),
+        scaler_sha256=scaler.scaler_sha256,
+        partition_sha256=partition_sha256,
+        batch_sha256="1" * 64,
+        decision_wall_ns=np.asarray([WALL], dtype=np.int64),
+    )
+    tuning = tuple(
+        _Batch(
+            role="tuning",
+            run_id=(run_id,),
+            scaler_sha256=scaler.scaler_sha256,
+            partition_sha256=partition_sha256,
+            batch_sha256=f"{index + 2:064x}",
+            decision_wall_ns=np.asarray(
+                [WALL + (index + 1) * NS],
+                dtype=np.int64,
+            ),
+        )
+        for index, run_id in enumerate(tuning_run_ids)
+    )
+    prepared = subject.Round74PreparedDevelopmentData(
+        scaler=scaler,
+        training_batches=(training,),
+        tuning_batches=tuning,
+    )
+
+    roles = subject.split_round74_prepared_tuning_roles(
+        prepared,
+        subpartition=subpartition,
+    )
+
+    assert len(roles.model_selection_batches) == 12
+    assert len(roles.calibration_batches) == 6
+    assert len(roles.policy_selection_batches) == 6
+    assert tuple(batch.run_id[0] for batch in roles.model_selection_batches) == (
+        subpartition.model_selection_run_ids
+    )
+    assert roles.as_dict()["cross_role_run_reuse_permitted"] is False
+    assert len(roles.role_assignment_sha256) == 64
+
+    drifted = replace(
+        prepared,
+        tuning_batches=(prepared.tuning_batches[1], prepared.tuning_batches[0])
+        + prepared.tuning_batches[2:],
+    )
+    with pytest.raises(ValueError, match="tuning chronology differs"):
+        subject.split_round74_prepared_tuning_roles(
+            drifted,
+            subpartition=subpartition,
+        )
+
+    wrong_parent = replace(
+        subpartition,
+        parent_partition_sha256="e" * 64,
+    )
+    with pytest.raises(ValueError, match="parent partition differs"):
+        subject.split_round74_prepared_tuning_roles(
+            prepared,
+            subpartition=wrong_parent,
         )

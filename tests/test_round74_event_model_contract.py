@@ -109,10 +109,6 @@ from simple_ai_trading.impact_absorption_exchange_info_evidence import (
 from simple_ai_trading.impact_absorption_target_assembly import (
     ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
 )
-from simple_ai_trading.round74_event_model_operator import (
-    ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
-)
-
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
@@ -220,9 +216,8 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_model_operator_sha256"] == _file_sha256(
         source["event_model_operator_path"]
     )
-    assert (
-        source["event_model_operator_schema_version"]
-        == ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+    assert source["event_model_operator_schema_version"] == (
+        "round-074-event-model-operator-v1"
     )
     assert source["event_execution_calibration_sha256"] == _file_sha256(
         source["event_execution_calibration_path"]

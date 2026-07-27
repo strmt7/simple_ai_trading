@@ -94,10 +94,6 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
-from simple_ai_trading.round74_event_model_operator import (
-    ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
-)
-
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 ARTIFACT_PATH = (
@@ -311,9 +307,8 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["pretest_policy_schema_version"] == (
         ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
     )
-    assert (
-        source["event_model_operator_schema_version"]
-        == ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+    assert source["event_model_operator_schema_version"] == (
+        "round-074-event-model-operator-v1"
     )
     model_design_path = REPOSITORY / source["event_model_design_path"]
     assert source["event_model_design_file_sha256"] == _file_sha256(
