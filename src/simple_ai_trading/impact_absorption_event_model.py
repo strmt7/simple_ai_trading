@@ -1,8 +1,9 @@
 """Probabilistic candidate models for causal Round 74 event sequences.
 
-The candidate panel intentionally contains a pooled linear control, a compact
-pooling MLP, and a causal dilated TCN. Architecture complexity has no promotion
-privilege. Model selection must occur later on sealed, after-cost evidence.
+The candidate panel intentionally contains pooled linear and MLP controls, a
+causal dilated TCN, and a compact causal attention encoder. Architecture
+complexity has no promotion privilege. Model selection must occur later on
+sealed, after-cost evidence.
 """
 
 from __future__ import annotations
@@ -27,19 +28,23 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v3"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v4"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
     "causal_event_tcn",
+    "causal_event_attention",
 )
 ROUND74_EVENT_HIDDEN_CHANNELS = 64
 ROUND74_EVENT_TCN_DILATIONS = (1, 2, 4, 8, 16, 32, 64)
 ROUND74_EVENT_TCN_KERNEL_SIZE = 3
 ROUND74_EVENT_TCN_RECEPTIVE_FIELD = 1 + (
-    (ROUND74_EVENT_TCN_KERNEL_SIZE - 1)
-    * sum(ROUND74_EVENT_TCN_DILATIONS)
+    (ROUND74_EVENT_TCN_KERNEL_SIZE - 1) * sum(ROUND74_EVENT_TCN_DILATIONS)
 )
+ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS = 72
+ROUND74_EVENT_ATTENTION_HEADS = 4
+ROUND74_EVENT_ATTENTION_LAYERS = 3
+ROUND74_EVENT_ATTENTION_EXPANSION = 2
 
 
 @dataclass(frozen=True)
@@ -66,10 +71,7 @@ class Round74EventModelOutput:
         )
         if self.payoff_quantiles_bps.shape != expected_quantiles:
             raise ValueError("Round 74 payoff-quantile output shape differs")
-        if (
-            self.maximum_adverse_excursion_quantiles_bps.shape
-            != expected_quantiles
-        ):
+        if self.maximum_adverse_excursion_quantiles_bps.shape != expected_quantiles:
             raise ValueError("Round 74 adverse-excursion output shape differs")
         if self.positive_payoff_logits.shape != expected_sides:
             raise ValueError("Round 74 positive-payoff output shape differs")
@@ -89,8 +91,8 @@ class Round74EventModelOutput:
         )
         if not all(bool(torch.isfinite(value).all()) for value in tensors):
             raise ValueError("Round 74 model output contains nonfinite values")
-        payoff_differences = self.payoff_quantiles_bps[..., 1:] - (
-            self.payoff_quantiles_bps[..., :-1]
+        payoff_differences = (
+            self.payoff_quantiles_bps[..., 1:] - (self.payoff_quantiles_bps[..., :-1])
         )
         adverse_differences = (
             self.maximum_adverse_excursion_quantiles_bps[..., 1:]
@@ -190,12 +192,8 @@ class _Round74DistributionalHeads(nn.Module):
                 ),
                 dim=3,
             ),
-            positive_payoff_logits=self.positive(encoded).reshape(
-                expected_sides
-            ),
-            adverse_selection_logits=self.adverse(encoded).reshape(
-                expected_sides
-            ),
+            positive_payoff_logits=self.positive(encoded).reshape(expected_sides),
+            adverse_selection_logits=self.adverse(encoded).reshape(expected_sides),
             regime_unpredictability_logits=self.unpredictability(encoded),
         )
         output.validate(encoded.shape[0])
@@ -345,6 +343,160 @@ class Round74CausalEventTCN(nn.Module):
         return self.heads(self.readout(encoded[:, :, -1]))
 
 
+class _Round74CausalAttentionBlock(nn.Module):
+    def __init__(
+        self,
+        hidden_channels: int,
+        *,
+        attention_heads: int,
+        expansion: int,
+        dropout: float,
+    ) -> None:
+        super().__init__()
+        if hidden_channels % attention_heads != 0:
+            raise ValueError("Round 74 attention head dimensions differ")
+        self.attention_heads = int(attention_heads)
+        self.head_channels = int(hidden_channels) // self.attention_heads
+        self.attention_scale = 1.0 / math.sqrt(float(self.head_channels))
+        self.attention_norm = nn.LayerNorm(hidden_channels)
+        self.query_key_value = nn.Linear(hidden_channels, hidden_channels * 3)
+        self.attention_output = nn.Linear(hidden_channels, hidden_channels)
+        self.attention_dropout = nn.Dropout(float(dropout))
+        self.feed_forward_norm = nn.LayerNorm(hidden_channels)
+        self.feed_forward_input = nn.Linear(
+            hidden_channels,
+            hidden_channels * int(expansion),
+        )
+        self.feed_forward_output = nn.Linear(
+            hidden_channels * int(expansion),
+            hidden_channels,
+        )
+        self.feed_forward_dropout = nn.Dropout(float(dropout))
+
+    def forward(
+        self,
+        values: torch.Tensor,
+        *,
+        causal_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        batch_size, sequence_length, hidden_channels = values.shape
+        normalized = self.attention_norm(values)
+        query, key, projected_value = self.query_key_value(normalized).chunk(
+            3,
+            dim=2,
+        )
+
+        def split_heads(tensor: torch.Tensor) -> torch.Tensor:
+            return tensor.reshape(
+                batch_size,
+                sequence_length,
+                self.attention_heads,
+                self.head_channels,
+            ).transpose(1, 2)
+
+        query = split_heads(query)
+        key = split_heads(key)
+        projected_value = split_heads(projected_value)
+        scores = torch.matmul(query, key.transpose(-2, -1))
+        scores = scores * self.attention_scale
+        scores = scores.masked_fill(
+            causal_mask[:sequence_length, :sequence_length],
+            torch.finfo(scores.dtype).min,
+        )
+        weights = self.attention_dropout(F.softmax(scores, dim=-1))
+        attended = torch.matmul(weights, projected_value)
+        attended = attended.transpose(1, 2).reshape(
+            batch_size,
+            sequence_length,
+            hidden_channels,
+        )
+        values = values + self.attention_dropout(self.attention_output(attended))
+        feed_forward = self.feed_forward_output(
+            F.gelu(self.feed_forward_input(self.feed_forward_norm(values)))
+        )
+        return values + self.feed_forward_dropout(feed_forward)
+
+
+class Round74CausalEventAttention(nn.Module):
+    """Compact pre-norm attention encoder over the causal event window."""
+
+    def __init__(
+        self,
+        input_features: int = len(ROUND74_EVENT_FEATURE_NAMES),
+        hidden_channels: int = ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS,
+        attention_heads: int = ROUND74_EVENT_ATTENTION_HEADS,
+        layers: int = ROUND74_EVENT_ATTENTION_LAYERS,
+        expansion: int = ROUND74_EVENT_ATTENTION_EXPANSION,
+        dropout: float = 0.10,
+    ) -> None:
+        super().__init__()
+        self.input_features = int(input_features)
+        self.hidden_channels = int(hidden_channels)
+        self.input_projection = nn.Linear(
+            self.input_features,
+            self.hidden_channels,
+        )
+        self.position_embedding = nn.Parameter(
+            torch.empty(
+                1,
+                ROUND74_EVENT_SEQUENCE_LENGTH,
+                self.hidden_channels,
+            )
+        )
+        nn.init.normal_(self.position_embedding, mean=0.0, std=0.02)
+        self.blocks = nn.ModuleList(
+            _Round74CausalAttentionBlock(
+                self.hidden_channels,
+                attention_heads=attention_heads,
+                expansion=expansion,
+                dropout=dropout,
+            )
+            for _ in range(int(layers))
+        )
+        self.final_norm = nn.LayerNorm(self.hidden_channels)
+        self.readout = nn.Sequential(
+            nn.Linear(self.hidden_channels, self.hidden_channels),
+            nn.GELU(),
+            nn.Dropout(float(dropout)),
+        )
+        self.heads = _Round74DistributionalHeads(self.hidden_channels)
+        self.register_buffer(
+            "_causal_mask",
+            torch.triu(
+                torch.ones(
+                    ROUND74_EVENT_SEQUENCE_LENGTH,
+                    ROUND74_EVENT_SEQUENCE_LENGTH,
+                    dtype=torch.bool,
+                ),
+                diagonal=1,
+            ),
+            persistent=False,
+        )
+
+    def _encode_events(self, values: torch.Tensor) -> torch.Tensor:
+        if values.ndim != 3 or values.shape[2] != self.input_features:
+            raise ValueError("Round 74 event attention input dimensions are invalid")
+        if values.shape[1] < 2:
+            raise ValueError("Round 74 event attention requires multiple events")
+        if values.shape[1] > ROUND74_EVENT_SEQUENCE_LENGTH:
+            raise ValueError(
+                "Round 74 event attention input exceeds the frozen sequence length"
+            )
+        sequence_length = int(values.shape[1])
+        encoded = self.input_projection(values)
+        encoded = encoded + self.position_embedding[:, :sequence_length, :]
+        for block in self.blocks:
+            encoded = block(
+                encoded,
+                causal_mask=self._causal_mask,
+            )
+        return self.final_norm(encoded)
+
+    def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
+        encoded = self._encode_events(values)
+        return self.heads(self.readout(encoded[:, -1, :]))
+
+
 def build_round74_event_model(candidate_id: str) -> nn.Module:
     selected = str(candidate_id).strip().lower()
     if selected == "event_pooling_linear":
@@ -353,6 +505,8 @@ def build_round74_event_model(candidate_id: str) -> nn.Module:
         return Round74EventPoolingMLP()
     if selected == "causal_event_tcn":
         return Round74CausalEventTCN()
+    if selected == "causal_event_attention":
+        return Round74CausalEventAttention()
     raise ValueError("Round 74 event model candidate is unsupported")
 
 
@@ -395,9 +549,9 @@ def round74_event_model_loss(
     if action_eligibility is None:
         action_eligibility = torch.ones_like(net_payoff_bps)
     if regime_unpredictability_eligibility is None:
-        regime_unpredictability_eligibility = (
-            action_eligibility.sum(dim=2) > 0.0
-        ).to(net_payoff_bps.dtype)
+        regime_unpredictability_eligibility = (action_eligibility.sum(dim=2) > 0.0).to(
+            net_payoff_bps.dtype
+        )
     if action_eligibility.shape != expected_action_shape:
         raise ValueError("Round 74 action-eligibility shape differs")
     if regime_unpredictability_eligibility.shape != (
@@ -421,12 +575,7 @@ def round74_event_model_loss(
         raise ValueError("Round 74 adverse-selection targets are outside [0, 1]")
     if bool(((regime_unpredictable < 0.0) | (regime_unpredictable > 1.0)).any()):
         raise ValueError("Round 74 unpredictability targets are outside [0, 1]")
-    if bool(
-        (
-            (action_eligibility != 0.0)
-            & (action_eligibility != 1.0)
-        ).any()
-    ) or bool(
+    if bool(((action_eligibility != 0.0) & (action_eligibility != 1.0)).any()) or bool(
         (
             (regime_unpredictability_eligibility != 0.0)
             & (regime_unpredictability_eligibility != 1.0)
@@ -447,22 +596,20 @@ def round74_event_model_loss(
         float(unpredictability_weight),
     )
     if not all(math.isfinite(value) and value >= 0.0 for value in loss_weights):
-        raise ValueError("Round 74 event-model loss weights must be finite and nonnegative")
+        raise ValueError(
+            "Round 74 event-model loss weights must be finite and nonnegative"
+        )
     quantile_levels = torch.tensor(
         ROUND74_EVENT_PAYOFF_QUANTILES,
         dtype=output.payoff_quantiles_bps.dtype,
         device=output.payoff_quantiles_bps.device,
     ).reshape(1, 1, 1, -1)
-    payoff_errors = (
-        net_payoff_bps.unsqueeze(3) - output.payoff_quantiles_bps
-    )
+    payoff_errors = net_payoff_bps.unsqueeze(3) - output.payoff_quantiles_bps
     payoff_pinball_values = torch.maximum(
         quantile_levels * payoff_errors,
         (quantile_levels - 1.0) * payoff_errors,
     )
-    payoff_pinball = (
-        payoff_pinball_values * action_eligibility.unsqueeze(3)
-    ).sum() / (
+    payoff_pinball = (payoff_pinball_values * action_eligibility.unsqueeze(3)).sum() / (
         action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES)
     )
     adverse_excursion_errors = maximum_adverse_excursion_bps.unsqueeze(3) - (
@@ -473,11 +620,8 @@ def round74_event_model_loss(
         (quantile_levels - 1.0) * adverse_excursion_errors,
     )
     adverse_excursion_pinball = (
-        adverse_excursion_pinball_values
-        * action_eligibility.unsqueeze(3)
-    ).sum() / (
-        action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES)
-    )
+        adverse_excursion_pinball_values * action_eligibility.unsqueeze(3)
+    ).sum() / (action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES))
     positive_targets = (net_payoff_bps > 0.0).to(net_payoff_bps.dtype)
     # BCE(logits) = softplus(logits) - target * logits. Keeping this explicit
     # avoids torch-directml's silent CPU fallback through log_sigmoid_forward.
@@ -528,7 +672,7 @@ def _fallback_messages(messages: list[str]) -> list[str]:
 def round74_event_model_preflight(
     compute_backend: str = "auto",
 ) -> tuple[object, dict[str, object]]:
-    """Run bounded forward/backward updates for both candidates."""
+    """Run bounded forward/backward updates for every declared candidate."""
 
     backend = require_backend(resolve_backend(compute_backend))
     device = torch_device_for_backend(backend)
@@ -545,9 +689,7 @@ def round74_event_model_preflight(
         for event_index in range(values_array.shape[1]):
             values_array[batch_index, event_index, event_index % 5] = 1.0
             values_array[batch_index, event_index, 5 + batch_index % 3] = 1.0
-    values = torch.from_numpy(
-        values_array
-    ).to(device)
+    values = torch.from_numpy(values_array).to(device)
     action_shape = (
         4,
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
@@ -590,9 +732,7 @@ def round74_event_model_preflight(
         "torch_version": str(torch.__version__),
         "sequence_length": ROUND74_EVENT_SEQUENCE_LENGTH,
         "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
-        "payoff_horizons_seconds": list(
-            ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
-        ),
+        "payoff_horizons_seconds": list(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
         "candidates": {},
     }
     messages: list[str] = []
@@ -612,9 +752,7 @@ def round74_event_model_preflight(
                 adverse_selection=adverse,
                 regime_unpredictable=unpredictable,
                 action_eligibility=action_eligibility,
-                regime_unpredictability_eligibility=(
-                    unpredictability_eligibility
-                ),
+                regime_unpredictability_eligibility=(unpredictability_eligibility),
             )
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -628,8 +766,7 @@ def round74_event_model_preflight(
                         parameter.add_(parameter.grad, alpha=-1e-4)
             change = float(torch.max(torch.abs(first.detach().cpu() - before)))
             component_values = {
-                key: float(value.detach().cpu())
-                for key, value in components.items()
+                key: float(value.detach().cpu()) for key, value in components.items()
             }
             if (
                 not math.isfinite(float(loss.detach().cpu()))

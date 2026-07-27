@@ -11,12 +11,16 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
+    ROUND74_EVENT_ATTENTION_HEADS,
+    ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS,
+    ROUND74_EVENT_ATTENTION_LAYERS,
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_TCN_DILATIONS,
     ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
+    Round74CausalEventAttention,
     Round74CausalEventTCN,
     Round74EventPoolingLinear,
     Round74EventPoolingMLP,
@@ -51,6 +55,7 @@ def _inputs(batch_size: int = 3, sequence_length: int = 32) -> torch.Tensor:
         Round74EventPoolingLinear(),
         Round74EventPoolingMLP(dropout=0.0),
         Round74CausalEventTCN(dropout=0.0),
+        Round74CausalEventAttention(dropout=0.0),
     ),
 )
 def test_round74_candidate_outputs_are_finite_and_monotone(model: object) -> None:
@@ -69,27 +74,27 @@ def test_round74_candidate_outputs_are_finite_and_monotone(model: object) -> Non
     ):
         differences = quantiles[..., 1:] - quantiles[..., :-1]
         assert bool((differences >= 0.0).all())
-    assert bool(
-        (output.maximum_adverse_excursion_quantiles_bps >= 0.0).all()
-    )
+    assert bool((output.maximum_adverse_excursion_quantiles_bps >= 0.0).all())
 
 
-def test_round74_candidate_complexity_order_keeps_linear_control_smallest() -> None:
+def test_round74_candidate_complexity_order_is_strict() -> None:
     parameter_counts = {
         candidate_id: sum(
             parameter.numel()
-            for parameter in build_round74_event_model(
-                candidate_id
-            ).parameters()
+            for parameter in build_round74_event_model(candidate_id).parameters()
         )
         for candidate_id in ROUND74_EVENT_MODEL_CANDIDATES
     }
 
-    assert parameter_counts["event_pooling_linear"] < (
-        parameter_counts["event_pooling_mlp"]
-    )
-    assert parameter_counts["event_pooling_linear"] < (
-        parameter_counts["causal_event_tcn"]
+    assert tuple(parameter_counts) == ROUND74_EVENT_MODEL_CANDIDATES
+    ordered_counts = tuple(parameter_counts.values())
+    assert all(
+        lower < higher
+        for lower, higher in zip(
+            ordered_counts[:-1],
+            ordered_counts[1:],
+            strict=True,
+        )
     )
 
 
@@ -121,6 +126,33 @@ def test_round74_tcn_receptive_field_covers_frozen_sequence() -> None:
             _inputs(
                 batch_size=1,
                 sequence_length=ROUND74_EVENT_TCN_RECEPTIVE_FIELD + 1,
+            )
+        )
+
+
+def test_round74_attention_is_strictly_causal_and_bounded() -> None:
+    assert ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS == 72
+    assert ROUND74_EVENT_ATTENTION_HEADS == 4
+    assert ROUND74_EVENT_ATTENTION_LAYERS == 3
+    model = Round74CausalEventAttention(dropout=0.0).eval()
+    values = _inputs(batch_size=2, sequence_length=41)
+    prefix_length = 23
+
+    with torch.no_grad():
+        full = model._encode_events(values)
+        prefix = model._encode_events(values[:, :prefix_length, :])
+
+    torch.testing.assert_close(
+        full[:, prefix_length - 1, :],
+        prefix[:, -1, :],
+        rtol=1e-6,
+        atol=1e-6,
+    )
+    with pytest.raises(ValueError, match="exceeds the frozen sequence length"):
+        model(
+            _inputs(
+                batch_size=1,
+                sequence_length=ROUND74_EVENT_SEQUENCE_LENGTH + 1,
             )
         )
 
@@ -285,6 +317,7 @@ def test_round74_candidate_registry_fails_closed() -> None:
         "Round74EventPoolingLinear",
         "Round74EventPoolingMLP",
         "Round74CausalEventTCN",
+        "Round74CausalEventAttention",
     )
     with pytest.raises(ValueError, match="unsupported"):
         build_round74_event_model("future-model")
