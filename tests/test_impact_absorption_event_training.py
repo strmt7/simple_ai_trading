@@ -330,6 +330,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         "tuning",
         start_wall_ns=WALL_NS + PURGE_NS + 10_000_000_000,
         identity=3,
+        rows=3,
     )
     artifact = train_and_seal_round74_pretest_policy(
         [training],
@@ -359,6 +360,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert selected_metrics["worst_run_loss"] >= (
         selected_metrics["run_balanced_loss"]
     )
+    assert selected_metrics["run_balanced_loss"] != selected_metrics["loss"]
     assert artifact.tuning_loss == selected_metrics["run_balanced_loss"]
     assert all(
         policy["authority"][name] is False
