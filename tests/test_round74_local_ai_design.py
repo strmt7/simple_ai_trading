@@ -87,7 +87,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v30.json"
+    / "round-074-local-ai-review-design-v31.json"
 )
 
 
@@ -271,6 +271,14 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["accelerated_backend"] == "directml"
     assert compute["warning_count_per_execution"] == 0
     assert compute["cpu_fallback_warning_count_per_execution"] == 0
+    assert compute["selected_candidate_id"] == "event_pooling_linear"
+    assert compute["complexity_promotion_familywise_alpha"] == 0.05
+    assert compute["complexity_promotion_comparison_alpha"] == 0.025
+    assert compute["nonlinear_promotion_pvalues"] == {
+        "event_pooling_mlp": 0.5,
+        "causal_event_tcn": 0.5,
+    }
+    assert compute["nonlinear_candidate_promoted"] is False
     assert compute["constructed_tensor_compute_only"] is True
     assert compute["real_market_events_used"] is False
     assert compute["candidate_loss_has_financial_meaning"] is False
@@ -297,6 +305,14 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["ai_prompt_summary_values_per_feature"] == 4
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
     assert architecture["ml_candidate_panel_includes_linear_microstructure_control"] is True
+    assert (
+        architecture[
+            "ml_candidate_selection_requires_paired_capture_run_complexity_promotion"
+        ]
+        is True
+    )
+    assert architecture["ml_candidate_selection_uses_ai_output"] is False
+    assert architecture["ml_candidate_selection_uses_sealed_test"] is False
     assert architecture["ai_receives_only_the_preselected_target_free_ml_candidate"] is True
     assert architecture["ai_may_choose_the_ml_candidate_architecture"] is False
     assert (
@@ -614,6 +630,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["candidate_weights_downloaded"] is True
     assert status["candidate_manifest_hash_verified"] is True
     assert status["current_three_candidate_ml_compute_preflight_completed"] is True
+    assert status["current_complexity_promotion_compute_preflight_completed"] is True
     assert status["current_three_candidate_ml_market_training_completed"] is False
     assert status["isolated_worker_implemented"] is True
     assert status["fail_closed_parent_runtime_implemented"] is True

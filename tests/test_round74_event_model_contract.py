@@ -70,6 +70,9 @@ from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_training import (
+    ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA,
+    ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT,
+    ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA,
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
@@ -106,12 +109,12 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v44.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v45.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-linear-control-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-complexity-gate-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -672,6 +675,19 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["mixed_capture_run_batch_permitted"] is False
     assert training["repeated_capture_run_batch_permitted"] is False
     assert training["candidate_panel"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert training["complexity_promotion_familywise_alpha"] == (
+        ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA
+    )
+    assert training["complexity_promotion_planned_comparison_count"] == (
+        ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+    )
+    assert training["complexity_promotion_comparison_alpha"] == (
+        ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+    )
+    assert training["complexity_promotion_exact_ties_excluded"] is True
+    assert training["complexity_promotion_uses_sealed_test"] is False
+    assert training["complexity_promotion_uses_backtest_pnl"] is False
+    assert training["complexity_promotion_ledger_bound_into_pretest_policy"] is True
     assert training["default_seed_panel"] == list(ROUND74_EVENT_TRAINING_DEFAULT_SEEDS)
     assert training["backtest_roi_used_for_gradient_or_model_selection"] is False
     assert training["seed_ensemble_method"] == (
@@ -855,6 +871,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["prospective_target_engine_implementation"] is True
     assert authority["leak_resistant_dataset_implementation"] is True
     assert authority["development_trainer_implementation"] is True
+    assert (
+        authority["paired_capture_run_complexity_promotion_gate_implementation"]
+        is True
+    )
     assert authority["immutable_pretest_policy_implementation"] is True
     assert authority["predeclared_cohort_admission_implementation"] is True
     assert authority["predeclared_cohort_plan"] is True
@@ -1058,8 +1078,12 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
-    assert "constructed tensors" in binding["event_training_directml_reuse_scope"]
-    assert "do not evidence market fit" in binding["event_training_directml_reuse_scope"]
+    assert "constructed tensor preflight" in (
+        binding["event_training_directml_reuse_scope"]
+    )
+    assert "does not evidence market fit" in (
+        binding["event_training_directml_reuse_scope"]
+    )
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
@@ -1102,6 +1126,38 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         repeated["candidate_run_balanced_tuning_proper_loss"]
         == (repeated["candidate_pooled_tuning_proper_loss"])
+    )
+    selection = repeated["selection"]
+    assert selection["selected_candidate_id"] == "event_pooling_linear"
+    assert repeated["selected_candidate_id"] == (
+        binding["event_training_directml_selected_candidate_id"]
+    )
+    assert selection["ordered_candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert selection["familywise_alpha"] == (
+        ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA
+    )
+    assert selection["planned_comparison_count"] == (
+        ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+    )
+    assert selection["comparison_alpha"] == (
+        ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+    )
+    assert selection["exact_ties_excluded_from_sign_test"] is True
+    assert all(
+        report["one_sided_exact_sign_pvalue"] == 0.5
+        and report["promoted"] is False
+        for report in selection["promotion_reports"]
+    )
+    assert binding["event_training_directml_promotion_pvalues"] == {
+        report["challenger_candidate_id"]: report["one_sided_exact_sign_pvalue"]
+        for report in selection["promotion_reports"]
+    }
+    assert binding["event_training_directml_comparison_alpha"] == (
+        ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+    )
+    assert (
+        binding["event_training_directml_candidate_losses_have_financial_meaning"]
+        is False
     )
     interpretation = evidence["interpretation"]
     assert interpretation["candidate_loss_has_financial_meaning"] is False
