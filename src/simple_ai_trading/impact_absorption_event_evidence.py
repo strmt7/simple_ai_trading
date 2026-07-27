@@ -35,7 +35,7 @@ from .impact_absorption_targets import Round73MarketQuantityRules
 from .impact_capture_frame import decode_impact_capture_frame
 
 
-ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION = "round-074-binance-source-evidence-v2"
+ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION = "round-074-binance-source-evidence-v3"
 ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION = "round-074-binance-clock-probe-v1"
 ROUND74_BINANCE_CLOCK_MAXIMUM_RTT_NS = 5_000_000_000
 ROUND74_BINANCE_CLOCK_MAXIMUM_PROBE_GAP_NS = 90_000_000_000
@@ -758,12 +758,12 @@ def build_round74_funding_evidence(
 
     normalized_payloads: dict[str, object] = {}
     funding_times: dict[str, tuple[int, ...]] = {}
-    record_count = 0
+    funding_row_count = 0
     for symbol in ROUND74_EVENT_TARGET_SYMBOLS:
         rows = tuple(normalized_input[symbol])
-        if not rows or len(rows) >= selected_limit:
+        if len(rows) >= selected_limit:
             raise ValueError(
-                "Round 74 Binance funding response is empty or may be truncated"
+                "Round 74 Binance funding response may be truncated"
             )
         normalized_rows: list[object] = []
         times: list[int] = []
@@ -799,7 +799,7 @@ def build_round74_funding_evidence(
             raise ValueError("Round 74 Binance funding response order differs")
         normalized_payloads[symbol] = normalized_rows
         funding_times[symbol] = tuple(times)
-        record_count += len(times)
+        funding_row_count += len(times)
 
     initial_coverage = (
         probes[1].request_started_monotonic_ns,
@@ -855,6 +855,9 @@ def build_round74_funding_evidence(
         "inclusive_time_bounds": True,
         "limit": selected_limit,
         "response_order": "ascending",
+        "symbol_response_count": len(normalized_payloads),
+        "funding_row_count": funding_row_count,
+        "empty_bounded_symbol_response_is_complete": True,
         "full_page_is_rejected_as_potentially_truncated": True,
         "clock_path": "/fapi/v1/time",
         "clock_mapping": (
@@ -873,7 +876,7 @@ def build_round74_funding_evidence(
         kind="funding_schedule",
         environment=selected_environment,
         observed_wall_ns=observed,
-        record_count=record_count,
+        record_count=len(normalized_payloads) + funding_row_count,
         source_query_or_protocol_sha256=_canonical_sha256(query_contract),
         source_payload_sha256=_canonical_sha256(source_payload),
         claims=claims,

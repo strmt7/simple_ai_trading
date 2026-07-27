@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SYMBOLS,
@@ -29,8 +30,14 @@ ARTIFACT_PATH = (
 )
 
 
-def _file_sha256(relative_path: str) -> str:
-    return hashlib.sha256((REPOSITORY / relative_path).read_bytes()).hexdigest()
+def _git_blob_sha256(commit: str, relative_path: str) -> str:
+    result = subprocess.run(
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+    )
+    return hashlib.sha256(result.stdout).hexdigest()
 
 
 def test_round74_exchange_info_capture_is_real_hash_bound_evidence() -> None:
@@ -58,8 +65,13 @@ def test_round74_exchange_info_capture_is_real_hash_bound_evidence() -> None:
     assert response["raw_payload_persisted"] is False
 
     source = artifact["source_binding"]
-    assert source["parser_sha256"] == _file_sha256(source["parser_path"])
-    assert source["capture_tool_sha256"] == _file_sha256(
+    execution_commit = artifact["execution_git_commit"]
+    assert source["parser_sha256"] == _git_blob_sha256(
+        execution_commit,
+        source["parser_path"],
+    )
+    assert source["capture_tool_sha256"] == _git_blob_sha256(
+        execution_commit,
         source["capture_tool_path"]
     )
     claims = artifact["quantity_rules"]

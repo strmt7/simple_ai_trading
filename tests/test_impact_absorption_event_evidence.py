@@ -433,6 +433,31 @@ def test_funding_evidence_uses_noninterpolated_clock_brackets() -> None:
     )
 
 
+def test_funding_evidence_accepts_complete_empty_bounded_responses() -> None:
+    payloads = {symbol: [] for symbol in SYMBOLS}
+    bundle = _funding_bundle(payloads=payloads)
+
+    assert bundle.boundary_mapping() == {symbol: () for symbol in SYMBOLS}
+    assert bundle.coverage_mapping() == {
+        symbol: (
+            MONOTONIC_NS + 60_000_000_000,
+            MONOTONIC_NS + 240_020_000_000,
+        )
+        for symbol in SYMBOLS
+    }
+    assert bundle.evidence.record_count == 3
+    assert bundle.evidence.binds(
+        round74_funding_schedule_evidence_claims(
+            funding_boundary_intervals_monotonic_ns={
+                symbol: () for symbol in SYMBOLS
+            },
+            funding_schedule_coverage_monotonic_ns=(
+                bundle.coverage_mapping()
+            ),
+        )
+    )
+
+
 def test_clock_probes_load_only_hash_verified_time_frames() -> None:
     connection, audit = _clock_capture_fixture()
 
