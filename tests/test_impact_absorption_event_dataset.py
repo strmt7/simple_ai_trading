@@ -94,10 +94,14 @@ def _engine() -> Round74EventTargetEngine:
         taker_fee_bps_by_symbol={
             symbol: 5.0 for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
         },
+        funding_boundaries_monotonic_ns={
+            symbol: () for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+        },
         additional_slippage_bps_per_side=1.0,
         commission_evidence_sha256="a" * 64,
         entry_exit_latency_evidence_sha256="b" * 64,
         slippage_evidence_sha256="c" * 64,
+        funding_schedule_evidence_sha256="d" * 64,
     )
     return Round74EventTargetEngine(
         spec=spec,

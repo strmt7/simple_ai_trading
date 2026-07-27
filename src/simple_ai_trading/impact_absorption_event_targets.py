@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v2"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v3"
 ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS = 5_000_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE = 1_000.0
 ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS = 250_000_000
@@ -88,10 +88,12 @@ class Round74EventTargetSpec:
     decision_to_entry_latency_ns: int
     decision_to_exit_latency_ns: int
     taker_fee_bps_by_symbol: tuple[tuple[str, float], ...]
+    funding_boundaries_monotonic_ns: tuple[tuple[str, tuple[int, ...]], ...]
     additional_slippage_bps_per_side: float
     commission_evidence_sha256: str
     entry_exit_latency_evidence_sha256: str
     slippage_evidence_sha256: str
+    funding_schedule_evidence_sha256: str
     maximum_state_lateness_ns: int = (
         ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
     )
@@ -114,10 +116,12 @@ class Round74EventTargetSpec:
         decision_to_entry_latency_ns: int,
         decision_to_exit_latency_ns: int,
         taker_fee_bps_by_symbol: Mapping[str, float],
+        funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
         additional_slippage_bps_per_side: float,
         commission_evidence_sha256: str,
         entry_exit_latency_evidence_sha256: str,
         slippage_evidence_sha256: str,
+        funding_schedule_evidence_sha256: str,
         maximum_state_lateness_ns: int = (
             ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
         ),
@@ -137,11 +141,21 @@ class Round74EventTargetSpec:
                 for symbol, value in taker_fee_bps_by_symbol.items()
             )
         )
+        funding = tuple(
+            sorted(
+                (
+                    str(symbol).strip().upper(),
+                    tuple(sorted(int(boundary) for boundary in boundaries)),
+                )
+                for symbol, boundaries in funding_boundaries_monotonic_ns.items()
+            )
+        )
         return cls(
             reference_quote_notional=float(reference_quote_notional),
             decision_to_entry_latency_ns=int(decision_to_entry_latency_ns),
             decision_to_exit_latency_ns=int(decision_to_exit_latency_ns),
             taker_fee_bps_by_symbol=fees,
+            funding_boundaries_monotonic_ns=funding,
             additional_slippage_bps_per_side=float(
                 additional_slippage_bps_per_side
             ),
@@ -150,6 +164,9 @@ class Round74EventTargetSpec:
                 entry_exit_latency_evidence_sha256
             ),
             slippage_evidence_sha256=str(slippage_evidence_sha256),
+            funding_schedule_evidence_sha256=str(
+                funding_schedule_evidence_sha256
+            ),
             maximum_state_lateness_ns=int(maximum_state_lateness_ns),
             maximum_decision_state_age_ns=int(
                 maximum_decision_state_age_ns
@@ -179,6 +196,22 @@ class Round74EventTargetSpec:
             for _symbol, fee in fees
         ):
             raise ValueError("Round 74 target fee is invalid")
+        funding = tuple(self.funding_boundaries_monotonic_ns)
+        if (
+            tuple(symbol for symbol, _boundaries in funding)
+            != ROUND74_EVENT_TARGET_SYMBOLS
+            or any(
+                boundary < 0
+                for _symbol, boundaries in funding
+                for boundary in boundaries
+            )
+            or any(
+                tuple(boundaries) != tuple(sorted(boundaries))
+                or len(boundaries) != len(set(boundaries))
+                for _symbol, boundaries in funding
+            )
+        ):
+            raise ValueError("Round 74 target funding schedule differs")
         slippage = _finite_nonnegative(
             self.additional_slippage_bps_per_side,
             "target additional slippage",
@@ -194,6 +227,10 @@ class Round74EventTargetSpec:
             "entry and exit latency evidence",
         )
         _sha256_digest(self.slippage_evidence_sha256, "slippage evidence")
+        _sha256_digest(
+            self.funding_schedule_evidence_sha256,
+            "funding schedule evidence",
+        )
         if (
             int(self.maximum_state_lateness_ns) < 0
             or int(self.maximum_state_lateness_ns)
@@ -229,6 +266,10 @@ class Round74EventTargetSpec:
             "decision_to_entry_latency_ns": self.decision_to_entry_latency_ns,
             "decision_to_exit_latency_ns": self.decision_to_exit_latency_ns,
             "taker_fee_bps_by_symbol": dict(self.taker_fee_bps_by_symbol),
+            "funding_boundaries_monotonic_ns": {
+                symbol: list(boundaries)
+                for symbol, boundaries in self.funding_boundaries_monotonic_ns
+            },
             "additional_slippage_bps_per_side": (
                 self.additional_slippage_bps_per_side
             ),
@@ -237,6 +278,9 @@ class Round74EventTargetSpec:
                 self.entry_exit_latency_evidence_sha256
             ),
             "slippage_evidence_sha256": self.slippage_evidence_sha256,
+            "funding_schedule_evidence_sha256": (
+                self.funding_schedule_evidence_sha256
+            ),
             "maximum_state_lateness_ns": self.maximum_state_lateness_ns,
             "maximum_decision_state_age_ns": (
                 self.maximum_decision_state_age_ns
@@ -247,6 +291,7 @@ class Round74EventTargetSpec:
             "sides": list(ROUND74_EVENT_PAYOFF_SIDES),
             "passive_fill_model": False,
             "marketable_l2_walk_only": True,
+            "funding_schedule_is_mandatory_and_hash_bound": True,
             "latency_semantics": (
                 "separately measured entry and exit submission-to-execution delays"
             ),
@@ -262,8 +307,9 @@ class Round74EventTargetSpec:
         if claimed != _canonical_sha256(payload):
             raise ValueError("Round 74 target spec payload digest differs")
         fees = payload.get("taker_fee_bps_by_symbol")
-        if not isinstance(fees, Mapping):
-            raise ValueError("Round 74 target fee payload differs")
+        funding = payload.get("funding_boundaries_monotonic_ns")
+        if not isinstance(fees, Mapping) or not isinstance(funding, Mapping):
+            raise ValueError("Round 74 target fee or funding payload differs")
         selected = cls.create(
             reference_quote_notional=float(
                 payload["reference_quote_notional"]
@@ -277,6 +323,10 @@ class Round74EventTargetSpec:
             taker_fee_bps_by_symbol={
                 str(symbol): float(fee) for symbol, fee in fees.items()
             },
+            funding_boundaries_monotonic_ns={
+                str(symbol): tuple(int(boundary) for boundary in boundaries)
+                for symbol, boundaries in funding.items()
+            },
             additional_slippage_bps_per_side=float(
                 payload["additional_slippage_bps_per_side"]
             ),
@@ -288,6 +338,9 @@ class Round74EventTargetSpec:
             ),
             slippage_evidence_sha256=str(
                 payload["slippage_evidence_sha256"]
+            ),
+            funding_schedule_evidence_sha256=str(
+                payload["funding_schedule_evidence_sha256"]
             ),
             maximum_state_lateness_ns=int(
                 payload["maximum_state_lateness_ns"]
@@ -657,7 +710,6 @@ class Round74EventTargetEngine:
         spec: Round74EventTargetSpec,
         anchors: Sequence[Round74EventTargetAnchor],
         quantity_rules: Mapping[str, Round73MarketQuantityRules],
-        funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]] | None = None,
     ) -> None:
         self.spec = spec
         self.anchors: dict[str, deque[Round74EventTargetAnchor]] = {
@@ -695,22 +747,10 @@ class Round74EventTargetEngine:
             for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         }
         self.quantity_rules = validated_rules
-        boundaries = funding_boundaries_monotonic_ns or {}
         self.funding_boundaries = {
-            symbol: tuple(sorted(int(value) for value in boundaries.get(symbol, ())))
-            for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            symbol: tuple(boundaries)
+            for symbol, boundaries in self.spec.funding_boundaries_monotonic_ns
         }
-        if any(
-            value < 0
-            for rows in self.funding_boundaries.values()
-            for value in rows
-        ):
-            raise ValueError("Round 74 target funding boundary is negative")
-        if any(
-            len(rows) != len(set(rows))
-            for rows in self.funding_boundaries.values()
-        ):
-            raise ValueError("Round 74 target funding boundary is duplicated")
         self.target_context_sha256 = _canonical_sha256(
             {
                 "target_spec_sha256": self.spec.spec_sha256,
