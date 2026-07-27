@@ -77,6 +77,7 @@ from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_training import (
+    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 
@@ -87,7 +88,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v32.json"
+    / "round-074-local-ai-review-design-v33.json"
 )
 
 
@@ -217,6 +218,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert (
         source["event_training_schema_version"] == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
     )
+    assert source["pretest_policy_schema_version"] == (
+        ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+    )
     model_design_path = REPOSITORY / source["event_model_design_path"]
     assert source["event_model_design_file_sha256"] == hashlib.sha256(
         model_design_path.read_bytes()
@@ -275,6 +279,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["observed_paired_capture_run_count"] == 1
     assert compute["required_paired_capture_run_count"] == 24
     assert compute["complete_tuning_panel"] is False
+    assert compute["training_capture_run_count"] == 2
+    assert compute["optimizer_steps_per_peer"] == 3
+    assert compute["run_contributions_per_optimizer_step"] == 2
+    assert compute["minimum_eligible_minibatches_per_run"] == 1
+    assert compute["maximum_eligible_minibatches_per_run"] == 3
+    assert compute["minimum_run_minibatch_contributions"] == 3
+    assert compute["maximum_run_minibatch_contributions"] == 3
+    assert compute["optimization_population_unit"] == "capture_run"
+    assert compute["unequal_training_run_sizes_proven"] is True
     assert compute["statistical_independence_or_significance_claim"] is False
     assert compute["nonlinear_candidate_promoted"] is False
     assert compute["constructed_tensor_compute_only"] is True
@@ -303,6 +316,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["ai_prompt_summary_values_per_feature"] == 4
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
     assert architecture["ml_candidate_panel_includes_linear_microstructure_control"] is True
+    assert architecture["ml_gradient_population_unit"] == "capture_run"
+    assert architecture["ml_row_pooled_optimizer_steps_permitted"] is False
+    assert architecture["ml_one_minibatch_per_run_per_optimizer_step"] is True
+    assert architecture["ml_unequal_run_directml_preflight_completed"] is True
     assert (
         architecture[
             "ml_candidate_selection_requires_paired_capture_run_complexity_promotion"
@@ -643,6 +660,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["candidate_manifest_hash_verified"] is True
     assert status["current_three_candidate_ml_compute_preflight_completed"] is True
     assert status["current_complexity_promotion_compute_preflight_completed"] is True
+    assert status["equal_run_gradient_optimization_implemented"] is True
+    assert status["unequal_run_directml_gradient_schedule_preflight_completed"] is True
     assert status["current_three_candidate_ml_market_training_completed"] is False
     assert status["isolated_worker_implemented"] is True
     assert status["fail_closed_parent_runtime_implemented"] is True
@@ -680,6 +699,21 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert artifact["host_preflight"]["request_schema_version"] == (
         ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
     )
+    latest = artifact["latest_capability_recheck"]
+    assert latest["source"] == "detect_ai_capabilities"
+    assert latest["model_name"] == "fino1:8b"
+    assert latest["model_parameters_b"] == 8.0
+    assert latest["provider_available"] is True
+    assert latest["model_available"] is True
+    assert latest["model_local"] is True
+    assert latest["gpu_vendor"] == "amd"
+    assert latest["compute_backend"] == "directml"
+    assert latest["compute_device"] == "privateuseone:0"
+    assert latest["free_vram_gib"] >= latest["minimum_free_vram_gib"]
+    assert latest["free_system_ram_gib"] < latest["minimum_free_system_ram_gib"]
+    assert latest["status"] == "blocked_capability"
+    assert latest["actual_model_inference_attempted"] is False
+    assert latest["host_runtime_preflight_passed"] is False
 
 
 def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
