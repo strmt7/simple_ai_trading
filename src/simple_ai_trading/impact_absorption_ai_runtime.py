@@ -11,6 +11,8 @@ import os
 import subprocess  # nosec B404
 import sys
 import time
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 from .ai_review import resolve_ollama_model_provenance
 from .ai_runtime import (
@@ -53,6 +55,7 @@ ROUND74_AI_RUNTIME_STATUSES = (
 CapabilityDetector = Callable[[AIRuntimeConfig], AICapabilityReport]
 ProvenanceResolver = Callable[[str, str, float], tuple[str, str]]
 ResidencyInspector = Callable[..., OllamaResidencyReport]
+ProviderPoster = Callable[[str, Mapping[str, object], float], object]
 PopenFactory = Callable[..., subprocess.Popen[str]]
 
 
@@ -389,6 +392,114 @@ def _strict_worker_result(raw_text: str) -> Round74AIWorkerResult:
     return Round74AIWorkerResult.from_dict(payload)
 
 
+def _post_provider_json(
+    url: str,
+    payload: Mapping[str, object],
+    timeout_seconds: float,
+) -> object:
+    if not url.startswith(f"{ROUND74_AI_WORKER_ENDPOINT}/"):
+        raise ValueError("Round 74 AI runtime refused a non-loopback request")
+    request = urllib_request.Request(
+        url,
+        data=_canonical_json(payload).encode("ascii"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "simple-ai-trading-round74-ai/0.1",
+        },
+        method="POST",
+    )
+    try:
+        with urllib_request.urlopen(  # nosec B310 - exact loopback endpoint
+            request,
+            timeout=timeout_seconds,
+        ) as response:
+            raw = response.read(ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES + 1)
+    except (OSError, urllib_error.URLError) as exc:
+        raise ValueError("Round 74 AI runtime provider request failed") from exc
+    if len(raw) > ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES:
+        raise ValueError("Round 74 AI runtime provider response is too large")
+    try:
+
+        def reject_duplicates(
+            pairs: list[tuple[str, object]],
+        ) -> dict[str, object]:
+            output: dict[str, object] = {}
+            for key, item in pairs:
+                if key in output:
+                    raise ValueError(
+                        "Round 74 AI runtime provider response has duplicate keys"
+                    )
+                output[key] = item
+            return output
+
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=reject_duplicates,
+            parse_constant=lambda item: (_ for _ in ()).throw(
+                ValueError(f"Round 74 AI runtime provider response contains {item}")
+            ),
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 74 AI runtime provider response is invalid") from exc
+    return value
+
+
+def unload_round74_ai_model(
+    config: Round74AIRuntimeConfig,
+    manifest: Round74AIModelManifest,
+    *,
+    residency_inspector: ResidencyInspector = inspect_ollama_model_residency,
+    provider_poster: ProviderPoster = _post_provider_json,
+    monotonic: Callable[[], float] = time.monotonic,
+    sleeper: Callable[[float], None] = time.sleep,
+    timeout_seconds: float = 10.0,
+) -> bool:
+    """Unload only the exact declared model and verify that it left residency."""
+
+    config.validate()
+    manifest.validate()
+    timeout = float(timeout_seconds)
+    if not math.isfinite(timeout) or timeout <= 0.0 or timeout > 30.0:
+        raise ValueError("Round 74 AI unload timeout differs")
+    inspection_timeout = min(timeout, 2.0)
+    current = residency_inspector(
+        config.endpoint,
+        config.model_name,
+        inspection_timeout,
+        expected_digest=manifest.model_artifact_sha256,
+    ).validated()
+    if current.status == "unloaded":
+        return False
+    if current.digest != manifest.model_artifact_sha256:
+        raise ValueError("Round 74 AI unload model identity differs")
+    response = provider_poster(
+        f"{config.endpoint}/api/generate",
+        {
+            "model": config.model_name,
+            "keep_alive": 0,
+            "stream": False,
+        },
+        timeout,
+    )
+    if not isinstance(response, Mapping) or response.get("done") is not True:
+        raise ValueError("Round 74 AI unload response differs")
+    deadline = monotonic() + timeout
+    while True:
+        current = residency_inspector(
+            config.endpoint,
+            config.model_name,
+            inspection_timeout,
+            expected_digest=manifest.model_artifact_sha256,
+        ).validated()
+        if current.status == "unloaded":
+            return True
+        if current.digest != manifest.model_artifact_sha256:
+            raise ValueError("Round 74 AI unload residency identity drifted")
+        if monotonic() >= deadline:
+            raise TimeoutError("Round 74 AI declared model unload timed out")
+        sleeper(0.25)
+
+
 def review_round74_ai_candidate(
     config: Round74AIRuntimeConfig,
     manifest: Round74AIModelManifest,
@@ -704,4 +815,5 @@ __all__ = [
     "Round74AIRuntimeConfig",
     "Round74AIRuntimeOutcome",
     "review_round74_ai_candidate",
+    "unload_round74_ai_model",
 ]

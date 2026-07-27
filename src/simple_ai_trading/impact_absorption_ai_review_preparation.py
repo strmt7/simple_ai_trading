@@ -18,6 +18,7 @@ from .impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
     Round74AIRuntimeOutcome,
     review_round74_ai_candidate,
+    unload_round74_ai_model,
 )
 from .impact_absorption_ai_uplift import Round74AIPairedReviewEvidence
 from .impact_absorption_event_action_policy import Round74ActionPolicySelection
@@ -33,13 +34,14 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v3"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v4"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 
 ReviewRunner = Callable[..., Round74AIRuntimeOutcome]
+ModelBatchFinalizer = Callable[["Round74AIReviewModelBinding"], object]
 ProgressCallback = Callable[[Mapping[str, object]], None]
 
 
@@ -55,6 +57,12 @@ def _canonical_json(value: object) -> str:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _finalize_round74_ai_model_batch(
+    binding: "Round74AIReviewModelBinding",
+) -> object:
+    return unload_round74_ai_model(binding.runtime, binding.manifest)
 
 
 @dataclass(frozen=True)
@@ -209,6 +217,7 @@ class Round74AIReviewPanel:
     rows: tuple[Round74TargetFreeReviewRow, ...]
     model_bindings: tuple[Round74AIReviewModelBinding, ...]
     reviews: tuple[tuple[Round74AIPairedReviewEvidence, ...], ...]
+    model_batch_unload_enforced: bool
     schema_version: str = ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION
     target_fields_accessed: bool = False
     trading_authority: bool = False
@@ -231,6 +240,7 @@ class Round74AIReviewPanel:
             or self.same_entry_latency_budget_ns <= 0
             or not self.model_bindings
             or len(self.model_bindings) != len(self.reviews)
+            or not isinstance(self.model_batch_unload_enforced, bool)
             or self.target_fields_accessed
             or self.trading_authority
         ):
@@ -305,6 +315,12 @@ class Round74AIReviewPanel:
                 [review.as_dict() for review in model_reviews]
                 for model_reviews in self.reviews
             ],
+            "model_batch_unload_enforced": self.model_batch_unload_enforced,
+            "model_batch_unload_policy": (
+                "exact_declared_model_only_verified_absent_before_next_batch"
+                if self.model_batch_unload_enforced
+                else "not_applicable_to_injected_review_runner"
+            ),
             "review_coverage_defined_before_target_scoring": True,
             "same_entry_latency_budget_policy": (
                 "externally_measured_signal_to_entry_slack"
@@ -419,6 +435,7 @@ def prepare_round74_target_free_ai_reviews(
     same_entry_latency_budget_ns: int,
     model_bindings: Sequence[Round74AIReviewModelBinding] | None = None,
     review_runner: ReviewRunner = review_round74_ai_candidate,
+    model_batch_finalizer: ModelBatchFinalizer | None = None,
     progress_callback: ProgressCallback | None = None,
     wall_time_ns: Callable[[], int] = time.time_ns,
 ) -> Round74AIReviewPanel:
@@ -456,92 +473,107 @@ def prepare_round74_target_free_ai_reviews(
     assert threshold is not None
     rows = _review_rows(inference, threshold_score=threshold)
     all_reviews: list[tuple[Round74AIPairedReviewEvidence, ...]] = []
+    selected_batch_finalizer = model_batch_finalizer
+    if (
+        selected_batch_finalizer is None
+        and review_runner is review_round74_ai_candidate
+    ):
+        selected_batch_finalizer = _finalize_round74_ai_model_batch
     total = len(bindings) * len(rows)
     completed = 0
     for binding in bindings:
         reviews: list[Round74AIPairedReviewEvidence] = []
         model_available_wall_ns = 0
-        for row in rows:
-            context = inference.contexts[row.panel_index]
-            output = inference.model_outputs[row.panel_index]
-            feature_values = torch.from_numpy(
-                np.array(
-                    context.feature_values[
-                        row.local_row_index : row.local_row_index + 1
-                    ],
-                    dtype=np.float32,
-                    copy=True,
-                    order="C",
+        batch_attempted = False
+        try:
+            for row in rows:
+                context = inference.contexts[row.panel_index]
+                output = inference.model_outputs[row.panel_index]
+                feature_values = torch.from_numpy(
+                    np.array(
+                        context.feature_values[
+                            row.local_row_index : row.local_row_index + 1
+                        ],
+                        dtype=np.float32,
+                        copy=True,
+                        order="C",
+                    )
                 )
-            )
-            requested_wall_ns = int(wall_time_ns())
-            request = build_round74_ai_review_request(
-                model_output=_row_output(output, row.local_row_index),
-                scaled_feature_values=feature_values,
-                row_index=0,
-                asset_slot=ROUND74_EVENT_SYMBOLS.index(row.symbol),
-                side=(
-                    ROUND74_EVENT_PAYOFF_SIDES[0]
-                    if row.side == 1
-                    else ROUND74_EVENT_PAYOFF_SIDES[1]
-                ),
-                horizon_seconds=row.horizon_seconds,
-                pretest_policy_sha256=inference.pretest_policy_sha256,
-                sample_sha256=row.feature_row_sha256,
-                deterministic_risk_state_sha256=(row.deterministic_risk_state_sha256),
-                probability_calibration=probability_calibration,
-                requested_wall_ns=requested_wall_ns,
-                expires_wall_ns=(requested_wall_ns + ROUND74_AI_REVIEW_VALIDITY_NS),
-                proposed_risk_size_bps=ROUND74_AI_REVIEW_UNIT_RISK_BPS,
-            )
-            outcome = review_runner(
-                binding.runtime,
-                binding.manifest,
-                request,
-                deterministic_risk_gate_passed=True,
-                observed_wall_ns=requested_wall_ns,
-            )
-            outcome.validate()
-            queue_delay_ns = max(
-                0,
-                model_available_wall_ns - row.decision_wall_ns,
-            )
-            model_available_wall_ns = (
-                max(model_available_wall_ns, row.decision_wall_ns) + outcome.elapsed_ns
-            )
-            evidence = Round74AIPairedReviewEvidence.from_runtime(
-                row_index=row.row_index,
-                feature_row_sha256=row.feature_row_sha256,
-                run_id=row.run_id,
-                symbol=row.symbol,
-                side=row.side,
-                horizon_seconds=row.horizon_seconds,
-                request=request,
-                outcome=outcome,
-                same_entry_latency_budget_ns=same_entry_latency_budget_ns,
-                queue_delay_ns=queue_delay_ns,
-            )
-            reviews.append(evidence)
-            completed += 1
-            if progress_callback is not None:
-                progress_callback(
-                    {
-                        "completed_reviews": completed,
-                        "total_reviews": total,
-                        "model_role": binding.role,
-                        "model_manifest_sha256": (binding.manifest.manifest_sha256),
-                        "row_index": row.row_index,
-                        "runtime_status": outcome.status,
-                        "runtime_elapsed_ns": outcome.elapsed_ns,
-                        "queue_delay_ns": evidence.queue_delay_ns,
-                        "effective_review_latency_ns": (
-                            evidence.effective_review_latency_ns
-                        ),
-                        "same_entry_latency_eligible": (
-                            evidence.same_entry_latency_eligible
-                        ),
-                    }
+                requested_wall_ns = int(wall_time_ns())
+                request = build_round74_ai_review_request(
+                    model_output=_row_output(output, row.local_row_index),
+                    scaled_feature_values=feature_values,
+                    row_index=0,
+                    asset_slot=ROUND74_EVENT_SYMBOLS.index(row.symbol),
+                    side=(
+                        ROUND74_EVENT_PAYOFF_SIDES[0]
+                        if row.side == 1
+                        else ROUND74_EVENT_PAYOFF_SIDES[1]
+                    ),
+                    horizon_seconds=row.horizon_seconds,
+                    pretest_policy_sha256=inference.pretest_policy_sha256,
+                    sample_sha256=row.feature_row_sha256,
+                    deterministic_risk_state_sha256=(
+                        row.deterministic_risk_state_sha256
+                    ),
+                    probability_calibration=probability_calibration,
+                    requested_wall_ns=requested_wall_ns,
+                    expires_wall_ns=(requested_wall_ns + ROUND74_AI_REVIEW_VALIDITY_NS),
+                    proposed_risk_size_bps=ROUND74_AI_REVIEW_UNIT_RISK_BPS,
                 )
+                batch_attempted = True
+                outcome = review_runner(
+                    binding.runtime,
+                    binding.manifest,
+                    request,
+                    deterministic_risk_gate_passed=True,
+                    observed_wall_ns=requested_wall_ns,
+                )
+                outcome.validate()
+                queue_delay_ns = max(
+                    0,
+                    model_available_wall_ns - row.decision_wall_ns,
+                )
+                model_available_wall_ns = (
+                    max(model_available_wall_ns, row.decision_wall_ns)
+                    + outcome.elapsed_ns
+                )
+                evidence = Round74AIPairedReviewEvidence.from_runtime(
+                    row_index=row.row_index,
+                    feature_row_sha256=row.feature_row_sha256,
+                    run_id=row.run_id,
+                    symbol=row.symbol,
+                    side=row.side,
+                    horizon_seconds=row.horizon_seconds,
+                    request=request,
+                    outcome=outcome,
+                    same_entry_latency_budget_ns=same_entry_latency_budget_ns,
+                    queue_delay_ns=queue_delay_ns,
+                )
+                reviews.append(evidence)
+                completed += 1
+                if progress_callback is not None:
+                    progress_callback(
+                        {
+                            "completed_reviews": completed,
+                            "total_reviews": total,
+                            "model_role": binding.role,
+                            "model_manifest_sha256": (binding.manifest.manifest_sha256),
+                            "row_index": row.row_index,
+                            "runtime_status": outcome.status,
+                            "runtime_elapsed_ns": outcome.elapsed_ns,
+                            "queue_delay_ns": evidence.queue_delay_ns,
+                            "effective_review_latency_ns": (
+                                evidence.effective_review_latency_ns
+                            ),
+                            "same_entry_latency_eligible": (
+                                evidence.same_entry_latency_eligible
+                            ),
+                        }
+                    )
+        finally:
+            if batch_attempted and selected_batch_finalizer is not None:
+                selected_batch_finalizer(binding)
         all_reviews.append(tuple(reviews))
     result = Round74AIReviewPanel(
         candidate_inference_sha256=inference.inference_sha256,
@@ -553,6 +585,7 @@ def prepare_round74_target_free_ai_reviews(
         rows=rows,
         model_bindings=bindings,
         reviews=tuple(all_reviews),
+        model_batch_unload_enforced=(selected_batch_finalizer is not None),
     )
     result.validate()
     return result
@@ -568,6 +601,7 @@ class Round74PreparedSealedAIReviewProvider:
         default_factory=round74_default_ai_review_model_panel
     )
     review_runner: ReviewRunner = review_round74_ai_candidate
+    model_batch_finalizer: ModelBatchFinalizer | None = None
     progress_callback: ProgressCallback | None = None
     wall_time_ns: Callable[[], int] = time.time_ns
 
@@ -583,6 +617,10 @@ class Round74PreparedSealedAIReviewProvider:
             or tuple(value.role for value in bindings)
             != ("finance_primary", "general_control")
             or not callable(self.review_runner)
+            or (
+                self.model_batch_finalizer is not None
+                and not callable(self.model_batch_finalizer)
+            )
             or (
                 self.progress_callback is not None
                 and not callable(self.progress_callback)
@@ -643,6 +681,7 @@ class Round74PreparedSealedAIReviewProvider:
             same_entry_latency_budget_ns=self.same_entry_latency_budget_ns,
             model_bindings=self.model_bindings,
             review_runner=self.review_runner,
+            model_batch_finalizer=self.model_batch_finalizer,
             progress_callback=self.progress_callback,
             wall_time_ns=self.wall_time_ns,
         )
