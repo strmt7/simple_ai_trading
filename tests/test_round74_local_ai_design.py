@@ -93,7 +93,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v39.json"
+    / "round-074-local-ai-review-design-v40.json"
 )
 
 
@@ -107,6 +107,12 @@ def _canonical_sha256(value: object) -> str:
             sort_keys=True,
         ).encode("ascii")
     ).hexdigest()
+
+
+def _file_sha256(relative_path: str) -> str:
+    payload = (REPOSITORY / relative_path).read_bytes()
+    canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _load_json(path: Path) -> dict[str, object]:
@@ -132,7 +138,13 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     claimed = artifact.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(artifact)
+    assert artifact["file_sha256_normalization"] == (
+        "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256"
+    )
     source = artifact["source_binding"]
+    assert (
+        source["file_sha256_normalization"] == (artifact["file_sha256_normalization"])
+    )
     for label in (
         "protocol",
         "bridge",
@@ -153,12 +165,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "event_model",
         "event_training",
     ):
-        assert (
-            source[f"{label}_sha256"]
-            == hashlib.sha256(
-                (REPOSITORY / source[f"{label}_path"]).read_bytes()
-            ).hexdigest()
-        )
+        assert source[f"{label}_sha256"] == _file_sha256(source[f"{label}_path"])
     assert source["model_manifest_schema_version"] == (
         ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
     )
@@ -232,9 +239,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         source["target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
     )
-    assert source["exchange_info_evidence_sha256"] == hashlib.sha256(
-        (REPOSITORY / source["exchange_info_evidence_path"]).read_bytes()
-    ).hexdigest()
+    assert source["exchange_info_evidence_sha256"] == _file_sha256(
+        source["exchange_info_evidence_path"]
+    )
     assert (
         source["exchange_info_evidence_schema_version"]
         == ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION
@@ -255,18 +262,21 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
     )
     model_design_path = REPOSITORY / source["event_model_design_path"]
-    assert source["event_model_design_file_sha256"] == hashlib.sha256(
-        model_design_path.read_bytes()
-    ).hexdigest()
+    assert source["event_model_design_file_sha256"] == _file_sha256(
+        source["event_model_design_path"]
+    )
     model_design = _load_json(model_design_path)
     model_design_claimed = model_design.pop("design_sha256")
     assert model_design_claimed == _canonical_sha256(model_design)
     assert model_design_claimed == source["event_model_design_sha256"]
     market = artifact["market_evidence_binding"]
+    assert (
+        market["file_sha256_normalization"] == (artifact["file_sha256_normalization"])
+    )
     exchange_path = REPOSITORY / market["exchange_info_path"]
-    assert market["exchange_info_file_sha256"] == hashlib.sha256(
-        exchange_path.read_bytes()
-    ).hexdigest()
+    assert market["exchange_info_file_sha256"] == _file_sha256(
+        market["exchange_info_path"]
+    )
     exchange = _load_json(exchange_path)
     exchange_claimed = exchange.pop("artifact_sha256")
     assert exchange_claimed == _canonical_sha256(exchange)
@@ -276,9 +286,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert market["exchange_info_raw_payload_persisted"] is False
     funding_path = REPOSITORY / market["funding_path"]
-    assert market["funding_file_sha256"] == hashlib.sha256(
-        funding_path.read_bytes()
-    ).hexdigest()
+    assert market["funding_file_sha256"] == _file_sha256(market["funding_path"])
     funding = _load_json(funding_path)
     funding_claimed = funding.pop("artifact_sha256")
     assert funding_claimed == _canonical_sha256(funding)
@@ -294,10 +302,11 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is False
     )
     compute = artifact["model_compute_evidence_binding"]
+    assert (
+        compute["file_sha256_normalization"] == (artifact["file_sha256_normalization"])
+    )
     compute_path = REPOSITORY / compute["path"]
-    assert compute["file_sha256"] == hashlib.sha256(
-        compute_path.read_bytes()
-    ).hexdigest()
+    assert compute["file_sha256"] == _file_sha256(compute["path"])
     compute_evidence = _load_json(compute_path)
     compute_claimed = compute_evidence.pop("artifact_sha256")
     assert compute_claimed == _canonical_sha256(compute_evidence)
@@ -887,7 +896,9 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert (
         evaluation["exact_replay_provider_invoked_only_after_live_reservation"] is True
     )
-    assert evaluation["sealed_replay_provider_read_only_store_adapter_implemented"] is True
+    assert (
+        evaluation["sealed_replay_provider_read_only_store_adapter_implemented"] is True
+    )
     assert (
         evaluation["sealed_replay_provider_requires_exact_test_run_assembly_panel"]
         is True

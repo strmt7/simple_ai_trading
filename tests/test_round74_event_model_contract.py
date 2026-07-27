@@ -113,7 +113,7 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v53.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v54.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
@@ -159,13 +159,19 @@ def _load_hash_bound(path: Path, field: str) -> dict[str, object]:
 
 
 def _file_sha256(relative_path: str) -> str:
-    return hashlib.sha256((REPOSITORY / relative_path).read_bytes()).hexdigest()
+    payload = (REPOSITORY / relative_path).read_bytes()
+    canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     design = _load_hash_bound(DESIGN_PATH, "design_sha256")
     source = design["source_binding"]
 
+    assert design["file_sha256_normalization"] == (
+        "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256"
+    )
+    assert source["file_sha256_normalization"] == (design["file_sha256_normalization"])
     assert source["event_sequence_sha256"] == _file_sha256(
         source["event_sequence_path"]
     )
@@ -378,10 +384,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert scaler["serialized_scaler_digest_verified_on_load"] is True
     assert scaler["model_bundle_must_bind_scaler_hash"] is True
     host = design["host_evidence_binding"]
+    assert host["file_sha256_normalization"] == (design["file_sha256_normalization"])
     exchange_path = REPOSITORY / host["exchange_info_path"]
-    assert host["exchange_info_file_sha256"] == hashlib.sha256(
-        exchange_path.read_bytes()
-    ).hexdigest()
+    assert host["exchange_info_file_sha256"] == _file_sha256(host["exchange_info_path"])
     exchange = _load_hash_bound(exchange_path, "artifact_sha256")
     assert exchange["artifact_sha256"] == host["exchange_info_artifact_sha256"]
     assert exchange["execution_git_commit"] == (
@@ -392,9 +397,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert exchange["response"]["raw_payload_persisted"] is False
     funding_path = REPOSITORY / host["funding_path"]
-    assert host["funding_file_sha256"] == hashlib.sha256(
-        funding_path.read_bytes()
-    ).hexdigest()
+    assert host["funding_file_sha256"] == _file_sha256(host["funding_path"])
     funding = _load_hash_bound(funding_path, "artifact_sha256")
     assert funding["artifact_sha256"] == host["funding_artifact_sha256"]
     assert funding["execution_git_commit"] == (
@@ -1185,8 +1188,16 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert source["event_targets_sha256"] == (
         binding["event_training_directml_target_sha256"]
     )
-    assert source["event_targets_sha256"] == (
-        design["source_binding"]["event_target_sha256"]
+    assert (
+        source["event_targets_sha256"]
+        == (binding["event_training_directml_target_legacy_checkout_sha256"])
+    )
+    assert (
+        binding["event_training_directml_target_canonical_sha256"]
+        == (design["source_binding"]["event_target_sha256"])
+    )
+    assert (
+        binding["event_training_directml_legacy_checkout_hashes_canonicalized"] is True
     )
     assert binding["event_training_directml_current_target_source_bound"] is True
     assert binding["event_training_directml_model_source_bound"] is True
@@ -1197,7 +1208,11 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     )
     assert (
         source["event_dataset_sha256"]
-        == design["source_binding"]["event_dataset_sha256"]
+        == (binding["event_training_directml_dataset_legacy_checkout_sha256"])
+    )
+    assert (
+        binding["event_training_directml_dataset_canonical_sha256"]
+        == (design["source_binding"]["event_dataset_sha256"])
     )
     assert (
         source["event_model_sha256"] == design["source_binding"]["event_model_sha256"]
