@@ -564,6 +564,20 @@ def command_capture_slot(args: argparse.Namespace) -> int:
     ):
         raise ValueError("campaign slot ordinal differs")
     selected = plan.slots[args.slot]
+    completed_ordinals = _validated_campaign_capture_slots(
+        plan=plan,
+        plan_artifact_sha256=artifact_sha256,
+        capture_directory=Path(args.output_directory),
+    )
+    next_slot = plan.next_slot(
+        completed_round_trip_ids=tuple(
+            plan.slots[ordinal].round_trip_id for ordinal in completed_ordinals
+        )
+    )
+    if next_slot is None:
+        raise RuntimeError("calibration campaign is already complete")
+    if selected != next_slot:
+        raise RuntimeError(f"campaign requires slot {next_slot.ordinal} next")
     args.calibration_run_id = plan.campaign_id
     args.round_trip_id = selected.round_trip_id
     args.symbol = selected.symbol
