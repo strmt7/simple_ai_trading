@@ -13,6 +13,7 @@ import numpy as np
 
 from .impact_absorption_event_dataset import (
     ROUND74_EVENT_PARTITION_ROLES,
+    ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74LabeledEventWindow,
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
     from .impact_absorption_event_calibration import Round74TuningSubpartition
 
 
-ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v3"
+ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v4"
 ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS = 8_192
 ROUND74_EVENT_MODEL_TEMPORAL_STRATA = 16
 ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM = 16
@@ -311,12 +312,16 @@ def assemble_round74_role_batches(
     target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
     pretest_model_policy_sha256: str | None = None,
     test_unlock_sha256: str | None = None,
+    window_representation: str = "per_symbol",
 ) -> tuple[Round74EventTrainingBatch, ...]:
     """Replay and assemble exactly one in-memory batch per capture run."""
 
     selected_store = _require_read_only_store(store)
     partition.validate()
     entries = _role_entries(partition, role)
+    selected_representation = str(window_representation)
+    if selected_representation not in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+        raise ValueError("Round 74 model operator window representation differs")
     expected_run_ids = tuple(entry.run_id for entry in entries)
     assemblies = dict(target_assembly_by_run_id)
     if set(assemblies) != set(expected_run_ids) or any(
@@ -342,6 +347,7 @@ def assemble_round74_role_batches(
                 target_engine=engine,
                 pretest_model_policy_sha256=pretest_model_policy_sha256,
                 test_unlock_sha256=test_unlock_sha256,
+                window_representation=selected_representation,
             ),
             entry=entry,
         )
@@ -351,7 +357,11 @@ def assemble_round74_role_batches(
             )
         batch = build_round74_event_training_batch(samples, scaler=scaler)
         batch.validate()
-        if batch.role != role or set(batch.run_id) != {entry.run_id}:
+        if (
+            batch.role != role
+            or set(batch.run_id) != {entry.run_id}
+            or batch.window_representation != selected_representation
+        ):
             raise ValueError("Round 74 model operator batch crossed capture runs")
         batches.append(batch)
     return tuple(batches)
@@ -383,6 +393,7 @@ class Round74PreparedDevelopmentData:
             or any(len(set(batch.run_id)) != 1 for batch in batches)
             or len({batch.partition_sha256 for batch in batches}) != 1
             or {batch.scaler_sha256 for batch in batches} != {self.scaler.scaler_sha256}
+            or len({batch.window_representation for batch in batches}) != 1
         ):
             raise ValueError("Round 74 prepared development data identity differs")
         run_ids = tuple(next(iter(set(batch.run_id))) for batch in batches)
@@ -403,6 +414,9 @@ class Round74PreparedDevelopmentData:
         return {
             "schema_version": self.schema_version,
             "scaler_sha256": self.scaler.scaler_sha256,
+            "window_representation": self.training_batches[
+                0
+            ].window_representation,
             "training_batch_sha256": [
                 batch.batch_sha256 for batch in self.training_batches
             ],
@@ -459,6 +473,7 @@ class Round74PreparedTuningRoles:
             or {batch.partition_sha256 for batch in batches}
             != {self.subpartition.parent_partition_sha256}
             or len({batch.scaler_sha256 for batch in batches}) != 1
+            or len({batch.window_representation for batch in batches}) != 1
         ):
             raise ValueError("Round 74 prepared tuning role identity differs")
 
@@ -472,6 +487,9 @@ class Round74PreparedTuningRoles:
         return {
             "schema_version": self.schema_version,
             "subpartition_sha256": self.subpartition.subpartition_sha256,
+            "window_representation": self.model_selection_batches[
+                0
+            ].window_representation,
             "model_selection_batch_sha256": [
                 batch.batch_sha256 for batch in self.model_selection_batches
             ],
@@ -532,6 +550,7 @@ def prepare_round74_development_data(
     target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
     chunk_rows: int = ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS,
     maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+    window_representation: str = "per_symbol",
 ) -> Round74PreparedDevelopmentData:
     """Fit the scaler, then build development batches without test access."""
 
@@ -559,6 +578,7 @@ def prepare_round74_development_data(
         target_assembly_by_run_id={
             run_id: target_assembly_by_run_id[run_id] for run_id in training_run_ids
         },
+        window_representation=window_representation,
     )
     tuning = assemble_round74_role_batches(
         store,
@@ -570,6 +590,7 @@ def prepare_round74_development_data(
             for entry in development_entries
             if entry.role == "tuning"
         },
+        window_representation=window_representation,
     )
     result = Round74PreparedDevelopmentData(
         scaler=scaler,
