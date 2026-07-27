@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+from multiprocessing.connection import Connection
 import sys
 from urllib import error as urllib_error
 from urllib import request as urllib_request
@@ -30,6 +31,9 @@ from .impact_absorption_ai_protocol import (
 
 ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION = "round-074-ai-worker-envelope-v1"
 ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION = "round-074-ai-worker-result-v1"
+ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION = (
+    "round-074-ai-worker-session-response-v1"
+)
 ROUND74_AI_WORKER_ENDPOINT = "http://127.0.0.1:11434"
 ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES = 1_000_000
 ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES = 1_000_000
@@ -621,6 +625,72 @@ def execute_round74_ai_worker(
     return result
 
 
+def serve_round74_ai_worker_connection(
+    connection: Connection,
+    *,
+    worker_executor: Callable[
+        [Round74AIWorkerEnvelope],
+        Round74AIWorkerResult,
+    ] = execute_round74_ai_worker,
+) -> int:
+    """Serve strict byte-framed requests for one pinned model identity."""
+
+    bound_identity: tuple[str, str, str] | None = None
+    try:
+        while True:
+            try:
+                raw = connection.recv_bytes(ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES)
+            except EOFError:
+                return 0
+            if not raw:
+                return 0
+            try:
+                payload = _strict_json_object(
+                    raw.decode("utf-8"),
+                    label="Round 74 AI worker session input",
+                )
+                envelope = Round74AIWorkerEnvelope.from_dict(payload)
+                identity = (
+                    envelope.model_name,
+                    envelope.model_manifest.manifest_sha256,
+                    envelope.endpoint,
+                )
+                if bound_identity is None:
+                    bound_identity = identity
+                elif identity != bound_identity:
+                    raise ValueError(
+                        "Round 74 AI worker session model identity changed"
+                    )
+                result = worker_executor(envelope)
+                result.validate()
+                response: dict[str, object] = {
+                    "schema_version": (
+                        ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION
+                    ),
+                    "status": "ok",
+                    "result": result.as_dict(),
+                    "error_class": None,
+                }
+            except Exception as exc:  # noqa: BLE001 - process boundary fails closed
+                response = {
+                    "schema_version": (
+                        ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION
+                    ),
+                    "status": "error",
+                    "result": None,
+                    "error_class": type(exc).__name__,
+                }
+                encoded = _canonical_json(response).encode("ascii")
+                connection.send_bytes(encoded)
+                return 2
+            encoded = _canonical_json(response).encode("ascii")
+            if len(encoded) > ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES:
+                raise ValueError("Round 74 AI worker session response is too large")
+            connection.send_bytes(encoded)
+    finally:
+        connection.close()
+
+
 def _read_stdin() -> str:
     raw = sys.stdin.buffer.read(ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES + 1)
     if len(raw) > ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES:
@@ -661,7 +731,9 @@ __all__ = [
     "ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES",
     "ROUND74_AI_WORKER_MAXIMUM_TIMEOUT_SECONDS",
     "ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION",
+    "ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION",
     "Round74AIWorkerEnvelope",
     "Round74AIWorkerResult",
     "execute_round74_ai_worker",
+    "serve_round74_ai_worker_connection",
 ]

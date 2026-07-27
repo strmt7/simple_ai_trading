@@ -33,6 +33,7 @@ from simple_ai_trading.impact_absorption_ai_review_preparation import (  # noqa:
     round74_default_ai_review_model_panel,
 )
 from simple_ai_trading.impact_absorption_ai_runtime import (  # noqa: E402
+    Round74AIWorkerSession,
     review_round74_ai_candidate,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
@@ -41,7 +42,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v5"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v6"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0
@@ -284,10 +285,13 @@ def _run(repository: Path) -> dict[str, object]:
             f"Round 74 AI preflight found unrelated resident models: {unrelated}"
         )
     outcomes: list[dict[str, object]] = []
+    worker_sessions: list[Round74AIWorkerSession] = []
     try:
         for binding in panel:
             for model_name in model_names:
                 _unload_declared_model(model_name)
+            worker_session = Round74AIWorkerSession()
+            worker_sessions.append(worker_session)
             for phase in ("cold", "warm"):
                 _progress(
                     "review-start",
@@ -301,6 +305,7 @@ def _run(repository: Path) -> dict[str, object]:
                     request,
                     deterministic_risk_gate_passed=True,
                     observed_wall_ns=time.time_ns(),
+                    worker_session=worker_session,
                 )
                 outcome.validate()
                 worker = outcome.worker_result
@@ -364,8 +369,23 @@ def _run(repository: Path) -> dict[str, object]:
                 raise RuntimeError(
                     f"Round 74 AI warm residency proof failed: {binding.model_name}"
                 )
+            if (
+                cold["outcome"]["capability"]["worker_process_mode"]
+                != "persistent_model_batch"
+                or warm["outcome"]["capability"]["worker_process_mode"]
+                != "persistent_model_batch"
+                or cold["outcome"]["capability"]["worker_session_request_ordinal"] != 1
+                or warm["outcome"]["capability"]["worker_session_request_ordinal"] != 2
+                or worker_session.restart_count != 0
+            ):
+                raise RuntimeError(
+                    f"Round 74 AI worker-session reuse failed: {binding.model_name}"
+                )
+            worker_session.close()
             _unload_declared_model(binding.model_name)
     finally:
+        for worker_session in worker_sessions:
+            worker_session.close()
         for model_name in model_names:
             _unload_declared_model(model_name)
     loaded_after = _loaded_models()
@@ -388,6 +408,12 @@ def _run(repository: Path) -> dict[str, object]:
             "declared_model_retained_between_cold_and_warm_requests": True,
             "resident_models_after": sorted(loaded_after),
             "model_process_terminated": False,
+            "isolated_worker_process_per_model_batch": True,
+            "isolated_worker_reused_within_model_batch": True,
+            "isolated_worker_restart_count": sum(
+                session.restart_count for session in worker_sessions
+            ),
+            "isolated_worker_processes_closed_after_batches": True,
             "official_keep_alive_zero_api_used": True,
         },
         "input_contract": {
@@ -407,6 +433,7 @@ def _run(repository: Path) -> dict[str, object]:
             "temporal_feature_count": len(ROUND74_AI_TEMPORAL_FEATURE_NAMES),
             "temporal_order": "oldest_to_newest",
             "temporal_path_exercised": True,
+            "worker_process_mode": "persistent_model_batch",
             "real_market_events_used": False,
             "real_market_targets_used": False,
             "absolute_market_date_exposed_to_model": False,
@@ -423,6 +450,8 @@ def _run(repository: Path) -> dict[str, object]:
             "all_models_fully_gpu_resident": True,
             "all_warm_requests_reused_exact_gpu_residency": True,
             "all_warm_load_durations_below_cold_load_durations": True,
+            "all_model_batches_reused_one_isolated_worker_process": True,
+            "all_worker_session_restart_counts_zero": True,
             "all_models_remote_inference_used": False,
             "all_models_execution_authority": False,
             "all_models_may_increase_risk": False,

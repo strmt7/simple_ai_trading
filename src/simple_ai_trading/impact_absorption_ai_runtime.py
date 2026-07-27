@@ -7,9 +7,11 @@ from dataclasses import dataclass
 import hashlib
 import json
 import math
+import multiprocessing
 import os
 import subprocess  # nosec B404
 import sys
+import threading
 import time
 from urllib import error as urllib_error
 from urllib import request as urllib_request
@@ -31,13 +33,15 @@ from .impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENDPOINT,
     ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES,
     ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES,
+    ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION,
     ROUND74_AI_WORKER_MAXIMUM_TIMEOUT_SECONDS,
     Round74AIWorkerEnvelope,
     Round74AIWorkerResult,
+    serve_round74_ai_worker_connection,
 )
 
 
-ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v3"
+ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v4"
 ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB = 16.0
 ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB = 8.0
 ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB = 8.0
@@ -397,6 +401,187 @@ def _strict_worker_result(raw_text: str) -> Round74AIWorkerResult:
     return Round74AIWorkerResult.from_dict(payload)
 
 
+def _reject_duplicate_pairs(
+    pairs: list[tuple[str, object]],
+    *,
+    label: str,
+) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"{label} contains duplicate keys")
+        result[key] = value
+    return result
+
+
+class Round74AIWorkerSession:
+    """Supervise one restartable isolated worker process for a model batch."""
+
+    def __init__(self) -> None:
+        self._context = multiprocessing.get_context("spawn")
+        self._connection: object | None = None
+        self._process: object | None = None
+        self._lock = threading.Lock()
+        self._started_once = False
+        self._request_count = 0
+        self._restart_count = 0
+
+    @property
+    def request_count(self) -> int:
+        return self._request_count
+
+    @property
+    def restart_count(self) -> int:
+        return self._restart_count
+
+    def _discard(self, *, terminate: bool) -> None:
+        connection = self._connection
+        process = self._process
+        self._connection = None
+        self._process = None
+        if connection is not None:
+            try:
+                connection.close()
+            except (OSError, ValueError):
+                pass
+        if process is not None:
+            try:
+                if terminate and process.is_alive():
+                    process.terminate()
+                process.join(timeout=1.0)
+                if process.is_alive():
+                    process.kill()
+                    process.join(timeout=1.0)
+            except (OSError, ValueError):
+                pass
+
+    def _start(self) -> None:
+        if self._process is not None and self._process.is_alive():
+            return
+        self._discard(terminate=True)
+        parent, child = self._context.Pipe(duplex=True)
+        process = self._context.Process(
+            target=serve_round74_ai_worker_connection,
+            args=(child,),
+            daemon=True,
+        )
+        try:
+            process.start()
+        except BaseException:
+            parent.close()
+            child.close()
+            raise
+        child.close()
+        self._connection = parent
+        self._process = process
+        if self._started_once:
+            self._restart_count += 1
+        self._started_once = True
+
+    def request(
+        self,
+        envelope: Round74AIWorkerEnvelope,
+        *,
+        timeout_seconds: float,
+    ) -> str:
+        envelope.validate()
+        if (
+            isinstance(timeout_seconds, bool)
+            or not isinstance(timeout_seconds, (int, float))
+            or not math.isfinite(float(timeout_seconds))
+            or timeout_seconds <= 0.0
+        ):
+            raise ValueError("Round 74 AI worker session timeout differs")
+        raw = _canonical_json(envelope.as_dict()).encode("ascii")
+        if len(raw) > ROUND74_AI_WORKER_MAXIMUM_INPUT_BYTES:
+            raise ValueError("Round 74 AI worker session input exceeds the limit")
+        with self._lock:
+            self._start()
+            connection = self._connection
+            assert connection is not None
+            self._request_count += 1
+            try:
+                connection.send_bytes(raw)
+                if not connection.poll(float(timeout_seconds)):
+                    raise subprocess.TimeoutExpired(
+                        "round74-ai-worker-session",
+                        float(timeout_seconds),
+                    )
+                response_raw = connection.recv_bytes(
+                    ROUND74_AI_WORKER_MAXIMUM_RESPONSE_BYTES
+                )
+            except subprocess.TimeoutExpired:
+                self._discard(terminate=True)
+                raise
+            except (EOFError, OSError, ValueError) as exc:
+                self._discard(terminate=True)
+                raise RuntimeError(
+                    "Round 74 AI worker session transport failed"
+                ) from exc
+            try:
+                response = json.loads(
+                    response_raw.decode("ascii"),
+                    object_pairs_hook=lambda pairs: _reject_duplicate_pairs(
+                        pairs,
+                        label="Round 74 AI worker session response",
+                    ),
+                    parse_constant=lambda item: (_ for _ in ()).throw(
+                        ValueError(
+                            f"Round 74 AI worker session response contains {item}"
+                        )
+                    ),
+                )
+            except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                self._discard(terminate=True)
+                raise RuntimeError(
+                    "Round 74 AI worker session response is invalid"
+                ) from exc
+            if (
+                not isinstance(response, Mapping)
+                or set(response)
+                != {"schema_version", "status", "result", "error_class"}
+                or response.get("schema_version")
+                != ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION
+            ):
+                self._discard(terminate=True)
+                raise RuntimeError(
+                    "Round 74 AI worker session response fields differ"
+                )
+            if response.get("status") == "error":
+                error_class = response.get("error_class")
+                self._discard(terminate=True)
+                raise RuntimeError(
+                    "Round 74 AI worker session failed: "
+                    f"{error_class if isinstance(error_class, str) else 'unknown'}"
+                )
+            if (
+                response.get("status") != "ok"
+                or response.get("error_class") is not None
+                or not isinstance(response.get("result"), Mapping)
+            ):
+                self._discard(terminate=True)
+                raise RuntimeError(
+                    "Round 74 AI worker session success response differs"
+                )
+            return _canonical_json(response["result"])
+
+    def close(self) -> None:
+        with self._lock:
+            connection = self._connection
+            if connection is not None:
+                try:
+                    connection.send_bytes(b"")
+                except (EOFError, OSError, ValueError):
+                    pass
+            self._discard(terminate=False)
+
+    def __enter__(self) -> Round74AIWorkerSession:
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        self.close()
+
+
 def _post_provider_json(
     url: str,
     payload: Mapping[str, object],
@@ -523,6 +708,7 @@ def review_round74_ai_candidate(
     residency_inspector: ResidencyInspector = inspect_ollama_model_residency,
     popen_factory: PopenFactory = subprocess.Popen,
     worker_command: Sequence[str] | None = None,
+    worker_session: Round74AIWorkerSession | None = None,
     monotonic_ns: Callable[[], int] = time.monotonic_ns,
     wall_time_ns: Callable[[], int] = time.time_ns,
 ) -> Round74AIRuntimeOutcome:
@@ -536,6 +722,14 @@ def review_round74_ai_candidate(
         or isinstance(observed_wall_ns, bool)
         or not isinstance(observed_wall_ns, int)
         or observed_wall_ns < request.requested_wall_ns
+        or (
+            worker_session is not None
+            and (
+                not isinstance(worker_session, Round74AIWorkerSession)
+                or worker_command is not None
+                or popen_factory is not subprocess.Popen
+            )
+        )
     ):
         raise ValueError("Round 74 AI runtime application context differs")
     started_ns = monotonic_ns()
@@ -680,6 +874,16 @@ def review_round74_ai_candidate(
         ),
         "provider_runtime_full_gpu_residency_required": True,
         "provider_runtime_full_gpu_residency_verified": False,
+        "worker_process_mode": (
+            "persistent_model_batch" if worker_session is not None else "one_shot"
+        ),
+        "worker_session_request_ordinal": (
+            worker_session.request_count + 1 if worker_session is not None else None
+        ),
+        "worker_session_restart_count_before_request": (
+            worker_session.restart_count if worker_session is not None else None
+        ),
+        "worker_session_restart_count_after_request": None,
     }
     if not capability.ok or capability_messages:
         return _outcome(
@@ -754,15 +958,25 @@ def review_round74_ai_candidate(
         review_request=request,
     )
     try:
-        stdout, _ = _spawn_worker(
-            worker_command or _default_worker_command(),
-            envelope,
-            timeout_seconds=min(
-                config.timeout_seconds,
-                (request.expires_wall_ns - current_wall_ns) / 1_000_000_000,
-            ),
-            popen_factory=popen_factory,
+        worker_timeout_seconds = min(
+            config.timeout_seconds,
+            (request.expires_wall_ns - current_wall_ns) / 1_000_000_000,
         )
+        if worker_session is None:
+            stdout, _ = _spawn_worker(
+                worker_command or _default_worker_command(),
+                envelope,
+                timeout_seconds=worker_timeout_seconds,
+                popen_factory=popen_factory,
+            )
+        else:
+            stdout = worker_session.request(
+                envelope,
+                timeout_seconds=worker_timeout_seconds,
+            )
+            capability_payload["worker_session_restart_count_after_request"] = (
+                worker_session.restart_count
+            )
     except subprocess.TimeoutExpired:
         return _outcome(
             status="worker_timeout",
@@ -870,6 +1084,7 @@ __all__ = [
     "ROUND74_AI_RUNTIME_STATUSES",
     "Round74AIRuntimeConfig",
     "Round74AIRuntimeOutcome",
+    "Round74AIWorkerSession",
     "review_round74_ai_candidate",
     "unload_round74_ai_model",
 ]

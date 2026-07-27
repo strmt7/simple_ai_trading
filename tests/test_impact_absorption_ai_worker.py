@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 import json
+from multiprocessing import Pipe
+import threading
 
 import pytest
 
@@ -15,9 +17,11 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 )
 from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENDPOINT,
+    ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION,
     Round74AIWorkerEnvelope,
     Round74AIWorkerResult,
     execute_round74_ai_worker,
+    serve_round74_ai_worker_connection,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
@@ -132,6 +136,101 @@ def _residency(
         size_vram_bytes=1_000,
         vram_to_model_ratio=1.0,
     )
+
+
+def _execute_for_session(
+    envelope: Round74AIWorkerEnvelope,
+) -> Round74AIWorkerResult:
+    return execute_round74_ai_worker(
+        envelope,
+        post_json=lambda *_: _response(),
+        provenance_resolver=lambda *_: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=_residency,
+    )
+
+
+def test_worker_session_reuses_one_process_and_binds_model_identity() -> None:
+    parent, child = Pipe(duplex=True)
+    completed: list[int] = []
+
+    def serve() -> None:
+        completed.append(
+            serve_round74_ai_worker_connection(
+                child,
+                worker_executor=_execute_for_session,
+            )
+        )
+
+    thread = threading.Thread(target=serve)
+    thread.start()
+    first = _envelope()
+    second = replace(
+        first,
+        review_request=replace(
+            first.review_request,
+            sample_sha256="5" * 64,
+        ),
+    )
+    for envelope in (first, second):
+        parent.send_bytes(
+            json.dumps(
+                envelope.as_dict(),
+                allow_nan=False,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("ascii")
+        )
+        response = json.loads(parent.recv_bytes().decode("ascii"))
+        assert response["schema_version"] == (
+            ROUND74_AI_WORKER_SESSION_RESPONSE_SCHEMA_VERSION
+        )
+        assert response["status"] == "ok"
+        assert response["error_class"] is None
+        result = Round74AIWorkerResult.from_dict(response["result"])
+        assert result.request_sha256 == envelope.review_request.request_sha256
+    parent.send_bytes(b"")
+    thread.join(timeout=2.0)
+    parent.close()
+
+    assert not thread.is_alive()
+    assert completed == [0]
+
+
+def test_worker_session_rejects_model_identity_drift_and_terminates() -> None:
+    parent, child = Pipe(duplex=True)
+    completed: list[int] = []
+
+    def serve() -> None:
+        completed.append(
+            serve_round74_ai_worker_connection(
+                child,
+                worker_executor=_execute_for_session,
+            )
+        )
+
+    thread = threading.Thread(target=serve)
+    thread.start()
+    first = _envelope()
+    for envelope in (first, replace(first, model_name="qwen3:8b")):
+        parent.send_bytes(
+            json.dumps(
+                envelope.as_dict(),
+                allow_nan=False,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("ascii")
+        )
+        response = json.loads(parent.recv_bytes().decode("ascii"))
+    thread.join(timeout=2.0)
+    parent.close()
+
+    assert response["status"] == "error"
+    assert response["result"] is None
+    assert response["error_class"] == "ValueError"
+    assert not thread.is_alive()
+    assert completed == [2]
 
 
 def test_worker_accepts_only_pinned_fully_gpu_resident_result() -> None:
