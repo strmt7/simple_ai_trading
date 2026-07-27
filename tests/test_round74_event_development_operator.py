@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -304,6 +306,7 @@ def test_round74_development_coordinator_rejects_unrepresentative_policy(
 
 def test_round74_development_coordinator_runs_real_calibration_and_policy_selection(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     base_wall_ns = 1_800_000_000_000_000_000
     batches = tuple(
@@ -362,3 +365,42 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
     )
     assert all(policy.profitability_claim is False for policy in result.action_policies)
     assert len(result.bundle_sha256) == 64
+
+    output = tmp_path / (f"round74-development-policy-{result.bundle_sha256}.json")
+    output.write_bytes(subject._canonical_bytes(result.as_dict()) + b"\n")
+    restored = subject.load_round74_development_policy_bundle(output)
+    assert restored == result
+    assert restored.probability_calibration == result.probability_calibration
+    assert restored.action_policies == result.action_policies
+
+    duplicate = tmp_path / output.name
+    duplicate.write_bytes(
+        output.read_bytes().replace(
+            b'{"action_policies":',
+            b'{"action_policies":[],"action_policies":',
+            1,
+        )
+    )
+    with pytest.raises(ValueError, match="bundle JSON differs"):
+        subject.load_round74_development_policy_bundle(duplicate)
+
+    source_mismatch = result.as_dict()
+    source_mismatch["source"]["action_policy_module_sha256"] = "0" * 64
+    source_mismatch.pop("bundle_sha256")
+    source_mismatch["bundle_sha256"] = subject._canonical_sha256(source_mismatch)
+    mismatch_path = tmp_path / (
+        f"round74-development-policy-{source_mismatch['bundle_sha256']}.json"
+    )
+    mismatch_path.write_text(
+        json.dumps(
+            source_mismatch,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="ascii",
+    )
+    with pytest.raises(ValueError, match="source identity differs"):
+        subject.load_round74_development_policy_bundle(mismatch_path)
