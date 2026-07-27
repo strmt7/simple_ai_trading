@@ -39,12 +39,20 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v6"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v5"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v7"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v6"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
     "round-074-target-context-panel-v1"
 )
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
+ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA = 0.05
+ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = (
+    len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
+)
+ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA = (
+    ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA
+    / ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+)
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
     "positive_payoff": 0.25,
@@ -257,6 +265,7 @@ class _CandidateFit:
     peer_states: tuple[dict[str, torch.Tensor], ...]
     peer_reports: tuple[dict[str, object], ...]
     ensemble_metrics: dict[str, float]
+    ensemble_run_losses: tuple[float, ...]
     ensemble_prediction_sha256: str
     parameter_count_per_peer: int
 
@@ -575,7 +584,7 @@ def _evaluate_model(
     *,
     minibatch_rows: int,
     device: object,
-) -> dict[str, float]:
+) -> tuple[dict[str, float], tuple[float, ...]]:
     model.eval()
     totals = _empty_metric_sums()
     per_run_metrics: list[dict[str, float]] = []
@@ -622,7 +631,7 @@ def _evaluate_model(
     metrics["run_count"] = float(len(run_losses))
     if not all(math.isfinite(value) for value in metrics.values()):
         raise RuntimeError("Round 74 run-balanced metrics are nonfinite")
-    return metrics
+    return metrics, run_losses
 
 
 def _cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
@@ -703,7 +712,7 @@ def _train_peer(
         if not _parameters_are_finite(model):
             raise RuntimeError("Round 74 model parameters are nonfinite")
         optimization_metrics = _finalize_metrics(optimization_totals)
-        tuning_metrics = _evaluate_model(
+        tuning_metrics, _tuning_run_losses = _evaluate_model(
             model,
             tuning_batches,
             minibatch_rows=config.minibatch_rows,
@@ -734,7 +743,7 @@ def _train_peer(
     if best_state is None or best_epoch < 1:
         raise RuntimeError("Round 74 model has no finite early-stop state")
     model.load_state_dict(best_state, strict=True)
-    restored_metrics = _evaluate_model(
+    restored_metrics, _restored_run_losses = _evaluate_model(
         model,
         tuning_batches,
         minibatch_rows=config.minibatch_rows,
@@ -823,7 +832,7 @@ def _fit_candidate(
         states.append(state)
         reports.append(report)
     ensemble = _ensemble_from_states(candidate_id, states, device=device)
-    ensemble_metrics = _evaluate_model(
+    ensemble_metrics, ensemble_run_losses = _evaluate_model(
         ensemble,
         tuning_batches,
         minibatch_rows=config.minibatch_rows,
@@ -843,9 +852,147 @@ def _fit_candidate(
         peer_states=tuple(states),
         peer_reports=tuple(reports),
         ensemble_metrics=ensemble_metrics,
+        ensemble_run_losses=ensemble_run_losses,
         ensemble_prediction_sha256=prediction_sha256,
         parameter_count_per_peer=parameter_count,
     )
+
+
+def _exact_one_sided_sign_pvalue(wins: int, non_tied: int) -> float:
+    if (
+        isinstance(wins, bool)
+        or isinstance(non_tied, bool)
+        or not isinstance(wins, int)
+        or not isinstance(non_tied, int)
+        or wins < 0
+        or non_tied < 0
+        or wins > non_tied
+    ):
+        raise ValueError("Round 74 paired sign-test counts differ")
+    if non_tied == 0:
+        return 1.0
+    numerator = sum(
+        math.comb(non_tied, successes)
+        for successes in range(wins, non_tied + 1)
+    )
+    return numerator / (2**non_tied)
+
+
+def _complexity_gated_candidate_id(
+    candidate_ids: Sequence[str],
+    candidate_run_losses: Mapping[str, Sequence[float]],
+    candidate_parameter_counts: Mapping[str, int],
+    *,
+    minimum_mean_loss_improvement: float,
+) -> tuple[str, tuple[dict[str, object], ...]]:
+    ordered = tuple(candidate_ids)
+    minimum_improvement = float(minimum_mean_loss_improvement)
+    if (
+        ordered != ROUND74_EVENT_MODEL_CANDIDATES
+        or set(candidate_run_losses) != set(ordered)
+        or set(candidate_parameter_counts) != set(ordered)
+        or not math.isfinite(minimum_improvement)
+        or minimum_improvement < 0.0
+    ):
+        raise ValueError("Round 74 complexity-promotion panel differs")
+    parameter_counts = tuple(candidate_parameter_counts[value] for value in ordered)
+    if (
+        any(
+            isinstance(value, bool) or not isinstance(value, int) or value <= 0
+            for value in parameter_counts
+        )
+        or any(
+            later <= earlier
+            for earlier, later in zip(
+                parameter_counts,
+                parameter_counts[1:],
+            )
+        )
+    ):
+        raise ValueError("Round 74 complexity order differs")
+    losses = {
+        candidate_id: tuple(float(value) for value in candidate_run_losses[candidate_id])
+        for candidate_id in ordered
+    }
+    run_counts = {len(value) for value in losses.values()}
+    if (
+        len(run_counts) != 1
+        or not run_counts
+        or next(iter(run_counts)) < 1
+        or any(
+            not math.isfinite(value)
+            for candidate_losses in losses.values()
+            for value in candidate_losses
+        )
+    ):
+        raise ValueError("Round 74 complexity-promotion run losses differ")
+    incumbent = ordered[0]
+    reports: list[dict[str, object]] = []
+    for challenger in ordered[1:]:
+        incumbent_losses = losses[incumbent]
+        challenger_losses = losses[challenger]
+        improvements = tuple(
+            incumbent_loss - challenger_loss
+            for incumbent_loss, challenger_loss in zip(
+                incumbent_losses,
+                challenger_losses,
+                strict=True,
+            )
+        )
+        wins = sum(value > 0.0 for value in improvements)
+        losses_count = sum(value < 0.0 for value in improvements)
+        ties = len(improvements) - wins - losses_count
+        non_tied = wins + losses_count
+        mean_improvement = sum(improvements) / len(improvements)
+        pvalue = _exact_one_sided_sign_pvalue(wins, non_tied)
+        promoted = (
+            mean_improvement > minimum_improvement
+            and pvalue <= ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+        )
+        reports.append(
+            {
+                "incumbent_candidate_id": incumbent,
+                "challenger_candidate_id": challenger,
+                "paired_capture_run_count": len(improvements),
+                "non_tied_capture_run_count": non_tied,
+                "challenger_win_count": wins,
+                "challenger_loss_count": losses_count,
+                "exact_tie_count": ties,
+                "mean_proper_loss_improvement": mean_improvement,
+                "minimum_mean_proper_loss_improvement": minimum_improvement,
+                "one_sided_exact_sign_pvalue": pvalue,
+                "comparison_alpha": (
+                    ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+                ),
+                "promoted": promoted,
+            }
+        )
+        if promoted:
+            incumbent = challenger
+    return incumbent, tuple(reports)
+
+
+def _select_candidate_with_complexity_gate(
+    fits: Sequence[_CandidateFit],
+    *,
+    minimum_mean_loss_improvement: float,
+) -> tuple[_CandidateFit, tuple[dict[str, object], ...]]:
+    fit_by_id = {fit.candidate_id: fit for fit in fits}
+    if len(fit_by_id) != len(fits):
+        raise ValueError("Round 74 candidate fit identity differs")
+    selected_id, reports = _complexity_gated_candidate_id(
+        tuple(fit_by_id),
+        {
+            candidate_id: fit_by_id[candidate_id].ensemble_run_losses
+            for candidate_id in fit_by_id
+        },
+        {
+            candidate_id: fit_by_id[candidate_id].parameter_count_per_peer
+            for candidate_id in fit_by_id
+        },
+        minimum_mean_loss_improvement=minimum_mean_loss_improvement,
+    )
+    return fit_by_id[selected_id], reports
 
 
 def _flatten_ensemble_state(
@@ -946,14 +1093,10 @@ def train_and_seal_round74_pretest_policy(
         raise RuntimeError(
             f"Round 74 event training used CPU fallback: {fallback_messages}"
         )
-    winner = min(
+    winner, promotion_reports = _select_candidate_with_complexity_gate(
         candidate_fits,
-        key=lambda fit: (
-            fit.ensemble_metrics["run_balanced_loss"],
-            fit.ensemble_metrics["worst_run_loss"],
-            fit.ensemble_metrics["loss"],
-            fit.parameter_count_per_peer,
-            fit.candidate_id,
+        minimum_mean_loss_improvement=(
+            selected_config.minimum_tuning_improvement
         ),
     )
     model_state = _flatten_ensemble_state(winner)
@@ -1045,18 +1188,30 @@ def train_and_seal_round74_pretest_policy(
                 "peer_count": len(fit.peer_states),
                 "peer_reports": list(fit.peer_reports),
                 "ensemble_tuning_metrics": fit.ensemble_metrics,
+                "ensemble_tuning_run_losses": list(fit.ensemble_run_losses),
                 "ensemble_prediction_sha256": (fit.ensemble_prediction_sha256),
             }
             for fit in candidate_fits
         },
         "selection": {
             "criterion": (
-                "minimum run-balanced chronological tuning proper loss; "
-                "then worst-run loss; then pooled loss; then parameter count; "
-                "then candidate id"
+                "sequential parameter-count complexity promotion; each challenger "
+                "must strictly exceed the numerical mean-loss floor and pass a "
+                "paired one-sided exact sign test across tuning capture runs"
             ),
             "selected_candidate_id": winner.candidate_id,
             "selected_tuning_metrics": winner.ensemble_metrics,
+            "ordered_candidate_ids": list(selected_config.candidate_ids),
+            "familywise_alpha": ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA,
+            "planned_comparison_count": (
+                ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+            ),
+            "comparison_alpha": ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA,
+            "exact_ties_excluded_from_sign_test": True,
+            "minimum_mean_proper_loss_improvement": (
+                selected_config.minimum_tuning_improvement
+            ),
+            "promotion_reports": list(promotion_reports),
             "complexity_promotion_privilege": False,
             "backtest_metric_used_for_selection": False,
         },
@@ -1410,10 +1565,13 @@ def load_round74_pretest_policy(
         "fully_censored_minibatches",
         "fully_censored_rows",
     }
+    candidate_run_losses: dict[str, tuple[float, ...]] = {}
+    candidate_parameter_counts: dict[str, int] = {}
     for panel_candidate, raw_report in candidate_panel.items():
         if not isinstance(raw_report, Mapping):
             raise ValueError("Round 74 pretest candidate report differs")
         metrics = raw_report.get("ensemble_tuning_metrics")
+        raw_run_losses = raw_report.get("ensemble_tuning_run_losses")
         peers = raw_report.get("peer_reports")
         parameter_count = raw_report.get("parameter_count_per_peer")
         if (
@@ -1423,6 +1581,7 @@ def load_round74_pretest_policy(
                 "peer_count",
                 "peer_reports",
                 "ensemble_tuning_metrics",
+                "ensemble_tuning_run_losses",
                 "ensemble_prediction_sha256",
             }
             or isinstance(parameter_count, bool)
@@ -1445,29 +1604,44 @@ def load_round74_pretest_policy(
             != float(len(tuning_batch_hashes))
             or float(metrics.get("worst_run_loss", math.inf))
             < float(metrics.get("run_balanced_loss", -math.inf))
+            or not isinstance(raw_run_losses, list)
+            or len(raw_run_losses) != len(tuning_batch_hashes)
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                for value in raw_run_losses
+            )
+            or not math.isclose(
+                sum(float(value) for value in raw_run_losses)
+                / len(raw_run_losses),
+                float(metrics.get("run_balanced_loss", math.inf)),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                max(float(value) for value in raw_run_losses),
+                float(metrics.get("worst_run_loss", math.inf)),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            )
             or _SHA256.fullmatch(str(raw_report.get("ensemble_prediction_sha256", "")))
             is None
             or panel_candidate not in reconstructed_config.candidate_ids
         ):
             raise ValueError("Round 74 pretest candidate report differs")
+        candidate_run_losses[str(panel_candidate)] = tuple(
+            float(value) for value in raw_run_losses
+        )
+        candidate_parameter_counts[str(panel_candidate)] = int(parameter_count)
     selected_report = candidate_panel[candidate_id]
     assert isinstance(selected_report, Mapping)
-    expected_winner = min(
-        candidate_panel,
-        key=lambda value: (
-            float(
-                candidate_panel[value]["ensemble_tuning_metrics"][
-                    "run_balanced_loss"
-                ]
-            ),
-            float(
-                candidate_panel[value]["ensemble_tuning_metrics"][
-                    "worst_run_loss"
-                ]
-            ),
-            float(candidate_panel[value]["ensemble_tuning_metrics"]["loss"]),
-            int(candidate_panel[value]["parameter_count_per_peer"]),
-            str(value),
+    expected_winner, expected_promotion_reports = _complexity_gated_candidate_id(
+        reconstructed_config.candidate_ids,
+        candidate_run_losses,
+        candidate_parameter_counts,
+        minimum_mean_loss_improvement=(
+            reconstructed_config.minimum_tuning_improvement
         ),
     )
     if (
@@ -1476,16 +1650,35 @@ def load_round74_pretest_policy(
             "criterion",
             "selected_candidate_id",
             "selected_tuning_metrics",
+            "ordered_candidate_ids",
+            "familywise_alpha",
+            "planned_comparison_count",
+            "comparison_alpha",
+            "exact_ties_excluded_from_sign_test",
+            "minimum_mean_proper_loss_improvement",
+            "promotion_reports",
             "complexity_promotion_privilege",
             "backtest_metric_used_for_selection",
         }
         or selection.get("criterion")
         != (
-            "minimum run-balanced chronological tuning proper loss; "
-            "then worst-run loss; then pooled loss; then parameter count; "
-            "then candidate id"
+            "sequential parameter-count complexity promotion; each challenger "
+            "must strictly exceed the numerical mean-loss floor and pass a "
+            "paired one-sided exact sign test across tuning capture runs"
         )
         or candidate_id != expected_winner
+        or selection.get("ordered_candidate_ids")
+        != list(reconstructed_config.candidate_ids)
+        or selection.get("familywise_alpha")
+        != ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA
+        or selection.get("planned_comparison_count")
+        != ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+        or selection.get("comparison_alpha")
+        != ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+        or selection.get("exact_ties_excluded_from_sign_test") is not True
+        or selection.get("minimum_mean_proper_loss_improvement")
+        != reconstructed_config.minimum_tuning_improvement
+        or selection.get("promotion_reports") != list(expected_promotion_reports)
         or selection.get("complexity_promotion_privilege") is not False
         or selection.get("backtest_metric_used_for_selection") is not False
         or selection.get("selected_tuning_metrics")
@@ -1556,6 +1749,9 @@ def load_round74_pretest_policy(
 
 
 __all__ = [
+    "ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA",
+    "ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT",
+    "ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA",
     "ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION",
     "ROUND74_EVENT_TRAINING_DEFAULT_SEEDS",
