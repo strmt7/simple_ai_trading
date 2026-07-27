@@ -1890,9 +1890,8 @@ def _validate_ai_execution_replays(
             row.validate()
         for instruction in instructions:
             instruction.validate()
-        if (
-            len({row.replay_sha256 for row in rows}) != len(rows)
-            or len(rows) != len(instructions)
+        if len({row.replay_sha256 for row in rows}) != len(rows) or len(rows) != len(
+            instructions
         ):
             raise ValueError("Round 74 sealed AI execution replay is duplicated")
         for row, instruction in zip(rows, instructions, strict=True):
@@ -1902,30 +1901,26 @@ def _validate_ai_execution_replays(
                 else {instruction.pre_replay_status}
             )
             if (
-                (
-                    row.row_index,
-                    row.feature_row_sha256,
-                    row.run_id,
-                    row.symbol,
-                    row.side,
-                    row.horizon_seconds,
-                    row.source_review_sha256,
-                    row.partition_sha256,
-                    row.requested_size_multiplier_bps,
-                )
-                != (
-                    instruction.row_index,
-                    instruction.feature_row_sha256,
-                    instruction.run_id,
-                    instruction.symbol,
-                    instruction.side,
-                    instruction.horizon_seconds,
-                    instruction.source_review_sha256,
-                    instruction.partition_sha256,
-                    instruction.requested_size_multiplier_bps,
-                )
-                or row.status not in permitted_statuses
-            ):
+                row.row_index,
+                row.feature_row_sha256,
+                row.run_id,
+                row.symbol,
+                row.side,
+                row.horizon_seconds,
+                row.source_review_sha256,
+                row.partition_sha256,
+                row.requested_size_multiplier_bps,
+            ) != (
+                instruction.row_index,
+                instruction.feature_row_sha256,
+                instruction.run_id,
+                instruction.symbol,
+                instruction.side,
+                instruction.horizon_seconds,
+                instruction.source_review_sha256,
+                instruction.partition_sha256,
+                instruction.requested_size_multiplier_bps,
+            ) or row.status not in permitted_statuses:
                 raise ValueError("Round 74 sealed AI execution instruction differs")
     return normalized
 
@@ -2209,13 +2204,9 @@ def _evaluate_reserved(
     for manifest, manifest_reviews in reviews.items():
         by_row = {review.row_index: review for review in manifest_reviews}
         try:
-            selected_reviews = tuple(
-                by_row[row_index] for row_index in trace.row_index
-            )
+            selected_reviews = tuple(by_row[row_index] for row_index in trace.row_index)
         except KeyError as exc:
-            raise ValueError(
-                "Round 74 sealed AI execution review is missing"
-            ) from exc
+            raise ValueError("Round 74 sealed AI execution review is missing") from exc
         instructions_by_manifest[manifest] = (
             build_round74_ai_execution_replay_instructions(
                 replay_selection,
@@ -2315,9 +2306,7 @@ def evaluate_round74_sealed_once(
     """Reserve metadata, load targets, replay AI, and finalize exactly once."""
 
     manifests = tuple(
-        sorted(
-            _require_sha256(value, "AI manifest") for value in ai_manifest_sha256
-        )
+        sorted(_require_sha256(value, "AI manifest") for value in ai_manifest_sha256)
     )
     claim = ledger.reserve_identity(
         test_identity=test_identity,
