@@ -290,6 +290,26 @@ def test_source_target_assembly_derives_every_configured_value() -> None:
         "SOLUSDT": 100_299_002,
     }
     assert spec.execution_environment == "binance_usdm_testnet"
+    restored = type(assembly).from_dict(assembly.as_dict())
+    assert restored.as_dict() == assembly.as_dict()
+    assert restored.assembly_sha256 == assembly.assembly_sha256
+
+    tampered = assembly.as_dict()
+    tampered["quantity_rules_by_symbol"]["BTCUSDT"]["maximum_quantity"] = "999"
+    with pytest.raises(ValueError, match="assembly"):
+        type(assembly).from_dict(tampered)
+    malformed = assembly.as_dict()
+    del malformed["quantity_rules_by_symbol"]["SOLUSDT"]
+    with pytest.raises(ValueError, match="payload differs"):
+        type(assembly).from_dict(malformed)
+    malformed = assembly.as_dict()
+    del malformed["quantity_rules_by_symbol"]["ETHUSDT"]["minimum_notional"]
+    with pytest.raises(ValueError, match="quantity rules differ"):
+        type(assembly).from_dict(malformed)
+    malformed = assembly.as_dict()
+    malformed["assembly_sha256"] = "f" * 64
+    with pytest.raises(ValueError, match="digest differs"):
+        type(assembly).from_dict(malformed)
     assert len(assembly.assembly_sha256) == 64
     assert assembly.create_engine(anchors=[]).spec.spec_sha256 == (
         spec.spec_sha256
