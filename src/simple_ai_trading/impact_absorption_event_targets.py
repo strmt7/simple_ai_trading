@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v4"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v5"
 ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "round-074-target-evidence-v1"
 )
@@ -760,11 +760,20 @@ class Round74EventTargetAnchor:
 
 @dataclass(frozen=True)
 class Round74EventActionPayoff:
+    midpoint_payoff_quote: float
+    midpoint_payoff_bps: float
+    book_walk_implementation_shortfall_quote: float
+    book_walk_implementation_shortfall_bps: float
     gross_payoff_quote: float
     gross_payoff_bps: float
     commission_quote: float
+    commission_bps: float
     additional_slippage_quote: float
-    total_cost_quote: float
+    additional_slippage_bps: float
+    explicit_cost_quote: float
+    explicit_cost_bps: float
+    total_implementation_shortfall_quote: float
+    total_implementation_shortfall_bps: float
     net_payoff_quote: float
     net_payoff_bps: float
 
@@ -774,6 +783,8 @@ def round74_event_action_payoff(
     side: str,
     entry_walk: Round73BookWalk,
     exit_walk: Round73BookWalk,
+    entry_mid: float,
+    exit_mid: float,
     taker_fee_bps: float,
     additional_slippage_bps_per_side: float,
 ) -> Round74EventActionPayoff:
@@ -796,41 +807,99 @@ def round74_event_action_payoff(
     )
     entry_quote = float(entry_walk.quote_notional)
     exit_quote = float(exit_walk.quote_notional)
+    entry_midpoint = float(entry_mid)
+    exit_midpoint = float(exit_mid)
     if (
         not math.isfinite(entry_quote)
         or not math.isfinite(exit_quote)
+        or not math.isfinite(entry_midpoint)
+        or not math.isfinite(exit_midpoint)
         or entry_quote <= 0.0
         or exit_quote <= 0.0
+        or entry_midpoint <= 0.0
+        or exit_midpoint <= 0.0
     ):
-        raise ValueError("Round 74 payoff quote notional is invalid")
+        raise ValueError("Round 74 payoff price or quote notional is invalid")
+    base_quantity = float(entry_walk.filled_base_quantity)
+    midpoint = base_quantity * (
+        exit_midpoint - entry_midpoint
+        if selected_side == "long"
+        else entry_midpoint - exit_midpoint
+    )
     gross = (
         exit_quote - entry_quote
         if selected_side == "long"
         else entry_quote - exit_quote
     )
+    book_walk_shortfall = midpoint - gross
+    tolerance = max(1e-12, abs(midpoint) * 1e-12, entry_quote * 1e-12)
+    if book_walk_shortfall < -tolerance:
+        raise ValueError("Round 74 payoff book walk improves on both midpoints")
+    if book_walk_shortfall < 0.0:
+        book_walk_shortfall = 0.0
+    midpoint_bps = midpoint / entry_quote * 10_000.0
+    book_walk_shortfall_bps = (
+        book_walk_shortfall / entry_quote * 10_000.0
+    )
     gross_bps = gross / entry_quote * 10_000.0
     commission = fee / 10_000.0 * (entry_quote + exit_quote)
     residual_slippage = slippage / 10_000.0 * (entry_quote + exit_quote)
-    total_cost = commission + residual_slippage
-    net = gross - total_cost
+    explicit_cost = commission + residual_slippage
+    total_implementation_shortfall = book_walk_shortfall + explicit_cost
+    commission_bps = commission / entry_quote * 10_000.0
+    residual_slippage_bps = residual_slippage / entry_quote * 10_000.0
+    explicit_cost_bps = explicit_cost / entry_quote * 10_000.0
+    total_implementation_shortfall_bps = (
+        total_implementation_shortfall / entry_quote * 10_000.0
+    )
+    net = gross - explicit_cost
     net_bps = net / entry_quote * 10_000.0
     values = (
+        midpoint,
+        midpoint_bps,
+        book_walk_shortfall,
+        book_walk_shortfall_bps,
         gross,
         gross_bps,
         commission,
+        commission_bps,
         residual_slippage,
-        total_cost,
+        residual_slippage_bps,
+        explicit_cost,
+        explicit_cost_bps,
+        total_implementation_shortfall,
+        total_implementation_shortfall_bps,
         net,
         net_bps,
     )
     if not all(math.isfinite(value) for value in values):
         raise ArithmeticError("Round 74 payoff is nonfinite")
+    if not math.isclose(
+        midpoint - total_implementation_shortfall,
+        net,
+        rel_tol=1e-12,
+        abs_tol=tolerance,
+    ):
+        raise ArithmeticError("Round 74 payoff reconciliation differs")
     return Round74EventActionPayoff(
+        midpoint_payoff_quote=midpoint,
+        midpoint_payoff_bps=midpoint_bps,
+        book_walk_implementation_shortfall_quote=book_walk_shortfall,
+        book_walk_implementation_shortfall_bps=book_walk_shortfall_bps,
         gross_payoff_quote=gross,
         gross_payoff_bps=gross_bps,
         commission_quote=commission,
+        commission_bps=commission_bps,
         additional_slippage_quote=residual_slippage,
-        total_cost_quote=total_cost,
+        additional_slippage_bps=residual_slippage_bps,
+        explicit_cost_quote=explicit_cost,
+        explicit_cost_bps=explicit_cost_bps,
+        total_implementation_shortfall_quote=(
+            total_implementation_shortfall
+        ),
+        total_implementation_shortfall_bps=(
+            total_implementation_shortfall_bps
+        ),
         net_payoff_quote=net,
         net_payoff_bps=net_bps,
     )
@@ -855,8 +924,18 @@ class Round74EventTargetOutcome:
     base_quantity: float | None
     entry_average_price: float | None
     exit_average_price: float | None
+    midpoint_payoff_bps: float | None
+    book_walk_implementation_shortfall_quote: float | None
+    book_walk_implementation_shortfall_bps: float | None
     gross_payoff_bps: float | None
-    total_cost_quote: float | None
+    commission_quote: float | None
+    commission_bps: float | None
+    additional_slippage_quote: float | None
+    additional_slippage_bps: float | None
+    explicit_cost_quote: float | None
+    explicit_cost_bps: float | None
+    total_implementation_shortfall_quote: float | None
+    total_implementation_shortfall_bps: float | None
     net_payoff_bps: float | None
     positive_net_payoff: bool | None
     maximum_adverse_excursion_bps: float | None
@@ -923,8 +1002,18 @@ class Round74EventTargetOutcome:
             self.base_quantity,
             self.entry_average_price,
             self.exit_average_price,
+            self.midpoint_payoff_bps,
+            self.book_walk_implementation_shortfall_quote,
+            self.book_walk_implementation_shortfall_bps,
             self.gross_payoff_bps,
-            self.total_cost_quote,
+            self.commission_quote,
+            self.commission_bps,
+            self.additional_slippage_quote,
+            self.additional_slippage_bps,
+            self.explicit_cost_quote,
+            self.explicit_cost_bps,
+            self.total_implementation_shortfall_quote,
+            self.total_implementation_shortfall_bps,
             self.net_payoff_bps,
             self.maximum_adverse_excursion_bps,
             self.maximum_favorable_excursion_bps,
@@ -964,13 +1053,67 @@ class Round74EventTargetOutcome:
                 float(self.base_quantity) <= 0.0
                 or float(self.entry_average_price) <= 0.0
                 or float(self.exit_average_price) <= 0.0
-                or float(self.total_cost_quote) < 0.0
+                or float(self.book_walk_implementation_shortfall_quote) < 0.0
+                or float(self.book_walk_implementation_shortfall_bps) < 0.0
+                or float(self.commission_quote) < 0.0
+                or float(self.commission_bps) < 0.0
+                or float(self.additional_slippage_quote) < 0.0
+                or float(self.additional_slippage_bps) < 0.0
+                or float(self.explicit_cost_quote) < 0.0
+                or float(self.explicit_cost_bps) < 0.0
+                or float(self.total_implementation_shortfall_quote) < 0.0
+                or float(self.total_implementation_shortfall_bps) < 0.0
                 or float(self.maximum_adverse_excursion_bps) < 0.0
                 or float(self.maximum_favorable_excursion_bps) < 0.0
                 or not 0.0 <= float(self.regime_unpredictability) <= 1.0
                 or float(self.minimum_exit_side_capacity_ratio) < 1.0
             ):
                 raise ValueError("Round 74 eligible outcome bounds differ")
+            if not (
+                math.isclose(
+                    float(self.midpoint_payoff_bps)
+                    - float(self.book_walk_implementation_shortfall_bps),
+                    float(self.gross_payoff_bps),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                and math.isclose(
+                    float(self.commission_quote)
+                    + float(self.additional_slippage_quote),
+                    float(self.explicit_cost_quote),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                and math.isclose(
+                    float(self.commission_bps)
+                    + float(self.additional_slippage_bps),
+                    float(self.explicit_cost_bps),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                and math.isclose(
+                    float(self.book_walk_implementation_shortfall_quote)
+                    + float(self.explicit_cost_quote),
+                    float(self.total_implementation_shortfall_quote),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                and math.isclose(
+                    float(self.book_walk_implementation_shortfall_bps)
+                    + float(self.explicit_cost_bps),
+                    float(self.total_implementation_shortfall_bps),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                and math.isclose(
+                    float(self.midpoint_payoff_bps)
+                    - float(self.total_implementation_shortfall_bps),
+                    float(self.net_payoff_bps),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+            ):
+                raise ValueError("Round 74 eligible outcome accounting differs")
         else:
             if self.ineligible_reason not in ROUND74_EVENT_TARGET_INELIGIBLE_REASONS:
                 raise ValueError("Round 74 ineligible outcome reason differs")
@@ -1005,8 +1148,26 @@ class Round74EventTargetOutcome:
             "base_quantity": self.base_quantity,
             "entry_average_price": self.entry_average_price,
             "exit_average_price": self.exit_average_price,
+            "midpoint_payoff_bps": self.midpoint_payoff_bps,
+            "book_walk_implementation_shortfall_quote": (
+                self.book_walk_implementation_shortfall_quote
+            ),
+            "book_walk_implementation_shortfall_bps": (
+                self.book_walk_implementation_shortfall_bps
+            ),
             "gross_payoff_bps": self.gross_payoff_bps,
-            "total_cost_quote": self.total_cost_quote,
+            "commission_quote": self.commission_quote,
+            "commission_bps": self.commission_bps,
+            "additional_slippage_quote": self.additional_slippage_quote,
+            "additional_slippage_bps": self.additional_slippage_bps,
+            "explicit_cost_quote": self.explicit_cost_quote,
+            "explicit_cost_bps": self.explicit_cost_bps,
+            "total_implementation_shortfall_quote": (
+                self.total_implementation_shortfall_quote
+            ),
+            "total_implementation_shortfall_bps": (
+                self.total_implementation_shortfall_bps
+            ),
             "net_payoff_bps": self.net_payoff_bps,
             "positive_net_payoff": self.positive_net_payoff,
             "maximum_adverse_excursion_bps": (
@@ -1244,8 +1405,18 @@ class Round74EventTargetEngine:
             base_quantity=None,
             entry_average_price=None,
             exit_average_price=None,
+            midpoint_payoff_bps=None,
+            book_walk_implementation_shortfall_quote=None,
+            book_walk_implementation_shortfall_bps=None,
             gross_payoff_bps=None,
-            total_cost_quote=None,
+            commission_quote=None,
+            commission_bps=None,
+            additional_slippage_quote=None,
+            additional_slippage_bps=None,
+            explicit_cost_quote=None,
+            explicit_cost_bps=None,
+            total_implementation_shortfall_quote=None,
+            total_implementation_shortfall_bps=None,
             net_payoff_bps=None,
             positive_net_payoff=None,
             maximum_adverse_excursion_bps=None,
@@ -1442,6 +1613,8 @@ class Round74EventTargetEngine:
                         side=side,
                         entry_walk=entry_walk,
                         exit_walk=close_walk,
+                        entry_mid=state.mid,
+                        exit_mid=state.mid,
                         taker_fee_bps=self.spec.fee_bps(symbol),
                         additional_slippage_bps_per_side=(
                             self.spec.slippage_bps_per_side(symbol)
@@ -1542,8 +1715,26 @@ class Round74EventTargetEngine:
             base_quantity=position.base_quantity,
             entry_average_price=position.entry_walk.average_price,
             exit_average_price=exit_walk.average_price,
+            midpoint_payoff_bps=payoff.midpoint_payoff_bps,
+            book_walk_implementation_shortfall_quote=(
+                payoff.book_walk_implementation_shortfall_quote
+            ),
+            book_walk_implementation_shortfall_bps=(
+                payoff.book_walk_implementation_shortfall_bps
+            ),
             gross_payoff_bps=payoff.gross_payoff_bps,
-            total_cost_quote=payoff.total_cost_quote,
+            commission_quote=payoff.commission_quote,
+            commission_bps=payoff.commission_bps,
+            additional_slippage_quote=payoff.additional_slippage_quote,
+            additional_slippage_bps=payoff.additional_slippage_bps,
+            explicit_cost_quote=payoff.explicit_cost_quote,
+            explicit_cost_bps=payoff.explicit_cost_bps,
+            total_implementation_shortfall_quote=(
+                payoff.total_implementation_shortfall_quote
+            ),
+            total_implementation_shortfall_bps=(
+                payoff.total_implementation_shortfall_bps
+            ),
             net_payoff_bps=payoff.net_payoff_bps,
             positive_net_payoff=payoff.net_payoff_bps > 0.0,
             maximum_adverse_excursion_bps=max(
@@ -1554,7 +1745,7 @@ class Round74EventTargetEngine:
                 0.0,
                 position.maximum_net_payoff_bps,
             ),
-            adverse_selection=payoff.gross_payoff_bps < 0.0,
+            adverse_selection=payoff.midpoint_payoff_bps < 0.0,
             regime_unpredictability=unpredictability,
             maximum_spread_bps=position.maximum_spread_bps,
             minimum_exit_side_capacity_ratio=(
@@ -1648,6 +1839,8 @@ class Round74EventTargetEngine:
                 side=position.side,
                 entry_walk=position.entry_walk,
                 exit_walk=exit_walk,
+                entry_mid=position.entry_mid,
+                exit_mid=state.mid,
                 taker_fee_bps=self.spec.fee_bps(symbol),
                 additional_slippage_bps_per_side=(
                     self.spec.slippage_bps_per_side(symbol)

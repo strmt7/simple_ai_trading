@@ -291,6 +291,8 @@ def test_round74_payoff_charges_both_actual_walked_legs() -> None:
         side="long",
         entry_walk=entry,
         exit_walk=exit_walk,
+        entry_mid=state.mid,
+        exit_mid=state.mid,
         taker_fee_bps=5.0,
         additional_slippage_bps_per_side=1.0,
     )
@@ -305,6 +307,21 @@ def test_round74_payoff_charges_both_actual_walked_legs() -> None:
     assert payoff.additional_slippage_quote == pytest.approx(
         1.0 / 10_000.0
         * (entry.quote_notional + exit_walk.quote_notional)
+    )
+    assert payoff.midpoint_payoff_quote == pytest.approx(0.0)
+    assert payoff.book_walk_implementation_shortfall_quote == pytest.approx(
+        -payoff.gross_payoff_quote
+    )
+    assert payoff.explicit_cost_quote == pytest.approx(
+        payoff.commission_quote + payoff.additional_slippage_quote
+    )
+    assert payoff.total_implementation_shortfall_quote == pytest.approx(
+        payoff.book_walk_implementation_shortfall_quote
+        + payoff.explicit_cost_quote
+    )
+    assert payoff.net_payoff_quote == pytest.approx(
+        payoff.midpoint_payoff_quote
+        - payoff.total_implementation_shortfall_quote
     )
     assert payoff.net_payoff_quote < payoff.gross_payoff_quote
 
@@ -421,6 +438,25 @@ def test_round74_target_engine_builds_complete_pathwise_panel() -> None:
     assert one_second_long.adverse_selection is False
     assert one_second_long.maximum_adverse_excursion_bps > 0.0
     assert one_second_long.regime_unpredictability == pytest.approx(0.0)
+    assert one_second_long.gross_payoff_bps == pytest.approx(
+        one_second_long.midpoint_payoff_bps
+        - one_second_long.book_walk_implementation_shortfall_bps
+    )
+    assert one_second_long.total_implementation_shortfall_bps == pytest.approx(
+        one_second_long.book_walk_implementation_shortfall_bps
+        + one_second_long.explicit_cost_bps
+    )
+    assert one_second_long.net_payoff_bps == pytest.approx(
+        one_second_long.midpoint_payoff_bps
+        - one_second_long.total_implementation_shortfall_bps
+    )
+    assert "total_cost_quote" not in one_second_long.as_dict()
+    corrupted = replace(
+        one_second_long,
+        explicit_cost_bps=one_second_long.explicit_cost_bps + 1.0,
+    )
+    with pytest.raises(ValueError, match="accounting differs"):
+        corrupted.validate()
     assert one_second_short.net_payoff_bps < 0.0
     assert one_second_short.adverse_selection is True
 
