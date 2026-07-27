@@ -1,0 +1,99 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v70",
+  "created_at_utc": "2026-07-27T19:22:00Z",
+  "implementation_git_commit": "04c9194a0403bbce21cbf5e7adc0f9932dc2a7c3",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v69.json",
+    "normalized_lf_sha256": "b1abf117e1bb760ce9988b50a168b141653451c8cf0b8c4956b72db4c2359897",
+    "design_sha256": "acda2f2877ee33884febaa7885ebbf06f3f789c10b746008ce1f679c51af300b",
+    "composition_rule": "v69 remains the scaler and bounded online decision-component latency contract; v70 adds exact profile-delayed L2 policy economics and mandatory coordinator integration"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_normalized_lf_sha256": "9bb64dd95f0ed5309c4b7609bc9725f87008b0bd905c1c7ac747173f370be548",
+    "action_policy_schema_version": "round-074-action-policy-v8",
+    "online_decision_latency_path": "src/simple_ai_trading/round74_online_decision_latency.py",
+    "online_decision_latency_normalized_lf_sha256": "df98ef522adab7de935cbef9ee42e3339498fde138e334dfe882af18ef732298",
+    "online_decision_latency_schema_version": "round-074-online-decision-latency-v1",
+    "delayed_execution_path": "src/simple_ai_trading/round74_delayed_execution_panel.py",
+    "delayed_execution_normalized_lf_sha256": "3bd255861f8d1695f020405e6d1528263d531d451d8d845b9bb5de4e9181b09d",
+    "delayed_execution_schema_version": "round-074-delayed-execution-replay-v1",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_normalized_lf_sha256": "33ea8d81f58cc25ffdd953ca12eb8f5414c330ef91d749273b87a01363379169",
+    "development_operator_schema_version": "round-074-development-policy-operator-v2",
+    "development_bundle_schema_version": "round-074-development-policy-bundle-v3"
+  },
+  "exact_delayed_execution_contract": {
+    "candidate_identity_remains_target_free": true,
+    "training_sample_hashes_are_not_rewritten_with_delayed_outcomes": true,
+    "execution_economics_are_a_separate_hash_bound_panel": true,
+    "profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "profile_delay_statistic": "distribution-free one-sided 95 percent upper-confidence order statistic for component p99",
+    "delay_applied_as": "additional entry latency before exact L2 book walk",
+    "quote_size_multiplier_bps": 10000,
+    "policy_selection_capture_runs": 6,
+    "database_scans": 6,
+    "in_memory_target_engine_replays": 18,
+    "naive_threshold_by_profile_database_scans_rejected": 72,
+    "all_three_profile_engines_consume_each_capture_stream_once": true,
+    "same_symbol_overlap_uses_delayed_actual_entry_and_exit": true,
+    "policy_payoff_uses_delayed_capital_scaled_net_payoff_bps": true,
+    "policy_adverse_excursion_uses_delayed_capital_scaled_value": true,
+    "policy_adverse_selection_uses_delayed_outcome": true,
+    "missing_or_misaligned_feature_row_fails_closed": true,
+    "missing_or_misaligned_target_outcome_fails_closed": true,
+    "source_capture_report_and_target_assembly_hashes_bound": true,
+    "full_outcome_rows_reproducible_from_read_only_event_store": true,
+    "full_outcome_rows_duplicated_in_development_bundle": false
+  },
+  "coordinator_contract": {
+    "exact_fitted_scaler_required": true,
+    "read_only_execution_store_required": true,
+    "cohort_partition_required": true,
+    "exact_six_policy_run_target_assemblies_required": true,
+    "decision_component_benchmarked_before_device_release": true,
+    "model_outputs_released_before_database_replay": true,
+    "all_profile_policies_require_execution_panel_sha256": true,
+    "latency_evidence_binds_model_policy_scaler_calibration_subpartition_backend_and_source": true,
+    "development_bundle_persists_raw_latency_samples": true,
+    "development_bundle_persists_execution_panel_hashes_and_counts": true,
+    "sealed_test_accessed": false
+  },
+  "verification": {
+    "focused_tests_passed": 39,
+    "one_pass_three_engine_replay_test_passed": true,
+    "positive_baseline_negative_delayed_economics_rejection_test_passed": true,
+    "development_bundle_round_trip_and_tamper_test_passed": true,
+    "ruff_passed": true,
+    "production_database_scanned_during_implementation": false,
+    "host_gpu_benchmark_run": false,
+    "prospective_model_result_exists": false
+  },
+  "remaining_blocks": [
+    "measure and bind socket-to-window and candidate-to-submission host components",
+    "complete and independently audit the 168-slot prospective cohort",
+    "complete the testnet execution-calibration aggregate",
+    "assemble 144 development source manifests",
+    "train calibrate replay and seal the development policy",
+    "run matched AI uplift evaluation",
+    "run the one-use sealed-test evaluation"
+  ],
+  "authority": {
+    "online_decision_component_latency_measured_on_host": false,
+    "end_to_end_tick_to_trade_latency_measured": false,
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "2e40001bc9f01f86d08b0f1ad9be42ce2bcdbea933c904a540d9a916c507614a"
+}
