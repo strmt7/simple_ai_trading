@@ -39,8 +39,8 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v1"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v1"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v2"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v2"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
@@ -181,20 +181,40 @@ class Round74EventEnsemble(nn.Module):
     def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
         outputs = tuple(peer(values) for peer in self.peers)
 
-        def mean(name: str) -> torch.Tensor:
+        def tensor_mean(name: str) -> torch.Tensor:
             return torch.stack(
                 tuple(getattr(output, name) for output in outputs),
                 dim=0,
             ).mean(dim=0)
 
+        def predictive_mixture_logit(name: str) -> torch.Tensor:
+            peer_logits = torch.stack(
+                tuple(getattr(output, name) for output in outputs),
+                dim=0,
+            )
+            probability = torch.sigmoid(peer_logits).mean(dim=0)
+            epsilon = torch.finfo(probability.dtype).eps
+            bounded = torch.clamp(
+                probability,
+                min=epsilon,
+                max=1.0 - epsilon,
+            )
+            return torch.log(bounded / (1.0 - bounded))
+
         output = Round74EventModelOutput(
-            payoff_quantiles_bps=mean("payoff_quantiles_bps"),
-            maximum_adverse_excursion_quantiles_bps=mean(
+            payoff_quantiles_bps=tensor_mean("payoff_quantiles_bps"),
+            maximum_adverse_excursion_quantiles_bps=tensor_mean(
                 "maximum_adverse_excursion_quantiles_bps"
             ),
-            positive_payoff_logits=mean("positive_payoff_logits"),
-            adverse_selection_logits=mean("adverse_selection_logits"),
-            regime_unpredictability_logits=mean("regime_unpredictability_logits"),
+            positive_payoff_logits=predictive_mixture_logit(
+                "positive_payoff_logits"
+            ),
+            adverse_selection_logits=predictive_mixture_logit(
+                "adverse_selection_logits"
+            ),
+            regime_unpredictability_logits=predictive_mixture_logit(
+                "regime_unpredictability_logits"
+            ),
         )
         output.validate(int(values.shape[0]))
         return output
@@ -878,6 +898,17 @@ def train_and_seal_round74_pretest_policy(
             "test_sample_digests_consumed": 0,
         },
         "training_policy": selected_config.as_dict(),
+        "ensemble_aggregation": {
+            "peer_weights": "equal",
+            "payoff_and_adverse_excursion_quantiles": (
+                "arithmetic_mean_of_peer_quantiles"
+            ),
+            "classification_heads": (
+                "arithmetic_mean_of_peer_probabilities_then_logit"
+            ),
+            "mean_peer_logits_permitted": False,
+            "probability_calibration_fitted_after_ensemble_aggregation": True,
+        },
         "backend": {
             "requested": backend.requested,
             "kind": backend.kind,
@@ -997,6 +1028,7 @@ def load_round74_pretest_policy(
         "source_binding",
         "development_data",
         "training_policy",
+        "ensemble_aggregation",
         "backend",
         "candidate_panel",
         "selection",
@@ -1010,6 +1042,7 @@ def load_round74_pretest_policy(
     development = policy.get("development_data")
     authority = policy.get("authority")
     training_policy = policy.get("training_policy")
+    ensemble_aggregation = policy.get("ensemble_aggregation")
     source_binding = policy.get("source_binding")
     candidate_panel = policy.get("candidate_panel")
     backend = policy.get("backend")
@@ -1021,6 +1054,7 @@ def load_round74_pretest_policy(
             development,
             authority,
             training_policy,
+            ensemble_aggregation,
             source_binding,
             candidate_panel,
             backend,
@@ -1032,6 +1066,7 @@ def load_round74_pretest_policy(
     assert isinstance(development, Mapping)
     assert isinstance(authority, Mapping)
     assert isinstance(training_policy, Mapping)
+    assert isinstance(ensemble_aggregation, Mapping)
     assert isinstance(source_binding, Mapping)
     assert isinstance(candidate_panel, Mapping)
     assert isinstance(backend, Mapping)
@@ -1086,6 +1121,18 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest training policy differs") from exc
     if reconstructed_config.as_dict() != dict(training_policy):
         raise ValueError("Round 74 pretest training policy differs")
+    if dict(ensemble_aggregation) != {
+        "peer_weights": "equal",
+        "payoff_and_adverse_excursion_quantiles": (
+            "arithmetic_mean_of_peer_quantiles"
+        ),
+        "classification_heads": (
+            "arithmetic_mean_of_peer_probabilities_then_logit"
+        ),
+        "mean_peer_logits_permitted": False,
+        "probability_calibration_fitted_after_ensemble_aggregation": True,
+    }:
+        raise ValueError("Round 74 pretest ensemble aggregation differs")
     if (
         set(backend)
         != {

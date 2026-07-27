@@ -22,9 +22,13 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
     ROUND74_EVENT_SEQUENCE_LENGTH,
 )
 from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
+    Round74EventEnsemble,
     Round74EventTrainingConfig,
     load_round74_pretest_policy,
     train_and_seal_round74_pretest_policy,
+)
+from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
+    Round74EventModelOutput,
 )
 
 
@@ -123,6 +127,61 @@ def _config() -> Round74EventTrainingConfig:
         minibatch_rows=2,
         minimum_role_rows=2,
     )
+
+
+class _FixedClassificationPeer(torch.nn.Module):
+    def __init__(self, probability: float) -> None:
+        super().__init__()
+        self.probability = float(probability)
+
+    def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
+        rows = int(values.shape[0])
+        action_shape = (
+            rows,
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+            len(ROUND74_EVENT_PAYOFF_SIDES),
+        )
+        regime_shape = (
+            rows,
+            len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
+        )
+        logit = torch.logit(torch.tensor(self.probability))
+        quantiles = torch.arange(5, dtype=values.dtype).reshape(1, 1, 1, 5)
+        quantiles = quantiles.expand(*action_shape, 5)
+        return Round74EventModelOutput(
+            payoff_quantiles_bps=quantiles,
+            maximum_adverse_excursion_quantiles_bps=quantiles,
+            positive_payoff_logits=logit.expand(action_shape),
+            adverse_selection_logits=logit.expand(action_shape),
+            regime_unpredictability_logits=logit.expand(regime_shape),
+        )
+
+
+def test_round74_ensemble_averages_probabilities_not_logits() -> None:
+    ensemble = Round74EventEnsemble("event_pooling_mlp", 2)
+    ensemble.peers = torch.nn.ModuleList(
+        (_FixedClassificationPeer(0.5), _FixedClassificationPeer(0.9))
+    )
+
+    output = ensemble(torch.zeros(3, 2, len(ROUND74_EVENT_FEATURE_NAMES)))
+
+    expected = torch.full_like(output.positive_payoff_logits, 0.7)
+    torch.testing.assert_close(
+        torch.sigmoid(output.positive_payoff_logits),
+        expected,
+    )
+    torch.testing.assert_close(
+        torch.sigmoid(output.adverse_selection_logits),
+        expected,
+    )
+    torch.testing.assert_close(
+        torch.sigmoid(output.regime_unpredictability_logits),
+        torch.full_like(output.regime_unpredictability_logits, 0.7),
+    )
+    mean_logit = (
+        torch.logit(torch.tensor(0.5)) + torch.logit(torch.tensor(0.9))
+    ) / 2.0
+    assert not torch.allclose(torch.sigmoid(mean_logit), torch.tensor(0.7))
 
 
 def _write_rehashed_policy(path: Path, policy: dict[str, object]) -> Path:
