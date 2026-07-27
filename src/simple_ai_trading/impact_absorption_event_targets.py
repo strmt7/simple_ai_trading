@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v1"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v2"
 ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS = 5_000_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE = 1_000.0
 ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS = 250_000_000
@@ -86,10 +86,11 @@ class Round74EventTargetSpec:
 
     reference_quote_notional: float
     decision_to_entry_latency_ns: int
+    decision_to_exit_latency_ns: int
     taker_fee_bps_by_symbol: tuple[tuple[str, float], ...]
     additional_slippage_bps_per_side: float
     commission_evidence_sha256: str
-    latency_evidence_sha256: str
+    entry_exit_latency_evidence_sha256: str
     slippage_evidence_sha256: str
     maximum_state_lateness_ns: int = (
         ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
@@ -111,10 +112,11 @@ class Round74EventTargetSpec:
         *,
         reference_quote_notional: float,
         decision_to_entry_latency_ns: int,
+        decision_to_exit_latency_ns: int,
         taker_fee_bps_by_symbol: Mapping[str, float],
         additional_slippage_bps_per_side: float,
         commission_evidence_sha256: str,
-        latency_evidence_sha256: str,
+        entry_exit_latency_evidence_sha256: str,
         slippage_evidence_sha256: str,
         maximum_state_lateness_ns: int = (
             ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
@@ -138,12 +140,15 @@ class Round74EventTargetSpec:
         return cls(
             reference_quote_notional=float(reference_quote_notional),
             decision_to_entry_latency_ns=int(decision_to_entry_latency_ns),
+            decision_to_exit_latency_ns=int(decision_to_exit_latency_ns),
             taker_fee_bps_by_symbol=fees,
             additional_slippage_bps_per_side=float(
                 additional_slippage_bps_per_side
             ),
             commission_evidence_sha256=str(commission_evidence_sha256),
-            latency_evidence_sha256=str(latency_evidence_sha256),
+            entry_exit_latency_evidence_sha256=str(
+                entry_exit_latency_evidence_sha256
+            ),
             slippage_evidence_sha256=str(slippage_evidence_sha256),
             maximum_state_lateness_ns=int(maximum_state_lateness_ns),
             maximum_decision_state_age_ns=int(
@@ -157,8 +162,14 @@ class Round74EventTargetSpec:
         reference = float(self.reference_quote_notional)
         if not math.isfinite(reference) or reference <= 0.0:
             raise ValueError("Round 74 target reference notional is invalid")
-        latency = int(self.decision_to_entry_latency_ns)
-        if latency <= 0 or latency > ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS:
+        latencies = (
+            int(self.decision_to_entry_latency_ns),
+            int(self.decision_to_exit_latency_ns),
+        )
+        if any(
+            latency <= 0 or latency > ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS
+            for latency in latencies
+        ):
             raise ValueError("Round 74 target latency is invalid")
         fees = tuple(self.taker_fee_bps_by_symbol)
         if tuple(symbol for symbol, _fee in fees) != ROUND74_EVENT_TARGET_SYMBOLS:
@@ -178,7 +189,10 @@ class Round74EventTargetSpec:
             self.commission_evidence_sha256,
             "commission evidence",
         )
-        _sha256_digest(self.latency_evidence_sha256, "latency evidence")
+        _sha256_digest(
+            self.entry_exit_latency_evidence_sha256,
+            "entry and exit latency evidence",
+        )
         _sha256_digest(self.slippage_evidence_sha256, "slippage evidence")
         if (
             int(self.maximum_state_lateness_ns) < 0
@@ -213,12 +227,15 @@ class Round74EventTargetSpec:
             "schema_version": self.schema_version,
             "reference_quote_notional": self.reference_quote_notional,
             "decision_to_entry_latency_ns": self.decision_to_entry_latency_ns,
+            "decision_to_exit_latency_ns": self.decision_to_exit_latency_ns,
             "taker_fee_bps_by_symbol": dict(self.taker_fee_bps_by_symbol),
             "additional_slippage_bps_per_side": (
                 self.additional_slippage_bps_per_side
             ),
             "commission_evidence_sha256": self.commission_evidence_sha256,
-            "latency_evidence_sha256": self.latency_evidence_sha256,
+            "entry_exit_latency_evidence_sha256": (
+                self.entry_exit_latency_evidence_sha256
+            ),
             "slippage_evidence_sha256": self.slippage_evidence_sha256,
             "maximum_state_lateness_ns": self.maximum_state_lateness_ns,
             "maximum_decision_state_age_ns": (
@@ -230,6 +247,9 @@ class Round74EventTargetSpec:
             "sides": list(ROUND74_EVENT_PAYOFF_SIDES),
             "passive_fill_model": False,
             "marketable_l2_walk_only": True,
+            "latency_semantics": (
+                "separately measured entry and exit submission-to-execution delays"
+            ),
         }
         if include_sha256:
             value["spec_sha256"] = _canonical_sha256(value)
@@ -251,6 +271,9 @@ class Round74EventTargetSpec:
             decision_to_entry_latency_ns=int(
                 payload["decision_to_entry_latency_ns"]
             ),
+            decision_to_exit_latency_ns=int(
+                payload["decision_to_exit_latency_ns"]
+            ),
             taker_fee_bps_by_symbol={
                 str(symbol): float(fee) for symbol, fee in fees.items()
             },
@@ -260,8 +283,8 @@ class Round74EventTargetSpec:
             commission_evidence_sha256=str(
                 payload["commission_evidence_sha256"]
             ),
-            latency_evidence_sha256=str(
-                payload["latency_evidence_sha256"]
+            entry_exit_latency_evidence_sha256=str(
+                payload["entry_exit_latency_evidence_sha256"]
             ),
             slippage_evidence_sha256=str(
                 payload["slippage_evidence_sha256"]
@@ -984,7 +1007,11 @@ class Round74EventTargetEngine:
                 elif close_walk is None:
                     reason = "path_capacity"
                 for horizon in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS:
-                    requested_exit = received_monotonic_ns + horizon * 1_000_000_000
+                    requested_exit = (
+                        received_monotonic_ns
+                        + horizon * 1_000_000_000
+                        + self.spec.decision_to_exit_latency_ns
+                    )
                     if reason or self._crosses_funding(
                         symbol,
                         entry_ns=received_monotonic_ns,
