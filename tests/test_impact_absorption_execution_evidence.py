@@ -58,12 +58,11 @@ def _record(
     quantity = Decimal("1")
     quote = actual_price * quantity
     position_key = (
-        "pre_pair_position_payload"
-        if path == "entry"
-        else "post_pair_position_payload"
+        "pre_pair_position_payload" if path == "entry" else "post_pair_position_payload"
     )
     return {
         "schema_version": ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
+        "environment": "binance_usdm_testnet",
         "calibration_run_id": "round74-execution-contract-test",
         "round_trip_id": f"{symbol}-{pair_index}",
         "path": path,
@@ -124,9 +123,7 @@ def _record(
 
 
 def _records(
-    pairs_per_symbol: int = (
-        ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL
-    ),
+    pairs_per_symbol: int = (ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL),
 ) -> list[dict[str, object]]:
     records: list[dict[str, object]] = []
     clock = 1_000_000_000_000
@@ -146,9 +143,7 @@ def _records(
                 latency_ns=entry_latency,
                 residual_bps=residual,
             )
-            exit_submission = (
-                int(entry["terminal_receipt_monotonic_ns"]) + 1_000_000
-            )
+            exit_submission = int(entry["terminal_receipt_monotonic_ns"]) + 1_000_000
             exit_record = _record(
                 symbol=symbol,
                 pair_index=pair_index,
@@ -159,10 +154,7 @@ def _records(
                 residual_bps=residual,
             )
             records.extend((entry, exit_record))
-            clock = (
-                int(exit_record["terminal_receipt_monotonic_ns"])
-                + 1_000_000
-            )
+            clock = int(exit_record["terminal_receipt_monotonic_ns"]) + 1_000_000
     return records
 
 
@@ -228,12 +220,8 @@ def _clock_probes() -> tuple[Round74BinanceClockProbe, ...]:
             message_index=index,
             request_started_wall_ns=WALL_NS + index * 60_000_000_000,
             received_wall_ns=WALL_NS + index * 60_000_000_000 + 20_000_000,
-            request_started_monotonic_ns=(
-                MONOTONIC_NS + index * 60_000_000_000
-            ),
-            received_monotonic_ns=(
-                MONOTONIC_NS + index * 60_000_000_000 + 20_000_000
-            ),
+            request_started_monotonic_ns=(MONOTONIC_NS + index * 60_000_000_000),
+            received_monotonic_ns=(MONOTONIC_NS + index * 60_000_000_000 + 20_000_000),
             exchange_time_ms=EXCHANGE_MS + index * 60_000,
             source_payload_sha256=f"{index + 1:064x}",
         )
@@ -281,9 +269,7 @@ def test_source_target_assembly_derives_every_configured_value() -> None:
     assembly = _assembly()
     spec = assembly.spec
 
-    assert dict(spec.taker_fee_bps_by_symbol) == {
-        symbol: 5.0 for symbol in SYMBOLS
-    }
+    assert dict(spec.taker_fee_bps_by_symbol) == {symbol: 5.0 for symbol in SYMBOLS}
     assert dict(spec.decision_to_entry_latency_ns_by_symbol) == {
         "BTCUSDT": 100_299_000,
         "ETHUSDT": 100_299_001,
@@ -311,9 +297,22 @@ def test_source_target_assembly_derives_every_configured_value() -> None:
     with pytest.raises(ValueError, match="digest differs"):
         type(assembly).from_dict(malformed)
     assert len(assembly.assembly_sha256) == 64
-    assert assembly.create_engine(anchors=[]).spec.spec_sha256 == (
-        spec.spec_sha256
-    )
+    assert assembly.create_engine(anchors=[]).spec.spec_sha256 == (spec.spec_sha256)
+
+
+def test_execution_source_environment_cannot_be_relabelled() -> None:
+    records = _records()
+    records[0]["environment"] = "binance_usdm_mainnet"
+    with pytest.raises(ValueError, match="source environment differs"):
+        build_round74_execution_calibration_evidence(
+            records=records,
+            environment="binance_usdm_testnet",
+            observed_wall_ns=WALL_NS,
+            reference_quote_notional=float(REFERENCE_NOTIONAL),
+        )
+
+    with pytest.raises(ValueError, match="source environment differs"):
+        _assembly(environment="binance_usdm_mainnet")
 
 
 def test_source_target_assembly_rejects_tampered_rules_and_sources() -> None:
@@ -357,28 +356,20 @@ def test_execution_calibration_derives_symbol_path_tail_evidence() -> None:
     assert bundle.entry_exit_latency_evidence.record_count == 1800
     assert bundle.entry_exit_latency_evidence.binds(
         round74_latency_evidence_claims(
-            decision_to_entry_latency_ns_by_symbol=(
-                bundle.entry_latency_mapping()
-            ),
-            decision_to_exit_latency_ns_by_symbol=(
-                bundle.exit_latency_mapping()
-            ),
+            decision_to_entry_latency_ns_by_symbol=(bundle.entry_latency_mapping()),
+            decision_to_exit_latency_ns_by_symbol=(bundle.exit_latency_mapping()),
         )
     )
     assert bundle.residual_slippage_evidence.binds(
         round74_slippage_evidence_claims(
             reference_quote_notional=float(REFERENCE_NOTIONAL),
-            additional_slippage_bps_per_side_by_symbol=(
-                bundle.slippage_mapping()
-            ),
+            additional_slippage_bps_per_side_by_symbol=(bundle.slippage_mapping()),
         )
     )
 
 
 def test_execution_calibration_rejects_incomplete_or_nonflat_pairs() -> None:
-    records = _records(
-        ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL - 1
-    )
+    records = _records(ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL - 1)
     with pytest.raises(ValueError, match="sample is incomplete"):
         _bundle(records)
 

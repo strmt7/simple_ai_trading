@@ -22,7 +22,7 @@ from .impact_absorption_event_targets import (
 
 
 ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION = (
-    "round-074-execution-calibration-source-v1"
+    "round-074-execution-calibration-source-v2"
 )
 ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL = 300
 ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE = 100
@@ -47,9 +47,7 @@ def _canonical_json_bytes(value: object) -> bytes:
             allow_nan=False,
         ).encode("ascii")
     except (TypeError, ValueError) as exc:
-        raise ValueError(
-            "Round 74 execution evidence is not canonical JSON"
-        ) from exc
+        raise ValueError("Round 74 execution evidence is not canonical JSON") from exc
 
 
 def _canonical_sha256(value: object) -> str:
@@ -68,9 +66,7 @@ def _sha256_digest(value: object, label: str) -> str:
 def _reject_sensitive_keys(value: object, path: str = "payload") -> None:
     if isinstance(value, Mapping):
         for key, nested in value.items():
-            normalized = (
-                str(key).strip().lower().replace("-", "").replace("_", "")
-            )
+            normalized = str(key).strip().lower().replace("-", "").replace("_", "")
             if normalized in _SENSITIVE_KEYS:
                 raise ValueError(
                     f"Round 74 execution {path} contains credential material"
@@ -107,17 +103,12 @@ def _strict_decimal(
     minimum: Decimal | None = None,
 ) -> Decimal:
     if not isinstance(value, str) or not value.strip():
-        raise ValueError(
-            f"Round 74 execution {label} must be a decimal string"
-        )
+        raise ValueError(f"Round 74 execution {label} must be a decimal string")
     try:
         selected = Decimal(value)
     except InvalidOperation as exc:
         raise ValueError(f"Round 74 execution {label} is invalid") from exc
-    if (
-        not selected.is_finite()
-        or (minimum is not None and selected < minimum)
-    ):
+    if not selected.is_finite() or (minimum is not None and selected < minimum):
         raise ValueError(f"Round 74 execution {label} is invalid")
     return selected
 
@@ -153,6 +144,7 @@ def _upper_confidence_quantile(
 
 @dataclass(frozen=True)
 class _ValidatedExecution:
+    environment: str
     calibration_run_id: str
     round_trip_id: str
     path: str
@@ -230,8 +222,7 @@ def _book_walk_average_price(
     normalized = _normalized_payload(value)
     if (
         not isinstance(normalized, Mapping)
-        or normalized.get("schema_version")
-        != "round-074-execution-book-state-v1"
+        or normalized.get("schema_version") != "round-074-execution-book-state-v1"
         or str(normalized.get("symbol", "")).strip().upper() != symbol
     ):
         raise ValueError("Round 74 execution book state differs")
@@ -269,9 +260,8 @@ def _book_walk_average_price(
             )
             levels.append((price, level_quantity))
         prices = [price for price, _level_quantity in levels]
-        if (
-            len(prices) != len(set(prices))
-            or prices != sorted(prices, reverse=descending)
+        if len(prices) != len(set(prices)) or prices != sorted(
+            prices, reverse=descending
         ):
             raise ValueError("Round 74 execution book ordering differs")
         parsed_sides[name] = tuple(levels)
@@ -301,9 +291,10 @@ def _validated_execution(
         raise ValueError("Round 74 execution record differs")
     if normalized.get("schema_version") != ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION:
         raise ValueError("Round 74 execution record schema differs")
-    calibration_run_id = str(
-        normalized.get("calibration_run_id", "")
-    ).strip()
+    environment = str(normalized.get("environment", "")).strip()
+    if environment not in ROUND74_EVENT_TARGET_ENVIRONMENTS:
+        raise ValueError("Round 74 execution source environment differs")
+    calibration_run_id = str(normalized.get("calibration_run_id", "")).strip()
     round_trip_id = str(normalized.get("round_trip_id", "")).strip()
     path = str(normalized.get("path", "")).strip()
     symbol = str(normalized.get("symbol", "")).strip().upper()
@@ -315,9 +306,7 @@ def _validated_execution(
         or path not in {"entry", "exit"}
         or symbol not in ROUND74_EVENT_TARGET_SYMBOLS
         or side not in {"BUY", "SELL"}
-        or not client_order_id.startswith(
-            ROUND74_EXECUTION_CALIBRATION_CLIENT_PREFIX
-        )
+        or not client_order_id.startswith(ROUND74_EXECUTION_CALIBRATION_CLIENT_PREFIX)
         or len(client_order_id) > 36
         or normalized.get("terminal_source") != "ORDER_TRADE_UPDATE"
     ):
@@ -339,9 +328,8 @@ def _validated_execution(
     trades = normalized.get("account_trade_payloads")
     if not isinstance(terminal, Mapping) or not isinstance(trades, list) or not trades:
         raise ValueError("Round 74 execution source payload differs")
-    if (
-        terminal.get("e") != "ORDER_TRADE_UPDATE"
-        or not isinstance(terminal.get("o"), Mapping)
+    if terminal.get("e") != "ORDER_TRADE_UPDATE" or not isinstance(
+        terminal.get("o"), Mapping
     ):
         raise ValueError("Round 74 execution terminal event differs")
     _strict_integer(terminal.get("E"), "terminal event time", minimum=1)
@@ -440,9 +428,7 @@ def _validated_execution(
     ):
         raise ValueError("Round 74 execution fill reconciliation differs")
     position_payload_key = (
-        "pre_pair_position_payload"
-        if path == "entry"
-        else "post_pair_position_payload"
+        "pre_pair_position_payload" if path == "entry" else "post_pair_position_payload"
     )
     position_amount = _validated_position_payload(
         normalized.get(position_payload_key),
@@ -450,26 +436,22 @@ def _validated_execution(
         label="pre-pair" if path == "entry" else "post-pair",
     )
     forbidden_position_key = (
-        "post_pair_position_payload"
-        if path == "entry"
-        else "pre_pair_position_payload"
+        "post_pair_position_payload" if path == "entry" else "pre_pair_position_payload"
     )
     if forbidden_position_key in normalized:
         raise ValueError("Round 74 execution position evidence placement differs")
     side_sign = Decimal("1") if side == "BUY" else Decimal("-1")
     residual = (
-        side_sign
-        * (actual_vwap / expected_price - Decimal("1"))
-        * Decimal("10000")
+        side_sign * (actual_vwap / expected_price - Decimal("1")) * Decimal("10000")
     )
     residual_float = float(residual)
     if (
         not math.isfinite(residual_float)
-        or abs(residual_float)
-        > ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE
+        or abs(residual_float) > ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE
     ):
         raise ValueError("Round 74 execution residual slippage differs")
     return _ValidatedExecution(
+        environment=environment,
         calibration_run_id=calibration_run_id,
         round_trip_id=round_trip_id,
         path=path,
@@ -538,6 +520,8 @@ def build_round74_execution_calibration_evidence(
         )
         for record in records
     )
+    if any(item.environment != selected_environment for item in selected):
+        raise ValueError("Round 74 execution source environment differs")
     if not selected or len({item.calibration_run_id for item in selected}) != 1:
         raise ValueError("Round 74 execution calibration run differs")
     if len({item.order_id for item in selected}) != len(selected) or len(
@@ -595,9 +579,7 @@ def build_round74_execution_calibration_evidence(
             if item.symbol == symbol and item.path == "exit"
         ]
         residuals = [
-            item.residual_slippage_bps
-            for item in selected
-            if item.symbol == symbol
+            item.residual_slippage_bps for item in selected if item.symbol == symbol
         ]
         entry_latencies[symbol] = int(
             _upper_confidence_quantile(
@@ -619,9 +601,7 @@ def build_round74_execution_calibration_evidence(
                 _upper_confidence_quantile(
                     residuals,
                     quantile=ROUND74_EXECUTION_CALIBRATION_QUANTILE,
-                    confidence=(
-                        ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE
-                    ),
+                    confidence=(ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE),
                 )
             ),
         )
@@ -636,6 +616,7 @@ def build_round74_execution_calibration_evidence(
     protocol = {
         "schema_version": ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
         "environment": selected_environment,
+        "source_record_environment_required": True,
         "symbols": list(ROUND74_EVENT_TARGET_SYMBOLS),
         "new_order_path": "/fapi/v1/order",
         "terminal_source": "ORDER_TRADE_UPDATE",
@@ -680,16 +661,13 @@ def build_round74_execution_calibration_evidence(
     return Round74ExecutionEvidenceBundle(
         reference_quote_notional=float(reference),
         decision_to_entry_latency_ns_by_symbol=tuple(
-            (symbol, entry_latencies[symbol])
-            for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            (symbol, entry_latencies[symbol]) for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         ),
         decision_to_exit_latency_ns_by_symbol=tuple(
-            (symbol, exit_latencies[symbol])
-            for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            (symbol, exit_latencies[symbol]) for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         ),
         additional_slippage_bps_per_side_by_symbol=tuple(
-            (symbol, slippage[symbol])
-            for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            (symbol, slippage[symbol]) for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         ),
         entry_exit_latency_evidence=Round74EventTargetEvidence.create(
             kind="entry_exit_latency",

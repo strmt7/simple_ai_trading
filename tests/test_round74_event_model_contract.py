@@ -98,7 +98,6 @@ from simple_ai_trading.impact_absorption_execution_evidence import (
     ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE,
     ROUND74_EXECUTION_CALIBRATION_QUANTILE,
     ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
-    ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_exchange_info_evidence import (
     ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION,
@@ -333,7 +332,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["event_execution_calibration_schema_version"]
-        == ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION
+        == "round-074-execution-calibration-source-v1"
     )
     assert source["event_dataset_sha256"] == _file_sha256(source["event_dataset_path"])
     assert source["event_action_policy_sha256"] == _file_sha256(

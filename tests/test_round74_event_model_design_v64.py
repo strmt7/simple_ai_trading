@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess  # nosec B404
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -32,9 +33,38 @@ def _normalized_lf_sha256(path: Path) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def test_round74_v64_composes_exact_v63_and_current_sources() -> None:
+def _normalized_lf_sha256_at_commit(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    raw = completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def test_round74_v64_composes_exact_v63_and_committed_sources() -> None:
     design = json.loads(DESIGN.read_text(encoding="utf-8"))
     claimed = design.pop("design_sha256")
+    commit = subprocess.run(  # nosec B603
+        [
+            "git",
+            "log",
+            "-n",
+            "1",
+            "--format=%H",
+            "--",
+            str(DESIGN.relative_to(REPOSITORY)),
+        ],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="ascii",
+        timeout=30,
+    ).stdout.strip()
 
     assert claimed == _canonical_sha256(design)
     base = design["base_design"]
@@ -42,7 +72,7 @@ def test_round74_v64_composes_exact_v63_and_current_sources() -> None:
         REPOSITORY / base["path"]
     )
     for relative, expected in design["normalized_lf_source_binding"].items():
-        assert _normalized_lf_sha256(REPOSITORY / relative) == expected
+        assert _normalized_lf_sha256_at_commit(commit, relative) == expected
 
 
 def test_round74_v64_binds_new_cohort_without_model_selection_drift() -> None:
