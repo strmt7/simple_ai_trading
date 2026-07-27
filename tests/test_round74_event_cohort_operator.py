@@ -49,7 +49,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v8.json"
+    / "round-074-event-cohort-operator-v9.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -122,6 +122,7 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert claimed == _canonical_sha256(contract)
     for path_key, hash_key in (
         ("operator_path", "operator_sha256"),
+        ("cohort_path", "cohort_sha256"),
         ("wrapper_path", "wrapper_sha256"),
     ):
         assert (
@@ -317,7 +318,7 @@ def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
     assert plan.plan_sha256 == ROUND74_EVENT_COHORT_PLAN_SHA256
     assert ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES == 24 * 1024**3
     assert ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES == 4 * 1024**3
-    assert ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS == 120
+    assert ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS == 300
     assert (
         plan.slot(1).scheduled_start_wall_ns - plan.slot(0).scheduled_start_wall_ns
         == 3_900_000_000_000

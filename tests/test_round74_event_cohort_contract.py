@@ -123,12 +123,11 @@ def test_round74_cohort_plan_binds_prerequisite_and_implementation() -> None:
         + int(window["duration_seconds"]) * 1_000_000_000
     )
     assert plan.prerequisite_window_end_wall_ns < (plan.scheduled_start_wall_ns)
-    # The immutable plan binds capture cadence and whole-run partition policy.
-    # Post-capture feature/dataset revisions are bound by the model contract.
+    # Historical plans retain their committed implementation after later
+    # schedule-policy revisions; the plan hash binds this exact Git object.
     path = "src/simple_ai_trading/impact_absorption_event_cohort.py"
-    assert _git_blob(plan.implementation_git_commit, path) == _git_blob(
-        "HEAD",
-        path,
+    assert _git_blob(plan.implementation_git_commit, path) == (
+        "a5b5870a483335cca3bc0187bc75d2ea496cf2c9"
     )
 
 

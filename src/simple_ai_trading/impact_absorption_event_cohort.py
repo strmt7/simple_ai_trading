@@ -27,13 +27,16 @@ from .impact_absorption_store import (
 
 
 ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION = "round-074-event-cohort-plan-v4"
-ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION = (
-    "round-074-event-cohort-binding-v1"
-)
+ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5 = "round-074-event-cohort-plan-v5"
+ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION = "round-074-event-cohort-binding-v1"
 ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS = 3_600_000_000_000
 ROUND74_EVENT_COHORT_SLOT_PERIOD_NS = 3_900_000_000_000
 ROUND74_EVENT_COHORT_START_TOLERANCE_NS = 30_000_000_000
 ROUND74_EVENT_COHORT_END_OVERHEAD_NS = 120_000_000_000
+ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_NS = 120_000_000_000
+ROUND74_EVENT_COHORT_V5_SLOT_PERIOD_NS = 4_500_000_000_000
+ROUND74_EVENT_COHORT_V5_END_OVERHEAD_NS = 300_000_000_000
+ROUND74_EVENT_COHORT_V5_FRESH_AUDIT_TIMEOUT_NS = 300_000_000_000
 ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS = {
     "training": 120,
     "tuning": 24,
@@ -69,9 +72,7 @@ _SYMBOL_EVENT_TYPES = frozenset(
         "synchronizedDepthUpdate",
     }
 )
-_SYMBOL_GLOBAL_EVENT_TYPES = _SYMBOL_EVENT_TYPES - {
-    "synchronizedDepthUpdate"
-}
+_SYMBOL_GLOBAL_EVENT_TYPES = _SYMBOL_EVENT_TYPES - {"synchronizedDepthUpdate"}
 
 
 def _canonical_json(value: object) -> str:
@@ -102,9 +103,7 @@ def _strict_json_object(raw_text: str, label: str) -> dict[str, object]:
         output: dict[str, object] = {}
         for key, value in pairs:
             if key in output:
-                raise ValueError(
-                    f"Round 74 cohort {label} has duplicate JSON keys"
-                )
+                raise ValueError(f"Round 74 cohort {label} has duplicate JSON keys")
             output[key] = value
         return output
 
@@ -131,11 +130,9 @@ class Round74EventCohortSlot:
             or self.ordinal < 0
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
             or int(self.scheduled_start_wall_ns) <= 0
-            or int(self.scheduled_end_wall_ns)
-            - int(self.scheduled_start_wall_ns)
+            or int(self.scheduled_end_wall_ns) - int(self.scheduled_start_wall_ns)
             != ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
-            or int(self.start_window_end_wall_ns)
-            - int(self.scheduled_start_wall_ns)
+            or int(self.start_window_end_wall_ns) - int(self.scheduled_start_wall_ns)
             != ROUND74_EVENT_COHORT_START_TOLERANCE_NS
         ):
             raise ValueError("Round 74 cohort slot identity differs")
@@ -163,6 +160,11 @@ class Round74EventCohortPlan:
     prerequisite_artifact_sha256: str = ""
     prerequisite_window_start_wall_ns: int = 0
     prerequisite_window_end_wall_ns: int = 0
+    slot_period_ns: int = ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
+    capture_duration_ns: int = ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
+    start_tolerance_ns: int = ROUND74_EVENT_COHORT_START_TOLERANCE_NS
+    maximum_end_overhead_ns: int = ROUND74_EVENT_COHORT_END_OVERHEAD_NS
+    fresh_audit_timeout_ns: int = ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_NS
     schema_version: str = ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION
 
     @property
@@ -171,20 +173,62 @@ class Round74EventCohortPlan:
 
     def validate(self) -> None:
         counts = (self.training_slots, self.tuning_slots, self.test_slots)
+        schedule = (
+            self.slot_period_ns,
+            self.capture_duration_ns,
+            self.start_tolerance_ns,
+            self.maximum_end_overhead_ns,
+            self.fresh_audit_timeout_ns,
+        )
+        historical_schedule = (
+            ROUND74_EVENT_COHORT_SLOT_PERIOD_NS,
+            ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS,
+            ROUND74_EVENT_COHORT_START_TOLERANCE_NS,
+            ROUND74_EVENT_COHORT_END_OVERHEAD_NS,
+            ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_NS,
+        )
+        v5_schedule = (
+            ROUND74_EVENT_COHORT_V5_SLOT_PERIOD_NS,
+            ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS,
+            ROUND74_EVENT_COHORT_START_TOLERANCE_NS,
+            ROUND74_EVENT_COHORT_V5_END_OVERHEAD_NS,
+            ROUND74_EVENT_COHORT_V5_FRESH_AUDIT_TIMEOUT_NS,
+        )
         if (
-            self.schema_version != ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION
+            self.schema_version
+            not in {
+                ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
+                ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5,
+            }
             or isinstance(self.scheduled_start_wall_ns, bool)
             or not isinstance(self.scheduled_start_wall_ns, int)
             or self.scheduled_start_wall_ns <= 0
             or self.scheduled_start_wall_ns % 1_000_000_000 != 0
             or _GIT_COMMIT.fullmatch(self.implementation_git_commit) is None
             or any(
-                isinstance(value, bool)
-                or not isinstance(value, int)
-                or value < 1
+                isinstance(value, bool) or not isinstance(value, int) or value < 1
                 for value in counts
             )
             or self.total_slots > ROUND74_EVENT_COHORT_MAXIMUM_SLOTS
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
+                for value in schedule
+            )
+            or self.capture_duration_ns != ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
+            or self.slot_period_ns
+            <= (
+                self.capture_duration_ns
+                + self.start_tolerance_ns
+                + self.maximum_end_overhead_ns
+            )
+            or (
+                self.schema_version == ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION
+                and schedule != historical_schedule
+            )
+            or (
+                self.schema_version == ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5
+                and schedule != v5_schedule
+            )
         ):
             raise ValueError("Round 74 cohort plan identity differs")
         _require_sha256(self.prerequisite_artifact_sha256, "prerequisite")
@@ -213,20 +257,13 @@ class Round74EventCohortPlan:
 
     def slot(self, ordinal: int) -> Round74EventCohortSlot:
         role = self.role_for_ordinal(ordinal)
-        start = (
-            int(self.scheduled_start_wall_ns)
-            + int(ordinal) * ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
-        )
+        start = int(self.scheduled_start_wall_ns) + int(ordinal) * self.slot_period_ns
         slot = Round74EventCohortSlot(
             ordinal=int(ordinal),
             role=role,
             scheduled_start_wall_ns=start,
-            scheduled_end_wall_ns=(
-                start + ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
-            ),
-            start_window_end_wall_ns=(
-                start + ROUND74_EVENT_COHORT_START_TOLERANCE_NS
-            ),
+            scheduled_end_wall_ns=(start + self.capture_duration_ns),
+            start_window_end_wall_ns=(start + self.start_tolerance_ns),
         )
         slot.validate()
         return slot
@@ -250,30 +287,20 @@ class Round74EventCohortPlan:
             "total_slots": self.total_slots,
             "schedule_formula": {
                 "ordinal_origin": 0,
-                "slot_period_ns": ROUND74_EVENT_COHORT_SLOT_PERIOD_NS,
-                "capture_duration_ns": (
-                    ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
-                ),
-                "start_tolerance_ns": (
-                    ROUND74_EVENT_COHORT_START_TOLERANCE_NS
-                ),
-                "maximum_end_overhead_ns": (
-                    ROUND74_EVENT_COHORT_END_OVERHEAD_NS
-                ),
+                "slot_period_ns": self.slot_period_ns,
+                "capture_duration_ns": self.capture_duration_ns,
+                "start_tolerance_ns": self.start_tolerance_ns,
+                "maximum_end_overhead_ns": self.maximum_end_overhead_ns,
             },
             "capture_contract": {
                 "provider": "Binance USD-M public production market data",
                 "symbols": list(IMPACT_CAPTURE_SYMBOLS),
-                "capture_schema_version": (
-                    IMPACT_CAPTURE_V10_SCHEMA_VERSION
-                ),
+                "capture_schema_version": (IMPACT_CAPTURE_V10_SCHEMA_VERSION),
                 "capture_report_schema_version": (
                     IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
                 ),
                 "capture_design_sha256": ROUND74_CAPTURE_DESIGN_SHA256,
-                "capture_contract_sha256": (
-                    IMPACT_CAPTURE_V10_CONTRACT_SHA256
-                ),
+                "capture_contract_sha256": (IMPACT_CAPTURE_V10_CONTRACT_SHA256),
                 "mode": "qualification",
                 "maximum_reconnects": 0,
                 "failed_or_missed_slot_replacement_permitted": False,
@@ -282,9 +309,7 @@ class Round74EventCohortPlan:
             },
             "prerequisite": {
                 "artifact_sha256": self.prerequisite_artifact_sha256,
-                "window_start_wall_ns": (
-                    self.prerequisite_window_start_wall_ns
-                ),
+                "window_start_wall_ns": (self.prerequisite_window_start_wall_ns),
                 "window_end_wall_ns": self.prerequisite_window_end_wall_ns,
                 "must_pass_before_first_slot": True,
                 "prerequisite_capture_is_model_cohort_data": False,
@@ -293,12 +318,8 @@ class Round74EventCohortPlan:
                 "split_unit": "whole capture run",
                 "role_order": list(ROUND74_EVENT_PARTITION_ROLES),
                 "random_row_split_permitted": False,
-                "minimum_purge_ns": (
-                    ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
-                ),
-                "minimum_embargo_ns": (
-                    ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
-                ),
+                "minimum_purge_ns": (ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS),
+                "minimum_embargo_ns": (ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS),
                 "maximum_target_span_ns": (
                     ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
                 ),
@@ -313,6 +334,10 @@ class Round74EventCohortPlan:
                 "trading_authority": False,
             },
         }
+        if self.schema_version == ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5:
+            payload["schedule_formula"]["fresh_audit_timeout_ns"] = (
+                self.fresh_audit_timeout_ns
+            )
         if include_sha256:
             payload["plan_sha256"] = _canonical_sha256(payload)
         return payload
@@ -328,28 +353,37 @@ class Round74EventCohortPlan:
             raise ValueError("Round 74 cohort plan digest differs")
         roles = payload.get("role_counts")
         prerequisite = payload.get("prerequisite")
-        if not isinstance(roles, Mapping) or not isinstance(
-            prerequisite,
-            Mapping,
+        schedule = payload.get("schedule_formula")
+        if (
+            not isinstance(roles, Mapping)
+            or not isinstance(
+                prerequisite,
+                Mapping,
+            )
+            or not isinstance(schedule, Mapping)
         ):
             raise ValueError("Round 74 cohort plan sections differ")
         try:
             selected = cls(
                 scheduled_start_wall_ns=int(payload["scheduled_start_wall_ns"]),
-                implementation_git_commit=str(
-                    payload["implementation_git_commit"]
-                ),
+                implementation_git_commit=str(payload["implementation_git_commit"]),
                 training_slots=int(roles["training"]),
                 tuning_slots=int(roles["tuning"]),
                 test_slots=int(roles["test"]),
-                prerequisite_artifact_sha256=str(
-                    prerequisite["artifact_sha256"]
-                ),
+                prerequisite_artifact_sha256=str(prerequisite["artifact_sha256"]),
                 prerequisite_window_start_wall_ns=int(
                     prerequisite["window_start_wall_ns"]
                 ),
-                prerequisite_window_end_wall_ns=int(
-                    prerequisite["window_end_wall_ns"]
+                prerequisite_window_end_wall_ns=int(prerequisite["window_end_wall_ns"]),
+                slot_period_ns=int(schedule["slot_period_ns"]),
+                capture_duration_ns=int(schedule["capture_duration_ns"]),
+                start_tolerance_ns=int(schedule["start_tolerance_ns"]),
+                maximum_end_overhead_ns=int(schedule["maximum_end_overhead_ns"]),
+                fresh_audit_timeout_ns=int(
+                    schedule.get(
+                        "fresh_audit_timeout_ns",
+                        ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_NS,
+                    )
                 ),
                 schema_version=str(payload["schema_version"]),
             )
@@ -385,20 +419,16 @@ class Round74EventCohortRunBinding:
             self.compressed_payload_bytes,
         )
         if (
-            self.schema_version
-            != ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION
+            self.schema_version != ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION
             or _RUN_ID.fullmatch(self.run_id) is None
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
             or isinstance(self.slot_ordinal, bool)
             or not isinstance(self.slot_ordinal, int)
             or self.slot_ordinal < 0
             or int(self.capture_start_wall_ns) <= 0
-            or int(self.capture_end_wall_ns)
-            <= int(self.capture_start_wall_ns)
+            or int(self.capture_end_wall_ns) <= int(self.capture_start_wall_ns)
             or any(
-                isinstance(value, bool)
-                or not isinstance(value, int)
-                or value <= 0
+                isinstance(value, bool) or not isinstance(value, int) or value <= 0
                 for value in counts
             )
         ):
@@ -449,21 +479,15 @@ class Round74EventCohortRunBinding:
                 run_id=str(payload["run_id"]),
                 report_sha256=str(payload["report_sha256"]),
                 supervisor_sha256=str(payload["supervisor_sha256"]),
-                capture_start_wall_ns=int(
-                    payload["capture_start_wall_ns"]
-                ),
+                capture_start_wall_ns=int(payload["capture_start_wall_ns"]),
                 capture_end_wall_ns=int(payload["capture_end_wall_ns"]),
                 message_count=int(payload["message_count"]),
                 frame_count=int(payload["frame_count"]),
-                compressed_payload_bytes=int(
-                    payload["compressed_payload_bytes"]
-                ),
+                compressed_payload_bytes=int(payload["compressed_payload_bytes"]),
                 schema_version=str(payload["schema_version"]),
             )
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(
-                "Round 74 cohort binding payload differs"
-            ) from exc
+            raise ValueError("Round 74 cohort binding payload differs") from exc
         if selected.as_dict(include_sha256=False) != payload:
             raise ValueError("Round 74 cohort binding static policy differs")
         selected.validate()
@@ -484,12 +508,9 @@ def bind_round74_event_cohort_supervisor(
     supervisor_sha256 = _canonical_sha256(supervisor)
     attempts = supervisor.get("attempts")
     if (
-        supervisor.get("schema_version")
-        != "round-074-capture-supervisor-report-v1"
-        or supervisor.get("design_sha256")
-        != ROUND74_CAPTURE_DESIGN_SHA256
-        or supervisor.get("capture_schema_version")
-        != IMPACT_CAPTURE_V10_SCHEMA_VERSION
+        supervisor.get("schema_version") != "round-074-capture-supervisor-report-v1"
+        or supervisor.get("design_sha256") != ROUND74_CAPTURE_DESIGN_SHA256
+        or supervisor.get("capture_schema_version") != IMPACT_CAPTURE_V10_SCHEMA_VERSION
         or supervisor.get("capture_contract_sha256")
         != IMPACT_CAPTURE_V10_CONTRACT_SHA256
         or supervisor.get("status") != "completed"
@@ -513,10 +534,8 @@ def bind_round74_event_cohort_supervisor(
     if (
         supervisor.get("selected_run_id") != run_id
         or _RUN_ID.fullmatch(run_id) is None
-        or report.get("schema_version")
-        != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
-        or report.get("capture_contract_sha256")
-        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or report.get("schema_version") != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
+        or report.get("capture_contract_sha256") != IMPACT_CAPTURE_V10_CONTRACT_SHA256
         or report.get("design_sha256") != ROUND74_CAPTURE_DESIGN_SHA256
         or report.get("mode") != "qualification"
         or report.get("status") != "completed"
@@ -536,16 +555,12 @@ def bind_round74_event_cohort_supervisor(
         or not isinstance(start, int)
         or isinstance(end, bool)
         or not isinstance(end, int)
-        or not (
-            slot.scheduled_start_wall_ns
-            <= start
-            <= slot.start_window_end_wall_ns
-        )
+        or not (slot.scheduled_start_wall_ns <= start <= slot.start_window_end_wall_ns)
         or end < slot.scheduled_end_wall_ns
         or end
         > slot.scheduled_end_wall_ns
-        + ROUND74_EVENT_COHORT_START_TOLERANCE_NS
-        + ROUND74_EVENT_COHORT_END_OVERHEAD_NS
+        + plan.start_tolerance_ns
+        + plan.maximum_end_overhead_ns
     ):
         raise ValueError("Round 74 cohort capture report is not admissible")
     elapsed = report.get("elapsed_seconds")
@@ -558,9 +573,9 @@ def bind_round74_event_cohort_supervisor(
         or float(elapsed) < 3_600.0
         or float(elapsed)
         > (
-            ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
-            + ROUND74_EVENT_COHORT_START_TOLERANCE_NS
-            + ROUND74_EVENT_COHORT_END_OVERHEAD_NS
+            plan.capture_duration_ns
+            + plan.start_tolerance_ns
+            + plan.maximum_end_overhead_ns
         )
         / 1_000_000_000
         or not isinstance(event_counts, Mapping)
@@ -592,27 +607,20 @@ def bind_round74_event_cohort_supervisor(
     ):
         raise ValueError("Round 74 cohort event coverage is not admissible")
     if any(
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or value < 0
+        isinstance(value, bool) or not isinstance(value, int) or value < 0
         for value in event_counts.values()
     ):
         raise ValueError("Round 74 cohort event counts differ")
     if any(
         any(
-            isinstance(value, bool)
-            or not isinstance(value, int)
-            or value < 0
+            isinstance(value, bool) or not isinstance(value, int) or value < 0
             for value in symbol_counts[symbol].values()
         )
         or int(symbol_counts[symbol]["synchronizedDepthUpdate"])
         > int(symbol_counts[symbol]["depthUpdate"])
         for symbol in IMPACT_CAPTURE_SYMBOLS
     ) or any(
-        sum(
-            int(symbol_counts[symbol][event_type])
-            for symbol in IMPACT_CAPTURE_SYMBOLS
-        )
+        sum(int(symbol_counts[symbol][event_type]) for symbol in IMPACT_CAPTURE_SYMBOLS)
         != int(event_counts[event_type])
         for event_type in _SYMBOL_GLOBAL_EVENT_TYPES
     ):
@@ -625,9 +633,7 @@ def bind_round74_event_cohort_supervisor(
         ),
     }
     if any(
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or value <= 0
+        isinstance(value, bool) or not isinstance(value, int) or value <= 0
         for value in integer_fields.values()
     ) or int(integer_fields["writer_message_count"]) != sum(
         int(value) for value in event_counts.values()
@@ -644,9 +650,7 @@ def bind_round74_event_cohort_supervisor(
         capture_end_wall_ns=end,
         message_count=int(integer_fields["writer_message_count"]),
         frame_count=int(integer_fields["writer_frame_count"]),
-        compressed_payload_bytes=int(
-            integer_fields["writer_compressed_payload_bytes"]
-        ),
+        compressed_payload_bytes=int(integer_fields["writer_compressed_payload_bytes"]),
     )
     binding.validate()
     return binding
@@ -688,13 +692,10 @@ def build_round74_event_run_partition(
         binding = by_ordinal[ordinal]
         role_changed = prior_role is not None and binding.role != prior_role
         anchor_start = binding.capture_start_wall_ns + (
-            ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
-            if role_changed
-            else 0
+            ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS if role_changed else 0
         )
         anchor_end = (
-            binding.capture_end_wall_ns
-            - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
+            binding.capture_end_wall_ns - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
         )
         if role_changed:
             previous = entries[-1]
@@ -704,9 +705,7 @@ def build_round74_event_run_partition(
                 capture_report_sha256=previous.capture_report_sha256,
                 capture_start_wall_ns=previous.capture_start_wall_ns,
                 capture_end_wall_ns=previous.capture_end_wall_ns,
-                eligible_anchor_start_wall_ns=(
-                    previous.eligible_anchor_start_wall_ns
-                ),
+                eligible_anchor_start_wall_ns=(previous.eligible_anchor_start_wall_ns),
                 eligible_anchor_end_wall_ns=min(
                     previous.eligible_anchor_end_wall_ns,
                     previous.capture_end_wall_ns
@@ -734,9 +733,7 @@ def build_round74_event_run_partition(
 
 
 def load_round74_event_cohort_plan(raw_text: str) -> Round74EventCohortPlan:
-    return Round74EventCohortPlan.from_dict(
-        _strict_json_object(raw_text, "plan")
-    )
+    return Round74EventCohortPlan.from_dict(_strict_json_object(raw_text, "plan"))
 
 
 def load_round74_event_cohort_binding(
@@ -752,10 +749,15 @@ __all__ = [
     "ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS",
     "ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS",
     "ROUND74_EVENT_COHORT_END_OVERHEAD_NS",
+    "ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_NS",
     "ROUND74_EVENT_COHORT_MAXIMUM_SLOTS",
     "ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION",
+    "ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5",
     "ROUND74_EVENT_COHORT_SLOT_PERIOD_NS",
     "ROUND74_EVENT_COHORT_START_TOLERANCE_NS",
+    "ROUND74_EVENT_COHORT_V5_END_OVERHEAD_NS",
+    "ROUND74_EVENT_COHORT_V5_FRESH_AUDIT_TIMEOUT_NS",
+    "ROUND74_EVENT_COHORT_V5_SLOT_PERIOD_NS",
     "Round74EventCohortPlan",
     "Round74EventCohortRunBinding",
     "Round74EventCohortSlot",

@@ -15,9 +15,6 @@ import threading
 import time
 
 from .impact_absorption_event_cohort import (
-    ROUND74_EVENT_COHORT_END_OVERHEAD_NS,
-    ROUND74_EVENT_COHORT_SLOT_PERIOD_NS,
-    ROUND74_EVENT_COHORT_START_TOLERANCE_NS,
     Round74EventCohortPlan,
     Round74EventCohortRunBinding,
     bind_round74_event_cohort_supervisor,
@@ -66,7 +63,7 @@ ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES = 24 * 1024 * 1024 * 1024
 ROUND74_EVENT_COHORT_FREE_SPACE_MINIMUM_BYTES = 100 * 1024 * 1024 * 1024
 ROUND74_EVENT_COHORT_PER_SLOT_GROWTH_LIMIT_BYTES = 512 * 1024 * 1024
 ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES = 4 * 1024 * 1024 * 1024
-ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS = 120
+ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS = 300
 
 _DATABASE_RELATIVE_PATH = Path("data/microstructure.duckdb")
 _CAPTURE_ARGUMENTS = (
@@ -125,11 +122,11 @@ def select_round74_cohort_slot(
     if now_wall_ns < plan.scheduled_start_wall_ns:
         return Round74CohortSlotSelection("before_campaign", None, None)
     offset = now_wall_ns - plan.scheduled_start_wall_ns
-    ordinal = offset // ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
+    ordinal = offset // plan.slot_period_ns
     if ordinal >= plan.total_slots:
         return Round74CohortSlotSelection("after_campaign", None, None)
-    within = offset % ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
-    if within <= ROUND74_EVENT_COHORT_START_TOLERANCE_NS:
+    within = offset % plan.slot_period_ns
+    if within <= plan.start_tolerance_ns:
         return Round74CohortSlotSelection("open", int(ordinal), int(within))
     return Round74CohortSlotSelection("between_slots", int(ordinal), int(within))
 
@@ -362,6 +359,7 @@ def _audit_slot(
     slot_root: Path,
     *,
     run_id: str,
+    timeout_seconds: float,
 ) -> tuple[dict[str, object], float]:
     stdout_path = slot_root / "audit.stdout.json"
     stderr_path = slot_root / "audit.stderr.log"
@@ -385,7 +383,7 @@ def _audit_slot(
         text=True,
         encoding="utf-8",
         errors="replace",
-        timeout=ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS,
+        timeout=timeout_seconds,
     )
     elapsed = time.monotonic() - started
     stdout_path.write_text(completed.stdout, encoding="utf-8", newline="\n")
@@ -534,8 +532,8 @@ def _run_slot_process(
         next_heartbeat = started_monotonic
         hard_deadline_wall_ns = (
             slot.scheduled_end_wall_ns
-            + ROUND74_EVENT_COHORT_START_TOLERANCE_NS
-            + ROUND74_EVENT_COHORT_END_OVERHEAD_NS
+            + plan.start_tolerance_ns
+            + plan.maximum_end_overhead_ns
         )
         while process.poll() is None:
             now_monotonic = time.monotonic()
@@ -614,9 +612,10 @@ def _run_slot_process(
         executable,
         slot_root,
         run_id=binding.run_id,
+        timeout_seconds=plan.fresh_audit_timeout_ns / 1_000_000_000,
     )
     _validate_slot_audit(audit, binding, supervisor)
-    if audit_elapsed > ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS:
+    if audit_elapsed > plan.fresh_audit_timeout_ns / 1_000_000_000:
         raise ValueError("Round 74 cohort fresh audit exceeded its bound")
     final_database, final_wal = _database_and_wal_bytes(database)
     if final_wal != 0:
