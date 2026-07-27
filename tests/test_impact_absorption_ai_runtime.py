@@ -94,7 +94,11 @@ def _capability(
     ok: bool = True,
     *,
     free_vram_gb: float | None = 10.0,
+    free_ram_gb: float | None = None,
 ) -> AICapabilityReport:
+    selected_free_ram_gb = (
+        free_ram_gb if free_ram_gb is not None else 20.0 if ok else 8.0
+    )
     return AICapabilityReport(
         ok=ok,
         provider="ollama",
@@ -105,7 +109,7 @@ def _capability(
         compute_backend_device="AMD Radeon RX 9070 XT",
         compute_backend_reason="",
         free_vram_gb=free_vram_gb,
-        free_ram_gb=20.0 if ok else 8.0,
+        free_ram_gb=selected_free_ram_gb,
         model_parameters_b=8.0,
         messages=() if ok else ("free system RAM is below required",),
         warnings=(),
@@ -412,7 +416,55 @@ def test_runtime_accepts_warm_exact_gpu_model_when_cold_load_headroom_is_low() -
     assert outcome.capability["pre_inference_cold_load_headroom_passed"] is False
     assert outcome.capability["pre_inference_exact_model_fully_gpu_resident"] is True
     assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
+    assert outcome.capability[
+        "pre_inference_warm_equivalent_preload_ram_headroom_passed"
+    ] is True
     assert outcome.capability["provider_runtime_full_gpu_residency_verified"] is True
+
+
+def test_runtime_accepts_warm_model_with_state_aware_ram_headroom() -> None:
+    detected_minimums: list[float] = []
+    detected_free_ram = iter((19.0, 13.5))
+
+    def detect(config: AIRuntimeConfig) -> AICapabilityReport:
+        free_ram_gb = next(detected_free_ram)
+        detected_minimums.append(config.min_free_ram_gb)
+        return _capability(
+            ok=free_ram_gb >= config.min_free_ram_gb,
+            free_ram_gb=free_ram_gb,
+        )
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=detect,
+        provenance_resolver=lambda *_: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=lambda *_args, **_kwargs: OllamaResidencyReport(
+            requested_model="fino1:8b",
+            status="gpu_resident",
+            loaded_model="fino1:8b",
+            digest=MODEL_DIGEST,
+            size_bytes=6 * 1024**3,
+            size_vram_bytes=6 * 1024**3,
+            vram_to_model_ratio=1.0,
+        ),
+        popen_factory=_factory(_Process()),
+        worker_command=("python", "-m", "isolated-worker"),
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "accepted"
+    assert detected_minimums == [16.0, 8.0]
+    assert outcome.capability is not None
+    assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
+    assert outcome.capability[
+        "pre_inference_warm_equivalent_preload_ram_headroom_passed"
+    ] is True
+    assert outcome.capability["pre_inference_warm_equivalent_preload_ram_gb"] == 19.5
 
 
 def test_runtime_does_not_relax_ram_headroom_for_a_warm_model() -> None:
@@ -453,7 +505,52 @@ def test_runtime_does_not_relax_ram_headroom_for_a_warm_model() -> None:
     )
 
     assert outcome.status == "blocked_capability"
-    assert detected_minimums == [16.0, 16.0]
+    assert detected_minimums == [16.0, 8.0]
+
+
+def test_runtime_blocks_warm_model_without_equivalent_preload_ram_headroom() -> None:
+    detections = 0
+
+    def detect(config: AIRuntimeConfig) -> AICapabilityReport:
+        nonlocal detections
+        detections += 1
+        free_ram_gb = 20.0 if detections == 1 else 8.5
+        return _capability(
+            ok=free_ram_gb >= config.min_free_ram_gb,
+            free_ram_gb=free_ram_gb,
+        )
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=detect,
+        provenance_resolver=lambda *_: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=lambda *_args, **_kwargs: OllamaResidencyReport(
+            requested_model="fino1:8b",
+            status="gpu_resident",
+            loaded_model="fino1:8b",
+            digest=MODEL_DIGEST,
+            size_bytes=5 * 1024**3,
+            size_vram_bytes=5 * 1024**3,
+            vram_to_model_ratio=1.0,
+        ),
+        popen_factory=_factory(_Process()),
+        worker_command=("python", "-m", "isolated-worker"),
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "blocked_capability"
+    assert outcome.capability is not None
+    assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
+    assert outcome.capability[
+        "pre_inference_warm_equivalent_preload_ram_headroom_passed"
+    ] is False
+    assert outcome.capability["pre_inference_warm_equivalent_preload_ram_gb"] == 13.5
+    assert "pre-load headroom" in outcome.message
 
 
 def test_runtime_blocks_low_headroom_when_exact_model_is_not_warm() -> None:
