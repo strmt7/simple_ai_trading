@@ -56,7 +56,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v12.json"
+    / "round-074-local-ai-review-design-v13.json"
 )
 
 
@@ -191,6 +191,17 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["late_accepted_review_retains_auditable_decision"] is True
     assert architecture["late_accepted_review_receives_same_entry_exposure"] is False
     assert architecture["latency_adjusted_delayed_entry_replay_implemented"] is False
+    assert (
+        architecture["future_target_eligibility_may_delete_a_model_selected_action"]
+        is False
+    )
+    assert architecture["selected_action_with_incomplete_executable_target_policy"] == (
+        "invalidate the threshold or sealed configuration"
+    )
+    assert (
+        architecture["fixed_payoff_imputation_for_censored_selected_action_permitted"]
+        is False
+    )
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -288,6 +299,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["target_free_candidate_inference_implemented"] is True
     assert status["two_model_review_preparation_implemented"] is True
     assert status["same_entry_latency_uplift_gate_implemented"] is True
+    assert status["future_censorship_promotion_gate_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
@@ -337,6 +349,27 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         is True
     )
     assert evaluation["latency_adjusted_delayed_entry_replay_implemented"] is False
+    assert (
+        evaluation[
+            "future_target_eligibility_may_delete_a_model_selected_observation"
+        ]
+        is False
+    )
+    assert (
+        evaluation[
+            "complete_executable_target_coverage_required_for_every_selected_action"
+        ]
+        is True
+    )
+    assert evaluation["censored_selected_action_policy"] == (
+        "configuration is unscorable and cannot be promoted"
+    )
+    assert (
+        evaluation[
+            "fixed_zero_loss_or_profit_imputation_for_censored_selected_action_permitted"
+        ]
+        is False
+    )
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
