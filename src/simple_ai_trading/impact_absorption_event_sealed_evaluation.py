@@ -72,7 +72,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v9"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v10"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -1082,6 +1082,11 @@ class Round74SealedEvaluationReport:
             self.schema_version != ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
             or any(_SHA256.fullmatch(value) is None for value in digests)
             or not self.test_batch_sha256
+            or len(self.ai_overlays) != ROUND74_SEALED_AI_MODEL_COUNT
+            or len(
+                {value.model_manifest_sha256 for value in self.ai_overlays}
+            )
+            != ROUND74_SEALED_AI_MODEL_COUNT
             or len(self.test_batch_sha256) != len(self.model_output_sha256)
             or len(self.test_batch_sha256) != len(self.candidate_sha256)
             or len(set(self.test_batch_sha256)) != len(self.test_batch_sha256)
@@ -2263,6 +2268,13 @@ def evaluate_round74_sealed_once(
     manifests = tuple(
         sorted(_require_sha256(value, "AI manifest") for value in ai_manifest_sha256)
     )
+    if (
+        len(manifests) != ROUND74_SEALED_AI_MODEL_COUNT
+        or len(set(manifests)) != ROUND74_SEALED_AI_MODEL_COUNT
+    ):
+        raise ValueError(
+            "Round 74 sealed evaluation requires the exact two-model AI family"
+        )
     claim = ledger.reserve_identity(
         test_identity=test_identity,
         action_selection=action_selection,
