@@ -97,6 +97,9 @@ def _engine() -> Round74EventTargetEngine:
     exit_latencies = {symbol: 100_000_000 for symbol in symbols}
     fees = {symbol: 5.0 for symbol in symbols}
     funding = {symbol: () for symbol in symbols}
+    funding_coverage = {
+        symbol: (0, 1_000_000_000_000) for symbol in symbols
+    }
     slippage = {symbol: 1.0 for symbol in symbols}
 
     def evidence(
@@ -120,6 +123,7 @@ def _engine() -> Round74EventTargetEngine:
         decision_to_exit_latency_ns_by_symbol=exit_latencies,
         taker_fee_bps_by_symbol=fees,
         funding_boundaries_monotonic_ns=funding,
+        funding_schedule_coverage_monotonic_ns=funding_coverage,
         additional_slippage_bps_per_side_by_symbol=slippage,
         commission_evidence=evidence(
             "commission",
@@ -144,7 +148,10 @@ def _engine() -> Round74EventTargetEngine:
         ),
         funding_schedule_evidence=evidence(
             "funding_schedule",
-            round74_funding_schedule_evidence_claims(funding),
+            round74_funding_schedule_evidence_claims(
+                funding_boundaries_monotonic_ns=funding,
+                funding_schedule_coverage_monotonic_ns=funding_coverage,
+            ),
             "d" * 64,
         ),
     )
