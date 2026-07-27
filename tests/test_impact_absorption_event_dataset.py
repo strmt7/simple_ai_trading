@@ -30,6 +30,7 @@ from simple_ai_trading.impact_absorption_event_targets import (
     round74_commission_evidence_claims,
     round74_funding_schedule_evidence_claims,
     round74_latency_evidence_claims,
+    round74_quantity_rules_evidence_claims,
     round74_slippage_evidence_claims,
 )
 from simple_ai_trading.impact_absorption_targets import (
@@ -101,6 +102,7 @@ def _engine() -> Round74EventTargetEngine:
         symbol: (0, 1_000_000_000_000) for symbol in symbols
     }
     slippage = {symbol: 1.0 for symbol in symbols}
+    rules = _rules()
 
     def evidence(
         kind: str,
@@ -125,6 +127,11 @@ def _engine() -> Round74EventTargetEngine:
         funding_boundary_intervals_monotonic_ns=funding_intervals,
         funding_schedule_coverage_monotonic_ns=funding_coverage,
         additional_slippage_bps_per_side_by_symbol=slippage,
+        quantity_rules_evidence=evidence(
+            "quantity_rules",
+            round74_quantity_rules_evidence_claims(rules),
+            "e" * 64,
+        ),
         commission_evidence=evidence(
             "commission",
             round74_commission_evidence_claims(fees),
@@ -158,7 +165,7 @@ def _engine() -> Round74EventTargetEngine:
     return Round74EventTargetEngine(
         spec=spec,
         anchors=[],
-        quantity_rules=_rules(),
+        quantity_rules=rules,
     )
 
 
