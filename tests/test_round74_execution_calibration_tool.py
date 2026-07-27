@@ -569,3 +569,45 @@ def test_capture_blocks_at_eighty_percent_request_weight(
         command_capture(_network_args(tmp_path, command="capture"))
 
     assert not (tmp_path / "artifacts").exists()
+
+
+def test_capture_slot_rejects_out_of_order_ordinal_before_credentials(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.delenv(API_KEY_ENV, raising=False)
+    monkeypatch.delenv(API_SECRET_ENV, raising=False)
+    plan_directory = tmp_path / "plans"
+    assert (
+        main(
+            [
+                "--output-directory",
+                str(plan_directory),
+                "plan",
+                "--campaign-id",
+                "round74-testnet-calibration",
+                "--target-quote-notional",
+                "100",
+            ]
+        )
+        == 0
+    )
+    plan_summary = json.loads(capsys.readouterr().out)
+
+    result = main(
+        [
+            "--output-directory",
+            str(tmp_path / "captures"),
+            "capture-slot",
+            "--yes",
+            "--acknowledge-non-mainnet-orders",
+            "--campaign-plan",
+            plan_summary["artifact"],
+            "--slot",
+            "2",
+        ]
+    )
+
+    assert result == 2
+    assert "requires slot 0 next" in capsys.readouterr().err
