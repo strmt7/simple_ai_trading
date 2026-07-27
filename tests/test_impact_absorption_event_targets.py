@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 
 import pytest
@@ -8,8 +9,13 @@ from simple_ai_trading.impact_absorption import L2BookState
 from simple_ai_trading.impact_absorption_event_targets import (
     Round74EventTargetAnchor,
     Round74EventTargetEngine,
+    Round74EventTargetEvidence,
     Round74EventTargetSpec,
+    round74_commission_evidence_claims,
     round74_event_action_payoff,
+    round74_funding_schedule_evidence_claims,
+    round74_latency_evidence_claims,
+    round74_slippage_evidence_claims,
 )
 from simple_ai_trading.impact_absorption_targets import (
     Round73MarketQuantityRules,
@@ -18,6 +24,25 @@ from simple_ai_trading.impact_absorption_targets import (
 
 
 NS = 1_000_000_000
+SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+EVIDENCE_WALL_NS = 1_784_000_000_000_000_000
+
+
+def _evidence(
+    kind: str,
+    claims: object,
+    *,
+    payload_sha256: str,
+) -> Round74EventTargetEvidence:
+    return Round74EventTargetEvidence.create(
+        kind=kind,
+        environment="binance_usdm_mainnet",
+        observed_wall_ns=EVIDENCE_WALL_NS,
+        record_count=3,
+        source_query_or_protocol_sha256=f"{len(kind):064x}",
+        source_payload_sha256=payload_sha256,
+        claims=claims,
+    )
 
 
 def _state(
@@ -81,25 +106,65 @@ def _spec(
     slippage_bps: float = 0.0,
     latency_ns: int = 100_000_000,
     exit_latency_ns: int = 100_000_000,
+    entry_latencies: dict[str, int] | None = None,
+    exit_latencies: dict[str, int] | None = None,
+    slippage_by_symbol: dict[str, float] | None = None,
     funding_boundaries: dict[str, tuple[int, ...]] | None = None,
     funding_evidence_sha256: str = "e" * 64,
 ) -> Round74EventTargetSpec:
-    funding = funding_boundaries or {
-        symbol: () for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+    funding = funding_boundaries if funding_boundaries is not None else {
+        symbol: () for symbol in SYMBOLS
     }
+    fees = {symbol: fee_bps for symbol in SYMBOLS}
+    entries = (
+        entry_latencies
+        if entry_latencies is not None
+        else {symbol: latency_ns for symbol in SYMBOLS}
+    )
+    exits = (
+        exit_latencies
+        if exit_latencies is not None
+        else {symbol: exit_latency_ns for symbol in SYMBOLS}
+    )
+    slippage = (
+        slippage_by_symbol
+        if slippage_by_symbol is not None
+        else {symbol: slippage_bps for symbol in SYMBOLS}
+    )
+    reference_notional = 100.0
     return Round74EventTargetSpec.create(
-        reference_quote_notional=100.0,
-        decision_to_entry_latency_ns=latency_ns,
-        decision_to_exit_latency_ns=exit_latency_ns,
-        taker_fee_bps_by_symbol={
-            symbol: fee_bps for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
-        },
+        reference_quote_notional=reference_notional,
+        decision_to_entry_latency_ns_by_symbol=entries,
+        decision_to_exit_latency_ns_by_symbol=exits,
+        taker_fee_bps_by_symbol=fees,
         funding_boundaries_monotonic_ns=funding,
-        additional_slippage_bps_per_side=slippage_bps,
-        commission_evidence_sha256="a" * 64,
-        entry_exit_latency_evidence_sha256="b" * 64,
-        slippage_evidence_sha256="d" * 64,
-        funding_schedule_evidence_sha256=funding_evidence_sha256,
+        additional_slippage_bps_per_side_by_symbol=slippage,
+        commission_evidence=_evidence(
+            "commission",
+            round74_commission_evidence_claims(fees),
+            payload_sha256="a" * 64,
+        ),
+        entry_exit_latency_evidence=_evidence(
+            "entry_exit_latency",
+            round74_latency_evidence_claims(
+                decision_to_entry_latency_ns_by_symbol=entries,
+                decision_to_exit_latency_ns_by_symbol=exits,
+            ),
+            payload_sha256="b" * 64,
+        ),
+        slippage_evidence=_evidence(
+            "residual_slippage",
+            round74_slippage_evidence_claims(
+                reference_quote_notional=reference_notional,
+                additional_slippage_bps_per_side_by_symbol=slippage,
+            ),
+            payload_sha256="d" * 64,
+        ),
+        funding_schedule_evidence=_evidence(
+            "funding_schedule",
+            round74_funding_schedule_evidence_claims(funding),
+            payload_sha256=funding_evidence_sha256,
+        ),
     )
 
 
@@ -107,9 +172,10 @@ def _anchor(
     *,
     index: int = 0,
     decision_ns: int = NS,
+    symbol: str = "BTCUSDT",
 ) -> Round74EventTargetAnchor:
     return Round74EventTargetAnchor(
-        symbol="BTCUSDT",
+        symbol=symbol,
         anchor_index=index,
         decision_monotonic_ns=decision_ns,
         decision_wall_ns=1_784_000_000_000_000_000 + decision_ns,
@@ -241,6 +307,88 @@ def test_round74_payoff_charges_both_actual_walked_legs() -> None:
         * (entry.quote_notional + exit_walk.quote_notional)
     )
     assert payoff.net_payoff_quote < payoff.gross_payoff_quote
+
+
+def test_round74_target_spec_uses_symbol_specific_latency_and_slippage() -> None:
+    entry_latencies = {
+        "BTCUSDT": 100_000_000,
+        "ETHUSDT": 200_000_000,
+        "SOLUSDT": 300_000_000,
+    }
+    exit_latencies = {
+        "BTCUSDT": 400_000_000,
+        "ETHUSDT": 500_000_000,
+        "SOLUSDT": 600_000_000,
+    }
+    slippage = {
+        "BTCUSDT": 0.25,
+        "ETHUSDT": 0.50,
+        "SOLUSDT": 1.00,
+    }
+    spec = _spec(
+        entry_latencies=entry_latencies,
+        exit_latencies=exit_latencies,
+        slippage_by_symbol=slippage,
+    )
+
+    assert spec.entry_latency_ns("BTCUSDT") == 100_000_000
+    assert spec.entry_latency_ns("ETHUSDT") == 200_000_000
+    assert spec.exit_latency_ns("SOLUSDT") == 600_000_000
+    assert spec.slippage_bps_per_side("BTCUSDT") == pytest.approx(0.25)
+    assert spec.slippage_bps_per_side("SOLUSDT") == pytest.approx(1.00)
+    payload = spec.as_dict()
+    assert payload["execution_environment"] == "binance_usdm_mainnet"
+    assert payload["latency_and_residual_slippage_are_symbol_specific"] is True
+    assert "decision_to_entry_latency_ns" not in payload
+    assert "additional_slippage_bps_per_side" not in payload
+    evidence = payload["evidence"]
+    assert isinstance(evidence, dict)
+    assert set(evidence) == {
+        "commission",
+        "entry_exit_latency",
+        "residual_slippage",
+        "funding_schedule",
+    }
+
+    engine = Round74EventTargetEngine(
+        spec=spec,
+        anchors=[
+            _anchor(symbol=symbol, index=index)
+            for index, symbol in enumerate(SYMBOLS)
+        ],
+        quantity_rules=_rules(),
+    )
+    outcomes = engine.finish()
+    assert {
+        symbol: {
+            outcome.requested_entry_monotonic_ns
+            for outcome in outcomes
+            if outcome.symbol == symbol
+        }
+        for symbol in SYMBOLS
+    } == {
+        symbol: {NS + entry_latencies[symbol]} for symbol in SYMBOLS
+    }
+
+
+def test_round74_target_evidence_is_self_hashing_and_environment_consistent() -> None:
+    spec = _spec()
+    evidence_payload = spec.commission_evidence.as_dict()
+    tampered = dict(evidence_payload)
+    tampered["record_count"] = 4
+    with pytest.raises(ValueError, match="evidence payload digest"):
+        Round74EventTargetEvidence.from_dict(tampered)
+    with pytest.raises(ValueError, match="evidence source differs"):
+        replace(spec.commission_evidence, source_id="unverified")
+    with pytest.raises(ValueError, match="record count differs"):
+        replace(spec.commission_evidence, record_count=2)
+
+    testnet_slippage = replace(
+        spec.slippage_evidence,
+        environment="binance_usdm_testnet",
+    )
+    with pytest.raises(ValueError, match="environments differ"):
+        replace(spec, slippage_evidence=testnet_slippage)
 
 
 def test_round74_target_engine_builds_complete_pathwise_panel() -> None:
@@ -697,23 +845,14 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
     with pytest.raises(ValueError, match="payload digest"):
         Round74EventTargetSpec.from_dict(tampered)
 
-    with pytest.raises(ValueError, match="latency evidence"):
-        Round74EventTargetSpec.create(
-            reference_quote_notional=100.0,
-            decision_to_entry_latency_ns=100_000_000,
-            decision_to_exit_latency_ns=100_000_000,
-            taker_fee_bps_by_symbol={
-                symbol: 5.0
-                for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
-            },
-            funding_boundaries_monotonic_ns={
-                symbol: () for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
-            },
-            additional_slippage_bps_per_side=1.0,
-            commission_evidence_sha256="a" * 64,
-            entry_exit_latency_evidence_sha256="unverified",
-            slippage_evidence_sha256="d" * 64,
-            funding_schedule_evidence_sha256="e" * 64,
+    with pytest.raises(ValueError, match="evidence claims differ"):
+        replace(
+            _spec(),
+            decision_to_entry_latency_ns_by_symbol=(
+                ("BTCUSDT", 200_000_000),
+                ("ETHUSDT", 100_000_000),
+                ("SOLUSDT", 100_000_000),
+            ),
         )
     with pytest.raises(ValueError, match="oversampled"):
         Round74EventTargetEngine(
@@ -751,5 +890,5 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
         )
     with pytest.raises(ValueError, match="funding schedule differs"):
         _spec(funding_boundaries={"BTCUSDT": (3 * NS,)})
-    with pytest.raises(ValueError, match="funding schedule evidence"):
+    with pytest.raises(ValueError, match="evidence source payload"):
         _spec(funding_evidence_sha256="unverified")
