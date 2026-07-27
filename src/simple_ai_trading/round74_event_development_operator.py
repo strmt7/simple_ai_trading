@@ -862,6 +862,7 @@ def train_calibrate_and_select_round74_development_policy(
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
+    matched_preparation_sha256: str | None = None,
 ) -> Round74DevelopmentPolicyArtifact:
     """Run the complete development path and write one immutable bundle."""
 
@@ -888,13 +889,18 @@ def train_calibrate_and_select_round74_development_policy(
     ):
         raise ValueError("Round 74 development prepared-role binding differs")
     output = Path(output_directory)
+    pretest_kwargs: dict[str, object] = {
+        "output_directory": output,
+        "compute_backend": compute_backend,
+        "config": config,
+        "feature_scaler": prepared.scaler,
+    }
+    if matched_preparation_sha256 is not None:
+        pretest_kwargs["matched_preparation_sha256"] = matched_preparation_sha256
     pretest = train_and_seal_round74_pretest_policy_from_prepared_roles(
         prepared.training_batches,
         tuning_roles,
-        output_directory=output,
-        compute_backend=compute_backend,
-        config=config,
-        feature_scaler=prepared.scaler,
+        **pretest_kwargs,
     )
     bundle = calibrate_and_select_round74_development_policy(
         tuning_roles,

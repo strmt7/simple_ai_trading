@@ -1660,11 +1660,13 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     feature_scaler: Round74EventFeatureScaler,
+    matched_preparation_sha256: str | None = None,
 ) -> Round74PretestPolicyArtifact:
     """Fit candidates with model-selection runs and no later tuning role."""
 
     from .round74_event_model_operator import Round74PreparedTuningRoles
     from .round74_event_model_operator import (
+        round74_matched_representative_window_policy,
         round74_representative_window_policy,
     )
 
@@ -1675,15 +1677,22 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
     selected_config.validate()
     if selected_config.execution_mode != "cohort":
         raise ValueError("Round 74 prepared tuning roles require cohort mode")
+    if matched_preparation_sha256 is None:
+        representative_policy_sha256 = str(
+            round74_representative_window_policy()["policy_sha256"]
+        )
+    else:
+        representative_policy_sha256 = str(
+            round74_matched_representative_window_policy()["policy_sha256"]
+        )
     return train_and_seal_round74_pretest_policy(
         training_batches,
         tuning_roles.model_selection_batches,
         output_directory=output_directory,
         compute_backend=compute_backend,
         config=selected_config,
-        representative_window_policy_sha256=(
-            str(round74_representative_window_policy()["policy_sha256"])
-        ),
+        representative_window_policy_sha256=representative_policy_sha256,
+        matched_preparation_sha256=matched_preparation_sha256,
         feature_scaler=feature_scaler,
     )
 
