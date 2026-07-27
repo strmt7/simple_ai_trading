@@ -492,6 +492,66 @@ def test_round74_trainer_records_and_skips_fully_censored_minibatches(
         assert optimization["eligible_action_targets"] > 0.0
 
 
+def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
+    tmp_path: Path,
+) -> None:
+    short_run = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=1,
+        rows=2,
+    )
+    long_run = _batch(
+        "training",
+        start_wall_ns=WALL_NS + 10_000_000_000,
+        identity=2,
+        rows=5,
+    )
+    tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 20_000_000_000,
+        identity=3,
+    )
+
+    artifact = train_and_seal_round74_pretest_policy(
+        [short_run, long_run],
+        [tuning],
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=_config(),
+    )
+    _model, policy = load_round74_pretest_policy(artifact.policy_path)
+
+    assert policy["optimization_population"] == {
+        "unit": "capture_run",
+        "optimizer_step": (
+            "one eligible minibatch per training capture run with "
+            "gradient accumulation"
+        ),
+        "gradient_divisor": "training_capture_run_count",
+        "shorter_run_policy": (
+            "deterministic epoch-rotated cycling of eligible minibatches"
+        ),
+        "fully_censored_minibatches_contribute_gradients": False,
+        "fully_censored_capture_run_policy": "reject",
+        "row_pooled_optimizer_steps_permitted": False,
+    }
+    for report in policy["candidate_panel"].values():
+        optimization = report["peer_reports"][0]["history"][0][
+            "optimization_metrics"
+        ]
+        assert optimization["run_count"] == 2.0
+        assert optimization["optimizer_steps"] == 3.0
+        assert optimization["run_contributions_per_optimizer_step"] == 2.0
+        assert optimization["minimum_run_minibatch_contributions"] == 3.0
+        assert optimization["maximum_run_minibatch_contributions"] == 3.0
+        assert optimization["minimum_eligible_minibatches_per_run"] == 1.0
+        assert optimization["maximum_eligible_minibatches_per_run"] == 3.0
+        assert optimization["worst_run_loss"] >= (
+            optimization["run_balanced_loss"]
+        )
+
+
 def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     tmp_path: Path,
 ) -> None:

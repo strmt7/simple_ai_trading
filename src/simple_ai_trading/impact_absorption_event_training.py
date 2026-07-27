@@ -39,8 +39,8 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v8"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v7"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v9"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v8"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
     "round-074-target-context-panel-v1"
 )
@@ -83,6 +83,23 @@ def _package_version(name: str) -> str:
         return version(name)
     except PackageNotFoundError:
         return "not-installed"
+
+
+def _optimization_population_policy() -> dict[str, object]:
+    return {
+        "unit": "capture_run",
+        "optimizer_step": (
+            "one eligible minibatch per training capture run with "
+            "gradient accumulation"
+        ),
+        "gradient_divisor": "training_capture_run_count",
+        "shorter_run_policy": (
+            "deterministic epoch-rotated cycling of eligible minibatches"
+        ),
+        "fully_censored_minibatches_contribute_gradients": False,
+        "fully_censored_capture_run_policy": "reject",
+        "row_pooled_optimizer_steps_permitted": False,
+    }
 
 
 def _reject_duplicate_json_pairs(
@@ -404,6 +421,31 @@ def _iter_minibatches(
             yield batch, slice(start, min(start + maximum_rows, batch.rows))
 
 
+def _run_balanced_minibatch_schedules(
+    batches: Sequence[Round74EventTrainingBatch],
+    maximum_rows: int,
+    *,
+    totals: dict[str, float],
+    per_run_totals: Sequence[dict[str, float]],
+) -> tuple[tuple[slice, ...], ...]:
+    """Build one deterministic eligible-minibatch cycle per capture run."""
+
+    if len(batches) != len(per_run_totals) or not batches:
+        raise ValueError("Round 74 run-balanced schedule differs")
+    schedules: list[tuple[slice, ...]] = []
+    for batch, run_totals in zip(batches, per_run_totals, strict=True):
+        eligible: list[slice] = []
+        for _selected, row_slice in _iter_minibatches((batch,), maximum_rows):
+            if _skip_fully_censored_minibatch(totals, batch, row_slice):
+                _skip_fully_censored_minibatch(run_totals, batch, row_slice)
+                continue
+            eligible.append(row_slice)
+        if not eligible:
+            raise ValueError("Round 74 training capture run is fully censored")
+        schedules.append(tuple(eligible))
+    return tuple(schedules)
+
+
 def _to_device_tensor(
     value: np.ndarray,
     row_slice: slice,
@@ -670,21 +712,42 @@ def _train_peer(
     for epoch in range(1, config.maximum_epochs + 1):
         model.train()
         optimization_totals = _empty_metric_sums()
-        for batch, row_slice in _iter_minibatches(
+        per_run_totals = tuple(
+            _empty_metric_sums() for _batch in training_batches
+        )
+        schedules = _run_balanced_minibatch_schedules(
             training_batches,
             config.minibatch_rows,
-        ):
-            if _skip_fully_censored_minibatch(
-                optimization_totals,
-                batch,
-                row_slice,
-            ):
-                continue
+            totals=optimization_totals,
+            per_run_totals=per_run_totals,
+        )
+        optimizer_steps = max(len(schedule) for schedule in schedules)
+        run_count = len(schedules)
+        for step in range(optimizer_steps):
             optimizer.zero_grad(set_to_none=True)
-            loss, components, action_weight, regime_weight = _loss_for_minibatch(
-                model, batch, row_slice, device
-            )
-            loss.backward()
+            for batch, schedule, run_totals in zip(
+                training_batches,
+                schedules,
+                per_run_totals,
+                strict=True,
+            ):
+                row_slice = schedule[(step + epoch - 1) % len(schedule)]
+                loss, components, action_weight, regime_weight = (
+                    _loss_for_minibatch(model, batch, row_slice, device)
+                )
+                (loss / run_count).backward()
+                _accumulate_metrics(
+                    optimization_totals,
+                    components,
+                    action_weight=action_weight,
+                    regime_weight=regime_weight,
+                )
+                _accumulate_metrics(
+                    run_totals,
+                    components,
+                    action_weight=action_weight,
+                    regime_weight=regime_weight,
+                )
             if any(
                 parameter.grad is not None
                 and not bool(torch.isfinite(parameter.grad).all())
@@ -699,15 +762,34 @@ def _train_peer(
             if not math.isfinite(float(gradient_norm.detach().cpu())):
                 raise RuntimeError("Round 74 model gradient norm is nonfinite")
             optimizer.step()
-            _accumulate_metrics(
-                optimization_totals,
-                components,
-                action_weight=action_weight,
-                regime_weight=regime_weight,
-            )
         if not _parameters_are_finite(model):
             raise RuntimeError("Round 74 model parameters are nonfinite")
         optimization_metrics = _finalize_metrics(optimization_totals)
+        optimization_run_losses = tuple(
+            _finalize_metrics(run_totals)["loss"]
+            for run_totals in per_run_totals
+        )
+        optimization_metrics.update(
+            {
+                "run_balanced_loss": (
+                    sum(optimization_run_losses) / len(optimization_run_losses)
+                ),
+                "worst_run_loss": max(optimization_run_losses),
+                "run_count": float(run_count),
+                "optimizer_steps": float(optimizer_steps),
+                "run_contributions_per_optimizer_step": float(run_count),
+                "minimum_run_minibatch_contributions": float(optimizer_steps),
+                "maximum_run_minibatch_contributions": float(optimizer_steps),
+                "minimum_eligible_minibatches_per_run": float(
+                    min(len(schedule) for schedule in schedules)
+                ),
+                "maximum_eligible_minibatches_per_run": float(
+                    max(len(schedule) for schedule in schedules)
+                ),
+            }
+        )
+        if not all(math.isfinite(value) for value in optimization_metrics.values()):
+            raise RuntimeError("Round 74 run-balanced optimization is nonfinite")
         tuning_metrics, _tuning_run_losses = _evaluate_model(
             model,
             tuning_batches,
@@ -1142,6 +1224,7 @@ def train_and_seal_round74_pretest_policy(
             "test_sample_digests_consumed": 0,
         },
         "training_policy": selected_config.as_dict(),
+        "optimization_population": _optimization_population_policy(),
         "ensemble_aggregation": {
             "peer_weights": "equal",
             "payoff_and_adverse_excursion_quantiles": (
@@ -1290,6 +1373,7 @@ def load_round74_pretest_policy(
         "source_binding",
         "development_data",
         "training_policy",
+        "optimization_population",
         "ensemble_aggregation",
         "backend",
         "candidate_panel",
@@ -1304,6 +1388,7 @@ def load_round74_pretest_policy(
     development = policy.get("development_data")
     authority = policy.get("authority")
     training_policy = policy.get("training_policy")
+    optimization_population = policy.get("optimization_population")
     ensemble_aggregation = policy.get("ensemble_aggregation")
     source_binding = policy.get("source_binding")
     candidate_panel = policy.get("candidate_panel")
@@ -1316,6 +1401,7 @@ def load_round74_pretest_policy(
             development,
             authority,
             training_policy,
+            optimization_population,
             ensemble_aggregation,
             source_binding,
             candidate_panel,
@@ -1328,6 +1414,7 @@ def load_round74_pretest_policy(
     assert isinstance(development, Mapping)
     assert isinstance(authority, Mapping)
     assert isinstance(training_policy, Mapping)
+    assert isinstance(optimization_population, Mapping)
     assert isinstance(ensemble_aggregation, Mapping)
     assert isinstance(source_binding, Mapping)
     assert isinstance(candidate_panel, Mapping)
@@ -1383,6 +1470,8 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest training policy differs") from exc
     if reconstructed_config.as_dict() != dict(training_policy):
         raise ValueError("Round 74 pretest training policy differs")
+    if dict(optimization_population) != _optimization_population_policy():
+        raise ValueError("Round 74 pretest optimization population differs")
     if dict(ensemble_aggregation) != {
         "peer_weights": "equal",
         "payoff_and_adverse_excursion_quantiles": (
