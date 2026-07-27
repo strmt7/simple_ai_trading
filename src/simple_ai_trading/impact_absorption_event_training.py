@@ -42,8 +42,8 @@ from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v16"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v15"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v17"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v16"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -192,10 +192,19 @@ class Round74EventTrainingConfig:
     minimum_role_rows: int = 1_024
     device_run_group_size: int = 8
     execution_mode: str = "cohort"
+    architecture_selection_mode: str = "complexity_gate"
 
     def validate(self) -> None:
+        candidate_panel_is_valid = (
+            self.architecture_selection_mode == "complexity_gate"
+            and self.candidate_ids == ROUND74_EVENT_MODEL_CANDIDATES
+        ) or (
+            self.architecture_selection_mode == "fixed"
+            and len(self.candidate_ids) == 1
+            and self.candidate_ids[0] in ROUND74_EVENT_MODEL_CANDIDATES
+        )
         if (
-            self.candidate_ids != ROUND74_EVENT_MODEL_CANDIDATES
+            not candidate_panel_is_valid
             or not self.seeds
             or len(self.seeds) != len(set(self.seeds))
             or any(
@@ -242,6 +251,7 @@ class Round74EventTrainingConfig:
             "minimum_role_rows": int(self.minimum_role_rows),
             "device_run_group_size": int(self.device_run_group_size),
             "execution_mode": self.execution_mode,
+            "architecture_selection_mode": self.architecture_selection_mode,
             "training_order": "chronological_no_shuffle",
             "tuning_order": "chronological_no_shuffle",
             "checkpoint_policy": "best_state_in_memory_only",
@@ -1441,10 +1451,36 @@ def train_and_seal_round74_pretest_policy(
         raise RuntimeError(
             f"Round 74 event training used CPU fallback: {fallback_messages}"
         )
-    winner, promotion_reports = _select_candidate_with_complexity_gate(
-        candidate_fits,
-        minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
-    )
+    if selected_config.architecture_selection_mode == "complexity_gate":
+        winner, promotion_reports = _select_candidate_with_complexity_gate(
+            candidate_fits,
+            minimum_mean_loss_improvement=(
+                selected_config.minimum_tuning_improvement
+            ),
+        )
+        selection_criterion = (
+            "sequential parameter-count complexity promotion; each challenger "
+            "requires all 12 model-selection capture runs, must strictly exceed the "
+            "numerical mean-loss floor, and may not degrade any paired run "
+            "beyond that floor"
+        )
+        planned_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+        required_paired_capture_run_count = (
+            ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        )
+        selection_improvement = selected_config.minimum_tuning_improvement
+    else:
+        if len(candidate_fits) != 1:
+            raise RuntimeError("Round 74 fixed architecture panel differs")
+        winner = candidate_fits[0]
+        promotion_reports = ()
+        selection_criterion = (
+            "fixed baseline-selected architecture; no architecture search or "
+            "complexity promotion performed"
+        )
+        planned_comparison_count = 0
+        required_paired_capture_run_count = 0
+        selection_improvement = 0.0
     model_state = _flatten_ensemble_state(winner)
     # safetensors 0.8 metadata uses map ordering that is not byte-stable.
     # Identity belongs in the hash-bound policy; sorted tensors stay stable.
@@ -1548,25 +1584,17 @@ def train_and_seal_round74_pretest_policy(
             for fit in candidate_fits
         },
         "selection": {
-            "criterion": (
-                "sequential parameter-count complexity promotion; each challenger "
-                "requires all 12 model-selection capture runs, must strictly exceed the "
-                "numerical mean-loss floor, and may not degrade any paired run "
-                "beyond that floor"
+            "architecture_selection_mode": (
+                selected_config.architecture_selection_mode
             ),
+            "criterion": selection_criterion,
             "selected_candidate_id": winner.candidate_id,
             "selected_tuning_metrics": winner.ensemble_metrics,
             "ordered_candidate_ids": list(selected_config.candidate_ids),
-            "planned_comparison_count": (ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT),
-            "required_paired_capture_run_count": (
-                ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-            ),
-            "minimum_mean_proper_loss_improvement": (
-                selected_config.minimum_tuning_improvement
-            ),
-            "maximum_permitted_paired_run_loss_degradation": (
-                selected_config.minimum_tuning_improvement
-            ),
+            "planned_comparison_count": planned_comparison_count,
+            "required_paired_capture_run_count": required_paired_capture_run_count,
+            "minimum_mean_proper_loss_improvement": selection_improvement,
+            "maximum_permitted_paired_run_loss_degradation": selection_improvement,
             "statistical_independence_or_significance_claim": False,
             "promotion_reports": list(promotion_reports),
             "complexity_promotion_privilege": False,
@@ -1793,6 +1821,9 @@ def load_round74_pretest_policy(
             minimum_role_rows=int(training_policy["minimum_role_rows"]),
             device_run_group_size=int(training_policy["device_run_group_size"]),
             execution_mode=str(training_policy["execution_mode"]),
+            architecture_selection_mode=str(
+                training_policy["architecture_selection_mode"]
+            ),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("Round 74 pretest training policy differs") from exc
@@ -2126,15 +2157,40 @@ def load_round74_pretest_policy(
         candidate_parameter_counts[str(panel_candidate)] = int(parameter_count)
     selected_report = candidate_panel[candidate_id]
     assert isinstance(selected_report, Mapping)
-    expected_winner, expected_promotion_reports = _complexity_gated_candidate_id(
-        reconstructed_config.candidate_ids,
-        candidate_run_losses,
-        candidate_parameter_counts,
-        minimum_mean_loss_improvement=(reconstructed_config.minimum_tuning_improvement),
-    )
+    if reconstructed_config.architecture_selection_mode == "complexity_gate":
+        expected_winner, expected_promotion_reports = _complexity_gated_candidate_id(
+            reconstructed_config.candidate_ids,
+            candidate_run_losses,
+            candidate_parameter_counts,
+            minimum_mean_loss_improvement=(
+                reconstructed_config.minimum_tuning_improvement
+            ),
+        )
+        expected_criterion = (
+            "sequential parameter-count complexity promotion; each challenger "
+            "requires all 12 model-selection capture runs, must strictly exceed the "
+            "numerical mean-loss floor, and may not degrade any paired run "
+            "beyond that floor"
+        )
+        expected_comparison_count = ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+        expected_paired_run_count = (
+            ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        )
+        expected_improvement = reconstructed_config.minimum_tuning_improvement
+    else:
+        expected_winner = reconstructed_config.candidate_ids[0]
+        expected_promotion_reports = ()
+        expected_criterion = (
+            "fixed baseline-selected architecture; no architecture search or "
+            "complexity promotion performed"
+        )
+        expected_comparison_count = 0
+        expected_paired_run_count = 0
+        expected_improvement = 0.0
     if (
         set(selection)
         != {
+            "architecture_selection_mode",
             "criterion",
             "selected_candidate_id",
             "selected_tuning_metrics",
@@ -2148,24 +2204,20 @@ def load_round74_pretest_policy(
             "complexity_promotion_privilege",
             "backtest_metric_used_for_selection",
         }
-        or selection.get("criterion")
-        != (
-            "sequential parameter-count complexity promotion; each challenger "
-            "requires all 12 model-selection capture runs, must strictly exceed the "
-            "numerical mean-loss floor, and may not degrade any paired run "
-            "beyond that floor"
-        )
+        or selection.get("architecture_selection_mode")
+        != reconstructed_config.architecture_selection_mode
+        or selection.get("criterion") != expected_criterion
         or candidate_id != expected_winner
         or selection.get("ordered_candidate_ids")
         != list(reconstructed_config.candidate_ids)
         or selection.get("planned_comparison_count")
-        != ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
+        != expected_comparison_count
         or selection.get("required_paired_capture_run_count")
-        != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        != expected_paired_run_count
         or selection.get("minimum_mean_proper_loss_improvement")
-        != reconstructed_config.minimum_tuning_improvement
+        != expected_improvement
         or selection.get("maximum_permitted_paired_run_loss_degradation")
-        != reconstructed_config.minimum_tuning_improvement
+        != expected_improvement
         or selection.get("statistical_independence_or_significance_claim") is not False
         or selection.get("promotion_reports") != list(expected_promotion_reports)
         or selection.get("complexity_promotion_privilege") is not False
