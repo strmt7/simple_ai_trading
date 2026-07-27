@@ -9,6 +9,7 @@ import pytest
 import torch
 
 from simple_ai_trading import (
+    impact_absorption_ai_execution_replay as replay_subject,
     impact_absorption_event_sealed_evaluation as sealed_subject,
 )
 from simple_ai_trading.impact_absorption_ai_protocol import (
@@ -16,9 +17,11 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
     Round74AIExecutionReplayInstruction,
+    Round74SealedStoreExecutionReplayProvider,
     build_round74_ai_execution_replay_instructions,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
+    Round74PreparedSealedAIReviewProvider,
     prepare_round74_target_free_ai_reviews,
     round74_default_ai_review_model_panel,
 )
@@ -43,6 +46,8 @@ from simple_ai_trading.impact_absorption_event_calibration import (
     Round74TemperatureFit,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
+    Round74EventRunPartition,
+    Round74EventRunPartitionEntry,
     Round74EventTrainingBatch,
 )
 from simple_ai_trading.impact_absorption_event_model import (
@@ -66,6 +71,10 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SEQUENCE_LENGTH,
     ROUND74_EVENT_SYMBOLS,
+)
+from simple_ai_trading.impact_absorption_store import ImpactAbsorptionStore
+from simple_ai_trading.impact_absorption_target_assembly import (
+    Round74SourceTargetAssembly,
 )
 
 
@@ -123,9 +132,7 @@ def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
         endpoint_message_index=_readonly(np.arange(rows, dtype=np.int64)),
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{300 + index:064x}" for index in range(rows)),
-        feature_window_sha256=tuple(
-            f"{400 + index:064x}" for index in range(rows)
-        ),
+        feature_window_sha256=tuple(f"{400 + index:064x}" for index in range(rows)),
         target_context_sha256=tuple("3" * 64 for _ in range(rows)),
         test_access_sha256=tuple(
             "4" * 64 if role == "test" else "" for _ in range(rows)
@@ -345,8 +352,7 @@ def _execution_replays(
     for index, review in enumerate(reviews):
         requested_multiplier = (
             review.decision.size_multiplier_bps
-            if review.runtime_status == "accepted"
-            and review.decision is not None
+            if review.runtime_status == "accepted" and review.decision is not None
             else 0
         )
         executed = requested_multiplier > 0
@@ -363,16 +369,10 @@ def _execution_replays(
             target_spec_sha256="f" * 64,
             status="executed" if executed else "ai_veto",
             requested_size_multiplier_bps=requested_multiplier,
-            applied_size_multiplier_bps=(
-                requested_multiplier if executed else 0
-            ),
+            applied_size_multiplier_bps=(requested_multiplier if executed else 0),
             exact_l2_replay_performed=executed,
-            target_outcome_sha256=(
-                f"{4_000 + index:064x}" if executed else None
-            ),
-            target_context_sha256=(
-                f"{5_000 + index:064x}" if executed else None
-            ),
+            target_outcome_sha256=(f"{4_000 + index:064x}" if executed else None),
+            target_context_sha256=(f"{5_000 + index:064x}" if executed else None),
             target_ineligible_reason="",
             requested_entry_monotonic_ns=10 if executed else None,
             actual_entry_monotonic_ns=11 if executed else None,
@@ -418,6 +418,104 @@ def _candidate_inference(
         inference_backend_device="cpu",
         inference_backend_vendor="test",
         inference_warning_count=0,
+    )
+    result.validate()
+    return result
+
+
+def _blocked_review(
+    _config: object,
+    manifest: object,
+    request: object,
+    *,
+    deterministic_risk_gate_passed: bool,
+    observed_wall_ns: int,
+) -> Round74AIRuntimeOutcome:
+    result = Round74AIRuntimeOutcome(
+        status="blocked_capability",
+        request_sha256=request.request_sha256,
+        manifest_sha256=manifest.manifest_sha256,
+        deterministic_risk_gate_passed=deterministic_risk_gate_passed,
+        observed_wall_ns=observed_wall_ns,
+        proposed_risk_size_bps=request.proposed_risk_size_bps,
+        approved_risk_size_bps=0,
+        capability={"ok": False},
+        resolved_model_digest=None,
+        resolved_model_metadata_sha256=None,
+        worker_result=None,
+        elapsed_ns=5_000_000_000_000,
+        failure_class="AICapabilityGate",
+        message="blocked by test capability gate",
+    )
+    result.validate()
+    return result
+
+
+def _provider_partition() -> Round74EventRunPartition:
+    second_ns = 1_000_000_000
+    first_wall_ns = 1_700_000_000_000_000_000
+    role_run_ids = (
+        ("training", f"{1:032x}"),
+        ("tuning", f"{2:032x}"),
+        *(("test", run_id) for run_id in TEST_RUNS),
+    )
+    entries = tuple(
+        Round74EventRunPartitionEntry(
+            run_id=run_id,
+            role=role,
+            capture_report_sha256=f"{index + 1:064x}",
+            capture_start_wall_ns=first_wall_ns + index * 2_000 * second_ns,
+            capture_end_wall_ns=(
+                first_wall_ns + index * 2_000 * second_ns + 1_000 * second_ns
+            ),
+            eligible_anchor_start_wall_ns=(
+                first_wall_ns + index * 2_000 * second_ns + 310_500_000_000
+            ),
+            eligible_anchor_end_wall_ns=(
+                first_wall_ns + index * 2_000 * second_ns + 600 * second_ns
+            ),
+        )
+        for index, (role, run_id) in enumerate(role_run_ids)
+    )
+    result = Round74EventRunPartition(
+        entries=entries,
+        cohort_plan_sha256="d" * 64,
+    )
+    result.validate()
+    return result
+
+
+def _replay_instruction(
+    *,
+    row_index: int,
+    run_id: str,
+    manifest: str,
+    partition_sha256: str,
+    action_selection_sha256: str,
+) -> Round74AIExecutionReplayInstruction:
+    result = Round74AIExecutionReplayInstruction(
+        row_index=row_index,
+        run_id=run_id,
+        symbol="BTCUSDT",
+        anchor_index=row_index,
+        decision_monotonic_ns=row_index,
+        decision_wall_ns=1_800_000_000_000_000_000 + row_index,
+        endpoint_frame_index=row_index,
+        endpoint_message_index=0,
+        sample_sha256=f"{1_000 + row_index:064x}",
+        feature_window_sha256=f"{2_000 + row_index:064x}",
+        feature_row_sha256=f"{3_000 + row_index:064x}",
+        side=1,
+        horizon_seconds=30,
+        source_review_sha256=f"{4_000 + row_index:064x}",
+        model_manifest_sha256=manifest,
+        runtime_status="blocked_capability",
+        effective_review_latency_ns=0,
+        same_entry_latency_eligible=False,
+        requested_size_multiplier_bps=0,
+        pre_replay_status="runtime_veto",
+        partition_sha256=partition_sha256,
+        action_selection_sha256=action_selection_sha256,
     )
     result.validate()
     return result
@@ -768,39 +866,12 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     inference = _candidate_inference(batch, calibration, selection)
     progress: list[Mapping[str, object]] = []
 
-    def blocked_review(
-        _config: object,
-        manifest: object,
-        request: object,
-        *,
-        deterministic_risk_gate_passed: bool,
-        observed_wall_ns: int,
-    ) -> Round74AIRuntimeOutcome:
-        result = Round74AIRuntimeOutcome(
-            status="blocked_capability",
-            request_sha256=request.request_sha256,
-            manifest_sha256=manifest.manifest_sha256,
-            deterministic_risk_gate_passed=deterministic_risk_gate_passed,
-            observed_wall_ns=observed_wall_ns,
-            proposed_risk_size_bps=request.proposed_risk_size_bps,
-            approved_risk_size_bps=0,
-            capability={"ok": False},
-            resolved_model_digest=None,
-            resolved_model_metadata_sha256=None,
-            worker_result=None,
-            elapsed_ns=5_000_000_000_000,
-            failure_class="AICapabilityGate",
-            message="blocked by test capability gate",
-        )
-        result.validate()
-        return result
-
     panel = prepare_round74_target_free_ai_reviews(
         inference,
         action_selection=selection,
         probability_calibration=calibration,
         same_entry_latency_budget_ns=1_000_000,
-        review_runner=blocked_review,
+        review_runner=_blocked_review,
         progress_callback=progress.append,
         wall_time_ns=lambda: 1_900_000_000_000_000_000,
     )
@@ -815,10 +886,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert panel.same_entry_latency_budget_ns == 1_000_000
     assert panel.reviews[0][0].queue_delay_ns == 0
     assert panel.reviews[0][1].queue_delay_ns == 1_000_000_000_000
-    assert (
-        panel.reviews[0][1].effective_review_latency_ns
-        == 6_000_000_000_000
-    )
+    assert panel.reviews[0][1].effective_review_latency_ns == 6_000_000_000_000
     assert len(panel.reviews) == 2
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
@@ -836,6 +904,150 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert panel.target_fields_accessed is False
     assert panel.trading_authority is False
     assert len(panel.panel_sha256) == 64
+
+
+def test_prepared_review_provider_binds_reserved_claim_and_model_panel(
+    tmp_path: Path,
+) -> None:
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    inference = _candidate_inference(batch, calibration, selection)
+    bindings = round74_default_ai_review_model_panel()
+    manifests = tuple(value.manifest.manifest_sha256 for value in bindings)
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    claim = ledger.reserve(
+        test_batches=(batch,),
+        action_selection=selection,
+        ai_manifest_sha256=manifests,
+    )
+    progress: list[Mapping[str, object]] = []
+    provider = Round74PreparedSealedAIReviewProvider(
+        probability_calibration=calibration,
+        same_entry_latency_budget_ns=1_000_000,
+        model_bindings=bindings,
+        review_runner=_blocked_review,
+        progress_callback=progress.append,
+        wall_time_ns=lambda: 1_900_000_000_000_000_000,
+    )
+
+    reviews = provider(
+        claim=claim,
+        manifests=manifests,
+        inference=inference,
+        action_selection=selection,
+    )
+
+    assert tuple(reviews) == manifests
+    assert all(len(value) == batch.rows for value in reviews.values())
+    assert all(
+        review.runtime_status == "blocked_capability"
+        for model_reviews in reviews.values()
+        for review in model_reviews
+    )
+    assert len(progress) == len(manifests) * batch.rows
+    with pytest.raises(ValueError, match="review identity differs"):
+        provider(
+            claim=claim,
+            manifests=tuple(reversed(manifests)),
+            inference=inference,
+            action_selection=selection,
+        )
+
+
+def test_store_replay_provider_reconciles_each_run_and_restores_order(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition = _provider_partition()
+    batch = replace(_test_batch(), partition_sha256=partition.partition_sha256)
+    batch.validate()
+    selection = _selection()
+    manifest = "a" * 64
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    claim = ledger.reserve(
+        test_batches=(batch,),
+        action_selection=selection,
+        ai_manifest_sha256=(manifest,),
+    )
+    store = ImpactAbsorptionStore(
+        tmp_path / "capture.duckdb",
+        read_only=True,
+    )
+    assembly = object.__new__(Round74SourceTargetAssembly)
+    provider = Round74SealedStoreExecutionReplayProvider(
+        store=store,
+        partition=partition,
+        assembly_by_run_id={run_id: assembly for run_id in claim.test_run_ids},
+    )
+    instructions = (
+        _replay_instruction(
+            row_index=0,
+            run_id=claim.test_run_ids[0],
+            manifest=manifest,
+            partition_sha256=claim.partition_sha256,
+            action_selection_sha256=claim.action_selection_sha256,
+        ),
+        _replay_instruction(
+            row_index=1,
+            run_id=claim.test_run_ids[1],
+            manifest=manifest,
+            partition_sha256=claim.partition_sha256,
+            action_selection_sha256=claim.action_selection_sha256,
+        ),
+        _replay_instruction(
+            row_index=2,
+            run_id=claim.test_run_ids[0],
+            manifest=manifest,
+            partition_sha256=claim.partition_sha256,
+            action_selection_sha256=claim.action_selection_sha256,
+        ),
+    )
+    replayed_runs: list[str] = []
+
+    def replay_run(
+        selected_store: object,
+        *,
+        partition: Round74EventRunPartition,
+        run_id: str,
+        assembly: Round74SourceTargetAssembly,
+        instructions: tuple[Round74AIExecutionReplayInstruction, ...],
+    ) -> tuple[Round74AIExecutionReplayEvidence, ...]:
+        assert selected_store is store
+        assert partition is provider.partition
+        assert assembly is provider.assembly_by_run_id[run_id]
+        replayed_runs.append(run_id)
+        return tuple(
+            replay_subject._non_replay_evidence(
+                row,
+                capture_report_sha256=partition.entry(run_id).capture_report_sha256,
+                target_spec_sha256="f" * 64,
+            )
+            for row in instructions
+        )
+
+    monkeypatch.setattr(
+        replay_subject,
+        "replay_round74_ai_execution_store_run",
+        replay_run,
+    )
+    replayed = provider(
+        claim=claim,
+        instructions_by_manifest={manifest: instructions},
+    )
+
+    assert replayed_runs == list(claim.test_run_ids[:2])
+    assert tuple(value.row_index for value in replayed[manifest]) == (0, 1, 2)
+    assert all(value.status == "runtime_veto" for value in replayed[manifest])
+    with pytest.raises(ValueError, match="provider identity differs"):
+        provider(
+            claim=claim,
+            instructions_by_manifest={"b" * 64: instructions},
+        )
 
 
 def test_development_data_is_rejected_before_ledger_creation(

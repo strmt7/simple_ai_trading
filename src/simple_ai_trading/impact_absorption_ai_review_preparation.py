@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import re
@@ -26,6 +26,7 @@ from .impact_absorption_event_model import Round74EventModelOutput
 from .impact_absorption_event_sealed_evaluation import (
     Round74TargetFreeCandidateInference,
 )
+from .impact_absorption_event_sealed_ledger import Round74SealedEvaluationClaim
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SYMBOLS,
@@ -381,9 +382,7 @@ def _review_rows(
                     "row_index": row_index,
                     "feature_row_sha256": (candidates.feature_row_sha256[local_index]),
                     "candidate_sha256": candidates.candidate_sha256,
-                    "decision_wall_ns": int(
-                        context.decision_wall_ns[local_index]
-                    ),
+                    "decision_wall_ns": int(context.decision_wall_ns[local_index]),
                     "paired_evaluation_unit_risk_bps": (
                         ROUND74_AI_REVIEW_UNIT_RISK_BPS
                     ),
@@ -402,9 +401,7 @@ def _review_rows(
                     horizon_seconds=int(candidates.horizon_seconds[local_index]),
                     candidate_sha256=candidates.candidate_sha256,
                     deterministic_risk_state_sha256=risk_state,
-                    decision_wall_ns=int(
-                        context.decision_wall_ns[local_index]
-                    ),
+                    decision_wall_ns=int(context.decision_wall_ns[local_index]),
                 )
             )
         offset += context.rows
@@ -510,8 +507,7 @@ def prepare_round74_target_free_ai_reviews(
                 model_available_wall_ns - row.decision_wall_ns,
             )
             model_available_wall_ns = (
-                max(model_available_wall_ns, row.decision_wall_ns)
-                + outcome.elapsed_ns
+                max(model_available_wall_ns, row.decision_wall_ns) + outcome.elapsed_ns
             )
             evidence = Round74AIPairedReviewEvidence.from_runtime(
                 row_index=row.row_index,
@@ -562,12 +558,107 @@ def prepare_round74_target_free_ai_reviews(
     return result
 
 
+@dataclass(frozen=True)
+class Round74PreparedSealedAIReviewProvider:
+    """Run the pinned target-free two-model panel for a reserved test claim."""
+
+    probability_calibration: Round74ProbabilityCalibration
+    same_entry_latency_budget_ns: int
+    model_bindings: tuple[Round74AIReviewModelBinding, ...] = field(
+        default_factory=round74_default_ai_review_model_panel
+    )
+    review_runner: ReviewRunner = review_round74_ai_candidate
+    progress_callback: ProgressCallback | None = None
+    wall_time_ns: Callable[[], int] = time.time_ns
+
+    def __post_init__(self) -> None:
+        bindings = tuple(self.model_bindings)
+        object.__setattr__(self, "model_bindings", bindings)
+        self.probability_calibration.validate()
+        if (
+            isinstance(self.same_entry_latency_budget_ns, bool)
+            or not isinstance(self.same_entry_latency_budget_ns, int)
+            or self.same_entry_latency_budget_ns <= 0
+            or len(bindings) != 2
+            or tuple(value.role for value in bindings)
+            != ("finance_primary", "general_control")
+            or not callable(self.review_runner)
+            or (
+                self.progress_callback is not None
+                and not callable(self.progress_callback)
+            )
+            or not callable(self.wall_time_ns)
+        ):
+            raise ValueError("Round 74 sealed AI review provider differs")
+        for binding in bindings:
+            binding.validate()
+
+    def __call__(
+        self,
+        *,
+        claim: Round74SealedEvaluationClaim,
+        manifests: tuple[str, ...],
+        inference: Round74TargetFreeCandidateInference,
+        action_selection: Round74ActionPolicySelection,
+    ) -> dict[str, tuple[Round74AIPairedReviewEvidence, ...]]:
+        claim.validate()
+        inference.validate()
+        action_selection.validate()
+        requested_manifests = tuple(manifests)
+        bound_manifests = tuple(
+            value.manifest.manifest_sha256 for value in self.model_bindings
+        )
+        context_run_ids = tuple(
+            dict.fromkeys(
+                run_id for context in inference.contexts for run_id in context.run_id
+            )
+        )
+        context_partitions = {
+            context.partition_sha256 for context in inference.contexts
+        }
+        if (
+            claim.status != "reserved"
+            or requested_manifests != claim.ai_manifest_sha256
+            or set(bound_manifests) != set(requested_manifests)
+            or action_selection.selection_sha256 != claim.action_selection_sha256
+            or action_selection.pretest_policy_sha256 != claim.pretest_policy_sha256
+            or action_selection.probability_calibration_sha256
+            != claim.probability_calibration_sha256
+            or action_selection.profile != claim.profile
+            or inference.action_selection_sha256 != claim.action_selection_sha256
+            or inference.pretest_policy_sha256 != claim.pretest_policy_sha256
+            or inference.probability_calibration_sha256
+            != claim.probability_calibration_sha256
+            or inference.profile != claim.profile
+            or self.probability_calibration.calibration_sha256
+            != claim.probability_calibration_sha256
+            or context_run_ids != claim.test_run_ids
+            or context_partitions != {claim.partition_sha256}
+        ):
+            raise ValueError("Round 74 sealed AI review identity differs")
+        panel = prepare_round74_target_free_ai_reviews(
+            inference,
+            action_selection=action_selection,
+            probability_calibration=self.probability_calibration,
+            same_entry_latency_budget_ns=self.same_entry_latency_budget_ns,
+            model_bindings=self.model_bindings,
+            review_runner=self.review_runner,
+            progress_callback=self.progress_callback,
+            wall_time_ns=self.wall_time_ns,
+        )
+        reviews = panel.reviews_by_manifest()
+        if set(reviews) != set(requested_manifests):
+            raise ValueError("Round 74 sealed AI review output panel differs")
+        return {manifest: reviews[manifest] for manifest in requested_manifests}
+
+
 __all__ = [
     "ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION",
     "ROUND74_AI_REVIEW_UNIT_RISK_BPS",
     "ROUND74_AI_REVIEW_VALIDITY_NS",
     "Round74AIReviewModelBinding",
     "Round74AIReviewPanel",
+    "Round74PreparedSealedAIReviewProvider",
     "Round74TargetFreeReviewRow",
     "prepare_round74_target_free_ai_reviews",
     "round74_default_ai_review_model_panel",
