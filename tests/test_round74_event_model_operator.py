@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, replace
+import hashlib
 
 import numpy as np
 import pytest
@@ -248,6 +250,17 @@ class _Sample:
     run_id: str
 
 
+@dataclass(frozen=True)
+class _RankedSample:
+    run_id: str
+    role: str
+    symbol: str
+    decision_wall_ns: int
+    decision_monotonic_ns: int
+    anchor_index: int
+    feature_window_sha256: str
+
+
 @dataclass
 class _Batch:
     role: str
@@ -263,6 +276,76 @@ class _Batch:
             raise ValueError("batch crossed runs")
         if self.decision_wall_ns is None:
             self.decision_wall_ns = np.asarray([WALL], dtype=np.int64)
+
+
+def test_representative_window_selection_is_target_blind_and_exact() -> None:
+    entry = _partition().entries[0]
+    span = entry.eligible_anchor_end_wall_ns - entry.eligible_anchor_start_wall_ns + 1
+    candidates: list[_RankedSample] = []
+    for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
+        for stratum in range(subject.ROUND74_EVENT_MODEL_TEMPORAL_STRATA):
+            stratum_start = (
+                entry.eligible_anchor_start_wall_ns
+                + span * stratum // subject.ROUND74_EVENT_MODEL_TEMPORAL_STRATA
+            )
+            for candidate in range(
+                subject.ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM + 2
+            ):
+                identity = f"{symbol}:{stratum}:{candidate}".encode("ascii")
+                candidates.append(
+                    _RankedSample(
+                        run_id=entry.run_id,
+                        role=entry.role,
+                        symbol=symbol,
+                        decision_wall_ns=stratum_start + candidate,
+                        decision_monotonic_ns=stratum_start + candidate,
+                        anchor_index=len(candidates),
+                        feature_window_sha256=hashlib.sha256(identity).hexdigest(),
+                    )
+                )
+
+    selected = subject.select_round74_representative_event_windows(
+        candidates,
+        entry=entry,
+    )
+    reversed_selected = subject.select_round74_representative_event_windows(
+        reversed(candidates),
+        entry=entry,
+    )
+
+    assert len(selected) == subject.ROUND74_EVENT_MODEL_WINDOWS_PER_RUN == 768
+    assert [item.feature_window_sha256 for item in selected] == [
+        item.feature_window_sha256 for item in reversed_selected
+    ]
+    assert Counter(item.symbol for item in selected) == {
+        "BTCUSDT": 256,
+        "ETHUSDT": 256,
+        "SOLUSDT": 256,
+    }
+    assert all(
+        earlier.decision_monotonic_ns <= later.decision_monotonic_ns
+        for earlier, later in zip(selected, selected[1:])
+    )
+    policy = subject.round74_representative_window_policy()
+    assert policy["target_label_or_outcome_used_for_selection"] is False
+    assert policy["model_output_used_for_selection"] is False
+    assert len(policy["policy_sha256"]) == 64
+
+
+def test_representative_window_selection_rejects_underfilled_strata() -> None:
+    entry = _partition().entries[0]
+    sample = _RankedSample(
+        run_id=entry.run_id,
+        role=entry.role,
+        symbol="BTCUSDT",
+        decision_wall_ns=entry.eligible_anchor_start_wall_ns,
+        decision_monotonic_ns=1,
+        anchor_index=0,
+        feature_window_sha256="a" * 64,
+    )
+
+    with pytest.raises(ValueError, match="coverage is incomplete"):
+        subject.select_round74_representative_event_windows([sample], entry=entry)
 
 
 @dataclass(frozen=True)
@@ -316,6 +399,11 @@ def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
         return (_Sample(run_id),)
 
     monkeypatch.setattr(subject, "iter_round74_labeled_event_windows", labeled)
+    monkeypatch.setattr(
+        subject,
+        "select_round74_representative_event_windows",
+        lambda windows, *, entry: tuple(windows),
+    )
 
     def batch_for(samples: tuple[_Sample, ...], *, scaler: object) -> _Batch:
         run_id = samples[0].run_id
@@ -420,6 +508,11 @@ def test_role_assembly_rejects_invalid_inputs(
         Round74SourceTargetAssembly,
         "create_engine",
         lambda _self, *, anchors: object(),
+    )
+    monkeypatch.setattr(
+        subject,
+        "select_round74_representative_event_windows",
+        lambda windows, *, entry: tuple(windows),
     )
     monkeypatch.setattr(
         subject,

@@ -73,6 +73,7 @@ def _run() -> dict[str, object]:
             "seeds": [7411, 7423, 7433],
             "epochs": 1,
             "minibatch_rows": 2,
+            "device_run_group_size": 8,
             "optimization_population": {
                 "unit": "capture_run",
                 "optimizer_step": (
@@ -119,7 +120,7 @@ def _run() -> dict[str, object]:
                 "selected_tuning_metrics": {"run_balanced_loss": 0.5},
                 "ordered_candidate_ids": candidate_ids,
                 "planned_comparison_count": 3,
-                "required_paired_capture_run_count": 24,
+                "required_paired_capture_run_count": 12,
                 "minimum_mean_proper_loss_improvement": 1e-5,
                 "maximum_permitted_paired_run_loss_degradation": 1e-5,
                 "statistical_independence_or_significance_claim": False,

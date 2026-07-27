@@ -510,7 +510,7 @@ def build_round74_event_model(candidate_id: str) -> nn.Module:
     raise ValueError("Round 74 event model candidate is unsupported")
 
 
-def round74_event_model_loss(
+def _round74_event_model_loss_impl(
     output: Round74EventModelOutput,
     *,
     net_payoff_bps: torch.Tensor,
@@ -523,13 +523,15 @@ def round74_event_model_loss(
     positive_weight: float = 0.25,
     adverse_weight: float = 0.20,
     unpredictability_weight: float = 0.10,
+    inputs_validated: bool = False,
 ) -> tuple[torch.Tensor, Mapping[str, torch.Tensor]]:
     """Use proper probabilistic losses without optimizing a backtest metric."""
 
     if net_payoff_bps.ndim != 3:
         raise ValueError("Round 74 net-payoff target dimensions differ")
     batch_size = int(net_payoff_bps.shape[0])
-    output.validate(batch_size)
+    if not inputs_validated:
+        output.validate(batch_size)
     expected_action_shape = (
         batch_size,
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
@@ -559,32 +561,35 @@ def round74_event_model_loss(
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
     ):
         raise ValueError("Round 74 unpredictability-eligibility shape differs")
-    targets = (
-        net_payoff_bps,
-        maximum_adverse_excursion_bps,
-        adverse_selection,
-        regime_unpredictable,
-        action_eligibility,
-        regime_unpredictability_eligibility,
-    )
-    if not all(bool(torch.isfinite(value).all()) for value in targets):
-        raise ValueError("Round 74 event-model targets contain nonfinite values")
-    if bool((maximum_adverse_excursion_bps < 0.0).any()):
-        raise ValueError("Round 74 adverse-excursion target is negative")
-    if bool(((adverse_selection < 0.0) | (adverse_selection > 1.0)).any()):
-        raise ValueError("Round 74 adverse-selection targets are outside [0, 1]")
-    if bool(((regime_unpredictable < 0.0) | (regime_unpredictable > 1.0)).any()):
-        raise ValueError("Round 74 unpredictability targets are outside [0, 1]")
-    if bool(((action_eligibility != 0.0) & (action_eligibility != 1.0)).any()) or bool(
-        (
-            (regime_unpredictability_eligibility != 0.0)
-            & (regime_unpredictability_eligibility != 1.0)
-        ).any()
-    ):
-        raise ValueError("Round 74 event-model eligibility is not binary")
+    if not inputs_validated:
+        targets = (
+            net_payoff_bps,
+            maximum_adverse_excursion_bps,
+            adverse_selection,
+            regime_unpredictable,
+            action_eligibility,
+            regime_unpredictability_eligibility,
+        )
+        if not all(bool(torch.isfinite(value).all()) for value in targets):
+            raise ValueError("Round 74 event-model targets contain nonfinite values")
+        if bool((maximum_adverse_excursion_bps < 0.0).any()):
+            raise ValueError("Round 74 adverse-excursion target is negative")
+        if bool(((adverse_selection < 0.0) | (adverse_selection > 1.0)).any()):
+            raise ValueError("Round 74 adverse-selection targets are outside [0, 1]")
+        if bool(((regime_unpredictable < 0.0) | (regime_unpredictable > 1.0)).any()):
+            raise ValueError("Round 74 unpredictability targets are outside [0, 1]")
+        if bool(
+            ((action_eligibility != 0.0) & (action_eligibility != 1.0)).any()
+        ) or bool(
+            (
+                (regime_unpredictability_eligibility != 0.0)
+                & (regime_unpredictability_eligibility != 1.0)
+            ).any()
+        ):
+            raise ValueError("Round 74 event-model eligibility is not binary")
     action_weight = action_eligibility.sum()
     regime_weight = regime_unpredictability_eligibility.sum()
-    if (
+    if not inputs_validated and (
         float(action_weight.detach().cpu()) <= 0.0
         or float(regime_weight.detach().cpu()) <= 0.0
     ):
@@ -649,7 +654,7 @@ def round74_event_model_loss(
         + loss_weights[2] * adverse
         + loss_weights[3] * unpredictability
     )
-    if not bool(torch.isfinite(total)):
+    if not inputs_validated and not bool(torch.isfinite(total)):
         raise ValueError("Round 74 event-model loss is nonfinite")
     return total, {
         "payoff_pinball": payoff_pinball,
@@ -658,6 +663,69 @@ def round74_event_model_loss(
         "adverse_bce": adverse,
         "unpredictability_bce": unpredictability,
     }
+
+
+def round74_event_model_loss(
+    output: Round74EventModelOutput,
+    *,
+    net_payoff_bps: torch.Tensor,
+    maximum_adverse_excursion_bps: torch.Tensor,
+    adverse_selection: torch.Tensor,
+    regime_unpredictable: torch.Tensor,
+    action_eligibility: torch.Tensor | None = None,
+    regime_unpredictability_eligibility: torch.Tensor | None = None,
+    maximum_adverse_excursion_weight: float = 0.35,
+    positive_weight: float = 0.25,
+    adverse_weight: float = 0.20,
+    unpredictability_weight: float = 0.10,
+) -> tuple[torch.Tensor, Mapping[str, torch.Tensor]]:
+    """Validate public inputs and evaluate the proper probabilistic loss."""
+
+    return _round74_event_model_loss_impl(
+        output,
+        net_payoff_bps=net_payoff_bps,
+        maximum_adverse_excursion_bps=maximum_adverse_excursion_bps,
+        adverse_selection=adverse_selection,
+        regime_unpredictable=regime_unpredictable,
+        action_eligibility=action_eligibility,
+        regime_unpredictability_eligibility=regime_unpredictability_eligibility,
+        maximum_adverse_excursion_weight=maximum_adverse_excursion_weight,
+        positive_weight=positive_weight,
+        adverse_weight=adverse_weight,
+        unpredictability_weight=unpredictability_weight,
+    )
+
+
+def _round74_event_model_loss_from_validated_inputs(
+    output: Round74EventModelOutput,
+    *,
+    net_payoff_bps: torch.Tensor,
+    maximum_adverse_excursion_bps: torch.Tensor,
+    adverse_selection: torch.Tensor,
+    regime_unpredictable: torch.Tensor,
+    action_eligibility: torch.Tensor,
+    regime_unpredictability_eligibility: torch.Tensor,
+    maximum_adverse_excursion_weight: float,
+    positive_weight: float,
+    adverse_weight: float,
+    unpredictability_weight: float,
+) -> tuple[torch.Tensor, Mapping[str, torch.Tensor]]:
+    """Evaluate one slice after its combined model and dataset validation."""
+
+    return _round74_event_model_loss_impl(
+        output,
+        net_payoff_bps=net_payoff_bps,
+        maximum_adverse_excursion_bps=maximum_adverse_excursion_bps,
+        adverse_selection=adverse_selection,
+        regime_unpredictable=regime_unpredictable,
+        action_eligibility=action_eligibility,
+        regime_unpredictability_eligibility=regime_unpredictability_eligibility,
+        maximum_adverse_excursion_weight=maximum_adverse_excursion_weight,
+        positive_weight=positive_weight,
+        adverse_weight=adverse_weight,
+        unpredictability_weight=unpredictability_weight,
+        inputs_validated=True,
+    )
 
 
 def _fallback_messages(messages: list[str]) -> list[str]:

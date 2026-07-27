@@ -33,18 +33,20 @@ from .impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
     Round74EventModelOutput,
+    _round74_event_model_loss_from_validated_inputs,
     build_round74_event_model,
     round74_event_model_loss,
 )
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v12"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v11"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v13"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v12"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
-ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 24
+ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 12
+ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS = 120
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
     "positive_payoff": 0.25,
@@ -94,6 +96,11 @@ def _optimization_population_policy() -> dict[str, object]:
         "fully_censored_minibatches_contribute_gradients": False,
         "fully_censored_capture_run_policy": "reject",
         "row_pooled_optimizer_steps_permitted": False,
+        "cohort_training_capture_runs": (ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS),
+        "cohort_model_selection_capture_runs": (
+            ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        ),
+        "calibration_or_policy_selection_runs_used_for_candidate_fit": False,
     }
 
 
@@ -133,6 +140,8 @@ class Round74EventTrainingConfig:
     weight_decay: float = 1e-4
     gradient_clip_norm: float = 1.0
     minimum_role_rows: int = 1_024
+    device_run_group_size: int = 8
+    execution_mode: str = "cohort"
 
     def validate(self) -> None:
         if (
@@ -148,6 +157,9 @@ class Round74EventTrainingConfig:
             or int(self.early_stopping_patience) > int(self.maximum_epochs)
             or int(self.minibatch_rows) < 1
             or int(self.minimum_role_rows) < 1
+            or int(self.device_run_group_size) < 1
+            or int(self.device_run_group_size) > 32
+            or self.execution_mode not in {"cohort", "preflight"}
         ):
             raise ValueError("Round 74 event training configuration differs")
         values = (
@@ -178,6 +190,8 @@ class Round74EventTrainingConfig:
             "weight_decay": float(self.weight_decay),
             "gradient_clip_norm": float(self.gradient_clip_norm),
             "minimum_role_rows": int(self.minimum_role_rows),
+            "device_run_group_size": int(self.device_run_group_size),
+            "execution_mode": self.execution_mode,
             "training_order": "chronological_no_shuffle",
             "tuning_order": "chronological_no_shuffle",
             "checkpoint_policy": "best_state_in_memory_only",
@@ -482,6 +496,7 @@ def _loss_for_minibatch(
     row_slice: slice,
     device: object,
 ) -> tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]:
+    action_weight, regime_weight, _rows = _minibatch_target_counts(batch, row_slice)
     features = _to_device_tensor(batch.feature_values, row_slice, device)
     payoff = _to_device_tensor(batch.net_payoff_bps, row_slice, device)
     adverse_excursion = _to_device_tensor(
@@ -526,9 +541,109 @@ def _loss_for_minibatch(
     return (
         loss,
         components,
-        int(action_eligibility.detach().sum().cpu()),
-        int(regime_eligibility.detach().sum().cpu()),
+        action_weight,
+        regime_weight,
     )
+
+
+def _slice_model_output(
+    output: Round74EventModelOutput,
+    start: int,
+    stop: int,
+) -> Round74EventModelOutput:
+    if start < 0 or stop <= start:
+        raise ValueError("Round 74 model-output slice differs")
+    return Round74EventModelOutput(
+        payoff_quantiles_bps=output.payoff_quantiles_bps[start:stop],
+        maximum_adverse_excursion_quantiles_bps=(
+            output.maximum_adverse_excursion_quantiles_bps[start:stop]
+        ),
+        positive_payoff_logits=output.positive_payoff_logits[start:stop],
+        adverse_selection_logits=output.adverse_selection_logits[start:stop],
+        regime_unpredictability_logits=(
+            output.regime_unpredictability_logits[start:stop]
+        ),
+    )
+
+
+def _concatenated_device_tensor(
+    selections: Sequence[tuple[Round74EventTrainingBatch, slice]],
+    attribute: str,
+    device: object,
+) -> torch.Tensor:
+    values = np.concatenate(
+        tuple(
+            np.asarray(getattr(batch, attribute)[row_slice], dtype=np.float32)
+            for batch, row_slice in selections
+        ),
+        axis=0,
+    )
+    return torch.from_numpy(np.ascontiguousarray(values)).to(device)
+
+
+def _losses_for_minibatch_group(
+    model: nn.Module,
+    selections: Sequence[tuple[Round74EventTrainingBatch, slice]],
+    device: object,
+) -> tuple[
+    tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int],
+    ...,
+]:
+    if not selections:
+        raise ValueError("Round 74 device run group is empty")
+    counts = tuple(
+        _minibatch_target_counts(batch, row_slice) for batch, row_slice in selections
+    )
+    if any(action <= 0 or regime <= 0 for action, regime, _rows in counts):
+        raise ValueError("Round 74 device run group contains a censored minibatch")
+    features = _concatenated_device_tensor(
+        selections,
+        "feature_values",
+        device,
+    )
+    targets = {
+        name: _concatenated_device_tensor(selections, name, device)
+        for name in (
+            "net_payoff_bps",
+            "maximum_adverse_excursion_bps",
+            "adverse_selection",
+            "regime_unpredictability",
+            "action_eligibility",
+            "regime_unpredictability_eligibility",
+        )
+    }
+    output = model(features)
+    results: list[tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]] = []
+    offset = 0
+    for action_weight, regime_weight, rows in counts:
+        stop = offset + rows
+        selected_output = _slice_model_output(output, offset, stop)
+        loss, components = _round74_event_model_loss_from_validated_inputs(
+            selected_output,
+            net_payoff_bps=targets["net_payoff_bps"][offset:stop],
+            maximum_adverse_excursion_bps=(
+                targets["maximum_adverse_excursion_bps"][offset:stop]
+            ),
+            adverse_selection=targets["adverse_selection"][offset:stop],
+            regime_unpredictable=targets["regime_unpredictability"][offset:stop],
+            action_eligibility=targets["action_eligibility"][offset:stop],
+            regime_unpredictability_eligibility=(
+                targets["regime_unpredictability_eligibility"][offset:stop]
+            ),
+            maximum_adverse_excursion_weight=(
+                ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["maximum_adverse_excursion"]
+            ),
+            positive_weight=ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["positive_payoff"],
+            adverse_weight=ROUND74_EVENT_TRAINING_LOSS_WEIGHTS["adverse_selection"],
+            unpredictability_weight=ROUND74_EVENT_TRAINING_LOSS_WEIGHTS[
+                "regime_unpredictability"
+            ],
+        )
+        results.append((loss, components, action_weight, regime_weight))
+        offset = stop
+    if offset != int(features.shape[0]):
+        raise RuntimeError("Round 74 device run group row accounting differs")
+    return tuple(results)
 
 
 def _empty_metric_sums() -> dict[str, float]:
@@ -547,23 +662,73 @@ def _empty_metric_sums() -> dict[str, float]:
 
 def _accumulate_metrics(
     totals: dict[str, float],
-    components: Mapping[str, torch.Tensor],
+    components: Mapping[str, torch.Tensor | float],
     *,
     action_weight: int,
     regime_weight: int,
 ) -> None:
+    def scalar(name: str) -> float:
+        value = components[name]
+        if isinstance(value, torch.Tensor):
+            return float(value.detach().cpu())
+        return float(value)
+
     for name in (
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
         "positive_bce",
         "adverse_bce",
     ):
-        totals[name] += float(components[name].detach().cpu()) * action_weight
-    totals["unpredictability_bce"] += (
-        float(components["unpredictability_bce"].detach().cpu()) * regime_weight
-    )
+        totals[name] += scalar(name) * action_weight
+    totals["unpredictability_bce"] += scalar("unpredictability_bce") * regime_weight
     totals["action_weight"] += action_weight
     totals["regime_weight"] += regime_weight
+
+
+def _accumulate_group_metrics(
+    totals: dict[str, float],
+    per_run_totals: Sequence[dict[str, float]],
+    grouped: Sequence[tuple[torch.Tensor, Mapping[str, torch.Tensor], int, int]],
+) -> None:
+    names = (
+        "payoff_pinball",
+        "maximum_adverse_excursion_pinball",
+        "positive_bce",
+        "adverse_bce",
+        "unpredictability_bce",
+    )
+    if not grouped or len(grouped) != len(per_run_totals):
+        raise ValueError("Round 74 grouped metric population differs")
+    component_values = (
+        torch.stack(
+            tuple(
+                torch.stack(tuple(components[name] for name in names))
+                for _loss, components, _action, _regime in grouped
+            )
+        )
+        .detach()
+        .cpu()
+        .tolist()
+    )
+    for run_totals, values, (_loss, _components, action_weight, regime_weight) in zip(
+        per_run_totals,
+        component_values,
+        grouped,
+        strict=True,
+    ):
+        mapped = dict(zip(names, (float(value) for value in values), strict=True))
+        _accumulate_metrics(
+            totals,
+            mapped,
+            action_weight=action_weight,
+            regime_weight=regime_weight,
+        )
+        _accumulate_metrics(
+            run_totals,
+            mapped,
+            action_weight=action_weight,
+            regime_weight=regime_weight,
+        )
 
 
 def _finalize_metrics(totals: Mapping[str, float]) -> dict[str, float]:
@@ -608,14 +773,15 @@ def _evaluate_model(
     batches: Sequence[Round74EventTrainingBatch],
     *,
     minibatch_rows: int,
+    device_run_group_size: int,
     device: object,
 ) -> tuple[dict[str, float], tuple[float, ...]]:
     model.eval()
     totals = _empty_metric_sums()
-    per_run_metrics: list[dict[str, float]] = []
+    per_run_totals = tuple(_empty_metric_sums() for _batch in batches)
+    selections: list[tuple[int, Round74EventTrainingBatch, slice]] = []
     with torch.no_grad():
-        for batch in batches:
-            run_totals = _empty_metric_sums()
+        for run_index, batch in enumerate(batches):
             for _selected, row_slice in _iter_minibatches(
                 (batch,),
                 minibatch_rows,
@@ -626,27 +792,31 @@ def _evaluate_model(
                     row_slice,
                 ):
                     _skip_fully_censored_minibatch(
-                        run_totals,
+                        per_run_totals[run_index],
                         batch,
                         row_slice,
                     )
                     continue
-                _loss, components, action_weight, regime_weight = _loss_for_minibatch(
-                    model, batch, row_slice, device
-                )
-                _accumulate_metrics(
-                    totals,
-                    components,
-                    action_weight=action_weight,
-                    regime_weight=regime_weight,
-                )
-                _accumulate_metrics(
-                    run_totals,
-                    components,
-                    action_weight=action_weight,
-                    regime_weight=regime_weight,
-                )
-            per_run_metrics.append(_finalize_metrics(run_totals))
+                selections.append((run_index, batch, row_slice))
+        for start in range(0, len(selections), device_run_group_size):
+            selected_group = selections[start : start + device_run_group_size]
+            grouped = _losses_for_minibatch_group(
+                model,
+                tuple(
+                    (batch, row_slice) for _index, batch, row_slice in selected_group
+                ),
+                device,
+            )
+            _accumulate_group_metrics(
+                totals,
+                tuple(
+                    per_run_totals[index] for index, _batch, _slice in selected_group
+                ),
+                grouped,
+            )
+    per_run_metrics = tuple(
+        _finalize_metrics(run_totals) for run_totals in per_run_totals
+    )
     metrics = _finalize_metrics(totals)
     run_losses = tuple(item["loss"] for item in per_run_metrics)
     if not run_losses:
@@ -667,10 +837,10 @@ def _cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
 
 
 def _parameters_are_finite(model: nn.Module) -> bool:
-    return all(
-        bool(torch.isfinite(parameter.detach()).all())
-        for parameter in model.parameters()
+    checks = tuple(
+        torch.isfinite(parameter.detach()).all() for parameter in model.parameters()
     )
+    return bool(checks) and bool(torch.stack(checks).all().detach().cpu())
 
 
 def _train_peer(
@@ -710,35 +880,39 @@ def _train_peer(
         run_count = len(schedules)
         for step in range(optimizer_steps):
             optimizer.zero_grad(set_to_none=True)
-            for batch, schedule, run_totals in zip(
-                training_batches,
-                schedules,
-                per_run_totals,
-                strict=True,
-            ):
-                row_slice = schedule[(step + epoch - 1) % len(schedule)]
-                loss, components, action_weight, regime_weight = _loss_for_minibatch(
-                    model, batch, row_slice, device
-                )
-                (loss / run_count).backward()
-                _accumulate_metrics(
-                    optimization_totals,
-                    components,
-                    action_weight=action_weight,
-                    regime_weight=regime_weight,
-                )
-                _accumulate_metrics(
+            selections = tuple(
+                (
+                    batch,
+                    schedule[(step + epoch - 1) % len(schedule)],
                     run_totals,
-                    components,
-                    action_weight=action_weight,
-                    regime_weight=regime_weight,
                 )
-            if any(
-                parameter.grad is not None
-                and not bool(torch.isfinite(parameter.grad).all())
-                for parameter in model.parameters()
-            ):
-                raise RuntimeError("Round 74 model gradient is nonfinite")
+                for batch, schedule, run_totals in zip(
+                    training_batches,
+                    schedules,
+                    per_run_totals,
+                    strict=True,
+                )
+            )
+            for start in range(0, run_count, config.device_run_group_size):
+                selected_group = selections[
+                    start : start + config.device_run_group_size
+                ]
+                grouped = _losses_for_minibatch_group(
+                    model,
+                    tuple(
+                        (batch, row_slice)
+                        for batch, row_slice, _run_totals in selected_group
+                    ),
+                    device,
+                )
+                (
+                    torch.stack(tuple(item[0] for item in grouped)).sum() / run_count
+                ).backward()
+                _accumulate_group_metrics(
+                    optimization_totals,
+                    tuple(run_totals for _batch, _slice, run_totals in selected_group),
+                    grouped,
+                )
             gradient_norm = torch.nn.utils.clip_grad_norm_(
                 model.parameters(),
                 max_norm=config.gradient_clip_norm,
@@ -778,6 +952,7 @@ def _train_peer(
             model,
             tuning_batches,
             minibatch_rows=config.minibatch_rows,
+            device_run_group_size=config.device_run_group_size,
             device=device,
         )
         tuning_loss = tuning_metrics["run_balanced_loss"]
@@ -809,6 +984,7 @@ def _train_peer(
         model,
         tuning_batches,
         minibatch_rows=config.minibatch_rows,
+        device_run_group_size=config.device_run_group_size,
         device=device,
     )
     if not math.isclose(
@@ -896,6 +1072,7 @@ def _fit_candidate(
         ensemble,
         tuning_batches,
         minibatch_rows=config.minibatch_rows,
+        device_run_group_size=config.device_run_group_size,
         device=device,
     )
     prediction_sha256 = _prediction_sha256(
@@ -1073,6 +1250,7 @@ def _runtime_source_binding() -> dict[str, str]:
         "dataset": "impact_absorption_event_dataset.py",
         "model": "impact_absorption_event_model.py",
         "training": "impact_absorption_event_training.py",
+        "model_operator": "round74_event_model_operator.py",
         "storage": "storage.py",
     }
     return {
@@ -1090,11 +1268,32 @@ def train_and_seal_round74_pretest_policy(
     output_directory: str | Path,
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
+    representative_window_policy_sha256: str | None = None,
 ) -> Round74PretestPolicyArtifact:
     """Train the declared panel and publish one reload-verified pretest policy."""
 
     selected_config = config or Round74EventTrainingConfig()
     selected_config.validate()
+    if selected_config.execution_mode == "cohort":
+        from .round74_event_model_operator import (
+            round74_representative_window_policy,
+        )
+
+        expected_window_policy = round74_representative_window_policy()["policy_sha256"]
+        if (
+            len(training_batches) != ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS
+            or len(tuning_batches) != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+            or representative_window_policy_sha256 != expected_window_policy
+        ):
+            raise ValueError(
+                "Round 74 cohort training requires exactly 120 training and "
+                "12 model-selection capture runs from the representative "
+                "window policy"
+            )
+    elif representative_window_policy_sha256 is not None:
+        raise ValueError(
+            "Round 74 preflight training cannot claim representative cohort windows"
+        )
     development = _validate_development_batches(
         training_batches,
         tuning_batches,
@@ -1184,6 +1383,12 @@ def train_and_seal_round74_pretest_policy(
             "target_context_count": len(development.target_context_sha256),
             "training_batch_sha256": list(development.training_batch_sha256),
             "tuning_batch_sha256": list(development.tuning_batch_sha256),
+            "representative_window_policy_sha256": (
+                representative_window_policy_sha256
+            ),
+            "representative_window_policy_applied": (
+                selected_config.execution_mode == "cohort"
+            ),
             "training_rows": development.training_rows,
             "tuning_rows": development.tuning_rows,
             "training_first_wall_ns": development.training_first_wall_ns,
@@ -1238,7 +1443,7 @@ def train_and_seal_round74_pretest_policy(
         "selection": {
             "criterion": (
                 "sequential parameter-count complexity promotion; each challenger "
-                "requires all 24 tuning capture runs, must strictly exceed the "
+                "requires all 12 model-selection capture runs, must strictly exceed the "
                 "numerical mean-loss floor, and may not degrade any paired run "
                 "beyond that floor"
             ),
@@ -1306,6 +1511,40 @@ def train_and_seal_round74_pretest_policy(
         model_path=model_path,
         selected_candidate_id=winner.candidate_id,
         tuning_loss=float(winner.ensemble_metrics["run_balanced_loss"]),
+    )
+
+
+def train_and_seal_round74_pretest_policy_from_prepared_roles(
+    training_batches: Sequence[Round74EventTrainingBatch],
+    tuning_roles: object,
+    *,
+    output_directory: str | Path,
+    compute_backend: str = "auto",
+    config: Round74EventTrainingConfig | None = None,
+) -> Round74PretestPolicyArtifact:
+    """Fit candidates with model-selection runs and no later tuning role."""
+
+    from .round74_event_model_operator import Round74PreparedTuningRoles
+    from .round74_event_model_operator import (
+        round74_representative_window_policy,
+    )
+
+    if not isinstance(tuning_roles, Round74PreparedTuningRoles):
+        raise TypeError("Round 74 prepared tuning roles are required")
+    tuning_roles.validate()
+    selected_config = config or Round74EventTrainingConfig()
+    selected_config.validate()
+    if selected_config.execution_mode != "cohort":
+        raise ValueError("Round 74 prepared tuning roles require cohort mode")
+    return train_and_seal_round74_pretest_policy(
+        training_batches,
+        tuning_roles.model_selection_batches,
+        output_directory=output_directory,
+        compute_backend=compute_backend,
+        config=selected_config,
+        representative_window_policy_sha256=(
+            str(round74_representative_window_policy()["policy_sha256"])
+        ),
     )
 
 
@@ -1436,6 +1675,8 @@ def load_round74_pretest_policy(
             weight_decay=float(training_policy["weight_decay"]),
             gradient_clip_norm=float(training_policy["gradient_clip_norm"]),
             minimum_role_rows=int(training_policy["minimum_role_rows"]),
+            device_run_group_size=int(training_policy["device_run_group_size"]),
+            execution_mode=str(training_policy["execution_mode"]),
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("Round 74 pretest training policy differs") from exc
@@ -1553,6 +1794,8 @@ def load_round74_pretest_policy(
             "target_context_count",
             "training_batch_sha256",
             "tuning_batch_sha256",
+            "representative_window_policy_sha256",
+            "representative_window_policy_applied",
             "training_rows",
             "tuning_rows",
             "training_first_wall_ns",
@@ -1564,6 +1807,8 @@ def load_round74_pretest_policy(
             "test_sample_digests_consumed",
         }
         or training_batch_hashes & tuning_batch_hashes
+        or development.get("representative_window_policy_applied")
+        is not (reconstructed_config.execution_mode == "cohort")
         or any(
             _SHA256.fullmatch(str(development.get(name, ""))) is None
             for name in (
@@ -1594,6 +1839,21 @@ def load_round74_pretest_policy(
         )
     ):
         raise ValueError("Round 74 pretest data identity differs")
+    representative_policy_sha256 = development.get(
+        "representative_window_policy_sha256"
+    )
+    if reconstructed_config.execution_mode == "cohort":
+        from .round74_event_model_operator import (
+            round74_representative_window_policy,
+        )
+
+        if (
+            representative_policy_sha256
+            != round74_representative_window_policy()["policy_sha256"]
+        ):
+            raise ValueError("Round 74 representative window policy differs")
+    elif representative_policy_sha256 is not None:
+        raise ValueError("Round 74 preflight window policy differs")
     expected_metric_names = {
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
@@ -1703,7 +1963,7 @@ def load_round74_pretest_policy(
         or selection.get("criterion")
         != (
             "sequential parameter-count complexity promotion; each challenger "
-            "requires all 24 tuning capture runs, must strictly exceed the "
+            "requires all 12 model-selection capture runs, must strictly exceed the "
             "numerical mean-loss floor, and may not degrade any paired run "
             "beyond that floor"
         )
@@ -1796,10 +2056,12 @@ __all__ = [
     "ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION",
     "ROUND74_EVENT_TRAINING_DEFAULT_SEEDS",
     "ROUND74_EVENT_TRAINING_LOSS_WEIGHTS",
+    "ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS",
     "ROUND74_EVENT_TRAINING_SCHEMA_VERSION",
     "Round74EventEnsemble",
     "Round74EventTrainingConfig",
     "Round74PretestPolicyArtifact",
     "load_round74_pretest_policy",
     "train_and_seal_round74_pretest_policy",
+    "train_and_seal_round74_pretest_policy_from_prepared_roles",
 ]

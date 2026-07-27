@@ -166,6 +166,7 @@ def _run(repository: Path) -> dict[str, object]:
         early_stopping_patience=1,
         minibatch_rows=2,
         minimum_role_rows=2,
+        execution_mode="preflight",
     )
     with tempfile.TemporaryDirectory(
         prefix="round74-training-preflight-"
@@ -184,7 +185,7 @@ def _run(repository: Path) -> dict[str, object]:
         backend = policy["backend"]
         optimization_population = policy["optimization_population"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v6",
+            "schema_version": "round-074-event-training-preflight-run-v7",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]
@@ -236,6 +237,7 @@ def _run(repository: Path) -> dict[str, object]:
                 "seeds": list(config.seeds),
                 "epochs": config.maximum_epochs,
                 "minibatch_rows": config.minibatch_rows,
+                "device_run_group_size": config.device_run_group_size,
                 "optimization_population": optimization_population,
             },
             "result": {

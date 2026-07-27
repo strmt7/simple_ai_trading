@@ -28,11 +28,14 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     Round74EventEnsemble,
     Round74EventTrainingConfig,
     _complexity_gated_candidate_id,
+    _loss_for_minibatch,
+    _losses_for_minibatch_group,
     load_round74_pretest_policy,
     train_and_seal_round74_pretest_policy,
 )
 from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     Round74EventModelOutput,
+    build_round74_event_model,
 )
 
 
@@ -133,7 +136,36 @@ def _config() -> Round74EventTrainingConfig:
         early_stopping_patience=1,
         minibatch_rows=2,
         minimum_role_rows=2,
+        execution_mode="preflight",
     )
+
+
+def test_round74_cohort_mode_rejects_partial_or_unbound_population(
+    tmp_path: Path,
+) -> None:
+    training = _batch("training", start_wall_ns=WALL_NS, identity=1)
+    tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+        identity=2,
+    )
+
+    with pytest.raises(ValueError, match="exactly 120 training and 12"):
+        train_and_seal_round74_pretest_policy(
+            [training],
+            [tuning],
+            output_directory=tmp_path,
+            compute_backend="cpu",
+        )
+    with pytest.raises(ValueError, match="cannot claim representative"):
+        train_and_seal_round74_pretest_policy(
+            [training],
+            [tuning],
+            output_directory=tmp_path,
+            compute_backend="cpu",
+            config=_config(),
+            representative_window_policy_sha256="a" * 64,
+        )
 
 
 def _with_fully_censored_prefix(
@@ -237,10 +269,10 @@ def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
         "causal_event_tcn": 129_060,
         "causal_event_attention": 151_876,
     }
-    linear = (1.0,) * 24
-    mlp = (0.9,) * 24
-    tcn = (0.8,) * 24
-    attention = (0.7,) * 24
+    linear = (1.0,) * 12
+    mlp = (0.9,) * 12
+    tcn = (0.8,) * 12
+    attention = (0.7,) * 12
 
     winner, reports = _complexity_gated_candidate_id(
         candidate_ids,
@@ -257,17 +289,17 @@ def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
     assert winner == "causal_event_attention"
     assert len(reports) == ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT == 3
     assert reports[0]["incumbent_candidate_id"] == "event_pooling_linear"
-    assert reports[0]["challenger_win_count"] == 24
+    assert reports[0]["challenger_win_count"] == 12
     assert reports[0]["challenger_loss_count"] == 0
     assert reports[0]["complete_tuning_panel"] is True
     assert reports[0]["all_paired_runs_noninferior"] is True
     assert reports[0]["maximum_paired_run_loss_degradation"] < 0.0
     assert reports[0]["promoted"] is True
     assert reports[1]["incumbent_candidate_id"] == "event_pooling_mlp"
-    assert reports[1]["challenger_win_count"] == 24
+    assert reports[1]["challenger_win_count"] == 12
     assert reports[1]["promoted"] is True
     assert reports[2]["incumbent_candidate_id"] == "causal_event_tcn"
-    assert reports[2]["challenger_win_count"] == 24
+    assert reports[2]["challenger_win_count"] == 12
     assert reports[2]["promoted"] is True
 
 
@@ -284,8 +316,8 @@ def test_round74_complexity_gate_rejects_point_better_but_weak_challengers() -> 
         "causal_event_tcn": 129_060,
         "causal_event_attention": 151_876,
     }
-    linear = (1.0,) * 24
-    weak = (0.8,) * 17 + (1.2,) * 7
+    linear = (1.0,) * 12
+    weak = (0.8,) * 8 + (1.2,) * 4
 
     winner, reports = _complexity_gated_candidate_id(
         candidate_ids,
@@ -316,10 +348,10 @@ def test_round74_complexity_gate_excludes_exact_ties() -> None:
             "causal_event_attention",
         ),
         {
-            "event_pooling_linear": (1.0,) * 24,
-            "event_pooling_mlp": (0.9,) * 18 + (1.0,) * 6,
-            "causal_event_tcn": (1.0,) * 24,
-            "causal_event_attention": (1.0,) * 24,
+            "event_pooling_linear": (1.0,) * 12,
+            "event_pooling_mlp": (0.9,) * 9 + (1.0,) * 3,
+            "causal_event_tcn": (1.0,) * 12,
+            "causal_event_attention": (1.0,) * 12,
         },
         {
             "event_pooling_linear": 13_000,
@@ -331,7 +363,7 @@ def test_round74_complexity_gate_excludes_exact_ties() -> None:
     )
 
     assert winner == "event_pooling_mlp"
-    assert reports[0]["exact_tie_count"] == 6
+    assert reports[0]["exact_tie_count"] == 3
     assert reports[0]["paired_capture_run_count"] == (
         ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
@@ -548,6 +580,9 @@ def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
         "fully_censored_minibatches_contribute_gradients": False,
         "fully_censored_capture_run_policy": "reject",
         "row_pooled_optimizer_steps_permitted": False,
+        "cohort_training_capture_runs": 120,
+        "cohort_model_selection_capture_runs": 12,
+        "calibration_or_policy_selection_runs_used_for_candidate_fit": False,
     }
     for report in policy["candidate_panel"].values():
         optimization = report["peer_reports"][0]["history"][0]["optimization_metrics"]
@@ -559,6 +594,67 @@ def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
         assert optimization["minimum_eligible_minibatches_per_run"] == 1.0
         assert optimization["maximum_eligible_minibatches_per_run"] == 3.0
         assert optimization["worst_run_loss"] >= (optimization["run_balanced_loss"])
+
+
+def test_round74_device_run_group_preserves_equal_run_gradient() -> None:
+    first_batch = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=1,
+        rows=2,
+    )
+    second_batch = _batch(
+        "training",
+        start_wall_ns=WALL_NS + 10_000_000_000,
+        identity=2,
+        rows=3,
+    )
+    first_slice = slice(0, 2)
+    second_slice = slice(0, 3)
+    torch.manual_seed(7401)
+    independent_model = build_round74_event_model("event_pooling_linear")
+    grouped_model = build_round74_event_model("event_pooling_linear")
+    grouped_model.load_state_dict(independent_model.state_dict(), strict=True)
+
+    independent = (
+        _loss_for_minibatch(independent_model, first_batch, first_slice, "cpu"),
+        _loss_for_minibatch(independent_model, second_batch, second_slice, "cpu"),
+    )
+    (
+        torch.stack(tuple(item[0] for item in independent)).sum() / len(independent)
+    ).backward()
+    grouped = _losses_for_minibatch_group(
+        grouped_model,
+        ((first_batch, first_slice), (second_batch, second_slice)),
+        "cpu",
+    )
+    (torch.stack(tuple(item[0] for item in grouped)).sum() / len(grouped)).backward()
+
+    for independent_item, grouped_item in zip(independent, grouped, strict=True):
+        assert torch.allclose(
+            independent_item[0], grouped_item[0], atol=1e-6, rtol=1e-6
+        )
+        assert independent_item[2:] == grouped_item[2:]
+        for name in independent_item[1]:
+            assert torch.allclose(
+                independent_item[1][name],
+                grouped_item[1][name],
+                atol=1e-6,
+                rtol=1e-6,
+            )
+    for independent_parameter, grouped_parameter in zip(
+        independent_model.parameters(),
+        grouped_model.parameters(),
+        strict=True,
+    ):
+        assert independent_parameter.grad is not None
+        assert grouped_parameter.grad is not None
+        assert torch.allclose(
+            independent_parameter.grad,
+            grouped_parameter.grad,
+            atol=1e-6,
+            rtol=1e-6,
+        )
 
 
 def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(

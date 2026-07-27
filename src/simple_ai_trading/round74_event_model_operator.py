@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
+import heapq
 import hashlib
 import json
 from typing import TYPE_CHECKING
@@ -12,6 +13,7 @@ import numpy as np
 
 from .impact_absorption_event_dataset import (
     ROUND74_EVENT_PARTITION_ROLES,
+    Round74LabeledEventWindow,
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
     Round74EventTrainingBatch,
@@ -25,15 +27,26 @@ from .impact_absorption_event_scaling import (
     fit_round74_event_feature_scaler_stream,
 )
 from .impact_absorption_event_sequence import iter_round74_v10_event_observations
-from .impact_absorption_store import ImpactAbsorptionStore
+from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS, ImpactAbsorptionStore
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
 if TYPE_CHECKING:
     from .impact_absorption_event_calibration import Round74TuningSubpartition
 
 
-ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v2"
+ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v3"
 ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS = 8_192
+ROUND74_EVENT_MODEL_TEMPORAL_STRATA = 16
+ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM = 16
+ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL = (
+    ROUND74_EVENT_MODEL_TEMPORAL_STRATA * ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM
+)
+ROUND74_EVENT_MODEL_WINDOWS_PER_RUN = (
+    len(IMPACT_CAPTURE_SYMBOLS) * ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL
+)
+ROUND74_EVENT_MODEL_WINDOW_SELECTION_SCHEMA_VERSION = (
+    "round-074-target-blind-window-selection-v1"
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -169,6 +182,126 @@ def _role_entries(
     return tuple(entry for entry in partition.entries if entry.role == selected_role)
 
 
+def round74_representative_window_policy() -> dict[str, object]:
+    """Return the frozen target-blind bounded sampling contract."""
+
+    policy: dict[str, object] = {
+        "schema_version": ROUND74_EVENT_MODEL_WINDOW_SELECTION_SCHEMA_VERSION,
+        "symbols": list(IMPACT_CAPTURE_SYMBOLS),
+        "temporal_strata": ROUND74_EVENT_MODEL_TEMPORAL_STRATA,
+        "windows_per_symbol_stratum": (ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM),
+        "windows_per_symbol": ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL,
+        "windows_per_run": ROUND74_EVENT_MODEL_WINDOWS_PER_RUN,
+        "stratum_axis": "eligible_anchor_wall_time",
+        "ranking": (
+            "ascending_sha256_of_schema_run_symbol_stratum_decision_and_"
+            "feature_window_identity"
+        ),
+        "target_label_or_outcome_used_for_selection": False,
+        "model_output_used_for_selection": False,
+        "selected_windows_restored_to_chronological_order": True,
+        "underfilled_symbol_stratum_policy": "reject_run",
+    }
+    policy["policy_sha256"] = _canonical_sha256(policy)
+    return policy
+
+
+def _window_stratum(
+    entry: Round74EventRunPartitionEntry,
+    decision_wall_ns: int,
+) -> int:
+    start = int(entry.eligible_anchor_start_wall_ns)
+    end = int(entry.eligible_anchor_end_wall_ns)
+    decision = int(decision_wall_ns)
+    if not start <= decision <= end:
+        raise ValueError("Round 74 selected window is outside the eligible interval")
+    span = end - start + 1
+    return min(
+        ROUND74_EVENT_MODEL_TEMPORAL_STRATA - 1,
+        (decision - start) * ROUND74_EVENT_MODEL_TEMPORAL_STRATA // span,
+    )
+
+
+def _target_blind_window_rank(
+    sample: Round74LabeledEventWindow,
+    *,
+    stratum: int,
+) -> int:
+    metadata = {
+        "schema_version": ROUND74_EVENT_MODEL_WINDOW_SELECTION_SCHEMA_VERSION,
+        "run_id": sample.run_id,
+        "symbol": sample.symbol,
+        "stratum": int(stratum),
+        "decision_wall_ns": int(sample.decision_wall_ns),
+        "feature_window_sha256": sample.feature_window_sha256,
+    }
+    return int(_canonical_sha256(metadata), 16)
+
+
+def select_round74_representative_event_windows(
+    windows: Iterable[Round74LabeledEventWindow],
+    *,
+    entry: Round74EventRunPartitionEntry,
+) -> tuple[Round74LabeledEventWindow, ...]:
+    """Select exact symbol/time coverage without inspecting any target value."""
+
+    entry.validate()
+    selected: dict[
+        tuple[str, int],
+        list[tuple[int, str, int, Round74LabeledEventWindow]],
+    ] = {
+        (symbol, stratum): []
+        for symbol in IMPACT_CAPTURE_SYMBOLS
+        for stratum in range(ROUND74_EVENT_MODEL_TEMPORAL_STRATA)
+    }
+    observed = 0
+    for sample in windows:
+        observed += 1
+        if (
+            sample.run_id != entry.run_id
+            or sample.role != entry.role
+            or sample.symbol not in IMPACT_CAPTURE_SYMBOLS
+        ):
+            raise ValueError("Round 74 selected window identity differs")
+        stratum = _window_stratum(entry, sample.decision_wall_ns)
+        rank = _target_blind_window_rank(sample, stratum=stratum)
+        heap = selected[(sample.symbol, stratum)]
+        item = (-rank, sample.feature_window_sha256, observed, sample)
+        if len(heap) < ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM:
+            heapq.heappush(heap, item)
+        elif rank < -heap[0][0]:
+            heapq.heapreplace(heap, item)
+    if observed == 0:
+        raise ValueError(f"Round 74 model operator run {entry.run_id} has no samples")
+    underfilled = tuple(
+        f"{symbol}:{stratum}:{len(heap)}"
+        for (symbol, stratum), heap in selected.items()
+        if len(heap) != ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM
+    )
+    if underfilled:
+        raise ValueError(
+            "Round 74 representative window coverage is incomplete: "
+            + ",".join(underfilled)
+        )
+    output = tuple(item[3] for heap in selected.values() for item in heap)
+    if len(output) != ROUND74_EVENT_MODEL_WINDOWS_PER_RUN:
+        raise RuntimeError("Round 74 representative window count differs")
+    ordered = tuple(
+        sorted(
+            output,
+            key=lambda sample: (
+                sample.decision_monotonic_ns,
+                sample.symbol,
+                sample.anchor_index,
+                sample.feature_window_sha256,
+            ),
+        )
+    )
+    if len({sample.feature_window_sha256 for sample in ordered}) != len(ordered):
+        raise ValueError("Round 74 representative window identity is duplicated")
+    return ordered
+
+
 def assemble_round74_role_batches(
     store: object,
     *,
@@ -201,7 +334,7 @@ def assemble_round74_role_batches(
     batches: list[Round74EventTrainingBatch] = []
     for entry in entries:
         engine = assemblies[entry.run_id].create_engine(anchors=())
-        samples = tuple(
+        samples = select_round74_representative_event_windows(
             iter_round74_labeled_event_windows(
                 selected_store,
                 partition=partition,
@@ -209,7 +342,8 @@ def assemble_round74_role_batches(
                 target_engine=engine,
                 pretest_model_policy_sha256=pretest_model_policy_sha256,
                 test_unlock_sha256=test_unlock_sha256,
-            )
+            ),
+            entry=entry,
         )
         if not samples:
             raise ValueError(
@@ -278,6 +412,7 @@ class Round74PreparedDevelopmentData:
             "training_rows": sum(batch.rows for batch in self.training_batches),
             "tuning_rows": sum(batch.rows for batch in self.tuning_batches),
             "source_database_access": "read_only",
+            "representative_window_policy": (round74_representative_window_policy()),
             "training_source_replay_passes": 2,
             "tuning_source_replay_passes": 1,
             "overlapping_windows_persisted": False,
@@ -448,11 +583,18 @@ def prepare_round74_development_data(
 __all__ = [
     "ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS",
     "ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION",
+    "ROUND74_EVENT_MODEL_TEMPORAL_STRATA",
+    "ROUND74_EVENT_MODEL_WINDOWS_PER_RUN",
+    "ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL",
+    "ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM",
+    "ROUND74_EVENT_MODEL_WINDOW_SELECTION_SCHEMA_VERSION",
     "Round74PreparedDevelopmentData",
     "Round74PreparedTuningRoles",
     "assemble_round74_role_batches",
     "fit_round74_cohort_feature_scaler",
     "iter_round74_training_feature_chunks",
     "prepare_round74_development_data",
+    "round74_representative_window_policy",
+    "select_round74_representative_event_windows",
     "split_round74_prepared_tuning_roles",
 ]
