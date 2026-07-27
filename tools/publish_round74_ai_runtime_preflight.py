@@ -21,9 +21,14 @@ if str(SOURCE) not in sys.path:
     sys.path.insert(0, str(SOURCE))
 
 from simple_ai_trading.impact_absorption_ai_protocol import (  # noqa: E402
+    ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION,
+    ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
+    ROUND74_AI_TEMPORAL_BLOCK_COUNT,
+    ROUND74_AI_TEMPORAL_FEATURE_NAMES,
     Round74AIReviewRequest,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (  # noqa: E402
+    ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
     round74_default_ai_review_model_panel,
 )
 from simple_ai_trading.impact_absorption_ai_runtime import (  # noqa: E402
@@ -35,7 +40,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v2"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v3"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0
@@ -195,28 +200,63 @@ def _require_clean_repository(repository: Path) -> str:
 
 def _synthetic_request() -> Round74AIReviewRequest:
     feature_count = len(ROUND74_EVENT_FEATURE_NAMES)
+    event_fractions = (0.40, 0.20, 0.30, 0.09, 0.01)
+    feature_last = tuple(
+        1.0 if index in (0, 5) else 0.0
+        for index in range(feature_count)
+    )
+    feature_mean = tuple(
+        (
+            event_fractions[index]
+            if index < len(event_fractions)
+            else 1.0 if index == 5 else 0.0
+        )
+        for index in range(feature_count)
+    )
+    feature_standard_deviation = tuple(
+        (
+            (event_fractions[index] * (1.0 - event_fractions[index])) ** 0.5
+            if index < len(event_fractions)
+            else 0.0 if index < 8 else 1.0
+        )
+        for index in range(feature_count)
+    )
     now = time.time_ns()
-    return Round74AIReviewRequest(
+    request = Round74AIReviewRequest(
         pretest_policy_sha256="a" * 64,
         probability_calibration_sha256="b" * 64,
         sample_sha256="c" * 64,
         deterministic_risk_state_sha256="d" * 64,
+        risk_profile="conservative",
         asset_slot=0,
         side="long",
         horizon_seconds=30,
         requested_wall_ns=now,
         expires_wall_ns=now + 30_000_000_000,
         proposed_risk_size_bps=50,
-        feature_last=(0.0,) * feature_count,
-        feature_mean=(0.0,) * feature_count,
-        feature_standard_deviation=(1.0,) * feature_count,
+        feature_last=feature_last,
+        feature_mean=feature_mean,
+        feature_standard_deviation=feature_standard_deviation,
         feature_recent_change=(0.0,) * feature_count,
+        feature_recent_block_means=tuple(
+            tuple(
+                (
+                    0.25 * (block_index + 1)
+                    if feature_index in (0, 9, 10, 13)
+                    else 0.0
+                )
+                for feature_index in range(len(ROUND74_AI_TEMPORAL_FEATURE_NAMES))
+            )
+            for block_index in range(ROUND74_AI_TEMPORAL_BLOCK_COUNT)
+        ),
         payoff_quantiles_bps=(-2.0, -1.0, 0.0, 1.0, 2.0),
         maximum_adverse_excursion_quantiles_bps=(1.0, 2.0, 3.0, 4.0, 5.0),
         positive_payoff_probability=0.70,
         adverse_selection_probability=0.85,
         regime_unpredictability_probability=0.90,
     )
+    request.validate()
+    return request
 
 
 def _source_binding(repository: Path) -> dict[str, str]:
@@ -351,6 +391,18 @@ def _run(repository: Path) -> dict[str, object]:
         },
         "input_contract": {
             "source": "deterministic constructed high-risk numeric packet",
+            "review_request_schema_version": (
+                ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+            ),
+            "prompt_payload_schema_version": (
+                ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION
+            ),
+            "review_panel_schema_version": ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
+            "risk_profile": "conservative",
+            "temporal_block_count": ROUND74_AI_TEMPORAL_BLOCK_COUNT,
+            "temporal_feature_count": len(ROUND74_AI_TEMPORAL_FEATURE_NAMES),
+            "temporal_order": "oldest_to_newest",
+            "temporal_path_exercised": True,
             "real_market_events_used": False,
             "real_market_targets_used": False,
             "absolute_market_date_exposed_to_model": False,

@@ -132,9 +132,22 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert payload["asset"] == "asset_0"
     assert payload["risk_profile"] == "conservative"
     assert payload["binary_feature_count"] == 8
-    assert payload["binary_feature_value_units"] == "zero_or_one_indicator"
-    assert payload["continuous_feature_value_units"] == (
+    assert payload["binary_feature_source_units"] == (
+        "zero_or_one_indicator_before_summary"
+    )
+    assert payload["binary_feature_summary_units"] == {
+        "last": "zero_or_one_indicator",
+        "mean": "fraction_of_events",
+        "standard_deviation": "population_standard_deviation",
+        "recent_16_minus_prior_16_mean": (
+            "signed_fraction_of_events_difference"
+        ),
+    }
+    assert payload["continuous_feature_source_units"] == (
         "dimensionless_training_scaler_normalized_values"
+    )
+    assert payload["continuous_feature_summary_units"] == (
+        "dimensionless_training_scaler_normalized_statistics"
     )
     assert payload["forecast_value_units"] == "basis_points"
     assert payload["horizon_seconds"] == 30
@@ -155,8 +168,10 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "future" not in user
     assert "Never infer an identity or date" in system
     assert "frozen conservative risk profile" in system
-    assert "first 8 feature-summary values are zero-or-one indicators" in system
-    assert "dimensionless training-scaler normalized values" in system
+    assert "first 8 source features are zero-or-one indicators" in system
+    assert "means are event fractions" in system
+    assert "recent changes are signed differences between event fractions" in system
+    assert "dimensionless training-scaler normalized statistics" in system
     assert "Only forecast and adverse-excursion arrays are in basis points" in system
     assert "contain no future observations" in system
     assert "increase size" in system

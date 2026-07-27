@@ -28,7 +28,7 @@ from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
 ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v5"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v6"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v7"
 ROUND74_AI_TEMPORAL_BLOCK_COUNT = 4
 ROUND74_AI_TEMPORAL_BLOCK_EVENTS = 16
 ROUND74_AI_TEMPORAL_FEATURE_NAMES = (
@@ -547,9 +547,20 @@ class Round74AIReviewRequest:
                 list(_AI_PROMPT_FEATURE_NAMES)
             ),
             "binary_feature_count": ROUND74_EVENT_BINARY_FEATURE_COUNT,
-            "binary_feature_value_units": "zero_or_one_indicator",
-            "continuous_feature_value_units": (
+            "binary_feature_source_units": "zero_or_one_indicator_before_summary",
+            "binary_feature_summary_units": {
+                "last": "zero_or_one_indicator",
+                "mean": "fraction_of_events",
+                "standard_deviation": "population_standard_deviation",
+                "recent_16_minus_prior_16_mean": (
+                    "signed_fraction_of_events_difference"
+                ),
+            },
+            "continuous_feature_source_units": (
                 "dimensionless_training_scaler_normalized_values"
+            ),
+            "continuous_feature_summary_units": (
+                "dimensionless_training_scaler_normalized_statistics"
             ),
             "standardized_feature_summary": feature_summary,
             "summary_value_order": [
@@ -699,9 +710,12 @@ def build_round74_ai_review_prompt(
         "You are a local market-risk reviewer operating under the frozen "
         f"{request.risk_profile} risk profile. "
         + _RISK_PROFILE_INSTRUCTIONS[request.risk_profile]
-        + f" The first {ROUND74_EVENT_BINARY_FEATURE_COUNT} feature-summary "
-        "values are zero-or-one indicators. Remaining feature-summary values "
-        "are dimensionless training-scaler normalized values, even when a "
+        + f" The first {ROUND74_EVENT_BINARY_FEATURE_COUNT} source features "
+        "are zero-or-one indicators before summarization: their last values "
+        "remain indicators, means are event fractions, standard deviations "
+        "are population standard deviations, and recent changes are signed "
+        "differences between event fractions. Remaining feature summaries are "
+        "dimensionless training-scaler normalized statistics, even when a "
         "feature name describes an underlying basis-point or quantity measure. "
         "Only forecast and adverse-excursion arrays are in basis points. "
         "Recent causal blocks are ordered oldest to newest and contain no "
