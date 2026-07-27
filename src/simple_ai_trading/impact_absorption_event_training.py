@@ -671,12 +671,14 @@ def _train_peer(
         device=device,
     )
     if not math.isclose(
-        restored_metrics["loss"],
+        restored_metrics["run_balanced_loss"],
         best_loss,
         rel_tol=1e-7,
         abs_tol=1e-7,
     ):
-        raise RuntimeError("Round 74 best-state reload metrics differ")
+        raise RuntimeError(
+            "Round 74 best-state run-balanced reload metric differs"
+        )
     return best_state, {
         "seed": seed,
         "best_epoch": best_epoch,
