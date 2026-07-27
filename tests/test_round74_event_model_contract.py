@@ -82,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v28.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v29.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -560,6 +560,18 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["same_entry_latency_eligibility_rate_gate"] == 0.99
     assert ai["same_entry_latency_eligibility_is_distinct_from_runtime_success"] is True
     assert ai["latency_adjusted_delayed_entry_replay_implemented_now"] is False
+    assert ai["historical_ai_queue_model_implemented_now"] is True
+    assert ai["ai_queue_model"] == (
+        "one FIFO single-server queue per alternative candidate model in historical "
+        "decision order"
+    )
+    assert ai["review_row_binds_decision_wall_nanoseconds"] is True
+    assert (
+        ai["review_evidence_binds_service_queue_and_effective_latency_nanoseconds"]
+        is True
+    )
+    assert ai["same_entry_latency_is_queue_delay_plus_measured_runtime_elapsed"] is True
+    assert ai["inference_service_time_alone_may_establish_same_entry_eligibility"] is False
     assert (
         ai["future_target_eligibility_may_delete_a_model_selected_observation"]
         is False
@@ -601,6 +613,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["two_model_ai_review_preparation_implementation"] is True
     assert authority["future_censored_action_rejection_implementation"] is True
     assert authority["equal_run_action_threshold_and_objective_implementation"] is True
+    assert authority["historical_ai_queue_latency_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
