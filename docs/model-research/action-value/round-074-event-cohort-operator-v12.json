@@ -13,7 +13,7 @@
   "source_binding": {
     "hash_mode": "utf8_lf_normalized_sha256",
     "operator_path": "src/simple_ai_trading/round74_event_cohort_operator.py",
-    "operator_sha256": "a78787ff4f5e8ce37c47df1f846dce44ff0228e2cca07613f36e6b4909c5229e",
+    "operator_sha256": "b79c99da903ab52595368ea3c3159216c0f2ea8f32bdd45c85b4e808e63ba2ce",
     "cohort_path": "src/simple_ai_trading/impact_absorption_event_cohort.py",
     "cohort_sha256": "3fab2a2ef17bcc03813287d39252d3fcdd2dbff6ff9bce8e22119ed4f4c6f557",
     "wrapper_path": "tools/run_round74_event_cohort_slot.py",
@@ -169,5 +169,5 @@
     "bounded_pre_admission_startup_relaunch_added": true,
     "source_hash_line_ending_dependent": false
   },
-  "artifact_sha256": "ce703964e8742e30e5b7937ae48b7131d170ec3b5d9b4597b5fd2fc055160f9e"
+  "artifact_sha256": "cb487f2817d090072b31841a0f438ff449a73b13ac0f1b805071e35d154ff145"
 }
