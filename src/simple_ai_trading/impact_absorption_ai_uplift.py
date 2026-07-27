@@ -31,10 +31,13 @@ from .impact_absorption_event_action_policy import (
     Round74ActionTrace,
     round74_action_profile,
 )
+from .impact_absorption_event_financial_metrics import (
+    round74_maximum_realized_drawdown_bps,
+)
 from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v2"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v3"
 ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
     "conservative": 0.60,
@@ -295,9 +298,6 @@ def _scaled_metrics(
     )
     scaled = baseline * multipliers
     scaled_mae = baseline_mae * multipliers
-    cumulative = np.cumsum(scaled)
-    peaks = np.maximum.accumulate(np.concatenate(([0.0], cumulative)))
-    drawdown = peaks[1:] - cumulative
     retained = multipliers > 0.0
     retained_symbols = tuple(
         symbol for symbol, keep in zip(trace.symbol, retained, strict=True) if keep
@@ -345,7 +345,12 @@ def _scaled_metrics(
         maximum_retained_symbol_share=float(maximum_symbol_share),
         total_net_bps=float(scaled.sum()),
         mean_paired_net_bps=float(scaled.mean()),
-        maximum_drawdown_bps=float(drawdown.max()),
+        maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
+            scaled,
+            run_ids=trace.run_id,
+            exit_monotonic_ns=trace.exit_monotonic_ns,
+            expected_run_ids=trace.expected_run_ids,
+        ),
         mean_maximum_adverse_excursion_bps=float(scaled_mae.mean()),
         profitable_run_ratio=float(np.mean(np.asarray(tuple(run_ai.values())) > 0.0)),
     )

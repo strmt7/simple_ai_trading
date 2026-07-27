@@ -42,6 +42,9 @@ from .impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS,
 )
 from .impact_absorption_event_dataset import Round74EventTrainingBatch
+from .impact_absorption_event_financial_metrics import (
+    round74_maximum_realized_drawdown_bps,
+)
 from .impact_absorption_event_model import Round74EventModelOutput
 from .impact_absorption_event_sealed_ledger import (
     Round74SealedEvaluationClaim,
@@ -56,7 +59,7 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v1"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v2"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -1169,9 +1172,6 @@ def _strategy_metrics(
     )
     gross_profit = float(executed[executed > 0.0].sum())
     gross_loss = float(-executed[executed < 0.0].sum())
-    cumulative = np.cumsum(scaled)
-    peaks = np.maximum.accumulate(np.concatenate(([0.0], cumulative)))
-    drawdown = peaks[1:] - cumulative if scaled.size else np.zeros(1)
     run_pnl = {run_id: 0.0 for run_id in trace.expected_run_ids}
     for run_id, value in zip(trace.run_id, scaled, strict=True):
         run_pnl[run_id] += float(value)
@@ -1207,7 +1207,12 @@ def _strategy_metrics(
         profit_factor=(
             gross_profit / gross_loss if gross_loss > 0.0 else None
         ),
-        maximum_drawdown_bps=float(drawdown.max()),
+        maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
+            scaled,
+            run_ids=trace.run_id,
+            exit_monotonic_ns=trace.exit_monotonic_ns,
+            expected_run_ids=trace.expected_run_ids,
+        ),
         gross_profit_bps=gross_profit,
         gross_loss_bps=gross_loss,
         expected_shortfall_95_bps=expected_shortfall,

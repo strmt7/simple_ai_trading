@@ -28,6 +28,9 @@ from .impact_absorption_event_dataset import (
     ROUND74_EVENT_PARTITION_ROLES,
     Round74EventTrainingBatch,
 )
+from .impact_absorption_event_financial_metrics import (
+    round74_maximum_realized_drawdown_bps,
+)
 from .impact_absorption_event_model import Round74EventModelOutput
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
@@ -40,7 +43,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v2"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v3"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -985,6 +988,9 @@ class Round74ActionTrace:
             "metrics": self.metrics.as_dict(),
             "replay_semantics": "one_open_trade_per_run_and_symbol",
             "exact_target_entry_exit_times_used": True,
+            "drawdown_order": (
+                "expected_run_then_actual_exit_monotonic_ns_then_signal_order"
+            ),
             "trading_authority": False,
             "execution_claim": False,
             "profitability_claim": False,
@@ -1000,6 +1006,7 @@ def _trace_metrics(
     net_payoff_bps: tuple[float, ...],
     maximum_adverse_excursion_bps: tuple[float, ...],
     adverse_selection: tuple[int, ...],
+    exit_monotonic_ns: tuple[int, ...],
     expected_run_ids: tuple[str, ...],
 ) -> Round74ActionTraceMetrics:
     values = np.asarray(net_payoff_bps, dtype=np.float64)
@@ -1009,9 +1016,6 @@ def _trace_metrics(
     )
     adverse = np.asarray(adverse_selection, dtype=np.float64)
     if values.size:
-        cumulative = np.cumsum(values)
-        peaks = np.maximum.accumulate(np.concatenate(([0.0], cumulative)))
-        drawdowns = peaks[1:] - cumulative
         gross_profit = float(values[values > 0.0].sum())
         gross_loss = float(-values[values < 0.0].sum())
         profit_factor = gross_profit / gross_loss if gross_loss > 0.0 else None
@@ -1020,7 +1024,6 @@ def _trace_metrics(
         }
         maximum_symbol_share = max(symbol_counts.values()) / len(symbols)
     else:
-        drawdowns = np.zeros(1, dtype=np.float64)
         gross_profit = 0.0
         gross_loss = 0.0
         profit_factor = None
@@ -1039,7 +1042,12 @@ def _trace_metrics(
         median_net_bps=float(np.median(values)) if values.size else 0.0,
         win_rate=float(np.mean(values > 0.0)) if values.size else 0.0,
         profit_factor=profit_factor,
-        maximum_drawdown_bps=float(drawdowns.max()),
+        maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
+            values,
+            run_ids=run_ids,
+            exit_monotonic_ns=exit_monotonic_ns,
+            expected_run_ids=expected_run_ids,
+        ),
         gross_profit_bps=gross_profit,
         gross_loss_bps=gross_loss,
         worst_trade_bps=float(values.min()) if values.size else 0.0,
@@ -1283,6 +1291,7 @@ def _simulate_round74_action_trace_batches(
             net_payoff_bps=payoff_tuple,
             maximum_adverse_excursion_bps=adverse_excursion_tuple,
             adverse_selection=adverse_selection_tuple,
+            exit_monotonic_ns=tuple(exits),
             expected_run_ids=expected,
         ),
     )
