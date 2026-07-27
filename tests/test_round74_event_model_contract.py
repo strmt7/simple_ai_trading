@@ -108,12 +108,12 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v46.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v47.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-complete-panel-gate-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-run-balanced-v2-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -701,6 +701,20 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert training["classification_mean_logit_pooling_permitted"] is False
     assert training["run_balanced_loss_primary"] is True
+    assert training["gradient_optimization_population_unit"] == "capture_run"
+    assert (
+        training["one_eligible_minibatch_per_training_run_per_optimizer_step"]
+        is True
+    )
+    assert training["gradient_divisor"] == "training_capture_run_count"
+    assert training["row_pooled_optimizer_steps_permitted"] is False
+    assert training["shorter_run_minibatch_policy"] == (
+        "deterministic epoch-rotated cycling"
+    )
+    assert training["high_activity_run_receives_extra_gradient_weight"] is False
+    assert training["fully_censored_minibatches_contribute_gradients"] is False
+    assert training["unequal_training_run_size_regression_tested"] is True
+    assert training["two_run_directml_gradient_schedule_preflight_completed"] is True
     assert training["checkpoint_selection_metric"] == "run_balanced_loss"
     assert training["checkpoint_reload_verification_metric"] == ("run_balanced_loss")
     assert training["pooled_loss_used_for_checkpoint_reload_verification"] is False
@@ -1082,7 +1096,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
-    assert "constructed tensor preflight" in (
+    assert "Two unequal training runs prove" in (
         binding["event_training_directml_reuse_scope"]
     )
     assert "does not evidence market fit" in (
@@ -1108,6 +1122,20 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert inputs["test_batches_consumed"] == 0
     assert inputs["candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
     assert inputs["seeds"] == list(ROUND74_EVENT_TRAINING_DEFAULT_SEEDS)
+    assert inputs["training_capture_runs"] == 2
+    assert inputs["optimization_population"] == {
+        "fully_censored_capture_run_policy": "reject",
+        "fully_censored_minibatches_contribute_gradients": False,
+        "gradient_divisor": "training_capture_run_count",
+        "optimizer_step": (
+            "one eligible minibatch per training capture run with gradient accumulation"
+        ),
+        "row_pooled_optimizer_steps_permitted": False,
+        "shorter_run_policy": (
+            "deterministic epoch-rotated cycling of eligible minibatches"
+        ),
+        "unit": "capture_run",
+    }
     verification = evidence["verification"]
     assert verification["fresh_process_execution_count"] == 2
     assert verification["candidate_count"] == len(ROUND74_EVENT_MODEL_CANDIDATES)
@@ -1123,6 +1151,22 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["cross_execution_candidate_metrics_equal"] is True
     assert verification["temporary_artifacts_removed_after_each_execution"] is True
     repeated = evidence["repeated_result"]
+    schedules = repeated["peer_run_balanced_optimization_schedule"]
+    assert set(schedules) == set(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert all(
+        schedule
+        == {
+            "maximum_eligible_minibatches_per_run": 3.0,
+            "maximum_run_minibatch_contributions": 3.0,
+            "minimum_eligible_minibatches_per_run": 1.0,
+            "minimum_run_minibatch_contributions": 3.0,
+            "optimizer_steps": 3.0,
+            "run_contributions_per_optimizer_step": 2.0,
+            "run_count": 2.0,
+        }
+        for candidate_schedules in schedules.values()
+        for schedule in candidate_schedules
+    )
     assert (
         repeated["candidate_run_balanced_tuning_proper_loss"]
         == (repeated["candidate_worst_run_tuning_proper_loss"])
@@ -1158,6 +1202,22 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
     assert binding["event_training_directml_complete_tuning_panel"] is False
+    assert binding["event_training_directml_training_capture_run_count"] == 2
+    assert binding["event_training_directml_optimizer_steps_per_peer"] == 3
+    assert (
+        binding["event_training_directml_run_contributions_per_optimizer_step"] == 2
+    )
+    assert (
+        binding["event_training_directml_minimum_eligible_minibatches_per_run"] == 1
+    )
+    assert (
+        binding["event_training_directml_maximum_eligible_minibatches_per_run"] == 3
+    )
+    assert binding["event_training_directml_minimum_run_minibatch_contributions"] == 3
+    assert binding["event_training_directml_maximum_run_minibatch_contributions"] == 3
+    assert binding["event_training_directml_optimization_population_unit"] == (
+        "capture_run"
+    )
     assert binding["event_training_directml_statistical_significance_claim"] is False
     assert (
         binding["event_training_directml_candidate_losses_have_financial_meaning"]
