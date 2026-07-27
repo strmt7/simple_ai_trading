@@ -15,6 +15,7 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = Path("docs/model-research/action-value")
 PREVIOUS_DESIGN = RESEARCH / "round-074-local-ai-review-design-v47.json"
 RUNTIME_PREFLIGHT = RESEARCH / "round-074-local-ai-runtime-preflight-v2-2026-07-27.json"
+EVENT_MODEL_DESIGN = RESEARCH / "round-074-event-sequence-model-design-v62.json"
 OUTPUT = RESEARCH / "round-074-local-ai-review-design-v48.json"
 GENERATOR_PATH = "tools/publish_round74_warm_ai_contract.py"
 RUNTIME_PATH = "src/simple_ai_trading/impact_absorption_ai_runtime.py"
@@ -205,10 +206,28 @@ def _duration_map(
 def _build(repository: Path, commit: str) -> dict[str, Any]:
     previous_path = repository / PREVIOUS_DESIGN
     preflight_path = repository / RUNTIME_PREFLIGHT
+    event_model_design_path = repository / EVENT_MODEL_DESIGN
     previous = _load_hash_bound(previous_path, "artifact_sha256")
     preflight = _load_hash_bound(preflight_path, "artifact_sha256")
+    event_model_design = _load_hash_bound(
+        event_model_design_path,
+        "design_sha256",
+    )
     if preflight.get("schema_version") != "round-074-local-ai-runtime-preflight-v2":
         raise ValueError("Round 74 warm AI preflight schema differs")
+    if (
+        event_model_design.get("schema_version")
+        != "round-074-event-sequence-model-design-v62"
+        or _mapping(event_model_design.get("authority"), "model authority").get(
+            "representative_market_training"
+        )
+        is not False
+        or _mapping(event_model_design.get("authority"), "model authority").get(
+            "profitability_claim"
+        )
+        is not False
+    ):
+        raise ValueError("Round 74 event-model design authority differs")
     outcomes = _validated_outcomes(preflight)
     source_binding = _mapping(preflight.get("source_binding"), "source binding")
     verification = _mapping(preflight.get("verification"), "verification")
@@ -240,8 +259,25 @@ def _build(repository: Path, commit: str) -> dict[str, Any]:
         }
     )
     source = value["source_binding"]
+    relative_event_model_design = str(EVENT_MODEL_DESIGN).replace("\\", "/")
     source.update(
         {
+            "event_model_design_path": relative_event_model_design,
+            "event_model_design_file_sha256": _normalized_file_sha256(
+                event_model_design_path
+            ),
+            "event_model_design_sha256": event_model_design["design_sha256"],
+            "event_model_operator_path": (
+                event_model_design["source_binding"]["event_model_operator_path"]
+            ),
+            "event_model_operator_sha256": (
+                event_model_design["source_binding"]["event_model_operator_sha256"]
+            ),
+            "event_model_operator_schema_version": (
+                event_model_design["source_binding"][
+                    "event_model_operator_schema_version"
+                ]
+            ),
             "runtime_path": RUNTIME_PATH,
             "runtime_sha256": _normalized_file_sha256(repository / RUNTIME_PATH),
             "runtime_outcome_schema_version": RUNTIME_SCHEMA_VERSION,
@@ -267,6 +303,10 @@ def _build(repository: Path, commit: str) -> dict[str, Any]:
             "declared_model_unload_verified_after_each_real_model_batch": True,
             "unrelated_models_targeted_for_unload": False,
             "provider_load_duration_bound_into_worker_evidence": True,
+            "deterministic_model_tuning_roles_disjoint_and_hash_bound": True,
+            "deterministic_model_selection_tuning_run_count": 12,
+            "probability_calibration_tuning_run_count": 6,
+            "action_policy_selection_tuning_run_count": 6,
         }
     )
     value["resource_policy"].update(
