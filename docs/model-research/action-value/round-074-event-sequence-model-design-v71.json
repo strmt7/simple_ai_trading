@@ -1,0 +1,86 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v71",
+  "created_at_utc": "2026-07-27T19:32:30Z",
+  "implementation_git_commit": "57a43a4bdc2aca2d81bed741a4053fa024ff35e2",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v70.json",
+    "normalized_lf_sha256": "c87e4fae02961eb8ea6cbc08291585f02ee35f7fc146712cd5c8af7a651d79d9",
+    "design_sha256": "2e40001bc9f01f86d08b0f1ad9be42ce2bcdbea933c904a540d9a916c507614a",
+    "composition_rule": "v70 remains the exact profile-delayed policy-economics contract; v71 adds one shared incremental window implementation for replay, measurement, and future online inference"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
+    "event_sequence_normalized_lf_sha256": "8adc91749f18c0ba64afc8b71acb74e183c3dac576d86a994001401ab526a6ab",
+    "event_sequence_schema_version": "round-074-causal-event-sequence-v4"
+  },
+  "implemented_parity_contract": {
+    "single_incremental_window_accumulator": true,
+    "offline_iterator_delegates_to_incremental_accumulator": true,
+    "future_online_path_must_use_incremental_accumulator": true,
+    "per_symbol_buffers": true,
+    "global_receipt_monotonicity_required": true,
+    "long_gap_reset_shared": true,
+    "stride_state_shared": true,
+    "window_validation_shared": true,
+    "feature_names_changed": false,
+    "feature_values_changed": false,
+    "target_or_pnl_accessed": false,
+    "order_authority_added": false
+  },
+  "research_decision_record": {
+    "retrieved_at_utc": "2026-07-27T19:30:00Z",
+    "sources": [
+      {
+        "url": "https://developers.binance.com/en/docs/products/spot/rest-api",
+        "kind": "official_exchange_documentation",
+        "decision": "keep request-dispatch, exchange-processing, and terminal execution receipt as distinct latency and unknown-order-state boundaries"
+      },
+      {
+        "url": "https://arxiv.org/abs/2506.05764",
+        "kind": "research_paper",
+        "decision": "prioritize causal microstructure inputs, preprocessing integrity, latency, and noise robustness before adding model depth"
+      },
+      {
+        "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4677989",
+        "kind": "research_paper",
+        "decision": "evaluate execution against the book at submission with latency-conditioned slippage and order-failure outcomes"
+      },
+      {
+        "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5074873",
+        "kind": "research_paper",
+        "decision": "treat maker fill probability and post-fill adverse selection as coupled outcomes rather than assuming every passive fill is beneficial"
+      }
+    ],
+    "model_architecture_changed_from_research_alone": false,
+    "economic_gate_changed_after_outcome_access": false
+  },
+  "verification": {
+    "focused_sequence_and_dataset_tests_passed": 15,
+    "incremental_and_offline_window_equivalence_test_passed": true,
+    "causal_order_gap_and_stride_tests_passed": true,
+    "ruff_passed": true,
+    "production_database_scanned_during_implementation": false,
+    "host_latency_benchmark_run": false,
+    "prospective_model_result_exists": false
+  },
+  "remaining_latency_boundaries": [
+    "websocket receive through immutable receipt-record construction",
+    "receipt-record decode feature extraction and ready-window construction",
+    "validated action candidate through request dispatch",
+    "request dispatch through terminal execution receipt or reconciled unknown state"
+  ],
+  "authority": {
+    "receipt_to_window_latency_measured_on_host": false,
+    "end_to_end_tick_to_trade_latency_measured": false,
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "838155fc5a35ab1e12acababff2dcac355a02cf64d451d55299b7838274c1f6e"
+}
