@@ -404,3 +404,74 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
     )
     with pytest.raises(ValueError, match="source identity differs"):
         subject.load_round74_development_policy_bundle(mismatch_path)
+
+
+def test_round74_development_input_pipeline_prepares_roles_before_training(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[object] = []
+    inputs = SimpleNamespace(
+        partition=object(),
+        validate=lambda: calls.append("inputs"),
+        target_assembly_by_run_id=lambda: {"run": "assembly"},
+    )
+    prepared = SimpleNamespace()
+    subpartition = SimpleNamespace()
+    roles = SimpleNamespace()
+    artifact = SimpleNamespace()
+    monkeypatch.setattr(
+        subject,
+        "prepare_round74_development_data",
+        lambda store, **kwargs: calls.append(("prepare", store, kwargs)) or prepared,
+    )
+    monkeypatch.setattr(
+        subject,
+        "build_round74_tuning_subpartition",
+        lambda partition: calls.append(("subpartition", partition)) or subpartition,
+    )
+    monkeypatch.setattr(
+        subject,
+        "split_round74_prepared_tuning_roles",
+        lambda selected, **kwargs: calls.append(("roles", selected, kwargs)) or roles,
+    )
+    monkeypatch.setattr(
+        subject,
+        "train_calibrate_and_select_round74_development_policy",
+        lambda selected, selected_roles, **kwargs: (
+            calls.append(("train", selected, selected_roles, kwargs)) or artifact
+        ),
+    )
+
+    result = subject.train_round74_development_policy_from_inputs(
+        "read-only-store",
+        inputs,
+        output_directory="output",
+        compute_backend="cpu",
+        inference_minibatch_rows=64,
+    )
+
+    assert result is artifact
+    assert calls == [
+        "inputs",
+        (
+            "prepare",
+            "read-only-store",
+            {
+                "partition": inputs.partition,
+                "target_assembly_by_run_id": {"run": "assembly"},
+            },
+        ),
+        ("subpartition", inputs.partition),
+        ("roles", prepared, {"subpartition": subpartition}),
+        (
+            "train",
+            prepared,
+            roles,
+            {
+                "output_directory": "output",
+                "compute_backend": "cpu",
+                "config": None,
+                "inference_minibatch_rows": 64,
+            },
+        ),
+    ]

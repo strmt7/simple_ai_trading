@@ -27,6 +27,7 @@ from .impact_absorption_event_action_policy import (
 )
 from .impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
+    build_round74_tuning_subpartition,
     fit_round74_probability_calibration,
 )
 from .impact_absorption_event_dataset import Round74EventTrainingBatch
@@ -40,7 +41,10 @@ from .impact_absorption_event_training import (
 from .round74_event_model_operator import (
     Round74PreparedDevelopmentData,
     Round74PreparedTuningRoles,
+    prepare_round74_development_data,
+    split_round74_prepared_tuning_roles,
 )
+from .round74_event_development_inputs import Round74DevelopmentInputs
 from .storage import write_bytes_atomic
 
 
@@ -664,6 +668,38 @@ def train_calibrate_and_select_round74_development_policy(
     )
 
 
+def train_round74_development_policy_from_inputs(
+    store: object,
+    inputs: Round74DevelopmentInputs,
+    *,
+    output_directory: str | Path,
+    compute_backend: str = "auto",
+    config: Round74EventTrainingConfig | None = None,
+    inference_minibatch_rows: int = 128,
+) -> Round74DevelopmentPolicyArtifact:
+    """Prepare, train, calibrate, and select from a sealed-input-safe panel."""
+
+    inputs.validate()
+    prepared = prepare_round74_development_data(
+        store,
+        partition=inputs.partition,
+        target_assembly_by_run_id=inputs.target_assembly_by_run_id(),
+    )
+    subpartition = build_round74_tuning_subpartition(inputs.partition)
+    roles = split_round74_prepared_tuning_roles(
+        prepared,
+        subpartition=subpartition,
+    )
+    return train_calibrate_and_select_round74_development_policy(
+        prepared,
+        roles,
+        output_directory=output_directory,
+        compute_backend=compute_backend,
+        config=config,
+        inference_minibatch_rows=inference_minibatch_rows,
+    )
+
+
 def load_round74_development_policy_bundle(
     path: str | Path,
 ) -> Round74DevelopmentPolicyBundle:
@@ -698,4 +734,5 @@ __all__ = [
     "calibrate_and_select_round74_development_policy",
     "load_round74_development_policy_bundle",
     "train_calibrate_and_select_round74_development_policy",
+    "train_round74_development_policy_from_inputs",
 ]
