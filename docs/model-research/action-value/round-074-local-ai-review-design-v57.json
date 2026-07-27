@@ -1,0 +1,91 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v57",
+  "artifact_kind": "compact_future_model_challenger_research",
+  "supersedes_artifact_sha256": "7de41342f0791f1f1d3b71df46539ce1db1c310ba11ffcbc6bc8f2471e4a0730",
+  "research_git_commit": "8dded2909fc436ee603b888c2c574739873f5cb7",
+  "current_family": {
+    "finance_primary": "TheFinAI/Fino1-8B",
+    "general_control": "Qwen/Qwen3-8B",
+    "model_count": 2,
+    "family_is_frozen_for_round_74": true,
+    "family_mutated_by_this_research": false,
+    "current_family_edge_assumed": false
+  },
+  "candidate_assessment": {
+    "future_primary_challenger": {
+      "model_id": "OpenDataArena/ODA-Fin-RL-8B",
+      "base_model": "Qwen/Qwen3-8B",
+      "parameter_count_billions": 8,
+      "license_id": "Apache-2.0",
+      "reported_scope": "financial_question_answering_sentiment_and_numerical_reasoning",
+      "reported_trading_microstructure_benchmark": false,
+      "reported_second_level_crypto_benchmark": false,
+      "local_ollama_manifest_pinned": false,
+      "exact_artifact_digest_pinned": false,
+      "eligible_for_current_family": false
+    },
+    "exploratory_factor_gating_candidate": {
+      "model_id": "AFatRat/Alpha-R1",
+      "base_model": "Qwen/Qwen3-8B",
+      "parameter_count_billions": 8,
+      "license_id": "Apache-2.0",
+      "reported_scope": "context_conditioned_equity_factor_screening_with_daily_news",
+      "reported_trading_microstructure_benchmark": false,
+      "reported_second_level_crypto_benchmark": false,
+      "direct_fit_to_current_numeric_risk_packet": false,
+      "eligible_for_current_family": false
+    }
+  },
+  "research_inference": {
+    "financial_qa_quality_implies_trading_edge": false,
+    "reported_equity_backtest_implies_crypto_edge": false,
+    "reported_daily_factor_gating_implies_second_level_execution_edge": false,
+    "future_challenger_requires_same_target_free_packet": true,
+    "future_challenger_requires_exact_delayed_l2_replay": true,
+    "future_challenger_requires_paired_after_cost_uplift": true,
+    "future_challenger_requires_drawdown_noninferiority": true,
+    "future_challenger_requires_fresh_family_preregistration": true,
+    "round_74_test_partition_may_be_reused_for_challenger_selection": false,
+    "model_download_or_conversion_authorized": false
+  },
+  "research_sources": [
+    {
+      "title": "Fino1: On the Transferability of Reasoning Enhanced LLMs to Finance",
+      "url": "https://arxiv.org/abs/2502.08127",
+      "used_for": "current finance-primary training scope and limitations"
+    },
+    {
+      "title": "Unlocking Data Value in Finance: A Study on Distillation and Difficulty-Aware Training",
+      "url": "https://arxiv.org/abs/2603.07223",
+      "used_for": "future ODA-Fin-RL-8B numerical-finance challenger rationale"
+    },
+    {
+      "title": "Alpha-R1: Alpha Screening with LLM Reasoning via Reinforcement Learning",
+      "url": "https://arxiv.org/abs/2512.23515",
+      "used_for": "factor-gating role and modality mismatch assessment"
+    },
+    {
+      "title": "StockBench: Can LLM Agents Trade Stocks Profitably In Real-world Markets?",
+      "url": "https://arxiv.org/abs/2510.02209",
+      "used_for": "separating financial knowledge from empirical trading performance"
+    }
+  ],
+  "verification": {
+    "primary_papers_reviewed": 4,
+    "current_family_changed": false,
+    "model_downloaded": false,
+    "gpu_model_workload_executed": false,
+    "sealed_test_accessed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "challenger_benchmark_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "74ce0d5c3ea9e14e14a2ee3e53942af9478be0e78a6cc672bee8b778ced73962"
+}

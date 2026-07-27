@@ -149,6 +149,13 @@ RUNTIME_CONTRACT_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v56.json"
 )
+MODEL_CHALLENGER_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v57.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -720,6 +727,52 @@ def test_round74_ai_design_delta_binds_runtime_semantics_and_host_preflight() ->
     assert verification["persisted_preflight_digest_verified"]
     assert verification["execution_commit_source_hashes_verified"]
     assert verification["post_execution_residency_empty"]
+    assert not verification["sealed_test_accessed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_keeps_future_challenger_out_of_frozen_family() -> None:
+    previous = _load_json(RUNTIME_CONTRACT_ARTIFACT_PATH)
+    artifact = _load_json(MODEL_CHALLENGER_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    family = artifact["current_family"]
+    candidates = artifact["candidate_assessment"]
+    inference = artifact["research_inference"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v57"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    assert family["model_count"] == 2
+    assert family["family_is_frozen_for_round_74"]
+    assert not family["family_mutated_by_this_research"]
+    assert not family["current_family_edge_assumed"]
+    oda = candidates["future_primary_challenger"]
+    assert oda["model_id"] == "OpenDataArena/ODA-Fin-RL-8B"
+    assert oda["parameter_count_billions"] == 8
+    assert oda["license_id"] == "Apache-2.0"
+    assert not oda["reported_trading_microstructure_benchmark"]
+    assert not oda["reported_second_level_crypto_benchmark"]
+    assert not oda["local_ollama_manifest_pinned"]
+    assert not oda["exact_artifact_digest_pinned"]
+    assert not oda["eligible_for_current_family"]
+    alpha = candidates["exploratory_factor_gating_candidate"]
+    assert alpha["model_id"] == "AFatRat/Alpha-R1"
+    assert not alpha["direct_fit_to_current_numeric_risk_packet"]
+    assert not alpha["eligible_for_current_family"]
+    assert not inference["financial_qa_quality_implies_trading_edge"]
+    assert not inference["reported_equity_backtest_implies_crypto_edge"]
+    assert inference["future_challenger_requires_exact_delayed_l2_replay"]
+    assert inference["future_challenger_requires_paired_after_cost_uplift"]
+    assert inference["future_challenger_requires_fresh_family_preregistration"]
+    assert not inference[
+        "round_74_test_partition_may_be_reused_for_challenger_selection"
+    ]
+    assert not inference["model_download_or_conversion_authorized"]
+    assert verification["primary_papers_reviewed"] == 4
+    assert not verification["current_family_changed"]
+    assert not verification["model_downloaded"]
+    assert not verification["gpu_model_workload_executed"]
     assert not verification["sealed_test_accessed"]
     assert all(value is False for value in artifact["status"].values())
 
