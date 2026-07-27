@@ -1,7 +1,7 @@
 """Run the deterministic Round 74 trainer contract on DirectML.
 
 This is a compute, serialization, and governance preflight. Its constructed
-two-row tensors are not market data and its losses have no financial meaning.
+tensors are not market data and its losses have no financial meaning.
 """
 
 from __future__ import annotations
@@ -49,8 +49,8 @@ def _batch(
     *,
     start_wall_ns: int,
     identity: int,
+    rows: int = 2,
 ) -> Round74EventTrainingBatch:
-    rows = 2
     generator = np.random.default_rng(7400 + identity)
     features = generator.normal(
         size=(
@@ -95,15 +95,18 @@ def _batch(
         partition_sha256="1" * 64,
         scaler_sha256="2" * 64,
         run_id=tuple(f"{identity:032x}" for _ in range(rows)),
-        symbol=("BTCUSDT", "ETHUSDT"),
+        symbol=tuple(
+            ("BTCUSDT", "ETHUSDT", "SOLUSDT")[row % 3]
+            for row in range(rows)
+        ),
         decision_monotonic_ns=_readonly(times.copy()),
         decision_wall_ns=_readonly(times + start_wall_ns),
         endpoint_frame_index=_readonly(np.arange(rows, dtype=np.int64)),
         endpoint_message_index=_readonly(np.zeros(rows, dtype=np.int64)),
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{identity * 100 + row:064x}" for row in range(rows)),
-        target_context_sha256=("3" * 64, "3" * 64),
-        test_access_sha256=("", ""),
+        target_context_sha256=tuple("3" * 64 for _ in range(rows)),
+        test_access_sha256=tuple("" for _ in range(rows)),
         feature_values=_readonly(features),
         actual_entry_monotonic_ns=_readonly(actual_entry),
         actual_exit_monotonic_ns=_readonly(actual_exit),
@@ -139,16 +142,23 @@ def _git_commit(repository: Path) -> str:
 
 
 def _run(repository: Path) -> dict[str, object]:
-    training = _batch(
+    short_training = _batch(
         "training",
         start_wall_ns=WALL_NS,
         identity=1,
     )
+    long_training = _batch(
+        "training",
+        start_wall_ns=WALL_NS + 3_000_000_000,
+        identity=2,
+        rows=5,
+    )
     tuning = _batch(
         "tuning",
-        start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
-        identity=2,
+        start_wall_ns=WALL_NS + PURGE_NS + 8_000_000_000,
+        identity=3,
     )
+    training = (short_training, long_training)
     config = Round74EventTrainingConfig(
         maximum_epochs=1,
         early_stopping_patience=1,
@@ -160,7 +170,7 @@ def _run(repository: Path) -> dict[str, object]:
     ) as raw_output:
         output = Path(raw_output)
         artifact = train_and_seal_round74_pretest_policy(
-            [training],
+            training,
             [tuning],
             output_directory=output,
             compute_backend="directml",
@@ -170,8 +180,9 @@ def _run(repository: Path) -> dict[str, object]:
         panel = policy["candidate_panel"]
         selected = policy["model_artifact"]
         backend = policy["backend"]
+        optimization_population = policy["optimization_population"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v3",
+            "schema_version": "round-074-event-training-preflight-run-v4",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]
@@ -191,14 +202,23 @@ def _run(repository: Path) -> dict[str, object]:
                 )
             },
             "input_contract": {
-                "training_batch_sha256": training.batch_sha256,
+                "training_batch_sha256": [
+                    batch.batch_sha256 for batch in training
+                ],
                 "tuning_batch_sha256": tuning.batch_sha256,
+                "training_rows": sum(batch.rows for batch in training),
+                "tuning_rows": tuning.rows,
+                "training_capture_runs": len(training),
+                "tuning_capture_runs": 1,
                 "training_eligible_action_targets": int(
-                    training.action_eligibility.sum()
+                    sum(batch.action_eligibility.sum() for batch in training)
                 ),
                 "tuning_eligible_action_targets": int(tuning.action_eligibility.sum()),
                 "training_eligible_regime_targets": int(
-                    training.regime_unpredictability_eligibility.sum()
+                    sum(
+                        batch.regime_unpredictability_eligibility.sum()
+                        for batch in training
+                    )
                 ),
                 "tuning_eligible_regime_targets": int(
                     tuning.regime_unpredictability_eligibility.sum()
@@ -207,6 +227,7 @@ def _run(repository: Path) -> dict[str, object]:
                 "seeds": list(config.seeds),
                 "epochs": config.maximum_epochs,
                 "minibatch_rows": config.minibatch_rows,
+                "optimization_population": optimization_population,
             },
             "result": {
                 "policy_sha256": artifact.policy_sha256,
@@ -235,6 +256,24 @@ def _run(repository: Path) -> dict[str, object]:
                 "peer_best_run_balanced_tuning_proper_loss": {
                     candidate_id: [
                         peer["best_tuning_metrics"]["run_balanced_loss"]
+                        for peer in panel[candidate_id]["peer_reports"]
+                    ]
+                    for candidate_id in config.candidate_ids
+                },
+                "peer_run_balanced_optimization_schedule": {
+                    candidate_id: [
+                        {
+                            key: peer["history"][0]["optimization_metrics"][key]
+                            for key in (
+                                "run_count",
+                                "optimizer_steps",
+                                "run_contributions_per_optimizer_step",
+                                "minimum_run_minibatch_contributions",
+                                "maximum_run_minibatch_contributions",
+                                "minimum_eligible_minibatches_per_run",
+                                "maximum_eligible_minibatches_per_run",
+                            )
+                        }
                         for peer in panel[candidate_id]["peer_reports"]
                     ]
                     for candidate_id in config.candidate_ids
