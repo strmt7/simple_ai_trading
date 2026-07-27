@@ -410,6 +410,24 @@ def test_recovery_refuses_position_that_exceeds_journal_ownership() -> None:
     )
 
 
+@pytest.mark.parametrize("position_amount", ["NaN", "Infinity", "-Infinity"])
+def test_recovery_rejects_non_finite_position_amount(
+    position_amount: str,
+) -> None:
+    transport = _Transport()
+    transport.position_amount = Decimal(position_amount)
+    journal = _journal()
+    _seed_filled_entry(journal)
+
+    with pytest.raises(RuntimeError, match="position amount differs"):
+        recover_round74_execution_calibration(
+            transport=transport,
+            journal=journal,
+        )
+
+    assert transport.orders == {}
+
+
 def test_recovery_keeps_unfound_prepared_entry_blocking() -> None:
     transport = _Transport()
     journal = _journal()
