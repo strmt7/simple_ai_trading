@@ -62,7 +62,7 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v6"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v7"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -71,6 +71,9 @@ ROUND74_SEALED_BOOTSTRAP_SEED = 7_474_011
 ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS = 2_048
 ROUND74_SEALED_ECE_BINS = 10
 ROUND74_SEALED_TEST_RUNS = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
+ROUND74_SEALED_FAMILYWISE_ALPHA = 0.05
+ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT = 3
+ROUND74_SEALED_AI_MODEL_COUNT = 2
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _ACTIVITY_REGIMES = ("predictable", "unpredictable", "unavailable")
@@ -682,12 +685,16 @@ class Round74RunBlockBootstrap:
     draws: int
     seed: int
     point_mean_run_net_bps: float
+    three_configuration_bonferroni_lower_mean_run_net_bps: float
+    two_ai_model_bonferroni_lower_mean_run_net_bps: float
     one_sided_95_lower_mean_run_net_bps: float
     one_sided_95_upper_mean_run_net_bps: float
 
     def validate(self) -> None:
         values = (
             self.point_mean_run_net_bps,
+            self.three_configuration_bonferroni_lower_mean_run_net_bps,
+            self.two_ai_model_bonferroni_lower_mean_run_net_bps,
             self.one_sided_95_lower_mean_run_net_bps,
             self.one_sided_95_upper_mean_run_net_bps,
         )
@@ -698,12 +705,23 @@ class Round74RunBlockBootstrap:
             or any(not math.isfinite(float(value)) for value in values)
             or not self.one_sided_95_lower_mean_run_net_bps
             <= self.one_sided_95_upper_mean_run_net_bps
+            or not self.three_configuration_bonferroni_lower_mean_run_net_bps
+            <= self.two_ai_model_bonferroni_lower_mean_run_net_bps
+            <= self.one_sided_95_lower_mean_run_net_bps
         ):
             raise ValueError("Round 74 sealed bootstrap differs")
 
     def as_dict(self) -> dict[str, object]:
         self.validate()
-        return dict(self.__dict__)
+        return {
+            **self.__dict__,
+            "familywise_alpha": ROUND74_SEALED_FAMILYWISE_ALPHA,
+            "qualification_configuration_count": (
+                ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT
+            ),
+            "paired_ai_model_count": ROUND74_SEALED_AI_MODEL_COUNT,
+            "resampling_unit": "whole_capture_run",
+        }
 
 
 @dataclass(frozen=True)
@@ -1106,6 +1124,20 @@ def _run_bootstrap(
         draws=ROUND74_SEALED_BOOTSTRAP_DRAWS,
         seed=seed,
         point_mean_run_net_bps=float(totals.mean()),
+        three_configuration_bonferroni_lower_mean_run_net_bps=float(
+            np.quantile(
+                sampled,
+                ROUND74_SEALED_FAMILYWISE_ALPHA
+                / ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
+            )
+        ),
+        two_ai_model_bonferroni_lower_mean_run_net_bps=float(
+            np.quantile(
+                sampled,
+                ROUND74_SEALED_FAMILYWISE_ALPHA
+                / ROUND74_SEALED_AI_MODEL_COUNT,
+            )
+        ),
         one_sided_95_lower_mean_run_net_bps=float(np.quantile(sampled, 0.05)),
         one_sided_95_upper_mean_run_net_bps=float(np.quantile(sampled, 0.95)),
     )
@@ -1131,8 +1163,14 @@ def _financial_gate_reasons(
         reasons.append("asset_diversification_not_met")
     if metrics.total_net_bps <= 0.0 or metrics.mean_paired_net_bps <= 0.0:
         reasons.append("positive_after_cost_payoff_not_met")
-    if metrics.run_block_bootstrap.one_sided_95_lower_mean_run_net_bps <= 0.0:
-        reasons.append("positive_run_block_confidence_lower_bound_not_met")
+    if (
+        metrics.run_block_bootstrap
+        .three_configuration_bonferroni_lower_mean_run_net_bps
+        <= 0.0
+    ):
+        reasons.append(
+            "positive_familywise_run_block_confidence_lower_bound_not_met"
+        )
     if metrics.profitable_run_ratio < spec.minimum_profitable_run_ratio:
         reasons.append("profitable_run_ratio_not_met")
     if metrics.gross_loss_bps > 0.0 and (
@@ -1727,8 +1765,13 @@ def _ai_overlay(
         reasons.append("retained_trade_ratio_not_met")
     if strategy.total_net_bps <= trace.metrics.total_net_bps:
         reasons.append("positive_paired_after_cost_uplift_not_met")
-    if delta_bootstrap.one_sided_95_lower_mean_run_net_bps <= 0.0:
-        reasons.append("positive_paired_delta_confidence_lower_bound_not_met")
+    if (
+        delta_bootstrap.two_ai_model_bonferroni_lower_mean_run_net_bps
+        <= 0.0
+    ):
+        reasons.append(
+            "positive_paired_delta_familywise_confidence_lower_bound_not_met"
+        )
     if strategy.maximum_drawdown_bps > trace.metrics.maximum_drawdown_bps:
         reasons.append("maximum_drawdown_noninferiority_not_met")
     result = Round74SealedAIOverlay(
@@ -1952,8 +1995,11 @@ def evaluate_round74_sealed_once(
 __all__ = [
     "ROUND74_SEALED_BOOTSTRAP_DRAWS",
     "ROUND74_SEALED_BOOTSTRAP_SEED",
+    "ROUND74_SEALED_AI_MODEL_COUNT",
     "ROUND74_SEALED_EVALUATION_SCHEMA_VERSION",
+    "ROUND74_SEALED_FAMILYWISE_ALPHA",
     "ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS",
+    "ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT",
     "ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION",
     "Round74ActionForecastSlice",
     "Round74BinaryForecastMetrics",

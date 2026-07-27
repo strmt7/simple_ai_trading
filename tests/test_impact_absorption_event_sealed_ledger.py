@@ -537,6 +537,10 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert overlay.same_entry_latency_eligible_reviews == 23
     assert overlay.retained_trades == 23
     assert "same_entry_latency_eligibility_rate_not_met" in overlay.gate_reasons
+    assert (
+        "positive_paired_delta_familywise_confidence_lower_bound_not_met"
+        in overlay.gate_reasons
+    )
     assert overlay.strategy_metrics.selected_action_target_ineligible == 0
     assert outcome.report.inference_backend_kind == "cpu"
     assert outcome.report.profitability_claim is False
@@ -596,6 +600,25 @@ def test_sealed_financial_gate_rejects_future_censored_selected_action() -> None
     assert metrics.selected_action_target_ineligible == 1
     assert not metrics.financial_gate_passed
     assert "selected_action_target_coverage_incomplete" in metrics.gate_reasons
+
+
+def test_sealed_bootstrap_controls_three_configuration_familywise_error() -> None:
+    values = np.asarray((-13.0, 0.0, *(2.0 for _ in range(22))))
+    evidence = sealed_subject._run_bootstrap(
+        TEST_RUNS,
+        values,
+        expected_run_ids=TEST_RUNS,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+
+    assert evidence.one_sided_95_lower_mean_run_net_bps > 0.0
+    assert evidence.two_ai_model_bonferroni_lower_mean_run_net_bps <= 0.0
+    assert (
+        evidence.three_configuration_bonferroni_lower_mean_run_net_bps
+        <= evidence.two_ai_model_bonferroni_lower_mean_run_net_bps
+    )
+    assert evidence.as_dict()["qualification_configuration_count"] == 3
+    assert evidence.as_dict()["paired_ai_model_count"] == 2
 
 
 def test_target_free_two_model_review_panel_preserves_blocked_observations() -> None:
