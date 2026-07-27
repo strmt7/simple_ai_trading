@@ -137,8 +137,10 @@ def _run_preflight(repository: Path) -> dict[str, Any]:
 
 
 def _require_sha256(value: object, field: str) -> str:
-    if not isinstance(value, str) or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
     ):
         raise RuntimeError(f"{field} is not a lowercase SHA-256 digest")
     return value
@@ -194,8 +196,7 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
             )
         )
         or inputs.get("feature_count") != len(ROUND74_EVENT_FEATURE_NAMES)
-        or inputs.get("feature_names_sha256")
-        != ROUND74_EVENT_FEATURE_NAMES_SHA256
+        or inputs.get("feature_names_sha256") != ROUND74_EVENT_FEATURE_NAMES_SHA256
         or inputs.get("state_half_lives_seconds")
         != list(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS)
         or not isinstance(seeds, list)
@@ -272,13 +273,11 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
     selection = result.get("selection")
     if (
         not isinstance(selection, dict)
-        or selection.get("selected_candidate_id")
-        != result.get("selected_candidate_id")
+        or selection.get("selected_candidate_id") != result.get("selected_candidate_id")
         or selection.get("ordered_candidate_ids") != candidate_ids
         or selection.get("planned_comparison_count") != len(candidate_ids) - 1
         or selection.get("required_paired_capture_run_count") != 24
-        or selection.get("statistical_independence_or_significance_claim")
-        is not False
+        or selection.get("statistical_independence_or_significance_claim") is not False
         or selection.get("complexity_promotion_privilege") is not False
         or selection.get("backtest_metric_used_for_selection") is not False
         or not isinstance(selection.get("promotion_reports"), list)
@@ -344,9 +343,10 @@ def _build_evidence(
             "supersedes_artifact_sha256",
         ),
         "round": 74,
-        "executed_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat().replace(
-            "+00:00", "Z"
-        ),
+        "executed_at_utc": datetime.now(UTC)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
         "execution_git_commit": commit,
         "source_binding": _source_binding(repository),
         "backend": backend,

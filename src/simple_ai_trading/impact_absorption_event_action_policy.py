@@ -327,8 +327,7 @@ class Round74ActionInferenceContext:
             )
             or any(_SHA256.fullmatch(value) is None for value in self.sample_sha256)
             or any(
-                _SHA256.fullmatch(value) is None
-                for value in self.feature_window_sha256
+                _SHA256.fullmatch(value) is None for value in self.feature_window_sha256
             )
             or _SHA256.fullmatch(self.partition_sha256) is None
             or _SHA256.fullmatch(self.scaler_sha256) is None
@@ -981,9 +980,8 @@ class Round74ActionTrace:
                 raise ValueError("Round 74 action trace overlaps")
             open_until[key] = exit_value
         self.metrics.validate()
-        if (
-            self.metrics.trades != rows
-            or self.metrics.active_runs > len(self.expected_run_ids)
+        if self.metrics.trades != rows or self.metrics.active_runs > len(
+            self.expected_run_ids
         ):
             raise ValueError("Round 74 action trace count differs")
 
@@ -1599,18 +1597,13 @@ def select_round74_action_policy_batches(
     expected_runs = tuning_subpartition.policy_selection_run_ids
     requested_batches = tuple(batches)
     requested_candidate_batches = tuple(candidate_batches)
-    provided_runs = {
-        run_id for batch in requested_batches for run_id in batch.run_id
-    }
-    if (
-        requested_batches
-        and (
-            provided_runs != set(expected_runs)
-            or any(
-                candidates.tuning_subpartition_sha256
-                != tuning_subpartition.subpartition_sha256
-                for candidates in requested_candidate_batches
-            )
+    provided_runs = {run_id for batch in requested_batches for run_id in batch.run_id}
+    if requested_batches and (
+        provided_runs != set(expected_runs)
+        or any(
+            candidates.tuning_subpartition_sha256
+            != tuning_subpartition.subpartition_sha256
+            for candidates in requested_candidate_batches
         )
     ):
         raise ValueError("Round 74 action policy data role differs")
@@ -1628,9 +1621,7 @@ def select_round74_action_policy_batches(
     ):
         raise ValueError("Round 74 action policy data role differs")
     spec = round74_action_profile(first_candidates.profile)
-    scores_by_run: dict[str, list[float]] = {
-        run_id: [] for run_id in expected_runs
-    }
+    scores_by_run: dict[str, list[float]] = {run_id: [] for run_id in expected_runs}
     for candidates in selected_candidate_batches:
         for run_id, score, eligible in zip(
             candidates.run_id,
@@ -1718,12 +1709,9 @@ def select_round74_action_policy_batches(
             first_candidates.probability_calibration_sha256
         ),
         tuning_subpartition_sha256=tuning_subpartition.subpartition_sha256,
-        target_batch_sha256=tuple(
-            batch.batch_sha256 for batch in selected_batches
-        ),
+        target_batch_sha256=tuple(batch.batch_sha256 for batch in selected_batches),
         candidate_sha256=tuple(
-            candidates.candidate_sha256
-            for candidates in selected_candidate_batches
+            candidates.candidate_sha256 for candidates in selected_candidate_batches
         ),
         accepted=did_accept,
         selected_quantile=selected_quantile,

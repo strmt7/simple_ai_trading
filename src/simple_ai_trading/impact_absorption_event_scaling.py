@@ -21,9 +21,7 @@ ROUND74_EVENT_BINARY_FEATURE_COUNT = 8
 ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS = 250_000
 ROUND74_EVENT_SCALER_STANDARDIZED_CLIP = 12.0
 ROUND74_EVENT_SCALER_MINIMUM_SCALE = 1e-6
-ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM = (
-    "splitmix64-smallest-priority-v1"
-)
+ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM = "splitmix64-smallest-priority-v1"
 ROUND74_EVENT_SCALER_SAMPLING_SEED = 7404
 
 
@@ -82,10 +80,8 @@ class Round74EventFeatureScaler:
         if self.schema_version != ROUND74_EVENT_SCALER_SCHEMA_VERSION:
             raise ValueError("Round 74 scaler schema differs")
         if (
-            self.fit_sampling_algorithm
-            != ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM
-            or int(self.fit_sampling_seed)
-            != ROUND74_EVENT_SCALER_SAMPLING_SEED
+            self.fit_sampling_algorithm != ROUND74_EVENT_SCALER_SAMPLING_ALGORITHM
+            or int(self.fit_sampling_seed) != ROUND74_EVENT_SCALER_SAMPLING_SEED
         ):
             raise ValueError("Round 74 scaler sampling contract differs")
         if (
@@ -120,9 +116,7 @@ class Round74EventFeatureScaler:
 
     def transform(self, values: np.ndarray) -> np.ndarray:
         selected = np.asarray(values)
-        if selected.ndim < 2 or selected.shape[-1] != len(
-            ROUND74_EVENT_FEATURE_NAMES
-        ):
+        if selected.ndim < 2 or selected.shape[-1] != len(ROUND74_EVENT_FEATURE_NAMES):
             raise ValueError("Round 74 scaler input dimensions differ")
         numeric = selected.astype(np.float64, copy=False)
         if not np.isfinite(numeric).all():
@@ -204,12 +198,8 @@ def _splitmix64_priorities(indices: np.ndarray) -> np.ndarray:
             + np.uint64(ROUND74_EVENT_SCALER_SAMPLING_SEED)
             + np.uint64(0x9E3779B97F4A7C15)
         )
-        values = (values ^ (values >> np.uint64(30))) * np.uint64(
-            0xBF58476D1CE4E5B9
-        )
-        values = (values ^ (values >> np.uint64(27))) * np.uint64(
-            0x94D049BB133111EB
-        )
+        values = (values ^ (values >> np.uint64(30))) * np.uint64(0xBF58476D1CE4E5B9)
+        values = (values ^ (values >> np.uint64(27))) * np.uint64(0x94D049BB133111EB)
     return values ^ (values >> np.uint64(31))
 
 
@@ -235,14 +225,10 @@ def _smallest_priority_positions(
 
 def _validate_training_chunk(value: object) -> np.ndarray:
     selected = np.asarray(value)
-    if selected.ndim != 2 or selected.shape[1] != len(
-        ROUND74_EVENT_FEATURE_NAMES
-    ):
+    if selected.ndim != 2 or selected.shape[1] != len(ROUND74_EVENT_FEATURE_NAMES):
         raise ValueError("Round 74 scaler training matrix dimensions differ")
     if not np.isfinite(selected).all():
-        raise ValueError(
-            "Round 74 scaler training matrix contains nonfinite values"
-        )
+        raise ValueError("Round 74 scaler training matrix contains nonfinite values")
     binary = selected[:, :ROUND74_EVENT_BINARY_FEATURE_COUNT]
     if np.any((binary != 0.0) & (binary != 1.0)):
         raise ValueError("Round 74 scaler training binary features are invalid")
@@ -288,10 +274,7 @@ def _scaler_from_sample(
     upper[sparse_nonconstant] = observed_maximum[sparse_nonconstant]
     scale[sparse_nonconstant] = np.maximum(
         scale[sparse_nonconstant],
-        (
-            observed_maximum[sparse_nonconstant]
-            - observed_minimum[sparse_nonconstant]
-        )
+        (observed_maximum[sparse_nonconstant] - observed_minimum[sparse_nonconstant])
         / 4.0,
     )
     binary_slice = slice(0, ROUND74_EVENT_BINARY_FEATURE_COUNT)
@@ -376,9 +359,7 @@ def fit_round74_event_feature_scaler_stream(
         )
         sampled_values = np.ascontiguousarray(candidate_values[positions])
         sampled_indices = np.ascontiguousarray(candidate_indices[positions])
-        sampled_priorities = np.ascontiguousarray(
-            candidate_priorities[positions]
-        )
+        sampled_priorities = np.ascontiguousarray(candidate_priorities[positions])
         input_rows += int(chunk.shape[0])
     if (
         input_rows < 2

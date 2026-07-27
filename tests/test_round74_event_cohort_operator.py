@@ -102,17 +102,16 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
         ("operator_path", "operator_sha256"),
         ("wrapper_path", "wrapper_sha256"),
     ):
-        assert hashlib.sha256(
-            (REPOSITORY / source[path_key]).read_bytes()
-        ).hexdigest() == source[hash_key]
+        assert (
+            hashlib.sha256((REPOSITORY / source[path_key]).read_bytes()).hexdigest()
+            == source[hash_key]
+        )
     execution = contract["slot_execution_contract"]
     assert execution["automatic_retry_permitted"] is False
     assert execution["partition_written_only_after_all_168_bindings"] is True
     partition = contract["partition_contract"]
     assert partition["target_schema_version"] == "round-074-executable-event-target-v10"
-    assert partition["dataset_schema_version"] == (
-        ROUND74_EVENT_DATASET_SCHEMA_VERSION
-    )
+    assert partition["dataset_schema_version"] == (ROUND74_EVENT_DATASET_SCHEMA_VERSION)
     assert partition["event_sequence_schema_version"] == (
         ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
     )
@@ -160,20 +159,17 @@ def test_round74_cohort_v1_was_superseded_before_slot_zero() -> None:
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["correction_basis"][
-        "selected_from_market_or_model_outcome"
-    ] is False
-    assert evidence["correction_basis"][
-        "schedule_or_role_counts_changed"
-    ] is False
+    assert (
+        evidence["correction_basis"]["selected_from_market_or_model_outcome"] is False
+    )
+    assert evidence["correction_basis"]["schedule_or_role_counts_changed"] is False
     assert evidence["pre_supersession_state"]["slot_zero_started"] is False
-    assert evidence["pre_supersession_state"][
-        "cohort_market_data_collected"
-    ] is False
+    assert evidence["pre_supersession_state"]["cohort_market_data_collected"] is False
     sequence = evidence["replacement_sequence"]
-    assert sequence[
-        "replacement_task_verified_ready_before_superseded_task_removal"
-    ] is True
+    assert (
+        sequence["replacement_task_verified_ready_before_superseded_task_removal"]
+        is True
+    )
     assert sequence["superseded_task_removed"] is True
 
 
@@ -188,13 +184,12 @@ def test_round74_cohort_v2_state_lateness_was_corrected_before_slot_zero() -> No
     assert basis["selected_from_market_or_model_outcome"] is False
     assert basis["schedule_or_role_counts_changed"] is False
     assert evidence["pre_supersession_state"]["slot_zero_started"] is False
-    assert evidence["pre_supersession_state"][
-        "cohort_market_data_collected"
-    ] is False
+    assert evidence["pre_supersession_state"]["cohort_market_data_collected"] is False
     sequence = evidence["replacement_sequence"]
-    assert sequence[
-        "replacement_task_verified_ready_before_superseded_task_removal"
-    ] is True
+    assert (
+        sequence["replacement_task_verified_ready_before_superseded_task_removal"]
+        is True
+    )
     assert sequence["superseded_task_removed"] is True
 
 
@@ -256,29 +251,39 @@ def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
     assert ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES == 24 * 1024**3
     assert ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES == 4 * 1024**3
     assert ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS == 120
-    assert plan.slot(1).scheduled_start_wall_ns - plan.slot(
-        0
-    ).scheduled_start_wall_ns == 3_900_000_000_000
+    assert (
+        plan.slot(1).scheduled_start_wall_ns - plan.slot(0).scheduled_start_wall_ns
+        == 3_900_000_000_000
+    )
 
 
 def test_round74_cohort_slot_selection_never_shifts_window() -> None:
     plan = load_round74_cohort_operator_plan(REPOSITORY)
     start = plan.scheduled_start_wall_ns
 
-    assert select_round74_cohort_slot(
-        plan,
-        now_wall_ns=start - 1,
-    ).status == "before_campaign"
+    assert (
+        select_round74_cohort_slot(
+            plan,
+            now_wall_ns=start - 1,
+        ).status
+        == "before_campaign"
+    )
     at_start = select_round74_cohort_slot(plan, now_wall_ns=start)
     assert (at_start.status, at_start.slot_ordinal) == ("open", 0)
-    assert select_round74_cohort_slot(
-        plan,
-        now_wall_ns=start + 30_000_000_000,
-    ).status == "open"
-    assert select_round74_cohort_slot(
-        plan,
-        now_wall_ns=start + 30_000_000_001,
-    ).status == "between_slots"
+    assert (
+        select_round74_cohort_slot(
+            plan,
+            now_wall_ns=start + 30_000_000_000,
+        ).status
+        == "open"
+    )
+    assert (
+        select_round74_cohort_slot(
+            plan,
+            now_wall_ns=start + 30_000_000_001,
+        ).status
+        == "between_slots"
+    )
     second = select_round74_cohort_slot(
         plan,
         now_wall_ns=start + 3_900_000_000_000,
