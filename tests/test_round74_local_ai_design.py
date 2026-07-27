@@ -50,6 +50,7 @@ from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
 )
 from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
+    ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION,
     ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_financial_metrics import (
@@ -92,7 +93,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v37.json"
+    / "round-074-local-ai-review-design-v38.json"
 )
 
 
@@ -204,6 +205,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["sealed_ledger_schema_version"] == (
         ROUND74_SEALED_LEDGER_SCHEMA_VERSION
+    )
+    assert source["sealed_dataset_identity_schema_version"] == (
+        ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
     )
     assert source["sealed_claim_schema_version"] == (
         ROUND74_SEALED_CLAIM_SCHEMA_VERSION
@@ -360,6 +364,22 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is False
     )
     assert architecture["baseline_and_ai_share_reference_capital_denominator"] is True
+    assert architecture[
+        "public_sealed_entrypoint_accepts_metadata_identity_not_target_batches"
+    ] is True
+    assert architecture["metadata_identity_reserved_before_test_batch_loader"] is True
+    assert architecture[
+        "test_batch_identity_reconciled_to_reservation_before_scoring"
+    ] is True
+    assert architecture[
+        "sealed_review_provider_receives_target_free_contexts_and_candidates_only"
+    ] is True
+    assert architecture[
+        "sealed_replay_provider_invoked_only_after_live_reservation"
+    ] is True
+    assert architecture[
+        "precomputed_execution_replay_evidence_accepted_by_public_sealed_entrypoint"
+    ] is False
     assert (
         architecture[
             "ml_candidate_selection_requires_paired_capture_run_complexity_promotion"
@@ -734,6 +754,13 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["exact_delayed_execution_replay_implemented"] is True
     assert status["sealed_exact_execution_evidence_implemented"] is True
     assert status["exact_reference_capital_accounting_implemented"] is True
+    assert status["metadata_only_sealed_reservation_implemented"] is True
+    assert status["post_reservation_test_batch_loader_implemented"] is True
+    assert status[
+        "post_reservation_target_free_ai_review_provider_implemented"
+    ] is True
+    assert status["post_reservation_exact_replay_provider_implemented"] is True
+    assert status["operator_cannot_preinspect_test_data_claim"] is False
     assert status["future_censorship_promotion_gate_implemented"] is True
     assert status["equal_run_action_selection_implemented"] is True
     assert status["historical_ai_queue_latency_implemented"] is True
@@ -837,6 +864,16 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         is False
     )
     assert evaluation["baseline_and_ai_use_same_reference_capital_denominator"] is True
+    assert evaluation["test_batch_loader_invoked_only_after_live_reservation"] is True
+    assert evaluation["ai_review_provider_invoked_only_after_live_reservation"] is True
+    assert evaluation["exact_replay_provider_invoked_only_after_live_reservation"] is True
+    assert evaluation[
+        "replay_evidence_reconciled_to_post_reservation_instruction_panel"
+    ] is True
+    assert evaluation[
+        "provider_failure_after_reservation_permanently_consumes_test_access"
+    ] is True
+    assert evaluation["cryptographic_or_os_enforced_operator_blinding_claim"] is False
     assert evaluation["baseline_payoff_scaling_without_book_rewalk_permitted"] is False
     assert (
         evaluation["delayed_entry_exit_path_risk_and_adverse_selection_recomputed"]

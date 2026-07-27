@@ -335,8 +335,11 @@ After parser or taxonomy changes, regenerate the header through the native build
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement. Read
-  `round-074-event-sequence-model-design-v51.json` and
-  `round-074-local-ai-review-design-v37.json`. This is implemented mechanics,
+  `round-074-event-sequence-model-design-v52.json` and
+  `round-074-local-ai-review-design-v38.json`. The sealed entry point reserves
+  a metadata-only identity before loading target-bearing test batches, then
+  invokes target-free AI review and exact replay providers only while the
+  reservation is live. This is implemented mechanics,
   not AI inference, uplift, edge, profitability, or trading authority.
 - Live Binance AI reviews are exact-case, asynchronous, hash-chained, and
   shadow-only. Pending, failed, or stale reviews block only new entries; exits
