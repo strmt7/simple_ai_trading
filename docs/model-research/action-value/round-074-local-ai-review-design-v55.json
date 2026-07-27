@@ -1,0 +1,75 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v55",
+  "artifact_kind": "compact_contract_correction_delta",
+  "supersedes_artifact_sha256": "e353ac126ba828523a46afb81f178065dd2d640d459dba8bf8644fa1a86c726b",
+  "implementation_git_commit": "ee5684b38b8249b49a707947ce6b76b3da4908be",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "52bc7c46587935341dbf1f222eb3bd23f341befff705650f90e2818f5e222c37",
+      "review_request_schema_version": "round-074-ai-review-request-v5",
+      "prompt_payload_schema_version": "round-074-ai-prompt-payload-v7"
+    },
+    "bridge": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_bridge.py",
+      "sha256": "7c6a3b48fee8d8612c9ca275d5e3f60963147e9adbbf47202fbf90fc2e7b6054",
+      "schema_version": "round-074-ai-bridge-v4"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "f03ded473bd2cb58411f4b401c7c304121cbc4d192633f871b72073cea990261",
+      "schema_version": "round-074-ai-review-panel-v9"
+    },
+    "runtime_preflight_publisher": {
+      "path": "tools/publish_round74_ai_runtime_preflight.py",
+      "sha256": "709e2ad088ed4c94e873b2d889d4dec0abea84df2eef2c18f60ba2b1c8c2be3e",
+      "schema_version": "round-074-local-ai-runtime-preflight-v3"
+    }
+  },
+  "summary_unit_correction": {
+    "first_eight_source_features_are_binary_indicators": true,
+    "binary_last_value_units": "zero_or_one_indicator",
+    "binary_mean_units": "fraction_of_events",
+    "binary_standard_deviation_units": "population_standard_deviation",
+    "binary_recent_change_units": "signed_fraction_of_events_difference",
+    "remaining_source_features_are_training_scaler_normalized": true,
+    "remaining_summary_values_are_normalized_statistics": true,
+    "all_binary_summary_values_are_zero_or_one": false,
+    "raw_financial_units_apply_to_scaled_feature_summaries": false,
+    "forecast_and_adverse_excursion_arrays_are_basis_points": true,
+    "prompt_payload_hash_binds_corrected_summary_units": true,
+    "request_remains_causal_anonymized_and_target_free": true,
+    "financial_uplift_assumed": false
+  },
+  "runtime_preflight_delta": {
+    "output_policy": "create_only",
+    "risk_profile": "conservative",
+    "temporal_block_count": 4,
+    "temporal_feature_count": 14,
+    "temporal_order": "oldest_to_newest",
+    "synthetic_binary_source_state_is_internally_consistent": true,
+    "real_market_events_used": false,
+    "real_market_targets_used": false,
+    "preflight_can_grant_trading_authority": false
+  },
+  "verification": {
+    "focused_tests_passed": 82,
+    "protocol_summary_unit_assertions_passed": true,
+    "request_round_trip_hash_assertion_passed": true,
+    "synthetic_temporal_path_assertions_passed": true,
+    "ruff_passed": true,
+    "sealed_test_accessed": false,
+    "gpu_model_workload_executed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "e2e03838aa1eba071621dc565981f4c6e23678cbb619062590490da62b73f048"
+}
