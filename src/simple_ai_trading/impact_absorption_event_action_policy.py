@@ -27,6 +27,7 @@ from .impact_absorption_event_calibration import (
 from .impact_absorption_event_dataset import (
     ROUND74_EVENT_DATASET_SCHEMA_VERSION,
     ROUND74_EVENT_PARTITION_ROLES,
+    ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74EventTrainingBatch,
 )
 from .impact_absorption_event_financial_metrics import (
@@ -47,7 +48,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v4"
+ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
 ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v8"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
@@ -299,6 +300,7 @@ class Round74ActionInferenceContext:
     role: str
     partition_sha256: str
     scaler_sha256: str
+    window_representation: str
     run_id: tuple[str, ...]
     symbol: tuple[str, ...]
     decision_monotonic_ns: np.ndarray
@@ -327,6 +329,7 @@ class Round74ActionInferenceContext:
         if (
             self.schema_version != ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
+            or self.window_representation not in ROUND74_EVENT_WINDOW_REPRESENTATIONS
             or self.rows < 1
             or len(self.symbol) != self.rows
             or len(self.sample_sha256) != self.rows
@@ -386,6 +389,7 @@ class Round74ActionInferenceContext:
             "role": self.role,
             "partition_sha256": self.partition_sha256,
             "scaler_sha256": self.scaler_sha256,
+            "window_representation": self.window_representation,
             "run_id": list(self.run_id),
             "symbol": list(self.symbol),
             "sample_sha256": list(self.sample_sha256),
@@ -414,6 +418,7 @@ def _feature_row_sha256(
         "schema_version": ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
         "partition_sha256": context.partition_sha256,
         "scaler_sha256": context.scaler_sha256,
+        "window_representation": context.window_representation,
         "role": context.role,
         "run_id": context.run_id[index],
         "symbol": context.symbol[index],
@@ -440,6 +445,7 @@ def build_round74_action_inference_context(
         role=batch.role,
         partition_sha256=batch.partition_sha256,
         scaler_sha256=batch.scaler_sha256,
+        window_representation=batch.window_representation,
         run_id=tuple(batch.run_id),
         symbol=tuple(batch.symbol),
         decision_monotonic_ns=batch.decision_monotonic_ns,

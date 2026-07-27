@@ -625,6 +625,7 @@ def _single_row_context(
         role=source.role,
         partition_sha256=source.partition_sha256,
         scaler_sha256=source.scaler_sha256,
+        window_representation=source.window_representation,
         run_id=(source.run_id[index],),
         symbol=(source.symbol[index],),
         decision_monotonic_ns=integer("decision_monotonic_ns"),

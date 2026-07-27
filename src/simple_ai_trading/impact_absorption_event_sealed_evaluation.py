@@ -1670,6 +1670,8 @@ def infer_round74_target_free_candidates(
         != action_selection.probability_calibration_sha256
         or development.get("partition_sha256") != selected_contexts[0].partition_sha256
         or development.get("scaler_sha256") != selected_contexts[0].scaler_sha256
+        or {context.window_representation for context in selected_contexts}
+        != {development.get("window_representation")}
     ):
         raise ValueError("Round 74 sealed pretest identity differs")
     backend = require_backend(resolve_backend(compute_backend))

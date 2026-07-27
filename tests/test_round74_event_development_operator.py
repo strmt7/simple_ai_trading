@@ -107,6 +107,7 @@ class _Batch:
     batch_sha256: str
     run_id: tuple[str, ...]
     scaler_sha256: str = "2" * 64
+    window_representation: str = "per_symbol"
 
 
 class _Subpartition:
@@ -309,6 +310,7 @@ def _policy(roles: _Roles, *, representative: bool = True) -> dict[str, object]:
             "tuning_batch_sha256": [
                 batch.batch_sha256 for batch in roles.model_selection_batches
             ],
+            "window_representation": "per_symbol",
             "representative_window_policy_applied": representative,
             "test_batches_consumed": 0,
         },
@@ -483,6 +485,7 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
         "development_data": {
             "training_batch_sha256": [_digest(index) for index in range(100, 220)],
             "tuning_batch_sha256": [batch.batch_sha256 for batch in batches[:12]],
+            "window_representation": "per_symbol",
             "representative_window_policy_applied": True,
             "test_batches_consumed": 0,
         },
@@ -630,10 +633,11 @@ def test_round74_development_input_pipeline_prepares_roles_before_training(
         (
             "prepare",
             "read-only-store",
-            {
-                "partition": inputs.partition,
-                "target_assembly_by_run_id": {"run": "assembly"},
-            },
+                {
+                    "partition": inputs.partition,
+                    "target_assembly_by_run_id": {"run": "assembly"},
+                    "window_representation": "per_symbol",
+                },
         ),
         ("subpartition", inputs.partition),
         ("roles", prepared, {"subpartition": subpartition}),

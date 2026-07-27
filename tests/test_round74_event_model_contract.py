@@ -34,7 +34,6 @@ from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_action_policy import (
-    ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
     ROUND74_ACTION_DEFAULT_PROFILE,
     ROUND74_ACTION_HORIZONS_SECONDS,
     ROUND74_ACTION_PROFILES,
@@ -383,7 +382,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["event_action_context_schema_version"]
-        == ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
+        == "round-074-action-context-v4"
     )
     assert (
         source["event_action_policy_schema_version"]

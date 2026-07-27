@@ -27,6 +27,7 @@ from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .distributional_tcn_model import ExplicitAdamW
 from .impact_absorption_event_dataset import (
     ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS,
+    ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74EventTrainingBatch,
 )
 from .impact_absorption_event_model import (
@@ -41,8 +42,8 @@ from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v14"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v13"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v15"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v14"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -284,6 +285,7 @@ class Round74PretestPolicyArtifact:
 class _DevelopmentIdentity:
     partition_sha256: str
     scaler_sha256: str
+    window_representation: str
     target_context_sha256: tuple[str, ...]
     target_context_panel_sha256: str
     training_batch_sha256: tuple[str, ...]
@@ -399,6 +401,7 @@ def _validate_development_batches(
     all_batches = (*training, *tuning)
     partitions = {batch.partition_sha256 for batch in all_batches}
     scalers = {batch.scaler_sha256 for batch in all_batches}
+    representations = {batch.window_representation for batch in all_batches}
     contexts = tuple(
         sorted(
             {
@@ -412,6 +415,11 @@ def _validate_development_batches(
         raise ValueError("Round 74 development partition identity differs")
     if len(scalers) != 1:
         raise ValueError("Round 74 development scaler identity differs")
+    if (
+        len(representations) != 1
+        or next(iter(representations)) not in ROUND74_EVENT_WINDOW_REPRESENTATIONS
+    ):
+        raise ValueError("Round 74 development window representation differs")
     target_context_panel_sha256 = _canonical_sha256(
         {
             "schema_version": (ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION),
@@ -421,6 +429,7 @@ def _validate_development_batches(
     return _DevelopmentIdentity(
         partition_sha256=next(iter(partitions)),
         scaler_sha256=next(iter(scalers)),
+        window_representation=next(iter(representations)),
         target_context_sha256=contexts,
         target_context_panel_sha256=target_context_panel_sha256,
         training_batch_sha256=tuple(batch.batch_sha256 for batch in training),
@@ -1433,6 +1442,7 @@ def train_and_seal_round74_pretest_policy(
         "development_data": {
             "partition_sha256": development.partition_sha256,
             "scaler_sha256": development.scaler_sha256,
+            "window_representation": development.window_representation,
             "target_context_panel_schema_version": (
                 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
             ),
@@ -1855,6 +1865,7 @@ def load_round74_pretest_policy(
         != {
             "partition_sha256",
             "scaler_sha256",
+            "window_representation",
             "target_context_panel_schema_version",
             "target_context_panel_sha256",
             "target_context_sha256",
@@ -1876,6 +1887,8 @@ def load_round74_pretest_policy(
         or training_batch_hashes & tuning_batch_hashes
         or development.get("representative_window_policy_applied")
         is not (reconstructed_config.execution_mode == "cohort")
+        or development.get("window_representation")
+        not in ROUND74_EVENT_WINDOW_REPRESENTATIONS
         or any(
             _SHA256.fullmatch(str(development.get(name, ""))) is None
             for name in (
