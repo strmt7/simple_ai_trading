@@ -334,8 +334,13 @@ After parser or taxonomy changes, regenerate the header through the native build
   ineligibility, and delayed overlap remain paired zero-exposure outcomes.
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
-  deployed notional after quantity quantization or delayed price movement. Read
-  `round-074-event-sequence-model-design-v63.json` and
+  deployed notional after quantity quantization or delayed price movement.
+  The first 65-minute cohort halted on slot 000 before admission because terminal
+  analysis exceeded its operator budget; that run remains excluded. The
+  separately hash-bound v5 plan uses a 75-minute cadence and preserves the same
+  120/24/24 roles. Read `round-074-event-sequence-model-design-v64.json`, which
+  composes the complete unchanged v63 model contract with the corrected plan,
+  operator, execution-evidence, and research bindings, then
   `round-074-local-ai-review-design-v49.json`. The model now uses an exact,
   target-blind 768-window sample per capture run, disjoint 12/6/6 tuning roles,
   and bounded equal-run DirectML groups. It also adds causal

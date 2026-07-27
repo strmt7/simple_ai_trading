@@ -1,0 +1,138 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v64",
+  "created_at_utc": "2026-07-27T17:36:00Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v63.json",
+    "normalized_lf_sha256": "7715be571b11b6503a6de30340078ef029995f4eae1dfb878d6165f5f7f42d9a",
+    "composition_rule": "v63 remains the complete model contract; v64 replaces only the cohort, operator, execution-evidence, and research decisions declared here"
+  },
+  "prospective_cohort": {
+    "plan_path": "docs/model-research/action-value/round-074-event-cohort-plan-v5.json",
+    "plan_sha256": "4373c432bcabb10071a0e60a90bf7ac99299139f223eb2a5afff920e6b78deb4",
+    "operator_contract_path": "docs/model-research/action-value/round-074-event-cohort-operator-v10.json",
+    "operator_contract_artifact_sha256": "0ef07ff29ae84064ded8956925959e79a55742751bef4890b2a3fd7a33073abf",
+    "host_schedule_path": "docs/model-research/action-value/round-074-event-cohort-host-schedule-v6-2026-07-27.json",
+    "host_schedule_artifact_sha256": "982a84f10fd0a521cdd0d374e3e6eca1e7e34c4f70df78b85726b6c7d012a6fc",
+    "failed_predecessor_evidence_path": "docs/model-research/action-value/round-074-event-cohort-plan-v4-r2-slot-000-failure-2026-07-27.json",
+    "failed_predecessor_evidence_artifact_sha256": "f229b954192be98ac2dd981c40b9e41d1772168effab429f9b91a9724a43b643",
+    "failed_predecessor_data_permitted": false,
+    "capture_roles": {
+      "training": 120,
+      "tuning": 24,
+      "test": 24
+    },
+    "slot_period_seconds": 4500,
+    "capture_duration_seconds": 3600,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ]
+  },
+  "model_contract_delta": {
+    "candidate_panel_changed": false,
+    "candidate_ids": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn",
+      "causal_event_attention"
+    ],
+    "feature_contract_changed": false,
+    "feature_count": 66,
+    "feature_names_sha256": "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a",
+    "target_contract_changed": false,
+    "training_tuning_test_roles_changed": false,
+    "candidate_promotion_rule_changed": false,
+    "probability_calibration_rule_changed": false,
+    "action_policy_rule_changed": false,
+    "ai_overlay_rule_changed": false,
+    "sealed_test_rule_changed": false,
+    "default_profile": "conservative",
+    "model_predictions_are_unlevered": true,
+    "leverage_is_not_a_source_of_edge": true
+  },
+  "execution_evidence_delta": {
+    "testnet_calibration_campaign_schema_version": "round-074-execution-calibration-campaign-plan-v1",
+    "testnet_only": true,
+    "mainnet_order_authority": false,
+    "credentials_committed_or_logged": false,
+    "runtime_exchange_filters_required": true,
+    "common_reference_notional_tolerance_required": true,
+    "entry_and_reduce_only_exit_measured_separately": true,
+    "per_symbol_per_side_latency_required": true,
+    "per_symbol_per_side_residual_slippage_required": true,
+    "rate_limit_headroom_required": true,
+    "execution_calibration_complete_now": false,
+    "missing_execution_evidence_policy": "block target assembly and every model or profitability claim"
+  },
+  "research_delta": [
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "used_for": "retaining stationary order-book and trade-flow features, symbol-shared modeling, and explicit adverse-selection stress"
+    },
+    {
+      "title": "Cross-impact of order flow imbalance in equity markets",
+      "url": "https://doi.org/10.1080/14697688.2023.2236159",
+      "used_for": "recognizing that lagged cross-asset OFI can help while multilevel own-asset OFI often dominates contemporaneous cross-impact"
+    },
+    {
+      "title": "Limit Order Book Event Stream Prediction with Diffusion Model",
+      "url": "https://arxiv.org/abs/2412.09631",
+      "used_for": "separating event-generation research from low-latency executable-payoff prediction"
+    },
+    {
+      "title": "Machine Learning-Based Bitcoin Trading Under Transaction Costs: Evidence From Walk-Forward Forecasting",
+      "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6795938",
+      "used_for": "retaining cost-aware abstention and rejecting sign accuracy as economic evidence"
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "used_for": "retaining simple controls and executable-transaction evaluation before complexity promotion"
+    }
+  ],
+  "research_decisions": {
+    "new_architecture_added_without_representative_evidence": false,
+    "reason_candidate_panel_retained": "The existing panel already tests stationary linear and nonlinear controls, causal convolution, and causal attention. Architecture novelty alone does not establish incremental after-cost value.",
+    "cross_asset_feature_panel_added": false,
+    "cross_asset_decision": "Lagged cross-impact is plausible but not uniformly incremental after multilevel own-asset flow. Adding another panel now would enlarge multiplicity without execution-grounded evidence.",
+    "diffusion_generator_used_for_live_inference": false,
+    "diffusion_decision": "Event-generation quality is not an executable payoff, latency, fill, or tail-risk result.",
+    "fixed_low_liquidity_hours_prohibited": true,
+    "dynamic_liquidity_policy": "Use observed spread, depth, volatility, flow, state freshness, and calibrated regime unpredictability; abstain when the selected profile gates fail.",
+    "predictive_accuracy_required": true,
+    "predictive_accuracy_sufficient_for_promotion": false,
+    "after_cost_tradability_required": true,
+    "drawdown_and_adverse_selection_non_degradation_required": true
+  },
+  "normalized_lf_source_binding": {
+    "src/simple_ai_trading/impact_absorption_event_cohort.py": "3fab2a2ef17bcc03813287d39252d3fcdd2dbff6ff9bce8e22119ed4f4c6f557",
+    "src/simple_ai_trading/round74_event_cohort_operator.py": "df3bd79a714b14211c57fabb5ce8dcfbce38d145c6d620e460c88322d87384e0",
+    "src/simple_ai_trading/round74_event_development_inputs.py": "68b3bef8ed8b5933cee524e613e28890714d853fa030d39992c04c566fcf65e8",
+    "src/simple_ai_trading/round74_event_development_operator.py": "6f51347cb6449e4ccbee26da0972df1a1b285a504a6a56c0ec5ea2bc2fa5a423",
+    "src/simple_ai_trading/impact_absorption_event_sequence.py": "3b70c7cd8cea759a69a406dd2a69401d431451a6820cb47a230880eab9c94572",
+    "src/simple_ai_trading/impact_absorption_event_model.py": "f2c3ef259e41662e83e7c61a409660ad3787a7538bcb6c50199c70b4a04d0044",
+    "src/simple_ai_trading/impact_absorption_event_training.py": "3e87b4d84e19f1d9d935d1de2da7b4dda30b486282a8262c6d74759dfa8438f5",
+    "src/simple_ai_trading/impact_absorption_event_action_policy.py": "29be3bac65ec7473dc3cd16e3e09a61a245182f1568b2b90166de34b7add96bc",
+    "src/simple_ai_trading/impact_absorption_event_calibration.py": "6c42d446e7c2538371bcf318bca66f910402b771c253df9f8e60a9efa7fc4a71",
+    "src/simple_ai_trading/impact_absorption_target_assembly.py": "fbd8d64e244413bfe26da0c384c3f16c6a2cd9b9b4e5e315209792751a238420",
+    "src/simple_ai_trading/impact_absorption_execution_evidence.py": "7877e15113b39095f035fa789bd2964951efb7b8688bcd01c2315bbe2e952ce0",
+    "src/simple_ai_trading/round74_execution_calibration_coordinator.py": "9e219f689a4a1591fa9a186031016bab536b656ae332872b4d39cff08f899ebe",
+    "src/simple_ai_trading/round74_execution_calibration_capture.py": "2fe0a33b3e5a5220ae92446c60d0478ff462d457c513ded830f48b20c7e40051",
+    "src/simple_ai_trading/round74_execution_calibration_sizing.py": "d4e7b21da815fa9b9e4740b7dc7d92be9287b86d706b1d1e1b7bde422e10a63e",
+    "src/simple_ai_trading/round74_execution_calibration_transport.py": "76a8019dae8144e93b7a97bfdb5aedefbc055d8509c9c87337d8fe5c98bedf49",
+    "src/simple_ai_trading/round74_execution_calibration_campaign.py": "34aaec7e494f50ee32a367cbef5bcf70afc817309e3b35f7171bb8a36e98f09f",
+    "src/simple_ai_trading/round74_execution_calibration_journal.py": "8eac22cb91ad9da39db83ab1e1904b026da508e7a0ec63374368619b765cf49d",
+    "src/simple_ai_trading/round74_commission_capture.py": "df0be9b255ee0e89a98622ff4b4fa4ef6052a9b9e7718814c3bfd29b527ae652"
+  },
+  "authority": {
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "design_sha256": "e35ef382cfb090da4cfde2c380561166a3ed2e5fecdc54c8f41ea373132fc035"
+}
