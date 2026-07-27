@@ -688,6 +688,46 @@ def test_global_event_windows_preserve_cross_asset_lead_lag_context() -> None:
     )
 
 
+def test_global_event_windows_enforce_stride_gap_and_order() -> None:
+    encoder = _encoder(ready_offset_ns=1)
+    tokens = []
+    for index, monotonic_ns in enumerate((100, 200, 300, 400, 10_000, 10_100)):
+        token = encoder.consume(
+            frame_index=0,
+            message_index=index,
+            record=_record(
+                lane="binance_futures_market",
+                sequence=index,
+                monotonic_ns=monotonic_ns,
+                stream_name="btcusdt@aggTrade",
+                payload=_trade(1_020 + index),
+            ),
+        )
+        assert token is not None
+        tokens.append(token)
+
+    accumulator = Round74GlobalEventWindowAccumulator(
+        sequence_length=2,
+        stride=2,
+        maximum_gap_ns=1_000,
+    )
+    observed = [
+        window
+        for token in tokens
+        if (window := accumulator.consume(token)) is not None
+    ]
+    assert [window.endpoint_message_index for window in observed] == [1, 3, 5]
+
+    with pytest.raises(ValueError, match="global event token order regressed"):
+        accumulator.consume(tokens[0])
+    with pytest.raises(ValueError, match="requires multiple tokens"):
+        Round74GlobalEventWindowAccumulator(sequence_length=1)
+    with pytest.raises(ValueError, match="stride must be positive"):
+        Round74GlobalEventWindowAccumulator(stride=0)
+    with pytest.raises(ValueError, match="gap limit must be positive"):
+        Round74GlobalEventWindowAccumulator(maximum_gap_ns=0)
+
+
 def test_event_sequence_fails_closed_on_regression_lane_and_duplicate_json() -> None:
     encoder = _encoder(ready_offset_ns=1)
     valid = _record(
