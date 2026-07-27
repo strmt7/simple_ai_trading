@@ -819,17 +819,24 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         evaluation["reusable_target_free_candidate_inference_implemented_now"] is True
     )
     assert evaluation["reservation_reset_api_available"] is False
-    assert evaluation[
-        "public_sealed_entrypoint_accepts_metadata_identity_not_target_batches"
-    ] is True
+    assert (
+        evaluation[
+            "public_sealed_entrypoint_accepts_metadata_identity_not_target_batches"
+        ]
+        is True
+    )
     assert evaluation["metadata_identity_reserved_before_test_batch_loader"] is True
     assert evaluation["test_batch_loader_invoked_only_after_live_reservation"] is True
-    assert evaluation[
-        "test_batch_identity_reconciled_to_reservation_before_scoring"
-    ] is True
-    assert evaluation[
-        "provider_failure_after_reservation_permanently_consumes_test_access"
-    ] is True
+    assert (
+        evaluation["test_batch_identity_reconciled_to_reservation_before_scoring"]
+        is True
+    )
+    assert (
+        evaluation[
+            "provider_failure_after_reservation_permanently_consumes_test_access"
+        ]
+        is True
+    )
     assert evaluation["cryptographic_or_os_enforced_operator_blinding_claim"] is False
     assert evaluation["sealed_test_runs"] == 24
     assert evaluation["sealed_bootstrap_draws"] == (ROUND74_SEALED_BOOTSTRAP_DRAWS)
@@ -924,16 +931,18 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["requested_size_multiplier_used_as_realized_notional_proxy"] is False
     assert ai["baseline_and_ai_use_same_reference_capital_denominator"] is True
     assert ai["capital_scaled_payoff_and_mae_recomputed_from_position_bps"] is True
-    assert ai[
-        "sealed_review_provider_receives_target_free_contexts_and_candidates_only"
-    ] is True
+    assert (
+        ai["sealed_review_provider_receives_target_free_contexts_and_candidates_only"]
+        is True
+    )
     assert ai["sealed_replay_provider_invoked_only_after_live_reservation"] is True
-    assert ai[
-        "precomputed_execution_replay_evidence_accepted_by_public_sealed_entrypoint"
-    ] is False
-    assert ai[
-        "replay_evidence_reconciled_to_post_reservation_instruction_panel"
-    ] is True
+    assert (
+        ai["precomputed_execution_replay_evidence_accepted_by_public_sealed_entrypoint"]
+        is False
+    )
+    assert (
+        ai["replay_evidence_reconciled_to_post_reservation_instruction_panel"] is True
+    )
     assert ai["historical_ai_queue_model_implemented_now"] is True
     assert ai["ai_queue_model"] == (
         "one FIFO single-server queue per alternative candidate model in historical "
@@ -997,9 +1006,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["exact_reference_capital_accounting_implementation"] is True
     assert authority["metadata_only_sealed_reservation_implementation"] is True
     assert authority["post_reservation_test_batch_loader_implementation"] is True
-    assert authority[
-        "post_reservation_target_free_ai_review_provider_implementation"
-    ] is True
+    assert (
+        authority["post_reservation_target_free_ai_review_provider_implementation"]
+        is True
+    )
     assert authority["post_reservation_exact_replay_provider_implementation"] is True
     assert authority["operator_cannot_preinspect_test_data_claim"] is False
     assert authority["sealed_multiple_comparison_control_implementation"] is True
