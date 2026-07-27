@@ -78,14 +78,16 @@ def _validate_path_panel(
     plan_path: Path,
     binding_directory: Path,
     target_assembly_directory: Path,
+    source_artifact_root: Path,
     output_directory: Path,
-) -> tuple[Path, Path, Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path, Path, Path]:
     raw_paths = (
         repository,
         database_path,
         plan_path,
         binding_directory,
         target_assembly_directory,
+        source_artifact_root,
         output_directory,
     )
     if any(path.is_symlink() for path in raw_paths):
@@ -95,6 +97,7 @@ def _validate_path_panel(
     plan = plan_path.resolve()
     bindings = binding_directory.resolve()
     assemblies = target_assembly_directory.resolve()
+    sources = source_artifact_root.resolve()
     output = output_directory.resolve()
     if (
         not root.is_dir()
@@ -103,10 +106,11 @@ def _validate_path_panel(
         or not plan.is_file()
         or not bindings.is_dir()
         or not assemblies.is_dir()
+        or not sources.is_dir()
         or (output.exists() and not output.is_dir())
     ):
         raise ValueError("Round 74 development path panel differs")
-    return database, plan, bindings, assemblies, output
+    return database, plan, bindings, assemblies, sources, output
 
 
 def _guard_idle_database(database: Path, *, repeated: bool) -> int:
@@ -128,6 +132,7 @@ def run_round74_event_development(
     repository: Path,
     database_path: Path,
     target_assembly_directory: Path,
+    source_artifact_root: Path,
     output_directory: Path,
     progress: ProgressCallback,
     plan_path: Path | None = None,
@@ -153,12 +158,13 @@ def run_round74_event_development(
         if binding_directory is None
         else Path(binding_directory)
     )
-    database, plan, bindings, assemblies, output = _validate_path_panel(
+    database, plan, bindings, assemblies, sources, output = _validate_path_panel(
         repository=selected_repository,
         database_path=Path(database_path),
         plan_path=selected_plan,
         binding_directory=selected_bindings,
         target_assembly_directory=Path(target_assembly_directory),
+        source_artifact_root=Path(source_artifact_root),
         output_directory=Path(output_directory),
     )
     normalized_memory, normalized_threads = validate_impact_store_resources(
@@ -180,6 +186,7 @@ def run_round74_event_development(
         plan_path=plan,
         binding_directory=bindings,
         target_assembly_directory=assemblies,
+        source_artifact_root=sources,
     )
     progress(
         "input_validation_completed",

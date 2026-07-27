@@ -13,10 +13,12 @@ def _paths(tmp_path: Path) -> dict[str, Path]:
     plan = repository / "plan.json"
     bindings = repository / "bindings"
     assemblies = repository / "assemblies"
+    sources = repository / "sources"
     output = repository / "output"
     database = repository / "microstructure.duckdb"
     bindings.mkdir(parents=True)
     assemblies.mkdir()
+    sources.mkdir()
     plan.write_text("{}\n", encoding="ascii")
     database.write_bytes(b"database")
     return {
@@ -24,6 +26,7 @@ def _paths(tmp_path: Path) -> dict[str, Path]:
         "plan": plan,
         "bindings": bindings,
         "assemblies": assemblies,
+        "sources": sources,
         "output": output,
         "database": database,
     }
@@ -127,6 +130,7 @@ def _run(
         plan_path=paths["plan"],
         binding_directory=paths["bindings"],
         target_assembly_directory=paths["assemblies"],
+        source_artifact_root=paths["sources"],
         output_directory=paths["output"],
         compute_backend="directml",
         memory_limit="4GB",
@@ -150,6 +154,7 @@ def test_runner_validates_inputs_before_read_only_database_and_reports_no_author
     input_index = events.index(input_event)
     store_event = next(value for value in events if value[0] == "store_init")
     assert input_index < events.index(store_event)
+    assert input_event[1]["source_artifact_root"] == paths["sources"].resolve()
     assert store_event[1] == paths["database"].resolve()
     assert store_event[2] == {
         "memory_limit": "4GB",
@@ -236,6 +241,7 @@ def test_runner_rechecks_capture_and_wal_without_opening_database(
             plan_path=paths["plan"],
             binding_directory=paths["bindings"],
             target_assembly_directory=paths["assemblies"],
+            source_artifact_root=paths["sources"],
             output_directory=paths["output"],
             progress=lambda *_args, **_kwargs: None,
         )
@@ -255,6 +261,7 @@ def test_runner_rechecks_capture_and_wal_without_opening_database(
             plan_path=paths["plan"],
             binding_directory=paths["bindings"],
             target_assembly_directory=paths["assemblies"],
+            source_artifact_root=paths["sources"],
             output_directory=paths["output"],
             progress=lambda *_args, **_kwargs: None,
         )
@@ -287,6 +294,7 @@ def test_runner_rejects_active_capture_before_panel_io(
             plan_path=paths["plan"],
             binding_directory=paths["bindings"],
             target_assembly_directory=paths["assemblies"],
+            source_artifact_root=paths["sources"],
             output_directory=paths["output"],
             progress=lambda *_args, **_kwargs: None,
         )

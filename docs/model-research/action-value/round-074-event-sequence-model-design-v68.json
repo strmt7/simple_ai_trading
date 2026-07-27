@@ -1,0 +1,115 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v68",
+  "created_at_utc": "2026-07-27T18:29:58Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v67.json",
+    "normalized_lf_sha256": "813d0fad3d2af22aaeed2f4014e460f4a63d14f2af4ea1898a6eb29f6bd335ce",
+    "design_sha256": "4a3f57cea9b922ab9f0d399dac7f9bff56cf5070be77228956dc624cd9aae429",
+    "composition_rule": "v67 remains the complete execution aggregation and no-transfer decision; v68 replaces only the development target-input provenance contract and guarded runtime source bindings declared here"
+  },
+  "target_assembly_manifest": {
+    "schema_version": "round-074-target-assembly-manifest-v1",
+    "source_path": "src/simple_ai_trading/round74_target_assembly_manifest.py",
+    "source_normalized_lf_sha256": "cca213f38e5d944b3fa6aedaefbe4cab41387afeb83be35678aab7baaf8ee937",
+    "test_path": "tests/test_round74_target_assembly_manifest.py",
+    "test_normalized_lf_sha256": "d22d613070f07fcacc9b49b7a35d04687cd455b26cb0fca3371b18547b166b7b",
+    "required_source_labels": [
+      "cohort_capture",
+      "exchange_info",
+      "commission",
+      "funding",
+      "execution_calibration",
+      "execution_scenario"
+    ],
+    "source_file_sha256_required": true,
+    "source_artifact_sha256_required": true,
+    "source_evidence_sha256_required": true,
+    "source_environment_reopened": true,
+    "mixed_environment_within_artifact_permitted": false,
+    "cohort_binding_sha256_required": true,
+    "run_binding_required_for": [
+      "cohort_capture",
+      "funding",
+      "execution_scenario"
+    ],
+    "scenario_contract_sha256_required": true,
+    "maximum_source_artifact_bytes": 16777216,
+    "testnet_calibration_may_supply_mainnet_assembly_evidence": false,
+    "production_execution_scenario_must_supply_assembly_latency_and_slippage_evidence": true,
+    "bare_self_consistent_assembly_accepted": false
+  },
+  "development_input_runtime": {
+    "input_schema_version": "round-074-development-inputs-v2",
+    "input_source_path": "src/simple_ai_trading/round74_event_development_inputs.py",
+    "input_source_normalized_lf_sha256": "e55822ea60a52dd498df1412cc98acfee9508df0e8102c724bf26fe86499f228",
+    "input_test_path": "tests/test_round74_event_development_inputs.py",
+    "input_test_normalized_lf_sha256": "4f05a015dc0f1817e4a5cb99ac16b303e7c74a33457d5c8d987e6dc466a98cfe",
+    "runtime_path": "src/simple_ai_trading/round74_event_development_runtime.py",
+    "runtime_normalized_lf_sha256": "4be0d996943b2e7e0bf81473edefb0d98beb14673744a1f0e2e2b6f46749b73e",
+    "runtime_test_path": "tests/test_round74_event_development_runtime.py",
+    "runtime_test_normalized_lf_sha256": "c3bf08e67eaf7caa3d3cfe1e702a9925a435463baf622c64a76c967f269b3929",
+    "tool_path": "tools/run_round74_event_development.py",
+    "tool_normalized_lf_sha256": "b6d6588d7c8060f09e70340cff42faabc62cec84ebc6364cd2fe9eb79968fd85",
+    "tool_test_path": "tests/test_round74_event_development_tool.py",
+    "tool_test_normalized_lf_sha256": "4ba7b7b680901136d02c011c13476d5ba43f587aaa5294f7af3cdf2ced45c086",
+    "required_binding_count": 168,
+    "required_development_manifest_count": 144,
+    "sealed_test_manifest_count_read": 0,
+    "manifest_sha256_in_inputs_sha256": true,
+    "source_artifact_root_required": true,
+    "all_manifest_and_source_validation_before_database_open": true,
+    "database_open_mode": "read_only",
+    "capture_and_wal_guards_preserved": true
+  },
+  "verification": {
+    "focused_test_files": [
+      "tests/test_round74_target_assembly_manifest.py",
+      "tests/test_round74_event_development_inputs.py",
+      "tests/test_round74_event_development_runtime.py",
+      "tests/test_round74_event_development_tool.py",
+      "tests/test_round74_event_model_design_v64.py",
+      "tests/test_round74_event_model_design_v65.py",
+      "tests/test_round74_event_model_design_v66.py",
+      "tests/test_round74_event_model_design_v67.py",
+      "tests/test_round74_event_model_design_v68.py"
+    ],
+    "focused_tests_passed_before_design_test": 22,
+    "ruff_check_passed_before_design_test": true,
+    "ruff_format_check_passed_before_design_test": true,
+    "representative_target_manifest_available": false,
+    "development_training_executed": false,
+    "sealed_test_accessed": false
+  },
+  "remaining_blocks": [
+    "source-backed production public-paper execution scenario contract and artifacts",
+    "complete and independently audited 168-slot prospective cohort",
+    "complete testnet execution-calibration aggregate",
+    "144 development manifests and source artifacts",
+    "development fit, calibration, selection, and immutable pretest seal",
+    "matched AI uplift evaluation",
+    "one-use sealed-test evaluation"
+  ],
+  "unchanged_model_contract": {
+    "candidate_panel_changed": false,
+    "feature_contract_changed": false,
+    "target_contract_changed": false,
+    "training_tuning_test_roles_changed": false,
+    "action_policy_rule_changed": false,
+    "ai_overlay_rule_changed": false,
+    "sealed_test_rule_changed": false,
+    "default_profile": "conservative",
+    "model_predictions_are_unlevered": true,
+    "leverage_is_not_a_source_of_edge": true
+  },
+  "authority": {
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "f458677f302420c9c45f2be27e85b4c1731baccdba08a667260260252a964701"
+}
