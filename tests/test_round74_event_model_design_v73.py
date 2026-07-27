@@ -16,9 +16,6 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
-from simple_ai_trading.round74_event_model_operator import (
-    ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
-)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -86,9 +83,6 @@ def test_round74_v73_binds_representation_through_sealed_inference() -> None:
         )
 
     assert ROUND74_EVENT_DATASET_SCHEMA_VERSION == "round-074-event-dataset-v10"
-    assert ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION == (
-        "round-074-event-model-operator-v4"
-    )
     assert ROUND74_EVENT_TRAINING_SCHEMA_VERSION == "round-074-event-training-v15"
     assert ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION == (
         "round-074-event-pretest-policy-v14"

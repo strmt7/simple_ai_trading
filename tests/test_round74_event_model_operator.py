@@ -260,6 +260,31 @@ class _RankedSample:
     decision_monotonic_ns: int
     anchor_index: int
     feature_window_sha256: str
+    endpoint_frame_index: int = 0
+    endpoint_message_index: int = 0
+
+
+@dataclass(frozen=True)
+class _RankedPair:
+    per_symbol: _RankedSample
+    global_cross_asset: _RankedSample
+
+    def validate(self) -> None:
+        if self.per_symbol.feature_window_sha256 == (
+            self.global_cross_asset.feature_window_sha256
+        ):
+            raise ValueError("representations are not distinct")
+
+    @property
+    def endpoint_sha256(self) -> str:
+        sample = self.per_symbol
+        return hashlib.sha256(
+            (
+                f"{sample.run_id}:{sample.symbol}:{sample.decision_wall_ns}:"
+                f"{sample.decision_monotonic_ns}:{sample.endpoint_frame_index}:"
+                f"{sample.endpoint_message_index}:{sample.anchor_index}"
+            ).encode("ascii")
+        ).hexdigest()
 
 
 @dataclass
@@ -272,12 +297,58 @@ class _Batch:
     rows: int = 1
     decision_wall_ns: np.ndarray | None = None
     window_representation: str = "per_symbol"
+    symbol: tuple[str, ...] = ("BTCUSDT",)
+    target_context_sha256: tuple[str, ...] = ("3" * 64,)
+    test_access_sha256: tuple[str, ...] = ("",)
+    decision_monotonic_ns: np.ndarray | None = None
+    endpoint_frame_index: np.ndarray | None = None
+    endpoint_message_index: np.ndarray | None = None
+    anchor_index: np.ndarray | None = None
+    actual_entry_monotonic_ns: np.ndarray | None = None
+    actual_exit_monotonic_ns: np.ndarray | None = None
+    net_payoff_bps: np.ndarray | None = None
+    maximum_adverse_excursion_bps: np.ndarray | None = None
+    adverse_selection: np.ndarray | None = None
+    regime_unpredictability: np.ndarray | None = None
+    action_eligibility: np.ndarray | None = None
+    regime_unpredictability_eligibility: np.ndarray | None = None
 
     def validate(self) -> None:
         if len(set(self.run_id)) != 1:
             raise ValueError("batch crossed runs")
         if self.decision_wall_ns is None:
             self.decision_wall_ns = np.asarray([WALL], dtype=np.int64)
+        for name in (
+            "decision_monotonic_ns",
+            "endpoint_frame_index",
+            "endpoint_message_index",
+            "anchor_index",
+            "actual_entry_monotonic_ns",
+            "actual_exit_monotonic_ns",
+        ):
+            if getattr(self, name) is None:
+                setattr(self, name, np.asarray([1], dtype=np.int64))
+        for name in (
+            "net_payoff_bps",
+            "maximum_adverse_excursion_bps",
+            "adverse_selection",
+            "regime_unpredictability",
+            "action_eligibility",
+            "regime_unpredictability_eligibility",
+        ):
+            if getattr(self, name) is None:
+                setattr(self, name, np.asarray([0.0], dtype=np.float64))
+
+
+@dataclass(frozen=True)
+class _MatchedPair:
+    per_symbol: _Sample
+    global_cross_asset: _Sample
+    endpoint_sha256: str = "9" * 64
+
+    def validate(self) -> None:
+        if self.per_symbol.run_id != self.global_cross_asset.run_id:
+            raise ValueError("pair run differs")
 
 
 def test_representative_window_selection_is_target_blind_and_exact() -> None:
@@ -348,6 +419,67 @@ def test_representative_window_selection_rejects_underfilled_strata() -> None:
 
     with pytest.raises(ValueError, match="coverage is incomplete"):
         subject.select_round74_representative_event_windows([sample], entry=entry)
+
+
+def test_matched_window_selection_is_endpoint_ranked_and_target_blind() -> None:
+    entry = _partition().entries[0]
+    span = entry.eligible_anchor_end_wall_ns - entry.eligible_anchor_start_wall_ns + 1
+    candidates: list[_RankedPair] = []
+    for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT"):
+        for stratum in range(subject.ROUND74_EVENT_MODEL_TEMPORAL_STRATA):
+            stratum_start = (
+                entry.eligible_anchor_start_wall_ns
+                + span * stratum // subject.ROUND74_EVENT_MODEL_TEMPORAL_STRATA
+            )
+            for candidate in range(
+                subject.ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM + 2
+            ):
+                endpoint = f"{symbol}:{stratum}:{candidate}".encode("ascii")
+                base = _RankedSample(
+                    run_id=entry.run_id,
+                    role=entry.role,
+                    symbol=symbol,
+                    decision_wall_ns=stratum_start + candidate,
+                    decision_monotonic_ns=stratum_start + candidate,
+                    anchor_index=len(candidates),
+                    feature_window_sha256=hashlib.sha256(
+                        b"per-symbol:" + endpoint
+                    ).hexdigest(),
+                )
+                candidates.append(
+                    _RankedPair(
+                        per_symbol=base,
+                        global_cross_asset=replace(
+                            base,
+                            feature_window_sha256=hashlib.sha256(
+                                b"global:" + endpoint
+                            ).hexdigest(),
+                        ),
+                    )
+                )
+
+    selected = subject.select_round74_representative_matched_event_windows(
+        candidates,
+        entry=entry,
+    )
+    reversed_selected = subject.select_round74_representative_matched_event_windows(
+        reversed(candidates),
+        entry=entry,
+    )
+
+    assert len(selected) == subject.ROUND74_EVENT_MODEL_WINDOWS_PER_RUN
+    assert [pair.endpoint_sha256 for pair in selected] == [
+        pair.endpoint_sha256 for pair in reversed_selected
+    ]
+    assert Counter(pair.per_symbol.symbol for pair in selected) == {
+        "BTCUSDT": 256,
+        "ETHUSDT": 256,
+        "SOLUSDT": 256,
+    }
+    policy = subject.round74_matched_representative_window_policy()
+    assert policy["feature_value_or_representation_digest_used_for_ranking"] is False
+    assert policy["target_value_or_outcome_used_for_ranking"] is False
+    assert policy["target_panel_used_only_for_exact_pair_validation"] is True
 
 
 @dataclass(frozen=True)
@@ -473,6 +605,97 @@ def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
     )
     assert [batch.run_id for batch in test] == [(test_id,)]
     assert authorizations[-1] == ("a" * 64, "b" * 64)
+
+
+def test_matched_role_assembly_replays_once_and_binds_equal_targets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition = _partition()
+    entry = partition.entries[0]
+    scaler_values = np.zeros((3, len(ROUND74_EVENT_FEATURE_NAMES)))
+    scaler_values[:, 0] = 1.0
+    scaler_values[:, 5] = 1.0
+    scaler = fit_round74_event_feature_scaler(
+        scaler_values,
+        partition_role="training",
+    )
+    assembly = object.__new__(Round74SourceTargetAssembly)
+    engines: list[object] = []
+
+    def create_engine(_self: object, *, anchors: object) -> object:
+        assert anchors == ()
+        engine = object()
+        engines.append(engine)
+        return engine
+
+    monkeypatch.setattr(Round74SourceTargetAssembly, "create_engine", create_engine)
+    replay_calls: list[dict[str, object]] = []
+
+    def matched(
+        _store: object,
+        *,
+        run_id: str,
+        target_engines: dict[str, object],
+        **_kwargs: object,
+    ) -> tuple[_MatchedPair, ...]:
+        replay_calls.append(target_engines)
+        return (
+            _MatchedPair(
+                per_symbol=_Sample(run_id, "per_symbol"),
+                global_cross_asset=_Sample(run_id, "global_cross_asset"),
+            ),
+        )
+
+    monkeypatch.setattr(subject, "iter_round74_matched_labeled_event_windows", matched)
+    monkeypatch.setattr(
+        subject,
+        "select_round74_representative_matched_event_windows",
+        lambda pairs, *, entry: tuple(pairs),
+    )
+
+    def batch_for(samples: tuple[_Sample, ...], *, scaler: object) -> _Batch:
+        representation = samples[0].window_representation
+        identity = 1 if representation == "per_symbol" else 2
+        return _Batch(
+            role="training",
+            run_id=(entry.run_id,),
+            scaler_sha256=scaler.scaler_sha256,
+            partition_sha256=partition.partition_sha256,
+            batch_sha256=f"{identity:064x}",
+            rows=subject.ROUND74_EVENT_MODEL_WINDOWS_PER_RUN,
+            window_representation=representation,
+            decision_wall_ns=np.asarray(
+                [entry.eligible_anchor_start_wall_ns],
+                dtype=np.int64,
+            ),
+        )
+
+    monkeypatch.setattr(subject, "build_round74_event_training_batch", batch_for)
+    result = subject.assemble_round74_matched_representation_role_batches(
+        _store(),
+        partition=partition,
+        scaler=scaler,
+        role="training",
+        target_assembly_by_run_id={entry.run_id: assembly},
+    )
+
+    assert len(replay_calls) == 1
+    assert set(replay_calls[0]) == {"per_symbol", "global_cross_asset"}
+    assert len(engines) == 2 and engines[0] is not engines[1]
+    assert result.per_symbol[0].window_representation == "per_symbol"
+    assert result.global_cross_asset[0].window_representation == (
+        "global_cross_asset"
+    )
+    assert result.as_dict()["source_replay_passes_per_run"] == 1
+    assert len(result.matched_role_sha256) == 64
+    with pytest.raises(ValueError, match="must be development"):
+        subject.assemble_round74_matched_representation_role_batches(
+            _store(),
+            partition=partition,
+            scaler=scaler,
+            role="test",
+            target_assembly_by_run_id={partition.entries[2].run_id: assembly},
+        )
 
 
 def test_role_assembly_rejects_invalid_inputs(
@@ -668,6 +891,87 @@ def test_development_preparation_excludes_test_and_binds_identity(
                 ),
             ),
         ).validate()
+
+
+def test_matched_development_preparation_reuses_one_scaler_and_role_replay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    partition = _partition()
+    scaler_values = np.zeros((3, len(ROUND74_EVENT_FEATURE_NAMES)))
+    scaler_values[:, 0] = 1.0
+    scaler_values[:, 5] = 1.0
+    scaler = fit_round74_event_feature_scaler(
+        scaler_values,
+        partition_role="training",
+    )
+    assembly = object.__new__(Round74SourceTargetAssembly)
+    development_entries = partition.entries[:2]
+    calls: list[str] = []
+    monkeypatch.setattr(
+        subject,
+        "fit_round74_cohort_feature_scaler",
+        lambda *_args, **_kwargs: scaler,
+    )
+
+    def matched_role(
+        _store: object,
+        *,
+        role: str,
+        target_assembly_by_run_id: dict[str, object],
+        **_kwargs: object,
+    ) -> subject.Round74MatchedRepresentationRoleBatches:
+        calls.append(role)
+        entry = next(item for item in development_entries if item.role == role)
+        assert set(target_assembly_by_run_id) == {entry.run_id}
+
+        def batch(representation: str, identity: int) -> _Batch:
+            return _Batch(
+                role=role,
+                run_id=(entry.run_id,),
+                scaler_sha256=scaler.scaler_sha256,
+                partition_sha256=partition.partition_sha256,
+                batch_sha256=f"{identity:064x}",
+                rows=subject.ROUND74_EVENT_MODEL_WINDOWS_PER_RUN,
+                window_representation=representation,
+                decision_wall_ns=np.asarray(
+                    [entry.eligible_anchor_start_wall_ns],
+                    dtype=np.int64,
+                ),
+            )
+
+        result = subject.Round74MatchedRepresentationRoleBatches(
+            role=role,
+            per_symbol=(batch("per_symbol", 1 if role == "training" else 3),),
+            global_cross_asset=(
+                batch("global_cross_asset", 2 if role == "training" else 4),
+            ),
+        )
+        result.validate()
+        return result
+
+    monkeypatch.setattr(
+        subject,
+        "assemble_round74_matched_representation_role_batches",
+        matched_role,
+    )
+    prepared = subject.prepare_round74_matched_development_data(
+        _store(),
+        partition=partition,
+        target_assembly_by_run_id={
+            entry.run_id: assembly for entry in development_entries
+        },
+    )
+
+    assert calls == ["training", "tuning"]
+    assert prepared.as_dict()["matched_representation_replay_passes_per_run"] == 1
+    assert prepared.representation("per_symbol").training_batches[
+        0
+    ].window_representation == "per_symbol"
+    assert prepared.representation("global_cross_asset").tuning_batches[
+        0
+    ].window_representation == "global_cross_asset"
+    with pytest.raises(ValueError, match="representation differs"):
+        prepared.representation("unbound")
 
 
 def test_development_preparation_rejects_identity_drift() -> None:
