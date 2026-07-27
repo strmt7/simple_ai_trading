@@ -56,7 +56,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v11.json"
+    / "round-074-local-ai-review-design-v12.json"
 )
 
 
@@ -177,6 +177,20 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is False
     )
     assert architecture["calibration_exact_run_ids_bound"] is True
+    assert architecture["runtime_elapsed_nanoseconds_bound_into_each_review_hash"] is True
+    assert (
+        architecture["same_entry_latency_budget_bound_into_each_review_and_panel_hash"]
+        is True
+    )
+    assert (
+        architecture[
+            "same_entry_latency_budget_may_be_derived_from_forecast_horizon_or_request_validity"
+        ]
+        is False
+    )
+    assert architecture["late_accepted_review_retains_auditable_decision"] is True
+    assert architecture["late_accepted_review_receives_same_entry_exposure"] is False
+    assert architecture["latency_adjusted_delayed_entry_replay_implemented"] is False
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -273,6 +287,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["sealed_ml_ai_evaluator_implemented"] is True
     assert status["target_free_candidate_inference_implemented"] is True
     assert status["two_model_review_preparation_implemented"] is True
+    assert status["same_entry_latency_uplift_gate_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
@@ -297,6 +312,31 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["implemented_missing_review_policy"] == (
         "invalidate entire evaluation"
     )
+    assert (
+        evaluation["runtime_elapsed_nanoseconds_and_same_entry_budget_are_hash_bound"]
+        is True
+    )
+    assert (
+        evaluation[
+            "same_entry_budget_must_not_exceed_independently_measured_residual_signal_to_entry_slack"
+        ]
+        is True
+    )
+    assert (
+        evaluation[
+            "forecast_horizon_or_request_validity_may_not_substitute_for_a_same_entry_budget"
+        ]
+        is True
+    )
+    assert evaluation["late_accepted_review_policy"] == (
+        "retain the validated decision for audit but apply zero exposure at the ML entry"
+    )
+    assert evaluation["same_entry_latency_eligibility_rate_gate"] == 0.99
+    assert (
+        evaluation["same_entry_latency_eligibility_is_distinct_from_runtime_success"]
+        is True
+    )
+    assert evaluation["latency_adjusted_delayed_entry_replay_implemented"] is False
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True

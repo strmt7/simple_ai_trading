@@ -82,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v25.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v26.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -514,6 +514,20 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["review_progress_emitted_after_every_candidate_model_pair"] is True
     assert ai["paired_development_evaluator_may_select_ai_model_or_promote"] is False
     assert ai["missing_review_policy"] == "invalidate entire evaluation"
+    assert ai["runtime_elapsed_nanoseconds_bound_into_each_review_hash"] is True
+    assert ai["same_entry_latency_budget_bound_into_review_and_panel_hashes"] is True
+    assert (
+        ai[
+            "same_entry_latency_budget_may_be_derived_from_forecast_horizon_or_request_validity"
+        ]
+        is False
+    )
+    assert ai["late_accepted_review_policy"] == (
+        "retain the validated decision for audit but apply zero exposure at the ML entry"
+    )
+    assert ai["same_entry_latency_eligibility_rate_gate"] == 0.99
+    assert ai["same_entry_latency_eligibility_is_distinct_from_runtime_success"] is True
+    assert ai["latency_adjusted_delayed_entry_replay_implemented_now"] is False
     assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
     assert (
         ai["target_eligibility_or_realized_exit_timing_may_select_ai_review_coverage"]
