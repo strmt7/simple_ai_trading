@@ -103,6 +103,13 @@ ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v47.json"
 )
+WARM_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v48.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -126,7 +133,13 @@ def _canonical_sha256(value: object) -> str:
 
 def _source_file_sha256(relative_path: str) -> str:
     artifact = json.loads(ARTIFACT_PATH.read_text(encoding="ascii"))
-    commit = artifact["implementation_git_commit"]
+    return _source_file_sha256_at(
+        artifact["implementation_git_commit"],
+        relative_path,
+    )
+
+
+def _source_file_sha256_at(commit: str, relative_path: str) -> str:
     completed = subprocess.run(  # nosec B603
         ["git", "show", f"{commit}:{relative_path}"],
         cwd=REPOSITORY,
@@ -136,6 +149,82 @@ def _source_file_sha256(relative_path: str) -> str:
     payload = completed.stdout
     canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def test_round74_warm_ai_design_binds_gpu_reuse_and_latest_model_contract() -> None:
+    previous = _load_json(ARTIFACT_PATH)
+    previous_sha256 = previous["artifact_sha256"]
+    artifact = _load_json(WARM_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    architecture = artifact["architecture"]
+    resources = artifact["resource_policy"]
+    preflight = artifact["runtime_preflight_evidence_binding"]
+    status = artifact["status"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v48"
+    assert artifact["supersedes_artifact_sha256"] == previous_sha256
+    assert source["runtime_outcome_schema_version"] == (
+        "round-074-ai-runtime-outcome-v2"
+    )
+    assert source["review_panel_schema_version"] == "round-074-ai-review-panel-v4"
+    assert source["event_model_design_path"].endswith(
+        "round-074-event-sequence-model-design-v62.json"
+    )
+    assert source["event_model_operator_schema_version"] == (
+        "round-074-event-model-operator-v2"
+    )
+    for label in (
+        "runtime",
+        "review_preparation",
+        "contract_generator",
+        "event_model_operator",
+    ):
+        assert source[f"{label}_sha256"] == _source_file_sha256_at(
+            commit,
+            source[f"{label}_path"],
+        )
+    assert source["event_model_design_file_sha256"] == _source_file_sha256_at(
+        commit,
+        source["event_model_design_path"],
+    )
+    assert architecture["cold_start_headroom_rechecked_before_model_load"] is True
+    assert architecture["warm_request_requires_exact_preinference_model_digest"] is (
+        True
+    )
+    assert architecture["warm_request_requires_preinference_full_gpu_residency"] is (
+        True
+    )
+    assert architecture[
+        "declared_model_unload_verified_after_each_real_model_batch"
+    ] is (True)
+    assert architecture["deterministic_model_tuning_roles_disjoint_and_hash_bound"] is (
+        True
+    )
+    assert architecture["deterministic_model_selection_tuning_run_count"] == 12
+    assert architecture["probability_calibration_tuning_run_count"] == 6
+    assert architecture["action_policy_selection_tuning_run_count"] == 6
+    assert resources["minimum_cold_free_vram_bytes"] == 8 * 1024**3
+    assert resources["minimum_cold_free_system_ram_bytes"] == 16 * 1024**3
+    assert resources["minimum_warm_free_system_ram_bytes"] == 16 * 1024**3
+    assert resources["warm_residual_ram_floor_may_be_bypassed"] is False
+    assert resources["one_large_model_resident_at_a_time"] is True
+    assert preflight["schema_version"] == "round-074-local-ai-runtime-preflight-v2"
+    assert preflight["request_count"] == 4
+    assert preflight["all_models_fully_gpu_resident"] is True
+    assert preflight["all_warm_requests_reused_exact_gpu_residency"] is True
+    assert preflight["resident_models_before"] == []
+    assert preflight["resident_models_after"] == []
+    assert preflight["representative_market_ai_evaluation_completed"] is False
+    assert preflight["ai_uplift_established"] is False
+    assert preflight["financial_edge_established"] is False
+    assert preflight["profitability_claim"] is False
+    assert status["representative_market_ai_evaluation_completed"] is False
+    assert status["ai_uplift_established"] is False
+    assert status["financial_edge_established"] is False
+    assert status["profitability_claim"] is False
 
 
 def _file_sha256(relative_path: str) -> str:
