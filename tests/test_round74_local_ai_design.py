@@ -63,7 +63,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v18.json"
+    / "round-074-local-ai-review-design-v19.json"
 )
 
 
@@ -273,6 +273,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is True
     )
     assert architecture["mixed_target_evidence_environments_permitted"] is False
+    assert (
+        architecture[
+            "target_payoff_exposes_midpoint_book_walk_explicit_cost_and_total_implementation_shortfall"
+        ]
+        is True
+    )
+    assert architecture["fees_plus_residual_slippage_may_be_labeled_total_cost"] is False
+    assert architecture["target_accounting_reconciles_in_quote_and_basis_points"] is True
+    assert architecture["adverse_selection_uses_midpoint_move_before_execution_friction"] is True
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -376,6 +385,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["sealed_multiple_comparison_control_implemented"] is True
     assert status["mandatory_funding_schedule_binding_implemented"] is True
     assert status["symbol_specific_execution_evidence_implemented"] is True
+    assert status["implementation_shortfall_reconciliation_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
@@ -465,6 +475,7 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         ]
         is False
     )
+    assert evaluation["paired_paths_share_exact_implementation_shortfall_decomposition"] is True
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True

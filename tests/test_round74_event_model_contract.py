@@ -86,7 +86,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v32.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v33.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -358,6 +358,27 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert costs["silently_empty_or_partial_funding_schedule_permitted"] is False
     assert costs["structured_evidence_claims_must_match_exact_configured_values"] is True
     assert costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
+    assert costs["midpoint_payoff_reported_before_execution_friction"] is True
+    assert costs["book_walk_implementation_shortfall_reported_separately"] is True
+    assert costs["commission_and_residual_slippage_reported_separately"] is True
+    assert costs["explicit_cost_equals_commission_plus_residual_slippage"] is True
+    assert (
+        costs[
+            "total_implementation_shortfall_equals_book_walk_plus_explicit_cost"
+        ]
+        is True
+    )
+    assert (
+        costs[
+            "net_payoff_equals_midpoint_payoff_minus_total_implementation_shortfall"
+        ]
+        is True
+    )
+    assert costs["quote_and_basis_point_reconciliation_required"] is True
+    assert costs["fees_plus_residual_slippage_may_be_labeled_total_cost"] is False
+    assert costs["adverse_selection_definition"] == (
+        "signed midpoint move against the selected side before execution friction"
+    )
     assert costs["missing_account_fee_policy"] == "fail closed"
     assert costs["runtime_fee_mismatch_policy"] == (
         "model bundle is incompatible and cannot trade"
@@ -666,6 +687,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["sealed_multiple_comparison_control_implementation"] is True
     assert authority["mandatory_funding_schedule_binding_implementation"] is True
     assert authority["symbol_specific_execution_evidence_implementation"] is True
+    assert authority["implementation_shortfall_reconciliation_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
@@ -821,7 +843,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
     assert "compute-only evidence" in binding["event_training_directml_reuse_scope"]
-    assert "does not bind target-v4" in binding["event_training_directml_reuse_scope"]
+    assert "does not bind target-v5" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
