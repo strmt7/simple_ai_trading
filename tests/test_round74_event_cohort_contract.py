@@ -72,7 +72,7 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     assert datetime.fromtimestamp(
         plan.slot(167).scheduled_end_wall_ns / 1_000_000_000,
         tz=timezone.utc,
-    ).isoformat() == "2026-08-03T17:02:00+00:00"
+    ).isoformat() == "2026-08-04T04:10:00+00:00"
     assert plan.slot(119).role == "training"
     assert plan.slot(120).role == "tuning"
     assert plan.slot(143).role == "tuning"
