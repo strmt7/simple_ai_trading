@@ -110,10 +110,14 @@ def _spec(
     exit_latencies: dict[str, int] | None = None,
     slippage_by_symbol: dict[str, float] | None = None,
     funding_boundaries: dict[str, tuple[int, ...]] | None = None,
+    funding_coverage: dict[str, tuple[int, int]] | None = None,
     funding_evidence_sha256: str = "e" * 64,
 ) -> Round74EventTargetSpec:
     funding = funding_boundaries if funding_boundaries is not None else {
         symbol: () for symbol in SYMBOLS
+    }
+    coverage = funding_coverage if funding_coverage is not None else {
+        symbol: (0, 1_000_000_000_000) for symbol in SYMBOLS
     }
     fees = {symbol: fee_bps for symbol in SYMBOLS}
     entries = (
@@ -138,6 +142,7 @@ def _spec(
         decision_to_exit_latency_ns_by_symbol=exits,
         taker_fee_bps_by_symbol=fees,
         funding_boundaries_monotonic_ns=funding,
+        funding_schedule_coverage_monotonic_ns=coverage,
         additional_slippage_bps_per_side_by_symbol=slippage,
         commission_evidence=_evidence(
             "commission",
@@ -162,7 +167,10 @@ def _spec(
         ),
         funding_schedule_evidence=_evidence(
             "funding_schedule",
-            round74_funding_schedule_evidence_claims(funding),
+            round74_funding_schedule_evidence_claims(
+                funding_boundaries_monotonic_ns=funding,
+                funding_schedule_coverage_monotonic_ns=coverage,
+            ),
             payload_sha256=funding_evidence_sha256,
         ),
     )
@@ -727,14 +735,38 @@ def test_round74_target_engine_censors_funding_crossing_and_capacity() -> None:
     } == {"entry_capacity"}
 
 
-def test_round74_target_engine_rechecks_funding_at_actual_exit() -> None:
-    engine = Round74EventTargetEngine(
-        spec=_spec(
-            funding_boundaries={
+@pytest.mark.parametrize(
+    ("funding_boundaries", "funding_coverage", "expected_reason"),
+    (
+        (
+            {
                 "BTCUSDT": (2_250_000_000,),
                 "ETHUSDT": (),
                 "SOLUSDT": (),
-            }
+            },
+            None,
+            "funding_boundary",
+        ),
+        (
+            {symbol: () for symbol in SYMBOLS},
+            {
+                "BTCUSDT": (0, 2_250_000_000),
+                "ETHUSDT": (0, 1_000_000_000_000),
+                "SOLUSDT": (0, 1_000_000_000_000),
+            },
+            "funding_coverage",
+        ),
+    ),
+)
+def test_round74_target_engine_rechecks_funding_at_actual_exit(
+    funding_boundaries: dict[str, tuple[int, ...]],
+    funding_coverage: dict[str, tuple[int, int]] | None,
+    expected_reason: str,
+) -> None:
+    engine = Round74EventTargetEngine(
+        spec=_spec(
+            funding_boundaries=funding_boundaries,
+            funding_coverage=funding_coverage,
         ),
         anchors=[_anchor()],
         quantity_rules=_rules(),
@@ -767,7 +799,7 @@ def test_round74_target_engine_rechecks_funding_at_actual_exit() -> None:
 
     assert not any(outcome.eligible for outcome in outcomes)
     assert {outcome.ineligible_reason for outcome in outcomes} == {
-        "funding_boundary"
+        expected_reason
     }
     one_second = [
         outcome for outcome in outcomes if outcome.horizon_seconds == 1
@@ -921,6 +953,9 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
         "ETHUSDT": [],
         "SOLUSDT": [],
     }
+    assert spec_payload["funding_schedule_coverage_monotonic_ns"] == {
+        symbol: [0, 1_000_000_000_000] for symbol in SYMBOLS
+    }
     assert spec_payload["funding_schedule_is_mandatory_and_hash_bound"] is True
     assert _spec(
         funding_boundaries={
@@ -979,5 +1014,20 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
         )
     with pytest.raises(ValueError, match="funding schedule differs"):
         _spec(funding_boundaries={"BTCUSDT": (3 * NS,)})
+    with pytest.raises(ValueError, match="funding coverage differs"):
+        _spec(
+            funding_boundaries={
+                "BTCUSDT": (3 * NS,),
+                "ETHUSDT": (),
+                "SOLUSDT": (),
+            },
+            funding_coverage={
+                "BTCUSDT": (0, 2 * NS),
+                "ETHUSDT": (0, 4 * NS),
+                "SOLUSDT": (0, 4 * NS),
+            },
+        )
+    with pytest.raises(ValueError, match="funding coverage differs"):
+        _spec(funding_coverage={"BTCUSDT": (0, 4 * NS)})
     with pytest.raises(ValueError, match="evidence source payload"):
         _spec(funding_evidence_sha256="unverified")

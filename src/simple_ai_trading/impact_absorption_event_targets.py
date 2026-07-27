@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v6"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v7"
 ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "round-074-target-evidence-v1"
 )
@@ -60,6 +60,7 @@ ROUND74_EVENT_TARGET_INELIGIBLE_REASONS = frozenset(
         "entry_capacity",
         "entry_minimum_notional",
         "funding_boundary",
+        "funding_coverage",
         "path_capacity",
         "path_state_gap",
         "exit_state_late",
@@ -150,7 +151,9 @@ def round74_slippage_evidence_claims(
 
 
 def round74_funding_schedule_evidence_claims(
+    *,
     funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
+    funding_schedule_coverage_monotonic_ns: Mapping[str, Sequence[int]],
 ) -> dict[str, object]:
     return {
         "funding_boundaries_monotonic_ns": {
@@ -161,7 +164,16 @@ def round74_funding_schedule_evidence_claims(
                 funding_boundaries_monotonic_ns.items()
             )
         },
+        "funding_schedule_coverage_monotonic_ns": {
+            str(symbol).strip().upper(): [
+                int(value) for value in coverage
+            ]
+            for symbol, coverage in sorted(
+                funding_schedule_coverage_monotonic_ns.items()
+            )
+        },
         "funding_crossing_policy": "censor",
+        "funding_coverage_policy": "censor",
     }
 
 
@@ -295,6 +307,9 @@ class Round74EventTargetSpec:
     decision_to_exit_latency_ns_by_symbol: tuple[tuple[str, int], ...]
     taker_fee_bps_by_symbol: tuple[tuple[str, float], ...]
     funding_boundaries_monotonic_ns: tuple[tuple[str, tuple[int, ...]], ...]
+    funding_schedule_coverage_monotonic_ns: tuple[
+        tuple[str, tuple[int, int]], ...
+    ]
     additional_slippage_bps_per_side_by_symbol: tuple[
         tuple[str, float], ...
     ]
@@ -325,6 +340,7 @@ class Round74EventTargetSpec:
         decision_to_exit_latency_ns_by_symbol: Mapping[str, int],
         taker_fee_bps_by_symbol: Mapping[str, float],
         funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
+        funding_schedule_coverage_monotonic_ns: Mapping[str, Sequence[int]],
         additional_slippage_bps_per_side_by_symbol: Mapping[str, float],
         commission_evidence: Round74EventTargetEvidence,
         entry_exit_latency_evidence: Round74EventTargetEvidence,
@@ -358,6 +374,22 @@ class Round74EventTargetSpec:
                 for symbol, boundaries in funding_boundaries_monotonic_ns.items()
             )
         )
+        funding_coverage = tuple(
+            sorted(
+                (
+                    str(symbol).strip().upper(),
+                    (int(coverage[0]), int(coverage[1])),
+                )
+                for symbol, coverage in (
+                    funding_schedule_coverage_monotonic_ns.items()
+                )
+                if len(coverage) == 2
+            )
+        )
+        if len(funding_coverage) != len(
+            funding_schedule_coverage_monotonic_ns
+        ):
+            raise ValueError("Round 74 target funding coverage differs")
         entry_latencies = tuple(
             sorted(
                 (str(symbol).strip().upper(), int(value))
@@ -388,6 +420,7 @@ class Round74EventTargetSpec:
             decision_to_exit_latency_ns_by_symbol=exit_latencies,
             taker_fee_bps_by_symbol=fees,
             funding_boundaries_monotonic_ns=funding,
+            funding_schedule_coverage_monotonic_ns=funding_coverage,
             additional_slippage_bps_per_side_by_symbol=slippage,
             commission_evidence=commission_evidence,
             entry_exit_latency_evidence=entry_exit_latency_evidence,
@@ -448,6 +481,27 @@ class Round74EventTargetSpec:
             )
         ):
             raise ValueError("Round 74 target funding schedule differs")
+        funding_coverage = tuple(
+            self.funding_schedule_coverage_monotonic_ns
+        )
+        if (
+            tuple(symbol for symbol, _coverage in funding_coverage)
+            != ROUND74_EVENT_TARGET_SYMBOLS
+            or any(
+                int(coverage[0]) < 0
+                or int(coverage[1]) <= int(coverage[0])
+                for _symbol, coverage in funding_coverage
+            )
+            or any(
+                any(
+                    boundary < int(coverage[0])
+                    or boundary > int(coverage[1])
+                    for boundary in dict(funding)[symbol]
+                )
+                for symbol, coverage in funding_coverage
+            )
+        ):
+            raise ValueError("Round 74 target funding coverage differs")
         slippage = tuple(self.additional_slippage_bps_per_side_by_symbol)
         if (
             tuple(symbol for symbol, _value in slippage)
@@ -491,7 +545,12 @@ class Round74EventTargetSpec:
             (
                 "funding_schedule",
                 self.funding_schedule_evidence,
-                round74_funding_schedule_evidence_claims(dict(funding)),
+                round74_funding_schedule_evidence_claims(
+                    funding_boundaries_monotonic_ns=dict(funding),
+                    funding_schedule_coverage_monotonic_ns=dict(
+                        funding_coverage
+                    ),
+                ),
             ),
         )
         if any(
@@ -597,6 +656,12 @@ class Round74EventTargetSpec:
                 symbol: list(boundaries)
                 for symbol, boundaries in self.funding_boundaries_monotonic_ns
             },
+            "funding_schedule_coverage_monotonic_ns": {
+                symbol: list(coverage)
+                for symbol, coverage in (
+                    self.funding_schedule_coverage_monotonic_ns
+                )
+            },
             "additional_slippage_bps_per_side_by_symbol": dict(
                 self.additional_slippage_bps_per_side_by_symbol
             ),
@@ -638,6 +703,9 @@ class Round74EventTargetSpec:
             raise ValueError("Round 74 target spec payload digest differs")
         fees = payload.get("taker_fee_bps_by_symbol")
         funding = payload.get("funding_boundaries_monotonic_ns")
+        funding_coverage = payload.get(
+            "funding_schedule_coverage_monotonic_ns"
+        )
         entry_latencies = payload.get(
             "decision_to_entry_latency_ns_by_symbol"
         )
@@ -651,6 +719,7 @@ class Round74EventTargetSpec:
             for item in (
                 fees,
                 funding,
+                funding_coverage,
                 entry_latencies,
                 exit_latencies,
                 slippage,
@@ -668,6 +737,7 @@ class Round74EventTargetSpec:
             raise ValueError("Round 74 target evidence panel differs")
         assert isinstance(fees, Mapping)
         assert isinstance(funding, Mapping)
+        assert isinstance(funding_coverage, Mapping)
         assert isinstance(entry_latencies, Mapping)
         assert isinstance(exit_latencies, Mapping)
         assert isinstance(slippage, Mapping)
@@ -689,6 +759,10 @@ class Round74EventTargetSpec:
             funding_boundaries_monotonic_ns={
                 str(symbol): tuple(int(boundary) for boundary in boundaries)
                 for symbol, boundaries in funding.items()
+            },
+            funding_schedule_coverage_monotonic_ns={
+                str(symbol): tuple(int(value) for value in coverage)
+                for symbol, coverage in funding_coverage.items()
             },
             additional_slippage_bps_per_side_by_symbol={
                 str(symbol): float(value)
@@ -1278,6 +1352,12 @@ class Round74EventTargetEngine:
             symbol: tuple(boundaries)
             for symbol, boundaries in self.spec.funding_boundaries_monotonic_ns
         }
+        self.funding_coverage = {
+            symbol: tuple(coverage)
+            for symbol, coverage in (
+                self.spec.funding_schedule_coverage_monotonic_ns
+            )
+        }
         self.target_context_sha256 = _canonical_sha256(
             {
                 "target_spec_sha256": self.spec.spec_sha256,
@@ -1304,6 +1384,10 @@ class Round74EventTargetEngine:
                 },
                 "funding_boundaries_monotonic_ns": {
                     symbol: list(self.funding_boundaries[symbol])
+                    for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+                },
+                "funding_schedule_coverage_monotonic_ns": {
+                    symbol: list(self.funding_coverage[symbol])
                     for symbol in ROUND74_EVENT_TARGET_SYMBOLS
                 },
             }
@@ -1507,17 +1591,22 @@ class Round74EventTargetEngine:
                     )
                 )
 
-    def _crosses_funding(
+    def _funding_ineligibility(
         self,
         symbol: str,
         *,
         entry_ns: int,
         exit_ns: int,
-    ) -> bool:
-        return any(
+    ) -> str:
+        coverage_start, coverage_end = self.funding_coverage[symbol]
+        if int(entry_ns) < coverage_start or int(exit_ns) > coverage_end:
+            return "funding_coverage"
+        if any(
             entry_ns < boundary <= exit_ns
             for boundary in self.funding_boundaries[symbol]
-        )
+        ):
+            return "funding_boundary"
+        return ""
 
     def _fulfill_entries(
         self,
@@ -1589,16 +1678,17 @@ class Round74EventTargetEngine:
                         + horizon * 1_000_000_000
                         + self.spec.exit_latency_ns(symbol)
                     )
-                    if reason or self._crosses_funding(
+                    funding_reason = self._funding_ineligibility(
                         symbol,
                         entry_ns=received_monotonic_ns,
                         exit_ns=requested_exit,
-                    ):
+                    )
+                    if reason or funding_reason:
                         self._record_ineligible(
                             anchor=anchor,
                             horizon_seconds=horizon,
                             side=side,
-                            reason=reason or "funding_boundary",
+                            reason=reason or funding_reason,
                             requested_entry_monotonic_ns=(
                                 pending.requested_entry_monotonic_ns
                             ),
@@ -1683,16 +1773,17 @@ class Round74EventTargetEngine:
                 actual_exit_message_index=message_index,
             )
             return
-        if self._crosses_funding(
+        funding_reason = self._funding_ineligibility(
             position.decision.anchor.symbol,
             entry_ns=position.actual_entry_monotonic_ns,
             exit_ns=received_monotonic_ns,
-        ):
+        )
+        if funding_reason:
             self._record_ineligible(
                 anchor=position.decision.anchor,
                 horizon_seconds=position.horizon_seconds,
                 side=position.side,
-                reason="funding_boundary",
+                reason=funding_reason,
                 requested_entry_monotonic_ns=(
                     position.requested_entry_monotonic_ns
                 ),
