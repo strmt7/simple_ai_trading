@@ -44,6 +44,14 @@ from simple_ai_trading.impact_absorption_event_dataset import (
 from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
+    ROUND74_SEALED_BOOTSTRAP_DRAWS,
+    ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_sealed_ledger import (
+    ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
+    ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
@@ -61,7 +69,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v10.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v11.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -126,6 +134,12 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["ai_uplift_evaluator_sha256"] == _file_sha256(
         source["ai_uplift_evaluator_path"]
     )
+    assert source["sealed_ledger_sha256"] == _file_sha256(
+        source["sealed_ledger_path"]
+    )
+    assert source["sealed_evaluator_sha256"] == _file_sha256(
+        source["sealed_evaluator_path"]
+    )
     assert source["event_cohort_sha256"] == _file_sha256(
         source["event_cohort_path"]
     )
@@ -179,6 +193,18 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["ai_uplift_evaluator_schema_version"]
         == ROUND74_AI_UPLIFT_SCHEMA_VERSION
+    )
+    assert (
+        source["sealed_ledger_schema_version"]
+        == ROUND74_SEALED_LEDGER_SCHEMA_VERSION
+    )
+    assert (
+        source["sealed_claim_schema_version"]
+        == ROUND74_SEALED_CLAIM_SCHEMA_VERSION
+    )
+    assert (
+        source["sealed_evaluator_schema_version"]
+        == ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
     )
     assert (
         source["event_cohort_plan_schema_version"]
@@ -381,6 +407,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert action["horizon_duration_used_as_exit_time_proxy"] is False
     assert action["diversification_requires_all_btc_eth_sol_symbols"] is True
     assert action["position_sizing_or_leverage_applied_here"] is False
+    assert action["candidate_input_context_duplicates_full_feature_tensor"] is False
+    assert action["selection_concatenates_full_feature_tensors"] is False
+    assert action["selection_binds_every_target_batch_and_candidate_digest"] is True
     training = design["development_training_contract"]
     assert training["implemented_now"] is True
     assert training["representative_market_training_run_completed_now"] is False
@@ -404,6 +433,19 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
     assert evaluation["sealed_test_may_be_used_once"] is True
+    assert evaluation["durable_one_use_ledger_implemented_now"] is True
+    assert evaluation["sealed_evaluator_implemented_now"] is True
+    assert evaluation["reservation_reset_api_available"] is False
+    assert evaluation["sealed_test_runs"] == 24
+    assert evaluation["sealed_bootstrap_draws"] == (
+        ROUND74_SEALED_BOOTSTRAP_DRAWS
+    )
+    assert (
+        evaluation[
+            "annualized_roi_sharpe_sortino_or_calmar_reported_without_a_capital_allocation_path"
+        ]
+        is False
+    )
     assert evaluation["profitability_required_by_assertion_or_data_filter"] is False
     assert design["ai_comparison_contract"][
         "ai_may_bypass_data_risk_or_execution_gate"
@@ -426,12 +468,21 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["ai_receives_only_a_preexisting_target_free_ml_candidate"] is True
     assert ai["ai_may_revive_an_ml_abstention"] is False
     assert ai["paired_development_evaluator_implemented_now"] is True
+    assert ai["paired_sealed_evaluator_implemented_now"] is True
+    assert ai["durable_one_use_sealed_ledger_implemented_now"] is True
     assert (
         ai["paired_development_evaluator_may_select_ai_model_or_promote"]
         is False
     )
     assert ai["missing_review_policy"] == "invalidate entire evaluation"
     assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
+    assert (
+        ai[
+            "target_eligibility_or_realized_exit_timing_may_select_ai_review_coverage"
+        ]
+        is False
+    )
+    assert ai["ai_veto_may_admit_a_later_overlapping_candidate"] is False
     assert ai[
         "ai_may_create_side_increase_size_set_leverage_or_touch_orders"
     ] is False
@@ -454,6 +505,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert authority["causal_calibrated_ai_bridge_implementation"] is True
+    assert authority["durable_one_use_sealed_ledger_implementation"] is True
+    assert authority["paired_ml_ai_sealed_evaluator_implementation"] is True
     assert (
         authority["probability_calibration_directml_compute_preflight"]
         is True
