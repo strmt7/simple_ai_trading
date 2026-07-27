@@ -154,6 +154,8 @@ def _review(
         model_manifest_sha256="6" * 64,
         runtime_status="accepted",
         runtime_elapsed_ns=runtime_elapsed_ns,
+        queue_delay_ns=0,
+        effective_review_latency_ns=runtime_elapsed_ns,
         same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
         same_entry_latency_eligible=latency_eligible,
         size_multiplier_bps=multiplier if latency_eligible else 0,
@@ -375,6 +377,7 @@ def test_runtime_evidence_reduction_is_recomputed_and_bound() -> None:
         request=request,
         outcome=outcome,
         same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        queue_delay_ns=0,
     )
 
     assert evidence.runtime_status == "accepted"
@@ -395,6 +398,7 @@ def test_runtime_evidence_reduction_is_recomputed_and_bound() -> None:
             request=request,
             outcome=changed,
             same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+            queue_delay_ns=0,
         )
     except ValueError as exc:
         assert "approved risk size differs" in str(exc)
@@ -413,6 +417,7 @@ def test_blocked_runtime_evidence_reduces_to_zero_without_decision() -> None:
         request=_runtime_request(),
         outcome=_runtime_outcome(status="blocked_capability"),
         same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        queue_delay_ns=0,
     )
 
     assert evidence.runtime_status == "blocked_capability"
@@ -439,6 +444,7 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
         request=request,
         outcome=late_outcome,
         same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        queue_delay_ns=0,
     )
 
     assert evidence.runtime_status == "accepted"
@@ -457,6 +463,7 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
         request=request,
         outcome=_runtime_outcome(),
         same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        queue_delay_ns=0,
     )
     assert evidence.review_sha256 != on_time_evidence.review_sha256
 
@@ -478,3 +485,25 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
     assert report.ai_metrics.runtime_success_rate == 1.0
     assert report.ai_metrics.same_entry_latency_eligible_reviews == 5
     assert "same_entry_latency_eligibility_rate_not_met" in report.gate_reasons
+
+
+def test_queue_wait_is_included_in_same_entry_latency() -> None:
+    evidence = Round74AIPairedReviewEvidence.from_runtime(
+        row_index=0,
+        feature_row_sha256=FEATURES[0],
+        run_id=RUNS[0],
+        symbol="BTCUSDT",
+        side=1,
+        horizon_seconds=30,
+        request=_runtime_request(),
+        outcome=_runtime_outcome(),
+        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        queue_delay_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+    )
+
+    assert evidence.runtime_elapsed_ns == 1_000
+    assert evidence.queue_delay_ns == SAME_ENTRY_LATENCY_BUDGET_NS
+    assert evidence.effective_review_latency_ns == 1_001_000
+    assert evidence.same_entry_latency_eligible is False
+    assert evidence.decision is not None
+    assert evidence.size_multiplier_bps == 0

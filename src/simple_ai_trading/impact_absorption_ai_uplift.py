@@ -37,7 +37,7 @@ from .impact_absorption_event_financial_metrics import (
 from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v4"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v5"
 ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
@@ -88,6 +88,8 @@ class Round74AIPairedReviewEvidence:
     model_manifest_sha256: str
     runtime_status: str
     runtime_elapsed_ns: int
+    queue_delay_ns: int
+    effective_review_latency_ns: int
     same_entry_latency_budget_ns: int
     same_entry_latency_eligible: bool
     size_multiplier_bps: int
@@ -115,6 +117,14 @@ class Round74AIPairedReviewEvidence:
             or isinstance(self.runtime_elapsed_ns, bool)
             or not isinstance(self.runtime_elapsed_ns, int)
             or self.runtime_elapsed_ns < 0
+            or isinstance(self.queue_delay_ns, bool)
+            or not isinstance(self.queue_delay_ns, int)
+            or self.queue_delay_ns < 0
+            or isinstance(self.effective_review_latency_ns, bool)
+            or not isinstance(self.effective_review_latency_ns, int)
+            or self.effective_review_latency_ns < 0
+            or self.effective_review_latency_ns
+            != self.runtime_elapsed_ns + self.queue_delay_ns
             or isinstance(self.same_entry_latency_budget_ns, bool)
             or not isinstance(self.same_entry_latency_budget_ns, int)
             or self.same_entry_latency_budget_ns <= 0
@@ -126,7 +136,8 @@ class Round74AIPairedReviewEvidence:
             raise ValueError("Round 74 AI paired review differs")
         expected_latency_eligible = (
             self.runtime_status == "accepted"
-            and self.runtime_elapsed_ns <= self.same_entry_latency_budget_ns
+            and self.effective_review_latency_ns
+            <= self.same_entry_latency_budget_ns
         )
         if self.same_entry_latency_eligible != expected_latency_eligible:
             raise ValueError("Round 74 AI same-entry latency eligibility differs")
@@ -165,6 +176,8 @@ class Round74AIPairedReviewEvidence:
             "model_manifest_sha256": self.model_manifest_sha256,
             "runtime_status": self.runtime_status,
             "runtime_elapsed_ns": self.runtime_elapsed_ns,
+            "queue_delay_ns": self.queue_delay_ns,
+            "effective_review_latency_ns": self.effective_review_latency_ns,
             "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
             "same_entry_latency_eligible": self.same_entry_latency_eligible,
             "size_multiplier_bps": self.size_multiplier_bps,
@@ -176,6 +189,7 @@ class Round74AIPairedReviewEvidence:
             "late_accepted_review_policy": (
                 "retain_audit_decision_but_apply_zero_same_entry_exposure"
             ),
+            "same_entry_latency_includes_historical_queue_delay": True,
             "latency_adjusted_replay_performed": False,
         }
         if include_sha256:
@@ -195,6 +209,7 @@ class Round74AIPairedReviewEvidence:
         request: Round74AIReviewRequest,
         outcome: Round74AIRuntimeOutcome,
         same_entry_latency_budget_ns: int,
+        queue_delay_ns: int,
     ) -> Round74AIPairedReviewEvidence:
         """Validate parent/worker evidence before reducing it to paired data."""
 
@@ -216,11 +231,18 @@ class Round74AIPairedReviewEvidence:
             or same_entry_latency_budget_ns <= 0
         ):
             raise ValueError("Round 74 AI same-entry latency budget differs")
+        if (
+            isinstance(queue_delay_ns, bool)
+            or not isinstance(queue_delay_ns, int)
+            or queue_delay_ns < 0
+        ):
+            raise ValueError("Round 74 AI queue delay differs")
+        effective_latency_ns = outcome.elapsed_ns + queue_delay_ns
         decision: Round74AIReviewDecision | None = None
         multiplier = 0
         latency_eligible = (
             outcome.status == "accepted"
-            and outcome.elapsed_ns <= same_entry_latency_budget_ns
+            and effective_latency_ns <= same_entry_latency_budget_ns
         )
         if outcome.status == "accepted":
             assert outcome.worker_result is not None
@@ -251,6 +273,8 @@ class Round74AIPairedReviewEvidence:
             model_manifest_sha256=outcome.manifest_sha256,
             runtime_status=outcome.status,
             runtime_elapsed_ns=outcome.elapsed_ns,
+            queue_delay_ns=queue_delay_ns,
+            effective_review_latency_ns=effective_latency_ns,
             same_entry_latency_budget_ns=same_entry_latency_budget_ns,
             same_entry_latency_eligible=latency_eligible,
             size_multiplier_bps=multiplier,
@@ -600,6 +624,7 @@ class Round74AIUpliftDevelopmentReport:
             "missing_review_policy": "invalidate_entire_evaluation",
             "same_side_entry_exit_and_overlap_order": True,
             "same_entry_fill_requires_measured_latency_eligibility": True,
+            "same_entry_latency_includes_historical_queue_delay": True,
             "latency_adjusted_replay_performed": False,
             "sealed_test_accessed": False,
             "ai_model_selection_permitted": False,
