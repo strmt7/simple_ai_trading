@@ -22,6 +22,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
     ROUND74_EVENT_SEQUENCE_LENGTH,
 )
 from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
+    ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     Round74EventEnsemble,
     Round74EventTrainingConfig,
     load_round74_pretest_policy,
@@ -241,7 +242,7 @@ def test_round74_trainer_rejects_test_data_before_backend_resolution(
         )
 
 
-def test_round74_trainer_requires_order_purge_and_shared_context(
+def test_round74_trainer_requires_order_purge_and_per_run_context(
     tmp_path: object,
 ) -> None:
     training = _batch("training", start_wall_ns=WALL_NS, identity=1)
@@ -259,19 +260,19 @@ def test_round74_trainer_requires_order_purge_and_shared_context(
             config=_config(),
         )
 
-    changed_context = replace(
+    mixed_context = replace(
         _batch(
             "tuning",
             start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
             identity=2,
         ),
-        target_context_sha256=("4" * 64, "4" * 64),
+        target_context_sha256=("3" * 64, "4" * 64),
     )
-    changed_context.validate()
-    with pytest.raises(ValueError, match="target context"):
+    mixed_context.validate()
+    with pytest.raises(ValueError, match="mixes target contexts"):
         train_and_seal_round74_pretest_policy(
             [training],
-            [changed_context],
+            [mixed_context],
             output_directory=tmp_path,
             compute_backend="cpu",
             config=_config(),
@@ -326,12 +327,16 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
         identity=2,
     )
-    later_tuning = _batch(
-        "tuning",
-        start_wall_ns=WALL_NS + PURGE_NS + 10_000_000_000,
-        identity=3,
-        rows=3,
+    later_tuning = replace(
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + PURGE_NS + 10_000_000_000,
+            identity=3,
+            rows=3,
+        ),
+        target_context_sha256=tuple("4" * 64 for _ in range(3)),
     )
+    later_tuning.validate()
     artifact = train_and_seal_round74_pretest_policy(
         [training],
         [tuning, later_tuning],
@@ -346,6 +351,13 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert policy["model_artifact"]["sha256"] == artifact.model_sha256
     assert policy["model_artifact"]["pickle_permitted"] is False
     assert policy["development_data"]["test_batches_consumed"] == 0
+    development = policy["development_data"]
+    assert development["target_context_panel_schema_version"] == (
+        ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+    )
+    assert development["target_context_sha256"] == ["3" * 64, "4" * 64]
+    assert development["target_context_count"] == 2
+    assert len(development["target_context_panel_sha256"]) == 64
     assert policy["backend"]["kind"] == "cpu"
     assert set(policy["candidate_panel"]) == {
         "event_pooling_mlp",
@@ -386,6 +398,19 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     changed_source_path = _write_rehashed_policy(tmp_path, changed_source)
     with pytest.raises(ValueError, match="source binding differs"):
         load_round74_pretest_policy(changed_source_path)
+
+    changed_context_panel = json.loads(
+        artifact.policy_path.read_text(encoding="ascii")
+    )
+    changed_context_panel["development_data"]["target_context_sha256"].append(
+        "5" * 64
+    )
+    changed_context_path = _write_rehashed_policy(
+        tmp_path,
+        changed_context_panel,
+    )
+    with pytest.raises(ValueError, match="target-context panel differs"):
+        load_round74_pretest_policy(changed_context_path)
 
     artifact.model_path.write_bytes(artifact.model_path.read_bytes() + b"x")
     with pytest.raises(ValueError, match="model artifact differs"):
