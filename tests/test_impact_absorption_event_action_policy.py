@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
 import math
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -9,6 +11,8 @@ import torch
 
 from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_DEFAULT_PROFILE,
+    Round74ActionExecutionOutcomeRow,
+    Round74ActionExecutionPanel,
     build_round74_action_inference_context,
     derive_round74_action_candidates,
     round74_action_profile,
@@ -36,6 +40,9 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SEQUENCE_LENGTH,
     ROUND74_EVENT_SYMBOLS,
+)
+from simple_ai_trading.impact_absorption_event_targets import (
+    Round74EventTargetOutcome,
 )
 
 
@@ -305,6 +312,120 @@ def _run_batch_panel(
     )
 
 
+def _delayed_outcome(
+    batch: Round74EventTrainingBatch,
+    row_index: int,
+    *,
+    horizon_seconds: int,
+    side: str,
+) -> Round74EventTargetOutcome:
+    entry = int(batch.decision_monotonic_ns[row_index]) + 900_000_000
+    exit_value = entry + horizon_seconds * 1_000_000_000
+    result = Round74EventTargetOutcome(
+        symbol=batch.symbol[row_index],
+        anchor_index=int(batch.anchor_index[row_index]),
+        horizon_seconds=horizon_seconds,
+        side=side,
+        eligible=True,
+        ineligible_reason="",
+        requested_entry_monotonic_ns=entry - 100_000_000,
+        actual_entry_monotonic_ns=entry,
+        actual_entry_frame_index=10_000 + row_index,
+        actual_entry_message_index=0,
+        requested_exit_monotonic_ns=exit_value - 100_000_000,
+        actual_exit_monotonic_ns=exit_value,
+        actual_exit_frame_index=20_000 + row_index,
+        actual_exit_message_index=0,
+        base_quantity=1.0,
+        reference_quote_notional=10_000.0,
+        entry_quote_notional=10_000.0,
+        entry_average_price=10_000.0,
+        exit_average_price=10_000.0,
+        midpoint_payoff_bps=1.0,
+        book_walk_implementation_shortfall_quote=1.0,
+        book_walk_implementation_shortfall_bps=1.0,
+        gross_payoff_bps=0.0,
+        commission_quote=1.0,
+        commission_bps=1.0,
+        additional_slippage_quote=1.0,
+        additional_slippage_bps=1.0,
+        explicit_cost_quote=2.0,
+        explicit_cost_bps=2.0,
+        total_implementation_shortfall_quote=3.0,
+        total_implementation_shortfall_bps=3.0,
+        net_payoff_bps=-2.0,
+        capital_scaled_net_payoff_bps=-2.0,
+        positive_net_payoff=False,
+        maximum_adverse_excursion_bps=2.0,
+        capital_scaled_maximum_adverse_excursion_bps=2.0,
+        maximum_favorable_excursion_bps=1.0,
+        adverse_selection=True,
+        regime_unpredictability=0.5,
+        maximum_spread_bps=1.0,
+        minimum_exit_side_capacity_ratio=2.0,
+        entry_update_id=100 + row_index,
+        exit_update_id=200 + row_index,
+        target_spec_sha256="7" * 64,
+        target_context_sha256="8" * 64,
+        feature_window_sha256=batch.feature_window_sha256[row_index],
+    )
+    result.validate()
+    return result
+
+
+def _execution_panel(
+    batches: tuple[Round74EventTrainingBatch, ...],
+    candidates: tuple,
+) -> Round74ActionExecutionPanel:
+    rows = tuple(
+        Round74ActionExecutionOutcomeRow(
+            feature_row_sha256=candidate.feature_row_sha256[row_index],
+            run_id=batch.run_id[row_index],
+            symbol=batch.symbol[row_index],
+            anchor_index=int(batch.anchor_index[row_index]),
+            feature_window_sha256=batch.feature_window_sha256[row_index],
+            outcomes=tuple(
+                _delayed_outcome(
+                    batch,
+                    row_index,
+                    horizon_seconds=horizon,
+                    side=side,
+                )
+                for horizon in ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS
+                for side in ROUND74_EVENT_PAYOFF_SIDES
+            ),
+        )
+        for batch, candidate in zip(batches, candidates, strict=True)
+        for row_index in range(batch.rows)
+    )
+    run_ids = _subpartition().policy_selection_run_ids
+    result = Round74ActionExecutionPanel(
+        profile="conservative",
+        partition_sha256=PARTITION_SHA256,
+        decision_latency_evidence_sha256="9" * 64,
+        additional_entry_latency_ns=800_000_000,
+        source_target_assembly_sha256=tuple((run_id, "a" * 64) for run_id in run_ids),
+        source_capture_report_sha256=tuple((run_id, "b" * 64) for run_id in run_ids),
+        execution_replay_module_sha256=(
+            hashlib.sha256(
+                (
+                    Path(__file__).parents[1]
+                    / "src"
+                    / "simple_ai_trading"
+                    / "round74_delayed_execution_panel.py"
+                )
+                .read_bytes()
+                .replace(b"\r\n", b"\n")
+                .replace(b"\r", b"\n")
+            )
+            .hexdigest()
+        ),
+        rows=rows,
+    )
+    result.validate()
+    return result
+
+
 def test_default_profile_is_conservative_and_profiles_relax_monotonically() -> None:
     assert ROUND74_ACTION_DEFAULT_PROFILE == "conservative"
     conservative = round74_action_profile()
@@ -533,6 +654,53 @@ def test_policy_selection_rejects_negative_after_cost_outcomes() -> None:
         "positive_after_cost_payoff_not_met" in value.rejection_reasons
         for value in selection.evaluations
     )
+
+
+def test_policy_selection_uses_profile_delayed_l2_economics_not_baseline() -> None:
+    batch = _batch(payoff_sign=1.0)
+    batches = _run_batch_panel(batch)
+    candidates = tuple(_candidates(value) for value in batches)
+    delayed = _execution_panel(batches, candidates)
+
+    baseline = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        _subpartition(),
+    )
+    selected = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        _subpartition(),
+        execution_panel=delayed,
+    )
+
+    assert baseline.accepted
+    assert not selected.accepted
+    assert selected.execution_outcome_panel_sha256 == delayed.panel_sha256
+    assert all(
+        evaluation.trace.metrics.total_net_bps < 0.0
+        for evaluation in selected.evaluations
+    )
+    assert all(
+        value >= 1_900_000_000
+        for evaluation in selected.evaluations
+        for value in evaluation.trace.entry_monotonic_ns
+    )
+
+
+def test_profile_delayed_l2_panel_rejects_missing_feature_row() -> None:
+    batch = _batch()
+    batches = _run_batch_panel(batch)
+    candidates = tuple(_candidates(value) for value in batches)
+    delayed = _execution_panel(batches, candidates)
+
+    with pytest.raises(ValueError, match="panel binding differs"):
+        select_round74_action_policy_batches(
+            batches,
+            candidates,
+            _subpartition(),
+            execution_panel=replace(delayed, rows=delayed.rows[:-1]),
+        )
 
 
 def test_policy_selection_rejects_future_censored_selected_action() -> None:
