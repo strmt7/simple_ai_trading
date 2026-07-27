@@ -85,7 +85,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v30.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v31.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -325,6 +325,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     costs = targets["costs"]
     assert costs["commission_evidence_digest_required"] is True
     assert costs["additional_residual_slippage_evidence_digest_required"] is True
+    assert costs["funding_boundary_panel_required_for_all_three_symbols"] is True
+    assert costs["funding_schedule_source_evidence_digest_required"] is True
+    assert costs["silently_empty_or_partial_funding_schedule_permitted"] is False
     assert costs["missing_account_fee_policy"] == "fail closed"
     assert costs["runtime_fee_mismatch_policy"] == (
         "model bundle is incompatible and cannot trade"
@@ -631,6 +634,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["equal_run_action_threshold_and_objective_implementation"] is True
     assert authority["historical_ai_queue_latency_implementation"] is True
     assert authority["sealed_multiple_comparison_control_implementation"] is True
+    assert authority["mandatory_funding_schedule_binding_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
@@ -757,10 +761,16 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         == binding["event_training_directml_artifact_sha256"]
     )
     source = evidence["source_binding"]
-    assert (
-        source["event_targets_sha256"]
-        == design["source_binding"]["event_target_sha256"]
+    assert source["event_targets_sha256"] == (
+        binding["event_training_directml_historical_target_sha256"]
     )
+    assert design["source_binding"]["event_target_sha256"] == (
+        binding["event_training_directml_current_target_sha256"]
+    )
+    assert source["event_targets_sha256"] != (
+        design["source_binding"]["event_target_sha256"]
+    )
+    assert binding["event_training_directml_current_target_source_bound"] is False
     assert (
         source["event_training_sha256"]
         == design["source_binding"]["event_training_sha256"]
@@ -779,7 +789,8 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
-    assert "exactly binds" in binding["event_training_directml_reuse_scope"]
+    assert "compute-only evidence" in binding["event_training_directml_reuse_scope"]
+    assert "does not bind target-v3" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
