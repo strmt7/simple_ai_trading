@@ -532,9 +532,65 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert overlay.same_entry_latency_eligible_reviews == 23
     assert overlay.retained_trades == 23
     assert "same_entry_latency_eligibility_rate_not_met" in overlay.gate_reasons
+    assert overlay.strategy_metrics.selected_action_target_ineligible == 0
     assert outcome.report.inference_backend_kind == "cpu"
     assert outcome.report.profitability_claim is False
     assert ledger.claim_matches(outcome.finalized_claim, required_status="complete")
+
+
+def test_sealed_financial_gate_rejects_future_censored_selected_action() -> None:
+    batch = _test_batch()
+    horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(30)
+    eligibility = np.array(batch.action_eligibility, copy=True)
+    entry = np.array(batch.actual_entry_monotonic_ns, copy=True)
+    exit_value = np.array(batch.actual_exit_monotonic_ns, copy=True)
+    payoff = np.array(batch.net_payoff_bps, copy=True)
+    mae = np.array(batch.maximum_adverse_excursion_bps, copy=True)
+    adverse = np.array(batch.adverse_selection, copy=True)
+    eligibility[0, horizon_index, 0] = 0.0
+    entry[0, horizon_index, 0] = -1
+    exit_value[0, horizon_index, 0] = -1
+    payoff[0, horizon_index, 0] = 0.0
+    mae[0, horizon_index, 0] = 0.0
+    adverse[0, horizon_index, 0] = 0.0
+    batch = replace(
+        batch,
+        action_eligibility=_readonly(eligibility),
+        actual_entry_monotonic_ns=_readonly(entry),
+        actual_exit_monotonic_ns=_readonly(exit_value),
+        net_payoff_bps=_readonly(payoff),
+        maximum_adverse_excursion_bps=_readonly(mae),
+        adverse_selection=_readonly(adverse),
+    )
+    batch.validate()
+    selection = _selection()
+    calibration = _calibration()
+    candidates = derive_round74_action_candidates(
+        _model_output(batch.rows),
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        profile=selection.profile,
+    )
+    trace = sealed_subject._simulate_round74_action_trace_batches(
+        (batch,),
+        (candidates,),
+        threshold_score=float(selection.selected_threshold_score or 0.0),
+        expected_run_ids=TEST_RUNS,
+        required_role="test",
+        expected_run_count=24,
+    )
+    metrics = sealed_subject._strategy_metrics(
+        trace,
+        np.ones(trace.metrics.trades, dtype=np.float64),
+        profile=selection.profile,
+        seed=1,
+    )
+
+    assert trace.skipped_target_ineligible == 1
+    assert metrics.selected_action_target_ineligible == 1
+    assert not metrics.financial_gate_passed
+    assert "selected_action_target_coverage_incomplete" in metrics.gate_reasons
 
 
 def test_target_free_two_model_review_panel_preserves_blocked_observations() -> None:

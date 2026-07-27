@@ -62,7 +62,7 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v3"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v4"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -709,6 +709,7 @@ class Round74RunBlockBootstrap:
 @dataclass(frozen=True)
 class Round74SealedStrategyMetrics:
     paired_observations: int
+    selected_action_target_ineligible: int
     executed_trades: int
     active_runs: int
     distinct_symbols: int
@@ -752,6 +753,7 @@ class Round74SealedStrategyMetrics:
                 isinstance(value, bool) or not isinstance(value, int) or value < 0
                 for value in (
                     self.paired_observations,
+                    self.selected_action_target_ineligible,
                     self.executed_trades,
                     self.active_runs,
                     self.distinct_symbols,
@@ -1118,6 +1120,8 @@ def _financial_gate_reasons(
     spec = round74_action_profile(profile)
     scale = ROUND74_SEALED_TEST_RUNS / 6
     reasons: list[str] = []
+    if metrics.selected_action_target_ineligible > 0:
+        reasons.append("selected_action_target_coverage_incomplete")
     if metrics.executed_trades < math.ceil(spec.minimum_trades * scale):
         reasons.append("scaled_minimum_trades_not_met")
     if metrics.active_runs < math.ceil(spec.minimum_active_runs * scale):
@@ -1205,6 +1209,7 @@ def _strategy_metrics(
     )
     provisional = Round74SealedStrategyMetrics(
         paired_observations=trace.metrics.trades,
+        selected_action_target_ineligible=trace.skipped_target_ineligible,
         executed_trades=int(retained.sum()),
         active_runs=len(set(retained_runs)),
         distinct_symbols=len(set(retained_symbols)),

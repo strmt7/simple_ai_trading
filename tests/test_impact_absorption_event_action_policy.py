@@ -486,6 +486,48 @@ def test_policy_selection_rejects_negative_after_cost_outcomes() -> None:
     )
 
 
+def test_policy_selection_rejects_future_censored_selected_action() -> None:
+    batch = _batch(payoff_sign=1.0)
+    horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(30)
+    row_index = len(ROUND74_EVENT_SYMBOLS) * 2 - 1
+    eligibility = np.array(batch.action_eligibility, copy=True)
+    entry = np.array(batch.actual_entry_monotonic_ns, copy=True)
+    exit_value = np.array(batch.actual_exit_monotonic_ns, copy=True)
+    payoff = np.array(batch.net_payoff_bps, copy=True)
+    mae = np.array(batch.maximum_adverse_excursion_bps, copy=True)
+    adverse = np.array(batch.adverse_selection, copy=True)
+    eligibility[row_index, horizon_index, 0] = 0.0
+    entry[row_index, horizon_index, 0] = -1
+    exit_value[row_index, horizon_index, 0] = -1
+    payoff[row_index, horizon_index, 0] = 0.0
+    mae[row_index, horizon_index, 0] = 0.0
+    adverse[row_index, horizon_index, 0] = 0.0
+    censored = replace(
+        batch,
+        action_eligibility=_readonly(eligibility),
+        actual_entry_monotonic_ns=_readonly(entry),
+        actual_exit_monotonic_ns=_readonly(exit_value),
+        net_payoff_bps=_readonly(payoff),
+        maximum_adverse_excursion_bps=_readonly(mae),
+        adverse_selection=_readonly(adverse),
+    )
+    censored.validate()
+
+    selection = select_round74_action_policy(
+        censored,
+        _candidates(censored),
+        _subpartition(),
+    )
+
+    assert not selection.accepted
+    assert all(
+        evaluation.trace.skipped_target_ineligible == 1
+        and "selected_action_target_coverage_incomplete"
+        in evaluation.rejection_reasons
+        for evaluation in selection.evaluations
+    )
+
+
 def test_policy_selection_rejects_non_policy_tuning_role() -> None:
     batch = _batch()
     candidates = _candidates(batch)
