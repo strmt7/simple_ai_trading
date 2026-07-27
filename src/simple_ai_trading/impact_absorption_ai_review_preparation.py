@@ -17,6 +17,7 @@ from .impact_absorption_ai_protocol import Round74AIModelManifest
 from .impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
     Round74AIRuntimeOutcome,
+    Round74AIWorkerSession,
     review_round74_ai_candidate,
     unload_round74_ai_model,
 )
@@ -34,7 +35,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v11"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v12"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
@@ -485,6 +486,11 @@ def prepare_round74_target_free_ai_reviews(
         reviews: list[Round74AIPairedReviewEvidence] = []
         model_available_wall_ns = 0
         batch_attempted = False
+        worker_session = (
+            Round74AIWorkerSession()
+            if review_runner is review_round74_ai_candidate
+            else None
+        )
         try:
             for row in rows:
                 context = inference.contexts[row.panel_index]
@@ -523,13 +529,23 @@ def prepare_round74_target_free_ai_reviews(
                     proposed_risk_size_bps=ROUND74_AI_REVIEW_UNIT_RISK_BPS,
                 )
                 batch_attempted = True
-                outcome = review_runner(
-                    binding.runtime,
-                    binding.manifest,
-                    request,
-                    deterministic_risk_gate_passed=True,
-                    observed_wall_ns=requested_wall_ns,
-                )
+                if worker_session is None:
+                    outcome = review_runner(
+                        binding.runtime,
+                        binding.manifest,
+                        request,
+                        deterministic_risk_gate_passed=True,
+                        observed_wall_ns=requested_wall_ns,
+                    )
+                else:
+                    outcome = review_round74_ai_candidate(
+                        binding.runtime,
+                        binding.manifest,
+                        request,
+                        deterministic_risk_gate_passed=True,
+                        observed_wall_ns=requested_wall_ns,
+                        worker_session=worker_session,
+                    )
                 outcome.validate()
                 queue_delay_ns = max(
                     0,
@@ -573,6 +589,8 @@ def prepare_round74_target_free_ai_reviews(
                         }
                     )
         finally:
+            if worker_session is not None:
+                worker_session.close()
             if batch_attempted and selected_batch_finalizer is not None:
                 selected_batch_finalizer(binding)
         all_reviews.append(tuple(reviews))

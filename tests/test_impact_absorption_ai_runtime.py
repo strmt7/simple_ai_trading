@@ -20,6 +20,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 )
 from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
+    Round74AIWorkerSession,
     review_round74_ai_candidate,
     unload_round74_ai_model,
 )
@@ -259,6 +260,45 @@ def test_runtime_accepts_bound_worker_and_only_reduces_risk() -> None:
     assert outcome.worker_result is not None
     assert outcome.as_dict()["remote_inference_used"] is False
     assert outcome.as_dict()["execution_authority"] is False
+
+
+def test_runtime_accepts_hash_bound_persistent_worker_session() -> None:
+    session = Round74AIWorkerSession()
+
+    def request(
+        envelope: Round74AIWorkerEnvelope,
+        *,
+        timeout_seconds: float,
+    ) -> str:
+        assert timeout_seconds > 0.0
+        return json.dumps(_worker_result(envelope).as_dict())
+
+    session.request = request  # type: ignore[method-assign]
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(
+            model_name="fino1:8b",
+            timeout_seconds=10.0,
+        ),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(),
+        provenance_resolver=lambda *_: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=_unloaded_residency,
+        worker_session=session,
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+    session.close()
+
+    assert outcome.status == "accepted"
+    assert outcome.approved_risk_size_bps == 1_250
+    assert outcome.capability is not None
+    assert outcome.capability["worker_process_mode"] == "persistent_model_batch"
+    assert outcome.capability["worker_session_request_ordinal"] == 1
+    assert outcome.capability["worker_session_restart_count_before_request"] == 0
+    assert outcome.capability["worker_session_restart_count_after_request"] == 0
     assert outcome.as_dict()["protective_exit_path_blocked"] is False
 
 

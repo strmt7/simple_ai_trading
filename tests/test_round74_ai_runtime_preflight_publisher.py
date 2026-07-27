@@ -40,7 +40,7 @@ def _source_sha256_at(commit: str, relative_path: str) -> str:
 
 
 def test_preflight_schema_tracks_current_ai_contract() -> None:
-    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v5"
+    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v6"
     assert PUBLISHER.ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION == (
         "round-074-ai-review-request-v5"
     )
@@ -51,7 +51,7 @@ def test_preflight_schema_tracks_current_ai_contract() -> None:
         "round-074-ai-system-prompt-v1"
     )
     assert PUBLISHER.ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION == (
-        "round-074-ai-review-panel-v11"
+        "round-074-ai-review-panel-v12"
     )
 
 
@@ -96,7 +96,7 @@ def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None
     verification = evidence["verification"]
 
     assert claimed == PUBLISHER._canonical_sha256(evidence)
-    assert evidence["schema_version"] == PUBLISHER.SCHEMA_VERSION
+    assert evidence["schema_version"] == "round-074-local-ai-runtime-preflight-v5"
     for label in PUBLISHER.SOURCE_PATHS:
         assert source[f"{label}_sha256"] == _source_sha256_at(
             commit,
