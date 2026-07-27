@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,11 @@ import sys
 import threading
 import time
 
+from .impact_absorption import ROUND74_CAPTURE_DESIGN_SHA256
+from .impact_absorption_capture import (
+    IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+)
 from .impact_absorption_event_cohort import (
     Round74EventCohortPlan,
     Round74EventCohortRunBinding,
@@ -54,16 +60,22 @@ ROUND74_ACTIVE_ADJUDICATION_SHA256 = (
     "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7"
 )
 ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION = (
-    "round-074-event-cohort-slot-state-v3"
+    "round-074-event-cohort-slot-state-v4"
 )
 ROUND74_EVENT_COHORT_OPERATOR_RESULT_SCHEMA_VERSION = (
-    "round-074-event-cohort-slot-result-v3"
+    "round-074-event-cohort-slot-result-v4"
+)
+ROUND74_EVENT_COHORT_STARTUP_LAUNCH_SCHEMA_VERSION = (
+    "round-074-event-cohort-startup-launch-v1"
 )
 ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES = 24 * 1024 * 1024 * 1024
 ROUND74_EVENT_COHORT_FREE_SPACE_MINIMUM_BYTES = 100 * 1024 * 1024 * 1024
 ROUND74_EVENT_COHORT_PER_SLOT_GROWTH_LIMIT_BYTES = 512 * 1024 * 1024
 ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES = 4 * 1024 * 1024 * 1024
 ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS = 300
+ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES = 2
+ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS = 0.25
+ROUND74_EVENT_COHORT_RELAUNCH_START_HEADROOM_NS = 1_000_000_000
 
 _DATABASE_RELATIVE_PATH = Path("data/microstructure.duckdb")
 _CAPTURE_ARGUMENTS = (
@@ -88,6 +100,15 @@ _CAPTURE_ARGUMENTS = (
 )
 _MONITOR_INTERVAL_SECONDS = 5.0
 _HEARTBEAT_INTERVAL_SECONDS = 30.0
+_TRANSIENT_STARTUP_ERROR_MARKERS = (
+    "ConnectionClosedError",
+    "ConnectionRefusedError",
+    "ConnectionResetError",
+    "InvalidHandshake",
+    "InvalidStatus",
+    "OSError",
+    "TimeoutError",
+)
 
 
 @dataclass(frozen=True)
@@ -97,6 +118,30 @@ class Round74CohortSlotSelection:
     status: str
     slot_ordinal: int | None
     offset_in_slot_period_ns: int | None
+
+
+@dataclass(frozen=True)
+class _Round74CaptureLaunch:
+    launch_ordinal: int
+    return_code: int
+    breaches: tuple[str, ...]
+    stop_method: str
+    stdout_text: str
+    stderr_text: str
+    stdout_path: Path
+    stderr_path: Path
+    monitor_samples: tuple[dict[str, object], ...]
+    database_bytes_after: int
+    wal_bytes_after: int
+    database_mtime_ns_after: int
+    wal_mtime_ns_after: int
+
+
+def _path_mtime_ns(path: Path) -> int:
+    try:
+        return path.stat().st_mtime_ns
+    except FileNotFoundError:
+        return 0
 
 
 def load_round74_cohort_operator_plan(
@@ -446,40 +491,25 @@ def _raise_for_capture_process_failure(
     )
 
 
-def _run_slot_process(
+def _run_capture_launch(
     repository: Path,
     plan: Round74EventCohortPlan,
     *,
     ordinal: int,
-) -> tuple[dict[str, object], dict[str, object]]:
+    launch_ordinal: int,
+    command: list[str],
+    baseline_database: int,
+    baseline_wal: int,
+    baseline_database_mtime_ns: int,
+    baseline_wal_mtime_ns: int,
+    state: dict[str, object],
+) -> _Round74CaptureLaunch:
     slot = plan.slot(ordinal)
     slot_root = _slot_root(repository, ordinal)
     state_path = slot_root / "state.json"
-    stdout_path = slot_root / "capture.stdout.json"
-    stderr_path = slot_root / "capture.stderr.log"
+    stdout_path = slot_root / f"capture-launch-{launch_ordinal:03d}.stdout.json"
+    stderr_path = slot_root / f"capture-launch-{launch_ordinal:03d}.stderr.log"
     database = repository / _DATABASE_RELATIVE_PATH
-    executable = repository / ".venv" / "Scripts" / "python.exe"
-    command = [str(executable), *_CAPTURE_ARGUMENTS]
-    baseline_database, baseline_wal = _database_and_wal_bytes(database)
-    reserved_at = datetime.now(timezone.utc)
-    reservation = {
-        "schema_version": ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION,
-        "plan_sha256": plan.plan_sha256,
-        "slot_ordinal": ordinal,
-        "role": slot.role,
-        "reserved_at_utc": reserved_at.isoformat().replace("+00:00", "Z"),
-        "command": command,
-        "baseline_database_bytes": baseline_database,
-        "baseline_wal_bytes": baseline_wal,
-        "automatic_retry_permitted": False,
-    }
-    reserve_round74_active_attempt(
-        slot_root / "attempt-reservation.json",
-        reservation,
-    )
-    state: dict[str, object] = {**reservation, "phase": "reserved"}
-    _durable_json_replace(state_path, state)
-
     stdout_lines: list[str] = []
     stderr_lines: list[str] = []
     monitor_samples: list[dict[str, object]] = []
@@ -519,18 +549,26 @@ def _run_slot_process(
             target=_stream_reader,
             args=(process.stdout, stdout_file, stdout_lines),
             kwargs={"mirror": False},
-            name=f"round74-cohort-{ordinal:03d}-stdout",
+            name=f"round74-cohort-{ordinal:03d}-{launch_ordinal:03d}-stdout",
         )
         stderr_thread = threading.Thread(
             target=_stream_reader,
             args=(process.stderr, stderr_file, stderr_lines),
             kwargs={"mirror": True},
-            name=f"round74-cohort-{ordinal:03d}-stderr",
+            name=f"round74-cohort-{ordinal:03d}-{launch_ordinal:03d}-stderr",
         )
         stdout_thread.start()
         stderr_thread.start()
         started_monotonic = time.monotonic()
-        state.update({"phase": "running", "process_id": process.pid})
+        state.update(
+            {
+                "phase": "running",
+                "process_id": process.pid,
+                "current_startup_launch_ordinal": launch_ordinal,
+                "current_capture_stdout": stdout_path.name,
+                "current_capture_stderr": stderr_path.name,
+            }
+        )
         _durable_json_replace(state_path, state)
         next_heartbeat = started_monotonic
         hard_deadline_wall_ns = (
@@ -549,6 +587,7 @@ def _run_slot_process(
             free_bytes = shutil.disk_usage(database.parent).free
             if now_monotonic >= next_heartbeat:
                 sample = {
+                    "startup_launch_ordinal": launch_ordinal,
                     "elapsed_seconds": round(elapsed, 3),
                     "database_bytes": database_bytes,
                     "wal_bytes": wal_bytes,
@@ -570,7 +609,8 @@ def _run_slot_process(
                 _durable_json_replace(state_path, state)
                 print(
                     "round74-cohort-progress: "
-                    f"slot={ordinal} elapsed={elapsed:.1f}s "
+                    f"slot={ordinal} launch={launch_ordinal} "
+                    f"elapsed={elapsed:.1f}s "
                     f"database_bytes={database_bytes} wal_bytes={wal_bytes} "
                     f"growth_bytes={growth} free_bytes={free_bytes}",
                     file=sys.stderr,
@@ -593,16 +633,344 @@ def _run_slot_process(
         if stdout_thread.is_alive() or stderr_thread.is_alive():
             raise RuntimeError("Round 74 cohort output drain did not terminate")
 
-    _raise_for_capture_process_failure(
+    final_database, final_wal = _database_and_wal_bytes(database)
+    final_database_mtime_ns = _path_mtime_ns(database)
+    final_wal_mtime_ns = _path_mtime_ns(Path(f"{database}.wal"))
+    return _Round74CaptureLaunch(
+        launch_ordinal=launch_ordinal,
         return_code=return_code,
-        breaches=breaches,
+        breaches=tuple(breaches),
         stop_method=stop_method,
-        stdout_lines=stdout_lines,
+        stdout_text="".join(stdout_lines),
+        stderr_text="".join(stderr_lines),
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+        monitor_samples=tuple(monitor_samples),
+        database_bytes_after=final_database,
+        wal_bytes_after=final_wal,
+        database_mtime_ns_after=final_database_mtime_ns,
+        wal_mtime_ns_after=final_wal_mtime_ns,
     )
-    supervisor = _strict_json_object(
-        "".join(stdout_lines),
-        "Round 74 cohort supervisor",
+
+
+def _pre_admission_startup_failure(
+    launch: _Round74CaptureLaunch,
+    *,
+    baseline_database: int,
+    baseline_wal: int,
+    baseline_database_mtime_ns: int,
+    baseline_wal_mtime_ns: int,
+    active_capture_processes: list[dict[str, object]],
+) -> dict[str, object] | None:
+    """Return an exact zero-evidence transient startup failure, otherwise none."""
+
+    try:
+        supervisor = _strict_json_object(
+            launch.stdout_text,
+            "Round 74 cohort failed-startup supervisor",
+        )
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    startup_errors = supervisor.get("startup_errors")
+    terminal_error = supervisor.get("terminal_error")
+    if (
+        launch.return_code == 0
+        or launch.breaches
+        or launch.stop_method
+        or baseline_wal != 0
+        or hashlib.sha256(launch.stdout_text.encode("utf-8")).hexdigest()
+        != _sha256_file(launch.stdout_path)
+        or hashlib.sha256(launch.stderr_text.encode("utf-8")).hexdigest()
+        != _sha256_file(launch.stderr_path)
+        or launch.database_bytes_after != baseline_database
+        or launch.wal_bytes_after != baseline_wal
+        or launch.database_mtime_ns_after != baseline_database_mtime_ns
+        or launch.wal_mtime_ns_after != baseline_wal_mtime_ns
+        or active_capture_processes
+        or supervisor.get("schema_version")
+        != "round-074-capture-supervisor-report-v1"
+        or supervisor.get("design_sha256") != ROUND74_CAPTURE_DESIGN_SHA256
+        or supervisor.get("capture_schema_version")
+        != IMPACT_CAPTURE_V10_SCHEMA_VERSION
+        or supervisor.get("capture_contract_sha256")
+        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or supervisor.get("status") != "failed"
+        or supervisor.get("qualification_passed") is not False
+        or supervisor.get("selected_run_id") != ""
+        or supervisor.get("attempts") != []
+        or supervisor.get("attempt_count") != 1
+        or supervisor.get("reconnect_count") != 0
+        or supervisor.get("reconnect_delays_seconds") != []
+        or supervisor.get("attempt_evidence_combined") is not False
+        or not isinstance(startup_errors, list)
+        or len(startup_errors) != 1
+        or not isinstance(startup_errors[0], str)
+        or terminal_error != startup_errors[0]
+        or not startup_errors[0].startswith("startup:")
+        or not any(
+            source in startup_errors[0]
+            for source in ("public_source:", "market_source:")
+        )
+        or not any(
+            marker in startup_errors[0]
+            for marker in _TRANSIENT_STARTUP_ERROR_MARKERS
+        )
+    ):
+        return None
+    return supervisor
+
+
+def _startup_relaunch_fits_slot(
+    plan: Round74EventCohortPlan,
+    *,
+    ordinal: int,
+    now_wall_ns: int,
+) -> bool:
+    backoff_ns = int(
+        ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS * 1_000_000_000
     )
+    return (
+        now_wall_ns + backoff_ns + ROUND74_EVENT_COHORT_RELAUNCH_START_HEADROOM_NS
+        <= plan.slot(ordinal).start_window_end_wall_ns
+    )
+
+
+def _persist_startup_launch_evidence(
+    repository: Path,
+    plan: Round74EventCohortPlan,
+    launch: _Round74CaptureLaunch,
+    *,
+    ordinal: int,
+    baseline_database: int,
+    baseline_wal: int,
+    baseline_database_mtime_ns: int,
+    baseline_wal_mtime_ns: int,
+    active_capture_processes: list[dict[str, object]],
+    supervisor: Mapping[str, object] | None,
+    disposition: str,
+    relaunch_permitted: bool,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schema_version": ROUND74_EVENT_COHORT_STARTUP_LAUNCH_SCHEMA_VERSION,
+        "plan_sha256": plan.plan_sha256,
+        "slot_ordinal": ordinal,
+        "role": plan.slot(ordinal).role,
+        "launch_ordinal": launch.launch_ordinal,
+        "disposition": disposition,
+        "return_code": launch.return_code,
+        "breaches": list(launch.breaches),
+        "stop_method": launch.stop_method,
+        "stdout_sha256": _sha256_file(launch.stdout_path),
+        "stderr_sha256": _sha256_file(launch.stderr_path),
+        "supervisor_sha256": (
+            "" if supervisor is None else _canonical_sha256(dict(supervisor))
+        ),
+        "selected_run_id": (
+            "" if supervisor is None else str(supervisor.get("selected_run_id", ""))
+        ),
+        "supervisor_attempts": (
+            None if supervisor is None else supervisor.get("attempts")
+        ),
+        "startup_errors": (
+            None if supervisor is None else supervisor.get("startup_errors")
+        ),
+        "database_bytes_before": baseline_database,
+        "wal_bytes_before": baseline_wal,
+        "database_mtime_ns_before": baseline_database_mtime_ns,
+        "wal_mtime_ns_before": baseline_wal_mtime_ns,
+        "database_bytes_after": launch.database_bytes_after,
+        "wal_bytes_after": launch.wal_bytes_after,
+        "database_mtime_ns_after": launch.database_mtime_ns_after,
+        "wal_mtime_ns_after": launch.wal_mtime_ns_after,
+        "database_or_wal_changed": (
+            launch.database_bytes_after != baseline_database
+            or launch.wal_bytes_after != baseline_wal
+            or launch.database_mtime_ns_after != baseline_database_mtime_ns
+            or launch.wal_mtime_ns_after != baseline_wal_mtime_ns
+        ),
+        "active_capture_processes_after": active_capture_processes,
+        "slot_retry_permitted": False,
+        "pre_admission_startup_relaunch_permitted": relaunch_permitted,
+        "credentials_used": False,
+        "orders_submitted": False,
+    }
+    payload["evidence_sha256"] = _canonical_sha256(payload)
+    path = (
+        _slot_root(repository, ordinal)
+        / f"startup-launch-{launch.launch_ordinal:03d}.json"
+    )
+    _durable_json_replace(path, payload)
+    return payload
+
+
+def _run_slot_process(
+    repository: Path,
+    plan: Round74EventCohortPlan,
+    *,
+    ordinal: int,
+) -> tuple[dict[str, object], dict[str, object]]:
+    slot = plan.slot(ordinal)
+    slot_root = _slot_root(repository, ordinal)
+    state_path = slot_root / "state.json"
+    database = repository / _DATABASE_RELATIVE_PATH
+    executable = repository / ".venv" / "Scripts" / "python.exe"
+    command = [str(executable), *_CAPTURE_ARGUMENTS]
+    baseline_database, baseline_wal = _database_and_wal_bytes(database)
+    baseline_database_mtime_ns = _path_mtime_ns(database)
+    baseline_wal_mtime_ns = _path_mtime_ns(Path(f"{database}.wal"))
+    reserved_at = datetime.now(timezone.utc)
+    reservation = {
+        "schema_version": ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION,
+        "plan_sha256": plan.plan_sha256,
+        "slot_ordinal": ordinal,
+        "role": slot.role,
+        "reserved_at_utc": reserved_at.isoformat().replace("+00:00", "Z"),
+        "command": command,
+        "baseline_database_bytes": baseline_database,
+        "baseline_wal_bytes": baseline_wal,
+        "baseline_database_mtime_ns": baseline_database_mtime_ns,
+        "baseline_wal_mtime_ns": baseline_wal_mtime_ns,
+        "automatic_retry_permitted": False,
+        "maximum_pre_admission_startup_launches": (
+            ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES
+        ),
+        "pre_admission_startup_relaunch_backoff_seconds": (
+            ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS
+        ),
+    }
+    reserve_round74_active_attempt(
+        slot_root / "attempt-reservation.json",
+        reservation,
+    )
+    state: dict[str, object] = {**reservation, "phase": "reserved"}
+    _durable_json_replace(state_path, state)
+
+    startup_launch_evidence: list[dict[str, object]] = []
+    accepted_launch: _Round74CaptureLaunch | None = None
+    supervisor: dict[str, object] | None = None
+    for launch_ordinal in range(
+        1,
+        ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES + 1,
+    ):
+        if launch_ordinal > 1:
+            current_database, current_wal = _database_and_wal_bytes(database)
+            current_database_mtime_ns = _path_mtime_ns(database)
+            current_wal_mtime_ns = _path_mtime_ns(Path(f"{database}.wal"))
+            if (
+                current_database != baseline_database
+                or current_wal != baseline_wal
+                or current_database_mtime_ns != baseline_database_mtime_ns
+                or current_wal_mtime_ns != baseline_wal_mtime_ns
+                or _active_capture_processes()
+                or not _startup_relaunch_fits_slot(
+                    plan,
+                    ordinal=ordinal,
+                    now_wall_ns=time.time_ns(),
+                )
+            ):
+                raise ValueError(
+                    "Round 74 cohort pre-admission startup relaunch "
+                    "readiness changed"
+                )
+        launch = _run_capture_launch(
+            repository,
+            plan,
+            ordinal=ordinal,
+            launch_ordinal=launch_ordinal,
+            command=command,
+            baseline_database=baseline_database,
+            baseline_wal=baseline_wal,
+            baseline_database_mtime_ns=baseline_database_mtime_ns,
+            baseline_wal_mtime_ns=baseline_wal_mtime_ns,
+            state=state,
+        )
+        if launch.return_code == 0 and not launch.breaches:
+            try:
+                supervisor = _strict_json_object(
+                    launch.stdout_text,
+                    "Round 74 cohort supervisor",
+                )
+            except (json.JSONDecodeError, TypeError, ValueError):
+                active_processes = _active_capture_processes()
+                evidence = _persist_startup_launch_evidence(
+                    repository,
+                    plan,
+                    launch,
+                    ordinal=ordinal,
+                    baseline_database=baseline_database,
+                    baseline_wal=baseline_wal,
+                    baseline_database_mtime_ns=baseline_database_mtime_ns,
+                    baseline_wal_mtime_ns=baseline_wal_mtime_ns,
+                    active_capture_processes=active_processes,
+                    supervisor=None,
+                    disposition="invalid_completed_supervisor",
+                    relaunch_permitted=False,
+                )
+                startup_launch_evidence.append(evidence)
+                raise
+            accepted_launch = launch
+            break
+
+        active_processes = _active_capture_processes()
+        failed_supervisor = _pre_admission_startup_failure(
+            launch,
+            baseline_database=baseline_database,
+            baseline_wal=baseline_wal,
+            baseline_database_mtime_ns=baseline_database_mtime_ns,
+            baseline_wal_mtime_ns=baseline_wal_mtime_ns,
+            active_capture_processes=active_processes,
+        )
+        relaunch_permitted = (
+            failed_supervisor is not None
+            and launch_ordinal < ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES
+            and _startup_relaunch_fits_slot(
+                plan,
+                ordinal=ordinal,
+                now_wall_ns=time.time_ns(),
+            )
+        )
+        evidence = _persist_startup_launch_evidence(
+            repository,
+            plan,
+            launch,
+            ordinal=ordinal,
+            baseline_database=baseline_database,
+            baseline_wal=baseline_wal,
+            baseline_database_mtime_ns=baseline_database_mtime_ns,
+            baseline_wal_mtime_ns=baseline_wal_mtime_ns,
+            active_capture_processes=active_processes,
+            supervisor=failed_supervisor,
+            disposition=(
+                "excluded_transient_pre_admission_startup"
+                if relaunch_permitted
+                else "terminal_capture_failure"
+            ),
+            relaunch_permitted=relaunch_permitted,
+        )
+        startup_launch_evidence.append(evidence)
+        state.update(
+            {
+                "phase": (
+                    "pre_admission_startup_relaunch_wait"
+                    if relaunch_permitted
+                    else "running"
+                ),
+                "pre_admission_startup_launches": startup_launch_evidence,
+            }
+        )
+        _durable_json_replace(state_path, state)
+        if relaunch_permitted:
+            time.sleep(ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS)
+            continue
+        _raise_for_capture_process_failure(
+            return_code=launch.return_code,
+            breaches=list(launch.breaches),
+            stop_method=launch.stop_method,
+            stdout_lines=[launch.stdout_text],
+        )
+
+    if accepted_launch is None or supervisor is None:
+        raise RuntimeError("Round 74 cohort has no admissible capture launch")
     attempts = supervisor.get("attempts")
     if (
         not isinstance(attempts, list)
@@ -640,12 +1008,14 @@ def _run_slot_process(
         "plan_sha256": plan.plan_sha256,
         "slot_ordinal": ordinal,
         "role": slot.role,
-        "capture_return_code": return_code,
-        "capture_stdout_sha256": _sha256_file(stdout_path),
-        "capture_stderr_sha256": _sha256_file(stderr_path),
+        "capture_return_code": accepted_launch.return_code,
+        "capture_stdout_sha256": _sha256_file(accepted_launch.stdout_path),
+        "capture_stderr_sha256": _sha256_file(accepted_launch.stderr_path),
+        "admitted_startup_launch_ordinal": accepted_launch.launch_ordinal,
+        "pre_admission_startup_launches": startup_launch_evidence,
         "supervisor_sha256": _canonical_sha256(supervisor),
         "fresh_audit": audit,
-        "monitor_samples": monitor_samples,
+        "monitor_samples": list(accepted_launch.monitor_samples),
         "database_bytes_before": baseline_database,
         "wal_bytes_before": baseline_wal,
         "database_bytes_after": final_database,
@@ -737,19 +1107,6 @@ def run_round74_cohort_current_slot(repository: Path) -> int:
     except BaseException as exc:
         slot_root = _slot_root(root, ordinal)
         if (slot_root / "attempt-reservation.json").exists():
-            failure = {
-                "schema_version": ROUND74_EVENT_COHORT_OPERATOR_RESULT_SCHEMA_VERSION,
-                "plan_sha256": plan.plan_sha256,
-                "slot_ordinal": ordinal,
-                "outcome": "failed",
-                "error": f"{type(exc).__name__}:{exc}"[:2_000],
-                "automatic_retry_permitted": False,
-                "orders_submitted": False,
-                "credentials_used": False,
-            }
-            failure["result_sha256"] = _canonical_sha256(failure)
-            if not (slot_root / "result.json").exists():
-                _durable_json_replace(slot_root / "result.json", failure)
             state_path = slot_root / "state.json"
             prior_state: dict[str, object] = {}
             if state_path.exists():
@@ -760,6 +1117,31 @@ def run_round74_cohort_current_slot(repository: Path) -> int:
                     )
                 except (OSError, ValueError):
                     prior_state = {}
+            launches = prior_state.get("pre_admission_startup_launches")
+            startup_launch_sha256s = (
+                [
+                    str(item["evidence_sha256"])
+                    for item in launches
+                    if isinstance(item, Mapping)
+                    and isinstance(item.get("evidence_sha256"), str)
+                ]
+                if isinstance(launches, list)
+                else []
+            )
+            failure = {
+                "schema_version": ROUND74_EVENT_COHORT_OPERATOR_RESULT_SCHEMA_VERSION,
+                "plan_sha256": plan.plan_sha256,
+                "slot_ordinal": ordinal,
+                "outcome": "failed",
+                "error": f"{type(exc).__name__}:{exc}"[:2_000],
+                "startup_launch_evidence_sha256s": startup_launch_sha256s,
+                "automatic_retry_permitted": False,
+                "orders_submitted": False,
+                "credentials_used": False,
+            }
+            failure["result_sha256"] = _canonical_sha256(failure)
+            if not (slot_root / "result.json").exists():
+                _durable_json_replace(slot_root / "result.json", failure)
             terminal_state = {
                 **prior_state,
                 "schema_version": ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION,
