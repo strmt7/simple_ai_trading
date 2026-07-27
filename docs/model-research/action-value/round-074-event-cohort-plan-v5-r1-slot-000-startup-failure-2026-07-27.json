@@ -1,0 +1,100 @@
+{
+  "schema_version": "round-074-event-cohort-startup-failure-v1",
+  "observed_at_utc": "2026-07-27T23:14:37Z",
+  "cohort_plan_sha256": "a7e3afb41992599137b845e4e0d4ecee3b9c6cebadc9347617f551dcc04ec223",
+  "slot": {
+    "ordinal": 0,
+    "role": "training",
+    "scheduled_start_utc": "2026-07-27T23:00:00Z",
+    "reserved_at_utc": "2026-07-27T23:00:01.770549Z",
+    "halted_at_utc": "2026-07-27T23:00:16.808916Z"
+  },
+  "immutable_local_evidence": {
+    "root_relative_path": "data/round74-event-cohort/a7e3afb41992599137b845e4e0d4ecee3b9c6cebadc9347617f551dcc04ec223",
+    "attempt_reservation_file_sha256": "912dc56e4341cab116eb0fdc9a331091ebf55a880c4be875a901ccc42f33dbcc",
+    "state_file_sha256": "07c0ba55a5509edfda3af4468f3298434b9d461f60c594b73bdd91d557899974",
+    "result_file_sha256": "34dea0ff60c15c270d2e8005ed3a10c61abfaa53cad9f7b741faf27115bd309f",
+    "capture_stdout_file_sha256": "12ffc0092869a42af4cd546c14eba086bbb7926533def5c65076b015e2247580",
+    "capture_stderr_file_sha256": "7908b3ed98c8886b8612e86786a8d6e83a9fdc21f01930818f7513389486b6c2",
+    "halt_file_sha256": "f11a10c882fde82fbe649c9f12385bdaab0190623d4cdb6e4b24e9c6dae14753",
+    "halt_payload_sha256": "5a582aa1d79e5ed01a44c7b6a8e3464490b9fbc9ad0d044236a78801f4d62f73",
+    "slot_result_payload_sha256": "8405bb6992c56035baf912cfd5822dc7d1d0d9e8fae7a4aec4c60d0fa75368f5"
+  },
+  "capture_supervisor": {
+    "status": "failed",
+    "selected_run_id": "",
+    "attempt_count": 1,
+    "attempts": [],
+    "attempt_evidence_combined": false,
+    "reconnect_count": 0,
+    "reconnect_delays_seconds": [],
+    "startup_errors": [
+      "startup:RuntimeError:public_source:ConnectionClosedError:no close frame received or sent"
+    ],
+    "terminal_error": "startup:RuntimeError:public_source:ConnectionClosedError:no close frame received or sent",
+    "qualification_passed": false
+  },
+  "resource_reconciliation": {
+    "database_bytes_before": 9433526272,
+    "database_bytes_after": 9433526272,
+    "wal_bytes_before": 0,
+    "wal_bytes_after": 0,
+    "database_and_wal_growth_bytes": 0,
+    "resource_breaches": [],
+    "stop_requested": false
+  },
+  "root_cause": {
+    "classification": "transient_public_websocket_transport_loss_before_run_creation",
+    "websockets_exception_meaning": "TCP connection lost without a completed WebSocket closing handshake",
+    "current_routed_public_endpoint_was_used": true,
+    "capture_or_model_defect_established": false,
+    "host_endpoint_outage_established": false,
+    "subsequent_host_probe": {
+      "attempts": 3,
+      "public_messages_per_attempt": 100,
+      "market_messages_per_attempt": 100,
+      "all_six_stream_probes_passed": true
+    }
+  },
+  "host_scheduler": {
+    "task_name": "SimpleAITrading-Round74-EventCohort-v7",
+    "state_after_failure_review": "Disabled",
+    "enabled": false,
+    "last_run_time_utc": "2026-07-27T23:00:00Z",
+    "last_task_result": 2,
+    "retained_next_run_time_utc_while_disabled": "2026-07-28T00:15:00Z"
+  },
+  "adjudication": {
+    "campaign_status": "permanently_failed",
+    "slot_status": "failed_before_admission",
+    "cohort_data_admitted": false,
+    "run_created": false,
+    "failed_slot_retry_permitted": false,
+    "failed_slot_replacement_permitted": false,
+    "campaign_reactivation_permitted": false,
+    "historical_evidence_mutation_permitted": false
+  },
+  "sources": [
+    {
+      "publisher": "Binance",
+      "title": "USD-M Futures Websocket Market Streams",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect",
+      "retrieved_at_utc": "2026-07-27T23:08:00Z"
+    },
+    {
+      "publisher": "websockets",
+      "title": "Connection FAQ",
+      "url": "https://websockets.readthedocs.io/en/latest/faq/connection.html",
+      "retrieved_at_utc": "2026-07-27T23:08:00Z"
+    }
+  ],
+  "authority": {
+    "credentials_used": false,
+    "orders_submitted": false,
+    "model_training_or_evaluation": false,
+    "market_or_model_outcome_used_for_replacement_design": false,
+    "profitability_or_edge_claim": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "05d41b12b65604dd4451e8ecc12e05f51a634086e08cb4c409a7bb2e014bac3d"
+}
