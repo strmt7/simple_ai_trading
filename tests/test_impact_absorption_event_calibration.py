@@ -46,24 +46,46 @@ def _partition(tuning_runs: int = 24) -> Round74EventRunPartition:
     )
 
 
+def _tuning_subpartition() -> Round74TuningSubpartition:
+    return build_round74_tuning_subpartition(_partition())
+
+
 def _calibration() -> Round74ProbabilityCalibration:
-    action_logits = torch.tensor(
-        [-4.0, -2.0, -1.0, 1.0, 2.0, 4.0],
-        dtype=torch.float32,
-    ).reshape(1, 3, 2)
-    action_labels = torch.tensor(
-        [0.0, 0.0, 1.0, 0.0, 1.0, 1.0],
-        dtype=torch.float32,
-    ).reshape(1, 3, 2)
+    action_logits = (
+        torch.tensor(
+            [-4.0, -2.0, -1.0, 1.0, 2.0, 4.0],
+            dtype=torch.float32,
+        )
+        .reshape(1, 3, 2)
+        .repeat(6, 1, 1)
+    )
+    action_labels = (
+        torch.tensor(
+            [0.0, 0.0, 1.0, 0.0, 1.0, 1.0],
+            dtype=torch.float32,
+        )
+        .reshape(1, 3, 2)
+        .repeat(6, 1, 1)
+    )
     action_mask = torch.ones_like(action_logits)
-    regime_logits = torch.tensor(
-        [-3.0, -1.0, 1.0, 3.0],
-        dtype=torch.float32,
-    ).reshape(1, 4)
-    regime_labels = torch.tensor(
-        [0.0, 1.0, 0.0, 1.0],
-        dtype=torch.float32,
-    ).reshape(1, 4)
+    regime_logits = (
+        torch.tensor(
+            [-3.0, -1.0, 1.0, 3.0],
+            dtype=torch.float32,
+        )
+        .reshape(1, 4)
+        .repeat(6, 1)
+    )
+    regime_labels = (
+        torch.tensor(
+            [0.0, 1.0, 0.0, 1.0],
+            dtype=torch.float32,
+        )
+        .reshape(1, 4)
+        .repeat(6, 1)
+    )
+    subpartition = _tuning_subpartition()
+    run_ids = subpartition.calibration_run_ids
     return fit_round74_probability_calibration(
         positive_payoff_logits=action_logits,
         positive_payoff_labels=action_labels,
@@ -73,8 +95,9 @@ def _calibration() -> Round74ProbabilityCalibration:
         regime_unpredictability_logits=regime_logits,
         regime_unpredictability_labels=regime_labels,
         regime_eligibility=torch.ones_like(regime_logits),
+        row_run_ids=run_ids,
+        tuning_subpartition=subpartition,
         pretest_policy_sha256="1" * 64,
-        tuning_subpartition_sha256="2" * 64,
         calibration_source_sha256="3" * 64,
         backend_kind="cpu",
         backend_device="test",
@@ -116,19 +139,85 @@ def test_temperature_calibration_is_deterministic_and_hash_bound() -> None:
 
     assert first == second
     assert first.calibration_sha256 == second.calibration_sha256
-    assert first.positive_payoff.calibrated_nll <= (
-        first.positive_payoff.uncalibrated_nll + 1e-7
+    assert first.positive_payoff.calibrated_run_balanced_nll <= (
+        first.positive_payoff.uncalibrated_run_balanced_nll + 1e-7
     )
-    assert first.adverse_selection.calibrated_nll <= (
-        first.adverse_selection.uncalibrated_nll + 1e-7
+    assert first.adverse_selection.calibrated_run_balanced_nll <= (
+        first.adverse_selection.uncalibrated_run_balanced_nll + 1e-7
     )
-    assert first.regime_unpredictability.calibrated_nll <= (
-        first.regime_unpredictability.uncalibrated_nll + 1e-7
+    assert first.regime_unpredictability.calibrated_run_balanced_nll <= (
+        first.regime_unpredictability.uncalibrated_run_balanced_nll + 1e-7
     )
+    assert first.positive_payoff.calibration_runs == 6
+    assert first.calibration_run_ids == _tuning_subpartition().calibration_run_ids
     payload = first.as_dict()
     assert payload["sealed_test_accessed"] is False
     assert payload["calibration_implies_financial_edge"] is False
     assert payload["candidate_temperature_count"] == 257
+
+
+def test_temperature_selection_is_invariant_to_busy_run_duplication() -> None:
+    subpartition = _tuning_subpartition()
+    expected = subpartition.calibration_run_ids
+    base_logits = torch.tensor(
+        [
+            [-4.0, 4.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+            [-2.0, 2.0],
+        ],
+        dtype=torch.float32,
+    )
+    base_labels = torch.tensor(
+        [
+            [1.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+            [0.0, 1.0],
+        ],
+        dtype=torch.float32,
+    )
+
+    def fit(logits: torch.Tensor, labels: torch.Tensor, runs: tuple[str, ...]):
+        mask = torch.ones_like(logits)
+        return fit_round74_probability_calibration(
+            positive_payoff_logits=logits,
+            positive_payoff_labels=labels,
+            adverse_selection_logits=-logits,
+            adverse_selection_labels=1.0 - labels,
+            action_eligibility=mask,
+            regime_unpredictability_logits=logits,
+            regime_unpredictability_labels=labels,
+            regime_eligibility=mask,
+            row_run_ids=runs,
+            tuning_subpartition=subpartition,
+            pretest_policy_sha256="1" * 64,
+            calibration_source_sha256="3" * 64,
+            backend_kind="cpu",
+            backend_device="test",
+        )
+
+    baseline = fit(base_logits, base_labels, expected)
+    repeated = 100
+    busy_logits = torch.cat(
+        (base_logits[:1].repeat(repeated, 1), base_logits[1:]),
+    )
+    busy_labels = torch.cat(
+        (base_labels[:1].repeat(repeated, 1), base_labels[1:]),
+    )
+    busy_runs = (expected[0],) * repeated + expected[1:]
+    duplicated = fit(busy_logits, busy_labels, busy_runs)
+
+    assert duplicated.positive_payoff.temperature == (
+        baseline.positive_payoff.temperature
+    )
+    assert duplicated.positive_payoff.maximum_run_observations == repeated * 2
+    assert duplicated.positive_payoff.minimum_run_observations == 2
+    assert duplicated.calibration_data_sha256 != baseline.calibration_data_sha256
 
 
 def test_temperature_application_uses_frozen_head_specific_values() -> None:
@@ -156,9 +245,11 @@ def test_temperature_application_uses_frozen_head_specific_values() -> None:
 
 
 def test_temperature_calibration_rejects_missing_class_support() -> None:
-    logits = torch.zeros((2, 2), dtype=torch.float32)
+    logits = torch.zeros((6, 2), dtype=torch.float32)
     labels = torch.zeros_like(logits)
     mask = torch.ones_like(logits)
+    subpartition = _tuning_subpartition()
+    run_ids = subpartition.calibration_run_ids
 
     with pytest.raises(ValueError, match="class support differs"):
         fit_round74_probability_calibration(
@@ -170,8 +261,9 @@ def test_temperature_calibration_rejects_missing_class_support() -> None:
             regime_unpredictability_logits=logits,
             regime_unpredictability_labels=labels,
             regime_eligibility=mask,
+            row_run_ids=run_ids,
+            tuning_subpartition=subpartition,
             pretest_policy_sha256="1" * 64,
-            tuning_subpartition_sha256="2" * 64,
             calibration_source_sha256="3" * 64,
             backend_kind="cpu",
             backend_device="test",
@@ -180,17 +272,19 @@ def test_temperature_calibration_rejects_missing_class_support() -> None:
 
 def test_temperature_calibration_rejects_invalid_mask_or_nonfinite_data() -> None:
     logits = torch.tensor(
-        [[-1.0, 1.0]],
+        [[-1.0, 1.0]] * 6,
         dtype=torch.float32,
     )
     labels = torch.tensor(
-        [[0.0, 1.0]],
+        [[0.0, 1.0]] * 6,
         dtype=torch.float32,
     )
     invalid_mask = torch.tensor(
-        [[1.0, 0.5]],
+        [[1.0, 0.5]] * 6,
         dtype=torch.float32,
     )
+    subpartition = _tuning_subpartition()
+    run_ids = subpartition.calibration_run_ids
 
     with pytest.raises(ValueError, match="calibration panel differs"):
         fit_round74_probability_calibration(
@@ -202,8 +296,9 @@ def test_temperature_calibration_rejects_invalid_mask_or_nonfinite_data() -> Non
             regime_unpredictability_logits=logits,
             regime_unpredictability_labels=labels,
             regime_eligibility=invalid_mask,
+            row_run_ids=run_ids,
+            tuning_subpartition=subpartition,
             pretest_policy_sha256="1" * 64,
-            tuning_subpartition_sha256="2" * 64,
             calibration_source_sha256="3" * 64,
             backend_kind="cpu",
             backend_device="test",

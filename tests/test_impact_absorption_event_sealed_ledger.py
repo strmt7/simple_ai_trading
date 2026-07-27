@@ -8,7 +8,9 @@ import numpy as np
 import pytest
 import torch
 
-from simple_ai_trading import impact_absorption_event_sealed_evaluation as sealed_subject
+from simple_ai_trading import (
+    impact_absorption_event_sealed_evaluation as sealed_subject,
+)
 from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIReviewDecision,
 )
@@ -208,6 +210,11 @@ def _calibration() -> Round74ProbabilityCalibration:
         temperature=1.0,
         eligible_observations=10,
         positive_observations=5,
+        calibration_runs=6,
+        minimum_run_observations=1,
+        maximum_run_observations=2,
+        uncalibrated_run_balanced_nll=0.5,
+        calibrated_run_balanced_nll=0.5,
         uncalibrated_nll=0.5,
         calibrated_nll=0.5,
         uncalibrated_brier=0.2,
@@ -220,6 +227,8 @@ def _calibration() -> Round74ProbabilityCalibration:
         tuning_subpartition_sha256="7" * 64,
         calibration_source_sha256="a" * 64,
         calibration_data_sha256="b" * 64,
+        calibration_run_ids=tuple(f"{index + 1:032x}" for index in range(6)),
+        calibration_row_run_ids_sha256="c" * 64,
         positive_payoff=fit,
         adverse_selection=fit,
         regime_unpredictability=fit,
@@ -293,9 +302,7 @@ def _reviews(
             side=int(candidates.side[index]),
             horizon_seconds=int(candidates.horizon_seconds[index]),
             pretest_policy_sha256=selection.pretest_policy_sha256,
-            probability_calibration_sha256=(
-                selection.probability_calibration_sha256
-            ),
+            probability_calibration_sha256=(selection.probability_calibration_sha256),
             request_sha256=f"{1_000 + index:064x}",
             runtime_outcome_sha256=f"{2_000 + index:064x}",
             model_manifest_sha256=manifest,
@@ -563,9 +570,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
 
     default_models = round74_default_ai_review_model_panel()
     assert len(default_models) == 2
-    assert tuple(
-        value.manifest.model_artifact_sha256 for value in default_models
-    ) == (
+    assert tuple(value.manifest.model_artifact_sha256 for value in default_models) == (
         "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
         "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
     )
@@ -581,8 +586,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert len(progress) == 48
     assert progress[-1]["completed_reviews"] == 48
     assert set(panel.reviews_by_manifest()) == {
-        binding.manifest.manifest_sha256
-        for binding in default_models
+        binding.manifest.manifest_sha256 for binding in default_models
     }
     assert panel.target_fields_accessed is False
     assert panel.trading_authority is False
