@@ -13,7 +13,7 @@ from simple_ai_trading.impact_absorption_event_cohort import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-PLAN_PATH = RESEARCH / "round-074-event-cohort-plan-v1.json"
+PLAN_PATH = RESEARCH / "round-074-event-cohort-plan-v2.json"
 PREFLIGHT_PATH = (
     RESEARCH
     / "round-074-v10-active-regime-qualification-preflight-2026-07-27.json"
@@ -61,7 +61,7 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     payload = plan.as_dict()
 
     assert payload["plan_sha256"] == (
-        "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd"
+        "1082f4038e6c79c1cb13c6337d44cc10f325b7c6bde68a761982f98844f5629e"
     )
     assert plan.total_slots == 168
     assert (plan.training_slots, plan.tuning_slots, plan.test_slots) == (
@@ -87,6 +87,12 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     assert payload["partition_policy"][
         "test_labels_or_outcomes_visible_before_pretest_seal"
     ] is False
+    assert payload["partition_policy"]["minimum_purge_ns"] == 310_000_000_000
+    assert payload["partition_policy"]["minimum_embargo_ns"] == 310_000_000_000
+    assert (
+        payload["partition_policy"]["maximum_target_span_ns"]
+        == 310_000_000_000
+    )
     assert set(payload["scope"].values()) >= {False}
     assert payload["scope"]["financial_edge_tested_by_plan"] is False
     assert payload["scope"]["profitability_claim"] is False
