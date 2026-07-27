@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
 
@@ -10,6 +11,13 @@ import torch
 from simple_ai_trading import impact_absorption_event_sealed_evaluation as sealed_subject
 from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIReviewDecision,
+)
+from simple_ai_trading.impact_absorption_ai_review_preparation import (
+    prepare_round74_target_free_ai_reviews,
+    round74_default_ai_review_model_panel,
+)
+from simple_ai_trading.impact_absorption_ai_runtime import (
+    Round74AIRuntimeOutcome,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
     Round74AIPairedReviewEvidence,
@@ -40,6 +48,7 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     Round74SealedReuseError,
 )
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
+    Round74TargetFreeCandidateInference,
     evaluate_round74_sealed_once,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
@@ -82,6 +91,16 @@ def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
         ),
         dtype=np.float32,
     )
+    symbols = tuple(
+        ROUND74_EVENT_SYMBOLS[index % len(ROUND74_EVENT_SYMBOLS)]
+        for index in range(rows)
+    )
+    for index, symbol in enumerate(symbols):
+        features[
+            index,
+            :,
+            ROUND74_EVENT_FEATURE_NAMES.index(f"symbol_is_{symbol.lower()}"),
+        ] = 1.0
     entry = np.full(action_shape, 10, dtype=np.int64)
     exit_value = np.full(action_shape, 20, dtype=np.int64)
     result = Round74EventTrainingBatch(
@@ -89,10 +108,7 @@ def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
         partition_sha256="1" * 64,
         scaler_sha256="2" * 64,
         run_id=TEST_RUNS,
-        symbol=tuple(
-            ROUND74_EVENT_SYMBOLS[index % len(ROUND74_EVENT_SYMBOLS)]
-            for index in range(rows)
-        ),
+        symbol=symbols,
         decision_monotonic_ns=_readonly(np.full(rows, 1_000_000_000, dtype=np.int64)),
         decision_wall_ns=_readonly(wall),
         endpoint_frame_index=_readonly(np.arange(rows, dtype=np.int64)),
@@ -297,6 +313,38 @@ def _reviews(
     return result
 
 
+def _candidate_inference(
+    batch: Round74EventTrainingBatch,
+    calibration: Round74ProbabilityCalibration,
+    selection: Round74ActionPolicySelection,
+) -> Round74TargetFreeCandidateInference:
+    context = build_round74_action_inference_context(batch)
+    output = _model_output(batch.rows)
+    candidates = derive_round74_action_candidates(
+        output,
+        context,
+        calibration,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        profile=selection.profile,
+    )
+    result = Round74TargetFreeCandidateInference(
+        contexts=(context,),
+        model_outputs=(output,),
+        candidates=(candidates,),
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        pretest_model_sha256="d" * 64,
+        probability_calibration_sha256=calibration.calibration_sha256,
+        action_selection_sha256=selection.selection_sha256,
+        profile=selection.profile,
+        inference_backend_kind="cpu",
+        inference_backend_device="cpu",
+        inference_backend_vendor="test",
+        inference_warning_count=0,
+    )
+    result.validate()
+    return result
+
+
 def test_reservation_consumes_test_access_before_evaluation(
     tmp_path: Path,
 ) -> None:
@@ -464,6 +512,81 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert outcome.report.inference_backend_kind == "cpu"
     assert outcome.report.profitability_claim is False
     assert ledger.claim_matches(outcome.finalized_claim, required_status="complete")
+
+
+def test_target_free_two_model_review_panel_preserves_blocked_observations() -> None:
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    inference = _candidate_inference(batch, calibration, selection)
+    progress: list[Mapping[str, object]] = []
+
+    def blocked_review(
+        _config: object,
+        manifest: object,
+        request: object,
+        *,
+        deterministic_risk_gate_passed: bool,
+        observed_wall_ns: int,
+    ) -> Round74AIRuntimeOutcome:
+        result = Round74AIRuntimeOutcome(
+            status="blocked_capability",
+            request_sha256=request.request_sha256,
+            manifest_sha256=manifest.manifest_sha256,
+            deterministic_risk_gate_passed=deterministic_risk_gate_passed,
+            observed_wall_ns=observed_wall_ns,
+            proposed_risk_size_bps=request.proposed_risk_size_bps,
+            approved_risk_size_bps=0,
+            capability={"ok": False},
+            resolved_model_digest=None,
+            resolved_model_metadata_sha256=None,
+            worker_result=None,
+            elapsed_ns=0,
+            failure_class="AICapabilityGate",
+            message="blocked by test capability gate",
+        )
+        result.validate()
+        return result
+
+    panel = prepare_round74_target_free_ai_reviews(
+        inference,
+        action_selection=selection,
+        probability_calibration=calibration,
+        review_runner=blocked_review,
+        progress_callback=progress.append,
+        wall_time_ns=lambda: 1_900_000_000_000_000_000,
+    )
+
+    default_models = round74_default_ai_review_model_panel()
+    assert len(default_models) == 2
+    assert tuple(
+        value.manifest.model_artifact_sha256 for value in default_models
+    ) == (
+        "083c6422a2dd90d62ec33638ab84271edddd2cf1fa6a9841898ea18a35e27b87",
+        "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    )
+    assert len(panel.rows) == 24
+    assert len(panel.reviews) == 2
+    assert all(len(value) == 24 for value in panel.reviews)
+    assert all(
+        review.runtime_status == "blocked_capability"
+        and review.size_multiplier_bps == 0
+        for reviews in panel.reviews
+        for review in reviews
+    )
+    assert len(progress) == 48
+    assert progress[-1]["completed_reviews"] == 48
+    assert set(panel.reviews_by_manifest()) == {
+        binding.manifest.manifest_sha256
+        for binding in default_models
+    }
+    assert panel.target_fields_accessed is False
+    assert panel.trading_authority is False
+    assert len(panel.panel_sha256) == 64
 
 
 def test_development_data_is_rejected_before_ledger_creation(
