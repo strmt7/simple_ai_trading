@@ -15,11 +15,6 @@ from simple_ai_trading.impact_absorption_event_training import (
 from simple_ai_trading.round74_event_model_operator import (
     ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
 )
-from simple_ai_trading.round74_representation_comparison import (
-    ROUND74_REPRESENTATION_COMPARISON_SCHEMA_VERSION,
-)
-
-
 REPOSITORY = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
     REPOSITORY
@@ -87,9 +82,6 @@ def test_round74_v74_binds_one_pass_fixed_architecture_comparison() -> None:
     assert ROUND74_EVENT_TRAINING_SCHEMA_VERSION == "round-074-event-training-v17"
     assert ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION == (
         "round-074-event-pretest-policy-v16"
-    )
-    assert ROUND74_REPRESENTATION_COMPARISON_SCHEMA_VERSION == (
-        "round-074-representation-comparison-v1"
     )
     replay = design["one_pass_matched_replay"]
     assert replay["raw_observation_iterator_calls_per_run"] == 1

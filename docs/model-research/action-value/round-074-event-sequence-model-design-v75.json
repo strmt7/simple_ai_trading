@@ -1,0 +1,70 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v75",
+  "created_at_utc": "2026-07-27T21:19:02Z",
+  "implementation_git_commit": "286035aa81edc1e110c896337b13a6f8d62b24fb",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v74.json",
+    "normalized_lf_sha256": "e2dfc491b09e038a3b20c1f0680b4fde016ab5cdca73ee00d2cc0fd04b08a9f9",
+    "design_sha256": "69f45c2a7e5df63d4dad9c790fdd647a4813df4713920d1cfb4b9bcff2b8ac75",
+    "composition_rule": "v74 binds one-pass matched representation replay and fixed-architecture selection; v75 adds an outcome-transparent conservative run-level noninferiority gate before any representation result exists"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "representation_comparison_path": "src/simple_ai_trading/round74_representation_comparison.py",
+    "representation_comparison_normalized_lf_sha256": "9f3bf35decda518d9ea5bf540ae35aabe337d109a010554e69e1d57394e49a43",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_normalized_lf_sha256": "b46ca691ec3f945cef76bc40489c7dc3d2d2bbca31109093b4cf5e5ae0b35916",
+    "calibration_path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+    "calibration_normalized_lf_sha256": "6c42d446e7c2538371bcf318bca66f910402b771c253df9f8e60a9efa7fc4a71"
+  },
+  "conservative_run_level_gate": {
+    "profile": "conservative",
+    "policy_selection_run_count": 6,
+    "baseline_and_challenger_ordered_run_ids_must_match": true,
+    "no_trade_runs_included_as_zero_payoff": true,
+    "economic_measure": "realized_unlevered_after_cost_net_payoff_bps",
+    "paired_run_delta": "challenger_run_net_payoff_bps_minus_baseline_run_net_payoff_bps",
+    "every_paired_run_must_be_noninferior": true,
+    "aggregate_improvement_can_override_a_degraded_run": false,
+    "regular_or_aggressive_every_run_gate_added": false,
+    "paired_run_ids_sha256_recorded": true,
+    "all_six_paired_run_deltas_recorded": true,
+    "minimum_paired_run_delta_recorded": true,
+    "challenger_worse_run_count_recorded": true,
+    "derived_summaries_recomputed_on_reload": true,
+    "outer_digest_recomputation_can_hide_forged_summary": false,
+    "sealed_test_used_for_selection": false
+  },
+  "verification": {
+    "representation_comparison_tests_passed": 6,
+    "ordered_run_identity_drift_tested": true,
+    "aggregate_gain_with_one_degraded_run_tested": true,
+    "forged_summary_with_recomputed_outer_digest_tested": true,
+    "ruff_passed": true,
+    "production_database_scanned_during_implementation": false,
+    "prospective_representation_comparison_run": false
+  },
+  "active_evidence_boundary": {
+    "historical_v5_cohort_slot_zero_outcome": "failed",
+    "historical_v5_raw_capture_qualified": true,
+    "historical_v5_fresh_audit_passed": true,
+    "historical_v5_capture_admitted_to_model_cohort": false,
+    "prospective_v5_r1_slot_zero_scheduled_start_utc": "2026-07-27T23:00:00Z",
+    "prospective_v5_r1_slot_zero_completed": false,
+    "model_or_ai_outcome_available": false
+  },
+  "authority": {
+    "conservative_run_level_noninferiority_established_on_market_data": false,
+    "cross_asset_predictive_uplift_established": false,
+    "representation_promoted": false,
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "acf0c4be3a97a9d2fc08bc04be71ca5ebcc8ae49f51d4390467a67d6585c0dc2"
+}
