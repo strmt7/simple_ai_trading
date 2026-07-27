@@ -142,6 +142,13 @@ SUMMARY_UNITS_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v55.json"
 )
+RUNTIME_CONTRACT_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v56.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -645,6 +652,75 @@ def test_round74_ai_design_delta_corrects_summary_units_and_preflight() -> None:
     assert verification["protocol_summary_unit_assertions_passed"]
     assert not verification["sealed_test_accessed"]
     assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_binds_runtime_semantics_and_host_preflight() -> None:
+    previous = _load_json(SUMMARY_UNITS_ARTIFACT_PATH)
+    artifact = _load_json(RUNTIME_CONTRACT_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    semantics = artifact["decision_semantic_delta"]
+    ram_gate = artifact["state_aware_ram_gate"]
+    preflight = artifact["host_preflight"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v56"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in (
+        "protocol",
+        "bridge",
+        "runtime",
+        "review_panel",
+        "runtime_preflight_publisher",
+    ):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["protocol"]["system_prompt_schema_version"] == (
+        "round-074-ai-system-prompt-v1"
+    )
+    assert source["runtime"]["schema_version"] == (
+        "round-074-ai-runtime-outcome-v3"
+    )
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v11"
+    )
+    assert source["runtime_preflight_publisher"]["schema_version"] == (
+        "round-074-local-ai-runtime-preflight-v5"
+    )
+    assert semantics["allow_unchanged_requires_none_reason_only"]
+    assert semantics["any_risk_reason_requires_reduce_veto_or_abstain"]
+    assert not semantics["model_output_can_increase_risk"]
+    assert not semantics["model_output_can_select_side_or_leverage"]
+    assert not semantics["model_output_can_submit_or_cancel_orders"]
+    assert ram_gate["cold_minimum_free_ram_gb"] == 16.0
+    assert ram_gate["cold_minimum_free_vram_gb"] == 8.0
+    assert ram_gate["warm_minimum_operational_free_ram_gb"] == 8.0
+    assert ram_gate["warm_minimum_equivalent_preload_ram_gb"] == 16.0
+    assert ram_gate["warm_requires_exact_fully_gpu_resident_model"]
+    assert ram_gate["unknown_or_insufficient_warm_headroom_fails_closed"]
+    preflight_artifact = _load_json(REPOSITORY / preflight["path"])
+    assert preflight["artifact_sha256"] == preflight_artifact["artifact_sha256"]
+    assert preflight["model_count"] == 2
+    assert preflight["request_count"] == 4
+    assert preflight["all_requests_accepted_by_protocol"]
+    assert preflight["all_requests_fully_gpu_resident"]
+    assert preflight["resident_models_after"] == []
+    assert preflight["fino_warm_elapsed_ns"] < preflight["fino_cold_elapsed_ns"]
+    assert preflight["qwen_warm_elapsed_ns"] < preflight["qwen_cold_elapsed_ns"]
+    assert not preflight["real_market_events_used"]
+    assert not preflight["real_market_targets_used"]
+    assert not preflight["test_partition_accessed"]
+    assert verification["focused_tests_passed"] == 56
+    assert verification["persisted_preflight_digest_verified"]
+    assert verification["execution_commit_source_hashes_verified"]
+    assert verification["post_execution_residency_empty"]
+    assert not verification["sealed_test_accessed"]
     assert all(value is False for value in artifact["status"].values())
 
 
