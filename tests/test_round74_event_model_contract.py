@@ -82,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v26.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v27.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -369,6 +369,20 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert action["candidate_horizons_seconds"] == list(ROUND74_ACTION_HORIZONS_SECONDS)
     assert action["candidate_derivation_receives_realized_targets"] is False
     assert action["candidate_input_context_contains_realized_target_fields"] is False
+    assert action["future_target_eligibility_may_delete_a_model_selected_action"] is False
+    assert (
+        action["complete_executable_target_coverage_required_for_every_selected_action"]
+        is True
+    )
+    assert action["selected_action_with_censored_target_policy"] == (
+        "reject the threshold as unscorable"
+    )
+    assert (
+        action[
+            "fixed_zero_loss_or_profit_imputation_for_censored_selected_action_permitted"
+        ]
+        is False
+    )
     assert action["calibrated_probabilities_required"] is True
     assert action["maximum_candidates_per_row"] == 1
     assert (
@@ -482,6 +496,13 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert evaluation["profitability_required_by_assertion_or_data_filter"] is False
     assert (
+        evaluation["selected_action_with_censored_target_may_pass_financial_gates"]
+        is False
+    )
+    assert evaluation["selected_action_target_coverage_failure_reason"] == (
+        "selected_action_target_coverage_incomplete"
+    )
+    assert (
         design["ai_comparison_contract"]["ai_may_bypass_data_risk_or_execution_gate"]
         is False
     )
@@ -528,6 +549,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["same_entry_latency_eligibility_rate_gate"] == 0.99
     assert ai["same_entry_latency_eligibility_is_distinct_from_runtime_success"] is True
     assert ai["latency_adjusted_delayed_entry_replay_implemented_now"] is False
+    assert (
+        ai["future_target_eligibility_may_delete_a_model_selected_observation"]
+        is False
+    )
+    assert ai["censored_selected_action_invalidates_ml_and_ai_financial_gates"] is True
     assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
     assert (
         ai["target_eligibility_or_realized_exit_timing_may_select_ai_review_coverage"]
@@ -562,6 +588,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["paired_ml_ai_sealed_evaluator_implementation"] is True
     assert authority["target_free_candidate_inference_implementation"] is True
     assert authority["two_model_ai_review_preparation_implementation"] is True
+    assert authority["future_censored_action_rejection_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
