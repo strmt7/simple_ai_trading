@@ -1,0 +1,51 @@
+{
+  "schema_version": "round-074-event-cohort-supersession-v3",
+  "artifact_sha256": "8d3aef2f28f3840dd46a718852c43b518b423c843b40d7e9c2e7d5661d80ec92",
+  "observed_at_utc": "2026-07-27T08:44:18Z",
+  "superseded_plan": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-plan-v3.json",
+    "plan_sha256": "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9",
+    "implementation_git_commit": "686c731b29200563cc76bb19dbfcc35fdfaa32cd"
+  },
+  "replacement_plan": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-plan-v4.json",
+    "plan_sha256": "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb",
+    "implementation_git_commit": "6efe56902524941c35654902b889ad85cd50f1b1"
+  },
+  "correction_basis": {
+    "dataset_schema_before": "round-074-event-dataset-v5",
+    "dataset_schema_after": "round-074-event-dataset-v7",
+    "target_schema_after": "round-074-executable-event-target-v10",
+    "defect": "The v3 plan implementation commit no longer matched the exact-capital dataset source used by the prospective cohort pipeline.",
+    "correction": "Bind v4 to the exact common-reference-capital dataset and retain the original schedule, roles, capture contract, purge, and embargo.",
+    "requested_size_fraction_substituted_for_realized_notional_after_correction": false,
+    "selected_from_market_or_model_outcome": false,
+    "schedule_or_role_counts_changed": false
+  },
+  "pre_supersession_state": {
+    "superseded_task_state": "Ready",
+    "superseded_task_last_result_hex": "0x41303",
+    "superseded_task_last_result_interpretation": "Task had not run.",
+    "superseded_task_missed_runs": 0,
+    "slot_zero_started": false,
+    "active_prerequisite_result_existed": false,
+    "superseded_campaign_directory_existed": false,
+    "replacement_campaign_directory_existed": false,
+    "slot_reservation_existed": false,
+    "slot_binding_existed": false,
+    "cohort_market_data_collected": false
+  },
+  "replacement_sequence": {
+    "replacement_task_registered_before_superseded_task_removal": true,
+    "replacement_task_verified_ready_before_superseded_task_removal": true,
+    "replacement_task_next_run_time_utc": "2026-07-27T14:15:00Z",
+    "superseded_task_removed": true,
+    "simultaneous_live_trigger_possible_after_replacement": false
+  },
+  "authority": {
+    "credentials_used": false,
+    "orders_submitted": false,
+    "market_or_model_outcomes_observed_for_selection": false,
+    "profitability_or_edge_claim": false
+  }
+}

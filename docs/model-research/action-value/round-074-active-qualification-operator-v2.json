@@ -1,0 +1,42 @@
+{
+  "schema_version": "round-074-active-qualification-operator-contract-v2",
+  "artifact_sha256": "f3e339830da73c7df8b23b156ed57cee709b3984abd711deacf1ce8b0775b459",
+  "created_at_utc": "2026-07-27T08:41:44Z",
+  "source_parent_git_commit": "6efe56902524941c35654902b889ad85cd50f1b1",
+  "preflight_artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+  "superseded_operator_contract_artifact_sha256": "0ce65bcb3572e47a83f3d60345ad0dbe2de3931cb6f041d036123c3ffcfa1654",
+  "source_binding": {
+    "operator_path": "src/simple_ai_trading/round74_active_qualification.py",
+    "operator_sha256": "6c2047fc0c542a6ffef24d4a0af824182303d0753d99f6435b22271f7021869d",
+    "wrapper_path": "tools/run_round74_active_qualification.py",
+    "wrapper_sha256": "2bcd87bd59121802ba7745736ec88b0e275e2a21edfe8bf1150cd6eee33928bf"
+  },
+  "execution_contract": {
+    "preflight_hash_and_canonical_json_verified_before_reservation": true,
+    "static_preflight_parse_requires_host_virtual_environment": false,
+    "capture_executable_exists_checked_at_host_readiness": true,
+    "frozen_capture_source_bytes_verified_against_preflight_commit": true,
+    "database_and_wal_baseline_must_match": true,
+    "minimum_free_space_checked": true,
+    "concurrent_capture_process_forbidden": true,
+    "exclusive_reservation_fsynced_before_process_spawn": true,
+    "reservation_removed_after_failure": false,
+    "automatic_retry_permitted": false,
+    "capture_stdout_and_stderr_persisted": true,
+    "heartbeat_interval_seconds": 30,
+    "database_and_wal_growth_watched_independently": true,
+    "process_io_verdict_taken_from_capture_process_counter": true,
+    "process_io_counter_interpreted_as_physical_nand_writes": false,
+    "fresh_process_audit_uses_explicit_run_id": true,
+    "stored_report_and_final_frame_hashes_must_match": true,
+    "quiet_middle_failed_and_active_outcomes_retained": true,
+    "post_reservation_operator_exception_is_terminal": true
+  },
+  "authority": {
+    "public_market_data_capture": true,
+    "order_submission": false,
+    "credentials": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false
+  }
+}

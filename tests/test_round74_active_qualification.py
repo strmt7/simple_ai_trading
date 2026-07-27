@@ -24,14 +24,14 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-active-qualification-operator-v1.json"
+    / "round-074-active-qualification-operator-v2.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-active-qualification-host-schedule-2026-07-27.json"
+    / "round-074-active-qualification-host-schedule-v2-2026-07-27.json"
 )
 
 
@@ -76,6 +76,9 @@ def test_round74_host_schedule_is_truthful_and_does_not_claim_execution() -> Non
     assert scheduler["next_run_time_utc"] == "2026-07-27T12:55:00Z"
     assert scheduler["start_when_available"] is False
     assert scheduler["last_task_result_hex"] == "0x41303"
+    assert evidence["post_install_readiness"][
+        "capture_executable_passed"
+    ] is True
     limitations = evidence["limitations"]
     assert limitations["future_execution_proven_now"] is False
     assert limitations["active_regime_qualification_proven_now"] is False
