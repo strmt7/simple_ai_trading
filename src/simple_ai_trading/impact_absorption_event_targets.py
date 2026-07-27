@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v5"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v6"
 ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "round-074-target-evidence-v1"
 )
@@ -1669,6 +1669,30 @@ class Round74EventTargetEngine:
                 horizon_seconds=position.horizon_seconds,
                 side=position.side,
                 reason="exit_state_late",
+                requested_entry_monotonic_ns=(
+                    position.requested_entry_monotonic_ns
+                ),
+                actual_entry_monotonic_ns=position.actual_entry_monotonic_ns,
+                actual_entry_frame_index=position.actual_entry_frame_index,
+                actual_entry_message_index=position.actual_entry_message_index,
+                requested_exit_monotonic_ns=(
+                    position.requested_exit_monotonic_ns
+                ),
+                actual_exit_monotonic_ns=received_monotonic_ns,
+                actual_exit_frame_index=frame_index,
+                actual_exit_message_index=message_index,
+            )
+            return
+        if self._crosses_funding(
+            position.decision.anchor.symbol,
+            entry_ns=position.actual_entry_monotonic_ns,
+            exit_ns=received_monotonic_ns,
+        ):
+            self._record_ineligible(
+                anchor=position.decision.anchor,
+                horizon_seconds=position.horizon_seconds,
+                side=position.side,
+                reason="funding_boundary",
                 requested_entry_monotonic_ns=(
                     position.requested_entry_monotonic_ns
                 ),

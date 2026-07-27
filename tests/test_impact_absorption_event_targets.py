@@ -727,6 +727,59 @@ def test_round74_target_engine_censors_funding_crossing_and_capacity() -> None:
     } == {"entry_capacity"}
 
 
+def test_round74_target_engine_rechecks_funding_at_actual_exit() -> None:
+    engine = Round74EventTargetEngine(
+        spec=_spec(
+            funding_boundaries={
+                "BTCUSDT": (2_250_000_000,),
+                "ETHUSDT": (),
+                "SOLUSDT": (),
+            }
+        ),
+        anchors=[_anchor()],
+        quantity_rules=_rules(),
+    )
+    engine.observe_depth(
+        received_monotonic_ns=900_000_000,
+        frame_index=1,
+        message_index=0,
+        state=_state(update_id=1),
+    )
+    engine.observe_depth(
+        received_monotonic_ns=NS,
+        frame_index=2,
+        message_index=0,
+        state=_state(update_id=2),
+    )
+    engine.observe_depth(
+        received_monotonic_ns=1_100_000_000,
+        frame_index=3,
+        message_index=0,
+        state=_state(update_id=3),
+    )
+    _observe_dense_path(
+        engine,
+        start_ns=1_100_000_000,
+        checkpoints=((2_300_000_000, 101.0),),
+    )
+
+    outcomes = engine.finish()
+
+    assert not any(outcome.eligible for outcome in outcomes)
+    assert {outcome.ineligible_reason for outcome in outcomes} == {
+        "funding_boundary"
+    }
+    one_second = [
+        outcome for outcome in outcomes if outcome.horizon_seconds == 1
+    ]
+    assert {outcome.requested_exit_monotonic_ns for outcome in one_second} == {
+        2_200_000_000
+    }
+    assert {outcome.actual_exit_monotonic_ns for outcome in one_second} == {
+        2_300_000_000
+    }
+
+
 def test_round74_target_engine_censors_late_state_and_rejects_bad_order() -> None:
     late_engine = Round74EventTargetEngine(
         spec=_spec(),
