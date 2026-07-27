@@ -135,6 +135,13 @@ TEMPORAL_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v54.json"
 )
+SUMMARY_UNITS_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v55.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -581,6 +588,61 @@ def test_round74_ai_design_delta_binds_causal_microstructure_blocks() -> None:
     assert verification["block_shape_and_finiteness_validated"]
     assert verification["bridge_order_regression_uses_increasing_spread_path"]
     assert verification["malformed_block_panel_rejected"]
+    assert not verification["sealed_test_accessed"]
+    assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_corrects_summary_units_and_preflight() -> None:
+    previous = _load_json(TEMPORAL_ARTIFACT_PATH)
+    artifact = _load_json(SUMMARY_UNITS_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    correction = artifact["summary_unit_correction"]
+    preflight = artifact["runtime_preflight_delta"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v55"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in ("protocol", "bridge", "review_panel", "runtime_preflight_publisher"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["protocol"]["prompt_payload_schema_version"] == (
+        "round-074-ai-prompt-payload-v7"
+    )
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v9"
+    )
+    assert source["runtime_preflight_publisher"]["schema_version"] == (
+        "round-074-local-ai-runtime-preflight-v3"
+    )
+    assert correction["first_eight_source_features_are_binary_indicators"]
+    assert correction["binary_last_value_units"] == "zero_or_one_indicator"
+    assert correction["binary_mean_units"] == "fraction_of_events"
+    assert correction["binary_standard_deviation_units"] == (
+        "population_standard_deviation"
+    )
+    assert correction["binary_recent_change_units"] == (
+        "signed_fraction_of_events_difference"
+    )
+    assert not correction["all_binary_summary_values_are_zero_or_one"]
+    assert not correction["raw_financial_units_apply_to_scaled_feature_summaries"]
+    assert correction["prompt_payload_hash_binds_corrected_summary_units"]
+    assert not correction["financial_uplift_assumed"]
+    assert preflight["output_policy"] == "create_only"
+    assert preflight["risk_profile"] == "conservative"
+    assert preflight["temporal_block_count"] == 4
+    assert preflight["temporal_feature_count"] == 14
+    assert not preflight["real_market_events_used"]
+    assert not preflight["real_market_targets_used"]
+    assert not preflight["preflight_can_grant_trading_authority"]
+    assert verification["focused_tests_passed"] == 82
+    assert verification["protocol_summary_unit_assertions_passed"]
     assert not verification["sealed_test_accessed"]
     assert not verification["gpu_model_workload_executed"]
     assert all(value is False for value in artifact["status"].values())
