@@ -22,7 +22,8 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v1"
+ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v2"
+ROUND74_AI_RECENT_BLOCK_EVENTS = 16
 _ASSET_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name)
     for name in (
@@ -144,6 +145,15 @@ def build_round74_ai_review_request(
         expected_length=feature_count,
         label="feature standard deviations",
     )
+    recent = selected[-ROUND74_AI_RECENT_BLOCK_EVENTS:]
+    prior = selected[
+        -(2 * ROUND74_AI_RECENT_BLOCK_EVENTS) : -ROUND74_AI_RECENT_BLOCK_EVENTS
+    ]
+    feature_recent_change = _finite_tuple(
+        recent.mean(dim=0) - prior.mean(dim=0),
+        expected_length=feature_count,
+        label="recent feature changes",
+    )
     quantile_count = int(model_output.payoff_quantiles_bps.shape[-1])
     payoff_quantiles = _finite_tuple(
         model_output.payoff_quantiles_bps[
@@ -177,6 +187,7 @@ def build_round74_ai_review_request(
         feature_last=feature_last,
         feature_mean=feature_mean,
         feature_standard_deviation=feature_standard_deviation,
+        feature_recent_change=feature_recent_change,
         payoff_quantiles_bps=payoff_quantiles,
         maximum_adverse_excursion_quantiles_bps=(adverse_excursion_quantiles),
         positive_payoff_probability=_finite_probability(
@@ -212,5 +223,6 @@ def build_round74_ai_review_request(
 
 __all__ = [
     "ROUND74_AI_BRIDGE_SCHEMA_VERSION",
+    "ROUND74_AI_RECENT_BLOCK_EVENTS",
     "build_round74_ai_review_request",
 ]

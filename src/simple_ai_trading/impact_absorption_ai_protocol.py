@@ -24,7 +24,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
-ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v2"
+ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v3"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v1"
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
@@ -268,6 +268,7 @@ class Round74AIReviewRequest:
     feature_last: tuple[float, ...]
     feature_mean: tuple[float, ...]
     feature_standard_deviation: tuple[float, ...]
+    feature_recent_change: tuple[float, ...]
     payoff_quantiles_bps: tuple[float, ...]
     maximum_adverse_excursion_quantiles_bps: tuple[float, ...]
     positive_payoff_probability: float
@@ -292,6 +293,11 @@ class Round74AIReviewRequest:
             expected_length=feature_count,
             label="feature standard deviations",
             nonnegative=True,
+        )
+        feature_recent_change = _finite_tuple(
+            self.feature_recent_change,
+            expected_length=feature_count,
+            label="recent feature changes",
         )
         payoff = _finite_tuple(
             self.payoff_quantiles_bps,
@@ -341,6 +347,7 @@ class Round74AIReviewRequest:
             or feature_last != self.feature_last
             or feature_mean != self.feature_mean
             or feature_std != self.feature_standard_deviation
+            or feature_recent_change != self.feature_recent_change
             or payoff != self.payoff_quantiles_bps
             or adverse != self.maximum_adverse_excursion_quantiles_bps
         ):
@@ -378,6 +385,7 @@ class Round74AIReviewRequest:
             "feature_last": list(self.feature_last),
             "feature_mean": list(self.feature_mean),
             "feature_standard_deviation": list(self.feature_standard_deviation),
+            "feature_recent_change": list(self.feature_recent_change),
             "payoff_quantiles_bps": list(self.payoff_quantiles_bps),
             "maximum_adverse_excursion_quantiles_bps": list(
                 self.maximum_adverse_excursion_quantiles_bps
@@ -425,6 +433,9 @@ class Round74AIReviewRequest:
                 feature_standard_deviation=tuple(
                     float(item) for item in payload["feature_standard_deviation"]
                 ),
+                feature_recent_change=tuple(
+                    float(item) for item in payload["feature_recent_change"]
+                ),
                 payoff_quantiles_bps=tuple(
                     float(item) for item in payload["payoff_quantiles_bps"]
                 ),
@@ -459,11 +470,12 @@ class Round74AIReviewRequest:
                 _rounded(self.feature_last[index], 8),
                 _rounded(self.feature_mean[index], 8),
                 _rounded(self.feature_standard_deviation[index], 8),
+                _rounded(self.feature_recent_change[index], 8),
             ]
             for index, name in enumerate(_AI_PROMPT_FEATURE_NAMES)
         }
         payload = {
-            "schema_version": "round-074-ai-prompt-payload-v1",
+            "schema_version": "round-074-ai-prompt-payload-v2",
             "asset": f"asset_{self.asset_slot}",
             "side": self.side,
             "horizon_seconds": self.horizon_seconds,
@@ -473,7 +485,12 @@ class Round74AIReviewRequest:
                 list(_AI_PROMPT_FEATURE_NAMES)
             ),
             "standardized_feature_summary": feature_summary,
-            "summary_value_order": ["last", "mean", "standard_deviation"],
+            "summary_value_order": [
+                "last",
+                "mean",
+                "standard_deviation",
+                "recent_16_minus_prior_16_mean",
+            ],
             "payoff_quantile_levels": list(ROUND74_EVENT_PAYOFF_QUANTILES),
             "payoff_quantiles_bps": [
                 _rounded(value, 6) for value in self.payoff_quantiles_bps

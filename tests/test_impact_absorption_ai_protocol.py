@@ -58,6 +58,7 @@ def _request() -> Round74AIReviewRequest:
         feature_last=tuple(last),
         feature_mean=tuple(0.1 for _ in range(count)),
         feature_standard_deviation=tuple(0.2 for _ in range(count)),
+        feature_recent_change=tuple(0.05 for _ in range(count)),
         payoff_quantiles_bps=(-5.0, -1.0, 2.0, 4.0, 7.0),
         maximum_adverse_excursion_quantiles_bps=(
             1.0,
@@ -124,6 +125,12 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert payload["asset"] == "asset_0"
     assert payload["horizon_seconds"] == 30
     assert "asset_identity_0" in payload["standardized_feature_summary"]
+    assert payload["summary_value_order"][-1] == (
+        "recent_16_minus_prior_16_mean"
+    )
+    assert len(
+        payload["standardized_feature_summary"]["asset_identity_0"]
+    ) == 4
     assert "symbol_is_btcusdt" not in user
     assert "BTCUSDT" not in user
     assert str(WALL_NS) not in user

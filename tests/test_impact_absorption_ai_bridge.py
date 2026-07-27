@@ -153,6 +153,13 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
     )
     assert request.feature_mean[10] == pytest.approx(0.0, abs=1e-7)
     assert request.feature_standard_deviation[10] > 0.0
+    assert request.feature_recent_change[10] > 0.0
+    assert (
+        request.feature_recent_change[
+            ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_btcusdt")
+        ]
+        == 0.0
+    )
 
 
 def test_bridge_does_not_require_realized_target_arrays() -> None:
