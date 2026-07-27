@@ -1,0 +1,128 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v67",
+  "created_at_utc": "2026-07-27T18:18:00Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v66.json",
+    "normalized_lf_sha256": "858567b841ae521b671d22f166128bef9635af909d1a6ea4cf66d89198409358",
+    "design_sha256": "78c315446de40d9a0ec18da3bfe1202a0ccd27e0e2c59e975765c9442307cc3a",
+    "composition_rule": "v65 remains the complete model and guarded-runtime contract; v66 remains the execution source-environment correction; v67 adds only complete-campaign aggregation and the no-transfer research decision declared here"
+  },
+  "execution_calibration_aggregation": {
+    "schema_version": "round-074-execution-calibration-aggregate-v1",
+    "tool_path": "tools/aggregate_round74_execution_calibration.py",
+    "tool_normalized_lf_sha256": "431e051c8f8c6b47482cd6eb12693816cd0f86cc3d88b052f2a099bc6581b822",
+    "test_path": "tests/test_round74_execution_calibration_aggregate.py",
+    "test_normalized_lf_sha256": "6b8e26fcc38b52eed6e07eb147360697797c68a3cfc7c55ede048088ce359782",
+    "campaign_environment": "binance_usdm_testnet",
+    "required_campaign_slots": 900,
+    "required_source_records": 1800,
+    "balanced_symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "complete_campaign_required": true,
+    "source_capture_file_sha256_bound": true,
+    "source_capture_artifact_sha256_bound": true,
+    "source_pair_sha256_bound": true,
+    "source_order_records_revalidated": true,
+    "tail_estimator": "distribution-free one-sided 95 percent upper confidence order statistic for p99",
+    "network_accessed": false,
+    "database_accessed": false,
+    "credentials_read": false,
+    "orders_submitted": false,
+    "mainnet_execution_equivalence": false,
+    "mainnet_transfer_permitted": false
+  },
+  "primary_research_delta": [
+    {
+      "source": "Albers, Cucuringu, Howison, and Shestopaloff, The good, the bad, and latency: exploratory trading on Bybit and Binance",
+      "url": "https://doi.org/10.1080/14697688.2025.2515933",
+      "observed_result": "A live experiment using millions of high-frequency market orders compares expected book outcomes with actual outcomes, models order failure, and reports that the studied strategies are not profitable after transaction costs.",
+      "contract_consequence": "Historical top-of-book replay or a test-environment fill cannot be declared equivalent to production execution; actual-outcome calibration and failure uncertainty must remain explicit."
+    },
+    {
+      "source": "Stoikov and Waeber, Reducing Transaction Costs with Low-Latency Trading Algorithms",
+      "url": "https://doi.org/10.1080/14697688.2016.1155928",
+      "observed_result": "The value of a limit-order-book signal can dissipate rapidly as execution latency increases.",
+      "contract_consequence": "Latency remains part of the executable target and must be stressed rather than treated as an operational footnote."
+    },
+    {
+      "source": "Huang, Lehalle, and Rosenbaum, Simulating and analyzing order book data: The queue-reactive model",
+      "url": "https://arxiv.org/abs/1312.0563",
+      "observed_result": "State-dependent queue simulation supports execution-probability and transaction-cost analysis; a simple Poisson model overestimates execution probability in the reported comparison.",
+      "contract_consequence": "Any future passive-order challenger must model state and queue uncertainty and cannot use naive fill assumptions."
+    },
+    {
+      "source": "Bodor and Carlier, Deep Learning Meets Queue-Reactive: A Framework for Realistic Limit Order Book Simulation",
+      "url": "https://arxiv.org/abs/2501.08822",
+      "observed_result": "Multidimensional queue state and order-size modeling improve reproduction of cross-queue dependence, order-size distributions, impact, and fill behavior.",
+      "contract_consequence": "A learned market simulator is a future challenger only after it reproduces held-out BTC, ETH, and SOL stylized facts; it cannot replace exact observed-book replay for primary evidence."
+    }
+  ],
+  "no_transfer_decision": {
+    "testnet_execution_evidence_use": "testnet infrastructure calibration and conservative scenario input only",
+    "mainnet_execution_equivalence_claim": false,
+    "single_testnet_to_mainnet_multiplier_permitted": false,
+    "synthetic_mainnet_point_estimate_permitted": false,
+    "mainnet_public_market_paper_target_requirement": "exact causal production public L2 replay at preregistered entry and exit delay scenarios, with source-bound fees, depth, capacity, freshness, adverse selection, and unresolved-state handling",
+    "scenario_bounds_may_be_tuned_on_sealed_test": false,
+    "testnet_fill_pnl_is_financial_edge_evidence": false,
+    "development_training_unblocked_by_testnet_aggregate_alone": false
+  },
+  "remaining_implementation_blocks": [
+    {
+      "block": "mainnet public-paper execution scenario contract",
+      "reason": "No source-backed transfer model currently maps testnet matching and liquidity to production execution.",
+      "required_resolution": "Implement exact observed production-book replay under a preregistered latency, depth, and residual-shortfall scenario panel without claiming a point-estimate transfer."
+    },
+    {
+      "block": "target assembly source manifest",
+      "reason": "A self-consistent serialized target assembly is not yet independently rebound to every capture artifact at development load time.",
+      "required_resolution": "Bind cohort run, exchange information, commission, funding, execution aggregate, scenario contract, source file hashes, and rebuilt assembly hash in a deep-audited manifest."
+    },
+    {
+      "block": "prospective cohort",
+      "reason": "The 168-slot Round 74 v5 cohort has not completed.",
+      "required_resolution": "Complete and independently audit all 120 training, 24 tuning, and 24 sealed-test captures."
+    }
+  ],
+  "verification": {
+    "focused_test_files": [
+      "tests/test_round74_execution_calibration_aggregate.py",
+      "tests/test_round74_execution_calibration_tool.py",
+      "tests/test_impact_absorption_execution_evidence.py",
+      "tests/test_round74_event_model_design_v67.py"
+    ],
+    "focused_execution_tests_passed_before_design_test": 26,
+    "ruff_check_passed_before_design_test": true,
+    "ruff_format_check_passed_before_design_test": true,
+    "complete_execution_campaign_available": false,
+    "aggregate_artifact_created": false,
+    "development_training_executed": false,
+    "sealed_test_accessed": false
+  },
+  "unchanged_model_contract": {
+    "candidate_panel_changed": false,
+    "feature_contract_changed": false,
+    "target_contract_changed": false,
+    "training_tuning_test_roles_changed": false,
+    "action_policy_rule_changed": false,
+    "ai_overlay_rule_changed": false,
+    "sealed_test_rule_changed": false,
+    "default_profile": "conservative",
+    "model_predictions_are_unlevered": true,
+    "leverage_is_not_a_source_of_edge": true
+  },
+  "authority": {
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "4a3f57cea9b922ab9f0d399dac7f9bff56cf5070be77228956dc624cd9aae429"
+}
