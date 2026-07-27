@@ -1,9 +1,9 @@
 {
   "schema_version": "round-074-event-sequence-model-design-v52",
-  "design_sha256": "7b3ae6ce235f1973d08eaf5c16a80943485ab6a40ad4596628751c28a03362e2",
+  "design_sha256": "16aaf45e45b1f95c54e6a3c9daa13a201307f46fca66fc5cc79f52a789fd780d",
   "round": 74,
-  "frozen_at_utc": "2026-07-27T09:10:22Z",
-  "implementation_git_commit": "2a0729c4f658c5cbd648895922748680d38cf6fc",
+  "frozen_at_utc": "2026-07-27T09:19:24Z",
+  "implementation_git_commit": "0cb1e5f31c05f8bdcc01e9673e0325ccee417890",
   "supersedes_design_sha256": "31b7ffe6c0f2154dd9bcae4b7aa097250c4e83343bced030585a448ff10f05da",
   "parent_capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
   "parent_capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
@@ -38,9 +38,9 @@
     "ai_execution_replay_path": "src/simple_ai_trading/impact_absorption_ai_execution_replay.py",
     "ai_execution_replay_sha256": "59dcee20c7ddd834bb61da40cb6c7b625c285ba6ab4eff35f31897d9ce87c65c",
     "sealed_ledger_path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
-    "sealed_ledger_sha256": "6ad2f51b55ab858d86bc9bfd13ddde7d1b22252cb2156b6c8c3c0398f5343e87",
+    "sealed_ledger_sha256": "3518fe240f2138dad236749ebf34fc0321a3e3d3bf284e286a19e129b7abae83",
     "sealed_evaluator_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
-    "sealed_evaluator_sha256": "974a65d6a3de04677f36e7635ec2af26d3a8d0fc6f4d148ada4526c3cccc942a",
+    "sealed_evaluator_sha256": "77944ff0e6de2e255b335cbf81c93114fbe53b2ca2d212d19f7dada4d56eac47",
     "financial_metrics_path": "src/simple_ai_trading/impact_absorption_event_financial_metrics.py",
     "financial_metrics_sha256": "70928c9e948708c5122108bab4bc4bdd2875e8933c7861f9230c9c1bdba38465",
     "ai_review_preparation_path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
@@ -1071,5 +1071,5 @@
     "post_reservation_exact_replay_provider_implementation": true,
     "operator_cannot_preinspect_test_data_claim": false
   },
-  "research_git_basis_commit": "2a0729c4f658c5cbd648895922748680d38cf6fc"
+  "research_git_basis_commit": "0cb1e5f31c05f8bdcc01e9673e0325ccee417890"
 }
