@@ -407,21 +407,19 @@ def test_runtime_accepts_warm_exact_gpu_model_when_cold_load_headroom_is_low() -
     assert outcome.capability["provider_runtime_full_gpu_residency_verified"] is True
 
 
-def test_runtime_rechecks_warm_ram_against_residual_floor() -> None:
+def test_runtime_does_not_relax_ram_headroom_for_a_warm_model() -> None:
     detected_minimums: list[float] = []
 
     def detect(config: AIRuntimeConfig) -> AICapabilityReport:
         detected_minimums.append(config.min_free_ram_gb)
-        if config.min_free_ram_gb == 16.0:
-            return AICapabilityReport(
-                **{
-                    **_capability(free_vram_gb=2.0).asdict(),
-                    "ok": False,
-                    "free_ram_gb": 8.0,
-                    "messages": ("free system RAM is below required",),
-                }
-            )
-        return _capability(free_vram_gb=2.0)
+        return AICapabilityReport(
+            **{
+                **_capability(free_vram_gb=2.0).asdict(),
+                "ok": False,
+                "free_ram_gb": 8.0,
+                "messages": ("free system RAM is below required",),
+            }
+        )
 
     outcome = review_round74_ai_candidate(
         Round74AIRuntimeConfig(model_name="fino1:8b"),
@@ -446,8 +444,8 @@ def test_runtime_rechecks_warm_ram_against_residual_floor() -> None:
         wall_time_ns=lambda: WALL_NS + 1,
     )
 
-    assert outcome.status == "accepted"
-    assert detected_minimums == [16.0, 4.0]
+    assert outcome.status == "blocked_capability"
+    assert detected_minimums == [16.0, 16.0]
 
 
 def test_runtime_blocks_low_headroom_when_exact_model_is_not_warm() -> None:
