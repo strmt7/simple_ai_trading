@@ -49,8 +49,11 @@ from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
+    ROUND74_SEALED_AI_MODEL_COUNT,
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
     ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
+    ROUND74_SEALED_FAMILYWISE_ALPHA,
+    ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
     ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sealed_ledger import (
@@ -82,7 +85,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v29.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v30.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -499,6 +502,19 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert evaluation["reservation_reset_api_available"] is False
     assert evaluation["sealed_test_runs"] == 24
     assert evaluation["sealed_bootstrap_draws"] == (ROUND74_SEALED_BOOTSTRAP_DRAWS)
+    assert evaluation["sealed_familywise_alpha"] == ROUND74_SEALED_FAMILYWISE_ALPHA
+    assert evaluation["sealed_qualification_configuration_count"] == (
+        ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT
+    )
+    assert evaluation["sealed_paired_ai_model_count"] == ROUND74_SEALED_AI_MODEL_COUNT
+    assert evaluation["sealed_profitability_bound_alpha"] == (
+        ROUND74_SEALED_FAMILYWISE_ALPHA
+        / ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT
+    )
+    assert evaluation["sealed_paired_ai_uplift_bound_alpha"] == (
+        ROUND74_SEALED_FAMILYWISE_ALPHA / ROUND74_SEALED_AI_MODEL_COUNT
+    )
+    assert evaluation["unadjusted_95_percent_lower_bounds_are_diagnostic_only"] is True
     assert (
         evaluation[
             "annualized_roi_sharpe_sortino_or_calmar_reported_without_a_capital_allocation_path"
@@ -614,6 +630,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["future_censored_action_rejection_implementation"] is True
     assert authority["equal_run_action_threshold_and_objective_implementation"] is True
     assert authority["historical_ai_queue_latency_implementation"] is True
+    assert authority["sealed_multiple_comparison_control_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True

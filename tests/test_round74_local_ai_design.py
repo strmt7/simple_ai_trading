@@ -37,8 +37,11 @@ from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
+    ROUND74_SEALED_AI_MODEL_COUNT,
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
     ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
+    ROUND74_SEALED_FAMILYWISE_ALPHA,
+    ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
     ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sealed_ledger import (
@@ -56,7 +59,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v15.json"
+    / "round-074-local-ai-review-design-v16.json"
 )
 
 
@@ -226,6 +229,14 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         architecture["inference_service_time_alone_may_establish_same_entry_eligibility"]
         is False
     )
+    assert architecture["sealed_familywise_alpha"] == ROUND74_SEALED_FAMILYWISE_ALPHA
+    assert architecture["sealed_qualification_configuration_count"] == (
+        ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT
+    )
+    assert architecture["sealed_paired_ai_model_count"] == (
+        ROUND74_SEALED_AI_MODEL_COUNT
+    )
+    assert architecture["unadjusted_interval_may_promote_a_configuration"] is False
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -326,6 +337,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["future_censorship_promotion_gate_implemented"] is True
     assert status["equal_run_action_selection_implemented"] is True
     assert status["historical_ai_queue_latency_implemented"] is True
+    assert status["sealed_multiple_comparison_control_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
@@ -404,6 +416,9 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["historical_queue_delay_included_in_same_entry_eligibility"] is True
     assert evaluation["queue_model_is_separate_for_each_alternative_candidate_model"] is True
     assert evaluation["queue_wait_may_be_omitted_from_reported_ai_latency"] is False
+    assert evaluation["sealed_profitability_uses_three_configuration_familywise_bound"] is True
+    assert evaluation["paired_ai_uplift_uses_two_model_familywise_bound"] is True
+    assert evaluation["unadjusted_95_percent_lower_bound_is_diagnostic_only"] is True
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
