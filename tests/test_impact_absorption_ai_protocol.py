@@ -125,12 +125,8 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert payload["asset"] == "asset_0"
     assert payload["horizon_seconds"] == 30
     assert "asset_identity_0" in payload["standardized_feature_summary"]
-    assert payload["summary_value_order"][-1] == (
-        "recent_16_minus_prior_16_mean"
-    )
-    assert len(
-        payload["standardized_feature_summary"]["asset_identity_0"]
-    ) == 4
+    assert payload["summary_value_order"][-1] == ("recent_16_minus_prior_16_mean")
+    assert len(payload["standardized_feature_summary"]["asset_identity_0"]) == 4
     assert "symbol_is_btcusdt" not in user
     assert "BTCUSDT" not in user
     assert str(WALL_NS) not in user
@@ -201,35 +197,77 @@ def test_ai_generated_decision_accepts_only_veto_only_schema(
     assert decision.as_dict()["may_submit_or_cancel_orders"] is False
 
 
+def test_ai_generated_decision_canonicalizes_unique_reason_order() -> None:
+    decision = Round74AIReviewDecision.from_generated_text(
+        json.dumps(
+            {
+                "schema_version": ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
+                "verdict": "reduce",
+                "size_multiplier_bps": 3_000,
+                "confidence_bps": 8_500,
+                "reason_codes": [
+                    "regime_unpredictability",
+                    "adverse_selection",
+                ],
+            }
+        )
+    )
+
+    assert decision.reason_codes == (
+        "adverse_selection",
+        "regime_unpredictability",
+    )
+
+
+def test_ai_generated_decision_canonicalizes_zero_reduction_to_veto() -> None:
+    decision = Round74AIReviewDecision.from_generated_text(
+        json.dumps(
+            {
+                "schema_version": ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
+                "verdict": "reduce",
+                "size_multiplier_bps": 0,
+                "confidence_bps": 500,
+                "reason_codes": [
+                    "forecast_uncertainty",
+                    "regime_unpredictability",
+                ],
+            }
+        )
+    )
+
+    assert decision.verdict == "veto"
+    assert decision.size_multiplier_bps == 0
+
+
 @pytest.mark.parametrize(
     "raw",
     [
         (
-            '{"schema_version":"round-074-ai-review-decision-v1",'
-            '"schema_version":"round-074-ai-review-decision-v1",'
+            '{"schema_version":"round-074-ai-review-decision-v2",'
+            '"schema_version":"round-074-ai-review-decision-v2",'
             '"verdict":"veto","size_multiplier_bps":0,'
             '"confidence_bps":7000,"reason_codes":["stale_state"]}'
         ),
         (
-            '{"schema_version":"round-074-ai-review-decision-v1",'
+            '{"schema_version":"round-074-ai-review-decision-v2",'
             '"verdict":"allow_unchanged","size_multiplier_bps":9999,'
             '"confidence_bps":7000,"reason_codes":["none"]}'
         ),
         (
-            '{"schema_version":"round-074-ai-review-decision-v1",'
+            '{"schema_version":"round-074-ai-review-decision-v2",'
             '"verdict":"reduce","size_multiplier_bps":5000,'
             '"confidence_bps":7000,'
-            '"reason_codes":["spread_wide","adverse_selection"]}'
+            '"reason_codes":["adverse_selection","adverse_selection"]}'
         ),
         (
-            '{"schema_version":"round-074-ai-review-decision-v1",'
+            '{"schema_version":"round-074-ai-review-decision-v2",'
             '"verdict":"veto","size_multiplier_bps":0,'
             '"confidence_bps":7000,"reason_codes":["stale_state"],'
             '"side":"short"}'
         ),
         (
             "```json\n"
-            '{"schema_version":"round-074-ai-review-decision-v1",'
+            '{"schema_version":"round-074-ai-review-decision-v2",'
             '"verdict":"veto","size_multiplier_bps":0,'
             '"confidence_bps":7000,"reason_codes":["stale_state"]}'
             "\n```"
