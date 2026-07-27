@@ -38,12 +38,19 @@ HOST_SCHEDULE = (
     / "action-value"
     / "round-074-event-cohort-host-schedule-v3-2026-07-27.json"
 )
-SUPERSESSION = (
+V1_SUPERSESSION = (
     REPOSITORY
     / "docs"
     / "model-research"
     / "action-value"
     / "round-074-event-cohort-v1-supersession-2026-07-27.json"
+)
+V2_SUPERSESSION = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-v2-supersession-2026-07-27.json"
 )
 
 
@@ -104,7 +111,7 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
 
 
 def test_round74_cohort_v1_was_superseded_before_slot_zero() -> None:
-    evidence = json.loads(SUPERSESSION.read_text(encoding="utf-8"))
+    evidence = json.loads(V1_SUPERSESSION.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
@@ -114,6 +121,27 @@ def test_round74_cohort_v1_was_superseded_before_slot_zero() -> None:
     assert evidence["correction_basis"][
         "schedule_or_role_counts_changed"
     ] is False
+    assert evidence["pre_supersession_state"]["slot_zero_started"] is False
+    assert evidence["pre_supersession_state"][
+        "cohort_market_data_collected"
+    ] is False
+    sequence = evidence["replacement_sequence"]
+    assert sequence[
+        "replacement_task_verified_ready_before_superseded_task_removal"
+    ] is True
+    assert sequence["superseded_task_removed"] is True
+
+
+def test_round74_cohort_v2_state_lateness_was_corrected_before_slot_zero() -> None:
+    evidence = json.loads(V2_SUPERSESSION.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    basis = evidence["correction_basis"]
+    assert basis["maximum_entry_state_lateness_ns"] == 250_000_000
+    assert basis["maximum_exit_state_lateness_ns"] == 250_000_000
+    assert basis["selected_from_market_or_model_outcome"] is False
+    assert basis["schedule_or_role_counts_changed"] is False
     assert evidence["pre_supersession_state"]["slot_zero_started"] is False
     assert evidence["pre_supersession_state"][
         "cohort_market_data_collected"
