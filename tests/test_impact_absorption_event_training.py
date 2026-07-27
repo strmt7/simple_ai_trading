@@ -278,6 +278,45 @@ def test_round74_trainer_requires_order_purge_and_shared_context(
         )
 
 
+def test_round74_trainer_rejects_mixed_or_repeated_capture_runs(
+    tmp_path: object,
+) -> None:
+    training = _batch("training", start_wall_ns=WALL_NS, identity=1)
+    tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+        identity=2,
+    )
+    mixed = replace(
+        training,
+        run_id=(training.run_id[0], f"{9:032x}"),
+    )
+    mixed.validate()
+
+    with pytest.raises(ValueError, match="mixes capture runs"):
+        train_and_seal_round74_pretest_policy(
+            [mixed],
+            [tuning],
+            output_directory=tmp_path,
+            compute_backend="cpu",
+            config=_config(),
+        )
+
+    repeated = _batch(
+        "training",
+        start_wall_ns=WALL_NS + 10_000_000_000,
+        identity=1,
+    )
+    with pytest.raises(ValueError, match="capture run is repeated"):
+        train_and_seal_round74_pretest_policy(
+            [training, repeated],
+            [tuning],
+            output_directory=tmp_path,
+            compute_backend="cpu",
+            config=_config(),
+        )
+
+
 def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     tmp_path: Path,
 ) -> None:
@@ -287,9 +326,14 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
         identity=2,
     )
+    later_tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 10_000_000_000,
+        identity=3,
+    )
     artifact = train_and_seal_round74_pretest_policy(
         [training],
-        [tuning],
+        [tuning, later_tuning],
         output_directory=tmp_path,
         compute_backend="cpu",
         config=_config(),
@@ -307,6 +351,15 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         "causal_event_tcn",
     }
     assert policy["selection"]["backtest_metric_used_for_selection"] is False
+    assert policy["selection"]["criterion"].startswith(
+        "minimum run-balanced chronological tuning proper loss"
+    )
+    selected_metrics = policy["selection"]["selected_tuning_metrics"]
+    assert selected_metrics["run_count"] == 2.0
+    assert selected_metrics["worst_run_loss"] >= (
+        selected_metrics["run_balanced_loss"]
+    )
+    assert artifact.tuning_loss == selected_metrics["run_balanced_loss"]
     assert all(
         policy["authority"][name] is False
         for name in (

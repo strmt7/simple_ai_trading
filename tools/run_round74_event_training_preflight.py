@@ -214,13 +214,27 @@ def _run(repository: Path) -> dict[str, object]:
                 "model_byte_count": int(selected["byte_count"]),
                 "prediction_sha256": selected["prediction_sha256"],
                 "selected_candidate_id": artifact.selected_candidate_id,
-                "candidate_tuning_proper_loss": {
-                    candidate_id: panel[candidate_id]["ensemble_tuning_metrics"]["loss"]
+                "candidate_run_balanced_tuning_proper_loss": {
+                    candidate_id: panel[candidate_id]["ensemble_tuning_metrics"][
+                        "run_balanced_loss"
+                    ]
                     for candidate_id in config.candidate_ids
                 },
-                "peer_best_tuning_proper_loss": {
+                "candidate_worst_run_tuning_proper_loss": {
+                    candidate_id: panel[candidate_id]["ensemble_tuning_metrics"][
+                        "worst_run_loss"
+                    ]
+                    for candidate_id in config.candidate_ids
+                },
+                "candidate_pooled_tuning_proper_loss": {
+                    candidate_id: panel[candidate_id]["ensemble_tuning_metrics"][
+                        "loss"
+                    ]
+                    for candidate_id in config.candidate_ids
+                },
+                "peer_best_run_balanced_tuning_proper_loss": {
                     candidate_id: [
-                        peer["best_tuning_metrics"]["loss"]
+                        peer["best_tuning_metrics"]["run_balanced_loss"]
                         for peer in panel[candidate_id]["peer_reports"]
                     ]
                     for candidate_id in config.candidate_ids
