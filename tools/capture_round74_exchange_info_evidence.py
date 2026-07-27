@@ -6,17 +6,14 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
 import sys
-import time
-from typing import Mapping, Sequence
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from typing import Mapping
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
+if str(REPOSITORY) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY))
 SOURCE = REPOSITORY / "src"
 if str(SOURCE) not in sys.path:
     sys.path.insert(0, str(SOURCE))
@@ -27,6 +24,13 @@ from simple_ai_trading.impact_absorption_exchange_info_evidence import (  # noqa
 from simple_ai_trading.impact_absorption_event_targets import (  # noqa: E402
     round74_quantity_rules_evidence_claims,
 )
+from tools._round74_public_evidence_capture import (  # noqa: E402
+    bounded_json_get,
+    canonical_sha256 as _canonical_sha256,
+    git_commit as _git_commit,
+    require_clean_tracked_worktree as _require_clean_tracked_worktree,
+    write_artifact as _write_artifact,
+)
 
 
 ROUND74_EXCHANGE_INFO_CAPTURE_SCHEMA_VERSION = (
@@ -36,77 +40,6 @@ ROUND74_EXCHANGE_INFO_URL = (
     "https://fapi.binance.com/fapi/v1/exchangeInfo"
 )
 ROUND74_EXCHANGE_INFO_MAXIMUM_RESPONSE_BYTES = 8 * 1024 * 1024
-
-
-def _canonical_json_bytes(value: object) -> bytes:
-    return json.dumps(
-        value,
-        allow_nan=False,
-        ensure_ascii=True,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("ascii")
-
-
-def _canonical_sha256(value: object) -> str:
-    return hashlib.sha256(_canonical_json_bytes(value)).hexdigest()
-
-
-def _reject_duplicate_keys(
-    pairs: Sequence[tuple[str, object]],
-) -> dict[str, object]:
-    result: dict[str, object] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError(
-                "Round 74 exchange-info response contains duplicate JSON keys"
-            )
-        result[key] = value
-    return result
-
-
-def _reject_nonfinite_json(value: str) -> object:
-    raise ValueError(
-        f"Round 74 exchange-info response contains {value}"
-    )
-
-
-def _git_commit() -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPOSITORY,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    commit = result.stdout.strip()
-    if len(commit) != 40:
-        raise ValueError("Round 74 exchange-info git identity differs")
-    return commit
-
-
-def _require_clean_tracked_worktree() -> None:
-    result = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
-        cwd=REPOSITORY,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    if result.stdout.strip():
-        raise ValueError(
-            "Round 74 exchange-info capture requires a clean tracked worktree"
-        )
-
-
-def _safe_header(headers: Mapping[str, str], name: str) -> str | None:
-    value = headers.get(name)
-    if value is None:
-        return None
-    selected = str(value).strip()
-    if not selected or len(selected) > 256:
-        raise ValueError("Round 74 exchange-info response header differs")
-    return selected
 
 
 def capture_round74_exchange_info(
@@ -120,78 +53,28 @@ def capture_round74_exchange_info(
         raise ValueError("Round 74 exchange-info timeout differs")
     _require_clean_tracked_worktree()
     execution_commit = _git_commit()
-    request_started_wall_ns = time.time_ns()
-    request_started_monotonic_ns = time.monotonic_ns()
-    request = Request(
-        ROUND74_EXCHANGE_INFO_URL,
-        method="GET",
-        headers={
-            "Accept": "application/json",
-            "User-Agent": "simple-ai-trading-round74-research/1",
-        },
+    response = bounded_json_get(
+        url=ROUND74_EXCHANGE_INFO_URL,
+        timeout_seconds=timeout,
+        maximum_response_bytes=(
+            ROUND74_EXCHANGE_INFO_MAXIMUM_RESPONSE_BYTES
+        ),
+        user_agent="simple-ai-trading-round74-research/1",
     )
-    try:
-        with urlopen(request, timeout=timeout) as response:
-            if (
-                response.status != 200
-                or response.geturl() != ROUND74_EXCHANGE_INFO_URL
-            ):
-                raise ValueError(
-                    "Round 74 exchange-info response identity differs"
-                )
-            content_type = response.headers.get_content_type()
-            if content_type != "application/json":
-                raise ValueError(
-                    "Round 74 exchange-info content type differs"
-                )
-            body = response.read(
-                ROUND74_EXCHANGE_INFO_MAXIMUM_RESPONSE_BYTES + 1
-            )
-            if (
-                not body
-                or len(body)
-                > ROUND74_EXCHANGE_INFO_MAXIMUM_RESPONSE_BYTES
-            ):
-                raise ValueError(
-                    "Round 74 exchange-info response size differs"
-                )
-            response_headers = {
-                "content_type": content_type,
-                "date": _safe_header(response.headers, "Date"),
-                "x_mbx_used_weight_1m": _safe_header(
-                    response.headers,
-                    "X-MBX-USED-WEIGHT-1M",
-                ),
-            }
-    except (HTTPError, URLError, TimeoutError) as exc:
-        raise RuntimeError(
-            "Round 74 exchange-info request failed without retry"
-        ) from exc
-    received_monotonic_ns = time.monotonic_ns()
-    received_wall_ns = time.time_ns()
-    try:
-        payload = json.loads(
-            body.decode("utf-8", errors="strict"),
-            object_pairs_hook=_reject_duplicate_keys,
-            parse_constant=_reject_nonfinite_json,
-        )
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError(
-            "Round 74 exchange-info response is not strict JSON"
-        ) from exc
+    payload = response.payload
     if not isinstance(payload, Mapping):
         raise ValueError("Round 74 exchange-info response root differs")
     bundle = build_round74_quantity_rules_evidence(
         payload=payload,
         environment="binance_usdm_mainnet",
-        observed_wall_ns=received_wall_ns,
+        observed_wall_ns=response.received_wall_ns,
     )
     rules = bundle.as_mapping()
     artifact: dict[str, object] = {
         "schema_version": ROUND74_EXCHANGE_INFO_CAPTURE_SCHEMA_VERSION,
         "artifact_sha256": "",
         "captured_at_utc": datetime.fromtimestamp(
-            received_wall_ns / 1_000_000_000,
+            response.received_wall_ns / 1_000_000_000,
             tz=timezone.utc,
         ).isoformat(timespec="microseconds").replace("+00:00", "Z"),
         "execution_git_commit": execution_commit,
@@ -203,18 +86,18 @@ def capture_round74_exchange_info(
             "timeout_seconds": timeout,
             "retry_count": 0,
             "credential_material_sent": False,
-            "request_started_wall_ns": request_started_wall_ns,
-            "request_started_monotonic_ns": request_started_monotonic_ns,
+            "request_started_wall_ns": response.request_started_wall_ns,
+            "request_started_monotonic_ns": (
+                response.request_started_monotonic_ns
+            ),
         },
         "response": {
             "status": 200,
-            "received_wall_ns": received_wall_ns,
-            "received_monotonic_ns": received_monotonic_ns,
-            "elapsed_monotonic_ns": (
-                received_monotonic_ns - request_started_monotonic_ns
-            ),
-            "body_bytes": len(body),
-            "headers": response_headers,
+            "received_wall_ns": response.received_wall_ns,
+            "received_monotonic_ns": response.received_monotonic_ns,
+            "elapsed_monotonic_ns": response.elapsed_monotonic_ns,
+            "body_bytes": len(response.body),
+            "headers": response.header_mapping(),
             "raw_payload_persisted": False,
         },
         "source_binding": {
@@ -256,36 +139,6 @@ def capture_round74_exchange_info(
         }
     )
     return artifact
-
-
-def _write_artifact(path: Path, artifact: Mapping[str, object]) -> None:
-    selected = path.resolve()
-    try:
-        selected.relative_to(REPOSITORY)
-    except ValueError as exc:
-        raise ValueError(
-            "Round 74 exchange-info output must remain inside the repository"
-        ) from exc
-    selected.parent.mkdir(parents=True, exist_ok=True)
-    temporary = selected.with_name(f".{selected.name}.{os.getpid()}.tmp")
-    encoded = (
-        json.dumps(
-            artifact,
-            allow_nan=False,
-            ensure_ascii=True,
-            indent=2,
-            sort_keys=False,
-        )
-        + "\n"
-    ).encode("ascii")
-    try:
-        with temporary.open("xb") as stream:
-            stream.write(encoded)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, selected)
-    finally:
-        temporary.unlink(missing_ok=True)
 
 
 def _parser() -> argparse.ArgumentParser:
