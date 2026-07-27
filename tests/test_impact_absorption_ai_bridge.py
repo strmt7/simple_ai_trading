@@ -86,6 +86,11 @@ def _fit(temperature: float) -> Round74TemperatureFit:
         temperature=temperature,
         eligible_observations=2,
         positive_observations=1,
+        calibration_runs=6,
+        minimum_run_observations=1,
+        maximum_run_observations=1,
+        uncalibrated_run_balanced_nll=0.5,
+        calibrated_run_balanced_nll=0.5,
         uncalibrated_nll=0.5,
         calibrated_nll=0.5,
         uncalibrated_brier=0.2,
@@ -96,11 +101,14 @@ def _fit(temperature: float) -> Round74TemperatureFit:
 
 
 def _calibration() -> Round74ProbabilityCalibration:
+    calibration_run_ids = tuple(f"{index + 1:032x}" for index in range(6))
     return Round74ProbabilityCalibration(
         pretest_policy_sha256="1" * 64,
         tuning_subpartition_sha256="4" * 64,
         calibration_source_sha256="5" * 64,
         calibration_data_sha256="6" * 64,
+        calibration_run_ids=calibration_run_ids,
+        calibration_row_run_ids_sha256="7" * 64,
         positive_payoff=_fit(2.0),
         adverse_selection=_fit(3.0),
         regime_unpredictability=_fit(4.0),

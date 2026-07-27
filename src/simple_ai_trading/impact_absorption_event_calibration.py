@@ -18,7 +18,7 @@ from .impact_absorption_event_dataset import (
 
 
 ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION = "round-074-tuning-subpartition-v1"
-ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION = "round-074-temperature-calibration-v1"
+ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION = "round-074-temperature-calibration-v2"
 ROUND74_TUNING_EXPECTED_RUNS = 24
 ROUND74_TUNING_MODEL_SELECTION_RUNS = 12
 ROUND74_TUNING_CALIBRATION_RUNS = 6
@@ -176,6 +176,11 @@ class Round74TemperatureFit:
     temperature: float
     eligible_observations: int
     positive_observations: int
+    calibration_runs: int
+    minimum_run_observations: int
+    maximum_run_observations: int
+    uncalibrated_run_balanced_nll: float
+    calibrated_run_balanced_nll: float
     uncalibrated_nll: float
     calibrated_nll: float
     uncalibrated_brier: float
@@ -186,6 +191,8 @@ class Round74TemperatureFit:
     def validate(self) -> None:
         metrics = (
             self.temperature,
+            self.uncalibrated_run_balanced_nll,
+            self.calibrated_run_balanced_nll,
             self.uncalibrated_nll,
             self.calibrated_nll,
             self.uncalibrated_brier,
@@ -204,8 +211,17 @@ class Round74TemperatureFit:
             or isinstance(self.positive_observations, bool)
             or not isinstance(self.positive_observations, int)
             or not 0 < self.positive_observations < self.eligible_observations
-            or self.calibrated_nll > self.uncalibrated_nll + 1e-7
+            or isinstance(self.calibration_runs, bool)
+            or self.calibration_runs != ROUND74_TUNING_CALIBRATION_RUNS
+            or isinstance(self.minimum_run_observations, bool)
+            or self.minimum_run_observations < 1
+            or isinstance(self.maximum_run_observations, bool)
+            or self.maximum_run_observations < self.minimum_run_observations
+            or self.calibrated_run_balanced_nll
+            > self.uncalibrated_run_balanced_nll + 1e-7
             or min(
+                self.uncalibrated_run_balanced_nll,
+                self.calibrated_run_balanced_nll,
                 self.uncalibrated_nll,
                 self.calibrated_nll,
                 self.uncalibrated_brier,
@@ -223,6 +239,11 @@ class Round74TemperatureFit:
             "temperature": self.temperature,
             "eligible_observations": self.eligible_observations,
             "positive_observations": self.positive_observations,
+            "calibration_runs": self.calibration_runs,
+            "minimum_run_observations": self.minimum_run_observations,
+            "maximum_run_observations": self.maximum_run_observations,
+            "uncalibrated_run_balanced_nll": (self.uncalibrated_run_balanced_nll),
+            "calibrated_run_balanced_nll": self.calibrated_run_balanced_nll,
             "uncalibrated_nll": self.uncalibrated_nll,
             "calibrated_nll": self.calibrated_nll,
             "uncalibrated_brier": self.uncalibrated_brier,
@@ -240,6 +261,8 @@ class Round74ProbabilityCalibration:
     tuning_subpartition_sha256: str
     calibration_source_sha256: str
     calibration_data_sha256: str
+    calibration_run_ids: tuple[str, ...]
+    calibration_row_run_ids_sha256: str
     positive_payoff: Round74TemperatureFit
     adverse_selection: Round74TemperatureFit
     regime_unpredictability: Round74TemperatureFit
@@ -264,6 +287,20 @@ class Round74ProbabilityCalibration:
             "calibration source",
         )
         _require_sha256(self.calibration_data_sha256, "calibration data")
+        if (
+            len(self.calibration_run_ids) != ROUND74_TUNING_CALIBRATION_RUNS
+            or len(set(self.calibration_run_ids)) != ROUND74_TUNING_CALIBRATION_RUNS
+            or any(
+                len(value) != 32
+                or any(character not in "0123456789abcdef" for character in value)
+                for value in self.calibration_run_ids
+            )
+        ):
+            raise ValueError("Round 74 probability calibration run identity differs")
+        _require_sha256(
+            self.calibration_row_run_ids_sha256,
+            "calibration row run ids",
+        )
         self.positive_payoff.validate()
         self.adverse_selection.validate()
         self.regime_unpredictability.validate()
@@ -281,6 +318,8 @@ class Round74ProbabilityCalibration:
             "tuning_subpartition_sha256": (self.tuning_subpartition_sha256),
             "calibration_source_sha256": (self.calibration_source_sha256),
             "calibration_data_sha256": self.calibration_data_sha256,
+            "calibration_run_ids": list(self.calibration_run_ids),
+            "calibration_row_run_ids_sha256": (self.calibration_row_run_ids_sha256),
             "positive_payoff": self.positive_payoff.as_dict(),
             "adverse_selection": self.adverse_selection.as_dict(),
             "regime_unpredictability": (self.regime_unpredictability.as_dict()),
@@ -289,7 +328,10 @@ class Round74ProbabilityCalibration:
             "candidate_temperature_count": (ROUND74_TEMPERATURE_CANDIDATE_COUNT),
             "candidate_temperature_minimum": (ROUND74_TEMPERATURE_MINIMUM),
             "candidate_temperature_maximum": (ROUND74_TEMPERATURE_MAXIMUM),
-            "selection_objective": ("binary_cross_entropy_on_calibration_runs_only"),
+            "selection_objective": (
+                "equal_run_weight_binary_cross_entropy_on_calibration_runs_only"
+            ),
+            "pooled_metrics_are_diagnostic_only": True,
             "sealed_test_accessed": False,
             "calibration_implies_financial_edge": False,
         }
@@ -303,8 +345,14 @@ def _validate_binary_panel(
     labels: torch.Tensor,
     eligibility: torch.Tensor,
     *,
+    row_run_ids: tuple[str, ...],
+    expected_run_ids: tuple[str, ...],
     label: str,
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    tuple[tuple[torch.Tensor, torch.Tensor], ...],
+]:
     if (
         logits.shape != labels.shape
         or logits.shape != eligibility.shape
@@ -329,7 +377,21 @@ def _validate_binary_panel(
         or not bool((selected_labels == 1.0).any())
     ):
         raise ValueError(f"Round 74 {label} calibration class support differs")
-    return selected_logits, selected_labels
+    row_shape = (len(row_run_ids),) + (1,) * (logits.ndim - 1)
+    run_panels: list[tuple[torch.Tensor, torch.Tensor]] = []
+    for run_id in expected_run_ids:
+        row_mask = torch.tensor(
+            tuple(value == run_id for value in row_run_ids),
+            dtype=torch.bool,
+            device=logits.device,
+        ).reshape(row_shape)
+        run_mask = mask & row_mask
+        run_logits = logits.detach()[run_mask].to(dtype=torch.float32)
+        run_labels = labels.detach()[run_mask].to(dtype=torch.float32)
+        if run_logits.numel() < 1:
+            raise ValueError(f"Round 74 {label} calibration run support differs")
+        run_panels.append((run_logits, run_labels))
+    return selected_logits, selected_labels, tuple(run_panels)
 
 
 def _expected_calibration_error(
@@ -367,6 +429,7 @@ def _expected_calibration_error(
 def _fit_temperature(
     logits: torch.Tensor,
     labels: torch.Tensor,
+    run_panels: tuple[tuple[torch.Tensor, torch.Tensor], ...],
 ) -> Round74TemperatureFit:
     log_temperatures = torch.linspace(
         math.log(ROUND74_TEMPERATURE_MINIMUM),
@@ -378,24 +441,42 @@ def _fit_temperature(
     temperatures = torch.exp(log_temperatures)
     losses: list[torch.Tensor] = []
     for chunk in temperatures.split(16):
-        scaled = logits.unsqueeze(0) / chunk.unsqueeze(1)
-        target = labels.unsqueeze(0).expand_as(scaled)
-        losses.append(
-            (F.softplus(scaled) - target * scaled).mean(dim=1)
-        )
+        run_losses: list[torch.Tensor] = []
+        for run_logits, run_labels in run_panels:
+            scaled = run_logits.unsqueeze(0) / chunk.unsqueeze(1)
+            target = run_labels.unsqueeze(0).expand_as(scaled)
+            run_losses.append((F.softplus(scaled) - target * scaled).mean(dim=1))
+        losses.append(torch.stack(run_losses, dim=1).mean(dim=1))
     candidate_loss = torch.cat(losses)
     selected_index = int(torch.argmin(candidate_loss).item())
     temperature = float(temperatures[selected_index].item())
     uncalibrated_probability = torch.sigmoid(logits)
     calibrated_probability = torch.sigmoid(logits / temperature)
-    uncalibrated_nll = float(
-        (F.softplus(logits) - labels * logits).mean().item()
+    uncalibrated_run_balanced_nll = float(
+        torch.stack(
+            tuple(
+                (F.softplus(run_logits) - run_labels * run_logits).mean()
+                for run_logits, run_labels in run_panels
+            )
+        )
+        .mean()
+        .item()
     )
-    calibrated_nll = float(candidate_loss[selected_index].item())
+    run_counts = tuple(int(run_labels.numel()) for _, run_labels in run_panels)
+    uncalibrated_nll = float((F.softplus(logits) - labels * logits).mean().item())
+    scaled_logits = logits / temperature
+    calibrated_nll = float(
+        (F.softplus(scaled_logits) - labels * scaled_logits).mean().item()
+    )
     fit = Round74TemperatureFit(
         temperature=temperature,
         eligible_observations=int(labels.numel()),
         positive_observations=int((labels == 1.0).sum().item()),
+        calibration_runs=len(run_panels),
+        minimum_run_observations=min(run_counts),
+        maximum_run_observations=max(run_counts),
+        uncalibrated_run_balanced_nll=uncalibrated_run_balanced_nll,
+        calibrated_run_balanced_nll=float(candidate_loss[selected_index].item()),
         uncalibrated_nll=uncalibrated_nll,
         calibrated_nll=calibrated_nll,
         uncalibrated_brier=float(
@@ -441,8 +522,9 @@ def fit_round74_probability_calibration(
     regime_unpredictability_logits: torch.Tensor,
     regime_unpredictability_labels: torch.Tensor,
     regime_eligibility: torch.Tensor,
+    row_run_ids: tuple[str, ...],
+    tuning_subpartition: Round74TuningSubpartition,
     pretest_policy_sha256: str,
-    tuning_subpartition_sha256: str,
     calibration_source_sha256: str,
     backend_kind: str,
     backend_device: str,
@@ -450,27 +532,53 @@ def fit_round74_probability_calibration(
     """Fit three scalar temperatures using only calibration-run labels."""
 
     _require_sha256(pretest_policy_sha256, "pretest policy")
-    _require_sha256(
-        tuning_subpartition_sha256,
-        "tuning subpartition",
-    )
+    tuning_subpartition.validate()
     _require_sha256(calibration_source_sha256, "calibration source")
-    positive_logits, positive_labels = _validate_binary_panel(
+    selected_row_run_ids = tuple(str(value) for value in row_run_ids)
+    expected_runs = tuning_subpartition.calibration_run_ids
+    if (
+        positive_payoff_logits.ndim < 1
+        or adverse_selection_logits.ndim < 1
+        or regime_unpredictability_logits.ndim < 1
+    ):
+        raise ValueError("Round 74 calibration run panel differs")
+    rows = int(positive_payoff_logits.shape[0])
+    if (
+        len(selected_row_run_ids) != rows
+        or len(expected_runs) != ROUND74_TUNING_CALIBRATION_RUNS
+        or len(set(expected_runs)) != ROUND74_TUNING_CALIBRATION_RUNS
+        or set(selected_row_run_ids) != set(expected_runs)
+        or any(
+            len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+            for value in (*selected_row_run_ids, *expected_runs)
+        )
+        or adverse_selection_logits.shape[0] != rows
+        or regime_unpredictability_logits.shape[0] != rows
+    ):
+        raise ValueError("Round 74 calibration run panel differs")
+    positive_logits, positive_labels, positive_run_panels = _validate_binary_panel(
         positive_payoff_logits,
         positive_payoff_labels,
         action_eligibility,
+        row_run_ids=selected_row_run_ids,
+        expected_run_ids=expected_runs,
         label="positive-payoff",
     )
-    adverse_logits, adverse_labels = _validate_binary_panel(
+    adverse_logits, adverse_labels, adverse_run_panels = _validate_binary_panel(
         adverse_selection_logits,
         adverse_selection_labels,
         action_eligibility,
+        row_run_ids=selected_row_run_ids,
+        expected_run_ids=expected_runs,
         label="adverse-selection",
     )
-    regime_logits, regime_labels = _validate_binary_panel(
+    regime_logits, regime_labels, regime_run_panels = _validate_binary_panel(
         regime_unpredictability_logits,
         regime_unpredictability_labels,
         regime_eligibility,
+        row_run_ids=selected_row_run_ids,
+        expected_run_ids=expected_runs,
         label="regime-unpredictability",
     )
     devices = {
@@ -483,10 +591,12 @@ def fit_round74_probability_calibration(
     identity = {
         "schema_version": ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
         "pretest_policy_sha256": pretest_policy_sha256,
-        "tuning_subpartition_sha256": tuning_subpartition_sha256,
+        "tuning_subpartition_sha256": tuning_subpartition.subpartition_sha256,
         "calibration_source_sha256": calibration_source_sha256,
         "backend_kind": str(backend_kind),
         "backend_device": str(backend_device),
+        "calibration_run_ids": list(expected_runs),
+        "calibration_row_run_ids": list(selected_row_run_ids),
     }
     digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
     for value in (
@@ -502,20 +612,25 @@ def fit_round74_probability_calibration(
         _update_tensor_digest(digest, value)
     result = Round74ProbabilityCalibration(
         pretest_policy_sha256=pretest_policy_sha256,
-        tuning_subpartition_sha256=tuning_subpartition_sha256,
+        tuning_subpartition_sha256=tuning_subpartition.subpartition_sha256,
         calibration_source_sha256=calibration_source_sha256,
         calibration_data_sha256=digest.hexdigest(),
+        calibration_run_ids=expected_runs,
+        calibration_row_run_ids_sha256=_canonical_sha256(list(selected_row_run_ids)),
         positive_payoff=_fit_temperature(
             positive_logits,
             positive_labels,
+            positive_run_panels,
         ),
         adverse_selection=_fit_temperature(
             adverse_logits,
             adverse_labels,
+            adverse_run_panels,
         ),
         regime_unpredictability=_fit_temperature(
             regime_logits,
             regime_labels,
+            regime_run_panels,
         ),
         backend_kind=str(backend_kind),
         backend_device=str(backend_device),
