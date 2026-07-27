@@ -42,8 +42,8 @@ from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v15"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v14"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v16"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v15"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -72,6 +72,38 @@ def _canonical_json_bytes(value: object) -> bytes:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json_bytes(value)).hexdigest()
+
+
+def _cohort_window_policy_identity(
+    representative_window_policy_sha256: object,
+    matched_preparation_sha256: object,
+) -> tuple[str, str | None]:
+    from .round74_event_model_operator import (
+        round74_matched_representative_window_policy,
+        round74_representative_window_policy,
+    )
+
+    claimed = str(representative_window_policy_sha256)
+    policies = {
+        "single_representation": round74_representative_window_policy()[
+            "policy_sha256"
+        ],
+        "matched_representation": (
+            round74_matched_representative_window_policy()["policy_sha256"]
+        ),
+    }
+    matching = tuple(kind for kind, digest in policies.items() if digest == claimed)
+    if len(matching) != 1:
+        raise ValueError("Round 74 representative window policy differs")
+    kind = matching[0]
+    if kind == "matched_representation":
+        matched = str(matched_preparation_sha256)
+        if _SHA256.fullmatch(matched) is None:
+            raise ValueError("Round 74 matched preparation identity differs")
+        return kind, matched
+    if matched_preparation_sha256 is not None:
+        raise ValueError("Round 74 single-representation preparation differs")
+    return kind, None
 
 
 def _sha256_bytes(value: bytes) -> str:
@@ -1295,6 +1327,7 @@ def train_and_seal_round74_pretest_policy(
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     representative_window_policy_sha256: str | None = None,
+    matched_preparation_sha256: str | None = None,
     feature_scaler: Round74EventFeatureScaler | None = None,
 ) -> Round74PretestPolicyArtifact:
     """Train the declared panel and publish one reload-verified pretest policy."""
@@ -1302,25 +1335,29 @@ def train_and_seal_round74_pretest_policy(
     selected_config = config or Round74EventTrainingConfig()
     selected_config.validate()
     if selected_config.execution_mode == "cohort":
-        from .round74_event_model_operator import (
-            round74_representative_window_policy,
-        )
-
-        expected_window_policy = round74_representative_window_policy()["policy_sha256"]
         if (
             len(training_batches) != ROUND74_EVENT_TRAINING_REQUIRED_CAPTURE_RUNS
             or len(tuning_batches) != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-            or representative_window_policy_sha256 != expected_window_policy
         ):
             raise ValueError(
                 "Round 74 cohort training requires exactly 120 training and "
                 "12 model-selection capture runs from the representative "
                 "window policy"
             )
-    elif representative_window_policy_sha256 is not None:
+        window_policy_kind, matched_preparation = _cohort_window_policy_identity(
+            representative_window_policy_sha256,
+            matched_preparation_sha256,
+        )
+    elif (
+        representative_window_policy_sha256 is not None
+        or matched_preparation_sha256 is not None
+    ):
         raise ValueError(
             "Round 74 preflight training cannot claim representative cohort windows"
         )
+    else:
+        window_policy_kind = "preflight"
+        matched_preparation = None
     development = _validate_development_batches(
         training_batches,
         tuning_batches,
@@ -1454,6 +1491,8 @@ def train_and_seal_round74_pretest_policy(
             "representative_window_policy_sha256": (
                 representative_window_policy_sha256
             ),
+            "representative_window_policy_kind": window_policy_kind,
+            "matched_preparation_sha256": matched_preparation,
             "representative_window_policy_applied": (
                 selected_config.execution_mode == "cohort"
             ),
@@ -1873,6 +1912,8 @@ def load_round74_pretest_policy(
             "training_batch_sha256",
             "tuning_batch_sha256",
             "representative_window_policy_sha256",
+            "representative_window_policy_kind",
+            "matched_preparation_sha256",
             "representative_window_policy_applied",
             "training_rows",
             "tuning_rows",
@@ -1923,16 +1964,26 @@ def load_round74_pretest_policy(
         "representative_window_policy_sha256"
     )
     if reconstructed_config.execution_mode == "cohort":
-        from .round74_event_model_operator import (
-            round74_representative_window_policy,
-        )
-
+        try:
+            expected_kind, expected_matched_preparation = (
+                _cohort_window_policy_identity(
+                    representative_policy_sha256,
+                    development.get("matched_preparation_sha256"),
+                )
+            )
+        except ValueError as exc:
+            raise ValueError("Round 74 representative window policy differs") from exc
         if (
-            representative_policy_sha256
-            != round74_representative_window_policy()["policy_sha256"]
+            development.get("representative_window_policy_kind") != expected_kind
+            or development.get("matched_preparation_sha256")
+            != expected_matched_preparation
         ):
             raise ValueError("Round 74 representative window policy differs")
-    elif representative_policy_sha256 is not None:
+    elif (
+        representative_policy_sha256 is not None
+        or development.get("representative_window_policy_kind") != "preflight"
+        or development.get("matched_preparation_sha256") is not None
+    ):
         raise ValueError("Round 74 preflight window policy differs")
     scaler_keys = {
         "available",

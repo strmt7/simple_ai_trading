@@ -12,10 +12,6 @@ from simple_ai_trading.impact_absorption_event_dataset import (
     ROUND74_EVENT_DATASET_SCHEMA_VERSION,
     ROUND74_EVENT_WINDOW_REPRESENTATIONS,
 )
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -83,10 +79,6 @@ def test_round74_v73_binds_representation_through_sealed_inference() -> None:
         )
 
     assert ROUND74_EVENT_DATASET_SCHEMA_VERSION == "round-074-event-dataset-v10"
-    assert ROUND74_EVENT_TRAINING_SCHEMA_VERSION == "round-074-event-training-v15"
-    assert ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION == (
-        "round-074-event-pretest-policy-v14"
-    )
     assert ROUND74_ACTION_CONTEXT_SCHEMA_VERSION == "round-074-action-context-v5"
     contract = design["representation_contract"]
     assert tuple(contract["supported_representations"]) == (
