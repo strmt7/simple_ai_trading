@@ -1,9 +1,9 @@
 {
   "schema_version": "round-074-local-ai-review-design-v38",
-  "artifact_sha256": "4fb50bc0ee177ba691b707aa124908a39263d9a4e94b620fd6a6fc428df1262a",
+  "artifact_sha256": "b646709df2bb3bd5306e075cd330fd29289d1177ae5f60b0ad17dada03dff438",
   "round": 74,
-  "researched_at_utc": "2026-07-27T09:10:22Z",
-  "implementation_git_commit": "2a0729c4f658c5cbd648895922748680d38cf6fc",
+  "researched_at_utc": "2026-07-27T09:19:24Z",
+  "implementation_git_commit": "0cb1e5f31c05f8bdcc01e9673e0325ccee417890",
   "supersedes_artifact_sha256": "e5ebb40e939a057649fa2be3d70938948da13cd4228f9d7e4a5cedc66a472860",
   "source_binding": {
     "protocol_path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
@@ -34,9 +34,9 @@
     "execution_replay_path": "src/simple_ai_trading/impact_absorption_ai_execution_replay.py",
     "execution_replay_sha256": "59dcee20c7ddd834bb61da40cb6c7b625c285ba6ab4eff35f31897d9ce87c65c",
     "sealed_ledger_path": "src/simple_ai_trading/impact_absorption_event_sealed_ledger.py",
-    "sealed_ledger_sha256": "6ad2f51b55ab858d86bc9bfd13ddde7d1b22252cb2156b6c8c3c0398f5343e87",
+    "sealed_ledger_sha256": "3518fe240f2138dad236749ebf34fc0321a3e3d3bf284e286a19e129b7abae83",
     "sealed_evaluator_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
-    "sealed_evaluator_sha256": "974a65d6a3de04677f36e7635ec2af26d3a8d0fc6f4d148ada4526c3cccc942a",
+    "sealed_evaluator_sha256": "77944ff0e6de2e255b335cbf81c93114fbe53b2ca2d212d19f7dada4d56eac47",
     "financial_metrics_path": "src/simple_ai_trading/impact_absorption_event_financial_metrics.py",
     "financial_metrics_sha256": "70928c9e948708c5122108bab4bc4bdd2875e8933c7861f9230c9c1bdba38465",
     "review_preparation_path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
@@ -50,8 +50,8 @@
     "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
     "event_training_sha256": "1d9f62820b9cc55145bfde2919098ba777da9f465199f1b44ea30e04464313ab",
     "event_model_design_path": "docs/model-research/action-value/round-074-event-sequence-model-design-v52.json",
-    "event_model_design_file_sha256": "69edccf00c182b94a40ad28087829d464fa57e25ea83c9c68c658eca9bdc8443",
-    "event_model_design_sha256": "7b3ae6ce235f1973d08eaf5c16a80943485ab6a40ad4596628751c28a03362e2",
+    "event_model_design_file_sha256": "903a313322932d0a5a922fb8d7b297350135544cd326314bdf1cb778456e7249",
+    "event_model_design_sha256": "16aaf45e45b1f95c54e6a3c9daa13a201307f46fca66fc5cc79f52a789fd780d",
     "model_manifest_schema_version": "round-074-ai-model-manifest-v1",
     "review_request_schema_version": "round-074-ai-review-request-v3",
     "review_decision_schema_version": "round-074-ai-review-decision-v1",
@@ -743,5 +743,5 @@
     "post_reservation_exact_replay_provider_implemented": true,
     "operator_cannot_preinspect_test_data_claim": false
   },
-  "research_git_basis_commit": "2a0729c4f658c5cbd648895922748680d38cf6fc"
+  "research_git_basis_commit": "0cb1e5f31c05f8bdcc01e9673e0325ccee417890"
 }
