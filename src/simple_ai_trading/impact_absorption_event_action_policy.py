@@ -816,9 +816,11 @@ class Round74ActionTraceMetrics:
             isinstance(self.trades, bool)
             or self.trades < 0
             or isinstance(self.active_runs, bool)
-            or not 0 <= self.active_runs <= 6
+            or not 0 <= self.active_runs <= self.trades
             or isinstance(self.distinct_symbols, bool)
-            or not 0 <= self.distinct_symbols <= len(ROUND74_EVENT_SYMBOLS)
+            or not 0
+            <= self.distinct_symbols
+            <= min(self.trades, len(ROUND74_EVENT_SYMBOLS))
             or any(not math.isfinite(float(value)) for value in finite)
             or any(
                 not 0.0 <= float(value) <= 1.0
@@ -894,8 +896,8 @@ class Round74ActionTrace:
         if (
             not math.isfinite(float(self.threshold_score))
             or self.threshold_score < 0.0
-            or len(self.expected_run_ids) != 6
-            or len(set(self.expected_run_ids)) != 6
+            or not self.expected_run_ids
+            or len(set(self.expected_run_ids)) != len(self.expected_run_ids)
             or any(_RUN_ID.fullmatch(value) is None for value in self.expected_run_ids)
             or any(len(value) != rows for value in vectors)
             or any(value < 0 for value in self.row_index)
@@ -956,7 +958,10 @@ class Round74ActionTrace:
                 raise ValueError("Round 74 action trace overlaps")
             open_until[key] = exit_value
         self.metrics.validate()
-        if self.metrics.trades != rows:
+        if (
+            self.metrics.trades != rows
+            or self.metrics.active_runs > len(self.expected_run_ids)
+        ):
             raise ValueError("Round 74 action trace count differs")
 
     def as_dict(self) -> dict[str, object]:
@@ -1071,6 +1076,8 @@ def _validate_round74_action_panel(
     candidate_batches: Sequence[Round74ActionCandidateBatch],
     *,
     expected_run_ids: tuple[str, ...],
+    required_role: str,
+    expected_run_count: int,
 ) -> tuple[
     tuple[Round74EventTrainingBatch, ...],
     tuple[Round74ActionCandidateBatch, ...],
@@ -1081,7 +1088,10 @@ def _validate_round74_action_panel(
     if (
         not selected_batches
         or len(selected_batches) != len(selected_candidates)
-        or len(expected) != 6
+        or required_role not in ROUND74_EVENT_PARTITION_ROLES
+        or isinstance(expected_run_count, bool)
+        or expected_run_count < 1
+        or len(expected) != expected_run_count
         or len(set(expected)) != len(expected)
         or any(_RUN_ID.fullmatch(value) is None for value in expected)
     ):
@@ -1105,7 +1115,7 @@ def _validate_round74_action_panel(
         sample_set = set(batch.sample_sha256)
         feature_set = set(candidates.feature_row_sha256)
         if (
-            batch.role != "tuning"
+            batch.role != required_role
             or batch.partition_sha256 != first_batch.partition_sha256
             or batch.scaler_sha256 != first_batch.scaler_sha256
             or candidates.profile != first_candidates.profile
@@ -1136,12 +1146,14 @@ def _validate_round74_action_panel(
     return selected_batches, selected_candidates
 
 
-def simulate_round74_action_trace_batches(
+def _simulate_round74_action_trace_batches(
     batches: Sequence[Round74EventTrainingBatch],
     candidate_batches: Sequence[Round74ActionCandidateBatch],
     *,
     threshold_score: float,
     expected_run_ids: tuple[str, ...],
+    required_role: str,
+    expected_run_count: int,
 ) -> Round74ActionTrace:
     """Replay a chronological batch panel without concatenating feature tensors."""
 
@@ -1153,6 +1165,8 @@ def simulate_round74_action_trace_batches(
         batches,
         candidate_batches,
         expected_run_ids=expected,
+        required_role=required_role,
+        expected_run_count=expected_run_count,
     )
     selected_rows: list[int] = []
     selected_runs: list[str] = []
@@ -1274,6 +1288,25 @@ def simulate_round74_action_trace_batches(
     )
     result.validate()
     return result
+
+
+def simulate_round74_action_trace_batches(
+    batches: Sequence[Round74EventTrainingBatch],
+    candidate_batches: Sequence[Round74ActionCandidateBatch],
+    *,
+    threshold_score: float,
+    expected_run_ids: tuple[str, ...],
+) -> Round74ActionTrace:
+    """Replay only the six policy-selection runs through the shared core."""
+
+    return _simulate_round74_action_trace_batches(
+        batches,
+        candidate_batches,
+        threshold_score=threshold_score,
+        expected_run_ids=expected_run_ids,
+        required_role="tuning",
+        expected_run_count=6,
+    )
 
 
 def simulate_round74_action_trace(
@@ -1508,6 +1541,8 @@ def select_round74_action_policy_batches(
         requested_batches,
         requested_candidate_batches,
         expected_run_ids=expected_runs,
+        required_role="tuning",
+        expected_run_count=6,
     )
     first_candidates = selected_candidate_batches[0]
     if (
