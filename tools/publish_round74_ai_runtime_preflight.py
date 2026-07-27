@@ -23,6 +23,7 @@ if str(SOURCE) not in sys.path:
 from simple_ai_trading.impact_absorption_ai_protocol import (  # noqa: E402
     ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
+    ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION,
     ROUND74_AI_TEMPORAL_BLOCK_COUNT,
     ROUND74_AI_TEMPORAL_FEATURE_NAMES,
     Round74AIReviewRequest,
@@ -40,7 +41,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v3"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v4"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0
@@ -396,6 +397,9 @@ def _run(repository: Path) -> dict[str, object]:
             ),
             "prompt_payload_schema_version": (
                 ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION
+            ),
+            "system_prompt_schema_version": (
+                ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION
             ),
             "review_panel_schema_version": ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
             "risk_profile": "conservative",

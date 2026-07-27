@@ -29,6 +29,7 @@ ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
 ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v5"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
 ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v7"
+ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION = "round-074-ai-system-prompt-v1"
 ROUND74_AI_TEMPORAL_BLOCK_COUNT = 4
 ROUND74_AI_TEMPORAL_BLOCK_EVENTS = 16
 ROUND74_AI_TEMPORAL_FEATURE_NAMES = (
@@ -730,7 +731,9 @@ def build_round74_ai_review_prompt(
         "allow_unchanged, reduce, veto, abstain. allow_unchanged requires "
         'size_multiplier_bps=10000 and reason_codes=["none"]. reduce '
         "requires 1..9999 and one or more sorted reason codes other than "
-        "none. veto or abstain requires 0. Valid reason codes are: "
+        "none. veto or abstain requires 0. Semantic coupling is mandatory: "
+        "if any risk reason applies, use reduce, veto, or abstain; never "
+        "combine allow_unchanged with a risk reason. Valid reason codes are: "
         + ", ".join(ROUND74_AI_REVIEW_REASON_CODES)
         + ". Do not return markdown or free text."
     )
@@ -776,6 +779,7 @@ __all__ = [
     "ROUND74_AI_REVIEW_MINIMUM_PARAMETER_COUNT",
     "ROUND74_AI_REVIEW_REASON_CODES",
     "ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION",
+    "ROUND74_AI_SYSTEM_PROMPT_SCHEMA_VERSION",
     "ROUND74_AI_REVIEW_VERDICTS",
     "ROUND74_AI_RUNTIME_BACKENDS",
     "ROUND74_AI_TEMPORAL_BLOCK_COUNT",
