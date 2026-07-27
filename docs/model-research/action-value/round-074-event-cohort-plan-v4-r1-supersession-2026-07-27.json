@@ -1,0 +1,38 @@
+{
+  "schema_version": "round-074-event-cohort-plan-supersession-v4",
+  "created_at_utc": "2026-07-27T14:20:00Z",
+  "superseded": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-plan-v4.json",
+    "plan_sha256": "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb",
+    "slot_zero_scheduled_start_utc": "2026-07-27T14:15:00Z"
+  },
+  "replacement": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-plan-v4-r2.json",
+    "plan_sha256": "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2",
+    "slot_zero_scheduled_start_utc": "2026-07-27T16:00:00Z"
+  },
+  "correction_basis": {
+    "reason": "the active prerequisite evaluator compared a v10 audit frame hash to a field absent from the v10 capture report",
+    "raw_active_result_retained": true,
+    "deterministic_adjudication_artifact_sha256": "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7",
+    "capture_retried": false,
+    "selected_from_market_model_or_target_outcome": false,
+    "capture_contract_changed": false,
+    "role_counts_changed": false,
+    "cadence_changed": false
+  },
+  "pre_supersession_state": {
+    "slot_zero_started": false,
+    "slot_zero_reserved": false,
+    "cohort_market_data_collected": false,
+    "campaign_halt_written": false,
+    "superseded_task_disabled_before_slot_zero": true
+  },
+  "authority": {
+    "orders_submitted": false,
+    "credentials_used": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false
+  },
+  "artifact_sha256": "759b37d18918f3d35a616533ce0c5695cb01bf71711691a643cec5c5d677389a"
+}

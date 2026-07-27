@@ -13,9 +13,12 @@ from simple_ai_trading.impact_absorption_event_cohort import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-PLAN_PATH = RESEARCH / "round-074-event-cohort-plan-v4.json"
+PLAN_PATH = RESEARCH / "round-074-event-cohort-plan-v4-r2.json"
 PREFLIGHT_PATH = (
     RESEARCH / "round-074-v10-active-regime-qualification-preflight-2026-07-27.json"
+)
+ADJUDICATION_PATH = (
+    RESEARCH / "round-074-v10-active-regime-qualification-adjudication-2026-07-27.json"
 )
 CADENCE_CORRECTION_PATH = (
     RESEARCH / "round-074-event-cohort-cadence-correction-2026-07-27.json"
@@ -56,7 +59,7 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     payload = plan.as_dict()
 
     assert payload["plan_sha256"] == (
-        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+        "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2"
     )
     assert plan.total_slots == 168
     assert (plan.training_slots, plan.tuning_slots, plan.test_slots) == (
@@ -69,14 +72,14 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
             plan.scheduled_start_wall_ns / 1_000_000_000,
             tz=timezone.utc,
         ).isoformat()
-        == "2026-07-27T14:15:00+00:00"
+        == "2026-07-27T16:00:00+00:00"
     )
     assert (
         datetime.fromtimestamp(
             plan.slot(167).scheduled_end_wall_ns / 1_000_000_000,
             tz=timezone.utc,
         ).isoformat()
-        == "2026-08-04T04:10:00+00:00"
+        == "2026-08-04T05:55:00+00:00"
     )
     assert plan.slot(119).role == "training"
     assert plan.slot(120).role == "tuning"
@@ -104,10 +107,13 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
 def test_round74_cohort_plan_binds_prerequisite_and_implementation() -> None:
     plan = load_round74_event_cohort_plan(PLAN_PATH.read_text(encoding="utf-8"))
     preflight = json.loads(PREFLIGHT_PATH.read_text(encoding="utf-8"))
-    claimed = preflight.pop("artifact_sha256")
+    preflight_claimed = preflight.pop("artifact_sha256")
+    adjudication = json.loads(ADJUDICATION_PATH.read_text(encoding="utf-8"))
+    adjudication_claimed = adjudication.pop("artifact_sha256")
 
-    assert claimed == _canonical_sha256(preflight)
-    assert plan.prerequisite_artifact_sha256 == claimed
+    assert preflight_claimed == _canonical_sha256(preflight)
+    assert adjudication_claimed == _canonical_sha256(adjudication)
+    assert plan.prerequisite_artifact_sha256 == adjudication_claimed
     window = preflight["fixed_execution_window"]
     assert plan.prerequisite_window_start_wall_ns == _wall_ns(
         window["earliest_start_utc"]
