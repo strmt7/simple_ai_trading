@@ -1,0 +1,97 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v58",
+  "artifact_kind": "compact_future_microstructure_hypotheses",
+  "supersedes_artifact_sha256": "74ce0d5c3ea9e14e14a2ee3e53942af9478be0e78a6cc672bee8b778ced73962",
+  "research_git_commit": "d7cb5543a947b20fa775e8f2c6f5cb3c7b79fa4d",
+  "current_feature_contract": {
+    "feature_count": 66,
+    "feature_names_sha256": "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a",
+    "level_imbalance_5_10_20_present": true,
+    "rank_banded_depth_pressure_present": true,
+    "rank_banded_absolute_depth_flow_present": true,
+    "trade_and_liquidation_pressure_present": true,
+    "spread_microprice_basis_and_funding_present": true,
+    "state_half_lives_seconds": [
+      5,
+      30,
+      300
+    ],
+    "level_3_individual_order_identity_present": false,
+    "future_feature_claim": false
+  },
+  "future_hypotheses": [
+    {
+      "id": "basis_point_distance_weighted_l2_flow",
+      "rationale": "posting distance can matter beyond rank-banded pressure",
+      "source_requirement": "causal_public_l2_depth_updates_only",
+      "individual_order_or_trader_identity_required": false,
+      "must_be_ablated_against_current_67_features": true,
+      "current_round_74_family_changed": false
+    },
+    {
+      "id": "calibrated_flow_toxicity_auxiliary_head",
+      "rationale": "separate likely adverse selection from directional payoff",
+      "source_requirement": "causal_features_with_purged_future_outcome_labels",
+      "must_report_calibration_and_proper_loss": true,
+      "may_directly_submit_or_cancel_orders": false,
+      "current_round_74_family_changed": false
+    },
+    {
+      "id": "flash_stress_and_liquidity_stratified_evaluation",
+      "rationale": "maker_and_taker_behavior_can_diverge_under_extreme_adverse_selection",
+      "selection_use": "development_only_before_fresh_preregistration",
+      "must_preserve_whole_run_split_and_embargo": true,
+      "current_round_74_family_changed": false
+    },
+    {
+      "id": "simple_model_feature_quality_baseline",
+      "rationale": "feature_quality_may_dominate_added_neural_depth",
+      "must_compare_against_linear_mlp_tcn_and_attention_candidates": true,
+      "complexity_promotion_without_paired_improvement_permitted": false,
+      "current_round_74_family_changed": false
+    }
+  ],
+  "research_inference": {
+    "paper_results_transfer_directly_to_current_assets": false,
+    "reported_accuracy_implies_after_cost_edge": false,
+    "level_3_spoofing_claim_can_be_made_from_level_2_data": false,
+    "new_features_may_access_future_events": false,
+    "new_hypothesis_may_bypass_current_prospective_cohort": false,
+    "fresh_preregistration_required_after_any_feature_change": true
+  },
+  "research_sources": [
+    {
+      "title": "Explainable Patterns in Cryptocurrency Microstructure",
+      "url": "https://arxiv.org/abs/2602.00776",
+      "used_for": "cross_asset_feature_stability_and_flash_stress_hypotheses"
+    },
+    {
+      "title": "Exploring Microstructural Dynamics in Cryptocurrency Limit Order Books: Better Inputs Matter More Than Stacking Another Hidden Layer",
+      "url": "https://arxiv.org/abs/2506.05764",
+      "used_for": "simple_model_and_feature_quality_control"
+    },
+    {
+      "title": "Learning the Spoofability of Limit Order Books With Interpretable Probabilistic Neural Networks",
+      "url": "https://arxiv.org/abs/2504.15908",
+      "used_for": "posting_distance_and_probabilistic_flow_toxicity_hypotheses"
+    }
+  ],
+  "verification": {
+    "primary_papers_reviewed": 3,
+    "current_feature_names_inspected": 66,
+    "source_level_mismatch_recorded": true,
+    "current_model_or_feature_contract_changed": false,
+    "gpu_model_workload_executed": false,
+    "sealed_test_accessed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "future_hypotheses_implemented": false,
+    "future_hypotheses_benchmarked": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "ccd152a0614508d758692dfc22fd43c1290866b3744be71d6fb6f196813cf805"
+}

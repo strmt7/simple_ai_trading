@@ -156,6 +156,13 @@ MODEL_CHALLENGER_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v57.json"
 )
+MICROSTRUCTURE_HYPOTHESES_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v58.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -772,6 +779,53 @@ def test_round74_ai_design_delta_keeps_future_challenger_out_of_frozen_family() 
     assert verification["primary_papers_reviewed"] == 4
     assert not verification["current_family_changed"]
     assert not verification["model_downloaded"]
+    assert not verification["gpu_model_workload_executed"]
+    assert not verification["sealed_test_accessed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_keeps_microstructure_hypotheses_out_of_round() -> None:
+    previous = _load_json(MODEL_CHALLENGER_ARTIFACT_PATH)
+    artifact = _load_json(MICROSTRUCTURE_HYPOTHESES_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    features = artifact["current_feature_contract"]
+    hypotheses = artifact["future_hypotheses"]
+    inference = artifact["research_inference"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v58"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    assert features["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES)
+    assert features["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert features["level_imbalance_5_10_20_present"]
+    assert features["rank_banded_depth_pressure_present"]
+    assert features["rank_banded_absolute_depth_flow_present"]
+    assert features["trade_and_liquidation_pressure_present"]
+    assert features["state_half_lives_seconds"] == [5, 30, 300]
+    assert not features["level_3_individual_order_identity_present"]
+    assert not features["future_feature_claim"]
+    assert {value["id"] for value in hypotheses} == {
+        "basis_point_distance_weighted_l2_flow",
+        "calibrated_flow_toxicity_auxiliary_head",
+        "flash_stress_and_liquidity_stratified_evaluation",
+        "simple_model_feature_quality_baseline",
+    }
+    assert all(
+        not value["current_round_74_family_changed"] for value in hypotheses
+    )
+    assert not inference["paper_results_transfer_directly_to_current_assets"]
+    assert not inference["reported_accuracy_implies_after_cost_edge"]
+    assert not inference["level_3_spoofing_claim_can_be_made_from_level_2_data"]
+    assert not inference["new_features_may_access_future_events"]
+    assert not inference["new_hypothesis_may_bypass_current_prospective_cohort"]
+    assert inference["fresh_preregistration_required_after_any_feature_change"]
+    assert verification["primary_papers_reviewed"] == 3
+    assert verification["current_feature_names_inspected"] == len(
+        ROUND74_EVENT_FEATURE_NAMES
+    )
+    assert verification["source_level_mismatch_recorded"]
+    assert not verification["current_model_or_feature_contract_changed"]
     assert not verification["gpu_model_workload_executed"]
     assert not verification["sealed_test_accessed"]
     assert all(value is False for value in artifact["status"].values())
