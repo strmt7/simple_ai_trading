@@ -315,9 +315,11 @@ def _build_ai(commit: str, model: dict[str, Any]) -> dict[str, Any]:
         "profitability_claim": False,
         "ai_uplift_claim": False,
     }
-    value["authority"]["representative_market_ai_evaluation"] = False
-    value["authority"]["financial_edge_established"] = False
-    value["authority"]["profitability_claim"] = False
+    status = value["status"]
+    status["representative_market_ai_evaluation_completed"] = False
+    status["financial_edge_established"] = False
+    status["profitability_claim"] = False
+    status["current_four_candidate_ml_market_training_completed"] = False
     value["artifact_sha256"] = _canonical_sha256(value)
     return value
 
