@@ -19,6 +19,8 @@ def test_main_reports_dependency_failure_without_authority(
     database.write_bytes(b"database")
     assemblies = repository / "assemblies"
     assemblies.mkdir()
+    sources = repository / "sources"
+    sources.mkdir()
     output = repository / "output"
     monkeypatch.setattr(
         subject,
@@ -36,6 +38,8 @@ def test_main_reports_dependency_failure_without_authority(
             str(database),
             "--target-assemblies",
             str(assemblies),
+            "--source-artifacts",
+            str(sources),
             "--output",
             str(output),
         ]

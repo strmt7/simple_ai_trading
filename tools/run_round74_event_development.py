@@ -43,6 +43,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--plan", type=Path)
     parser.add_argument("--bindings", type=Path)
     parser.add_argument("--target-assemblies", type=Path, required=True)
+    parser.add_argument("--source-artifacts", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--compute-backend",
@@ -71,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
             plan_path=arguments.plan,
             binding_directory=arguments.bindings,
             target_assembly_directory=arguments.target_assemblies,
+            source_artifact_root=arguments.source_artifacts,
             output_directory=arguments.output,
             compute_backend=arguments.compute_backend,
             memory_limit=arguments.memory_limit,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess  # nosec B404
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -30,18 +31,50 @@ def _normalized_lf_sha256(path: Path) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _normalized_lf_sha256_at_commit(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    payload = completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def test_round74_v65_binds_guarded_development_runtime() -> None:
     design = json.loads(DESIGN.read_text(encoding="ascii"))
     claimed = design.pop("design_sha256")
     runtime = design["development_runtime"]
+    commit = subprocess.run(  # nosec B603
+        [
+            "git",
+            "log",
+            "-n",
+            "1",
+            "--format=%H",
+            "--",
+            str(DESIGN.relative_to(REPOSITORY)),
+        ],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="ascii",
+        timeout=30,
+    ).stdout.strip()
 
     assert claimed == _canonical_sha256(design)
     assert design["base_design"]["normalized_lf_sha256"] == _normalized_lf_sha256(
         REPOSITORY / design["base_design"]["path"]
     )
     for label in ("runtime", "tool", "runtime_test", "tool_test"):
-        assert runtime[f"{label}_normalized_lf_sha256"] == _normalized_lf_sha256(
-            REPOSITORY / runtime[f"{label}_path"]
+        assert runtime[f"{label}_normalized_lf_sha256"] == (
+            _normalized_lf_sha256_at_commit(
+                commit,
+                runtime[f"{label}_path"],
+            )
         )
 
 

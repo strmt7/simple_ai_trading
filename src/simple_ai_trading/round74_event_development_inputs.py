@@ -17,9 +17,12 @@ from .impact_absorption_event_cohort import (
 from .impact_absorption_event_dataset import Round74EventRunPartition
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .round74_event_cohort_operator import ROUND74_EVENT_COHORT_PLAN_SHA256
+from .round74_target_assembly_manifest import (
+    load_and_audit_round74_target_assembly_manifest,
+)
 
 
-ROUND74_DEVELOPMENT_INPUTS_SCHEMA_VERSION = "round-074-development-inputs-v1"
+ROUND74_DEVELOPMENT_INPUTS_SCHEMA_VERSION = "round-074-development-inputs-v2"
 ROUND74_DEVELOPMENT_TRAINING_RUNS = 120
 ROUND74_DEVELOPMENT_TUNING_RUNS = 24
 ROUND74_SEALED_TEST_RUNS = 24
@@ -40,36 +43,6 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
 
 
-def _reject_duplicate_keys(
-    pairs: list[tuple[str, object]],
-) -> dict[str, object]:
-    selected: dict[str, object] = {}
-    for key, value in pairs:
-        if key in selected:
-            raise ValueError(f"Round 74 development input duplicate key: {key}")
-        selected[key] = value
-    return selected
-
-
-def _reject_nonfinite_json(value: str) -> object:
-    raise ValueError(f"Round 74 development input non-finite value: {value}")
-
-
-def _strict_json_object(path: Path, *, label: str) -> dict[str, object]:
-    try:
-        raw = path.read_bytes()
-        value = json.loads(
-            raw.decode("ascii"),
-            object_pairs_hook=_reject_duplicate_keys,
-            parse_constant=_reject_nonfinite_json,
-        )
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-        raise ValueError(f"Round 74 {label} JSON differs") from exc
-    if not isinstance(value, dict):
-        raise ValueError(f"Round 74 {label} root differs")
-    return value
-
-
 @dataclass(frozen=True)
 class Round74DevelopmentInputs:
     """Exactly 144 development assemblies bound to a complete 168-run cohort."""
@@ -78,6 +51,7 @@ class Round74DevelopmentInputs:
     bindings: tuple[Round74EventCohortRunBinding, ...]
     partition: Round74EventRunPartition
     target_assemblies: tuple[tuple[str, Round74SourceTargetAssembly], ...]
+    target_manifest_sha256_by_run_id: tuple[tuple[str, str], ...]
     schema_version: str = ROUND74_DEVELOPMENT_INPUTS_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -86,6 +60,7 @@ class Round74DevelopmentInputs:
         for binding in self.bindings:
             binding.validate()
         assemblies = dict(self.target_assemblies)
+        manifests = dict(self.target_manifest_sha256_by_run_id)
         development_entries = tuple(
             entry for entry in self.partition.entries if entry.role != "test"
         )
@@ -116,6 +91,13 @@ class Round74DevelopmentInputs:
             != ROUND74_DEVELOPMENT_TRAINING_RUNS + ROUND74_DEVELOPMENT_TUNING_RUNS
             or tuple(assemblies) != development_run_ids
             or len(assemblies) != len(self.target_assemblies)
+            or tuple(manifests) != development_run_ids
+            or len(manifests) != len(self.target_manifest_sha256_by_run_id)
+            or any(
+                len(digest) != 64
+                or any(character not in "0123456789abcdef" for character in digest)
+                for digest in manifests.values()
+            )
         ):
             raise ValueError("Round 74 development input identity differs")
         for assembly in assemblies.values():
@@ -142,6 +124,9 @@ class Round74DevelopmentInputs:
                 run_id: assembly.assembly_sha256
                 for run_id, assembly in self.target_assemblies
             },
+            "development_target_manifest_sha256": dict(
+                self.target_manifest_sha256_by_run_id
+            ),
             "training_runs": ROUND74_DEVELOPMENT_TRAINING_RUNS,
             "tuning_runs": ROUND74_DEVELOPMENT_TUNING_RUNS,
             "sealed_test_runs": ROUND74_SEALED_TEST_RUNS,
@@ -163,12 +148,14 @@ def load_round74_development_inputs(
     plan_path: str | Path,
     binding_directory: str | Path,
     target_assembly_directory: str | Path,
+    source_artifact_root: str | Path,
 ) -> Round74DevelopmentInputs:
-    """Load all cohort bindings and only development target assemblies."""
+    """Load all bindings and deep-audit only development target manifests."""
 
     selected_plan_path = Path(plan_path)
     selected_binding_directory = Path(binding_directory)
     selected_assembly_directory = Path(target_assembly_directory)
+    selected_source_root = Path(source_artifact_root)
     if selected_plan_path.is_symlink() or not selected_plan_path.is_file():
         raise ValueError("Round 74 development plan file differs")
     plan = load_round74_event_cohort_plan(
@@ -195,30 +182,43 @@ def load_round74_development_inputs(
     development_run_ids = tuple(
         entry.run_id for entry in partition.entries if entry.role != "test"
     )
+    binding_by_run_id = {binding.run_id: binding for binding in bindings}
+    if len(binding_by_run_id) != len(bindings) or set(binding_by_run_id) != {
+        entry.run_id for entry in partition.entries
+    }:
+        raise ValueError("Round 74 development binding run identity differs")
     expected_assembly_names = {f"{run_id}.json" for run_id in development_run_ids}
     assembly_entries = tuple(selected_assembly_directory.iterdir())
     observed_assembly_names = {path.name for path in assembly_entries}
     if observed_assembly_names != expected_assembly_names or any(
         path.is_symlink() or not path.is_file() for path in assembly_entries
     ):
-        raise ValueError("Round 74 development target assembly file panel differs")
-    assemblies = tuple(
+        raise ValueError("Round 74 development target manifest file panel differs")
+    loaded = tuple(
         (
             run_id,
-            Round74SourceTargetAssembly.from_dict(
-                _strict_json_object(
-                    selected_assembly_directory / f"{run_id}.json",
-                    label="development target assembly",
-                )
+            load_and_audit_round74_target_assembly_manifest(
+                manifest_path=(selected_assembly_directory / f"{run_id}.json"),
+                source_artifact_root=selected_source_root,
             ),
         )
         for run_id in development_run_ids
     )
+    if any(
+        manifest.run_id != run_id
+        or manifest.cohort_binding_sha256 != binding_by_run_id[run_id].binding_sha256
+        for run_id, manifest in loaded
+    ):
+        raise ValueError("Round 74 development target manifest binding differs")
+    assemblies = tuple((run_id, manifest.assembly) for run_id, manifest in loaded)
     selected = Round74DevelopmentInputs(
         plan=plan,
         bindings=bindings,
         partition=partition,
         target_assemblies=assemblies,
+        target_manifest_sha256_by_run_id=tuple(
+            (run_id, manifest.manifest_sha256) for run_id, manifest in loaded
+        ),
     )
     selected.validate()
     return selected
