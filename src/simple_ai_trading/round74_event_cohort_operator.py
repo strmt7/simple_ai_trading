@@ -41,16 +41,16 @@ from .round74_active_qualification import (
 
 
 ROUND74_EVENT_COHORT_PLAN_RELATIVE_PATH = Path(
-    "docs/model-research/action-value/round-074-event-cohort-plan-v2.json"
+    "docs/model-research/action-value/round-074-event-cohort-plan-v3.json"
 )
 ROUND74_EVENT_COHORT_PLAN_SHA256 = (
-    "1082f4038e6c79c1cb13c6337d44cc10f325b7c6bde68a761982f98844f5629e"
+    "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9"
 )
 ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION = (
-    "round-074-event-cohort-slot-state-v2"
+    "round-074-event-cohort-slot-state-v3"
 )
 ROUND74_EVENT_COHORT_OPERATOR_RESULT_SCHEMA_VERSION = (
-    "round-074-event-cohort-slot-result-v2"
+    "round-074-event-cohort-slot-result-v3"
 )
 ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES = 24 * 1024 * 1024 * 1024
 ROUND74_EVENT_COHORT_FREE_SPACE_MINIMUM_BYTES = 100 * 1024 * 1024 * 1024

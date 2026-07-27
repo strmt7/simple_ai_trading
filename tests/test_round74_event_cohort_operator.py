@@ -29,14 +29,14 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v2.json"
+    / "round-074-event-cohort-operator-v3.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-host-schedule-v2-2026-07-27.json"
+    / "round-074-event-cohort-host-schedule-v3-2026-07-27.json"
 )
 SUPERSESSION = (
     REPOSITORY
@@ -76,9 +76,9 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert execution["automatic_retry_permitted"] is False
     assert execution["partition_written_only_after_all_168_bindings"] is True
     partition = contract["partition_contract"]
-    assert partition["maximum_target_span_ns"] == 310_000_000_000
-    assert partition["minimum_purge_ns"] == 310_000_000_000
-    assert partition["minimum_embargo_ns"] == 310_000_000_000
+    assert partition["maximum_target_span_ns"] == 310_500_000_000
+    assert partition["minimum_purge_ns"] == 310_500_000_000
+    assert partition["minimum_embargo_ns"] == 310_500_000_000
 
 
 def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
@@ -89,7 +89,7 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
     assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
     scheduler = evidence["host_scheduler"]
     assert scheduler["task_name"] == (
-        "SimpleAITrading-Round74-EventCohort-v2"
+        "SimpleAITrading-Round74-EventCohort-v3"
     )
     assert scheduler["superseded_task_present"] is False
     assert scheduler["next_run_time_utc"] == "2026-07-27T14:15:00Z"
