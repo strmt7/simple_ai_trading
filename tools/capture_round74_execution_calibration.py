@@ -114,30 +114,35 @@ def _write_artifact(
     return target
 
 
-def _load_campaign_plan_artifact(
-    path: Path,
-) -> tuple[Round74ExecutionCampaignPlan, str]:
+def _load_canonical_artifact(path: Path) -> tuple[dict[str, object], str]:
     try:
         raw = path.read_bytes()
     except OSError as exc:
-        raise ValueError("campaign plan artifact cannot be read") from exc
+        raise ValueError("execution artifact cannot be read") from exc
     if not raw or len(raw) > 4 * 1024 * 1024:
-        raise ValueError("campaign plan artifact size differs")
+        raise ValueError("execution artifact size differs")
     try:
         payload = json.loads(raw)
     except (UnicodeDecodeError, ValueError) as exc:
-        raise ValueError("campaign plan artifact JSON differs") from exc
+        raise ValueError("execution artifact JSON differs") from exc
     if not isinstance(payload, dict):
-        raise ValueError("campaign plan artifact root differs")
+        raise ValueError("execution artifact root differs")
     try:
         canonical = (_canonical_json(payload) + "\n").encode("ascii")
     except (TypeError, UnicodeEncodeError, ValueError) as exc:
-        raise ValueError("campaign plan artifact JSON differs") from exc
+        raise ValueError("execution artifact JSON differs") from exc
     if raw != canonical:
-        raise ValueError("campaign plan artifact is not canonical")
+        raise ValueError("execution artifact is not canonical")
     artifact_sha256 = str(payload.pop("artifact_sha256", ""))
     if artifact_sha256 != _canonical_sha256(payload):
-        raise ValueError("campaign plan artifact digest differs")
+        raise ValueError("execution artifact digest differs")
+    return payload, artifact_sha256
+
+
+def _load_campaign_plan_artifact(
+    path: Path,
+) -> tuple[Round74ExecutionCampaignPlan, str]:
+    payload, artifact_sha256 = _load_canonical_artifact(path)
     if (
         payload.get("operation") != "plan"
         or payload.get("environment") != "binance_usdm_testnet"
@@ -233,6 +238,104 @@ def command_plan(args: argparse.Namespace) -> int:
                 "plan_sha256": plan.plan_sha256,
                 "slot_count": len(plan.slots),
                 "pairs_per_symbol": plan.pairs_per_symbol,
+            }
+        )
+    )
+    return 0
+
+
+def _validated_campaign_capture_slots(
+    *,
+    plan: Round74ExecutionCampaignPlan,
+    plan_artifact_sha256: str,
+    capture_directory: Path,
+) -> tuple[int, ...]:
+    if not capture_directory.exists():
+        return ()
+    if not capture_directory.is_dir():
+        raise ValueError("campaign capture directory differs")
+    by_ordinal = {slot.ordinal: slot for slot in plan.slots}
+    completed: list[int] = []
+    source_hashes = _source_hashes()
+    for path in sorted(capture_directory.glob("*.json")):
+        payload, artifact_sha256 = _load_canonical_artifact(path)
+        if path.stem != artifact_sha256:
+            raise ValueError("campaign capture artifact filename differs")
+        binding = payload.get("campaign_binding")
+        result = payload.get("result")
+        sizing = payload.get("sizing")
+        if (
+            payload.get("operation") != "capture"
+            or payload.get("environment") != "binance_usdm_testnet"
+            or payload.get("source_sha256") != source_hashes
+            or not isinstance(binding, dict)
+            or not isinstance(result, dict)
+            or not isinstance(sizing, dict)
+            or binding.get("campaign_plan_artifact_sha256") != plan_artifact_sha256
+            or binding.get("campaign_plan_sha256") != plan.plan_sha256
+            or result.get("evidence_admitted") is not True
+            or not isinstance(result.get("pair"), dict)
+        ):
+            raise ValueError("campaign capture artifact authority differs")
+        ordinal = binding.get("slot_ordinal")
+        if (
+            isinstance(ordinal, bool)
+            or not isinstance(ordinal, int)
+            or ordinal not in by_ordinal
+            or ordinal in completed
+        ):
+            raise ValueError("campaign capture slot identity differs")
+        slot = by_ordinal[ordinal]
+        pair = dict(result["pair"])
+        pair_sha256 = str(pair.pop("pair_sha256", ""))
+        records = pair.get("records")
+        if (
+            pair_sha256 != _canonical_sha256(pair)
+            or binding.get("round_trip_id") != slot.round_trip_id
+            or pair.get("calibration_run_id") != plan.campaign_id
+            or pair.get("round_trip_id") != slot.round_trip_id
+            or pair.get("symbol") != slot.symbol
+            or sizing.get("symbol") != slot.symbol
+            or sizing.get("entry_side") != slot.entry_side
+            or sizing.get("target_quote_notional")
+            != format(plan.target_quote_notional, "f")
+            or not isinstance(records, list)
+            or len(records) != 2
+            or not any(
+                isinstance(record, dict)
+                and record.get("path") == "entry"
+                and record.get("side") == slot.entry_side
+                for record in records
+            )
+        ):
+            raise ValueError("campaign capture pair identity differs")
+        completed.append(ordinal)
+    return tuple(sorted(completed))
+
+
+def command_campaign_status(args: argparse.Namespace) -> int:
+    plan, artifact_sha256 = _load_campaign_plan_artifact(Path(args.campaign_plan))
+    completed_ordinals = _validated_campaign_capture_slots(
+        plan=plan,
+        plan_artifact_sha256=artifact_sha256,
+        capture_directory=Path(args.capture_directory),
+    )
+    completed_ids = tuple(
+        plan.slots[ordinal].round_trip_id for ordinal in completed_ordinals
+    )
+    next_slot = plan.next_slot(
+        completed_round_trip_ids=completed_ids,
+    )
+    print(
+        _canonical_json(
+            {
+                "campaign_plan_sha256": plan.plan_sha256,
+                "completed_slot_count": len(completed_ordinals),
+                "total_slot_count": len(plan.slots),
+                "complete": next_slot is None,
+                "next_slot": (next_slot.as_dict() if next_slot is not None else None),
+                "network_accessed": False,
+                "orders_submitted": False,
             }
         )
     )
@@ -412,6 +515,13 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     plan.set_defaults(func=command_plan)
+    campaign_status = subparsers.add_parser(
+        "campaign-status",
+        help="validate local captures and report the exact next slot",
+    )
+    campaign_status.add_argument("--campaign-plan", required=True)
+    campaign_status.add_argument("--capture-directory", required=True)
+    campaign_status.set_defaults(func=command_campaign_status)
     for name, handler in (
         ("recover", command_recover),
         ("capture", command_capture),

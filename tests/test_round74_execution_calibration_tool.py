@@ -107,17 +107,64 @@ class _RecoveryResult:
 
 
 class _Pair:
-    pair_sha256 = "a" * 64
+    def __init__(
+        self,
+        *,
+        calibration_run_id: str,
+        round_trip_id: str,
+        symbol: str,
+        entry_side: str,
+    ) -> None:
+        exit_side = "SELL" if entry_side == "BUY" else "BUY"
+        self.payload = {
+            "schema_version": "fake-pair-v1",
+            "environment": "binance_usdm_testnet",
+            "calibration_run_id": calibration_run_id,
+            "round_trip_id": round_trip_id,
+            "symbol": symbol,
+            "reference_quote_notional": "99.0099",
+            "records": [
+                {"path": "entry", "side": entry_side},
+                {"path": "exit", "side": exit_side},
+            ],
+            "authority": {"test_only": True},
+        }
+        canonical = json.dumps(
+            self.payload,
+            allow_nan=False,
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("ascii")
+        self.pair_sha256 = hashlib.sha256(canonical).hexdigest()
 
 
 class _CaptureResult:
     evidence_admitted = True
-    pair = _Pair()
+
+    def __init__(
+        self,
+        *,
+        calibration_run_id: str = "round74-test",
+        round_trip_id: str = "BTCUSDT-0",
+        symbol: str = "BTCUSDT",
+        entry_side: str = "BUY",
+        **_kwargs: object,
+    ) -> None:
+        self.pair = _Pair(
+            calibration_run_id=calibration_run_id,
+            round_trip_id=round_trip_id,
+            symbol=symbol,
+            entry_side=entry_side,
+        )
 
     def as_dict(self) -> dict[str, object]:
         return {
             "evidence_admitted": True,
-            "pair": {"pair_sha256": self.pair.pair_sha256},
+            "pair": {
+                **self.pair.payload,
+                "pair_sha256": self.pair.pair_sha256,
+            },
         }
 
 
@@ -344,7 +391,7 @@ def test_capture_writes_admitted_pair_artifact(
 
     summary = json.loads(capsys.readouterr().out)
     assert summary["evidence_admitted"] is True
-    assert summary["pair_sha256"] == "a" * 64
+    assert len(summary["pair_sha256"]) == 64
     payload = _read_single_artifact(tmp_path / "artifacts")
     assert payload["operation"] == "capture"
     assert payload["recovery_before_capture"]["complete"] is True
@@ -403,7 +450,7 @@ def test_capture_slot_is_cryptographically_bound_to_plan(
     monkeypatch.setattr(
         tool,
         "capture_round74_execution_calibration_pair",
-        lambda **_kwargs: _CaptureResult(),
+        lambda **kwargs: _CaptureResult(**kwargs),
     )
     plan_directory = tmp_path / "plans"
     assert (
@@ -452,3 +499,21 @@ def test_capture_slot_is_cryptographically_bound_to_plan(
     }
     assert payload["sizing"]["symbol"] == "BTCUSDT"
     assert payload["sizing"]["entry_side"] == "BUY"
+
+    assert (
+        main(
+            [
+                "campaign-status",
+                "--campaign-plan",
+                plan_summary["artifact"],
+                "--capture-directory",
+                str(tmp_path / "captures"),
+            ]
+        )
+        == 0
+    )
+    status = json.loads(capsys.readouterr().out)
+    assert status["completed_slot_count"] == 1
+    assert status["total_slot_count"] == 900
+    assert status["next_slot"]["ordinal"] == 1
+    assert status["network_accessed"] is False
