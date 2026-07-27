@@ -18,6 +18,10 @@ PREFLIGHT_PATH = (
     RESEARCH
     / "round-074-v10-active-regime-qualification-preflight-2026-07-27.json"
 )
+CADENCE_CORRECTION_PATH = (
+    RESEARCH
+    / "round-074-event-cohort-cadence-correction-2026-07-27.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -57,7 +61,7 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     payload = plan.as_dict()
 
     assert payload["plan_sha256"] == (
-        "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236"
+        "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd"
     )
     assert plan.total_slots == 168
     assert (plan.training_slots, plan.tuning_slots, plan.test_slots) == (
@@ -117,3 +121,26 @@ def test_round74_cohort_plan_binds_prerequisite_and_implementation() -> None:
             "HEAD",
             path,
         )
+
+
+def test_round74_cohort_cadence_correction_prevents_audit_overlap() -> None:
+    evidence = json.loads(CADENCE_CORRECTION_PATH.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["pre_observation_basis"][
+        "correction_selected_from_market_or_model_outcome"
+    ] is False
+    defect = evidence["defect"]
+    assert defect["nominal_gap_seconds"] < (
+        defect["maximum_start_tolerance_seconds"]
+        + defect["maximum_end_overhead_seconds"]
+    )
+    correction = evidence["correction"]
+    assert correction["nominal_gap_seconds"] == (
+        correction["maximum_start_and_end_allowance_seconds"]
+        + correction["maximum_inline_fresh_audit_seconds"]
+        + correction["minimum_process_transition_reserve_seconds"]
+    )
+    assert correction["overlap_permitted"] is False
+    assert correction["role_counts_changed"] is False

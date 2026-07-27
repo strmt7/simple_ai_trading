@@ -1,6 +1,6 @@
 {
   "schema_version": "round-074-event-cohort-plan-v1",
-  "implementation_git_commit": "3480a8dd6dd163659146cb527ed9b381b94b6e87",
+  "implementation_git_commit": "39a6f279cd4f527c853025b79285efe6abebff65",
   "scheduled_start_wall_ns": 1785161700000000000,
   "role_counts": {
     "training": 120,
@@ -10,7 +10,7 @@
   "total_slots": 168,
   "schedule_formula": {
     "ordinal_origin": 0,
-    "slot_period_ns": 3660000000000,
+    "slot_period_ns": 3900000000000,
     "capture_duration_ns": 3600000000000,
     "start_tolerance_ns": 30000000000,
     "maximum_end_overhead_ns": 120000000000
@@ -60,5 +60,5 @@
     "profitability_claim": false,
     "trading_authority": false
   },
-  "plan_sha256": "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236"
+  "plan_sha256": "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd"
 }

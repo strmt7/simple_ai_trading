@@ -73,7 +73,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v13.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v14.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -285,7 +285,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     cohort = design["cohort_admission_contract"]
     assert cohort["implemented_now"] is True
     assert cohort["plan_sha256"] == (
-        "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236"
+        "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd"
     )
     assert cohort["role_counts"] == {
         "training": 120,
@@ -661,9 +661,13 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert source["event_model_sha256"] == design["source_binding"][
         "event_model_sha256"
     ]
-    assert source["event_cohort_sha256"] == design["source_binding"][
+    assert source["event_cohort_sha256"] == binding[
+        "event_training_directml_event_cohort_sha256"
+    ]
+    assert source["event_cohort_sha256"] != design["source_binding"][
         "event_cohort_sha256"
     ]
+    assert "cadence-only" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )

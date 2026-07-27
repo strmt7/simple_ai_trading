@@ -1,0 +1,56 @@
+{
+  "schema_version": "round-074-event-cohort-cadence-correction-v1",
+  "artifact_sha256": "e6704f064335fd176b60e0c5652693cd8981c016202078c5c39dd08783d7b58b",
+  "observed_at_utc": "2026-07-27T01:44:21Z",
+  "audit_benchmark_execution_git_commit": "68dbd966a0b5ae690b9bd9387e0f73a4bf8ff347",
+  "corrected_implementation_git_commit": "39a6f279cd4f527c853025b79285efe6abebff65",
+  "superseded_plan_sha256": "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236",
+  "corrected_plan_sha256": "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd",
+  "pre_observation_basis": {
+    "cohort_capture_started": false,
+    "cohort_market_stream_observed": false,
+    "cohort_activity_or_target_observed": false,
+    "model_or_ai_outcome_observed": false,
+    "correction_selected_from_market_or_model_outcome": false
+  },
+  "fresh_audit_benchmark": {
+    "database": "data/microstructure.duckdb",
+    "existing_v10_run_id": "36d3c2407a0045a5aa78b3913dff8ab6",
+    "existing_stored_report_sha256": "1edc47e7f13126bcddd501aa6d86466f8ba37fc0a45abca99e87f6350d35148b",
+    "command": ".venv/Scripts/python.exe -m simple_ai_trading impact-audit --database data/microstructure.duckdb --run-id 36d3c2407a0045a5aa78b3913dff8ab6 --json",
+    "exit_code": 0,
+    "wall_elapsed_seconds": 31.8954216,
+    "database_bytes_after": 9433526272,
+    "wal_exists_after": false,
+    "timing_is_operational_telemetry_not_a_performance_or_edge_result": true
+  },
+  "defect": {
+    "superseded_slot_period_seconds": 3660,
+    "capture_duration_seconds": 3600,
+    "nominal_gap_seconds": 60,
+    "maximum_start_tolerance_seconds": 30,
+    "maximum_end_overhead_seconds": 120,
+    "fresh_process_audit_required": true,
+    "reason": "The 60-second nominal gap was smaller than the 150-second admitted start and finalization allowance even before the required fresh audit. Adjacent slots could overlap or force an unaudited transition."
+  },
+  "correction": {
+    "slot_period_seconds": 3900,
+    "capture_duration_seconds": 3600,
+    "nominal_gap_seconds": 300,
+    "maximum_start_and_end_allowance_seconds": 150,
+    "maximum_inline_fresh_audit_seconds": 120,
+    "minimum_process_transition_reserve_seconds": 30,
+    "overlap_permitted": false,
+    "audit_or_transition_overrun_policy": "halt campaign and retain the missed slot; never replace or shift it",
+    "role_counts_changed": false,
+    "total_slots_changed": false,
+    "first_slot_changed": false,
+    "last_slot_end_utc": "2026-08-04T04:10:00Z"
+  },
+  "authority": {
+    "cohort_capture_authorized_by_this_evidence": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false,
+    "orders_or_credentials": false
+  }
+}
