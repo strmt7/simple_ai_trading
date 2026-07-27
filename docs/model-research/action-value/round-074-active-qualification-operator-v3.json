@@ -1,0 +1,58 @@
+{
+  "schema_version": "round-074-active-qualification-operator-contract-v3",
+  "artifact_sha256": "39c76c141f543469ec25d95b4c245a3e90003a31368a8d8155f3ac40ca567065",
+  "created_at_utc": "2026-07-27T14:08:00Z",
+  "source_parent_git_commit": "b46ff41493177f74122a86fcd0798c1210b3cc20",
+  "preflight_artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+  "retained_result_sha256": "baa31064a82fa6bb742f5de288661b7a8b19e3d88bddc6accbb8adaee84d20ab",
+  "superseded_operator_contract_artifact_sha256": "f3e339830da73c7df8b23b156ed57cee709b3984abd711deacf1ce8b0775b459",
+  "source_binding": {
+    "operator_path": "src/simple_ai_trading/round74_active_qualification.py",
+    "operator_sha256": "943fee099206a8c24b94ee440237e9ff86798c4deb5f37f1a73510228ef68fdc",
+    "wrapper_path": "tools/run_round74_active_qualification.py",
+    "wrapper_sha256": "2bcd87bd59121802ba7745736ec88b0e275e2a21edfe8bf1150cd6eee33928bf",
+    "adjudicator_path": "src/simple_ai_trading/round74_active_adjudication.py",
+    "adjudicator_sha256": "afa4e392ae0e529b019eae32ee0b142dbcadb688f31749aeb1c9ff3cf4ddcd38",
+    "adjudicator_wrapper_path": "tools/adjudicate_round74_active_qualification.py",
+    "adjudicator_wrapper_sha256": "c531bad4fa0c43242af136073b433e0cfb5d1878f3f70a80d91f4fb046f693cb"
+  },
+  "correction_contract": {
+    "defect_identifier": "v10_report_frame_identity_schema_mismatch",
+    "original_result_mutated": false,
+    "capture_retried": false,
+    "new_market_data_used": false,
+    "stored_report_sha256_must_match": true,
+    "fresh_audit_run_status_must_match_report": true,
+    "fresh_audit_contract_sha256_must_match_report": true,
+    "fresh_audit_counts_must_match_report": true,
+    "fresh_audit_compressed_bytes_must_match_report": true,
+    "fresh_audit_frame_chain_sha256_must_be_well_formed": true
+  },
+  "execution_contract": {
+    "preflight_hash_and_canonical_json_verified_before_reservation": true,
+    "static_preflight_parse_requires_host_virtual_environment": false,
+    "capture_executable_exists_checked_at_host_readiness": true,
+    "frozen_capture_source_bytes_verified_against_preflight_commit": true,
+    "database_and_wal_baseline_must_match": true,
+    "minimum_free_space_checked": true,
+    "concurrent_capture_process_forbidden": true,
+    "exclusive_reservation_fsynced_before_process_spawn": true,
+    "reservation_removed_after_failure": false,
+    "automatic_retry_permitted": false,
+    "capture_stdout_and_stderr_persisted": true,
+    "heartbeat_interval_seconds": 30,
+    "database_and_wal_growth_watched_independently": true,
+    "process_io_verdict_taken_from_capture_process_counter": true,
+    "process_io_counter_interpreted_as_physical_nand_writes": false,
+    "fresh_process_audit_uses_explicit_run_id": true,
+    "quiet_middle_failed_and_active_outcomes_retained": true,
+    "post_reservation_operator_exception_is_terminal": true
+  },
+  "authority": {
+    "public_market_data_capture": true,
+    "order_submission": false,
+    "credentials": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false
+  }
+}

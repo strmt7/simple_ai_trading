@@ -24,7 +24,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-active-qualification-operator-v2.json"
+    / "round-074-active-qualification-operator-v3.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -56,10 +56,13 @@ def test_round74_active_operator_contract_binds_executable_bytes() -> None:
     for path_key, hash_key in (
         ("operator_path", "operator_sha256"),
         ("wrapper_path", "wrapper_sha256"),
+        ("adjudicator_path", "adjudicator_sha256"),
+        ("adjudicator_wrapper_path", "adjudicator_wrapper_sha256"),
     ):
-        assert hashlib.sha256(
-            (REPOSITORY / source[path_key]).read_bytes()
-        ).hexdigest() == source[hash_key]
+        assert (
+            hashlib.sha256((REPOSITORY / source[path_key]).read_bytes()).hexdigest()
+            == source[hash_key]
+        )
     assert contract["execution_contract"]["automatic_retry_permitted"] is False
     assert contract["authority"]["order_submission"] is False
 
@@ -69,9 +72,7 @@ def test_round74_host_schedule_is_truthful_and_does_not_claim_execution() -> Non
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["preflight_artifact_sha256"] == (
-        ROUND74_ACTIVE_PREFLIGHT_SHA256
-    )
+    assert evidence["preflight_artifact_sha256"] == (ROUND74_ACTIVE_PREFLIGHT_SHA256)
     scheduler = evidence["host_scheduler"]
     assert scheduler["next_run_time_utc"] == "2026-07-27T12:55:00Z"
     assert scheduler["start_when_available"] is False
@@ -118,10 +119,13 @@ def test_round74_active_readiness_before_window_does_not_reserve() -> None:
     )
 
     assert readiness["window_status"] == "before_window"
-    assert readiness["ready_for_window"] is True
+    reservation_exists = Path(str(readiness["reservation_path"])).exists()
+    assert readiness["ready_for_window"] is (not reservation_exists)
     assert readiness["can_start_now"] is False
     assert readiness["checks"]["capture_executable_passed"] is True
-    assert not Path(str(readiness["reservation_path"])).exists()
+    assert readiness["checks"]["no_existing_reservation_passed"] is (
+        not reservation_exists
+    )
 
 
 def test_round74_active_window_and_activity_boundaries_are_frozen() -> None:
@@ -148,18 +152,24 @@ def test_round74_active_window_and_activity_boundaries_are_frozen() -> None:
         )
         == "missed"
     )
-    assert classify_round74_activity(
-        message_count=735_851,
-        elapsed_seconds=1_000.0,
-        active_minimum=735.8503256619431,
-        quiet_maximum=510.26877174932963,
-    )[0] == "active"
-    assert classify_round74_activity(
-        message_count=510_268,
-        elapsed_seconds=1_000.0,
-        active_minimum=735.8503256619431,
-        quiet_maximum=510.26877174932963,
-    )[0] == "quiet"
+    assert (
+        classify_round74_activity(
+            message_count=735_851,
+            elapsed_seconds=1_000.0,
+            active_minimum=735.8503256619431,
+            quiet_maximum=510.26877174932963,
+        )[0]
+        == "active"
+    )
+    assert (
+        classify_round74_activity(
+            message_count=510_268,
+            elapsed_seconds=1_000.0,
+            active_minimum=735.8503256619431,
+            quiet_maximum=510.26877174932963,
+        )[0]
+        == "quiet"
+    )
 
 
 def test_round74_attempt_reservation_is_permanent_and_exclusive(
@@ -191,8 +201,12 @@ def test_round74_active_verdict_requires_matching_fresh_audit() -> None:
         "resource_safety_errors": [],
         "audit_passed": True,
         "audit_errors": [],
-        "last_frame_sha256": "b" * 64,
+        "capture_contract_sha256": (
+            "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0"
+        ),
+        "writer_frame_count": 42,
         "writer_message_count": 2_700_000,
+        "writer_compressed_payload_bytes": 9_000_000,
         "elapsed_seconds": 3_600.0,
         "process_io_delta_write_bytes": 1_000_000,
     }
@@ -228,8 +242,15 @@ def test_round74_active_verdict_requires_matching_fresh_audit() -> None:
                 "passed": True,
                 "errors": [],
                 "run_id": "a" * 32,
+                "run_status": "completed",
+                "capture_contract_sha256": (
+                    "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0"
+                ),
                 "stored_report_schema_version": "round-074-capture-report-v10",
                 "stored_report_sha256": report_sha256,
+                "frame_count": 42,
+                "message_count": 2_700_000,
+                "compressed_payload_bytes": 9_000_000,
                 "last_frame_sha256": "b" * 64,
             },
         }
@@ -247,3 +268,39 @@ def test_round74_active_verdict_requires_matching_fresh_audit() -> None:
     assert result["outcome"] == "active_qualified"
     assert result["active_qualified"] is True
     assert result["errors"] == []
+
+    audits[0]["audit"]["frame_count"] = 41
+    rejected = _evaluate_operator_result(
+        preflight,
+        capture_return_code=0,
+        supervisor=supervisor,
+        supervisor_parse_error="",
+        audits=audits,
+        watchdog_breaches=[],
+    )
+    assert rejected["active_qualified"] is False
+    assert rejected["errors"] == ["fresh_audit_or_report_identity_failed"]
+
+
+def test_round74_retained_result_adjudicates_without_mutation() -> None:
+    from simple_ai_trading.round74_active_adjudication import (
+        ROUND74_ACTIVE_RESULT_EVIDENCE_RELATIVE_PATH,
+        build_round74_active_adjudication,
+    )
+
+    source_path = REPOSITORY / ROUND74_ACTIVE_RESULT_EVIDENCE_RELATIVE_PATH
+    before = hashlib.sha256(source_path.read_bytes()).hexdigest()
+
+    artifact = build_round74_active_adjudication(
+        REPOSITORY,
+        adjudicated_at_utc=datetime(2026, 7, 27, 14, 5, tzinfo=timezone.utc),
+    )
+
+    assert hashlib.sha256(source_path.read_bytes()).hexdigest() == before
+    assert artifact["defect"]["fresh_audit_stored_report_sha256_matches"] is True
+    assert artifact["adjudication"]["capture_retried"] is False
+    assert (
+        artifact["adjudication"]["corrected_verdict"]["outcome"] == "active_qualified"
+    )
+    claimed = artifact.pop("artifact_sha256")
+    assert claimed == _canonical_sha256(artifact)

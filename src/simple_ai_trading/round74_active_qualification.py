@@ -236,8 +236,7 @@ def load_round74_active_preflight(
         or payload.get("implementation_git_commit")
         != "a986a2e3d6c69abe9d6f497b432645545c6825e6"
         or scope.get("capture_schema_version") != IMPACT_CAPTURE_V10_SCHEMA_VERSION
-        or scope.get("capture_contract_sha256")
-        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or scope.get("capture_contract_sha256") != IMPACT_CAPTURE_V10_CONTRACT_SHA256
         or scope.get("qualification_only") is not True
         or scope.get("order_submission_permitted") is not False
         or window.get("maximum_reconnects") != 0
@@ -245,8 +244,7 @@ def load_round74_active_preflight(
         or window.get("reschedule_after_observing_market_activity_permitted")
         is not False
         or invocation.get("stdout_and_stderr_must_be_persisted") is not True
-        or invocation.get("operator_progress_check_interval_maximum_seconds")
-        != 120
+        or invocation.get("operator_progress_check_interval_maximum_seconds") != 120
         or correction.get("prior_command_started") is not False
         or correction.get("prior_market_stream_observed") is not False
         or correction.get("correction_selected_from_market_outcome") is not False
@@ -705,8 +703,7 @@ def _evaluate_operator_result(
         raw_attempts = supervisor.get("attempts")
         attempts = raw_attempts if isinstance(raw_attempts, list) else []
         if (
-            supervisor.get("schema_version")
-            != "round-074-capture-supervisor-report-v1"
+            supervisor.get("schema_version") != "round-074-capture-supervisor-report-v1"
             or supervisor.get("capture_schema_version")
             != IMPACT_CAPTURE_V10_SCHEMA_VERSION
             or supervisor.get("capture_contract_sha256")
@@ -737,9 +734,7 @@ def _evaluate_operator_result(
         report_sha256 = _canonical_sha256(dict(attempt))
         audit_wrapper = audit_by_run.get(run_id)
         audit = (
-            audit_wrapper.get("audit")
-            if isinstance(audit_wrapper, Mapping)
-            else None
+            audit_wrapper.get("audit") if isinstance(audit_wrapper, Mapping) else None
         )
         if (
             not isinstance(audit, Mapping)
@@ -747,10 +742,17 @@ def _evaluate_operator_result(
             or audit.get("passed") is not True
             or audit.get("errors") != []
             or audit.get("run_id") != run_id
+            or audit.get("run_status") != attempt.get("status")
+            or audit.get("capture_contract_sha256")
+            != attempt.get("capture_contract_sha256")
             or audit.get("stored_report_schema_version")
             != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
             or audit.get("stored_report_sha256") != report_sha256
-            or audit.get("last_frame_sha256") != attempt.get("last_frame_sha256")
+            or audit.get("frame_count") != attempt.get("writer_frame_count")
+            or audit.get("message_count") != attempt.get("writer_message_count")
+            or audit.get("compressed_payload_bytes")
+            != attempt.get("writer_compressed_payload_bytes")
+            or _SHA256.fullmatch(str(audit.get("last_frame_sha256", ""))) is None
         ):
             errors.append("fresh_audit_or_report_identity_failed")
         try:
@@ -763,8 +765,7 @@ def _evaluate_operator_result(
         except (KeyError, TypeError, ValueError) as exc:
             errors.append(f"activity_classification:{type(exc).__name__}:{exc}")
         capture_data_passed = (
-            attempt.get("schema_version")
-            == IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
+            attempt.get("schema_version") == IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
             and attempt.get("status") == "completed"
             and attempt.get("capture_gate_passed") is True
             and attempt.get("qualification_passed") is True
@@ -846,9 +847,7 @@ def _run_round74_active_qualification(repository: Path) -> int:
 
     stdout_lines: list[str] = []
     stderr_lines: list[str] = []
-    creation_flags = (
-        subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
-    )
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
     command = [str(preflight.executable), *preflight.arguments]
     started_monotonic = time.monotonic()
     started_utc = datetime.now(timezone.utc)
@@ -978,9 +977,7 @@ def _run_round74_active_qualification(repository: Path) -> int:
         "schema_version": ROUND74_ACTIVE_RESULT_SCHEMA_VERSION,
         "preflight_sha256": preflight.artifact_sha256,
         "started_at_utc": started_utc.isoformat().replace("+00:00", "Z"),
-        "ended_at_utc": datetime.now(timezone.utc)
-        .isoformat()
-        .replace("+00:00", "Z"),
+        "ended_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "capture_command": command,
         "capture_return_code": return_code,
         "capture_stdout_path": str(capture_stdout_path.relative_to(root)),

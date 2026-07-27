@@ -1,0 +1,40 @@
+{
+  "adjudicated_at_utc": "2026-07-27T14:08:13.931852Z",
+  "adjudication": {
+    "capture_or_audit_data_mutated": false,
+    "capture_retried": false,
+    "corrected_verdict": {
+      "active_qualified": true,
+      "activity_label": "active",
+      "automatic_retry_permitted": false,
+      "capture_data_passed": true,
+      "capture_report_sha256": "2e4bb14351a57eae570b97bda997f9a47f3c32bb7855253b59f80e563580f8e5",
+      "errors": [],
+      "messages_per_second": 1667.9150596833201,
+      "outcome": "active_qualified"
+    },
+    "new_market_data_used": false,
+    "original_result_mutated": false
+  },
+  "artifact_sha256": "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7",
+  "authority": {
+    "credentials_used": false,
+    "orders_submitted": false,
+    "profitability_or_edge_claim": false,
+    "trading_or_model_promotion_authority": false
+  },
+  "defect": {
+    "correction": "validate the audited frame-chain hash shape and compare the fresh audit to v10 report fields that actually exist",
+    "fresh_audit_contains_last_frame_sha256": true,
+    "fresh_audit_stored_report_sha256_matches": true,
+    "identifier": "v10_report_frame_identity_schema_mismatch",
+    "original_error": "fresh_audit_or_report_identity_failed",
+    "v10_report_contains_last_frame_sha256": false
+  },
+  "schema_version": "round-074-active-qualification-adjudication-v1",
+  "source_result": {
+    "file_sha256": "c71a3c6be74f36c27b21b39b9b606fb7c77242cd592f5f1831319053f10ccccd",
+    "path": "docs/model-research/action-value/round-074-v10-active-regime-qualification-result-2026-07-27.json",
+    "result_sha256": "baa31064a82fa6bb742f5de288661b7a8b19e3d88bddc6accbb8adaee84d20ab"
+  }
+}
