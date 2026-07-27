@@ -419,9 +419,12 @@ def _validate_slot_audit(
         or audit.get("errors") != []
         or audit.get("run_id") != binding.run_id
         or audit.get("stored_report_sha256") != binding.report_sha256
-        or audit.get("last_frame_sha256") != report.get("last_frame_sha256")
+        or audit.get("capture_contract_sha256")
+        != report.get("capture_contract_sha256")
         or audit.get("frame_count") != binding.frame_count
         or audit.get("message_count") != binding.message_count
+        or audit.get("compressed_payload_bytes")
+        != binding.compressed_payload_bytes
     ):
         raise ValueError("Round 74 cohort fresh audit identity differs")
 
