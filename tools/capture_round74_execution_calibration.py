@@ -24,6 +24,7 @@ from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SYMBOLS,
 )
 from simple_ai_trading.round74_execution_calibration_campaign import (
+    Round74ExecutionCampaignPlan,
     build_round74_execution_campaign_plan,
 )
 from simple_ai_trading.round74_execution_calibration_coordinator import (
@@ -111,6 +112,43 @@ def _write_artifact(
     temporary.write_bytes(encoded)
     temporary.replace(target)
     return target
+
+
+def _load_campaign_plan_artifact(
+    path: Path,
+) -> tuple[Round74ExecutionCampaignPlan, str]:
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise ValueError("campaign plan artifact cannot be read") from exc
+    if not raw or len(raw) > 4 * 1024 * 1024:
+        raise ValueError("campaign plan artifact size differs")
+    try:
+        payload = json.loads(raw)
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise ValueError("campaign plan artifact JSON differs") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("campaign plan artifact root differs")
+    try:
+        canonical = (_canonical_json(payload) + "\n").encode("ascii")
+    except (TypeError, UnicodeEncodeError, ValueError) as exc:
+        raise ValueError("campaign plan artifact JSON differs") from exc
+    if raw != canonical:
+        raise ValueError("campaign plan artifact is not canonical")
+    artifact_sha256 = str(payload.pop("artifact_sha256", ""))
+    if artifact_sha256 != _canonical_sha256(payload):
+        raise ValueError("campaign plan artifact digest differs")
+    if (
+        payload.get("operation") != "plan"
+        or payload.get("environment") != "binance_usdm_testnet"
+        or payload.get("network_accessed") is not False
+        or payload.get("orders_submitted") is not False
+        or payload.get("source_sha256") != _source_hashes()
+        or not isinstance(payload.get("plan"), dict)
+    ):
+        raise ValueError("campaign plan artifact authority differs")
+    plan = Round74ExecutionCampaignPlan.from_dict(payload["plan"])
+    return plan, artifact_sha256
 
 
 def _credentials() -> tuple[str, str]:
@@ -287,6 +325,7 @@ def command_capture(args: argparse.Namespace) -> int:
         payload = {
             **_base_payload(operation="capture"),
             "database": str(database),
+            "campaign_binding": getattr(args, "campaign_binding", None),
             "recovery_before_capture": recovery.as_dict(),
             "sizing": sizing.as_dict(),
             "result": result.as_dict(),
@@ -309,6 +348,34 @@ def command_capture(args: argparse.Namespace) -> int:
         )
     )
     return 0 if result.evidence_admitted else 1
+
+
+def command_capture_slot(args: argparse.Namespace) -> int:
+    _require_order_confirmation(args)
+    plan, artifact_sha256 = _load_campaign_plan_artifact(Path(args.campaign_plan))
+    if (
+        isinstance(args.slot, bool)
+        or not isinstance(args.slot, int)
+        or args.slot < 0
+        or args.slot >= len(plan.slots)
+    ):
+        raise ValueError("campaign slot ordinal differs")
+    selected = plan.slots[args.slot]
+    args.calibration_run_id = plan.campaign_id
+    args.round_trip_id = selected.round_trip_id
+    args.symbol = selected.symbol
+    args.entry_side = selected.entry_side
+    args.target_quote_notional = format(
+        plan.target_quote_notional,
+        "f",
+    )
+    args.campaign_binding = {
+        "campaign_plan_artifact_sha256": artifact_sha256,
+        "campaign_plan_sha256": plan.plan_sha256,
+        "slot_ordinal": selected.ordinal,
+        "round_trip_id": selected.round_trip_id,
+    }
+    return command_capture(args)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -348,13 +415,18 @@ def build_parser() -> argparse.ArgumentParser:
     for name, handler in (
         ("recover", command_recover),
         ("capture", command_capture),
+        ("capture-slot", command_capture_slot),
     ):
         selected = subparsers.add_parser(
             name,
             help=(
                 "reconcile and reduce bot-owned testnet exposure"
                 if name == "recover"
-                else "recover first, then capture one testnet pair"
+                else (
+                    "recover first, then capture one plan-bound testnet pair"
+                    if name == "capture-slot"
+                    else "recover first, then capture one testnet pair"
+                )
             ),
         )
         selected.add_argument("--yes", action="store_true")
@@ -390,6 +462,13 @@ def build_parser() -> argparse.ArgumentParser:
             "live exchange filters, mark price, and captured depth"
         ),
     )
+    capture_slot = subparsers.choices["capture-slot"]
+    capture_slot.add_argument(
+        "--campaign-plan",
+        required=True,
+        help="canonical source-bound campaign plan artifact",
+    )
+    capture_slot.add_argument("--slot", required=True, type=int)
     return parser
 
 
