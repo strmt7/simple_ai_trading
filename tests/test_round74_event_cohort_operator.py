@@ -36,7 +36,14 @@ HOST_SCHEDULE = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-host-schedule-2026-07-27.json"
+    / "round-074-event-cohort-host-schedule-v2-2026-07-27.json"
+)
+SUPERSESSION = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-v1-supersession-2026-07-27.json"
 )
 
 
@@ -81,6 +88,10 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
     assert claimed == _canonical_sha256(evidence)
     assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
     scheduler = evidence["host_scheduler"]
+    assert scheduler["task_name"] == (
+        "SimpleAITrading-Round74-EventCohort-v2"
+    )
+    assert scheduler["superseded_task_present"] is False
     assert scheduler["next_run_time_utc"] == "2026-07-27T14:15:00Z"
     assert scheduler["repetition_interval"] == "PT1H5M"
     assert scheduler["last_trigger_utc"] == "2026-08-04T03:10:00Z"
@@ -90,6 +101,28 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
     assert limitations["future_execution_proven_now"] is False
     assert limitations["cohort_slot_admitted_now"] is False
     assert limitations["profitability_or_edge_claim"] is False
+
+
+def test_round74_cohort_v1_was_superseded_before_slot_zero() -> None:
+    evidence = json.loads(SUPERSESSION.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["correction_basis"][
+        "selected_from_market_or_model_outcome"
+    ] is False
+    assert evidence["correction_basis"][
+        "schedule_or_role_counts_changed"
+    ] is False
+    assert evidence["pre_supersession_state"]["slot_zero_started"] is False
+    assert evidence["pre_supersession_state"][
+        "cohort_market_data_collected"
+    ] is False
+    sequence = evidence["replacement_sequence"]
+    assert sequence[
+        "replacement_task_verified_ready_before_superseded_task_removal"
+    ] is True
+    assert sequence["superseded_task_removed"] is True
 
 
 def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
