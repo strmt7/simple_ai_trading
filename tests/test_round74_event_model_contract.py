@@ -40,7 +40,6 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_PROFILES,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
     ROUND74_EVENT_PARTITION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_scaling import (
@@ -377,9 +376,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_target_evidence_schema_version"] == (
         ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
     )
-    assert (
-        source["event_dataset_schema_version"] == ROUND74_EVENT_DATASET_SCHEMA_VERSION
-    )
+    assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
     assert (
         source["event_partition_schema_version"]
         == ROUND74_EVENT_PARTITION_SCHEMA_VERSION
@@ -480,7 +477,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
     )
     assert cohort["post_capture_dataset_schema_version"] == (
-        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+        "round-074-event-dataset-v9"
     )
     assert cohort["raw_capture_schedule_changed_for_multiscale_features"] is False
     assert cohort["role_counts"] == {

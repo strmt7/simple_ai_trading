@@ -76,9 +76,6 @@ from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
@@ -442,9 +439,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["event_scaler_schema_version"] == (
         ROUND74_EVENT_SCALER_SCHEMA_VERSION
     )
-    assert source["event_dataset_schema_version"] == (
-        ROUND74_EVENT_DATASET_SCHEMA_VERSION
-    )
+    assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
     assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
     assert source["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
     assert source["state_half_lives_seconds"] == list(
