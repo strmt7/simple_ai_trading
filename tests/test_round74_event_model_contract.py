@@ -73,11 +73,8 @@ from simple_ai_trading.impact_absorption_event_targets import (
 )
 from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT,
-    ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS,
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_ATTENTION_HEADS,
@@ -115,6 +112,9 @@ RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
 DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v61.json"
 TUNING_SEPARATION_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v62.json"
+)
+MODEL_INTEGRATION_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v63.json"
 )
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
@@ -228,6 +228,59 @@ def test_round74_tuning_role_correction_is_disjoint_and_source_bound() -> None:
     assert authority["disjoint_tuning_role_adapter_implementation"] is True
     assert authority["model_selection"] is False
     assert authority["profitability_claim"] is False
+
+
+def test_round74_model_integration_is_bounded_target_blind_and_source_bound() -> None:
+    previous = _load_hash_bound(
+        TUNING_SEPARATION_DESIGN_PATH,
+        "design_sha256",
+    )
+    design = _load_hash_bound(MODEL_INTEGRATION_DESIGN_PATH, "design_sha256")
+    commit = str(design["implementation_git_commit"])
+    source = design["source_binding"]
+    sampling = design["representative_window_selection_contract"]
+    device = design["device_execution_contract"]
+    memory = design["development_memory_contract"]
+    correction = design["model_integration_correction"]
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v63"
+    assert design["supersedes_design_sha256"] == previous["design_sha256"]
+    assert source["event_model_operator_schema_version"] == (
+        "round-074-event-model-operator-v3"
+    )
+    assert source["event_training_schema_version"] == "round-074-event-training-v13"
+    assert source["pretest_policy_schema_version"] == (
+        "round-074-event-pretest-policy-v12"
+    )
+    for label in (
+        "event_model_operator",
+        "event_model",
+        "event_training",
+        "model_integration_contract_generator",
+    ):
+        assert source[f"{label}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{label}_path"],
+        )
+    assert sampling["schema_version"] == "round-074-target-blind-window-selection-v1"
+    assert sampling["windows_per_capture_run"] == 768
+    assert sampling["windows_per_symbol_per_capture_run"] == 256
+    assert sampling["realized_targets_model_outputs_or_profitability_used"] is False
+    assert sampling["underfilled_symbol_or_stratum_policy"] == "reject"
+    assert device["training_capture_runs"] == 120
+    assert device["model_selection_capture_runs"] == 12
+    assert device["probability_calibration_capture_runs"] == 6
+    assert device["action_policy_selection_capture_runs"] == 6
+    assert device["default_device_run_group_size"] == 8
+    assert device["optimizer_forwards_per_step_at_default_group_size"] == 15
+    assert device["optimizer_forward_reduction_fraction"] == 0.875
+    assert device["equal_capture_run_loss_normalization_preserved"] is True
+    assert memory["representative_windows"] == 110592
+    assert memory["feature_tensor_upper_bound_bytes"] == 3737124864
+    assert memory["feature_tensor_upper_bound_gib"] == 3.48046875
+    assert correction["representative_market_training_completed"] is False
+    assert correction["financial_edge_established"] is False
+    assert correction["profitability_claim"] is False
 
 
 def test_round74_event_model_design_is_source_bound_and_causal() -> None:
@@ -409,12 +462,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         source["temperature_calibration_schema_version"]
         == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
     )
-    assert (
-        source["event_training_schema_version"] == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
-    )
-    assert (
-        source["pretest_policy_schema_version"]
-        == ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+    assert source["event_training_schema_version"] == "round-074-event-training-v12"
+    assert source["pretest_policy_schema_version"] == (
+        "round-074-event-pretest-policy-v11"
     )
     assert source["target_context_panel_schema_version"] == (
         ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
@@ -816,9 +866,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["complexity_promotion_planned_comparison_count"] == (
         ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
     )
-    assert training["complexity_promotion_required_paired_capture_runs"] == (
-        ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-    )
+    assert training["complexity_promotion_required_paired_capture_runs"] == 24
     assert training["complexity_promotion_maximum_paired_run_loss_degradation"] == (
         1e-5
     )
@@ -1503,14 +1551,11 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert selection["planned_comparison_count"] == (
         ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
     )
-    assert selection["required_paired_capture_run_count"] == (
-        ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-    )
+    assert selection["required_paired_capture_run_count"] == 24
     assert selection["statistical_independence_or_significance_claim"] is False
     assert all(
         report["paired_capture_run_count"] == 1
-        and report["required_paired_capture_run_count"]
-        == ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        and report["required_paired_capture_run_count"] == 24
         and report["complete_tuning_panel"] is False
         and report["all_paired_runs_noninferior"] is True
         and report["promoted"] is False
@@ -1520,9 +1565,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert binding["event_training_directml_candidate_count"] == len(
         ROUND74_EVENT_MODEL_CANDIDATES
     )
-    assert binding["event_training_directml_required_paired_run_count"] == (
-        ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
-    )
+    assert binding["event_training_directml_required_paired_run_count"] == (24)
     assert binding["event_training_directml_complete_tuning_panel"] is False
     assert binding["event_training_directml_training_capture_run_count"] == 2
     assert binding["event_training_directml_optimizer_steps_per_peer"] == 3
