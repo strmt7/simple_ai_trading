@@ -82,7 +82,8 @@ def test_strict_json_rejects_duplicate_and_nonfinite_values() -> None:
 
 
 def test_validate_run_accepts_complete_three_candidate_panel() -> None:
-    PUBLISHER._validate_run(_run(), commit="a" * 40)
+    run = json.loads(json.dumps(_run(), sort_keys=True))
+    PUBLISHER._validate_run(run, commit="a" * 40)
 
 
 @pytest.mark.parametrize(
