@@ -13,6 +13,9 @@ import hashlib
 import json
 from typing import Mapping, Sequence
 
+import zstandard
+
+from .impact_absorption import ROUND74_CAPTURE_DESIGN_SHA256
 from .impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_ENVIRONMENTS,
     ROUND74_EVENT_TARGET_SYMBOLS,
@@ -20,6 +23,14 @@ from .impact_absorption_event_targets import (
     round74_commission_evidence_claims,
     round74_funding_schedule_evidence_claims,
 )
+from .impact_absorption_store import (
+    IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V10_FRAME_TABLE,
+    IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+    ImpactCaptureAudit,
+)
+from .impact_capture_frame import decode_impact_capture_frame
 
 
 ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION = "round-074-binance-source-evidence-v1"
@@ -136,6 +147,7 @@ class Round74BinanceClockProbe:
 
     capture_run_id: str
     capture_contract_sha256: str
+    capture_audit_sha256: str
     frame_index: int
     message_index: int
     request_started_wall_ns: int
@@ -150,6 +162,7 @@ class Round74BinanceClockProbe:
         if not str(self.capture_run_id).strip():
             raise ValueError("Round 74 Binance clock capture run is empty")
         _sha256_digest(self.capture_contract_sha256, "capture contract")
+        _sha256_digest(self.capture_audit_sha256, "capture audit")
         _sha256_digest(self.source_payload_sha256, "clock payload")
         frame = _nonnegative_integer(self.frame_index, "clock frame index")
         message = _nonnegative_integer(self.message_index, "clock message index")
@@ -194,6 +207,7 @@ class Round74BinanceClockProbe:
             "schema_version": self.schema_version,
             "capture_run_id": self.capture_run_id,
             "capture_contract_sha256": self.capture_contract_sha256,
+            "capture_audit_sha256": self.capture_audit_sha256,
             "frame_index": self.frame_index,
             "message_index": self.message_index,
             "request_started_wall_ns": self.request_started_wall_ns,
@@ -332,7 +346,7 @@ def _validated_clock_probes(
         raise ValueError("Round 74 Binance clock probe location is duplicated")
     if len({probe.capture_run_id for probe in selected}) != 1 or len(
         {probe.capture_contract_sha256 for probe in selected}
-    ) != 1:
+    ) != 1 or len({probe.capture_audit_sha256 for probe in selected}) != 1:
         raise ValueError("Round 74 Binance clock probe capture identity differs")
     for previous, current in zip(selected, selected[1:], strict=False):
         if (
@@ -345,6 +359,167 @@ def _validated_clock_probes(
         ):
             raise ValueError("Round 74 Binance clock probe order differs")
     return selected
+
+
+def load_round74_binance_clock_probes(
+    connection: object,
+    *,
+    run_id: str,
+    capture_audit: ImpactCaptureAudit,
+) -> tuple[Round74BinanceClockProbe, ...]:
+    """Extract audited `/time` probes without rescanning every capture frame."""
+
+    selected_run = str(run_id).strip()
+    if (
+        not selected_run
+        or not isinstance(capture_audit, ImpactCaptureAudit)
+        or capture_audit.run_id != selected_run
+        or not capture_audit.passed
+        or capture_audit.errors
+        or capture_audit.capture_contract_sha256
+        != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+    ):
+        raise ValueError("Round 74 Binance capture audit differs")
+    audit_sha256 = _canonical_sha256(capture_audit.as_dict())
+    run = connection.execute(
+        """
+        SELECT schema_version, design_sha256, capture_contract_sha256,
+               status, last_frame_sha256
+        FROM impact_capture_run WHERE run_id = ?
+        """,
+        [selected_run],
+    ).fetchone()
+    if (
+        run is None
+        or str(run[0]) != IMPACT_CAPTURE_V10_SCHEMA_VERSION
+        or str(run[1]) != ROUND74_CAPTURE_DESIGN_SHA256
+        or str(run[2]) != IMPACT_CAPTURE_V10_CONTRACT_SHA256
+        or str(run[3]) != "completed"
+        or str(run[4]) != capture_audit.last_frame_sha256
+    ):
+        raise ValueError("Round 74 Binance capture run identity differs")
+    context_rows = connection.execute(
+        f"""
+        SELECT frame_index, message_index, request_path,
+               request_parameters_json, response_status,
+               request_started_wall_ns, request_started_monotonic_ns,
+               exchange_time_ms
+        FROM {IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE}
+        WHERE run_id = ? AND event_type = 'serverTime'
+        ORDER BY frame_index, message_index
+        """,
+        [selected_run],
+    ).fetchall()
+    if len(context_rows) < 4:
+        raise ValueError("Round 74 Binance capture clock context is incomplete")
+    context_by_frame: dict[int, list[tuple[object, ...]]] = {}
+    for row in context_rows:
+        frame_index = _nonnegative_integer(row[0], "clock frame index")
+        message_index = _nonnegative_integer(row[1], "clock message index")
+        if (
+            str(row[2]) != "/fapi/v1/time"
+            or json.loads(str(row[3])) != {}
+            or int(row[4]) != 200
+            or row[7] is None
+        ):
+            raise ValueError("Round 74 Binance capture clock context differs")
+        context_by_frame.setdefault(frame_index, []).append(
+            (
+                message_index,
+                _positive_integer(row[5], "clock request wall time"),
+                _positive_integer(row[6], "clock request monotonic time"),
+                _positive_integer(row[7], "clock exchange time"),
+            )
+        )
+    frame_rows = connection.execute(
+        f"""
+        SELECT DISTINCT f.frame_index, f.message_count,
+               f.uncompressed_bytes, f.uncompressed_sha256,
+               f.compressed_bytes, f.compressed_sha256,
+               f.compressed_payload
+        FROM {IMPACT_CAPTURE_V10_FRAME_TABLE} AS f
+        INNER JOIN {IMPACT_CAPTURE_V10_REST_CONTEXT_TABLE} AS r
+          ON r.run_id = f.run_id AND r.frame_index = f.frame_index
+        WHERE f.run_id = ? AND r.event_type = 'serverTime'
+        ORDER BY f.frame_index
+        """,
+        [selected_run],
+    ).fetchall()
+    if tuple(int(row[0]) for row in frame_rows) != tuple(context_by_frame):
+        raise ValueError("Round 74 Binance capture clock frames differ")
+    decompressor = zstandard.ZstdDecompressor()
+    probes: list[Round74BinanceClockProbe] = []
+    for row in frame_rows:
+        frame_index = int(row[0])
+        compressed = bytes(row[6])
+        if (
+            len(compressed) != int(row[4])
+            or hashlib.sha256(compressed).hexdigest() != str(row[5])
+        ):
+            raise ValueError("Round 74 Binance capture compressed frame differs")
+        try:
+            uncompressed = decompressor.decompress(
+                compressed,
+                max_output_size=int(row[2]),
+            )
+        except zstandard.ZstdError as exc:
+            raise ValueError(
+                "Round 74 Binance capture clock frame cannot decompress"
+            ) from exc
+        if (
+            len(uncompressed) != int(row[2])
+            or hashlib.sha256(uncompressed).hexdigest() != str(row[3])
+        ):
+            raise ValueError("Round 74 Binance capture uncompressed frame differs")
+        records = decode_impact_capture_frame(
+            uncompressed,
+            expected_message_count=int(row[1]),
+        )
+        for (
+            message_index,
+            request_started_wall_ns,
+            request_started_monotonic_ns,
+            exchange_time_ms,
+        ) in context_by_frame[frame_index]:
+            try:
+                record = records[message_index].record
+            except IndexError as exc:
+                raise ValueError(
+                    "Round 74 Binance capture clock location differs"
+                ) from exc
+            try:
+                body = json.loads(record.raw_text)
+            except (TypeError, json.JSONDecodeError) as exc:
+                raise ValueError(
+                    "Round 74 Binance capture clock payload differs"
+                ) from exc
+            if (
+                record.stream != "binance_futures_rest"
+                or not isinstance(body, Mapping)
+                or set(body) != {"serverTime"}
+                or body["serverTime"] != exchange_time_ms
+            ):
+                raise ValueError("Round 74 Binance capture clock payload differs")
+            probes.append(
+                Round74BinanceClockProbe(
+                    capture_run_id=selected_run,
+                    capture_contract_sha256=IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+                    capture_audit_sha256=audit_sha256,
+                    frame_index=frame_index,
+                    message_index=message_index,
+                    request_started_wall_ns=request_started_wall_ns,
+                    received_wall_ns=record.received_wall_ns,
+                    request_started_monotonic_ns=(
+                        request_started_monotonic_ns
+                    ),
+                    received_monotonic_ns=record.received_monotonic_ns,
+                    exchange_time_ms=exchange_time_ms,
+                    source_payload_sha256=hashlib.sha256(
+                        record.raw_text.encode("utf-8", errors="strict")
+                    ).hexdigest(),
+                )
+            )
+    return _validated_clock_probes(probes)
 
 
 def _funding_interval_for_exchange_time(
@@ -532,6 +707,7 @@ def build_round74_funding_evidence(
         ),
         "capture_run_id": probes[0].capture_run_id,
         "capture_contract_sha256": probes[0].capture_contract_sha256,
+        "capture_audit_sha256": probes[0].capture_audit_sha256,
     }
     source_payload = {
         "funding_responses": normalized_payloads,
@@ -570,4 +746,5 @@ __all__ = [
     "Round74FundingEvidenceBundle",
     "build_round74_commission_evidence",
     "build_round74_funding_evidence",
+    "load_round74_binance_clock_probes",
 ]
