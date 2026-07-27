@@ -116,7 +116,7 @@ from simple_ai_trading.round74_event_model_operator import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v55.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v56.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
@@ -399,33 +399,28 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert host["exchange_info_file_sha256"] == _file_sha256(host["exchange_info_path"])
     exchange = _load_hash_bound(exchange_path, "artifact_sha256")
     assert exchange["artifact_sha256"] == host["exchange_info_artifact_sha256"]
-    assert exchange["execution_git_commit"] == (
-        host["exchange_info_execution_git_commit"]
+    assert (
+        exchange["execution_git_commit"] == (host["exchange_info_execution_git_commit"])
     )
-    assert exchange["target_evidence"]["evidence_sha256"] == (
-        host["exchange_info_target_evidence_sha256"]
+    assert (
+        exchange["target_evidence"]["evidence_sha256"]
+        == (host["exchange_info_target_evidence_sha256"])
     )
     assert exchange["response"]["raw_payload_persisted"] is False
     funding_path = REPOSITORY / host["funding_path"]
     assert host["funding_file_sha256"] == _file_sha256(host["funding_path"])
     funding = _load_hash_bound(funding_path, "artifact_sha256")
     assert funding["artifact_sha256"] == host["funding_artifact_sha256"]
-    assert funding["execution_git_commit"] == (
-        host["funding_execution_git_commit"]
-    )
-    assert funding["target_evidence"]["evidence_sha256"] == (
-        host["funding_target_evidence_sha256"]
-    )
-    assert funding["capture_binding"]["run_id"] == (
-        host["funding_capture_run_id"]
-    )
-    assert funding["clock_binding"]["probe_count"] == (
-        host["funding_clock_probe_count"]
-    )
+    assert funding["execution_git_commit"] == (host["funding_execution_git_commit"])
     assert (
-        funding["scope"]["capture_run_may_be_used_for_financial_evaluation"]
-        is False
+        funding["target_evidence"]["evidence_sha256"]
+        == (host["funding_target_evidence_sha256"])
     )
+    assert funding["capture_binding"]["run_id"] == (host["funding_capture_run_id"])
+    assert (
+        funding["clock_binding"]["probe_count"] == (host["funding_clock_probe_count"])
+    )
+    assert funding["scope"]["capture_run_may_be_used_for_financial_evaluation"] is False
 
 
 def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
@@ -441,15 +436,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is False
     )
     assert (
-        targets[
-            "source_derived_target_assembly_hash_binds_spec_and_quantity_claims"
-        ]
+        targets["source_derived_target_assembly_hash_binds_spec_and_quantity_claims"]
         is True
     )
-    assert (
-        targets["source_derived_target_engine_revalidates_quantity_evidence"]
-        is True
-    )
+    assert targets["source_derived_target_engine_revalidates_quantity_evidence"] is True
     assert targets["decision_order_key"] == [
         "received_monotonic_ns",
         "frame_index",
@@ -496,9 +486,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert (
-        latency[
-            "evidence_record_binds_environment_source_time_count_query_and_payload"
-        ]
+        latency["evidence_record_binds_environment_source_time_count_query_and_payload"]
         is True
     )
     entry = targets["entry_and_exit"]
@@ -551,9 +539,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert costs["commission_source_response_parser_implemented"] is True
     assert costs["funding_history_source_response_parser_implemented"] is True
     assert (
-        costs[
-            "empty_explicitly_bounded_funding_response_is_accepted_as_complete"
-        ]
+        costs["empty_explicitly_bounded_funding_response_is_accepted_as_complete"]
         is True
     )
     assert costs["missing_symbol_funding_response_is_accepted_as_empty"] is False
@@ -563,8 +549,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert costs["credential_material_may_enter_target_evidence_or_artifacts"] is False
     assert costs["full_funding_limit_page_accepted_as_complete"] is False
-    assert "completed audited Round 74 v10 capture" in (
-        costs["clock_probe_capture_requirement"]
+    assert (
+        "completed audited Round 74 v10 capture"
+        in (costs["clock_probe_capture_requirement"])
     )
     assert "without interpolation" in costs["funding_clock_mapping"]
     assert costs["post_audit_clock_extraction_decompresses_only_probe_frames"] is True
@@ -578,7 +565,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert costs["execution_calibration_client_order_id_prefix"] == "sat-r74-cal-"
-    assert costs["execution_calibration_reconciles_order_update_and_account_trade_fills"] is True
+    assert (
+        costs["execution_calibration_reconciles_order_update_and_account_trade_fills"]
+        is True
+    )
     assert "fresh captured L2" in costs["execution_calibration_expected_price_source"]
     assert costs["execution_calibration_maximum_book_age_nanoseconds"] == (
         ROUND74_EXECUTION_CALIBRATION_MAXIMUM_BOOK_AGE_NS
@@ -597,22 +587,22 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert "distribution-free" in costs["execution_tail_estimator"]
     assert costs["execution_calibration_parser_places_orders"] is False
     assert costs["real_testnet_execution_calibration_completed_now"] is False
-    assert costs["structured_evidence_claims_must_match_exact_configured_values"] is True
-    assert costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
+    assert (
+        costs["structured_evidence_claims_must_match_exact_configured_values"] is True
+    )
+    assert (
+        costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
+    )
     assert costs["midpoint_payoff_reported_before_execution_friction"] is True
     assert costs["book_walk_implementation_shortfall_reported_separately"] is True
     assert costs["commission_and_residual_slippage_reported_separately"] is True
     assert costs["explicit_cost_equals_commission_plus_residual_slippage"] is True
     assert (
-        costs[
-            "total_implementation_shortfall_equals_book_walk_plus_explicit_cost"
-        ]
+        costs["total_implementation_shortfall_equals_book_walk_plus_explicit_cost"]
         is True
     )
     assert (
-        costs[
-            "net_payoff_equals_midpoint_payoff_minus_total_implementation_shortfall"
-        ]
+        costs["net_payoff_equals_midpoint_payoff_minus_total_implementation_shortfall"]
         is True
     )
     assert costs["quote_and_basis_point_reconciliation_required"] is True
@@ -663,10 +653,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert dataset["model_mae_label_uses_reference_capital_normalization"] is True
     assert dataset["raw_position_bps_substituted_for_reference_capital_bps"] is False
     assert dataset["bounded_post_cohort_model_operator_implemented_now"] is True
-    assert (
-        dataset["source_target_assembly_roundtrip_serialization_implemented"]
-        is True
-    )
+    assert dataset["source_target_assembly_roundtrip_serialization_implemented"] is True
     assert dataset["per_capture_run_source_target_assembly_required"] is True
     assert dataset["scaler_fit_source"] == (
         "each unique raw training event exactly once"
@@ -686,7 +673,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert action["candidate_horizons_seconds"] == list(ROUND74_ACTION_HORIZONS_SECONDS)
     assert action["candidate_derivation_receives_realized_targets"] is False
     assert action["candidate_input_context_contains_realized_target_fields"] is False
-    assert action["future_target_eligibility_may_delete_a_model_selected_action"] is False
+    assert (
+        action["future_target_eligibility_may_delete_a_model_selected_action"] is False
+    )
     assert (
         action["complete_executable_target_coverage_required_for_every_selected_action"]
         is True
@@ -757,9 +746,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         1e-5
     )
     assert (
-        training[
-            "complexity_promotion_statistical_independence_or_significance_claim"
-        ]
+        training["complexity_promotion_statistical_independence_or_significance_claim"]
         is False
     )
     assert training["complexity_promotion_uses_sealed_test"] is False
@@ -776,8 +763,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["run_balanced_loss_primary"] is True
     assert training["gradient_optimization_population_unit"] == "capture_run"
     assert (
-        training["one_eligible_minibatch_per_training_run_per_optimizer_step"]
-        is True
+        training["one_eligible_minibatch_per_training_run_per_optimizer_step"] is True
     )
     assert training["gradient_divisor"] == "training_capture_run_count"
     assert training["row_pooled_optimizer_steps_permitted"] is False
@@ -991,10 +977,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert ai["same_entry_latency_is_queue_delay_plus_measured_runtime_elapsed"] is True
-    assert ai["inference_service_time_alone_may_establish_same_entry_eligibility"] is False
     assert (
-        ai["future_target_eligibility_may_delete_a_model_selected_observation"]
-        is False
+        ai["inference_service_time_alone_may_establish_same_entry_eligibility"] is False
+    )
+    assert (
+        ai["future_target_eligibility_may_delete_a_model_selected_observation"] is False
     )
     assert ai["censored_selected_action_invalidates_ml_and_ai_financial_gates"] is True
     assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
@@ -1019,8 +1006,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["leak_resistant_dataset_implementation"] is True
     assert authority["development_trainer_implementation"] is True
     assert (
-        authority["paired_capture_run_complexity_promotion_gate_implementation"]
-        is True
+        authority["paired_capture_run_complexity_promotion_gate_implementation"] is True
     )
     assert authority["immutable_pretest_policy_implementation"] is True
     assert authority["predeclared_cohort_admission_implementation"] is True
@@ -1063,26 +1049,15 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["execution_calibration_evidence_parser_implementation"] is True
     assert authority["exchange_info_quantity_rules_parser_implementation"] is True
     assert (
-        authority["quantity_rules_runtime_evidence_match_gate_implementation"]
-        is True
+        authority["quantity_rules_runtime_evidence_match_gate_implementation"] is True
     )
     assert authority["source_derived_target_assembly_implementation"] is True
+    assert authority["bounded_post_cohort_model_data_operator_implementation"] is True
     assert (
-        authority["bounded_post_cohort_model_data_operator_implementation"]
+        authority["source_target_assembly_roundtrip_serialization_implementation"]
         is True
     )
-    assert (
-        authority[
-            "source_target_assembly_roundtrip_serialization_implementation"
-        ]
-        is True
-    )
-    assert (
-        authority[
-            "complete_empty_bounded_funding_response_implementation"
-        ]
-        is True
-    )
+    assert authority["complete_empty_bounded_funding_response_implementation"] is True
     assert authority["real_public_exchange_info_evidence_captured"] is True
     assert authority["real_authenticated_commission_evidence_captured"] is False
     assert authority["real_public_funding_evidence_captured"] is True
@@ -1172,8 +1147,9 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
         == binding["event_model_directml_historical_source_sha256"]
     )
     assert binding["event_model_directml_current_source_bound"] is False
-    assert evidence["event_model_source_sha256"] != (
-        design["source_binding"]["event_model_sha256"]
+    assert (
+        evidence["event_model_source_sha256"]
+        != (design["source_binding"]["event_model_sha256"])
     )
     assert "Historical two-candidate" in binding["event_model_directml_reuse_scope"]
     backend = evidence["backend"]
@@ -1217,12 +1193,14 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         evidence["artifact_sha256"]
         == binding["event_training_directml_artifact_sha256"]
     )
-    assert _file_sha256(binding["event_training_directml_path"]) == (
-        binding["event_training_directml_file_sha256"]
+    assert (
+        _file_sha256(binding["event_training_directml_path"])
+        == (binding["event_training_directml_file_sha256"])
     )
     source = evidence["source_binding"]
-    assert source["event_targets_sha256"] == (
-        binding["event_training_directml_target_sha256"]
+    assert (
+        source["event_targets_sha256"]
+        == (binding["event_training_directml_target_sha256"])
     )
     assert (
         source["event_targets_sha256"]
@@ -1276,8 +1254,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         source["preflight_runner_path"]
     )
     assert source["publisher_sha256"] == _file_sha256(source["publisher_path"])
-    assert source["publisher_sha256"] == (
-        binding["event_training_directml_publisher_sha256"]
+    assert (
+        source["publisher_sha256"]
+        == (binding["event_training_directml_publisher_sha256"])
     )
     backend = evidence["backend"]
     assert backend["requested"] == backend["kind"] == "directml"
@@ -1347,8 +1326,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     )
     selection = repeated["selection"]
     assert selection["selected_candidate_id"] == "event_pooling_linear"
-    assert repeated["selected_candidate_id"] == (
-        binding["event_training_directml_selected_candidate_id"]
+    assert (
+        repeated["selected_candidate_id"]
+        == (binding["event_training_directml_selected_candidate_id"])
     )
     assert selection["ordered_candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
     assert selection["planned_comparison_count"] == (
@@ -1374,15 +1354,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert binding["event_training_directml_complete_tuning_panel"] is False
     assert binding["event_training_directml_training_capture_run_count"] == 2
     assert binding["event_training_directml_optimizer_steps_per_peer"] == 3
-    assert (
-        binding["event_training_directml_run_contributions_per_optimizer_step"] == 2
-    )
-    assert (
-        binding["event_training_directml_minimum_eligible_minibatches_per_run"] == 1
-    )
-    assert (
-        binding["event_training_directml_maximum_eligible_minibatches_per_run"] == 3
-    )
+    assert binding["event_training_directml_run_contributions_per_optimizer_step"] == 2
+    assert binding["event_training_directml_minimum_eligible_minibatches_per_run"] == 1
+    assert binding["event_training_directml_maximum_eligible_minibatches_per_run"] == 3
     assert binding["event_training_directml_minimum_run_minibatch_contributions"] == 3
     assert binding["event_training_directml_maximum_run_minibatch_contributions"] == 3
     assert binding["event_training_directml_optimization_population_unit"] == (

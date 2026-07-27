@@ -335,8 +335,8 @@ After parser or taxonomy changes, regenerate the header through the native build
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement. Read
-  `round-074-event-sequence-model-design-v55.json` and
-  `round-074-local-ai-review-design-v41.json`. Their source and evidence file
+  `round-074-event-sequence-model-design-v56.json` and
+  `round-074-local-ai-review-design-v42.json`. Their source and evidence file
   hashes canonicalize text line endings to LF, so Windows and Linux verify the
   same committed content. The sealed entry point reserves
   a metadata-only identity before loading target-bearing test batches, then
