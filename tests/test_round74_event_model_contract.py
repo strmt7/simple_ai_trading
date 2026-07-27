@@ -82,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v22.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v23.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -501,6 +501,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["per_capture_run_target_context_uniformity_required"] is True
     assert training["cross_run_target_context_change_permitted"] is True
     assert training["exact_sorted_target_context_panel_bound_into_policy"] is True
+    assert training["fully_censored_minibatch_policy"] == (
+        "skip before device transfer and record minibatch and row counts"
+    )
+    assert training["fully_censored_capture_run_policy"] == "reject"
+    assert training["censored_targets_used_as_negative_labels"] is False
+    assert training["fully_censored_minibatch_regression_tested"] is True
     assert training["high_activity_run_receives_extra_selection_weight"] is False
     assert training["worst_run_loss_is_reported"] is True
     assert training["worst_run_loss_is_primary_optimization_objective"] is False
@@ -808,6 +814,12 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["per_run_target_context_uniformity_required"] is True
     assert verification["cross_run_target_context_change_permitted"] is True
     assert verification["pretest_policy_binds_exact_sorted_target_context_panel"] is True
+    assert verification["fully_censored_minibatch_policy"] == (
+        "skip before device transfer and record counts"
+    )
+    assert verification["fully_censored_capture_run_policy"] == "reject"
+    assert verification["censored_targets_used_as_negative_labels"] is False
+    assert verification["fully_censored_minibatch_regression_test_passed"] is True
     assert verification["tcn_receptive_field_events"] == (
         ROUND74_EVENT_TCN_RECEPTIVE_FIELD
     )
