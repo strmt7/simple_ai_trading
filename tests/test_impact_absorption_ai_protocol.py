@@ -174,6 +174,8 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "dimensionless training-scaler normalized statistics" in system
     assert "Only forecast and adverse-excursion arrays are in basis points" in system
     assert "contain no future observations" in system
+    assert "Semantic coupling is mandatory" in system
+    assert "never combine allow_unchanged with a risk reason" in system
     assert "increase size" in system
     assert "propose an order" in system
 
