@@ -283,7 +283,7 @@ def test_recover_writes_canonical_source_bound_secret_free_artifact(
     assert payload["mainnet_orders_submitted"] is False
     assert payload["profitability_claim"] is False
     assert payload["last_rate_limit_headers"] == {"x-mbx-used-weight-1m": "7"}
-    assert len(payload["source_sha256"]) == 7
+    assert len(payload["source_sha256"]) == 8
     assert all(len(value) == 64 for value in payload["source_sha256"].values())
 
 
@@ -351,3 +351,34 @@ def test_capture_writes_admitted_pair_artifact(
     assert payload["sizing"]["quantity"] == "0.99"
     assert payload["sizing"]["reference_quote_notional"] == "99.0099"
     assert payload["result"]["evidence_admitted"] is True
+
+
+def test_plan_is_offline_balanced_and_source_bound(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    monkeypatch.delenv(API_KEY_ENV, raising=False)
+    monkeypatch.delenv(API_SECRET_ENV, raising=False)
+
+    result = main(
+        [
+            "--output-directory",
+            str(tmp_path / "artifacts"),
+            "plan",
+            "--campaign-id",
+            "round74-testnet-calibration",
+            "--target-quote-notional",
+            "250",
+        ]
+    )
+
+    assert result == 0
+    summary = json.loads(capsys.readouterr().out)
+    assert summary["slot_count"] == 900
+    assert summary["pairs_per_symbol"] == 300
+    payload = _read_single_artifact(tmp_path / "artifacts")
+    assert payload["network_accessed"] is False
+    assert payload["orders_submitted"] is False
+    assert payload["plan"]["plan_sha256"] == summary["plan_sha256"]
+    assert payload["plan"]["authority"]["mainnet_execution_evidence"] is False
