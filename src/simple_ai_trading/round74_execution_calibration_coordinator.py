@@ -669,10 +669,14 @@ def recover_round74_execution_calibration(
             position_amount = Decimal(
                 str(current_position.get("positionAmt"))
             )
-        except InvalidOperation as exc:
+        except (InvalidOperation, TypeError, ValueError) as exc:
             raise RuntimeError(
                 "Round 74 execution recovery position amount differs"
             ) from exc
+        if not position_amount.is_finite():
+            raise RuntimeError(
+                "Round 74 execution recovery position amount differs"
+            )
         if exit_snapshot is not None and exit_snapshot.state == "FILLED":
             if position_amount != 0:
                 raise RuntimeError(

@@ -1,0 +1,336 @@
+"""Capture or recover one Round 74 USD-M testnet execution pair."""
+
+from __future__ import annotations
+
+import argparse
+from decimal import Decimal, InvalidOperation
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+import time
+
+import duckdb
+
+import simple_ai_trading.impact_absorption_execution_evidence as evidence_module
+import simple_ai_trading.round74_execution_calibration_capture as capture_module
+import simple_ai_trading.round74_execution_calibration_coordinator as coordinator_module
+import simple_ai_trading.round74_execution_calibration_journal as journal_module
+import simple_ai_trading.round74_execution_calibration_transport as transport_module
+from simple_ai_trading.impact_absorption_event_targets import (
+    ROUND74_EVENT_TARGET_SYMBOLS,
+)
+from simple_ai_trading.round74_execution_calibration_coordinator import (
+    capture_round74_execution_calibration_pair,
+    recover_round74_execution_calibration,
+)
+from simple_ai_trading.round74_execution_calibration_journal import (
+    Round74ExecutionCalibrationJournal,
+)
+from simple_ai_trading.round74_execution_calibration_transport import (
+    Round74BinanceTestnetExecutionTransport,
+)
+
+
+ROUND74_EXECUTION_TOOL_SCHEMA_VERSION = "round-074-execution-calibration-tool-v1"
+API_KEY_ENV = "SIMPLE_AI_TRADING_BINANCE_TESTNET_API_KEY"
+API_SECRET_ENV = "SIMPLE_AI_TRADING_BINANCE_TESTNET_API_SECRET"
+_SOURCE_MODULES = (
+    evidence_module,
+    capture_module,
+    coordinator_module,
+    journal_module,
+    transport_module,
+)
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(_canonical_json(value).encode("ascii")).hexdigest()
+
+
+def _decimal(value: object, *, label: str) -> Decimal:
+    try:
+        selected = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be a positive decimal") from exc
+    if not selected.is_finite() or selected <= 0:
+        raise ValueError(f"{label} must be a positive decimal")
+    return selected
+
+
+def _source_hashes() -> dict[str, str]:
+    selected: dict[str, str] = {}
+    tool_path = Path(__file__).resolve()
+    selected[tool_path.name] = hashlib.sha256(tool_path.read_bytes()).hexdigest()
+    for module in _SOURCE_MODULES:
+        module_path = Path(str(module.__file__)).resolve()
+        selected[module_path.name] = hashlib.sha256(
+            module_path.read_bytes()
+        ).hexdigest()
+    return dict(sorted(selected.items()))
+
+
+def _write_artifact(
+    *,
+    output_directory: Path,
+    payload: dict[str, object],
+) -> Path:
+    output_directory.mkdir(parents=True, exist_ok=True)
+    value = dict(payload)
+    value["artifact_sha256"] = _canonical_sha256(value)
+    encoded = (_canonical_json(value) + "\n").encode("ascii")
+    target = output_directory / f"{value['artifact_sha256']}.json"
+    if target.exists():
+        if target.read_bytes() != encoded:
+            raise RuntimeError("existing execution artifact bytes differ")
+        return target
+    temporary = target.with_suffix(".json.tmp")
+    if temporary.exists():
+        raise RuntimeError("execution artifact temporary path already exists")
+    temporary.write_bytes(encoded)
+    temporary.replace(target)
+    return target
+
+
+def _credentials() -> tuple[str, str]:
+    api_key = os.environ.get(API_KEY_ENV, "")
+    api_secret = os.environ.get(API_SECRET_ENV, "")
+    if not api_key or not api_secret:
+        raise RuntimeError(
+            f"set {API_KEY_ENV} and {API_SECRET_ENV}; values are never persisted"
+        )
+    return api_key, api_secret
+
+
+def _require_order_confirmation(args: argparse.Namespace) -> None:
+    if not args.yes or not args.acknowledge_non_mainnet_orders:
+        raise RuntimeError(
+            "network mode requires --yes and --acknowledge-non-mainnet-orders"
+        )
+
+
+def _base_payload(*, operation: str) -> dict[str, object]:
+    return {
+        "schema_version": ROUND74_EXECUTION_TOOL_SCHEMA_VERSION,
+        "operation": operation,
+        "captured_at_wall_ns": time.time_ns(),
+        "environment": "binance_usdm_testnet",
+        "rest_base_url": (transport_module.ROUND74_EXECUTION_TRANSPORT_REST_BASE_URL),
+        "websocket_base_url": (
+            transport_module.ROUND74_EXECUTION_TRANSPORT_WS_BASE_URL
+        ),
+        "source_sha256": _source_hashes(),
+        "credential_material_persisted": False,
+        "signed_query_persisted": False,
+        "mainnet_orders_submitted": False,
+        "mainnet_trading_authority": False,
+        "profitability_claim": False,
+    }
+
+
+def command_status(args: argparse.Namespace) -> int:
+    database = Path(args.database)
+    database.parent.mkdir(parents=True, exist_ok=True)
+    with duckdb.connect(str(database)) as connection:
+        journal = Round74ExecutionCalibrationJournal(connection)
+        journal.verify()
+        blockers = journal.blocking_round_trip_ids()
+        snapshots = journal.current_snapshots()
+    payload = {
+        **_base_payload(operation="status"),
+        "database": str(database),
+        "blocking_round_trip_ids": list(blockers),
+        "intent_count": len(snapshots),
+        "network_accessed": False,
+        "orders_submitted": False,
+    }
+    print(_canonical_json(payload))
+    return 1 if blockers else 0
+
+
+def command_recover(args: argparse.Namespace) -> int:
+    _require_order_confirmation(args)
+    api_key, api_secret = _credentials()
+    database = Path(args.database)
+    output_directory = Path(args.output_directory)
+    database.parent.mkdir(parents=True, exist_ok=True)
+    with duckdb.connect(str(database)) as connection:
+        journal = Round74ExecutionCalibrationJournal(connection)
+        with Round74BinanceTestnetExecutionTransport(
+            api_key=api_key,
+            api_secret=api_secret,
+            timeout_seconds=args.timeout_seconds,
+        ) as transport:
+            result = recover_round74_execution_calibration(
+                transport=transport,
+                journal=journal,
+            )
+            rate_limits = dict(transport.last_rate_limit_headers)
+        payload = {
+            **_base_payload(operation="recover"),
+            "database": str(database),
+            "result": result.as_dict(),
+            "last_rate_limit_headers": rate_limits,
+            "orders_may_have_been_submitted": True,
+        }
+        target = _write_artifact(
+            output_directory=output_directory,
+            payload=payload,
+        )
+    print(
+        _canonical_json(
+            {
+                "artifact": str(target),
+                "complete": result.complete,
+                "blocking_round_trip_ids": list(result.blocking_round_trip_ids),
+            }
+        )
+    )
+    return 0 if result.complete else 1
+
+
+def command_capture(args: argparse.Namespace) -> int:
+    _require_order_confirmation(args)
+    api_key, api_secret = _credentials()
+    database = Path(args.database)
+    output_directory = Path(args.output_directory)
+    quantity = _decimal(args.quantity, label="quantity")
+    reference = _decimal(
+        args.reference_quote_notional,
+        label="reference quote notional",
+    )
+    database.parent.mkdir(parents=True, exist_ok=True)
+    with duckdb.connect(str(database)) as connection:
+        journal = Round74ExecutionCalibrationJournal(connection)
+        with Round74BinanceTestnetExecutionTransport(
+            api_key=api_key,
+            api_secret=api_secret,
+            timeout_seconds=args.timeout_seconds,
+        ) as transport:
+            recovery = recover_round74_execution_calibration(
+                transport=transport,
+                journal=journal,
+            )
+            if not recovery.complete:
+                raise RuntimeError("unresolved calibration exposure blocks a new pair")
+            result = capture_round74_execution_calibration_pair(
+                transport=transport,
+                journal=journal,
+                calibration_run_id=args.calibration_run_id,
+                round_trip_id=args.round_trip_id,
+                symbol=args.symbol,
+                entry_side=args.entry_side,
+                quantity=quantity,
+                reference_quote_notional=reference,
+            )
+            rate_limits = dict(transport.last_rate_limit_headers)
+        payload = {
+            **_base_payload(operation="capture"),
+            "database": str(database),
+            "recovery_before_capture": recovery.as_dict(),
+            "result": result.as_dict(),
+            "last_rate_limit_headers": rate_limits,
+            "orders_may_have_been_submitted": True,
+        }
+        target = _write_artifact(
+            output_directory=output_directory,
+            payload=payload,
+        )
+    print(
+        _canonical_json(
+            {
+                "artifact": str(target),
+                "evidence_admitted": result.evidence_admitted,
+                "pair_sha256": (
+                    result.pair.pair_sha256 if result.pair is not None else None
+                ),
+            }
+        )
+    )
+    return 0 if result.evidence_admitted else 1
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Capture bot-owned, flat-to-flat Binance USD-M test-environment "
+            "execution evidence. This tool never targets mainnet."
+        )
+    )
+    parser.add_argument(
+        "--database",
+        default="data/microstructure.duckdb",
+        help="shared DuckDB evidence database",
+    )
+    parser.add_argument(
+        "--output-directory",
+        default="data/round74-execution-calibration",
+        help="source-bound artifact directory",
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    status = subparsers.add_parser("status", help="inspect local blockers only")
+    status.set_defaults(func=command_status)
+    for name, handler in (
+        ("recover", command_recover),
+        ("capture", command_capture),
+    ):
+        selected = subparsers.add_parser(
+            name,
+            help=(
+                "reconcile and reduce bot-owned testnet exposure"
+                if name == "recover"
+                else "recover first, then capture one testnet pair"
+            ),
+        )
+        selected.add_argument("--yes", action="store_true")
+        selected.add_argument(
+            "--acknowledge-non-mainnet-orders",
+            action="store_true",
+            help="confirm that this mode can submit Binance testnet orders",
+        )
+        selected.add_argument(
+            "--timeout-seconds",
+            type=float,
+            default=10.0,
+        )
+        selected.set_defaults(func=handler)
+    capture = subparsers.choices["capture"]
+    capture.add_argument("--calibration-run-id", required=True)
+    capture.add_argument("--round-trip-id", required=True)
+    capture.add_argument(
+        "--symbol",
+        choices=ROUND74_EVENT_TARGET_SYMBOLS,
+        required=True,
+    )
+    capture.add_argument(
+        "--entry-side",
+        choices=("BUY", "SELL"),
+        required=True,
+    )
+    capture.add_argument("--quantity", required=True)
+    capture.add_argument("--reference-quote-notional", required=True)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    try:
+        return int(args.func(args))
+    except (RuntimeError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
