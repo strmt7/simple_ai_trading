@@ -38,6 +38,7 @@ from .impact_absorption_ai_worker import (
 ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v2"
 ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB = 16.0
 ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB = 8.0
+ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB = 4.0
 ROUND74_AI_RUNTIME_STATUSES = (
     "accepted",
     "blocked_deterministic_gate",
@@ -259,6 +260,8 @@ def _outcome(
 def _capability_config(
     config: Round74AIRuntimeConfig,
     manifest: Round74AIModelManifest,
+    *,
+    exact_model_already_fully_gpu_resident: bool = False,
 ) -> AIRuntimeConfig:
     return AIRuntimeConfig(
         enabled=True,
@@ -271,7 +274,11 @@ def _capability_config(
             config.minimum_free_vram_gb,
             manifest.minimum_vram_bytes / 1024**3,
         ),
-        min_free_ram_gb=config.minimum_free_ram_gb,
+        min_free_ram_gb=(
+            ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB
+            if exact_model_already_fully_gpu_resident
+            else config.minimum_free_ram_gb
+        ),
         min_model_parameters_b=2.0,
         allow_paper_fallback=False,
     )
@@ -442,13 +449,17 @@ def review_round74_ai_candidate(
             message="The review request expired before inference.",
             **base,
         )
-    capability_config = _capability_config(config, manifest)
-    capability = capability_detector(capability_config)
-    required_vram_gb = capability_config.min_free_vram_gb
+    cold_capability_config = _capability_config(config, manifest)
+    cold_capability = capability_detector(cold_capability_config)
+    required_vram_gb = cold_capability_config.min_free_vram_gb
     warm_residency: OllamaResidencyReport | None = None
     warm_residency_error_type: str | None = None
-    requires_warm_residency_check = capability.ok and (
-        capability.free_vram_gb is None or capability.free_vram_gb < required_vram_gb
+    cold_vram_headroom_passed = (
+        cold_capability.free_vram_gb is not None
+        and cold_capability.free_vram_gb >= required_vram_gb
+    )
+    requires_warm_residency_check = (
+        not cold_capability.ok or not cold_vram_headroom_passed
     )
     if requires_warm_residency_check:
         try:
@@ -465,6 +476,16 @@ def review_round74_ai_candidate(
         and warm_residency.fully_gpu_resident
         and warm_residency.digest == manifest.model_artifact_sha256
     )
+    capability_config = _capability_config(
+        config,
+        manifest,
+        exact_model_already_fully_gpu_resident=(exact_model_already_fully_gpu_resident),
+    )
+    capability = (
+        capability_detector(capability_config)
+        if exact_model_already_fully_gpu_resident
+        else cold_capability
+    )
     capability_messages = _provider_capability_messages(
         capability,
         minimum_free_vram_gb=required_vram_gb,
@@ -473,10 +494,10 @@ def review_round74_ai_candidate(
     capability_payload = {
         **capability.asdict(),
         "minimum_free_vram_gb": required_vram_gb,
-        "pre_inference_cold_load_headroom_passed": (
-            capability.free_vram_gb is not None
-            and capability.free_vram_gb >= required_vram_gb
-        ),
+        "minimum_cold_free_ram_gb": config.minimum_free_ram_gb,
+        "minimum_warm_free_ram_gb": ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB,
+        "pre_inference_cold_capability_passed": cold_capability.ok,
+        "pre_inference_cold_load_headroom_passed": cold_vram_headroom_passed,
         "pre_inference_warm_residency_check_required": (requires_warm_residency_check),
         "pre_inference_warm_residency": (
             warm_residency.asdict() if warm_residency is not None else None
@@ -484,6 +505,11 @@ def review_round74_ai_candidate(
         "pre_inference_warm_residency_error_type": warm_residency_error_type,
         "pre_inference_exact_model_fully_gpu_resident": (
             exact_model_already_fully_gpu_resident
+        ),
+        "pre_inference_warm_ram_headroom_passed": bool(
+            exact_model_already_fully_gpu_resident
+            and capability.free_ram_gb is not None
+            and capability.free_ram_gb >= ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB
         ),
         "provider_runtime_full_gpu_residency_required": True,
         "provider_runtime_full_gpu_residency_verified": False,
@@ -672,6 +698,7 @@ def review_round74_ai_candidate(
 __all__ = [
     "ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB",
     "ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB",
+    "ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB",
     "ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION",
     "ROUND74_AI_RUNTIME_STATUSES",
     "Round74AIRuntimeConfig",

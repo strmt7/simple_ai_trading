@@ -263,6 +263,19 @@ def _run(repository: Path) -> dict[str, object]:
                 )
                 outcome.validate()
                 worker = outcome.worker_result
+                capability = outcome.capability or {}
+                _progress(
+                    "review-result",
+                    model=binding.model_name,
+                    phase=phase,
+                    status=outcome.status,
+                    failure_class=outcome.failure_class,
+                    free_ram_gb=capability.get("free_ram_gb"),
+                    free_vram_gb=capability.get("free_vram_gb"),
+                    warm_exact_gpu=capability.get(
+                        "pre_inference_exact_model_fully_gpu_resident"
+                    ),
+                )
                 if (
                     outcome.status != "accepted"
                     or worker is None
