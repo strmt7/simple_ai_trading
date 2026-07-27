@@ -11,7 +11,7 @@
   "cohort_plan_sha256": "4373c432bcabb10071a0e60a90bf7ac99299139f223eb2a5afff920e6b78deb4",
   "source_binding": {
     "operator_path": "src/simple_ai_trading/round74_event_cohort_operator.py",
-    "operator_sha256": "f5b94ce2d03fa0596ecedb0fdc489e52d065d2c1ff7324678ad66d38871ed7b9",
+    "operator_sha256": "7a60691622a77e30d71de3c8cf21b815f101dfbb789a2672d1315e22cd77067c",
     "cohort_path": "src/simple_ai_trading/impact_absorption_event_cohort.py",
     "cohort_sha256": "b2543fc0f07e65f85b050b39493f4d6e004c3e49307b3c2fe13f496f53de413d",
     "wrapper_path": "tools/run_round74_event_cohort_slot.py",
@@ -56,6 +56,7 @@
     "concurrent_capture_process_forbidden": true,
     "capture_stdout_and_stderr_persisted": true,
     "heartbeat_interval_seconds": 30,
+    "heartbeat_state_persisted_during_capture": true,
     "maximum_child_finalization_seconds": 300,
     "fresh_process_audit_timeout_seconds": 300,
     "fresh_audit_uses_explicit_run_id": true,
@@ -124,5 +125,5 @@
     "failed_slot_retried_or_replaced": false,
     "selected_from_market_model_or_target_outcome": false
   },
-  "artifact_sha256": "0ef07ff29ae84064ded8956925959e79a55742751bef4890b2a3fd7a33073abf"
+  "artifact_sha256": "bc50d681d9d06a922046525607c70cf5e220f3707f1dd1644e7ca2881f7ecd84"
 }
