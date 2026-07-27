@@ -23,7 +23,7 @@ import torch
 
 from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_ai_uplift import (
-    ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE,
+    Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
 )
 from .impact_absorption_event_action_policy import (
@@ -59,10 +59,13 @@ from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SYMBOLS,
 )
+from .impact_absorption_event_targets import (
+    ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS,
+)
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v7"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v8"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -831,12 +834,17 @@ class Round74SealedStrategyMetrics:
 class Round74SealedAIOverlay:
     model_manifest_sha256: str
     review_sha256: tuple[str, ...]
+    execution_replay_sha256: tuple[str, ...]
     reviewed_candidates: int
     runtime_accepted_reviews: int
     runtime_success_rate: float
     same_entry_latency_budget_ns: int
     same_entry_latency_eligible_reviews: int
     same_entry_latency_eligibility_rate: float
+    exact_replay_required_reviews: int
+    exact_replay_completed_reviews: int
+    exact_replay_target_ineligible_reviews: int
+    delayed_overlap_vetoes: int
     retained_trades: int
     reduced_trades: int
     vetoed_trades: int
@@ -854,12 +862,24 @@ class Round74SealedAIOverlay:
             or len(self.review_sha256) != self.reviewed_candidates
             or len(set(self.review_sha256)) != len(self.review_sha256)
             or any(_SHA256.fullmatch(value) is None for value in self.review_sha256)
+            or len(self.execution_replay_sha256)
+            != self.strategy_metrics.paired_observations
+            or len(set(self.execution_replay_sha256))
+            != len(self.execution_replay_sha256)
+            or any(
+                _SHA256.fullmatch(value) is None
+                for value in self.execution_replay_sha256
+            )
             or any(
                 isinstance(value, bool) or not isinstance(value, int) or value < 0
                 for value in (
                     self.reviewed_candidates,
                     self.runtime_accepted_reviews,
                     self.same_entry_latency_eligible_reviews,
+                    self.exact_replay_required_reviews,
+                    self.exact_replay_completed_reviews,
+                    self.exact_replay_target_ineligible_reviews,
+                    self.delayed_overlap_vetoes,
                     self.retained_trades,
                     self.reduced_trades,
                     self.vetoed_trades,
@@ -867,6 +887,13 @@ class Round74SealedAIOverlay:
             )
             or self.runtime_accepted_reviews > self.reviewed_candidates
             or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
+            or self.exact_replay_completed_reviews
+            != self.exact_replay_required_reviews
+            or self.exact_replay_required_reviews
+            > self.strategy_metrics.paired_observations
+            or self.exact_replay_target_ineligible_reviews
+            > self.exact_replay_completed_reviews
+            or self.delayed_overlap_vetoes > self.exact_replay_completed_reviews
             or isinstance(self.same_entry_latency_budget_ns, bool)
             or not isinstance(self.same_entry_latency_budget_ns, int)
             or self.same_entry_latency_budget_ns <= 0
@@ -903,6 +930,7 @@ class Round74SealedAIOverlay:
         return {
             "model_manifest_sha256": self.model_manifest_sha256,
             "review_sha256": list(self.review_sha256),
+            "execution_replay_sha256": list(self.execution_replay_sha256),
             "reviewed_candidates": self.reviewed_candidates,
             "runtime_accepted_reviews": self.runtime_accepted_reviews,
             "runtime_success_rate": self.runtime_success_rate,
@@ -913,6 +941,12 @@ class Round74SealedAIOverlay:
             "same_entry_latency_eligibility_rate": (
                 self.same_entry_latency_eligibility_rate
             ),
+            "exact_replay_required_reviews": self.exact_replay_required_reviews,
+            "exact_replay_completed_reviews": self.exact_replay_completed_reviews,
+            "exact_replay_target_ineligible_reviews": (
+                self.exact_replay_target_ineligible_reviews
+            ),
+            "delayed_overlap_vetoes": self.delayed_overlap_vetoes,
             "retained_trades": self.retained_trades,
             "reduced_trades": self.reduced_trades,
             "vetoed_trades": self.vetoed_trades,
@@ -922,9 +956,11 @@ class Round74SealedAIOverlay:
             "uplift_gate_passed": self.uplift_gate_passed,
             "gate_reasons": list(self.gate_reasons),
             "may_create_or_replace_ml_actions": False,
-            "same_entry_fill_requires_measured_latency_eligibility": True,
+            "same_entry_fill_requires_measured_latency_eligibility": False,
             "same_entry_latency_includes_historical_queue_delay": True,
-            "latency_adjusted_replay_performed": False,
+            "same_entry_latency_is_diagnostic_only": True,
+            "latency_adjusted_replay_performed": True,
+            "baseline_payoff_scaled_without_rewalking_book": False,
         }
 
 
@@ -1192,39 +1228,53 @@ def _financial_gate_reasons(
     return tuple(reasons)
 
 
-def _strategy_metrics(
+def _strategy_metrics_from_execution_values(
     trace: Round74ActionTrace,
-    multipliers: np.ndarray,
+    net_payoff_bps: np.ndarray,
+    maximum_adverse_excursion_bps: np.ndarray,
+    retained: np.ndarray,
+    adverse_selection: np.ndarray,
+    exit_monotonic_ns: Sequence[int],
     *,
     profile: str,
     seed: int,
 ) -> Round74SealedStrategyMetrics:
-    multiplier = np.asarray(multipliers, dtype=np.float64)
-    if (
-        multiplier.shape != (trace.metrics.trades,)
-        or not np.isfinite(multiplier).all()
-        or np.any((multiplier < 0.0) | (multiplier > 1.0))
-    ):
-        raise ValueError("Round 74 sealed strategy multiplier differs")
-    baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
-    baseline_mae = np.asarray(
-        trace.maximum_adverse_excursion_bps,
+    scaled = np.asarray(net_payoff_bps, dtype=np.float64)
+    scaled_mae = np.asarray(
+        maximum_adverse_excursion_bps,
         dtype=np.float64,
     )
-    scaled = baseline * multiplier
-    scaled_mae = baseline_mae * multiplier
-    retained = multiplier > 0.0
-    executed = scaled[retained]
-    executed_mae = scaled_mae[retained]
-    executed_adverse = np.asarray(
-        trace.adverse_selection,
-        dtype=np.float64,
-    )[retained]
+    retained_mask = np.asarray(retained, dtype=np.bool_)
+    adverse = np.asarray(adverse_selection, dtype=np.bool_)
+    exits = tuple(int(value) for value in exit_monotonic_ns)
+    shape = (trace.metrics.trades,)
+    if (
+        scaled.shape != shape
+        or scaled_mae.shape != shape
+        or retained_mask.shape != shape
+        or adverse.shape != shape
+        or len(exits) != trace.metrics.trades
+        or not np.isfinite(scaled).all()
+        or not np.isfinite(scaled_mae).all()
+        or np.any(scaled_mae < 0.0)
+        or np.any(scaled[~retained_mask] != 0.0)
+        or np.any(scaled_mae[~retained_mask] != 0.0)
+        or np.any(adverse[~retained_mask])
+        or any(value < 0 for value in exits)
+    ):
+        raise ValueError("Round 74 sealed strategy execution values differ")
+    executed = scaled[retained_mask]
+    executed_mae = scaled_mae[retained_mask]
+    executed_adverse = adverse[retained_mask]
     retained_runs = tuple(
-        run_id for run_id, keep in zip(trace.run_id, retained, strict=True) if keep
+        run_id
+        for run_id, keep in zip(trace.run_id, retained_mask, strict=True)
+        if keep
     )
     retained_symbols = tuple(
-        symbol for symbol, keep in zip(trace.symbol, retained, strict=True) if keep
+        symbol
+        for symbol, keep in zip(trace.symbol, retained_mask, strict=True)
+        if keep
     )
     gross_profit = float(executed[executed > 0.0].sum())
     gross_loss = float(-executed[executed < 0.0].sum())
@@ -1249,7 +1299,7 @@ def _strategy_metrics(
     provisional = Round74SealedStrategyMetrics(
         paired_observations=trace.metrics.trades,
         selected_action_target_ineligible=trace.skipped_target_ineligible,
-        executed_trades=int(retained.sum()),
+        executed_trades=int(retained_mask.sum()),
         active_runs=len(set(retained_runs)),
         distinct_symbols=len(set(retained_symbols)),
         total_net_bps=float(scaled.sum()),
@@ -1263,7 +1313,7 @@ def _strategy_metrics(
         maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
             scaled,
             run_ids=trace.run_id,
-            exit_monotonic_ns=trace.exit_monotonic_ns,
+            exit_monotonic_ns=exits,
             expected_run_ids=trace.expected_run_ids,
         ),
         gross_profit_bps=gross_profit,
@@ -1291,6 +1341,78 @@ def _strategy_metrics(
     )
     result.validate()
     return result
+
+
+def _baseline_strategy_metrics(
+    trace: Round74ActionTrace,
+    *,
+    profile: str,
+    seed: int,
+) -> Round74SealedStrategyMetrics:
+    """Score the immutable baseline trace without execution substitution."""
+
+    retained = np.ones(trace.metrics.trades, dtype=np.bool_)
+    return _strategy_metrics_from_execution_values(
+        trace,
+        np.asarray(trace.net_payoff_bps, dtype=np.float64),
+        np.asarray(
+            trace.maximum_adverse_excursion_bps,
+            dtype=np.float64,
+        ),
+        retained,
+        np.asarray(trace.adverse_selection, dtype=np.bool_),
+        trace.exit_monotonic_ns,
+        profile=profile,
+        seed=seed,
+    )
+
+
+def _exact_replay_strategy_metrics(
+    trace: Round74ActionTrace,
+    executions: Sequence[Round74AIExecutionReplayEvidence],
+    *,
+    profile: str,
+    seed: int,
+) -> Round74SealedStrategyMetrics:
+    rows = tuple(executions)
+    for row in rows:
+        row.validate()
+    if len(rows) != trace.metrics.trades:
+        raise ValueError("Round 74 sealed AI execution coverage differs")
+    retained = np.asarray(
+        [row.status == "executed" for row in rows],
+        dtype=np.bool_,
+    )
+    return _strategy_metrics_from_execution_values(
+        trace,
+        np.asarray(
+            [row.capital_scaled_net_payoff_bps for row in rows],
+            dtype=np.float64,
+        ),
+        np.asarray(
+            [
+                row.capital_scaled_maximum_adverse_excursion_bps
+                for row in rows
+            ],
+            dtype=np.float64,
+        ),
+        retained,
+        np.asarray([row.adverse_selection for row in rows], dtype=np.bool_),
+        tuple(
+            (
+                row.actual_exit_monotonic_ns
+                if row.actual_exit_monotonic_ns is not None
+                else baseline_exit
+            )
+            for row, baseline_exit in zip(
+                rows,
+                trace.exit_monotonic_ns,
+                strict=True,
+            )
+        ),
+        profile=profile,
+        seed=seed,
+    )
 
 
 def _cpu_output(output: Round74EventModelOutput) -> Round74EventModelOutput:
@@ -1697,11 +1819,35 @@ def _validate_ai_reviews(
     return normalized
 
 
+def _validate_ai_execution_replays(
+    ai_execution_replays_by_manifest: Mapping[
+        str,
+        Sequence[Round74AIExecutionReplayEvidence],
+    ],
+    *,
+    manifests: tuple[str, ...],
+) -> dict[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
+    normalized = {
+        _require_sha256(key, "AI manifest"): tuple(value)
+        for key, value in ai_execution_replays_by_manifest.items()
+    }
+    if set(normalized) != set(manifests):
+        raise ValueError("Round 74 sealed AI execution replay panel differs")
+    for rows in normalized.values():
+        for row in rows:
+            row.validate()
+        if len({row.replay_sha256 for row in rows}) != len(rows):
+            raise ValueError("Round 74 sealed AI execution replay is duplicated")
+    return normalized
+
+
 def _ai_overlay(
     trace: Round74ActionTrace,
     all_reviews: tuple[Round74AIPairedReviewEvidence, ...],
+    executions: tuple[Round74AIExecutionReplayEvidence, ...],
     *,
     manifest: str,
+    expected_partition_sha256: str,
     profile: str,
     seed: int,
 ) -> Round74SealedAIOverlay:
@@ -1710,18 +1856,89 @@ def _ai_overlay(
         reviews = tuple(by_row[row_index] for row_index in trace.row_index)
     except KeyError as exc:
         raise ValueError("Round 74 sealed AI trace review is missing") from exc
-    multipliers = np.asarray(
-        [value.size_multiplier_bps / 10_000.0 for value in reviews],
-        dtype=np.float64,
-    )
-    strategy = _strategy_metrics(
+    if (
+        tuple(value.row_index for value in executions) != trace.row_index
+        or len({value.row_index for value in executions}) != len(executions)
+        or {value.partition_sha256 for value in executions}
+        != {expected_partition_sha256}
+        or len({value.target_spec_sha256 for value in executions}) != 1
+    ):
+        raise ValueError("Round 74 sealed AI execution trace coverage differs")
+    capture_report_by_run: dict[str, str] = {}
+    for index, (review, execution) in enumerate(
+        zip(reviews, executions, strict=True)
+    ):
+        requested_multiplier = (
+            review.decision.size_multiplier_bps
+            if review.runtime_status == "accepted"
+            and review.decision is not None
+            else 0
+        )
+        previous_report = capture_report_by_run.setdefault(
+            execution.run_id,
+            execution.source_capture_report_sha256,
+        )
+        if (
+            (
+                execution.feature_row_sha256,
+                execution.run_id,
+                execution.symbol,
+                execution.side,
+                execution.horizon_seconds,
+            )
+            != (
+                trace.feature_row_sha256[index],
+                trace.run_id[index],
+                trace.symbol[index],
+                trace.side[index],
+                trace.horizon_seconds[index],
+            )
+            or execution.source_review_sha256 != review.review_sha256
+            or execution.requested_size_multiplier_bps
+            != requested_multiplier
+            or previous_report != execution.source_capture_report_sha256
+            or (
+                review.runtime_status != "accepted"
+                and execution.status != "runtime_veto"
+            )
+            or (
+                review.runtime_status == "accepted"
+                and requested_multiplier == 0
+                and execution.status != "ai_veto"
+            )
+            or (
+                review.runtime_status == "accepted"
+                and requested_multiplier > 0
+                and review.effective_review_latency_ns
+                > ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                and execution.status != "historical_review_expired"
+            )
+            or (
+                review.runtime_status == "accepted"
+                and requested_multiplier > 0
+                and review.effective_review_latency_ns
+                <= ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                and execution.status
+                not in {
+                    "target_ineligible",
+                    "delayed_overlap_veto",
+                    "executed",
+                }
+            )
+        ):
+            raise ValueError("Round 74 sealed AI execution identity differs")
+    strategy = _exact_replay_strategy_metrics(
         trace,
-        multipliers,
+        executions,
         profile=profile,
         seed=seed,
     )
     baseline_values = np.asarray(trace.net_payoff_bps, dtype=np.float64)
-    delta = baseline_values * multipliers - baseline_values
+    exact_values = np.asarray(
+        [value.capital_scaled_net_payoff_bps for value in executions],
+        dtype=np.float64,
+    )
+    delta = exact_values - baseline_values
     delta_bootstrap = _run_bootstrap(
         trace.run_id,
         delta,
@@ -1743,18 +1960,17 @@ def _ai_overlay(
     latency_eligibility_rate = (
         latency_eligible_reviews / len(all_reviews) if all_reviews else 0.0
     )
-    retained = int(np.sum(multipliers > 0.0))
-    reduced = int(np.sum((multipliers > 0.0) & (multipliers < 1.0)))
+    retained = sum(value.status == "executed" for value in executions)
+    reduced = sum(
+        value.status == "executed"
+        and value.applied_size_multiplier_bps < 10_000
+        for value in executions
+    )
     reasons: list[str] = []
     if not strategy.financial_gate_passed:
         reasons.extend(f"financial:{value}" for value in strategy.gate_reasons)
     if runtime_success_rate < 0.99:
         reasons.append("runtime_success_rate_not_met")
-    if (
-        latency_eligibility_rate
-        < ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE
-    ):
-        reasons.append("same_entry_latency_eligibility_rate_not_met")
     retained_ratio = retained / trace.metrics.trades if trace.metrics.trades else 0.0
     minimum_retained = {
         "conservative": 0.60,
@@ -1777,6 +1993,9 @@ def _ai_overlay(
     result = Round74SealedAIOverlay(
         model_manifest_sha256=manifest,
         review_sha256=tuple(value.review_sha256 for value in all_reviews),
+        execution_replay_sha256=tuple(
+            value.replay_sha256 for value in executions
+        ),
         reviewed_candidates=len(all_reviews),
         runtime_accepted_reviews=sum(
             value.runtime_status == "accepted" for value in all_reviews
@@ -1785,6 +2004,21 @@ def _ai_overlay(
         same_entry_latency_budget_ns=next(iter(latency_budgets)),
         same_entry_latency_eligible_reviews=latency_eligible_reviews,
         same_entry_latency_eligibility_rate=latency_eligibility_rate,
+        exact_replay_required_reviews=sum(
+            value.requested_size_multiplier_bps > 0
+            and value.status
+            not in {"runtime_veto", "ai_veto", "historical_review_expired"}
+            for value in executions
+        ),
+        exact_replay_completed_reviews=sum(
+            value.exact_l2_replay_performed for value in executions
+        ),
+        exact_replay_target_ineligible_reviews=sum(
+            value.status == "target_ineligible" for value in executions
+        ),
+        delayed_overlap_vetoes=sum(
+            value.status == "delayed_overlap_veto" for value in executions
+        ),
         retained_trades=retained,
         reduced_trades=reduced,
         vetoed_trades=trace.metrics.trades - retained,
@@ -1809,6 +2043,10 @@ def _evaluate_reserved(
     ai_reviews_by_manifest: Mapping[
         str,
         Sequence[Round74AIPairedReviewEvidence],
+    ],
+    ai_execution_replays_by_manifest: Mapping[
+        str,
+        Sequence[Round74AIExecutionReplayEvidence],
     ],
     compute_backend: str,
     inference_minibatch_rows: int,
@@ -1851,6 +2089,10 @@ def _evaluate_reserved(
         expected_rows=target_free_rows,
         action_selection=action_selection,
     )
+    executions = _validate_ai_execution_replays(
+        ai_execution_replays_by_manifest,
+        manifests=claim.ai_manifest_sha256,
+    )
     trace = _simulate_round74_action_trace_batches(
         test_batches,
         candidates,
@@ -1859,17 +2101,24 @@ def _evaluate_reserved(
         required_role="test",
         expected_run_count=ROUND74_SEALED_TEST_RUNS,
     )
-    baseline = _strategy_metrics(
+    baseline = _baseline_strategy_metrics(
         trace,
-        np.ones(trace.metrics.trades, dtype=np.float64),
         profile=action_selection.profile,
         seed=ROUND74_SEALED_BOOTSTRAP_SEED,
     )
+    partition_sha256 = {
+        batch.partition_sha256 for batch in test_batches
+    }
+    if len(partition_sha256) != 1:
+        raise ValueError("Round 74 sealed test partition differs")
+    expected_partition_sha256 = next(iter(partition_sha256))
     overlays = tuple(
         _ai_overlay(
             trace,
             reviews[manifest],
+            executions[manifest],
             manifest=manifest,
+            expected_partition_sha256=expected_partition_sha256,
             profile=action_selection.profile,
             seed=ROUND74_SEALED_BOOTSTRAP_SEED + index + 1,
         )
@@ -1933,6 +2182,10 @@ def evaluate_round74_sealed_once(
         str,
         Sequence[Round74AIPairedReviewEvidence],
     ],
+    ai_execution_replays_by_manifest: Mapping[
+        str,
+        Sequence[Round74AIExecutionReplayEvidence],
+    ],
     ledger: Round74SealedEvaluationLedger,
     compute_backend: str = "auto",
     inference_minibatch_rows: int = ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS,
@@ -1959,6 +2212,9 @@ def evaluate_round74_sealed_once(
             probability_calibration=probability_calibration,
             pretest_policy_path=Path(pretest_policy_path),
             ai_reviews_by_manifest=ai_reviews_by_manifest,
+            ai_execution_replays_by_manifest=(
+                ai_execution_replays_by_manifest
+            ),
             compute_backend=compute_backend,
             inference_minibatch_rows=inference_minibatch_rows,
         )

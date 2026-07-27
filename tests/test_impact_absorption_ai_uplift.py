@@ -12,6 +12,7 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeOutcome,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
+    Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     evaluate_round74_ai_overlay_development,
 )
@@ -275,6 +276,61 @@ def _runtime_outcome(*, status: str = "accepted") -> Round74AIRuntimeOutcome:
     return result
 
 
+def _execution(
+    review: Round74AIPairedReviewEvidence,
+    index: int,
+) -> Round74AIExecutionReplayEvidence:
+    decision = review.decision
+    requested_multiplier = (
+        decision.size_multiplier_bps if decision is not None else 0
+    )
+    executed = (
+        review.runtime_status == "accepted" and requested_multiplier > 0
+    )
+    if review.runtime_status != "accepted":
+        status = "runtime_veto"
+    elif requested_multiplier == 0:
+        status = "ai_veto"
+    else:
+        status = "executed"
+    scale = requested_multiplier / 10_000.0 if executed else 0.0
+    result = Round74AIExecutionReplayEvidence(
+        row_index=review.row_index,
+        feature_row_sha256=review.feature_row_sha256,
+        run_id=review.run_id,
+        symbol=review.symbol,
+        side=review.side,
+        horizon_seconds=review.horizon_seconds,
+        source_review_sha256=review.review_sha256,
+        partition_sha256="7" * 64,
+        source_capture_report_sha256="8" * 64,
+        target_spec_sha256="9" * 64,
+        status=status,
+        requested_size_multiplier_bps=requested_multiplier,
+        applied_size_multiplier_bps=(
+            requested_multiplier if executed else 0
+        ),
+        exact_l2_replay_performed=executed,
+        target_outcome_sha256=f"{index + 400:064x}" if executed else None,
+        target_context_sha256=f"{index + 500:064x}" if executed else None,
+        target_ineligible_reason="",
+        requested_entry_monotonic_ns=11 if executed else None,
+        actual_entry_monotonic_ns=12 if executed else None,
+        actual_exit_monotonic_ns=20 if executed else None,
+        capital_scaled_net_payoff_bps=PAYOFFS[index] * scale,
+        capital_scaled_maximum_adverse_excursion_bps=1.0 * scale,
+        adverse_selection=False,
+    )
+    result.validate()
+    return result
+
+
+def _executions(
+    reviews: tuple[Round74AIPairedReviewEvidence, ...],
+) -> tuple[Round74AIExecutionReplayEvidence, ...]:
+    return tuple(_execution(review, index) for index, review in enumerate(reviews))
+
+
 def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     reviews = tuple(
         _review(index, 0 if payoff < 0.0 else 10_000)
@@ -284,6 +340,7 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     report = evaluate_round74_ai_overlay_development(
         _selection(),
         reviews,
+        _executions(reviews),
     )
 
     assert report.development_gate_passed
@@ -299,9 +356,11 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
 
 
 def test_all_veto_overlay_fails_closed_without_dropping_pairs() -> None:
+    reviews = tuple(_review(index, 0) for index in range(6))
     report = evaluate_round74_ai_overlay_development(
         _selection(),
-        tuple(_review(index, 0) for index in range(6)),
+        reviews,
+        _executions(reviews),
     )
 
     assert not report.development_gate_passed
@@ -327,6 +386,7 @@ def test_blocked_runtime_review_is_a_paired_zero_exposure_veto() -> None:
     report = evaluate_round74_ai_overlay_development(
         _selection(),
         tuple(reviews),
+        _executions(tuple(reviews)),
     )
 
     assert not report.development_gate_passed
@@ -343,6 +403,7 @@ def test_review_coverage_and_action_identity_must_match_exactly() -> None:
         evaluate_round74_ai_overlay_development(
             _selection(),
             reviews[:-1],
+            _executions(reviews),
         )
     except ValueError as exc:
         assert "coverage differs" in str(exc)
@@ -356,6 +417,7 @@ def test_review_coverage_and_action_identity_must_match_exactly() -> None:
         evaluate_round74_ai_overlay_development(
             _selection(),
             tuple(changed),
+            _executions(tuple(changed)),
         )
     except ValueError as exc:
         assert "action identity differs" in str(exc)
@@ -479,12 +541,55 @@ def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
     report = evaluate_round74_ai_overlay_development(
         _selection(),
         tuple(reviews),
+        _executions(tuple(reviews)),
     )
 
-    assert not report.development_gate_passed
+    assert report.development_gate_passed
     assert report.ai_metrics.runtime_success_rate == 1.0
     assert report.ai_metrics.same_entry_latency_eligible_reviews == 5
-    assert "same_entry_latency_eligibility_rate_not_met" in report.gate_reasons
+    assert report.ai_metrics.exact_replay_required_reviews == 4
+    assert report.ai_metrics.exact_replay_completed_reviews == 4
+    assert report.as_dict()["latency_adjusted_replay_performed"] is True
+    assert "same_entry_latency_eligibility_rate_not_met" not in report.gate_reasons
+
+
+def test_exact_execution_evidence_is_causal_and_fail_closed() -> None:
+    executed = _execution(_review(0, 10_000), 0)
+    ineligible = replace(
+        executed,
+        status="target_ineligible",
+        applied_size_multiplier_bps=0,
+        target_ineligible_reason="entry_book_missing",
+        actual_entry_monotonic_ns=None,
+        actual_exit_monotonic_ns=None,
+        capital_scaled_net_payoff_bps=0.0,
+        capital_scaled_maximum_adverse_excursion_bps=0.0,
+        adverse_selection=False,
+    )
+    ineligible.validate()
+
+    for changed in (
+        replace(executed, actual_entry_monotonic_ns=10),
+        replace(
+            executed,
+            status="ai_veto",
+            applied_size_multiplier_bps=0,
+            exact_l2_replay_performed=False,
+            target_outcome_sha256=None,
+            target_context_sha256=None,
+            requested_entry_monotonic_ns=None,
+            actual_entry_monotonic_ns=None,
+            actual_exit_monotonic_ns=None,
+            capital_scaled_net_payoff_bps=0.0,
+            capital_scaled_maximum_adverse_excursion_bps=0.0,
+        ),
+    ):
+        try:
+            changed.validate()
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid AI execution evidence was accepted")
 
 
 def test_queue_wait_is_included_in_same_entry_latency() -> None:

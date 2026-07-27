@@ -167,6 +167,9 @@ def _batch(
         endpoint_message_index=_readonly(np.arange(rows, dtype=np.int64)),
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{1000 + index:064x}" for index in range(rows)),
+        feature_window_sha256=tuple(
+            f"{2000 + index:064x}" for index in range(rows)
+        ),
         target_context_sha256=tuple("6" * 64 for _ in range(rows)),
         test_access_sha256=tuple("" for _ in range(rows)),
         feature_values=_readonly(feature_values),
@@ -273,6 +276,7 @@ def _slice_batch(
         endpoint_message_index=batch.endpoint_message_index[start:stop],
         anchor_index=batch.anchor_index[start:stop],
         sample_sha256=batch.sample_sha256[start:stop],
+        feature_window_sha256=batch.feature_window_sha256[start:stop],
         target_context_sha256=batch.target_context_sha256[start:stop],
         test_access_sha256=batch.test_access_sha256[start:stop],
         feature_values=batch.feature_values[start:stop],

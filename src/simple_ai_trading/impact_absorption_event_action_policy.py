@@ -42,7 +42,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v1"
+ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v2"
 ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v5"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
@@ -294,6 +294,8 @@ class Round74ActionInferenceContext:
     endpoint_frame_index: np.ndarray
     endpoint_message_index: np.ndarray
     anchor_index: np.ndarray
+    sample_sha256: tuple[str, ...]
+    feature_window_sha256: tuple[str, ...]
     feature_values: np.ndarray
     feature_row_sha256: tuple[str, ...]
     schema_version: str = ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
@@ -315,11 +317,18 @@ class Round74ActionInferenceContext:
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
             or self.rows < 1
             or len(self.symbol) != self.rows
+            or len(self.sample_sha256) != self.rows
+            or len(self.feature_window_sha256) != self.rows
             or len(self.feature_row_sha256) != self.rows
             or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
             or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
             or any(
                 _SHA256.fullmatch(value) is None for value in self.feature_row_sha256
+            )
+            or any(_SHA256.fullmatch(value) is None for value in self.sample_sha256)
+            or any(
+                _SHA256.fullmatch(value) is None
+                for value in self.feature_window_sha256
             )
             or _SHA256.fullmatch(self.partition_sha256) is None
             or _SHA256.fullmatch(self.scaler_sha256) is None
@@ -368,6 +377,8 @@ class Round74ActionInferenceContext:
             "scaler_sha256": self.scaler_sha256,
             "run_id": list(self.run_id),
             "symbol": list(self.symbol),
+            "sample_sha256": list(self.sample_sha256),
+            "feature_window_sha256": list(self.feature_window_sha256),
             "feature_row_sha256": list(self.feature_row_sha256),
             "contains_realized_targets": False,
         }
@@ -400,6 +411,8 @@ def _feature_row_sha256(
         "endpoint_frame_index": int(context.endpoint_frame_index[index]),
         "endpoint_message_index": int(context.endpoint_message_index[index]),
         "anchor_index": int(context.anchor_index[index]),
+        "sample_sha256": context.sample_sha256[index],
+        "feature_window_sha256": context.feature_window_sha256[index],
     }
     digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
     _update_array_digest(digest, context.feature_values[index])
@@ -423,6 +436,8 @@ def build_round74_action_inference_context(
         endpoint_frame_index=batch.endpoint_frame_index,
         endpoint_message_index=batch.endpoint_message_index,
         anchor_index=batch.anchor_index,
+        sample_sha256=batch.sample_sha256,
+        feature_window_sha256=batch.feature_window_sha256,
         feature_values=batch.feature_values,
         feature_row_sha256=(),
     )
