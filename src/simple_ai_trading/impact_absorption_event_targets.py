@@ -26,7 +26,10 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v3"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v4"
+ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
+    "round-074-target-evidence-v1"
+)
 ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS = 5_000_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE = 1_000.0
 ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS = 250_000_000
@@ -34,6 +37,20 @@ ROUND74_EVENT_TARGET_MAXIMUM_DECISION_STATE_AGE_NS = 250_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_PATH_STATE_GAP_NS = 250_000_000
 ROUND74_EVENT_TARGET_MINIMUM_ANCHOR_SPACING_NS = 1_000_000_000
 ROUND74_EVENT_TARGET_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+ROUND74_EVENT_TARGET_ENVIRONMENTS = (
+    "binance_usdm_mainnet",
+    "binance_usdm_testnet",
+)
+ROUND74_EVENT_TARGET_EVIDENCE_SOURCES = {
+    "commission": "binance_usdm_fapi_v1_commission_rate",
+    "entry_exit_latency": (
+        "round74_host_submission_to_execution_latency_v1"
+    ),
+    "residual_slippage": (
+        "round74_realized_execution_shortfall_calibration_v1"
+    ),
+    "funding_schedule": "binance_usdm_fapi_v1_funding_rate",
+}
 ROUND74_EVENT_TARGET_INELIGIBLE_REASONS = frozenset(
     {
         "decision_state_missing",
@@ -80,20 +97,211 @@ def _finite_nonnegative(value: object, label: str) -> float:
     return selected
 
 
+def round74_commission_evidence_claims(
+    taker_fee_bps_by_symbol: Mapping[str, float],
+) -> dict[str, object]:
+    return {
+        "taker_fee_bps_by_symbol": {
+            str(symbol).strip().upper(): float(value)
+            for symbol, value in sorted(taker_fee_bps_by_symbol.items())
+        }
+    }
+
+
+def round74_latency_evidence_claims(
+    *,
+    decision_to_entry_latency_ns_by_symbol: Mapping[str, int],
+    decision_to_exit_latency_ns_by_symbol: Mapping[str, int],
+) -> dict[str, object]:
+    return {
+        "decision_to_entry_latency_ns_by_symbol": {
+            str(symbol).strip().upper(): int(value)
+            for symbol, value in sorted(
+                decision_to_entry_latency_ns_by_symbol.items()
+            )
+        },
+        "decision_to_exit_latency_ns_by_symbol": {
+            str(symbol).strip().upper(): int(value)
+            for symbol, value in sorted(
+                decision_to_exit_latency_ns_by_symbol.items()
+            )
+        },
+        "latency_semantics": "submission to terminal execution report",
+    }
+
+
+def round74_slippage_evidence_claims(
+    *,
+    reference_quote_notional: float,
+    additional_slippage_bps_per_side_by_symbol: Mapping[str, float],
+) -> dict[str, object]:
+    return {
+        "reference_quote_notional": float(reference_quote_notional),
+        "additional_slippage_bps_per_side_by_symbol": {
+            str(symbol).strip().upper(): float(value)
+            for symbol, value in sorted(
+                additional_slippage_bps_per_side_by_symbol.items()
+            )
+        },
+        "slippage_semantics": (
+            "realized execution shortfall residual after captured L2 book walk"
+        ),
+    }
+
+
+def round74_funding_schedule_evidence_claims(
+    funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
+) -> dict[str, object]:
+    return {
+        "funding_boundaries_monotonic_ns": {
+            str(symbol).strip().upper(): sorted(
+                int(boundary) for boundary in boundaries
+            )
+            for symbol, boundaries in sorted(
+                funding_boundaries_monotonic_ns.items()
+            )
+        },
+        "funding_crossing_policy": "censor",
+    }
+
+
+@dataclass(frozen=True)
+class Round74EventTargetEvidence:
+    """One immutable source record bound to an exact target claim."""
+
+    kind: str
+    source_id: str
+    environment: str
+    observed_wall_ns: int
+    record_count: int
+    source_query_or_protocol_sha256: str
+    source_payload_sha256: str
+    claims_sha256: str
+    schema_version: str = ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        kind: str,
+        environment: str,
+        observed_wall_ns: int,
+        record_count: int,
+        source_query_or_protocol_sha256: str,
+        source_payload_sha256: str,
+        claims: object,
+    ) -> Round74EventTargetEvidence:
+        selected_kind = str(kind).strip()
+        try:
+            source_id = ROUND74_EVENT_TARGET_EVIDENCE_SOURCES[selected_kind]
+        except KeyError as exc:
+            raise ValueError("Round 74 target evidence kind differs") from exc
+        return cls(
+            kind=selected_kind,
+            source_id=source_id,
+            environment=str(environment).strip(),
+            observed_wall_ns=int(observed_wall_ns),
+            record_count=int(record_count),
+            source_query_or_protocol_sha256=str(
+                source_query_or_protocol_sha256
+            ),
+            source_payload_sha256=str(source_payload_sha256),
+            claims_sha256=_canonical_sha256(claims),
+        )
+
+    def __post_init__(self) -> None:
+        if (
+            self.kind not in ROUND74_EVENT_TARGET_EVIDENCE_SOURCES
+            or self.source_id
+            != ROUND74_EVENT_TARGET_EVIDENCE_SOURCES[self.kind]
+        ):
+            raise ValueError("Round 74 target evidence source differs")
+        if self.environment not in ROUND74_EVENT_TARGET_ENVIRONMENTS:
+            raise ValueError("Round 74 target evidence environment differs")
+        if int(self.observed_wall_ns) <= 0:
+            raise ValueError("Round 74 target evidence observation time differs")
+        if int(self.record_count) < len(ROUND74_EVENT_TARGET_SYMBOLS):
+            raise ValueError("Round 74 target evidence record count differs")
+        _sha256_digest(
+            self.source_query_or_protocol_sha256,
+            "evidence query or protocol",
+        )
+        _sha256_digest(
+            self.source_payload_sha256,
+            "evidence source payload",
+        )
+        _sha256_digest(self.claims_sha256, "evidence claims")
+        if self.schema_version != ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION:
+            raise ValueError("Round 74 target evidence schema differs")
+
+    @property
+    def evidence_sha256(self) -> str:
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def binds(self, claims: object) -> bool:
+        return self.claims_sha256 == _canonical_sha256(claims)
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        value: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "kind": self.kind,
+            "source_id": self.source_id,
+            "environment": self.environment,
+            "observed_wall_ns": self.observed_wall_ns,
+            "record_count": self.record_count,
+            "source_query_or_protocol_sha256": (
+                self.source_query_or_protocol_sha256
+            ),
+            "source_payload_sha256": self.source_payload_sha256,
+            "claims_sha256": self.claims_sha256,
+        }
+        if include_sha256:
+            value["evidence_sha256"] = _canonical_sha256(value)
+        return value
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74EventTargetEvidence:
+        payload = dict(value)
+        claimed = str(payload.pop("evidence_sha256", ""))
+        if claimed != _canonical_sha256(payload):
+            raise ValueError("Round 74 target evidence payload digest differs")
+        selected = cls(
+            kind=str(payload["kind"]),
+            source_id=str(payload["source_id"]),
+            environment=str(payload["environment"]),
+            observed_wall_ns=int(payload["observed_wall_ns"]),
+            record_count=int(payload["record_count"]),
+            source_query_or_protocol_sha256=str(
+                payload["source_query_or_protocol_sha256"]
+            ),
+            source_payload_sha256=str(payload["source_payload_sha256"]),
+            claims_sha256=str(payload["claims_sha256"]),
+            schema_version=str(payload["schema_version"]),
+        )
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError("Round 74 target evidence static policy differs")
+        return selected
+
+
 @dataclass(frozen=True)
 class Round74EventTargetSpec:
     """Hash-bound latency, cost, size, and sampling assumptions."""
 
     reference_quote_notional: float
-    decision_to_entry_latency_ns: int
-    decision_to_exit_latency_ns: int
+    decision_to_entry_latency_ns_by_symbol: tuple[tuple[str, int], ...]
+    decision_to_exit_latency_ns_by_symbol: tuple[tuple[str, int], ...]
     taker_fee_bps_by_symbol: tuple[tuple[str, float], ...]
     funding_boundaries_monotonic_ns: tuple[tuple[str, tuple[int, ...]], ...]
-    additional_slippage_bps_per_side: float
-    commission_evidence_sha256: str
-    entry_exit_latency_evidence_sha256: str
-    slippage_evidence_sha256: str
-    funding_schedule_evidence_sha256: str
+    additional_slippage_bps_per_side_by_symbol: tuple[
+        tuple[str, float], ...
+    ]
+    commission_evidence: Round74EventTargetEvidence
+    entry_exit_latency_evidence: Round74EventTargetEvidence
+    slippage_evidence: Round74EventTargetEvidence
+    funding_schedule_evidence: Round74EventTargetEvidence
     maximum_state_lateness_ns: int = (
         ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
     )
@@ -113,15 +321,15 @@ class Round74EventTargetSpec:
         cls,
         *,
         reference_quote_notional: float,
-        decision_to_entry_latency_ns: int,
-        decision_to_exit_latency_ns: int,
+        decision_to_entry_latency_ns_by_symbol: Mapping[str, int],
+        decision_to_exit_latency_ns_by_symbol: Mapping[str, int],
         taker_fee_bps_by_symbol: Mapping[str, float],
         funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
-        additional_slippage_bps_per_side: float,
-        commission_evidence_sha256: str,
-        entry_exit_latency_evidence_sha256: str,
-        slippage_evidence_sha256: str,
-        funding_schedule_evidence_sha256: str,
+        additional_slippage_bps_per_side_by_symbol: Mapping[str, float],
+        commission_evidence: Round74EventTargetEvidence,
+        entry_exit_latency_evidence: Round74EventTargetEvidence,
+        slippage_evidence: Round74EventTargetEvidence,
+        funding_schedule_evidence: Round74EventTargetEvidence,
         maximum_state_lateness_ns: int = (
             ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
         ),
@@ -150,23 +358,41 @@ class Round74EventTargetSpec:
                 for symbol, boundaries in funding_boundaries_monotonic_ns.items()
             )
         )
+        entry_latencies = tuple(
+            sorted(
+                (str(symbol).strip().upper(), int(value))
+                for symbol, value in (
+                    decision_to_entry_latency_ns_by_symbol.items()
+                )
+            )
+        )
+        exit_latencies = tuple(
+            sorted(
+                (str(symbol).strip().upper(), int(value))
+                for symbol, value in (
+                    decision_to_exit_latency_ns_by_symbol.items()
+                )
+            )
+        )
+        slippage = tuple(
+            sorted(
+                (str(symbol).strip().upper(), float(value))
+                for symbol, value in (
+                    additional_slippage_bps_per_side_by_symbol.items()
+                )
+            )
+        )
         return cls(
             reference_quote_notional=float(reference_quote_notional),
-            decision_to_entry_latency_ns=int(decision_to_entry_latency_ns),
-            decision_to_exit_latency_ns=int(decision_to_exit_latency_ns),
+            decision_to_entry_latency_ns_by_symbol=entry_latencies,
+            decision_to_exit_latency_ns_by_symbol=exit_latencies,
             taker_fee_bps_by_symbol=fees,
             funding_boundaries_monotonic_ns=funding,
-            additional_slippage_bps_per_side=float(
-                additional_slippage_bps_per_side
-            ),
-            commission_evidence_sha256=str(commission_evidence_sha256),
-            entry_exit_latency_evidence_sha256=str(
-                entry_exit_latency_evidence_sha256
-            ),
-            slippage_evidence_sha256=str(slippage_evidence_sha256),
-            funding_schedule_evidence_sha256=str(
-                funding_schedule_evidence_sha256
-            ),
+            additional_slippage_bps_per_side_by_symbol=slippage,
+            commission_evidence=commission_evidence,
+            entry_exit_latency_evidence=entry_exit_latency_evidence,
+            slippage_evidence=slippage_evidence,
+            funding_schedule_evidence=funding_schedule_evidence,
             maximum_state_lateness_ns=int(maximum_state_lateness_ns),
             maximum_decision_state_age_ns=int(
                 maximum_decision_state_age_ns
@@ -179,9 +405,19 @@ class Round74EventTargetSpec:
         reference = float(self.reference_quote_notional)
         if not math.isfinite(reference) or reference <= 0.0:
             raise ValueError("Round 74 target reference notional is invalid")
-        latencies = (
-            int(self.decision_to_entry_latency_ns),
-            int(self.decision_to_exit_latency_ns),
+        entry_latencies = tuple(self.decision_to_entry_latency_ns_by_symbol)
+        exit_latencies = tuple(self.decision_to_exit_latency_ns_by_symbol)
+        if (
+            tuple(symbol for symbol, _value in entry_latencies)
+            != ROUND74_EVENT_TARGET_SYMBOLS
+            or tuple(symbol for symbol, _value in exit_latencies)
+            != ROUND74_EVENT_TARGET_SYMBOLS
+        ):
+            raise ValueError("Round 74 target latency universe differs")
+        latencies = tuple(
+            int(value)
+            for panel in (entry_latencies, exit_latencies)
+            for _symbol, value in panel
         )
         if any(
             latency <= 0 or latency > ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS
@@ -212,25 +448,66 @@ class Round74EventTargetSpec:
             )
         ):
             raise ValueError("Round 74 target funding schedule differs")
-        slippage = _finite_nonnegative(
-            self.additional_slippage_bps_per_side,
-            "target additional slippage",
-        )
-        if slippage > ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE:
+        slippage = tuple(self.additional_slippage_bps_per_side_by_symbol)
+        if (
+            tuple(symbol for symbol, _value in slippage)
+            != ROUND74_EVENT_TARGET_SYMBOLS
+        ):
+            raise ValueError("Round 74 target slippage universe differs")
+        if any(
+            _finite_nonnegative(value, "target additional slippage")
+            > ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE
+            for _symbol, value in slippage
+        ):
             raise ValueError("Round 74 target additional slippage is too large")
-        _sha256_digest(
-            self.commission_evidence_sha256,
-            "commission evidence",
+        evidence_panel = (
+            (
+                "commission",
+                self.commission_evidence,
+                round74_commission_evidence_claims(dict(fees)),
+            ),
+            (
+                "entry_exit_latency",
+                self.entry_exit_latency_evidence,
+                round74_latency_evidence_claims(
+                    decision_to_entry_latency_ns_by_symbol=dict(
+                        entry_latencies
+                    ),
+                    decision_to_exit_latency_ns_by_symbol=dict(
+                        exit_latencies
+                    ),
+                ),
+            ),
+            (
+                "residual_slippage",
+                self.slippage_evidence,
+                round74_slippage_evidence_claims(
+                    reference_quote_notional=reference,
+                    additional_slippage_bps_per_side_by_symbol=dict(
+                        slippage
+                    ),
+                ),
+            ),
+            (
+                "funding_schedule",
+                self.funding_schedule_evidence,
+                round74_funding_schedule_evidence_claims(dict(funding)),
+            ),
         )
-        _sha256_digest(
-            self.entry_exit_latency_evidence_sha256,
-            "entry and exit latency evidence",
-        )
-        _sha256_digest(self.slippage_evidence_sha256, "slippage evidence")
-        _sha256_digest(
-            self.funding_schedule_evidence_sha256,
-            "funding schedule evidence",
-        )
+        if any(
+            not isinstance(evidence, Round74EventTargetEvidence)
+            or evidence.kind != kind
+            or not evidence.binds(claims)
+            for kind, evidence, claims in evidence_panel
+        ):
+            raise ValueError("Round 74 target evidence claims differ")
+        if len(
+            {
+                evidence.environment
+                for _kind, evidence, _claims in evidence_panel
+            }
+        ) != 1:
+            raise ValueError("Round 74 target evidence environments differ")
         if (
             int(self.maximum_state_lateness_ns) < 0
             or int(self.maximum_state_lateness_ns)
@@ -252,35 +529,86 @@ class Round74EventTargetSpec:
     def spec_sha256(self) -> str:
         return _canonical_sha256(self.as_dict(include_sha256=False))
 
-    def fee_bps(self, symbol: str) -> float:
+    @property
+    def execution_environment(self) -> str:
+        return self.commission_evidence.environment
+
+    @staticmethod
+    def _symbol_value(
+        panel: tuple[tuple[str, int | float], ...],
+        symbol: str,
+        *,
+        label: str,
+    ) -> int | float:
         selected = str(symbol).strip().upper()
         try:
-            return float(dict(self.taker_fee_bps_by_symbol)[selected])
+            return dict(panel)[selected]
         except KeyError as exc:
-            raise ValueError("Round 74 target fee symbol differs") from exc
+            raise ValueError(f"Round 74 target {label} symbol differs") from exc
+
+    def entry_latency_ns(self, symbol: str) -> int:
+        return int(
+            self._symbol_value(
+                self.decision_to_entry_latency_ns_by_symbol,
+                symbol,
+                label="entry latency",
+            )
+        )
+
+    def exit_latency_ns(self, symbol: str) -> int:
+        return int(
+            self._symbol_value(
+                self.decision_to_exit_latency_ns_by_symbol,
+                symbol,
+                label="exit latency",
+            )
+        )
+
+    def fee_bps(self, symbol: str) -> float:
+        return float(
+            self._symbol_value(
+                self.taker_fee_bps_by_symbol,
+                symbol,
+                label="fee",
+            )
+        )
+
+    def slippage_bps_per_side(self, symbol: str) -> float:
+        return float(
+            self._symbol_value(
+                self.additional_slippage_bps_per_side_by_symbol,
+                symbol,
+                label="slippage",
+            )
+        )
 
     def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
         value: dict[str, object] = {
             "schema_version": self.schema_version,
             "reference_quote_notional": self.reference_quote_notional,
-            "decision_to_entry_latency_ns": self.decision_to_entry_latency_ns,
-            "decision_to_exit_latency_ns": self.decision_to_exit_latency_ns,
+            "decision_to_entry_latency_ns_by_symbol": dict(
+                self.decision_to_entry_latency_ns_by_symbol
+            ),
+            "decision_to_exit_latency_ns_by_symbol": dict(
+                self.decision_to_exit_latency_ns_by_symbol
+            ),
             "taker_fee_bps_by_symbol": dict(self.taker_fee_bps_by_symbol),
             "funding_boundaries_monotonic_ns": {
                 symbol: list(boundaries)
                 for symbol, boundaries in self.funding_boundaries_monotonic_ns
             },
-            "additional_slippage_bps_per_side": (
-                self.additional_slippage_bps_per_side
+            "additional_slippage_bps_per_side_by_symbol": dict(
+                self.additional_slippage_bps_per_side_by_symbol
             ),
-            "commission_evidence_sha256": self.commission_evidence_sha256,
-            "entry_exit_latency_evidence_sha256": (
-                self.entry_exit_latency_evidence_sha256
-            ),
-            "slippage_evidence_sha256": self.slippage_evidence_sha256,
-            "funding_schedule_evidence_sha256": (
-                self.funding_schedule_evidence_sha256
-            ),
+            "evidence": {
+                "commission": self.commission_evidence.as_dict(),
+                "entry_exit_latency": (
+                    self.entry_exit_latency_evidence.as_dict()
+                ),
+                "residual_slippage": self.slippage_evidence.as_dict(),
+                "funding_schedule": self.funding_schedule_evidence.as_dict(),
+            },
+            "execution_environment": self.execution_environment,
             "maximum_state_lateness_ns": self.maximum_state_lateness_ns,
             "maximum_decision_state_age_ns": (
                 self.maximum_decision_state_age_ns
@@ -292,8 +620,10 @@ class Round74EventTargetSpec:
             "passive_fill_model": False,
             "marketable_l2_walk_only": True,
             "funding_schedule_is_mandatory_and_hash_bound": True,
+            "latency_and_residual_slippage_are_symbol_specific": True,
             "latency_semantics": (
-                "separately measured entry and exit submission-to-execution delays"
+                "separately measured symbol-specific entry and exit "
+                "submission-to-terminal-execution-report delays"
             ),
         }
         if include_sha256:
@@ -308,18 +638,51 @@ class Round74EventTargetSpec:
             raise ValueError("Round 74 target spec payload digest differs")
         fees = payload.get("taker_fee_bps_by_symbol")
         funding = payload.get("funding_boundaries_monotonic_ns")
-        if not isinstance(fees, Mapping) or not isinstance(funding, Mapping):
-            raise ValueError("Round 74 target fee or funding payload differs")
+        entry_latencies = payload.get(
+            "decision_to_entry_latency_ns_by_symbol"
+        )
+        exit_latencies = payload.get("decision_to_exit_latency_ns_by_symbol")
+        slippage = payload.get(
+            "additional_slippage_bps_per_side_by_symbol"
+        )
+        evidence = payload.get("evidence")
+        if not all(
+            isinstance(item, Mapping)
+            for item in (
+                fees,
+                funding,
+                entry_latencies,
+                exit_latencies,
+                slippage,
+                evidence,
+            )
+        ):
+            raise ValueError("Round 74 target mapping payload differs")
+        assert isinstance(evidence, Mapping)
+        if set(evidence) != {
+            "commission",
+            "entry_exit_latency",
+            "residual_slippage",
+            "funding_schedule",
+        } or not all(isinstance(item, Mapping) for item in evidence.values()):
+            raise ValueError("Round 74 target evidence panel differs")
+        assert isinstance(fees, Mapping)
+        assert isinstance(funding, Mapping)
+        assert isinstance(entry_latencies, Mapping)
+        assert isinstance(exit_latencies, Mapping)
+        assert isinstance(slippage, Mapping)
         selected = cls.create(
             reference_quote_notional=float(
                 payload["reference_quote_notional"]
             ),
-            decision_to_entry_latency_ns=int(
-                payload["decision_to_entry_latency_ns"]
-            ),
-            decision_to_exit_latency_ns=int(
-                payload["decision_to_exit_latency_ns"]
-            ),
+            decision_to_entry_latency_ns_by_symbol={
+                str(symbol): int(latency)
+                for symbol, latency in entry_latencies.items()
+            },
+            decision_to_exit_latency_ns_by_symbol={
+                str(symbol): int(latency)
+                for symbol, latency in exit_latencies.items()
+            },
             taker_fee_bps_by_symbol={
                 str(symbol): float(fee) for symbol, fee in fees.items()
             },
@@ -327,20 +690,23 @@ class Round74EventTargetSpec:
                 str(symbol): tuple(int(boundary) for boundary in boundaries)
                 for symbol, boundaries in funding.items()
             },
-            additional_slippage_bps_per_side=float(
-                payload["additional_slippage_bps_per_side"]
+            additional_slippage_bps_per_side_by_symbol={
+                str(symbol): float(value)
+                for symbol, value in slippage.items()
+            },
+            commission_evidence=Round74EventTargetEvidence.from_dict(
+                evidence["commission"]
             ),
-            commission_evidence_sha256=str(
-                payload["commission_evidence_sha256"]
+            entry_exit_latency_evidence=(
+                Round74EventTargetEvidence.from_dict(
+                    evidence["entry_exit_latency"]
+                )
             ),
-            entry_exit_latency_evidence_sha256=str(
-                payload["entry_exit_latency_evidence_sha256"]
+            slippage_evidence=Round74EventTargetEvidence.from_dict(
+                evidence["residual_slippage"]
             ),
-            slippage_evidence_sha256=str(
-                payload["slippage_evidence_sha256"]
-            ),
-            funding_schedule_evidence_sha256=str(
-                payload["funding_schedule_evidence_sha256"]
+            funding_schedule_evidence=Round74EventTargetEvidence.from_dict(
+                evidence["funding_schedule"]
             ),
             maximum_state_lateness_ns=int(
                 payload["maximum_state_lateness_ns"]
@@ -930,7 +1296,7 @@ class Round74EventTargetEngine:
                 anchor = queue.popleft()
                 requested = (
                     anchor.decision_monotonic_ns
-                    + self.spec.decision_to_entry_latency_ns
+                    + self.spec.entry_latency_ns(symbol)
                 )
                 latest = self.latest_state.get(symbol)
                 if latest is None:
@@ -1050,7 +1416,7 @@ class Round74EventTargetEngine:
                     requested_exit = (
                         received_monotonic_ns
                         + horizon * 1_000_000_000
-                        + self.spec.decision_to_exit_latency_ns
+                        + self.spec.exit_latency_ns(symbol)
                     )
                     if reason or self._crosses_funding(
                         symbol,
@@ -1078,7 +1444,7 @@ class Round74EventTargetEngine:
                         exit_walk=close_walk,
                         taker_fee_bps=self.spec.fee_bps(symbol),
                         additional_slippage_bps_per_side=(
-                            self.spec.additional_slippage_bps_per_side
+                            self.spec.slippage_bps_per_side(symbol)
                         ),
                     )
                     identifier = self._next_identifier
@@ -1284,7 +1650,7 @@ class Round74EventTargetEngine:
                 exit_walk=exit_walk,
                 taker_fee_bps=self.spec.fee_bps(symbol),
                 additional_slippage_bps_per_side=(
-                    self.spec.additional_slippage_bps_per_side
+                    self.spec.slippage_bps_per_side(symbol)
                 ),
             )
             position.minimum_net_payoff_bps = min(
@@ -1377,7 +1743,7 @@ class Round74EventTargetEngine:
                     reason="coverage_end",
                     requested_entry_monotonic_ns=(
                         anchor.decision_monotonic_ns
-                        + self.spec.decision_to_entry_latency_ns
+                        + self.spec.entry_latency_ns(symbol)
                     ),
                 )
             while self.pending[symbol]:
@@ -1433,6 +1799,9 @@ class Round74EventTargetEngine:
 
 
 __all__ = [
+    "ROUND74_EVENT_TARGET_ENVIRONMENTS",
+    "ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION",
+    "ROUND74_EVENT_TARGET_EVIDENCE_SOURCES",
     "ROUND74_EVENT_TARGET_INELIGIBLE_REASONS",
     "ROUND74_EVENT_TARGET_MAXIMUM_DECISION_STATE_AGE_NS",
     "ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS",
@@ -1444,7 +1813,12 @@ __all__ = [
     "Round74EventActionPayoff",
     "Round74EventTargetAnchor",
     "Round74EventTargetEngine",
+    "Round74EventTargetEvidence",
     "Round74EventTargetOutcome",
     "Round74EventTargetSpec",
+    "round74_commission_evidence_claims",
     "round74_event_action_payoff",
+    "round74_funding_schedule_evidence_claims",
+    "round74_latency_evidence_claims",
+    "round74_slippage_evidence_claims",
 ]

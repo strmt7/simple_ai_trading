@@ -25,7 +25,12 @@ from simple_ai_trading.impact_absorption_event_sequence import (
 )
 from simple_ai_trading.impact_absorption_event_targets import (
     Round74EventTargetEngine,
+    Round74EventTargetEvidence,
     Round74EventTargetSpec,
+    round74_commission_evidence_claims,
+    round74_funding_schedule_evidence_claims,
+    round74_latency_evidence_claims,
+    round74_slippage_evidence_claims,
 )
 from simple_ai_trading.impact_absorption_targets import (
     Round73MarketQuantityRules,
@@ -87,21 +92,61 @@ def _rules() -> dict[str, Round73MarketQuantityRules]:
 
 
 def _engine() -> Round74EventTargetEngine:
+    symbols = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+    entry_latencies = {symbol: 100_000_000 for symbol in symbols}
+    exit_latencies = {symbol: 100_000_000 for symbol in symbols}
+    fees = {symbol: 5.0 for symbol in symbols}
+    funding = {symbol: () for symbol in symbols}
+    slippage = {symbol: 1.0 for symbol in symbols}
+
+    def evidence(
+        kind: str,
+        claims: object,
+        payload_sha256: str,
+    ) -> Round74EventTargetEvidence:
+        return Round74EventTargetEvidence.create(
+            kind=kind,
+            environment="binance_usdm_mainnet",
+            observed_wall_ns=WALL,
+            record_count=3,
+            source_query_or_protocol_sha256=f"{len(kind):064x}",
+            source_payload_sha256=payload_sha256,
+            claims=claims,
+        )
+
     spec = Round74EventTargetSpec.create(
         reference_quote_notional=100.0,
-        decision_to_entry_latency_ns=100_000_000,
-        decision_to_exit_latency_ns=100_000_000,
-        taker_fee_bps_by_symbol={
-            symbol: 5.0 for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
-        },
-        funding_boundaries_monotonic_ns={
-            symbol: () for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
-        },
-        additional_slippage_bps_per_side=1.0,
-        commission_evidence_sha256="a" * 64,
-        entry_exit_latency_evidence_sha256="b" * 64,
-        slippage_evidence_sha256="c" * 64,
-        funding_schedule_evidence_sha256="d" * 64,
+        decision_to_entry_latency_ns_by_symbol=entry_latencies,
+        decision_to_exit_latency_ns_by_symbol=exit_latencies,
+        taker_fee_bps_by_symbol=fees,
+        funding_boundaries_monotonic_ns=funding,
+        additional_slippage_bps_per_side_by_symbol=slippage,
+        commission_evidence=evidence(
+            "commission",
+            round74_commission_evidence_claims(fees),
+            "a" * 64,
+        ),
+        entry_exit_latency_evidence=evidence(
+            "entry_exit_latency",
+            round74_latency_evidence_claims(
+                decision_to_entry_latency_ns_by_symbol=entry_latencies,
+                decision_to_exit_latency_ns_by_symbol=exit_latencies,
+            ),
+            "b" * 64,
+        ),
+        slippage_evidence=evidence(
+            "residual_slippage",
+            round74_slippage_evidence_claims(
+                reference_quote_notional=100.0,
+                additional_slippage_bps_per_side_by_symbol=slippage,
+            ),
+            "c" * 64,
+        ),
+        funding_schedule_evidence=evidence(
+            "funding_schedule",
+            round74_funding_schedule_evidence_claims(funding),
+            "d" * 64,
+        ),
     )
     return Round74EventTargetEngine(
         spec=spec,
