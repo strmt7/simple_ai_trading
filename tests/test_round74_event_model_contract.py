@@ -98,7 +98,7 @@ from simple_ai_trading.impact_absorption_execution_evidence import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v38.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v39.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -368,6 +368,14 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     entry = targets["entry_and_exit"]
     assert entry["initial_supported_execution"] == "marketable orders only"
+    assert entry["quantity_rules_source_response_parser_implemented"] is True
+    assert entry["quantity_rules_evidence_digest_required"] is True
+    assert "MARKET_LOT_SIZE" in entry["quantity_rules_source"]
+    assert "MIN_NOTIONAL" in entry["quantity_rules_source"]
+    assert entry["quantity_precision_may_substitute_for_market_lot_size"] is False
+    assert entry["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
+    assert entry["runtime_quantity_rules_must_match_evidence_claims"] is True
+    assert entry["real_public_exchange_info_evidence_captured_now"] is False
     assert entry["passive_maker_fill_target_permitted_from_l2"] is False
     assert entry["insufficient_visible_depth_policy"] == (
         "censor target and forbid action"
@@ -780,6 +788,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["binance_source_evidence_parser_implementation"] is True
     assert authority["audited_clock_probe_loader_implementation"] is True
     assert authority["execution_calibration_evidence_parser_implementation"] is True
+    assert authority["exchange_info_quantity_rules_parser_implementation"] is True
+    assert (
+        authority["quantity_rules_runtime_evidence_match_gate_implementation"]
+        is True
+    )
+    assert authority["real_public_exchange_info_evidence_captured"] is False
     assert authority["real_authenticated_commission_evidence_captured"] is False
     assert authority["real_public_funding_evidence_captured"] is False
     assert authority["real_testnet_execution_calibration_completed"] is False
@@ -938,7 +952,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
     assert "compute-only evidence" in binding["event_training_directml_reuse_scope"]
-    assert "does not bind target-v8" in binding["event_training_directml_reuse_scope"]
+    assert "does not bind target-v9" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )

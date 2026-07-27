@@ -74,7 +74,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v24.json"
+    / "round-074-local-ai-review-design-v25.json"
 )
 
 
@@ -298,6 +298,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is True
     )
     assert architecture["mixed_target_evidence_environments_permitted"] is False
+    assert architecture["quantity_rules_are_parsed_from_exchange_info"] is True
+    assert architecture["quantity_rules_evidence_is_required_and_target_hash_bound"] is True
+    assert (
+        architecture["quantity_rules_use_market_lot_size_and_min_notional_filters"]
+        is True
+    )
+    assert architecture["quantity_precision_may_substitute_for_market_lot_size"] is False
+    assert architecture["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
+    assert architecture["real_public_exchange_info_evidence_captured"] is False
     assert (
         architecture[
             "target_payoff_exposes_midpoint_book_walk_explicit_cost_and_total_implementation_shortfall"
@@ -500,6 +509,9 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["binance_source_evidence_parser_implemented"] is True
     assert status["audited_clock_probe_loader_implemented"] is True
     assert status["execution_calibration_evidence_parser_implemented"] is True
+    assert status["exchange_info_quantity_rules_parser_implemented"] is True
+    assert status["quantity_rules_runtime_evidence_match_gate_implemented"] is True
+    assert status["real_public_exchange_info_evidence_captured"] is False
     assert status["real_authenticated_commission_evidence_captured"] is False
     assert status["real_public_funding_evidence_captured"] is False
     assert status["real_testnet_execution_calibration_completed"] is False
