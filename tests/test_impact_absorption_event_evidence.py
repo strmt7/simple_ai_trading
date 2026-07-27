@@ -1,18 +1,31 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import hashlib
 
 import pytest
+import zstandard
 
+from simple_ai_trading.impact_absorption import ROUND74_CAPTURE_DESIGN_SHA256
 from simple_ai_trading.impact_absorption_event_evidence import (
     ROUND74_BINANCE_CLOCK_MAXIMUM_PROBE_GAP_NS,
     Round74BinanceClockProbe,
     build_round74_commission_evidence,
     build_round74_funding_evidence,
+    load_round74_binance_clock_probes,
+)
+from simple_ai_trading.impact_absorption_store import (
+    IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+    IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+    ImpactCaptureAudit,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
     round74_commission_evidence_claims,
     round74_funding_schedule_evidence_claims,
+)
+from simple_ai_trading.impact_capture_frame import (
+    ImpactCaptureFrameRecord,
+    encode_impact_capture_frame,
 )
 
 
@@ -21,6 +34,43 @@ WALL_NS = 1_784_000_000_000_000_000
 MONOTONIC_NS = 1_000_000_000_000
 EXCHANGE_MS = 1_784_000_000_000
 CAPTURE_CONTRACT_SHA256 = "a" * 64
+
+
+class _Result:
+    def __init__(self, rows: list[tuple[object, ...]]) -> None:
+        self.rows = rows
+
+    def fetchone(self) -> tuple[object, ...] | None:
+        return self.rows[0] if self.rows else None
+
+    def fetchall(self) -> list[tuple[object, ...]]:
+        return self.rows
+
+
+class _ClockConnection:
+    def __init__(
+        self,
+        *,
+        run_row: tuple[object, ...],
+        context_rows: list[tuple[object, ...]],
+        frame_rows: list[tuple[object, ...]],
+    ) -> None:
+        self.run_row = run_row
+        self.context_rows = context_rows
+        self.frame_rows = frame_rows
+
+    def execute(
+        self,
+        query: str,
+        _parameters: list[object],
+    ) -> _Result:
+        if "FROM impact_capture_run" in query:
+            return _Result([self.run_row])
+        if "SELECT DISTINCT f.frame_index" in query:
+            return _Result(self.frame_rows)
+        if "event_type = 'serverTime'" in query:
+            return _Result(self.context_rows)
+        raise AssertionError(f"unexpected query: {query}")
 
 
 def _commission_payloads() -> dict[str, dict[str, object]]:
@@ -47,6 +97,7 @@ def _clock_probes(count: int = 6) -> tuple[Round74BinanceClockProbe, ...]:
             Round74BinanceClockProbe(
                 capture_run_id="round74-contract-test",
                 capture_contract_sha256=CAPTURE_CONTRACT_SHA256,
+                capture_audit_sha256="b" * 64,
                 frame_index=index,
                 message_index=index + 1,
                 request_started_wall_ns=WALL_NS + index * 60_000_000_000,
@@ -58,6 +109,75 @@ def _clock_probes(count: int = 6) -> tuple[Round74BinanceClockProbe, ...]:
             )
         )
     return tuple(probes)
+
+
+def _clock_capture_fixture() -> tuple[
+    _ClockConnection,
+    ImpactCaptureAudit,
+]:
+    context_rows: list[tuple[object, ...]] = []
+    frame_rows: list[tuple[object, ...]] = []
+    compressor = zstandard.ZstdCompressor(level=1)
+    for index in range(6):
+        exchange_time_ms = EXCHANGE_MS + index * 60_000
+        started_wall_ns = WALL_NS + index * 60_000_000_000
+        started_monotonic_ns = MONOTONIC_NS + index * 60_000_000_000
+        record = ImpactCaptureFrameRecord(
+            stream="binance_futures_rest",
+            connection_id="binance-rest:round74-capture-test",
+            sequence_number=index,
+            received_wall_ns=started_wall_ns + 20_000_000,
+            received_monotonic_ns=started_monotonic_ns + 20_000_000,
+            raw_text=f'{{"serverTime":{exchange_time_ms}}}',
+        )
+        uncompressed, _located = encode_impact_capture_frame([record])
+        compressed = compressor.compress(uncompressed)
+        context_rows.append(
+            (
+                index,
+                0,
+                "/fapi/v1/time",
+                "{}",
+                200,
+                started_wall_ns,
+                started_monotonic_ns,
+                exchange_time_ms,
+            )
+        )
+        frame_rows.append(
+            (
+                index,
+                1,
+                len(uncompressed),
+                hashlib.sha256(uncompressed).hexdigest(),
+                len(compressed),
+                hashlib.sha256(compressed).hexdigest(),
+                compressed,
+            )
+        )
+    last_frame_sha256 = "c" * 64
+    audit = ImpactCaptureAudit(
+        run_id="round74-capture-test",
+        passed=True,
+        errors=(),
+        frame_count=6,
+        message_count=6,
+        compressed_payload_bytes=sum(int(row[4]) for row in frame_rows),
+        last_frame_sha256=last_frame_sha256,
+        capture_contract_sha256=IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+    )
+    connection = _ClockConnection(
+        run_row=(
+            IMPACT_CAPTURE_V10_SCHEMA_VERSION,
+            ROUND74_CAPTURE_DESIGN_SHA256,
+            IMPACT_CAPTURE_V10_CONTRACT_SHA256,
+            "completed",
+            last_frame_sha256,
+        ),
+        context_rows=context_rows,
+        frame_rows=frame_rows,
+    )
+    return connection, audit
 
 
 def _funding_payloads(
@@ -171,6 +291,37 @@ def test_funding_evidence_uses_noninterpolated_clock_brackets() -> None:
             ),
         )
     )
+
+
+def test_clock_probes_load_only_hash_verified_time_frames() -> None:
+    connection, audit = _clock_capture_fixture()
+
+    probes = load_round74_binance_clock_probes(
+        connection,
+        run_id=audit.run_id,
+        capture_audit=audit,
+    )
+
+    assert len(probes) == 6
+    assert probes[0].exchange_time_ms == EXCHANGE_MS
+    assert probes[-1].request_started_monotonic_ns == (
+        MONOTONIC_NS + 300_000_000_000
+    )
+    assert len({probe.capture_audit_sha256 for probe in probes}) == 1
+
+
+def test_clock_probe_loader_rejects_tampered_selected_frame() -> None:
+    connection, audit = _clock_capture_fixture()
+    tampered = list(connection.frame_rows[2])
+    tampered[5] = "d" * 64
+    connection.frame_rows[2] = tuple(tampered)
+
+    with pytest.raises(ValueError, match="compressed frame"):
+        load_round74_binance_clock_probes(
+            connection,
+            run_id=audit.run_id,
+            capture_audit=audit,
+        )
 
 
 def test_funding_at_clock_probe_trims_ambiguous_coverage_edge() -> None:
