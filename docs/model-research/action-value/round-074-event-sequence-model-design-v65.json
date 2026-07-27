@@ -1,0 +1,77 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v65",
+  "created_at_utc": "2026-07-27T18:25:00Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v64.json",
+    "normalized_lf_sha256": "0534656f5c31d5346eed1c6e121af1e91e52337d4d88c9d24d81a485df2f712d",
+    "composition_rule": "v64 remains the complete model contract; v65 adds only the guarded development runtime declared here"
+  },
+  "development_runtime": {
+    "schema_version": "round-074-development-run-v1",
+    "runtime_path": "src/simple_ai_trading/round74_event_development_runtime.py",
+    "runtime_normalized_lf_sha256": "cfb6c750be40688d21df2a03a873f5862a06592c34914b206d3f8c9f2733a4ed",
+    "tool_path": "tools/run_round74_event_development.py",
+    "tool_normalized_lf_sha256": "15ce7f855fd8dca7ec75afd43fd6095813424adafc34d538dedacd1b04db0790",
+    "runtime_test_path": "tests/test_round74_event_development_runtime.py",
+    "runtime_test_normalized_lf_sha256": "4de136fe4605e6a877cb67ce08379972fda506e2d7eacceecef18ed7dadbf4eb",
+    "tool_test_path": "tests/test_round74_event_development_tool.py",
+    "tool_test_normalized_lf_sha256": "41db2d94f2d34f1de83e9f2158ebe83ff3fd2a9489375d444fb233bf98fbaf8f",
+    "input_validation_before_database_open": true,
+    "required_binding_count": 168,
+    "required_development_target_assembly_count": 144,
+    "sealed_test_target_assembly_count_read": 0,
+    "database_open_mode": "read_only",
+    "capture_process_checks": 2,
+    "wal_absence_checks": 2,
+    "default_progress_heartbeat_seconds": 30,
+    "shared_heartbeat_primitive": "src/simple_ai_trading/progress_heartbeat.py",
+    "default_compute_backend_request": "auto",
+    "explicit_accelerator_fallback_permitted": false,
+    "automatic_cpu_reference_fallback_permitted": true,
+    "model_hyperparameters_exposed_by_runner": false,
+    "output_result_hash_bound": true
+  },
+  "verification": {
+    "focused_test_files": [
+      "tests/test_round74_event_development_runtime.py",
+      "tests/test_round74_event_development_tool.py",
+      "tests/test_round74_event_development_inputs.py",
+      "tests/test_round74_event_development_operator.py",
+      "tests/test_progress_heartbeat.py",
+      "tests/test_round74_event_model_design_v65.py"
+    ],
+    "focused_test_count": 19,
+    "focused_tests_passed": true,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "live_negative_path_checked": true,
+    "live_negative_path_outcome": "missing 144-file development assembly panel failed before database open",
+    "representative_cohort_available": false,
+    "development_training_executed": false,
+    "gpu_model_workload_executed": false
+  },
+  "unchanged_model_contract": {
+    "candidate_panel_changed": false,
+    "feature_contract_changed": false,
+    "target_contract_changed": false,
+    "training_tuning_test_roles_changed": false,
+    "action_policy_rule_changed": false,
+    "ai_overlay_rule_changed": false,
+    "sealed_test_rule_changed": false,
+    "execution_evidence_required": true,
+    "default_profile": "conservative",
+    "model_predictions_are_unlevered": true,
+    "leverage_is_not_a_source_of_edge": true
+  },
+  "authority": {
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "468f703cc2823d7b445534af89259579c8ee07b681e6abbde41c31f8ec45620d"
+}
