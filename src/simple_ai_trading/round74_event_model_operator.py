@@ -162,9 +162,7 @@ def _role_entries(
     selected_role = str(role)
     if selected_role not in ROUND74_EVENT_PARTITION_ROLES:
         raise ValueError("Round 74 model operator role differs")
-    return tuple(
-        entry for entry in partition.entries if entry.role == selected_role
-    )
+    return tuple(entry for entry in partition.entries if entry.role == selected_role)
 
 
 def assemble_round74_role_batches(

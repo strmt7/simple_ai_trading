@@ -505,9 +505,7 @@ def test_development_preparation_excludes_test_and_binds_identity(
     with pytest.raises(ValueError, match="identity differs"):
         replace(
             prepared,
-            training_batches=(
-                replace(prepared.training_batches[0], role="tuning"),
-            ),
+            training_batches=(replace(prepared.training_batches[0], role="tuning"),),
         ).validate()
     with pytest.raises(ValueError, match="run is repeated"):
         replace(
