@@ -93,7 +93,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v38.json"
+    / "round-074-local-ai-review-design-v39.json"
 )
 
 
@@ -769,6 +769,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["post_reservation_test_batch_loader_implemented"] is True
     assert status["post_reservation_target_free_ai_review_provider_implemented"] is True
     assert status["post_reservation_exact_replay_provider_implemented"] is True
+    assert status["concrete_target_free_ai_review_adapter_implemented"] is True
+    assert status["read_only_store_exact_replay_adapter_implemented"] is True
     assert status["operator_cannot_preinspect_test_data_claim"] is False
     assert status["future_censorship_promotion_gate_implemented"] is True
     assert status["equal_run_action_selection_implemented"] is True
@@ -876,7 +878,22 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["test_batch_loader_invoked_only_after_live_reservation"] is True
     assert evaluation["ai_review_provider_invoked_only_after_live_reservation"] is True
     assert (
+        evaluation[
+            "sealed_review_provider_receives_hash_bound_target_free_inference_only"
+        ]
+        is True
+    )
+    assert evaluation["sealed_review_provider_concrete_adapter_implemented"] is True
+    assert (
         evaluation["exact_replay_provider_invoked_only_after_live_reservation"] is True
+    )
+    assert evaluation["sealed_replay_provider_read_only_store_adapter_implemented"] is True
+    assert (
+        evaluation["sealed_replay_provider_requires_exact_test_run_assembly_panel"]
+        is True
+    )
+    assert (
+        evaluation["sealed_replay_provider_restores_global_instruction_order"] is True
     )
     assert (
         evaluation["replay_evidence_reconciled_to_post_reservation_instruction_panel"]

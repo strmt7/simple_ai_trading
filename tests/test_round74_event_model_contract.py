@@ -113,7 +113,7 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v52.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v53.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
@@ -935,7 +935,15 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         ai["sealed_review_provider_receives_target_free_contexts_and_candidates_only"]
         is True
     )
+    assert (
+        ai["sealed_review_provider_receives_hash_bound_target_free_inference_only"]
+        is True
+    )
+    assert ai["sealed_review_provider_concrete_adapter_implemented"] is True
     assert ai["sealed_replay_provider_invoked_only_after_live_reservation"] is True
+    assert ai["sealed_replay_provider_read_only_store_adapter_implemented"] is True
+    assert ai["sealed_replay_provider_requires_exact_test_run_assembly_panel"] is True
+    assert ai["sealed_replay_provider_restores_global_instruction_order"] is True
     assert (
         ai["precomputed_execution_replay_evidence_accepted_by_public_sealed_entrypoint"]
         is False
@@ -1011,6 +1019,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert authority["post_reservation_exact_replay_provider_implementation"] is True
+    assert authority["concrete_target_free_ai_review_adapter_implementation"] is True
+    assert authority["read_only_store_exact_replay_adapter_implementation"] is True
     assert authority["operator_cannot_preinspect_test_data_claim"] is False
     assert authority["sealed_multiple_comparison_control_implementation"] is True
     assert authority["mandatory_funding_schedule_binding_implementation"] is True
