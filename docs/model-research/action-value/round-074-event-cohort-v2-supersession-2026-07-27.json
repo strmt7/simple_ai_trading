@@ -1,0 +1,55 @@
+{
+  "schema_version": "round-074-event-cohort-supersession-v2",
+  "artifact_sha256": "fa514287c6a71f75a53b4a446705fb87a66dff7e1e8911a8dc63cb3a755f4f8f",
+  "observed_at_utc": "2026-07-27T02:33:23Z",
+  "superseded_plan": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-plan-v2.json",
+    "plan_sha256": "1082f4038e6c79c1cb13c6337d44cc10f325b7c6bde68a761982f98844f5629e",
+    "maximum_target_span_ns": 310000000000,
+    "minimum_purge_ns": 310000000000,
+    "minimum_embargo_ns": 310000000000
+  },
+  "replacement_plan": {
+    "path": "docs/model-research/action-value/round-074-event-cohort-plan-v3.json",
+    "plan_sha256": "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9",
+    "implementation_git_commit": "686c731b29200563cc76bb19dbfcc35fdfaa32cd",
+    "maximum_target_span_ns": 310500000000,
+    "minimum_purge_ns": 310500000000,
+    "minimum_embargo_ns": 310500000000
+  },
+  "correction_basis": {
+    "maximum_payoff_horizon_ns": 300000000000,
+    "maximum_decision_to_entry_latency_ns": 5000000000,
+    "maximum_decision_to_exit_latency_ns": 5000000000,
+    "maximum_entry_state_lateness_ns": 250000000,
+    "maximum_exit_state_lateness_ns": 250000000,
+    "correct_maximum_target_span_formula": "payoff horizon + entry latency + entry state lateness + exit latency + exit state lateness",
+    "selected_from_market_or_model_outcome": false,
+    "schedule_or_role_counts_changed": false,
+    "purpose": "Prevent partition leakage by including admissible entry and exit state lateness in the complete target span."
+  },
+  "pre_supersession_state": {
+    "superseded_task_state": "Ready",
+    "superseded_task_last_result_hex": "0x41303",
+    "superseded_task_last_result_interpretation": "Task has not yet run.",
+    "superseded_task_missed_runs": 0,
+    "slot_zero_started": false,
+    "campaign_directory_existed": false,
+    "slot_reservation_existed": false,
+    "slot_binding_existed": false,
+    "cohort_market_data_collected": false
+  },
+  "replacement_sequence": {
+    "replacement_task_registered_before_superseded_task_removal": true,
+    "replacement_task_verified_ready_before_superseded_task_removal": true,
+    "replacement_task_next_run_time_utc": "2026-07-27T14:15:00Z",
+    "superseded_task_removed": true,
+    "simultaneous_live_trigger_possible_after_replacement": false
+  },
+  "authority": {
+    "credentials_used": false,
+    "orders_submitted": false,
+    "market_or_model_outcomes_observed_for_selection": false,
+    "profitability_or_edge_claim": false
+  }
+}
