@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 import re
+from typing import Sequence
 
 import numpy as np
 import torch
@@ -39,7 +40,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v1"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v2"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -405,7 +406,7 @@ def _feature_row_sha256(
 def build_round74_action_inference_context(
     batch: Round74EventTrainingBatch,
 ) -> Round74ActionInferenceContext:
-    """Copy only causal identity/features out of a labeled research batch."""
+    """Expose immutable causal identity/features without duplicating the batch."""
 
     batch.validate()
     provisional = Round74ActionInferenceContext(
@@ -414,22 +415,12 @@ def build_round74_action_inference_context(
         scaler_sha256=batch.scaler_sha256,
         run_id=tuple(batch.run_id),
         symbol=tuple(batch.symbol),
-        decision_monotonic_ns=_readonly(
-            np.array(batch.decision_monotonic_ns, dtype=np.int64, copy=True)
-        ),
-        decision_wall_ns=_readonly(
-            np.array(batch.decision_wall_ns, dtype=np.int64, copy=True)
-        ),
-        endpoint_frame_index=_readonly(
-            np.array(batch.endpoint_frame_index, dtype=np.int64, copy=True)
-        ),
-        endpoint_message_index=_readonly(
-            np.array(batch.endpoint_message_index, dtype=np.int64, copy=True)
-        ),
-        anchor_index=_readonly(np.array(batch.anchor_index, dtype=np.int64, copy=True)),
-        feature_values=_readonly(
-            np.array(batch.feature_values, dtype=np.float32, copy=True)
-        ),
+        decision_monotonic_ns=batch.decision_monotonic_ns,
+        decision_wall_ns=batch.decision_wall_ns,
+        endpoint_frame_index=batch.endpoint_frame_index,
+        endpoint_message_index=batch.endpoint_message_index,
+        anchor_index=batch.anchor_index,
+        feature_values=batch.feature_values,
         feature_row_sha256=(),
     )
     context = Round74ActionInferenceContext(
@@ -1060,34 +1051,109 @@ def _trace_metrics(
     return result
 
 
-def simulate_round74_action_trace(
+def _round74_batch_order_key(
     batch: Round74EventTrainingBatch,
-    candidates: Round74ActionCandidateBatch,
+    row_index: int,
+) -> tuple[int, str, int, int, int, str, int]:
+    return (
+        int(batch.decision_wall_ns[row_index]),
+        batch.run_id[row_index],
+        int(batch.decision_monotonic_ns[row_index]),
+        int(batch.endpoint_frame_index[row_index]),
+        int(batch.endpoint_message_index[row_index]),
+        batch.symbol[row_index],
+        int(batch.anchor_index[row_index]),
+    )
+
+
+def _validate_round74_action_panel(
+    batches: Sequence[Round74EventTrainingBatch],
+    candidate_batches: Sequence[Round74ActionCandidateBatch],
+    *,
+    expected_run_ids: tuple[str, ...],
+) -> tuple[
+    tuple[Round74EventTrainingBatch, ...],
+    tuple[Round74ActionCandidateBatch, ...],
+]:
+    selected_batches = tuple(batches)
+    selected_candidates = tuple(candidate_batches)
+    expected = tuple(expected_run_ids)
+    if (
+        not selected_batches
+        or len(selected_batches) != len(selected_candidates)
+        or len(expected) != 6
+        or len(set(expected)) != len(expected)
+        or any(_RUN_ID.fullmatch(value) is None for value in expected)
+    ):
+        raise ValueError("Round 74 action replay panel differs")
+    first_batch = selected_batches[0]
+    first_candidates = selected_candidates[0]
+    seen_runs: set[str] = set()
+    seen_samples: set[str] = set()
+    seen_feature_rows: set[str] = set()
+    prior_last_key: tuple[int, str, int, int, int, str, int] | None = None
+    for batch, candidates in zip(
+        selected_batches,
+        selected_candidates,
+        strict=True,
+    ):
+        batch.validate()
+        candidates.validate()
+        context = build_round74_action_inference_context(batch)
+        first_key = _round74_batch_order_key(batch, 0)
+        last_key = _round74_batch_order_key(batch, batch.rows - 1)
+        sample_set = set(batch.sample_sha256)
+        feature_set = set(candidates.feature_row_sha256)
+        if (
+            batch.role != "tuning"
+            or batch.partition_sha256 != first_batch.partition_sha256
+            or batch.scaler_sha256 != first_batch.scaler_sha256
+            or candidates.profile != first_candidates.profile
+            or candidates.pretest_policy_sha256
+            != first_candidates.pretest_policy_sha256
+            or candidates.probability_calibration_sha256
+            != first_candidates.probability_calibration_sha256
+            or candidates.tuning_subpartition_sha256
+            != first_candidates.tuning_subpartition_sha256
+            or candidates.context_sha256 != context.context_sha256
+            or candidates.run_id != context.run_id
+            or candidates.symbol != context.symbol
+            or candidates.feature_row_sha256 != context.feature_row_sha256
+            or any(run_id not in expected for run_id in batch.run_id)
+            or len(sample_set) != batch.rows
+            or len(feature_set) != batch.rows
+            or seen_samples.intersection(sample_set)
+            or seen_feature_rows.intersection(feature_set)
+            or (prior_last_key is not None and first_key <= prior_last_key)
+        ):
+            raise ValueError("Round 74 action replay identity differs")
+        seen_runs.update(batch.run_id)
+        seen_samples.update(sample_set)
+        seen_feature_rows.update(feature_set)
+        prior_last_key = last_key
+    if seen_runs != set(expected):
+        raise ValueError("Round 74 action replay run coverage differs")
+    return selected_batches, selected_candidates
+
+
+def simulate_round74_action_trace_batches(
+    batches: Sequence[Round74EventTrainingBatch],
+    candidate_batches: Sequence[Round74ActionCandidateBatch],
     *,
     threshold_score: float,
     expected_run_ids: tuple[str, ...],
 ) -> Round74ActionTrace:
-    """Replay selected actions against exact outcomes without cross-run clocks."""
+    """Replay a chronological batch panel without concatenating feature tensors."""
 
-    batch.validate()
-    candidates.validate()
     threshold = float(threshold_score)
     expected = tuple(expected_run_ids)
-    context = build_round74_action_inference_context(batch)
-    if (
-        batch.role != "tuning"
-        or not math.isfinite(threshold)
-        or threshold < 0.0
-        or candidates.context_sha256 != context.context_sha256
-        or candidates.run_id != context.run_id
-        or candidates.symbol != context.symbol
-        or candidates.feature_row_sha256 != context.feature_row_sha256
-        or len(expected) != 6
-        or len(set(expected)) != len(expected)
-        or any(_RUN_ID.fullmatch(value) is None for value in expected)
-        or set(batch.run_id) != set(expected)
-    ):
+    if not math.isfinite(threshold) or threshold < 0.0:
         raise ValueError("Round 74 action replay identity differs")
+    selected_batches, selected_candidate_batches = _validate_round74_action_panel(
+        batches,
+        candidate_batches,
+        expected_run_ids=expected,
+    )
     selected_rows: list[int] = []
     selected_runs: list[str] = []
     selected_symbols: list[str] = []
@@ -1102,73 +1168,80 @@ def simulate_round74_action_trace(
     open_until: dict[tuple[str, str], int] = {}
     skipped_target_ineligible = 0
     skipped_overlap = 0
-    for row_index in range(batch.rows):
-        if (
-            not candidates.eligible[row_index]
-            or candidates.quality_score[row_index] < threshold
-        ):
-            continue
-        horizon = int(candidates.horizon_seconds[row_index])
-        horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(horizon)
-        side = int(candidates.side[row_index])
-        side_index = 0 if side == 1 else 1
-        if batch.action_eligibility[row_index, horizon_index, side_index] != 1.0:
-            skipped_target_ineligible += 1
-            continue
-        entry = int(
-            batch.actual_entry_monotonic_ns[
-                row_index,
-                horizon_index,
-                side_index,
-            ]
-        )
-        exit_value = int(
-            batch.actual_exit_monotonic_ns[
-                row_index,
-                horizon_index,
-                side_index,
-            ]
-        )
-        position_key = (batch.run_id[row_index], batch.symbol[row_index])
-        if entry < open_until.get(position_key, -1):
-            skipped_overlap += 1
-            continue
-        open_until[position_key] = exit_value
-        selected_rows.append(row_index)
-        selected_runs.append(batch.run_id[row_index])
-        selected_symbols.append(batch.symbol[row_index])
-        selected_features.append(candidates.feature_row_sha256[row_index])
-        selected_horizons.append(horizon)
-        selected_sides.append(side)
-        entries.append(entry)
-        exits.append(exit_value)
-        payoffs.append(
-            float(
-                batch.net_payoff_bps[
+    global_row_offset = 0
+    for batch, candidates in zip(
+        selected_batches,
+        selected_candidate_batches,
+        strict=True,
+    ):
+        for row_index in range(batch.rows):
+            if (
+                not candidates.eligible[row_index]
+                or candidates.quality_score[row_index] < threshold
+            ):
+                continue
+            horizon = int(candidates.horizon_seconds[row_index])
+            horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(horizon)
+            side = int(candidates.side[row_index])
+            side_index = 0 if side == 1 else 1
+            if batch.action_eligibility[row_index, horizon_index, side_index] != 1.0:
+                skipped_target_ineligible += 1
+                continue
+            entry = int(
+                batch.actual_entry_monotonic_ns[
                     row_index,
                     horizon_index,
                     side_index,
                 ]
             )
-        )
-        adverse_excursions.append(
-            float(
-                batch.maximum_adverse_excursion_bps[
+            exit_value = int(
+                batch.actual_exit_monotonic_ns[
                     row_index,
                     horizon_index,
                     side_index,
                 ]
             )
-        )
-        adverse_selections.append(
-            int(
-                batch.adverse_selection[
-                    row_index,
-                    horizon_index,
-                    side_index,
-                ]
+            position_key = (batch.run_id[row_index], batch.symbol[row_index])
+            if entry < open_until.get(position_key, -1):
+                skipped_overlap += 1
+                continue
+            open_until[position_key] = exit_value
+            selected_rows.append(global_row_offset + row_index)
+            selected_runs.append(batch.run_id[row_index])
+            selected_symbols.append(batch.symbol[row_index])
+            selected_features.append(candidates.feature_row_sha256[row_index])
+            selected_horizons.append(horizon)
+            selected_sides.append(side)
+            entries.append(entry)
+            exits.append(exit_value)
+            payoffs.append(
+                float(
+                    batch.net_payoff_bps[
+                        row_index,
+                        horizon_index,
+                        side_index,
+                    ]
+                )
             )
-        )
+            adverse_excursions.append(
+                float(
+                    batch.maximum_adverse_excursion_bps[
+                        row_index,
+                        horizon_index,
+                        side_index,
+                    ]
+                )
+            )
+            adverse_selections.append(
+                int(
+                    batch.adverse_selection[
+                        row_index,
+                        horizon_index,
+                        side_index,
+                    ]
+                )
+            )
+        global_row_offset += batch.rows
     run_tuple = tuple(selected_runs)
     symbol_tuple = tuple(selected_symbols)
     payoff_tuple = tuple(payoffs)
@@ -1201,6 +1274,23 @@ def simulate_round74_action_trace(
     )
     result.validate()
     return result
+
+
+def simulate_round74_action_trace(
+    batch: Round74EventTrainingBatch,
+    candidates: Round74ActionCandidateBatch,
+    *,
+    threshold_score: float,
+    expected_run_ids: tuple[str, ...],
+) -> Round74ActionTrace:
+    """Replay one compatibility batch through the bounded panel implementation."""
+
+    return simulate_round74_action_trace_batches(
+        (batch,),
+        (candidates,),
+        threshold_score=threshold_score,
+        expected_run_ids=expected_run_ids,
+    )
 
 
 def _trace_gate_reasons(
@@ -1280,8 +1370,8 @@ class Round74ActionPolicySelection:
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     tuning_subpartition_sha256: str
-    target_batch_sha256: str
-    candidate_sha256: str
+    target_batch_sha256: tuple[str, ...]
+    candidate_sha256: tuple[str, ...]
     accepted: bool
     selected_quantile: float | None
     selected_threshold_score: float | None
@@ -1305,10 +1395,14 @@ class Round74ActionPolicySelection:
                     self.pretest_policy_sha256,
                     self.probability_calibration_sha256,
                     self.tuning_subpartition_sha256,
-                    self.target_batch_sha256,
-                    self.candidate_sha256,
+                    *self.target_batch_sha256,
+                    *self.candidate_sha256,
                 )
             )
+            or not self.target_batch_sha256
+            or len(self.target_batch_sha256) != len(self.candidate_sha256)
+            or len(set(self.target_batch_sha256)) != len(self.target_batch_sha256)
+            or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or len(self.evaluations) != len(spec.threshold_quantiles)
             or tuple(value.quantile for value in self.evaluations)
             != spec.threshold_quantiles
@@ -1364,8 +1458,8 @@ class Round74ActionPolicySelection:
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
-            "target_batch_sha256": self.target_batch_sha256,
-            "candidate_sha256": self.candidate_sha256,
+            "target_batch_sha256": list(self.target_batch_sha256),
+            "candidate_sha256": list(self.candidate_sha256),
             "accepted": self.accepted,
             "selected_quantile": self.selected_quantile,
             "selected_threshold_score": self.selected_threshold_score,
@@ -1384,36 +1478,61 @@ class Round74ActionPolicySelection:
         return value
 
 
-def select_round74_action_policy(
-    batch: Round74EventTrainingBatch,
-    candidates: Round74ActionCandidateBatch,
+def select_round74_action_policy_batches(
+    batches: Sequence[Round74EventTrainingBatch],
+    candidate_batches: Sequence[Round74ActionCandidateBatch],
     tuning_subpartition: Round74TuningSubpartition,
 ) -> Round74ActionPolicySelection:
-    """Select a threshold using only the six fixed policy-selection runs."""
+    """Select one threshold from a bounded six-run tuning batch panel."""
 
-    batch.validate()
-    candidates.validate()
     tuning_subpartition.validate()
-    context = build_round74_action_inference_context(batch)
     expected_runs = tuning_subpartition.policy_selection_run_ids
+    requested_batches = tuple(batches)
+    requested_candidate_batches = tuple(candidate_batches)
+    provided_runs = {
+        run_id for batch in requested_batches for run_id in batch.run_id
+    }
     if (
-        batch.role != "tuning"
-        or candidates.context_sha256 != context.context_sha256
-        or candidates.tuning_subpartition_sha256
-        != tuning_subpartition.subpartition_sha256
-        or set(batch.run_id) != set(expected_runs)
-        or any(run_id not in expected_runs for run_id in batch.run_id)
+        requested_batches
+        and (
+            provided_runs != set(expected_runs)
+            or any(
+                candidates.tuning_subpartition_sha256
+                != tuning_subpartition.subpartition_sha256
+                for candidates in requested_candidate_batches
+            )
+        )
     ):
         raise ValueError("Round 74 action policy data role differs")
-    spec = round74_action_profile(candidates.profile)
-    active_scores = candidates.quality_score[candidates.eligible]
+    selected_batches, selected_candidate_batches = _validate_round74_action_panel(
+        requested_batches,
+        requested_candidate_batches,
+        expected_run_ids=expected_runs,
+    )
+    first_candidates = selected_candidate_batches[0]
+    if (
+        first_candidates.tuning_subpartition_sha256
+        != tuning_subpartition.subpartition_sha256
+    ):
+        raise ValueError("Round 74 action policy data role differs")
+    spec = round74_action_profile(first_candidates.profile)
+    eligible_scores = tuple(
+        candidates.quality_score[candidates.eligible]
+        for candidates in selected_candidate_batches
+        if np.any(candidates.eligible)
+    )
+    active_scores = (
+        np.concatenate(eligible_scores)
+        if eligible_scores
+        else np.empty(0, dtype=np.float64)
+    )
     evaluations: list[Round74ActionThresholdEvaluation] = []
     if active_scores.size:
         for quantile in spec.threshold_quantiles:
             threshold = float(np.quantile(active_scores, quantile, method="linear"))
-            trace = simulate_round74_action_trace(
-                batch,
-                candidates,
+            trace = simulate_round74_action_trace_batches(
+                selected_batches,
+                selected_candidate_batches,
                 threshold_score=threshold,
                 expected_run_ids=expected_runs,
             )
@@ -1437,9 +1556,9 @@ def select_round74_action_policy(
             )
     else:
         for quantile in spec.threshold_quantiles:
-            trace = simulate_round74_action_trace(
-                batch,
-                candidates,
+            trace = simulate_round74_action_trace_batches(
+                selected_batches,
+                selected_candidate_batches,
                 threshold_score=np.finfo(np.float64).max,
                 expected_run_ids=expected_runs,
             )
@@ -1475,11 +1594,18 @@ def select_round74_action_policy(
         did_accept = False
     result = Round74ActionPolicySelection(
         profile=spec.profile,
-        pretest_policy_sha256=candidates.pretest_policy_sha256,
-        probability_calibration_sha256=(candidates.probability_calibration_sha256),
+        pretest_policy_sha256=first_candidates.pretest_policy_sha256,
+        probability_calibration_sha256=(
+            first_candidates.probability_calibration_sha256
+        ),
         tuning_subpartition_sha256=tuning_subpartition.subpartition_sha256,
-        target_batch_sha256=batch.batch_sha256,
-        candidate_sha256=candidates.candidate_sha256,
+        target_batch_sha256=tuple(
+            batch.batch_sha256 for batch in selected_batches
+        ),
+        candidate_sha256=tuple(
+            candidates.candidate_sha256
+            for candidates in selected_candidate_batches
+        ),
         accepted=did_accept,
         selected_quantile=selected_quantile,
         selected_threshold_score=selected_threshold,
@@ -1488,6 +1614,20 @@ def select_round74_action_policy(
     )
     result.validate()
     return result
+
+
+def select_round74_action_policy(
+    batch: Round74EventTrainingBatch,
+    candidates: Round74ActionCandidateBatch,
+    tuning_subpartition: Round74TuningSubpartition,
+) -> Round74ActionPolicySelection:
+    """Select through the panel implementation for single-batch callers."""
+
+    return select_round74_action_policy_batches(
+        (batch,),
+        (candidates,),
+        tuning_subpartition,
+    )
 
 
 __all__ = [
@@ -1507,5 +1647,7 @@ __all__ = [
     "derive_round74_action_candidates",
     "round74_action_profile",
     "select_round74_action_policy",
+    "select_round74_action_policy_batches",
     "simulate_round74_action_trace",
+    "simulate_round74_action_trace_batches",
 ]

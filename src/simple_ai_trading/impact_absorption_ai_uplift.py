@@ -34,7 +34,7 @@ from .impact_absorption_event_action_policy import (
 from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v1"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v2"
 ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
     "conservative": 0.60,
@@ -364,7 +364,7 @@ class Round74AIUpliftDevelopmentReport:
 
     profile: str
     action_selection_sha256: str
-    candidate_sha256: str
+    candidate_sha256: tuple[str, ...]
     pretest_policy_sha256: str
     probability_calibration_sha256: str
     model_manifest_sha256: str
@@ -427,13 +427,15 @@ class Round74AIUpliftDevelopmentReport:
                 _SHA256.fullmatch(value) is None
                 for value in (
                     self.action_selection_sha256,
-                    self.candidate_sha256,
                     self.pretest_policy_sha256,
                     self.probability_calibration_sha256,
                     self.model_manifest_sha256,
+                    *self.candidate_sha256,
                     *self.review_sha256,
                 )
             )
+            or not self.candidate_sha256
+            or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or len(self.review_sha256) != self.baseline_trace.metrics.trades
             or len(set(self.review_sha256)) != len(self.review_sha256)
             or len(self.ai_scaled_net_payoff_bps) != self.baseline_trace.metrics.trades
@@ -487,7 +489,7 @@ class Round74AIUpliftDevelopmentReport:
             "schema_version": self.schema_version,
             "profile": self.profile,
             "action_selection_sha256": self.action_selection_sha256,
-            "candidate_sha256": self.candidate_sha256,
+            "candidate_sha256": list(self.candidate_sha256),
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "model_manifest_sha256": self.model_manifest_sha256,
