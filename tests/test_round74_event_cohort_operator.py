@@ -52,6 +52,13 @@ V2_SUPERSESSION = (
     / "action-value"
     / "round-074-event-cohort-v2-supersession-2026-07-27.json"
 )
+V3_SUPERSESSION = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-v3-supersession-2026-07-27.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -83,6 +90,17 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert execution["automatic_retry_permitted"] is False
     assert execution["partition_written_only_after_all_168_bindings"] is True
     partition = contract["partition_contract"]
+    assert (
+        partition["target_schema_version"]
+        == "round-074-executable-event-target-v10"
+    )
+    assert partition["dataset_schema_version"] == "round-074-event-dataset-v7"
+    assert partition["common_reference_capital_accounting"] is True
+    assert partition["actual_walked_entry_quote_notional_used"] is True
+    assert (
+        partition["requested_size_fraction_used_as_realized_notional"]
+        is False
+    )
     assert partition["maximum_target_span_ns"] == 310_500_000_000
     assert partition["minimum_purge_ns"] == 310_500_000_000
     assert partition["minimum_embargo_ns"] == 310_500_000_000
@@ -94,6 +112,9 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
 
     assert claimed == _canonical_sha256(evidence)
     assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["operator_contract_artifact_sha256"] == (
+        "9b5c6c4fd17922feb30b128d6d8c6437177b1762362023966c7772a7a25efda4"
+    )
     scheduler = evidence["host_scheduler"]
     assert scheduler["task_name"] == (
         "SimpleAITrading-Round74-EventCohort-v4"
@@ -146,6 +167,35 @@ def test_round74_cohort_v2_state_lateness_was_corrected_before_slot_zero() -> No
     assert evidence["pre_supersession_state"][
         "cohort_market_data_collected"
     ] is False
+    sequence = evidence["replacement_sequence"]
+    assert sequence[
+        "replacement_task_verified_ready_before_superseded_task_removal"
+    ] is True
+    assert sequence["superseded_task_removed"] is True
+
+
+def test_round74_cohort_v3_dataset_binding_was_corrected_before_slot_zero() -> None:
+    evidence = json.loads(V3_SUPERSESSION.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    basis = evidence["correction_basis"]
+    assert basis["dataset_schema_before"] == "round-074-event-dataset-v5"
+    assert basis["dataset_schema_after"] == "round-074-event-dataset-v7"
+    assert basis["target_schema_after"] == (
+        "round-074-executable-event-target-v10"
+    )
+    assert (
+        basis[
+            "requested_size_fraction_substituted_for_realized_notional_after_correction"
+        ]
+        is False
+    )
+    assert basis["selected_from_market_or_model_outcome"] is False
+    assert basis["schedule_or_role_counts_changed"] is False
+    state = evidence["pre_supersession_state"]
+    assert state["slot_zero_started"] is False
+    assert state["cohort_market_data_collected"] is False
     sequence = evidence["replacement_sequence"]
     assert sequence[
         "replacement_task_verified_ready_before_superseded_task_removal"

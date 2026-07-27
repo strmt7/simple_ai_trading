@@ -1,0 +1,52 @@
+{
+  "schema_version": "round-074-active-qualification-host-schedule-v2",
+  "artifact_sha256": "a44b10833825937f2c929e6d1c9c235b2aac11b8e8911ce8ad30e11cf4cf29e5",
+  "observed_at_utc": "2026-07-27T08:43:21.958881Z",
+  "execution_git_commit": "6efe56902524941c35654902b889ad85cd50f1b1",
+  "preflight_artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+  "operator_contract_artifact_sha256": "f3e339830da73c7df8b23b156ed57cee709b3984abd711deacf1ce8b0775b459",
+  "superseded_host_schedule_artifact_sha256": "88cbaf4825f1e9d8aa4a7003f228375619bb917d8663ed959e6069afa2207fad",
+  "host_scheduler": {
+    "provider": "Windows Task Scheduler",
+    "task_name": "SimpleAITrading-Round74-ActiveQualification-20260727",
+    "state": "Ready",
+    "next_run_time_utc": "2026-07-27T12:55:00Z",
+    "start_boundary_local": "2026-07-27T14:55:00+02:00",
+    "executable": "C:\\trader\\simple_ai_trading\\.venv\\Scripts\\python.exe",
+    "arguments": "\"C:\\trader\\simple_ai_trading\\tools\\run_round74_active_qualification.py\"",
+    "working_directory": "C:\\trader\\simple_ai_trading",
+    "enabled": true,
+    "wake_to_run": true,
+    "start_when_available": false,
+    "execution_time_limit": "PT2H",
+    "number_of_missed_runs": 0,
+    "last_task_result_decimal": 267011,
+    "last_task_result_hex": "0x41303",
+    "last_task_result_interpretation": "Task has not yet run; the scheduler sentinel timestamp is not an execution.",
+    "interactive_user_logon_required": true
+  },
+  "post_install_readiness": {
+    "window_status": "before_window",
+    "ready_for_window": true,
+    "can_start_now": false,
+    "preflight_identity_passed": true,
+    "capture_executable_passed": true,
+    "frozen_capture_source_passed": true,
+    "baseline_database_and_wal_passed": true,
+    "free_space_passed": true,
+    "no_existing_reservation_passed": true,
+    "no_active_capture_process_passed": true,
+    "database_bytes": 9433526272,
+    "wal_bytes": 0,
+    "free_bytes": 2430193946624,
+    "free_space_minimum_bytes": 107374182400
+  },
+  "limitations": {
+    "future_execution_proven_now": false,
+    "active_regime_qualification_proven_now": false,
+    "scheduler_state_can_change_after_observation": true,
+    "launcher_refuses_start_after_2026_07_27_12_57_00_utc": true,
+    "automatic_retry_permitted": false,
+    "orders_or_credentials_used": false
+  }
+}
