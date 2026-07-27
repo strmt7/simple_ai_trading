@@ -34,6 +34,8 @@ from simple_ai_trading.round74_event_cohort_operator import (
     ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES,
     ROUND74_EVENT_COHORT_PLAN_SHA256,
     ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES,
+    ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH,
+    ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_SHA256,
     ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS,
     _Round74CaptureLaunch,
     _load_contiguous_bindings,
@@ -45,6 +47,7 @@ from simple_ai_trading.round74_event_cohort_operator import (
     run_round74_cohort_current_slot,
     select_round74_cohort_slot,
     validate_round74_active_prerequisite,
+    validate_round74_startup_prerequisite,
 )
 from simple_ai_trading.storage import write_json_atomic
 
@@ -55,7 +58,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v11.json"
+    / "round-074-event-cohort-operator-v12.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -84,6 +87,13 @@ V5_SLOT_ZERO_FAILURE = (
     / "model-research"
     / "action-value"
     / "round-074-event-cohort-plan-v5-slot-000-failure-2026-07-27.json"
+)
+V5_R1_SLOT_ZERO_STARTUP_FAILURE = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-plan-v5-r1-slot-000-startup-failure-2026-07-27.json"
 )
 V1_SUPERSESSION = (
     REPOSITORY
@@ -184,6 +194,9 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     source = contract["source_binding"]
 
     assert claimed == _canonical_sha256(contract)
+    assert claimed == (
+        "ce703964e8742e30e5b7937ae48b7131d170ec3b5d9b4597b5fd2fc055160f9e"
+    )
     assert source["hash_mode"] == "utf8_lf_normalized_sha256"
     for path_key, hash_key in (
         ("operator_path", "operator_sha256"),
@@ -193,8 +206,15 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
         assert _normalized_source_sha256(REPOSITORY / source[path_key]) == source[hash_key]
     execution = contract["slot_execution_contract"]
     assert execution["automatic_retry_permitted"] is False
+    assert execution["maximum_reconnects"] == 0
     assert execution["heartbeat_state_persisted_during_capture"] is True
     assert execution["partition_written_only_after_all_168_bindings"] is True
+    startup = contract["pre_admission_startup_contract"]
+    assert startup["maximum_launches"] == 2
+    assert startup["maximum_relaunches"] == 1
+    assert startup["database_size_and_mtime_must_be_unchanged"] is True
+    assert startup["wal_size_and_mtime_must_be_unchanged"] is True
+    assert startup["failed_launch_evidence_combined_with_admitted_capture"] is False
     partition = contract["partition_contract"]
     assert partition["target_schema_version"] == "round-074-executable-event-target-v10"
     assert partition["dataset_schema_version"] == "round-074-event-dataset-v9"
@@ -281,7 +301,9 @@ def test_round74_v7_host_schedule_is_exact_and_pre_execution_only() -> None:
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["cohort_plan_sha256"] == (
+        "a7e3afb41992599137b845e4e0d4ecee3b9c6cebadc9347617f551dcc04ec223"
+    )
     assert evidence["operator_contract_artifact_sha256"] == (
         "c4c8b9bafdfec6cbfb95d96edf789e73d109e8d4117108ac69df407fd24b4962"
     )
@@ -328,6 +350,28 @@ def test_round74_v5_slot_zero_failure_is_hash_bound_and_never_reused() -> None:
     assert adjudication["outcome"] == "failed"
     assert adjudication["cohort_data_admitted"] is False
     assert adjudication["failed_capture_reused_as_cohort_data"] is False
+
+
+def test_round74_v5_r1_startup_failure_is_hash_bound_and_never_reused() -> None:
+    evidence = json.loads(
+        V5_R1_SLOT_ZERO_STARTUP_FAILURE.read_text(encoding="utf-8")
+    )
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert claimed == (
+        "05d41b12b65604dd4451e8ecc12e05f51a634086e08cb4c409a7bb2e014bac3d"
+    )
+    supervisor = evidence["capture_supervisor"]
+    assert supervisor["selected_run_id"] == ""
+    assert supervisor["attempts"] == []
+    assert supervisor["reconnect_count"] == 0
+    assert evidence["resource_reconciliation"]["database_and_wal_growth_bytes"] == 0
+    assert evidence["host_scheduler"]["state_after_failure_review"] == "Disabled"
+    adjudication = evidence["adjudication"]
+    assert adjudication["campaign_status"] == "permanently_failed"
+    assert adjudication["cohort_data_admitted"] is False
+    assert adjudication["campaign_reactivation_permitted"] is False
 
 
 def test_round74_cohort_v1_was_superseded_before_slot_zero() -> None:
@@ -471,7 +515,7 @@ def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
     assert (
         plan.plan_sha256
         == ROUND74_EVENT_COHORT_PLAN_SHA256
-        == ("a7e3afb41992599137b845e4e0d4ecee3b9c6cebadc9347617f551dcc04ec223")
+        == ("213a564026654905d62d2e74fd1c1944ff9ffd6d44af32557ccc20628ce59a04")
     )
     assert ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES == 24 * 1024**3
     assert ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES == 4 * 1024**3
@@ -556,6 +600,27 @@ def test_round74_cohort_prerequisite_requires_exact_adjudicated_result(
     write_json_atomic(target, failed, sort_keys=True)
     with pytest.raises(ValueError, match="file identity differs"):
         validate_round74_active_prerequisite(tmp_path)
+
+
+def test_round74_cohort_requires_exact_startup_prerequisite(
+    tmp_path: Path,
+) -> None:
+    plan = load_round74_cohort_operator_plan(REPOSITORY)
+    payload = validate_round74_startup_prerequisite(REPOSITORY, plan)
+
+    assert payload["artifact_sha256"] == (
+        ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_SHA256
+    )
+    assert payload["live_capture"]["message_count"] == 202_725
+    assert payload["fresh_process_audit"]["passed"] is True
+    destination = tmp_path / ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    tampered = deepcopy(payload)
+    tampered["live_capture"]["message_count"] = 202_724
+    write_json_atomic(destination, tampered, sort_keys=True)
+
+    with pytest.raises(ValueError, match="startup prerequisite differs"):
+        validate_round74_startup_prerequisite(tmp_path, plan)
 
 
 def test_round74_cohort_requires_every_prior_binding(tmp_path: Path) -> None:

@@ -51,10 +51,17 @@ from .round74_active_adjudication import (
 
 
 ROUND74_EVENT_COHORT_PLAN_RELATIVE_PATH = Path(
-    "docs/model-research/action-value/round-074-event-cohort-plan-v5-r1.json"
+    "docs/model-research/action-value/round-074-event-cohort-plan-v5-r2.json"
 )
 ROUND74_EVENT_COHORT_PLAN_SHA256 = (
-    "a7e3afb41992599137b845e4e0d4ecee3b9c6cebadc9347617f551dcc04ec223"
+    "213a564026654905d62d2e74fd1c1944ff9ffd6d44af32557ccc20628ce59a04"
+)
+ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH = Path(
+    "docs/model-research/action-value/"
+    "round-074-event-cohort-startup-prerequisite-2026-07-27.json"
+)
+ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_SHA256 = (
+    "4a799cf928b57baf6cd1e7f587e5bdd02ecea161013b4b6267e5c7e42981f4f1"
 )
 ROUND74_ACTIVE_ADJUDICATION_SHA256 = (
     "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7"
@@ -151,7 +158,86 @@ def load_round74_cohort_operator_plan(
     plan = load_round74_event_cohort_plan(path.read_text(encoding="utf-8"))
     if plan.plan_sha256 != ROUND74_EVENT_COHORT_PLAN_SHA256:
         raise ValueError("Round 74 cohort operator plan digest differs")
+    validate_round74_startup_prerequisite(repository, plan)
     return plan
+
+
+def validate_round74_startup_prerequisite(
+    repository: Path,
+    plan: Round74EventCohortPlan,
+) -> dict[str, object]:
+    path = (
+        repository.resolve()
+        / ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH
+    )
+    payload = _strict_json_object(
+        path.read_text(encoding="utf-8"),
+        "Round 74 cohort startup prerequisite",
+    )
+    claimed = str(payload.get("artifact_sha256", ""))
+    canonical = dict(payload)
+    canonical.pop("artifact_sha256", None)
+    probe = payload.get("live_public_stream_probe")
+    capture = payload.get("live_capture")
+    audit = payload.get("fresh_process_audit")
+    relaunch = payload.get("startup_relaunch_validation")
+    verdict = payload.get("verdict")
+    if (
+        claimed != _canonical_sha256(canonical)
+        or claimed != ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_SHA256
+        or payload.get("schema_version")
+        != "round-074-event-cohort-startup-prerequisite-v1"
+        or payload.get("implementation_git_commit")
+        != plan.implementation_git_commit
+        or not isinstance(probe, Mapping)
+        or probe.get("all_six_stream_probes_passed") is not True
+        or probe.get("attempt_count") != 3
+        or probe.get("messages_required_per_stream_per_attempt") != 100
+        or probe.get("credentials_used") is not False
+        or probe.get("orders_submitted") is not False
+        or not isinstance(capture, Mapping)
+        or capture.get("status") != "completed"
+        or capture.get("failure_class") != "none"
+        or capture.get("error") != ""
+        or capture.get("mode") != "probe"
+        or capture.get("capture_gate_passed") is not True
+        or capture.get("data_qualification_passed") is not True
+        or capture.get("resource_safety_passed") is not True
+        or capture.get("storage_efficiency_passed") is not True
+        or capture.get("qualification_passed") is not False
+        or capture.get("wal_absent_after_capture_and_audit") is not True
+        or not isinstance(capture.get("message_count"), int)
+        or int(capture["message_count"]) <= 0
+        or not isinstance(capture.get("ended_wall_ns"), int)
+        or int(capture["ended_wall_ns"]) >= plan.scheduled_start_wall_ns
+        or not isinstance(audit, Mapping)
+        or audit.get("passed") is not True
+        or audit.get("errors") != []
+        or audit.get("run_id") != capture.get("run_id")
+        or audit.get("stored_report_sha256") != capture.get("report_sha256")
+        or audit.get("message_count") != capture.get("message_count")
+        or audit.get("frame_count") != capture.get("frame_count")
+        or audit.get("compressed_payload_bytes")
+        != capture.get("compressed_payload_bytes")
+        or not isinstance(relaunch, Mapping)
+        or relaunch.get("maximum_startup_launches")
+        != ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES
+        or relaunch.get("maximum_pre_admission_relaunches") != 1
+        or relaunch.get("backoff_seconds")
+        != ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS
+        or relaunch.get("database_size_and_mtime_must_remain_unchanged")
+        is not True
+        or relaunch.get("wal_size_and_mtime_must_remain_unchanged") is not True
+        or relaunch.get("admitted_capture_maximum_reconnects") != 0
+        or not isinstance(verdict, Mapping)
+        or verdict.get("passed") is not True
+        or verdict.get("cohort_data_created") is not False
+        or verdict.get("model_training_or_evaluation") is not False
+        or verdict.get("profitability_or_edge_claim") is not False
+        or verdict.get("trading_authority") is not False
+    ):
+        raise ValueError("Round 74 cohort startup prerequisite differs")
+    return payload
 
 
 def select_round74_cohort_slot(
@@ -1170,10 +1256,13 @@ __all__ = [
     "ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION",
     "ROUND74_EVENT_COHORT_PLAN_RELATIVE_PATH",
     "ROUND74_EVENT_COHORT_PLAN_SHA256",
+    "ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH",
+    "ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_SHA256",
     "Round74CohortSlotSelection",
     "inspect_round74_cohort_readiness",
     "load_round74_cohort_operator_plan",
     "run_round74_cohort_current_slot",
     "select_round74_cohort_slot",
     "validate_round74_active_prerequisite",
+    "validate_round74_startup_prerequisite",
 ]
