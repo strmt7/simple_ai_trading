@@ -12,6 +12,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 )
 from simple_ai_trading.impact_absorption_ai_bridge import (
     ROUND74_AI_BRIDGE_SCHEMA_VERSION,
+    ROUND74_AI_RECENT_BLOCK_EVENTS,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
@@ -55,7 +56,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v8.json"
+    / "round-074-local-ai-review-design-v9.json"
 )
 
 
@@ -156,6 +157,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["absolute_date_exposed_to_ai"] is False
     assert architecture["real_symbol_exposed_to_ai"] is False
     assert architecture["future_outcome_exposed_to_ai"] is False
+    assert architecture["causal_recent_direction_summary_implemented"] is True
+    assert architecture["causal_recent_direction_block_events"] == (
+        ROUND74_AI_RECENT_BLOCK_EVENTS
+    )
+    assert (
+        architecture["causal_recent_direction_realized_target_or_future_access"]
+        is False
+    )
+    assert architecture["ai_prompt_summary_values_per_feature"] == 4
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
@@ -251,6 +261,9 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["two_model_review_preparation_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
+    assert artifact["host_preflight"]["request_schema_version"] == (
+        ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+    )
 
 
 def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
@@ -287,6 +300,10 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     ] is False
     assert evaluation["accuracy_ignored"] is False
     assert evaluation["profitability_required_by_data_filter_or_test_assertion"] is False
+    assert evaluation["ai_receives_causal_recent_direction_summary"] is True
+    assert evaluation["ai_recent_direction_summary_block_events"] == (
+        ROUND74_AI_RECENT_BLOCK_EVENTS
+    )
     assert (
         "enough remaining executable trades to avoid trivial all-veto behavior"
         in evaluation["promotion_requires"]
