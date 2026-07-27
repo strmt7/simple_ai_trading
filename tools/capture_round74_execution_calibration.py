@@ -17,6 +17,7 @@ import simple_ai_trading.impact_absorption_execution_evidence as evidence_module
 import simple_ai_trading.round74_execution_calibration_capture as capture_module
 import simple_ai_trading.round74_execution_calibration_coordinator as coordinator_module
 import simple_ai_trading.round74_execution_calibration_journal as journal_module
+import simple_ai_trading.round74_execution_calibration_sizing as sizing_module
 import simple_ai_trading.round74_execution_calibration_transport as transport_module
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SYMBOLS,
@@ -27,6 +28,9 @@ from simple_ai_trading.round74_execution_calibration_coordinator import (
 )
 from simple_ai_trading.round74_execution_calibration_journal import (
     Round74ExecutionCalibrationJournal,
+)
+from simple_ai_trading.round74_execution_calibration_sizing import (
+    prepare_round74_execution_sizing,
 )
 from simple_ai_trading.round74_execution_calibration_transport import (
     Round74BinanceTestnetExecutionTransport,
@@ -41,6 +45,7 @@ _SOURCE_MODULES = (
     capture_module,
     coordinator_module,
     journal_module,
+    sizing_module,
     transport_module,
 )
 
@@ -205,10 +210,9 @@ def command_capture(args: argparse.Namespace) -> int:
     api_key, api_secret = _credentials()
     database = Path(args.database)
     output_directory = Path(args.output_directory)
-    quantity = _decimal(args.quantity, label="quantity")
-    reference = _decimal(
-        args.reference_quote_notional,
-        label="reference quote notional",
+    target_quote_notional = _decimal(
+        args.target_quote_notional,
+        label="target quote notional",
     )
     database.parent.mkdir(parents=True, exist_ok=True)
     with duckdb.connect(str(database)) as connection:
@@ -224,6 +228,14 @@ def command_capture(args: argparse.Namespace) -> int:
             )
             if not recovery.complete:
                 raise RuntimeError("unresolved calibration exposure blocks a new pair")
+            sizing = prepare_round74_execution_sizing(
+                symbol=args.symbol,
+                entry_side=args.entry_side,
+                target_quote_notional=target_quote_notional,
+                exchange_information=transport.exchange_information(args.symbol),
+                mark_price=transport.mark_price(args.symbol),
+                book=transport.book(args.symbol),
+            )
             result = capture_round74_execution_calibration_pair(
                 transport=transport,
                 journal=journal,
@@ -231,14 +243,15 @@ def command_capture(args: argparse.Namespace) -> int:
                 round_trip_id=args.round_trip_id,
                 symbol=args.symbol,
                 entry_side=args.entry_side,
-                quantity=quantity,
-                reference_quote_notional=reference,
+                quantity=sizing.quantity,
+                reference_quote_notional=(sizing.reference_quote_notional),
             )
             rate_limits = dict(transport.last_rate_limit_headers)
         payload = {
             **_base_payload(operation="capture"),
             "database": str(database),
             "recovery_before_capture": recovery.as_dict(),
+            "sizing": sizing.as_dict(),
             "result": result.as_dict(),
             "last_rate_limit_headers": rate_limits,
             "orders_may_have_been_submitted": True,
@@ -318,8 +331,14 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("BUY", "SELL"),
         required=True,
     )
-    capture.add_argument("--quantity", required=True)
-    capture.add_argument("--reference-quote-notional", required=True)
+    capture.add_argument(
+        "--target-quote-notional",
+        required=True,
+        help=(
+            "maximum testnet quote notional; legal quantity is derived from "
+            "live exchange filters, mark price, and captured depth"
+        ),
+    )
     return parser
 
 

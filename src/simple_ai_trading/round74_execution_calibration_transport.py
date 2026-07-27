@@ -28,6 +28,7 @@ ROUND74_EXECUTION_TRANSPORT_WS_BASE_URL = "wss://demo-fstream.binance.com"
 ROUND74_EXECUTION_TRANSPORT_RECV_WINDOW_MS = 2_000
 ROUND74_EXECUTION_TRANSPORT_MAXIMUM_TIMEOUT_SECONDS = 20.0
 ROUND74_EXECUTION_TRANSPORT_MAXIMUM_RESPONSE_BYTES = 256 * 1024
+ROUND74_EXECUTION_TRANSPORT_EXCHANGE_INFO_MAXIMUM_BYTES = 4 * 1024 * 1024
 ROUND74_EXECUTION_TRANSPORT_CLOCK_REFRESH_SECONDS = 60.0
 ROUND74_EXECUTION_TRANSPORT_BOOK_LIMIT = 100
 _USER_AGENT = "simple-ai-trading-round74-testnet-calibration/1"
@@ -93,11 +94,15 @@ def _symbol(value: object) -> str:
     return selected
 
 
-def _json_payload(response: _Response) -> object:
+def _json_payload(
+    response: _Response,
+    *,
+    maximum_response_bytes: int,
+) -> object:
     content = bytes(response.content)
     if (
         not content
-        or len(content) > ROUND74_EXECUTION_TRANSPORT_MAXIMUM_RESPONSE_BYTES
+        or len(content) > maximum_response_bytes
     ):
         raise RuntimeError("Round 74 execution response size differs")
     try:
@@ -184,7 +189,20 @@ class Round74BinanceTestnetExecutionTransport:
         api_key_only: bool = False,
         order_submission: bool = False,
         allow_order_not_found: bool = False,
+        maximum_response_bytes: int = (
+            ROUND74_EXECUTION_TRANSPORT_MAXIMUM_RESPONSE_BYTES
+        ),
     ) -> tuple[int, object, str]:
+        if (
+            isinstance(maximum_response_bytes, bool)
+            or not isinstance(maximum_response_bytes, int)
+            or maximum_response_bytes <= 0
+            or maximum_response_bytes
+            > ROUND74_EXECUTION_TRANSPORT_EXCHANGE_INFO_MAXIMUM_BYTES
+        ):
+            raise ValueError(
+                "Round 74 execution response byte limit differs"
+            )
         selected_params = dict(params or {})
         if signed:
             self._ensure_fresh_clock()
@@ -226,7 +244,10 @@ class Round74BinanceTestnetExecutionTransport:
         if received_ns < started_ns:
             raise RuntimeError("Round 74 execution request clock differs")
         self._record_rate_limits(response.headers)
-        payload = _json_payload(response)
+        payload = _json_payload(
+            response,
+            maximum_response_bytes=maximum_response_bytes,
+        )
         if response.status_code != 200:
             code = payload.get("code") if isinstance(payload, Mapping) else None
             if allow_order_not_found and code == -2013:
@@ -368,6 +389,63 @@ class Round74BinanceTestnetExecutionTransport:
         ):
             raise RuntimeError("Round 74 execution open orders differ")
         return tuple(dict(row) for row in payload)
+
+    def exchange_information(self, symbol: str) -> Mapping[str, object]:
+        selected_symbol = _symbol(symbol)
+        received_ns, payload, payload_sha = self._request(
+            "GET",
+            "/fapi/v1/exchangeInfo",
+            maximum_response_bytes=(
+                ROUND74_EXECUTION_TRANSPORT_EXCHANGE_INFO_MAXIMUM_BYTES
+            ),
+        )
+        if not isinstance(payload, Mapping) or not isinstance(
+            payload.get("symbols"),
+            list,
+        ):
+            raise RuntimeError(
+                "Round 74 execution exchange information differs"
+            )
+        selected = [
+            row
+            for row in payload["symbols"]
+            if isinstance(row, Mapping)
+            and row.get("symbol") == selected_symbol
+        ]
+        if len(selected) != 1:
+            raise RuntimeError(
+                "Round 74 execution exchange symbol differs"
+            )
+        return {
+            "schema_version": (
+                "round-074-execution-exchange-information-v1"
+            ),
+            "symbol": selected_symbol,
+            "received_monotonic_ns": received_ns,
+            "symbol_payload": dict(selected[0]),
+            "source_payload_sha256": payload_sha,
+        }
+
+    def mark_price(self, symbol: str) -> Mapping[str, object]:
+        selected_symbol = _symbol(symbol)
+        received_ns, payload, payload_sha = self._request(
+            "GET",
+            "/fapi/v1/premiumIndex",
+            params={"symbol": selected_symbol},
+        )
+        if (
+            not isinstance(payload, Mapping)
+            or payload.get("symbol") != selected_symbol
+            or not isinstance(payload.get("markPrice"), str)
+        ):
+            raise RuntimeError("Round 74 execution mark price differs")
+        return {
+            "schema_version": "round-074-execution-mark-price-v1",
+            "symbol": selected_symbol,
+            "received_monotonic_ns": received_ns,
+            "mark_price": payload["markPrice"],
+            "source_payload_sha256": payload_sha,
+        }
 
     def book(self, symbol: str) -> Mapping[str, object]:
         selected_symbol = _symbol(symbol)
@@ -557,6 +635,7 @@ class Round74BinanceTestnetExecutionTransport:
 
 __all__ = [
     "ROUND74_EXECUTION_TRANSPORT_BOOK_LIMIT",
+    "ROUND74_EXECUTION_TRANSPORT_EXCHANGE_INFO_MAXIMUM_BYTES",
     "ROUND74_EXECUTION_TRANSPORT_MAXIMUM_RESPONSE_BYTES",
     "ROUND74_EXECUTION_TRANSPORT_RECV_WINDOW_MS",
     "ROUND74_EXECUTION_TRANSPORT_REST_BASE_URL",

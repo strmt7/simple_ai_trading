@@ -46,6 +46,51 @@ class _FakeTransport:
     ) -> None:
         return None
 
+    def exchange_information(self, symbol: str) -> dict[str, object]:
+        return {
+            "schema_version": ("round-074-execution-exchange-information-v1"),
+            "symbol": symbol,
+            "source_payload_sha256": "1" * 64,
+            "symbol_payload": {
+                "symbol": symbol,
+                "pair": symbol,
+                "contractType": "PERPETUAL",
+                "status": "TRADING",
+                "quoteAsset": "USDT",
+                "marginAsset": "USDT",
+                "filters": [
+                    {
+                        "filterType": "MARKET_LOT_SIZE",
+                        "minQty": "0.01",
+                        "maxQty": "10",
+                        "stepSize": "0.01",
+                    },
+                    {
+                        "filterType": "MIN_NOTIONAL",
+                        "notional": "5",
+                    },
+                ],
+            },
+        }
+
+    def mark_price(self, symbol: str) -> dict[str, object]:
+        return {
+            "schema_version": "round-074-execution-mark-price-v1",
+            "symbol": symbol,
+            "mark_price": "100",
+            "source_payload_sha256": "2" * 64,
+        }
+
+    def book(self, symbol: str) -> dict[str, object]:
+        return {
+            "schema_version": "round-074-execution-book-state-v1",
+            "symbol": symbol,
+            "update_id": 42,
+            "bids": [["99.99", "10"]],
+            "asks": [["100.01", "10"]],
+            "source_payload_sha256": "3" * 64,
+        }
+
 
 class _RecoveryResult:
     def __init__(self, *, complete: bool) -> None:
@@ -101,9 +146,7 @@ def _network_args(
                 "BTCUSDT",
                 "--entry-side",
                 "BUY",
-                "--quantity",
-                "1",
-                "--reference-quote-notional",
+                "--target-quote-notional",
                 "100",
             ]
         )
@@ -168,9 +211,7 @@ def test_network_modes_require_two_confirmations_before_credentials(
             "BTCUSDT",
             "--entry-side",
             "BUY",
-            "--quantity",
-            "1",
-            "--reference-quote-notional",
+            "--target-quote-notional",
             "100",
         ]
     )
@@ -199,9 +240,7 @@ def test_capture_never_reads_credentials_without_both_confirmations(
             "BTCUSDT",
             "--entry-side",
             "BUY",
-            "--quantity",
-            "1",
-            "--reference-quote-notional",
+            "--target-quote-notional",
             "100",
         ]
     )
@@ -244,7 +283,7 @@ def test_recover_writes_canonical_source_bound_secret_free_artifact(
     assert payload["mainnet_orders_submitted"] is False
     assert payload["profitability_claim"] is False
     assert payload["last_rate_limit_headers"] == {"x-mbx-used-weight-1m": "7"}
-    assert len(payload["source_sha256"]) == 6
+    assert len(payload["source_sha256"]) == 7
     assert all(len(value) == 64 for value in payload["source_sha256"].values())
 
 
@@ -309,4 +348,6 @@ def test_capture_writes_admitted_pair_artifact(
     payload = _read_single_artifact(tmp_path / "artifacts")
     assert payload["operation"] == "capture"
     assert payload["recovery_before_capture"]["complete"] is True
+    assert payload["sizing"]["quantity"] == "0.99"
+    assert payload["sizing"]["reference_quote_notional"] == "99.0099"
     assert payload["result"]["evidence_admitted"] is True
