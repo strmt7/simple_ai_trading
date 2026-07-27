@@ -563,3 +563,30 @@ def test_declared_model_batch_unload_does_not_load_an_absent_model() -> None:
 
     assert unloaded is False
     assert posted is False
+
+
+def test_declared_model_batch_unload_refuses_same_digest_alias() -> None:
+    posted = False
+
+    def post(*_args: object, **_kwargs: object) -> object:
+        nonlocal posted
+        posted = True
+        return {"done": True}
+
+    with pytest.raises(ValueError, match="model identity differs"):
+        unload_round74_ai_model(
+            Round74AIRuntimeConfig(model_name="fino1:8b"),
+            _manifest(),
+            residency_inspector=lambda *_args, **_kwargs: OllamaResidencyReport(
+                requested_model="fino1:8b",
+                status="gpu_resident",
+                loaded_model="unrelated-alias:8b",
+                digest=MODEL_DIGEST,
+                size_bytes=1_000,
+                size_vram_bytes=1_000,
+                vram_to_model_ratio=1.0,
+            ),
+            provider_poster=post,
+        )
+
+    assert posted is False

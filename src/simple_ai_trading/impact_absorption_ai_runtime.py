@@ -85,6 +85,11 @@ def _is_sha256(value: object) -> bool:
     )
 
 
+def _normalized_model_reference(value: object) -> str:
+    selected = str(value or "").strip().lower()
+    return selected if ":" in selected else f"{selected}:latest"
+
+
 @dataclass(frozen=True)
 class Round74AIRuntimeConfig:
     """Resource and process limits for one local, veto-only review."""
@@ -470,7 +475,9 @@ def unload_round74_ai_model(
     ).validated()
     if current.status == "unloaded":
         return False
-    if current.digest != manifest.model_artifact_sha256:
+    if current.digest != manifest.model_artifact_sha256 or _normalized_model_reference(
+        current.loaded_model
+    ) != _normalized_model_reference(config.model_name):
         raise ValueError("Round 74 AI unload model identity differs")
     response = provider_poster(
         f"{config.endpoint}/api/generate",
@@ -493,7 +500,11 @@ def unload_round74_ai_model(
         ).validated()
         if current.status == "unloaded":
             return True
-        if current.digest != manifest.model_artifact_sha256:
+        if (
+            current.digest != manifest.model_artifact_sha256
+            or _normalized_model_reference(current.loaded_model)
+            != _normalized_model_reference(config.model_name)
+        ):
             raise ValueError("Round 74 AI unload residency identity drifted")
         if monotonic() >= deadline:
             raise TimeoutError("Round 74 AI declared model unload timed out")
