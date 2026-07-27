@@ -13,7 +13,9 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     derive_round74_action_candidates,
     round74_action_profile,
     select_round74_action_policy,
+    select_round74_action_policy_batches,
     simulate_round74_action_trace,
+    simulate_round74_action_trace_batches,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
     Round74ProbabilityCalibration,
@@ -248,6 +250,51 @@ def _candidates(
     )
 
 
+def _slice_batch(
+    batch: Round74EventTrainingBatch,
+    start: int,
+    stop: int,
+) -> Round74EventTrainingBatch:
+    result = replace(
+        batch,
+        run_id=batch.run_id[start:stop],
+        symbol=batch.symbol[start:stop],
+        decision_monotonic_ns=batch.decision_monotonic_ns[start:stop],
+        decision_wall_ns=batch.decision_wall_ns[start:stop],
+        endpoint_frame_index=batch.endpoint_frame_index[start:stop],
+        endpoint_message_index=batch.endpoint_message_index[start:stop],
+        anchor_index=batch.anchor_index[start:stop],
+        sample_sha256=batch.sample_sha256[start:stop],
+        target_context_sha256=batch.target_context_sha256[start:stop],
+        test_access_sha256=batch.test_access_sha256[start:stop],
+        feature_values=batch.feature_values[start:stop],
+        actual_entry_monotonic_ns=batch.actual_entry_monotonic_ns[start:stop],
+        actual_exit_monotonic_ns=batch.actual_exit_monotonic_ns[start:stop],
+        net_payoff_bps=batch.net_payoff_bps[start:stop],
+        maximum_adverse_excursion_bps=(
+            batch.maximum_adverse_excursion_bps[start:stop]
+        ),
+        adverse_selection=batch.adverse_selection[start:stop],
+        regime_unpredictability=batch.regime_unpredictability[start:stop],
+        action_eligibility=batch.action_eligibility[start:stop],
+        regime_unpredictability_eligibility=(
+            batch.regime_unpredictability_eligibility[start:stop]
+        ),
+    )
+    result.validate()
+    return result
+
+
+def _run_batch_panel(
+    batch: Round74EventTrainingBatch,
+) -> tuple[Round74EventTrainingBatch, ...]:
+    rows_per_run = len(ROUND74_EVENT_SYMBOLS) * 2
+    return tuple(
+        _slice_batch(batch, start, start + rows_per_run)
+        for start in range(0, batch.rows, rows_per_run)
+    )
+
+
 def test_default_profile_is_conservative_and_profiles_relax_monotonically() -> None:
     assert ROUND74_ACTION_DEFAULT_PROFILE == "conservative"
     conservative = round74_action_profile()
@@ -275,10 +322,16 @@ def test_default_profile_is_conservative_and_profiles_relax_monotonically() -> N
 def test_candidate_derivation_is_target_free_and_prefers_shorter_tie() -> None:
     positive_batch = _batch(payoff_sign=1.0)
     negative_batch = _batch(payoff_sign=-1.0)
+    context = build_round74_action_inference_context(positive_batch)
 
     positive = _candidates(positive_batch)
     negative = _candidates(negative_batch)
 
+    assert np.shares_memory(context.feature_values, positive_batch.feature_values)
+    assert np.shares_memory(
+        context.decision_wall_ns,
+        positive_batch.decision_wall_ns,
+    )
     assert positive.candidate_sha256 == negative.candidate_sha256
     assert positive.context_sha256 == negative.context_sha256
     assert positive.eligible.all()
@@ -347,6 +400,68 @@ def test_policy_selection_accepts_only_profitable_diversified_tuning_trace() -> 
     accepted = [value for value in selection.evaluations if value.accepted]
     assert accepted
     assert all(value.trace.metrics.total_net_bps > 0.0 for value in accepted)
+
+
+def test_batch_panel_selection_matches_single_batch_without_feature_copy() -> None:
+    batch = _batch(payoff_sign=1.0)
+    batches = _run_batch_panel(batch)
+    candidates = tuple(_candidates(value) for value in batches)
+
+    panel_trace = simulate_round74_action_trace_batches(
+        batches,
+        candidates,
+        threshold_score=0.0,
+        expected_run_ids=_subpartition().policy_selection_run_ids,
+    )
+    single_trace = simulate_round74_action_trace(
+        batch,
+        _candidates(batch),
+        threshold_score=0.0,
+        expected_run_ids=_subpartition().policy_selection_run_ids,
+    )
+    panel_selection = select_round74_action_policy_batches(
+        batches,
+        candidates,
+        _subpartition(),
+    )
+    single_selection = select_round74_action_policy(
+        batch,
+        _candidates(batch),
+        _subpartition(),
+    )
+
+    assert panel_trace.as_dict() == single_trace.as_dict()
+    assert panel_selection.selected_threshold_score == (
+        single_selection.selected_threshold_score
+    )
+    assert panel_selection.evaluations == single_selection.evaluations
+    assert len(panel_selection.target_batch_sha256) == 6
+    assert len(panel_selection.candidate_sha256) == 6
+    assert all(
+        np.shares_memory(value.feature_values, batch.feature_values)
+        for value in batches
+    )
+
+
+def test_batch_panel_rejects_non_chronological_or_duplicate_panels() -> None:
+    batch = _batch()
+    batches = _run_batch_panel(batch)
+    candidates = tuple(_candidates(value) for value in batches)
+
+    with pytest.raises(ValueError, match="replay identity differs"):
+        simulate_round74_action_trace_batches(
+            (batches[1], batches[0], *batches[2:]),
+            (candidates[1], candidates[0], *candidates[2:]),
+            threshold_score=0.0,
+            expected_run_ids=_subpartition().policy_selection_run_ids,
+        )
+    with pytest.raises(ValueError, match="replay identity differs"):
+        simulate_round74_action_trace_batches(
+            (*batches, batches[-1]),
+            (*candidates, candidates[-1]),
+            threshold_score=0.0,
+            expected_run_ids=_subpartition().policy_selection_run_ids,
+        )
 
 
 def test_policy_selection_rejects_negative_after_cost_outcomes() -> None:
