@@ -94,6 +94,9 @@ from simple_ai_trading.impact_absorption_execution_evidence import (
     ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
     ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_exchange_info_evidence import (
+    ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_target_assembly import (
     ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
 )
@@ -101,7 +104,7 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v41.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v42.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -155,6 +158,13 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+    )
+    assert source["event_exchange_info_evidence_sha256"] == _file_sha256(
+        source["event_exchange_info_evidence_path"]
+    )
+    assert (
+        source["event_exchange_info_evidence_schema_version"]
+        == ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION
     )
     assert source["event_target_assembly_sha256"] == _file_sha256(
         source["event_target_assembly_path"]
@@ -456,6 +466,17 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert costs["touching_or_overlapping_funding_intervals_permitted"] is False
     assert costs["commission_source_response_parser_implemented"] is True
     assert costs["funding_history_source_response_parser_implemented"] is True
+    assert (
+        costs[
+            "empty_explicitly_bounded_funding_response_is_accepted_as_complete"
+        ]
+        is True
+    )
+    assert costs["missing_symbol_funding_response_is_accepted_as_empty"] is False
+    assert (
+        costs["funding_evidence_record_count_includes_symbol_responses_and_rows"]
+        is True
+    )
     assert costs["credential_material_may_enter_target_evidence_or_artifacts"] is False
     assert costs["full_funding_limit_page_accepted_as_complete"] is False
     assert "completed audited Round 74 v10 capture" in (
@@ -835,6 +856,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert authority["source_derived_target_assembly_implementation"] is True
+    assert (
+        authority[
+            "complete_empty_bounded_funding_response_implementation"
+        ]
+        is True
+    )
     assert authority["real_public_exchange_info_evidence_captured"] is True
     assert authority["real_authenticated_commission_evidence_captured"] is False
     assert authority["real_public_funding_evidence_captured"] is False

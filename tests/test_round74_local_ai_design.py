@@ -66,6 +66,9 @@ from simple_ai_trading.impact_absorption_execution_evidence import (
     ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
     ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_exchange_info_evidence import (
+    ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_target_assembly import (
     ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
 )
@@ -77,7 +80,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v27.json"
+    / "round-074-local-ai-review-design-v28.json"
 )
 
 
@@ -185,6 +188,13 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert (
         source["target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+    )
+    assert source["exchange_info_evidence_sha256"] == hashlib.sha256(
+        (REPOSITORY / source["exchange_info_evidence_path"]).read_bytes()
+    ).hexdigest()
+    assert (
+        source["exchange_info_evidence_schema_version"]
+        == ROUND74_EXCHANGE_INFO_EVIDENCE_SCHEMA_VERSION
     )
     assert (
         source["target_assembly_schema_version"]
@@ -379,6 +389,22 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["funding_history_full_limit_page_is_accepted_as_complete"] is False
     assert (
         architecture[
+            "empty_explicitly_bounded_funding_response_is_accepted_as_complete"
+        ]
+        is True
+    )
+    assert (
+        architecture["missing_symbol_funding_response_is_accepted_as_empty"]
+        is False
+    )
+    assert (
+        architecture[
+            "funding_evidence_record_count_includes_symbol_responses_and_rows"
+        ]
+        is True
+    )
+    assert (
+        architecture[
             "funding_clock_probes_are_loaded_only_from_completed_audited_v10_capture"
         ]
         is True
@@ -550,6 +576,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["exchange_info_quantity_rules_parser_implemented"] is True
     assert status["quantity_rules_runtime_evidence_match_gate_implemented"] is True
     assert status["source_derived_target_assembly_implemented"] is True
+    assert status["complete_empty_bounded_funding_response_implemented"] is True
     assert status["real_public_exchange_info_evidence_captured"] is True
     assert status["real_authenticated_commission_evidence_captured"] is False
     assert status["real_public_funding_evidence_captured"] is False
