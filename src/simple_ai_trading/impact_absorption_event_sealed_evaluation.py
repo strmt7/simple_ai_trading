@@ -62,7 +62,7 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v5"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v6"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -905,6 +905,7 @@ class Round74SealedAIOverlay:
             "gate_reasons": list(self.gate_reasons),
             "may_create_or_replace_ml_actions": False,
             "same_entry_fill_requires_measured_latency_eligibility": True,
+            "same_entry_latency_includes_historical_queue_delay": True,
             "latency_adjusted_replay_performed": False,
         }
 

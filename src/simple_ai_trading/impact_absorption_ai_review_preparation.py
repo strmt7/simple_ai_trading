@@ -32,7 +32,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v2"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v3"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
@@ -161,6 +161,7 @@ class Round74TargetFreeReviewRow:
     horizon_seconds: int
     candidate_sha256: str
     deterministic_risk_state_sha256: str
+    decision_wall_ns: int
 
     def validate(self) -> None:
         if (
@@ -183,6 +184,9 @@ class Round74TargetFreeReviewRow:
             or self.symbol not in ROUND74_EVENT_SYMBOLS
             or self.side not in (-1, 1)
             or self.horizon_seconds not in (30, 300)
+            or isinstance(self.decision_wall_ns, bool)
+            or not isinstance(self.decision_wall_ns, int)
+            or self.decision_wall_ns <= 0
         ):
             raise ValueError("Round 74 target-free review row differs")
 
@@ -236,6 +240,11 @@ class Round74AIReviewPanel:
             sorted(row.row_index for row in self.rows)
         ) or len({row.row_index for row in self.rows}) != len(self.rows):
             raise ValueError("Round 74 AI review row order differs")
+        if any(
+            current.decision_wall_ns < prior.decision_wall_ns
+            for prior, current in zip(self.rows, self.rows[1:])
+        ):
+            raise ValueError("Round 74 AI review wall-time order differs")
         manifest_sha256: set[str] = set()
         expected_rows = tuple(row.row_index for row in self.rows)
         for binding, reviews in zip(
@@ -299,6 +308,10 @@ class Round74AIReviewPanel:
             "same_entry_latency_budget_policy": (
                 "externally_measured_signal_to_entry_slack"
             ),
+            "queue_model": (
+                "single_server_per_candidate_model_in_historical_decision_order"
+            ),
+            "queue_delay_included_in_same_entry_eligibility": True,
             "latency_adjusted_replay_performed": False,
             "target_fields_accessed": False,
             "trading_authority": False,
@@ -368,6 +381,9 @@ def _review_rows(
                     "row_index": row_index,
                     "feature_row_sha256": (candidates.feature_row_sha256[local_index]),
                     "candidate_sha256": candidates.candidate_sha256,
+                    "decision_wall_ns": int(
+                        context.decision_wall_ns[local_index]
+                    ),
                     "paired_evaluation_unit_risk_bps": (
                         ROUND74_AI_REVIEW_UNIT_RISK_BPS
                     ),
@@ -386,6 +402,9 @@ def _review_rows(
                     horizon_seconds=int(candidates.horizon_seconds[local_index]),
                     candidate_sha256=candidates.candidate_sha256,
                     deterministic_risk_state_sha256=risk_state,
+                    decision_wall_ns=int(
+                        context.decision_wall_ns[local_index]
+                    ),
                 )
             )
         offset += context.rows
@@ -444,6 +463,7 @@ def prepare_round74_target_free_ai_reviews(
     completed = 0
     for binding in bindings:
         reviews: list[Round74AIPairedReviewEvidence] = []
+        model_available_wall_ns = 0
         for row in rows:
             context = inference.contexts[row.panel_index]
             output = inference.model_outputs[row.panel_index]
@@ -485,6 +505,14 @@ def prepare_round74_target_free_ai_reviews(
                 observed_wall_ns=requested_wall_ns,
             )
             outcome.validate()
+            queue_delay_ns = max(
+                0,
+                model_available_wall_ns - row.decision_wall_ns,
+            )
+            model_available_wall_ns = (
+                max(model_available_wall_ns, row.decision_wall_ns)
+                + outcome.elapsed_ns
+            )
             evidence = Round74AIPairedReviewEvidence.from_runtime(
                 row_index=row.row_index,
                 feature_row_sha256=row.feature_row_sha256,
@@ -495,6 +523,7 @@ def prepare_round74_target_free_ai_reviews(
                 request=request,
                 outcome=outcome,
                 same_entry_latency_budget_ns=same_entry_latency_budget_ns,
+                queue_delay_ns=queue_delay_ns,
             )
             reviews.append(evidence)
             completed += 1
@@ -508,6 +537,10 @@ def prepare_round74_target_free_ai_reviews(
                         "row_index": row.row_index,
                         "runtime_status": outcome.status,
                         "runtime_elapsed_ns": outcome.elapsed_ns,
+                        "queue_delay_ns": evidence.queue_delay_ns,
+                        "effective_review_latency_ns": (
+                            evidence.effective_review_latency_ns
+                        ),
                         "same_entry_latency_eligible": (
                             evidence.same_entry_latency_eligible
                         ),

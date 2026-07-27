@@ -310,6 +310,8 @@ def _reviews(
             model_manifest_sha256=manifest,
             runtime_status="accepted",
             runtime_elapsed_ns=1_000,
+            queue_delay_ns=0,
+            effective_review_latency_ns=1_000,
             same_entry_latency_budget_ns=1_000_000,
             same_entry_latency_eligible=True,
             size_multiplier_bps=10_000,
@@ -504,6 +506,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     reviews[0] = replace(
         reviews[0],
         runtime_elapsed_ns=1_000_001,
+        effective_review_latency_ns=1_000_001,
         same_entry_latency_eligible=False,
         size_multiplier_bps=0,
     )
@@ -626,7 +629,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
             resolved_model_digest=None,
             resolved_model_metadata_sha256=None,
             worker_result=None,
-            elapsed_ns=0,
+            elapsed_ns=5_000_000_000_000,
             failure_class="AICapabilityGate",
             message="blocked by test capability gate",
         )
@@ -651,6 +654,12 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     )
     assert len(panel.rows) == 24
     assert panel.same_entry_latency_budget_ns == 1_000_000
+    assert panel.reviews[0][0].queue_delay_ns == 0
+    assert panel.reviews[0][1].queue_delay_ns == 1_000_000_000_000
+    assert (
+        panel.reviews[0][1].effective_review_latency_ns
+        == 6_000_000_000_000
+    )
     assert len(panel.reviews) == 2
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
