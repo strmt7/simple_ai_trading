@@ -83,6 +83,9 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_model import (
+    ROUND74_EVENT_ATTENTION_HEADS,
+    ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS,
+    ROUND74_EVENT_ATTENTION_LAYERS,
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
     ROUND74_EVENT_TCN_DILATIONS,
@@ -116,12 +119,12 @@ from simple_ai_trading.round74_event_model_operator import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v56.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v57.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-cohort-v4-v7-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-attention-v8-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -823,6 +826,13 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         temporal["frozen_sequence_length_events"]
         <= (temporal["causal_receptive_field_events"])
     )
+    attention = design["candidate_panel"]["causal_event_attention"]
+    assert attention["parameter_count"] == 151_876
+    assert attention["hidden_channels"] == ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS
+    assert attention["attention_heads"] == ROUND74_EVENT_ATTENTION_HEADS
+    assert attention["layers"] == ROUND74_EVENT_ATTENTION_LAYERS
+    assert attention["strict_causal_mask"] is True
+    assert attention["frozen_sequence_length_events"] == 128
     evaluation = design["prospective_evaluation_contract"]
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
@@ -1239,7 +1249,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
     assert (
-        "unequal constructed training runs"
+        "constructed unequal training runs"
         in (binding["event_training_directml_reuse_scope"])
     )
     assert (
@@ -1247,7 +1257,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         in (binding["event_training_directml_reuse_scope"])
     )
     assert (
-        "does not evidence market fit"
+        "not market fit"
         in (binding["event_training_directml_reuse_scope"])
     )
     assert source["preflight_runner_sha256"] == _file_sha256(
@@ -1292,7 +1302,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["seed_count_per_candidate"] == len(
         ROUND74_EVENT_TRAINING_DEFAULT_SEEDS
     )
-    assert verification["peer_update_count"] == 9
+    assert verification["peer_update_count"] == 12
     assert verification["cross_execution_complete_result_equal"] is True
     assert verification["cross_execution_policy_sha256_equal"] is True
     assert verification["cross_execution_model_sha256_equal"] is True
@@ -1348,6 +1358,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         for report in selection["promotion_reports"]
     )
     assert binding["event_training_directml_observed_paired_run_count"] == 1
+    assert binding["event_training_directml_candidate_count"] == len(
+        ROUND74_EVENT_MODEL_CANDIDATES
+    )
     assert binding["event_training_directml_required_paired_run_count"] == (
         ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )

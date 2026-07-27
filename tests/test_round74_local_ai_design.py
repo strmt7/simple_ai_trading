@@ -96,7 +96,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v42.json"
+    / "round-074-local-ai-review-design-v43.json"
 )
 
 
@@ -318,7 +318,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute_claimed == compute["artifact_sha256"]
     assert compute["candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
     assert compute["fresh_process_execution_count"] == 2
-    assert compute["peer_update_count"] == 9
+    assert compute["peer_update_count"] == 12
     assert compute["accelerated_backend"] == "directml"
     assert compute["warning_count_per_execution"] == 0
     assert compute["cpu_fallback_warning_count_per_execution"] == 0
@@ -337,6 +337,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["unequal_training_run_sizes_proven"] is True
     assert compute["statistical_independence_or_significance_claim"] is False
     assert compute["nonlinear_candidate_promoted"] is False
+    assert compute["attention_candidate_promoted"] is False
     assert compute["constructed_tensor_compute_only"] is True
     assert compute["real_market_events_used"] is False
     assert compute["candidate_loss_has_financial_meaning"] is False
@@ -368,6 +369,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         architecture["ml_candidate_panel_includes_linear_microstructure_control"]
         is True
     )
+    assert architecture["ml_candidate_panel_includes_causal_attention"] is True
+    assert architecture["ml_attention_candidate_parameter_count"] == 151_876
+    assert architecture["ml_attention_strict_causal_mask"] is True
+    assert architecture["ml_attention_directml_preflight_completed"] is True
     assert architecture["ml_gradient_population_unit"] == "capture_run"
     assert architecture["ml_row_pooled_optimizer_steps_permitted"] is False
     assert architecture["ml_one_minibatch_per_run_per_optimizer_step"] is True
@@ -807,11 +812,11 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         assert status[key] is False
     assert status["candidate_weights_downloaded"] is True
     assert status["candidate_manifest_hash_verified"] is True
-    assert status["current_three_candidate_ml_compute_preflight_completed"] is True
+    assert status["current_four_candidate_ml_compute_preflight_completed"] is True
     assert status["current_complexity_promotion_compute_preflight_completed"] is True
     assert status["equal_run_gradient_optimization_implemented"] is True
     assert status["unequal_run_directml_gradient_schedule_preflight_completed"] is True
-    assert status["current_three_candidate_ml_market_training_completed"] is False
+    assert status["current_four_candidate_ml_market_training_completed"] is False
     assert status["isolated_worker_implemented"] is True
     assert status["fail_closed_parent_runtime_implemented"] is True
     assert status["causal_calibrated_bridge_implemented"] is True
