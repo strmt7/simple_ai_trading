@@ -1,0 +1,207 @@
+{
+  "schema_version": "round-074-event-training-directml-preflight-evidence-v14",
+  "supersedes_artifact_sha256": "4a7136f69fc801c1e5084efef031de304b1cc73e5add8ddad76ca0ef1bb0121c",
+  "round": 74,
+  "executed_at_utc": "2026-07-27T06:46:35Z",
+  "execution_git_commit": "25457d70eee75a2727d87fe5b40f19a6a5d0fa6f",
+  "source_binding": {
+    "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
+    "event_sequence_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
+    "event_scaling_path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
+    "event_scaling_sha256": "c42d614cee0edf877af501ea4a77b78e5a7f3f2135423eb2336d8ace78c86986",
+    "event_targets_path": "src/simple_ai_trading/impact_absorption_event_targets.py",
+    "event_targets_sha256": "b847e053dc4dabcf421ac57f065377a8eb7bfc1d2a38c862b9aa84e57d257372",
+    "event_dataset_path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+    "event_dataset_sha256": "ed363ed8e409ebb2f07d735bac9666b90e62c7a51e63e59c80faba8ca1ca4138",
+    "event_model_path": "src/simple_ai_trading/impact_absorption_event_model.py",
+    "event_model_sha256": "e97936b0c90caf370feb6fb21ad66e0f3ce5c5a8ddaa53a3c21bf4e9c4a54346",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "ab5fa4f1e58c0ea4a22965ec25798b7a583c47c148a6d604b84502ef77cf587b",
+    "event_cohort_path": "src/simple_ai_trading/impact_absorption_event_cohort.py",
+    "event_cohort_sha256": "78b74032517330e7292511807f60c6e88ffa9e670b2f8811a92a69a23d166b20",
+    "storage_path": "src/simple_ai_trading/storage.py",
+    "storage_sha256": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610",
+    "preflight_runner_path": "tools/run_round74_event_training_preflight.py",
+    "preflight_runner_sha256": "8cba0b917e43604ad026ef788a7f8af6750d75b391f1131aa49223088a319088",
+    "publisher_path": "tools/publish_round74_event_training_preflight.py",
+    "publisher_sha256": "6e92723deaf8467c9f41b5a916e750abe36660e1709c292c03f18969855f6b1f",
+    "event_model_schema_version": "round-074-event-payoff-model-v3",
+    "event_training_schema_version": "round-074-event-training-v8",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v7"
+  },
+  "backend": {
+    "accelerated": true,
+    "deterministic_algorithms_requested": true,
+    "device": "privateuseone:0",
+    "kind": "directml",
+    "requested": "directml",
+    "safetensors_version": "0.8.0",
+    "selection": "runtime_current_device",
+    "torch_directml_version": "0.2.5.dev240914",
+    "torch_version": "2.4.1+cpu",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "warning_count_per_execution": 0,
+    "cpu_fallback_warning_count_per_execution": 0
+  },
+  "input_contract": {
+    "source": "deterministic constructed tensor contract from the hash-bound preflight runner",
+    "real_market_events_used": false,
+    "real_market_targets_used": false,
+    "training_rows": 2,
+    "tuning_rows": 2,
+    "candidate_ids": [
+      "event_pooling_linear",
+      "event_pooling_mlp",
+      "causal_event_tcn"
+    ],
+    "epochs": 1,
+    "minibatch_rows": 2,
+    "seeds": [
+      7411,
+      7423,
+      7433
+    ],
+    "training_batch_sha256": "24079761babfc52b6fdb19cb7601c9ef40e532b6973d98f146a1c715dd3226bf",
+    "training_eligible_action_targets": 15,
+    "training_eligible_regime_targets": 8,
+    "tuning_batch_sha256": "16f87f75d642f1ab9ccf3381983d51b65b917949175afcbbeb52c73ba67dbe97",
+    "tuning_eligible_action_targets": 15,
+    "tuning_eligible_regime_targets": 8,
+    "test_batches_consumed": 0
+  },
+  "verification": {
+    "operator_process_invocation_count": 2,
+    "fresh_process_execution_count": 2,
+    "successful_execution_count": 2,
+    "candidate_count": 3,
+    "all_candidates_trained": true,
+    "seed_count_per_candidate": 3,
+    "peer_update_count": 9,
+    "safe_tensor_state_reload_verified": true,
+    "atomic_policy_reload_verified": true,
+    "temporary_artifacts_removed_after_each_execution": true,
+    "cross_execution_complete_result_equal": true,
+    "cross_execution_policy_sha256_equal": true,
+    "cross_execution_model_sha256_equal": true,
+    "cross_execution_prediction_sha256_equal": true,
+    "cross_execution_candidate_metrics_equal": true
+  },
+  "repeated_result": {
+    "candidate_pooled_tuning_proper_loss": {
+      "causal_event_tcn": 0.8407557129859924,
+      "event_pooling_linear": 0.8675906002521516,
+      "event_pooling_mlp": 0.8463841125369072
+    },
+    "candidate_run_balanced_tuning_proper_loss": {
+      "causal_event_tcn": 0.8407557129859924,
+      "event_pooling_linear": 0.8675906002521516,
+      "event_pooling_mlp": 0.8463841125369072
+    },
+    "candidate_worst_run_tuning_proper_loss": {
+      "causal_event_tcn": 0.8407557129859924,
+      "event_pooling_linear": 0.8675906002521516,
+      "event_pooling_mlp": 0.8463841125369072
+    },
+    "model_byte_count": 158864,
+    "model_sha256": "8604b8bfe4089c7db67e99af0e0877fc86e05b6c1c93dd5401e8e30c6805d4ce",
+    "peer_best_run_balanced_tuning_proper_loss": {
+      "causal_event_tcn": [
+        0.8404306143522262,
+        0.8422561973333359,
+        0.8411938890814781
+      ],
+      "event_pooling_linear": [
+        0.9350639030337333,
+        0.8980255678296089,
+        0.8831463485956191
+      ],
+      "event_pooling_mlp": [
+        0.8419364243745803,
+        0.842772988975048,
+        0.8557772114872934
+      ]
+    },
+    "policy_sha256": "3334a60f3bce4e068f81235b0fe5485e6986c61b6605477d07f5273ead8c89d2",
+    "prediction_sha256": "ce8170945ada55470e40db5a5779b490f3a1e27830024985efef92215649fe75",
+    "selected_candidate_id": "event_pooling_linear",
+    "selection": {
+      "backtest_metric_used_for_selection": false,
+      "complexity_promotion_privilege": false,
+      "criterion": "sequential parameter-count complexity promotion; each challenger requires all 24 tuning capture runs, must strictly exceed the numerical mean-loss floor, and may not degrade any paired run beyond that floor",
+      "maximum_permitted_paired_run_loss_degradation": 1e-05,
+      "minimum_mean_proper_loss_improvement": 1e-05,
+      "ordered_candidate_ids": [
+        "event_pooling_linear",
+        "event_pooling_mlp",
+        "causal_event_tcn"
+      ],
+      "planned_comparison_count": 2,
+      "promotion_reports": [
+        {
+          "all_paired_runs_noninferior": true,
+          "challenger_candidate_id": "event_pooling_mlp",
+          "challenger_loss_count": 0,
+          "challenger_win_count": 1,
+          "complete_tuning_panel": false,
+          "exact_tie_count": 0,
+          "incumbent_candidate_id": "event_pooling_linear",
+          "maximum_paired_run_loss_degradation": -0.02120648771524447,
+          "maximum_permitted_paired_run_loss_degradation": 1e-05,
+          "mean_proper_loss_improvement": 0.02120648771524447,
+          "minimum_mean_proper_loss_improvement": 1e-05,
+          "paired_capture_run_count": 1,
+          "promoted": false,
+          "required_paired_capture_run_count": 24
+        },
+        {
+          "all_paired_runs_noninferior": true,
+          "challenger_candidate_id": "causal_event_tcn",
+          "challenger_loss_count": 0,
+          "challenger_win_count": 1,
+          "complete_tuning_panel": false,
+          "exact_tie_count": 0,
+          "incumbent_candidate_id": "event_pooling_linear",
+          "maximum_paired_run_loss_degradation": -0.026834887266159235,
+          "maximum_permitted_paired_run_loss_degradation": 1e-05,
+          "mean_proper_loss_improvement": 0.026834887266159235,
+          "minimum_mean_proper_loss_improvement": 1e-05,
+          "paired_capture_run_count": 1,
+          "promoted": false,
+          "required_paired_capture_run_count": 24
+        }
+      ],
+      "required_paired_capture_run_count": 24,
+      "selected_candidate_id": "event_pooling_linear",
+      "selected_tuning_metrics": {
+        "adverse_bce": 0.7853785753250122,
+        "eligible_action_targets": 15.0,
+        "eligible_regime_targets": 8.0,
+        "fully_censored_minibatches": 0.0,
+        "fully_censored_rows": 0.0,
+        "loss": 0.8675906002521516,
+        "maximum_adverse_excursion_pinball": 0.2566623091697693,
+        "payoff_pinball": 0.37844207882881165,
+        "positive_bce": 0.6652175784111023,
+        "run_balanced_loss": 0.8675906002521516,
+        "run_count": 1.0,
+        "unpredictability_bce": 0.7593660354614258,
+        "worst_run_loss": 0.8675906002521516
+      },
+      "statistical_independence_or_significance_claim": false
+    }
+  },
+  "interpretation": {
+    "result_type": "compute serialization and governance preflight only",
+    "candidate_loss_has_financial_meaning": false,
+    "representative_market_training_performed": false,
+    "sealed_test_evaluated": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false,
+    "cross_platform_bitwise_reproducibility_claim": false
+  },
+  "artifact_sha256": "c5a7a6dfdcebb3ed6c204e74cefbfcb6a35a8285c3bf909a5db5c3526de372f0"
+}

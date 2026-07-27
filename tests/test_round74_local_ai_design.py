@@ -87,7 +87,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v31.json"
+    / "round-074-local-ai-review-design-v32.json"
 )
 
 
@@ -272,12 +272,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["warning_count_per_execution"] == 0
     assert compute["cpu_fallback_warning_count_per_execution"] == 0
     assert compute["selected_candidate_id"] == "event_pooling_linear"
-    assert compute["complexity_promotion_familywise_alpha"] == 0.05
-    assert compute["complexity_promotion_comparison_alpha"] == 0.025
-    assert compute["nonlinear_promotion_pvalues"] == {
-        "event_pooling_mlp": 0.5,
-        "causal_event_tcn": 0.5,
-    }
+    assert compute["observed_paired_capture_run_count"] == 1
+    assert compute["required_paired_capture_run_count"] == 24
+    assert compute["complete_tuning_panel"] is False
+    assert compute["statistical_independence_or_significance_claim"] is False
     assert compute["nonlinear_candidate_promoted"] is False
     assert compute["constructed_tensor_compute_only"] is True
     assert compute["real_market_events_used"] is False
@@ -310,6 +308,20 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
             "ml_candidate_selection_requires_paired_capture_run_complexity_promotion"
         ]
         is True
+    )
+    assert (
+        architecture["ml_candidate_selection_requires_complete_24_run_tuning_panel"]
+        is True
+    )
+    assert (
+        architecture[
+            "ml_candidate_selection_permits_any_material_paired_run_degradation"
+        ]
+        is False
+    )
+    assert (
+        architecture["ml_candidate_selection_makes_dependent_run_significance_claim"]
+        is False
     )
     assert architecture["ml_candidate_selection_uses_ai_output"] is False
     assert architecture["ml_candidate_selection_uses_sealed_test"] is False
