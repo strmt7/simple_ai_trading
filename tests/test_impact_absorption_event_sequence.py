@@ -417,7 +417,7 @@ def test_multi_timescale_state_is_invariant_to_empty_event_sampling_rate() -> No
     sparse.consume(frame_index=0, message_index=0, record=first_trade)
     dense.consume(frame_index=0, message_index=0, record=first_trade)
 
-    for index, seconds in enumerate((3, 5, 7, 9), start=1):
+    for index, seconds in enumerate((2, 3, 4, 5), start=1):
         dense.consume(
             frame_index=0,
             message_index=index,
@@ -430,13 +430,13 @@ def test_multi_timescale_state_is_invariant_to_empty_event_sampling_rate() -> No
             ),
         )
 
-    moved_ticker = _ticker(11_020)
+    moved_ticker = _ticker(6_020)
     moved_ticker["b"] = "100.1"
     moved_ticker["a"] = "100.2"
     final_record = _record(
         lane="binance_futures_public",
         sequence=0,
-        monotonic_ns=11_000_000_000,
+        monotonic_ns=6_000_000_000,
         stream_name="btcusdt@bookTicker",
         payload=moved_ticker,
     )
@@ -462,6 +462,54 @@ def test_multi_timescale_state_is_invariant_to_empty_event_sampling_rate() -> No
             rel=1e-12,
             abs=1e-12,
         )
+
+
+def test_multi_timescale_state_resets_instead_of_interpolating_across_gap() -> None:
+    encoder = _encoder(ready_offset_ns=1)
+    encoder.consume(
+        frame_index=0,
+        message_index=0,
+        record=_record(
+            lane="binance_futures_market",
+            sequence=0,
+            monotonic_ns=1_000_000_000,
+            stream_name="btcusdt@aggTrade",
+            payload=_trade(1_020),
+        ),
+    )
+    encoder.consume(
+        frame_index=0,
+        message_index=1,
+        record=_record(
+            lane="binance_futures_market",
+            sequence=1,
+            monotonic_ns=2_000_000_000,
+            stream_name="btcusdt@markPrice@1s",
+            payload=_mark(2_020),
+        ),
+    )
+    moved_ticker = _ticker(8_020)
+    moved_ticker["b"] = "101.0"
+    moved_ticker["a"] = "101.1"
+    after_gap = encoder.consume(
+        frame_index=0,
+        message_index=2,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=0,
+            monotonic_ns=8_000_000_001,
+            stream_name="btcusdt@bookTicker",
+            payload=moved_ticker,
+        ),
+    )
+
+    assert after_gap is not None
+    state_features = tuple(
+        name for name in ROUND74_EVENT_FEATURE_NAMES if name.startswith("ewm_")
+    )
+    assert state_features
+    assert all(_feature(after_gap, name) == 0.0 for name in state_features)
+    assert _feature(after_gap, "mid_log_return_bps") > 0.0
 
 
 def test_event_windows_are_per_symbol_causal_and_break_on_long_gap() -> None:

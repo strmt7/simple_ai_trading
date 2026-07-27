@@ -29,7 +29,7 @@ from .impact_absorption import (
 from .impact_capture_frame import ImpactCaptureFrameRecord
 
 
-ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v3"
+ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v4"
 ROUND74_EVENT_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 ROUND74_EVENT_SEQUENCE_LENGTH = 128
 ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS = (1, 5, 30, 300)
@@ -208,10 +208,13 @@ class _Round74TimeScaleState:
     """Continuous-time causal state with no fixed event-rate assumption."""
 
     def __init__(self) -> None:
-        count = len(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS)
         self._prior_ns: int | None = None
         self._prior_spread_bps = 0.0
         self._prior_l1_imbalance = 0.0
+        self._clear_accumulators()
+
+    def _clear_accumulators(self) -> None:
+        count = len(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS)
         self._exposure_seconds = [0.0] * count
         self._return_bps = [0.0] * count
         self._return_squared_bps = [0.0] * count
@@ -243,13 +246,24 @@ class _Round74TimeScaleState:
         )
         if selected_ns < 0 or not all(math.isfinite(value) for value in values):
             raise ValueError("Round 74 time-scale state input is invalid")
-        if self._prior_ns is None:
+        gap_reset = self._prior_ns is None
+        if self._prior_ns is not None and selected_ns < self._prior_ns:
+            raise ValueError("Round 74 time-scale state receipt order regressed")
+        if (
+            self._prior_ns is not None
+            and selected_ns - self._prior_ns > ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS
+        ):
+            gap_reset = True
+        if gap_reset:
+            self._clear_accumulators()
             self._prior_ns = selected_ns
             self._prior_spread_bps = values[4]
             self._prior_l1_imbalance = values[5]
-        if selected_ns < self._prior_ns:
-            raise ValueError("Round 74 time-scale state receipt order regressed")
-        elapsed_seconds = (selected_ns - self._prior_ns) / 1_000_000_000.0
+        prior_ns = self._prior_ns
+        if prior_ns is None:
+            raise RuntimeError("Round 74 time-scale state did not initialize")
+        elapsed_seconds = (selected_ns - prior_ns) / 1_000_000_000.0
+        return_bps = 0.0 if gap_reset else values[0]
         output: list[float] = []
         for index, half_life in enumerate(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS):
             beta = math.log(2.0) / float(half_life)
@@ -257,9 +271,9 @@ class _Round74TimeScaleState:
             interval_weight = -math.expm1(-beta * elapsed_seconds) / beta
             exposure = decay * self._exposure_seconds[index] + interval_weight
             self._exposure_seconds[index] = exposure
-            self._return_bps[index] = decay * self._return_bps[index] + values[0]
+            self._return_bps[index] = decay * self._return_bps[index] + return_bps
             self._return_squared_bps[index] = (
-                decay * self._return_squared_bps[index] + values[0] * values[0]
+                decay * self._return_squared_bps[index] + return_bps * return_bps
             )
             self._trade_pressure[index] = (
                 decay * self._trade_pressure[index] + values[1]

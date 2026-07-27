@@ -28,7 +28,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v5"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v6"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
