@@ -12,6 +12,9 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 from simple_ai_trading.impact_absorption_ai_bridge import (
     ROUND74_AI_BRIDGE_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_uplift import (
+    ROUND74_AI_UPLIFT_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
@@ -58,7 +61,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v9.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v10.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -120,6 +123,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_action_policy_sha256"] == _file_sha256(
         source["event_action_policy_path"]
     )
+    assert source["ai_uplift_evaluator_sha256"] == _file_sha256(
+        source["ai_uplift_evaluator_path"]
+    )
     assert source["event_cohort_sha256"] == _file_sha256(
         source["event_cohort_path"]
     )
@@ -169,6 +175,10 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_action_policy_schema_version"]
         == ROUND74_ACTION_POLICY_SCHEMA_VERSION
+    )
+    assert (
+        source["ai_uplift_evaluator_schema_version"]
+        == ROUND74_AI_UPLIFT_SCHEMA_VERSION
     )
     assert (
         source["event_cohort_plan_schema_version"]
@@ -415,6 +425,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["one_and_five_second_ml_paths_wait_for_ai"] is False
     assert ai["ai_receives_only_a_preexisting_target_free_ml_candidate"] is True
     assert ai["ai_may_revive_an_ml_abstention"] is False
+    assert ai["paired_development_evaluator_implemented_now"] is True
+    assert (
+        ai["paired_development_evaluator_may_select_ai_model_or_promote"]
+        is False
+    )
+    assert ai["missing_review_policy"] == "invalidate entire evaluation"
     assert ai["absolute_date_or_real_symbol_exposed_to_ai"] is False
     assert ai[
         "ai_may_create_side_increase_size_set_leverage_or_touch_orders"
@@ -431,6 +447,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["tuning_subpartition_implementation"] is True
     assert authority["probability_calibration_implementation"] is True
     assert authority["selective_action_policy_implementation"] is True
+    assert (
+        authority[
+            "paired_ai_uplift_development_evaluator_implementation"
+        ]
+        is True
+    )
     assert authority["causal_calibrated_ai_bridge_implementation"] is True
     assert (
         authority["probability_calibration_directml_compute_preflight"]
