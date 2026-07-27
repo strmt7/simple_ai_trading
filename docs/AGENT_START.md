@@ -325,6 +325,16 @@ After parser or taxonomy changes, regenerate the header through the native build
 - Overall AI uplift now requires both the paired primary-latency gate and
   positive, ML-beating, return- and drawdown-nondegrading execution at every
   preregistered network-latency stress. A primary-only improvement is rejected.
+- The separate Round 74 event-model AI experiment must never scale or reuse the
+  baseline fill. Every positive AI exposure requires an exact delayed top-20 L2
+  rewalk with the AI size applied before quantity quantization. The same-entry
+  latency flag is diagnostic only; accepted reviews beyond that budget retain
+  their audited decision and replay the delayed book up to the frozen 30-second
+  historical ceiling. Runtime vetoes, AI vetoes, expired reviews, target
+  ineligibility, and delayed overlap remain paired zero-exposure outcomes. Read
+  `round-074-event-sequence-model-design-v48.json` and
+  `round-074-local-ai-review-design-v34.json`. This is implemented mechanics,
+  not AI inference, uplift, edge, profitability, or trading authority.
 - Live Binance AI reviews are exact-case, asynchronous, hash-chained, and
   shadow-only. Pending, failed, or stale reviews block only new entries; exits
   retain the original ML side. `ai-uplift` rejects post-entry/reused reviews and
