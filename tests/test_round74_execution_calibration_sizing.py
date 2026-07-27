@@ -141,6 +141,23 @@ def test_sizing_rejects_target_above_exchange_maximum_quantity() -> None:
         )
 
 
+def test_sizing_rejects_quantity_too_coarse_for_shared_notional() -> None:
+    exchange, mark, book = _sources()
+    market_lot = exchange["symbol_payload"]["filters"][0]
+    market_lot["minQty"] = "1"
+    market_lot["stepSize"] = "1"
+
+    with pytest.raises(ValueError, match="notional tolerance"):
+        prepare_round74_execution_sizing(
+            symbol="BTCUSDT",
+            entry_side="BUY",
+            target_quote_notional=Decimal("150"),
+            exchange_information=exchange,
+            mark_price=mark,
+            book=book,
+        )
+
+
 @pytest.mark.parametrize(
     ("path", "value", "message"),
     [
