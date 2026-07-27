@@ -166,6 +166,12 @@ def _scaler() -> Round74EventFeatureScaler:
 def test_round74_cohort_mode_rejects_partial_or_unbound_population(
     tmp_path: Path,
 ) -> None:
+    import simple_ai_trading.impact_absorption_event_training as training_subject
+    from simple_ai_trading.round74_event_model_operator import (
+        round74_matched_representative_window_policy,
+        round74_representative_window_policy,
+    )
+
     training = _batch("training", start_wall_ns=WALL_NS, identity=1)
     tuning = _batch(
         "tuning",
@@ -188,6 +194,24 @@ def test_round74_cohort_mode_rejects_partial_or_unbound_population(
             compute_backend="cpu",
             config=_config(),
             representative_window_policy_sha256="a" * 64,
+        )
+    assert training_subject._cohort_window_policy_identity(
+        round74_representative_window_policy()["policy_sha256"],
+        None,
+    ) == ("single_representation", None)
+    assert training_subject._cohort_window_policy_identity(
+        round74_matched_representative_window_policy()["policy_sha256"],
+        "f" * 64,
+    ) == ("matched_representation", "f" * 64)
+    with pytest.raises(ValueError, match="matched preparation identity differs"):
+        training_subject._cohort_window_policy_identity(
+            round74_matched_representative_window_policy()["policy_sha256"],
+            None,
+        )
+    with pytest.raises(ValueError, match="single-representation preparation differs"):
+        training_subject._cohort_window_policy_identity(
+            round74_representative_window_policy()["policy_sha256"],
+            "f" * 64,
         )
 
 
@@ -773,6 +797,8 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert policy["development_data"]["test_batches_consumed"] == 0
     development = policy["development_data"]
     assert development["window_representation"] == "per_symbol"
+    assert development["representative_window_policy_kind"] == "preflight"
+    assert development["matched_preparation_sha256"] is None
     assert development["target_context_panel_schema_version"] == (
         ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
     )
