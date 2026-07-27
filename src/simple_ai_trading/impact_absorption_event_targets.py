@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v9"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v10"
 ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "round-074-target-evidence-v1"
 )
@@ -1120,6 +1120,8 @@ class Round74EventTargetOutcome:
     actual_exit_frame_index: int | None
     actual_exit_message_index: int | None
     base_quantity: float | None
+    reference_quote_notional: float | None
+    entry_quote_notional: float | None
     entry_average_price: float | None
     exit_average_price: float | None
     midpoint_payoff_bps: float | None
@@ -1135,8 +1137,10 @@ class Round74EventTargetOutcome:
     total_implementation_shortfall_quote: float | None
     total_implementation_shortfall_bps: float | None
     net_payoff_bps: float | None
+    capital_scaled_net_payoff_bps: float | None
     positive_net_payoff: bool | None
     maximum_adverse_excursion_bps: float | None
+    capital_scaled_maximum_adverse_excursion_bps: float | None
     maximum_favorable_excursion_bps: float | None
     adverse_selection: bool | None
     regime_unpredictability: float | None
@@ -1198,6 +1202,8 @@ class Round74EventTargetOutcome:
                 raise ValueError(f"Round 74 outcome {label} order key is negative")
         financial = (
             self.base_quantity,
+            self.reference_quote_notional,
+            self.entry_quote_notional,
             self.entry_average_price,
             self.exit_average_price,
             self.midpoint_payoff_bps,
@@ -1213,7 +1219,9 @@ class Round74EventTargetOutcome:
             self.total_implementation_shortfall_quote,
             self.total_implementation_shortfall_bps,
             self.net_payoff_bps,
+            self.capital_scaled_net_payoff_bps,
             self.maximum_adverse_excursion_bps,
+            self.capital_scaled_maximum_adverse_excursion_bps,
             self.maximum_favorable_excursion_bps,
             self.regime_unpredictability,
             self.maximum_spread_bps,
@@ -1249,6 +1257,8 @@ class Round74EventTargetOutcome:
                 raise ValueError("Round 74 eligible outcome is nonfinite")
             if (
                 float(self.base_quantity) <= 0.0
+                or float(self.reference_quote_notional) <= 0.0
+                or float(self.entry_quote_notional) <= 0.0
                 or float(self.entry_average_price) <= 0.0
                 or float(self.exit_average_price) <= 0.0
                 or float(self.book_walk_implementation_shortfall_quote) < 0.0
@@ -1262,6 +1272,7 @@ class Round74EventTargetOutcome:
                 or float(self.total_implementation_shortfall_quote) < 0.0
                 or float(self.total_implementation_shortfall_bps) < 0.0
                 or float(self.maximum_adverse_excursion_bps) < 0.0
+                or float(self.capital_scaled_maximum_adverse_excursion_bps) < 0.0
                 or float(self.maximum_favorable_excursion_bps) < 0.0
                 or not 0.0 <= float(self.regime_unpredictability) <= 1.0
                 or float(self.minimum_exit_side_capacity_ratio) < 1.0
@@ -1310,6 +1321,28 @@ class Round74EventTargetOutcome:
                     rel_tol=1e-10,
                     abs_tol=1e-10,
                 )
+                and math.isclose(
+                    float(self.base_quantity) * float(self.entry_average_price),
+                    float(self.entry_quote_notional),
+                    rel_tol=1e-12,
+                    abs_tol=1e-12,
+                )
+                and math.isclose(
+                    float(self.net_payoff_bps)
+                    * float(self.entry_quote_notional)
+                    / float(self.reference_quote_notional),
+                    float(self.capital_scaled_net_payoff_bps),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                and math.isclose(
+                    float(self.maximum_adverse_excursion_bps)
+                    * float(self.entry_quote_notional)
+                    / float(self.reference_quote_notional),
+                    float(self.capital_scaled_maximum_adverse_excursion_bps),
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
             ):
                 raise ValueError("Round 74 eligible outcome accounting differs")
         else:
@@ -1344,6 +1377,8 @@ class Round74EventTargetOutcome:
             "actual_exit_frame_index": self.actual_exit_frame_index,
             "actual_exit_message_index": self.actual_exit_message_index,
             "base_quantity": self.base_quantity,
+            "reference_quote_notional": self.reference_quote_notional,
+            "entry_quote_notional": self.entry_quote_notional,
             "entry_average_price": self.entry_average_price,
             "exit_average_price": self.exit_average_price,
             "midpoint_payoff_bps": self.midpoint_payoff_bps,
@@ -1367,9 +1402,13 @@ class Round74EventTargetOutcome:
                 self.total_implementation_shortfall_bps
             ),
             "net_payoff_bps": self.net_payoff_bps,
+            "capital_scaled_net_payoff_bps": (self.capital_scaled_net_payoff_bps),
             "positive_net_payoff": self.positive_net_payoff,
             "maximum_adverse_excursion_bps": (
                 self.maximum_adverse_excursion_bps
+            ),
+            "capital_scaled_maximum_adverse_excursion_bps": (
+                self.capital_scaled_maximum_adverse_excursion_bps
             ),
             "maximum_favorable_excursion_bps": (
                 self.maximum_favorable_excursion_bps
@@ -1644,6 +1683,8 @@ class Round74EventTargetEngine:
             actual_exit_frame_index=actual_exit_frame_index,
             actual_exit_message_index=actual_exit_message_index,
             base_quantity=None,
+            reference_quote_notional=None,
+            entry_quote_notional=None,
             entry_average_price=None,
             exit_average_price=None,
             midpoint_payoff_bps=None,
@@ -1659,8 +1700,10 @@ class Round74EventTargetEngine:
             total_implementation_shortfall_quote=None,
             total_implementation_shortfall_bps=None,
             net_payoff_bps=None,
+            capital_scaled_net_payoff_bps=None,
             positive_net_payoff=None,
             maximum_adverse_excursion_bps=None,
+            capital_scaled_maximum_adverse_excursion_bps=None,
             maximum_favorable_excursion_bps=None,
             adverse_selection=None,
             regime_unpredictability=None,
@@ -1998,6 +2041,8 @@ class Round74EventTargetEngine:
             actual_exit_frame_index=frame_index,
             actual_exit_message_index=message_index,
             base_quantity=position.base_quantity,
+            reference_quote_notional=self.spec.reference_quote_notional,
+            entry_quote_notional=position.entry_walk.quote_notional,
             entry_average_price=position.entry_walk.average_price,
             exit_average_price=exit_walk.average_price,
             midpoint_payoff_bps=payoff.midpoint_payoff_bps,
@@ -2021,10 +2066,20 @@ class Round74EventTargetEngine:
                 payoff.total_implementation_shortfall_bps
             ),
             net_payoff_bps=payoff.net_payoff_bps,
+            capital_scaled_net_payoff_bps=(
+                payoff.net_payoff_bps
+                * position.entry_walk.quote_notional
+                / self.spec.reference_quote_notional
+            ),
             positive_net_payoff=payoff.net_payoff_bps > 0.0,
             maximum_adverse_excursion_bps=max(
                 0.0,
                 -position.minimum_net_payoff_bps,
+            ),
+            capital_scaled_maximum_adverse_excursion_bps=(
+                max(0.0, -position.minimum_net_payoff_bps)
+                * position.entry_walk.quote_notional
+                / self.spec.reference_quote_notional
             ),
             maximum_favorable_excursion_bps=max(
                 0.0,

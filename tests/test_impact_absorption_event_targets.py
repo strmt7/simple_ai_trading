@@ -411,6 +411,23 @@ def test_execution_override_rewalks_delayed_book_with_quantized_size() -> None:
     assert delayed_outcome.entry_average_price != (
         baseline_outcome.entry_average_price
     )
+    assert delayed_outcome.entry_quote_notional == pytest.approx(
+        delayed_outcome.base_quantity * delayed_outcome.entry_average_price
+    )
+    assert delayed_outcome.reference_quote_notional == pytest.approx(100.0)
+    assert delayed_outcome.capital_scaled_net_payoff_bps == pytest.approx(
+        delayed_outcome.net_payoff_bps
+        * delayed_outcome.entry_quote_notional
+        / delayed_outcome.reference_quote_notional
+    )
+    assert (
+        delayed_outcome.capital_scaled_maximum_adverse_excursion_bps
+        == pytest.approx(
+            delayed_outcome.maximum_adverse_excursion_bps
+            * delayed_outcome.entry_quote_notional
+            / delayed_outcome.reference_quote_notional
+        )
+    )
     assert delayed_outcome.target_context_sha256 != (
         baseline_outcome.target_context_sha256
     )
@@ -511,6 +528,19 @@ def test_ai_execution_replay_uses_delayed_book_and_capital_scaled_size() -> None
     assert evidence.requested_entry_monotonic_ns == 2_100_000_000
     assert evidence.actual_entry_monotonic_ns == 2_100_000_000
     assert evidence.applied_size_multiplier_bps == 5_000
+    assert evidence.reference_quote_notional == pytest.approx(100.0)
+    assert evidence.actual_entry_quote_notional is not None
+    assert evidence.actual_deployed_capital_bps == pytest.approx(
+        evidence.actual_entry_quote_notional
+        / evidence.reference_quote_notional
+        * 10_000.0
+    )
+    assert evidence.actual_deployed_capital_bps != pytest.approx(5_000.0)
+    assert evidence.capital_scaled_net_payoff_bps == pytest.approx(
+        evidence.position_net_payoff_bps
+        * evidence.actual_entry_quote_notional
+        / evidence.reference_quote_notional
+    )
     assert evidence.target_outcome_sha256 is not None
     assert evidence.target_context_sha256 is not None
     assert evidence.replay_sha256

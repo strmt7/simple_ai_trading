@@ -40,7 +40,10 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v6"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v7"
+ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
+    "round-074-ai-execution-replay-evidence-v2"
+)
 ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
     "conservative": 0.60,
@@ -321,9 +324,15 @@ class Round74AIExecutionReplayEvidence:
     requested_entry_monotonic_ns: int | None
     actual_entry_monotonic_ns: int | None
     actual_exit_monotonic_ns: int | None
+    reference_quote_notional: float | None
+    actual_entry_quote_notional: float | None
+    actual_deployed_capital_bps: float
+    position_net_payoff_bps: float
+    position_maximum_adverse_excursion_bps: float
     capital_scaled_net_payoff_bps: float
     capital_scaled_maximum_adverse_excursion_bps: float
     adverse_selection: bool
+    schema_version: str = ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION
 
     def validate(self) -> None:
         replay_status = self.status in {
@@ -339,8 +348,16 @@ class Round74AIExecutionReplayEvidence:
         )
         actual_entry = self.actual_entry_monotonic_ns
         actual_exit = self.actual_exit_monotonic_ns
+        capital_values = (
+            self.actual_deployed_capital_bps,
+            self.position_net_payoff_bps,
+            self.position_maximum_adverse_excursion_bps,
+            self.capital_scaled_net_payoff_bps,
+            self.capital_scaled_maximum_adverse_excursion_bps,
+        )
         if (
-            isinstance(self.row_index, bool)
+            self.schema_version != ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION
+            or isinstance(self.row_index, bool)
             or not isinstance(self.row_index, int)
             or self.row_index < 0
             or _SHA256.fullmatch(self.feature_row_sha256) is None
@@ -387,10 +404,9 @@ class Round74AIExecutionReplayEvidence:
                     or actual_exit < 0
                 )
             )
-            or not math.isfinite(float(self.capital_scaled_net_payoff_bps))
-            or not math.isfinite(
-                float(self.capital_scaled_maximum_adverse_excursion_bps)
-            )
+            or any(not math.isfinite(float(value)) for value in capital_values)
+            or self.actual_deployed_capital_bps < 0.0
+            or self.position_maximum_adverse_excursion_bps < 0.0
             or self.capital_scaled_maximum_adverse_excursion_bps < 0.0
             or not isinstance(self.adverse_selection, bool)
             or (
@@ -414,15 +430,48 @@ class Round74AIExecutionReplayEvidence:
                 self.requested_size_multiplier_bps <= 0
                 or self.applied_size_multiplier_bps
                 != self.requested_size_multiplier_bps
+                or self.reference_quote_notional is None
+                or self.actual_entry_quote_notional is None
+                or self.reference_quote_notional <= 0.0
+                or self.actual_entry_quote_notional <= 0.0
                 or self.requested_entry_monotonic_ns is None
                 or actual_entry is None
                 or actual_exit is None
                 or actual_exit < actual_entry
                 or self.target_ineligible_reason
+                or not math.isclose(
+                    self.actual_entry_quote_notional
+                    / self.reference_quote_notional
+                    * 10_000.0,
+                    self.actual_deployed_capital_bps,
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                or not math.isclose(
+                    self.position_net_payoff_bps
+                    * self.actual_entry_quote_notional
+                    / self.reference_quote_notional,
+                    self.capital_scaled_net_payoff_bps,
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
+                or not math.isclose(
+                    self.position_maximum_adverse_excursion_bps
+                    * self.actual_entry_quote_notional
+                    / self.reference_quote_notional,
+                    self.capital_scaled_maximum_adverse_excursion_bps,
+                    rel_tol=1e-10,
+                    abs_tol=1e-10,
+                )
             ):
                 raise ValueError("Round 74 AI executed replay evidence differs")
         elif (
             self.applied_size_multiplier_bps != 0
+            or self.reference_quote_notional is not None
+            or self.actual_entry_quote_notional is not None
+            or self.actual_deployed_capital_bps != 0.0
+            or self.position_net_payoff_bps != 0.0
+            or self.position_maximum_adverse_excursion_bps != 0.0
             or self.capital_scaled_net_payoff_bps != 0.0
             or self.capital_scaled_maximum_adverse_excursion_bps != 0.0
             or self.adverse_selection
@@ -1031,6 +1080,7 @@ def evaluate_round74_ai_overlay_development(
 
 
 __all__ = [
+    "ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION",
     "ROUND74_AI_EXECUTION_REPLAY_STATUSES",
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
     "ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE",

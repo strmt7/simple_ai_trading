@@ -34,7 +34,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v6"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v7"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v4"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
@@ -635,8 +635,8 @@ def build_round74_event_training_batch(
             assert (
                 outcome.actual_entry_monotonic_ns is not None
                 and outcome.actual_exit_monotonic_ns is not None
-                and outcome.net_payoff_bps is not None
-                and outcome.maximum_adverse_excursion_bps is not None
+                and outcome.capital_scaled_net_payoff_bps is not None
+                and outcome.capital_scaled_maximum_adverse_excursion_bps is not None
                 and outcome.adverse_selection is not None
                 and outcome.regime_unpredictability is not None
             )
@@ -650,9 +650,11 @@ def build_round74_event_training_batch(
                 horizon_index,
                 side_index,
             ] = outcome.actual_exit_monotonic_ns
-            payoff[sample_index, horizon_index, side_index] = outcome.net_payoff_bps
+            payoff[sample_index, horizon_index, side_index] = (
+                outcome.capital_scaled_net_payoff_bps
+            )
             adverse_excursion[sample_index, horizon_index, side_index] = (
-                outcome.maximum_adverse_excursion_bps
+                outcome.capital_scaled_maximum_adverse_excursion_bps
             )
             adverse_selection[sample_index, horizon_index, side_index] = float(
                 outcome.adverse_selection

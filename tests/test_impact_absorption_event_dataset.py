@@ -24,6 +24,8 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     Round74ReplayObservation,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_SIDES,
     Round74EventTargetEngine,
     Round74EventTargetEvidence,
     Round74EventTargetSpec,
@@ -354,6 +356,22 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
     assert batch.anchor_index.tolist() == [sample.anchor_index]
     assert batch.test_access_sha256 == ("",)
     assert float(batch.action_eligibility.sum()) == 8.0
+    selected = next(outcome for outcome in sample.outcomes if outcome.eligible)
+    horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(
+        selected.horizon_seconds
+    )
+    side_index = ROUND74_EVENT_PAYOFF_SIDES.index(selected.side)
+    assert batch.net_payoff_bps[0, horizon_index, side_index] == pytest.approx(
+        selected.capital_scaled_net_payoff_bps
+    )
+    assert batch.maximum_adverse_excursion_bps[
+        0,
+        horizon_index,
+        side_index,
+    ] == pytest.approx(selected.capital_scaled_maximum_adverse_excursion_bps)
+    assert selected.capital_scaled_net_payoff_bps != pytest.approx(
+        selected.net_payoff_bps
+    )
     assert len(batch.batch_sha256) == 64
     assert not batch.feature_values.flags.writeable
 
