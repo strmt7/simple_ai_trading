@@ -6,6 +6,7 @@ from io import StringIO
 import json
 from pathlib import Path
 import shutil
+from types import SimpleNamespace
 
 import pytest
 
@@ -33,6 +34,7 @@ from simple_ai_trading.round74_event_cohort_operator import (
     ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES,
     _load_contiguous_bindings,
     _raise_for_capture_process_failure,
+    _validate_slot_audit,
     load_round74_cohort_operator_plan,
     run_round74_cohort_current_slot,
     select_round74_cohort_slot,
@@ -471,6 +473,96 @@ def test_round74_cohort_process_failure_precedes_supervisor_json_parse() -> None
             stop_method="terminate",
             stdout_lines=[],
         )
+
+
+def test_round74_cohort_fresh_audit_accepts_actual_v10_report_identity() -> None:
+    report_sha256 = "a" * 64
+    run_id = "1" * 32
+    capture_contract_sha256 = "b" * 64
+    binding = SimpleNamespace(
+        run_id=run_id,
+        report_sha256=report_sha256,
+        frame_count=864,
+        message_count=1_427_754,
+        compressed_payload_bytes=50_642_043,
+    )
+    supervisor = {
+        "attempts": [
+            {
+                "run_id": run_id,
+                "capture_contract_sha256": capture_contract_sha256,
+                "writer_frame_count": 864,
+                "writer_message_count": 1_427_754,
+                "writer_compressed_payload_bytes": 50_642_043,
+            }
+        ]
+    }
+    audit = {
+        "_operator_evidence": {"return_code": 0},
+        "passed": True,
+        "errors": [],
+        "run_id": run_id,
+        "stored_report_sha256": report_sha256,
+        "capture_contract_sha256": capture_contract_sha256,
+        "last_frame_sha256": "c" * 64,
+        "frame_count": 864,
+        "message_count": 1_427_754,
+        "compressed_payload_bytes": 50_642_043,
+    }
+
+    _validate_slot_audit(audit, binding, supervisor)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("capture_contract_sha256", "d" * 64),
+        ("frame_count", 863),
+        ("message_count", 1_427_753),
+        ("compressed_payload_bytes", 50_642_042),
+    ],
+)
+def test_round74_cohort_fresh_audit_rejects_mismatched_v10_identity(
+    field: str,
+    value: object,
+) -> None:
+    report_sha256 = "a" * 64
+    run_id = "1" * 32
+    capture_contract_sha256 = "b" * 64
+    binding = SimpleNamespace(
+        run_id=run_id,
+        report_sha256=report_sha256,
+        frame_count=864,
+        message_count=1_427_754,
+        compressed_payload_bytes=50_642_043,
+    )
+    supervisor = {
+        "attempts": [
+            {
+                "run_id": run_id,
+                "capture_contract_sha256": capture_contract_sha256,
+                "writer_frame_count": 864,
+                "writer_message_count": 1_427_754,
+                "writer_compressed_payload_bytes": 50_642_043,
+            }
+        ]
+    }
+    audit = {
+        "_operator_evidence": {"return_code": 0},
+        "passed": True,
+        "errors": [],
+        "run_id": run_id,
+        "stored_report_sha256": report_sha256,
+        "capture_contract_sha256": capture_contract_sha256,
+        "last_frame_sha256": "c" * 64,
+        "frame_count": 864,
+        "message_count": 1_427_754,
+        "compressed_payload_bytes": 50_642_043,
+    }
+    audit[field] = value
+
+    with pytest.raises(ValueError, match="fresh audit identity differs"):
+        _validate_slot_audit(audit, binding, supervisor)  # type: ignore[arg-type]
 
 
 def test_round74_cohort_persists_live_progress_before_child_completion(
