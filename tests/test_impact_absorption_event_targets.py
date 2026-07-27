@@ -7,6 +7,7 @@ import pytest
 
 from simple_ai_trading.impact_absorption import L2BookState
 from simple_ai_trading.impact_absorption_event_targets import (
+    Round74EventExecutionOverride,
     Round74EventTargetAnchor,
     Round74EventTargetEngine,
     Round74EventTargetEvidence,
@@ -254,6 +255,19 @@ def _complete_engine(
     return engine.finish()
 
 
+def _selected_outcome(
+    outcomes: tuple,
+    *,
+    horizon_seconds: int = 30,
+    side: str = "long",
+):
+    return next(
+        outcome
+        for outcome in outcomes
+        if outcome.horizon_seconds == horizon_seconds and outcome.side == side
+    )
+
+
 def _observe_dense_path(
     engine: Round74EventTargetEngine,
     *,
@@ -350,6 +364,75 @@ def test_round74_payoff_charges_both_actual_walked_legs() -> None:
         - payoff.total_implementation_shortfall_quote
     )
     assert payoff.net_payoff_quote < payoff.gross_payoff_quote
+
+
+def test_execution_override_rewalks_delayed_book_with_quantized_size() -> None:
+    anchor = _anchor()
+    baseline = Round74EventTargetEngine(
+        spec=_spec(),
+        anchors=(anchor,),
+        quantity_rules=_rules(),
+    )
+    delayed = Round74EventTargetEngine(
+        spec=_spec(),
+        anchors=(anchor,),
+        quantity_rules=_rules(),
+        execution_overrides=(
+            Round74EventExecutionOverride(
+                symbol=anchor.symbol,
+                anchor_index=anchor.anchor_index,
+                feature_window_sha256=anchor.feature_window_sha256,
+                additional_entry_latency_ns=NS,
+                quote_size_multiplier_bps=5_000,
+                source_review_sha256="9" * 64,
+            ),
+        ),
+    )
+
+    baseline_outcome = _selected_outcome(_complete_engine(baseline))
+    delayed_outcome = _selected_outcome(_complete_engine(delayed))
+
+    assert baseline_outcome.requested_entry_monotonic_ns == 1_100_000_000
+    assert baseline_outcome.actual_entry_monotonic_ns == 1_100_000_000
+    assert baseline_outcome.base_quantity == pytest.approx(1.0)
+    assert delayed_outcome.requested_entry_monotonic_ns == 2_100_000_000
+    assert delayed_outcome.actual_entry_monotonic_ns == 2_100_000_000
+    assert delayed_outcome.base_quantity == pytest.approx(0.5)
+    assert delayed_outcome.entry_average_price != (
+        baseline_outcome.entry_average_price
+    )
+    assert delayed_outcome.target_context_sha256 != (
+        baseline_outcome.target_context_sha256
+    )
+
+
+def test_execution_override_rejects_incomplete_or_unsafe_identity() -> None:
+    anchor = _anchor()
+    override = Round74EventExecutionOverride(
+        symbol=anchor.symbol,
+        anchor_index=anchor.anchor_index,
+        feature_window_sha256=anchor.feature_window_sha256,
+        additional_entry_latency_ns=NS,
+        quote_size_multiplier_bps=5_000,
+        source_review_sha256="9" * 64,
+    )
+
+    with pytest.raises(ValueError, match="coverage differs"):
+        Round74EventTargetEngine(
+            spec=_spec(),
+            anchors=(),
+            quantity_rules=_rules(),
+            execution_overrides=(override,),
+        )
+    with pytest.raises(ValueError, match="execution override differs"):
+        replace(override, quote_size_multiplier_bps=0).validate()
+    with pytest.raises(ValueError, match="identity differs"):
+        Round74EventTargetEngine(
+            spec=_spec(),
+            anchors=(replace(anchor, feature_window_sha256="8" * 64),),
+            quantity_rules=_rules(),
+            execution_overrides=(override,),
+        )
 
 
 def test_round74_target_spec_uses_symbol_specific_latency_and_slippage() -> None:
