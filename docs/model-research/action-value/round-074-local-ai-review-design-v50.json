@@ -1,0 +1,106 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v50",
+  "artifact_kind": "compact_contract_delta",
+  "supersedes_artifact_sha256": "d41aad8e7755f0f073edd3aa0267a25a290a912ce8acbde087d846405eba866f",
+  "implementation_git_commit": "a48824542d5bad82cbbef49dcb38bf30f200d8ed",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "sealed_evaluator": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "66a9890c7785bb3be8306177be44c0a9d42cd45073af106cbaedcdf647ff4e11",
+      "schema_version": "round-074-sealed-evaluation-v10"
+    },
+    "ai_uplift": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+      "sha256": "31c9fb231662724abbb7b1b4a314419bebfcea6cdc675e364b568cb82c1c088b",
+      "schema_version": "round-074-ai-uplift-development-v7",
+      "execution_replay_schema_version": "round-074-ai-execution-replay-evidence-v2"
+    },
+    "ai_review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "5a4ccd8cc32ae50596188a4d20022f4a8dfc4bcc95ab54f99a359ffc39f7be2b",
+      "schema_version": "round-074-ai-review-panel-v4"
+    },
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "f2c3ef259e41662e83e7c61a409660ad3787a7538bcb6c50199c70b4a04d0044",
+      "schema_version": "round-074-event-payoff-model-v6"
+    },
+    "model_operator": {
+      "path": "src/simple_ai_trading/round74_event_model_operator.py",
+      "sha256": "f49bddeb6beb6125f1177d64887cc0782b2bb01e4d02270b143db781afdd1673",
+      "schema_version": "round-074-event-model-operator-v5"
+    },
+    "training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "0dccfbcedb62e6a58e0a1a1caa81f8f7a0e3f9da00ae5ae6fef872dda4430b38",
+      "schema_version": "round-074-event-training-v17",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v16"
+    },
+    "dataset": {
+      "path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+      "sha256": "5173468670a63be402e589d01b388a6790f11747b4c4a60a211138a1fa2a05c1",
+      "schema_version": "round-074-event-dataset-v10"
+    },
+    "representation_comparison": {
+      "path": "src/simple_ai_trading/round74_representation_comparison.py",
+      "sha256": "9f3bf35decda518d9ea5bf540ae35aabe337d109a010554e69e1d57394e49a43",
+      "schema_version": "round-074-representation-comparison-v2"
+    },
+    "event_model_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v75.json",
+      "file_sha256": "7c62cdd7fdec6b369fe3168066031b46056987ba3d06e9edbdecb454a3d0b543",
+      "design_sha256": "acf0c4be3a97a9d2fc08bc04be71ca5ebcc8ae49f51d4390467a67d6585c0dc2"
+    }
+  },
+  "sealed_ai_family_delta": {
+    "predeclared_model_count": 2,
+    "model_roles": [
+      "finance_primary",
+      "general_control"
+    ],
+    "exactly_two_unique_manifests_required_before_test_reservation": true,
+    "incomplete_family_may_consume_one_use_test_access": false,
+    "duplicate_overlay_may_validate_as_two_models": false,
+    "report_requires_exactly_two_unique_model_overlays": true,
+    "paired_delta_familywise_alpha": 0.05,
+    "paired_delta_bonferroni_denominator": 2,
+    "absolute_payoff_familywise_configuration_count": 3
+  },
+  "inherited_executable_contract": {
+    "ai_may_create_or_replace_ml_actions": false,
+    "ai_actions": [
+      "retain",
+      "reduce",
+      "veto"
+    ],
+    "review_context_contains_realized_targets": false,
+    "failed_or_blocked_review_policy": "paired_zero_exposure_veto",
+    "missing_review_policy": "invalidate_evaluation",
+    "same_entry_latency_is_diagnostic_only": true,
+    "late_accepted_review_may_inherit_baseline_fill": false,
+    "late_accepted_review_requires_exact_delayed_l2_replay": true,
+    "historical_review_expiration_ceiling_nanoseconds": 30000000000,
+    "baseline_payoff_scaling_without_book_replay_permitted": false,
+    "one_large_model_resident_at_a_time": true
+  },
+  "verification": {
+    "focused_tests_passed": 18,
+    "focused_test_command": "python -m pytest tests/test_impact_absorption_event_sealed_ledger.py tests/test_round74_local_ai_design.py -q",
+    "ruff_passed": true,
+    "incomplete_family_rejected_before_ledger_creation": true,
+    "duplicate_overlay_tamper_rejected": true,
+    "sealed_test_accessed": false,
+    "gpu_model_workload_executed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "d7678141acbaf1cff5b9099930ac32bf1f1f2b82fcf3e6c13e1c79d45eeba963"
+}
