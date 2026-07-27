@@ -8,6 +8,9 @@ from decimal import Decimal, InvalidOperation, ROUND_FLOOR
 import re
 
 from .impact_absorption_event_targets import ROUND74_EVENT_TARGET_SYMBOLS
+from .impact_absorption_execution_evidence import (
+    ROUND74_EXECUTION_CALIBRATION_NOTIONAL_TOLERANCE_FRACTION,
+)
 
 
 ROUND74_EXECUTION_SIZING_SCHEMA_VERSION = "round-074-execution-calibration-sizing-v1"
@@ -343,6 +346,11 @@ def prepare_round74_execution_sizing(
     )
     if reference_quote_notional > target:
         raise ValueError("Round 74 execution sizing exceeds quote budget")
+    relative_shortfall = (target - reference_quote_notional) / target
+    if relative_shortfall > ROUND74_EXECUTION_CALIBRATION_NOTIONAL_TOLERANCE_FRACTION:
+        raise ValueError(
+            "Round 74 execution legal quantity exceeds calibration notional tolerance"
+        )
     best_price = levels[0][0]
     expected_vwap = reference_quote_notional / quantity
     if selected_side == "BUY":
