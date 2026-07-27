@@ -15,11 +15,13 @@ from .impact_absorption_event_dataset import (
     ROUND74_EVENT_PARTITION_ROLES,
     ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74LabeledEventWindow,
+    Round74MatchedEventWindowPair,
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
     Round74EventTrainingBatch,
     build_round74_event_training_batch,
     iter_round74_labeled_event_windows,
+    iter_round74_matched_labeled_event_windows,
     validate_round74_capture_report_binding,
 )
 from .impact_absorption_event_scaling import (
@@ -35,7 +37,7 @@ if TYPE_CHECKING:
     from .impact_absorption_event_calibration import Round74TuningSubpartition
 
 
-ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v4"
+ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v5"
 ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS = 8_192
 ROUND74_EVENT_MODEL_TEMPORAL_STRATA = 16
 ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM = 16
@@ -47,6 +49,9 @@ ROUND74_EVENT_MODEL_WINDOWS_PER_RUN = (
 )
 ROUND74_EVENT_MODEL_WINDOW_SELECTION_SCHEMA_VERSION = (
     "round-074-target-blind-window-selection-v1"
+)
+ROUND74_EVENT_MODEL_MATCHED_WINDOW_SELECTION_SCHEMA_VERSION = (
+    "round-074-target-blind-matched-window-selection-v1"
 )
 
 
@@ -303,6 +308,119 @@ def select_round74_representative_event_windows(
     return ordered
 
 
+def round74_matched_representative_window_policy() -> dict[str, object]:
+    """Return the endpoint-only ranking contract for representation comparison."""
+
+    policy: dict[str, object] = {
+        "schema_version": (
+            ROUND74_EVENT_MODEL_MATCHED_WINDOW_SELECTION_SCHEMA_VERSION
+        ),
+        "representations": list(ROUND74_EVENT_WINDOW_REPRESENTATIONS),
+        "symbols": list(IMPACT_CAPTURE_SYMBOLS),
+        "temporal_strata": ROUND74_EVENT_MODEL_TEMPORAL_STRATA,
+        "windows_per_symbol_stratum": (ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM),
+        "windows_per_run": ROUND74_EVENT_MODEL_WINDOWS_PER_RUN,
+        "stratum_axis": "eligible_anchor_wall_time",
+        "ranking": (
+            "ascending_sha256_of_schema_run_symbol_stratum_and_shared_endpoint"
+        ),
+        "feature_value_or_representation_digest_used_for_ranking": False,
+        "target_value_or_outcome_used_for_ranking": False,
+        "target_panel_used_only_for_exact_pair_validation": True,
+        "underfilled_symbol_stratum_policy": "reject_run",
+    }
+    policy["policy_sha256"] = _canonical_sha256(policy)
+    return policy
+
+
+def _target_blind_pair_rank(
+    pair: Round74MatchedEventWindowPair,
+    *,
+    stratum: int,
+) -> int:
+    sample = pair.per_symbol
+    metadata = {
+        "schema_version": (
+            ROUND74_EVENT_MODEL_MATCHED_WINDOW_SELECTION_SCHEMA_VERSION
+        ),
+        "run_id": sample.run_id,
+        "symbol": sample.symbol,
+        "stratum": int(stratum),
+        "decision_monotonic_ns": int(sample.decision_monotonic_ns),
+        "decision_wall_ns": int(sample.decision_wall_ns),
+        "endpoint_frame_index": int(sample.endpoint_frame_index),
+        "endpoint_message_index": int(sample.endpoint_message_index),
+    }
+    return int(_canonical_sha256(metadata), 16)
+
+
+def select_round74_representative_matched_event_windows(
+    pairs: Iterable[Round74MatchedEventWindowPair],
+    *,
+    entry: Round74EventRunPartitionEntry,
+) -> tuple[Round74MatchedEventWindowPair, ...]:
+    """Select one target-blind endpoint panel shared by both representations."""
+
+    entry.validate()
+    selected: dict[
+        tuple[str, int],
+        list[tuple[int, str, int, Round74MatchedEventWindowPair]],
+    ] = {
+        (symbol, stratum): []
+        for symbol in IMPACT_CAPTURE_SYMBOLS
+        for stratum in range(ROUND74_EVENT_MODEL_TEMPORAL_STRATA)
+    }
+    observed = 0
+    for pair in pairs:
+        pair.validate()
+        sample = pair.per_symbol
+        observed += 1
+        if (
+            sample.run_id != entry.run_id
+            or sample.role != entry.role
+            or sample.symbol not in IMPACT_CAPTURE_SYMBOLS
+        ):
+            raise ValueError("Round 74 matched window identity differs")
+        stratum = _window_stratum(entry, sample.decision_wall_ns)
+        rank = _target_blind_pair_rank(pair, stratum=stratum)
+        endpoint_sha256 = pair.endpoint_sha256
+        heap = selected[(sample.symbol, stratum)]
+        item = (-rank, endpoint_sha256, observed, pair)
+        if len(heap) < ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM:
+            heapq.heappush(heap, item)
+        elif rank < -heap[0][0]:
+            heapq.heapreplace(heap, item)
+    if observed == 0:
+        raise ValueError(f"Round 74 model operator run {entry.run_id} has no pairs")
+    underfilled = tuple(
+        f"{symbol}:{stratum}:{len(heap)}"
+        for (symbol, stratum), heap in selected.items()
+        if len(heap) != ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM
+    )
+    if underfilled:
+        raise ValueError(
+            "Round 74 matched representative coverage is incomplete: "
+            + ",".join(underfilled)
+        )
+    output = tuple(item[3] for heap in selected.values() for item in heap)
+    if len(output) != ROUND74_EVENT_MODEL_WINDOWS_PER_RUN:
+        raise RuntimeError("Round 74 matched representative count differs")
+    ordered = tuple(
+        sorted(
+            output,
+            key=lambda pair: (
+                pair.per_symbol.decision_monotonic_ns,
+                pair.per_symbol.symbol,
+                pair.per_symbol.anchor_index,
+                pair.endpoint_sha256,
+            ),
+        )
+    )
+    if len({pair.endpoint_sha256 for pair in ordered}) != len(ordered):
+        raise ValueError("Round 74 matched endpoint identity is duplicated")
+    return ordered
+
+
 def assemble_round74_role_batches(
     store: object,
     *,
@@ -365,6 +483,206 @@ def assemble_round74_role_batches(
             raise ValueError("Round 74 model operator batch crossed capture runs")
         batches.append(batch)
     return tuple(batches)
+
+
+def _matched_batch_endpoint_sha256(batch: Round74EventTrainingBatch) -> str:
+    return _canonical_sha256(
+        {
+            "role": batch.role,
+            "partition_sha256": batch.partition_sha256,
+            "scaler_sha256": batch.scaler_sha256,
+            "run_id": list(batch.run_id),
+            "symbol": list(batch.symbol),
+            "decision_monotonic_ns": batch.decision_monotonic_ns.tolist(),
+            "decision_wall_ns": batch.decision_wall_ns.tolist(),
+            "endpoint_frame_index": batch.endpoint_frame_index.tolist(),
+            "endpoint_message_index": batch.endpoint_message_index.tolist(),
+            "anchor_index": batch.anchor_index.tolist(),
+            "target_context_sha256": list(batch.target_context_sha256),
+            "test_access_sha256": list(batch.test_access_sha256),
+        }
+    )
+
+
+def _matched_batches_differ(
+    left: Round74EventTrainingBatch,
+    right: Round74EventTrainingBatch,
+) -> bool:
+    scalar_or_tuple_fields = (
+        "role",
+        "partition_sha256",
+        "scaler_sha256",
+        "run_id",
+        "symbol",
+        "target_context_sha256",
+        "test_access_sha256",
+    )
+    identity_arrays = (
+        "decision_monotonic_ns",
+        "decision_wall_ns",
+        "endpoint_frame_index",
+        "endpoint_message_index",
+        "anchor_index",
+    )
+    target_arrays = (
+        "actual_entry_monotonic_ns",
+        "actual_exit_monotonic_ns",
+        "net_payoff_bps",
+        "maximum_adverse_excursion_bps",
+        "adverse_selection",
+        "regime_unpredictability",
+        "action_eligibility",
+        "regime_unpredictability_eligibility",
+    )
+    return (
+        any(getattr(left, name) != getattr(right, name) for name in scalar_or_tuple_fields)
+        or any(
+            not np.array_equal(getattr(left, name), getattr(right, name))
+            for name in identity_arrays
+        )
+        or any(
+            not np.array_equal(
+                getattr(left, name),
+                getattr(right, name),
+                equal_nan=True,
+            )
+            for name in target_arrays
+        )
+    )
+
+
+@dataclass(frozen=True)
+class Round74MatchedRepresentationRoleBatches:
+    """Endpoint- and target-identical batches for one development role."""
+
+    role: str
+    per_symbol: tuple[Round74EventTrainingBatch, ...]
+    global_cross_asset: tuple[Round74EventTrainingBatch, ...]
+    schema_version: str = ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        if (
+            self.schema_version != ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+            or self.role not in {"training", "tuning"}
+            or not self.per_symbol
+            or len(self.per_symbol) != len(self.global_cross_asset)
+        ):
+            raise ValueError("Round 74 matched role batches differ")
+        for left, right in zip(
+            self.per_symbol,
+            self.global_cross_asset,
+            strict=True,
+        ):
+            left.validate()
+            right.validate()
+            if (
+                left.role != self.role
+                or left.window_representation != "per_symbol"
+                or right.window_representation != "global_cross_asset"
+                or left.rows != ROUND74_EVENT_MODEL_WINDOWS_PER_RUN
+                or right.rows != ROUND74_EVENT_MODEL_WINDOWS_PER_RUN
+                or left.batch_sha256 == right.batch_sha256
+                or _matched_batches_differ(left, right)
+            ):
+                raise ValueError("Round 74 matched role batch identity differs")
+        run_ids = tuple(batch.run_id[0] for batch in self.per_symbol)
+        first_wall_ns = tuple(
+            int(batch.decision_wall_ns[0]) for batch in self.per_symbol
+        )
+        if (
+            len(run_ids) != len(set(run_ids))
+            or any(
+                current <= prior
+                for prior, current in zip(first_wall_ns, first_wall_ns[1:])
+            )
+        ):
+            raise ValueError("Round 74 matched role capture run order differs")
+
+    @property
+    def matched_role_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict())
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "role": self.role,
+            "representations": list(ROUND74_EVENT_WINDOW_REPRESENTATIONS),
+            "per_symbol_batch_sha256": [
+                batch.batch_sha256 for batch in self.per_symbol
+            ],
+            "global_cross_asset_batch_sha256": [
+                batch.batch_sha256 for batch in self.global_cross_asset
+            ],
+            "endpoint_panel_sha256": [
+                _matched_batch_endpoint_sha256(batch) for batch in self.per_symbol
+            ],
+            "rows": sum(batch.rows for batch in self.per_symbol),
+            "source_replay_passes_per_run": 1,
+            "target_value_or_outcome_used_for_sampling": False,
+            "test_role_accessed": False,
+            "representative_window_policy": (
+                round74_matched_representative_window_policy()
+            ),
+        }
+
+
+def assemble_round74_matched_representation_role_batches(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    scaler: Round74EventFeatureScaler,
+    role: str,
+    target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+) -> Round74MatchedRepresentationRoleBatches:
+    """Replay one development role once into endpoint-identical batches."""
+
+    selected_store = _require_read_only_store(store)
+    partition.validate()
+    if role not in {"training", "tuning"}:
+        raise ValueError("Round 74 matched role must be development data")
+    entries = _role_entries(partition, role)
+    expected_run_ids = tuple(entry.run_id for entry in entries)
+    assemblies = dict(target_assembly_by_run_id)
+    if set(assemblies) != set(expected_run_ids) or any(
+        not isinstance(assemblies[run_id], Round74SourceTargetAssembly)
+        for run_id in expected_run_ids
+    ):
+        raise ValueError("Round 74 matched target assembly panel differs")
+    batches: dict[str, list[Round74EventTrainingBatch]] = {
+        representation: []
+        for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS
+    }
+    for entry in entries:
+        assembly = assemblies[entry.run_id]
+        pairs = select_round74_representative_matched_event_windows(
+            iter_round74_matched_labeled_event_windows(
+                selected_store,
+                partition=partition,
+                run_id=entry.run_id,
+                target_engines={
+                    representation: assembly.create_engine(anchors=())
+                    for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS
+                },
+            ),
+            entry=entry,
+        )
+        for representation in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+            samples = tuple(
+                getattr(pair, representation)
+                for pair in pairs
+            )
+            batch = build_round74_event_training_batch(samples, scaler=scaler)
+            batch.validate()
+            batches[representation].append(batch)
+    result = Round74MatchedRepresentationRoleBatches(
+        role=role,
+        per_symbol=tuple(batches["per_symbol"]),
+        global_cross_asset=tuple(batches["global_cross_asset"]),
+    )
+    result.validate()
+    return result
 
 
 @dataclass(frozen=True)
@@ -601,21 +919,141 @@ def prepare_round74_development_data(
     return result
 
 
+@dataclass(frozen=True)
+class Round74PreparedMatchedDevelopmentData:
+    """One-scaler, one-replay development panel for both representations."""
+
+    scaler: Round74EventFeatureScaler
+    training: Round74MatchedRepresentationRoleBatches
+    tuning: Round74MatchedRepresentationRoleBatches
+    schema_version: str = ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        self.training.validate()
+        self.tuning.validate()
+        batches = (
+            *self.training.per_symbol,
+            *self.training.global_cross_asset,
+            *self.tuning.per_symbol,
+            *self.tuning.global_cross_asset,
+        )
+        if (
+            self.schema_version != ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+            or not isinstance(self.scaler, Round74EventFeatureScaler)
+            or self.training.role != "training"
+            or self.tuning.role != "tuning"
+            or {batch.scaler_sha256 for batch in batches}
+            != {self.scaler.scaler_sha256}
+            or len({batch.partition_sha256 for batch in batches}) != 1
+        ):
+            raise ValueError("Round 74 prepared matched development data differs")
+        if int(self.training.per_symbol[-1].decision_wall_ns[-1]) >= int(
+            self.tuning.per_symbol[0].decision_wall_ns[0]
+        ):
+            raise ValueError("Round 74 prepared matched chronology differs")
+
+    def representation(self, value: str) -> Round74PreparedDevelopmentData:
+        self.validate()
+        selected = str(value)
+        if selected not in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+            raise ValueError("Round 74 prepared matched representation differs")
+        result = Round74PreparedDevelopmentData(
+            scaler=self.scaler,
+            training_batches=getattr(self.training, selected),
+            tuning_batches=getattr(self.tuning, selected),
+        )
+        result.validate()
+        return result
+
+    @property
+    def preparation_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict())
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "scaler_sha256": self.scaler.scaler_sha256,
+            "training_matched_role_sha256": self.training.matched_role_sha256,
+            "tuning_matched_role_sha256": self.tuning.matched_role_sha256,
+            "representations": list(ROUND74_EVENT_WINDOW_REPRESENTATIONS),
+            "training_source_replay_passes": 2,
+            "tuning_source_replay_passes": 1,
+            "matched_representation_replay_passes_per_run": 1,
+            "overlapping_windows_persisted": False,
+            "test_role_accessed": False,
+        }
+
+
+def prepare_round74_matched_development_data(
+    store: object,
+    *,
+    partition: Round74EventRunPartition,
+    target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+    chunk_rows: int = ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS,
+    maximum_fit_rows: int = ROUND74_EVENT_SCALER_MAXIMUM_FIT_ROWS,
+) -> Round74PreparedMatchedDevelopmentData:
+    """Fit one training-only scaler and replay both representations once."""
+
+    partition.validate()
+    development_entries = tuple(
+        entry for entry in partition.entries if entry.role != "test"
+    )
+    expected_run_ids = {entry.run_id for entry in development_entries}
+    if set(target_assembly_by_run_id) != expected_run_ids:
+        raise ValueError("Round 74 matched development assembly panel differs")
+    scaler = fit_round74_cohort_feature_scaler(
+        store,
+        partition=partition,
+        chunk_rows=chunk_rows,
+        maximum_fit_rows=maximum_fit_rows,
+    )
+    roles = {
+        role: assemble_round74_matched_representation_role_batches(
+            store,
+            partition=partition,
+            scaler=scaler,
+            role=role,
+            target_assembly_by_run_id={
+                entry.run_id: target_assembly_by_run_id[entry.run_id]
+                for entry in development_entries
+                if entry.role == role
+            },
+        )
+        for role in ("training", "tuning")
+    }
+    result = Round74PreparedMatchedDevelopmentData(
+        scaler=scaler,
+        training=roles["training"],
+        tuning=roles["tuning"],
+    )
+    result.validate()
+    return result
+
+
 __all__ = [
     "ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS",
+    "ROUND74_EVENT_MODEL_MATCHED_WINDOW_SELECTION_SCHEMA_VERSION",
     "ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION",
     "ROUND74_EVENT_MODEL_TEMPORAL_STRATA",
     "ROUND74_EVENT_MODEL_WINDOWS_PER_RUN",
     "ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL",
     "ROUND74_EVENT_MODEL_WINDOWS_PER_SYMBOL_STRATUM",
     "ROUND74_EVENT_MODEL_WINDOW_SELECTION_SCHEMA_VERSION",
+    "Round74MatchedRepresentationRoleBatches",
     "Round74PreparedDevelopmentData",
+    "Round74PreparedMatchedDevelopmentData",
     "Round74PreparedTuningRoles",
+    "assemble_round74_matched_representation_role_batches",
     "assemble_round74_role_batches",
     "fit_round74_cohort_feature_scaler",
     "iter_round74_training_feature_chunks",
+    "prepare_round74_matched_development_data",
     "prepare_round74_development_data",
+    "round74_matched_representative_window_policy",
     "round74_representative_window_policy",
+    "select_round74_representative_matched_event_windows",
     "select_round74_representative_event_windows",
     "split_round74_prepared_tuning_roles",
 ]

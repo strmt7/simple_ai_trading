@@ -10,6 +10,7 @@ from simple_ai_trading.impact_absorption import L2BookState
 from simple_ai_trading.impact_absorption_event_dataset import (
     ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74EventDatasetAssembler,
+    Round74MatchedEventDatasetAssembler,
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
     build_round74_event_training_batch,
@@ -95,7 +96,7 @@ def _rules() -> dict[str, Round73MarketQuantityRules]:
     }
 
 
-def _engine() -> Round74EventTargetEngine:
+def _engine(*, additional_slippage_bps: float = 1.0) -> Round74EventTargetEngine:
     symbols = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
     entry_latencies = {symbol: 100_000_000 for symbol in symbols}
     exit_latencies = {symbol: 100_000_000 for symbol in symbols}
@@ -104,7 +105,7 @@ def _engine() -> Round74EventTargetEngine:
     funding_coverage = {
         symbol: (0, 1_000_000_000_000) for symbol in symbols
     }
-    slippage = {symbol: 1.0 for symbol in symbols}
+    slippage = {symbol: additional_slippage_bps for symbol in symbols}
     rules = _rules()
 
     def evidence(
@@ -446,6 +447,84 @@ def test_round74_dataset_binds_and_separates_window_representations() -> None:
             run_id=f"{1:032x}",
             target_engine=_engine(),
             window_representation="unbound",
+        )
+
+
+def test_round74_matched_assembler_uses_one_shared_anchor_and_target_panel() -> None:
+    assembler = Round74MatchedEventDatasetAssembler(
+        partition=_partition(),
+        run_id=f"{1:032x}",
+        target_engines={
+            "per_symbol": _engine(),
+            "global_cross_asset": _engine(),
+        },
+    )
+    completed = []
+    for index in range(128):
+        completed.extend(
+            assembler.consume(
+                _observation(
+                    index=index,
+                    monotonic_ns=index * 100_000_000,
+                    token=True,
+                )
+            )
+        )
+    for index, monotonic_ns in enumerate(
+        range(12_800_000_000, 313_000_000_001, 200_000_000),
+        start=128,
+    ):
+        completed.extend(
+            assembler.consume(
+                _observation(
+                    index=index,
+                    monotonic_ns=monotonic_ns,
+                    token=False,
+                )
+            )
+        )
+    completed.extend(assembler.finish())
+
+    assert len(completed) == 1
+    pair = completed[0]
+    pair.validate()
+    assert pair.per_symbol.anchor_index == pair.global_cross_asset.anchor_index == 0
+    assert pair.per_symbol.decision_wall_ns == (
+        pair.global_cross_asset.decision_wall_ns
+    )
+    assert pair.per_symbol.feature_values == pair.global_cross_asset.feature_values
+    assert pair.per_symbol.feature_window_sha256 != (
+        pair.global_cross_asset.feature_window_sha256
+    )
+    assert len(pair.endpoint_sha256) == 64
+
+    engine = _engine()
+    with pytest.raises(ValueError, match="engine panel differs"):
+        Round74MatchedEventDatasetAssembler(
+            partition=_partition(),
+            run_id=f"{1:032x}",
+            target_engines={
+                "per_symbol": engine,
+                "global_cross_asset": engine,
+            },
+        )
+    with pytest.raises(ValueError, match="engine panel differs"):
+        Round74MatchedEventDatasetAssembler(
+            partition=_partition(),
+            run_id=f"{1:032x}",
+            target_engines={
+                "per_symbol": _engine(),
+                "global_cross_asset": _engine(additional_slippage_bps=2.0),
+            },
+        )
+    with pytest.raises(ValueError, match="rejects test data"):
+        Round74MatchedEventDatasetAssembler(
+            partition=_partition(),
+            run_id=f"{3:032x}",
+            target_engines={
+                "per_symbol": _engine(),
+                "global_cross_asset": _engine(),
+            },
         )
 
 
