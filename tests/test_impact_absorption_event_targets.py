@@ -80,16 +80,18 @@ def _spec(
     fee_bps: float = 0.0,
     slippage_bps: float = 0.0,
     latency_ns: int = 100_000_000,
+    exit_latency_ns: int = 100_000_000,
 ) -> Round74EventTargetSpec:
     return Round74EventTargetSpec.create(
         reference_quote_notional=100.0,
         decision_to_entry_latency_ns=latency_ns,
+        decision_to_exit_latency_ns=exit_latency_ns,
         taker_fee_bps_by_symbol={
             symbol: fee_bps for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
         },
         additional_slippage_bps_per_side=slippage_bps,
         commission_evidence_sha256="a" * 64,
-        latency_evidence_sha256="b" * 64,
+        entry_exit_latency_evidence_sha256="b" * 64,
         slippage_evidence_sha256="d" * 64,
     )
 
@@ -140,10 +142,10 @@ def _complete_engine(
             (offset, mid)
             for offset, mid in zip(
                 (
-                    2_100_000_000,
-                    6_100_000_000,
-                    31_100_000_000,
-                    301_100_000_000,
+                    2_200_000_000,
+                    6_200_000_000,
+                    31_200_000_000,
+                    301_200_000_000,
                 ),
                 path_mids,
                 strict=True,
@@ -268,6 +270,56 @@ def test_round74_target_engine_builds_complete_pathwise_panel() -> None:
     assert one_second_short.adverse_selection is True
 
 
+def test_round74_target_engine_applies_separate_measured_exit_latency() -> None:
+    fast = Round74EventTargetEngine(
+        spec=_spec(exit_latency_ns=100_000_000),
+        anchors=[_anchor()],
+        quantity_rules=_rules(),
+    )
+    slow = Round74EventTargetEngine(
+        spec=_spec(exit_latency_ns=300_000_000),
+        anchors=[_anchor()],
+        quantity_rules=_rules(),
+    )
+    observations = (
+        (900_000_000, 100.0),
+        (1_000_000_000, 100.0),
+        (1_100_000_000, 100.0),
+        (1_300_000_000, 100.0),
+        (1_500_000_000, 100.0),
+        (1_700_000_000, 100.0),
+        (1_900_000_000, 100.0),
+        (2_100_000_000, 100.0),
+        (2_200_000_000, 101.0),
+        (2_400_000_000, 95.0),
+    )
+    for frame_index, (received, mid) in enumerate(observations, start=1):
+        for engine in (fast, slow):
+            engine.observe_depth(
+                received_monotonic_ns=received,
+                frame_index=frame_index,
+                message_index=0,
+                state=_state(mid=mid, update_id=frame_index),
+            )
+
+    fast_one_second = next(
+        outcome
+        for outcome in fast.finish()
+        if outcome.horizon_seconds == 1 and outcome.side == "long"
+    )
+    slow_one_second = next(
+        outcome
+        for outcome in slow.finish()
+        if outcome.horizon_seconds == 1 and outcome.side == "long"
+    )
+
+    assert fast_one_second.eligible
+    assert slow_one_second.eligible
+    assert fast_one_second.actual_exit_monotonic_ns == 2_200_000_000
+    assert slow_one_second.actual_exit_monotonic_ns == 2_400_000_000
+    assert fast_one_second.net_payoff_bps > slow_one_second.net_payoff_bps
+
+
 def test_round74_target_engine_accepts_only_causal_streamed_anchors() -> None:
     engine = Round74EventTargetEngine(
         spec=_spec(),
@@ -319,10 +371,10 @@ def test_round74_target_engine_accepts_only_causal_streamed_anchors() -> None:
         engine,
         start_ns=1_100_000_000,
         checkpoints=(
-            (2_100_000_000, 101.0),
-            (6_100_000_000, 102.0),
-            (31_100_000_000, 103.0),
-            (301_100_000_000, 104.0),
+            (2_200_000_000, 101.0),
+            (6_200_000_000, 102.0),
+            (31_200_000_000, 103.0),
+            (301_200_000_000, 104.0),
         ),
     )
 
@@ -388,10 +440,10 @@ def test_round74_path_risk_uses_intervening_books_not_only_endpoint() -> None:
         start_ns=1_100_000_000,
         checkpoints=(
             (1_600_000_000, 98.0),
-            (2_100_000_000, 101.0),
-            (6_100_000_000, 101.0),
-            (31_100_000_000, 101.0),
-            (301_100_000_000, 101.0),
+            (2_200_000_000, 101.0),
+            (6_200_000_000, 101.0),
+            (31_200_000_000, 101.0),
+            (301_200_000_000, 101.0),
         ),
     )
     outcomes = engine.finish()
@@ -434,7 +486,7 @@ def test_round74_target_engine_censors_funding_crossing_and_capacity() -> None:
     _observe_dense_path(
         funding_engine,
         start_ns=1_100_000_000,
-        checkpoints=((2_100_000_000, 101.0),),
+        checkpoints=((2_200_000_000, 101.0),),
     )
     funding = funding_engine.finish()
 
@@ -565,10 +617,10 @@ def test_round74_target_engine_excludes_later_tied_timestamp_messages() -> None:
         engine,
         start_ns=1_100_000_000,
         checkpoints=(
-            (2_100_000_000, 201.0),
-            (6_100_000_000, 202.0),
-            (31_100_000_000, 203.0),
-            (301_100_000_000, 204.0),
+            (2_200_000_000, 201.0),
+            (6_200_000_000, 202.0),
+            (31_200_000_000, 203.0),
+            (301_200_000_000, 204.0),
         ),
     )
 
@@ -624,13 +676,14 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
         Round74EventTargetSpec.create(
             reference_quote_notional=100.0,
             decision_to_entry_latency_ns=100_000_000,
+            decision_to_exit_latency_ns=100_000_000,
             taker_fee_bps_by_symbol={
                 symbol: 5.0
                 for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
             },
             additional_slippage_bps_per_side=1.0,
             commission_evidence_sha256="a" * 64,
-            latency_evidence_sha256="unverified",
+            entry_exit_latency_evidence_sha256="unverified",
             slippage_evidence_sha256="d" * 64,
         )
     with pytest.raises(ValueError, match="oversampled"):

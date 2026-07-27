@@ -90,12 +90,13 @@ def _engine() -> Round74EventTargetEngine:
     spec = Round74EventTargetSpec.create(
         reference_quote_notional=100.0,
         decision_to_entry_latency_ns=100_000_000,
+        decision_to_exit_latency_ns=100_000_000,
         taker_fee_bps_by_symbol={
             symbol: 5.0 for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
         },
         additional_slippage_bps_per_side=1.0,
         commission_evidence_sha256="a" * 64,
-        latency_evidence_sha256="b" * 64,
+        entry_exit_latency_evidence_sha256="b" * 64,
         slippage_evidence_sha256="c" * 64,
     )
     return Round74EventTargetEngine(
@@ -248,7 +249,7 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
         )
     assert assembler.pending_window_count == 1
     for index, monotonic_ns in enumerate(
-        range(12_800_000_000, 312_800_000_001, 200_000_000),
+        range(12_800_000_000, 313_000_000_001, 200_000_000),
         start=128,
     ):
         completed.extend(
