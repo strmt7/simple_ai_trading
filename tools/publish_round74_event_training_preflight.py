@@ -32,7 +32,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v18"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v19"
 RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v7"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
@@ -64,7 +64,8 @@ def _canonical_sha256(value: object) -> str:
 
 
 def _file_sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _reject_constant(value: str) -> None:
@@ -319,6 +320,9 @@ def _source_binding(repository: Path) -> dict[str, str]:
     result["event_training_schema_version"] = ROUND74_EVENT_TRAINING_SCHEMA_VERSION
     result["pretest_policy_schema_version"] = (
         ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+    )
+    result["file_sha256_normalization"] = (
+        "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256"
     )
     return result
 

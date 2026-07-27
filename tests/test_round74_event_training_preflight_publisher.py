@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 from copy import deepcopy
 from pathlib import Path
+import subprocess  # nosec B404
 from types import ModuleType
 
 import pytest
@@ -11,6 +13,13 @@ import pytest
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 TOOL_PATH = REPOSITORY / "tools/publish_round74_event_training_preflight.py"
+EVIDENCE_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-training-directml-preflight-model-integration-v19-2026-07-27.json"
+)
 SPEC = importlib.util.spec_from_file_location(
     "publish_round74_event_training_preflight",
     TOOL_PATH,
@@ -19,6 +28,74 @@ assert SPEC is not None and SPEC.loader is not None
 PUBLISHER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PUBLISHER)
 assert isinstance(PUBLISHER, ModuleType)
+
+
+def _source_sha256_at(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    payload = completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def test_round74_model_integration_directml_evidence_is_repeated_and_bound() -> None:
+    evidence = json.loads(EVIDENCE_PATH.read_text(encoding="ascii"))
+    claimed = evidence.pop("artifact_sha256")
+    commit = evidence["execution_git_commit"]
+    source = evidence["source_binding"]
+    inputs = evidence["input_contract"]
+    verification = evidence["verification"]
+    interpretation = evidence["interpretation"]
+
+    assert claimed == PUBLISHER._canonical_sha256(evidence)
+    assert evidence["schema_version"] == (
+        "round-074-event-training-directml-preflight-evidence-v19"
+    )
+    assert source["file_sha256_normalization"] == (
+        "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256"
+    )
+    for label in (
+        "event_model",
+        "event_training",
+        "event_model_operator",
+        "preflight_runner",
+        "publisher",
+    ):
+        assert source[f"{label}_sha256"] == _source_sha256_at(
+            commit,
+            source[f"{label}_path"],
+        )
+    assert evidence["backend"]["kind"] == "directml"
+    assert evidence["backend"]["vendor"] == "AMD Radeon RX 9070 XT"
+    assert evidence["backend"]["warning_count_per_execution"] == 0
+    assert evidence["backend"]["cpu_fallback_warning_count_per_execution"] == 0
+    assert inputs["device_run_group_size"] == 8
+    assert inputs["optimization_population"]["cohort_training_capture_runs"] == 120
+    assert (
+        inputs["optimization_population"]["cohort_model_selection_capture_runs"] == 12
+    )
+    assert (
+        inputs["optimization_population"][
+            "calibration_or_policy_selection_runs_used_for_candidate_fit"
+        ]
+        is False
+    )
+    assert verification["fresh_process_execution_count"] == 2
+    assert verification["successful_execution_count"] == 2
+    assert verification["all_candidates_trained"] is True
+    assert verification["cross_execution_complete_result_equal"] is True
+    assert (
+        evidence["repeated_result"]["selection"]["required_paired_capture_run_count"]
+        == 12
+    )
+    assert interpretation["representative_market_training_performed"] is False
+    assert interpretation["financial_edge_tested"] is False
+    assert interpretation["profitability_claim"] is False
+    assert interpretation["ai_uplift_claim"] is False
 
 
 def _run() -> dict[str, object]:
