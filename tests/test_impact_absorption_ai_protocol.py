@@ -49,6 +49,7 @@ def _request() -> Round74AIReviewRequest:
         probability_calibration_sha256="4" * 64,
         sample_sha256="2" * 64,
         deterministic_risk_state_sha256="3" * 64,
+        risk_profile="conservative",
         asset_slot=0,
         side="long",
         horizon_seconds=30,
@@ -123,6 +124,7 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert restored == request
     assert len(request.request_sha256) == 64
     assert payload["asset"] == "asset_0"
+    assert payload["risk_profile"] == "conservative"
     assert payload["horizon_seconds"] == 30
     assert "asset_identity_0" in payload["standardized_feature_summary"]
     assert payload["summary_value_order"][-1] == ("recent_16_minus_prior_16_mean")
@@ -134,14 +136,33 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert request.sample_sha256 not in user
     assert "future" not in user
     assert "Never infer an identity or date" in system
+    assert "frozen conservative risk profile" in system
     assert "increase size" in system
     assert "propose an order" in system
+
+
+def test_ai_risk_profile_is_hash_bound_and_changes_only_review_tolerance() -> None:
+    requests = tuple(
+        replace(_request(), risk_profile=profile)
+        for profile in ("conservative", "regular", "aggressive")
+    )
+    prompts = tuple(build_round74_ai_review_prompt(request) for request in requests)
+
+    assert len({request.request_sha256 for request in requests}) == 3
+    assert len({system for system, _user in prompts}) == 3
+    for request, (system, user) in zip(requests, prompts, strict=True):
+        payload = json.loads(user)
+        assert payload["risk_profile"] == request.risk_profile
+        assert f"frozen {request.risk_profile} risk profile" in system
+        assert "increase size" in system
+        assert "propose an order" in system
 
 
 @pytest.mark.parametrize(
     "changed",
     [
         {"horizon_seconds": 5},
+        {"risk_profile": "reckless"},
         {"expires_wall_ns": (WALL_NS + ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS + 1)},
         {"proposed_risk_size_bps": 10_001},
         {"positive_payoff_probability": float("nan")},

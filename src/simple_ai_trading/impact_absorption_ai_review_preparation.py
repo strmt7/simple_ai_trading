@@ -34,7 +34,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v4"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v5"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
@@ -516,6 +516,7 @@ def prepare_round74_target_free_ai_reviews(
                     deterministic_risk_state_sha256=(
                         row.deterministic_risk_state_sha256
                     ),
+                    risk_profile=action_selection.profile,
                     probability_calibration=probability_calibration,
                     requested_wall_ns=requested_wall_ns,
                     expires_wall_ns=(requested_wall_ns + ROUND74_AI_REVIEW_VALIDITY_NS),

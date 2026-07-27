@@ -128,6 +128,7 @@ def _build(**changes: object):
         "pretest_policy_sha256": "1" * 64,
         "sample_sha256": "2" * 64,
         "deterministic_risk_state_sha256": "3" * 64,
+        "risk_profile": "conservative",
         "probability_calibration": _calibration(),
         "requested_wall_ns": WALL_NS,
         "expires_wall_ns": WALL_NS + 10_000_000_000,
@@ -141,6 +142,7 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
     request = _build()
 
     assert request.asset_slot == 0
+    assert request.risk_profile == "conservative"
     assert request.side == "long"
     assert request.horizon_seconds == 30
     assert request.payoff_quantiles_bps == (-5.0, -1.0, 2.0, 4.0, 7.0)
