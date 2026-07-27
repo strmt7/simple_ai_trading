@@ -6,6 +6,7 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 import hashlib
 import json
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -27,8 +28,11 @@ from .impact_absorption_event_sequence import iter_round74_v10_event_observation
 from .impact_absorption_store import ImpactAbsorptionStore
 from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
+if TYPE_CHECKING:
+    from .impact_absorption_event_calibration import Round74TuningSubpartition
 
-ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v1"
+
+ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = "round-074-event-model-operator-v2"
 ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS = 8_192
 
 
@@ -281,6 +285,111 @@ class Round74PreparedDevelopmentData:
         }
 
 
+@dataclass(frozen=True)
+class Round74PreparedTuningRoles:
+    """Disjoint tuning batches with model-selection reuse made impossible."""
+
+    subpartition: Round74TuningSubpartition
+    model_selection_batches: tuple[Round74EventTrainingBatch, ...]
+    calibration_batches: tuple[Round74EventTrainingBatch, ...]
+    policy_selection_batches: tuple[Round74EventTrainingBatch, ...]
+    schema_version: str = ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        self.subpartition.validate()
+        groups = (
+            (
+                self.model_selection_batches,
+                self.subpartition.model_selection_run_ids,
+            ),
+            (self.calibration_batches, self.subpartition.calibration_run_ids),
+            (
+                self.policy_selection_batches,
+                self.subpartition.policy_selection_run_ids,
+            ),
+        )
+        batches = tuple(batch for group, _run_ids in groups for batch in group)
+        if self.schema_version != ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION:
+            raise ValueError("Round 74 prepared tuning roles schema differs")
+        for batch in batches:
+            batch.validate()
+        if any(
+            tuple(next(iter(set(batch.run_id))) for batch in group) != run_ids
+            for group, run_ids in groups
+        ):
+            raise ValueError("Round 74 prepared tuning role assignment differs")
+        if (
+            any(batch.role != "tuning" for batch in batches)
+            or len({next(iter(set(batch.run_id))) for batch in batches}) != len(batches)
+            or {batch.partition_sha256 for batch in batches}
+            != {self.subpartition.parent_partition_sha256}
+            or len({batch.scaler_sha256 for batch in batches}) != 1
+        ):
+            raise ValueError("Round 74 prepared tuning role identity differs")
+
+    @property
+    def role_assignment_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict())
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "subpartition_sha256": self.subpartition.subpartition_sha256,
+            "model_selection_batch_sha256": [
+                batch.batch_sha256 for batch in self.model_selection_batches
+            ],
+            "calibration_batch_sha256": [
+                batch.batch_sha256 for batch in self.calibration_batches
+            ],
+            "policy_selection_batch_sha256": [
+                batch.batch_sha256 for batch in self.policy_selection_batches
+            ],
+            "model_selection_run_count": len(self.model_selection_batches),
+            "calibration_run_count": len(self.calibration_batches),
+            "policy_selection_run_count": len(self.policy_selection_batches),
+            "cross_role_run_reuse_permitted": False,
+            "sealed_test_role_accessed": False,
+        }
+
+
+def split_round74_prepared_tuning_roles(
+    prepared: Round74PreparedDevelopmentData,
+    *,
+    subpartition: Round74TuningSubpartition,
+) -> Round74PreparedTuningRoles:
+    """Assign all 24 tuning batches before model, calibration, or policy use."""
+
+    prepared.validate()
+    subpartition.validate()
+    expected_run_ids = (
+        *subpartition.model_selection_run_ids,
+        *subpartition.calibration_run_ids,
+        *subpartition.policy_selection_run_ids,
+    )
+    observed_run_ids = tuple(
+        next(iter(set(batch.run_id))) for batch in prepared.tuning_batches
+    )
+    if observed_run_ids != expected_run_ids:
+        raise ValueError("Round 74 prepared tuning chronology differs")
+    if {
+        batch.partition_sha256
+        for batch in (*prepared.training_batches, *prepared.tuning_batches)
+    } != {subpartition.parent_partition_sha256}:
+        raise ValueError("Round 74 prepared tuning parent partition differs")
+    model_end = len(subpartition.model_selection_run_ids)
+    calibration_end = model_end + len(subpartition.calibration_run_ids)
+    selected = Round74PreparedTuningRoles(
+        subpartition=subpartition,
+        model_selection_batches=prepared.tuning_batches[:model_end],
+        calibration_batches=prepared.tuning_batches[model_end:calibration_end],
+        policy_selection_batches=prepared.tuning_batches[calibration_end:],
+    )
+    selected.validate()
+    return selected
+
+
 def prepare_round74_development_data(
     store: object,
     *,
@@ -340,8 +449,10 @@ __all__ = [
     "ROUND74_EVENT_MODEL_FEATURE_CHUNK_ROWS",
     "ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION",
     "Round74PreparedDevelopmentData",
+    "Round74PreparedTuningRoles",
     "assemble_round74_role_batches",
     "fit_round74_cohort_feature_scaler",
     "iter_round74_training_feature_chunks",
     "prepare_round74_development_data",
+    "split_round74_prepared_tuning_roles",
 ]
