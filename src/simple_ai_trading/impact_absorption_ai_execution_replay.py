@@ -125,8 +125,7 @@ class Round74AIExecutionReplayInstruction:
             self.action_selection_sha256,
         )
         if (
-            self.schema_version
-            != ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
+            self.schema_version != ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
             or isinstance(self.row_index, bool)
             or not isinstance(self.row_index, int)
             or self.row_index < 0
@@ -136,9 +135,7 @@ class Round74AIExecutionReplayInstruction:
             or not isinstance(self.anchor_index, int)
             or self.anchor_index < 0
             or any(
-                isinstance(value, bool)
-                or not isinstance(value, int)
-                or value < 0
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
                 for value in (
                     self.decision_monotonic_ns,
                     self.endpoint_frame_index,
@@ -159,8 +156,7 @@ class Round74AIExecutionReplayInstruction:
             or isinstance(self.requested_size_multiplier_bps, bool)
             or not isinstance(self.requested_size_multiplier_bps, int)
             or not 0 <= self.requested_size_multiplier_bps <= 10_000
-            or self.pre_replay_status
-            not in ROUND74_AI_EXECUTION_PRE_REPLAY_STATUSES
+            or self.pre_replay_status not in ROUND74_AI_EXECUTION_PRE_REPLAY_STATUSES
         ):
             raise ValueError("Round 74 AI execution instruction differs")
         if self.pre_replay_status == "replay_required":
@@ -253,16 +249,14 @@ def build_round74_ai_execution_replay_instructions(
         if (
             context.feature_row_sha256[local_index]
             != trace.feature_row_sha256[trace_index]
-            or review.feature_row_sha256
-            != trace.feature_row_sha256[trace_index]
+            or review.feature_row_sha256 != trace.feature_row_sha256[trace_index]
             or context.run_id[local_index] != trace.run_id[trace_index]
             or review.run_id != trace.run_id[trace_index]
             or context.symbol[local_index] != trace.symbol[trace_index]
             or review.symbol != trace.symbol[trace_index]
             or review.side != trace.side[trace_index]
             or review.horizon_seconds != trace.horizon_seconds[trace_index]
-            or review.pretest_policy_sha256
-            != action_selection.pretest_policy_sha256
+            or review.pretest_policy_sha256 != action_selection.pretest_policy_sha256
             or review.probability_calibration_sha256
             != action_selection.probability_calibration_sha256
         ):
@@ -287,16 +281,10 @@ def build_round74_ai_execution_replay_instructions(
             run_id=review.run_id,
             symbol=review.symbol,
             anchor_index=int(context.anchor_index[local_index]),
-            decision_monotonic_ns=int(
-                context.decision_monotonic_ns[local_index]
-            ),
+            decision_monotonic_ns=int(context.decision_monotonic_ns[local_index]),
             decision_wall_ns=int(context.decision_wall_ns[local_index]),
-            endpoint_frame_index=int(
-                context.endpoint_frame_index[local_index]
-            ),
-            endpoint_message_index=int(
-                context.endpoint_message_index[local_index]
-            ),
+            endpoint_frame_index=int(context.endpoint_frame_index[local_index]),
+            endpoint_message_index=int(context.endpoint_message_index[local_index]),
             sample_sha256=context.sample_sha256[local_index],
             feature_window_sha256=context.feature_window_sha256[local_index],
             feature_row_sha256=review.feature_row_sha256,
@@ -341,9 +329,7 @@ def _non_replay_evidence(
         source_capture_report_sha256=capture_report_sha256,
         target_spec_sha256=target_spec_sha256,
         status=status,
-        requested_size_multiplier_bps=(
-            instruction.requested_size_multiplier_bps
-        ),
+        requested_size_multiplier_bps=(instruction.requested_size_multiplier_bps),
         applied_size_multiplier_bps=0,
         exact_l2_replay_performed=False,
         target_outcome_sha256=None,
@@ -393,9 +379,7 @@ def replay_round74_ai_execution_run(
         or len({row.partition_sha256 for row in rows}) != 1
     ):
         raise ValueError("Round 74 AI execution run instruction panel differs")
-    required = tuple(
-        row for row in rows if row.pre_replay_status == "replay_required"
-    )
+    required = tuple(row for row in rows if row.pre_replay_status == "replay_required")
     target_spec_sha256 = assembly.spec.spec_sha256
     if not required:
         return tuple(
@@ -524,15 +508,11 @@ def replay_round74_ai_execution_run(
             target_outcome_sha256=outcome_sha256,
             target_context_sha256=outcome.target_context_sha256,
             target_ineligible_reason=target_reason,
-            requested_entry_monotonic_ns=(
-                outcome.requested_entry_monotonic_ns
-            ),
+            requested_entry_monotonic_ns=(outcome.requested_entry_monotonic_ns),
             actual_entry_monotonic_ns=outcome.actual_entry_monotonic_ns,
             actual_exit_monotonic_ns=outcome.actual_exit_monotonic_ns,
             capital_scaled_net_payoff_bps=net_bps,
-            capital_scaled_maximum_adverse_excursion_bps=(
-                adverse_excursion_bps
-            ),
+            capital_scaled_maximum_adverse_excursion_bps=(adverse_excursion_bps),
             adverse_selection=adverse_selection,
         )
         evidence.validate()
@@ -589,8 +569,7 @@ def replay_round74_ai_execution_store_run(
     )
     rows = tuple(instructions)
     if any(
-        row.run_id != entry.run_id
-        or row.partition_sha256 != partition.partition_sha256
+        row.run_id != entry.run_id or row.partition_sha256 != partition.partition_sha256
         for row in rows
     ):
         raise ValueError("Round 74 AI execution store identity differs")
