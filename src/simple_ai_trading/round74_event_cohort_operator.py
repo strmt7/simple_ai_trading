@@ -38,13 +38,23 @@ from .round74_active_qualification import (
     _strict_json_object,
     reserve_round74_active_attempt,
 )
+from .round74_active_adjudication import (
+    ROUND74_ACTIVE_ADJUDICATION_RELATIVE_PATH,
+    ROUND74_ACTIVE_ADJUDICATION_SCHEMA_VERSION,
+    ROUND74_ACTIVE_RESULT_FILE_SHA256,
+    ROUND74_ACTIVE_RESULT_SHA256,
+    build_round74_active_adjudication,
+)
 
 
 ROUND74_EVENT_COHORT_PLAN_RELATIVE_PATH = Path(
-    "docs/model-research/action-value/round-074-event-cohort-plan-v4.json"
+    "docs/model-research/action-value/round-074-event-cohort-plan-v4-r2.json"
 )
 ROUND74_EVENT_COHORT_PLAN_SHA256 = (
-    "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+    "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2"
+)
+ROUND74_ACTIVE_ADJUDICATION_SHA256 = (
+    "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7"
 )
 ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION = (
     "round-074-event-cohort-slot-state-v3"
@@ -137,9 +147,12 @@ def _active_result_path(repository: Path) -> Path:
 def validate_round74_active_prerequisite(
     repository: Path,
 ) -> dict[str, object]:
-    """Require the exact successful active result before any cohort reservation."""
+    """Require the exact raw result and deterministic adjudication."""
 
-    path = _active_result_path(repository)
+    root = repository.resolve()
+    path = _active_result_path(root)
+    if _sha256_file(path) != ROUND74_ACTIVE_RESULT_FILE_SHA256:
+        raise ValueError("Round 74 active prerequisite file identity differs")
     result = _strict_json_object(
         path.read_text(encoding="utf-8"),
         "Round 74 active prerequisite result",
@@ -152,14 +165,15 @@ def validate_round74_active_prerequisite(
     supervisor = result.get("supervisor_report")
     if (
         claimed != _canonical_sha256(canonical)
+        or claimed != ROUND74_ACTIVE_RESULT_SHA256
         or result.get("schema_version") != ROUND74_ACTIVE_RESULT_SCHEMA_VERSION
         or result.get("preflight_sha256") != ROUND74_ACTIVE_PREFLIGHT_SHA256
         or not isinstance(verdict, Mapping)
-        or verdict.get("outcome") != "active_qualified"
-        or verdict.get("active_qualified") is not True
+        or verdict.get("outcome") != "failed"
+        or verdict.get("active_qualified") is not False
         or verdict.get("capture_data_passed") is not True
         or verdict.get("activity_label") != "active"
-        or verdict.get("errors") != []
+        or verdict.get("errors") != ["fresh_audit_or_report_identity_failed"]
         or result.get("capture_return_code") != 0
         or result.get("watchdog_breaches") != []
         or result.get("automatic_retry_permitted") is not False
@@ -177,15 +191,37 @@ def validate_round74_active_prerequisite(
         or audits[0]["audit"].get("passed") is not True
     ):
         raise ValueError("Round 74 active prerequisite did not pass exactly")
-    return result
+
+    adjudication_path = root / ROUND74_ACTIVE_ADJUDICATION_RELATIVE_PATH
+    adjudication = _strict_json_object(
+        adjudication_path.read_text(encoding="utf-8"),
+        "Round 74 active prerequisite adjudication",
+    )
+    adjudication_claimed = str(adjudication.get("artifact_sha256", ""))
+    adjudicated_at = datetime.fromisoformat(
+        str(adjudication.get("adjudicated_at_utc", "")).replace("Z", "+00:00")
+    )
+    expected = build_round74_active_adjudication(
+        root,
+        adjudicated_at_utc=adjudicated_at,
+    )
+    if (
+        adjudication.get("schema_version") != ROUND74_ACTIVE_ADJUDICATION_SCHEMA_VERSION
+        or adjudication_claimed != ROUND74_ACTIVE_ADJUDICATION_SHA256
+        or adjudication != expected
+    ):
+        raise ValueError(
+            "Round 74 active prerequisite adjudication did not pass exactly"
+        )
+    return {
+        "source_result": result,
+        "adjudication": adjudication,
+    }
 
 
 def _campaign_root(repository: Path) -> Path:
     return (
-        repository
-        / "data"
-        / "round74-event-cohort"
-        / ROUND74_EVENT_COHORT_PLAN_SHA256
+        repository / "data" / "round74-event-cohort" / ROUND74_EVENT_COHORT_PLAN_SHA256
     )
 
 
@@ -208,9 +244,7 @@ def _load_contiguous_bindings(
         path = _binding_path(repository, ordinal)
         if not path.is_file():
             raise ValueError(f"Round 74 cohort prior slot {ordinal} is missing")
-        binding = load_round74_event_cohort_binding(
-            path.read_text(encoding="utf-8")
-        )
+        binding = load_round74_event_cohort_binding(path.read_text(encoding="utf-8"))
         if binding.slot_ordinal != ordinal or binding.plan_sha256 != plan.plan_sha256:
             raise ValueError(f"Round 74 cohort prior slot {ordinal} binding differs")
         bindings.append(binding)
@@ -288,9 +322,7 @@ def inspect_round74_cohort_readiness(
         if ordinal is None
         else (_slot_root(root, ordinal) / "attempt-reservation.json").exists()
     )
-    binding_exists = (
-        False if ordinal is None else _binding_path(root, ordinal).exists()
-    )
+    binding_exists = False if ordinal is None else _binding_path(root, ordinal).exists()
     checks = {
         "active_prerequisite_passed": prerequisite_passed,
         "campaign_not_halted": not halt_path.exists(),
@@ -313,9 +345,7 @@ def inspect_round74_cohort_readiness(
         "plan_sha256": plan.plan_sha256,
         "slot_status": selection.status,
         "slot_ordinal": ordinal,
-        "ready_for_current_slot": (
-            selection.status == "open" and all(checks.values())
-        ),
+        "ready_for_current_slot": (selection.status == "open" and all(checks.values())),
         "checks": checks,
         "prerequisite_error": prerequisite_error,
         "prior_bindings_error": prior_bindings_error,
@@ -437,9 +467,7 @@ def _run_slot_process(
     monitor_samples: list[dict[str, object]] = []
     breaches: list[str] = []
     stop_method = ""
-    creation_flags = (
-        subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
-    )
+    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
     with (
         stdout_path.open(
             "w",
@@ -498,10 +526,7 @@ def _run_slot_process(
             database_bytes, wal_bytes = _database_and_wal_bytes(database)
             growth = max(
                 0,
-                database_bytes
-                + wal_bytes
-                - baseline_database
-                - baseline_wal,
+                database_bytes + wal_bytes - baseline_database - baseline_wal,
             )
             free_bytes = shutil.disk_usage(database.parent).free
             if now_monotonic >= next_heartbeat:
@@ -638,9 +663,7 @@ def run_round74_cohort_current_slot(repository: Path) -> int:
     now_wall_ns = time.time_ns()
     selection = select_round74_cohort_slot(plan, now_wall_ns=now_wall_ns)
     if selection.status != "open" or selection.slot_ordinal is None:
-        raise RuntimeError(
-            f"Round 74 cohort has no open slot: {selection.status}"
-        )
+        raise RuntimeError(f"Round 74 cohort has no open slot: {selection.status}")
     ordinal = selection.slot_ordinal
     halt_path = _campaign_root(root) / "halt.json"
     if halt_path.exists():

@@ -4,6 +4,7 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -20,7 +21,12 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
 from simple_ai_trading.round74_active_qualification import (
+    ROUND74_ACTIVE_PREFLIGHT_RELATIVE_PATH,
     ROUND74_ACTIVE_PREFLIGHT_SHA256,
+)
+from simple_ai_trading.round74_active_adjudication import (
+    ROUND74_ACTIVE_ADJUDICATION_RELATIVE_PATH,
+    ROUND74_ACTIVE_RESULT_EVIDENCE_RELATIVE_PATH,
 )
 from simple_ai_trading.round74_event_cohort_operator import (
     ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS,
@@ -41,7 +47,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v6.json"
+    / "round-074-event-cohort-operator-v7.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -84,6 +90,13 @@ V5_OPERATOR_SUPERSESSION = (
     / "model-research"
     / "action-value"
     / "round-074-event-cohort-operator-v5-supersession-2026-07-27.json"
+)
+V4_PLAN_R1_SUPERSESSION = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-plan-v4-r1-supersession-2026-07-27.json"
 )
 
 
@@ -143,7 +156,9 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["cohort_plan_sha256"] == (
+        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+    )
     assert evidence["operator_contract_artifact_sha256"] == (
         "9b5c6c4fd17922feb30b128d6d8c6437177b1762362023966c7772a7a25efda4"
     )
@@ -233,7 +248,9 @@ def test_round74_cohort_operator_v4_was_superseded_before_slot_zero() -> None:
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["cohort_plan_sha256"] == (
+        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+    )
     assert evidence["superseded_operator"]["dataset_schema_version"] == (
         "round-074-event-dataset-v7"
     )
@@ -251,12 +268,33 @@ def test_round74_cohort_operator_v4_was_superseded_before_slot_zero() -> None:
     assert evidence["authority"]["profitability_or_edge_claim"] is False
 
 
+def test_round74_cohort_plan_r1_was_superseded_before_slot_zero() -> None:
+    evidence = json.loads(V4_PLAN_R1_SUPERSESSION.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["superseded"]["plan_sha256"] == (
+        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+    )
+    assert evidence["replacement"]["plan_sha256"] == (ROUND74_EVENT_COHORT_PLAN_SHA256)
+    basis = evidence["correction_basis"]
+    assert basis["raw_active_result_retained"] is True
+    assert basis["capture_retried"] is False
+    assert basis["selected_from_market_model_or_target_outcome"] is False
+    assert evidence["pre_supersession_state"]["slot_zero_started"] is False
+    assert evidence["pre_supersession_state"]["campaign_halt_written"] is False
+    assert evidence["authority"]["model_training_or_evaluation"] is False
+    assert evidence["authority"]["profitability_or_edge_claim"] is False
+
+
 def test_round74_cohort_operator_v5_was_superseded_before_slot_zero() -> None:
     evidence = json.loads(V5_OPERATOR_SUPERSESSION.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["cohort_plan_sha256"] == (
+        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+    )
     assert evidence["superseded_operator"]["dataset_schema_version"] == (
         "round-074-event-dataset-v8"
     )
@@ -318,43 +356,17 @@ def test_round74_cohort_slot_selection_never_shifts_window() -> None:
     assert (second.status, second.slot_ordinal) == ("open", 1)
 
 
-def _active_result() -> dict[str, object]:
-    result: dict[str, object] = {
-        "schema_version": "round-074-active-qualification-operator-result-v1",
-        "preflight_sha256": ROUND74_ACTIVE_PREFLIGHT_SHA256,
-        "capture_return_code": 0,
-        "watchdog_breaches": [],
-        "supervisor_report": {
-            "status": "completed",
-            "qualification_passed": True,
-            "reconnect_count": 0,
-        },
-        "fresh_process_audits": [
-            {
-                "return_code": 0,
-                "audit": {"passed": True},
-            }
-        ],
-        "verdict": {
-            "outcome": "active_qualified",
-            "active_qualified": True,
-            "capture_data_passed": True,
-            "activity_label": "active",
-            "errors": [],
-        },
-        "automatic_retry_permitted": False,
-        "orders_submitted": False,
-        "credentials_used": False,
-    }
-    from simple_ai_trading.round74_event_cohort_operator import _canonical_sha256
-
-    result["result_sha256"] = _canonical_sha256(result)
-    return result
-
-
-def test_round74_cohort_prerequisite_rejects_non_active_result(
+def test_round74_cohort_prerequisite_requires_exact_adjudicated_result(
     tmp_path: Path,
 ) -> None:
+    for relative in (
+        ROUND74_ACTIVE_PREFLIGHT_RELATIVE_PATH,
+        ROUND74_ACTIVE_RESULT_EVIDENCE_RELATIVE_PATH,
+        ROUND74_ACTIVE_ADJUDICATION_RELATIVE_PATH,
+    ):
+        destination = tmp_path / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPOSITORY / relative, destination)
     target = (
         tmp_path
         / "data"
@@ -362,19 +374,25 @@ def test_round74_cohort_prerequisite_rejects_non_active_result(
         / ROUND74_ACTIVE_PREFLIGHT_SHA256
         / "result.json"
     )
-    passed = _active_result()
-    write_json_atomic(target, passed, sort_keys=True)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(REPOSITORY / ROUND74_ACTIVE_RESULT_EVIDENCE_RELATIVE_PATH, target)
 
-    assert validate_round74_active_prerequisite(tmp_path) == passed
+    validated = validate_round74_active_prerequisite(tmp_path)
+    assert validated["source_result"]["result_sha256"] == (
+        "baa31064a82fa6bb742f5de288661b7a8b19e3d88bddc6accbb8adaee84d20ab"
+    )
+    assert validated["adjudication"]["artifact_sha256"] == (
+        "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7"
+    )
 
-    failed = deepcopy(passed)
+    failed = deepcopy(validated["source_result"])
     failed["verdict"]["activity_label"] = "middle"
     failed.pop("result_sha256")
     from simple_ai_trading.round74_event_cohort_operator import _canonical_sha256
 
     failed["result_sha256"] = _canonical_sha256(failed)
     write_json_atomic(target, failed, sort_keys=True)
-    with pytest.raises(ValueError, match="did not pass exactly"):
+    with pytest.raises(ValueError, match="file identity differs"):
         validate_round74_active_prerequisite(tmp_path)
 
 

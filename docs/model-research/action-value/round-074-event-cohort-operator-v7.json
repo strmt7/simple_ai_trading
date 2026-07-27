@@ -1,0 +1,102 @@
+{
+  "schema_version": "round-074-event-cohort-operator-contract-v7",
+  "created_at_utc": "2026-07-27T14:20:00Z",
+  "source_parent_git_commit": "1b24623f0d2bedf879a99aa39cf64fdbfce5c2a6",
+  "active_preflight_artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+  "active_result_sha256": "baa31064a82fa6bb742f5de288661b7a8b19e3d88bddc6accbb8adaee84d20ab",
+  "active_adjudication_artifact_sha256": "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7",
+  "cohort_plan_sha256": "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2",
+  "superseded_cohort_plan_sha256": "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb",
+  "superseded_operator_contract_artifact_sha256": "aebd0c3d30e9273df423175135d96df0193dd3b3d430776cb9fec31e678e2a91",
+  "cadence_correction_artifact_sha256": "e6704f064335fd176b60e0c5652693cd8981c016202078c5c39dd08783d7b58b",
+  "source_binding": {
+    "operator_path": "src/simple_ai_trading/round74_event_cohort_operator.py",
+    "operator_sha256": "e01b9561146c1617edf946c3d8ae1896eae5b0d69751919b54ca2d3f577e6305",
+    "wrapper_path": "tools/run_round74_event_cohort_slot.py",
+    "wrapper_sha256": "4d1e26712671ffd30319747ef1f8ea0aefad26ac1f09920655cb53ef7eb1f84a"
+  },
+  "slot_execution_contract": {
+    "one_hour_public_market_capture": true,
+    "slot_period_seconds": 3900,
+    "slot_start_tolerance_seconds": 30,
+    "maximum_reconnects": 0,
+    "current_slot_only": true,
+    "prior_contiguous_bindings_required": true,
+    "future_slot_access_permitted": false,
+    "active_prerequisite_exact_raw_result_required": true,
+    "active_prerequisite_exact_adjudication_required": true,
+    "exclusive_reservation_fsynced_before_spawn": true,
+    "successful_duplicate_invocation_is_idempotent": true,
+    "reserved_without_binding_is_retryable": false,
+    "failed_or_missed_slot_replacement_permitted": false,
+    "automatic_retry_permitted": false,
+    "campaign_halts_on_gap_or_failure": true,
+    "concurrent_capture_process_forbidden": true,
+    "capture_stdout_and_stderr_persisted": true,
+    "heartbeat_interval_seconds": 30,
+    "fresh_process_audit_timeout_seconds": 120,
+    "fresh_audit_uses_explicit_run_id": true,
+    "stored_report_and_final_frame_hashes_must_match": true,
+    "binding_written_only_after_fresh_audit": true,
+    "partition_written_only_after_all_168_bindings": true
+  },
+  "partition_contract": {
+    "target_schema_version": "round-074-executable-event-target-v10",
+    "dataset_schema_version": "round-074-event-dataset-v9",
+    "partition_schema_version": "round-074-run-partition-v4",
+    "common_reference_capital_accounting": true,
+    "actual_walked_entry_quote_notional_used": true,
+    "requested_size_fraction_used_as_realized_notional": false,
+    "decision_to_entry_latency_measured_separately": true,
+    "decision_to_exit_latency_measured_separately": true,
+    "maximum_entry_state_lateness_ns": 250000000,
+    "maximum_exit_state_lateness_ns": 250000000,
+    "maximum_target_span_ns": 310500000000,
+    "minimum_purge_ns": 310500000000,
+    "minimum_embargo_ns": 310500000000,
+    "event_sequence_schema_version": "round-074-causal-event-sequence-v4",
+    "event_scaler_schema_version": "round-074-event-feature-scaler-v4",
+    "feature_count": 66,
+    "feature_names_sha256": "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a",
+    "state_half_lives_seconds": [
+      5,
+      30,
+      300
+    ]
+  },
+  "resource_contract": {
+    "database": "data/microstructure.duckdb",
+    "single_database_file": true,
+    "global_database_cap_bytes": 25769803776,
+    "per_slot_database_and_wal_growth_limit_bytes": 536870912,
+    "per_slot_process_io_transfer_limit_bytes": 4294967296,
+    "minimum_free_space_bytes": 107374182400,
+    "wal_must_be_absent_before_and_after_slot": true,
+    "process_io_counter_interpreted_as_physical_nand_writes": false,
+    "gpu_or_model_fit_during_capture": false
+  },
+  "authority": {
+    "public_binance_market_data": true,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "credentials_or_orders": false,
+    "model_training_or_evaluation": false,
+    "test_target_access": false,
+    "profitability_or_edge_claim": false
+  },
+  "supersession_scope": {
+    "raw_capture_contract_changed": false,
+    "slot_schedule_changed": true,
+    "role_counts_changed": false,
+    "capture_executable_changed": false,
+    "active_prerequisite_interpretation_changed": true,
+    "downstream_feature_and_dataset_contract_changed": false,
+    "selected_from_market_model_or_target_outcome": false,
+    "slot_zero_started_when_superseded": false,
+    "cohort_market_data_collected_when_superseded": false
+  },
+  "artifact_sha256": "56f9696180d133ee4671fdaad9e3e362c6d7666f0e9eda6c8f64865d091fd285"
+}
