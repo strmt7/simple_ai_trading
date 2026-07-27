@@ -66,6 +66,9 @@ from simple_ai_trading.impact_absorption_execution_evidence import (
     ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
     ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_target_assembly import (
+    ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -74,7 +77,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v25.json"
+    / "round-074-local-ai-review-design-v26.json"
 )
 
 
@@ -103,6 +106,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "action_policy",
         "targets",
         "target_source_evidence",
+        "target_assembly",
         "execution_calibration_evidence",
         "uplift_evaluator",
         "sealed_ledger",
@@ -181,6 +185,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert (
         source["target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+    )
+    assert (
+        source["target_assembly_schema_version"]
+        == ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION
     )
     assert (
         source["execution_calibration_schema_version"]
@@ -307,6 +315,23 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["quantity_precision_may_substitute_for_market_lot_size"] is False
     assert architecture["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
     assert architecture["real_public_exchange_info_evidence_captured"] is False
+    assert architecture["source_derived_target_assembly_implemented"] is True
+    assert (
+        architecture[
+            "source_derived_target_assembly_accepts_caller_configured_fees_latency_slippage_or_quantity_rules"
+        ]
+        is False
+    )
+    assert (
+        architecture[
+            "source_derived_target_assembly_hash_binds_spec_and_quantity_claims"
+        ]
+        is True
+    )
+    assert (
+        architecture["source_derived_target_engine_revalidates_quantity_evidence"]
+        is True
+    )
     assert (
         architecture[
             "target_payoff_exposes_midpoint_book_walk_explicit_cost_and_total_implementation_shortfall"
@@ -511,6 +536,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["execution_calibration_evidence_parser_implemented"] is True
     assert status["exchange_info_quantity_rules_parser_implemented"] is True
     assert status["quantity_rules_runtime_evidence_match_gate_implemented"] is True
+    assert status["source_derived_target_assembly_implemented"] is True
     assert status["real_public_exchange_info_evidence_captured"] is False
     assert status["real_authenticated_commission_evidence_captured"] is False
     assert status["real_public_funding_evidence_captured"] is False
