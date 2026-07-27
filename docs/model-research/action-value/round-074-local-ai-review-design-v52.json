@@ -1,0 +1,48 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v52",
+  "artifact_kind": "compact_contract_delta",
+  "supersedes_artifact_sha256": "ef54e6977f6559ccee17f2693681fb11606ac9b978458e9b12e0a84eaf6a5c40",
+  "implementation_git_commit": "e3633abcfc40e0a95c2b256cec9c6ab928d5396b",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "8c1bedf78134f64f66655e8fa4fc38c7848a5677043e7abdefeb7f3396b731b8",
+      "review_request_schema_version": "round-074-ai-review-request-v4",
+      "prompt_payload_schema_version": "round-074-ai-prompt-payload-v4"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "d7c9b436a4a205c1880438d956a999257e3d8eee42dbf4059aa0c6670c85deb8",
+      "schema_version": "round-074-ai-review-panel-v6"
+    }
+  },
+  "unit_contract_delta": {
+    "standardized_feature_value_units": "dimensionless_training_scaler_z_scores",
+    "forecast_value_units": "basis_points",
+    "maximum_adverse_excursion_value_units": "basis_points",
+    "feature_names_with_financial_unit_suffixes_are_raw_values": false,
+    "prompt_explicitly_prohibits_raw_unit_interpretation_of_z_scores": true,
+    "prompt_payload_hash_binds_unit_metadata": true,
+    "request_remains_target_free": true,
+    "financial_uplift_assumed": false
+  },
+  "verification": {
+    "focused_tests_passed": 97,
+    "unit_metadata_asserted": true,
+    "system_instruction_asserted": true,
+    "ruff_passed": true,
+    "sealed_test_accessed": false,
+    "gpu_model_workload_executed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "b3be9d0f575f82728024f99f2691deb285925dc4b86de629b543896e045dd9ff"
+}
