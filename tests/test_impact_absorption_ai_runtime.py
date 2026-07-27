@@ -311,6 +311,7 @@ def test_runtime_rejects_provenance_drift_without_spawning() -> None:
         observed_wall_ns=WALL_NS,
         capability_detector=lambda _config: _capability(),
         provenance_resolver=lambda *_: ("f" * 64, METADATA_DIGEST),
+        residency_inspector=_unloaded_residency,
         popen_factory=spawn,
         monotonic_ns=lambda: 100,
         wall_time_ns=lambda: WALL_NS + 1,
@@ -482,6 +483,68 @@ def test_runtime_blocks_low_headroom_when_exact_model_is_not_warm() -> None:
     assert spawned is False
     assert outcome.capability is not None
     assert outcome.capability["pre_inference_exact_model_fully_gpu_resident"] is False
+
+
+def test_runtime_blocks_nonexact_loaded_model_before_worker() -> None:
+    spawned = False
+
+    def spawn(*_args: object, **_kwargs: object) -> _Process:
+        nonlocal spawned
+        spawned = True
+        return _Process()
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(),
+        residency_inspector=lambda *_args, **_kwargs: OllamaResidencyReport(
+            requested_model="fino1:8b",
+            status="gpu_resident",
+            loaded_model="unrelated-alias:8b",
+            digest=MODEL_DIGEST,
+            size_bytes=1_000,
+            size_vram_bytes=1_000,
+            vram_to_model_ratio=1.0,
+        ),
+        popen_factory=spawn,
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "blocked_capability"
+    assert spawned is False
+
+
+def test_runtime_blocks_unreadable_residency_before_worker() -> None:
+    spawned = False
+
+    def spawn(*_args: object, **_kwargs: object) -> _Process:
+        nonlocal spawned
+        spawned = True
+        return _Process()
+
+    def inspect(*_args: object, **_kwargs: object) -> OllamaResidencyReport:
+        raise ValueError("malformed provider inventory")
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(),
+        residency_inspector=inspect,
+        popen_factory=spawn,
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "blocked_capability"
+    assert outcome.failure_class == "AICapabilityGate"
+    assert spawned is False
 
 
 def test_runtime_rejects_non_loopback_or_relaxed_resource_policy() -> None:
