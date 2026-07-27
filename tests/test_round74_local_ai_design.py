@@ -55,6 +55,10 @@ from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
     ROUND74_EVENT_TARGET_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_evidence import (
+    ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION,
+    ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -63,7 +67,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v22.json"
+    / "round-074-local-ai-review-design-v23.json"
 )
 
 
@@ -91,6 +95,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "calibration",
         "action_policy",
         "targets",
+        "target_source_evidence",
         "uplift_evaluator",
         "sealed_ledger",
         "sealed_evaluator",
@@ -160,6 +165,14 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["review_panel_schema_version"] == (
         ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION
+    )
+    assert (
+        source["target_source_evidence_schema_version"]
+        == ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION
+    )
+    assert (
+        source["target_clock_probe_schema_version"]
+        == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
     )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
@@ -297,6 +310,33 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is True
     )
     assert architecture["exact_timestamp_false_precision_for_funding_permitted"] is False
+    assert (
+        architecture[
+            "commission_evidence_is_parsed_from_exact_signed_endpoint_responses"
+        ]
+        is True
+    )
+    assert architecture["credential_material_may_enter_evidence_or_artifacts"] is False
+    assert architecture["funding_history_full_limit_page_is_accepted_as_complete"] is False
+    assert (
+        architecture[
+            "funding_clock_probes_are_loaded_only_from_completed_audited_v10_capture"
+        ]
+        is True
+    )
+    assert architecture["funding_clock_mapping_interpolates_between_probes"] is False
+    assert (
+        architecture[
+            "funding_boundary_uses_preceding_request_start_and_following_receipt"
+        ]
+        is True
+    )
+    assert (
+        architecture[
+            "only_frames_with_clock_probes_are_decompressed_after_capture_audit"
+        ]
+        is True
+    )
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -404,6 +444,10 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["actual_exit_funding_recheck_implemented"] is True
     assert status["funding_schedule_coverage_gate_implemented"] is True
     assert status["funding_clock_uncertainty_interval_implemented"] is True
+    assert status["binance_source_evidence_parser_implemented"] is True
+    assert status["audited_clock_probe_loader_implemented"] is True
+    assert status["real_authenticated_commission_evidence_captured"] is False
+    assert status["real_public_funding_evidence_captured"] is False
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (

@@ -82,11 +82,15 @@ from simple_ai_trading.impact_absorption_event_model import (
 from simple_ai_trading.impact_absorption_event_financial_metrics import (
     ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_evidence import (
+    ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION,
+    ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v36.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v37.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -130,6 +134,17 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_model_sha256"] == _file_sha256(source["event_model_path"])
     assert source["event_scaler_sha256"] == _file_sha256(source["event_scaler_path"])
     assert source["event_target_sha256"] == _file_sha256(source["event_target_path"])
+    assert source["event_target_source_evidence_sha256"] == _file_sha256(
+        source["event_target_source_evidence_path"]
+    )
+    assert (
+        source["event_target_source_evidence_schema_version"]
+        == ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION
+    )
+    assert (
+        source["event_target_clock_probe_schema_version"]
+        == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+    )
     assert source["event_dataset_sha256"] == _file_sha256(source["event_dataset_path"])
     assert source["event_action_policy_sha256"] == _file_sha256(
         source["event_action_policy_path"]
@@ -375,6 +390,17 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert costs["funding_interval_overlap_policy"] == "censor target"
     assert costs["exact_point_timestamp_required_or_assumed"] is False
     assert costs["touching_or_overlapping_funding_intervals_permitted"] is False
+    assert costs["commission_source_response_parser_implemented"] is True
+    assert costs["funding_history_source_response_parser_implemented"] is True
+    assert costs["credential_material_may_enter_target_evidence_or_artifacts"] is False
+    assert costs["full_funding_limit_page_accepted_as_complete"] is False
+    assert "completed audited Round 74 v10 capture" in (
+        costs["clock_probe_capture_requirement"]
+    )
+    assert "without interpolation" in costs["funding_clock_mapping"]
+    assert costs["post_audit_clock_extraction_decompresses_only_probe_frames"] is True
+    assert costs["real_authenticated_commission_evidence_captured_now"] is False
+    assert costs["real_public_funding_evidence_captured_now"] is False
     assert costs["structured_evidence_claims_must_match_exact_configured_values"] is True
     assert costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
     assert costs["midpoint_payoff_reported_before_execution_friction"] is True
@@ -710,6 +736,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["actual_exit_funding_recheck_implementation"] is True
     assert authority["funding_schedule_coverage_gate_implementation"] is True
     assert authority["funding_clock_uncertainty_interval_implementation"] is True
+    assert authority["binance_source_evidence_parser_implementation"] is True
+    assert authority["audited_clock_probe_loader_implementation"] is True
+    assert authority["real_authenticated_commission_evidence_captured"] is False
+    assert authority["real_public_funding_evidence_captured"] is False
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
