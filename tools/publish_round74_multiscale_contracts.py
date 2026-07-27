@@ -583,7 +583,8 @@ def main() -> int:
         now=now,
         previous=previous_operator,
     )
-    if (repository / OPERATOR_OUTPUT).exists():
+    operator_reused = (repository / OPERATOR_OUTPUT).exists()
+    if operator_reused:
         operator = _load_hash_bound(
             repository / OPERATOR_OUTPUT,
             "artifact_sha256",
@@ -649,8 +650,9 @@ def main() -> int:
                 "ai_design_sha256": ai_design["artifact_sha256"],
                 "execution_git_commit": commit,
                 "model_design_sha256": model_design["design_sha256"],
-                "reused_operator_contract_sha256": operator["artifact_sha256"],
-                "reused_operator_supersession_sha256": supersession["artifact_sha256"],
+                "operator_contract_reused": operator_reused,
+                "operator_contract_sha256": operator["artifact_sha256"],
+                "operator_supersession_sha256": supersession["artifact_sha256"],
             },
             allow_nan=False,
             ensure_ascii=True,
