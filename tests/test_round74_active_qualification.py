@@ -26,6 +26,13 @@ OPERATOR_CONTRACT = (
     / "action-value"
     / "round-074-active-qualification-operator-v1.json"
 )
+HOST_SCHEDULE = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-active-qualification-host-schedule-2026-07-27.json"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -55,6 +62,24 @@ def test_round74_active_operator_contract_binds_executable_bytes() -> None:
         ).hexdigest() == source[hash_key]
     assert contract["execution_contract"]["automatic_retry_permitted"] is False
     assert contract["authority"]["order_submission"] is False
+
+
+def test_round74_host_schedule_is_truthful_and_does_not_claim_execution() -> None:
+    evidence = json.loads(HOST_SCHEDULE.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["preflight_artifact_sha256"] == (
+        ROUND74_ACTIVE_PREFLIGHT_SHA256
+    )
+    scheduler = evidence["host_scheduler"]
+    assert scheduler["next_run_time_utc"] == "2026-07-27T12:55:00Z"
+    assert scheduler["start_when_available"] is False
+    assert scheduler["last_task_result_hex"] == "0x41303"
+    limitations = evidence["limitations"]
+    assert limitations["future_execution_proven_now"] is False
+    assert limitations["active_regime_qualification_proven_now"] is False
+    assert limitations["automatic_retry_permitted"] is False
 
 
 def test_round74_active_preflight_binds_corrected_cap_and_exact_command() -> None:
