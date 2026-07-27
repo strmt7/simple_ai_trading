@@ -248,6 +248,7 @@ def test_feature_stream_rejects_bad_store_chunk_and_source_rows(
 @dataclass
 class _Sample:
     run_id: str
+    window_representation: str = "per_symbol"
 
 
 @dataclass(frozen=True)
@@ -270,6 +271,7 @@ class _Batch:
     batch_sha256: str
     rows: int = 1
     decision_wall_ns: np.ndarray | None = None
+    window_representation: str = "per_symbol"
 
     def validate(self) -> None:
         if len(set(self.run_id)) != 1:
@@ -386,6 +388,7 @@ def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
         lambda _self, *, anchors: object(),
     )
     authorizations: list[tuple[str | None, str | None]] = []
+    representations: list[str] = []
 
     def labeled(
         _store: object,
@@ -393,10 +396,12 @@ def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
         run_id: str,
         pretest_model_policy_sha256: str | None,
         test_unlock_sha256: str | None,
+        window_representation: str,
         **_kwargs: object,
     ) -> tuple[_Sample, ...]:
         authorizations.append((pretest_model_policy_sha256, test_unlock_sha256))
-        return (_Sample(run_id),)
+        representations.append(window_representation)
+        return (_Sample(run_id, window_representation),)
 
     monkeypatch.setattr(subject, "iter_round74_labeled_event_windows", labeled)
     monkeypatch.setattr(
@@ -414,6 +419,7 @@ def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
             scaler_sha256=scaler.scaler_sha256,
             partition_sha256=partition.partition_sha256,
             batch_sha256=f"{int(run_id, 16):064x}",
+            window_representation=samples[0].window_representation,
             decision_wall_ns=np.asarray(
                 [entry.eligible_anchor_start_wall_ns],
                 dtype=np.int64,
@@ -435,6 +441,17 @@ def test_role_assembly_is_one_run_per_batch_and_test_is_gated(
     )
     assert [batch.run_id for batch in training] == [(training_id,)]
     assert authorizations == [(None, None)]
+    assert representations == ["per_symbol"]
+    global_training = subject.assemble_round74_role_batches(
+        _store(),
+        partition=partition,
+        scaler=scaler,
+        role="training",
+        target_assembly_by_run_id={training_id: assembly},
+        window_representation="global_cross_asset",
+    )
+    assert global_training[0].window_representation == "global_cross_asset"
+    assert representations[-1] == "global_cross_asset"
 
     test_id = partition.entries[2].run_id
     with pytest.raises(ValueError, match="authorization is missing"):
@@ -493,6 +510,15 @@ def test_role_assembly_rejects_invalid_inputs(
             scaler=scaler,
             role="training",
             target_assembly_by_run_id={},
+        )
+    with pytest.raises(ValueError, match="window representation differs"):
+        subject.assemble_round74_role_batches(
+            _store(),
+            partition=partition,
+            scaler=scaler,
+            role="training",
+            target_assembly_by_run_id={training_id: assembly},
+            window_representation="unbound",
         )
     with pytest.raises(ValueError, match="received test authorization"):
         subject.assemble_round74_role_batches(
