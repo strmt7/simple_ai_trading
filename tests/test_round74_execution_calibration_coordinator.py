@@ -22,6 +22,20 @@ from simple_ai_trading.round74_execution_calibration_journal import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _deterministic_monotonic_ns(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    current = 1_000_000_000_000
+
+    def tick() -> int:
+        nonlocal current
+        current += 1_000_000
+        return current
+
+    monkeypatch.setattr(time, "monotonic_ns", tick)
+
+
 def _sha(value: object) -> str:
     encoded = json.dumps(
         value,
@@ -383,9 +397,7 @@ def test_recovery_closes_exact_journal_owned_entry_and_verifies_flat() -> None:
     )
 
     assert result.complete is True
-    assert result.recovered_round_trip_ids == (
-        "round74-recovery:BTCUSDT-recovery",
-    )
+    assert result.recovered_round_trip_ids == ("round74-recovery:BTCUSDT-recovery",)
     assert len(transport.orders) == 1
     assert next(iter(transport.orders.values()))["reduceOnly"] is True
     assert transport.position_amount == 0
@@ -405,9 +417,7 @@ def test_recovery_refuses_position_that_exceeds_journal_ownership() -> None:
         )
 
     assert transport.orders == {}
-    assert journal.blocking_round_trip_ids() == (
-        "round74-recovery:BTCUSDT-recovery",
-    )
+    assert journal.blocking_round_trip_ids() == ("round74-recovery:BTCUSDT-recovery",)
 
 
 @pytest.mark.parametrize("position_amount", ["NaN", "Infinity", "-Infinity"])
@@ -452,7 +462,5 @@ def test_recovery_keeps_unfound_prepared_entry_blocking() -> None:
     )
 
     assert result.complete is False
-    assert result.blocking_round_trip_ids == (
-        "round74-recovery:BTCUSDT-unknown",
-    )
+    assert result.blocking_round_trip_ids == ("round74-recovery:BTCUSDT-unknown",)
     assert transport.orders == {}

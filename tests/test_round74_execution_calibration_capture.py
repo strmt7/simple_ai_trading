@@ -24,12 +24,11 @@ def _record(*, path: str, side: str, submission_ns: int) -> dict[str, object]:
         Decimal("0.01") if side == "BUY" else Decimal("-0.01")
     )
     position_key = (
-        "pre_pair_position_payload"
-        if path == "entry"
-        else "post_pair_position_payload"
+        "pre_pair_position_payload" if path == "entry" else "post_pair_position_payload"
     )
     return {
         "schema_version": ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
+        "environment": "binance_usdm_testnet",
         "calibration_run_id": "round74-capture-test",
         "round_trip_id": "BTCUSDT-0",
         "path": path,
@@ -96,9 +95,7 @@ def _leg(record: dict[str, object]) -> Round74ExecutionCaptureLeg:
         side=str(record["side"]),
         client_order_id=str(record["client_order_id"]),
         submission_monotonic_ns=int(record["submission_monotonic_ns"]),
-        terminal_receipt_monotonic_ns=int(
-            record["terminal_receipt_monotonic_ns"]
-        ),
+        terminal_receipt_monotonic_ns=int(record["terminal_receipt_monotonic_ns"]),
         expected_book_walk_source=record["expected_book_walk_source"],
         terminal_order_payload=record["terminal_order_payload"],
         account_trade_payloads=tuple(record["account_trade_payloads"]),
@@ -129,6 +126,9 @@ def test_capture_pair_emits_two_parser_valid_secret_free_records() -> None:
     entry, exit_record = pair.records()
 
     assert [entry["path"], exit_record["path"]] == ["entry", "exit"]
+    assert (
+        entry["environment"] == exit_record["environment"] == ("binance_usdm_testnet")
+    )
     assert entry["pre_pair_position_payload"]["positionAmt"] == "0"
     assert exit_record["post_pair_position_payload"]["positionAmt"] == "0"
     artifact = pair.as_dict()
@@ -180,9 +180,7 @@ def test_capture_pair_rejects_non_admissible_sources(
         terminal["o"]["z"] = "0.99"
         trades = deepcopy(list(pair.exit.account_trade_payloads))
         trades[0]["qty"] = "0.99"
-        trades[0]["quoteQty"] = str(
-            Decimal(trades[0]["price"]) * Decimal("0.99")
-        )
+        trades[0]["quoteQty"] = str(Decimal(trades[0]["price"]) * Decimal("0.99"))
         pair = Round74ExecutionCapturePair(
             **{
                 **pair.__dict__,

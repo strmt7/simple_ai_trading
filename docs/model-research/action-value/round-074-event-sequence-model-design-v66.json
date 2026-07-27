@@ -1,0 +1,67 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v66",
+  "created_at_utc": "2026-07-27T18:58:00Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v65.json",
+    "normalized_lf_sha256": "edebbb1f69ce680652526aafa40f90fd0bcb49be3c01ee56b9c785e0132258b9",
+    "composition_rule": "v65 remains the complete model and guarded-runtime contract; v66 replaces only execution-calibration source provenance"
+  },
+  "execution_provenance_correction": {
+    "superseded_source_schema_version": "round-074-execution-calibration-source-v1",
+    "current_source_schema_version": "round-074-execution-calibration-source-v2",
+    "defect": "v1 execution legs omitted their source environment while the aggregate accepted a caller-supplied environment",
+    "risk": "testnet latency and slippage records could be relabelled as mainnet and pass a same-environment target-spec check",
+    "environment_intrinsic_to_each_execution_leg": true,
+    "aggregate_environment_must_equal_every_leg": true,
+    "mixed_environment_panel_permitted": false,
+    "testnet_records_may_claim_mainnet": false,
+    "mainnet_target_assembly_from_testnet_records_permitted": false,
+    "testnet_to_mainnet_transfer_model_implemented": false,
+    "missing_transfer_model_policy": "block mainnet target assembly, representative training, sealed test access, and every financial claim",
+    "production_book_age_limit_ns": 250000000,
+    "production_book_age_limit_changed": false,
+    "coordinator_test_clock_policy": "deterministic injected monotonic clock; no production timing bound was weakened"
+  },
+  "normalized_lf_source_binding": {
+    "src/simple_ai_trading/impact_absorption_execution_evidence.py": "16237156d92564cb73240601c74742c8b2af9225ce04861b6c685c6a3bf2db55",
+    "src/simple_ai_trading/round74_execution_calibration_capture.py": "b1ff77b1df7782de9ca328a0df6abaaa4d1d8359db27452471bed51682d81abb",
+    "tests/test_impact_absorption_execution_evidence.py": "fb3154f845e3a68e699640aa0c34d88db0534470742168e6f86d009fe9cf1f56",
+    "tests/test_round74_event_model_design_v64.py": "b5bfb662efa5bee4ddae0ec1210e0d449524586a1abcbc872b3538c185204d3a",
+    "tests/test_round74_execution_calibration_capture.py": "72e6072c98891ec5e48108ffe9f17d7dfb993b1bea7798c7e0ff76357e10dd76",
+    "tests/test_round74_execution_calibration_coordinator.py": "034f1ae438e750740e9b34aa98f545c07d0f67fe4eedc7b4ab28f44b6530eaa5"
+  },
+  "verification": {
+    "affected_domain_test_count": 59,
+    "affected_domain_tests_passed": true,
+    "explicit_relabel_test_passed": true,
+    "testnet_capture_record_environment_test_passed": true,
+    "coordinator_flat_pair_test_passed": true,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "representative_market_training_executed": false,
+    "gpu_model_workload_executed": false
+  },
+  "unchanged_model_contract": {
+    "candidate_panel_changed": false,
+    "feature_contract_changed": false,
+    "target_economics_changed": false,
+    "training_tuning_test_roles_changed": false,
+    "action_policy_rule_changed": false,
+    "ai_overlay_rule_changed": false,
+    "sealed_test_rule_changed": false,
+    "default_profile": "conservative",
+    "model_predictions_are_unlevered": true,
+    "leverage_is_not_a_source_of_edge": true
+  },
+  "authority": {
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "78c315446de40d9a0ec18da3bfe1202a0ccd27e0e2c59e975765c9442307cc3a"
+}

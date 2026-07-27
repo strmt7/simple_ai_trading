@@ -16,9 +16,7 @@ from .impact_absorption_execution_evidence import (
 )
 
 
-ROUND74_EXECUTION_CAPTURE_PAIR_SCHEMA_VERSION = (
-    "round-074-execution-capture-pair-v1"
-)
+ROUND74_EXECUTION_CAPTURE_PAIR_SCHEMA_VERSION = "round-074-execution-capture-pair-v1"
 ROUND74_EXECUTION_CAPTURE_ENVIRONMENT = "binance_usdm_testnet"
 ROUND74_EXECUTION_CAPTURE_PATHS = ("entry", "exit")
 _SENSITIVE_KEYS = frozenset(
@@ -48,9 +46,7 @@ def _canonical_sha256(value: object) -> str:
 def _reject_sensitive_keys(value: object, *, path: str = "payload") -> None:
     if isinstance(value, Mapping):
         for key, nested in value.items():
-            normalized = (
-                str(key).strip().lower().replace("-", "").replace("_", "")
-            )
+            normalized = str(key).strip().lower().replace("-", "").replace("_", "")
             if normalized in _SENSITIVE_KEYS:
                 raise ValueError(
                     f"Round 74 execution capture {path} contains credentials"
@@ -65,7 +61,9 @@ def _reject_sensitive_keys(value: object, *, path: str = "payload") -> None:
             _reject_sensitive_keys(nested, path=f"{path}[{index}]")
 
 
-def _normalized_mapping(value: Mapping[str, object], *, label: str) -> dict[str, object]:
+def _normalized_mapping(
+    value: Mapping[str, object], *, label: str
+) -> dict[str, object]:
     _reject_sensitive_keys(value, path=label)
     normalized = json.loads(_canonical_json(dict(value)))
     if not isinstance(normalized, dict):
@@ -77,9 +75,7 @@ def _positive_decimal(value: object, *, label: str) -> Decimal:
     try:
         selected = Decimal(str(value))
     except InvalidOperation as exc:
-        raise ValueError(
-            f"Round 74 execution capture {label} differs"
-        ) from exc
+        raise ValueError(f"Round 74 execution capture {label} differs") from exc
     if not selected.is_finite() or selected <= 0:
         raise ValueError(f"Round 74 execution capture {label} differs")
     return selected
@@ -145,8 +141,7 @@ class Round74ExecutionCaptureLeg:
             or terminal["o"].get("S") != self.side
             or terminal["o"].get("R") is not (self.path == "exit")
             or any(
-                trade.get("symbol") != self.symbol
-                or trade.get("side") != self.side
+                trade.get("symbol") != self.symbol or trade.get("side") != self.side
                 for trade in trades
             )
         ):
@@ -157,6 +152,7 @@ class Round74ExecutionCaptureLeg:
         *,
         calibration_run_id: str,
         round_trip_id: str,
+        environment: str,
         flat_position_payload: Mapping[str, object],
     ) -> dict[str, object]:
         self.validate()
@@ -166,6 +162,7 @@ class Round74ExecutionCaptureLeg:
             raise ValueError("Round 74 execution capture pair identity differs")
         record: dict[str, object] = {
             "schema_version": ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
+            "environment": str(environment),
             "calibration_run_id": run_id,
             "round_trip_id": pair_id,
             "path": self.path,
@@ -173,9 +170,7 @@ class Round74ExecutionCaptureLeg:
             "side": self.side,
             "client_order_id": self.client_order_id,
             "submission_monotonic_ns": self.submission_monotonic_ns,
-            "terminal_receipt_monotonic_ns": (
-                self.terminal_receipt_monotonic_ns
-            ),
+            "terminal_receipt_monotonic_ns": (self.terminal_receipt_monotonic_ns),
             "terminal_source": "ORDER_TRADE_UPDATE",
             "expected_book_walk_source": _normalized_mapping(
                 self.expected_book_walk_source,
@@ -223,8 +218,7 @@ class Round74ExecutionCapturePair:
             label="reference quote notional",
         )
         if (
-            self.schema_version
-            != ROUND74_EXECUTION_CAPTURE_PAIR_SCHEMA_VERSION
+            self.schema_version != ROUND74_EXECUTION_CAPTURE_PAIR_SCHEMA_VERSION
             or self.environment != ROUND74_EXECUTION_CAPTURE_ENVIRONMENT
             or self.symbol not in ROUND74_EVENT_TARGET_SYMBOLS
             or self.entry.path != "entry"
@@ -239,11 +233,13 @@ class Round74ExecutionCapturePair:
         entry_record = self.entry.as_record(
             calibration_run_id=self.calibration_run_id,
             round_trip_id=self.round_trip_id,
+            environment=self.environment,
             flat_position_payload=self.pre_pair_position_payload,
         )
         exit_record = self.exit.as_record(
             calibration_run_id=self.calibration_run_id,
             round_trip_id=self.round_trip_id,
+            environment=self.environment,
             flat_position_payload=self.post_pair_position_payload,
         )
         normalized_entry = validate_round74_execution_calibration_record(
@@ -263,9 +259,7 @@ class Round74ExecutionCapturePair:
             or self.exit.submission_monotonic_ns
             < self.entry.terminal_receipt_monotonic_ns
         ):
-            raise ValueError(
-                "Round 74 execution capture flat round trip differs"
-            )
+            raise ValueError("Round 74 execution capture flat round trip differs")
         return normalized_entry, normalized_exit
 
     @property

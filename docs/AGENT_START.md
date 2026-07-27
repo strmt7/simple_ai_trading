@@ -347,7 +347,12 @@ After parser or taxonomy changes, regenerate the header through the native build
   rechecks capture-process and WAL absence, emits bounded-silence heartbeats,
   and never reads a sealed-test assembly. The complete cohort and target panel
   do not exist yet, so no representative training or financial result exists.
-  Then read
+  Then read `round-074-event-sequence-model-design-v66.json`. Execution source
+  schema v2 makes the venue environment intrinsic to every calibration leg and
+  rejects any aggregate whose requested environment differs. Testnet execution
+  records cannot be relabelled as mainnet. No testnet-to-mainnet transfer model
+  exists, so mainnet target assembly and every downstream financial claim remain
+  blocked. Then read
   `round-074-local-ai-review-design-v49.json`. The model now uses an exact,
   target-blind 768-window sample per capture run, disjoint 12/6/6 tuning roles,
   and bounded equal-run DirectML groups. It also adds causal
