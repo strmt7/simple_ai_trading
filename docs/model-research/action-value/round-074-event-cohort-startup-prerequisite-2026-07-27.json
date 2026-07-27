@@ -1,0 +1,116 @@
+{
+  "schema_version": "round-074-event-cohort-startup-prerequisite-v1",
+  "created_at_utc": "2026-07-27T23:27:00Z",
+  "implementation_git_commit": "7eaa364ba0ca4df55852d817fb5ac33a438a5c94",
+  "purpose": "validate current routed Binance transport and unchanged v10 capture continuity before freezing a fresh cohort campaign",
+  "live_public_stream_probe": {
+    "attempt_count": 3,
+    "streams_per_attempt": [
+      "public",
+      "market"
+    ],
+    "messages_required_per_stream_per_attempt": 100,
+    "all_six_stream_probes_passed": true,
+    "public_first_message_seconds": [
+      1.187,
+      1.219,
+      1.203
+    ],
+    "market_first_message_seconds": [
+      1.187,
+      1.219,
+      1.219
+    ],
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "live_capture": {
+    "database_relative_path": "data/round74-startup-prerequisite-7eaa364.duckdb",
+    "database_sha256": "9504df678f1ec2deb3a049a68addfa5dbfaad1e6b9a04570889de165fa112e26",
+    "database_bytes": 14954496,
+    "wal_absent_after_capture_and_audit": true,
+    "run_id": "a4f868c623b74630a240c4da8ab5d29e",
+    "mode": "probe",
+    "capture_schema_version": "round-074-prospective-evidence-v10",
+    "capture_report_schema_version": "round-074-capture-report-v10",
+    "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+    "capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+    "started_wall_ns": 1785194445050529200,
+    "ended_wall_ns": 1785194633209772600,
+    "started_at_utc": "2026-07-27T23:20:45.050Z",
+    "ended_at_utc": "2026-07-27T23:23:53.209Z",
+    "elapsed_seconds": 182.09399999992456,
+    "status": "completed",
+    "failure_class": "none",
+    "error": "",
+    "capture_gate_passed": true,
+    "data_qualification_passed": true,
+    "resource_safety_passed": true,
+    "storage_efficiency_passed": true,
+    "qualification_passed": false,
+    "message_count": 202725,
+    "frame_count": 43,
+    "compressed_payload_bytes": 5756265,
+    "database_physical_growth_bytes": 9961472,
+    "process_io_delta_write_bytes": 16123435,
+    "queue_high_water_messages": 896,
+    "queue_capacity_messages": 65536,
+    "negative_corrected_latency_fraction": 0.0,
+    "report_sha256": "29902da9819803844cde5ba758e7d85c25a874d35fa73cdfc7ffaf75949ead26"
+  },
+  "fresh_process_audit": {
+    "schema_version": "round-074-capture-audit-v1",
+    "passed": true,
+    "errors": [],
+    "run_id": "a4f868c623b74630a240c4da8ab5d29e",
+    "run_status": "completed",
+    "stored_report_schema_version": "round-074-capture-report-v10",
+    "stored_report_sha256": "29902da9819803844cde5ba758e7d85c25a874d35fa73cdfc7ffaf75949ead26",
+    "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+    "message_count": 202725,
+    "frame_count": 43,
+    "compressed_payload_bytes": 5756265,
+    "last_frame_sha256": "4cb859227c90a13773a4b1577d8ab85e2ce5e68e42eb7ce55d38d479176be71f"
+  },
+  "startup_relaunch_validation": {
+    "live_transient_failure_injected": false,
+    "reason_not_injected": "the prospective source and network path must not be deliberately disrupted",
+    "exact_failure_shape_covered_by_focused_test": true,
+    "maximum_startup_launches": 2,
+    "maximum_pre_admission_relaunches": 1,
+    "backoff_seconds": 0.25,
+    "original_start_window_seconds": 30,
+    "database_size_and_mtime_must_remain_unchanged": true,
+    "wal_size_and_mtime_must_remain_unchanged": true,
+    "selected_run_id_must_be_empty": true,
+    "supervisor_attempts_must_be_empty": true,
+    "active_capture_processes_must_be_empty": true,
+    "admitted_capture_maximum_reconnects": 0
+  },
+  "sources": [
+    {
+      "publisher": "Binance",
+      "title": "USD-M Futures Websocket Market Streams",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect",
+      "retrieved_at_utc": "2026-07-27T23:08:00Z"
+    },
+    {
+      "publisher": "websockets",
+      "title": "Connection FAQ",
+      "url": "https://websockets.readthedocs.io/en/latest/faq/connection.html",
+      "retrieved_at_utc": "2026-07-27T23:08:00Z"
+    }
+  ],
+  "verdict": {
+    "passed": true,
+    "current_public_transport_reachable": true,
+    "normal_v10_probe_capture_completed": true,
+    "fresh_exact_wire_audit_passed": true,
+    "cohort_data_created": false,
+    "qualification_capture_created": false,
+    "model_training_or_evaluation": false,
+    "profitability_or_edge_claim": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "4a799cf928b57baf6cd1e7f587e5bdd02ecea161013b4b6267e5c7e42981f4f1"
+}
