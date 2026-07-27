@@ -113,6 +113,9 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
 DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v61.json"
+TUNING_SEPARATION_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v62.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -162,7 +165,10 @@ def _load_hash_bound(path: Path, field: str) -> dict[str, object]:
 
 def _file_sha256(relative_path: str) -> str:
     design = json.loads(DESIGN_PATH.read_text(encoding="ascii"))
-    commit = design["implementation_git_commit"]
+    return _file_sha256_at(design["implementation_git_commit"], relative_path)
+
+
+def _file_sha256_at(commit: str, relative_path: str) -> str:
     completed = subprocess.run(  # nosec B603
         ["git", "show", f"{commit}:{relative_path}"],
         cwd=REPOSITORY,
@@ -172,6 +178,56 @@ def _file_sha256(relative_path: str) -> str:
     payload = completed.stdout
     canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def test_round74_tuning_role_correction_is_disjoint_and_source_bound() -> None:
+    previous = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    design = _load_hash_bound(TUNING_SEPARATION_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    dataset = design["dataset_assembly_contract"]
+    training = design["development_training_contract"]
+    correction = design["tuning_role_correction"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v62"
+    assert design["supersedes_design_sha256"] == previous["design_sha256"]
+    assert source["event_model_operator_schema_version"] == (
+        "round-074-event-model-operator-v2"
+    )
+    assert source["event_model_operator_sha256"] == _file_sha256_at(
+        commit,
+        source["event_model_operator_path"],
+    )
+    assert source["tuning_role_contract_generator_sha256"] == _file_sha256_at(
+        commit,
+        source["tuning_role_contract_generator_path"],
+    )
+    assert dataset["disjoint_tuning_role_adapter_implemented_now"] is True
+    assert dataset["model_selection_receives_only_first_12_tuning_runs"] is True
+    assert dataset["probability_calibration_receives_only_next_6_tuning_runs"] is True
+    assert dataset["action_policy_selection_receives_only_final_6_tuning_runs"] is True
+    assert dataset["test_role_accessed_by_tuning_assignment"] is False
+    assert training["complexity_promotion_required_paired_capture_runs"] == 12
+    assert training["candidate_training_may_receive_calibration_runs"] is False
+    assert training["candidate_training_may_receive_policy_selection_runs"] is False
+    assert (
+        training[
+            "model_selection_probability_calibration_or_policy_run_reuse_permitted"
+        ]
+        is False
+    )
+    assert correction["raw_capture_contract_changed"] is False
+    assert correction["cohort_schedule_changed"] is False
+    assert correction[
+        "selected_from_market_targets_model_results_or_profitability"
+    ] is (False)
+    assert correction["representative_market_training_completed"] is False
+    assert correction["financial_edge_established"] is False
+    assert correction["profitability_claim"] is False
+    assert authority["disjoint_tuning_role_adapter_implementation"] is True
+    assert authority["model_selection"] is False
+    assert authority["profitability_claim"] is False
 
 
 def test_round74_event_model_design_is_source_bound_and_causal() -> None:
