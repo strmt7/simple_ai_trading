@@ -15,6 +15,8 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
+    ROUND74_EVENT_TCN_DILATIONS,
+    ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
     Round74CausalEventTCN,
     Round74EventPoolingMLP,
     build_round74_event_model,
@@ -22,6 +24,7 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
 )
 from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
     ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_SEQUENCE_LENGTH,
 )
 
 
@@ -84,6 +87,21 @@ def test_round74_tcn_is_strictly_causal() -> None:
         rtol=1e-6,
         atol=1e-6,
     )
+
+
+def test_round74_tcn_receptive_field_covers_frozen_sequence() -> None:
+    assert ROUND74_EVENT_TCN_DILATIONS == (1, 2, 4, 8, 16, 32, 64)
+    assert ROUND74_EVENT_TCN_RECEPTIVE_FIELD == 255
+    assert ROUND74_EVENT_TCN_RECEPTIVE_FIELD >= ROUND74_EVENT_SEQUENCE_LENGTH
+
+    model = Round74CausalEventTCN(dropout=0.0)
+    with pytest.raises(ValueError, match="exceeds its causal receptive field"):
+        model(
+            _inputs(
+                batch_size=1,
+                sequence_length=ROUND74_EVENT_TCN_RECEPTIVE_FIELD + 1,
+            )
+        )
 
 
 def test_round74_loss_is_finite_and_backpropagates() -> None:
