@@ -824,13 +824,11 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["exact_replay_required_for_every_positive_exposure"] is True
     assert evaluation["exact_replay_hash_bound_per_paired_observation"] is True
     assert (
-        evaluation["exact_replay_binds_reference_quote_and_actual_entry_quote"]
-        is True
+        evaluation["exact_replay_binds_reference_quote_and_actual_entry_quote"] is True
     )
     assert evaluation["actual_deployed_capital_bps_reconciled_per_execution"] is True
     assert (
-        evaluation["capital_scaled_payoff_and_mae_recomputed_from_position_bps"]
-        is True
+        evaluation["capital_scaled_payoff_and_mae_recomputed_from_position_bps"] is True
     )
     assert (
         evaluation[
