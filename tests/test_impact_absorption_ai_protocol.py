@@ -125,8 +125,10 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert len(request.request_sha256) == 64
     assert payload["asset"] == "asset_0"
     assert payload["risk_profile"] == "conservative"
-    assert payload["standardized_feature_value_units"] == (
-        "dimensionless_training_scaler_z_scores"
+    assert payload["binary_feature_count"] == 8
+    assert payload["binary_feature_value_units"] == "zero_or_one_indicator"
+    assert payload["continuous_feature_value_units"] == (
+        "dimensionless_training_scaler_normalized_values"
     )
     assert payload["forecast_value_units"] == "basis_points"
     assert payload["horizon_seconds"] == 30
@@ -141,7 +143,8 @@ def test_ai_prompt_is_causal_anonymized_and_schema_constrained() -> None:
     assert "future" not in user
     assert "Never infer an identity or date" in system
     assert "frozen conservative risk profile" in system
-    assert "dimensionless training-scaler z-scores" in system
+    assert "first 8 feature-summary values are zero-or-one indicators" in system
+    assert "dimensionless training-scaler normalized values" in system
     assert "Only forecast and adverse-excursion arrays are in basis points" in system
     assert "increase size" in system
     assert "propose an order" in system

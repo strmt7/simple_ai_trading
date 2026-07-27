@@ -22,12 +22,13 @@ from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_SIDES,
 )
 from .impact_absorption_event_action_policy import ROUND74_ACTION_PROFILES
+from .impact_absorption_event_scaling import ROUND74_EVENT_BINARY_FEATURE_COUNT
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
 ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v4"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v4"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v5"
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_MINIMUM_PARAMETER_COUNT = 2_000_000_000
@@ -508,8 +509,10 @@ class Round74AIReviewRequest:
             "anonymized_feature_names_sha256": _canonical_sha256(
                 list(_AI_PROMPT_FEATURE_NAMES)
             ),
-            "standardized_feature_value_units": (
-                "dimensionless_training_scaler_z_scores"
+            "binary_feature_count": ROUND74_EVENT_BINARY_FEATURE_COUNT,
+            "binary_feature_value_units": "zero_or_one_indicator",
+            "continuous_feature_value_units": (
+                "dimensionless_training_scaler_normalized_values"
             ),
             "standardized_feature_summary": feature_summary,
             "summary_value_order": [
@@ -650,10 +653,12 @@ def build_round74_ai_review_prompt(
         "You are a local market-risk reviewer operating under the frozen "
         f"{request.risk_profile} risk profile. "
         + _RISK_PROFILE_INSTRUCTIONS[request.risk_profile]
-        + " Feature-summary values are dimensionless training-scaler z-scores, "
-        "even when a feature name describes an underlying basis-point or "
-        "quantity measure. Only forecast and adverse-excursion arrays are in "
-        "basis points. Assess only the "
+        + f" The first {ROUND74_EVENT_BINARY_FEATURE_COUNT} feature-summary "
+        "values are zero-or-one indicators. Remaining feature-summary values "
+        "are dimensionless training-scaler normalized values, even when a "
+        "feature name describes an underlying basis-point or quantity measure. "
+        "Only forecast and adverse-excursion arrays are in basis points. "
+        "Assess only the "
         "causal numeric packet. You may preserve, reduce, veto, or abstain. "
         "Never infer an identity or date, choose a side, increase size, set "
         "leverage, or propose an order. Return exactly one JSON object with "
