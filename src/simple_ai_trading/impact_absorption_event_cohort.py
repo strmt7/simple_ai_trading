@@ -26,7 +26,7 @@ from .impact_absorption_store import (
 )
 
 
-ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION = "round-074-event-cohort-plan-v3"
+ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION = "round-074-event-cohort-plan-v4"
 ROUND74_EVENT_COHORT_BINDING_SCHEMA_VERSION = (
     "round-074-event-cohort-binding-v1"
 )

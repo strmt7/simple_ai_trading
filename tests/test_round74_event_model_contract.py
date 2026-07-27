@@ -14,6 +14,7 @@ from simple_ai_trading.impact_absorption_ai_bridge import (
     ROUND74_AI_RECENT_BLOCK_EVENTS,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
+    ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
@@ -111,12 +112,12 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v49.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v50.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-ai-exact-replay-v5-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-exact-capital-v6-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -137,7 +138,19 @@ def _canonical_sha256(value: object) -> str:
 
 
 def _load_hash_bound(path: Path, field: str) -> dict[str, object]:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    def reject_duplicates(
+        pairs: list[tuple[str, object]],
+    ) -> dict[str, object]:
+        value: dict[str, object] = {}
+        for key, item in pairs:
+            assert key not in value
+            value[key] = item
+        return value
+
+    value = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=reject_duplicates,
+    )
     claimed = value.pop(field)
     assert claimed == _canonical_sha256(value)
     value[field] = claimed
@@ -251,6 +264,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert source["ai_execution_replay_plan_schema_version"] == (
         ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
+    )
+    assert source["ai_execution_replay_evidence_schema_version"] == (
+        ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION
     )
     assert (
         source["sealed_ledger_schema_version"] == ROUND74_SEALED_LEDGER_SCHEMA_VERSION
@@ -434,6 +450,22 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         ]
         is True
     )
+    assert (
+        targets["reference_capital_normalization_uses_actual_walked_entry_quote"]
+        is True
+    )
+    assert (
+        targets[
+            "requested_quote_fraction_substitution_for_executed_notional_permitted"
+        ]
+        is False
+    )
+    assert (
+        targets[
+            "capital_scaled_payoff_and_mae_reconcile_quantity_price_and_reference"
+        ]
+        is True
+    )
     latency = targets["decision_to_entry_and_exit_execution_latency"]
     assert latency["must_be_measured_on_the_execution_host"] is True
     assert latency["entry_and_exit_must_be_measured_separately"] is True
@@ -614,6 +646,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert dataset["per_capture_run_target_context_uniformity_required"] is True
     assert dataset["cross_run_target_context_change_permitted"] is True
     assert dataset["pretest_policy_binds_exact_sorted_target_context_panel"] is True
+    assert dataset["model_payoff_label_uses_reference_capital_normalization"] is True
+    assert dataset["model_mae_label_uses_reference_capital_normalization"] is True
+    assert dataset["raw_position_bps_substituted_for_reference_capital_bps"] is False
     action = design["action_policy_contract"]
     assert action["implemented_now"] is True
     assert action["representative_market_policy_selected_now"] is False
@@ -872,6 +907,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["baseline_payoff_scaling_without_book_rewalk_permitted"] is False
     assert ai["nonexecuted_replay_statuses_apply_zero_exposure"] is True
     assert ai["sealed_ai_metrics_bind_each_execution_replay_sha256"] is True
+    assert ai["exact_replay_binds_reference_quote_and_actual_entry_quote"] is True
+    assert ai["actual_deployed_capital_bps_reconciled_per_execution"] is True
+    assert ai["requested_size_multiplier_used_as_realized_notional_proxy"] is False
+    assert ai["baseline_and_ai_use_same_reference_capital_denominator"] is True
+    assert ai["capital_scaled_payoff_and_mae_recomputed_from_position_bps"] is True
     assert ai["historical_ai_queue_model_implemented_now"] is True
     assert ai["ai_queue_model"] == (
         "one FIFO single-server queue per alternative candidate model in historical "
@@ -932,6 +972,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["historical_ai_queue_latency_implementation"] is True
     assert authority["exact_delayed_ai_execution_replay_implementation"] is True
     assert authority["sealed_exact_ai_execution_evidence_implementation"] is True
+    assert authority["exact_reference_capital_accounting_implementation"] is True
     assert authority["sealed_multiple_comparison_control_implementation"] is True
     assert authority["mandatory_funding_schedule_binding_implementation"] is True
     assert authority["symbol_specific_execution_evidence_implementation"] is True
@@ -1119,7 +1160,10 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
-    assert "Two unequal training runs prove" in (
+    assert "unequal constructed training runs" in (
+        binding["event_training_directml_reuse_scope"]
+    )
+    assert "equal capture-run gradient weight" in (
         binding["event_training_directml_reuse_scope"]
     )
     assert "does not evidence market fit" in (
