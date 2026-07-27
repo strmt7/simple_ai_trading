@@ -3,7 +3,7 @@
   "observed_at_utc": "2026-07-27T23:39:13.7416565Z",
   "source_git_commit": "4ec9e52b8a493680c21fbf3c7fc575bc21869fbf",
   "cohort_plan_sha256": "213a564026654905d62d2e74fd1c1944ff9ffd6d44af32557ccc20628ce59a04",
-  "operator_contract_artifact_sha256": "ce703964e8742e30e5b7937ae48b7131d170ec3b5d9b4597b5fd2fc055160f9e",
+  "operator_contract_artifact_sha256": "cb487f2817d090072b31841a0f438ff449a73b13ac0f1b805071e35d154ff145",
   "failed_campaign_evidence_artifact_sha256": "05d41b12b65604dd4451e8ecc12e05f51a634086e08cb4c409a7bb2e014bac3d",
   "startup_prerequisite_artifact_sha256": "4a799cf928b57baf6cd1e7f587e5bdd02ecea161013b4b6267e5c7e42981f4f1",
   "host_scheduler": {
@@ -71,5 +71,5 @@
     "credentials_used": false,
     "orders_submitted": false
   },
-  "artifact_sha256": "4694b5311cc3f4d1a08c4e8c8169101b39e03e6e3d8389b739106d9d663a240a"
+  "artifact_sha256": "c6e7e2fd5627af3b0d6c2008262c5b5583c2a77673ac8b2061899ca525102309"
 }

@@ -160,9 +160,7 @@ def _canonical_sha256(value: object) -> str:
 
 def _normalized_source_sha256(path: Path) -> str:
     normalized = (
-        path.read_text(encoding="utf-8")
-        .replace("\r\n", "\n")
-        .replace("\r", "\n")
+        path.read_text(encoding="utf-8").replace("\r\n", "\n").replace("\r", "\n")
     )
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
@@ -202,7 +200,7 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
 
     assert claimed == _canonical_sha256(contract)
     assert claimed == (
-        "ce703964e8742e30e5b7937ae48b7131d170ec3b5d9b4597b5fd2fc055160f9e"
+        "cb487f2817d090072b31841a0f438ff449a73b13ac0f1b805071e35d154ff145"
     )
     assert source["hash_mode"] == "utf8_lf_normalized_sha256"
     for path_key, hash_key in (
@@ -210,7 +208,9 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
         ("cohort_path", "cohort_sha256"),
         ("wrapper_path", "wrapper_sha256"),
     ):
-        assert _normalized_source_sha256(REPOSITORY / source[path_key]) == source[hash_key]
+        assert (
+            _normalized_source_sha256(REPOSITORY / source[path_key]) == source[hash_key]
+        )
     execution = contract["slot_execution_contract"]
     assert execution["automatic_retry_permitted"] is False
     assert execution["maximum_reconnects"] == 0
@@ -343,11 +343,11 @@ def test_round74_v8_host_schedule_is_exact_and_pre_execution_only() -> None:
 
     assert claimed == _canonical_sha256(evidence)
     assert claimed == (
-        "4694b5311cc3f4d1a08c4e8c8169101b39e03e6e3d8389b739106d9d663a240a"
+        "c6e7e2fd5627af3b0d6c2008262c5b5583c2a77673ac8b2061899ca525102309"
     )
     assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
     assert evidence["operator_contract_artifact_sha256"] == (
-        "ce703964e8742e30e5b7937ae48b7131d170ec3b5d9b4597b5fd2fc055160f9e"
+        "cb487f2817d090072b31841a0f438ff449a73b13ac0f1b805071e35d154ff145"
     )
     scheduler = evidence["host_scheduler"]
     assert scheduler["task_name"] == "SimpleAITrading-Round74-EventCohort-v8"
@@ -396,9 +396,7 @@ def test_round74_v5_slot_zero_failure_is_hash_bound_and_never_reused() -> None:
 
 
 def test_round74_v5_r1_startup_failure_is_hash_bound_and_never_reused() -> None:
-    evidence = json.loads(
-        V5_R1_SLOT_ZERO_STARTUP_FAILURE.read_text(encoding="utf-8")
-    )
+    evidence = json.loads(V5_R1_SLOT_ZERO_STARTUP_FAILURE.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
@@ -950,7 +948,9 @@ def test_round74_cohort_persists_live_progress_before_child_completion(
 
     plan = load_round74_cohort_operator_plan(REPOSITORY)
     controlled_process = ControlledProcess()
-    monkeypatch.setattr(operator.subprocess, "Popen", lambda *_args, **_kwargs: controlled_process)
+    monkeypatch.setattr(
+        operator.subprocess, "Popen", lambda *_args, **_kwargs: controlled_process
+    )
     monkeypatch.setattr(operator, "_active_capture_processes", lambda: [])
     monkeypatch.setattr(operator.time, "sleep", lambda _seconds: None)
     monkeypatch.setattr(
