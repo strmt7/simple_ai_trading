@@ -404,6 +404,66 @@ def test_event_sequence_adds_causal_multi_timescale_liquidity_state() -> None:
     assert all(math.isfinite(value) for value in third.feature_values)
 
 
+def test_multi_timescale_state_is_invariant_to_empty_event_sampling_rate() -> None:
+    sparse = _encoder(ready_offset_ns=1)
+    dense = _encoder(ready_offset_ns=1)
+    first_trade = _record(
+        lane="binance_futures_market",
+        sequence=0,
+        monotonic_ns=1_000_000_000,
+        stream_name="btcusdt@aggTrade",
+        payload=_trade(1_020),
+    )
+    sparse.consume(frame_index=0, message_index=0, record=first_trade)
+    dense.consume(frame_index=0, message_index=0, record=first_trade)
+
+    for index, seconds in enumerate((3, 5, 7, 9), start=1):
+        dense.consume(
+            frame_index=0,
+            message_index=index,
+            record=_record(
+                lane="binance_futures_market",
+                sequence=index,
+                monotonic_ns=seconds * 1_000_000_000,
+                stream_name="btcusdt@markPrice@1s",
+                payload=_mark(1_020 + seconds),
+            ),
+        )
+
+    moved_ticker = _ticker(11_020)
+    moved_ticker["b"] = "100.1"
+    moved_ticker["a"] = "100.2"
+    final_record = _record(
+        lane="binance_futures_public",
+        sequence=0,
+        monotonic_ns=11_000_000_000,
+        stream_name="btcusdt@bookTicker",
+        payload=moved_ticker,
+    )
+    sparse_final = sparse.consume(
+        frame_index=0,
+        message_index=1,
+        record=final_record,
+    )
+    dense_final = dense.consume(
+        frame_index=0,
+        message_index=5,
+        record=final_record,
+    )
+
+    assert sparse_final is not None and dense_final is not None
+    state_features = tuple(
+        name for name in ROUND74_EVENT_FEATURE_NAMES if name.startswith("ewm_")
+    )
+    assert len(state_features) == 21
+    for name in state_features:
+        assert _feature(dense_final, name) == pytest.approx(
+            _feature(sparse_final, name),
+            rel=1e-12,
+            abs=1e-12,
+        )
+
+
 def test_event_windows_are_per_symbol_causal_and_break_on_long_gap() -> None:
     encoder = _encoder(ready_offset_ns=1)
     tokens = []
