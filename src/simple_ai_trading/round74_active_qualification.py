@@ -232,8 +232,7 @@ def load_round74_active_preflight(
     )
 
     if (
-        not executable.is_file()
-        or arguments != _EXPECTED_ARGUMENTS
+        arguments != _EXPECTED_ARGUMENTS
         or payload.get("implementation_git_commit")
         != "a986a2e3d6c69abe9d6f497b432645545c6825e6"
         or scope.get("capture_schema_version") != IMPACT_CAPTURE_V10_SCHEMA_VERSION
@@ -495,6 +494,7 @@ def inspect_round74_active_readiness(
     )
     checks = {
         "preflight_identity_passed": True,
+        "capture_executable_passed": preflight.executable.is_file(),
         "frozen_capture_source_passed": source_matches,
         "baseline_database_and_wal_passed": baseline_matches,
         "free_space_passed": free_bytes >= preflight.free_space_minimum_bytes,

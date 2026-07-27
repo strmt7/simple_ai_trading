@@ -100,6 +100,18 @@ def test_round74_active_preflight_binds_corrected_cap_and_exact_command() -> Non
 
 
 def test_round74_active_readiness_before_window_does_not_reserve() -> None:
+    preflight = load_round74_active_preflight(REPOSITORY)
+    database_bytes = (
+        preflight.database.stat().st_size
+        if preflight.database.is_file()
+        else 0
+    )
+    if (
+        not preflight.executable.is_file()
+        or database_bytes != preflight.baseline_database_bytes
+    ):
+        pytest.skip("Round 74 host-bound capture fixture is unavailable")
+
     readiness = inspect_round74_active_readiness(
         REPOSITORY,
         now_utc=datetime(2026, 7, 27, 12, 0, tzinfo=timezone.utc),
@@ -109,6 +121,7 @@ def test_round74_active_readiness_before_window_does_not_reserve() -> None:
     assert readiness["window_status"] == "before_window"
     assert readiness["ready_for_window"] is True
     assert readiness["can_start_now"] is False
+    assert readiness["checks"]["capture_executable_passed"] is True
     assert not Path(str(readiness["reservation_path"])).exists()
 
 

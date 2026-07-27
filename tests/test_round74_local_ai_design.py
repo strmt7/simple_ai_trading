@@ -30,6 +30,7 @@ from simple_ai_trading.impact_absorption_ai_review_preparation import (
     round74_default_ai_review_model_panel,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
+    ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
@@ -91,7 +92,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v35.json"
+    / "round-074-local-ai-review-design-v36.json"
 )
 
 
@@ -107,8 +108,26 @@ def _canonical_sha256(value: object) -> str:
     ).hexdigest()
 
 
+def _load_json(path: Path) -> dict[str, object]:
+    def reject_duplicates(
+        pairs: list[tuple[str, object]],
+    ) -> dict[str, object]:
+        value: dict[str, object] = {}
+        for key, item in pairs:
+            assert key not in value
+            value[key] = item
+        return value
+
+    value = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=reject_duplicates,
+    )
+    assert isinstance(value, dict)
+    return value
+
+
 def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
-    artifact = json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+    artifact = _load_json(ARTIFACT_PATH)
     claimed = artifact.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(artifact)
@@ -180,6 +199,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["execution_replay_plan_schema_version"] == (
         ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
     )
+    assert source["execution_replay_evidence_schema_version"] == (
+        ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION
+    )
     assert source["sealed_ledger_schema_version"] == (
         ROUND74_SEALED_LEDGER_SCHEMA_VERSION
     )
@@ -232,7 +254,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["event_model_design_file_sha256"] == hashlib.sha256(
         model_design_path.read_bytes()
     ).hexdigest()
-    model_design = json.loads(model_design_path.read_text(encoding="utf-8"))
+    model_design = _load_json(model_design_path)
     model_design_claimed = model_design.pop("design_sha256")
     assert model_design_claimed == _canonical_sha256(model_design)
     assert model_design_claimed == source["event_model_design_sha256"]
@@ -241,7 +263,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert market["exchange_info_file_sha256"] == hashlib.sha256(
         exchange_path.read_bytes()
     ).hexdigest()
-    exchange = json.loads(exchange_path.read_text(encoding="utf-8"))
+    exchange = _load_json(exchange_path)
     exchange_claimed = exchange.pop("artifact_sha256")
     assert exchange_claimed == _canonical_sha256(exchange)
     assert exchange_claimed == market["exchange_info_artifact_sha256"]
@@ -253,7 +275,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert market["funding_file_sha256"] == hashlib.sha256(
         funding_path.read_bytes()
     ).hexdigest()
-    funding = json.loads(funding_path.read_text(encoding="utf-8"))
+    funding = _load_json(funding_path)
     funding_claimed = funding.pop("artifact_sha256")
     assert funding_claimed == _canonical_sha256(funding)
     assert funding_claimed == market["funding_artifact_sha256"]
@@ -272,7 +294,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["file_sha256"] == hashlib.sha256(
         compute_path.read_bytes()
     ).hexdigest()
-    compute_evidence = json.loads(compute_path.read_text(encoding="utf-8"))
+    compute_evidence = _load_json(compute_path)
     compute_claimed = compute_evidence.pop("artifact_sha256")
     assert compute_claimed == _canonical_sha256(compute_evidence)
     assert compute_claimed == compute["artifact_sha256"]
@@ -303,6 +325,8 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["financial_edge_tested"] is False
     assert compute["profitability_claim"] is False
     assert compute["ai_inference_exercised"] is False
+    assert compute["exact_capital_accounting_sources_bound"] is True
+    assert compute["market_accounting_or_edge_claim"] is False
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -327,6 +351,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["ml_row_pooled_optimizer_steps_permitted"] is False
     assert architecture["ml_one_minibatch_per_run_per_optimizer_step"] is True
     assert architecture["ml_unequal_run_directml_preflight_completed"] is True
+    assert (
+        architecture["reference_capital_normalization_uses_actual_walked_entry_quote"]
+        is True
+    )
+    assert (
+        architecture["requested_size_multiplier_used_as_realized_notional_proxy"]
+        is False
+    )
+    assert architecture["baseline_and_ai_share_reference_capital_denominator"] is True
     assert (
         architecture[
             "ml_candidate_selection_requires_paired_capture_run_complexity_promotion"
@@ -619,7 +652,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
 
 
 def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
-    artifact = json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+    artifact = _load_json(ARTIFACT_PATH)
     candidates = artifact["candidate_preselection"]
     finance = candidates["finance_candidate"]
     control = candidates["general_control"]
@@ -700,6 +733,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["same_entry_latency_retained_as_diagnostic"] is True
     assert status["exact_delayed_execution_replay_implemented"] is True
     assert status["sealed_exact_execution_evidence_implemented"] is True
+    assert status["exact_reference_capital_accounting_implemented"] is True
     assert status["future_censorship_promotion_gate_implemented"] is True
     assert status["equal_run_action_selection_implemented"] is True
     assert status["historical_ai_queue_latency_implemented"] is True
@@ -744,7 +778,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
 
 
 def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
-    artifact = json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+    artifact = _load_json(ARTIFACT_PATH)
     evaluation = artifact["paired_evaluation_contract"]
 
     assert evaluation["same_events_targets_costs_and_timing"] is True
@@ -789,6 +823,22 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["latency_adjusted_delayed_entry_replay_implemented"] is True
     assert evaluation["exact_replay_required_for_every_positive_exposure"] is True
     assert evaluation["exact_replay_hash_bound_per_paired_observation"] is True
+    assert (
+        evaluation["exact_replay_binds_reference_quote_and_actual_entry_quote"]
+        is True
+    )
+    assert evaluation["actual_deployed_capital_bps_reconciled_per_execution"] is True
+    assert (
+        evaluation["capital_scaled_payoff_and_mae_recomputed_from_position_bps"]
+        is True
+    )
+    assert (
+        evaluation[
+            "requested_quote_fraction_substitution_for_executed_notional_permitted"
+        ]
+        is False
+    )
+    assert evaluation["baseline_and_ai_use_same_reference_capital_denominator"] is True
     assert evaluation["baseline_payoff_scaling_without_book_rewalk_permitted"] is False
     assert (
         evaluation["delayed_entry_exit_path_risk_and_adverse_selection_recomputed"]
