@@ -54,7 +54,7 @@ HOST_SCHEDULE = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-host-schedule-v4-2026-07-27.json"
+    / "round-074-event-cohort-host-schedule-v5-2026-07-27.json"
 )
 V1_SUPERSESSION = (
     REPOSITORY
@@ -156,21 +156,21 @@ def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == (
-        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
-    )
+    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
     assert evidence["operator_contract_artifact_sha256"] == (
-        "9b5c6c4fd17922feb30b128d6d8c6437177b1762362023966c7772a7a25efda4"
+        "56f9696180d133ee4671fdaad9e3e362c6d7666f0e9eda6c8f64865d091fd285"
     )
     scheduler = evidence["host_scheduler"]
-    assert scheduler["task_name"] == ("SimpleAITrading-Round74-EventCohort-v4")
-    assert scheduler["superseded_task_present"] is False
-    assert scheduler["next_run_time_utc"] == "2026-07-27T14:15:00Z"
+    assert scheduler["task_name"] == ("SimpleAITrading-Round74-EventCohort-v5")
+    assert scheduler["superseded_task_present"] is True
+    assert scheduler["superseded_task_state"] == "Disabled"
+    assert scheduler["next_run_time_utc"] == "2026-07-27T16:00:00Z"
     assert scheduler["repetition_interval"] == "PT1H5M"
-    assert scheduler["last_trigger_utc"] == "2026-08-04T03:10:00Z"
+    assert scheduler["last_trigger_utc"] == "2026-08-04T04:55:00Z"
     assert scheduler["start_when_available"] is False
     assert scheduler["multiple_instances"] == "IgnoreNew"
     limitations = evidence["limitations"]
+    assert limitations["active_prerequisite_proven_now"] is True
     assert limitations["future_execution_proven_now"] is False
     assert limitations["cohort_slot_admitted_now"] is False
     assert limitations["profitability_or_edge_claim"] is False
