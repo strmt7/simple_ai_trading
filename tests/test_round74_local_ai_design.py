@@ -24,6 +24,10 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_review_preparation import (
+    ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
+    round74_default_ai_review_model_panel,
+)
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
@@ -34,6 +38,7 @@ from simple_ai_trading.impact_absorption_ai_worker import (
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
     ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
+    ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
@@ -47,7 +52,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v6.json"
+    / "round-074-local-ai-review-design-v7.json"
 )
 
 
@@ -77,6 +82,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "uplift_evaluator",
         "sealed_ledger",
         "sealed_evaluator",
+        "review_preparation",
         "worker",
         "runtime",
     ):
@@ -128,6 +134,12 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["sealed_evaluator_schema_version"] == (
         ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
     )
+    assert source["target_free_inference_schema_version"] == (
+        ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
+    )
+    assert source["review_panel_schema_version"] == (
+        ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION
+    )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -141,6 +153,12 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
+    assert architecture[
+        "reusable_target_free_candidate_inference_implemented"
+    ] is True
+    assert architecture[
+        "two_model_target_free_review_preparation_implemented"
+    ] is True
     assert architecture["ai_may_revive_ml_abstention"] is False
     for key in (
         "ai_may_create_trade_side",
@@ -168,6 +186,10 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert finance["license_id"] == "llama3.1"
     assert finance["trading_edge_established"] is False
     assert finance["pinned_quantized_artifact_ready"] is True
+    default_models = round74_default_ai_review_model_panel()
+    assert finance["local_ollama_artifact"][
+        "review_protocol_manifest_sha256"
+    ] == default_models[0].manifest.manifest_sha256
     assert len(
         finance["local_ollama_artifact"]["manifest_sha256"]
     ) == 64
@@ -181,6 +203,9 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         == 6_076_825_600
     )
     assert control["trading_edge_established"] is False
+    assert control["local_ollama_control_artifact"][
+        "review_protocol_manifest_sha256"
+    ] == default_models[1].manifest.manifest_sha256
     assert candidates["finance_brand_or_parameter_count_implies_edge"] is False
     assert (
         candidates["promotion_requires_our_paired_sealed_market_evidence"]
@@ -211,6 +236,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["paired_uplift_evaluator_implemented"] is True
     assert status["durable_one_use_sealed_ledger_implemented"] is True
     assert status["sealed_ml_ai_evaluator_implemented"] is True
+    assert status["target_free_candidate_inference_implemented"] is True
+    assert status["two_model_review_preparation_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
 
