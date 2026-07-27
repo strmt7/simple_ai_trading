@@ -63,7 +63,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v21.json"
+    / "round-074-local-ai-review-design-v22.json"
 )
 
 
@@ -289,6 +289,14 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["per_symbol_funding_schedule_coverage_is_mandatory"] is True
     assert architecture["targets_outside_verified_funding_coverage_are_censored"] is True
+    assert architecture["funding_times_are_bounded_monotonic_uncertainty_intervals"] is True
+    assert (
+        architecture[
+            "positions_overlapping_any_funding_uncertainty_interval_are_censored"
+        ]
+        is True
+    )
+    assert architecture["exact_timestamp_false_precision_for_funding_permitted"] is False
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -395,6 +403,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["implementation_shortfall_reconciliation_implemented"] is True
     assert status["actual_exit_funding_recheck_implemented"] is True
     assert status["funding_schedule_coverage_gate_implemented"] is True
+    assert status["funding_clock_uncertainty_interval_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
@@ -487,6 +496,12 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["paired_paths_share_exact_implementation_shortfall_decomposition"] is True
     assert evaluation["paired_target_eligibility_uses_actual_exit_funding_recheck"] is True
     assert evaluation["paired_target_eligibility_requires_verified_funding_coverage"] is True
+    assert (
+        evaluation[
+            "paired_target_eligibility_uses_identical_funding_uncertainty_intervals"
+        ]
+        is True
+    )
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
