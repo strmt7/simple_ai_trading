@@ -42,8 +42,8 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v2"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v5"
+ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v3"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v6"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"

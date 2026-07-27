@@ -29,12 +29,13 @@ from .impact_absorption import (
 from .impact_capture_frame import ImpactCaptureFrameRecord
 
 
-ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v2"
+ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v3"
 ROUND74_EVENT_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 ROUND74_EVENT_SEQUENCE_LENGTH = 128
 ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS = (1, 5, 30, 300)
 ROUND74_EVENT_PAYOFF_SIDES = ("long", "short")
 ROUND74_EVENT_PAYOFF_QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
+ROUND74_EVENT_STATE_HALF_LIVES_SECONDS = (5, 30, 300)
 ROUND74_EVENT_TYPES = (
     "depthUpdate",
     "bookTicker",
@@ -70,6 +71,8 @@ ROUND74_EVENT_FEATURE_NAMES = (
     "l2_imbalance_20",
     "bid_depth_5_share_of_20",
     "ask_depth_5_share_of_20",
+    "log1p_bid_depth_quote_20",
+    "log1p_ask_depth_quote_20",
     "mid_log_return_bps",
     *(
         f"depth_signed_pressure_{band}_scaled"
@@ -88,6 +91,19 @@ ROUND74_EVENT_FEATURE_NAMES = (
     "liquidation_signed_quote_scaled",
     "bbo_bid_qty_change_scaled",
     "bbo_ask_qty_change_scaled",
+    *(
+        feature_name
+        for half_life in ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+        for feature_name in (
+            f"ewm_return_projection_{half_life}s_bps",
+            f"ewm_realized_volatility_{half_life}s_bps",
+            f"ewm_signed_trade_pressure_per_second_{half_life}s",
+            f"ewm_signed_depth_pressure_per_second_{half_life}s",
+            f"ewm_signed_liquidation_pressure_per_second_{half_life}s",
+            f"ewm_spread_{half_life}s_bps",
+            f"ewm_l1_imbalance_{half_life}s",
+        )
+    ),
     "log1p_ms_since_depth_update",
     "log1p_ms_since_book_ticker",
     "log1p_ms_since_aggregate_trade",
@@ -192,6 +208,118 @@ def _time_since_feature(now_ns: int, prior_ns: int | None) -> float:
         elapsed_ms = max(0.0, (int(now_ns) - int(prior_ns)) / 1_000_000.0)
         elapsed_ms = min(ROUND74_EVENT_MAX_TIME_SINCE_MS, elapsed_ms)
     return math.log1p(elapsed_ms)
+
+
+class _Round74TimeScaleState:
+    """Continuous-time causal state with no fixed event-rate assumption."""
+
+    def __init__(self) -> None:
+        count = len(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS)
+        self._prior_ns: int | None = None
+        self._prior_spread_bps = 0.0
+        self._prior_l1_imbalance = 0.0
+        self._exposure_seconds = [0.0] * count
+        self._return_bps = [0.0] * count
+        self._return_squared_bps = [0.0] * count
+        self._trade_pressure = [0.0] * count
+        self._depth_pressure = [0.0] * count
+        self._liquidation_pressure = [0.0] * count
+        self._spread_integral = [0.0] * count
+        self._l1_imbalance_integral = [0.0] * count
+
+    def update(
+        self,
+        *,
+        now_ns: int,
+        mid_log_return_bps: float,
+        trade_pressure: float,
+        depth_pressure: float,
+        liquidation_pressure: float,
+        spread_bps: float,
+        l1_imbalance: float,
+    ) -> tuple[float, ...]:
+        selected_ns = int(now_ns)
+        values = (
+            float(mid_log_return_bps),
+            float(trade_pressure),
+            float(depth_pressure),
+            float(liquidation_pressure),
+            float(spread_bps),
+            float(l1_imbalance),
+        )
+        if selected_ns < 0 or not all(math.isfinite(value) for value in values):
+            raise ValueError("Round 74 time-scale state input is invalid")
+        if self._prior_ns is None:
+            self._prior_ns = selected_ns
+            self._prior_spread_bps = values[4]
+            self._prior_l1_imbalance = values[5]
+        if selected_ns < self._prior_ns:
+            raise ValueError("Round 74 time-scale state receipt order regressed")
+        elapsed_seconds = (selected_ns - self._prior_ns) / 1_000_000_000.0
+        output: list[float] = []
+        for index, half_life in enumerate(
+            ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+        ):
+            beta = math.log(2.0) / float(half_life)
+            decay = math.exp(-beta * elapsed_seconds)
+            interval_weight = -math.expm1(-beta * elapsed_seconds) / beta
+            exposure = (
+                decay * self._exposure_seconds[index] + interval_weight
+            )
+            self._exposure_seconds[index] = exposure
+            self._return_bps[index] = (
+                decay * self._return_bps[index] + values[0]
+            )
+            self._return_squared_bps[index] = (
+                decay * self._return_squared_bps[index] + values[0] * values[0]
+            )
+            self._trade_pressure[index] = (
+                decay * self._trade_pressure[index] + values[1]
+            )
+            self._depth_pressure[index] = (
+                decay * self._depth_pressure[index] + values[2]
+            )
+            self._liquidation_pressure[index] = (
+                decay * self._liquidation_pressure[index] + values[3]
+            )
+            self._spread_integral[index] = (
+                decay * self._spread_integral[index]
+                + self._prior_spread_bps * interval_weight
+            )
+            self._l1_imbalance_integral[index] = (
+                decay * self._l1_imbalance_integral[index]
+                + self._prior_l1_imbalance * interval_weight
+            )
+            if exposure <= 0.0:
+                output.extend((0.0,) * 7)
+                continue
+            projected_return = (
+                self._return_bps[index] / exposure * float(half_life)
+            )
+            projected_variance = (
+                self._return_squared_bps[index]
+                / exposure
+                * float(half_life)
+            )
+            output.extend(
+                (
+                    projected_return,
+                    math.sqrt(max(0.0, projected_variance)),
+                    _signed_log1p(self._trade_pressure[index] / exposure),
+                    _signed_log1p(self._depth_pressure[index] / exposure),
+                    _signed_log1p(
+                        self._liquidation_pressure[index] / exposure
+                    ),
+                    self._spread_integral[index] / exposure,
+                    self._l1_imbalance_integral[index] / exposure,
+                )
+            )
+        self._prior_ns = selected_ns
+        self._prior_spread_bps = values[4]
+        self._prior_l1_imbalance = values[5]
+        if not all(math.isfinite(value) for value in output):
+            raise ValueError("Round 74 time-scale state is nonfinite")
+        return tuple(output)
 
 
 @dataclass(frozen=True)
@@ -334,6 +462,7 @@ class Round74EventSequenceEncoder:
         self._last_depth_update_is_stale = False
         self._prior_record_ns: int | None = None
         self._prior_mid: float | None = None
+        self._time_scale_state = _Round74TimeScaleState()
         self._last_event_ns: dict[str, int | None] = {
             event_type: None for event_type in ROUND74_EVENT_TYPES
         }
@@ -405,8 +534,10 @@ class Round74EventSequenceEncoder:
         depth_absolute = {band: 0.0 for band in ROUND74_EVENT_BANDS}
         trade_signed = 0.0
         trade_absolute = 0.0
+        trade_pressure = 0.0
         trade_price_to_mid_bps = 0.0
         liquidation_signed = 0.0
+        liquidation_pressure = 0.0
         bid_qty_change = 0.0
         ask_qty_change = 0.0
         pre_depth = _depth_total(self._l2_state)
@@ -468,6 +599,10 @@ class Round74EventSequenceEncoder:
                 _safe_ratio(trade.quote_notional, pre_depth)
             )
             trade_signed = sign * trade_absolute
+            trade_pressure = sign * _safe_ratio(
+                trade.quote_notional,
+                pre_depth,
+            )
             current_mid = (self._bid + self._ask) / 2.0
             trade_price_to_mid_bps = _bps(trade.price - current_mid, current_mid)
         elif event_type == "markPriceUpdate":
@@ -485,9 +620,11 @@ class Round74EventSequenceEncoder:
             )
             exchange_event_time_ms = int(liquidation.event_time_ms)
             sign = 1.0 if liquidation.side == "BUY" else -1.0
-            liquidation_signed = sign * _signed_log1p(
-                _safe_ratio(liquidation.observed_filled_quote, pre_depth)
+            liquidation_pressure = sign * _safe_ratio(
+                liquidation.observed_filled_quote,
+                pre_depth,
             )
+            liquidation_signed = _signed_log1p(liquidation_pressure)
 
         mid, spread_bps, l1_imbalance, microprice_offset_bps = (
             self._market_state()
@@ -506,6 +643,16 @@ class Round74EventSequenceEncoder:
             mark_to_mid_bps = _bps(self._mark.mark_price - mid, mid)
             index_to_mid_bps = _bps(self._mark.index_price - mid, mid)
             funding_rate_bps = float(self._mark.funding_rate) * 10_000.0
+        depth_pressure = _safe_ratio(sum(depth_signed.values()), pre_depth)
+        time_scale = self._time_scale_state.update(
+            now_ns=received_ns,
+            mid_log_return_bps=mid_log_return_bps,
+            trade_pressure=trade_pressure,
+            depth_pressure=depth_pressure,
+            liquidation_pressure=liquidation_pressure,
+            spread_bps=spread_bps,
+            l1_imbalance=l1_imbalance,
+        )
         temporal = tuple(
             _time_since_feature(received_ns, self._last_event_ns[candidate])
             for candidate in ROUND74_EVENT_TYPES
@@ -526,6 +673,8 @@ class Round74EventSequenceEncoder:
             state.imbalance_20,
             _safe_ratio(state.bid_depth_quote_5, state.bid_depth_quote_20),
             _safe_ratio(state.ask_depth_quote_5, state.ask_depth_quote_20),
+            math.log1p(state.bid_depth_quote_20),
+            math.log1p(state.ask_depth_quote_20),
             mid_log_return_bps,
             *(
                 _signed_log1p(_safe_ratio(depth_signed[band], pre_depth))
@@ -544,6 +693,7 @@ class Round74EventSequenceEncoder:
             liquidation_signed,
             bid_qty_change,
             ask_qty_change,
+            *time_scale,
             *temporal,
             math.sin(angle),
             math.cos(angle),
@@ -869,6 +1019,7 @@ __all__ = [
     "ROUND74_EVENT_PAYOFF_SIDES",
     "ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION",
     "ROUND74_EVENT_SEQUENCE_LENGTH",
+    "ROUND74_EVENT_STATE_HALF_LIVES_SECONDS",
     "ROUND74_EVENT_SYMBOLS",
     "ROUND74_EVENT_TYPES",
     "Round74MultiSymbolEventReplay",

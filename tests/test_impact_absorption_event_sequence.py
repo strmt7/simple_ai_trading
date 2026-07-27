@@ -9,6 +9,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
+    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
     Round74EventSequenceEncoder,
     Round74MultiSymbolEventReplay,
     iter_round74_event_windows,
@@ -344,6 +345,61 @@ def test_event_sequence_retains_mark_and_liquidation_context() -> None:
     assert _feature(liquidation, "mark_to_mid_bps") == pytest.approx(
         _feature(mark, "mark_to_mid_bps")
     )
+
+
+def test_event_sequence_adds_causal_multi_timescale_liquidity_state() -> None:
+    encoder = _encoder(ready_offset_ns=1)
+    first = encoder.consume(
+        frame_index=0,
+        message_index=0,
+        record=_record(
+            lane="binance_futures_market",
+            sequence=0,
+            monotonic_ns=1_000_000_000,
+            stream_name="btcusdt@aggTrade",
+            payload=_trade(1_020),
+        ),
+    )
+    moved_ticker = _ticker(6_020)
+    moved_ticker["b"] = "100.1"
+    moved_ticker["a"] = "100.2"
+    second = encoder.consume(
+        frame_index=0,
+        message_index=1,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=0,
+            monotonic_ns=6_000_000_000,
+            stream_name="btcusdt@bookTicker",
+            payload=moved_ticker,
+        ),
+    )
+    third = encoder.consume(
+        frame_index=0,
+        message_index=2,
+        record=_record(
+            lane="binance_futures_market",
+            sequence=1,
+            monotonic_ns=11_000_000_000,
+            stream_name="btcusdt@aggTrade",
+            payload=_trade(11_020, buyer_is_maker=True),
+        ),
+    )
+
+    assert first is not None and second is not None and third is not None
+    assert ROUND74_EVENT_STATE_HALF_LIVES_SECONDS == (5, 30, 300)
+    assert _feature(first, "ewm_return_projection_5s_bps") == 0.0
+    assert _feature(second, "ewm_return_projection_5s_bps") > 0.0
+    assert _feature(second, "ewm_realized_volatility_300s_bps") > 0.0
+    assert _feature(second, "ewm_signed_trade_pressure_per_second_30s") > 0.0
+    assert (
+        _feature(third, "ewm_signed_trade_pressure_per_second_5s")
+        < _feature(second, "ewm_signed_trade_pressure_per_second_5s")
+    )
+    assert _feature(third, "ewm_spread_300s_bps") > 0.0
+    assert _feature(third, "log1p_bid_depth_quote_20") > 0.0
+    assert _feature(third, "log1p_ask_depth_quote_20") > 0.0
+    assert all(math.isfinite(value) for value in third.feature_values)
 
 
 def test_event_windows_are_per_symbol_causal_and_break_on_long_gap() -> None:
