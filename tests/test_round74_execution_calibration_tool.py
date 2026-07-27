@@ -382,3 +382,73 @@ def test_plan_is_offline_balanced_and_source_bound(
     assert payload["orders_submitted"] is False
     assert payload["plan"]["plan_sha256"] == summary["plan_sha256"]
     assert payload["plan"]["authority"]["mainnet_execution_evidence"] is False
+
+
+def test_capture_slot_is_cryptographically_bound_to_plan(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    _install_ephemeral_credentials(monkeypatch)
+    monkeypatch.setattr(
+        tool,
+        "Round74BinanceTestnetExecutionTransport",
+        _FakeTransport,
+    )
+    monkeypatch.setattr(
+        tool,
+        "recover_round74_execution_calibration",
+        lambda **_kwargs: _RecoveryResult(complete=True),
+    )
+    monkeypatch.setattr(
+        tool,
+        "capture_round74_execution_calibration_pair",
+        lambda **_kwargs: _CaptureResult(),
+    )
+    plan_directory = tmp_path / "plans"
+    assert (
+        main(
+            [
+                "--output-directory",
+                str(plan_directory),
+                "plan",
+                "--campaign-id",
+                "round74-testnet-calibration",
+                "--target-quote-notional",
+                "100",
+            ]
+        )
+        == 0
+    )
+    plan_summary = json.loads(capsys.readouterr().out)
+
+    assert (
+        main(
+            [
+                "--database",
+                str(tmp_path / "evidence.duckdb"),
+                "--output-directory",
+                str(tmp_path / "captures"),
+                "capture-slot",
+                "--yes",
+                "--acknowledge-non-mainnet-orders",
+                "--campaign-plan",
+                plan_summary["artifact"],
+                "--slot",
+                "0",
+            ]
+        )
+        == 0
+    )
+
+    capture_summary = json.loads(capsys.readouterr().out)
+    assert capture_summary["evidence_admitted"] is True
+    payload = _read_single_artifact(tmp_path / "captures")
+    assert payload["campaign_binding"] == {
+        "campaign_plan_artifact_sha256": Path(plan_summary["artifact"]).stem,
+        "campaign_plan_sha256": plan_summary["plan_sha256"],
+        "round_trip_id": ("round74-testnet-calibration-btcusdt-00000-buy"),
+        "slot_ordinal": 0,
+    }
+    assert payload["sizing"]["symbol"] == "BTCUSDT"
+    assert payload["sizing"]["entry_side"] == "BUY"
