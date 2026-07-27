@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 from decimal import Decimal
 
 import pytest
@@ -15,11 +16,22 @@ from simple_ai_trading.impact_absorption_event_targets import (
     round74_latency_evidence_claims,
     round74_slippage_evidence_claims,
 )
+from simple_ai_trading.impact_absorption_event_evidence import (
+    Round74BinanceClockProbe,
+)
+from simple_ai_trading.impact_absorption_target_assembly import (
+    assemble_round74_source_target,
+)
+from simple_ai_trading.impact_absorption_targets import (
+    Round73MarketQuantityRules,
+)
 
 
 SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 WALL_NS = 1_784_000_000_000_000_000
 REFERENCE_NOTIONAL = Decimal("100")
+MONOTONIC_NS = 1_000_000_000_000
+EXCHANGE_MS = 1_784_000_000_000
 
 
 def _record(
@@ -161,6 +173,149 @@ def _bundle(records: list[dict[str, object]] | None = None):
         observed_wall_ns=WALL_NS,
         reference_quote_notional=float(REFERENCE_NOTIONAL),
     )
+
+
+def _exchange_info_payload() -> dict[str, object]:
+    return {
+        "timezone": "UTC",
+        "serverTime": EXCHANGE_MS,
+        "symbols": [
+            {
+                "symbol": symbol,
+                "pair": symbol,
+                "contractType": "PERPETUAL",
+                "status": "TRADING",
+                "quoteAsset": "USDT",
+                "marginAsset": "USDT",
+                "orderTypes": ["LIMIT", "MARKET"],
+                "filters": [
+                    {
+                        "filterType": "MARKET_LOT_SIZE",
+                        "minQty": "0.001",
+                        "maxQty": "1000",
+                        "stepSize": "0.001",
+                    },
+                    {
+                        "filterType": "MIN_NOTIONAL",
+                        "notional": "10",
+                    },
+                ],
+            }
+            for symbol in SYMBOLS
+        ],
+    }
+
+
+def _commission_payloads() -> dict[str, dict[str, object]]:
+    return {
+        symbol: {
+            "symbol": symbol,
+            "makerCommissionRate": "0.0002",
+            "takerCommissionRate": "0.0005",
+            "rpiCommissionRate": "0.00005",
+        }
+        for symbol in SYMBOLS
+    }
+
+
+def _clock_probes() -> tuple[Round74BinanceClockProbe, ...]:
+    return tuple(
+        Round74BinanceClockProbe(
+            capture_run_id="round74-source-assembly-test",
+            capture_contract_sha256="a" * 64,
+            capture_audit_sha256="b" * 64,
+            frame_index=index,
+            message_index=index,
+            request_started_wall_ns=WALL_NS + index * 60_000_000_000,
+            received_wall_ns=WALL_NS + index * 60_000_000_000 + 20_000_000,
+            request_started_monotonic_ns=(
+                MONOTONIC_NS + index * 60_000_000_000
+            ),
+            received_monotonic_ns=(
+                MONOTONIC_NS + index * 60_000_000_000 + 20_000_000
+            ),
+            exchange_time_ms=EXCHANGE_MS + index * 60_000,
+            source_payload_sha256=f"{index + 1:064x}",
+        )
+        for index in range(6)
+    )
+
+
+def _funding_payloads() -> dict[str, list[dict[str, object]]]:
+    return {
+        symbol: [
+            {
+                "symbol": symbol,
+                "fundingRate": "0.0001",
+                "fundingTime": EXCHANGE_MS + 150_000,
+                "markPrice": "100.0",
+                "rateType": "Regular",
+            }
+        ]
+        for symbol in SYMBOLS
+    }
+
+
+def _assembly(**overrides: object):
+    values = {
+        "exchange_info_payload": _exchange_info_payload(),
+        "commission_payload_by_symbol": _commission_payloads(),
+        "funding_payload_by_symbol": _funding_payloads(),
+        "execution_calibration_records": _records(),
+        "funding_clock_probes": _clock_probes(),
+        "environment": "binance_usdm_testnet",
+        "exchange_info_observed_wall_ns": WALL_NS,
+        "commission_observed_wall_ns": WALL_NS + 1,
+        "funding_observed_wall_ns": WALL_NS + 2,
+        "execution_observed_wall_ns": WALL_NS + 3,
+        "funding_start_time_ms": EXCHANGE_MS - 3_600_000,
+        "funding_end_time_ms": EXCHANGE_MS + 3_600_000,
+        "funding_limit": 1000,
+        "reference_quote_notional": float(REFERENCE_NOTIONAL),
+    }
+    values.update(overrides)
+    return assemble_round74_source_target(**values)
+
+
+def test_source_target_assembly_derives_every_configured_value() -> None:
+    assembly = _assembly()
+    spec = assembly.spec
+
+    assert dict(spec.taker_fee_bps_by_symbol) == {
+        symbol: 5.0 for symbol in SYMBOLS
+    }
+    assert dict(spec.decision_to_entry_latency_ns_by_symbol) == {
+        "BTCUSDT": 100_299_000,
+        "ETHUSDT": 100_299_001,
+        "SOLUSDT": 100_299_002,
+    }
+    assert spec.execution_environment == "binance_usdm_testnet"
+    assert len(assembly.assembly_sha256) == 64
+    assert assembly.create_engine(anchors=[]).spec.spec_sha256 == (
+        spec.spec_sha256
+    )
+
+
+def test_source_target_assembly_rejects_tampered_rules_and_sources() -> None:
+    assembly = _assembly()
+    rules = assembly.quantity_rules_mapping()
+    rules["BTCUSDT"] = Round73MarketQuantityRules.create(
+        symbol="BTCUSDT",
+        step_size="0.01",
+        minimum_quantity="0.01",
+        maximum_quantity="1000",
+        minimum_notional="10",
+    )
+    with pytest.raises(ValueError, match="evidence claims differ"):
+        replace(
+            assembly,
+            quantity_rules_by_symbol=tuple(sorted(rules.items())),
+        )
+
+    commissions = _commission_payloads()
+    commissions["BTCUSDT"]["api_key"] = "must-not-persist"
+    with pytest.raises(ValueError, match="credential material"):
+        _assembly(commission_payload_by_symbol=commissions)
 
 
 def test_execution_calibration_derives_symbol_path_tail_evidence() -> None:
