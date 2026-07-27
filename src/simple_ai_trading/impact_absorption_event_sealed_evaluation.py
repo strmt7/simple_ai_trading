@@ -25,8 +25,10 @@ from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_ai_uplift import Round74AIPairedReviewEvidence
 from .impact_absorption_event_action_policy import (
     Round74ActionCandidateBatch,
+    Round74ActionInferenceContext,
     Round74ActionPolicySelection,
     Round74ActionTrace,
+    _model_output_sha256,
     _simulate_round74_action_trace_batches,
     build_round74_action_inference_context,
     derive_round74_action_candidates,
@@ -55,6 +57,9 @@ from .impact_absorption_event_training import load_round74_pretest_policy
 
 
 ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v1"
+ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
+    "round-074-target-free-candidate-inference-v1"
+)
 ROUND74_SEALED_BOOTSTRAP_DRAWS = 10_000
 ROUND74_SEALED_BOOTSTRAP_SEED = 7_474_011
 ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS = 2_048
@@ -1285,6 +1290,254 @@ def _concat_outputs(
     return result
 
 
+@dataclass(frozen=True)
+class Round74TargetFreeCandidateInference:
+    """Verified model outputs and candidates with no realized-target access."""
+
+    contexts: tuple[Round74ActionInferenceContext, ...]
+    model_outputs: tuple[Round74EventModelOutput, ...]
+    candidates: tuple[Round74ActionCandidateBatch, ...]
+    pretest_policy_sha256: str
+    pretest_model_sha256: str
+    probability_calibration_sha256: str
+    action_selection_sha256: str
+    profile: str
+    inference_backend_kind: str
+    inference_backend_device: str
+    inference_backend_vendor: str
+    inference_warning_count: int
+    schema_version: str = ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
+    target_fields_accessed: bool = False
+    trading_authority: bool = False
+
+    def validate(self) -> None:
+        if (
+            self.schema_version != ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
+            or not self.contexts
+            or len(self.contexts) != len(self.model_outputs)
+            or len(self.contexts) != len(self.candidates)
+            or _SHA256.fullmatch(self.pretest_policy_sha256) is None
+            or _SHA256.fullmatch(self.pretest_model_sha256) is None
+            or _SHA256.fullmatch(self.probability_calibration_sha256) is None
+            or _SHA256.fullmatch(self.action_selection_sha256) is None
+            or self.profile not in ("conservative", "regular", "aggressive")
+            or not self.inference_backend_kind
+            or not self.inference_backend_device
+            or not self.inference_backend_vendor
+            or isinstance(self.inference_warning_count, bool)
+            or self.inference_warning_count < 0
+            or self.target_fields_accessed
+            or self.trading_authority
+        ):
+            raise ValueError("Round 74 target-free inference differs")
+        first = self.contexts[0]
+        run_ids: set[str] = set()
+        feature_rows: set[str] = set()
+        prior_key: tuple[int, str, int, int, int, str, int] | None = None
+        for context, output, candidates in zip(
+            self.contexts,
+            self.model_outputs,
+            self.candidates,
+            strict=True,
+        ):
+            context.validate()
+            output.validate(context.rows)
+            candidates.validate()
+            first_key = (
+                int(context.decision_wall_ns[0]),
+                context.run_id[0],
+                int(context.decision_monotonic_ns[0]),
+                int(context.endpoint_frame_index[0]),
+                int(context.endpoint_message_index[0]),
+                context.symbol[0],
+                int(context.anchor_index[0]),
+            )
+            last_index = context.rows - 1
+            last_key = (
+                int(context.decision_wall_ns[last_index]),
+                context.run_id[last_index],
+                int(context.decision_monotonic_ns[last_index]),
+                int(context.endpoint_frame_index[last_index]),
+                int(context.endpoint_message_index[last_index]),
+                context.symbol[last_index],
+                int(context.anchor_index[last_index]),
+            )
+            current_features = set(context.feature_row_sha256)
+            if (
+                context.role != "test"
+                or context.partition_sha256 != first.partition_sha256
+                or context.scaler_sha256 != first.scaler_sha256
+                or candidates.context_sha256 != context.context_sha256
+                or candidates.run_id != context.run_id
+                or candidates.symbol != context.symbol
+                or candidates.feature_row_sha256 != context.feature_row_sha256
+                or candidates.model_output_sha256 != _model_output_sha256(output)
+                or candidates.pretest_policy_sha256
+                != self.pretest_policy_sha256
+                or candidates.probability_calibration_sha256
+                != self.probability_calibration_sha256
+                or candidates.profile != self.profile
+                or len(current_features) != context.rows
+                or feature_rows.intersection(current_features)
+                or (prior_key is not None and first_key <= prior_key)
+            ):
+                raise ValueError("Round 74 target-free inference identity differs")
+            feature_rows.update(current_features)
+            run_ids.update(context.run_id)
+            prior_key = last_key
+        if len(run_ids) != ROUND74_SEALED_TEST_RUNS:
+            raise ValueError("Round 74 target-free inference run coverage differs")
+
+    @property
+    def inference_sha256(self) -> str:
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        value: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "pretest_policy_sha256": self.pretest_policy_sha256,
+            "pretest_model_sha256": self.pretest_model_sha256,
+            "probability_calibration_sha256": (
+                self.probability_calibration_sha256
+            ),
+            "action_selection_sha256": self.action_selection_sha256,
+            "profile": self.profile,
+            "context_sha256": [
+                context.context_sha256 for context in self.contexts
+            ],
+            "model_output_sha256": [
+                candidates.model_output_sha256 for candidates in self.candidates
+            ],
+            "candidate_sha256": [
+                candidates.candidate_sha256 for candidates in self.candidates
+            ],
+            "inference_backend": {
+                "kind": self.inference_backend_kind,
+                "device": self.inference_backend_device,
+                "vendor": self.inference_backend_vendor,
+                "warning_count": self.inference_warning_count,
+            },
+            "target_fields_accessed": False,
+            "trading_authority": False,
+        }
+        if include_sha256:
+            value["inference_sha256"] = _canonical_sha256(value)
+        return value
+
+
+def infer_round74_target_free_candidates(
+    contexts: Sequence[Round74ActionInferenceContext],
+    *,
+    action_selection: Round74ActionPolicySelection,
+    probability_calibration: Round74ProbabilityCalibration,
+    pretest_policy_path: str | Path,
+    compute_backend: str = "auto",
+    minibatch_rows: int = ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS,
+) -> Round74TargetFreeCandidateInference:
+    """Run the frozen model on immutable causal contexts without target access."""
+
+    selected_contexts = tuple(contexts)
+    if isinstance(minibatch_rows, bool) or minibatch_rows < 1:
+        raise ValueError("Round 74 sealed inference minibatch differs")
+    if not selected_contexts:
+        raise ValueError("Round 74 target-free inference contexts are missing")
+    for context in selected_contexts:
+        context.validate()
+    action_selection.validate()
+    if (
+        not action_selection.accepted
+        or action_selection.selected_threshold_score is None
+    ):
+        raise ValueError("Round 74 target-free inference policy is not accepted")
+    model, policy = load_round74_pretest_policy(Path(pretest_policy_path))
+    policy_sha256 = _require_sha256(policy["policy_sha256"], "pretest policy")
+    model_artifact = policy.get("model_artifact")
+    development = policy.get("development_data")
+    if not isinstance(model_artifact, Mapping) or not isinstance(
+        development,
+        Mapping,
+    ):
+        raise ValueError("Round 74 sealed pretest policy sections differ")
+    model_sha256 = _require_sha256(model_artifact.get("sha256"), "pretest model")
+    probability_calibration.validate()
+    if (
+        policy_sha256 != action_selection.pretest_policy_sha256
+        or probability_calibration.pretest_policy_sha256 != policy_sha256
+        or probability_calibration.calibration_sha256
+        != action_selection.probability_calibration_sha256
+        or development.get("partition_sha256")
+        != selected_contexts[0].partition_sha256
+        or development.get("scaler_sha256") != selected_contexts[0].scaler_sha256
+    ):
+        raise ValueError("Round 74 sealed pretest identity differs")
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
+    candidates: list[Round74ActionCandidateBatch] = []
+    model_outputs: list[Round74EventModelOutput] = []
+    warning_messages: list[str] = []
+    try:
+        model = model.to(device)
+        model.eval()
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            with torch.inference_mode():
+                for context in selected_contexts:
+                    outputs: list[Round74EventModelOutput] = []
+                    for start in range(0, context.rows, minibatch_rows):
+                        stop = min(context.rows, start + minibatch_rows)
+                        feature_copy = np.array(
+                            context.feature_values[start:stop],
+                            dtype=np.float32,
+                            copy=True,
+                            order="C",
+                        )
+                        values = torch.from_numpy(feature_copy).to(device)
+                        outputs.append(_cpu_output(model(values)))
+                        del values
+                    output = _concat_outputs(outputs, rows=context.rows)
+                    candidate = derive_round74_action_candidates(
+                        output,
+                        context,
+                        probability_calibration,
+                        pretest_policy_sha256=policy_sha256,
+                        profile=action_selection.profile,
+                    )
+                    model_outputs.append(output)
+                    candidates.append(candidate)
+            warning_messages.extend(str(value.message) for value in caught)
+    finally:
+        model.to("cpu")
+    fallback_messages = tuple(
+        message
+        for message in warning_messages
+        if "not currently supported on the DML backend" in message
+        or "fall back to run on the CPU" in message
+    )
+    if fallback_messages:
+        raise RuntimeError(
+            f"Round 74 sealed inference used CPU fallback: {fallback_messages}"
+        )
+    result = Round74TargetFreeCandidateInference(
+        contexts=selected_contexts,
+        model_outputs=tuple(model_outputs),
+        candidates=tuple(candidates),
+        pretest_policy_sha256=policy_sha256,
+        pretest_model_sha256=model_sha256,
+        probability_calibration_sha256=(
+            probability_calibration.calibration_sha256
+        ),
+        action_selection_sha256=action_selection.selection_sha256,
+        profile=action_selection.profile,
+        inference_backend_kind=backend.kind,
+        inference_backend_device=str(device),
+        inference_backend_vendor=backend.vendor,
+        inference_warning_count=len(warning_messages),
+    )
+    result.validate()
+    return result
+
+
 def _derive_test_candidates(
     batches: tuple[Round74EventTrainingBatch, ...],
     *,
@@ -1303,85 +1556,29 @@ def _derive_test_candidates(
     str,
     int,
 ]:
-    if isinstance(minibatch_rows, bool) or minibatch_rows < 1:
-        raise ValueError("Round 74 sealed inference minibatch differs")
-    model, policy = load_round74_pretest_policy(pretest_policy_path)
-    policy_sha256 = _require_sha256(policy["policy_sha256"], "pretest policy")
-    model_artifact = policy.get("model_artifact")
-    development = policy.get("development_data")
-    if not isinstance(model_artifact, Mapping) or not isinstance(
-        development,
-        Mapping,
-    ):
-        raise ValueError("Round 74 sealed pretest policy sections differ")
-    model_sha256 = _require_sha256(model_artifact.get("sha256"), "pretest model")
-    probability_calibration.validate()
-    if (
-        policy_sha256 != action_selection.pretest_policy_sha256
-        or probability_calibration.pretest_policy_sha256 != policy_sha256
-        or probability_calibration.calibration_sha256
-        != action_selection.probability_calibration_sha256
-        or development.get("partition_sha256") != batches[0].partition_sha256
-        or development.get("scaler_sha256") != batches[0].scaler_sha256
-    ):
-        raise ValueError("Round 74 sealed pretest identity differs")
-    backend = require_backend(resolve_backend(compute_backend))
-    device = torch_device_for_backend(backend)
-    candidates: list[Round74ActionCandidateBatch] = []
-    predictive = _PredictiveAccumulator()
-    warning_messages: list[str] = []
-    try:
-        model = model.to(device)
-        model.eval()
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            with torch.inference_mode():
-                for batch in batches:
-                    outputs: list[Round74EventModelOutput] = []
-                    for start in range(0, batch.rows, minibatch_rows):
-                        stop = min(batch.rows, start + minibatch_rows)
-                        feature_copy = np.array(
-                            batch.feature_values[start:stop],
-                            dtype=np.float32,
-                            copy=True,
-                            order="C",
-                        )
-                        values = torch.from_numpy(feature_copy).to(device)
-                        outputs.append(_cpu_output(model(values)))
-                        del values
-                    output = _concat_outputs(outputs, rows=batch.rows)
-                    context = build_round74_action_inference_context(batch)
-                    candidate = derive_round74_action_candidates(
-                        output,
-                        context,
-                        probability_calibration,
-                        pretest_policy_sha256=policy_sha256,
-                        profile=action_selection.profile,
-                    )
-                    predictive.update(batch, output, probability_calibration)
-                    candidates.append(candidate)
-            warning_messages.extend(str(value.message) for value in caught)
-    finally:
-        model.to("cpu")
-    fallback_messages = tuple(
-        message
-        for message in warning_messages
-        if "not currently supported on the DML backend" in message
-        or "fall back to run on the CPU" in message
+    contexts = tuple(
+        build_round74_action_inference_context(batch) for batch in batches
     )
-    if fallback_messages:
-        raise RuntimeError(
-            f"Round 74 sealed inference used CPU fallback: {fallback_messages}"
-        )
+    inference = infer_round74_target_free_candidates(
+        contexts,
+        action_selection=action_selection,
+        probability_calibration=probability_calibration,
+        pretest_policy_path=pretest_policy_path,
+        compute_backend=compute_backend,
+        minibatch_rows=minibatch_rows,
+    )
+    predictive = _PredictiveAccumulator()
+    for batch, output in zip(batches, inference.model_outputs, strict=True):
+        predictive.update(batch, output, probability_calibration)
     return (
-        tuple(candidates),
+        inference.candidates,
         predictive.result(),
-        policy_sha256,
-        model_sha256,
-        backend.kind,
-        str(device),
-        backend.vendor,
-        len(warning_messages),
+        inference.pretest_policy_sha256,
+        inference.pretest_model_sha256,
+        inference.inference_backend_kind,
+        inference.inference_backend_device,
+        inference.inference_backend_vendor,
+        inference.inference_warning_count,
     )
 
 
@@ -1752,6 +1949,7 @@ __all__ = [
     "ROUND74_SEALED_BOOTSTRAP_SEED",
     "ROUND74_SEALED_EVALUATION_SCHEMA_VERSION",
     "ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS",
+    "ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION",
     "Round74ActionForecastSlice",
     "Round74BinaryForecastMetrics",
     "Round74QuantileForecastMetrics",
@@ -1762,5 +1960,7 @@ __all__ = [
     "Round74SealedEvaluationReport",
     "Round74SealedPredictiveDiagnostics",
     "Round74SealedStrategyMetrics",
+    "Round74TargetFreeCandidateInference",
     "evaluate_round74_sealed_once",
+    "infer_round74_target_free_candidates",
 ]
