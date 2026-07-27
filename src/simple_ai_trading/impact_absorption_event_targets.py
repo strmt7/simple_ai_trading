@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v7"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v8"
 ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "round-074-target-evidence-v1"
 )
@@ -152,16 +152,20 @@ def round74_slippage_evidence_claims(
 
 def round74_funding_schedule_evidence_claims(
     *,
-    funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
+    funding_boundary_intervals_monotonic_ns: Mapping[
+        str,
+        Sequence[Sequence[int]],
+    ],
     funding_schedule_coverage_monotonic_ns: Mapping[str, Sequence[int]],
 ) -> dict[str, object]:
     return {
-        "funding_boundaries_monotonic_ns": {
+        "funding_boundary_intervals_monotonic_ns": {
             str(symbol).strip().upper(): sorted(
-                int(boundary) for boundary in boundaries
+                [int(interval[0]), int(interval[1])]
+                for interval in intervals
             )
-            for symbol, boundaries in sorted(
-                funding_boundaries_monotonic_ns.items()
+            for symbol, intervals in sorted(
+                funding_boundary_intervals_monotonic_ns.items()
             )
         },
         "funding_schedule_coverage_monotonic_ns": {
@@ -306,7 +310,9 @@ class Round74EventTargetSpec:
     decision_to_entry_latency_ns_by_symbol: tuple[tuple[str, int], ...]
     decision_to_exit_latency_ns_by_symbol: tuple[tuple[str, int], ...]
     taker_fee_bps_by_symbol: tuple[tuple[str, float], ...]
-    funding_boundaries_monotonic_ns: tuple[tuple[str, tuple[int, ...]], ...]
+    funding_boundary_intervals_monotonic_ns: tuple[
+        tuple[str, tuple[tuple[int, int], ...]], ...
+    ]
     funding_schedule_coverage_monotonic_ns: tuple[
         tuple[str, tuple[int, int]], ...
     ]
@@ -339,7 +345,10 @@ class Round74EventTargetSpec:
         decision_to_entry_latency_ns_by_symbol: Mapping[str, int],
         decision_to_exit_latency_ns_by_symbol: Mapping[str, int],
         taker_fee_bps_by_symbol: Mapping[str, float],
-        funding_boundaries_monotonic_ns: Mapping[str, Sequence[int]],
+        funding_boundary_intervals_monotonic_ns: Mapping[
+            str,
+            Sequence[Sequence[int]],
+        ],
         funding_schedule_coverage_monotonic_ns: Mapping[str, Sequence[int]],
         additional_slippage_bps_per_side_by_symbol: Mapping[str, float],
         commission_evidence: Round74EventTargetEvidence,
@@ -365,13 +374,26 @@ class Round74EventTargetSpec:
                 for symbol, value in taker_fee_bps_by_symbol.items()
             )
         )
+        if any(
+            len(interval) != 2
+            for intervals in funding_boundary_intervals_monotonic_ns.values()
+            for interval in intervals
+        ):
+            raise ValueError("Round 74 target funding schedule differs")
         funding = tuple(
             sorted(
                 (
                     str(symbol).strip().upper(),
-                    tuple(sorted(int(boundary) for boundary in boundaries)),
+                    tuple(
+                        sorted(
+                            (int(interval[0]), int(interval[1]))
+                            for interval in intervals
+                        )
+                    ),
                 )
-                for symbol, boundaries in funding_boundaries_monotonic_ns.items()
+                for symbol, intervals in (
+                    funding_boundary_intervals_monotonic_ns.items()
+                )
             )
         )
         funding_coverage = tuple(
@@ -419,7 +441,7 @@ class Round74EventTargetSpec:
             decision_to_entry_latency_ns_by_symbol=entry_latencies,
             decision_to_exit_latency_ns_by_symbol=exit_latencies,
             taker_fee_bps_by_symbol=fees,
-            funding_boundaries_monotonic_ns=funding,
+            funding_boundary_intervals_monotonic_ns=funding,
             funding_schedule_coverage_monotonic_ns=funding_coverage,
             additional_slippage_bps_per_side_by_symbol=slippage,
             commission_evidence=commission_evidence,
@@ -465,19 +487,24 @@ class Round74EventTargetSpec:
             for _symbol, fee in fees
         ):
             raise ValueError("Round 74 target fee is invalid")
-        funding = tuple(self.funding_boundaries_monotonic_ns)
+        funding = tuple(self.funding_boundary_intervals_monotonic_ns)
         if (
-            tuple(symbol for symbol, _boundaries in funding)
+            tuple(symbol for symbol, _intervals in funding)
             != ROUND74_EVENT_TARGET_SYMBOLS
             or any(
-                boundary < 0
-                for _symbol, boundaries in funding
-                for boundary in boundaries
+                int(interval[0]) < 0 or int(interval[1]) < int(interval[0])
+                for _symbol, intervals in funding
+                for interval in intervals
             )
             or any(
-                tuple(boundaries) != tuple(sorted(boundaries))
-                or len(boundaries) != len(set(boundaries))
-                for _symbol, boundaries in funding
+                tuple(intervals) != tuple(sorted(intervals))
+                or len(intervals) != len(set(intervals))
+                or any(
+                    int(intervals[index][0])
+                    <= int(intervals[index - 1][1])
+                    for index in range(1, len(intervals))
+                )
+                for _symbol, intervals in funding
             )
         ):
             raise ValueError("Round 74 target funding schedule differs")
@@ -494,9 +521,9 @@ class Round74EventTargetSpec:
             )
             or any(
                 any(
-                    boundary < int(coverage[0])
-                    or boundary > int(coverage[1])
-                    for boundary in dict(funding)[symbol]
+                    int(interval[0]) < int(coverage[0])
+                    or int(interval[1]) > int(coverage[1])
+                    for interval in dict(funding)[symbol]
                 )
                 for symbol, coverage in funding_coverage
             )
@@ -546,7 +573,7 @@ class Round74EventTargetSpec:
                 "funding_schedule",
                 self.funding_schedule_evidence,
                 round74_funding_schedule_evidence_claims(
-                    funding_boundaries_monotonic_ns=dict(funding),
+                    funding_boundary_intervals_monotonic_ns=dict(funding),
                     funding_schedule_coverage_monotonic_ns=dict(
                         funding_coverage
                     ),
@@ -652,9 +679,11 @@ class Round74EventTargetSpec:
                 self.decision_to_exit_latency_ns_by_symbol
             ),
             "taker_fee_bps_by_symbol": dict(self.taker_fee_bps_by_symbol),
-            "funding_boundaries_monotonic_ns": {
-                symbol: list(boundaries)
-                for symbol, boundaries in self.funding_boundaries_monotonic_ns
+            "funding_boundary_intervals_monotonic_ns": {
+                symbol: [list(interval) for interval in intervals]
+                for symbol, intervals in (
+                    self.funding_boundary_intervals_monotonic_ns
+                )
             },
             "funding_schedule_coverage_monotonic_ns": {
                 symbol: list(coverage)
@@ -702,7 +731,7 @@ class Round74EventTargetSpec:
         if claimed != _canonical_sha256(payload):
             raise ValueError("Round 74 target spec payload digest differs")
         fees = payload.get("taker_fee_bps_by_symbol")
-        funding = payload.get("funding_boundaries_monotonic_ns")
+        funding = payload.get("funding_boundary_intervals_monotonic_ns")
         funding_coverage = payload.get(
             "funding_schedule_coverage_monotonic_ns"
         )
@@ -756,9 +785,12 @@ class Round74EventTargetSpec:
             taker_fee_bps_by_symbol={
                 str(symbol): float(fee) for symbol, fee in fees.items()
             },
-            funding_boundaries_monotonic_ns={
-                str(symbol): tuple(int(boundary) for boundary in boundaries)
-                for symbol, boundaries in funding.items()
+            funding_boundary_intervals_monotonic_ns={
+                str(symbol): tuple(
+                    tuple(int(value) for value in interval)
+                    for interval in intervals
+                )
+                for symbol, intervals in funding.items()
             },
             funding_schedule_coverage_monotonic_ns={
                 str(symbol): tuple(int(value) for value in coverage)
@@ -1348,9 +1380,11 @@ class Round74EventTargetEngine:
             for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         }
         self.quantity_rules = validated_rules
-        self.funding_boundaries = {
-            symbol: tuple(boundaries)
-            for symbol, boundaries in self.spec.funding_boundaries_monotonic_ns
+        self.funding_boundary_intervals = {
+            symbol: tuple(intervals)
+            for symbol, intervals in (
+                self.spec.funding_boundary_intervals_monotonic_ns
+            )
         }
         self.funding_coverage = {
             symbol: tuple(coverage)
@@ -1382,8 +1416,11 @@ class Round74EventTargetEngine:
                     }
                     for symbol in ROUND74_EVENT_TARGET_SYMBOLS
                 },
-                "funding_boundaries_monotonic_ns": {
-                    symbol: list(self.funding_boundaries[symbol])
+                "funding_boundary_intervals_monotonic_ns": {
+                    symbol: [
+                        list(interval)
+                        for interval in self.funding_boundary_intervals[symbol]
+                    ]
                     for symbol in ROUND74_EVENT_TARGET_SYMBOLS
                 },
                 "funding_schedule_coverage_monotonic_ns": {
@@ -1602,8 +1639,8 @@ class Round74EventTargetEngine:
         if int(entry_ns) < coverage_start or int(exit_ns) > coverage_end:
             return "funding_coverage"
         if any(
-            entry_ns < boundary <= exit_ns
-            for boundary in self.funding_boundaries[symbol]
+            entry_ns <= interval[1] and exit_ns >= interval[0]
+            for interval in self.funding_boundary_intervals[symbol]
         ):
             return "funding_boundary"
         return ""
