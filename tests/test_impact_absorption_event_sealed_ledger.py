@@ -5,16 +5,33 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
+from simple_ai_trading import impact_absorption_event_sealed_evaluation as sealed_subject
+from simple_ai_trading.impact_absorption_ai_protocol import (
+    Round74AIReviewDecision,
+)
+from simple_ai_trading.impact_absorption_ai_uplift import (
+    Round74AIPairedReviewEvidence,
+)
 from simple_ai_trading.impact_absorption_event_action_policy import (
     Round74ActionPolicySelection,
     Round74ActionThresholdEvaluation,
     Round74ActionTrace,
     Round74ActionTraceMetrics,
+    build_round74_action_inference_context,
+    derive_round74_action_candidates,
     round74_action_profile,
+)
+from simple_ai_trading.impact_absorption_event_calibration import (
+    Round74ProbabilityCalibration,
+    Round74TemperatureFit,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
     Round74EventTrainingBatch,
+)
+from simple_ai_trading.impact_absorption_event_model import (
+    Round74EventModelOutput,
 )
 from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     Round74SealedEvaluationClaim,
@@ -22,9 +39,13 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     Round74SealedLedgerError,
     Round74SealedReuseError,
 )
+from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
+    evaluate_round74_sealed_once,
+)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SEQUENCE_LENGTH,
     ROUND74_EVENT_SYMBOLS,
@@ -166,6 +187,116 @@ def _selection() -> Round74ActionPolicySelection:
     return result
 
 
+def _calibration() -> Round74ProbabilityCalibration:
+    fit = Round74TemperatureFit(
+        temperature=1.0,
+        eligible_observations=10,
+        positive_observations=5,
+        uncalibrated_nll=0.5,
+        calibrated_nll=0.5,
+        uncalibrated_brier=0.2,
+        calibrated_brier=0.2,
+        uncalibrated_ece=0.1,
+        calibrated_ece=0.1,
+    )
+    result = Round74ProbabilityCalibration(
+        pretest_policy_sha256="5" * 64,
+        tuning_subpartition_sha256="7" * 64,
+        calibration_source_sha256="a" * 64,
+        calibration_data_sha256="b" * 64,
+        positive_payoff=fit,
+        adverse_selection=fit,
+        regime_unpredictability=fit,
+        backend_kind="cpu",
+        backend_device="test",
+    )
+    result.validate()
+    return result
+
+
+def _model_output(rows: int) -> Round74EventModelOutput:
+    horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    sides = len(ROUND74_EVENT_PAYOFF_SIDES)
+    quantiles = len(ROUND74_EVENT_PAYOFF_QUANTILES)
+    payoff = torch.full(
+        (rows, horizons, sides, quantiles),
+        -5.0,
+        dtype=torch.float32,
+    )
+    mae = torch.ones_like(payoff)
+    positive = torch.full((rows, horizons, sides), -2.0, dtype=torch.float32)
+    adverse = torch.full((rows, horizons, sides), 2.0, dtype=torch.float32)
+    regime = torch.full((rows, horizons), -2.0, dtype=torch.float32)
+    horizon_index = ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS.index(30)
+    payoff[:, horizon_index, 0, :] = torch.tensor((2.0, 4.0, 8.0, 10.0, 12.0))
+    mae[:, horizon_index, 0, :] = torch.tensor((0.2, 0.4, 0.8, 1.2, 2.0))
+    positive[:, horizon_index, 0] = 2.0
+    adverse[:, horizon_index, 0] = -2.0
+    result = Round74EventModelOutput(
+        payoff_quantiles_bps=payoff,
+        maximum_adverse_excursion_quantiles_bps=mae,
+        positive_payoff_logits=positive,
+        adverse_selection_logits=adverse,
+        regime_unpredictability_logits=regime,
+    )
+    result.validate(rows)
+    return result
+
+
+class _Model(torch.nn.Module):
+    def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
+        return _model_output(int(values.shape[0]))
+
+
+def _reviews(
+    batch: Round74EventTrainingBatch,
+    calibration: Round74ProbabilityCalibration,
+    selection: Round74ActionPolicySelection,
+    *,
+    manifest: str,
+) -> tuple[Round74AIPairedReviewEvidence, ...]:
+    candidates = derive_round74_action_candidates(
+        _model_output(batch.rows),
+        build_round74_action_inference_context(batch),
+        calibration,
+        pretest_policy_sha256=selection.pretest_policy_sha256,
+        profile=selection.profile,
+    )
+    decision = Round74AIReviewDecision(
+        verdict="allow_unchanged",
+        size_multiplier_bps=10_000,
+        confidence_bps=8_000,
+        reason_codes=("none",),
+    )
+    result = tuple(
+        Round74AIPairedReviewEvidence(
+            row_index=index,
+            feature_row_sha256=candidates.feature_row_sha256[index],
+            run_id=candidates.run_id[index],
+            symbol=candidates.symbol[index],
+            side=int(candidates.side[index]),
+            horizon_seconds=int(candidates.horizon_seconds[index]),
+            pretest_policy_sha256=selection.pretest_policy_sha256,
+            probability_calibration_sha256=(
+                selection.probability_calibration_sha256
+            ),
+            request_sha256=f"{1_000 + index:064x}",
+            runtime_outcome_sha256=f"{2_000 + index:064x}",
+            model_manifest_sha256=manifest,
+            runtime_status="accepted",
+            size_multiplier_bps=10_000,
+            decision=decision,
+        )
+        for index in range(batch.rows)
+        if candidates.eligible[index]
+        and candidates.quality_score[index]
+        >= float(selection.selected_threshold_score or 0.0)
+    )
+    for value in result:
+        value.validate()
+    return result
+
+
 def test_reservation_consumes_test_access_before_evaluation(
     tmp_path: Path,
 ) -> None:
@@ -248,6 +379,91 @@ def test_evaluation_error_is_durable_and_still_consumes_test(
             action_selection=_selection(),
             ai_manifest_sha256=("a" * 64,),
         )
+
+
+def test_sealed_evaluator_finalizes_failure_after_reservation(
+    tmp_path: Path,
+) -> None:
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    batch = _test_batch()
+
+    with pytest.raises(ValueError, match="pretest policy could not be read"):
+        evaluate_round74_sealed_once(
+            (batch,),
+            action_selection=_selection(),
+            probability_calibration=_calibration(),
+            pretest_policy_path=tmp_path / "missing-policy.json",
+            ai_reviews_by_manifest={"a" * 64: ()},
+            ledger=ledger,
+            compute_backend="cpu",
+        )
+
+    with pytest.raises(Round74SealedReuseError, match="status=failed"):
+        ledger.reserve(
+            test_batches=(batch,),
+            action_selection=_selection(),
+            ai_manifest_sha256=("a" * 64,),
+        )
+
+
+def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
+    batch = _test_batch()
+    calibration = _calibration()
+    selection = replace(
+        _selection(),
+        probability_calibration_sha256=calibration.calibration_sha256,
+    )
+    selection.validate()
+    manifest = "c" * 64
+    policy = {
+        "policy_sha256": selection.pretest_policy_sha256,
+        "model_artifact": {"sha256": "d" * 64},
+        "development_data": {
+            "partition_sha256": batch.partition_sha256,
+            "scaler_sha256": batch.scaler_sha256,
+        },
+    }
+    monkeypatch.setattr(
+        sealed_subject,
+        "load_round74_pretest_policy",
+        lambda _path: (_Model(), policy),
+    )
+
+    outcome = evaluate_round74_sealed_once(
+        (batch,),
+        action_selection=selection,
+        probability_calibration=calibration,
+        pretest_policy_path=tmp_path / "policy.json",
+        ai_reviews_by_manifest={
+            manifest: _reviews(
+                batch,
+                calibration,
+                selection,
+                manifest=manifest,
+            )
+        },
+        ledger=ledger,
+        compute_backend="cpu",
+    )
+
+    assert outcome.finalized_claim.status == "complete"
+    assert outcome.report.result_outcome == "candidate_passed_predeclared_gates"
+    assert outcome.report.qualified_configuration == ("ml_baseline",)
+    assert outcome.report.baseline_metrics.executed_trades == 24
+    assert outcome.report.baseline_metrics.financial_gate_passed
+    assert outcome.report.predictive_diagnostics.eligible_action_targets == (
+        24
+        * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+        * len(ROUND74_EVENT_PAYOFF_SIDES)
+    )
+    assert not outcome.report.ai_overlays[0].uplift_gate_passed
+    assert outcome.report.inference_backend_kind == "cpu"
+    assert outcome.report.profitability_claim is False
+    assert ledger.claim_matches(outcome.finalized_claim, required_status="complete")
 
 
 def test_development_data_is_rejected_before_ledger_creation(
