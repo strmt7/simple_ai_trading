@@ -1,0 +1,142 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v69",
+  "created_at_utc": "2026-07-27T18:52:00Z",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v68.json",
+    "normalized_lf_sha256": "de1524e95acfcb9aacb8ac8ff19f07c60eb8448d23ec3b7f4a011c6c98b5d499",
+    "design_sha256": "f458677f302420c9c45f2be27e85b4c1731baccdba08a667260260252a964701",
+    "composition_rule": "v68 remains the complete source-audited target-manifest contract; v69 adds only the reloadable scaler and target-free online decision-component latency contracts declared here"
+  },
+  "corrected_defect": {
+    "finding": "the target specification names decision-to-entry and decision-to-exit latencies, but its evidence semantics are local order submission to terminal execution receipt; the pretest artifact also sealed only a scaler digest and not the scaler parameters required to reproduce live inputs",
+    "financial_consequence": "short-horizon action values could omit feature preprocessing and model decision time, while the model could not be reproduced from its own artifact set",
+    "resolution_scope": "persist the exact training-only scaler and measure one explicitly bounded feature-window-to-candidate latency component before exact delayed-book policy scoring",
+    "target_label_or_profitability_result_viewed": false
+  },
+  "pretest_scaler_artifact": {
+    "training_source_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "training_source_normalized_lf_sha256": "69e6530e0d9ffca98c19d52d1d745d501635e9c983ed4dd5b7c580e3a2eef0c5",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_normalized_lf_sha256": "4b471f877425125b796951795595aae3273b7441be5689ca8a9876502c496ef3",
+    "test_path": "tests/test_impact_absorption_event_training.py",
+    "test_normalized_lf_sha256": "c6acc5072de949d58b5df598d044ec4f08faee3f95d0ce2f134ec6434744affe",
+    "cohort_mode_requires_exact_fitted_scaler": true,
+    "training_only_scaler_sha256_must_match_all_batches": true,
+    "canonical_json_artifact_persisted_beside_model": true,
+    "byte_sha256_and_byte_count_verified": true,
+    "static_scaler_sha256_recomputed": true,
+    "reload_equivalence_verified_before_policy_publication": true,
+    "duplicate_json_keys_rejected": true,
+    "preflight_without_scaler_is_explicitly_non_deployable": true
+  },
+  "online_decision_component_latency": {
+    "schema_version": "round-074-online-decision-latency-v1",
+    "source_path": "src/simple_ai_trading/round74_online_decision_latency.py",
+    "source_normalized_lf_sha256": "df98ef522adab7de935cbef9ee42e3339498fde138e334dfe882af18ef732298",
+    "test_path": "tests/test_round74_online_decision_latency.py",
+    "test_normalized_lf_sha256": "da82d147a3b5a6d9e8be3120c0769a15cac37eae8963e9c670051ac54d0e2681",
+    "input_boundary": "ready raw 128-event feature window",
+    "output_boundary": "materialized validated profile-specific action candidate",
+    "profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "warmups_per_profile": 16,
+    "measurements_per_profile": 300,
+    "tail_quantile": 0.99,
+    "tail_confidence": 0.95,
+    "tail_estimator": "distribution-free one-sided upper-confidence order statistic",
+    "clock": "time.perf_counter_ns",
+    "blocking_device_to_host_materialization_required": true,
+    "non_blocking_transfer_requested": false,
+    "directml_cpu_fallback_warning_rejected": true,
+    "raw_samples_persisted_for_recomputation": true,
+    "target_fields_or_outcomes_consumed": false,
+    "source_context_and_feature_row_hashes_bound": true,
+    "effective_backend_and_package_versions_bound": true,
+    "host_specific": true
+  },
+  "latency_composition_and_replay_rule": {
+    "component_may_be_called_end_to_end_tick_to_trade": false,
+    "missing_required_components": [
+      "socket receipt and frame parsing",
+      "event feature extraction before the ready window",
+      "risk coordinator and order construction",
+      "order submission to terminal execution receipt"
+    ],
+    "policy_selection_may_use_precomputed_baseline_payoff_after_component_measurement": false,
+    "required_next_step": "replay every policy-selection anchor once against exact captured public L2 after the profile-specific decision-component upper-confidence delay, then score every threshold from that common delayed outcome panel",
+    "threshold_specific_database_replay_permitted": false,
+    "candidate_independent_raw_replay_panel_required": true,
+    "optional_ai_review_latency_is_additive_after_baseline_decision_latency": true,
+    "testnet_execution_calibration_may_establish_mainnet_equivalence": false
+  },
+  "primary_and_official_research": [
+    {
+      "source": "PyTorch benchmark utilities",
+      "url": "https://docs.pytorch.org/docs/stable/benchmark_utils.html",
+      "applied": "warmup and accelerator synchronization are required for latency measurement"
+    },
+    {
+      "source": "PyTorch Tensor copy semantics",
+      "url": "https://docs.pytorch.org/docs/stable/generated/torch.Tensor.copy_.html",
+      "applied": "non_blocking false is retained so device-to-host materialization is a completion barrier"
+    },
+    {
+      "source": "ONNX Runtime DirectML execution provider",
+      "url": "https://onnxruntime.ai/docs/execution-providers/DirectML-ExecutionProvider.html",
+      "applied": "DirectML inference is hardware-agnostic but fixed shapes, sequential execution, and explicit performance validation matter; DirectML is sustained engineering and WinML is the preferred future Windows deployment path"
+    },
+    {
+      "source": "Albers et al. 2025 live Binance and Bybit execution experiment",
+      "url": "https://doi.org/10.1080/14697688.2025.2515933",
+      "applied": "latency, liquidity, volatility, and adverse selection require actual execution evidence and prohibit guessed backtest-to-live transfer"
+    }
+  ],
+  "verification": {
+    "scaler_persistence_and_tamper_test_passed": true,
+    "online_decision_latency_contract_tests_passed": 4,
+    "real_target_free_cpu_path_smoke_passed": true,
+    "ruff_passed": true,
+    "host_gpu_benchmark_run": false,
+    "exact_delayed_l2_policy_selection_integrated": false,
+    "prospective_model_result_exists": false
+  },
+  "remaining_blocks": [
+    "wire the component evidence into one-pass exact delayed-L2 policy-selection replay",
+    "measure and bind the remaining socket-to-window and candidate-to-submission host components",
+    "source-backed production public-paper execution scenario contract and artifacts",
+    "complete and independently audited 168-slot prospective cohort",
+    "complete testnet execution-calibration aggregate",
+    "144 development manifests and source artifacts",
+    "development fit, calibration, delayed-execution policy selection, and immutable pretest seal",
+    "matched AI uplift evaluation",
+    "one-use sealed-test evaluation"
+  ],
+  "unchanged_model_contract": {
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "conservative_default": true,
+    "ai_role": "veto_or_reduce_only_after_matched_uplift",
+    "leverage_is_risk_ceiling_not_edge": true,
+    "test_role_accessed": false,
+    "future_data_permitted_in_inference": false
+  },
+  "authority": {
+    "representative_market_training_completed": false,
+    "online_decision_component_latency_measured_on_host": false,
+    "end_to_end_tick_to_trade_latency_measured": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "acda2f2877ee33884febaa7885ebbf06f3f789c10b746008ce1f679c51af300b"
+}

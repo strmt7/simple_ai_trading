@@ -37,11 +37,12 @@ from .impact_absorption_event_model import (
     build_round74_event_model,
     round74_event_model_loss,
 )
+from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v13"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v12"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v14"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v13"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
@@ -124,6 +125,22 @@ def _write_immutable_bytes(path: Path, payload: bytes) -> None:
             return
         raise FileExistsError(f"immutable Round 74 artifact already exists: {path}")
     write_bytes_atomic(path, payload)
+
+
+def _load_scaler_bytes(payload: bytes) -> Round74EventFeatureScaler:
+    try:
+        raw = json.loads(
+            payload.decode("ascii"),
+            object_pairs_hook=_reject_duplicate_json_pairs,
+        )
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Round 74 pretest scaler could not be read") from exc
+    if not isinstance(raw, Mapping):
+        raise ValueError("Round 74 pretest scaler root differs")
+    try:
+        return Round74EventFeatureScaler.from_dict(raw)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("Round 74 pretest scaler payload differs") from exc
 
 
 @dataclass(frozen=True)
@@ -1269,6 +1286,7 @@ def train_and_seal_round74_pretest_policy(
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     representative_window_policy_sha256: str | None = None,
+    feature_scaler: Round74EventFeatureScaler | None = None,
 ) -> Round74PretestPolicyArtifact:
     """Train the declared panel and publish one reload-verified pretest policy."""
 
@@ -1299,6 +1317,46 @@ def train_and_seal_round74_pretest_policy(
         tuning_batches,
         minimum_rows=selected_config.minimum_role_rows,
     )
+    if feature_scaler is None:
+        if selected_config.execution_mode == "cohort":
+            raise ValueError("Round 74 cohort training requires its fitted feature scaler")
+        scaler_payload = b""
+        scaler_artifact: dict[str, object] = {
+            "available": False,
+            "reason": "preflight_only",
+            "filename": None,
+            "scaler_sha256": None,
+            "file_sha256": None,
+            "byte_count": 0,
+            "media_type": None,
+            "fit_partition_role": None,
+            "reload_verified": False,
+        }
+    else:
+        if (
+            not isinstance(feature_scaler, Round74EventFeatureScaler)
+            or feature_scaler.scaler_sha256 != development.scaler_sha256
+        ):
+            raise ValueError("Round 74 fitted feature scaler identity differs")
+        scaler_payload = _canonical_json_bytes(feature_scaler.as_dict()) + b"\n"
+        scaler_file_sha256 = _sha256_bytes(scaler_payload)
+        scaler_filename = (
+            f"round74-feature-scaler-{feature_scaler.scaler_sha256}.json"
+        )
+        reloaded_scaler = _load_scaler_bytes(scaler_payload)
+        if reloaded_scaler.as_dict() != feature_scaler.as_dict():
+            raise RuntimeError("Round 74 feature scaler reload differs")
+        scaler_artifact = {
+            "available": True,
+            "reason": "training_only_scaler_persisted",
+            "filename": scaler_filename,
+            "scaler_sha256": feature_scaler.scaler_sha256,
+            "file_sha256": scaler_file_sha256,
+            "byte_count": len(scaler_payload),
+            "media_type": "application/json",
+            "fit_partition_role": "training",
+            "reload_verified": True,
+        }
     backend = require_backend(resolve_backend(compute_backend))
     device = torch_device_for_backend(backend)
     prior_deterministic = torch.are_deterministic_algorithms_enabled()
@@ -1476,6 +1534,7 @@ def train_and_seal_round74_pretest_policy(
             "prediction_reload_verified": True,
             "prediction_sha256": reload_prediction_sha256,
         },
+        "scaler_artifact": scaler_artifact,
         "authority": {
             "development_training_completed": True,
             "chronological_tuning_completed": True,
@@ -1497,6 +1556,8 @@ def train_and_seal_round74_pretest_policy(
     model_path = output / model_filename
     policy_path = output / f"round74-pretest-policy-{policy_sha256}.json"
     _write_immutable_bytes(model_path, model_bytes)
+    if feature_scaler is not None:
+        _write_immutable_bytes(output / scaler_filename, scaler_payload)
     _write_immutable_bytes(policy_path, policy_bytes)
     verified_model, verified_policy = load_round74_pretest_policy(policy_path)
     if (
@@ -1521,6 +1582,7 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
     output_directory: str | Path,
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
+    feature_scaler: Round74EventFeatureScaler,
 ) -> Round74PretestPolicyArtifact:
     """Fit candidates with model-selection runs and no later tuning role."""
 
@@ -1545,6 +1607,7 @@ def train_and_seal_round74_pretest_policy_from_prepared_roles(
         representative_window_policy_sha256=(
             str(round74_representative_window_policy()["policy_sha256"])
         ),
+        feature_scaler=feature_scaler,
     )
 
 
@@ -1589,12 +1652,14 @@ def load_round74_pretest_policy(
         "candidate_panel",
         "selection",
         "model_artifact",
+        "scaler_artifact",
         "authority",
         "policy_sha256",
     }:
         raise ValueError("Round 74 pretest policy top-level contract differs")
     selection = policy.get("selection")
     artifact = policy.get("model_artifact")
+    scaler_artifact = policy.get("scaler_artifact")
     development = policy.get("development_data")
     authority = policy.get("authority")
     training_policy = policy.get("training_policy")
@@ -1608,6 +1673,7 @@ def load_round74_pretest_policy(
         for value in (
             selection,
             artifact,
+            scaler_artifact,
             development,
             authority,
             training_policy,
@@ -1621,6 +1687,7 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest policy sections differ")
     assert isinstance(selection, Mapping)
     assert isinstance(artifact, Mapping)
+    assert isinstance(scaler_artifact, Mapping)
     assert isinstance(development, Mapping)
     assert isinstance(authority, Mapping)
     assert isinstance(training_policy, Mapping)
@@ -1854,6 +1921,63 @@ def load_round74_pretest_policy(
             raise ValueError("Round 74 representative window policy differs")
     elif representative_policy_sha256 is not None:
         raise ValueError("Round 74 preflight window policy differs")
+    scaler_keys = {
+        "available",
+        "reason",
+        "filename",
+        "scaler_sha256",
+        "file_sha256",
+        "byte_count",
+        "media_type",
+        "fit_partition_role",
+        "reload_verified",
+    }
+    scaler_available = scaler_artifact.get("available")
+    if set(scaler_artifact) != scaler_keys or not isinstance(
+        scaler_available,
+        bool,
+    ):
+        raise ValueError("Round 74 pretest scaler artifact differs")
+    if scaler_available:
+        scaler_filename = scaler_artifact.get("filename")
+        scaler_sha256 = scaler_artifact.get("scaler_sha256")
+        scaler_file_sha256 = scaler_artifact.get("file_sha256")
+        scaler_byte_count = scaler_artifact.get("byte_count")
+        if (
+            not isinstance(scaler_filename, str)
+            or _SAFE_FILENAME.fullmatch(scaler_filename) is None
+            or scaler_filename
+            != f"round74-feature-scaler-{development['scaler_sha256']}.json"
+            or scaler_sha256 != development["scaler_sha256"]
+            or _SHA256.fullmatch(str(scaler_file_sha256)) is None
+            or isinstance(scaler_byte_count, bool)
+            or not isinstance(scaler_byte_count, int)
+            or scaler_byte_count <= 0
+            or scaler_artifact.get("reason")
+            != "training_only_scaler_persisted"
+            or scaler_artifact.get("media_type") != "application/json"
+            or scaler_artifact.get("fit_partition_role") != "training"
+            or scaler_artifact.get("reload_verified") is not True
+        ):
+            raise ValueError("Round 74 pretest scaler artifact differs")
+    else:
+        if dict(scaler_artifact) != {
+            "available": False,
+            "reason": "preflight_only",
+            "filename": None,
+            "scaler_sha256": None,
+            "file_sha256": None,
+            "byte_count": 0,
+            "media_type": None,
+            "fit_partition_role": None,
+            "reload_verified": False,
+        }:
+            raise ValueError("Round 74 pretest absent scaler artifact differs")
+        scaler_filename = None
+        scaler_file_sha256 = None
+        scaler_byte_count = 0
+    if reconstructed_config.execution_mode == "cohort" and not scaler_available:
+        raise ValueError("Round 74 cohort pretest scaler artifact is unavailable")
     expected_metric_names = {
         "payoff_pinball",
         "maximum_adverse_excursion_pinball",
@@ -2028,6 +2152,21 @@ def load_round74_pretest_policy(
     for forbidden in (*sorted(required_false_authority),):
         if authority.get(forbidden) is not False:
             raise ValueError("Round 74 pretest policy overstates authority")
+    if scaler_available:
+        assert isinstance(scaler_filename, str)
+        scaler_path = selected_path.parent / scaler_filename
+        try:
+            scaler_bytes = scaler_path.read_bytes()
+        except OSError as exc:
+            raise ValueError("Round 74 pretest scaler could not be read") from exc
+        if (
+            _sha256_bytes(scaler_bytes) != scaler_file_sha256
+            or len(scaler_bytes) != scaler_byte_count
+        ):
+            raise ValueError("Round 74 pretest scaler artifact differs")
+        loaded_scaler = _load_scaler_bytes(scaler_bytes)
+        if loaded_scaler.scaler_sha256 != development["scaler_sha256"]:
+            raise ValueError("Round 74 pretest scaler identity differs")
     model_path = selected_path.parent / filename
     try:
         model_bytes = model_path.read_bytes()
@@ -2049,6 +2188,27 @@ def load_round74_pretest_policy(
     return model, policy
 
 
+def load_round74_pretest_scaler(
+    policy_path: str | Path,
+) -> Round74EventFeatureScaler:
+    """Load the exact training-only scaler bound to a cohort pretest policy."""
+
+    selected_path = Path(policy_path)
+    _model, policy = load_round74_pretest_policy(selected_path)
+    artifact = policy["scaler_artifact"]
+    assert isinstance(artifact, Mapping)
+    if artifact.get("available") is not True:
+        raise ValueError("Round 74 pretest scaler is unavailable")
+    filename = artifact.get("filename")
+    if not isinstance(filename, str):
+        raise ValueError("Round 74 pretest scaler filename differs")
+    try:
+        payload = (selected_path.parent / filename).read_bytes()
+    except OSError as exc:
+        raise ValueError("Round 74 pretest scaler could not be read") from exc
+    return _load_scaler_bytes(payload)
+
+
 __all__ = [
     "ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT",
     "ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS",
@@ -2062,6 +2222,7 @@ __all__ = [
     "Round74EventTrainingConfig",
     "Round74PretestPolicyArtifact",
     "load_round74_pretest_policy",
+    "load_round74_pretest_scaler",
     "train_and_seal_round74_pretest_policy",
     "train_and_seal_round74_pretest_policy_from_prepared_roles",
 ]

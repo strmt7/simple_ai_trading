@@ -21,7 +21,6 @@ from simple_ai_trading.impact_absorption_event_calibration import (
 )
 from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
-    ROUND74_ACTION_POLICY_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
     round74_default_ai_review_model_panel,
@@ -380,9 +379,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["action_context_schema_version"] == (
         ROUND74_ACTION_CONTEXT_SCHEMA_VERSION
     )
-    assert source["action_policy_schema_version"] == (
-        ROUND74_ACTION_POLICY_SCHEMA_VERSION
-    )
+    assert source["action_policy_schema_version"] == "round-074-action-policy-v7"
     assert source["target_schema_version"] == ROUND74_EVENT_TARGET_SCHEMA_VERSION
     assert source["target_evidence_schema_version"] == (
         ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION

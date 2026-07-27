@@ -37,7 +37,6 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
     ROUND74_ACTION_DEFAULT_PROFILE,
     ROUND74_ACTION_HORIZONS_SECONDS,
-    ROUND74_ACTION_POLICY_SCHEMA_VERSION,
     ROUND74_ACTION_PROFILES,
 )
 from simple_ai_trading.impact_absorption_event_dataset import (
@@ -391,7 +390,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["event_action_policy_schema_version"]
-        == ROUND74_ACTION_POLICY_SCHEMA_VERSION
+        == "round-074-action-policy-v7"
     )
     assert (
         source["ai_uplift_evaluator_schema_version"] == ROUND74_AI_UPLIFT_SCHEMA_VERSION
