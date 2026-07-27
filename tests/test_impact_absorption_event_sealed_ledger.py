@@ -307,6 +307,9 @@ def _reviews(
             runtime_outcome_sha256=f"{2_000 + index:064x}",
             model_manifest_sha256=manifest,
             runtime_status="accepted",
+            runtime_elapsed_ns=1_000,
+            same_entry_latency_budget_ns=1_000_000,
+            same_entry_latency_eligible=True,
             size_multiplier_bps=10_000,
             decision=decision,
         )
@@ -488,19 +491,27 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         lambda _path: (_Model(), policy),
     )
 
+    reviews = list(
+        _reviews(
+            batch,
+            calibration,
+            selection,
+            manifest=manifest,
+        )
+    )
+    reviews[0] = replace(
+        reviews[0],
+        runtime_elapsed_ns=1_000_001,
+        same_entry_latency_eligible=False,
+        size_multiplier_bps=0,
+    )
+    reviews[0].validate()
     outcome = evaluate_round74_sealed_once(
         (batch,),
         action_selection=selection,
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "policy.json",
-        ai_reviews_by_manifest={
-            manifest: _reviews(
-                batch,
-                calibration,
-                selection,
-                manifest=manifest,
-            )
-        },
+        ai_reviews_by_manifest={manifest: tuple(reviews)},
         ledger=ledger,
         compute_backend="cpu",
     )
@@ -515,7 +526,12 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
         * len(ROUND74_EVENT_PAYOFF_SIDES)
     )
-    assert not outcome.report.ai_overlays[0].uplift_gate_passed
+    overlay = outcome.report.ai_overlays[0]
+    assert not overlay.uplift_gate_passed
+    assert overlay.runtime_success_rate == 1.0
+    assert overlay.same_entry_latency_eligible_reviews == 23
+    assert overlay.retained_trades == 23
+    assert "same_entry_latency_eligibility_rate_not_met" in overlay.gate_reasons
     assert outcome.report.inference_backend_kind == "cpu"
     assert outcome.report.profitability_claim is False
     assert ledger.claim_matches(outcome.finalized_claim, required_status="complete")
@@ -563,6 +579,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         inference,
         action_selection=selection,
         probability_calibration=calibration,
+        same_entry_latency_budget_ns=1_000_000,
         review_runner=blocked_review,
         progress_callback=progress.append,
         wall_time_ns=lambda: 1_900_000_000_000_000_000,
@@ -575,10 +592,12 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
     )
     assert len(panel.rows) == 24
+    assert panel.same_entry_latency_budget_ns == 1_000_000
     assert len(panel.reviews) == 2
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
         review.runtime_status == "blocked_capability"
+        and review.same_entry_latency_eligible is False
         and review.size_multiplier_bps == 0
         for reviews in panel.reviews
         for review in reviews

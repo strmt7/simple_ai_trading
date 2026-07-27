@@ -35,6 +35,7 @@ FEATURES = tuple(f"{index + 100:064x}" for index in range(6))
 SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT") * 2
 PAYOFFS = (2.0, -1.0, 2.0, -1.0, 2.0, 2.0)
 WALL_NS = 1_800_000_000_000_000_000
+SAME_ENTRY_LATENCY_BUDGET_NS = 1_000_000
 
 
 def _trace() -> Round74ActionTrace:
@@ -109,7 +110,12 @@ def _selection() -> Round74ActionPolicySelection:
     return result
 
 
-def _review(index: int, multiplier: int) -> Round74AIPairedReviewEvidence:
+def _review(
+    index: int,
+    multiplier: int,
+    *,
+    runtime_elapsed_ns: int = 1_000,
+) -> Round74AIPairedReviewEvidence:
     if multiplier == 10_000:
         decision = Round74AIReviewDecision(
             verdict="allow_unchanged",
@@ -131,6 +137,7 @@ def _review(index: int, multiplier: int) -> Round74AIPairedReviewEvidence:
             confidence_bps=8_000,
             reason_codes=("forecast_uncertainty",),
         )
+    latency_eligible = runtime_elapsed_ns <= SAME_ENTRY_LATENCY_BUDGET_NS
     result = Round74AIPairedReviewEvidence(
         row_index=index,
         feature_row_sha256=FEATURES[index],
@@ -144,7 +151,10 @@ def _review(index: int, multiplier: int) -> Round74AIPairedReviewEvidence:
         runtime_outcome_sha256=f"{index + 300:064x}",
         model_manifest_sha256="6" * 64,
         runtime_status="accepted",
-        size_multiplier_bps=multiplier,
+        runtime_elapsed_ns=runtime_elapsed_ns,
+        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+        same_entry_latency_eligible=latency_eligible,
+        size_multiplier_bps=multiplier if latency_eligible else 0,
         decision=decision,
     )
     result.validate()
@@ -304,6 +314,7 @@ def test_blocked_runtime_review_is_a_paired_zero_exposure_veto() -> None:
     reviews[0] = replace(
         reviews[0],
         runtime_status="blocked_capability",
+        same_entry_latency_eligible=False,
         size_multiplier_bps=0,
         decision=None,
     )
@@ -361,9 +372,12 @@ def test_runtime_evidence_reduction_is_recomputed_and_bound() -> None:
         horizon_seconds=30,
         request=request,
         outcome=outcome,
+        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
     )
 
     assert evidence.runtime_status == "accepted"
+    assert evidence.runtime_elapsed_ns == 1_000
+    assert evidence.same_entry_latency_eligible
     assert evidence.size_multiplier_bps == 5_000
     assert evidence.decision is not None
     changed = replace(outcome, approved_risk_size_bps=1_000)
@@ -378,6 +392,7 @@ def test_runtime_evidence_reduction_is_recomputed_and_bound() -> None:
             horizon_seconds=30,
             request=request,
             outcome=changed,
+            same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
         )
     except ValueError as exc:
         assert "approved risk size differs" in str(exc)
@@ -395,8 +410,69 @@ def test_blocked_runtime_evidence_reduces_to_zero_without_decision() -> None:
         horizon_seconds=30,
         request=_runtime_request(),
         outcome=_runtime_outcome(status="blocked_capability"),
+        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
     )
 
     assert evidence.runtime_status == "blocked_capability"
+    assert evidence.same_entry_latency_eligible is False
     assert evidence.size_multiplier_bps == 0
     assert evidence.decision is None
+
+
+def test_late_accepted_review_is_audited_but_cannot_inherit_ml_fill() -> None:
+    request = _runtime_request()
+    late_outcome = replace(
+        _runtime_outcome(),
+        elapsed_ns=SAME_ENTRY_LATENCY_BUDGET_NS + 1,
+    )
+    late_outcome.validate()
+
+    evidence = Round74AIPairedReviewEvidence.from_runtime(
+        row_index=0,
+        feature_row_sha256=FEATURES[0],
+        run_id=RUNS[0],
+        symbol="BTCUSDT",
+        side=1,
+        horizon_seconds=30,
+        request=request,
+        outcome=late_outcome,
+        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+    )
+
+    assert evidence.runtime_status == "accepted"
+    assert evidence.decision is not None
+    assert evidence.decision.size_multiplier_bps == 5_000
+    assert evidence.same_entry_latency_eligible is False
+    assert evidence.size_multiplier_bps == 0
+    assert evidence.as_dict()["latency_adjusted_replay_performed"] is False
+    on_time_evidence = Round74AIPairedReviewEvidence.from_runtime(
+        row_index=0,
+        feature_row_sha256=FEATURES[0],
+        run_id=RUNS[0],
+        symbol="BTCUSDT",
+        side=1,
+        horizon_seconds=30,
+        request=request,
+        outcome=_runtime_outcome(),
+        same_entry_latency_budget_ns=SAME_ENTRY_LATENCY_BUDGET_NS,
+    )
+    assert evidence.review_sha256 != on_time_evidence.review_sha256
+
+    reviews = [
+        _review(index, 0 if payoff < 0.0 else 10_000)
+        for index, payoff in enumerate(PAYOFFS)
+    ]
+    reviews[0] = _review(
+        0,
+        10_000,
+        runtime_elapsed_ns=SAME_ENTRY_LATENCY_BUDGET_NS + 1,
+    )
+    report = evaluate_round74_ai_overlay_development(
+        _selection(),
+        tuple(reviews),
+    )
+
+    assert not report.development_gate_passed
+    assert report.ai_metrics.runtime_success_rate == 1.0
+    assert report.ai_metrics.same_entry_latency_eligible_reviews == 5
+    assert "same_entry_latency_eligibility_rate_not_met" in report.gate_reasons
