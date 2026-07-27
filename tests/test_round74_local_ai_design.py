@@ -36,7 +36,6 @@ from simple_ai_trading.impact_absorption_ai_worker import (
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_AI_MODEL_COUNT,
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
-    ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
     ROUND74_SEALED_FAMILYWISE_ALPHA,
     ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
     ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
@@ -395,7 +394,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_SEALED_CLAIM_SCHEMA_VERSION
     )
     assert source["sealed_evaluator_schema_version"] == (
-        ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
+        "round-074-sealed-evaluation-v9"
     )
     assert source["financial_metrics_schema_version"] == (
         ROUND74_REALIZED_METRICS_SCHEMA_VERSION

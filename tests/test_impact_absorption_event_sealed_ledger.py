@@ -628,9 +628,15 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
             action_selection=_selection(),
             probability_calibration=_calibration(),
             pretest_policy_path=tmp_path / "missing-policy.json",
-            ai_manifest_sha256=("a" * 64,),
-            ai_review_provider=lambda **_kwargs: {"a" * 64: ()},
-            ai_execution_replay_provider=lambda **_kwargs: {"a" * 64: ()},
+            ai_manifest_sha256=("a" * 64, "b" * 64),
+            ai_review_provider=lambda **_kwargs: {
+                "a" * 64: (),
+                "b" * 64: (),
+            },
+            ai_execution_replay_provider=lambda **_kwargs: {
+                "a" * 64: (),
+                "b" * 64: (),
+            },
             ledger=ledger,
             compute_backend="cpu",
         )
@@ -640,7 +646,7 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
         ledger.reserve(
             test_batches=(batch,),
             action_selection=_selection(),
-            ai_manifest_sha256=("a" * 64,),
+            ai_manifest_sha256=("a" * 64, "b" * 64),
         )
 
 
@@ -656,7 +662,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         probability_calibration_sha256=calibration.calibration_sha256,
     )
     selection.validate()
-    manifest = "c" * 64
+    manifests = ("c" * 64, "e" * 64)
     policy = {
         "policy_sha256": selection.pretest_policy_sha256,
         "model_artifact": {"sha256": "d" * 64},
@@ -672,14 +678,18 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         lambda _path: (_Model(), policy),
     )
 
-    reviews = list(
-        _reviews(
-            batch,
-            calibration,
-            selection,
-            manifest=manifest,
+    reviews_by_manifest = {
+        manifest: list(
+            _reviews(
+                batch,
+                calibration,
+                selection,
+                manifest=manifest,
+            )
         )
-    )
+        for manifest in manifests
+    }
+    reviews = reviews_by_manifest[manifests[0]]
     reviews[0] = replace(
         reviews[0],
         runtime_elapsed_ns=1_000_001,
@@ -688,10 +698,13 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         size_multiplier_bps=0,
     )
     reviews[0].validate()
-    execution_replays = _execution_replays(
-        tuple(reviews),
-        partition_sha256=batch.partition_sha256,
-    )
+    execution_replays_by_manifest = {
+        manifest: _execution_replays(
+            tuple(model_reviews),
+            partition_sha256=batch.partition_sha256,
+        )
+        for manifest, model_reviews in reviews_by_manifest.items()
+    }
     provider_order: list[str] = []
 
     def load_test_batches(
@@ -709,7 +722,10 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     ) -> Mapping[str, tuple[Round74AIPairedReviewEvidence, ...]]:
         assert ledger.claim_matches(claim, required_status="reserved")
         provider_order.append("review")
-        return {manifest: tuple(reviews)}
+        return {
+            manifest: tuple(model_reviews)
+            for manifest, model_reviews in reviews_by_manifest.items()
+        }
 
     def replay_provider(
         *,
@@ -720,9 +736,9 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         ],
     ) -> Mapping[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
         assert ledger.claim_matches(claim, required_status="reserved")
-        assert tuple(instructions_by_manifest) == (manifest,)
+        assert tuple(instructions_by_manifest) == manifests
         provider_order.append("replay")
-        return {manifest: execution_replays}
+        return execution_replays_by_manifest
 
     outcome = evaluate_round74_sealed_once(
         build_round74_sealed_dataset_identity((batch,)),
@@ -730,7 +746,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         action_selection=selection,
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "policy.json",
-        ai_manifest_sha256=(manifest,),
+        ai_manifest_sha256=manifests,
         ai_review_provider=review_provider,
         ai_execution_replay_provider=replay_provider,
         ledger=ledger,
@@ -743,6 +759,15 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert outcome.report.qualified_configuration == ("ml_baseline",)
     assert outcome.report.baseline_metrics.executed_trades == 24
     assert outcome.report.baseline_metrics.financial_gate_passed
+    assert len(outcome.report.ai_overlays) == 2
+    with pytest.raises(ValueError, match="sealed evaluation report differs"):
+        replace(
+            outcome.report,
+            ai_overlays=(
+                outcome.report.ai_overlays[0],
+                outcome.report.ai_overlays[0],
+            ),
+        ).validate()
     assert outcome.report.predictive_diagnostics.eligible_action_targets == (
         24
         * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
@@ -781,6 +806,30 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert instructions[0].pre_replay_status == "replay_required"
     assert instructions[0].requested_size_multiplier_bps == 10_000
     assert not instructions[0].same_entry_latency_eligible
+
+
+def test_sealed_evaluator_rejects_incomplete_ai_family_before_reservation(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "sealed.sqlite3"
+    ledger = Round74SealedEvaluationLedger(path)
+    batch = _test_batch()
+
+    with pytest.raises(ValueError, match="exact two-model AI family"):
+        evaluate_round74_sealed_once(
+            build_round74_sealed_dataset_identity((batch,)),
+            test_batch_loader=lambda **_kwargs: (batch,),
+            action_selection=_selection(),
+            probability_calibration=_calibration(),
+            pretest_policy_path=tmp_path / "policy.json",
+            ai_manifest_sha256=("a" * 64,),
+            ai_review_provider=lambda **_kwargs: {},
+            ai_execution_replay_provider=lambda **_kwargs: {},
+            ledger=ledger,
+            compute_backend="cpu",
+        )
+
+    assert not path.exists()
 
 
 def test_sealed_financial_gate_rejects_future_censored_selected_action() -> None:
