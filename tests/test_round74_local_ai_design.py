@@ -72,6 +72,13 @@ from simple_ai_trading.impact_absorption_exchange_info_evidence import (
 from simple_ai_trading.impact_absorption_target_assembly import (
     ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_model import (
+    ROUND74_EVENT_MODEL_CANDIDATES,
+    ROUND74_EVENT_MODEL_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_training import (
+    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -80,7 +87,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v29.json"
+    / "round-074-local-ai-review-design-v30.json"
 )
 
 
@@ -118,6 +125,8 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "review_preparation",
         "worker",
         "runtime",
+        "event_model",
+        "event_training",
     ):
         assert (
             source[f"{label}_sha256"]
@@ -204,6 +213,18 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         source["execution_calibration_schema_version"]
         == ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION
     )
+    assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
+    assert (
+        source["event_training_schema_version"] == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
+    )
+    model_design_path = REPOSITORY / source["event_model_design_path"]
+    assert source["event_model_design_file_sha256"] == hashlib.sha256(
+        model_design_path.read_bytes()
+    ).hexdigest()
+    model_design = json.loads(model_design_path.read_text(encoding="utf-8"))
+    model_design_claimed = model_design.pop("design_sha256")
+    assert model_design_claimed == _canonical_sha256(model_design)
+    assert model_design_claimed == source["event_model_design_sha256"]
     market = artifact["market_evidence_binding"]
     exchange_path = REPOSITORY / market["exchange_info_path"]
     assert market["exchange_info_file_sha256"] == hashlib.sha256(
@@ -235,6 +256,27 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         funding["scope"]["capture_run_may_be_used_for_financial_evaluation"]
         is False
     )
+    compute = artifact["model_compute_evidence_binding"]
+    compute_path = REPOSITORY / compute["path"]
+    assert compute["file_sha256"] == hashlib.sha256(
+        compute_path.read_bytes()
+    ).hexdigest()
+    compute_evidence = json.loads(compute_path.read_text(encoding="utf-8"))
+    compute_claimed = compute_evidence.pop("artifact_sha256")
+    assert compute_claimed == _canonical_sha256(compute_evidence)
+    assert compute_claimed == compute["artifact_sha256"]
+    assert compute["candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert compute["fresh_process_execution_count"] == 2
+    assert compute["peer_update_count"] == 9
+    assert compute["accelerated_backend"] == "directml"
+    assert compute["warning_count_per_execution"] == 0
+    assert compute["cpu_fallback_warning_count_per_execution"] == 0
+    assert compute["constructed_tensor_compute_only"] is True
+    assert compute["real_market_events_used"] is False
+    assert compute["candidate_loss_has_financial_meaning"] is False
+    assert compute["financial_edge_tested"] is False
+    assert compute["profitability_claim"] is False
+    assert compute["ai_inference_exercised"] is False
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -254,6 +296,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["ai_prompt_summary_values_per_feature"] == 4
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
+    assert architecture["ml_candidate_panel_includes_linear_microstructure_control"] is True
+    assert architecture["ai_receives_only_the_preselected_target_free_ml_candidate"] is True
+    assert architecture["ai_may_choose_the_ml_candidate_architecture"] is False
     assert (
         architecture["calibrated_probability_selection_uses_equal_capture_run_weights"]
         is True
@@ -568,6 +613,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         assert status[key] is False
     assert status["candidate_weights_downloaded"] is True
     assert status["candidate_manifest_hash_verified"] is True
+    assert status["current_three_candidate_ml_compute_preflight_completed"] is True
+    assert status["current_three_candidate_ml_market_training_completed"] is False
     assert status["isolated_worker_implemented"] is True
     assert status["fail_closed_parent_runtime_implemented"] is True
     assert status["causal_calibrated_bridge_implemented"] is True

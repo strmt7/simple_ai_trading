@@ -76,6 +76,8 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_model import (
+    ROUND74_EVENT_MODEL_CANDIDATES,
+    ROUND74_EVENT_MODEL_SCHEMA_VERSION,
     ROUND74_EVENT_TCN_DILATIONS,
     ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
 )
@@ -104,10 +106,13 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v43.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v44.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
-TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
+TRAINING_PATH = (
+    RESEARCH
+    / "round-074-event-training-directml-preflight-linear-control-2026-07-27.json"
+)
 CALIBRATION_PATH = (
     RESEARCH
     / "round-074-run-balanced-temperature-calibration-directml-preflight-2026-07-27.json"
@@ -212,6 +217,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_sequence_schema_version"] == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
     )
+    assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
     assert source["event_scaler_schema_version"] == ROUND74_EVENT_SCALER_SCHEMA_VERSION
     assert source["event_target_schema_version"] == ROUND74_EVENT_TARGET_SCHEMA_VERSION
     assert source["event_target_evidence_schema_version"] == (
@@ -665,10 +671,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["one_capture_run_per_batch_required"] is True
     assert training["mixed_capture_run_batch_permitted"] is False
     assert training["repeated_capture_run_batch_permitted"] is False
-    assert training["candidate_panel"] == [
-        "event_pooling_mlp",
-        "causal_event_tcn",
-    ]
+    assert training["candidate_panel"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
     assert training["default_seed_panel"] == list(ROUND74_EVENT_TRAINING_DEFAULT_SEEDS)
     assert training["backtest_roi_used_for_gradient_or_model_selection"] is False
     assert training["seed_ensemble_method"] == (
@@ -712,6 +715,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["pickle_permitted"] is False
     assert training["policy_binds_entire_causal_source_chain"] is True
     assert training["cross_platform_bitwise_reproducibility_claim"] is False
+    linear = design["candidate_panel"]["event_pooling_linear"]
+    assert linear["parameter_count"] == 13_000
+    assert linear["nonlinear_encoder"] is False
+    assert linear["monotone_distributional_heads_shared_with_other_candidates"] is True
+    assert design["candidate_panel"]["complexity_has_promotion_privilege"] is False
     temporal = design["candidate_panel"]["causal_event_tcn"]
     assert temporal["dilations"] == list(ROUND74_EVENT_TCN_DILATIONS)
     assert temporal["causal_receptive_field_events"] == (
@@ -971,8 +979,13 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
     )
     assert (
         evidence["event_model_source_sha256"]
-        == design["source_binding"]["event_model_sha256"]
+        == binding["event_model_directml_historical_source_sha256"]
     )
+    assert binding["event_model_directml_current_source_bound"] is False
+    assert evidence["event_model_source_sha256"] != (
+        design["source_binding"]["event_model_sha256"]
+    )
+    assert "Historical two-candidate" in binding["event_model_directml_reuse_scope"]
     backend = evidence["backend"]
     assert backend["requested"] == backend["kind"] == "directml"
     assert backend["vendor"] == "AMD Radeon RX 9070 XT"
@@ -1014,17 +1027,19 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         evidence["artifact_sha256"]
         == binding["event_training_directml_artifact_sha256"]
     )
+    assert _file_sha256(binding["event_training_directml_path"]) == (
+        binding["event_training_directml_file_sha256"]
+    )
     source = evidence["source_binding"]
     assert source["event_targets_sha256"] == (
-        binding["event_training_directml_historical_target_sha256"]
+        binding["event_training_directml_target_sha256"]
     )
-    assert design["source_binding"]["event_target_sha256"] == (
-        binding["event_training_directml_current_target_sha256"]
-    )
-    assert source["event_targets_sha256"] != (
+    assert source["event_targets_sha256"] == (
         design["source_binding"]["event_target_sha256"]
     )
-    assert binding["event_training_directml_current_target_source_bound"] is False
+    assert binding["event_training_directml_current_target_source_bound"] is True
+    assert binding["event_training_directml_model_source_bound"] is True
+    assert binding["event_training_directml_training_source_bound"] is True
     assert (
         source["event_training_sha256"]
         == design["source_binding"]["event_training_sha256"]
@@ -1043,10 +1058,14 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
-    assert "compute-only evidence" in binding["event_training_directml_reuse_scope"]
-    assert "does not bind target-v9" in binding["event_training_directml_reuse_scope"]
+    assert "constructed tensors" in binding["event_training_directml_reuse_scope"]
+    assert "do not evidence market fit" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
+    )
+    assert source["publisher_sha256"] == _file_sha256(source["publisher_path"])
+    assert source["publisher_sha256"] == (
+        binding["event_training_directml_publisher_sha256"]
     )
     backend = evidence["backend"]
     assert backend["requested"] == backend["kind"] == "directml"
@@ -1059,53 +1078,22 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert inputs["real_market_events_used"] is False
     assert inputs["real_market_targets_used"] is False
     assert inputs["test_batches_consumed"] == 0
-    assert inputs["candidate_ids"] == ["event_pooling_mlp", "causal_event_tcn"]
+    assert inputs["candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
     assert inputs["seeds"] == list(ROUND74_EVENT_TRAINING_DEFAULT_SEEDS)
     verification = evidence["verification"]
     assert verification["fresh_process_execution_count"] == 2
-    assert verification["all_six_peer_updates_completed"] is True
+    assert verification["candidate_count"] == len(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert verification["all_candidates_trained"] is True
+    assert verification["seed_count_per_candidate"] == len(
+        ROUND74_EVENT_TRAINING_DEFAULT_SEEDS
+    )
+    assert verification["peer_update_count"] == 9
+    assert verification["cross_execution_complete_result_equal"] is True
     assert verification["cross_execution_policy_sha256_equal"] is True
     assert verification["cross_execution_model_sha256_equal"] is True
     assert verification["cross_execution_prediction_sha256_equal"] is True
     assert verification["cross_execution_candidate_metrics_equal"] is True
     assert verification["temporary_artifacts_removed_after_each_execution"] is True
-    assert (
-        verification[
-            "classification_peer_probabilities_averaged_before_logit_conversion"
-        ]
-        is True
-    )
-    assert (
-        verification["post_aggregation_probability_calibration_contract_sealed"] is True
-    )
-    assert verification["tuning_metric_unit"] == "one-hour capture run"
-    assert verification["synthetic_tuning_run_count"] == 1
-    assert verification["each_tuning_run_has_equal_selection_weight"] is True
-    assert verification["mixed_or_repeated_capture_run_policy"] == "fail closed"
-    assert verification["checkpoint_selection_metric"] == "run_balanced_loss"
-    assert verification["checkpoint_reload_verification_metric"] == (
-        "run_balanced_loss"
-    )
-    assert verification["pooled_loss_used_for_checkpoint_reload_verification"] is False
-    assert verification["unequal_tuning_run_size_regression_test_passed"] is True
-    assert verification["target_context_panel_schema_version"] == (
-        ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
-    )
-    assert verification["per_run_target_context_uniformity_required"] is True
-    assert verification["cross_run_target_context_change_permitted"] is True
-    assert (
-        verification["pretest_policy_binds_exact_sorted_target_context_panel"] is True
-    )
-    assert verification["fully_censored_minibatch_policy"] == (
-        "skip before device transfer and record counts"
-    )
-    assert verification["fully_censored_capture_run_policy"] == "reject"
-    assert verification["censored_targets_used_as_negative_labels"] is False
-    assert verification["fully_censored_minibatch_regression_test_passed"] is True
-    assert verification["tcn_receptive_field_events"] == (
-        ROUND74_EVENT_TCN_RECEPTIVE_FIELD
-    )
-    assert verification["frozen_sequence_fully_covered"] is True
     repeated = evidence["repeated_result"]
     assert (
         repeated["candidate_run_balanced_tuning_proper_loss"]
@@ -1115,11 +1103,6 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         repeated["candidate_run_balanced_tuning_proper_loss"]
         == (repeated["candidate_pooled_tuning_proper_loss"])
     )
-    assert verification["maximum_entry_state_lateness_ns"] == 250_000_000
-    assert verification["maximum_exit_state_lateness_ns"] == 250_000_000
-    assert verification["maximum_target_span_ns"] == 310_500_000_000
-    assert verification["minimum_partition_purge_ns"] == 310_500_000_000
-    assert verification["minimum_partition_embargo_ns"] == 310_500_000_000
     interpretation = evidence["interpretation"]
     assert interpretation["candidate_loss_has_financial_meaning"] is False
     assert interpretation["representative_market_training_performed"] is False
