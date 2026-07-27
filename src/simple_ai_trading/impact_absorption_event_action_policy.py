@@ -874,6 +874,60 @@ class Round74ActionTraceMetrics:
         self.validate()
         return {key: value for key, value in self.__dict__.items()}
 
+    @classmethod
+    def from_dict(cls, value: Mapping[str, object]) -> Round74ActionTraceMetrics:
+        payload = dict(value)
+        if set(payload) != set(cls.__dataclass_fields__):
+            raise ValueError("Round 74 action trace metrics payload differs")
+
+        def integer(name: str) -> int:
+            selected = payload[name]
+            if isinstance(selected, bool) or not isinstance(selected, int):
+                raise ValueError("Round 74 action trace metrics integer differs")
+            return selected
+
+        def number(name: str) -> float:
+            selected = payload[name]
+            if (
+                isinstance(selected, bool)
+                or not isinstance(selected, (int, float))
+                or not math.isfinite(float(selected))
+            ):
+                raise ValueError("Round 74 action trace metrics number differs")
+            return float(selected)
+
+        profit_factor = payload["profit_factor"]
+        if profit_factor is not None:
+            profit_factor = number("profit_factor")
+        selected = cls(
+            trades=integer("trades"),
+            active_runs=integer("active_runs"),
+            distinct_symbols=integer("distinct_symbols"),
+            total_net_bps=number("total_net_bps"),
+            mean_run_net_bps=number("mean_run_net_bps"),
+            mean_net_bps=number("mean_net_bps"),
+            median_net_bps=number("median_net_bps"),
+            win_rate=number("win_rate"),
+            profit_factor=profit_factor,
+            maximum_drawdown_bps=number("maximum_drawdown_bps"),
+            gross_profit_bps=number("gross_profit_bps"),
+            gross_loss_bps=number("gross_loss_bps"),
+            worst_trade_bps=number("worst_trade_bps"),
+            mean_maximum_adverse_excursion_bps=number(
+                "mean_maximum_adverse_excursion_bps"
+            ),
+            mean_run_maximum_adverse_excursion_bps=number(
+                "mean_run_maximum_adverse_excursion_bps"
+            ),
+            adverse_selection_rate=number("adverse_selection_rate"),
+            profitable_run_ratio=number("profitable_run_ratio"),
+            maximum_symbol_trade_share=number("maximum_symbol_trade_share"),
+        )
+        selected.validate()
+        if _canonical_json(selected.as_dict()) != _canonical_json(payload):
+            raise ValueError("Round 74 action trace metrics encoding differs")
+        return selected
+
 
 @dataclass(frozen=True)
 class Round74ActionTrace:
@@ -1015,6 +1069,112 @@ class Round74ActionTrace:
             "portfolio_claim": False,
             "leverage_applied": False,
         }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, object]) -> Round74ActionTrace:
+        payload = dict(value)
+        expected_keys = {
+            "threshold_score",
+            "expected_run_ids",
+            "row_index",
+            "run_id",
+            "symbol",
+            "feature_row_sha256",
+            "horizon_seconds",
+            "side",
+            "entry_monotonic_ns",
+            "exit_monotonic_ns",
+            "net_payoff_bps",
+            "maximum_adverse_excursion_bps",
+            "adverse_selection",
+            "skipped_target_ineligible",
+            "skipped_same_symbol_overlap",
+            "metrics",
+            "replay_semantics",
+            "exact_target_entry_exit_times_used",
+            "drawdown_order",
+            "trading_authority",
+            "execution_claim",
+            "profitability_claim",
+            "portfolio_claim",
+            "leverage_applied",
+        }
+        if set(payload) != expected_keys:
+            raise ValueError("Round 74 action trace payload differs")
+
+        def sequence(name: str) -> list[object]:
+            selected = payload[name]
+            if not isinstance(selected, list):
+                raise ValueError("Round 74 action trace sequence differs")
+            return selected
+
+        def strings(name: str) -> tuple[str, ...]:
+            selected = sequence(name)
+            if any(not isinstance(item, str) for item in selected):
+                raise ValueError("Round 74 action trace string sequence differs")
+            return tuple(selected)
+
+        def integers(name: str) -> tuple[int, ...]:
+            selected = sequence(name)
+            if any(
+                isinstance(item, bool) or not isinstance(item, int) for item in selected
+            ):
+                raise ValueError("Round 74 action trace integer sequence differs")
+            return tuple(selected)
+
+        def numbers(name: str) -> tuple[float, ...]:
+            selected = sequence(name)
+            if any(
+                isinstance(item, bool)
+                or not isinstance(item, (int, float))
+                or not math.isfinite(float(item))
+                for item in selected
+            ):
+                raise ValueError("Round 74 action trace number sequence differs")
+            return tuple(float(item) for item in selected)
+
+        def integer(name: str) -> int:
+            selected = payload[name]
+            if isinstance(selected, bool) or not isinstance(selected, int):
+                raise ValueError("Round 74 action trace integer differs")
+            return selected
+
+        threshold = payload["threshold_score"]
+        metrics = payload["metrics"]
+        if (
+            isinstance(threshold, bool)
+            or not isinstance(threshold, (int, float))
+            or not math.isfinite(float(threshold))
+            or not isinstance(metrics, Mapping)
+        ):
+            raise ValueError("Round 74 action trace types differ")
+        selected = cls(
+            threshold_score=float(threshold),
+            expected_run_ids=strings("expected_run_ids"),
+            row_index=integers("row_index"),
+            run_id=strings("run_id"),
+            symbol=strings("symbol"),
+            feature_row_sha256=strings("feature_row_sha256"),
+            horizon_seconds=integers("horizon_seconds"),
+            side=integers("side"),
+            entry_monotonic_ns=integers("entry_monotonic_ns"),
+            exit_monotonic_ns=integers("exit_monotonic_ns"),
+            net_payoff_bps=numbers("net_payoff_bps"),
+            maximum_adverse_excursion_bps=numbers("maximum_adverse_excursion_bps"),
+            adverse_selection=integers("adverse_selection"),
+            skipped_target_ineligible=integer("skipped_target_ineligible"),
+            skipped_same_symbol_overlap=integer("skipped_same_symbol_overlap"),
+            metrics=Round74ActionTraceMetrics.from_dict(metrics),
+            trading_authority=payload["trading_authority"],
+            execution_claim=payload["execution_claim"],
+            profitability_claim=payload["profitability_claim"],
+            portfolio_claim=payload["portfolio_claim"],
+            leverage_applied=payload["leverage_applied"],
+        )
+        selected.validate()
+        if _canonical_json(selected.as_dict()) != _canonical_json(payload):
+            raise ValueError("Round 74 action trace policy differs")
+        return selected
 
 
 def _trace_metrics(
@@ -1437,6 +1597,57 @@ class Round74ActionThresholdEvaluation:
             "trace": self.trace.as_dict(),
         }
 
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74ActionThresholdEvaluation:
+        payload = dict(value)
+        expected_keys = {
+            "quantile",
+            "threshold_score",
+            "objective_bps",
+            "objective_semantics",
+            "accepted",
+            "rejection_reasons",
+            "trace",
+        }
+        if set(payload) != expected_keys:
+            raise ValueError("Round 74 action threshold payload differs")
+        trace = payload["trace"]
+        reasons = payload["rejection_reasons"]
+        accepted = payload["accepted"]
+        numbers = (
+            payload["quantile"],
+            payload["threshold_score"],
+            payload["objective_bps"],
+        )
+        if (
+            not isinstance(trace, Mapping)
+            or not isinstance(reasons, list)
+            or any(not isinstance(reason, str) for reason in reasons)
+            or not isinstance(accepted, bool)
+            or any(
+                isinstance(item, bool)
+                or not isinstance(item, (int, float))
+                or not math.isfinite(float(item))
+                for item in numbers
+            )
+        ):
+            raise ValueError("Round 74 action threshold types differ")
+        selected = cls(
+            quantile=float(numbers[0]),
+            threshold_score=float(numbers[1]),
+            objective_bps=float(numbers[2]),
+            accepted=accepted,
+            rejection_reasons=tuple(reasons),
+            trace=Round74ActionTrace.from_dict(trace),
+        )
+        selected.validate()
+        if _canonical_json(selected.as_dict()) != _canonical_json(payload):
+            raise ValueError("Round 74 action threshold policy differs")
+        return selected
+
 
 @dataclass(frozen=True)
 class Round74ActionPolicySelection:
@@ -1552,6 +1763,109 @@ class Round74ActionPolicySelection:
         if include_sha256:
             value["selection_sha256"] = _canonical_sha256(value)
         return value
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74ActionPolicySelection:
+        payload = dict(value)
+        claimed = payload.pop("selection_sha256", None)
+        if (
+            not isinstance(claimed, str)
+            or _SHA256.fullmatch(claimed) is None
+            or claimed != _canonical_sha256(payload)
+        ):
+            raise ValueError("Round 74 action policy digest differs")
+        expected_keys = {
+            "schema_version",
+            "profile",
+            "profile_spec",
+            "pretest_policy_sha256",
+            "probability_calibration_sha256",
+            "tuning_subpartition_sha256",
+            "target_batch_sha256",
+            "candidate_sha256",
+            "accepted",
+            "selected_quantile",
+            "selected_threshold_score",
+            "evaluations",
+            "rejection_reasons",
+            "selection_data_role",
+            "sealed_test_accessed",
+            "trading_authority",
+            "execution_claim",
+            "profitability_claim",
+            "portfolio_claim",
+            "leverage_applied",
+        }
+        if set(payload) != expected_keys:
+            raise ValueError("Round 74 action policy payload differs")
+
+        def strings(name: str) -> tuple[str, ...]:
+            values = payload[name]
+            if not isinstance(values, list) or any(
+                not isinstance(item, str) for item in values
+            ):
+                raise ValueError("Round 74 action policy sequence differs")
+            return tuple(values)
+
+        evaluations = payload["evaluations"]
+        reasons = payload["rejection_reasons"]
+        accepted = payload["accepted"]
+        if (
+            not isinstance(evaluations, list)
+            or any(not isinstance(item, Mapping) for item in evaluations)
+            or not isinstance(reasons, list)
+            or any(not isinstance(item, str) for item in reasons)
+            or not isinstance(accepted, bool)
+        ):
+            raise ValueError("Round 74 action policy types differ")
+
+        def optional_number(name: str) -> float | None:
+            value = payload[name]
+            if value is None:
+                return None
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+            ):
+                raise ValueError("Round 74 action policy number differs")
+            return float(value)
+
+        selected = cls(
+            profile=str(payload["profile"]),
+            pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
+            probability_calibration_sha256=str(
+                payload["probability_calibration_sha256"]
+            ),
+            tuning_subpartition_sha256=str(payload["tuning_subpartition_sha256"]),
+            target_batch_sha256=strings("target_batch_sha256"),
+            candidate_sha256=strings("candidate_sha256"),
+            accepted=accepted,
+            selected_quantile=optional_number("selected_quantile"),
+            selected_threshold_score=optional_number("selected_threshold_score"),
+            evaluations=tuple(
+                Round74ActionThresholdEvaluation.from_dict(item) for item in evaluations
+            ),
+            rejection_reasons=tuple(reasons),
+            schema_version=str(payload["schema_version"]),
+            sealed_test_accessed=payload["sealed_test_accessed"],
+            trading_authority=payload["trading_authority"],
+            execution_claim=payload["execution_claim"],
+            profitability_claim=payload["profitability_claim"],
+            portfolio_claim=payload["portfolio_claim"],
+            leverage_applied=payload["leverage_applied"],
+        )
+        selected.validate()
+        if _canonical_json(selected.as_dict(include_sha256=False)) != _canonical_json(
+            payload
+        ):
+            raise ValueError("Round 74 action policy contract differs")
+        if selected.selection_sha256 != claimed:
+            raise ValueError("Round 74 action policy identity differs")
+        return selected
 
 
 def _equal_run_score_threshold(

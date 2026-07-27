@@ -252,6 +252,65 @@ class Round74TemperatureFit:
             "calibrated_ece": self.calibrated_ece,
         }
 
+    @classmethod
+    def from_dict(cls, value: Mapping[str, object]) -> Round74TemperatureFit:
+        payload = dict(value)
+        expected_keys = {
+            "temperature",
+            "eligible_observations",
+            "positive_observations",
+            "calibration_runs",
+            "minimum_run_observations",
+            "maximum_run_observations",
+            "uncalibrated_run_balanced_nll",
+            "calibrated_run_balanced_nll",
+            "uncalibrated_nll",
+            "calibrated_nll",
+            "uncalibrated_brier",
+            "calibrated_brier",
+            "uncalibrated_ece",
+            "calibrated_ece",
+        }
+        if set(payload) != expected_keys:
+            raise ValueError("Round 74 temperature fit payload differs")
+
+        def integer(name: str) -> int:
+            selected = payload[name]
+            if isinstance(selected, bool) or not isinstance(selected, int):
+                raise ValueError("Round 74 temperature fit integer differs")
+            return selected
+
+        def number(name: str) -> float:
+            selected = payload[name]
+            if (
+                isinstance(selected, bool)
+                or not isinstance(selected, (int, float))
+                or not math.isfinite(float(selected))
+            ):
+                raise ValueError("Round 74 temperature fit number differs")
+            return float(selected)
+
+        selected = cls(
+            temperature=number("temperature"),
+            eligible_observations=integer("eligible_observations"),
+            positive_observations=integer("positive_observations"),
+            calibration_runs=integer("calibration_runs"),
+            minimum_run_observations=integer("minimum_run_observations"),
+            maximum_run_observations=integer("maximum_run_observations"),
+            uncalibrated_run_balanced_nll=number("uncalibrated_run_balanced_nll"),
+            calibrated_run_balanced_nll=number("calibrated_run_balanced_nll"),
+            uncalibrated_nll=number("uncalibrated_nll"),
+            calibrated_nll=number("calibrated_nll"),
+            uncalibrated_brier=number("uncalibrated_brier"),
+            calibrated_brier=number("calibrated_brier"),
+            uncalibrated_ece=number("uncalibrated_ece"),
+            calibrated_ece=number("calibrated_ece"),
+        )
+        selected.validate()
+        if _canonical_json(selected.as_dict()) != _canonical_json(payload):
+            raise ValueError("Round 74 temperature fit encoding differs")
+        return selected
+
 
 @dataclass(frozen=True)
 class Round74ProbabilityCalibration:
@@ -338,6 +397,80 @@ class Round74ProbabilityCalibration:
         if include_sha256:
             payload["calibration_sha256"] = _canonical_sha256(payload)
         return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74ProbabilityCalibration:
+        payload = dict(value)
+        claimed = payload.pop("calibration_sha256", None)
+        if not _is_sha256(claimed) or claimed != _canonical_sha256(payload):
+            raise ValueError("Round 74 probability calibration digest differs")
+        expected_keys = {
+            "schema_version",
+            "pretest_policy_sha256",
+            "tuning_subpartition_sha256",
+            "calibration_source_sha256",
+            "calibration_data_sha256",
+            "calibration_run_ids",
+            "calibration_row_run_ids_sha256",
+            "positive_payoff",
+            "adverse_selection",
+            "regime_unpredictability",
+            "backend_kind",
+            "backend_device",
+            "candidate_temperature_count",
+            "candidate_temperature_minimum",
+            "candidate_temperature_maximum",
+            "selection_objective",
+            "pooled_metrics_are_diagnostic_only",
+            "sealed_test_accessed",
+            "calibration_implies_financial_edge",
+        }
+        if set(payload) != expected_keys:
+            raise ValueError("Round 74 probability calibration payload differs")
+        run_ids = payload["calibration_run_ids"]
+        nested = (
+            payload["positive_payoff"],
+            payload["adverse_selection"],
+            payload["regime_unpredictability"],
+        )
+        if (
+            not isinstance(run_ids, list)
+            or any(not isinstance(item, str) for item in run_ids)
+            or any(not isinstance(item, Mapping) for item in nested)
+        ):
+            raise ValueError("Round 74 probability calibration types differ")
+        try:
+            selected = cls(
+                pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
+                tuning_subpartition_sha256=str(payload["tuning_subpartition_sha256"]),
+                calibration_source_sha256=str(payload["calibration_source_sha256"]),
+                calibration_data_sha256=str(payload["calibration_data_sha256"]),
+                calibration_run_ids=tuple(run_ids),
+                calibration_row_run_ids_sha256=str(
+                    payload["calibration_row_run_ids_sha256"]
+                ),
+                positive_payoff=Round74TemperatureFit.from_dict(nested[0]),
+                adverse_selection=Round74TemperatureFit.from_dict(nested[1]),
+                regime_unpredictability=Round74TemperatureFit.from_dict(nested[2]),
+                backend_kind=str(payload["backend_kind"]),
+                backend_device=str(payload["backend_device"]),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 probability calibration payload differs"
+            ) from exc
+        selected.validate()
+        if _canonical_json(selected.as_dict(include_sha256=False)) != _canonical_json(
+            payload
+        ):
+            raise ValueError("Round 74 probability calibration policy differs")
+        if selected.calibration_sha256 != claimed:
+            raise ValueError("Round 74 probability calibration identity differs")
+        return selected
 
 
 def _validate_binary_panel(

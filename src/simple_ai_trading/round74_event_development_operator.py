@@ -46,7 +46,7 @@ from .storage import write_bytes_atomic
 
 ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v1"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v1"
+    "round-074-development-policy-bundle-v2"
 )
 
 _SHA256 = "0123456789abcdef"
@@ -78,6 +78,36 @@ def _module_sha256(filename: str) -> str:
     payload = (Path(__file__).parent / filename).read_bytes()
     normalized = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(normalized).hexdigest()
+
+
+def _current_source_sha256() -> dict[str, str]:
+    return {
+        "event_model_module_sha256": _module_sha256("impact_absorption_event_model.py"),
+        "calibration_module_sha256": _module_sha256(
+            "impact_absorption_event_calibration.py"
+        ),
+        "action_policy_module_sha256": _module_sha256(
+            "impact_absorption_event_action_policy.py"
+        ),
+        "development_operator_module_sha256": _module_sha256(
+            "round74_event_development_operator.py"
+        ),
+    }
+
+
+def _reject_duplicate_keys(
+    pairs: list[tuple[str, object]],
+) -> dict[str, object]:
+    selected: dict[str, object] = {}
+    for key, value in pairs:
+        if key in selected:
+            raise ValueError(f"Round 74 development duplicate JSON key: {key}")
+        selected[key] = value
+    return selected
+
+
+def _reject_nonfinite_json(value: str) -> object:
+    raise ValueError(f"Round 74 development non-finite JSON value: {value}")
 
 
 def _to_device_array(value: np.ndarray, device: object) -> torch.Tensor:
@@ -178,6 +208,10 @@ class Round74DevelopmentPolicyBundle:
     backend_device: str
     backend_vendor: str
     warning_count: int
+    event_model_module_sha256: str
+    calibration_module_sha256: str
+    action_policy_module_sha256: str
+    development_operator_module_sha256: str
     schema_version: str = ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -188,6 +222,10 @@ class Round74DevelopmentPolicyBundle:
             *self.model_selection_batch_sha256,
             *self.calibration_batch_sha256,
             *self.policy_selection_batch_sha256,
+            self.event_model_module_sha256,
+            self.calibration_module_sha256,
+            self.action_policy_module_sha256,
+            self.development_operator_module_sha256,
         )
         if (
             self.schema_version != ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
@@ -212,6 +250,15 @@ class Round74DevelopmentPolicyBundle:
             or self.warning_count < 0
         ):
             raise ValueError("Round 74 development policy bundle differs")
+        if {
+            "event_model_module_sha256": self.event_model_module_sha256,
+            "calibration_module_sha256": self.calibration_module_sha256,
+            "action_policy_module_sha256": self.action_policy_module_sha256,
+            "development_operator_module_sha256": (
+                self.development_operator_module_sha256
+            ),
+        } != _current_source_sha256():
+            raise ValueError("Round 74 development policy source identity differs")
         self.probability_calibration.validate()
         if (
             self.probability_calibration.pretest_policy_sha256
@@ -257,6 +304,14 @@ class Round74DevelopmentPolicyBundle:
                 "vendor": self.backend_vendor,
                 "warning_count": self.warning_count,
             },
+            "source": {
+                "event_model_module_sha256": self.event_model_module_sha256,
+                "calibration_module_sha256": self.calibration_module_sha256,
+                "action_policy_module_sha256": self.action_policy_module_sha256,
+                "development_operator_module_sha256": (
+                    self.development_operator_module_sha256
+                ),
+            },
             "authority": {
                 "representative_market_training_completed": True,
                 "sealed_test_accessed": False,
@@ -271,6 +326,93 @@ class Round74DevelopmentPolicyBundle:
         if include_sha256:
             value["bundle_sha256"] = _canonical_sha256(value)
         return value
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74DevelopmentPolicyBundle:
+        payload = dict(value)
+        claimed = payload.pop("bundle_sha256", None)
+        if not _is_sha256(claimed) or claimed != _canonical_sha256(payload):
+            raise ValueError("Round 74 development policy digest differs")
+        expected_keys = {
+            "schema_version",
+            "operator_schema_version",
+            "pretest_policy_sha256",
+            "pretest_model_sha256",
+            "tuning_subpartition_sha256",
+            "model_selection_batch_sha256",
+            "calibration_batch_sha256",
+            "policy_selection_batch_sha256",
+            "probability_calibration",
+            "action_policies",
+            "backend",
+            "source",
+            "authority",
+        }
+        if set(payload) != expected_keys:
+            raise ValueError("Round 74 development policy payload differs")
+
+        def strings(name: str) -> tuple[str, ...]:
+            values = payload[name]
+            if not isinstance(values, list) or any(
+                not isinstance(item, str) for item in values
+            ):
+                raise ValueError("Round 74 development policy sequence differs")
+            return tuple(values)
+
+        calibration = payload["probability_calibration"]
+        policies = payload["action_policies"]
+        backend = payload["backend"]
+        source = payload["source"]
+        if (
+            not isinstance(calibration, Mapping)
+            or not isinstance(policies, list)
+            or any(not isinstance(item, Mapping) for item in policies)
+            or not isinstance(backend, Mapping)
+            or not isinstance(source, Mapping)
+        ):
+            raise ValueError("Round 74 development policy types differ")
+        warning_count = backend.get("warning_count")
+        if isinstance(warning_count, bool) or not isinstance(warning_count, int):
+            raise ValueError("Round 74 development warning count differs")
+        try:
+            selected = cls(
+                pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
+                pretest_model_sha256=str(payload["pretest_model_sha256"]),
+                tuning_subpartition_sha256=str(payload["tuning_subpartition_sha256"]),
+                model_selection_batch_sha256=strings("model_selection_batch_sha256"),
+                calibration_batch_sha256=strings("calibration_batch_sha256"),
+                policy_selection_batch_sha256=strings("policy_selection_batch_sha256"),
+                probability_calibration=Round74ProbabilityCalibration.from_dict(
+                    calibration
+                ),
+                action_policies=tuple(
+                    Round74ActionPolicySelection.from_dict(item) for item in policies
+                ),
+                backend_kind=str(backend["kind"]),
+                backend_device=str(backend["device"]),
+                backend_vendor=str(backend["vendor"]),
+                warning_count=warning_count,
+                event_model_module_sha256=str(source["event_model_module_sha256"]),
+                calibration_module_sha256=str(source["calibration_module_sha256"]),
+                action_policy_module_sha256=str(source["action_policy_module_sha256"]),
+                development_operator_module_sha256=str(
+                    source["development_operator_module_sha256"]
+                ),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("Round 74 development policy payload differs") from exc
+        selected.validate()
+        if _canonical_bytes(selected.as_dict(include_sha256=False)) != _canonical_bytes(
+            payload
+        ):
+            raise ValueError("Round 74 development policy contract differs")
+        if selected.bundle_sha256 != claimed:
+            raise ValueError("Round 74 development policy identity differs")
+        return selected
 
 
 @dataclass(frozen=True)
@@ -434,6 +576,7 @@ def calibrate_and_select_round74_development_policy(
     )
     if fallback:
         raise RuntimeError(f"Round 74 development used CPU fallback: {fallback}")
+    source_sha256 = _current_source_sha256()
     result = Round74DevelopmentPolicyBundle(
         pretest_policy_sha256=str(policy["policy_sha256"]),
         pretest_model_sha256=str(artifact["sha256"]),
@@ -453,6 +596,7 @@ def calibrate_and_select_round74_development_policy(
         backend_device=str(device),
         backend_vendor=backend.vendor,
         warning_count=len(warning_messages),
+        **source_sha256,
     )
     result.validate()
     return result
@@ -509,9 +653,8 @@ def train_calibrate_and_select_round74_development_policy(
             raise FileExistsError("Round 74 immutable development bundle differs")
     else:
         write_bytes_atomic(path, payload)
-    persisted = json.loads(path.read_text(encoding="ascii"))
-    claimed = persisted.pop("bundle_sha256", None)
-    if claimed != _canonical_sha256(persisted):
+    persisted = load_round74_development_policy_bundle(path)
+    if persisted.as_dict() != bundle.as_dict():
         raise RuntimeError("Round 74 persisted development bundle differs")
     return Round74DevelopmentPolicyArtifact(
         bundle_sha256=bundle.bundle_sha256,
@@ -521,11 +664,38 @@ def train_calibrate_and_select_round74_development_policy(
     )
 
 
+def load_round74_development_policy_bundle(
+    path: str | Path,
+) -> Round74DevelopmentPolicyBundle:
+    """Load one canonical, source-bound development bundle and fail closed."""
+
+    selected_path = Path(path)
+    try:
+        raw = selected_path.read_bytes()
+        value = json.loads(
+            raw.decode("ascii"),
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_constant=_reject_nonfinite_json,
+        )
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise ValueError("Round 74 development bundle JSON differs") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("Round 74 development bundle root differs")
+    bundle = Round74DevelopmentPolicyBundle.from_dict(value)
+    expected_name = f"round74-development-policy-{bundle.bundle_sha256}.json"
+    if selected_path.name != expected_name:
+        raise ValueError("Round 74 development bundle filename differs")
+    if raw != _canonical_bytes(bundle.as_dict()) + b"\n":
+        raise ValueError("Round 74 development bundle encoding differs")
+    return bundle
+
+
 __all__ = [
     "ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION",
     "ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION",
     "Round74DevelopmentPolicyArtifact",
     "Round74DevelopmentPolicyBundle",
     "calibrate_and_select_round74_development_policy",
+    "load_round74_development_policy_bundle",
     "train_calibrate_and_select_round74_development_policy",
 ]
