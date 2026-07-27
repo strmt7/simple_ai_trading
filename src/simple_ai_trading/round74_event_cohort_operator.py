@@ -45,10 +45,10 @@ from .round74_active_adjudication import (
 
 
 ROUND74_EVENT_COHORT_PLAN_RELATIVE_PATH = Path(
-    "docs/model-research/action-value/round-074-event-cohort-plan-v4-r2.json"
+    "docs/model-research/action-value/round-074-event-cohort-plan-v5.json"
 )
 ROUND74_EVENT_COHORT_PLAN_SHA256 = (
-    "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2"
+    "4373c432bcabb10071a0e60a90bf7ac99299139f223eb2a5afff920e6b78deb4"
 )
 ROUND74_ACTIVE_ADJUDICATION_SHA256 = (
     "fef501a34da6b36bb004b1731b9751a1cdb52ce649fdc4fa6579640c7af962a7"
