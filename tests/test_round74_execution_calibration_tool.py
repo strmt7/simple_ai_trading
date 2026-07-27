@@ -51,6 +51,20 @@ class _FakeTransport:
             "schema_version": ("round-074-execution-exchange-information-v1"),
             "symbol": symbol,
             "source_payload_sha256": "1" * 64,
+            "rate_limits": [
+                {
+                    "rateLimitType": "REQUEST_WEIGHT",
+                    "interval": "MINUTE",
+                    "intervalNum": 1,
+                    "limit": 2400,
+                },
+                {
+                    "rateLimitType": "ORDERS",
+                    "interval": "MINUTE",
+                    "intervalNum": 1,
+                    "limit": 1200,
+                },
+            ],
             "symbol_payload": {
                 "symbol": symbol,
                 "pair": symbol,
@@ -397,6 +411,8 @@ def test_capture_writes_admitted_pair_artifact(
     assert payload["recovery_before_capture"]["complete"] is True
     assert payload["sizing"]["quantity"] == "0.99"
     assert payload["sizing"]["reference_quote_notional"] == "99.0099"
+    assert payload["exchange_rate_limits"][0]["limit"] == 2400
+    assert payload["rate_limit_preflight"]["capture_blocked"] is False
     assert payload["result"]["evidence_admitted"] is True
 
 
@@ -517,3 +533,39 @@ def test_capture_slot_is_cryptographically_bound_to_plan(
     assert status["total_slot_count"] == 900
     assert status["next_slot"]["ordinal"] == 1
     assert status["network_accessed"] is False
+
+
+def test_capture_blocks_at_eighty_percent_request_weight(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    class _SaturatedTransport(_FakeTransport):
+        def __init__(self, **kwargs: object) -> None:
+            super().__init__(**kwargs)
+            self.last_rate_limit_headers = {"x-mbx-used-weight-1m": "1920"}
+
+    _install_ephemeral_credentials(monkeypatch)
+    monkeypatch.setattr(
+        tool,
+        "Round74BinanceTestnetExecutionTransport",
+        _SaturatedTransport,
+    )
+    monkeypatch.setattr(
+        tool,
+        "recover_round74_execution_calibration",
+        lambda **_kwargs: _RecoveryResult(complete=True),
+    )
+
+    def _unexpected_capture(**_kwargs) -> _CaptureResult:
+        raise AssertionError("capture reached after rate-limit block")
+
+    monkeypatch.setattr(
+        tool,
+        "capture_round74_execution_calibration_pair",
+        _unexpected_capture,
+    )
+
+    with pytest.raises(RuntimeError, match="rate-limit utilization"):
+        command_capture(_network_args(tmp_path, command="capture"))
+
+    assert not (tmp_path / "artifacts").exists()

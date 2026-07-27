@@ -43,6 +43,7 @@ from simple_ai_trading.round74_execution_calibration_transport import (
 
 
 ROUND74_EXECUTION_TOOL_SCHEMA_VERSION = "round-074-execution-calibration-tool-v1"
+ROUND74_EXECUTION_RATE_LIMIT_START_FRACTION = Decimal("0.80")
 API_KEY_ENV = "SIMPLE_AI_TRADING_BINANCE_TESTNET_API_KEY"
 API_SECRET_ENV = "SIMPLE_AI_TRADING_BINANCE_TESTNET_API_SECRET"
 _SOURCE_MODULES = (
@@ -78,6 +79,94 @@ def _decimal(value: object, *, label: str) -> Decimal:
     if not selected.is_finite() or selected <= 0:
         raise ValueError(f"{label} must be a positive decimal")
     return selected
+
+
+def _rate_limit_preflight(
+    *,
+    definitions: object,
+    headers: dict[str, str],
+) -> dict[str, object]:
+    if not isinstance(definitions, list):
+        raise ValueError("rate limit definitions differ")
+    interval_suffix = {
+        "SECOND": "s",
+        "MINUTE": "m",
+        "HOUR": "h",
+        "DAY": "d",
+    }
+    observations: list[dict[str, object]] = []
+    request_weight_observed = False
+    blocked = "retry-after" in headers
+    for raw in definitions:
+        if not isinstance(raw, dict):
+            raise ValueError("rate limit definition differs")
+        limit_type = str(raw.get("rateLimitType", ""))
+        if limit_type not in {"REQUEST_WEIGHT", "ORDERS"}:
+            continue
+        interval = str(raw.get("interval", ""))
+        suffix = interval_suffix.get(interval)
+        interval_number = raw.get("intervalNum")
+        limit = raw.get("limit")
+        if (
+            suffix is None
+            or isinstance(interval_number, bool)
+            or not isinstance(interval_number, int)
+            or interval_number <= 0
+            or isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or limit <= 0
+        ):
+            raise ValueError("rate limit definition differs")
+        prefix = (
+            "x-mbx-used-weight-"
+            if limit_type == "REQUEST_WEIGHT"
+            else "x-mbx-order-count-"
+        )
+        header = f"{prefix}{interval_number}{suffix}"
+        raw_count = headers.get(header)
+        observed = raw_count is not None
+        count: int | None = None
+        utilization: str | None = None
+        at_or_above_start_limit = False
+        if observed:
+            try:
+                count = int(str(raw_count))
+            except ValueError as exc:
+                raise ValueError("rate limit header differs") from exc
+            if count < 0:
+                raise ValueError("rate limit header differs")
+            ratio = Decimal(count) / Decimal(limit)
+            utilization = format(ratio, "f")
+            at_or_above_start_limit = (
+                ratio >= ROUND74_EXECUTION_RATE_LIMIT_START_FRACTION
+            )
+            blocked = blocked or at_or_above_start_limit
+            if limit_type == "REQUEST_WEIGHT":
+                request_weight_observed = True
+        observations.append(
+            {
+                "rate_limit_type": limit_type,
+                "interval": interval,
+                "interval_number": interval_number,
+                "limit": limit,
+                "header": header,
+                "observed": observed,
+                "count": count,
+                "utilization_fraction": utilization,
+                "at_or_above_start_limit": at_or_above_start_limit,
+            }
+        )
+    if not request_weight_observed:
+        raise RuntimeError("request-weight utilization is unavailable; capture blocked")
+    return {
+        "start_limit_fraction": format(
+            ROUND74_EXECUTION_RATE_LIMIT_START_FRACTION,
+            "f",
+        ),
+        "retry_after_observed": "retry-after" in headers,
+        "observations": observations,
+        "capture_blocked": blocked,
+    }
 
 
 def _source_hashes() -> dict[str, str]:
@@ -406,11 +495,20 @@ def command_capture(args: argparse.Namespace) -> int:
             )
             if not recovery.complete:
                 raise RuntimeError("unresolved calibration exposure blocks a new pair")
+            exchange_information = transport.exchange_information(args.symbol)
+            rate_limit_preflight = _rate_limit_preflight(
+                definitions=exchange_information["rate_limits"],
+                headers=dict(transport.last_rate_limit_headers),
+            )
+            if rate_limit_preflight["capture_blocked"]:
+                raise RuntimeError(
+                    "rate-limit utilization blocks a new calibration pair"
+                )
             sizing = prepare_round74_execution_sizing(
                 symbol=args.symbol,
                 entry_side=args.entry_side,
                 target_quote_notional=target_quote_notional,
-                exchange_information=transport.exchange_information(args.symbol),
+                exchange_information=exchange_information,
                 mark_price=transport.mark_price(args.symbol),
                 book=transport.book(args.symbol),
             )
@@ -430,6 +528,8 @@ def command_capture(args: argparse.Namespace) -> int:
             "database": str(database),
             "campaign_binding": getattr(args, "campaign_binding", None),
             "recovery_before_capture": recovery.as_dict(),
+            "exchange_rate_limits": exchange_information["rate_limits"],
+            "rate_limit_preflight": rate_limit_preflight,
             "sizing": sizing.as_dict(),
             "result": result.as_dict(),
             "last_rate_limit_headers": rate_limits,

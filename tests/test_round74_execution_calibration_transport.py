@@ -80,6 +80,20 @@ class _Session:
             return _Response(
                 {
                     "padding": self.exchange_information_padding,
+                    "rateLimits": [
+                        {
+                            "rateLimitType": "REQUEST_WEIGHT",
+                            "interval": "MINUTE",
+                            "intervalNum": 1,
+                            "limit": 2400,
+                        },
+                        {
+                            "rateLimitType": "ORDERS",
+                            "interval": "MINUTE",
+                            "intervalNum": 1,
+                            "limit": 1200,
+                        },
+                    ],
                     "symbols": [
                         {
                             "symbol": "BTCUSDT",
@@ -296,6 +310,10 @@ def test_transport_uses_only_official_testnet_surfaces_and_signed_calls() -> Non
     )
     assert "ephemeral-key" not in serialized_public_state
     assert "ephemeral-secret" not in serialized_public_state
+    assert transport.last_rate_limit_headers == {
+        "x-mbx-order-count-10s": "1",
+        "x-mbx-used-weight-1m": "2",
+    }
 
 
 def test_transport_allows_bounded_full_exchange_information_payload() -> None:
