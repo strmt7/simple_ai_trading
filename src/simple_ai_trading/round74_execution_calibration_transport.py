@@ -177,7 +177,11 @@ class Round74BinanceTestnetExecutionTransport:
                 or normalized == "retry-after"
             ):
                 selected[normalized] = str(value)
-        self.last_rate_limit_headers = dict(sorted(selected.items()))
+        merged = dict(self.last_rate_limit_headers)
+        if "retry-after" not in selected:
+            merged.pop("retry-after", None)
+        merged.update(selected)
+        self.last_rate_limit_headers = dict(sorted(merged.items()))
 
     def _request(
         self,
@@ -399,9 +403,14 @@ class Round74BinanceTestnetExecutionTransport:
                 ROUND74_EXECUTION_TRANSPORT_EXCHANGE_INFO_MAXIMUM_BYTES
             ),
         )
-        if not isinstance(payload, Mapping) or not isinstance(
-            payload.get("symbols"),
-            list,
+        if (
+            not isinstance(payload, Mapping)
+            or not isinstance(payload.get("symbols"), list)
+            or not isinstance(payload.get("rateLimits"), list)
+            or any(
+                not isinstance(value, Mapping)
+                for value in payload["rateLimits"]
+            )
         ):
             raise RuntimeError(
                 "Round 74 execution exchange information differs"
@@ -423,6 +432,9 @@ class Round74BinanceTestnetExecutionTransport:
             "symbol": selected_symbol,
             "received_monotonic_ns": received_ns,
             "symbol_payload": dict(selected[0]),
+            "rate_limits": [
+                dict(value) for value in payload["rateLimits"]
+            ],
             "source_payload_sha256": payload_sha,
         }
 
