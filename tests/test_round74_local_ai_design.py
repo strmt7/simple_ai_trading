@@ -85,6 +85,9 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
+from simple_ai_trading.round74_event_model_operator import (
+    ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -93,7 +96,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v40.json"
+    / "round-074-local-ai-review-design-v41.json"
 )
 
 
@@ -164,6 +167,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "runtime",
         "event_model",
         "event_training",
+        "event_model_operator",
     ):
         assert source[f"{label}_sha256"] == _file_sha256(source[f"{label}_path"])
     assert source["model_manifest_schema_version"] == (
@@ -260,6 +264,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["pretest_policy_schema_version"] == (
         ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+    )
+    assert (
+        source["event_model_operator_schema_version"]
+        == ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
     )
     model_design_path = REPOSITORY / source["event_model_design_path"]
     assert source["event_model_design_file_sha256"] == _file_sha256(
@@ -545,6 +553,20 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["real_public_exchange_info_evidence_captured"] is True
     assert architecture["source_derived_target_assembly_implemented"] is True
     assert (
+        architecture["bounded_post_cohort_model_data_operator_implemented"]
+        is True
+    )
+    assert (
+        architecture[
+            "source_target_assembly_roundtrip_serialization_implemented"
+        ]
+        is True
+    )
+    assert architecture["model_scaler_reads_unique_training_events_only"] is True
+    assert architecture["model_operator_reads_capture_database_only"] is True
+    assert architecture["model_operator_persists_overlapping_windows"] is False
+    assert architecture["development_model_operator_accesses_test_role"] is False
+    assert (
         architecture[
             "source_derived_target_assembly_accepts_caller_configured_fees_latency_slippage_or_quantity_rules"
         ]
@@ -797,6 +819,11 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["exchange_info_quantity_rules_parser_implemented"] is True
     assert status["quantity_rules_runtime_evidence_match_gate_implemented"] is True
     assert status["source_derived_target_assembly_implemented"] is True
+    assert status["bounded_post_cohort_model_data_operator_implemented"] is True
+    assert (
+        status["source_target_assembly_roundtrip_serialization_implemented"]
+        is True
+    )
     assert status["complete_empty_bounded_funding_response_implemented"] is True
     assert status["real_public_exchange_info_evidence_captured"] is True
     assert status["real_authenticated_commission_evidence_captured"] is False
