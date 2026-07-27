@@ -1,0 +1,74 @@
+{
+  "schema_version": "round-074-event-cohort-operator-contract-v2",
+  "artifact_sha256": "d42b340047e6936c5c3b255d1b574b726b106e914488273e851f96768aa8be89",
+  "created_at_utc": "2026-07-27T02:25:00Z",
+  "source_parent_git_commit": "b2fdb73f6518c4b8cbe9074b0b0703c916e6916d",
+  "active_preflight_artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+  "cohort_plan_sha256": "1082f4038e6c79c1cb13c6337d44cc10f325b7c6bde68a761982f98844f5629e",
+  "superseded_cohort_plan_sha256": "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd",
+  "superseded_operator_contract_artifact_sha256": "84eb1ffad56717521ece88091f27dfd4086c248690e0b8ba10f2025860b95b53",
+  "cadence_correction_artifact_sha256": "e6704f064335fd176b60e0c5652693cd8981c016202078c5c39dd08783d7b58b",
+  "source_binding": {
+    "operator_path": "src/simple_ai_trading/round74_event_cohort_operator.py",
+    "operator_sha256": "4305c4af6b1ec5a6d39ec2e1b8c8ca6db3bd1fbdb1e1d8dfb840cd0f9f888d55",
+    "wrapper_path": "tools/run_round74_event_cohort_slot.py",
+    "wrapper_sha256": "4d1e26712671ffd30319747ef1f8ea0aefad26ac1f09920655cb53ef7eb1f84a"
+  },
+  "slot_execution_contract": {
+    "one_hour_public_market_capture": true,
+    "slot_period_seconds": 3900,
+    "slot_start_tolerance_seconds": 30,
+    "maximum_reconnects": 0,
+    "current_slot_only": true,
+    "prior_contiguous_bindings_required": true,
+    "future_slot_access_permitted": false,
+    "active_prerequisite_exact_result_required": true,
+    "exclusive_reservation_fsynced_before_spawn": true,
+    "successful_duplicate_invocation_is_idempotent": true,
+    "reserved_without_binding_is_retryable": false,
+    "failed_or_missed_slot_replacement_permitted": false,
+    "automatic_retry_permitted": false,
+    "campaign_halts_on_gap_or_failure": true,
+    "concurrent_capture_process_forbidden": true,
+    "capture_stdout_and_stderr_persisted": true,
+    "heartbeat_interval_seconds": 30,
+    "fresh_process_audit_timeout_seconds": 120,
+    "fresh_audit_uses_explicit_run_id": true,
+    "stored_report_and_final_frame_hashes_must_match": true,
+    "binding_written_only_after_fresh_audit": true,
+    "partition_written_only_after_all_168_bindings": true
+  },
+  "partition_contract": {
+    "target_schema_version": "round-074-executable-event-target-v2",
+    "dataset_schema_version": "round-074-event-dataset-v4",
+    "partition_schema_version": "round-074-run-partition-v3",
+    "decision_to_entry_latency_measured_separately": true,
+    "decision_to_exit_latency_measured_separately": true,
+    "maximum_target_span_ns": 310000000000,
+    "minimum_purge_ns": 310000000000,
+    "minimum_embargo_ns": 310000000000
+  },
+  "resource_contract": {
+    "database": "data/microstructure.duckdb",
+    "single_database_file": true,
+    "global_database_cap_bytes": 25769803776,
+    "per_slot_database_and_wal_growth_limit_bytes": 536870912,
+    "per_slot_process_io_transfer_limit_bytes": 4294967296,
+    "minimum_free_space_bytes": 107374182400,
+    "wal_must_be_absent_before_and_after_slot": true,
+    "process_io_counter_interpreted_as_physical_nand_writes": false,
+    "gpu_or_model_fit_during_capture": false
+  },
+  "authority": {
+    "public_binance_market_data": true,
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "credentials_or_orders": false,
+    "model_training_or_evaluation": false,
+    "test_target_access": false,
+    "profitability_or_edge_claim": false
+  }
+}
