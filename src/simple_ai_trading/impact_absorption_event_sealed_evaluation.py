@@ -107,8 +107,7 @@ class Round74SealedAIReviewProvider(Protocol):
         *,
         claim: Round74SealedEvaluationClaim,
         manifests: tuple[str, ...],
-        contexts: tuple[Round74ActionInferenceContext, ...],
-        candidates: tuple[Round74ActionCandidateBatch, ...],
+        inference: Round74TargetFreeCandidateInference,
         action_selection: Round74ActionPolicySelection,
     ) -> Mapping[str, Sequence[Round74AIPairedReviewEvidence]]: ...
 
@@ -932,8 +931,7 @@ class Round74SealedAIOverlay:
             )
             or self.runtime_accepted_reviews > self.reviewed_candidates
             or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
-            or self.exact_replay_completed_reviews
-            != self.exact_replay_required_reviews
+            or self.exact_replay_completed_reviews != self.exact_replay_required_reviews
             or self.exact_replay_required_reviews
             > self.strategy_metrics.paired_observations
             or self.exact_replay_target_ineligible_reviews
@@ -1215,8 +1213,7 @@ def _run_bootstrap(
         two_ai_model_bonferroni_lower_mean_run_net_bps=float(
             np.quantile(
                 sampled,
-                ROUND74_SEALED_FAMILYWISE_ALPHA
-                / ROUND74_SEALED_AI_MODEL_COUNT,
+                ROUND74_SEALED_FAMILYWISE_ALPHA / ROUND74_SEALED_AI_MODEL_COUNT,
             )
         ),
         one_sided_95_lower_mean_run_net_bps=float(np.quantile(sampled, 0.05)),
@@ -1245,13 +1242,10 @@ def _financial_gate_reasons(
     if metrics.total_net_bps <= 0.0 or metrics.mean_paired_net_bps <= 0.0:
         reasons.append("positive_after_cost_payoff_not_met")
     if (
-        metrics.run_block_bootstrap
-        .three_configuration_bonferroni_lower_mean_run_net_bps
+        metrics.run_block_bootstrap.three_configuration_bonferroni_lower_mean_run_net_bps
         <= 0.0
     ):
-        reasons.append(
-            "positive_familywise_run_block_confidence_lower_bound_not_met"
-        )
+        reasons.append("positive_familywise_run_block_confidence_lower_bound_not_met")
     if metrics.profitable_run_ratio < spec.minimum_profitable_run_ratio:
         reasons.append("profitable_run_ratio_not_met")
     if metrics.gross_loss_bps > 0.0 and (
@@ -1312,14 +1306,10 @@ def _strategy_metrics_from_execution_values(
     executed_mae = scaled_mae[retained_mask]
     executed_adverse = adverse[retained_mask]
     retained_runs = tuple(
-        run_id
-        for run_id, keep in zip(trace.run_id, retained_mask, strict=True)
-        if keep
+        run_id for run_id, keep in zip(trace.run_id, retained_mask, strict=True) if keep
     )
     retained_symbols = tuple(
-        symbol
-        for symbol, keep in zip(trace.symbol, retained_mask, strict=True)
-        if keep
+        symbol for symbol, keep in zip(trace.symbol, retained_mask, strict=True) if keep
     )
     gross_profit = float(executed[executed > 0.0].sum())
     gross_loss = float(-executed[executed < 0.0].sum())
@@ -1435,10 +1425,7 @@ def _exact_replay_strategy_metrics(
             dtype=np.float64,
         ),
         np.asarray(
-            [
-                row.capital_scaled_maximum_adverse_excursion_bps
-                for row in rows
-            ],
+            [row.capital_scaled_maximum_adverse_excursion_bps for row in rows],
             dtype=np.float64,
         ),
         retained,
@@ -1759,14 +1746,8 @@ def _derive_test_candidates(
     compute_backend: str,
     minibatch_rows: int,
 ) -> tuple[
-    tuple[Round74ActionCandidateBatch, ...],
+    Round74TargetFreeCandidateInference,
     Round74SealedPredictiveDiagnostics,
-    str,
-    str,
-    str,
-    str,
-    str,
-    int,
 ]:
     contexts = tuple(build_round74_action_inference_context(batch) for batch in batches)
     inference = infer_round74_target_free_candidates(
@@ -1780,16 +1761,7 @@ def _derive_test_candidates(
     predictive = _PredictiveAccumulator()
     for batch, output in zip(batches, inference.model_outputs, strict=True):
         predictive.update(batch, output, probability_calibration)
-    return (
-        inference.candidates,
-        predictive.result(),
-        inference.pretest_policy_sha256,
-        inference.pretest_model_sha256,
-        inference.inference_backend_kind,
-        inference.inference_backend_device,
-        inference.inference_backend_vendor,
-        inference.inference_warning_count,
-    )
+    return inference, predictive.result()
 
 
 def _target_free_review_rows(
@@ -1949,13 +1921,10 @@ def _ai_overlay(
     ):
         raise ValueError("Round 74 sealed AI execution trace coverage differs")
     capture_report_by_run: dict[str, str] = {}
-    for index, (review, execution) in enumerate(
-        zip(reviews, executions, strict=True)
-    ):
+    for index, (review, execution) in enumerate(zip(reviews, executions, strict=True)):
         requested_multiplier = (
             review.decision.size_multiplier_bps
-            if review.runtime_status == "accepted"
-            and review.decision is not None
+            if review.runtime_status == "accepted" and review.decision is not None
             else 0
         )
         previous_report = capture_report_by_run.setdefault(
@@ -1978,8 +1947,7 @@ def _ai_overlay(
                 trace.horizon_seconds[index],
             )
             or execution.source_review_sha256 != review.review_sha256
-            or execution.requested_size_multiplier_bps
-            != requested_multiplier
+            or execution.requested_size_multiplier_bps != requested_multiplier
             or previous_report != execution.source_capture_report_sha256
             or (
                 review.runtime_status != "accepted"
@@ -2046,8 +2014,7 @@ def _ai_overlay(
     )
     retained = sum(value.status == "executed" for value in executions)
     reduced = sum(
-        value.status == "executed"
-        and value.applied_size_multiplier_bps < 10_000
+        value.status == "executed" and value.applied_size_multiplier_bps < 10_000
         for value in executions
     )
     reasons: list[str] = []
@@ -2065,10 +2032,7 @@ def _ai_overlay(
         reasons.append("retained_trade_ratio_not_met")
     if strategy.total_net_bps <= trace.metrics.total_net_bps:
         reasons.append("positive_paired_after_cost_uplift_not_met")
-    if (
-        delta_bootstrap.two_ai_model_bonferroni_lower_mean_run_net_bps
-        <= 0.0
-    ):
+    if delta_bootstrap.two_ai_model_bonferroni_lower_mean_run_net_bps <= 0.0:
         reasons.append(
             "positive_paired_delta_familywise_confidence_lower_bound_not_met"
         )
@@ -2077,9 +2041,7 @@ def _ai_overlay(
     result = Round74SealedAIOverlay(
         model_manifest_sha256=manifest,
         review_sha256=tuple(value.review_sha256 for value in all_reviews),
-        execution_replay_sha256=tuple(
-            value.replay_sha256 for value in executions
-        ),
+        execution_replay_sha256=tuple(value.replay_sha256 for value in executions),
         reviewed_candidates=len(all_reviews),
         runtime_accepted_reviews=sum(
             value.runtime_status == "accepted" for value in all_reviews
@@ -2138,16 +2100,7 @@ def _evaluate_reserved(
         or action_selection.selected_threshold_score is None
     ):
         raise ValueError("Round 74 sealed reserved input identity differs")
-    (
-        candidates,
-        predictive,
-        policy_sha256,
-        model_sha256,
-        backend_kind,
-        backend_device,
-        backend_vendor,
-        warning_count,
-    ) = _derive_test_candidates(
+    inference, predictive = _derive_test_candidates(
         test_batches,
         action_selection=action_selection,
         probability_calibration=probability_calibration,
@@ -2155,20 +2108,20 @@ def _evaluate_reserved(
         compute_backend=compute_backend,
         minibatch_rows=inference_minibatch_rows,
     )
+    candidates = inference.candidates
+    contexts = inference.contexts
     threshold = action_selection.selected_threshold_score
     assert threshold is not None
     target_free_rows = _target_free_review_rows(
         candidates,
         threshold_score=threshold,
     )
-    contexts = tuple(
-        build_round74_action_inference_context(batch) for batch in test_batches
-    )
+    if not ledger.claim_matches(claim, required_status="reserved"):
+        raise ValueError("Round 74 sealed reservation expired before AI review")
     ai_reviews_by_manifest = ai_review_provider(
         claim=claim,
         manifests=claim.ai_manifest_sha256,
-        contexts=contexts,
-        candidates=candidates,
+        inference=inference,
         action_selection=action_selection,
     )
     reviews = _validate_ai_reviews(
@@ -2214,6 +2167,8 @@ def _evaluate_reserved(
                 reviews=selected_reviews,
             )
         )
+    if not ledger.claim_matches(claim, required_status="reserved"):
+        raise ValueError("Round 74 sealed reservation expired before exact replay")
     ai_execution_replays_by_manifest = ai_execution_replay_provider(
         claim=claim,
         instructions_by_manifest=instructions_by_manifest,
@@ -2223,9 +2178,7 @@ def _evaluate_reserved(
         manifests=claim.ai_manifest_sha256,
         instructions_by_manifest=instructions_by_manifest,
     )
-    partition_sha256 = {
-        batch.partition_sha256 for batch in test_batches
-    }
+    partition_sha256 = {batch.partition_sha256 for batch in test_batches}
     if len(partition_sha256) != 1:
         raise ValueError("Round 74 sealed test partition differs")
     expected_partition_sha256 = next(iter(partition_sha256))
@@ -2262,18 +2215,18 @@ def _evaluate_reserved(
         reservation_id=claim.reservation_id,
         test_access_sha256=claim.test_access_sha256,
         dataset_sha256=claim.dataset_sha256,
-        pretest_policy_sha256=policy_sha256,
-        pretest_model_sha256=model_sha256,
+        pretest_policy_sha256=inference.pretest_policy_sha256,
+        pretest_model_sha256=inference.pretest_model_sha256,
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
         action_selection_sha256=action_selection.selection_sha256,
         profile=action_selection.profile,
         test_batch_sha256=claim.batch_sha256,
         model_output_sha256=tuple(value.model_output_sha256 for value in candidates),
         candidate_sha256=tuple(value.candidate_sha256 for value in candidates),
-        inference_backend_kind=backend_kind,
-        inference_backend_device=backend_device,
-        inference_backend_vendor=backend_vendor,
-        inference_warning_count=warning_count,
+        inference_backend_kind=inference.inference_backend_kind,
+        inference_backend_device=inference.inference_backend_device,
+        inference_backend_vendor=inference.inference_backend_vendor,
+        inference_warning_count=inference.inference_warning_count,
         predictive_diagnostics=predictive,
         baseline_trace=trace,
         baseline_metrics=baseline,
