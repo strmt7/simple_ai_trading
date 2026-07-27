@@ -56,7 +56,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v10.json"
+    / "round-074-local-ai-review-design-v11.json"
 )
 
 
@@ -91,9 +91,12 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "worker",
         "runtime",
     ):
-        assert source[f"{label}_sha256"] == hashlib.sha256(
-            (REPOSITORY / source[f"{label}_path"]).read_bytes()
-        ).hexdigest()
+        assert (
+            source[f"{label}_sha256"]
+            == hashlib.sha256(
+                (REPOSITORY / source[f"{label}_path"]).read_bytes()
+            ).hexdigest()
+        )
     assert source["model_manifest_schema_version"] == (
         ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
     )
@@ -112,9 +115,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["runtime_outcome_schema_version"] == (
         ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION
     )
-    assert source["bridge_schema_version"] == (
-        ROUND74_AI_BRIDGE_SCHEMA_VERSION
-    )
+    assert source["bridge_schema_version"] == (ROUND74_AI_BRIDGE_SCHEMA_VERSION)
     assert source["tuning_subpartition_schema_version"] == (
         ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION
     )
@@ -167,6 +168,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["ai_prompt_summary_values_per_feature"] == 4
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
+    assert (
+        architecture["calibrated_probability_selection_uses_equal_capture_run_weights"]
+        is True
+    )
+    assert (
+        architecture["calibration_pooled_observation_metrics_used_for_selection"]
+        is False
+    )
+    assert architecture["calibration_exact_run_ids_bound"] is True
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -174,12 +184,8 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["drawdown_order"] == (
         "cohort run then actual exit monotonic time then signal-order tie break"
     )
-    assert architecture[
-        "reusable_target_free_candidate_inference_implemented"
-    ] is True
-    assert architecture[
-        "two_model_target_free_review_preparation_implemented"
-    ] is True
+    assert architecture["reusable_target_free_candidate_inference_implemented"] is True
+    assert architecture["two_model_target_free_review_preparation_implemented"] is True
     assert architecture["ai_may_revive_ml_abstention"] is False
     for key in (
         "ai_may_create_trade_side",
@@ -189,9 +195,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     ):
         assert architecture[key] is False
     assert (
-        architecture[
-            "deterministic_data_execution_and_risk_gates_remain_authoritative"
-        ]
+        architecture["deterministic_data_execution_and_risk_gates_remain_authoritative"]
         is True
     )
 
@@ -208,30 +212,25 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert finance["trading_edge_established"] is False
     assert finance["pinned_quantized_artifact_ready"] is True
     default_models = round74_default_ai_review_model_panel()
-    assert finance["local_ollama_artifact"][
-        "review_protocol_manifest_sha256"
-    ] == default_models[0].manifest.manifest_sha256
-    assert len(
-        finance["local_ollama_artifact"]["manifest_sha256"]
-    ) == 64
+    assert (
+        finance["local_ollama_artifact"]["review_protocol_manifest_sha256"]
+        == default_models[0].manifest.manifest_sha256
+    )
+    assert len(finance["local_ollama_artifact"]["manifest_sha256"]) == 64
     assert control["model_id"] == "Qwen/Qwen3-8B"
     assert len(control["repository_revision"]) == 40
     assert control["license_id"] == "Apache-2.0"
     assert (
-        control["pinned_onnx_conversion"][
-            "int4_external_data_observed_bytes"
-        ]
+        control["pinned_onnx_conversion"]["int4_external_data_observed_bytes"]
         == 6_076_825_600
     )
     assert control["trading_edge_established"] is False
-    assert control["local_ollama_control_artifact"][
-        "review_protocol_manifest_sha256"
-    ] == default_models[1].manifest.manifest_sha256
-    assert candidates["finance_brand_or_parameter_count_implies_edge"] is False
     assert (
-        candidates["promotion_requires_our_paired_sealed_market_evidence"]
-        is True
+        control["local_ollama_control_artifact"]["review_protocol_manifest_sha256"]
+        == default_models[1].manifest.manifest_sha256
     )
+    assert candidates["finance_brand_or_parameter_count_implies_edge"] is False
+    assert candidates["promotion_requires_our_paired_sealed_market_evidence"] is True
     challengers = candidates["researched_deferred_challengers"]
     assert [value["model_id"] for value in challengers] == [
         "OpenDataArena/ODA-Fin-RL-8B",
@@ -245,8 +244,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         for value in challengers
     )
     assert all(
-        value["source_safetensors_bytes"] > 16_000_000_000
-        for value in challengers
+        value["source_safetensors_bytes"] > 16_000_000_000 for value in challengers
     )
 
     status = artifact["status"]
@@ -302,7 +300,10 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
-    assert evaluation["sealed_access_is_reserved_and_permanently_consumed_before_scoring"] is True
+    assert (
+        evaluation["sealed_access_is_reserved_and_permanently_consumed_before_scoring"]
+        is True
+    )
     assert evaluation["crash_after_reservation_may_reset_or_reuse_the_test"] is False
     assert evaluation["sealed_bootstrap_draws"] == ROUND74_SEALED_BOOTSTRAP_DRAWS
     assert (
@@ -311,11 +312,14 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         ]
         is True
     )
-    assert evaluation[
-        "ai_veto_of_an_earlier_action_may_admit_a_later_overlapping_action"
-    ] is False
+    assert (
+        evaluation["ai_veto_of_an_earlier_action_may_admit_a_later_overlapping_action"]
+        is False
+    )
     assert evaluation["accuracy_ignored"] is False
-    assert evaluation["profitability_required_by_data_filter_or_test_assertion"] is False
+    assert (
+        evaluation["profitability_required_by_data_filter_or_test_assertion"] is False
+    )
     assert evaluation["ai_receives_causal_recent_direction_summary"] is True
     assert evaluation["ai_recent_direction_summary_block_events"] == (
         ROUND74_AI_RECENT_BLOCK_EVENTS

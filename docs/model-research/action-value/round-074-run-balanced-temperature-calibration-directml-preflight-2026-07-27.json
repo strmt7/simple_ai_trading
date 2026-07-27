@@ -1,0 +1,82 @@
+{
+  "schema_version": "round-074-run-balanced-temperature-calibration-directml-preflight-v1",
+  "artifact_sha256": "ca1006bb24b5fa078d34a5d3666d9d90c6983ccd128882ea58559623bb6d1d7a",
+  "round": 74,
+  "executed_at_utc": "2026-07-27T03:32:37Z",
+  "execution_git_commit": "8562de0f28bac261ba07e5acbcb30d915e7f03f5",
+  "source_binding": {
+    "path": "src/simple_ai_trading/impact_absorption_event_calibration.py",
+    "sha256": "0596792c9d55f2cd44481a889c20084880d71b72f3b5ae1525eb06ca7225997c",
+    "tuning_subpartition_schema_version": "round-074-tuning-subpartition-v1",
+    "temperature_calibration_schema_version": "round-074-temperature-calibration-v2"
+  },
+  "backend": {
+    "requested": "directml",
+    "kind": "directml",
+    "device": "privateuseone:0",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "selection": "runtime_current_device",
+    "accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "warning_count": 0,
+    "cpu_fallback_warning_count": 0
+  },
+  "input_contract": {
+    "calibration_runs": 6,
+    "baseline_rows": 6,
+    "duplicated_busy_run_rows": 100,
+    "other_run_rows_each": 1,
+    "observations_per_row": 2,
+    "both_classes_present_per_head": true,
+    "real_market_features_used": false,
+    "real_market_targets_used": false,
+    "sealed_test_accessed": false,
+    "synthetic_preflight_only": true
+  },
+  "verification": {
+    "candidate_temperature_count": 257,
+    "temperature_minimum": 0.05,
+    "temperature_maximum": 20.0,
+    "baseline_head_temperatures": {
+      "positive_payoff": 2.7356765270233154,
+      "adverse_selection": 2.7356765270233154,
+      "regime_unpredictability": 2.7356765270233154
+    },
+    "duplicated_head_temperatures": {
+      "positive_payoff": 2.7356765270233154,
+      "adverse_selection": 2.7356765270233154,
+      "regime_unpredictability": 2.7356765270233154
+    },
+    "baseline_run_balanced_nll_before": 0.7754648923873901,
+    "baseline_run_balanced_nll_after": 0.6059139370918274,
+    "duplicated_run_balanced_nll_before": 0.7754648923873901,
+    "duplicated_run_balanced_nll_after": 0.6059139370918274,
+    "duplicated_pooled_nll_before": 3.8328535556793213,
+    "duplicated_pooled_nll_after": 1.6097464561462402,
+    "baseline_minimum_run_observations": 2,
+    "baseline_maximum_run_observations": 2,
+    "duplicated_minimum_run_observations": 2,
+    "duplicated_maximum_run_observations": 200,
+    "baseline_calibration_sha256": "7176741c2ba87b0c30eae1a18c6e92b2766b7439ed928aa418fbcd00c1a54f1b",
+    "duplicated_calibration_sha256": "f771afde805a55a1f33e10e8129d38c6cd5d299c2706d4002cb77f9af3973ae8",
+    "tuning_subpartition_sha256": "c79ffa4ee3ce901f787396f3fa084b667f36beb692f6f00645892ab13bc0f825",
+    "canonical_stdout_sha256": "3692ff32d1533e6dc282d43ad16290791fcd942f5059a43f812313992e162303",
+    "all_three_temperature_searches_completed": true,
+    "all_head_temperatures_invariant_to_busy_run_duplication": true,
+    "hidden_cpu_fallback_detected": false
+  },
+  "interpretation": {
+    "directml_calibration_compute_path_verified": true,
+    "equal_capture_run_weighting_verified": true,
+    "pooled_observation_metrics_used_for_selection": false,
+    "calibration_quality_established": false,
+    "representative_market_calibration_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
