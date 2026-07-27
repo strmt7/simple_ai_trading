@@ -43,7 +43,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v3"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v4"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -1341,6 +1341,8 @@ def _trace_gate_reasons(
 ) -> tuple[str, ...]:
     metrics = trace.metrics
     reasons: list[str] = []
+    if trace.skipped_target_ineligible > 0:
+        reasons.append("selected_action_target_coverage_incomplete")
     if metrics.trades < spec.minimum_trades:
         reasons.append("minimum_trades_not_met")
     if metrics.active_runs < spec.minimum_active_runs:
