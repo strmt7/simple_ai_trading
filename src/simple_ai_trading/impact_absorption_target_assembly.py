@@ -101,6 +101,78 @@ class Round74SourceTargetAssembly:
             }
         )
 
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        value: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "target_spec": self.spec.as_dict(),
+            "quantity_rules_by_symbol": {
+                symbol: {
+                    "step_size": format(rules.step_size, "f"),
+                    "minimum_quantity": format(rules.minimum_quantity, "f"),
+                    "maximum_quantity": format(rules.maximum_quantity, "f"),
+                    "minimum_notional": format(rules.minimum_notional, "f"),
+                }
+                for symbol, rules in self.quantity_rules_by_symbol
+            },
+        }
+        if include_sha256:
+            value["assembly_sha256"] = self.assembly_sha256
+        return value
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74SourceTargetAssembly:
+        payload = dict(value)
+        claimed = str(payload.pop("assembly_sha256", ""))
+        target_spec = payload.get("target_spec")
+        raw_rules = payload.get("quantity_rules_by_symbol")
+        if (
+            payload.get("schema_version")
+            != ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION
+            or not isinstance(target_spec, Mapping)
+            or not isinstance(raw_rules, Mapping)
+            or tuple(sorted(str(symbol) for symbol in raw_rules))
+            != tuple(sorted(ROUND74_EVENT_TARGET_SYMBOLS))
+        ):
+            raise ValueError("Round 74 source target assembly payload differs")
+        rules: list[tuple[str, Round73MarketQuantityRules]] = []
+        for symbol in ROUND74_EVENT_TARGET_SYMBOLS:
+            row = raw_rules.get(symbol)
+            if not isinstance(row, Mapping) or set(row) != {
+                "step_size",
+                "minimum_quantity",
+                "maximum_quantity",
+                "minimum_notional",
+            }:
+                raise ValueError(
+                    "Round 74 source target assembly quantity rules differ"
+                )
+            rules.append(
+                (
+                    symbol,
+                    Round73MarketQuantityRules.create(
+                        symbol=symbol,
+                        step_size=row["step_size"],
+                        minimum_quantity=row["minimum_quantity"],
+                        maximum_quantity=row["maximum_quantity"],
+                        minimum_notional=row["minimum_notional"],
+                    ),
+                )
+            )
+        selected = cls(
+            spec=Round74EventTargetSpec.from_dict(target_spec),
+            quantity_rules_by_symbol=tuple(rules),
+            schema_version=str(payload["schema_version"]),
+        )
+        if (
+            claimed != selected.assembly_sha256
+            or selected.as_dict(include_sha256=False) != payload
+        ):
+            raise ValueError("Round 74 source target assembly digest differs")
+        return selected
+
     def create_engine(
         self,
         *,
