@@ -77,7 +77,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v26.json"
+    / "round-074-local-ai-review-design-v27.json"
 )
 
 
@@ -194,6 +194,19 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         source["execution_calibration_schema_version"]
         == ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION
     )
+    market = artifact["market_evidence_binding"]
+    exchange_path = REPOSITORY / market["exchange_info_path"]
+    assert market["exchange_info_file_sha256"] == hashlib.sha256(
+        exchange_path.read_bytes()
+    ).hexdigest()
+    exchange = json.loads(exchange_path.read_text(encoding="utf-8"))
+    exchange_claimed = exchange.pop("artifact_sha256")
+    assert exchange_claimed == _canonical_sha256(exchange)
+    assert exchange_claimed == market["exchange_info_artifact_sha256"]
+    assert exchange["target_evidence"]["evidence_sha256"] == (
+        market["exchange_info_target_evidence_sha256"]
+    )
+    assert market["exchange_info_raw_payload_persisted"] is False
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -314,7 +327,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["quantity_precision_may_substitute_for_market_lot_size"] is False
     assert architecture["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
-    assert architecture["real_public_exchange_info_evidence_captured"] is False
+    assert architecture["real_public_exchange_info_evidence_captured"] is True
     assert architecture["source_derived_target_assembly_implemented"] is True
     assert (
         architecture[
@@ -537,7 +550,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["exchange_info_quantity_rules_parser_implemented"] is True
     assert status["quantity_rules_runtime_evidence_match_gate_implemented"] is True
     assert status["source_derived_target_assembly_implemented"] is True
-    assert status["real_public_exchange_info_evidence_captured"] is False
+    assert status["real_public_exchange_info_evidence_captured"] is True
     assert status["real_authenticated_commission_evidence_captured"] is False
     assert status["real_public_funding_evidence_captured"] is False
     assert status["real_testnet_execution_calibration_completed"] is False

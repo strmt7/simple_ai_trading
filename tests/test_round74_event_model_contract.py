@@ -101,7 +101,7 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v40.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v41.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -330,6 +330,20 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert scaler["sampling_algorithm"] == ("splitmix64-smallest-priority-v1")
     assert scaler["serialized_scaler_digest_verified_on_load"] is True
     assert scaler["model_bundle_must_bind_scaler_hash"] is True
+    host = design["host_evidence_binding"]
+    exchange_path = REPOSITORY / host["exchange_info_path"]
+    assert host["exchange_info_file_sha256"] == hashlib.sha256(
+        exchange_path.read_bytes()
+    ).hexdigest()
+    exchange = _load_hash_bound(exchange_path, "artifact_sha256")
+    assert exchange["artifact_sha256"] == host["exchange_info_artifact_sha256"]
+    assert exchange["execution_git_commit"] == (
+        host["exchange_info_execution_git_commit"]
+    )
+    assert exchange["target_evidence"]["evidence_sha256"] == (
+        host["exchange_info_target_evidence_sha256"]
+    )
+    assert exchange["response"]["raw_payload_persisted"] is False
 
 
 def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
@@ -402,7 +416,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert entry["quantity_precision_may_substitute_for_market_lot_size"] is False
     assert entry["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
     assert entry["runtime_quantity_rules_must_match_evidence_claims"] is True
-    assert entry["real_public_exchange_info_evidence_captured_now"] is False
+    assert entry["real_public_exchange_info_evidence_captured_now"] is True
     assert entry["passive_maker_fill_target_permitted_from_l2"] is False
     assert entry["insufficient_visible_depth_policy"] == (
         "censor target and forbid action"
@@ -821,7 +835,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert authority["source_derived_target_assembly_implementation"] is True
-    assert authority["real_public_exchange_info_evidence_captured"] is False
+    assert authority["real_public_exchange_info_evidence_captured"] is True
     assert authority["real_authenticated_commission_evidence_captured"] is False
     assert authority["real_public_funding_evidence_captured"] is False
     assert authority["real_testnet_execution_calibration_completed"] is False
