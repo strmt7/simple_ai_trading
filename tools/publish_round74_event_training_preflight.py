@@ -179,7 +179,7 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
     )
     for field in metric_fields:
         values = result.get(field)
-        if not isinstance(values, dict) or list(values) != candidate_ids:
+        if not isinstance(values, dict) or set(values) != set(candidate_ids):
             raise RuntimeError(f"Round 74 preflight {field} panel differs")
     peer_metrics = result["peer_best_run_balanced_tuning_proper_loss"]
     if any(
