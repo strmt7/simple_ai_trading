@@ -128,6 +128,13 @@ CORRECTED_UNITS_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v53.json"
 )
+TEMPORAL_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v54.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -521,6 +528,59 @@ def test_round74_ai_design_delta_corrects_binary_feature_units() -> None:
     assert verification["focused_tests_passed"] == 98
     assert verification["binary_indicator_metadata_asserted"]
     assert verification["continuous_normalized_metadata_asserted"]
+    assert not verification["sealed_test_accessed"]
+    assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_binds_causal_microstructure_blocks() -> None:
+    previous = _load_json(CORRECTED_UNITS_ARTIFACT_PATH)
+    artifact = _load_json(TEMPORAL_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    trajectory = artifact["causal_trajectory_delta"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v54"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in ("protocol", "bridge", "review_panel"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["protocol"]["review_request_schema_version"] == (
+        "round-074-ai-review-request-v5"
+    )
+    assert source["protocol"]["prompt_payload_schema_version"] == (
+        "round-074-ai-prompt-payload-v6"
+    )
+    assert source["bridge"]["schema_version"] == "round-074-ai-bridge-v4"
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v8"
+    )
+    assert trajectory["block_count"] == 4
+    assert trajectory["events_per_block"] == 16
+    assert trajectory["event_span"] == 64
+    assert trajectory["block_order"] == "oldest_to_newest"
+    assert len(trajectory["feature_names"]) == 14
+    for key in (
+        "future_observations_included",
+        "real_symbol_or_absolute_date_included",
+        "realized_target_included",
+        "full_unbounded_event_sequence_sent_to_llm",
+        "financial_uplift_assumed",
+    ):
+        assert trajectory[key] is False
+    assert trajectory["trajectory_is_bound_by_request_sha256"]
+    assert trajectory["trajectory_is_bound_by_prompt_payload_sha256"]
+    assert trajectory["promotion_requires_paired_after_cost_evidence"]
+    assert verification["focused_tests_passed"] == 100
+    assert verification["block_shape_and_finiteness_validated"]
+    assert verification["bridge_order_regression_uses_increasing_spread_path"]
+    assert verification["malformed_block_panel_rejected"]
     assert not verification["sealed_test_accessed"]
     assert not verification["gpu_model_workload_executed"]
     assert all(value is False for value in artifact["status"].values())
