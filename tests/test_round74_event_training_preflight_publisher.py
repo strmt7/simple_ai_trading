@@ -66,9 +66,7 @@ def _run() -> dict[str, object]:
                 "causal_event_attention": 153_532,
             },
             "feature_count": len(PUBLISHER.ROUND74_EVENT_FEATURE_NAMES),
-            "feature_names_sha256": (
-                PUBLISHER.ROUND74_EVENT_FEATURE_NAMES_SHA256
-            ),
+            "feature_names_sha256": (PUBLISHER.ROUND74_EVENT_FEATURE_NAMES_SHA256),
             "state_half_lives_seconds": list(
                 PUBLISHER.ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
             ),
