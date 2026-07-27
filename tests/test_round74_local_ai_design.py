@@ -80,7 +80,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v28.json"
+    / "round-074-local-ai-review-design-v29.json"
 )
 
 
@@ -217,6 +217,24 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         market["exchange_info_target_evidence_sha256"]
     )
     assert market["exchange_info_raw_payload_persisted"] is False
+    funding_path = REPOSITORY / market["funding_path"]
+    assert market["funding_file_sha256"] == hashlib.sha256(
+        funding_path.read_bytes()
+    ).hexdigest()
+    funding = json.loads(funding_path.read_text(encoding="utf-8"))
+    funding_claimed = funding.pop("artifact_sha256")
+    assert funding_claimed == _canonical_sha256(funding)
+    assert funding_claimed == market["funding_artifact_sha256"]
+    assert funding["target_evidence"]["evidence_sha256"] == (
+        market["funding_target_evidence_sha256"]
+    )
+    assert funding["capture_binding"]["run_id"] == (
+        market["funding_capture_run_id"]
+    )
+    assert (
+        funding["scope"]["capture_run_may_be_used_for_financial_evaluation"]
+        is False
+    )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -579,7 +597,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["complete_empty_bounded_funding_response_implemented"] is True
     assert status["real_public_exchange_info_evidence_captured"] is True
     assert status["real_authenticated_commission_evidence_captured"] is False
-    assert status["real_public_funding_evidence_captured"] is False
+    assert status["real_public_funding_evidence_captured"] is True
     assert status["real_testnet_execution_calibration_completed"] is False
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0

@@ -104,7 +104,7 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v42.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v43.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -354,6 +354,28 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         host["exchange_info_target_evidence_sha256"]
     )
     assert exchange["response"]["raw_payload_persisted"] is False
+    funding_path = REPOSITORY / host["funding_path"]
+    assert host["funding_file_sha256"] == hashlib.sha256(
+        funding_path.read_bytes()
+    ).hexdigest()
+    funding = _load_hash_bound(funding_path, "artifact_sha256")
+    assert funding["artifact_sha256"] == host["funding_artifact_sha256"]
+    assert funding["execution_git_commit"] == (
+        host["funding_execution_git_commit"]
+    )
+    assert funding["target_evidence"]["evidence_sha256"] == (
+        host["funding_target_evidence_sha256"]
+    )
+    assert funding["capture_binding"]["run_id"] == (
+        host["funding_capture_run_id"]
+    )
+    assert funding["clock_binding"]["probe_count"] == (
+        host["funding_clock_probe_count"]
+    )
+    assert (
+        funding["scope"]["capture_run_may_be_used_for_financial_evaluation"]
+        is False
+    )
 
 
 def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
@@ -485,7 +507,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert "without interpolation" in costs["funding_clock_mapping"]
     assert costs["post_audit_clock_extraction_decompresses_only_probe_frames"] is True
     assert costs["real_authenticated_commission_evidence_captured_now"] is False
-    assert costs["real_public_funding_evidence_captured_now"] is False
+    assert costs["real_public_funding_evidence_captured_now"] is True
+    assert "not target generation" in costs["real_public_funding_evidence_scope"]
     assert (
         costs[
             "execution_calibration_requires_flat_before_entry_and_after_reduce_only_exit"
@@ -864,7 +887,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert authority["real_public_exchange_info_evidence_captured"] is True
     assert authority["real_authenticated_commission_evidence_captured"] is False
-    assert authority["real_public_funding_evidence_captured"] is False
+    assert authority["real_public_funding_evidence_captured"] is True
     assert authority["real_testnet_execution_calibration_completed"] is False
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
