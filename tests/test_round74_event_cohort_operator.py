@@ -7,6 +7,18 @@ from pathlib import Path
 
 import pytest
 
+from simple_ai_trading.impact_absorption_event_dataset import (
+    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_scaling import (
+    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_FEATURE_NAMES_SHA256,
+    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
+    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
+)
 from simple_ai_trading.round74_active_qualification import (
     ROUND74_ACTIVE_PREFLIGHT_SHA256,
 )
@@ -29,7 +41,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v4.json"
+    / "round-074-event-cohort-operator-v5.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -58,6 +70,13 @@ V3_SUPERSESSION = (
     / "model-research"
     / "action-value"
     / "round-074-event-cohort-v3-supersession-2026-07-27.json"
+)
+V4_OPERATOR_SUPERSESSION = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-operator-v4-supersession-2026-07-27.json"
 )
 
 
@@ -91,7 +110,20 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert execution["partition_written_only_after_all_168_bindings"] is True
     partition = contract["partition_contract"]
     assert partition["target_schema_version"] == "round-074-executable-event-target-v10"
-    assert partition["dataset_schema_version"] == "round-074-event-dataset-v7"
+    assert partition["dataset_schema_version"] == (
+        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+    )
+    assert partition["event_sequence_schema_version"] == (
+        ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+    )
+    assert partition["event_scaler_schema_version"] == (
+        ROUND74_EVENT_SCALER_SCHEMA_VERSION
+    )
+    assert partition["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
+    assert partition["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert partition["state_half_lives_seconds"] == list(
+        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+    )
     assert partition["common_reference_capital_accounting"] is True
     assert partition["actual_walked_entry_quote_notional_used"] is True
     assert partition["requested_size_fraction_used_as_realized_notional"] is False
@@ -192,6 +224,29 @@ def test_round74_cohort_v3_dataset_binding_was_corrected_before_slot_zero() -> N
         is True
     )
     assert sequence["superseded_task_removed"] is True
+
+
+def test_round74_cohort_operator_v4_was_superseded_before_slot_zero() -> None:
+    evidence = json.loads(V4_OPERATOR_SUPERSESSION.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["superseded_operator"]["dataset_schema_version"] == (
+        "round-074-event-dataset-v7"
+    )
+    assert evidence["replacement_operator"]["dataset_schema_version"] == (
+        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+    )
+    basis = evidence["correction_basis"]
+    assert basis["raw_capture_plan_changed"] is False
+    assert basis["task_schedule_changed"] is False
+    assert basis["roles_or_slot_times_changed"] is False
+    assert basis["selected_from_market_model_or_target_outcome"] is False
+    assert basis["slot_zero_started"] is False
+    assert basis["cohort_market_data_collected"] is False
+    assert evidence["authority"]["model_training_or_evaluation_performed"] is False
+    assert evidence["authority"]["profitability_or_edge_claim"] is False
 
 
 def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:

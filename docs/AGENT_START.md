@@ -335,8 +335,12 @@ After parser or taxonomy changes, regenerate the header through the native build
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement. Read
-  `round-074-event-sequence-model-design-v58.json` and
-  `round-074-local-ai-review-design-v44.json`. Their source and evidence file
+  `round-074-event-sequence-model-design-v59.json` and
+  `round-074-local-ai-review-design-v45.json`. The model now adds causal
+  continuous-time 5/30/300-second return, realized-volatility, order-flow,
+  spread, and imbalance state to each exact event token; this corrects the
+  mismatch between a 128-event window that may span only seconds and 30/300-
+  second payoff targets without assuming a fixed event rate. Their source and evidence file
   hashes canonicalize text line endings to LF, so Windows and Linux verify the
   same committed content. The sealed entry point reserves
   a metadata-only identity before loading target-bearing test batches, then

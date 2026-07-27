@@ -348,6 +348,12 @@ def _update_model_design(
     preflight_path = str(TRAINING_PREFLIGHT).replace("\\", "/")
     host.update(
         {
+            "event_sequence_replay_current_source_bound": False,
+            "event_sequence_replay_reuse_scope": (
+                "Historical exact-wire and read-only replay evidence for "
+                "sequence-v2 only; it does not exercise or validate the "
+                "current sequence-v3 multi-timescale feature state."
+            ),
             "event_training_directml_path": preflight_path,
             "event_training_directml_file_sha256": _source_hash(
                 repository, preflight_path
@@ -384,9 +390,9 @@ def _update_model_design(
                 "Two fresh-process AMD DirectML executions bind sequence-v3, "
                 "66 causal features, 5/30/300-second state, model-v5, "
                 "training-v11, pretest-policy-v10, dataset-v8, and all four "
-                "candidates. Constructed unequal runs prove equal capture-run "
-                "gradient weight; this is not market fit, edge, AI uplift, or "
-                "profitability evidence."
+                "candidates. The constructed unequal training runs prove equal "
+                "capture-run gradient weight; this is not market fit, edge, AI "
+                "uplift, or profitability evidence."
             ),
         }
     )
