@@ -14,6 +14,7 @@ import time
 import duckdb
 
 import simple_ai_trading.impact_absorption_execution_evidence as evidence_module
+import simple_ai_trading.round74_execution_calibration_campaign as campaign_module
 import simple_ai_trading.round74_execution_calibration_capture as capture_module
 import simple_ai_trading.round74_execution_calibration_coordinator as coordinator_module
 import simple_ai_trading.round74_execution_calibration_journal as journal_module
@@ -21,6 +22,9 @@ import simple_ai_trading.round74_execution_calibration_sizing as sizing_module
 import simple_ai_trading.round74_execution_calibration_transport as transport_module
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SYMBOLS,
+)
+from simple_ai_trading.round74_execution_calibration_campaign import (
+    build_round74_execution_campaign_plan,
 )
 from simple_ai_trading.round74_execution_calibration_coordinator import (
     capture_round74_execution_calibration_pair,
@@ -42,6 +46,7 @@ API_KEY_ENV = "SIMPLE_AI_TRADING_BINANCE_TESTNET_API_KEY"
 API_SECRET_ENV = "SIMPLE_AI_TRADING_BINANCE_TESTNET_API_SECRET"
 _SOURCE_MODULES = (
     evidence_module,
+    campaign_module,
     capture_module,
     coordinator_module,
     journal_module,
@@ -162,6 +167,38 @@ def command_status(args: argparse.Namespace) -> int:
     }
     print(_canonical_json(payload))
     return 1 if blockers else 0
+
+
+def command_plan(args: argparse.Namespace) -> int:
+    plan = build_round74_execution_campaign_plan(
+        campaign_id=args.campaign_id,
+        target_quote_notional=_decimal(
+            args.target_quote_notional,
+            label="target quote notional",
+        ),
+        pairs_per_symbol=args.pairs_per_symbol,
+    )
+    payload = {
+        **_base_payload(operation="plan"),
+        "plan": plan.as_dict(),
+        "network_accessed": False,
+        "orders_submitted": False,
+    }
+    target = _write_artifact(
+        output_directory=Path(args.output_directory),
+        payload=payload,
+    )
+    print(
+        _canonical_json(
+            {
+                "artifact": str(target),
+                "plan_sha256": plan.plan_sha256,
+                "slot_count": len(plan.slots),
+                "pairs_per_symbol": plan.pairs_per_symbol,
+            }
+        )
+    )
+    return 0
 
 
 def command_recover(args: argparse.Namespace) -> int:
@@ -294,6 +331,20 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     status = subparsers.add_parser("status", help="inspect local blockers only")
     status.set_defaults(func=command_status)
+    plan = subparsers.add_parser(
+        "plan",
+        help="write a deterministic balanced testnet campaign plan",
+    )
+    plan.add_argument("--campaign-id", required=True)
+    plan.add_argument("--target-quote-notional", required=True)
+    plan.add_argument(
+        "--pairs-per-symbol",
+        type=int,
+        default=(
+            evidence_module.ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL
+        ),
+    )
+    plan.set_defaults(func=command_plan)
     for name, handler in (
         ("recover", command_recover),
         ("capture", command_capture),
