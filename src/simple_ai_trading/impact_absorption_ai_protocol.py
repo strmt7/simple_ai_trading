@@ -25,7 +25,7 @@ from .impact_absorption_event_sequence import (
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
 ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v3"
-ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v1"
+ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_MINIMUM_PARAMETER_COUNT = 2_000_000_000
@@ -591,15 +591,21 @@ class Round74AIReviewDecision:
         }:
             raise ValueError("Round 74 AI decision fields differ")
         reasons = payload["reason_codes"]
-        if not isinstance(reasons, list) or any(
-            not isinstance(value, str) for value in reasons
+        if (
+            not isinstance(reasons, list)
+            or any(not isinstance(value, str) for value in reasons)
+            or len(reasons) != len(set(reasons))
         ):
             raise ValueError("Round 74 AI decision reason codes differ")
+        verdict = str(payload["verdict"])
+        size_multiplier_bps = payload["size_multiplier_bps"]
+        if verdict == "reduce" and size_multiplier_bps == 0:
+            verdict = "veto"
         selected = cls(
-            verdict=str(payload["verdict"]),
-            size_multiplier_bps=payload["size_multiplier_bps"],
+            verdict=verdict,
+            size_multiplier_bps=size_multiplier_bps,
             confidence_bps=payload["confidence_bps"],
-            reason_codes=tuple(reasons),
+            reason_codes=tuple(sorted(reasons)),
             schema_version=str(payload["schema_version"]),
         )
         selected.validate()
