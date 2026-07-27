@@ -41,10 +41,10 @@ from .round74_active_qualification import (
 
 
 ROUND74_EVENT_COHORT_PLAN_RELATIVE_PATH = Path(
-    "docs/model-research/action-value/round-074-event-cohort-plan-v3.json"
+    "docs/model-research/action-value/round-074-event-cohort-plan-v4.json"
 )
 ROUND74_EVENT_COHORT_PLAN_SHA256 = (
-    "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9"
+    "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
 )
 ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION = (
     "round-074-event-cohort-slot-state-v3"

@@ -1,0 +1,64 @@
+{
+  "schema_version": "round-074-event-cohort-plan-v4",
+  "implementation_git_commit": "6efe56902524941c35654902b889ad85cd50f1b1",
+  "scheduled_start_wall_ns": 1785161700000000000,
+  "role_counts": {
+    "training": 120,
+    "tuning": 24,
+    "test": 24
+  },
+  "total_slots": 168,
+  "schedule_formula": {
+    "ordinal_origin": 0,
+    "slot_period_ns": 3900000000000,
+    "capture_duration_ns": 3600000000000,
+    "start_tolerance_ns": 30000000000,
+    "maximum_end_overhead_ns": 120000000000
+  },
+  "capture_contract": {
+    "provider": "Binance USD-M public production market data",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "capture_schema_version": "round-074-prospective-evidence-v10",
+    "capture_report_schema_version": "round-074-capture-report-v10",
+    "capture_design_sha256": "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136",
+    "capture_contract_sha256": "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0",
+    "mode": "qualification",
+    "maximum_reconnects": 0,
+    "failed_or_missed_slot_replacement_permitted": false,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "prerequisite": {
+    "artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+    "window_start_wall_ns": 1785156900000000000,
+    "window_end_wall_ns": 1785160620000000000,
+    "must_pass_before_first_slot": true,
+    "prerequisite_capture_is_model_cohort_data": false
+  },
+  "partition_policy": {
+    "split_unit": "whole capture run",
+    "role_order": [
+      "training",
+      "tuning",
+      "test"
+    ],
+    "random_row_split_permitted": false,
+    "minimum_purge_ns": 310500000000,
+    "minimum_embargo_ns": 310500000000,
+    "maximum_target_span_ns": 310500000000,
+    "test_labels_or_outcomes_visible_before_pretest_seal": false
+  },
+  "scope": {
+    "purpose": "initial live microstructure viability cohort",
+    "long_horizon_edge_claim_permitted": false,
+    "years_of_historical_coverage_claim": false,
+    "financial_edge_tested_by_plan": false,
+    "profitability_claim": false,
+    "trading_authority": false
+  },
+  "plan_sha256": "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
+}
