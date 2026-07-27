@@ -332,8 +332,8 @@ After parser or taxonomy changes, regenerate the header through the native build
   their audited decision and replay the delayed book up to the frozen 30-second
   historical ceiling. Runtime vetoes, AI vetoes, expired reviews, target
   ineligibility, and delayed overlap remain paired zero-exposure outcomes. Read
-  `round-074-event-sequence-model-design-v48.json` and
-  `round-074-local-ai-review-design-v34.json`. This is implemented mechanics,
+  `round-074-event-sequence-model-design-v49.json` and
+  `round-074-local-ai-review-design-v35.json`. This is implemented mechanics,
   not AI inference, uplift, edge, profitability, or trading authority.
 - Live Binance AI reviews are exact-case, asynchronous, hash-chained, and
   shadow-only. Pending, failed, or stale reviews block only new entries; exits
