@@ -491,6 +491,26 @@ def _validated_execution(
     )
 
 
+def validate_round74_execution_calibration_record(
+    *,
+    record: Mapping[str, object],
+    reference_quote_notional: float,
+) -> dict[str, object]:
+    """Validate one source record without weakening full-panel requirements."""
+
+    reference = Decimal(str(reference_quote_notional))
+    if not reference.is_finite() or reference <= 0:
+        raise ValueError("Round 74 execution reference notional differs")
+    selected = _validated_execution(
+        record,
+        reference_quote_notional=reference,
+    )
+    normalized = selected.normalized_source
+    if not isinstance(normalized, dict):
+        raise ValueError("Round 74 execution normalized record differs")
+    return dict(normalized)
+
+
 def build_round74_execution_calibration_evidence(
     *,
     records: Sequence[Mapping[str, object]],
@@ -703,4 +723,5 @@ __all__ = [
     "ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION",
     "Round74ExecutionEvidenceBundle",
     "build_round74_execution_calibration_evidence",
+    "validate_round74_execution_calibration_record",
 ]
