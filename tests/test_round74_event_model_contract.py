@@ -120,7 +120,7 @@ from simple_ai_trading.round74_event_model_operator import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v59.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v60.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -128,7 +128,7 @@ AI_RUNTIME_PREFLIGHT_PATH = (
 )
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-multi-timescale-v9-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-format-bound-v10-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
