@@ -82,7 +82,11 @@ def _request() -> Round74AIReviewRequest:
     )
 
 
-def _capability(ok: bool = True) -> AICapabilityReport:
+def _capability(
+    ok: bool = True,
+    *,
+    free_vram_gb: float | None = 10.0,
+) -> AICapabilityReport:
     return AICapabilityReport(
         ok=ok,
         provider="ollama",
@@ -92,7 +96,7 @@ def _capability(ok: bool = True) -> AICapabilityReport:
         compute_backend_kind="directml",
         compute_backend_device="AMD Radeon RX 9070 XT",
         compute_backend_reason="",
-        free_vram_gb=10.0,
+        free_vram_gb=free_vram_gb,
         free_ram_gb=20.0 if ok else 8.0,
         model_parameters_b=8.0,
         messages=() if ok else ("free system RAM is below required",),
@@ -335,6 +339,87 @@ def test_runtime_capability_policy_requires_declared_headroom() -> None:
     assert captured[0].min_free_ram_gb == 16.0
     assert captured[0].min_free_vram_gb == 8.0
     assert captured[0].allow_paper_fallback is False
+
+
+def test_runtime_accepts_warm_exact_gpu_model_when_cold_load_headroom_is_low() -> None:
+    process = _Process()
+    inspections: list[tuple[str, str, str]] = []
+
+    def inspect(
+        endpoint: str,
+        model_name: str,
+        _timeout_seconds: float,
+        *,
+        expected_digest: str,
+    ) -> OllamaResidencyReport:
+        inspections.append((endpoint, model_name, expected_digest))
+        return OllamaResidencyReport(
+            requested_model=model_name,
+            status="gpu_resident",
+            loaded_model=model_name,
+            digest=expected_digest,
+            size_bytes=1_000,
+            size_vram_bytes=1_000,
+            vram_to_model_ratio=1.0,
+        )
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(free_vram_gb=2.0),
+        provenance_resolver=lambda *_: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=inspect,
+        popen_factory=_factory(process),
+        worker_command=("python", "-m", "isolated-worker"),
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "accepted"
+    assert inspections == [("http://127.0.0.1:11434", "fino1:8b", MODEL_DIGEST)]
+    assert outcome.capability is not None
+    assert outcome.capability["pre_inference_cold_load_headroom_passed"] is False
+    assert outcome.capability["pre_inference_exact_model_fully_gpu_resident"] is True
+    assert outcome.capability["provider_runtime_full_gpu_residency_verified"] is True
+
+
+def test_runtime_blocks_low_headroom_when_exact_model_is_not_warm() -> None:
+    spawned = False
+
+    def spawn(*_args: object, **_kwargs: object) -> _Process:
+        nonlocal spawned
+        spawned = True
+        return _Process()
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=lambda _config: _capability(free_vram_gb=2.0),
+        residency_inspector=lambda *_args, **_kwargs: OllamaResidencyReport(
+            requested_model="fino1:8b",
+            status="unloaded",
+            loaded_model=None,
+            digest=None,
+            size_bytes=None,
+            size_vram_bytes=None,
+            vram_to_model_ratio=None,
+        ),
+        popen_factory=spawn,
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "blocked_capability"
+    assert outcome.approved_risk_size_bps == 0
+    assert spawned is False
+    assert outcome.capability is not None
+    assert outcome.capability["pre_inference_exact_model_fully_gpu_resident"] is False
 
 
 def test_runtime_rejects_non_loopback_or_relaxed_resource_policy() -> None:

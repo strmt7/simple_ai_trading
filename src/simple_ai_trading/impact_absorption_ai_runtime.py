@@ -16,7 +16,9 @@ from .ai_review import resolve_ollama_model_provenance
 from .ai_runtime import (
     AICapabilityReport,
     AIRuntimeConfig,
+    OllamaResidencyReport,
     detect_ai_capabilities,
+    inspect_ollama_model_residency,
 )
 from .impact_absorption_ai_protocol import (
     Round74AIModelManifest,
@@ -33,7 +35,7 @@ from .impact_absorption_ai_worker import (
 )
 
 
-ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v1"
+ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v2"
 ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB = 16.0
 ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB = 8.0
 ROUND74_AI_RUNTIME_STATUSES = (
@@ -49,6 +51,7 @@ ROUND74_AI_RUNTIME_STATUSES = (
 
 CapabilityDetector = Callable[[AIRuntimeConfig], AICapabilityReport]
 ProvenanceResolver = Callable[[str, str, float], tuple[str, str]]
+ResidencyInspector = Callable[..., OllamaResidencyReport]
 PopenFactory = Callable[..., subprocess.Popen[str]]
 
 
@@ -278,8 +281,11 @@ def _provider_capability_messages(
     capability: AICapabilityReport,
     *,
     minimum_free_vram_gb: float,
+    exact_model_already_fully_gpu_resident: bool,
 ) -> tuple[str, ...]:
     messages = list(capability.messages)
+    if exact_model_already_fully_gpu_resident:
+        return tuple(messages)
     if capability.free_vram_gb is None:
         messages.append("free VRAM could not be measured before local AI inference")
     elif capability.free_vram_gb < minimum_free_vram_gb:
@@ -385,6 +391,7 @@ def review_round74_ai_candidate(
     observed_wall_ns: int,
     capability_detector: CapabilityDetector = detect_ai_capabilities,
     provenance_resolver: ProvenanceResolver = (resolve_ollama_model_provenance),
+    residency_inspector: ResidencyInspector = inspect_ollama_model_residency,
     popen_factory: PopenFactory = subprocess.Popen,
     worker_command: Sequence[str] | None = None,
     monotonic_ns: Callable[[], int] = time.monotonic_ns,
@@ -438,13 +445,46 @@ def review_round74_ai_candidate(
     capability_config = _capability_config(config, manifest)
     capability = capability_detector(capability_config)
     required_vram_gb = capability_config.min_free_vram_gb
+    warm_residency: OllamaResidencyReport | None = None
+    warm_residency_error_type: str | None = None
+    requires_warm_residency_check = capability.ok and (
+        capability.free_vram_gb is None or capability.free_vram_gb < required_vram_gb
+    )
+    if requires_warm_residency_check:
+        try:
+            warm_residency = residency_inspector(
+                config.endpoint,
+                config.model_name,
+                min(config.timeout_seconds, 2.0),
+                expected_digest=manifest.model_artifact_sha256,
+            ).validated()
+        except Exception as exc:  # noqa: BLE001 - gate converts to deny
+            warm_residency_error_type = type(exc).__name__
+    exact_model_already_fully_gpu_resident = bool(
+        warm_residency is not None
+        and warm_residency.fully_gpu_resident
+        and warm_residency.digest == manifest.model_artifact_sha256
+    )
     capability_messages = _provider_capability_messages(
         capability,
         minimum_free_vram_gb=required_vram_gb,
+        exact_model_already_fully_gpu_resident=(exact_model_already_fully_gpu_resident),
     )
     capability_payload = {
         **capability.asdict(),
         "minimum_free_vram_gb": required_vram_gb,
+        "pre_inference_cold_load_headroom_passed": (
+            capability.free_vram_gb is not None
+            and capability.free_vram_gb >= required_vram_gb
+        ),
+        "pre_inference_warm_residency_check_required": (requires_warm_residency_check),
+        "pre_inference_warm_residency": (
+            warm_residency.asdict() if warm_residency is not None else None
+        ),
+        "pre_inference_warm_residency_error_type": warm_residency_error_type,
+        "pre_inference_exact_model_fully_gpu_resident": (
+            exact_model_already_fully_gpu_resident
+        ),
         "provider_runtime_full_gpu_residency_required": True,
         "provider_runtime_full_gpu_residency_verified": False,
     }

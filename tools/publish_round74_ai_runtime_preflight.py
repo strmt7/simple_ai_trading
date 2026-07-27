@@ -35,7 +35,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v1"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v2"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0
@@ -63,6 +63,11 @@ def _canonical_bytes(value: object) -> bytes:
 
 def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
+
+
+def _progress(stage: str, **values: object) -> None:
+    detail = " ".join(f"{key}={value}" for key, value in values.items())
+    print(f"[round74-ai-preflight] {stage} {detail}".rstrip(), flush=True)
 
 
 def _normalized_file_sha256(path: Path) -> str:
@@ -242,39 +247,69 @@ def _run(repository: Path) -> dict[str, object]:
         for binding in panel:
             for model_name in model_names:
                 _unload_declared_model(model_name)
-            request = _synthetic_request()
-            outcome = review_round74_ai_candidate(
-                binding.runtime,
-                binding.manifest,
-                request,
-                deterministic_risk_gate_passed=True,
-                observed_wall_ns=time.time_ns(),
-            )
-            outcome.validate()
-            worker = outcome.worker_result
+            for phase in ("cold", "warm"):
+                _progress(
+                    "review-start",
+                    model=binding.model_name,
+                    phase=phase,
+                )
+                request = _synthetic_request()
+                outcome = review_round74_ai_candidate(
+                    binding.runtime,
+                    binding.manifest,
+                    request,
+                    deterministic_risk_gate_passed=True,
+                    observed_wall_ns=time.time_ns(),
+                )
+                outcome.validate()
+                worker = outcome.worker_result
+                if (
+                    outcome.status != "accepted"
+                    or worker is None
+                    or outcome.approved_risk_size_bps > outcome.proposed_risk_size_bps
+                    or worker["residency"]["status"] != "gpu_resident"
+                    or worker["residency"]["vram_to_model_ratio"] != 1.0
+                    or worker["decision"]["may_increase_risk"] is not False
+                    or worker["decision"]["may_select_side"] is not False
+                    or worker["decision"]["may_set_leverage"] is not False
+                    or worker["decision"]["may_submit_or_cancel_orders"] is not False
+                ):
+                    raise RuntimeError(
+                        f"Round 74 AI preflight model failed: "
+                        f"{binding.model_name} {phase}"
+                    )
+                outcomes.append(
+                    {
+                        "role": binding.role,
+                        "model_name": binding.model_name,
+                        "phase": phase,
+                        "manifest_sha256": binding.manifest.manifest_sha256,
+                        "request_sha256": request.request_sha256,
+                        "outcome": outcome.as_dict(),
+                    }
+                )
+                _progress(
+                    "review-complete",
+                    model=binding.model_name,
+                    phase=phase,
+                    elapsed_ns=outcome.elapsed_ns,
+                    load_duration_ns=worker["load_duration_ns"],
+                )
+            cold, warm = outcomes[-2:]
+            cold_worker = cold["outcome"]["worker_result"]
+            warm_worker = warm["outcome"]["worker_result"]
             if (
-                outcome.status != "accepted"
-                or worker is None
-                or outcome.approved_risk_size_bps > outcome.proposed_risk_size_bps
-                or worker["residency"]["status"] != "gpu_resident"
-                or worker["residency"]["vram_to_model_ratio"] != 1.0
-                or worker["decision"]["may_increase_risk"] is not False
-                or worker["decision"]["may_select_side"] is not False
-                or worker["decision"]["may_set_leverage"] is not False
-                or worker["decision"]["may_submit_or_cancel_orders"] is not False
+                cold["phase"] != "cold"
+                or warm["phase"] != "warm"
+                or warm_worker["load_duration_ns"] >= cold_worker["load_duration_ns"]
+                or warm["outcome"]["capability"][
+                    "pre_inference_exact_model_fully_gpu_resident"
+                ]
+                is not True
             ):
                 raise RuntimeError(
-                    f"Round 74 AI preflight model failed: {binding.model_name}"
+                    f"Round 74 AI warm residency proof failed: {binding.model_name}"
                 )
-            outcomes.append(
-                {
-                    "role": binding.role,
-                    "model_name": binding.model_name,
-                    "manifest_sha256": binding.manifest.manifest_sha256,
-                    "request_sha256": request.request_sha256,
-                    "outcome": outcome.as_dict(),
-                }
-            )
             _unload_declared_model(binding.model_name)
     finally:
         for model_name in model_names:
@@ -295,7 +330,8 @@ def _run(repository: Path) -> dict[str, object]:
             "ollama_endpoint": OLLAMA_ENDPOINT,
             "resident_models_before": sorted(loaded_before),
             "unrelated_resident_models_permitted": False,
-            "declared_models_unloaded_between_runs": True,
+            "declared_models_unloaded_between_model_batches": True,
+            "declared_model_retained_between_cold_and_warm_requests": True,
             "resident_models_after": sorted(loaded_after),
             "model_process_terminated": False,
             "official_keep_alive_zero_api_used": True,
@@ -310,9 +346,14 @@ def _run(repository: Path) -> dict[str, object]:
         },
         "model_outcomes": outcomes,
         "verification": {
-            "model_count": len(outcomes),
+            "model_count": len(panel),
+            "request_count": len(outcomes),
+            "cold_request_count": sum(value["phase"] == "cold" for value in outcomes),
+            "warm_request_count": sum(value["phase"] == "warm" for value in outcomes),
             "all_models_accepted_by_protocol": True,
             "all_models_fully_gpu_resident": True,
+            "all_warm_requests_reused_exact_gpu_residency": True,
+            "all_warm_load_durations_below_cold_load_durations": True,
             "all_models_remote_inference_used": False,
             "all_models_execution_authority": False,
             "all_models_may_increase_risk": False,
@@ -338,7 +379,8 @@ def _run(repository: Path) -> dict[str, object]:
                 "title": "Ollama FAQ: model keep-alive and unloading",
                 "url": "https://docs.ollama.com/faq",
                 "used_for": (
-                    "isolating model residency with the documented keep_alive=0 API"
+                    "retaining each model for its warm request and isolating model "
+                    "batches with the documented keep_alive API"
                 ),
             },
             {
