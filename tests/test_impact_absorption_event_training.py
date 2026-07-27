@@ -130,6 +130,41 @@ def _config() -> Round74EventTrainingConfig:
     )
 
 
+def _with_fully_censored_prefix(
+    batch: Round74EventTrainingBatch,
+    rows: int,
+) -> Round74EventTrainingBatch:
+    payoff = batch.net_payoff_bps.copy()
+    adverse_excursion = batch.maximum_adverse_excursion_bps.copy()
+    adverse = batch.adverse_selection.copy()
+    unpredictable = batch.regime_unpredictability.copy()
+    action_eligibility = batch.action_eligibility.copy()
+    regime_eligibility = batch.regime_unpredictability_eligibility.copy()
+    actual_entry = batch.actual_entry_monotonic_ns.copy()
+    actual_exit = batch.actual_exit_monotonic_ns.copy()
+    payoff[:rows] = 0.0
+    adverse_excursion[:rows] = 0.0
+    adverse[:rows] = 0.0
+    unpredictable[:rows] = 0.0
+    action_eligibility[:rows] = 0.0
+    regime_eligibility[:rows] = 0.0
+    actual_entry[:rows] = -1
+    actual_exit[:rows] = -1
+    selected = replace(
+        batch,
+        net_payoff_bps=_readonly(payoff),
+        maximum_adverse_excursion_bps=_readonly(adverse_excursion),
+        adverse_selection=_readonly(adverse),
+        regime_unpredictability=_readonly(unpredictable),
+        action_eligibility=_readonly(action_eligibility),
+        regime_unpredictability_eligibility=_readonly(regime_eligibility),
+        actual_entry_monotonic_ns=_readonly(actual_entry),
+        actual_exit_monotonic_ns=_readonly(actual_exit),
+    )
+    selected.validate()
+    return selected
+
+
 class _FixedClassificationPeer(torch.nn.Module):
     def __init__(self, probability: float) -> None:
         super().__init__()
@@ -316,6 +351,37 @@ def test_round74_trainer_rejects_mixed_or_repeated_capture_runs(
             compute_backend="cpu",
             config=_config(),
         )
+
+
+def test_round74_trainer_records_and_skips_fully_censored_minibatches(
+    tmp_path: Path,
+) -> None:
+    training = _with_fully_censored_prefix(
+        _batch("training", start_wall_ns=WALL_NS, identity=1, rows=3),
+        2,
+    )
+    tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+        identity=2,
+    )
+
+    artifact = train_and_seal_round74_pretest_policy(
+        [training],
+        [tuning],
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=_config(),
+    )
+    _model, policy = load_round74_pretest_policy(artifact.policy_path)
+
+    for report in policy["candidate_panel"].values():
+        optimization = report["peer_reports"][0]["history"][0][
+            "optimization_metrics"
+        ]
+        assert optimization["fully_censored_minibatches"] == 1.0
+        assert optimization["fully_censored_rows"] == 2.0
+        assert optimization["eligible_action_targets"] > 0.0
 
 
 def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
