@@ -52,6 +52,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
     ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
+    ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
     ROUND74_EVENT_TARGET_SCHEMA_VERSION,
 )
 
@@ -62,7 +63,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v17.json"
+    / "round-074-local-ai-review-design-v18.json"
 )
 
 
@@ -136,6 +137,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_ACTION_POLICY_SCHEMA_VERSION
     )
     assert source["target_schema_version"] == ROUND74_EVENT_TARGET_SCHEMA_VERSION
+    assert source["target_evidence_schema_version"] == (
+        ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
+    )
     assert source["uplift_evaluator_schema_version"] == (
         ROUND74_AI_UPLIFT_SCHEMA_VERSION
     )
@@ -252,6 +256,23 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "censor target and reject any selected action configuration with incomplete "
         "coverage"
     )
+    assert architecture["entry_and_exit_latency_are_separately_bound_per_symbol"] is True
+    assert (
+        architecture["residual_slippage_is_bound_per_symbol_and_reference_notional"]
+        is True
+    )
+    assert (
+        architecture["single_global_latency_or_residual_slippage_assumption_permitted"]
+        is False
+    )
+    assert architecture["structured_target_evidence_records_bind_exact_claims"] is True
+    assert (
+        architecture[
+            "target_evidence_records_bind_environment_source_time_count_query_and_payload"
+        ]
+        is True
+    )
+    assert architecture["mixed_target_evidence_environments_permitted"] is False
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -354,6 +375,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["historical_ai_queue_latency_implemented"] is True
     assert status["sealed_multiple_comparison_control_implemented"] is True
     assert status["mandatory_funding_schedule_binding_implemented"] is True
+    assert status["symbol_specific_execution_evidence_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
@@ -437,6 +459,12 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["unadjusted_95_percent_lower_bound_is_diagnostic_only"] is True
     assert evaluation["same_target_cost_and_timing_claim_binds_target_engine_source"] is True
     assert evaluation["funding_schedule_or_source_evidence_may_be_omitted"] is False
+    assert (
+        evaluation[
+            "symbol_specific_latency_fee_slippage_and_funding_evidence_may_be_omitted"
+        ]
+        is False
+    )
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True

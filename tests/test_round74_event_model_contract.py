@@ -66,6 +66,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
+    ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
     ROUND74_EVENT_TARGET_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_training import (
@@ -85,7 +86,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v31.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v32.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -163,6 +164,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert source["event_scaler_schema_version"] == ROUND74_EVENT_SCALER_SCHEMA_VERSION
     assert source["event_target_schema_version"] == ROUND74_EVENT_TARGET_SCHEMA_VERSION
+    assert source["event_target_evidence_schema_version"] == (
+        ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION
+    )
     assert (
         source["event_dataset_schema_version"] == ROUND74_EVENT_DATASET_SCHEMA_VERSION
     )
@@ -305,17 +309,33 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is False
     )
     assert (
-        targets["target_context_hash_binds_spec_quantity_filters_and_funding_schedule"]
+        targets[
+            "target_context_hash_binds_spec_quantity_filters_funding_schedule_and_execution_evidence"
+        ]
         is True
     )
     latency = targets["decision_to_entry_and_exit_execution_latency"]
     assert latency["must_be_measured_on_the_execution_host"] is True
     assert latency["entry_and_exit_must_be_measured_separately"] is True
+    assert latency["entry_and_exit_must_be_bound_separately_for_each_symbol"] is True
+    assert latency["single_global_latency_assumption_permitted"] is False
     assert latency["maximum_entry_latency_nanoseconds"] == 5_000_000_000
     assert latency["maximum_exit_latency_nanoseconds"] == 5_000_000_000
     assert latency["maximum_entry_state_lateness_nanoseconds"] == 250_000_000
     assert latency["maximum_exit_state_lateness_nanoseconds"] == 250_000_000
     assert latency["fixed_unverified_latency_assumption_permitted"] is False
+    assert (
+        latency[
+            "structured_latency_evidence_record_must_bind_all_symbols_and_both_paths"
+        ]
+        is True
+    )
+    assert (
+        latency[
+            "evidence_record_binds_environment_source_time_count_query_and_payload"
+        ]
+        is True
+    )
     entry = targets["entry_and_exit"]
     assert entry["initial_supported_execution"] == "marketable orders only"
     assert entry["passive_maker_fill_target_permitted_from_l2"] is False
@@ -324,10 +344,20 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     costs = targets["costs"]
     assert costs["commission_evidence_digest_required"] is True
+    assert costs["commission_must_be_bound_per_symbol"] is True
     assert costs["additional_residual_slippage_evidence_digest_required"] is True
+    assert (
+        costs[
+            "additional_residual_slippage_must_be_bound_per_symbol_and_reference_notional"
+        ]
+        is True
+    )
+    assert costs["single_global_residual_slippage_assumption_permitted"] is False
     assert costs["funding_boundary_panel_required_for_all_three_symbols"] is True
     assert costs["funding_schedule_source_evidence_digest_required"] is True
     assert costs["silently_empty_or_partial_funding_schedule_permitted"] is False
+    assert costs["structured_evidence_claims_must_match_exact_configured_values"] is True
+    assert costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
     assert costs["missing_account_fee_policy"] == "fail closed"
     assert costs["runtime_fee_mismatch_policy"] == (
         "model bundle is incompatible and cannot trade"
@@ -635,6 +665,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["historical_ai_queue_latency_implementation"] is True
     assert authority["sealed_multiple_comparison_control_implementation"] is True
     assert authority["mandatory_funding_schedule_binding_implementation"] is True
+    assert authority["symbol_specific_execution_evidence_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
@@ -790,7 +821,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
     assert "compute-only evidence" in binding["event_training_directml_reuse_scope"]
-    assert "does not bind target-v3" in binding["event_training_directml_reuse_scope"]
+    assert "does not bind target-v4" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
