@@ -82,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v23.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v24.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -598,6 +598,15 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai[
         "ai_may_create_side_increase_size_set_leverage_or_touch_orders"
     ] is False
+    assert ai["deferred_finance_challenger_count"] == 2
+    assert ai["deferred_challenger_downloaded_now"] is False
+    assert ai["financial_qa_benchmark_implies_trading_edge"] is False
+    assert (
+        ai[
+            "challenger_panel_expansion_requires_predeclared_resource_safe_packet_screen"
+        ]
+        is True
+    )
     authority = design["authority"]
     assert authority["training_only_scaler_implementation"] is True
     assert authority["prospective_target_engine_implementation"] is True

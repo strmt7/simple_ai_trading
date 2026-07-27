@@ -56,7 +56,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v9.json"
+    / "round-074-local-ai-review-design-v10.json"
 )
 
 
@@ -231,6 +231,22 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert (
         candidates["promotion_requires_our_paired_sealed_market_evidence"]
         is True
+    )
+    challengers = candidates["researched_deferred_challengers"]
+    assert [value["model_id"] for value in challengers] == [
+        "OpenDataArena/ODA-Fin-RL-8B",
+        "TheFinAI/Fin-o1-8B",
+    ]
+    assert all(value["license_id"] == "Apache-2.0" for value in challengers)
+    assert all(
+        value["trading_packet_edge_established"] is False
+        and value["local_artifact_downloaded"] is False
+        and len(value["repository_revision"]) == 40
+        for value in challengers
+    )
+    assert all(
+        value["source_safetensors_bytes"] > 16_000_000_000
+        for value in challengers
     )
 
     status = artifact["status"]
