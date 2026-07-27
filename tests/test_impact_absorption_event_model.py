@@ -18,6 +18,7 @@ from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
     ROUND74_EVENT_TCN_DILATIONS,
     ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
     Round74CausalEventTCN,
+    Round74EventPoolingLinear,
     Round74EventPoolingMLP,
     build_round74_event_model,
     round74_event_model_loss,
@@ -47,6 +48,7 @@ def _inputs(batch_size: int = 3, sequence_length: int = 32) -> torch.Tensor:
 @pytest.mark.parametrize(
     "model",
     (
+        Round74EventPoolingLinear(),
         Round74EventPoolingMLP(dropout=0.0),
         Round74CausalEventTCN(dropout=0.0),
     ),
@@ -69,6 +71,25 @@ def test_round74_candidate_outputs_are_finite_and_monotone(model: object) -> Non
         assert bool((differences >= 0.0).all())
     assert bool(
         (output.maximum_adverse_excursion_quantiles_bps >= 0.0).all()
+    )
+
+
+def test_round74_candidate_complexity_order_keeps_linear_control_smallest() -> None:
+    parameter_counts = {
+        candidate_id: sum(
+            parameter.numel()
+            for parameter in build_round74_event_model(
+                candidate_id
+            ).parameters()
+        )
+        for candidate_id in ROUND74_EVENT_MODEL_CANDIDATES
+    }
+
+    assert parameter_counts["event_pooling_linear"] < (
+        parameter_counts["event_pooling_mlp"]
+    )
+    assert parameter_counts["event_pooling_linear"] < (
+        parameter_counts["causal_event_tcn"]
     )
 
 
@@ -260,7 +281,11 @@ def test_round74_candidate_registry_fails_closed() -> None:
     assert tuple(
         type(build_round74_event_model(candidate_id)).__name__
         for candidate_id in ROUND74_EVENT_MODEL_CANDIDATES
-    ) == ("Round74EventPoolingMLP", "Round74CausalEventTCN")
+    ) == (
+        "Round74EventPoolingLinear",
+        "Round74EventPoolingMLP",
+        "Round74CausalEventTCN",
+    )
     with pytest.raises(ValueError, match="unsupported"):
         build_round74_event_model("future-model")
 

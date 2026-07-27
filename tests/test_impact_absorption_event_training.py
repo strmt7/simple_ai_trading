@@ -426,6 +426,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert len(development["target_context_panel_sha256"]) == 64
     assert policy["backend"]["kind"] == "cpu"
     assert set(policy["candidate_panel"]) == {
+        "event_pooling_linear",
         "event_pooling_mlp",
         "causal_event_tcn",
     }

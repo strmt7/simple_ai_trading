@@ -1,8 +1,8 @@
 """Probabilistic candidate models for causal Round 74 event sequences.
 
-The candidate panel intentionally contains both a compact pooling MLP and a
-causal dilated TCN. Architecture complexity has no promotion privilege. Model
-selection must occur later on sealed, after-cost evidence.
+The candidate panel intentionally contains a pooled linear control, a compact
+pooling MLP, and a causal dilated TCN. Architecture complexity has no promotion
+privilege. Model selection must occur later on sealed, after-cost evidence.
 """
 
 from __future__ import annotations
@@ -27,8 +27,12 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v2"
-ROUND74_EVENT_MODEL_CANDIDATES = ("event_pooling_mlp", "causal_event_tcn")
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v3"
+ROUND74_EVENT_MODEL_CANDIDATES = (
+    "event_pooling_linear",
+    "event_pooling_mlp",
+    "causal_event_tcn",
+)
 ROUND74_EVENT_HIDDEN_CHANNELS = 64
 ROUND74_EVENT_TCN_DILATIONS = (1, 2, 4, 8, 16, 32, 64)
 ROUND74_EVENT_TCN_KERNEL_SIZE = 3
@@ -198,6 +202,41 @@ class _Round74DistributionalHeads(nn.Module):
         return output
 
 
+def _round74_pooling_summary(
+    values: torch.Tensor,
+    *,
+    input_features: int,
+) -> torch.Tensor:
+    if values.ndim != 3 or values.shape[2] != input_features:
+        raise ValueError("Round 74 pooled model input dimensions are invalid")
+    if values.shape[1] < 2:
+        raise ValueError("Round 74 pooled model requires multiple events")
+    mean = values.mean(dim=1)
+    centered = values - mean.unsqueeze(1)
+    dispersion = torch.sqrt((centered * centered).mean(dim=1) + 1e-6)
+    return torch.cat((values[:, -1, :], mean, dispersion), dim=1)
+
+
+class Round74EventPoolingLinear(nn.Module):
+    """Low-capacity control over last, mean, and dispersion summaries."""
+
+    def __init__(
+        self,
+        input_features: int = len(ROUND74_EVENT_FEATURE_NAMES),
+    ) -> None:
+        super().__init__()
+        self.input_features = int(input_features)
+        self.heads = _Round74DistributionalHeads(self.input_features * 3)
+
+    def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
+        return self.heads(
+            _round74_pooling_summary(
+                values,
+                input_features=self.input_features,
+            )
+        )
+
+
 class Round74EventPoolingMLP(nn.Module):
     """Simple last/mean/dispersion baseline over causal event windows."""
 
@@ -220,14 +259,10 @@ class Round74EventPoolingMLP(nn.Module):
         self.heads = _Round74DistributionalHeads(hidden_channels)
 
     def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
-        if values.ndim != 3 or values.shape[2] != self.input_features:
-            raise ValueError("Round 74 pooling MLP input dimensions are invalid")
-        if values.shape[1] < 2:
-            raise ValueError("Round 74 pooling MLP requires multiple events")
-        mean = values.mean(dim=1)
-        centered = values - mean.unsqueeze(1)
-        dispersion = torch.sqrt((centered * centered).mean(dim=1) + 1e-6)
-        summary = torch.cat((values[:, -1, :], mean, dispersion), dim=1)
+        summary = _round74_pooling_summary(
+            values,
+            input_features=self.input_features,
+        )
         return self.heads(self.encoder(summary))
 
 
@@ -312,6 +347,8 @@ class Round74CausalEventTCN(nn.Module):
 
 def build_round74_event_model(candidate_id: str) -> nn.Module:
     selected = str(candidate_id).strip().lower()
+    if selected == "event_pooling_linear":
+        return Round74EventPoolingLinear()
     if selected == "event_pooling_mlp":
         return Round74EventPoolingMLP()
     if selected == "causal_event_tcn":
@@ -638,6 +675,7 @@ __all__ = [
     "ROUND74_EVENT_TCN_RECEPTIVE_FIELD",
     "Round74CausalEventTCN",
     "Round74EventModelOutput",
+    "Round74EventPoolingLinear",
     "Round74EventPoolingMLP",
     "build_round74_event_model",
     "round74_event_model_loss",

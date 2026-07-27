@@ -39,7 +39,7 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v5"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v6"
 ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v5"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
     "round-074-target-context-panel-v1"
