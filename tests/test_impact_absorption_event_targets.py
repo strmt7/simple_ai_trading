@@ -81,7 +81,12 @@ def _spec(
     slippage_bps: float = 0.0,
     latency_ns: int = 100_000_000,
     exit_latency_ns: int = 100_000_000,
+    funding_boundaries: dict[str, tuple[int, ...]] | None = None,
+    funding_evidence_sha256: str = "e" * 64,
 ) -> Round74EventTargetSpec:
+    funding = funding_boundaries or {
+        symbol: () for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+    }
     return Round74EventTargetSpec.create(
         reference_quote_notional=100.0,
         decision_to_entry_latency_ns=latency_ns,
@@ -89,10 +94,12 @@ def _spec(
         taker_fee_bps_by_symbol={
             symbol: fee_bps for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
         },
+        funding_boundaries_monotonic_ns=funding,
         additional_slippage_bps_per_side=slippage_bps,
         commission_evidence_sha256="a" * 64,
         entry_exit_latency_evidence_sha256="b" * 64,
         slippage_evidence_sha256="d" * 64,
+        funding_schedule_evidence_sha256=funding_evidence_sha256,
     )
 
 
@@ -460,10 +467,15 @@ def test_round74_path_risk_uses_intervening_books_not_only_endpoint() -> None:
 
 def test_round74_target_engine_censors_funding_crossing_and_capacity() -> None:
     funding_engine = Round74EventTargetEngine(
-        spec=_spec(),
+        spec=_spec(
+            funding_boundaries={
+                "BTCUSDT": (3 * NS,),
+                "ETHUSDT": (),
+                "SOLUSDT": (),
+            }
+        ),
         anchors=[_anchor()],
         quantity_rules=_rules(),
-        funding_boundaries_monotonic_ns={"BTCUSDT": (3 * NS,)},
     )
     funding_engine.observe_depth(
         received_monotonic_ns=900_000_000,
@@ -667,6 +679,19 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
     spec_payload = _spec().as_dict()
     restored = Round74EventTargetSpec.from_dict(spec_payload)
     assert restored.spec_sha256 == spec_payload["spec_sha256"]
+    assert spec_payload["funding_boundaries_monotonic_ns"] == {
+        "BTCUSDT": [],
+        "ETHUSDT": [],
+        "SOLUSDT": [],
+    }
+    assert spec_payload["funding_schedule_is_mandatory_and_hash_bound"] is True
+    assert _spec(
+        funding_boundaries={
+            "BTCUSDT": (3 * NS,),
+            "ETHUSDT": (),
+            "SOLUSDT": (),
+        }
+    ).spec_sha256 != restored.spec_sha256
     tampered = dict(spec_payload)
     tampered["reference_quote_notional"] = 101.0
     with pytest.raises(ValueError, match="payload digest"):
@@ -681,10 +706,14 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
                 symbol: 5.0
                 for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
             },
+            funding_boundaries_monotonic_ns={
+                symbol: () for symbol in ("BTCUSDT", "ETHUSDT", "SOLUSDT")
+            },
             additional_slippage_bps_per_side=1.0,
             commission_evidence_sha256="a" * 64,
             entry_exit_latency_evidence_sha256="unverified",
             slippage_evidence_sha256="d" * 64,
+            funding_schedule_evidence_sha256="e" * 64,
         )
     with pytest.raises(ValueError, match="oversampled"):
         Round74EventTargetEngine(
@@ -712,12 +741,15 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
             anchors=[],
             quantity_rules=invalid_rules,
         )
-    with pytest.raises(ValueError, match="funding boundary is duplicated"):
-        Round74EventTargetEngine(
-            spec=_spec(),
-            anchors=[],
-            quantity_rules=_rules(),
-            funding_boundaries_monotonic_ns={
+    with pytest.raises(ValueError, match="funding schedule differs"):
+        _spec(
+            funding_boundaries={
                 "BTCUSDT": (3 * NS, 3 * NS),
-            },
+                "ETHUSDT": (),
+                "SOLUSDT": (),
+            }
         )
+    with pytest.raises(ValueError, match="funding schedule differs"):
+        _spec(funding_boundaries={"BTCUSDT": (3 * NS,)})
+    with pytest.raises(ValueError, match="funding schedule evidence"):
+        _spec(funding_evidence_sha256="unverified")
