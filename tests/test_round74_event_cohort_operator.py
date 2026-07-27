@@ -49,7 +49,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v10.json"
+    / "round-074-event-cohort-operator-v11.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -58,12 +58,26 @@ HOST_SCHEDULE = (
     / "action-value"
     / "round-074-event-cohort-host-schedule-v5-2026-07-27.json"
 )
-CURRENT_HOST_SCHEDULE = (
+HISTORICAL_HOST_SCHEDULE_V6 = (
     REPOSITORY
     / "docs"
     / "model-research"
     / "action-value"
     / "round-074-event-cohort-host-schedule-v6-2026-07-27.json"
+)
+CURRENT_HOST_SCHEDULE = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-host-schedule-v7-2026-07-27.json"
+)
+V5_SLOT_ZERO_FAILURE = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-plan-v5-slot-000-failure-2026-07-27.json"
 )
 V1_SUPERSESSION = (
     REPOSITORY
@@ -121,21 +135,28 @@ def _canonical_sha256(value: object) -> str:
     ).hexdigest()
 
 
+def _normalized_source_sha256(path: Path) -> str:
+    normalized = (
+        path.read_text(encoding="utf-8")
+        .replace("\r\n", "\n")
+        .replace("\r", "\n")
+    )
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     contract = json.loads(OPERATOR_CONTRACT.read_text(encoding="utf-8"))
     claimed = contract.pop("artifact_sha256")
     source = contract["source_binding"]
 
     assert claimed == _canonical_sha256(contract)
+    assert source["hash_mode"] == "utf8_lf_normalized_sha256"
     for path_key, hash_key in (
         ("operator_path", "operator_sha256"),
         ("cohort_path", "cohort_sha256"),
         ("wrapper_path", "wrapper_sha256"),
     ):
-        assert (
-            hashlib.sha256((REPOSITORY / source[path_key]).read_bytes()).hexdigest()
-            == source[hash_key]
-        )
+        assert _normalized_source_sha256(REPOSITORY / source[path_key]) == source[hash_key]
     execution = contract["slot_execution_contract"]
     assert execution["automatic_retry_permitted"] is False
     assert execution["heartbeat_state_persisted_during_capture"] is True
@@ -189,12 +210,14 @@ def test_round74_historical_host_schedule_remains_hash_bound() -> None:
     assert limitations["profitability_or_edge_claim"] is False
 
 
-def test_round74_v6_host_schedule_is_exact_and_pre_execution_only() -> None:
-    evidence = json.loads(CURRENT_HOST_SCHEDULE.read_text(encoding="utf-8"))
+def test_round74_v6_host_schedule_remains_hash_bound() -> None:
+    evidence = json.loads(HISTORICAL_HOST_SCHEDULE_V6.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["cohort_plan_sha256"] == (
+        "4373c432bcabb10071a0e60a90bf7ac99299139f223eb2a5afff920e6b78deb4"
+    )
     assert evidence["operator_contract_artifact_sha256"] == (
         "0ef07ff29ae84064ded8956925959e79a55742751bef4890b2a3fd7a33073abf"
     )
@@ -217,6 +240,28 @@ def test_round74_v6_host_schedule_is_exact_and_pre_execution_only() -> None:
     assert limitations["future_execution_proven_now"] is False
     assert limitations["cohort_slot_admitted_now"] is False
     assert limitations["profitability_or_edge_claim"] is False
+
+
+def test_round74_v5_slot_zero_failure_is_hash_bound_and_never_reused() -> None:
+    evidence = json.loads(V5_SLOT_ZERO_FAILURE.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    root_cause = evidence["root_cause"]
+    assert root_cause["classification"] == "operator_identity_validation_defect"
+    assert root_cause["raw_capture_failed"] is False
+    assert root_cause["fresh_audit_failed"] is False
+    assert root_cause["report_schema_contains_last_frame_sha256"] is False
+    audit = evidence["capture_and_fresh_audit"]
+    assert audit["report_hash_matches"] is True
+    assert audit["run_id_matches"] is True
+    assert audit["frame_count_matches"] is True
+    assert audit["message_count_matches"] is True
+    assert audit["compressed_payload_bytes_match"] is True
+    adjudication = evidence["adjudication"]
+    assert adjudication["outcome"] == "failed"
+    assert adjudication["cohort_data_admitted"] is False
+    assert adjudication["failed_capture_reused_as_cohort_data"] is False
 
 
 def test_round74_cohort_v1_was_superseded_before_slot_zero() -> None:
@@ -360,7 +405,7 @@ def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
     assert (
         plan.plan_sha256
         == ROUND74_EVENT_COHORT_PLAN_SHA256
-        == ("4373c432bcabb10071a0e60a90bf7ac99299139f223eb2a5afff920e6b78deb4")
+        == ("a7e3afb41992599137b845e4e0d4ecee3b9c6cebadc9347617f551dcc04ec223")
     )
     assert ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES == 24 * 1024**3
     assert ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES == 4 * 1024**3
