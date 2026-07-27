@@ -107,6 +107,13 @@ CURRENT_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v50.json"
 )
+PROFILED_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v51.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -341,6 +348,69 @@ def test_round74_ai_design_delta_binds_exact_two_model_family() -> None:
     assert verification["focused_tests_passed"] == 18
     assert verification["incomplete_family_rejected_before_ledger_creation"]
     assert verification["duplicate_overlay_tamper_rejected"]
+    assert not verification["sealed_test_accessed"]
+    assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in status.values())
+
+
+def test_round74_ai_design_delta_binds_frozen_risk_profile() -> None:
+    previous = _load_json(CURRENT_ARTIFACT_PATH)
+    artifact = _load_json(PROFILED_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    profile = artifact["risk_profile_delta"]
+    verification = artifact["verification"]
+    status = artifact["status"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v51"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in ("protocol", "bridge", "review_panel", "sealed_evaluator"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    model_design = source["event_model_design"]
+    assert model_design["file_sha256"] == _source_file_sha256_at(
+        commit,
+        model_design["path"],
+    )
+    assert source["protocol"]["review_request_schema_version"] == (
+        "round-074-ai-review-request-v4"
+    )
+    assert source["protocol"]["prompt_payload_schema_version"] == (
+        "round-074-ai-prompt-payload-v3"
+    )
+    assert source["bridge"]["schema_version"] == "round-074-ai-bridge-v3"
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v5"
+    )
+    assert profile["profiles"] == ["conservative", "regular", "aggressive"]
+    assert profile["default_profile"] == "conservative"
+    assert profile["profile_is_frozen_before_ai_review"]
+    assert profile["profile_is_bound_by_request_sha256"]
+    assert profile["profile_changes_retain_reduce_veto_tolerance"]
+    for key in (
+        "profile_may_change_side",
+        "profile_may_increase_position_size",
+        "profile_may_set_or_increase_leverage",
+        "profile_may_submit_or_modify_orders",
+        "profile_may_override_deterministic_risk_controls",
+        "profile_specific_financial_uplift_assumed",
+    ):
+        assert profile[key] is False
+    assert {value["url"] for value in artifact["research_basis"]} == {
+        "https://arxiv.org/abs/2512.12264",
+        "https://arxiv.org/abs/2603.09303",
+    }
+    assert verification["focused_tests_passed"] == 96
+    assert verification["all_profile_request_digests_distinct"]
+    assert verification["all_profile_system_prompts_distinct"]
+    assert verification[
+        "all_profile_prompts_prohibit_size_increase_and_order_authority"
+    ]
     assert not verification["sealed_test_accessed"]
     assert not verification["gpu_model_workload_executed"]
     assert all(value is False for value in status.values())
