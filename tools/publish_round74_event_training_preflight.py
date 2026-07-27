@@ -32,8 +32,8 @@ from simple_ai_trading.impact_absorption_event_training import (
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v17"
-RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v6"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v18"
+RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v7"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
     "event_scaling": "src/simple_ai_trading/impact_absorption_event_scaling.py",
@@ -41,6 +41,7 @@ SOURCE_PATHS = {
     "event_dataset": "src/simple_ai_trading/impact_absorption_event_dataset.py",
     "event_model": "src/simple_ai_trading/impact_absorption_event_model.py",
     "event_training": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_model_operator": "src/simple_ai_trading/round74_event_model_operator.py",
     "event_cohort": "src/simple_ai_trading/impact_absorption_event_cohort.py",
     "storage": "src/simple_ai_trading/storage.py",
     "preflight_runner": "tools/run_round74_event_training_preflight.py",
@@ -213,6 +214,7 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         or inputs.get("tuning_rows") != 2
         or inputs.get("training_capture_runs") != 2
         or inputs.get("tuning_capture_runs") != 1
+        or inputs.get("device_run_group_size") != 8
         or optimization_population
         != {
             "unit": "capture_run",
@@ -276,7 +278,7 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         or selection.get("selected_candidate_id") != result.get("selected_candidate_id")
         or selection.get("ordered_candidate_ids") != candidate_ids
         or selection.get("planned_comparison_count") != len(candidate_ids) - 1
-        or selection.get("required_paired_capture_run_count") != 24
+        or selection.get("required_paired_capture_run_count") != 12
         or selection.get("statistical_independence_or_significance_claim") is not False
         or selection.get("complexity_promotion_privilege") is not False
         or selection.get("backtest_metric_used_for_selection") is not False
