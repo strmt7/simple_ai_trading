@@ -47,16 +47,34 @@ def _run() -> dict[str, object]:
             "cpu_fallback_warning_count": 0,
         },
         "input_contract": {
-            "training_batch_sha256": "1" * 64,
+            "training_batch_sha256": ["1" * 64, "6" * 64],
             "tuning_batch_sha256": "2" * 64,
-            "training_eligible_action_targets": 15,
+            "training_rows": 7,
+            "tuning_rows": 2,
+            "training_capture_runs": 2,
+            "tuning_capture_runs": 1,
+            "training_eligible_action_targets": 54,
             "tuning_eligible_action_targets": 15,
-            "training_eligible_regime_targets": 8,
+            "training_eligible_regime_targets": 28,
             "tuning_eligible_regime_targets": 8,
             "candidate_ids": candidate_ids,
             "seeds": [7411, 7423, 7433],
             "epochs": 1,
             "minibatch_rows": 2,
+            "optimization_population": {
+                "unit": "capture_run",
+                "optimizer_step": (
+                    "one eligible minibatch per training capture run with "
+                    "gradient accumulation"
+                ),
+                "gradient_divisor": "training_capture_run_count",
+                "shorter_run_policy": (
+                    "deterministic epoch-rotated cycling of eligible minibatches"
+                ),
+                "fully_censored_minibatches_contribute_gradients": False,
+                "fully_censored_capture_run_policy": "reject",
+                "row_pooled_optimizer_steps_permitted": False,
+            },
         },
         "result": {
             "policy_sha256": "3" * 64,
@@ -68,6 +86,21 @@ def _run() -> dict[str, object]:
             "candidate_worst_run_tuning_proper_loss": losses,
             "candidate_pooled_tuning_proper_loss": losses,
             "peer_best_run_balanced_tuning_proper_loss": peers,
+            "peer_run_balanced_optimization_schedule": {
+                candidate_id: [
+                    {
+                        "run_count": 2.0,
+                        "optimizer_steps": 3.0,
+                        "run_contributions_per_optimizer_step": 2.0,
+                        "minimum_run_minibatch_contributions": 3.0,
+                        "maximum_run_minibatch_contributions": 3.0,
+                        "minimum_eligible_minibatches_per_run": 1.0,
+                        "maximum_eligible_minibatches_per_run": 3.0,
+                    }
+                    for _seed in (7411, 7423, 7433)
+                ]
+                for candidate_id in candidate_ids
+            },
             "selection": {
                 "criterion": "test complexity gate",
                 "selected_candidate_id": "event_pooling_linear",
@@ -109,6 +142,8 @@ def test_strict_json_rejects_duplicate_and_nonfinite_values() -> None:
 def test_validate_run_accepts_complete_three_candidate_panel() -> None:
     run = json.loads(json.dumps(_run(), sort_keys=True))
     PUBLISHER._validate_run(run, commit="a" * 40)
+    assert run["input_contract"]["training_capture_runs"] == 2
+    assert run["input_contract"]["training_rows"] == 7
 
 
 @pytest.mark.parametrize(

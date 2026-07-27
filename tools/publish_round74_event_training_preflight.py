@@ -27,8 +27,8 @@ from simple_ai_trading.impact_absorption_event_training import (
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v14"
-RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v3"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v15"
+RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v4"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
     "event_scaling": "src/simple_ai_trading/impact_absorption_event_scaling.py",
@@ -161,6 +161,8 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         raise RuntimeError("Round 74 DirectML backend did not pass its strict gate")
     candidate_ids = inputs.get("candidate_ids")
     seeds = inputs.get("seeds")
+    training_batch_sha256 = inputs.get("training_batch_sha256")
+    optimization_population = inputs.get("optimization_population")
     if (
         not isinstance(candidate_ids, list)
         or len(candidate_ids) < 2
@@ -169,6 +171,32 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         or not isinstance(seeds, list)
         or not seeds
         or not all(isinstance(value, int) and value > 0 for value in seeds)
+        or not isinstance(training_batch_sha256, list)
+        or len(training_batch_sha256) != 2
+        or len(set(training_batch_sha256)) != 2
+        or any(
+            not isinstance(value, str) or len(value) != 64
+            for value in training_batch_sha256
+        )
+        or inputs.get("training_rows") != 7
+        or inputs.get("tuning_rows") != 2
+        or inputs.get("training_capture_runs") != 2
+        or inputs.get("tuning_capture_runs") != 1
+        or optimization_population
+        != {
+            "unit": "capture_run",
+            "optimizer_step": (
+                "one eligible minibatch per training capture run with "
+                "gradient accumulation"
+            ),
+            "gradient_divisor": "training_capture_run_count",
+            "shorter_run_policy": (
+                "deterministic epoch-rotated cycling of eligible minibatches"
+            ),
+            "fully_censored_minibatches_contribute_gradients": False,
+            "fully_censored_capture_run_policy": "reject",
+            "row_pooled_optimizer_steps_permitted": False,
+        }
     ):
         raise RuntimeError("Round 74 preflight candidate or seed panel differs")
     metric_fields = (
@@ -182,12 +210,33 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         if not isinstance(values, dict) or set(values) != set(candidate_ids):
             raise RuntimeError(f"Round 74 preflight {field} panel differs")
     peer_metrics = result["peer_best_run_balanced_tuning_proper_loss"]
+    schedules = result.get("peer_run_balanced_optimization_schedule")
     if any(
         not isinstance(peer_metrics[candidate_id], list)
         or len(peer_metrics[candidate_id]) != len(seeds)
         for candidate_id in candidate_ids
     ):
         raise RuntimeError("Round 74 preflight peer update count differs")
+    schedule_contract = {
+        "run_count": 2.0,
+        "optimizer_steps": 3.0,
+        "run_contributions_per_optimizer_step": 2.0,
+        "minimum_run_minibatch_contributions": 3.0,
+        "maximum_run_minibatch_contributions": 3.0,
+        "minimum_eligible_minibatches_per_run": 1.0,
+        "maximum_eligible_minibatches_per_run": 3.0,
+    }
+    if (
+        not isinstance(schedules, dict)
+        or set(schedules) != set(candidate_ids)
+        or any(
+            not isinstance(schedules[candidate_id], list)
+            or len(schedules[candidate_id]) != len(seeds)
+            or any(value != schedule_contract for value in schedules[candidate_id])
+            for candidate_id in candidate_ids
+        )
+    ):
+        raise RuntimeError("Round 74 run-balanced optimization proof differs")
     for field in ("policy_sha256", "model_sha256", "prediction_sha256"):
         _require_sha256(result.get(field), field)
     selection = result.get("selection")
@@ -278,8 +327,6 @@ def _build_evidence(
             ),
             "real_market_events_used": False,
             "real_market_targets_used": False,
-            "training_rows": 2,
-            "tuning_rows": 2,
             **inputs,
             "test_batches_consumed": 0,
         },
