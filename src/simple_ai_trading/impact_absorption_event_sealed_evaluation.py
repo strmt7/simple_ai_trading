@@ -10,12 +10,13 @@ retain, reduce, or veto those same observations.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
 from pathlib import Path
 import re
+from typing import Protocol
 import warnings
 
 import numpy as np
@@ -25,6 +26,10 @@ from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
+)
+from .impact_absorption_ai_execution_replay import (
+    Round74AIExecutionReplayInstruction,
+    build_round74_ai_execution_replay_instructions,
 )
 from .impact_absorption_event_action_policy import (
     Round74ActionCandidateBatch,
@@ -50,8 +55,10 @@ from .impact_absorption_event_financial_metrics import (
 )
 from .impact_absorption_event_model import Round74EventModelOutput
 from .impact_absorption_event_sealed_ledger import (
+    Round74SealedDatasetIdentity,
     Round74SealedEvaluationClaim,
     Round74SealedEvaluationLedger,
+    build_round74_sealed_dataset_identity,
 )
 from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
@@ -65,7 +72,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v8"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v9"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v1"
 )
@@ -80,6 +87,44 @@ ROUND74_SEALED_AI_MODEL_COUNT = 2
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _ACTIVITY_REGIMES = ("predictable", "unpredictable", "unavailable")
+
+
+class Round74SealedTestBatchLoader(Protocol):
+    """Load the target-bearing test panel only after a live reservation."""
+
+    def __call__(
+        self,
+        *,
+        claim: Round74SealedEvaluationClaim,
+    ) -> Sequence[Round74EventTrainingBatch]: ...
+
+
+class Round74SealedAIReviewProvider(Protocol):
+    """Review only target-free contexts after the test access is consumed."""
+
+    def __call__(
+        self,
+        *,
+        claim: Round74SealedEvaluationClaim,
+        manifests: tuple[str, ...],
+        contexts: tuple[Round74ActionInferenceContext, ...],
+        candidates: tuple[Round74ActionCandidateBatch, ...],
+        action_selection: Round74ActionPolicySelection,
+    ) -> Mapping[str, Sequence[Round74AIPairedReviewEvidence]]: ...
+
+
+class Round74SealedAIExecutionReplayProvider(Protocol):
+    """Perform target-bearing replay only from post-reservation instructions."""
+
+    def __call__(
+        self,
+        *,
+        claim: Round74SealedEvaluationClaim,
+        instructions_by_manifest: Mapping[
+            str,
+            Sequence[Round74AIExecutionReplayInstruction],
+        ],
+    ) -> Mapping[str, Sequence[Round74AIExecutionReplayEvidence]]: ...
 
 
 def _canonical_json(value: object) -> str:
@@ -1826,6 +1871,10 @@ def _validate_ai_execution_replays(
     ],
     *,
     manifests: tuple[str, ...],
+    instructions_by_manifest: Mapping[
+        str,
+        Sequence[Round74AIExecutionReplayInstruction],
+    ],
 ) -> dict[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
     normalized = {
         _require_sha256(key, "AI manifest"): tuple(value)
@@ -1833,11 +1882,51 @@ def _validate_ai_execution_replays(
     }
     if set(normalized) != set(manifests):
         raise ValueError("Round 74 sealed AI execution replay panel differs")
-    for rows in normalized.values():
+    if set(instructions_by_manifest) != set(manifests):
+        raise ValueError("Round 74 sealed AI execution instruction panel differs")
+    for manifest, rows in normalized.items():
+        instructions = tuple(instructions_by_manifest[manifest])
         for row in rows:
             row.validate()
-        if len({row.replay_sha256 for row in rows}) != len(rows):
+        for instruction in instructions:
+            instruction.validate()
+        if (
+            len({row.replay_sha256 for row in rows}) != len(rows)
+            or len(rows) != len(instructions)
+        ):
             raise ValueError("Round 74 sealed AI execution replay is duplicated")
+        for row, instruction in zip(rows, instructions, strict=True):
+            permitted_statuses = (
+                {"target_ineligible", "delayed_overlap_veto", "executed"}
+                if instruction.pre_replay_status == "replay_required"
+                else {instruction.pre_replay_status}
+            )
+            if (
+                (
+                    row.row_index,
+                    row.feature_row_sha256,
+                    row.run_id,
+                    row.symbol,
+                    row.side,
+                    row.horizon_seconds,
+                    row.source_review_sha256,
+                    row.partition_sha256,
+                    row.requested_size_multiplier_bps,
+                )
+                != (
+                    instruction.row_index,
+                    instruction.feature_row_sha256,
+                    instruction.run_id,
+                    instruction.symbol,
+                    instruction.side,
+                    instruction.horizon_seconds,
+                    instruction.source_review_sha256,
+                    instruction.partition_sha256,
+                    instruction.requested_size_multiplier_bps,
+                )
+                or row.status not in permitted_statuses
+            ):
+                raise ValueError("Round 74 sealed AI execution instruction differs")
     return normalized
 
 
@@ -2040,14 +2129,8 @@ def _evaluate_reserved(
     action_selection: Round74ActionPolicySelection,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: Path,
-    ai_reviews_by_manifest: Mapping[
-        str,
-        Sequence[Round74AIPairedReviewEvidence],
-    ],
-    ai_execution_replays_by_manifest: Mapping[
-        str,
-        Sequence[Round74AIExecutionReplayEvidence],
-    ],
+    ai_review_provider: Round74SealedAIReviewProvider,
+    ai_execution_replay_provider: Round74SealedAIExecutionReplayProvider,
     compute_backend: str,
     inference_minibatch_rows: int,
 ) -> Round74SealedEvaluationReport:
@@ -2083,15 +2166,21 @@ def _evaluate_reserved(
         candidates,
         threshold_score=threshold,
     )
+    contexts = tuple(
+        build_round74_action_inference_context(batch) for batch in test_batches
+    )
+    ai_reviews_by_manifest = ai_review_provider(
+        claim=claim,
+        manifests=claim.ai_manifest_sha256,
+        contexts=contexts,
+        candidates=candidates,
+        action_selection=action_selection,
+    )
     reviews = _validate_ai_reviews(
         ai_reviews_by_manifest,
         manifests=claim.ai_manifest_sha256,
         expected_rows=target_free_rows,
         action_selection=action_selection,
-    )
-    executions = _validate_ai_execution_replays(
-        ai_execution_replays_by_manifest,
-        manifests=claim.ai_manifest_sha256,
     )
     trace = _simulate_round74_action_trace_batches(
         test_batches,
@@ -2105,6 +2194,43 @@ def _evaluate_reserved(
         trace,
         profile=action_selection.profile,
         seed=ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+    replay_selection = replace(
+        action_selection,
+        evaluations=tuple(
+            replace(value, trace=trace) for value in action_selection.evaluations
+        ),
+    )
+    replay_selection.validate()
+    instructions_by_manifest: dict[
+        str,
+        tuple[Round74AIExecutionReplayInstruction, ...],
+    ] = {}
+    for manifest, manifest_reviews in reviews.items():
+        by_row = {review.row_index: review for review in manifest_reviews}
+        try:
+            selected_reviews = tuple(
+                by_row[row_index] for row_index in trace.row_index
+            )
+        except KeyError as exc:
+            raise ValueError(
+                "Round 74 sealed AI execution review is missing"
+            ) from exc
+        instructions_by_manifest[manifest] = (
+            build_round74_ai_execution_replay_instructions(
+                replay_selection,
+                contexts=contexts,
+                reviews=selected_reviews,
+            )
+        )
+    ai_execution_replays_by_manifest = ai_execution_replay_provider(
+        claim=claim,
+        instructions_by_manifest=instructions_by_manifest,
+    )
+    executions = _validate_ai_execution_replays(
+        ai_execution_replays_by_manifest,
+        manifests=claim.ai_manifest_sha256,
+        instructions_by_manifest=instructions_by_manifest,
     )
     partition_sha256 = {
         batch.partition_sha256 for batch in test_batches
@@ -2173,37 +2299,46 @@ def _evaluate_reserved(
 
 
 def evaluate_round74_sealed_once(
-    test_batches: Sequence[Round74EventTrainingBatch],
+    test_identity: Round74SealedDatasetIdentity,
     *,
+    test_batch_loader: Round74SealedTestBatchLoader,
     action_selection: Round74ActionPolicySelection,
     probability_calibration: Round74ProbabilityCalibration,
     pretest_policy_path: str | Path,
-    ai_reviews_by_manifest: Mapping[
-        str,
-        Sequence[Round74AIPairedReviewEvidence],
-    ],
-    ai_execution_replays_by_manifest: Mapping[
-        str,
-        Sequence[Round74AIExecutionReplayEvidence],
-    ],
+    ai_manifest_sha256: Sequence[str],
+    ai_review_provider: Round74SealedAIReviewProvider,
+    ai_execution_replay_provider: Round74SealedAIExecutionReplayProvider,
     ledger: Round74SealedEvaluationLedger,
     compute_backend: str = "auto",
     inference_minibatch_rows: int = ROUND74_SEALED_INFERENCE_MINIBATCH_ROWS,
 ) -> Round74SealedEvaluationOutcome:
-    """Reserve, evaluate exactly once, and durably finalize the sealed result."""
+    """Reserve metadata, load targets, replay AI, and finalize exactly once."""
 
-    batches = tuple(test_batches)
     manifests = tuple(
         sorted(
-            _require_sha256(value, "AI manifest") for value in ai_reviews_by_manifest
+            _require_sha256(value, "AI manifest") for value in ai_manifest_sha256
         )
     )
-    claim = ledger.reserve(
-        test_batches=batches,
+    claim = ledger.reserve_identity(
+        test_identity=test_identity,
         action_selection=action_selection,
         ai_manifest_sha256=manifests,
     )
     try:
+        if not ledger.claim_matches(claim, required_status="reserved"):
+            raise ValueError("Round 74 sealed reservation is not live")
+        batches = tuple(test_batch_loader(claim=claim))
+        loaded_identity = build_round74_sealed_dataset_identity(batches)
+        if (
+            loaded_identity.as_dict() != test_identity.as_dict()
+            or loaded_identity.dataset_sha256 != claim.dataset_sha256
+            or loaded_identity.test_access_sha256 != claim.test_access_sha256
+            or loaded_identity.partition_sha256 != claim.partition_sha256
+            or loaded_identity.scaler_sha256 != claim.scaler_sha256
+            or loaded_identity.test_run_ids != claim.test_run_ids
+            or loaded_identity.batch_sha256 != claim.batch_sha256
+        ):
+            raise ValueError("Round 74 sealed loaded test identity differs")
         report = _evaluate_reserved(
             claim,
             ledger=ledger,
@@ -2211,10 +2346,8 @@ def evaluate_round74_sealed_once(
             action_selection=action_selection,
             probability_calibration=probability_calibration,
             pretest_policy_path=Path(pretest_policy_path),
-            ai_reviews_by_manifest=ai_reviews_by_manifest,
-            ai_execution_replays_by_manifest=(
-                ai_execution_replays_by_manifest
-            ),
+            ai_review_provider=ai_review_provider,
+            ai_execution_replay_provider=ai_execution_replay_provider,
             compute_backend=compute_backend,
             inference_minibatch_rows=inference_minibatch_rows,
         )
@@ -2263,10 +2396,13 @@ __all__ = [
     "Round74RegimeForecastSlice",
     "Round74RunBlockBootstrap",
     "Round74SealedAIOverlay",
+    "Round74SealedAIExecutionReplayProvider",
+    "Round74SealedAIReviewProvider",
     "Round74SealedEvaluationOutcome",
     "Round74SealedEvaluationReport",
     "Round74SealedPredictiveDiagnostics",
     "Round74SealedStrategyMetrics",
+    "Round74SealedTestBatchLoader",
     "Round74TargetFreeCandidateInference",
     "evaluate_round74_sealed_once",
     "infer_round74_target_free_candidates",

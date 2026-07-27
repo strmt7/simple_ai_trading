@@ -15,6 +15,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIReviewDecision,
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
+    Round74AIExecutionReplayInstruction,
     build_round74_ai_execution_replay_instructions,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
@@ -52,6 +53,7 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     Round74SealedEvaluationLedger,
     Round74SealedLedgerError,
     Round74SealedReuseError,
+    build_round74_sealed_dataset_identity,
 )
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     Round74TargetFreeCandidateInference,
@@ -510,19 +512,32 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
 ) -> None:
     ledger = Round74SealedEvaluationLedger(tmp_path / "sealed.sqlite3")
     batch = _test_batch()
+    identity = build_round74_sealed_dataset_identity((batch,))
+    loader_status: list[str] = []
+
+    def load_after_reservation(
+        *,
+        claim: Round74SealedEvaluationClaim,
+    ) -> tuple[Round74EventTrainingBatch, ...]:
+        assert ledger.claim_matches(claim, required_status="reserved")
+        loader_status.append(claim.status)
+        return (batch,)
 
     with pytest.raises(ValueError, match="pretest policy could not be read"):
         evaluate_round74_sealed_once(
-            (batch,),
+            identity,
+            test_batch_loader=load_after_reservation,
             action_selection=_selection(),
             probability_calibration=_calibration(),
             pretest_policy_path=tmp_path / "missing-policy.json",
-            ai_reviews_by_manifest={"a" * 64: ()},
-            ai_execution_replays_by_manifest={"a" * 64: ()},
+            ai_manifest_sha256=("a" * 64,),
+            ai_review_provider=lambda **_kwargs: {"a" * 64: ()},
+            ai_execution_replay_provider=lambda **_kwargs: {"a" * 64: ()},
             ledger=ledger,
             compute_backend="cpu",
         )
 
+    assert loader_status == ["reserved"]
     with pytest.raises(Round74SealedReuseError, match="status=failed"):
         ledger.reserve(
             test_batches=(batch,),
@@ -578,17 +593,52 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         tuple(reviews),
         partition_sha256=batch.partition_sha256,
     )
+    provider_order: list[str] = []
+
+    def load_test_batches(
+        *,
+        claim: Round74SealedEvaluationClaim,
+    ) -> tuple[Round74EventTrainingBatch, ...]:
+        assert ledger.claim_matches(claim, required_status="reserved")
+        provider_order.append("load")
+        return (batch,)
+
+    def review_provider(
+        *,
+        claim: Round74SealedEvaluationClaim,
+        **_kwargs: object,
+    ) -> Mapping[str, tuple[Round74AIPairedReviewEvidence, ...]]:
+        assert ledger.claim_matches(claim, required_status="reserved")
+        provider_order.append("review")
+        return {manifest: tuple(reviews)}
+
+    def replay_provider(
+        *,
+        claim: Round74SealedEvaluationClaim,
+        instructions_by_manifest: Mapping[
+            str,
+            tuple[Round74AIExecutionReplayInstruction, ...],
+        ],
+    ) -> Mapping[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
+        assert ledger.claim_matches(claim, required_status="reserved")
+        assert tuple(instructions_by_manifest) == (manifest,)
+        provider_order.append("replay")
+        return {manifest: execution_replays}
+
     outcome = evaluate_round74_sealed_once(
-        (batch,),
+        build_round74_sealed_dataset_identity((batch,)),
+        test_batch_loader=load_test_batches,
         action_selection=selection,
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "policy.json",
-        ai_reviews_by_manifest={manifest: tuple(reviews)},
-        ai_execution_replays_by_manifest={manifest: execution_replays},
+        ai_manifest_sha256=(manifest,),
+        ai_review_provider=review_provider,
+        ai_execution_replay_provider=replay_provider,
         ledger=ledger,
         compute_backend="cpu",
     )
 
+    assert provider_order == ["load", "review", "replay"]
     assert outcome.finalized_claim.status == "complete"
     assert outcome.report.result_outcome == "candidate_passed_predeclared_gates"
     assert outcome.report.qualified_configuration == ("ml_baseline",)
