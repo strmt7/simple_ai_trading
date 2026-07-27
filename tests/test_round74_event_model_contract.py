@@ -455,15 +455,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert (
-        targets[
-            "requested_quote_fraction_substitution_for_executed_notional_permitted"
-        ]
+        targets["requested_quote_fraction_substitution_for_executed_notional_permitted"]
         is False
     )
     assert (
-        targets[
-            "capital_scaled_payoff_and_mae_reconcile_quantity_price_and_reference"
-        ]
+        targets["capital_scaled_payoff_and_mae_reconcile_quantity_price_and_reference"]
         is True
     )
     latency = targets["decision_to_entry_and_exit_execution_latency"]
@@ -1160,14 +1156,17 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
-    assert "unequal constructed training runs" in (
-        binding["event_training_directml_reuse_scope"]
+    assert (
+        "unequal constructed training runs"
+        in (binding["event_training_directml_reuse_scope"])
     )
-    assert "equal capture-run gradient weight" in (
-        binding["event_training_directml_reuse_scope"]
+    assert (
+        "equal capture-run gradient weight"
+        in (binding["event_training_directml_reuse_scope"])
     )
-    assert "does not evidence market fit" in (
-        binding["event_training_directml_reuse_scope"]
+    assert (
+        "does not evidence market fit"
+        in (binding["event_training_directml_reuse_scope"])
     )
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
