@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import deque
 from dataclasses import dataclass, field
 import hashlib
 from itertools import pairwise
@@ -22,6 +21,8 @@ from .impact_absorption_event_sequence import (
     ROUND74_EVENT_SEQUENCE_LENGTH,
     ROUND74_EVENT_SYMBOLS,
     Round74EventToken,
+    Round74EventWindowAccumulator,
+    Round74GlobalEventWindowAccumulator,
     Round74ReplayObservation,
 )
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
@@ -34,9 +35,10 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v9"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v10"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v4"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
+ROUND74_EVENT_WINDOW_REPRESENTATIONS = ("per_symbol", "global_cross_asset")
 ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
     max(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS) * 1_000_000_000
     + 2 * ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS
@@ -232,6 +234,7 @@ def _feature_window_sha256(
     *,
     run_id: str,
     symbol: str,
+    window_representation: str,
     anchor_index: int,
     endpoint: Round74EventToken,
     feature_values: tuple[tuple[float, ...], ...],
@@ -239,6 +242,7 @@ def _feature_window_sha256(
     metadata = {
         "schema_version": ROUND74_EVENT_DATASET_SCHEMA_VERSION,
         "feature_names_sha256": ROUND74_EVENT_FEATURE_NAMES_SHA256,
+        "window_representation": window_representation,
         "run_id": run_id,
         "symbol": symbol,
         "anchor_index": int(anchor_index),
@@ -270,6 +274,7 @@ class Round74LabeledEventWindow:
     feature_window_sha256: str
     feature_values: tuple[tuple[float, ...], ...]
     outcomes: tuple[Round74EventTargetOutcome, ...]
+    window_representation: str = "per_symbol"
     schema_version: str = ROUND74_EVENT_DATASET_SCHEMA_VERSION
 
     def validate(self) -> None:
@@ -277,6 +282,7 @@ class Round74LabeledEventWindow:
             self.schema_version != ROUND74_EVENT_DATASET_SCHEMA_VERSION
             or _RUN_ID.fullmatch(self.run_id) is None
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
+            or self.window_representation not in ROUND74_EVENT_WINDOW_REPRESENTATIONS
             or self.symbol not in ROUND74_EVENT_SYMBOLS
             or int(self.anchor_index) < 0
             or min(
@@ -331,6 +337,7 @@ class Round74LabeledEventWindow:
             "role": self.role,
             "partition_sha256": self.partition_sha256,
             "test_access_sha256": self.test_access_sha256,
+            "window_representation": self.window_representation,
             "symbol": self.symbol,
             "anchor_index": self.anchor_index,
             "decision_monotonic_ns": self.decision_monotonic_ns,
@@ -394,6 +401,7 @@ class Round74EventTrainingBatch:
     regime_unpredictability: np.ndarray
     action_eligibility: np.ndarray
     regime_unpredictability_eligibility: np.ndarray
+    window_representation: str = "per_symbol"
     schema_version: str = ROUND74_EVENT_DATASET_SCHEMA_VERSION
 
     @property
@@ -439,6 +447,7 @@ class Round74EventTrainingBatch:
         if (
             self.schema_version != ROUND74_EVENT_DATASET_SCHEMA_VERSION
             or self.role not in ROUND74_EVENT_PARTITION_ROLES
+            or self.window_representation not in ROUND74_EVENT_WINDOW_REPRESENTATIONS
             or self.rows < 1
             or len(self.run_id) != self.rows
             or len(self.symbol) != self.rows
@@ -554,6 +563,7 @@ class Round74EventTrainingBatch:
             "feature_window_sha256": list(self.feature_window_sha256),
             "target_context_sha256": list(self.target_context_sha256),
             "test_access_sha256": list(self.test_access_sha256),
+            "window_representation": self.window_representation,
         }
         digest = hashlib.sha256(_canonical_json(identity).encode("ascii"))
         for value in (
@@ -590,8 +600,13 @@ def build_round74_event_training_batch(
         sample.validate()
     roles = {sample.role for sample in selected}
     partitions = {sample.partition_sha256 for sample in selected}
-    if len(roles) != 1 or len(partitions) != 1:
-        raise ValueError("Round 74 event batch crossed role or partition")
+    representations = {sample.window_representation for sample in selected}
+    if (
+        len(roles) != 1
+        or len(partitions) != 1
+        or len(representations) != 1
+    ):
+        raise ValueError("Round 74 event batch crossed role partition or representation")
     raw_features = np.asarray(
         [sample.feature_values for sample in selected],
         dtype=np.float64,
@@ -730,6 +745,7 @@ def build_round74_event_training_batch(
         regime_unpredictability=_readonly(unpredictability),
         action_eligibility=_readonly(action_eligibility),
         regime_unpredictability_eligibility=_readonly(unpredictability_eligibility),
+        window_representation=next(iter(representations)),
     )
     batch.validate()
     return batch
@@ -749,6 +765,7 @@ class _PendingWindow:
     endpoint_message_index: int
     feature_window_sha256: str
     feature_values: tuple[tuple[float, ...], ...]
+    window_representation: str
     outcomes: list[Round74EventTargetOutcome] = field(default_factory=list)
 
     def complete(self) -> Round74LabeledEventWindow:
@@ -772,6 +789,7 @@ class _PendingWindow:
             feature_window_sha256=self.feature_window_sha256,
             feature_values=self.feature_values,
             outcomes=rows,
+            window_representation=self.window_representation,
         )
         sample.validate()
         return sample
@@ -789,6 +807,7 @@ class Round74EventDatasetAssembler:
         pretest_model_policy_sha256: str | None = None,
         test_unlock_sha256: str | None = None,
         maximum_window_gap_ns: int = (ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS),
+        window_representation: str = "per_symbol",
     ) -> None:
         partition.validate()
         self.partition = partition
@@ -799,6 +818,9 @@ class Round74EventDatasetAssembler:
         if int(maximum_window_gap_ns) < 1:
             raise ValueError("Round 74 assembler window gap is invalid")
         self.maximum_window_gap_ns = int(maximum_window_gap_ns)
+        self.window_representation = str(window_representation)
+        if self.window_representation not in ROUND74_EVENT_WINDOW_REPRESENTATIONS:
+            raise ValueError("Round 74 assembler window representation differs")
         if self.run.role == "test":
             policy = _require_sha256(
                 pretest_model_policy_sha256,
@@ -817,11 +839,16 @@ class Round74EventDatasetAssembler:
             )
         else:
             self.test_access_sha256 = ""
-        self._buffers = {
-            symbol: deque(maxlen=ROUND74_EVENT_SEQUENCE_LENGTH)
-            for symbol in ROUND74_EVENT_SYMBOLS
-        }
-        self._prior_token_ns: dict[str, int] = {}
+        accumulator_type = (
+            Round74EventWindowAccumulator
+            if self.window_representation == "per_symbol"
+            else Round74GlobalEventWindowAccumulator
+        )
+        self._window_accumulator = accumulator_type(
+            sequence_length=ROUND74_EVENT_SEQUENCE_LENGTH,
+            stride=1,
+            maximum_gap_ns=self.maximum_window_gap_ns,
+        )
         self._last_anchor_ns: dict[str, int] = {}
         self._next_anchor_index = {symbol: 0 for symbol in ROUND74_EVENT_SYMBOLS}
         self._pending: dict[str, _PendingWindow] = {}
@@ -864,16 +891,8 @@ class Round74EventDatasetAssembler:
 
     def _append_token(self, token: Round74EventToken) -> None:
         symbol = token.symbol
-        prior = self._prior_token_ns.get(symbol)
-        buffer = self._buffers[symbol]
-        if (
-            prior is not None
-            and token.received_monotonic_ns - prior > self.maximum_window_gap_ns
-        ):
-            buffer.clear()
-        self._prior_token_ns[symbol] = token.received_monotonic_ns
-        buffer.append(token)
-        if len(buffer) < ROUND74_EVENT_SEQUENCE_LENGTH:
+        window = self._window_accumulator.consume(token)
+        if window is None:
             return
         if not (
             self.run.eligible_anchor_start_wall_ns
@@ -889,10 +908,11 @@ class Round74EventDatasetAssembler:
         ):
             return
         anchor_index = self._next_anchor_index[symbol]
-        feature_values = tuple(item.feature_values for item in buffer)
+        feature_values = window.feature_values
         feature_sha = _feature_window_sha256(
             run_id=self.run.run_id,
             symbol=symbol,
+            window_representation=self.window_representation,
             anchor_index=anchor_index,
             endpoint=token,
             feature_values=feature_values,
@@ -922,6 +942,7 @@ class Round74EventDatasetAssembler:
             endpoint_message_index=token.message_index,
             feature_window_sha256=feature_sha,
             feature_values=feature_values,
+            window_representation=self.window_representation,
         )
         self._next_anchor_index[symbol] += 1
         self._last_anchor_ns[symbol] = token.received_monotonic_ns
@@ -1014,6 +1035,7 @@ def iter_round74_labeled_event_windows(
     target_engine: Round74EventTargetEngine,
     pretest_model_policy_sha256: str | None = None,
     test_unlock_sha256: str | None = None,
+    window_representation: str = "per_symbol",
 ) -> Iterator[Round74LabeledEventWindow]:
     """Audit and join one hash-bound run without writing duplicate windows."""
 
@@ -1049,6 +1071,7 @@ def iter_round74_labeled_event_windows(
         target_engine=target_engine,
         pretest_model_policy_sha256=pretest_model_policy_sha256,
         test_unlock_sha256=test_unlock_sha256,
+        window_representation=window_representation,
     )
     for observation in iter_round74_v10_event_observations(
         store,
@@ -1065,6 +1088,7 @@ __all__ = [
     "ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS",
     "ROUND74_EVENT_PARTITION_ROLES",
     "ROUND74_EVENT_PARTITION_SCHEMA_VERSION",
+    "ROUND74_EVENT_WINDOW_REPRESENTATIONS",
     "Round74EventDatasetAssembler",
     "Round74EventTrainingBatch",
     "Round74EventRunPartition",

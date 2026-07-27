@@ -8,6 +8,7 @@ import pytest
 
 from simple_ai_trading.impact_absorption import L2BookState
 from simple_ai_trading.impact_absorption_event_dataset import (
+    ROUND74_EVENT_WINDOW_REPRESENTATIONS,
     Round74EventDatasetAssembler,
     Round74EventRunPartition,
     Round74EventRunPartitionEntry,
@@ -374,6 +375,78 @@ def test_round74_streaming_assembler_builds_complete_bounded_panel() -> None:
     )
     assert len(batch.batch_sha256) == 64
     assert not batch.feature_values.flags.writeable
+
+
+def test_round74_dataset_binds_and_separates_window_representations() -> None:
+    assert ROUND74_EVENT_WINDOW_REPRESENTATIONS == (
+        "per_symbol",
+        "global_cross_asset",
+    )
+
+    def assemble(window_representation: str):
+        assembler = Round74EventDatasetAssembler(
+            partition=_partition(),
+            run_id=f"{1:032x}",
+            target_engine=_engine(),
+            window_representation=window_representation,
+        )
+        completed = []
+        for index in range(128):
+            completed.extend(
+                assembler.consume(
+                    _observation(
+                        index=index,
+                        monotonic_ns=index * 100_000_000,
+                        token=True,
+                    )
+                )
+            )
+        for index, monotonic_ns in enumerate(
+            range(12_800_000_000, 313_000_000_001, 200_000_000),
+            start=128,
+        ):
+            completed.extend(
+                assembler.consume(
+                    _observation(
+                        index=index,
+                        monotonic_ns=monotonic_ns,
+                        token=False,
+                    )
+                )
+            )
+        completed.extend(assembler.finish())
+        assert len(completed) == 1
+        return completed[0]
+
+    per_symbol = assemble("per_symbol")
+    global_context = assemble("global_cross_asset")
+    assert per_symbol.window_representation == "per_symbol"
+    assert global_context.window_representation == "global_cross_asset"
+    assert per_symbol.feature_values == global_context.feature_values
+    assert per_symbol.feature_window_sha256 != global_context.feature_window_sha256
+    assert per_symbol.sample_sha256 != global_context.sample_sha256
+
+    scaler = fit_round74_event_feature_scaler(
+        np.asarray(per_symbol.feature_values, dtype=np.float64),
+        partition_role="training",
+    )
+    global_batch = build_round74_event_training_batch(
+        [global_context],
+        scaler=scaler,
+    )
+    assert global_batch.window_representation == "global_cross_asset"
+    with pytest.raises(ValueError, match="role partition or representation"):
+        build_round74_event_training_batch(
+            [per_symbol, global_context],
+            scaler=scaler,
+        )
+    with pytest.raises(ValueError, match="window representation differs"):
+        Round74EventDatasetAssembler(
+            partition=_partition(),
+            run_id=f"{1:032x}",
+            target_engine=_engine(),
+            window_representation="unbound",
+        )
 
 
 def test_round74_streaming_assembler_never_uses_stale_depth_as_state() -> None:

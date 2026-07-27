@@ -9,9 +9,6 @@ import shutil
 
 import pytest
 
-from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
@@ -143,7 +140,7 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert execution["partition_written_only_after_all_168_bindings"] is True
     partition = contract["partition_contract"]
     assert partition["target_schema_version"] == "round-074-executable-event-target-v10"
-    assert partition["dataset_schema_version"] == (ROUND74_EVENT_DATASET_SCHEMA_VERSION)
+    assert partition["dataset_schema_version"] == "round-074-event-dataset-v9"
     assert partition["event_sequence_schema_version"] == (
         ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
     )
@@ -345,7 +342,7 @@ def test_round74_cohort_operator_v5_was_superseded_before_slot_zero() -> None:
         "round-074-event-dataset-v8"
     )
     assert evidence["replacement_operator"]["dataset_schema_version"] == (
-        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+        "round-074-event-dataset-v9"
     )
     basis = evidence["correction_basis"]
     assert basis["raw_capture_plan_changed"] is False
