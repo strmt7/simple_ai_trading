@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -106,6 +106,7 @@ def _real_batch(identity: int, start_wall_ns: int) -> Round74EventTrainingBatch:
 class _Batch:
     batch_sha256: str
     run_id: tuple[str, ...]
+    scaler_sha256: str = "2" * 64
 
 
 class _Subpartition:
@@ -128,6 +129,9 @@ class _Roles:
             _Batch(_digest(index), (f"{index:032x}",)) for index in range(19, 25)
         )
         self.subpartition = _Subpartition()
+        self.subpartition.policy_selection_run_ids = tuple(
+            batch.run_id[0] for batch in self.policy_selection_batches
+        )
 
     def validate(self) -> None:
         return None
@@ -154,12 +158,18 @@ class _Calibration:
 
 
 class _Policy:
-    def __init__(self, profile: str, target_sha256: tuple[str, ...]) -> None:
+    def __init__(
+        self,
+        profile: str,
+        target_sha256: tuple[str, ...],
+        execution_outcome_panel_sha256: str,
+    ) -> None:
         self.profile = profile
         self.pretest_policy_sha256 = _Calibration.pretest_policy_sha256
         self.probability_calibration_sha256 = _Calibration.calibration_sha256
         self.tuning_subpartition_sha256 = _Subpartition.subpartition_sha256
         self.target_batch_sha256 = target_sha256
+        self.execution_outcome_panel_sha256 = execution_outcome_panel_sha256
 
     def validate(self) -> None:
         return None
@@ -168,7 +178,127 @@ class _Policy:
         return {
             "profile": self.profile,
             "target_batch_sha256": list(self.target_batch_sha256),
+            "execution_outcome_panel_sha256": (
+                self.execution_outcome_panel_sha256
+            ),
         }
+
+
+class _Scaler:
+    scaler_sha256 = "2" * 64
+
+
+class _Partition:
+    def __init__(self, partition_sha256: str) -> None:
+        self.partition_sha256 = partition_sha256
+
+    def validate(self) -> None:
+        return None
+
+
+class _Assembly:
+    pass
+
+
+@dataclass(frozen=True)
+class _Latency:
+    pretest_policy_sha256: str = _Calibration.pretest_policy_sha256
+    pretest_model_sha256: str = _digest(701)
+    scaler_sha256: str = _Scaler.scaler_sha256
+    probability_calibration_sha256: str = _Calibration.calibration_sha256
+    tuning_subpartition_sha256: str = _Subpartition.subpartition_sha256
+    backend_kind: str = "cpu"
+    backend_device: str = "cpu"
+    backend_vendor: str = "portable CPU reference"
+    warning_count: int = 0
+
+    def validate(self) -> None:
+        return None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "pretest_policy_sha256": self.pretest_policy_sha256,
+            "pretest_model_sha256": self.pretest_model_sha256,
+            "scaler_sha256": self.scaler_sha256,
+            "probability_calibration_sha256": (
+                self.probability_calibration_sha256
+            ),
+            "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
+            "backend_kind": self.backend_kind,
+            "backend_device": self.backend_device,
+            "backend_vendor": self.backend_vendor,
+            "warning_count": self.warning_count,
+        }
+
+    @classmethod
+    def from_dict(cls, value: object) -> _Latency:
+        if not isinstance(value, dict):
+            raise ValueError("latency differs")
+        return cls(**value)
+
+
+@dataclass(frozen=True)
+class _ExecutionPanel:
+    profile: str
+    panel_sha256: str
+    rows: tuple[int, ...] = (1, 2, 3)
+
+
+def _mock_execution_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    roles: object,
+    *,
+    parent_partition_sha256: str,
+) -> tuple[_Scaler, _Partition, dict[str, _Assembly]]:
+    monkeypatch.setattr(subject, "Round74EventFeatureScaler", _Scaler)
+    monkeypatch.setattr(subject, "Round74SourceTargetAssembly", _Assembly)
+    monkeypatch.setattr(subject, "Round74OnlineDecisionLatencyEvidence", _Latency)
+    def benchmark(
+        _model: object,
+        *,
+        scaler: object,
+        calibration: object,
+        pretest_policy_sha256: str,
+        pretest_model_sha256: str,
+        backend: object,
+        device: object,
+        **_kwargs: object,
+    ) -> _Latency:
+        return _Latency(
+            pretest_policy_sha256=pretest_policy_sha256,
+            pretest_model_sha256=pretest_model_sha256,
+            scaler_sha256=str(scaler.scaler_sha256),
+            probability_calibration_sha256=str(
+                calibration.calibration_sha256
+            ),
+            tuning_subpartition_sha256=(
+                roles.subpartition.subpartition_sha256
+            ),
+            backend_kind=str(backend.kind),
+            backend_device=str(device),
+            backend_vendor=str(backend.vendor),
+        )
+
+    monkeypatch.setattr(
+        subject,
+        "benchmark_round74_online_decision_latency",
+        benchmark,
+    )
+    panels = tuple(
+        _ExecutionPanel(profile, _digest(800 + index))
+        for index, profile in enumerate(subject.ROUND74_ACTION_PROFILES)
+    )
+    monkeypatch.setattr(
+        subject,
+        "build_round74_delayed_execution_panels",
+        lambda *_args, **_kwargs: panels,
+    )
+    partition = _Partition(parent_partition_sha256)
+    assemblies = {
+        run_id: _Assembly()
+        for run_id in roles.subpartition.policy_selection_run_ids
+    }
+    return _Scaler(), partition, assemblies
 
 
 def _policy(roles: _Roles, *, representative: bool = True) -> dict[str, object]:
@@ -241,11 +371,18 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         return SimpleNamespace(profile=profile)
 
     monkeypatch.setattr(subject, "derive_round74_action_candidates", derive)
+    scaler, partition, assemblies = _mock_execution_boundary(
+        monkeypatch,
+        roles,
+        parent_partition_sha256=roles.subpartition.parent_partition_sha256,
+    )
 
     def select(
         batches: tuple[_Batch, ...],
         candidates: tuple[object, ...],
         _subpartition: object,
+        *,
+        execution_panel: _ExecutionPanel,
     ) -> _Policy:
         assert len(batches) == len(candidates) == 6
         profile = str(candidates[0].profile)
@@ -253,6 +390,7 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         return _Policy(
             profile,
             tuple(batch.batch_sha256 for batch in batches),
+            execution_panel.panel_sha256,
         )
 
     monkeypatch.setattr(subject, "select_round74_action_policy_batches", select)
@@ -260,6 +398,10 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
     result = subject.calibrate_and_select_round74_development_policy(
         roles,  # type: ignore[arg-type]
         pretest_policy_path="unused.json",
+        feature_scaler=scaler,  # type: ignore[arg-type]
+        execution_store=object(),
+        execution_partition=partition,  # type: ignore[arg-type]
+        execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]
         compute_backend="cpu",
     )
 
@@ -295,11 +437,20 @@ def test_round74_development_coordinator_rejects_unrepresentative_policy(
         "load_round74_pretest_policy",
         lambda _path: (_Model(), _policy(roles, representative=False)),
     )
+    scaler, partition, assemblies = _mock_execution_boundary(
+        monkeypatch,
+        roles,
+        parent_partition_sha256=roles.subpartition.parent_partition_sha256,
+    )
 
     with pytest.raises(ValueError, match="tuning role binding differs"):
         subject.calibrate_and_select_round74_development_policy(
             roles,  # type: ignore[arg-type]
             pretest_policy_path="unused.json",
+            feature_scaler=scaler,  # type: ignore[arg-type]
+            execution_store=object(),
+            execution_partition=partition,  # type: ignore[arg-type]
+            execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]
             compute_backend="cpu",
         )
 
@@ -344,10 +495,33 @@ def test_round74_development_coordinator_runs_real_calibration_and_policy_select
         "load_round74_pretest_policy",
         lambda _path: (model, policy),
     )
+    scaler, partition, assemblies = _mock_execution_boundary(
+        monkeypatch,
+        roles,
+        parent_partition_sha256=subpartition.parent_partition_sha256,
+    )
+    baseline_select = subject.select_round74_action_policy_batches
+
+    def delayed_select(*args, execution_panel, **kwargs):
+        baseline = baseline_select(*args, **kwargs)
+        return replace(
+            baseline,
+            execution_outcome_panel_sha256=execution_panel.panel_sha256,
+        )
+
+    monkeypatch.setattr(
+        subject,
+        "select_round74_action_policy_batches",
+        delayed_select,
+    )
 
     result = subject.calibrate_and_select_round74_development_policy(
         roles,  # type: ignore[arg-type]
         pretest_policy_path="unused.json",
+        feature_scaler=scaler,  # type: ignore[arg-type]
+        execution_store=object(),
+        execution_partition=partition,  # type: ignore[arg-type]
+        execution_target_assembly_by_run_id=assemblies,  # type: ignore[arg-type]
         compute_backend="cpu",
         minibatch_rows=3,
     )
@@ -416,8 +590,8 @@ def test_round74_development_input_pipeline_prepares_roles_before_training(
         target_assembly_by_run_id=lambda: {"run": "assembly"},
     )
     prepared = SimpleNamespace()
-    subpartition = SimpleNamespace()
-    roles = SimpleNamespace()
+    subpartition = SimpleNamespace(policy_selection_run_ids=("run",))
+    roles = SimpleNamespace(subpartition=subpartition)
     artifact = SimpleNamespace()
     monkeypatch.setattr(
         subject,
@@ -469,6 +643,11 @@ def test_round74_development_input_pipeline_prepares_roles_before_training(
             roles,
             {
                 "output_directory": "output",
+                "execution_store": "read-only-store",
+                "execution_partition": inputs.partition,
+                "execution_target_assembly_by_run_id": {
+                    "run": "assembly",
+                },
                 "compute_backend": "cpu",
                 "config": None,
                 "inference_minibatch_rows": 64,

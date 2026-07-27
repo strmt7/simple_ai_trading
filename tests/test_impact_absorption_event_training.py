@@ -21,6 +21,10 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SEQUENCE_LENGTH,
 )
+from simple_ai_trading.impact_absorption_event_scaling import (  # noqa: E402
+    ROUND74_EVENT_BINARY_FEATURE_COUNT,
+    Round74EventFeatureScaler,
+)
 from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT,
     ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS,
@@ -31,6 +35,7 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     _loss_for_minibatch,
     _losses_for_minibatch_group,
     load_round74_pretest_policy,
+    load_round74_pretest_scaler,
     train_and_seal_round74_pretest_policy,
 )
 from simple_ai_trading.impact_absorption_event_model import (  # noqa: E402
@@ -140,6 +145,24 @@ def _config() -> Round74EventTrainingConfig:
     )
 
 
+def _scaler() -> Round74EventFeatureScaler:
+    feature_count = len(ROUND74_EVENT_FEATURE_NAMES)
+    lower = np.full(feature_count, -10.0, dtype=np.float64)
+    upper = np.full(feature_count, 10.0, dtype=np.float64)
+    lower[:ROUND74_EVENT_BINARY_FEATURE_COUNT] = 0.0
+    upper[:ROUND74_EVENT_BINARY_FEATURE_COUNT] = 1.0
+    return Round74EventFeatureScaler(
+        median=np.zeros(feature_count, dtype=np.float64),
+        scale=np.ones(feature_count, dtype=np.float64),
+        lower_clip=lower,
+        upper_clip=upper,
+        constant_mask=np.zeros(feature_count, dtype=np.bool_),
+        fit_input_rows=10,
+        fit_sample_rows=10,
+        fit_sample_index_sha256="5" * 64,
+    )
+
+
 def test_round74_cohort_mode_rejects_partial_or_unbound_population(
     tmp_path: Path,
 ) -> None:
@@ -166,6 +189,46 @@ def test_round74_cohort_mode_rejects_partial_or_unbound_population(
             config=_config(),
             representative_window_policy_sha256="a" * 64,
         )
+
+
+def test_round74_pretest_persists_and_tamper_checks_exact_scaler(
+    tmp_path: Path,
+) -> None:
+    scaler = _scaler()
+    training = replace(
+        _batch("training", start_wall_ns=WALL_NS, identity=1),
+        scaler_sha256=scaler.scaler_sha256,
+    )
+    tuning = replace(
+        _batch(
+            "tuning",
+            start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+            identity=2,
+        ),
+        scaler_sha256=scaler.scaler_sha256,
+    )
+    training.validate()
+    tuning.validate()
+
+    artifact = train_and_seal_round74_pretest_policy(
+        [training],
+        [tuning],
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=_config(),
+        feature_scaler=scaler,
+    )
+    loaded = load_round74_pretest_scaler(artifact.policy_path)
+    assert loaded.as_dict() == scaler.as_dict()
+    _model, policy = load_round74_pretest_policy(artifact.policy_path)
+    scaler_artifact = policy["scaler_artifact"]
+    assert scaler_artifact["available"] is True
+    assert scaler_artifact["scaler_sha256"] == scaler.scaler_sha256
+
+    scaler_path = tmp_path / str(scaler_artifact["filename"])
+    scaler_path.write_bytes(scaler_path.read_bytes() + b"x")
+    with pytest.raises(ValueError, match="scaler artifact differs"):
+        load_round74_pretest_policy(artifact.policy_path)
 
 
 def _with_fully_censored_prefix(

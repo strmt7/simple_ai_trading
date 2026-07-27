@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
+from importlib.metadata import PackageNotFoundError, version
 import json
 from pathlib import Path
 import warnings
@@ -30,8 +31,16 @@ from .impact_absorption_event_calibration import (
     build_round74_tuning_subpartition,
     fit_round74_probability_calibration,
 )
-from .impact_absorption_event_dataset import Round74EventTrainingBatch
+from .impact_absorption_event_dataset import (
+    Round74EventRunPartition,
+    Round74EventTrainingBatch,
+)
 from .impact_absorption_event_model import Round74EventModelOutput
+from .impact_absorption_event_scaling import Round74EventFeatureScaler
+from .impact_absorption_event_sequence import (
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
+    ROUND74_EVENT_PAYOFF_SIDES,
+)
 from .impact_absorption_event_training import (
     Round74EventTrainingConfig,
     Round74PretestPolicyArtifact,
@@ -45,12 +54,20 @@ from .round74_event_model_operator import (
     split_round74_prepared_tuning_roles,
 )
 from .round74_event_development_inputs import Round74DevelopmentInputs
+from .round74_delayed_execution_panel import (
+    build_round74_delayed_execution_panels,
+)
+from .round74_online_decision_latency import (
+    Round74OnlineDecisionLatencyEvidence,
+    benchmark_round74_online_decision_latency,
+)
+from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 from .storage import write_bytes_atomic
 
 
-ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v1"
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v2"
 ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
-    "round-074-development-policy-bundle-v2"
+    "round-074-development-policy-bundle-v3"
 )
 
 _SHA256 = "0123456789abcdef"
@@ -84,6 +101,13 @@ def _module_sha256(filename: str) -> str:
     return hashlib.sha256(normalized).hexdigest()
 
 
+def _package_version(name: str) -> str:
+    try:
+        return version(name)
+    except PackageNotFoundError:
+        return "not-installed"
+
+
 def _current_source_sha256() -> dict[str, str]:
     return {
         "event_model_module_sha256": _module_sha256("impact_absorption_event_model.py"),
@@ -92,6 +116,12 @@ def _current_source_sha256() -> dict[str, str]:
         ),
         "action_policy_module_sha256": _module_sha256(
             "impact_absorption_event_action_policy.py"
+        ),
+        "decision_latency_module_sha256": _module_sha256(
+            "round74_online_decision_latency.py"
+        ),
+        "delayed_execution_module_sha256": _module_sha256(
+            "round74_delayed_execution_panel.py"
         ),
         "development_operator_module_sha256": _module_sha256(
             "round74_event_development_operator.py"
@@ -202,11 +232,15 @@ class Round74DevelopmentPolicyBundle:
 
     pretest_policy_sha256: str
     pretest_model_sha256: str
+    feature_scaler_sha256: str
     tuning_subpartition_sha256: str
     model_selection_batch_sha256: tuple[str, ...]
     calibration_batch_sha256: tuple[str, ...]
     policy_selection_batch_sha256: tuple[str, ...]
     probability_calibration: Round74ProbabilityCalibration
+    online_decision_latency: Round74OnlineDecisionLatencyEvidence
+    execution_outcome_panel_sha256: tuple[str, ...]
+    execution_outcome_panel_rows: tuple[int, ...]
     action_policies: tuple[Round74ActionPolicySelection, ...]
     backend_kind: str
     backend_device: str
@@ -215,6 +249,8 @@ class Round74DevelopmentPolicyBundle:
     event_model_module_sha256: str
     calibration_module_sha256: str
     action_policy_module_sha256: str
+    decision_latency_module_sha256: str
+    delayed_execution_module_sha256: str
     development_operator_module_sha256: str
     schema_version: str = ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
 
@@ -222,13 +258,17 @@ class Round74DevelopmentPolicyBundle:
         digest_values = (
             self.pretest_policy_sha256,
             self.pretest_model_sha256,
+            self.feature_scaler_sha256,
             self.tuning_subpartition_sha256,
             *self.model_selection_batch_sha256,
             *self.calibration_batch_sha256,
             *self.policy_selection_batch_sha256,
+            *self.execution_outcome_panel_sha256,
             self.event_model_module_sha256,
             self.calibration_module_sha256,
             self.action_policy_module_sha256,
+            self.decision_latency_module_sha256,
+            self.delayed_execution_module_sha256,
             self.development_operator_module_sha256,
         )
         if (
@@ -237,6 +277,17 @@ class Round74DevelopmentPolicyBundle:
             or len(self.model_selection_batch_sha256) != 12
             or len(self.calibration_batch_sha256) != 6
             or len(self.policy_selection_batch_sha256) != 6
+            or len(self.execution_outcome_panel_sha256)
+            != len(ROUND74_ACTION_PROFILES)
+            or len(self.execution_outcome_panel_rows)
+            != len(ROUND74_ACTION_PROFILES)
+            or len(set(self.execution_outcome_panel_sha256))
+            != len(ROUND74_ACTION_PROFILES)
+            or len(set(self.execution_outcome_panel_rows)) != 1
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 1
+                for value in self.execution_outcome_panel_rows
+            )
             or len(
                 set(
                     (
@@ -258,12 +309,19 @@ class Round74DevelopmentPolicyBundle:
             "event_model_module_sha256": self.event_model_module_sha256,
             "calibration_module_sha256": self.calibration_module_sha256,
             "action_policy_module_sha256": self.action_policy_module_sha256,
+            "decision_latency_module_sha256": (
+                self.decision_latency_module_sha256
+            ),
+            "delayed_execution_module_sha256": (
+                self.delayed_execution_module_sha256
+            ),
             "development_operator_module_sha256": (
                 self.development_operator_module_sha256
             ),
         } != _current_source_sha256():
             raise ValueError("Round 74 development policy source identity differs")
         self.probability_calibration.validate()
+        self.online_decision_latency.validate()
         if (
             self.probability_calibration.pretest_policy_sha256
             != self.pretest_policy_sha256
@@ -271,6 +329,19 @@ class Round74DevelopmentPolicyBundle:
             != self.tuning_subpartition_sha256
             or tuple(policy.profile for policy in self.action_policies)
             != ROUND74_ACTION_PROFILES
+            or self.online_decision_latency.pretest_policy_sha256
+            != self.pretest_policy_sha256
+            or self.online_decision_latency.pretest_model_sha256
+            != self.pretest_model_sha256
+            or self.online_decision_latency.scaler_sha256
+            != self.feature_scaler_sha256
+            or self.online_decision_latency.probability_calibration_sha256
+            != self.probability_calibration.calibration_sha256
+            or self.online_decision_latency.tuning_subpartition_sha256
+            != self.tuning_subpartition_sha256
+            or self.online_decision_latency.backend_kind != self.backend_kind
+            or self.online_decision_latency.backend_device != self.backend_device
+            or self.online_decision_latency.backend_vendor != self.backend_vendor
         ):
             raise ValueError("Round 74 development policy identity differs")
         for policy in self.action_policies:
@@ -281,6 +352,10 @@ class Round74DevelopmentPolicyBundle:
                 != self.probability_calibration.calibration_sha256
                 or policy.tuning_subpartition_sha256 != self.tuning_subpartition_sha256
                 or policy.target_batch_sha256 != self.policy_selection_batch_sha256
+                or policy.execution_outcome_panel_sha256
+                != self.execution_outcome_panel_sha256[
+                    ROUND74_ACTION_PROFILES.index(policy.profile)
+                ]
             ):
                 raise ValueError("Round 74 development action policy differs")
 
@@ -296,11 +371,35 @@ class Round74DevelopmentPolicyBundle:
             "operator_schema_version": ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION,
             "pretest_policy_sha256": self.pretest_policy_sha256,
             "pretest_model_sha256": self.pretest_model_sha256,
+            "feature_scaler_sha256": self.feature_scaler_sha256,
             "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
             "model_selection_batch_sha256": list(self.model_selection_batch_sha256),
             "calibration_batch_sha256": list(self.calibration_batch_sha256),
             "policy_selection_batch_sha256": list(self.policy_selection_batch_sha256),
             "probability_calibration": self.probability_calibration.as_dict(),
+            "online_decision_latency": self.online_decision_latency.as_dict(),
+            "execution_outcome_panels": [
+                {
+                    "profile": profile,
+                    "panel_sha256": panel_sha256,
+                    "row_count": rows,
+                    "target_outcome_count": (
+                        rows
+                        * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+                        * len(ROUND74_EVENT_PAYOFF_SIDES)
+                    ),
+                    "full_outcome_rows_persisted": False,
+                    "reproduction_source": (
+                        "read-only captured event store and source target assemblies"
+                    ),
+                }
+                for profile, panel_sha256, rows in zip(
+                    ROUND74_ACTION_PROFILES,
+                    self.execution_outcome_panel_sha256,
+                    self.execution_outcome_panel_rows,
+                    strict=True,
+                )
+            ],
             "action_policies": [policy.as_dict() for policy in self.action_policies],
             "backend": {
                 "kind": self.backend_kind,
@@ -312,6 +411,12 @@ class Round74DevelopmentPolicyBundle:
                 "event_model_module_sha256": self.event_model_module_sha256,
                 "calibration_module_sha256": self.calibration_module_sha256,
                 "action_policy_module_sha256": self.action_policy_module_sha256,
+                "decision_latency_module_sha256": (
+                    self.decision_latency_module_sha256
+                ),
+                "delayed_execution_module_sha256": (
+                    self.delayed_execution_module_sha256
+                ),
                 "development_operator_module_sha256": (
                     self.development_operator_module_sha256
                 ),
@@ -345,11 +450,14 @@ class Round74DevelopmentPolicyBundle:
             "operator_schema_version",
             "pretest_policy_sha256",
             "pretest_model_sha256",
+            "feature_scaler_sha256",
             "tuning_subpartition_sha256",
             "model_selection_batch_sha256",
             "calibration_batch_sha256",
             "policy_selection_batch_sha256",
             "probability_calibration",
+            "online_decision_latency",
+            "execution_outcome_panels",
             "action_policies",
             "backend",
             "source",
@@ -367,11 +475,17 @@ class Round74DevelopmentPolicyBundle:
             return tuple(values)
 
         calibration = payload["probability_calibration"]
+        latency = payload["online_decision_latency"]
+        execution_panels = payload["execution_outcome_panels"]
         policies = payload["action_policies"]
         backend = payload["backend"]
         source = payload["source"]
         if (
             not isinstance(calibration, Mapping)
+            or not isinstance(latency, Mapping)
+            or not isinstance(execution_panels, list)
+            or len(execution_panels) != len(ROUND74_ACTION_PROFILES)
+            or any(not isinstance(item, Mapping) for item in execution_panels)
             or not isinstance(policies, list)
             or any(not isinstance(item, Mapping) for item in policies)
             or not isinstance(backend, Mapping)
@@ -381,10 +495,47 @@ class Round74DevelopmentPolicyBundle:
         warning_count = backend.get("warning_count")
         if isinstance(warning_count, bool) or not isinstance(warning_count, int):
             raise ValueError("Round 74 development warning count differs")
+        expected_panel_keys = {
+            "profile",
+            "panel_sha256",
+            "row_count",
+            "target_outcome_count",
+            "full_outcome_rows_persisted",
+            "reproduction_source",
+        }
+        parsed_panel_sha256: list[str] = []
+        parsed_panel_rows: list[int] = []
+        for profile, raw_panel in zip(
+            ROUND74_ACTION_PROFILES,
+            execution_panels,
+            strict=True,
+        ):
+            assert isinstance(raw_panel, Mapping)
+            panel = dict(raw_panel)
+            rows = panel.get("row_count")
+            if (
+                set(panel) != expected_panel_keys
+                or panel.get("profile") != profile
+                or not _is_sha256(panel.get("panel_sha256"))
+                or isinstance(rows, bool)
+                or not isinstance(rows, int)
+                or rows < 1
+                or panel.get("target_outcome_count")
+                != rows
+                * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+                * len(ROUND74_EVENT_PAYOFF_SIDES)
+                or panel.get("full_outcome_rows_persisted") is not False
+                or panel.get("reproduction_source")
+                != "read-only captured event store and source target assemblies"
+            ):
+                raise ValueError("Round 74 execution outcome panel differs")
+            parsed_panel_sha256.append(str(panel["panel_sha256"]))
+            parsed_panel_rows.append(rows)
         try:
             selected = cls(
                 pretest_policy_sha256=str(payload["pretest_policy_sha256"]),
                 pretest_model_sha256=str(payload["pretest_model_sha256"]),
+                feature_scaler_sha256=str(payload["feature_scaler_sha256"]),
                 tuning_subpartition_sha256=str(payload["tuning_subpartition_sha256"]),
                 model_selection_batch_sha256=strings("model_selection_batch_sha256"),
                 calibration_batch_sha256=strings("calibration_batch_sha256"),
@@ -392,6 +543,11 @@ class Round74DevelopmentPolicyBundle:
                 probability_calibration=Round74ProbabilityCalibration.from_dict(
                     calibration
                 ),
+                online_decision_latency=(
+                    Round74OnlineDecisionLatencyEvidence.from_dict(latency)
+                ),
+                execution_outcome_panel_sha256=tuple(parsed_panel_sha256),
+                execution_outcome_panel_rows=tuple(parsed_panel_rows),
                 action_policies=tuple(
                     Round74ActionPolicySelection.from_dict(item) for item in policies
                 ),
@@ -402,6 +558,12 @@ class Round74DevelopmentPolicyBundle:
                 event_model_module_sha256=str(source["event_model_module_sha256"]),
                 calibration_module_sha256=str(source["calibration_module_sha256"]),
                 action_policy_module_sha256=str(source["action_policy_module_sha256"]),
+                decision_latency_module_sha256=str(
+                    source["decision_latency_module_sha256"]
+                ),
+                delayed_execution_module_sha256=str(
+                    source["delayed_execution_module_sha256"]
+                ),
                 development_operator_module_sha256=str(
                     source["development_operator_module_sha256"]
                 ),
@@ -477,12 +639,45 @@ def calibrate_and_select_round74_development_policy(
     tuning_roles: Round74PreparedTuningRoles,
     *,
     pretest_policy_path: str | Path,
+    feature_scaler: Round74EventFeatureScaler,
+    execution_store: object,
+    execution_partition: Round74EventRunPartition,
+    execution_target_assembly_by_run_id: Mapping[
+        str,
+        Round74SourceTargetAssembly,
+    ],
     compute_backend: str = "auto",
     minibatch_rows: int = 128,
 ) -> Round74DevelopmentPolicyBundle:
     """Calibrate and select all profiles without loading sealed test data."""
 
     tuning_roles.validate()
+    execution_partition.validate()
+    expected_execution_runs = tuning_roles.subpartition.policy_selection_run_ids
+    execution_assemblies = dict(execution_target_assembly_by_run_id)
+    if (
+        not isinstance(feature_scaler, Round74EventFeatureScaler)
+        or {
+            batch.scaler_sha256
+            for batch in (
+                *tuning_roles.model_selection_batches,
+                *tuning_roles.calibration_batches,
+                *tuning_roles.policy_selection_batches,
+            )
+        }
+        != {feature_scaler.scaler_sha256}
+        or execution_partition.partition_sha256
+        != tuning_roles.subpartition.parent_partition_sha256
+        or set(execution_assemblies) != set(expected_execution_runs)
+        or any(
+            not isinstance(
+                execution_assemblies[run_id],
+                Round74SourceTargetAssembly,
+            )
+            for run_id in expected_execution_runs
+        )
+    ):
+        raise ValueError("Round 74 development execution replay input differs")
     model, policy = load_round74_pretest_policy(pretest_policy_path)
     development = policy.get("development_data")
     artifact = policy.get("model_artifact")
@@ -547,31 +742,39 @@ def calibrate_and_select_round74_development_policy(
                 build_round74_action_inference_context(batch)
                 for batch in tuning_roles.policy_selection_batches
             )
-            action_policies = tuple(
-                select_round74_action_policy_batches(
-                    tuning_roles.policy_selection_batches,
-                    tuple(
-                        derive_round74_action_candidates(
-                            output,
-                            context,
-                            calibration,
-                            pretest_policy_sha256=str(policy["policy_sha256"]),
-                            profile=profile,
-                        )
-                        for output, context in zip(
-                            policy_outputs,
-                            contexts,
-                            strict=True,
-                        )
-                    ),
-                    tuning_roles.subpartition,
+            candidates_by_profile = {
+                profile: tuple(
+                    derive_round74_action_candidates(
+                        output,
+                        context,
+                        calibration,
+                        pretest_policy_sha256=str(policy["policy_sha256"]),
+                        profile=profile,
+                    )
+                    for output, context in zip(
+                        policy_outputs,
+                        contexts,
+                        strict=True,
+                    )
                 )
                 for profile in ROUND74_ACTION_PROFILES
+            }
+            decision_latency = benchmark_round74_online_decision_latency(
+                model,
+                scaler=feature_scaler,
+                calibration=calibration,
+                contexts=contexts,
+                pretest_policy_sha256=str(policy["policy_sha256"]),
+                pretest_model_sha256=str(artifact["sha256"]),
+                backend=backend,
+                device=device,
+                torch_directml_version=_package_version("torch-directml"),
             )
             warning_messages.extend(str(item.message) for item in caught)
     finally:
         torch.use_deterministic_algorithms(prior_deterministic)
         model.to("cpu")
+    del calibration_outputs, policy_outputs
     fallback = tuple(
         message
         for message in warning_messages
@@ -580,10 +783,33 @@ def calibrate_and_select_round74_development_policy(
     )
     if fallback:
         raise RuntimeError(f"Round 74 development used CPU fallback: {fallback}")
+    execution_panels = build_round74_delayed_execution_panels(
+        execution_store,
+        partition=execution_partition,
+        policy_selection_batches=tuning_roles.policy_selection_batches,
+        target_assembly_by_run_id=execution_assemblies,
+        latency_evidence=decision_latency,
+    )
+    if tuple(panel.profile for panel in execution_panels) != ROUND74_ACTION_PROFILES:
+        raise ValueError("Round 74 development execution profile panel differs")
+    action_policies = tuple(
+        select_round74_action_policy_batches(
+            tuning_roles.policy_selection_batches,
+            candidates_by_profile[profile],
+            tuning_roles.subpartition,
+            execution_panel=panel,
+        )
+        for profile, panel in zip(
+            ROUND74_ACTION_PROFILES,
+            execution_panels,
+            strict=True,
+        )
+    )
     source_sha256 = _current_source_sha256()
     result = Round74DevelopmentPolicyBundle(
         pretest_policy_sha256=str(policy["policy_sha256"]),
         pretest_model_sha256=str(artifact["sha256"]),
+        feature_scaler_sha256=feature_scaler.scaler_sha256,
         tuning_subpartition_sha256=tuning_roles.subpartition.subpartition_sha256,
         model_selection_batch_sha256=tuple(
             batch.batch_sha256 for batch in tuning_roles.model_selection_batches
@@ -595,11 +821,18 @@ def calibrate_and_select_round74_development_policy(
             batch.batch_sha256 for batch in tuning_roles.policy_selection_batches
         ),
         probability_calibration=calibration,
+        online_decision_latency=decision_latency,
+        execution_outcome_panel_sha256=tuple(
+            panel.panel_sha256 for panel in execution_panels
+        ),
+        execution_outcome_panel_rows=tuple(
+            len(panel.rows) for panel in execution_panels
+        ),
         action_policies=action_policies,
         backend_kind=backend.kind,
         backend_device=str(device),
         backend_vendor=backend.vendor,
-        warning_count=len(warning_messages),
+        warning_count=len(warning_messages) + decision_latency.warning_count,
         **source_sha256,
     )
     result.validate()
@@ -611,6 +844,12 @@ def train_calibrate_and_select_round74_development_policy(
     tuning_roles: Round74PreparedTuningRoles,
     *,
     output_directory: str | Path,
+    execution_store: object,
+    execution_partition: Round74EventRunPartition,
+    execution_target_assembly_by_run_id: Mapping[
+        str,
+        Round74SourceTargetAssembly,
+    ],
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
@@ -619,6 +858,7 @@ def train_calibrate_and_select_round74_development_policy(
 
     prepared.validate()
     tuning_roles.validate()
+    execution_partition.validate()
     prepared_tuning_sha256 = tuple(
         batch.batch_sha256 for batch in prepared.tuning_batches
     )
@@ -632,7 +872,9 @@ def train_calibrate_and_select_round74_development_policy(
     )
     if (
         prepared_tuning_sha256 != role_tuning_sha256
-        or prepared.partition.partition_sha256
+        or prepared.training_batches[0].partition_sha256
+        != tuning_roles.subpartition.parent_partition_sha256
+        or execution_partition.partition_sha256
         != tuning_roles.subpartition.parent_partition_sha256
     ):
         raise ValueError("Round 74 development prepared-role binding differs")
@@ -643,10 +885,17 @@ def train_calibrate_and_select_round74_development_policy(
         output_directory=output,
         compute_backend=compute_backend,
         config=config,
+        feature_scaler=prepared.scaler,
     )
     bundle = calibrate_and_select_round74_development_policy(
         tuning_roles,
         pretest_policy_path=pretest.policy_path,
+        feature_scaler=prepared.scaler,
+        execution_store=execution_store,
+        execution_partition=execution_partition,
+        execution_target_assembly_by_run_id=(
+            execution_target_assembly_by_run_id
+        ),
         compute_backend=compute_backend,
         minibatch_rows=inference_minibatch_rows,
     )
@@ -690,10 +939,17 @@ def train_round74_development_policy_from_inputs(
         prepared,
         subpartition=subpartition,
     )
+    assemblies = inputs.target_assembly_by_run_id()
     return train_calibrate_and_select_round74_development_policy(
         prepared,
         roles,
         output_directory=output_directory,
+        execution_store=store,
+        execution_partition=inputs.partition,
+        execution_target_assembly_by_run_id={
+            run_id: assemblies[run_id]
+            for run_id in roles.subpartition.policy_selection_run_ids
+        },
         compute_backend=compute_backend,
         config=config,
         inference_minibatch_rows=inference_minibatch_rows,
