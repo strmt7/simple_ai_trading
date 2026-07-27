@@ -30,8 +30,12 @@ from .impact_absorption_event_sequence import (
 ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v2"
 ROUND74_EVENT_MODEL_CANDIDATES = ("event_pooling_mlp", "causal_event_tcn")
 ROUND74_EVENT_HIDDEN_CHANNELS = 64
-ROUND74_EVENT_TCN_DILATIONS = (1, 2, 4, 8)
+ROUND74_EVENT_TCN_DILATIONS = (1, 2, 4, 8, 16, 32, 64)
 ROUND74_EVENT_TCN_KERNEL_SIZE = 3
+ROUND74_EVENT_TCN_RECEPTIVE_FIELD = 1 + (
+    (ROUND74_EVENT_TCN_KERNEL_SIZE - 1)
+    * sum(ROUND74_EVENT_TCN_DILATIONS)
+)
 
 
 @dataclass(frozen=True)
@@ -292,6 +296,10 @@ class Round74CausalEventTCN(nn.Module):
             raise ValueError("Round 74 event TCN input dimensions are invalid")
         if values.shape[1] < 2:
             raise ValueError("Round 74 event TCN requires multiple events")
+        if values.shape[1] > ROUND74_EVENT_TCN_RECEPTIVE_FIELD:
+            raise ValueError(
+                "Round 74 event TCN input exceeds its causal receptive field"
+            )
         encoded = F.gelu(self.projection(values.transpose(1, 2)))
         for block in self.blocks:
             encoded = block(encoded)
@@ -627,6 +635,7 @@ __all__ = [
     "ROUND74_EVENT_SEQUENCE_LENGTH",
     "ROUND74_EVENT_TCN_DILATIONS",
     "ROUND74_EVENT_TCN_KERNEL_SIZE",
+    "ROUND74_EVENT_TCN_RECEPTIVE_FIELD",
     "Round74CausalEventTCN",
     "Round74EventModelOutput",
     "Round74EventPoolingMLP",
