@@ -49,7 +49,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v9.json"
+    / "round-074-event-cohort-operator-v10.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -154,12 +154,14 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert partition["minimum_embargo_ns"] == 310_500_000_000
 
 
-def test_round74_cohort_host_schedule_is_exact_and_pre_execution_only() -> None:
+def test_round74_historical_host_schedule_remains_hash_bound() -> None:
     evidence = json.loads(HOST_SCHEDULE.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(evidence)
-    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["cohort_plan_sha256"] == (
+        "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2"
+    )
     assert evidence["operator_contract_artifact_sha256"] == (
         "56f9696180d133ee4671fdaad9e3e362c6d7666f0e9eda6c8f64865d091fd285"
     )
@@ -279,7 +281,9 @@ def test_round74_cohort_plan_r1_was_superseded_before_slot_zero() -> None:
     assert evidence["superseded"]["plan_sha256"] == (
         "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
     )
-    assert evidence["replacement"]["plan_sha256"] == (ROUND74_EVENT_COHORT_PLAN_SHA256)
+    assert evidence["replacement"]["plan_sha256"] == (
+        "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2"
+    )
     basis = evidence["correction_basis"]
     assert basis["raw_active_result_retained"] is True
     assert basis["capture_retried"] is False
@@ -315,13 +319,17 @@ def test_round74_cohort_operator_v5_was_superseded_before_slot_zero() -> None:
 def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
     plan = load_round74_cohort_operator_plan(REPOSITORY)
 
-    assert plan.plan_sha256 == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert (
+        plan.plan_sha256
+        == ROUND74_EVENT_COHORT_PLAN_SHA256
+        == ("4373c432bcabb10071a0e60a90bf7ac99299139f223eb2a5afff920e6b78deb4")
+    )
     assert ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES == 24 * 1024**3
     assert ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES == 4 * 1024**3
     assert ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS == 300
     assert (
         plan.slot(1).scheduled_start_wall_ns - plan.slot(0).scheduled_start_wall_ns
-        == 3_900_000_000_000
+        == 4_500_000_000_000
     )
 
 
@@ -354,7 +362,7 @@ def test_round74_cohort_slot_selection_never_shifts_window() -> None:
     )
     second = select_round74_cohort_slot(
         plan,
-        now_wall_ns=start + 3_900_000_000_000,
+        now_wall_ns=start + 4_500_000_000_000,
     )
     assert (second.status, second.slot_ordinal) == ("open", 1)
 

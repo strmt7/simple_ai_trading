@@ -1,0 +1,91 @@
+{
+  "schema_version": "round-074-event-cohort-infrastructure-failure-v1",
+  "observed_at_utc": "2026-07-27T17:22:22Z",
+  "failed_campaign": {
+    "plan_sha256": "57eadcc86d2d672299aa2e3df81606e76deab76bf77fceefbe0c24c90d02dca2",
+    "slot_ordinal": 0,
+    "role": "training",
+    "scheduled_start_utc": "2026-07-27T16:00:00Z",
+    "scheduled_end_utc": "2026-07-27T17:00:00Z",
+    "halt_observed_at_utc": "2026-07-27T17:03:01.799530Z",
+    "automatic_retry_permitted": false,
+    "failed_or_missed_slot_replacement_permitted": false,
+    "campaign_reopened": false
+  },
+  "durable_operator_evidence": {
+    "attempt_reservation_file_sha256": "e9f6566a8a22f05c6bff766492b4689f24d2fbc161eda88cdfd81b62bfa5473d",
+    "result_file_sha256": "d001eeef13b9b2cd3b544181b90ee177f24428db780d0cc3d6ea6d7e00a42be4",
+    "result_sha256": "845d4731d00d9a04739559706db063d740146fe07026c971944754f8d88faad4",
+    "state_file_sha256": "095bba97f77e9266fdefe5722029fa419e151a27d14a453e38baf9cb6353f5a0",
+    "halt_file_sha256": "51e813f65d41054aa2094f30b5af8b8ebc1b41bc408c90268c6da8cc3d95dba8",
+    "halt_sha256": "99137b02a306f442afaa59bc20c8cdf437afd72863c43e84615737053a349290",
+    "capture_stdout_file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "capture_stdout_bytes": 0,
+    "capture_stderr_file_sha256": "60ae95aa0e9ad3b702c0c150dd16a7edd0af29a15727b6abafcceb300e74cb28",
+    "last_persisted_progress_state": "finalizing",
+    "last_persisted_progress_elapsed_seconds": 3600.6,
+    "last_persisted_progress_wal_bytes": 126382574,
+    "recorded_error": "JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
+  },
+  "read_only_database_reconciliation": {
+    "database_bytes": 9433526272,
+    "wal_present": false,
+    "run_id": "e175c8f2c99c47d88a409744c76040c2",
+    "schema_version": "round-074-prospective-evidence-v10",
+    "run_status": "completed",
+    "started_wall_ns": 1785168002511818700,
+    "ended_wall_ns": 1785171612824575900,
+    "compressed_payload_bytes": 123972811,
+    "payload_cap_reached": false,
+    "frame_count": 837,
+    "message_count": 4498908,
+    "segment_count": 3,
+    "last_frame_sha256": "e924ae3d3e88fbbec37b5c2e371ff005083e4791c6afd6be2392aa4c3c26fe2f",
+    "run_error": "",
+    "segment_verdicts": {
+      "BTCUSDT": {
+        "status": "valid",
+        "invalid_event_count": 0,
+        "sequence_gap_count": 0,
+        "crossed_book_count": 0
+      },
+      "ETHUSDT": {
+        "status": "valid",
+        "invalid_event_count": 0,
+        "sequence_gap_count": 0,
+        "crossed_book_count": 0
+      },
+      "SOLUSDT": {
+        "status": "valid",
+        "invalid_event_count": 0,
+        "sequence_gap_count": 0,
+        "crossed_book_count": 0
+      }
+    },
+    "stored_capture_report_count": 0
+  },
+  "adjudication": {
+    "outcome": "failed",
+    "cohort_binding_written": false,
+    "cohort_data_admitted": false,
+    "model_or_target_access_permitted": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "supported_inference": "The capture reached terminal analysis and committed its run, but terminal analysis did not emit a supervisor report before the operator deadline.",
+    "causal_certainty_claimed": false,
+    "manual_unpersisted_observations_used_as_authority": false
+  },
+  "prospective_correction": {
+    "historical_plan_modified": false,
+    "historical_slot_retried_or_replaced": false,
+    "new_plan_required": true,
+    "new_plan_schema_version": "round-074-event-cohort-plan-v5",
+    "new_slot_period_seconds": 4500,
+    "new_maximum_child_finalization_seconds": 300,
+    "new_fresh_process_audit_timeout_seconds": 300,
+    "new_minimum_process_transition_reserve_seconds": 270,
+    "correction_selected_from_market_model_or_target_outcome": false
+  },
+  "artifact_sha256": "f229b954192be98ac2dd981c40b9e41d1772168effab429f9b91a9724a43b643"
+}
