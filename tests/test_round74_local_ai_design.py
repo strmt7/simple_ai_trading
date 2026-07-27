@@ -121,6 +121,13 @@ UNITS_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v52.json"
 )
+CORRECTED_UNITS_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v53.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -463,6 +470,57 @@ def test_round74_ai_design_delta_disambiguates_feature_units() -> None:
     assert verification["focused_tests_passed"] == 97
     assert verification["unit_metadata_asserted"]
     assert verification["system_instruction_asserted"]
+    assert not verification["sealed_test_accessed"]
+    assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_corrects_binary_feature_units() -> None:
+    previous = _load_json(UNITS_ARTIFACT_PATH)
+    artifact = _load_json(CORRECTED_UNITS_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    correction = artifact["correction"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v53"
+    assert artifact["artifact_kind"] == "compact_correction_delta"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in ("protocol", "review_panel", "event_scaler"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["protocol"]["prompt_payload_schema_version"] == (
+        "round-074-ai-prompt-payload-v5"
+    )
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v7"
+    )
+    assert source["event_scaler"]["schema_version"] == (
+        "round-074-event-feature-scaler-v4"
+    )
+    assert not correction["superseded_claim_is_correct"]
+    assert correction["binary_feature_count"] == 8
+    assert correction["binary_feature_value_units"] == "zero_or_one_indicator"
+    assert correction["continuous_feature_value_units"] == (
+        "dimensionless_training_scaler_normalized_values"
+    )
+    assert not correction["continuous_values_are_strict_standard_deviation_z_scores"]
+    assert correction[
+        "continuous_scaling_uses_training_only_robust_location_scale_and_clipping"
+    ]
+    assert correction["prompt_payload_hash_binds_corrected_unit_metadata"]
+    assert correction[
+        "system_prompt_states_binary_and_continuous_contracts_separately"
+    ]
+    assert not correction["financial_uplift_assumed"]
+    assert verification["focused_tests_passed"] == 98
+    assert verification["binary_indicator_metadata_asserted"]
+    assert verification["continuous_normalized_metadata_asserted"]
     assert not verification["sealed_test_accessed"]
     assert not verification["gpu_model_workload_executed"]
     assert all(value is False for value in artifact["status"].values())
