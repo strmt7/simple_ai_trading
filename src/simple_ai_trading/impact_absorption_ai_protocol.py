@@ -27,7 +27,7 @@ from .impact_absorption_event_action_policy import ROUND74_ACTION_PROFILES
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
 ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v4"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
-ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v3"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v4"
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_MINIMUM_PARAMETER_COUNT = 2_000_000_000
@@ -508,6 +508,9 @@ class Round74AIReviewRequest:
             "anonymized_feature_names_sha256": _canonical_sha256(
                 list(_AI_PROMPT_FEATURE_NAMES)
             ),
+            "standardized_feature_value_units": (
+                "dimensionless_training_scaler_z_scores"
+            ),
             "standardized_feature_summary": feature_summary,
             "summary_value_order": [
                 "last",
@@ -516,6 +519,7 @@ class Round74AIReviewRequest:
                 "recent_16_minus_prior_16_mean",
             ],
             "payoff_quantile_levels": list(ROUND74_EVENT_PAYOFF_QUANTILES),
+            "forecast_value_units": "basis_points",
             "payoff_quantiles_bps": [
                 _rounded(value, 6) for value in self.payoff_quantiles_bps
             ],
@@ -646,7 +650,10 @@ def build_round74_ai_review_prompt(
         "You are a local market-risk reviewer operating under the frozen "
         f"{request.risk_profile} risk profile. "
         + _RISK_PROFILE_INSTRUCTIONS[request.risk_profile]
-        + " Assess only the "
+        + " Feature-summary values are dimensionless training-scaler z-scores, "
+        "even when a feature name describes an underlying basis-point or "
+        "quantity measure. Only forecast and adverse-excursion arrays are in "
+        "basis points. Assess only the "
         "causal numeric packet. You may preserve, reduce, veto, or abstain. "
         "Never infer an identity or date, choose a side, increase size, set "
         "leverage, or propose an order. Return exactly one JSON object with "
