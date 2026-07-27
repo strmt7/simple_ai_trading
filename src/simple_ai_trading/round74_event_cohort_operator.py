@@ -167,8 +167,7 @@ def validate_round74_startup_prerequisite(
     plan: Round74EventCohortPlan,
 ) -> dict[str, object]:
     path = (
-        repository.resolve()
-        / ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH
+        repository.resolve() / ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_RELATIVE_PATH
     )
     payload = _strict_json_object(
         path.read_text(encoding="utf-8"),
@@ -187,8 +186,7 @@ def validate_round74_startup_prerequisite(
         or claimed != ROUND74_EVENT_COHORT_STARTUP_PREREQUISITE_SHA256
         or payload.get("schema_version")
         != "round-074-event-cohort-startup-prerequisite-v1"
-        or payload.get("implementation_git_commit")
-        != plan.implementation_git_commit
+        or payload.get("implementation_git_commit") != plan.implementation_git_commit
         or not isinstance(probe, Mapping)
         or probe.get("all_six_stream_probes_passed") is not True
         or probe.get("attempt_count") != 3
@@ -225,8 +223,7 @@ def validate_round74_startup_prerequisite(
         or relaunch.get("maximum_pre_admission_relaunches") != 1
         or relaunch.get("backoff_seconds")
         != ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS
-        or relaunch.get("database_size_and_mtime_must_remain_unchanged")
-        is not True
+        or relaunch.get("database_size_and_mtime_must_remain_unchanged") is not True
         or relaunch.get("wal_size_and_mtime_must_remain_unchanged") is not True
         or relaunch.get("admitted_capture_maximum_reconnects") != 0
         or not isinstance(verdict, Mapping)
@@ -550,12 +547,10 @@ def _validate_slot_audit(
         or audit.get("errors") != []
         or audit.get("run_id") != binding.run_id
         or audit.get("stored_report_sha256") != binding.report_sha256
-        or audit.get("capture_contract_sha256")
-        != report.get("capture_contract_sha256")
+        or audit.get("capture_contract_sha256") != report.get("capture_contract_sha256")
         or audit.get("frame_count") != binding.frame_count
         or audit.get("message_count") != binding.message_count
-        or audit.get("compressed_payload_bytes")
-        != binding.compressed_payload_bytes
+        or audit.get("compressed_payload_bytes") != binding.compressed_payload_bytes
     ):
         raise ValueError("Round 74 cohort fresh audit identity differs")
 
@@ -773,11 +768,9 @@ def _pre_admission_startup_failure(
         or launch.database_mtime_ns_after != baseline_database_mtime_ns
         or launch.wal_mtime_ns_after != baseline_wal_mtime_ns
         or active_capture_processes
-        or supervisor.get("schema_version")
-        != "round-074-capture-supervisor-report-v1"
+        or supervisor.get("schema_version") != "round-074-capture-supervisor-report-v1"
         or supervisor.get("design_sha256") != ROUND74_CAPTURE_DESIGN_SHA256
-        or supervisor.get("capture_schema_version")
-        != IMPACT_CAPTURE_V10_SCHEMA_VERSION
+        or supervisor.get("capture_schema_version") != IMPACT_CAPTURE_V10_SCHEMA_VERSION
         or supervisor.get("capture_contract_sha256")
         != IMPACT_CAPTURE_V10_CONTRACT_SHA256
         or supervisor.get("status") != "failed"
@@ -798,8 +791,7 @@ def _pre_admission_startup_failure(
             for source in ("public_source:", "market_source:")
         )
         or not any(
-            marker in startup_errors[0]
-            for marker in _TRANSIENT_STARTUP_ERROR_MARKERS
+            marker in startup_errors[0] for marker in _TRANSIENT_STARTUP_ERROR_MARKERS
         )
     ):
         return None
@@ -955,8 +947,7 @@ def _run_slot_process(
                 )
             ):
                 raise ValueError(
-                    "Round 74 cohort pre-admission startup relaunch "
-                    "readiness changed"
+                    "Round 74 cohort pre-admission startup relaunch readiness changed"
                 )
         launch = _run_capture_launch(
             repository,
