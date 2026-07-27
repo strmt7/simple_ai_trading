@@ -73,7 +73,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v14.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v15.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -81,7 +81,7 @@ REPLAY_PATH = (
     RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 )
 TRAINING_PATH = (
-    RESEARCH / "round-074-event-training-directml-preflight-2026-07-26.json"
+    RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -441,6 +441,15 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         ROUND74_EVENT_TRAINING_DEFAULT_SEEDS
     )
     assert training["backtest_roi_used_for_gradient_or_model_selection"] is False
+    assert training["seed_ensemble_method"] == (
+        "equal peer weights; arithmetic mean of peer quantiles for continuous "
+        "heads and arithmetic mean of peer probabilities then logit conversion "
+        "for classification heads"
+    )
+    assert training["classification_mean_logit_pooling_permitted"] is False
+    assert training["probability_calibration_order"] == (
+        "after seed-ensemble probability aggregation"
+    )
     assert training["pickle_permitted"] is False
     assert training["policy_binds_entire_causal_source_chain"] is True
     assert training["cross_platform_bitwise_reproducibility_claim"] is False
@@ -664,10 +673,10 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert source["event_cohort_sha256"] == binding[
         "event_training_directml_event_cohort_sha256"
     ]
-    assert source["event_cohort_sha256"] != design["source_binding"][
+    assert source["event_cohort_sha256"] == design["source_binding"][
         "event_cohort_sha256"
     ]
-    assert "cadence-only" in binding["event_training_directml_reuse_scope"]
+    assert "exactly binds" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
@@ -692,6 +701,16 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["cross_execution_prediction_sha256_equal"] is True
     assert verification["cross_execution_candidate_metrics_equal"] is True
     assert verification["temporary_artifacts_removed_after_each_execution"] is True
+    assert (
+        verification[
+            "classification_peer_probabilities_averaged_before_logit_conversion"
+        ]
+        is True
+    )
+    assert (
+        verification["post_aggregation_probability_calibration_contract_sealed"]
+        is True
+    )
     interpretation = evidence["interpretation"]
     assert interpretation["candidate_loss_has_financial_meaning"] is False
     assert interpretation["representative_market_training_performed"] is False

@@ -1,0 +1,113 @@
+{
+  "schema_version": "round-074-event-training-directml-preflight-evidence-v5",
+  "artifact_sha256": "901ea5ac69ed08555c0ffdc32137d7d9d105ee70393a93da4a72c828553e5a00",
+  "supersedes_artifact_sha256": "b8e7b6b7a221926206e8e72c344059e751897dd7435edac2a7639bce973b30f3",
+  "round": 74,
+  "executed_at_utc": "2026-07-27T02:01:33Z",
+  "execution_git_commit": "c42df8f4358fdfedbddc3152f759390416639012",
+  "source_binding": {
+    "event_sequence_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
+    "event_scaling_sha256": "c42d614cee0edf877af501ea4a77b78e5a7f3f2135423eb2336d8ace78c86986",
+    "event_targets_sha256": "4e6d2dca8def15c114aa8e6aec4c2d2c9ac85c75ec3072d0e95b6ea2869cb130",
+    "event_dataset_sha256": "e4492ec365e1a6cd2c0ccc2fa870cb767b2dd02e3e0e57db00c538f0df451382",
+    "event_model_sha256": "636250cca313a7fe472aa5e8da55d4149e2773c86721508b659e689bbc31d75a",
+    "event_training_sha256": "3059977e15e4831392bd0e2e3ed06c9aa00ff4f5febab4d9520038eec5588b7a",
+    "event_cohort_sha256": "d8d64ef3b17f3ddbb962b0c62b408a8b353b718eabc126cccce83b13633be583",
+    "storage_sha256": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610",
+    "preflight_runner_path": "tools/run_round74_event_training_preflight.py",
+    "preflight_runner_sha256": "d4a219822950128d4c38c50ade9db36b660a0f37799b4635531930496c2d7b7b"
+  },
+  "backend": {
+    "requested": "directml",
+    "kind": "directml",
+    "device": "privateuseone:0",
+    "vendor": "AMD Radeon RX 9070 XT",
+    "selection": "runtime_current_device",
+    "accelerated": true,
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "safetensors_version": "0.8.0",
+    "deterministic_algorithms_requested": true,
+    "warning_count_per_execution": 0,
+    "cpu_fallback_warning_count_per_execution": 0
+  },
+  "input_contract": {
+    "source": "deterministic constructed tensor contract from the hash-bound preflight runner",
+    "real_market_events_used": false,
+    "real_market_targets_used": false,
+    "training_rows": 2,
+    "tuning_rows": 2,
+    "training_batch_sha256": "19a921713e4600a4e47acd18f0078acb2661c5dec2212e90677aa96ce2192797",
+    "tuning_batch_sha256": "b847fa863c565984af5998f5a65da17126f64c1bb8097529409accee55ff0400",
+    "training_eligible_action_targets": 15,
+    "tuning_eligible_action_targets": 15,
+    "training_eligible_regime_targets": 8,
+    "tuning_eligible_regime_targets": 8,
+    "candidate_ids": [
+      "event_pooling_mlp",
+      "causal_event_tcn"
+    ],
+    "seeds": [
+      7411,
+      7423,
+      7433
+    ],
+    "epochs": 1,
+    "minibatch_rows": 2,
+    "test_batches_consumed": 0
+  },
+  "verification": {
+    "operator_process_invocation_count": 2,
+    "fresh_process_execution_count": 2,
+    "successful_execution_count": 2,
+    "both_candidates_trained": true,
+    "all_six_peer_updates_completed": true,
+    "chronological_tuning_completed": true,
+    "safe_tensor_state_reload_verified": true,
+    "prediction_reload_verified": true,
+    "atomic_policy_reload_verified": true,
+    "temporary_artifacts_removed_after_each_execution": true,
+    "cross_execution_policy_sha256_equal": true,
+    "cross_execution_model_sha256_equal": true,
+    "cross_execution_prediction_sha256_equal": true,
+    "cross_execution_candidate_metrics_equal": true,
+    "classification_peer_probabilities_averaged_before_logit_conversion": true,
+    "post_aggregation_probability_calibration_contract_sealed": true
+  },
+  "repeated_result": {
+    "policy_sha256": "d3c9083faffa0ce5d88adeca53107138edb746d9a9a8fe6519789e0c4c59691e",
+    "model_sha256": "f4d530434ec4f2872676d3862a91b96b9bc9b5b8242b1c2d2a3f0a5f81544380",
+    "model_byte_count": 962888,
+    "prediction_sha256": "2371e11556be6a69f78993cca44ec5f93d85f46b73ca7aeef490ac3eb1d07692",
+    "selected_candidate_id": "causal_event_tcn",
+    "candidate_tuning_proper_loss": {
+      "event_pooling_mlp": 0.8463841125369072,
+      "causal_event_tcn": 0.840041171014309
+    },
+    "peer_best_tuning_proper_loss": {
+      "event_pooling_mlp": [
+        0.8419364243745803,
+        0.842772988975048,
+        0.8557772114872934
+      ],
+      "causal_event_tcn": [
+        0.835280866920948,
+        0.84583610445261,
+        0.8399527028203011
+      ]
+    }
+  },
+  "interpretation": {
+    "result_type": "compute serialization and governance preflight only",
+    "candidate_loss_has_financial_meaning": false,
+    "representative_market_training_performed": false,
+    "sealed_test_evaluated": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false,
+    "cross_platform_bitwise_reproducibility_claim": false
+  }
+}
