@@ -39,8 +39,8 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v2"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v2"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v3"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v3"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
@@ -283,6 +283,7 @@ def _validate_role_batches(
     prior_key: tuple[object, ...] | None = None
     rows = 0
     samples: set[str] = set()
+    capture_runs: set[str] = set()
     for batch in batches:
         batch.validate()
         if batch.role != required_role:
@@ -290,6 +291,17 @@ def _validate_role_batches(
                 f"Round 74 trainer rejects {batch.role!r} data in "
                 f"the {required_role} role"
             )
+        batch_runs = set(batch.run_id)
+        if len(batch_runs) != 1:
+            raise ValueError(
+                f"Round 74 {required_role} batch mixes capture runs"
+            )
+        run_id = next(iter(batch_runs))
+        if run_id in capture_runs:
+            raise ValueError(
+                f"Round 74 {required_role} capture run is repeated"
+            )
+        capture_runs.add(run_id)
         first = _row_key(batch, 0)
         last = _row_key(batch, batch.rows - 1)
         if prior_key is not None and first <= prior_key:
@@ -513,18 +525,40 @@ def _evaluate_model(
 ) -> dict[str, float]:
     model.eval()
     totals = _empty_metric_sums()
+    per_run_metrics: list[dict[str, float]] = []
     with torch.no_grad():
-        for batch, row_slice in _iter_minibatches(batches, minibatch_rows):
-            _loss, components, action_weight, regime_weight = _loss_for_minibatch(
-                model, batch, row_slice, device
-            )
-            _accumulate_metrics(
-                totals,
-                components,
-                action_weight=action_weight,
-                regime_weight=regime_weight,
-            )
-    return _finalize_metrics(totals)
+        for batch in batches:
+            run_totals = _empty_metric_sums()
+            for _selected, row_slice in _iter_minibatches(
+                (batch,),
+                minibatch_rows,
+            ):
+                _loss, components, action_weight, regime_weight = (
+                    _loss_for_minibatch(model, batch, row_slice, device)
+                )
+                _accumulate_metrics(
+                    totals,
+                    components,
+                    action_weight=action_weight,
+                    regime_weight=regime_weight,
+                )
+                _accumulate_metrics(
+                    run_totals,
+                    components,
+                    action_weight=action_weight,
+                    regime_weight=regime_weight,
+                )
+            per_run_metrics.append(_finalize_metrics(run_totals))
+    metrics = _finalize_metrics(totals)
+    run_losses = tuple(item["loss"] for item in per_run_metrics)
+    if not run_losses:
+        raise ValueError("Round 74 tuning has no capture runs")
+    metrics["run_balanced_loss"] = sum(run_losses) / len(run_losses)
+    metrics["worst_run_loss"] = max(run_losses)
+    metrics["run_count"] = float(len(run_losses))
+    if not all(math.isfinite(value) for value in metrics.values()):
+        raise RuntimeError("Round 74 run-balanced metrics are nonfinite")
+    return metrics
 
 
 def _cpu_state(model: nn.Module) -> dict[str, torch.Tensor]:
@@ -605,7 +639,7 @@ def _train_peer(
             minibatch_rows=config.minibatch_rows,
             device=device,
         )
-        tuning_loss = tuning_metrics["loss"]
+        tuning_loss = tuning_metrics["run_balanced_loss"]
         improved = (
             best_state is None
             or tuning_loss < best_loss - config.minimum_tuning_improvement
@@ -843,6 +877,8 @@ def train_and_seal_round74_pretest_policy(
     winner = min(
         candidate_fits,
         key=lambda fit: (
+            fit.ensemble_metrics["run_balanced_loss"],
+            fit.ensemble_metrics["worst_run_loss"],
             fit.ensemble_metrics["loss"],
             fit.parameter_count_per_peer,
             fit.candidate_id,
@@ -936,8 +972,9 @@ def train_and_seal_round74_pretest_policy(
         },
         "selection": {
             "criterion": (
-                "minimum chronological tuning proper loss; then parameter "
-                "count; then candidate id"
+                "minimum run-balanced chronological tuning proper loss; "
+                "then worst-run loss; then pooled loss; then parameter count; "
+                "then candidate id"
             ),
             "selected_candidate_id": winner.candidate_id,
             "selected_tuning_metrics": winner.ensemble_metrics,
@@ -989,7 +1026,7 @@ def train_and_seal_round74_pretest_policy(
         model_sha256=model_sha256,
         model_path=model_path,
         selected_candidate_id=winner.candidate_id,
-        tuning_loss=float(winner.ensemble_metrics["loss"]),
+        tuning_loss=float(winner.ensemble_metrics["run_balanced_loss"]),
     )
 
 
@@ -1256,6 +1293,9 @@ def load_round74_pretest_policy(
         "adverse_bce",
         "unpredictability_bce",
         "loss",
+        "run_balanced_loss",
+        "worst_run_loss",
+        "run_count",
         "eligible_action_targets",
         "eligible_regime_targets",
     }
@@ -1290,6 +1330,10 @@ def load_round74_pretest_policy(
                 and math.isfinite(float(value))
                 for value in metrics.values()
             )
+            or float(metrics.get("run_count", 0.0))
+            != float(len(tuning_batch_hashes))
+            or float(metrics.get("worst_run_loss", math.inf))
+            < float(metrics.get("run_balanced_loss", -math.inf))
             or _SHA256.fullmatch(str(raw_report.get("ensemble_prediction_sha256", "")))
             is None
             or panel_candidate not in reconstructed_config.candidate_ids
@@ -1300,6 +1344,16 @@ def load_round74_pretest_policy(
     expected_winner = min(
         candidate_panel,
         key=lambda value: (
+            float(
+                candidate_panel[value]["ensemble_tuning_metrics"][
+                    "run_balanced_loss"
+                ]
+            ),
+            float(
+                candidate_panel[value]["ensemble_tuning_metrics"][
+                    "worst_run_loss"
+                ]
+            ),
             float(candidate_panel[value]["ensemble_tuning_metrics"]["loss"]),
             int(candidate_panel[value]["parameter_count_per_peer"]),
             str(value),
@@ -1316,8 +1370,9 @@ def load_round74_pretest_policy(
         }
         or selection.get("criterion")
         != (
-            "minimum chronological tuning proper loss; then parameter "
-            "count; then candidate id"
+            "minimum run-balanced chronological tuning proper loss; "
+            "then worst-run loss; then pooled loss; then parameter count; "
+            "then candidate id"
         )
         or candidate_id != expected_winner
         or selection.get("complexity_promotion_privilege") is not False
