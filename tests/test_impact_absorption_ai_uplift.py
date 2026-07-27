@@ -173,6 +173,7 @@ def _runtime_request() -> Round74AIReviewRequest:
         probability_calibration_sha256="2" * 64,
         sample_sha256=FEATURES[0],
         deterministic_risk_state_sha256="7" * 64,
+        risk_profile="aggressive",
         asset_slot=0,
         side="long",
         horizon_seconds=30,

@@ -9,12 +9,8 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_HORIZONS_SECONDS,
-    ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_ai_bridge import (
-    ROUND74_AI_BRIDGE_SCHEMA_VERSION,
-    ROUND74_AI_RECENT_BLOCK_EVENTS,
-)
+from simple_ai_trading.impact_absorption_ai_bridge import ROUND74_AI_RECENT_BLOCK_EVENTS
 from simple_ai_trading.impact_absorption_event_calibration import (
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
@@ -416,7 +412,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
     )
     assert source["review_request_schema_version"] == (
-        ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+        "round-074-ai-review-request-v3"
     )
     assert source["review_decision_schema_version"] == (
         ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
@@ -430,7 +426,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["runtime_outcome_schema_version"] == (
         "round-074-ai-runtime-outcome-v1"
     )
-    assert source["bridge_schema_version"] == (ROUND74_AI_BRIDGE_SCHEMA_VERSION)
+    assert source["bridge_schema_version"] == "round-074-ai-bridge-v2"
     assert source["tuning_subpartition_schema_version"] == (
         ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION
     )
@@ -1183,7 +1179,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     )
     assert host["decision_schema_version"] == ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
     assert artifact["host_preflight"]["request_schema_version"] == (
-        ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+        "round-074-ai-review-request-v3"
     )
     for key in (
         "representative_market_ai_evaluation_completed",

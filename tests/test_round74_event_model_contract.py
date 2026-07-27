@@ -8,12 +8,8 @@ import subprocess  # nosec B404
 from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION,
     ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
-    ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_ai_bridge import (
-    ROUND74_AI_BRIDGE_SCHEMA_VERSION,
-    ROUND74_AI_RECENT_BLOCK_EVENTS,
-)
+from simple_ai_trading.impact_absorption_ai_bridge import ROUND74_AI_RECENT_BLOCK_EVENTS
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION,
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
@@ -47,7 +43,6 @@ from simple_ai_trading.impact_absorption_event_scaling import (
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_AI_MODEL_COUNT,
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
-    ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
     ROUND74_SEALED_FAMILYWISE_ALPHA,
     ROUND74_SEALED_QUALIFICATION_CONFIGURATION_COUNT,
     ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION,
@@ -406,7 +401,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["sealed_claim_schema_version"] == ROUND74_SEALED_CLAIM_SCHEMA_VERSION
     assert (
         source["sealed_evaluator_schema_version"]
-        == ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
+        == "round-074-sealed-evaluation-v9"
     )
     assert source["financial_metrics_schema_version"] == (
         ROUND74_REALIZED_METRICS_SCHEMA_VERSION
@@ -430,7 +425,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["ai_review_request_schema_version"]
-        == ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+        == "round-074-ai-review-request-v3"
     )
     assert (
         source["ai_review_decision_schema_version"]
@@ -447,7 +442,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["ai_runtime_outcome_schema_version"] == (
         "round-074-ai-runtime-outcome-v1"
     )
-    assert source["ai_bridge_schema_version"] == ROUND74_AI_BRIDGE_SCHEMA_VERSION
+    assert source["ai_bridge_schema_version"] == "round-074-ai-bridge-v2"
     assert (
         source["tuning_subpartition_schema_version"]
         == ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION

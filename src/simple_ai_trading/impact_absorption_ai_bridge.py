@@ -22,7 +22,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v2"
+ROUND74_AI_BRIDGE_SCHEMA_VERSION = "round-074-ai-bridge-v3"
 ROUND74_AI_RECENT_BLOCK_EVENTS = 16
 _ASSET_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name)
@@ -103,6 +103,7 @@ def build_round74_ai_review_request(
     pretest_policy_sha256: str,
     sample_sha256: str,
     deterministic_risk_state_sha256: str,
+    risk_profile: str,
     probability_calibration: Round74ProbabilityCalibration,
     requested_wall_ns: int,
     expires_wall_ns: int,
@@ -178,6 +179,7 @@ def build_round74_ai_review_request(
         probability_calibration_sha256=(probability_calibration.calibration_sha256),
         sample_sha256=sample_sha256,
         deterministic_risk_state_sha256=(deterministic_risk_state_sha256),
+        risk_profile=risk_profile,
         asset_slot=asset_slot,
         side=side,
         horizon_seconds=horizon_seconds,

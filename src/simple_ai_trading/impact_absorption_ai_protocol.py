@@ -21,11 +21,13 @@ from .impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
 )
+from .impact_absorption_event_action_policy import ROUND74_ACTION_PROFILES
 
 
 ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION = "round-074-ai-model-manifest-v1"
-ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v3"
+ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION = "round-074-ai-review-request-v4"
 ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION = "round-074-ai-review-decision-v2"
+ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION = "round-074-ai-prompt-payload-v3"
 ROUND74_AI_REVIEW_HORIZONS_SECONDS = (30, 300)
 ROUND74_AI_REVIEW_MAXIMUM_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_MINIMUM_PARAMETER_COUNT = 2_000_000_000
@@ -77,6 +79,23 @@ _AI_PROMPT_FEATURE_NAMES = tuple(
     f"asset_identity_{index - 5}" if 5 <= index <= 7 else name
     for index, name in enumerate(ROUND74_EVENT_FEATURE_NAMES)
 )
+_RISK_PROFILE_INSTRUCTIONS = {
+    "conservative": (
+        "Require the strongest agreement between forecasts and market state. "
+        "Treat uncertainty, unstable flow, or deteriorating execution quality "
+        "as strong reasons to reduce or veto."
+    ),
+    "regular": (
+        "Balance opportunity retention against forecast uncertainty and "
+        "execution risk. Reduce or veto when expected edge is not robust to "
+        "the adverse state."
+    ),
+    "aggressive": (
+        "Tolerate more forecast dispersion and volatility than lower-risk "
+        "profiles, but reduce or veto for material adverse selection, thin "
+        "liquidity, stale state, or model inconsistency."
+    ),
+}
 
 
 def _canonical_json(value: object) -> str:
@@ -259,6 +278,7 @@ class Round74AIReviewRequest:
     probability_calibration_sha256: str
     sample_sha256: str
     deterministic_risk_state_sha256: str
+    risk_profile: str
     asset_slot: int
     side: str
     horizon_seconds: int
@@ -319,6 +339,7 @@ class Round74AIReviewRequest:
         )
         if (
             self.schema_version != ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
+            or self.risk_profile not in ROUND74_ACTION_PROFILES
             or isinstance(self.asset_slot, bool)
             or not isinstance(self.asset_slot, int)
             or not 0 <= self.asset_slot < 3
@@ -376,6 +397,7 @@ class Round74AIReviewRequest:
             "probability_calibration_sha256": (self.probability_calibration_sha256),
             "sample_sha256": self.sample_sha256,
             "deterministic_risk_state_sha256": (self.deterministic_risk_state_sha256),
+            "risk_profile": self.risk_profile,
             "asset_slot": self.asset_slot,
             "side": self.side,
             "horizon_seconds": self.horizon_seconds,
@@ -422,6 +444,7 @@ class Round74AIReviewRequest:
                 deterministic_risk_state_sha256=str(
                     payload["deterministic_risk_state_sha256"]
                 ),
+                risk_profile=str(payload["risk_profile"]),
                 asset_slot=int(payload["asset_slot"]),
                 side=str(payload["side"]),
                 horizon_seconds=int(payload["horizon_seconds"]),
@@ -475,7 +498,8 @@ class Round74AIReviewRequest:
             for index, name in enumerate(_AI_PROMPT_FEATURE_NAMES)
         }
         payload = {
-            "schema_version": "round-074-ai-prompt-payload-v2",
+            "schema_version": ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION,
+            "risk_profile": self.risk_profile,
             "asset": f"asset_{self.asset_slot}",
             "side": self.side,
             "horizon_seconds": self.horizon_seconds,
@@ -619,7 +643,10 @@ def build_round74_ai_review_prompt(
 
     request.validate()
     system = (
-        "You are a conservative local market-risk reviewer. Assess only the "
+        "You are a local market-risk reviewer operating under the frozen "
+        f"{request.risk_profile} risk profile. "
+        + _RISK_PROFILE_INSTRUCTIONS[request.risk_profile]
+        + " Assess only the "
         "causal numeric packet. You may preserve, reduce, veto, or abstain. "
         "Never infer an identity or date, choose a side, increase size, set "
         "leverage, or propose an order. Return exactly one JSON object with "
@@ -666,6 +693,7 @@ def apply_round74_ai_risk_modifier(
 __all__ = [
     "ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION",
     "ROUND74_AI_MODEL_ARTIFACT_KINDS",
+    "ROUND74_AI_PROMPT_PAYLOAD_SCHEMA_VERSION",
     "ROUND74_AI_QUANTIZATION_FORMATS",
     "ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION",
     "ROUND74_AI_REVIEW_HORIZONS_SECONDS",
