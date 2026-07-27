@@ -36,6 +36,10 @@ ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS = 250_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_DECISION_STATE_AGE_NS = 250_000_000
 ROUND74_EVENT_TARGET_MAXIMUM_PATH_STATE_GAP_NS = 250_000_000
 ROUND74_EVENT_TARGET_MINIMUM_ANCHOR_SPACING_NS = 1_000_000_000
+ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS = 30_000_000_000
+ROUND74_EVENT_EXECUTION_OVERRIDE_SCHEMA_VERSION = (
+    "round-074-event-execution-override-v1"
+)
 ROUND74_EVENT_TARGET_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 ROUND74_EVENT_TARGET_ENVIRONMENTS = (
     "binance_usdm_mainnet",
@@ -903,6 +907,56 @@ class Round74EventTargetAnchor:
 
 
 @dataclass(frozen=True)
+class Round74EventExecutionOverride:
+    """Review-specific delay and size applied before an exact L2 book walk."""
+
+    symbol: str
+    anchor_index: int
+    feature_window_sha256: str
+    additional_entry_latency_ns: int
+    quote_size_multiplier_bps: int
+    source_review_sha256: str
+    schema_version: str = ROUND74_EVENT_EXECUTION_OVERRIDE_SCHEMA_VERSION
+
+    @property
+    def key(self) -> tuple[str, int]:
+        return self.symbol, int(self.anchor_index)
+
+    def validate(self) -> None:
+        if (
+            self.schema_version
+            != ROUND74_EVENT_EXECUTION_OVERRIDE_SCHEMA_VERSION
+            or self.symbol not in ROUND74_EVENT_TARGET_SYMBOLS
+            or isinstance(self.anchor_index, bool)
+            or not isinstance(self.anchor_index, int)
+            or self.anchor_index < 0
+            or isinstance(self.additional_entry_latency_ns, bool)
+            or not isinstance(self.additional_entry_latency_ns, int)
+            or not 0
+            <= self.additional_entry_latency_ns
+            <= ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+            or isinstance(self.quote_size_multiplier_bps, bool)
+            or not isinstance(self.quote_size_multiplier_bps, int)
+            or not 1 <= self.quote_size_multiplier_bps <= 10_000
+        ):
+            raise ValueError("Round 74 event execution override differs")
+        _sha256_digest(self.feature_window_sha256, "override feature window")
+        _sha256_digest(self.source_review_sha256, "override source review")
+
+    def as_dict(self) -> dict[str, object]:
+        self.validate()
+        return {
+            "schema_version": self.schema_version,
+            "symbol": self.symbol,
+            "anchor_index": self.anchor_index,
+            "feature_window_sha256": self.feature_window_sha256,
+            "additional_entry_latency_ns": self.additional_entry_latency_ns,
+            "quote_size_multiplier_bps": self.quote_size_multiplier_bps,
+            "source_review_sha256": self.source_review_sha256,
+        }
+
+
+@dataclass(frozen=True)
 class Round74EventActionPayoff:
     midpoint_payoff_quote: float
     midpoint_payoff_bps: float
@@ -1381,8 +1435,18 @@ class Round74EventTargetEngine:
         spec: Round74EventTargetSpec,
         anchors: Sequence[Round74EventTargetAnchor],
         quantity_rules: Mapping[str, Round73MarketQuantityRules],
+        execution_overrides: Sequence[Round74EventExecutionOverride] = (),
     ) -> None:
         self.spec = spec
+        overrides: dict[tuple[str, int], Round74EventExecutionOverride] = {}
+        for override in execution_overrides:
+            if not isinstance(override, Round74EventExecutionOverride):
+                raise TypeError("Round 74 event execution override type differs")
+            override.validate()
+            if override.key in overrides:
+                raise ValueError("Round 74 event execution override is duplicated")
+            overrides[override.key] = override
+        self.execution_overrides = overrides
         self.anchors: dict[str, deque[Round74EventTargetAnchor]] = {
             symbol: deque() for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         }
@@ -1400,6 +1464,10 @@ class Round74EventTargetEngine:
             ),
         ):
             self.add_anchor(anchor)
+        if self.execution_overrides and set(self.execution_overrides) != (
+            self._anchor_keys
+        ):
+            raise ValueError("Round 74 event execution override coverage differs")
         rules = {
             str(symbol).upper(): value for symbol, value in quantity_rules.items()
         }
@@ -1434,43 +1502,47 @@ class Round74EventTargetEngine:
                 self.spec.funding_schedule_coverage_monotonic_ns
             )
         }
-        self.target_context_sha256 = _canonical_sha256(
-            {
-                "target_spec_sha256": self.spec.spec_sha256,
-                "quantity_rules": {
-                    symbol: {
-                        "step_size": format(
-                            validated_rules[symbol].step_size,
-                            "f",
-                        ),
-                        "minimum_quantity": format(
-                            validated_rules[symbol].minimum_quantity,
-                            "f",
-                        ),
-                        "maximum_quantity": format(
-                            validated_rules[symbol].maximum_quantity,
-                            "f",
-                        ),
-                        "minimum_notional": format(
-                            validated_rules[symbol].minimum_notional,
-                            "f",
-                        ),
-                    }
-                    for symbol in ROUND74_EVENT_TARGET_SYMBOLS
-                },
-                "funding_boundary_intervals_monotonic_ns": {
-                    symbol: [
-                        list(interval)
-                        for interval in self.funding_boundary_intervals[symbol]
-                    ]
-                    for symbol in ROUND74_EVENT_TARGET_SYMBOLS
-                },
-                "funding_schedule_coverage_monotonic_ns": {
-                    symbol: list(self.funding_coverage[symbol])
-                    for symbol in ROUND74_EVENT_TARGET_SYMBOLS
-                },
-            }
-        )
+        context: dict[str, object] = {
+            "target_spec_sha256": self.spec.spec_sha256,
+            "quantity_rules": {
+                symbol: {
+                    "step_size": format(
+                        validated_rules[symbol].step_size,
+                        "f",
+                    ),
+                    "minimum_quantity": format(
+                        validated_rules[symbol].minimum_quantity,
+                        "f",
+                    ),
+                    "maximum_quantity": format(
+                        validated_rules[symbol].maximum_quantity,
+                        "f",
+                    ),
+                    "minimum_notional": format(
+                        validated_rules[symbol].minimum_notional,
+                        "f",
+                    ),
+                }
+                for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            },
+            "funding_boundary_intervals_monotonic_ns": {
+                symbol: [
+                    list(interval)
+                    for interval in self.funding_boundary_intervals[symbol]
+                ]
+                for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            },
+            "funding_schedule_coverage_monotonic_ns": {
+                symbol: list(self.funding_coverage[symbol])
+                for symbol in ROUND74_EVENT_TARGET_SYMBOLS
+            },
+        }
+        if self.execution_overrides:
+            context["execution_overrides"] = [
+                self.execution_overrides[key].as_dict()
+                for key in sorted(self.execution_overrides)
+            ]
+        self.target_context_sha256 = _canonical_sha256(context)
         self.latest_state: dict[
             str,
             tuple[ReceiptOrderKey, L2BookState],
@@ -1510,6 +1582,12 @@ class Round74EventTargetEngine:
             raise ValueError("Round 74 target engine is already finished")
         anchor.validate()
         key = (anchor.symbol, int(anchor.anchor_index))
+        override = self.execution_overrides.get(key)
+        if self.execution_overrides and (
+            override is None
+            or override.feature_window_sha256 != anchor.feature_window_sha256
+        ):
+            raise ValueError("Round 74 event execution override identity differs")
         if key in self._anchor_keys:
             raise ValueError("Round 74 target anchor key is duplicated")
         prior = self._anchor_prior_by_symbol.get(anchor.symbol)
@@ -1632,6 +1710,11 @@ class Round74EventTargetEngine:
                     anchor.decision_monotonic_ns
                     + self.spec.entry_latency_ns(symbol)
                 )
+                override = self.execution_overrides.get(
+                    (anchor.symbol, anchor.anchor_index)
+                )
+                if override is not None:
+                    requested += override.additional_entry_latency_ns
                 latest = self.latest_state.get(symbol)
                 if latest is None:
                     self._record_anchor_panel_ineligible(
@@ -1655,7 +1738,15 @@ class Round74EventTargetEngine:
                 quantity = self.quantity_rules[
                     symbol
                 ].quantize_reference_quantity(
-                    reference_quote_notional=self.spec.reference_quote_notional,
+                    reference_quote_notional=(
+                        self.spec.reference_quote_notional
+                        * (
+                            override.quote_size_multiplier_bps
+                            if override is not None
+                            else 10_000
+                        )
+                        / 10_000.0
+                    ),
                     decision_mid=state.mid,
                 )
                 self.pending[symbol].append(
@@ -2189,7 +2280,9 @@ __all__ = [
     "ROUND74_EVENT_TARGET_ENVIRONMENTS",
     "ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_EVIDENCE_SOURCES",
+    "ROUND74_EVENT_EXECUTION_OVERRIDE_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_INELIGIBLE_REASONS",
+    "ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS",
     "ROUND74_EVENT_TARGET_MAXIMUM_DECISION_STATE_AGE_NS",
     "ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS",
     "ROUND74_EVENT_TARGET_MAXIMUM_SLIPPAGE_BPS_PER_SIDE",
@@ -2198,6 +2291,7 @@ __all__ = [
     "ROUND74_EVENT_TARGET_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_SYMBOLS",
     "Round74EventActionPayoff",
+    "Round74EventExecutionOverride",
     "Round74EventTargetAnchor",
     "Round74EventTargetEngine",
     "Round74EventTargetEvidence",
