@@ -171,7 +171,7 @@ def _run(repository: Path) -> dict[str, object]:
         selected = policy["model_artifact"]
         backend = policy["backend"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v1",
+            "schema_version": "round-074-event-training-preflight-run-v2",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]
@@ -239,6 +239,7 @@ def _run(repository: Path) -> dict[str, object]:
                     ]
                     for candidate_id in config.candidate_ids
                 },
+                "selection": policy["selection"],
             },
             "temporary_artifact_count_before_cleanup": len(tuple(output.iterdir())),
         }
