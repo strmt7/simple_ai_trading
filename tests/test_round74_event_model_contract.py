@@ -70,6 +70,10 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_model import (
+    ROUND74_EVENT_TCN_DILATIONS,
+    ROUND74_EVENT_TCN_RECEPTIVE_FIELD,
+)
 from simple_ai_trading.impact_absorption_event_financial_metrics import (
     ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
 )
@@ -77,7 +81,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v19.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v20.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -490,6 +494,15 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["pickle_permitted"] is False
     assert training["policy_binds_entire_causal_source_chain"] is True
     assert training["cross_platform_bitwise_reproducibility_claim"] is False
+    temporal = design["candidate_panel"]["causal_event_tcn"]
+    assert temporal["dilations"] == list(ROUND74_EVENT_TCN_DILATIONS)
+    assert temporal["causal_receptive_field_events"] == (
+        ROUND74_EVENT_TCN_RECEPTIVE_FIELD
+    )
+    assert temporal["frozen_sequence_fully_covered"] is True
+    assert temporal["frozen_sequence_length_events"] <= (
+        temporal["causal_receptive_field_events"]
+    )
     evaluation = design["prospective_evaluation_contract"]
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
@@ -681,6 +694,10 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
     assert verification["parameter_update_completed"] is True
     assert verification["warning_count"] == 0
     assert verification["cpu_fallback_warning_count"] == 0
+    assert verification["tcn_receptive_field_events"] == (
+        ROUND74_EVENT_TCN_RECEPTIVE_FIELD
+    )
+    assert verification["frozen_sequence_fully_covered"] is True
     assert evidence["input_contract"]["masked_action_targets"] == 1
     for candidate_id, candidate in evidence["candidates"].items():
         assert candidate["parameter_count"] == design["candidate_panel"][
@@ -763,6 +780,10 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert verification["synthetic_tuning_run_count"] == 1
     assert verification["each_tuning_run_has_equal_selection_weight"] is True
     assert verification["mixed_or_repeated_capture_run_policy"] == "fail closed"
+    assert verification["tcn_receptive_field_events"] == (
+        ROUND74_EVENT_TCN_RECEPTIVE_FIELD
+    )
+    assert verification["frozen_sequence_fully_covered"] is True
     repeated = evidence["repeated_result"]
     assert repeated["candidate_run_balanced_tuning_proper_loss"] == (
         repeated["candidate_worst_run_tuning_proper_loss"]

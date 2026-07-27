@@ -1,11 +1,11 @@
 {
-  "schema_version": "round-074-event-model-directml-preflight-evidence-v1",
-  "artifact_sha256": "f938d776c36a8b23af282ff1de7ac8275818ec77929ef2ea6abb6abc0616a95c",
+  "schema_version": "round-074-event-model-directml-preflight-evidence-v2",
+  "artifact_sha256": "6ac90aea5b0a4053aa2ca3a69d9e70104224a0558e3f76476788865a78153c60",
   "round": 74,
-  "observed_at_utc": "2026-07-26T21:26:57.417834+00:00",
-  "execution_git_commit": "af28c10dc8bf365b59f6b2b6201f5016886e46ec",
+  "observed_at_utc": "2026-07-27T02:58:33Z",
+  "execution_git_commit": "c47f4c2aba0369f0bdc9078fb85d07d9fa7a3128",
   "event_sequence_source_sha256": "0e7be6929c1177b147a27a830e0dcbd0f52edfb63c9f4610c9e62b0b44bf3a81",
-  "event_model_source_sha256": "636250cca313a7fe472aa5e8da55d4149e2773c86721508b659e689bbc31d75a",
+  "event_model_source_sha256": "758e1f14f6f6fec30329dabe690eed25d5e4ab3b08a95243b70bc39c12dc0dfa",
   "event_model_schema_version": "round-074-event-payoff-model-v2",
   "backend": {
     "requested": "directml",
@@ -41,19 +41,19 @@
         "adverse_bce": 0.6997635364532471,
         "unpredictability_bce": 0.69938063621521
       },
-      "parameter_max_abs_change": 4.246830940246582e-07
+      "parameter_max_abs_change": 4.246830940246582e-7
     },
     "causal_event_tcn": {
-      "parameter_count": 79524,
-      "loss": 0.8893337845802307,
+      "parameter_count": 129060,
+      "loss": 0.8868526220321655,
       "components": {
-        "payoff_pinball": 0.4323843717575073,
-        "maximum_adverse_excursion_pinball": 0.2153799682855606,
-        "positive_bce": 0.7003870606422424,
-        "adverse_bce": 0.6903018355369568,
-        "unpredictability_bce": 0.6840927600860596
+        "payoff_pinball": 0.43064919114112854,
+        "maximum_adverse_excursion_pinball": 0.21582894027233124,
+        "positive_bce": 0.6799876093864441,
+        "adverse_bce": 0.6945496797561646,
+        "unpredictability_bce": 0.7175639271736145
       },
-      "parameter_max_abs_change": 9.834766387939453e-07
+      "parameter_max_abs_change": 3.2782554626464844e-7
     }
   },
   "verification": {
@@ -62,7 +62,9 @@
     "gradient_clipping_completed": true,
     "parameter_update_completed": true,
     "warning_count": 0,
-    "cpu_fallback_warning_count": 0
+    "cpu_fallback_warning_count": 0,
+    "tcn_receptive_field_events": 255,
+    "frozen_sequence_fully_covered": true
   },
   "interpretation": {
     "compute_path_viable_on_observed_amd_host": true,
@@ -79,5 +81,6 @@
     "paper_trading": false,
     "testnet_trading": false,
     "live_trading": false
-  }
+  },
+  "supersedes_artifact_sha256": "f938d776c36a8b23af282ff1de7ac8275818ec77929ef2ea6abb6abc0616a95c"
 }
