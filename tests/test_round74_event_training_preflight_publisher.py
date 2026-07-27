@@ -68,6 +68,29 @@ def _run() -> dict[str, object]:
             "candidate_worst_run_tuning_proper_loss": losses,
             "candidate_pooled_tuning_proper_loss": losses,
             "peer_best_run_balanced_tuning_proper_loss": peers,
+            "selection": {
+                "criterion": "test complexity gate",
+                "selected_candidate_id": "event_pooling_linear",
+                "selected_tuning_metrics": {"run_balanced_loss": 0.5},
+                "ordered_candidate_ids": candidate_ids,
+                "familywise_alpha": 0.05,
+                "planned_comparison_count": 2,
+                "comparison_alpha": 0.025,
+                "exact_ties_excluded_from_sign_test": True,
+                "minimum_mean_proper_loss_improvement": 1e-5,
+                "promotion_reports": [
+                    {
+                        "paired_capture_run_count": 1,
+                        "promoted": False,
+                    },
+                    {
+                        "paired_capture_run_count": 1,
+                        "promoted": False,
+                    },
+                ],
+                "complexity_promotion_privilege": False,
+                "backtest_metric_used_for_selection": False,
+            },
         },
         "temporary_artifact_count_before_cleanup": 2,
         "temporary_directory_removed": True,
@@ -109,6 +132,13 @@ def test_validate_run_rejects_incomplete_candidate_metrics() -> None:
     run = _run()
     del run["result"]["candidate_pooled_tuning_proper_loss"]["causal_event_tcn"]
     with pytest.raises(RuntimeError, match="panel differs"):
+        PUBLISHER._validate_run(run, commit="a" * 40)
+
+
+def test_validate_run_rejects_unearned_complexity_promotion() -> None:
+    run = _run()
+    run["result"]["selection"]["promotion_reports"][0]["promoted"] = True
+    with pytest.raises(RuntimeError, match="complexity-promotion"):
         PUBLISHER._validate_run(run, commit="a" * 40)
 
 

@@ -27,8 +27,8 @@ from simple_ai_trading.impact_absorption_event_training import (
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v12"
-RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v1"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v13"
+RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v2"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
     "event_scaling": "src/simple_ai_trading/impact_absorption_event_scaling.py",
@@ -190,6 +190,30 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         raise RuntimeError("Round 74 preflight peer update count differs")
     for field in ("policy_sha256", "model_sha256", "prediction_sha256"):
         _require_sha256(result.get(field), field)
+    selection = result.get("selection")
+    if (
+        not isinstance(selection, dict)
+        or selection.get("selected_candidate_id")
+        != result.get("selected_candidate_id")
+        or selection.get("ordered_candidate_ids") != candidate_ids
+        or selection.get("familywise_alpha") != 0.05
+        or selection.get("planned_comparison_count") != len(candidate_ids) - 1
+        or selection.get("comparison_alpha")
+        != 0.05 / (len(candidate_ids) - 1)
+        or selection.get("exact_ties_excluded_from_sign_test") is not True
+        or selection.get("complexity_promotion_privilege") is not False
+        or selection.get("backtest_metric_used_for_selection") is not False
+        or not isinstance(selection.get("promotion_reports"), list)
+        or len(selection["promotion_reports"]) != len(candidate_ids) - 1
+        or any(
+            not isinstance(report, dict)
+            or report.get("promoted") is not False
+            or report.get("paired_capture_run_count") != 1
+            for report in selection["promotion_reports"]
+        )
+        or result.get("selected_candidate_id") != candidate_ids[0]
+    ):
+        raise RuntimeError("Round 74 complexity-promotion preflight gate failed")
     if (
         not isinstance(result.get("model_byte_count"), int)
         or result["model_byte_count"] <= 0
