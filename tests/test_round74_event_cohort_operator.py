@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 import hashlib
 from io import StringIO
 import json
@@ -30,10 +31,15 @@ from simple_ai_trading.round74_active_adjudication import (
 from simple_ai_trading.round74_event_cohort_operator import (
     ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS,
     ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES,
+    ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES,
     ROUND74_EVENT_COHORT_PLAN_SHA256,
     ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES,
+    ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS,
+    _Round74CaptureLaunch,
     _load_contiguous_bindings,
+    _pre_admission_startup_failure,
     _raise_for_capture_process_failure,
+    _startup_relaunch_fits_slot,
     _validate_slot_audit,
     load_round74_cohort_operator_plan,
     run_round74_cohort_current_slot,
@@ -142,6 +148,34 @@ def _normalized_source_sha256(path: Path) -> str:
         .replace("\r", "\n")
     )
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def _startup_failure_supervisor(
+    error: str = (
+        "startup:RuntimeError:public_source:ConnectionClosedError:"
+        "no close frame received or sent"
+    ),
+) -> dict[str, object]:
+    return {
+        "attempt_count": 1,
+        "attempt_evidence_combined": False,
+        "attempts": [],
+        "capture_contract_sha256": (
+            "5e245b0f398bb89ca579efcde6acef258fef4efa4204334b9657b43aa9e39cb0"
+        ),
+        "capture_schema_version": "round-074-prospective-evidence-v10",
+        "design_sha256": (
+            "b00e20499a0025c05cb27cc352d9444ce722493b5bdb592d628224343e81e136"
+        ),
+        "qualification_passed": False,
+        "reconnect_count": 0,
+        "reconnect_delays_seconds": [],
+        "schema_version": "round-074-capture-supervisor-report-v1",
+        "selected_run_id": "",
+        "startup_errors": [error],
+        "status": "failed",
+        "terminal_error": error,
+    }
 
 
 def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
@@ -442,6 +476,8 @@ def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
     assert ROUND74_EVENT_COHORT_GLOBAL_DATABASE_CAP_BYTES == 24 * 1024**3
     assert ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES == 4 * 1024**3
     assert ROUND74_EVENT_COHORT_FRESH_AUDIT_TIMEOUT_SECONDS == 300
+    assert ROUND74_EVENT_COHORT_MAXIMUM_STARTUP_LAUNCHES == 2
+    assert ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS == 0.25
     assert (
         plan.slot(1).scheduled_start_wall_ns - plan.slot(0).scheduled_start_wall_ns
         == 4_500_000_000_000
@@ -550,6 +586,146 @@ def test_round74_cohort_process_failure_precedes_supervisor_json_parse() -> None
             stop_method="terminate",
             stdout_lines=[],
         )
+
+
+def test_round74_cohort_relaunches_only_exact_zero_evidence_transport_startup(
+    tmp_path: Path,
+) -> None:
+    stdout_path = tmp_path / "capture.stdout.json"
+    stderr_path = tmp_path / "capture.stderr.log"
+    supervisor = _startup_failure_supervisor()
+    supervisor_text = json.dumps(supervisor)
+    stdout_path.write_text(supervisor_text, encoding="utf-8")
+    stderr_path.write_text("", encoding="utf-8")
+    launch = _Round74CaptureLaunch(
+        launch_ordinal=1,
+        return_code=2,
+        breaches=(),
+        stop_method="",
+        stdout_text=supervisor_text,
+        stderr_text="",
+        stdout_path=stdout_path,
+        stderr_path=stderr_path,
+        monitor_samples=(),
+        database_bytes_after=9_433_526_272,
+        wal_bytes_after=0,
+        database_mtime_ns_after=17,
+        wal_mtime_ns_after=0,
+    )
+
+    accepted = _pre_admission_startup_failure(
+        launch,
+        baseline_database=9_433_526_272,
+        baseline_wal=0,
+        baseline_database_mtime_ns=17,
+        baseline_wal_mtime_ns=0,
+        active_capture_processes=[],
+    )
+    assert accepted == supervisor
+
+    assert (
+        _pre_admission_startup_failure(
+            replace(launch, database_bytes_after=9_433_526_273),
+            baseline_database=9_433_526_272,
+            baseline_wal=0,
+            baseline_database_mtime_ns=17,
+            baseline_wal_mtime_ns=0,
+            active_capture_processes=[],
+        )
+        is None
+    )
+    assert (
+        _pre_admission_startup_failure(
+            replace(launch, wal_bytes_after=1),
+            baseline_database=9_433_526_272,
+            baseline_wal=0,
+            baseline_database_mtime_ns=17,
+            baseline_wal_mtime_ns=0,
+            active_capture_processes=[],
+        )
+        is None
+    )
+    assert (
+        _pre_admission_startup_failure(
+            replace(launch, database_mtime_ns_after=18),
+            baseline_database=9_433_526_272,
+            baseline_wal=0,
+            baseline_database_mtime_ns=17,
+            baseline_wal_mtime_ns=0,
+            active_capture_processes=[],
+        )
+        is None
+    )
+    assert (
+        _pre_admission_startup_failure(
+            launch,
+            baseline_database=9_433_526_272,
+            baseline_wal=0,
+            baseline_database_mtime_ns=17,
+            baseline_wal_mtime_ns=0,
+            active_capture_processes=[
+                {"process_id": 7, "command_line": "impact-capture"}
+            ],
+        )
+        is None
+    )
+    non_transport = _startup_failure_supervisor(
+        "startup:ValueError:capture contract differs"
+    )
+    non_transport_text = json.dumps(non_transport)
+    stdout_path.write_text(non_transport_text, encoding="utf-8")
+    assert (
+        _pre_admission_startup_failure(
+            replace(launch, stdout_text=non_transport_text),
+            baseline_database=9_433_526_272,
+            baseline_wal=0,
+            baseline_database_mtime_ns=17,
+            baseline_wal_mtime_ns=0,
+            active_capture_processes=[],
+        )
+        is None
+    )
+    run_created = _startup_failure_supervisor()
+    run_created["attempts"] = [{"run_id": "1" * 32}]
+    run_created["selected_run_id"] = "1" * 32
+    run_created_text = json.dumps(run_created)
+    stdout_path.write_text(run_created_text, encoding="utf-8")
+    assert (
+        _pre_admission_startup_failure(
+            replace(launch, stdout_text=run_created_text),
+            baseline_database=9_433_526_272,
+            baseline_wal=0,
+            baseline_database_mtime_ns=17,
+            baseline_wal_mtime_ns=0,
+            active_capture_processes=[],
+        )
+        is None
+    )
+
+
+def test_round74_cohort_startup_relaunch_must_fit_original_window() -> None:
+    plan = load_round74_cohort_operator_plan(REPOSITORY)
+    window_end = plan.slot(0).start_window_end_wall_ns
+
+    assert _startup_relaunch_fits_slot(
+        plan,
+        ordinal=0,
+        now_wall_ns=(
+            window_end
+            - 1_000_000_000
+            - int(ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS * 1e9)
+        ),
+    )
+    assert not _startup_relaunch_fits_slot(
+        plan,
+        ordinal=0,
+        now_wall_ns=(
+            window_end
+            - 1_000_000_000
+            - int(ROUND74_EVENT_COHORT_STARTUP_RELAUNCH_BACKOFF_SECONDS * 1e9)
+            + 1
+        ),
+    )
 
 
 def test_round74_cohort_fresh_audit_accepts_actual_v10_report_identity() -> None:
@@ -667,6 +843,7 @@ def test_round74_cohort_persists_live_progress_before_child_completion(
     plan = load_round74_cohort_operator_plan(REPOSITORY)
     controlled_process = ControlledProcess()
     monkeypatch.setattr(operator.subprocess, "Popen", lambda *_args, **_kwargs: controlled_process)
+    monkeypatch.setattr(operator, "_active_capture_processes", lambda: [])
     monkeypatch.setattr(operator.time, "sleep", lambda _seconds: None)
     monkeypatch.setattr(
         operator.time,
@@ -686,6 +863,77 @@ def test_round74_cohort_persists_live_progress_before_child_completion(
     assert state["last_progress"]["elapsed_seconds"] >= 0.0
     assert state["last_progress"]["database_and_wal_growth_bytes"] == 0
     assert state["last_progress_at_utc"].endswith("Z")
+
+
+def test_round74_cohort_persists_one_excluded_startup_before_terminal_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from simple_ai_trading import round74_event_cohort_operator as operator
+
+    class ImmediateProcess:
+        def __init__(self, pid: int, return_code: int, stdout: str) -> None:
+            self.pid = pid
+            self.return_code = return_code
+            self.stdout = StringIO(stdout)
+            self.stderr = StringIO("")
+
+        def poll(self) -> int:
+            return self.return_code
+
+        def wait(self, *, timeout: int) -> int:
+            assert timeout == 60
+            return self.return_code
+
+    plan = load_round74_cohort_operator_plan(REPOSITORY)
+    processes = iter(
+        (
+            ImmediateProcess(41184, 2, json.dumps(_startup_failure_supervisor())),
+            ImmediateProcess(41185, 1, "{}"),
+        )
+    )
+    spawn_count = 0
+
+    def spawn(*_args: object, **_kwargs: object) -> ImmediateProcess:
+        nonlocal spawn_count
+        spawn_count += 1
+        return next(processes)
+
+    monkeypatch.setattr(operator.subprocess, "Popen", spawn)
+    monkeypatch.setattr(operator, "_active_capture_processes", lambda: [])
+    monkeypatch.setattr(operator.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(
+        operator.time,
+        "time_ns",
+        lambda: plan.slot(0).scheduled_start_wall_ns,
+    )
+
+    with pytest.raises(ValueError, match=r"return_code=1.*stdout=present"):
+        operator._run_slot_process(tmp_path, plan, ordinal=0)
+
+    assert spawn_count == 2
+    first = json.loads(
+        (operator._slot_root(tmp_path, 0) / "startup-launch-001.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    second = json.loads(
+        (operator._slot_root(tmp_path, 0) / "startup-launch-002.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    state = json.loads(
+        (operator._slot_root(tmp_path, 0) / "state.json").read_text(encoding="utf-8")
+    )
+    assert first["disposition"] == "excluded_transient_pre_admission_startup"
+    assert first["selected_run_id"] == ""
+    assert first["supervisor_attempts"] == []
+    assert first["database_or_wal_changed"] is False
+    assert first["pre_admission_startup_relaunch_permitted"] is True
+    assert second["disposition"] == "terminal_capture_failure"
+    assert second["pre_admission_startup_relaunch_permitted"] is False
+    assert state["current_startup_launch_ordinal"] == 2
+    assert len(state["pre_admission_startup_launches"]) == 2
 
 
 def test_round74_cohort_failure_terminalizes_reserved_slot(
