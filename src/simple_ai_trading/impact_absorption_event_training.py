@@ -39,8 +39,8 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v4"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v4"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v5"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v5"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
     "round-074-target-context-panel-v1"
 )
@@ -408,6 +408,38 @@ def _to_device_tensor(
     return torch.from_numpy(copied).to(device)
 
 
+def _minibatch_target_counts(
+    batch: Round74EventTrainingBatch,
+    row_slice: slice,
+) -> tuple[int, int, int]:
+    start, stop, step = row_slice.indices(batch.rows)
+    if step != 1 or stop <= start:
+        raise ValueError("Round 74 minibatch slice differs")
+    action_weight = int(batch.action_eligibility[row_slice].sum())
+    regime_weight = int(
+        batch.regime_unpredictability_eligibility[row_slice].sum()
+    )
+    if (action_weight == 0) != (regime_weight == 0):
+        raise ValueError("Round 74 minibatch target eligibility differs")
+    return action_weight, regime_weight, stop - start
+
+
+def _skip_fully_censored_minibatch(
+    totals: dict[str, float],
+    batch: Round74EventTrainingBatch,
+    row_slice: slice,
+) -> bool:
+    action_weight, regime_weight, rows = _minibatch_target_counts(
+        batch,
+        row_slice,
+    )
+    if action_weight > 0 and regime_weight > 0:
+        return False
+    totals["fully_censored_minibatches"] += 1.0
+    totals["fully_censored_rows"] += float(rows)
+    return True
+
+
 def _loss_for_minibatch(
     model: nn.Module,
     batch: Round74EventTrainingBatch,
@@ -472,6 +504,8 @@ def _empty_metric_sums() -> dict[str, float]:
         "unpredictability_bce": 0.0,
         "action_weight": 0.0,
         "regime_weight": 0.0,
+        "fully_censored_minibatches": 0.0,
+        "fully_censored_rows": 0.0,
     }
 
 
@@ -526,6 +560,10 @@ def _finalize_metrics(totals: Mapping[str, float]) -> dict[str, float]:
     )
     metrics["eligible_action_targets"] = action_weight
     metrics["eligible_regime_targets"] = regime_weight
+    metrics["fully_censored_minibatches"] = float(
+        totals["fully_censored_minibatches"]
+    )
+    metrics["fully_censored_rows"] = float(totals["fully_censored_rows"])
     if not all(math.isfinite(value) for value in metrics.values()):
         raise RuntimeError("Round 74 aggregate metrics are nonfinite")
     return metrics
@@ -548,6 +586,17 @@ def _evaluate_model(
                 (batch,),
                 minibatch_rows,
             ):
+                if _skip_fully_censored_minibatch(
+                    totals,
+                    batch,
+                    row_slice,
+                ):
+                    _skip_fully_censored_minibatch(
+                        run_totals,
+                        batch,
+                        row_slice,
+                    )
+                    continue
                 _loss, components, action_weight, regime_weight = (
                     _loss_for_minibatch(model, batch, row_slice, device)
                 )
@@ -620,6 +669,12 @@ def _train_peer(
             training_batches,
             config.minibatch_rows,
         ):
+            if _skip_fully_censored_minibatch(
+                optimization_totals,
+                batch,
+                row_slice,
+            ):
+                continue
             optimizer.zero_grad(set_to_none=True)
             loss, components, action_weight, regime_weight = _loss_for_minibatch(
                 model, batch, row_slice, device
@@ -1352,6 +1407,8 @@ def load_round74_pretest_policy(
         "run_count",
         "eligible_action_targets",
         "eligible_regime_targets",
+        "fully_censored_minibatches",
+        "fully_censored_rows",
     }
     for panel_candidate, raw_report in candidate_panel.items():
         if not isinstance(raw_report, Mapping):
