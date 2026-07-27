@@ -167,6 +167,7 @@ def _runtime_request() -> Round74AIReviewRequest:
         feature_last=tuple(0.0 for _ in range(count)),
         feature_mean=tuple(0.0 for _ in range(count)),
         feature_standard_deviation=tuple(0.0 for _ in range(count)),
+        feature_recent_change=tuple(0.0 for _ in range(count)),
         payoff_quantiles_bps=(-2.0, 0.0, 2.0, 4.0, 6.0),
         maximum_adverse_excursion_quantiles_bps=(
             0.2,
