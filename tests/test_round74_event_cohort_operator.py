@@ -81,6 +81,13 @@ CURRENT_HOST_SCHEDULE = (
     / "action-value"
     / "round-074-event-cohort-host-schedule-v7-2026-07-27.json"
 )
+CURRENT_HOST_SCHEDULE_V8 = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-host-schedule-v8-2026-07-27.json"
+)
 V5_SLOT_ZERO_FAILURE = (
     REPOSITORY
     / "docs"
@@ -327,6 +334,42 @@ def test_round74_v7_host_schedule_is_exact_and_pre_execution_only() -> None:
     assert limitations["future_execution_proven_now"] is False
     assert limitations["cohort_slot_admitted_now"] is False
     assert limitations["failed_v5_capture_admitted"] is False
+    assert limitations["profitability_or_edge_claim"] is False
+
+
+def test_round74_v8_host_schedule_is_exact_and_pre_execution_only() -> None:
+    evidence = json.loads(CURRENT_HOST_SCHEDULE_V8.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert claimed == (
+        "4694b5311cc3f4d1a08c4e8c8169101b39e03e6e3d8389b739106d9d663a240a"
+    )
+    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["operator_contract_artifact_sha256"] == (
+        "ce703964e8742e30e5b7937ae48b7131d170ec3b5d9b4597b5fd2fc055160f9e"
+    )
+    scheduler = evidence["host_scheduler"]
+    assert scheduler["task_name"] == "SimpleAITrading-Round74-EventCohort-v8"
+    assert scheduler["state"] == "Ready"
+    assert scheduler["enabled"] is True
+    assert scheduler["next_run_time_utc"] == "2026-07-28T00:45:00Z"
+    assert scheduler["last_trigger_utc"] == "2026-08-05T17:30:00Z"
+    assert scheduler["repetition_interval"] == "PT1H15M"
+    assert scheduler["stop_at_duration_end"] is False
+    assert scheduler["multiple_instances"] == "IgnoreNew"
+    assert scheduler["start_when_available"] is False
+    assert scheduler["task_execution_time_limit"] == "PT1H14M"
+    assert evidence["superseded_host_scheduler"]["state"] == "Disabled"
+    readiness = evidence["future_slot_zero_readiness"]
+    assert readiness["ready_for_current_slot"] is True
+    assert readiness["startup_prerequisite_passed"] is True
+    assert readiness["wal_absent"] is True
+    assert readiness["no_active_capture_process"] is True
+    limitations = evidence["limitations"]
+    assert limitations["future_execution_proven_now"] is False
+    assert limitations["cohort_slot_admitted_now"] is False
+    assert limitations["failed_v5_r1_capture_admitted"] is False
     assert limitations["profitability_or_edge_claim"] is False
 
 
