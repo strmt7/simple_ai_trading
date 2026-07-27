@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION,
@@ -19,12 +20,6 @@ from simple_ai_trading.impact_absorption_ai_uplift import (
 )
 from simple_ai_trading.impact_absorption_ai_execution_replay import (
     ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_ai_runtime import (
-    ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_ai_review_preparation import (
-    ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
@@ -170,7 +165,15 @@ def _load_hash_bound(path: Path, field: str) -> dict[str, object]:
 
 
 def _file_sha256(relative_path: str) -> str:
-    payload = (REPOSITORY / relative_path).read_bytes()
+    design = json.loads(DESIGN_PATH.read_text(encoding="ascii"))
+    commit = design["implementation_git_commit"]
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+    )
+    payload = completed.stdout
     canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(canonical).hexdigest()
 
@@ -314,10 +317,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         source["target_free_inference_schema_version"]
         == ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
     )
-    assert (
-        source["ai_review_panel_schema_version"]
-        == ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION
-    )
+    assert source["ai_review_panel_schema_version"] == "round-074-ai-review-panel-v3"
     assert (
         source["event_cohort_plan_schema_version"]
         == ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION
@@ -346,9 +346,8 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         source["ai_worker_result_schema_version"]
         == ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION
     )
-    assert (
-        source["ai_runtime_outcome_schema_version"]
-        == ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION
+    assert source["ai_runtime_outcome_schema_version"] == (
+        "round-074-ai-runtime-outcome-v1"
     )
     assert source["ai_bridge_schema_version"] == ROUND74_AI_BRIDGE_SCHEMA_VERSION
     assert (

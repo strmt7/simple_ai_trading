@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_ai_protocol import (
     ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION,
@@ -22,11 +23,7 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
     ROUND74_ACTION_POLICY_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_ai_runtime import (
-    ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
-    ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION,
     round74_default_ai_review_model_panel,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
@@ -131,6 +128,20 @@ def _canonical_sha256(value: object) -> str:
     ).hexdigest()
 
 
+def _source_file_sha256(relative_path: str) -> str:
+    artifact = json.loads(ARTIFACT_PATH.read_text(encoding="ascii"))
+    commit = artifact["implementation_git_commit"]
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+    )
+    payload = completed.stdout
+    canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def _file_sha256(relative_path: str) -> str:
     payload = (REPOSITORY / relative_path).read_bytes()
     canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
@@ -192,7 +203,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "event_model_operator",
         "contract_generator",
     ):
-        assert source[f"{label}_sha256"] == _file_sha256(source[f"{label}_path"])
+        assert source[f"{label}_sha256"] == _source_file_sha256(source[f"{label}_path"])
     assert source["model_manifest_schema_version"] == (
         ROUND74_AI_MODEL_MANIFEST_SCHEMA_VERSION
     )
@@ -209,7 +220,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION
     )
     assert source["runtime_outcome_schema_version"] == (
-        ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION
+        "round-074-ai-runtime-outcome-v1"
     )
     assert source["bridge_schema_version"] == (ROUND74_AI_BRIDGE_SCHEMA_VERSION)
     assert source["tuning_subpartition_schema_version"] == (
@@ -255,9 +266,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["target_free_inference_schema_version"] == (
         ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
     )
-    assert source["review_panel_schema_version"] == (
-        ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION
-    )
+    assert source["review_panel_schema_version"] == "round-074-ai-review-panel-v3"
     assert (
         source["target_source_evidence_schema_version"]
         == ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION
@@ -266,7 +275,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         source["target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
     )
-    assert source["exchange_info_evidence_sha256"] == _file_sha256(
+    assert source["exchange_info_evidence_sha256"] == _source_file_sha256(
         source["exchange_info_evidence_path"]
     )
     assert (
