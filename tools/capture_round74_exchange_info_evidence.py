@@ -21,7 +21,7 @@ SOURCE = REPOSITORY / "src"
 if str(SOURCE) not in sys.path:
     sys.path.insert(0, str(SOURCE))
 
-from simple_ai_trading.impact_absorption_event_evidence import (  # noqa: E402
+from simple_ai_trading.impact_absorption_exchange_info_evidence import (  # noqa: E402
     build_round74_quantity_rules_evidence,
 )
 from simple_ai_trading.impact_absorption_event_targets import (  # noqa: E402
@@ -220,14 +220,14 @@ def capture_round74_exchange_info(
         "source_binding": {
             "parser_path": (
                 "src/simple_ai_trading/"
-                "impact_absorption_event_evidence.py"
+                "impact_absorption_exchange_info_evidence.py"
             ),
             "parser_sha256": hashlib.sha256(
                 (
                     REPOSITORY
                     / "src"
                     / "simple_ai_trading"
-                    / "impact_absorption_event_evidence.py"
+                    / "impact_absorption_exchange_info_evidence.py"
                 ).read_bytes()
             ).hexdigest(),
             "capture_tool_path": (
