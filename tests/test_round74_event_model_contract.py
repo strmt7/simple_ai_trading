@@ -86,7 +86,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v35.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v36.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -368,6 +368,13 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert costs["funding_schedule_source_evidence_digest_required"] is True
     assert costs["silently_empty_or_partial_funding_schedule_permitted"] is False
+    assert (
+        costs["funding_timestamp_representation"]
+        == "per-symbol monotonic lower and upper uncertainty interval"
+    )
+    assert costs["funding_interval_overlap_policy"] == "censor target"
+    assert costs["exact_point_timestamp_required_or_assumed"] is False
+    assert costs["touching_or_overlapping_funding_intervals_permitted"] is False
     assert costs["structured_evidence_claims_must_match_exact_configured_values"] is True
     assert costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
     assert costs["midpoint_payoff_reported_before_execution_friction"] is True
@@ -702,6 +709,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["implementation_shortfall_reconciliation_implementation"] is True
     assert authority["actual_exit_funding_recheck_implementation"] is True
     assert authority["funding_schedule_coverage_gate_implementation"] is True
+    assert authority["funding_clock_uncertainty_interval_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
@@ -857,7 +865,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         source["event_cohort_sha256"] == design["source_binding"]["event_cohort_sha256"]
     )
     assert "compute-only evidence" in binding["event_training_directml_reuse_scope"]
-    assert "does not bind target-v7" in binding["event_training_directml_reuse_scope"]
+    assert "does not bind target-v8" in binding["event_training_directml_reuse_scope"]
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
