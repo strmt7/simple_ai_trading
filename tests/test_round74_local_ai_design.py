@@ -24,6 +24,9 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_uplift import (
+    ROUND74_AI_UPLIFT_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
     ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
@@ -36,7 +39,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v4.json"
+    / "round-074-local-ai-review-design-v5.json"
 )
 
 
@@ -63,6 +66,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "bridge",
         "calibration",
         "action_policy",
+        "uplift_evaluator",
         "worker",
         "runtime",
     ):
@@ -101,6 +105,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["action_policy_schema_version"] == (
         ROUND74_ACTION_POLICY_SCHEMA_VERSION
+    )
+    assert source["uplift_evaluator_schema_version"] == (
+        ROUND74_AI_UPLIFT_SCHEMA_VERSION
     )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
@@ -179,7 +186,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["fail_closed_parent_runtime_implemented"] is True
     assert status["causal_calibrated_bridge_implemented"] is True
     assert status["target_free_action_preselection_implemented"] is True
-    assert status["paired_uplift_evaluator_implemented"] is False
+    assert status["paired_uplift_evaluator_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
 
@@ -194,10 +201,14 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["ai_can_only_preserve_reduce_veto_or_abstain"] is True
     assert (
         evaluation[
-            "missing_timeout_blocked_or_invalid_ai_review_is_a_fail_closed_veto_not_a_dropped_observation"
+            "timeout_blocked_or_invalid_present_ai_review_is_a_fail_closed_veto_not_a_dropped_observation"
         ]
         is True
     )
+    assert evaluation["implemented_missing_review_policy"] == (
+        "invalidate entire evaluation"
+    )
+    assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
     assert evaluation["accuracy_ignored"] is False
