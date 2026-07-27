@@ -11,6 +11,8 @@ from .impact_absorption_event_evidence import (
     Round74BinanceClockProbe,
     build_round74_commission_evidence,
     build_round74_funding_evidence,
+)
+from .impact_absorption_exchange_info_evidence import (
     build_round74_quantity_rules_evidence,
 )
 from .impact_absorption_event_targets import (

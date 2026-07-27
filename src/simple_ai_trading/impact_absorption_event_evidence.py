@@ -22,7 +22,10 @@ from .impact_absorption_event_targets import (
     Round74EventTargetEvidence,
     round74_commission_evidence_claims,
     round74_funding_schedule_evidence_claims,
-    round74_quantity_rules_evidence_claims,
+)
+from .impact_absorption_exchange_info_evidence import (
+    Round74QuantityRulesEvidenceBundle,
+    build_round74_quantity_rules_evidence,
 )
 from .impact_absorption_store import (
     IMPACT_CAPTURE_V10_CONTRACT_SHA256,
@@ -31,7 +34,6 @@ from .impact_absorption_store import (
     IMPACT_CAPTURE_V10_SCHEMA_VERSION,
     ImpactCaptureAudit,
 )
-from .impact_absorption_targets import Round73MarketQuantityRules
 from .impact_capture_frame import decode_impact_capture_frame
 
 
@@ -239,20 +241,6 @@ class Round74CommissionEvidenceBundle:
 
 
 @dataclass(frozen=True)
-class Round74QuantityRulesEvidenceBundle:
-    """Validated market-order filters and their immutable source evidence."""
-
-    quantity_rules_by_symbol: tuple[
-        tuple[str, Round73MarketQuantityRules],
-        ...,
-    ]
-    evidence: Round74EventTargetEvidence
-
-    def as_mapping(self) -> dict[str, Round73MarketQuantityRules]:
-        return dict(self.quantity_rules_by_symbol)
-
-
-@dataclass(frozen=True)
 class Round74FundingEvidenceBundle:
     """Complete queried funding panel mapped into conservative local intervals."""
 
@@ -271,146 +259,6 @@ class Round74FundingEvidenceBundle:
 
     def coverage_mapping(self) -> dict[str, tuple[int, int]]:
         return dict(self.funding_schedule_coverage_monotonic_ns)
-
-
-def build_round74_quantity_rules_evidence(
-    *,
-    payload: Mapping[str, object],
-    environment: str,
-    observed_wall_ns: int,
-) -> Round74QuantityRulesEvidenceBundle:
-    """Derive executable market-order constraints from exchange metadata."""
-
-    selected_environment = _environment(environment)
-    observed = _positive_integer(
-        observed_wall_ns,
-        "quantity-rules observation time",
-    )
-    normalized = _normalized_payload(payload)
-    if not isinstance(normalized, Mapping):
-        raise ValueError("Round 74 Binance exchange-info payload differs")
-    symbol_rows = normalized.get("symbols")
-    if not isinstance(symbol_rows, Sequence) or isinstance(
-        symbol_rows,
-        (str, bytes, bytearray),
-    ):
-        raise ValueError("Round 74 Binance exchange-info symbols differ")
-
-    selected_rows: dict[str, Mapping[str, object]] = {}
-    for row in symbol_rows:
-        if not isinstance(row, Mapping):
-            raise ValueError("Round 74 Binance exchange-info symbol row differs")
-        symbol = str(row.get("symbol", "")).strip().upper()
-        if symbol not in ROUND74_EVENT_TARGET_SYMBOLS:
-            continue
-        if symbol in selected_rows:
-            raise ValueError(
-                "Round 74 Binance exchange-info target symbol is duplicated"
-            )
-        selected_rows[symbol] = row
-    if tuple(sorted(selected_rows)) != ROUND74_EVENT_TARGET_SYMBOLS:
-        raise ValueError("Round 74 Binance exchange-info symbol panel differs")
-
-    rules: dict[str, Round73MarketQuantityRules] = {}
-    for symbol in ROUND74_EVENT_TARGET_SYMBOLS:
-        row = selected_rows[symbol]
-        order_types = row.get("orderTypes")
-        if (
-            row.get("status") != "TRADING"
-            or row.get("contractType") != "PERPETUAL"
-            or str(row.get("pair", "")).strip().upper() != symbol
-            or row.get("quoteAsset") != "USDT"
-            or row.get("marginAsset") != "USDT"
-            or not isinstance(order_types, Sequence)
-            or isinstance(order_types, (str, bytes, bytearray))
-            or "MARKET" not in order_types
-        ):
-            raise ValueError(
-                "Round 74 Binance exchange-info trading contract differs"
-            )
-        filters = row.get("filters")
-        if not isinstance(filters, Sequence) or isinstance(
-            filters,
-            (str, bytes, bytearray),
-        ):
-            raise ValueError("Round 74 Binance exchange-info filters differ")
-        filter_by_type: dict[str, Mapping[str, object]] = {}
-        for item in filters:
-            if not isinstance(item, Mapping):
-                raise ValueError(
-                    "Round 74 Binance exchange-info filter row differs"
-                )
-            filter_type = str(item.get("filterType", "")).strip()
-            if not filter_type or filter_type in filter_by_type:
-                raise ValueError(
-                    "Round 74 Binance exchange-info filter type differs"
-                )
-            filter_by_type[filter_type] = item
-        try:
-            lot = filter_by_type["MARKET_LOT_SIZE"]
-            notional = filter_by_type["MIN_NOTIONAL"]
-        except KeyError as exc:
-            raise ValueError(
-                "Round 74 Binance exchange-info executable filters differ"
-            ) from exc
-        rules[symbol] = Round73MarketQuantityRules.create(
-            symbol=symbol,
-            step_size=_strict_decimal_string(
-                lot.get("stepSize"),
-                "MARKET_LOT_SIZE.stepSize",
-                minimum=Decimal("0"),
-            ),
-            minimum_quantity=_strict_decimal_string(
-                lot.get("minQty"),
-                "MARKET_LOT_SIZE.minQty",
-                minimum=Decimal("0"),
-            ),
-            maximum_quantity=_strict_decimal_string(
-                lot.get("maxQty"),
-                "MARKET_LOT_SIZE.maxQty",
-                minimum=Decimal("0"),
-            ),
-            minimum_notional=_strict_decimal_string(
-                notional.get("notional"),
-                "MIN_NOTIONAL.notional",
-                minimum=Decimal("0"),
-            ),
-        )
-
-    claims = round74_quantity_rules_evidence_claims(rules)
-    query_contract = {
-        "schema_version": ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
-        "environment": selected_environment,
-        "method": "GET",
-        "path": "/fapi/v1/exchangeInfo",
-        "security_type": "NONE",
-        "symbols": list(ROUND74_EVENT_TARGET_SYMBOLS),
-        "contract_requirements": {
-            "status": "TRADING",
-            "contractType": "PERPETUAL",
-            "quoteAsset": "USDT",
-            "marginAsset": "USDT",
-            "orderType": "MARKET",
-        },
-        "filters_used": ["MARKET_LOT_SIZE", "MIN_NOTIONAL"],
-        "precision_fields_are_not_quantity_rules": True,
-        "credential_material_persisted": False,
-    }
-    evidence = Round74EventTargetEvidence.create(
-        kind="quantity_rules",
-        environment=selected_environment,
-        observed_wall_ns=observed,
-        record_count=len(rules),
-        source_query_or_protocol_sha256=_canonical_sha256(query_contract),
-        source_payload_sha256=_canonical_sha256(normalized),
-        claims=claims,
-    )
-    return Round74QuantityRulesEvidenceBundle(
-        quantity_rules_by_symbol=tuple(
-            (symbol, rules[symbol]) for symbol in ROUND74_EVENT_TARGET_SYMBOLS
-        ),
-        evidence=evidence,
-    )
 
 
 def build_round74_commission_evidence(
