@@ -103,6 +103,9 @@ def _batch(
         endpoint_message_index=_readonly(np.zeros(rows, dtype=np.int64)),
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{identity * 100 + row:064x}" for row in range(rows)),
+        feature_window_sha256=tuple(
+            f"{identity * 1000 + row:064x}" for row in range(rows)
+        ),
         target_context_sha256=tuple("3" * 64 for _ in range(rows)),
         test_access_sha256=tuple(
             "4" * 64 if role == "test" else "" for _ in range(rows)

@@ -35,11 +35,13 @@ from .impact_absorption_event_financial_metrics import (
     round74_maximum_realized_drawdown_bps,
 )
 from .impact_absorption_event_sequence import ROUND74_EVENT_SYMBOLS
+from .impact_absorption_event_targets import (
+    ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS,
+)
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v5"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v6"
 ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE = 0.99
-ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE = 0.99
 ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
     "conservative": 0.60,
     "regular": 0.50,
@@ -48,6 +50,16 @@ ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO = {
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
+ROUND74_AI_EXECUTION_REPLAY_STATUSES = frozenset(
+    {
+        "runtime_veto",
+        "ai_veto",
+        "historical_review_expired",
+        "target_ineligible",
+        "delayed_overlap_veto",
+        "executed",
+    }
+)
 
 
 def _canonical_json(value: object) -> str:
@@ -187,8 +199,9 @@ class Round74AIPairedReviewEvidence:
             "realized_target_exposed_to_ai": False,
             "may_change_side_entry_exit_or_overlap_order": False,
             "late_accepted_review_policy": (
-                "retain_audit_decision_but_apply_zero_same_entry_exposure"
+                "retain_decision_for_exact_delayed_book_replay"
             ),
+            "size_multiplier_bps_is_same_entry_diagnostic_projection": True,
             "same_entry_latency_includes_historical_queue_delay": True,
             "latency_adjusted_replay_performed": False,
         }
@@ -285,6 +298,185 @@ class Round74AIPairedReviewEvidence:
 
 
 @dataclass(frozen=True)
+class Round74AIExecutionReplayEvidence:
+    """Exact delayed-entry L2 replay aligned to one paired AI review."""
+
+    row_index: int
+    feature_row_sha256: str
+    run_id: str
+    symbol: str
+    side: int
+    horizon_seconds: int
+    source_review_sha256: str
+    partition_sha256: str
+    source_capture_report_sha256: str
+    target_spec_sha256: str
+    status: str
+    requested_size_multiplier_bps: int
+    applied_size_multiplier_bps: int
+    exact_l2_replay_performed: bool
+    target_outcome_sha256: str | None
+    target_context_sha256: str | None
+    target_ineligible_reason: str
+    requested_entry_monotonic_ns: int | None
+    actual_entry_monotonic_ns: int | None
+    actual_exit_monotonic_ns: int | None
+    capital_scaled_net_payoff_bps: float
+    capital_scaled_maximum_adverse_excursion_bps: float
+    adverse_selection: bool
+
+    def validate(self) -> None:
+        replay_status = self.status in {
+            "target_ineligible",
+            "delayed_overlap_veto",
+            "executed",
+        }
+        target_bound = (
+            isinstance(self.target_outcome_sha256, str)
+            and _SHA256.fullmatch(self.target_outcome_sha256) is not None
+            and isinstance(self.target_context_sha256, str)
+            and _SHA256.fullmatch(self.target_context_sha256) is not None
+        )
+        actual_entry = self.actual_entry_monotonic_ns
+        actual_exit = self.actual_exit_monotonic_ns
+        if (
+            isinstance(self.row_index, bool)
+            or not isinstance(self.row_index, int)
+            or self.row_index < 0
+            or _SHA256.fullmatch(self.feature_row_sha256) is None
+            or _RUN_ID.fullmatch(self.run_id) is None
+            or self.symbol not in ROUND74_EVENT_SYMBOLS
+            or self.side not in (-1, 1)
+            or self.horizon_seconds not in (30, 300)
+            or _SHA256.fullmatch(self.source_review_sha256) is None
+            or _SHA256.fullmatch(self.partition_sha256) is None
+            or _SHA256.fullmatch(self.source_capture_report_sha256) is None
+            or _SHA256.fullmatch(self.target_spec_sha256) is None
+            or self.status not in ROUND74_AI_EXECUTION_REPLAY_STATUSES
+            or isinstance(self.requested_size_multiplier_bps, bool)
+            or not isinstance(self.requested_size_multiplier_bps, int)
+            or not 0 <= self.requested_size_multiplier_bps <= 10_000
+            or isinstance(self.applied_size_multiplier_bps, bool)
+            or not isinstance(self.applied_size_multiplier_bps, int)
+            or not 0 <= self.applied_size_multiplier_bps <= 10_000
+            or self.applied_size_multiplier_bps
+            > self.requested_size_multiplier_bps
+            or self.exact_l2_replay_performed != replay_status
+            or target_bound != replay_status
+            or (
+                self.requested_entry_monotonic_ns is not None
+                and (
+                    isinstance(self.requested_entry_monotonic_ns, bool)
+                    or not isinstance(self.requested_entry_monotonic_ns, int)
+                    or self.requested_entry_monotonic_ns < 0
+                )
+            )
+            or (
+                actual_entry is not None
+                and (
+                    isinstance(actual_entry, bool)
+                    or not isinstance(actual_entry, int)
+                    or actual_entry < 0
+                )
+            )
+            or (
+                actual_exit is not None
+                and (
+                    isinstance(actual_exit, bool)
+                    or not isinstance(actual_exit, int)
+                    or actual_exit < 0
+                )
+            )
+            or not math.isfinite(float(self.capital_scaled_net_payoff_bps))
+            or not math.isfinite(
+                float(self.capital_scaled_maximum_adverse_excursion_bps)
+            )
+            or self.capital_scaled_maximum_adverse_excursion_bps < 0.0
+            or not isinstance(self.adverse_selection, bool)
+            or (
+                replay_status
+                and self.requested_size_multiplier_bps <= 0
+            )
+            or (
+                replay_status
+                and self.requested_entry_monotonic_ns is None
+            )
+            or (
+                actual_entry is not None
+                and self.requested_entry_monotonic_ns is not None
+                and actual_entry < self.requested_entry_monotonic_ns
+            )
+            or (actual_exit is not None and actual_entry is None)
+        ):
+            raise ValueError("Round 74 AI execution replay evidence differs")
+        if self.status == "executed":
+            if (
+                self.requested_size_multiplier_bps <= 0
+                or self.applied_size_multiplier_bps
+                != self.requested_size_multiplier_bps
+                or self.requested_entry_monotonic_ns is None
+                or actual_entry is None
+                or actual_exit is None
+                or actual_exit < actual_entry
+                or self.target_ineligible_reason
+            ):
+                raise ValueError("Round 74 AI executed replay evidence differs")
+        elif (
+            self.applied_size_multiplier_bps != 0
+            or self.capital_scaled_net_payoff_bps != 0.0
+            or self.capital_scaled_maximum_adverse_excursion_bps != 0.0
+            or self.adverse_selection
+        ):
+            raise ValueError("Round 74 AI veto replay exposure differs")
+        if self.status == "target_ineligible":
+            if not self.target_ineligible_reason:
+                raise ValueError("Round 74 AI target ineligibility differs")
+        elif self.target_ineligible_reason:
+            raise ValueError("Round 74 AI replay reason differs")
+        if self.status == "delayed_overlap_veto" and (
+            actual_entry is None or actual_exit is None
+        ):
+            raise ValueError("Round 74 AI overlap replay timing differs")
+        if self.status in {"runtime_veto", "ai_veto"} and (
+            self.requested_size_multiplier_bps != 0
+        ):
+            raise ValueError("Round 74 AI pre-replay veto size differs")
+        if self.status == "historical_review_expired" and (
+            self.requested_size_multiplier_bps <= 0
+        ):
+            raise ValueError("Round 74 AI expired replay size differs")
+        if not replay_status and any(
+            value is not None
+            for value in (
+                self.target_outcome_sha256,
+                self.target_context_sha256,
+                self.requested_entry_monotonic_ns,
+                actual_entry,
+                actual_exit,
+            )
+        ):
+            raise ValueError("Round 74 AI non-replay evidence contains a target")
+
+    @property
+    def replay_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        value: dict[str, object] = {
+            **self.__dict__,
+            "baseline_payoff_scaled_without_rewalking_book": False,
+            "latency_adjusted_book_rewalk_required_for_exposure": True,
+            "trading_authority": False,
+            "profitability_claim": False,
+        }
+        if include_sha256:
+            value["replay_sha256"] = _canonical_sha256(value)
+        return value
+
+
+@dataclass(frozen=True)
 class Round74AIOverlayMetrics:
     """Capital-scaled trace metrics for the immutable baseline sequence."""
 
@@ -296,6 +488,10 @@ class Round74AIOverlayMetrics:
     runtime_success_rate: float
     same_entry_latency_eligible_reviews: int
     same_entry_latency_eligibility_rate: float
+    exact_replay_required_reviews: int
+    exact_replay_completed_reviews: int
+    exact_replay_target_ineligible_reviews: int
+    delayed_overlap_vetoes: int
     retained_trade_ratio: float
     distinct_retained_symbols: int
     maximum_retained_symbol_share: float
@@ -313,6 +509,10 @@ class Round74AIOverlayMetrics:
             self.reduced_trades,
             self.runtime_accepted_reviews,
             self.same_entry_latency_eligible_reviews,
+            self.exact_replay_required_reviews,
+            self.exact_replay_completed_reviews,
+            self.exact_replay_target_ineligible_reviews,
+            self.delayed_overlap_vetoes,
             self.distinct_retained_symbols,
         )
         ratios = (
@@ -338,6 +538,11 @@ class Round74AIOverlayMetrics:
             or self.reduced_trades > self.retained_trades
             or self.runtime_accepted_reviews > self.baseline_trades
             or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
+            or self.exact_replay_completed_reviews
+            != self.exact_replay_required_reviews
+            or self.exact_replay_target_ineligible_reviews
+            > self.exact_replay_completed_reviews
+            or self.delayed_overlap_vetoes > self.exact_replay_completed_reviews
             or self.distinct_retained_symbols > len(ROUND74_EVENT_SYMBOLS)
             or any(not math.isfinite(float(value)) for value in finite)
             or any(not 0.0 <= float(value) <= 1.0 for value in ratios)
@@ -380,24 +585,29 @@ class Round74AIOverlayMetrics:
 def _scaled_metrics(
     trace: Round74ActionTrace,
     reviews: Sequence[Round74AIPairedReviewEvidence],
+    executions: Sequence[Round74AIExecutionReplayEvidence],
 ) -> tuple[
     Round74AIOverlayMetrics,
     tuple[float, ...],
     tuple[float, ...],
     tuple[Mapping[str, object], ...],
 ]:
-    multipliers = np.asarray(
-        [review.size_multiplier_bps / 10_000.0 for review in reviews],
-        dtype=np.float64,
-    )
     baseline = np.asarray(trace.net_payoff_bps, dtype=np.float64)
-    baseline_mae = np.asarray(
-        trace.maximum_adverse_excursion_bps,
+    scaled = np.asarray(
+        [value.capital_scaled_net_payoff_bps for value in executions],
         dtype=np.float64,
     )
-    scaled = baseline * multipliers
-    scaled_mae = baseline_mae * multipliers
-    retained = multipliers > 0.0
+    scaled_mae = np.asarray(
+        [
+            value.capital_scaled_maximum_adverse_excursion_bps
+            for value in executions
+        ],
+        dtype=np.float64,
+    )
+    retained = np.asarray(
+        [value.status == "executed" for value in executions],
+        dtype=np.bool_,
+    )
     retained_symbols = tuple(
         symbol for symbol, keep in zip(trace.symbol, retained, strict=True) if keep
     )
@@ -431,7 +641,8 @@ def _scaled_metrics(
         retained_trades=int(retained.sum()),
         vetoed_trades=int((~retained).sum()),
         reduced_trades=sum(
-            0 < review.size_multiplier_bps < 10_000 for review in reviews
+            0 < execution.applied_size_multiplier_bps < 10_000
+            for execution in executions
         ),
         runtime_accepted_reviews=sum(
             review.runtime_status == "accepted" for review in reviews
@@ -445,6 +656,21 @@ def _scaled_metrics(
         same_entry_latency_eligibility_rate=float(
             np.mean([review.same_entry_latency_eligible for review in reviews])
         ),
+        exact_replay_required_reviews=sum(
+            value.requested_size_multiplier_bps > 0
+            and value.status
+            not in {"runtime_veto", "ai_veto", "historical_review_expired"}
+            for value in executions
+        ),
+        exact_replay_completed_reviews=sum(
+            value.exact_l2_replay_performed for value in executions
+        ),
+        exact_replay_target_ineligible_reviews=sum(
+            value.status == "target_ineligible" for value in executions
+        ),
+        delayed_overlap_vetoes=sum(
+            value.status == "delayed_overlap_veto" for value in executions
+        ),
         retained_trade_ratio=float(retained.mean()),
         distinct_retained_symbols=len(set(retained_symbols)),
         maximum_retained_symbol_share=float(maximum_symbol_share),
@@ -453,7 +679,16 @@ def _scaled_metrics(
         maximum_drawdown_bps=round74_maximum_realized_drawdown_bps(
             scaled,
             run_ids=trace.run_id,
-            exit_monotonic_ns=trace.exit_monotonic_ns,
+            exit_monotonic_ns=tuple(
+                execution.actual_exit_monotonic_ns
+                if execution.actual_exit_monotonic_ns is not None
+                else baseline_exit
+                for execution, baseline_exit in zip(
+                    executions,
+                    trace.exit_monotonic_ns,
+                    strict=True,
+                )
+            ),
             expected_run_ids=trace.expected_run_ids,
         ),
         mean_maximum_adverse_excursion_bps=float(scaled_mae.mean()),
@@ -481,6 +716,7 @@ class Round74AIUpliftDevelopmentReport:
     same_entry_latency_budget_ns: int
     baseline_trace: Round74ActionTrace
     review_sha256: tuple[str, ...]
+    execution_replay_sha256: tuple[str, ...]
     ai_scaled_net_payoff_bps: tuple[float, ...]
     ai_scaled_maximum_adverse_excursion_bps: tuple[float, ...]
     paired_runs: tuple[Mapping[str, object], ...]
@@ -543,6 +779,7 @@ class Round74AIUpliftDevelopmentReport:
                     self.model_manifest_sha256,
                     *self.candidate_sha256,
                     *self.review_sha256,
+                    *self.execution_replay_sha256,
                 )
             )
             or not self.candidate_sha256
@@ -552,6 +789,10 @@ class Round74AIUpliftDevelopmentReport:
             or len(set(self.candidate_sha256)) != len(self.candidate_sha256)
             or len(self.review_sha256) != self.baseline_trace.metrics.trades
             or len(set(self.review_sha256)) != len(self.review_sha256)
+            or len(self.execution_replay_sha256)
+            != self.baseline_trace.metrics.trades
+            or len(set(self.execution_replay_sha256))
+            != len(self.execution_replay_sha256)
             or len(self.ai_scaled_net_payoff_bps) != self.baseline_trace.metrics.trades
             or len(self.ai_scaled_maximum_adverse_excursion_bps)
             != self.baseline_trace.metrics.trades
@@ -610,6 +851,7 @@ class Round74AIUpliftDevelopmentReport:
             "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
             "baseline_trace": self.baseline_trace.as_dict(),
             "review_sha256": list(self.review_sha256),
+            "execution_replay_sha256": list(self.execution_replay_sha256),
             "ai_scaled_net_payoff_bps": list(self.ai_scaled_net_payoff_bps),
             "ai_scaled_maximum_adverse_excursion_bps": list(
                 self.ai_scaled_maximum_adverse_excursion_bps
@@ -623,9 +865,11 @@ class Round74AIUpliftDevelopmentReport:
             ),
             "missing_review_policy": "invalidate_entire_evaluation",
             "same_side_entry_exit_and_overlap_order": True,
-            "same_entry_fill_requires_measured_latency_eligibility": True,
+            "same_entry_fill_requires_measured_latency_eligibility": False,
             "same_entry_latency_includes_historical_queue_delay": True,
-            "latency_adjusted_replay_performed": False,
+            "same_entry_latency_is_diagnostic_only": True,
+            "latency_adjusted_replay_performed": True,
+            "baseline_payoff_scaled_without_rewalking_book": False,
             "sealed_test_accessed": False,
             "ai_model_selection_permitted": False,
             "promotion_authority": False,
@@ -640,6 +884,7 @@ class Round74AIUpliftDevelopmentReport:
 def evaluate_round74_ai_overlay_development(
     action_selection: Round74ActionPolicySelection,
     reviews: Sequence[Round74AIPairedReviewEvidence],
+    executions: Sequence[Round74AIExecutionReplayEvidence],
 ) -> Round74AIUpliftDevelopmentReport:
     """Compare one AI overlay on the already-consumed tuning trace only."""
 
@@ -655,12 +900,19 @@ def evaluate_round74_ai_overlay_development(
         raise ValueError("Round 74 AI uplift lacks an accepted action policy")
     trace = selected[0].trace
     review_rows = tuple(reviews)
+    execution_rows = tuple(executions)
     for review in review_rows:
         review.validate()
+    for execution in execution_rows:
+        execution.validate()
     if (
         len(review_rows) != trace.metrics.trades
+        or len(execution_rows) != trace.metrics.trades
         or tuple(review.row_index for review in review_rows) != trace.row_index
+        or tuple(value.row_index for value in execution_rows) != trace.row_index
         or len({review.row_index for review in review_rows}) != len(review_rows)
+        or len({value.row_index for value in execution_rows})
+        != len(execution_rows)
     ):
         raise ValueError("Round 74 AI paired review coverage differs")
     manifest_values = {review.model_manifest_sha256 for review in review_rows}
@@ -670,6 +922,13 @@ def evaluate_round74_ai_overlay_development(
     if len(latency_budgets) != 1:
         raise ValueError("Round 74 AI paired latency budget differs")
     for index, review in enumerate(review_rows):
+        execution = execution_rows[index]
+        requested_multiplier = (
+            review.decision.size_multiplier_bps
+            if review.runtime_status == "accepted"
+            and review.decision is not None
+            else 0
+        )
         if (
             review.feature_row_sha256 != trace.feature_row_sha256[index]
             or review.run_id != trace.run_id[index]
@@ -679,21 +938,53 @@ def evaluate_round74_ai_overlay_development(
             or review.pretest_policy_sha256 != action_selection.pretest_policy_sha256
             or review.probability_calibration_sha256
             != action_selection.probability_calibration_sha256
+            or execution.feature_row_sha256 != trace.feature_row_sha256[index]
+            or execution.run_id != trace.run_id[index]
+            or execution.symbol != trace.symbol[index]
+            or execution.side != trace.side[index]
+            or execution.horizon_seconds != trace.horizon_seconds[index]
+            or execution.source_review_sha256 != review.review_sha256
+            or execution.requested_size_multiplier_bps
+            != requested_multiplier
+            or (
+                review.runtime_status != "accepted"
+                and execution.status != "runtime_veto"
+            )
+            or (
+                review.runtime_status == "accepted"
+                and requested_multiplier == 0
+                and execution.status != "ai_veto"
+            )
+            or (
+                review.runtime_status == "accepted"
+                and requested_multiplier > 0
+                and review.effective_review_latency_ns
+                > ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                and execution.status != "historical_review_expired"
+            )
+            or (
+                review.runtime_status == "accepted"
+                and requested_multiplier > 0
+                and review.effective_review_latency_ns
+                <= ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                and execution.status
+                not in {
+                    "target_ineligible",
+                    "delayed_overlap_veto",
+                    "executed",
+                }
+            )
         ):
             raise ValueError("Round 74 AI paired action identity differs")
     metrics, scaled, scaled_mae, paired_runs = _scaled_metrics(
         trace,
         review_rows,
+        execution_rows,
     )
     profile = round74_action_profile(action_selection.profile)
     reasons: list[str] = []
     if metrics.runtime_success_rate < ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE:
         reasons.append("runtime_success_rate_not_met")
-    if (
-        metrics.same_entry_latency_eligibility_rate
-        < ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE
-    ):
-        reasons.append("same_entry_latency_eligibility_rate_not_met")
     if (
         metrics.retained_trade_ratio
         < ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO[profile.profile]
@@ -725,6 +1016,9 @@ def evaluate_round74_ai_overlay_development(
         same_entry_latency_budget_ns=next(iter(latency_budgets)),
         baseline_trace=trace,
         review_sha256=tuple(review.review_sha256 for review in review_rows),
+        execution_replay_sha256=tuple(
+            value.replay_sha256 for value in execution_rows
+        ),
         ai_scaled_net_payoff_bps=scaled,
         ai_scaled_maximum_adverse_excursion_bps=scaled_mae,
         paired_runs=paired_runs,
@@ -737,10 +1031,11 @@ def evaluate_round74_ai_overlay_development(
 
 
 __all__ = [
+    "ROUND74_AI_EXECUTION_REPLAY_STATUSES",
     "ROUND74_AI_UPLIFT_MINIMUM_RETAINED_TRADE_RATIO",
     "ROUND74_AI_UPLIFT_MINIMUM_RUNTIME_SUCCESS_RATE",
-    "ROUND74_AI_UPLIFT_MINIMUM_SAME_ENTRY_LATENCY_ELIGIBILITY_RATE",
     "ROUND74_AI_UPLIFT_SCHEMA_VERSION",
+    "Round74AIExecutionReplayEvidence",
     "Round74AIOverlayMetrics",
     "Round74AIPairedReviewEvidence",
     "Round74AIUpliftDevelopmentReport",

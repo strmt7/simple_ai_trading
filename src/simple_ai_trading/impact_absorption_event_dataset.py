@@ -34,7 +34,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v5"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v6"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v4"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
@@ -382,6 +382,7 @@ class Round74EventTrainingBatch:
     endpoint_message_index: np.ndarray
     anchor_index: np.ndarray
     sample_sha256: tuple[str, ...]
+    feature_window_sha256: tuple[str, ...]
     target_context_sha256: tuple[str, ...]
     test_access_sha256: tuple[str, ...]
     feature_values: np.ndarray
@@ -441,11 +442,16 @@ class Round74EventTrainingBatch:
             or self.rows < 1
             or len(self.run_id) != self.rows
             or len(self.symbol) != self.rows
+            or len(self.feature_window_sha256) != self.rows
             or len(self.target_context_sha256) != self.rows
             or len(self.test_access_sha256) != self.rows
             or any(_RUN_ID.fullmatch(value) is None for value in self.run_id)
             or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
             or any(_SHA256.fullmatch(value) is None for value in self.sample_sha256)
+            or any(
+                _SHA256.fullmatch(value) is None
+                for value in self.feature_window_sha256
+            )
             or any(
                 _SHA256.fullmatch(value) is None for value in self.target_context_sha256
             )
@@ -547,6 +553,7 @@ class Round74EventTrainingBatch:
             "run_id": list(self.run_id),
             "symbol": list(self.symbol),
             "sample_sha256": list(self.sample_sha256),
+            "feature_window_sha256": list(self.feature_window_sha256),
             "target_context_sha256": list(self.target_context_sha256),
             "test_access_sha256": list(self.test_access_sha256),
         }
@@ -709,6 +716,9 @@ def build_round74_event_training_batch(
             )
         ),
         sample_sha256=tuple(sample.sample_sha256 for sample in selected),
+        feature_window_sha256=tuple(
+            sample.feature_window_sha256 for sample in selected
+        ),
         target_context_sha256=tuple(contexts),
         test_access_sha256=tuple(
             sample.test_access_sha256 for sample in selected

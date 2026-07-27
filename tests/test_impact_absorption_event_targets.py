@@ -6,6 +6,13 @@ from decimal import Decimal
 import pytest
 
 from simple_ai_trading.impact_absorption import L2BookState
+from simple_ai_trading.impact_absorption_ai_execution_replay import (
+    Round74AIExecutionReplayInstruction,
+    replay_round74_ai_execution_run,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    Round74ReplayObservation,
+)
 from simple_ai_trading.impact_absorption_event_targets import (
     Round74EventExecutionOverride,
     Round74EventTargetAnchor,
@@ -22,6 +29,9 @@ from simple_ai_trading.impact_absorption_event_targets import (
 from simple_ai_trading.impact_absorption_targets import (
     Round73MarketQuantityRules,
     walk_round73_book,
+)
+from simple_ai_trading.impact_absorption_target_assembly import (
+    Round74SourceTargetAssembly,
 )
 
 
@@ -433,6 +443,77 @@ def test_execution_override_rejects_incomplete_or_unsafe_identity() -> None:
             quantity_rules=_rules(),
             execution_overrides=(override,),
         )
+
+
+def test_ai_execution_replay_uses_delayed_book_and_capital_scaled_size() -> None:
+    anchor = _anchor()
+    instruction = Round74AIExecutionReplayInstruction(
+        row_index=0,
+        run_id="1" * 32,
+        symbol=anchor.symbol,
+        anchor_index=anchor.anchor_index,
+        decision_monotonic_ns=anchor.decision_monotonic_ns,
+        decision_wall_ns=anchor.decision_wall_ns,
+        endpoint_frame_index=anchor.endpoint_frame_index,
+        endpoint_message_index=anchor.endpoint_message_index,
+        sample_sha256="a" * 64,
+        feature_window_sha256=anchor.feature_window_sha256,
+        feature_row_sha256="b" * 64,
+        side=1,
+        horizon_seconds=30,
+        source_review_sha256="9" * 64,
+        model_manifest_sha256="8" * 64,
+        runtime_status="accepted",
+        effective_review_latency_ns=NS,
+        same_entry_latency_eligible=False,
+        requested_size_multiplier_bps=5_000,
+        pre_replay_status="replay_required",
+        partition_sha256="7" * 64,
+        action_selection_sha256="6" * 64,
+    )
+    instruction.validate()
+    assembly = Round74SourceTargetAssembly(
+        spec=_spec(),
+        quantity_rules_by_symbol=tuple(_rules().items()),
+    )
+    observations: list[Round74ReplayObservation] = []
+    for frame_index, received_ns in enumerate(
+        range(900_000_000, 303_000_000_000, 200_000_000),
+        start=1,
+    ):
+        mid = 100.0 if received_ns < 2_100_000_000 else 101.0
+        observations.append(
+            Round74ReplayObservation(
+                symbol=anchor.symbol,
+                event_type="depthUpdate",
+                frame_index=frame_index,
+                message_index=0,
+                received_monotonic_ns=received_ns,
+                received_wall_ns=anchor.decision_wall_ns + received_ns,
+                token=None,
+                depth_state=_state(
+                    mid=mid,
+                    update_id=frame_index,
+                ),
+                depth_update_is_stale=False,
+            )
+        )
+
+    (evidence,) = replay_round74_ai_execution_run(
+        assembly,
+        (instruction,),
+        observations,
+        capture_report_sha256="5" * 64,
+    )
+
+    assert evidence.status == "executed"
+    assert evidence.exact_l2_replay_performed
+    assert evidence.requested_entry_monotonic_ns == 2_100_000_000
+    assert evidence.actual_entry_monotonic_ns == 2_100_000_000
+    assert evidence.applied_size_multiplier_bps == 5_000
+    assert evidence.target_outcome_sha256 is not None
+    assert evidence.target_context_sha256 is not None
+    assert evidence.replay_sha256
 
 
 def test_round74_target_spec_uses_symbol_specific_latency_and_slippage() -> None:

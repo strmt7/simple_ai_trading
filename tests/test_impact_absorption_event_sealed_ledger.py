@@ -14,6 +14,9 @@ from simple_ai_trading import (
 from simple_ai_trading.impact_absorption_ai_protocol import (
     Round74AIReviewDecision,
 )
+from simple_ai_trading.impact_absorption_ai_execution_replay import (
+    build_round74_ai_execution_replay_instructions,
+)
 from simple_ai_trading.impact_absorption_ai_review_preparation import (
     prepare_round74_target_free_ai_reviews,
     round74_default_ai_review_model_panel,
@@ -22,6 +25,7 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeOutcome,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
+    Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
 )
 from simple_ai_trading.impact_absorption_event_action_policy import (
@@ -117,6 +121,9 @@ def _test_batch(*, role: str = "test") -> Round74EventTrainingBatch:
         endpoint_message_index=_readonly(np.arange(rows, dtype=np.int64)),
         anchor_index=_readonly(np.arange(rows, dtype=np.int64)),
         sample_sha256=tuple(f"{300 + index:064x}" for index in range(rows)),
+        feature_window_sha256=tuple(
+            f"{400 + index:064x}" for index in range(rows)
+        ),
         target_context_sha256=tuple("3" * 64 for _ in range(rows)),
         test_access_sha256=tuple(
             "4" * 64 if role == "test" else "" for _ in range(rows)
@@ -327,6 +334,58 @@ def _reviews(
     return result
 
 
+def _execution_replays(
+    reviews: tuple[Round74AIPairedReviewEvidence, ...],
+    *,
+    partition_sha256: str,
+) -> tuple[Round74AIExecutionReplayEvidence, ...]:
+    result: list[Round74AIExecutionReplayEvidence] = []
+    for index, review in enumerate(reviews):
+        requested_multiplier = (
+            review.decision.size_multiplier_bps
+            if review.runtime_status == "accepted"
+            and review.decision is not None
+            else 0
+        )
+        executed = requested_multiplier > 0
+        evidence = Round74AIExecutionReplayEvidence(
+            row_index=review.row_index,
+            feature_row_sha256=review.feature_row_sha256,
+            run_id=review.run_id,
+            symbol=review.symbol,
+            side=review.side,
+            horizon_seconds=review.horizon_seconds,
+            source_review_sha256=review.review_sha256,
+            partition_sha256=partition_sha256,
+            source_capture_report_sha256=f"{3_000 + index:064x}",
+            target_spec_sha256="f" * 64,
+            status="executed" if executed else "ai_veto",
+            requested_size_multiplier_bps=requested_multiplier,
+            applied_size_multiplier_bps=(
+                requested_multiplier if executed else 0
+            ),
+            exact_l2_replay_performed=executed,
+            target_outcome_sha256=(
+                f"{4_000 + index:064x}" if executed else None
+            ),
+            target_context_sha256=(
+                f"{5_000 + index:064x}" if executed else None
+            ),
+            target_ineligible_reason="",
+            requested_entry_monotonic_ns=10 if executed else None,
+            actual_entry_monotonic_ns=11 if executed else None,
+            actual_exit_monotonic_ns=20 if executed else None,
+            capital_scaled_net_payoff_bps=1.0 if executed else 0.0,
+            capital_scaled_maximum_adverse_excursion_bps=(
+                1.0 if executed else 0.0
+            ),
+            adverse_selection=False,
+        )
+        evidence.validate()
+        result.append(evidence)
+    return tuple(result)
+
+
 def _candidate_inference(
     batch: Round74EventTrainingBatch,
     calibration: Round74ProbabilityCalibration,
@@ -456,6 +515,7 @@ def test_sealed_evaluator_finalizes_failure_after_reservation(
             probability_calibration=_calibration(),
             pretest_policy_path=tmp_path / "missing-policy.json",
             ai_reviews_by_manifest={"a" * 64: ()},
+            ai_execution_replays_by_manifest={"a" * 64: ()},
             ledger=ledger,
             compute_backend="cpu",
         )
@@ -511,12 +571,17 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         size_multiplier_bps=0,
     )
     reviews[0].validate()
+    execution_replays = _execution_replays(
+        tuple(reviews),
+        partition_sha256=batch.partition_sha256,
+    )
     outcome = evaluate_round74_sealed_once(
         (batch,),
         action_selection=selection,
         probability_calibration=calibration,
         pretest_policy_path=tmp_path / "policy.json",
         ai_reviews_by_manifest={manifest: tuple(reviews)},
+        ai_execution_replays_by_manifest={manifest: execution_replays},
         ledger=ledger,
         compute_backend="cpu",
     )
@@ -535,8 +600,11 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert not overlay.uplift_gate_passed
     assert overlay.runtime_success_rate == 1.0
     assert overlay.same_entry_latency_eligible_reviews == 23
-    assert overlay.retained_trades == 23
-    assert "same_entry_latency_eligibility_rate_not_met" in overlay.gate_reasons
+    assert overlay.retained_trades == 24
+    assert overlay.exact_replay_required_reviews == 24
+    assert overlay.exact_replay_completed_reviews == 24
+    assert "same_entry_latency_eligibility_rate_not_met" not in overlay.gate_reasons
+    assert overlay.strategy_metrics.total_net_bps == 24.0
     assert (
         "positive_paired_delta_familywise_confidence_lower_bound_not_met"
         in overlay.gate_reasons
@@ -545,6 +613,22 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert outcome.report.inference_backend_kind == "cpu"
     assert outcome.report.profitability_claim is False
     assert ledger.claim_matches(outcome.finalized_claim, required_status="complete")
+    replay_selection = replace(
+        selection,
+        evaluations=tuple(
+            replace(value, trace=outcome.report.baseline_trace)
+            for value in selection.evaluations
+        ),
+    )
+    replay_selection.validate()
+    instructions = build_round74_ai_execution_replay_instructions(
+        replay_selection,
+        contexts=(build_round74_action_inference_context(batch),),
+        reviews=tuple(reviews),
+    )
+    assert instructions[0].pre_replay_status == "replay_required"
+    assert instructions[0].requested_size_multiplier_bps == 10_000
+    assert not instructions[0].same_entry_latency_eligible
 
 
 def test_sealed_financial_gate_rejects_future_censored_selected_action() -> None:
@@ -589,9 +673,8 @@ def test_sealed_financial_gate_rejects_future_censored_selected_action() -> None
         required_role="test",
         expected_run_count=24,
     )
-    metrics = sealed_subject._strategy_metrics(
+    metrics = sealed_subject._baseline_strategy_metrics(
         trace,
-        np.ones(trace.metrics.trades, dtype=np.float64),
         profile=selection.profile,
         seed=1,
     )
