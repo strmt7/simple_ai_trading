@@ -142,6 +142,23 @@ def _worker_result(envelope: Round74AIWorkerEnvelope) -> Round74AIWorkerResult:
     )
 
 
+def _unloaded_residency(
+    _endpoint: str,
+    model_name: str,
+    _timeout_seconds: float,
+    **_kwargs: object,
+) -> OllamaResidencyReport:
+    return OllamaResidencyReport(
+        requested_model=model_name,
+        status="unloaded",
+        loaded_model=None,
+        digest=None,
+        size_bytes=None,
+        size_vram_bytes=None,
+        vram_to_model_ratio=None,
+    )
+
+
 class _Process:
     def __init__(
         self,
@@ -214,6 +231,7 @@ def _review(
             MODEL_DIGEST,
             METADATA_DIGEST,
         ),
+        residency_inspector=_unloaded_residency,
         popen_factory=_factory(process),
         worker_command=("python", "-m", "isolated-worker"),
         monotonic_ns=lambda: 100,
@@ -331,6 +349,7 @@ def test_runtime_capability_policy_requires_declared_headroom() -> None:
         deterministic_risk_gate_passed=True,
         observed_wall_ns=WALL_NS,
         capability_detector=detect,
+        residency_inspector=_unloaded_residency,
         monotonic_ns=lambda: 100,
         wall_time_ns=lambda: WALL_NS + 1,
     )
@@ -383,7 +402,51 @@ def test_runtime_accepts_warm_exact_gpu_model_when_cold_load_headroom_is_low() -
     assert outcome.capability is not None
     assert outcome.capability["pre_inference_cold_load_headroom_passed"] is False
     assert outcome.capability["pre_inference_exact_model_fully_gpu_resident"] is True
+    assert outcome.capability["pre_inference_warm_ram_headroom_passed"] is True
     assert outcome.capability["provider_runtime_full_gpu_residency_verified"] is True
+
+
+def test_runtime_rechecks_warm_ram_against_residual_floor() -> None:
+    detected_minimums: list[float] = []
+
+    def detect(config: AIRuntimeConfig) -> AICapabilityReport:
+        detected_minimums.append(config.min_free_ram_gb)
+        if config.min_free_ram_gb == 16.0:
+            return AICapabilityReport(
+                **{
+                    **_capability(free_vram_gb=2.0).asdict(),
+                    "ok": False,
+                    "free_ram_gb": 8.0,
+                    "messages": ("free system RAM is below required",),
+                }
+            )
+        return _capability(free_vram_gb=2.0)
+
+    outcome = review_round74_ai_candidate(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        _request(),
+        deterministic_risk_gate_passed=True,
+        observed_wall_ns=WALL_NS,
+        capability_detector=detect,
+        provenance_resolver=lambda *_: (MODEL_DIGEST, METADATA_DIGEST),
+        residency_inspector=lambda *_args, **_kwargs: OllamaResidencyReport(
+            requested_model="fino1:8b",
+            status="gpu_resident",
+            loaded_model="fino1:8b",
+            digest=MODEL_DIGEST,
+            size_bytes=1_000,
+            size_vram_bytes=1_000,
+            vram_to_model_ratio=1.0,
+        ),
+        popen_factory=_factory(_Process()),
+        worker_command=("python", "-m", "isolated-worker"),
+        monotonic_ns=lambda: 100,
+        wall_time_ns=lambda: WALL_NS + 1,
+    )
+
+    assert outcome.status == "accepted"
+    assert detected_minimums == [16.0, 4.0]
 
 
 def test_runtime_blocks_low_headroom_when_exact_model_is_not_warm() -> None:
