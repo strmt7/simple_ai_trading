@@ -82,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v27.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v28.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -389,6 +389,11 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         action["threshold_selection_data"]
         == "six whole chronological policy-selection tuning runs only"
     )
+    assert action["threshold_quantile_estimator"] == (
+        "median of each active capture run's within-run linear quantile"
+    )
+    assert action["high_activity_run_receives_extra_threshold_weight"] is False
+    assert action["busy_run_row_duplication_regression_tested"] is True
     assert action["sealed_test_accessed"] is False
     assert action["replay_uses_exact_captured_entry_and_exit_monotonic_times"] is True
     assert action["horizon_duration_used_as_exit_time_proxy"] is False
@@ -407,6 +412,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert action["candidate_input_context_duplicates_full_feature_tensor"] is False
     assert action["selection_concatenates_full_feature_tensors"] is False
     assert action["selection_binds_every_target_batch_and_candidate_digest"] is True
+    assert action["selection_objective"] == (
+        "mean cumulative capture-run net bps minus profile-weighted worst realized "
+        "drawdown and mean cumulative capture-run maximum-adverse-excursion penalties"
+    )
+    assert action["pooled_total_net_bps_used_for_selection"] is False
+    assert action["total_net_bps_retained_as_diagnostic"] is True
     training = design["development_training_contract"]
     assert training["implemented_now"] is True
     assert training["representative_market_training_run_completed_now"] is False
@@ -589,6 +600,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["target_free_candidate_inference_implementation"] is True
     assert authority["two_model_ai_review_preparation_implementation"] is True
     assert authority["future_censored_action_rejection_implementation"] is True
+    assert authority["equal_run_action_threshold_and_objective_implementation"] is True
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
