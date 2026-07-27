@@ -1,0 +1,82 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v54",
+  "artifact_kind": "compact_contract_delta",
+  "supersedes_artifact_sha256": "a8b71adb49e5709e725dfbae3aa6d5154cf6235f7d11c08d21b0f2a9440d5b61",
+  "implementation_git_commit": "67866ab0db0a10a4a673042674ae18f93292aeb9",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "356e867e6b8d62b8834d476d2472392cbc1c5d49e5490a8ee50b8736e79e6771",
+      "review_request_schema_version": "round-074-ai-review-request-v5",
+      "prompt_payload_schema_version": "round-074-ai-prompt-payload-v6"
+    },
+    "bridge": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_bridge.py",
+      "sha256": "7c6a3b48fee8d8612c9ca275d5e3f60963147e9adbbf47202fbf90fc2e7b6054",
+      "schema_version": "round-074-ai-bridge-v4"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "96c0d6719e552a2b3adbf1ca480ead3df82c7274f41435f377e782365164c711",
+      "schema_version": "round-074-ai-review-panel-v8"
+    }
+  },
+  "causal_trajectory_delta": {
+    "block_count": 4,
+    "events_per_block": 16,
+    "event_span": 64,
+    "block_order": "oldest_to_newest",
+    "feature_names": [
+      "spread_bps",
+      "l1_imbalance",
+      "microprice_offset_bps",
+      "l2_imbalance_5",
+      "log1p_bid_depth_quote_20",
+      "log1p_ask_depth_quote_20",
+      "mid_log_return_bps",
+      "trade_signed_quote_scaled",
+      "liquidation_signed_quote_scaled",
+      "mark_to_mid_bps",
+      "ewm_realized_volatility_5s_bps",
+      "ewm_signed_trade_pressure_per_second_5s",
+      "ewm_signed_depth_pressure_per_second_5s",
+      "ewm_spread_5s_bps"
+    ],
+    "feature_groups": [
+      "spread_and_execution_quality",
+      "book_imbalance_and_depth",
+      "return_and_volatility",
+      "trade_depth_and_liquidation_flow",
+      "mark_basis_and_funding_state"
+    ],
+    "future_observations_included": false,
+    "real_symbol_or_absolute_date_included": false,
+    "realized_target_included": false,
+    "trajectory_is_bound_by_request_sha256": true,
+    "trajectory_is_bound_by_prompt_payload_sha256": true,
+    "full_unbounded_event_sequence_sent_to_llm": false,
+    "financial_uplift_assumed": false,
+    "promotion_requires_paired_after_cost_evidence": true
+  },
+  "verification": {
+    "focused_tests_passed": 100,
+    "block_shape_and_finiteness_validated": true,
+    "bridge_order_regression_uses_increasing_spread_path": true,
+    "malformed_block_panel_rejected": true,
+    "prompt_declares_causal_oldest_to_newest_order": true,
+    "ruff_passed": true,
+    "sealed_test_accessed": false,
+    "gpu_model_workload_executed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "e353ac126ba828523a46afb81f178065dd2d640d459dba8bf8644fa1a86c726b"
+}
