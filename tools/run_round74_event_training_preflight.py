@@ -171,7 +171,7 @@ def _run(repository: Path) -> dict[str, object]:
         selected = policy["model_artifact"]
         backend = policy["backend"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v2",
+            "schema_version": "round-074-event-training-preflight-run-v3",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]

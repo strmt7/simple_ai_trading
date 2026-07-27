@@ -39,20 +39,16 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v7"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v6"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v8"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v7"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
     "round-074-target-context-panel-v1"
 )
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
-ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA = 0.05
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = (
     len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 )
-ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA = (
-    ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA
-    / ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
-)
+ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 24
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
     "positive_payoff": 0.25,
@@ -858,26 +854,6 @@ def _fit_candidate(
     )
 
 
-def _exact_one_sided_sign_pvalue(wins: int, non_tied: int) -> float:
-    if (
-        isinstance(wins, bool)
-        or isinstance(non_tied, bool)
-        or not isinstance(wins, int)
-        or not isinstance(non_tied, int)
-        or wins < 0
-        or non_tied < 0
-        or wins > non_tied
-    ):
-        raise ValueError("Round 74 paired sign-test counts differ")
-    if non_tied == 0:
-        return 1.0
-    numerator = sum(
-        math.comb(non_tied, successes)
-        for successes in range(wins, non_tied + 1)
-    )
-    return numerator / (2**non_tied)
-
-
 def _complexity_gated_candidate_id(
     candidate_ids: Sequence[str],
     candidate_run_losses: Mapping[str, Sequence[float]],
@@ -942,28 +918,38 @@ def _complexity_gated_candidate_id(
         wins = sum(value > 0.0 for value in improvements)
         losses_count = sum(value < 0.0 for value in improvements)
         ties = len(improvements) - wins - losses_count
-        non_tied = wins + losses_count
         mean_improvement = sum(improvements) / len(improvements)
-        pvalue = _exact_one_sided_sign_pvalue(wins, non_tied)
+        maximum_loss_degradation = max(-value for value in improvements)
+        complete_tuning_panel = (
+            len(improvements)
+            == ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+        )
+        all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
         promoted = (
+            complete_tuning_panel
+            and
             mean_improvement > minimum_improvement
-            and pvalue <= ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+            and all_runs_noninferior
         )
         reports.append(
             {
                 "incumbent_candidate_id": incumbent,
                 "challenger_candidate_id": challenger,
                 "paired_capture_run_count": len(improvements),
-                "non_tied_capture_run_count": non_tied,
+                "required_paired_capture_run_count": (
+                    ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+                ),
+                "complete_tuning_panel": complete_tuning_panel,
                 "challenger_win_count": wins,
                 "challenger_loss_count": losses_count,
                 "exact_tie_count": ties,
                 "mean_proper_loss_improvement": mean_improvement,
                 "minimum_mean_proper_loss_improvement": minimum_improvement,
-                "one_sided_exact_sign_pvalue": pvalue,
-                "comparison_alpha": (
-                    ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
+                "maximum_paired_run_loss_degradation": maximum_loss_degradation,
+                "maximum_permitted_paired_run_loss_degradation": (
+                    minimum_improvement
                 ),
+                "all_paired_runs_noninferior": all_runs_noninferior,
                 "promoted": promoted,
             }
         )
@@ -1196,21 +1182,26 @@ def train_and_seal_round74_pretest_policy(
         "selection": {
             "criterion": (
                 "sequential parameter-count complexity promotion; each challenger "
-                "must strictly exceed the numerical mean-loss floor and pass a "
-                "paired one-sided exact sign test across tuning capture runs"
+                "requires all 24 tuning capture runs, must strictly exceed the "
+                "numerical mean-loss floor, and may not degrade any paired run "
+                "beyond that floor"
             ),
             "selected_candidate_id": winner.candidate_id,
             "selected_tuning_metrics": winner.ensemble_metrics,
             "ordered_candidate_ids": list(selected_config.candidate_ids),
-            "familywise_alpha": ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA,
             "planned_comparison_count": (
                 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
             ),
-            "comparison_alpha": ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA,
-            "exact_ties_excluded_from_sign_test": True,
+            "required_paired_capture_run_count": (
+                ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+            ),
             "minimum_mean_proper_loss_improvement": (
                 selected_config.minimum_tuning_improvement
             ),
+            "maximum_permitted_paired_run_loss_degradation": (
+                selected_config.minimum_tuning_improvement
+            ),
+            "statistical_independence_or_significance_claim": False,
             "promotion_reports": list(promotion_reports),
             "complexity_promotion_privilege": False,
             "backtest_metric_used_for_selection": False,
@@ -1651,11 +1642,11 @@ def load_round74_pretest_policy(
             "selected_candidate_id",
             "selected_tuning_metrics",
             "ordered_candidate_ids",
-            "familywise_alpha",
             "planned_comparison_count",
-            "comparison_alpha",
-            "exact_ties_excluded_from_sign_test",
+            "required_paired_capture_run_count",
             "minimum_mean_proper_loss_improvement",
+            "maximum_permitted_paired_run_loss_degradation",
+            "statistical_independence_or_significance_claim",
             "promotion_reports",
             "complexity_promotion_privilege",
             "backtest_metric_used_for_selection",
@@ -1663,21 +1654,23 @@ def load_round74_pretest_policy(
         or selection.get("criterion")
         != (
             "sequential parameter-count complexity promotion; each challenger "
-            "must strictly exceed the numerical mean-loss floor and pass a "
-            "paired one-sided exact sign test across tuning capture runs"
+            "requires all 24 tuning capture runs, must strictly exceed the "
+            "numerical mean-loss floor, and may not degrade any paired run "
+            "beyond that floor"
         )
         or candidate_id != expected_winner
         or selection.get("ordered_candidate_ids")
         != list(reconstructed_config.candidate_ids)
-        or selection.get("familywise_alpha")
-        != ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA
         or selection.get("planned_comparison_count")
         != ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
-        or selection.get("comparison_alpha")
-        != ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA
-        or selection.get("exact_ties_excluded_from_sign_test") is not True
+        or selection.get("required_paired_capture_run_count")
+        != ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         or selection.get("minimum_mean_proper_loss_improvement")
         != reconstructed_config.minimum_tuning_improvement
+        or selection.get("maximum_permitted_paired_run_loss_degradation")
+        != reconstructed_config.minimum_tuning_improvement
+        or selection.get("statistical_independence_or_significance_claim")
+        is not False
         or selection.get("promotion_reports") != list(expected_promotion_reports)
         or selection.get("complexity_promotion_privilege") is not False
         or selection.get("backtest_metric_used_for_selection") is not False
@@ -1749,9 +1742,8 @@ def load_round74_pretest_policy(
 
 
 __all__ = [
-    "ROUND74_COMPLEXITY_PROMOTION_COMPARISON_ALPHA",
     "ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT",
-    "ROUND74_COMPLEXITY_PROMOTION_FAMILYWISE_ALPHA",
+    "ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS",
     "ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION",
     "ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION",
     "ROUND74_EVENT_TRAINING_DEFAULT_SEEDS",

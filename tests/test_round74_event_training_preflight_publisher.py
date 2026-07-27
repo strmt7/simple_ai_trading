@@ -73,18 +73,20 @@ def _run() -> dict[str, object]:
                 "selected_candidate_id": "event_pooling_linear",
                 "selected_tuning_metrics": {"run_balanced_loss": 0.5},
                 "ordered_candidate_ids": candidate_ids,
-                "familywise_alpha": 0.05,
                 "planned_comparison_count": 2,
-                "comparison_alpha": 0.025,
-                "exact_ties_excluded_from_sign_test": True,
+                "required_paired_capture_run_count": 24,
                 "minimum_mean_proper_loss_improvement": 1e-5,
+                "maximum_permitted_paired_run_loss_degradation": 1e-5,
+                "statistical_independence_or_significance_claim": False,
                 "promotion_reports": [
                     {
                         "paired_capture_run_count": 1,
+                        "complete_tuning_panel": False,
                         "promoted": False,
                     },
                     {
                         "paired_capture_run_count": 1,
+                        "complete_tuning_panel": False,
                         "promoted": False,
                     },
                 ],
