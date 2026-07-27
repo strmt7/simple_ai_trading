@@ -238,7 +238,7 @@ def test_round74_cohort_operator_v4_was_superseded_before_slot_zero() -> None:
         "round-074-event-dataset-v7"
     )
     assert evidence["replacement_operator"]["dataset_schema_version"] == (
-        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+        "round-074-event-dataset-v8"
     )
     basis = evidence["correction_basis"]
     assert basis["raw_capture_plan_changed"] is False
