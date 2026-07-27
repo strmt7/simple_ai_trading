@@ -76,7 +76,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v16.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v17.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -294,7 +294,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     cohort = design["cohort_admission_contract"]
     assert cohort["implemented_now"] is True
     assert cohort["plan_sha256"] == (
-        "98d00717fbe07fe974ef3a61acf732ef58809a16140491a4dd6bc3da691593dd"
+        "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9"
     )
     assert cohort["role_counts"] == {
         "training": 120,
@@ -304,6 +304,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert cohort["active_prerequisite_passed_now"] is False
     assert cohort["failed_or_missed_slot_replacement_permitted"] is False
     assert cohort["partition_hash_must_bind_plan_sha256"] is True
+    assert cohort["maximum_target_span_seconds"] == 310.5
+    assert cohort["minimum_purge_seconds"] == 310.5
+    assert cohort["minimum_embargo_seconds"] == 310.5
     assert cohort["representative_market_data_collected_now"] is False
     features = design["causal_feature_contract"]
     assert features["per_event_asset_identity_retained"] is True
@@ -342,8 +345,13 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         ]
         is True
     )
-    latency = targets["decision_submission_and_execution_latency"]
+    latency = targets["decision_to_entry_and_exit_execution_latency"]
     assert latency["must_be_measured_on_the_execution_host"] is True
+    assert latency["entry_and_exit_must_be_measured_separately"] is True
+    assert latency["maximum_entry_latency_nanoseconds"] == 5_000_000_000
+    assert latency["maximum_exit_latency_nanoseconds"] == 5_000_000_000
+    assert latency["maximum_entry_state_lateness_nanoseconds"] == 250_000_000
+    assert latency["maximum_exit_state_lateness_nanoseconds"] == 250_000_000
     assert latency["fixed_unverified_latency_assumption_permitted"] is False
     entry = targets["entry_and_exit"]
     assert entry["initial_supported_execution"] == "marketable orders only"
@@ -385,10 +393,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert tuning["sealed_test_accessed"] is False
     assert dataset["split_unit"] == "whole capture run"
     assert dataset["random_row_split_permitted"] is False
-    assert dataset["minimum_purge_seconds"] == 300
-    assert dataset["minimum_embargo_seconds"] == 300
-    assert dataset["maximum_target_span_seconds_including_latency_ceiling"] == (
-        305
+    assert dataset["minimum_purge_seconds"] == 310.5
+    assert dataset["minimum_embargo_seconds"] == 310.5
+    assert dataset[
+        "maximum_target_span_seconds_including_latency_and_state_lateness_ceilings"
+    ] == (
+        310.5
     )
     assert dataset["batch_hash_binds_run_symbol_and_exact_decision_order"] is True
     assert (
@@ -450,7 +460,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["accepted_roles"] == ["training", "tuning"]
     assert training["test_role_rejected_before_backend_initialization"] is True
     assert training["training_and_tuning_sample_overlap_permitted"] is False
-    assert training["minimum_role_transition_purge_seconds"] == 300
+    assert training["minimum_role_transition_purge_seconds"] == 310.5
     assert training["mixed_partition_scaler_or_target_context_permitted"] is False
     assert training["candidate_panel"] == [
         "event_pooling_mlp",
@@ -475,6 +485,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     evaluation = design["prospective_evaluation_contract"]
     assert "design-consumed" in evaluation["quiet_qualification_run_status"]
     assert evaluation["random_row_split_permitted"] is False
+    assert evaluation["minimum_purge_seconds"] == 310.5
     assert evaluation["sealed_test_may_be_used_once"] is True
     assert evaluation["durable_one_use_ledger_implemented_now"] is True
     assert evaluation["sealed_evaluator_implemented_now"] is True
@@ -680,6 +691,9 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         "event_training_directml_artifact_sha256"
     ]
     source = evidence["source_binding"]
+    assert source["event_targets_sha256"] == design["source_binding"][
+        "event_target_sha256"
+    ]
     assert source["event_training_sha256"] == design["source_binding"][
         "event_training_sha256"
     ]
@@ -730,6 +744,11 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         verification["post_aggregation_probability_calibration_contract_sealed"]
         is True
     )
+    assert verification["maximum_entry_state_lateness_ns"] == 250_000_000
+    assert verification["maximum_exit_state_lateness_ns"] == 250_000_000
+    assert verification["maximum_target_span_ns"] == 310_500_000_000
+    assert verification["minimum_partition_purge_ns"] == 310_500_000_000
+    assert verification["minimum_partition_embargo_ns"] == 310_500_000_000
     interpretation = evidence["interpretation"]
     assert interpretation["candidate_loss_has_financial_meaning"] is False
     assert interpretation["representative_market_training_performed"] is False
