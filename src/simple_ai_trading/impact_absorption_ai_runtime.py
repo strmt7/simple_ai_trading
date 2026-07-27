@@ -37,10 +37,10 @@ from .impact_absorption_ai_worker import (
 )
 
 
-ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v2"
+ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION = "round-074-ai-runtime-outcome-v3"
 ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB = 16.0
 ROUND74_AI_RUNTIME_MINIMUM_FREE_VRAM_GB = 8.0
-ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB = ROUND74_AI_RUNTIME_MINIMUM_FREE_RAM_GB
+ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB = 8.0
 ROUND74_AI_RUNTIME_STATUSES = (
     "accepted",
     "blocked_deterministic_gate",
@@ -615,6 +615,26 @@ def review_round74_ai_candidate(
             ),
         )
     )
+    warm_equivalent_preload_ram_gb: float | None = None
+    warm_equivalent_preload_ram_headroom_passed = False
+    if (
+        exact_model_already_fully_gpu_resident
+        and capability.free_ram_gb is not None
+        and warm_residency is not None
+        and warm_residency.size_bytes is not None
+    ):
+        warm_equivalent_preload_ram_gb = (
+            capability.free_ram_gb + warm_residency.size_bytes / 1024**3
+        )
+        warm_equivalent_preload_ram_headroom_passed = (
+            warm_equivalent_preload_ram_gb >= config.minimum_free_ram_gb
+        )
+        if not warm_equivalent_preload_ram_headroom_passed:
+            capability_messages.append(
+                "warm exact-model free RAM plus bound model size "
+                f"{warm_equivalent_preload_ram_gb:.1f} GiB is below required "
+                f"pre-load headroom {config.minimum_free_ram_gb:.1f} GiB"
+            )
     if warm_residency_error_type is not None:
         capability_messages.append(
             "pre-inference provider residency could not be verified"
@@ -651,6 +671,12 @@ def review_round74_ai_candidate(
             exact_model_already_fully_gpu_resident
             and capability.free_ram_gb is not None
             and capability.free_ram_gb >= ROUND74_AI_RUNTIME_MINIMUM_WARM_FREE_RAM_GB
+        ),
+        "pre_inference_warm_equivalent_preload_ram_gb": (
+            warm_equivalent_preload_ram_gb
+        ),
+        "pre_inference_warm_equivalent_preload_ram_headroom_passed": (
+            warm_equivalent_preload_ram_headroom_passed
         ),
         "provider_runtime_full_gpu_residency_required": True,
         "provider_runtime_full_gpu_residency_verified": False,

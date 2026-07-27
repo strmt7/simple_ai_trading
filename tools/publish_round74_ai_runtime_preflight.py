@@ -41,7 +41,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (  # noqa: E402
 from simple_ai_trading.storage import write_bytes_atomic  # noqa: E402
 
 
-SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v4"
+SCHEMA_VERSION = "round-074-local-ai-runtime-preflight-v5"
 OLLAMA_ENDPOINT = "http://127.0.0.1:11434"
 MAXIMUM_RESPONSE_BYTES = 1_000_000
 UNLOAD_TIMEOUT_SECONDS = 10.0

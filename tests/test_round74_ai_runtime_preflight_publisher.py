@@ -18,7 +18,7 @@ assert isinstance(PUBLISHER, ModuleType)
 
 
 def test_preflight_schema_tracks_current_ai_contract() -> None:
-    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v4"
+    assert PUBLISHER.SCHEMA_VERSION == "round-074-local-ai-runtime-preflight-v5"
     assert PUBLISHER.ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION == (
         "round-074-ai-review-request-v5"
     )
@@ -29,7 +29,7 @@ def test_preflight_schema_tracks_current_ai_contract() -> None:
         "round-074-ai-system-prompt-v1"
     )
     assert PUBLISHER.ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION == (
-        "round-074-ai-review-panel-v10"
+        "round-074-ai-review-panel-v11"
     )
 
 
