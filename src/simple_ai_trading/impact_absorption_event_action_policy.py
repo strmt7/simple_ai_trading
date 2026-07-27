@@ -13,7 +13,7 @@ import hashlib
 import json
 import math
 import re
-from typing import Sequence
+from typing import Mapping, Sequence
 
 import numpy as np
 import torch
@@ -43,7 +43,7 @@ from .impact_absorption_event_sequence import (
 
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v4"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v5"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -787,6 +787,7 @@ class Round74ActionTraceMetrics:
     active_runs: int
     distinct_symbols: int
     total_net_bps: float
+    mean_run_net_bps: float
     mean_net_bps: float
     median_net_bps: float
     win_rate: float
@@ -796,6 +797,7 @@ class Round74ActionTraceMetrics:
     gross_loss_bps: float
     worst_trade_bps: float
     mean_maximum_adverse_excursion_bps: float
+    mean_run_maximum_adverse_excursion_bps: float
     adverse_selection_rate: float
     profitable_run_ratio: float
     maximum_symbol_trade_share: float
@@ -803,6 +805,7 @@ class Round74ActionTraceMetrics:
     def validate(self) -> None:
         finite = (
             self.total_net_bps,
+            self.mean_run_net_bps,
             self.mean_net_bps,
             self.median_net_bps,
             self.win_rate,
@@ -811,6 +814,7 @@ class Round74ActionTraceMetrics:
             self.gross_loss_bps,
             self.worst_trade_bps,
             self.mean_maximum_adverse_excursion_bps,
+            self.mean_run_maximum_adverse_excursion_bps,
             self.adverse_selection_rate,
             self.profitable_run_ratio,
             self.maximum_symbol_trade_share,
@@ -839,6 +843,7 @@ class Round74ActionTraceMetrics:
                 self.gross_profit_bps,
                 self.gross_loss_bps,
                 self.mean_maximum_adverse_excursion_bps,
+                self.mean_run_maximum_adverse_excursion_bps,
             )
             < 0.0
             or (
@@ -1029,15 +1034,23 @@ def _trace_metrics(
         profit_factor = None
         maximum_symbol_share = 0.0
     run_pnl = {run_id: 0.0 for run_id in expected_run_ids}
+    run_adverse_excursion = {run_id: 0.0 for run_id in expected_run_ids}
     run_trades = {run_id: 0 for run_id in expected_run_ids}
-    for run_id, value in zip(run_ids, values, strict=True):
+    for run_id, value, excursion in zip(
+        run_ids,
+        values,
+        adverse_excursion,
+        strict=True,
+    ):
         run_pnl[run_id] += float(value)
+        run_adverse_excursion[run_id] += float(excursion)
         run_trades[run_id] += 1
     result = Round74ActionTraceMetrics(
         trades=int(values.size),
         active_runs=sum(count > 0 for count in run_trades.values()),
         distinct_symbols=len(set(symbols)),
         total_net_bps=float(values.sum()) if values.size else 0.0,
+        mean_run_net_bps=float(np.mean(tuple(run_pnl.values()))),
         mean_net_bps=float(values.mean()) if values.size else 0.0,
         median_net_bps=float(np.median(values)) if values.size else 0.0,
         win_rate=float(np.mean(values > 0.0)) if values.size else 0.0,
@@ -1053,6 +1066,9 @@ def _trace_metrics(
         worst_trade_bps=float(values.min()) if values.size else 0.0,
         mean_maximum_adverse_excursion_bps=(
             float(adverse_excursion.mean()) if values.size else 0.0
+        ),
+        mean_run_maximum_adverse_excursion_bps=float(
+            np.mean(tuple(run_adverse_excursion.values()))
         ),
         adverse_selection_rate=(float(adverse.mean()) if values.size else 0.0),
         profitable_run_ratio=float(
@@ -1400,6 +1416,9 @@ class Round74ActionThresholdEvaluation:
             "quantile": self.quantile,
             "threshold_score": self.threshold_score,
             "objective_bps": self.objective_bps,
+            "objective_semantics": (
+                "mean_run_net_bps_minus_worst_drawdown_and_mean_run_mae_penalties"
+            ),
             "accepted": self.accepted,
             "rejection_reasons": list(self.rejection_reasons),
             "trace": self.trace.as_dict(),
@@ -1522,6 +1541,38 @@ class Round74ActionPolicySelection:
         return value
 
 
+def _equal_run_score_threshold(
+    scores_by_run: Mapping[str, Sequence[float]],
+    *,
+    quantile: float,
+    expected_run_ids: Sequence[str],
+) -> float:
+    """Give each capture run one vote in the threshold grid."""
+
+    expected = tuple(expected_run_ids)
+    selected_quantile = float(quantile)
+    if (
+        not expected
+        or len(set(expected)) != len(expected)
+        or not 0.0 < selected_quantile < 1.0
+        or any(run_id not in expected for run_id in scores_by_run)
+    ):
+        raise ValueError("Round 74 equal-run threshold identity differs")
+    run_quantiles: list[float] = []
+    for run_id in expected:
+        values = np.asarray(tuple(scores_by_run.get(run_id, ())), dtype=np.float64)
+        if values.size == 0:
+            continue
+        if values.ndim != 1 or not np.isfinite(values).all() or np.any(values < 0.0):
+            raise ValueError("Round 74 equal-run threshold score differs")
+        run_quantiles.append(
+            float(np.quantile(values, selected_quantile, method="linear"))
+        )
+    if not run_quantiles:
+        raise ValueError("Round 74 equal-run threshold has no active run")
+    return float(np.median(np.asarray(run_quantiles, dtype=np.float64)))
+
+
 def select_round74_action_policy_batches(
     batches: Sequence[Round74EventTrainingBatch],
     candidate_batches: Sequence[Round74ActionCandidateBatch],
@@ -1562,20 +1613,27 @@ def select_round74_action_policy_batches(
     ):
         raise ValueError("Round 74 action policy data role differs")
     spec = round74_action_profile(first_candidates.profile)
-    eligible_scores = tuple(
-        candidates.quality_score[candidates.eligible]
-        for candidates in selected_candidate_batches
-        if np.any(candidates.eligible)
-    )
-    active_scores = (
-        np.concatenate(eligible_scores)
-        if eligible_scores
-        else np.empty(0, dtype=np.float64)
-    )
+    scores_by_run: dict[str, list[float]] = {
+        run_id: [] for run_id in expected_runs
+    }
+    for candidates in selected_candidate_batches:
+        for run_id, score, eligible in zip(
+            candidates.run_id,
+            candidates.quality_score,
+            candidates.eligible,
+            strict=True,
+        ):
+            if eligible:
+                scores_by_run[run_id].append(float(score))
+    has_active_scores = any(scores_by_run.values())
     evaluations: list[Round74ActionThresholdEvaluation] = []
-    if active_scores.size:
+    if has_active_scores:
         for quantile in spec.threshold_quantiles:
-            threshold = float(np.quantile(active_scores, quantile, method="linear"))
+            threshold = _equal_run_score_threshold(
+                scores_by_run,
+                quantile=quantile,
+                expected_run_ids=expected_runs,
+            )
             trace = simulate_round74_action_trace_batches(
                 selected_batches,
                 selected_candidate_batches,
@@ -1585,10 +1643,10 @@ def select_round74_action_policy_batches(
             reasons = _trace_gate_reasons(trace, spec)
             metrics = trace.metrics
             objective = float(
-                metrics.total_net_bps
+                metrics.mean_run_net_bps
                 - spec.objective_drawdown_penalty * metrics.maximum_drawdown_bps
                 - spec.objective_adverse_excursion_penalty
-                * metrics.mean_maximum_adverse_excursion_bps
+                * metrics.mean_run_maximum_adverse_excursion_bps
             )
             evaluations.append(
                 Round74ActionThresholdEvaluation(
