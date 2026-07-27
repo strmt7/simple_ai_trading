@@ -11,8 +11,12 @@ from simple_ai_trading.impact_absorption import (
 )
 from simple_ai_trading.impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS,
+    ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5,
     ROUND74_EVENT_COHORT_SLOT_PERIOD_NS,
     ROUND74_EVENT_COHORT_START_TOLERANCE_NS,
+    ROUND74_EVENT_COHORT_V5_END_OVERHEAD_NS,
+    ROUND74_EVENT_COHORT_V5_FRESH_AUDIT_TIMEOUT_NS,
+    ROUND74_EVENT_COHORT_V5_SLOT_PERIOD_NS,
     Round74EventCohortPlan,
     Round74EventCohortRunBinding,
     bind_round74_event_cohort_supervisor,
@@ -55,6 +59,18 @@ def _plan() -> Round74EventCohortPlan:
         prerequisite_artifact_sha256="a" * 64,
         prerequisite_window_start_wall_ns=1_999_900_000_000_000_000,
         prerequisite_window_end_wall_ns=1_999_904_000_000_000_000,
+    )
+
+
+def _v5_plan() -> Round74EventCohortPlan:
+    return Round74EventCohortPlan(
+        **{
+            **_plan().__dict__,
+            "slot_period_ns": ROUND74_EVENT_COHORT_V5_SLOT_PERIOD_NS,
+            "maximum_end_overhead_ns": (ROUND74_EVENT_COHORT_V5_END_OVERHEAD_NS),
+            "fresh_audit_timeout_ns": (ROUND74_EVENT_COHORT_V5_FRESH_AUDIT_TIMEOUT_NS),
+            "schema_version": ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION_V5,
+        }
     )
 
 
@@ -182,19 +198,47 @@ def test_plan_is_compact_deterministic_and_strictly_loadable() -> None:
     ]
     assert (
         loaded.slot(3).scheduled_start_wall_ns
-        == loaded.scheduled_start_wall_ns
-        + 3 * ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
+        == loaded.scheduled_start_wall_ns + 3 * ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
     )
     assert (
-        loaded.slot(0).scheduled_end_wall_ns
-        - loaded.slot(0).scheduled_start_wall_ns
+        loaded.slot(0).scheduled_end_wall_ns - loaded.slot(0).scheduled_start_wall_ns
         == ROUND74_EVENT_COHORT_CAPTURE_DURATION_NS
     )
     assert (
-        loaded.slot(0).start_window_end_wall_ns
-        - loaded.slot(0).scheduled_start_wall_ns
+        loaded.slot(0).start_window_end_wall_ns - loaded.slot(0).scheduled_start_wall_ns
         == ROUND74_EVENT_COHORT_START_TOLERANCE_NS
     )
+    assert "fresh_audit_timeout_ns" not in payload["schedule_formula"]
+
+
+def test_v5_plan_preserves_historical_loading_and_uses_measured_headroom() -> None:
+    historical = load_round74_event_cohort_plan(json.dumps(_plan().as_dict()))
+    plan = _v5_plan()
+    loaded = load_round74_event_cohort_plan(json.dumps(plan.as_dict()))
+
+    assert historical.slot_period_ns == ROUND74_EVENT_COHORT_SLOT_PERIOD_NS
+    assert loaded == plan
+    assert loaded.slot_period_ns == 4_500_000_000_000
+    assert loaded.maximum_end_overhead_ns == 300_000_000_000
+    assert loaded.fresh_audit_timeout_ns == 300_000_000_000
+    assert (
+        loaded.slot(1).scheduled_start_wall_ns - loaded.slot(0).scheduled_start_wall_ns
+        == ROUND74_EVENT_COHORT_V5_SLOT_PERIOD_NS
+    )
+    assert loaded.as_dict()["schedule_formula"]["fresh_audit_timeout_ns"] == (
+        ROUND74_EVENT_COHORT_V5_FRESH_AUDIT_TIMEOUT_NS
+    )
+
+
+def test_v5_plan_rejects_unregistered_schedule_variants() -> None:
+    payload = _v5_plan().as_dict()
+    payload["schedule_formula"]["slot_period_ns"] += 1
+    unsigned = dict(payload)
+    unsigned.pop("plan_sha256")
+    payload["plan_sha256"] = _canonical_sha256(unsigned)
+
+    with pytest.raises(ValueError, match="plan identity differs"):
+        load_round74_event_cohort_plan(json.dumps(payload))
 
 
 def test_plan_loader_rejects_duplicate_keys_and_policy_tampering() -> None:
@@ -218,16 +262,12 @@ def test_qualified_supervisor_binds_to_exact_predeclared_slot() -> None:
         slot_ordinal=0,
         supervisor_payload=supervisor,
     )
-    loaded = load_round74_event_cohort_binding(
-        json.dumps(binding.as_dict())
-    )
+    loaded = load_round74_event_cohort_binding(json.dumps(binding.as_dict()))
 
     assert loaded == binding
     assert binding.plan_sha256 == plan.plan_sha256
     assert binding.run_id == supervisor["selected_run_id"]
-    assert binding.report_sha256 == _canonical_sha256(
-        supervisor["attempts"][0]
-    )
+    assert binding.report_sha256 == _canonical_sha256(supervisor["attempts"][0])
     assert binding.supervisor_sha256 == _canonical_sha256(supervisor)
 
 
