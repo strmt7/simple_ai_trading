@@ -1,0 +1,103 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v74",
+  "created_at_utc": "2026-07-27T20:47:58Z",
+  "implementation_git_commit": "5c0372c6cd319d777ddfec7c3c86fe51605f753f",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v73.json",
+    "normalized_lf_sha256": "17cf6131f107c5349d5f8c49028a18903f80b7dae57c53fbd09893288a721841",
+    "design_sha256": "a63c73e605f8cdeede5abe490b3e7883a8d8dbd1719d369779721ff5efb25edd",
+    "composition_rule": "v73 binds representation identity end to end; v74 adds one-pass shared-anchor replay and a development-only fixed-architecture promotion gate without producing or assuming a market result"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_dataset_path": "src/simple_ai_trading/impact_absorption_event_dataset.py",
+    "event_dataset_normalized_lf_sha256": "5173468670a63be402e589d01b388a6790f11747b4c4a60a211138a1fa2a05c1",
+    "model_operator_path": "src/simple_ai_trading/round74_event_model_operator.py",
+    "model_operator_normalized_lf_sha256": "f49bddeb6beb6125f1177d64887cc0782b2bb01e4d02270b143db781afdd1673",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_normalized_lf_sha256": "0dccfbcedb62e6a58e0a1a1caa81f8f7a0e3f9da00ae5ae6fef872dda4430b38",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_normalized_lf_sha256": "89adac22d23af4b5ded25559ca775afdb7ecbccab49a21284013e23e8225d217",
+    "representation_comparison_path": "src/simple_ai_trading/round74_representation_comparison.py",
+    "representation_comparison_normalized_lf_sha256": "e92b6a40df115eb6f0c79a57864527b359057e3d93836f0982f13939cba15e53"
+  },
+  "one_pass_matched_replay": {
+    "representations": [
+      "per_symbol",
+      "global_cross_asset"
+    ],
+    "raw_observation_iterator_calls_per_run": 1,
+    "independent_target_engines_required": true,
+    "target_spec_and_context_must_match_before_replay": true,
+    "shared_anchor_index_and_endpoint_required": true,
+    "both_feature_windows_must_be_available_at_anchor": true,
+    "realized_target_panel_must_match_exactly": true,
+    "target_value_or_outcome_used_for_sampling": false,
+    "endpoint_only_target_blind_ranking": true,
+    "training_only_scaler_shared": true,
+    "test_role_access_permitted": false,
+    "production_database_written": false
+  },
+  "staged_selection": {
+    "baseline_representation": "per_symbol",
+    "baseline_architecture_mode": "complexity_gate",
+    "challenger_representation": "global_cross_asset",
+    "challenger_architecture_mode": "fixed",
+    "challenger_candidate": "baseline_selected_candidate",
+    "seed_panel_must_match": true,
+    "scaler_and_tuning_subpartition_must_match": true,
+    "model_selection_run_count": 12,
+    "calibration_run_count": 6,
+    "policy_selection_run_count": 6,
+    "proper_loss_must_improve_strictly": true,
+    "every_paired_run_must_be_noninferior": true,
+    "conservative_baseline_and_challenger_must_be_accepted": true,
+    "accepted_profile_objective_may_degrade": false,
+    "accepted_profile_after_cost_payoff_may_degrade": false,
+    "accepted_profile_maximum_drawdown_may_increase": false,
+    "accepted_profile_adverse_selection_may_increase": false,
+    "accepted_profile_adverse_excursion_may_increase": false,
+    "sealed_test_used_for_selection": false
+  },
+  "artifact_contract": {
+    "matched_sampling_policy_bound_in_pretest_policy": true,
+    "matched_preparation_sha256_bound_in_pretest_policy": true,
+    "fixed_architecture_mode_records_zero_architecture_comparisons": true,
+    "comparison_json_is_hash_bound": true,
+    "duplicate_json_keys_rejected": true,
+    "immutable_reload_verified": true,
+    "authority_fields_fail_closed": true
+  },
+  "verification": {
+    "affected_focused_tests_passed": 42,
+    "dataset_tests_passed": 6,
+    "model_operator_tests_passed": 13,
+    "training_tests_passed": 14,
+    "development_operator_tests_passed": 4,
+    "representation_comparison_tests_passed": 5,
+    "ruff_passed": true,
+    "production_database_scanned_during_implementation": false,
+    "prospective_representation_comparison_run": false
+  },
+  "active_evidence_boundary": {
+    "active_cohort_contract_changed": false,
+    "development_schema_changes_merged_to_active_main": false,
+    "active_slot_000_observed_running_at_design_time": true,
+    "active_slot_000_training_capture_completed": false,
+    "representative_market_training_completed": false,
+    "model_or_ai_outcome_available": false
+  },
+  "authority": {
+    "cross_asset_predictive_uplift_established": false,
+    "representation_promoted": false,
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "69f45c2a7e5df63d4dad9c790fdd647a4813df4713920d1cfb4b9bcff2b8ac75"
+}
