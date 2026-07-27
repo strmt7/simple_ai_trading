@@ -17,6 +17,7 @@ from .round74_execution_calibration_capture import (
 from .round74_execution_calibration_journal import (
     Round74ExecutionCalibrationIntent,
     Round74ExecutionCalibrationJournal,
+    Round74ExecutionCalibrationSnapshot,
     Round74ExecutionCalibrationTransition,
 )
 
@@ -208,6 +209,43 @@ class Round74ExecutionCalibrationResult:
                 "mainnet_orders_submitted": False,
                 "mainnet_trading_authority": False,
                 "profitability_claim": False,
+            },
+        }
+
+
+@dataclass(frozen=True)
+class Round74ExecutionRecoveryResult:
+    recovered_round_trip_ids: tuple[str, ...]
+    blocking_round_trip_ids: tuple[str, ...]
+    schema_version: str = ROUND74_EXECUTION_COORDINATOR_SCHEMA_VERSION
+
+    @property
+    def complete(self) -> bool:
+        return not self.blocking_round_trip_ids
+
+    def as_dict(self) -> dict[str, object]:
+        if (
+            self.schema_version != ROUND74_EXECUTION_COORDINATOR_SCHEMA_VERSION
+            or len(set(self.recovered_round_trip_ids))
+            != len(self.recovered_round_trip_ids)
+            or len(set(self.blocking_round_trip_ids))
+            != len(self.blocking_round_trip_ids)
+        ):
+            raise ValueError("Round 74 execution recovery result differs")
+        return {
+            "schema_version": self.schema_version,
+            "recovered_round_trip_ids": list(
+                self.recovered_round_trip_ids
+            ),
+            "blocking_round_trip_ids": list(
+                self.blocking_round_trip_ids
+            ),
+            "complete": self.complete,
+            "authority": {
+                "bot_namespaced_orders_only": True,
+                "reduce_only_recovery": True,
+                "mainnet_orders_submitted": False,
+                "mainnet_trading_authority": False,
             },
         }
 
@@ -507,6 +545,231 @@ def _execute_leg(
     )
 
 
+def _reconcile_existing_intent(
+    *,
+    transport: Round74ExecutionCalibrationTransport,
+    journal: Round74ExecutionCalibrationJournal,
+    snapshot: Round74ExecutionCalibrationSnapshot,
+) -> Round74ExecutionCalibrationSnapshot:
+    if snapshot.state in {"FILLED", "FLAT_VERIFIED", "REJECTED"}:
+        return snapshot
+    query = transport.query_order(
+        symbol=snapshot.intent.symbol,
+        client_order_id=snapshot.intent.client_order_id,
+    )
+    if query is None:
+        return snapshot
+    status, order_id, filled_quantity, average_fill_price = _query_fill(
+        query,
+        symbol=snapshot.intent.symbol,
+        side=snapshot.intent.side,
+        client_order_id=snapshot.intent.client_order_id,
+        reduce_only=snapshot.intent.reduce_only,
+    )
+    if status == "FILLED":
+        _transition(
+            journal,
+            client_order_id=snapshot.intent.client_order_id,
+            state="FILLED",
+            source_payload=query,
+            order_id=order_id,
+            executed_quantity=filled_quantity,
+            average_fill_price=average_fill_price,
+            reason="restart reconciliation found filled order",
+        )
+    elif status in {
+        "CANCELED",
+        "EXPIRED",
+        "EXPIRED_IN_MATCH",
+        "REJECTED",
+    }:
+        _transition(
+            journal,
+            client_order_id=snapshot.intent.client_order_id,
+            state="REJECTED",
+            source_payload=query,
+            order_id=order_id,
+            executed_quantity=filled_quantity,
+            average_fill_price=average_fill_price,
+            reason=f"restart reconciliation found {status}",
+        )
+    elif snapshot.state != "UNKNOWN":
+        _transition(
+            journal,
+            client_order_id=snapshot.intent.client_order_id,
+            state="UNKNOWN",
+            source_payload=query,
+            order_id=order_id,
+            executed_quantity=filled_quantity,
+            average_fill_price=average_fill_price,
+            reason=f"restart reconciliation found {status}",
+        )
+    return journal.current(snapshot.intent.client_order_id)
+
+
+def recover_round74_execution_calibration(
+    *,
+    transport: Round74ExecutionCalibrationTransport,
+    journal: Round74ExecutionCalibrationJournal,
+) -> Round74ExecutionRecoveryResult:
+    """Reconcile known bot intents and close only exact journal-owned exposure."""
+
+    initial_blockers = journal.blocking_round_trip_ids()
+    if not initial_blockers:
+        return Round74ExecutionRecoveryResult((), ())
+    snapshots = journal.current_snapshots()
+    grouped: dict[
+        tuple[str, str],
+        dict[str, Round74ExecutionCalibrationSnapshot],
+    ] = {}
+    for snapshot in snapshots:
+        grouped.setdefault(
+            (
+                snapshot.intent.calibration_run_id,
+                snapshot.intent.round_trip_id,
+            ),
+            {},
+        )[snapshot.intent.path] = snapshot
+    recovered: list[str] = []
+    for blocker in initial_blockers:
+        run_id, pair_id = blocker.split(":", 1)
+        pair = grouped[(run_id, pair_id)]
+        entry = _reconcile_existing_intent(
+            transport=transport,
+            journal=journal,
+            snapshot=pair["entry"],
+        )
+        exit_snapshot = pair.get("exit")
+        if exit_snapshot is not None:
+            exit_snapshot = _reconcile_existing_intent(
+                transport=transport,
+                journal=journal,
+                snapshot=exit_snapshot,
+            )
+        if entry.state != "FILLED":
+            break
+        symbol = entry.intent.symbol
+        expected_position = (
+            entry.executed_quantity
+            if entry.intent.side == "BUY"
+            else -entry.executed_quantity
+        )
+        current_position = _normalized_mapping(
+            transport.position(symbol),
+            label="recovery position",
+        )
+        if (
+            current_position.get("symbol") != symbol
+            or current_position.get("positionSide") != "BOTH"
+        ):
+            raise RuntimeError(
+                "Round 74 execution recovery position identity differs"
+            )
+        try:
+            position_amount = Decimal(
+                str(current_position.get("positionAmt"))
+            )
+        except InvalidOperation as exc:
+            raise RuntimeError(
+                "Round 74 execution recovery position amount differs"
+            ) from exc
+        if exit_snapshot is not None and exit_snapshot.state == "FILLED":
+            if position_amount != 0:
+                raise RuntimeError(
+                    "Round 74 execution recovery exit fill is not flat"
+                )
+            _transition(
+                journal,
+                client_order_id=exit_snapshot.intent.client_order_id,
+                state="FLAT_VERIFIED",
+                source_payload=current_position,
+                order_id=exit_snapshot.order_id,
+                executed_quantity=exit_snapshot.executed_quantity,
+                average_fill_price=exit_snapshot.average_fill_price,
+                reason="restart exact flat position verified",
+            )
+            recovered.append(blocker)
+            continue
+        if position_amount != expected_position:
+            raise RuntimeError(
+                "Round 74 execution recovery refuses non-owned position "
+                f"for {symbol}"
+            )
+        if transport.open_orders(symbol):
+            raise RuntimeError(
+                "Round 74 execution recovery found existing open orders"
+            )
+        exit_side = "SELL" if entry.intent.side == "BUY" else "BUY"
+        if exit_snapshot is None:
+            _exit_book, exit_book_sha = _book_or_recovery_digest(
+                transport,
+                symbol=symbol,
+                path="exit",
+            )
+            exit_client_id = _client_order_id(
+                calibration_run_id=run_id,
+                round_trip_id=pair_id,
+                path="exit",
+            )
+            journal.record_intent(
+                Round74ExecutionCalibrationIntent(
+                    calibration_run_id=run_id,
+                    round_trip_id=pair_id,
+                    path="exit",
+                    symbol=symbol,
+                    side=exit_side,
+                    client_order_id=exit_client_id,
+                    quantity=entry.executed_quantity,
+                    reference_quote_notional=(
+                        entry.intent.reference_quote_notional
+                    ),
+                    reduce_only=True,
+                    created_wall_ns=time.time_ns(),
+                    book_source_sha256=exit_book_sha,
+                )
+            )
+        else:
+            if exit_snapshot.state != "REJECTED":
+                break
+            missing = transport.query_order(
+                symbol=symbol,
+                client_order_id=exit_snapshot.intent.client_order_id,
+            )
+            if missing is not None:
+                break
+            exit_client_id = exit_snapshot.intent.client_order_id
+        exit_outcome = _execute_leg(
+            transport=transport,
+            journal=journal,
+            symbol=symbol,
+            side=exit_side,
+            quantity=entry.executed_quantity,
+            reduce_only=True,
+            client_order_id=exit_client_id,
+        )
+        final_position = _flat_position(
+            transport.position(symbol),
+            symbol=symbol,
+        )
+        _transition(
+            journal,
+            client_order_id=exit_client_id,
+            state="FLAT_VERIFIED",
+            source_payload=final_position,
+            order_id=exit_outcome.order_id,
+            executed_quantity=exit_outcome.executed_quantity,
+            average_fill_price=exit_outcome.average_fill_price,
+            reason="restart reduce-only exit verified flat",
+        )
+        recovered.append(blocker)
+    result = Round74ExecutionRecoveryResult(
+        recovered_round_trip_ids=tuple(recovered),
+        blocking_round_trip_ids=journal.blocking_round_trip_ids(),
+    )
+    result.as_dict()
+    return result
+
+
 def _book_or_recovery_digest(
     transport: Round74ExecutionCalibrationTransport,
     *,
@@ -753,7 +1016,9 @@ __all__ = [
     "ROUND74_EXECUTION_TERMINAL_TIMEOUT_SECONDS",
     "Round74ExecutionCalibrationResult",
     "Round74ExecutionCalibrationTransport",
+    "Round74ExecutionRecoveryResult",
     "Round74OrderSubmissionRejected",
     "Round74OrderSubmissionUnknown",
     "capture_round74_execution_calibration_pair",
+    "recover_round74_execution_calibration",
 ]
