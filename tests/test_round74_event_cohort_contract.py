@@ -13,7 +13,7 @@ from simple_ai_trading.impact_absorption_event_cohort import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-PLAN_PATH = RESEARCH / "round-074-event-cohort-plan-v3.json"
+PLAN_PATH = RESEARCH / "round-074-event-cohort-plan-v4.json"
 PREFLIGHT_PATH = (
     RESEARCH
     / "round-074-v10-active-regime-qualification-preflight-2026-07-27.json"
@@ -61,7 +61,7 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     payload = plan.as_dict()
 
     assert payload["plan_sha256"] == (
-        "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9"
+        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
     )
     assert plan.total_slots == 168
     assert (plan.training_slots, plan.tuning_slots, plan.test_slots) == (
