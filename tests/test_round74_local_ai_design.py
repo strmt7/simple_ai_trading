@@ -31,6 +31,14 @@ from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
     ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
+    ROUND74_SEALED_BOOTSTRAP_DRAWS,
+    ROUND74_SEALED_EVALUATION_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_sealed_ledger import (
+    ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
+    ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -39,7 +47,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v5.json"
+    / "round-074-local-ai-review-design-v6.json"
 )
 
 
@@ -67,6 +75,8 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "calibration",
         "action_policy",
         "uplift_evaluator",
+        "sealed_ledger",
+        "sealed_evaluator",
         "worker",
         "runtime",
     ):
@@ -109,6 +119,15 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["uplift_evaluator_schema_version"] == (
         ROUND74_AI_UPLIFT_SCHEMA_VERSION
     )
+    assert source["sealed_ledger_schema_version"] == (
+        ROUND74_SEALED_LEDGER_SCHEMA_VERSION
+    )
+    assert source["sealed_claim_schema_version"] == (
+        ROUND74_SEALED_CLAIM_SCHEMA_VERSION
+    )
+    assert source["sealed_evaluator_schema_version"] == (
+        ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
+    )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -119,6 +138,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["real_symbol_exposed_to_ai"] is False
     assert architecture["future_outcome_exposed_to_ai"] is False
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
+    assert architecture["bounded_capture_run_panel_replay_implemented"] is True
+    assert architecture["durable_one_use_sealed_ledger_implemented"] is True
+    assert architecture["sealed_ml_ai_evaluator_implemented"] is True
     assert architecture["ai_may_revive_ml_abstention"] is False
     for key in (
         "ai_may_create_trade_side",
@@ -187,6 +209,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["causal_calibrated_bridge_implemented"] is True
     assert status["target_free_action_preselection_implemented"] is True
     assert status["paired_uplift_evaluator_implemented"] is True
+    assert status["durable_one_use_sealed_ledger_implemented"] is True
+    assert status["sealed_ml_ai_evaluator_implemented"] is True
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
 
@@ -211,6 +235,18 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
     assert evaluation["development_evaluator_is_promotional"] is False
     assert evaluation["ai_may_change_candidate_overlap_order"] is False
     assert evaluation["sealed_test_used_once_after_ai_policy_freeze"] is True
+    assert evaluation["sealed_access_is_reserved_and_permanently_consumed_before_scoring"] is True
+    assert evaluation["crash_after_reservation_may_reset_or_reuse_the_test"] is False
+    assert evaluation["sealed_bootstrap_draws"] == ROUND74_SEALED_BOOTSTRAP_DRAWS
+    assert (
+        evaluation[
+            "target_eligibility_and_realized_exit_timing_may_not_choose_which_ai_reviews_exist"
+        ]
+        is True
+    )
+    assert evaluation[
+        "ai_veto_of_an_earlier_action_may_admit_a_later_overlapping_action"
+    ] is False
     assert evaluation["accuracy_ignored"] is False
     assert evaluation["profitability_required_by_data_filter_or_test_assertion"] is False
     assert (
