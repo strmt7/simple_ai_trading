@@ -44,6 +44,9 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_CLAIM_SCHEMA_VERSION,
     ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_financial_metrics import (
+    ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -52,7 +55,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v7.json"
+    / "round-074-local-ai-review-design-v8.json"
 )
 
 
@@ -82,6 +85,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "uplift_evaluator",
         "sealed_ledger",
         "sealed_evaluator",
+        "financial_metrics",
         "review_preparation",
         "worker",
         "runtime",
@@ -134,6 +138,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["sealed_evaluator_schema_version"] == (
         ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
     )
+    assert source["financial_metrics_schema_version"] == (
+        ROUND74_REALIZED_METRICS_SCHEMA_VERSION
+    )
     assert source["target_free_inference_schema_version"] == (
         ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION
     )
@@ -153,6 +160,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
+    assert architecture["ml_ai_drawdown_uses_shared_actual_exit_order"] is True
+    assert architecture["drawdown_order"] == (
+        "cohort run then actual exit monotonic time then signal-order tie break"
+    )
     assert architecture[
         "reusable_target_free_candidate_inference_implemented"
     ] is True

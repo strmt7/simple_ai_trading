@@ -69,11 +69,14 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_financial_metrics import (
+    ROUND74_REALIZED_METRICS_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v15.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v16.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -144,6 +147,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["sealed_evaluator_sha256"] == _file_sha256(
         source["sealed_evaluator_path"]
     )
+    assert source["financial_metrics_sha256"] == _file_sha256(
+        source["financial_metrics_path"]
+    )
     assert source["ai_review_preparation_sha256"] == _file_sha256(
         source["ai_review_preparation_path"]
     )
@@ -212,6 +218,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["sealed_evaluator_schema_version"]
         == ROUND74_SEALED_EVALUATION_SCHEMA_VERSION
+    )
+    assert source["financial_metrics_schema_version"] == (
+        ROUND74_REALIZED_METRICS_SCHEMA_VERSION
     )
     assert (
         source["target_free_inference_schema_version"]
@@ -420,6 +429,16 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert action["horizon_duration_used_as_exit_time_proxy"] is False
+    assert action["drawdown_uses_actual_payoff_realization_order"] is True
+    assert action["drawdown_order"] == (
+        "cohort run then actual exit monotonic time then signal-order tie break"
+    )
+    assert (
+        action[
+            "shared_drawdown_implementation_required_for_ml_ai_and_sealed_evaluation"
+        ]
+        is True
+    )
     assert action["diversification_requires_all_btc_eth_sol_symbols"] is True
     assert action["position_sizing_or_leverage_applied_here"] is False
     assert action["candidate_input_context_duplicates_full_feature_tensor"] is False
