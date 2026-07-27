@@ -1,0 +1,82 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v72",
+  "created_at_utc": "2026-07-27T20:05:30Z",
+  "implementation_git_commit": "2fb78ab14514ae7a1aab689767d9afa9803ae729",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v71.json",
+    "normalized_lf_sha256": "2b119a9f29215a9562f4a4a7ad6eee12c1ce9d7a3d490acd0e4c1111315f0a3d",
+    "design_sha256": "838155fc5a35ab1e12acababff2dcac355a02cf64d451d55299b7838274c1f6e",
+    "composition_rule": "v71 remains the shared per-symbol online and replay window contract; v72 adds a separate target-free global cross-asset context primitive without promoting or replacing the per-symbol baseline"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "event_sequence_path": "src/simple_ai_trading/impact_absorption_event_sequence.py",
+    "event_sequence_normalized_lf_sha256": "753b41208d891a923a5e0a2fb604bd3db88014dfb79e93d7be3960ad322301bb",
+    "event_sequence_schema_version": "round-074-causal-event-sequence-v4",
+    "feature_count": 66
+  },
+  "implemented_cross_asset_primitive": {
+    "global_receipt_order_preserved": true,
+    "single_bounded_global_deque": true,
+    "endpoint_symbol_identifies_target_asset": true,
+    "stride_counter_is_per_endpoint_symbol": true,
+    "long_global_receipt_gap_clears_context": true,
+    "receipt_regression_fails_closed": true,
+    "btc_eth_sol_only": true,
+    "causal_feature_schema_changed": false,
+    "future_target_or_pnl_accessed": false,
+    "per_symbol_baseline_replaced": false,
+    "training_candidate_selectable": false
+  },
+  "preregistered_hypothesis": {
+    "statement": "lagged BTC ETH and SOL microstructure events may improve short-horizon conditional payoff and adverse-selection forecasts beyond each asset's own event history",
+    "contemporaneous_cross_impact_assumed": false,
+    "improvement_assumed": false,
+    "required_comparison": "matched endpoint and target panel comparing per-symbol and global-context representations before architecture selection",
+    "promotion_metric": "run-balanced proper probabilistic loss followed by independently delayed after-cost policy economics",
+    "promotion_before_matched_evidence_permitted": false
+  },
+  "research_decision_record": {
+    "retrieved_at_utc": "2026-07-27T20:02:00Z",
+    "sources": [
+      {
+        "url": "https://arxiv.org/abs/2112.13213",
+        "kind": "research_paper",
+        "decision": "test lagged cross-asset order-flow information while refusing to assume contemporaneous cross-impact adds value after multi-level own-asset OFI"
+      },
+      {
+        "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5043260",
+        "kind": "research_paper",
+        "decision": "retain price liquidity depth imbalance and volatility context in a causal high-frequency cross-asset candidate"
+      }
+    ],
+    "market_or_model_outcome_viewed_before_hypothesis": false
+  },
+  "verification": {
+    "focused_sequence_and_dataset_tests_passed": 17,
+    "cross_asset_context_test_passed": true,
+    "incremental_and_iterator_equivalence_test_passed": true,
+    "stride_gap_regression_and_invalid_configuration_tests_passed": true,
+    "ruff_passed": true,
+    "production_database_scanned_during_implementation": false,
+    "prospective_representation_comparison_run": false
+  },
+  "remaining_integration_block": {
+    "matched_representation_dataset_assembly_implemented": false,
+    "representation_identity_bound_in_training_artifact": false,
+    "representation_complexity_gate_implemented": false,
+    "reason": "the primitive is frozen before outcomes; it must not enter candidate selection until endpoint-matched dataset identity and promotion gates are executable"
+  },
+  "authority": {
+    "cross_asset_predictive_uplift_established": false,
+    "representative_market_training_completed": false,
+    "sealed_test_accessed": false,
+    "ai_uplift_evaluated": false,
+    "market_edge_established": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "09fae398029b37e8a4929ddf33145081a96bd25b8e03c269313668a07d3261df"
+}
