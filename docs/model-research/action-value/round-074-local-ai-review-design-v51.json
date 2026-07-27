@@ -1,0 +1,99 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v51",
+  "artifact_kind": "compact_contract_delta",
+  "supersedes_artifact_sha256": "d7678141acbaf1cff5b9099930ac32bf1f1f2b82fcf3e6c13e1c79d45eeba963",
+  "implementation_git_commit": "ec375e915a6c842960b72109a9dc9492ffb668db",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "4253614087186e0760840a79bb550bf56453f98a5c80ea0cc95f6b425201103d",
+      "review_request_schema_version": "round-074-ai-review-request-v4",
+      "prompt_payload_schema_version": "round-074-ai-prompt-payload-v3"
+    },
+    "bridge": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_bridge.py",
+      "sha256": "991f5243a83f271315e7fbf5cc6972f16f8b7c558139768d935bf0b57220e8f5",
+      "schema_version": "round-074-ai-bridge-v3"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "24e188f599270af920414b826a263f34baec1900e2d266a7ae8027caa0c385f9",
+      "schema_version": "round-074-ai-review-panel-v5"
+    },
+    "sealed_evaluator": {
+      "path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+      "sha256": "66a9890c7785bb3be8306177be44c0a9d42cd45073af106cbaedcdf647ff4e11",
+      "schema_version": "round-074-sealed-evaluation-v10"
+    },
+    "event_model_design": {
+      "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v75.json",
+      "file_sha256": "7c62cdd7fdec6b369fe3168066031b46056987ba3d06e9edbdecb454a3d0b543",
+      "design_sha256": "acf0c4be3a97a9d2fc08bc04be71ca5ebcc8ae49f51d4390467a67d6585c0dc2"
+    }
+  },
+  "risk_profile_delta": {
+    "profiles": [
+      "conservative",
+      "regular",
+      "aggressive"
+    ],
+    "default_profile": "conservative",
+    "profile_is_frozen_before_ai_review": true,
+    "profile_is_bound_by_request_sha256": true,
+    "profile_is_exposed_in_causal_prompt_payload": true,
+    "profile_changes_retain_reduce_veto_tolerance": true,
+    "profile_may_change_side": false,
+    "profile_may_increase_position_size": false,
+    "profile_may_set_or_increase_leverage": false,
+    "profile_may_submit_or_modify_orders": false,
+    "profile_may_override_deterministic_risk_controls": false,
+    "profile_specific_financial_uplift_assumed": false,
+    "profile_specific_financial_uplift_requires_paired_evidence": true
+  },
+  "research_basis": [
+    {
+      "title": "Investor risk profiles of large language models",
+      "url": "https://arxiv.org/abs/2603.09303",
+      "publication_status": "arxiv_preprint",
+      "relevant_observation": "models exhibit different default risk tolerances and profile prompts can shift expressed risk preferences",
+      "design_consequence": "bind the user-selected risk profile explicitly instead of relying on a model default"
+    },
+    {
+      "title": "Market-Bench: Evaluating Large Language Models on Introductory Quantitative Trading and Market Dynamics",
+      "url": "https://arxiv.org/abs/2512.12264",
+      "publication_status": "arxiv_preprint",
+      "relevant_observation": "current models can execute simple trading tasks yet still produce material price inventory and risk errors",
+      "design_consequence": "retain deterministic calculations controls and execution outside the language model"
+    }
+  ],
+  "verification": {
+    "focused_tests_passed": 96,
+    "focused_test_files": [
+      "tests/test_impact_absorption_ai_protocol.py",
+      "tests/test_impact_absorption_ai_bridge.py",
+      "tests/test_impact_absorption_ai_runtime.py",
+      "tests/test_impact_absorption_ai_worker.py",
+      "tests/test_impact_absorption_ai_uplift.py",
+      "tests/test_impact_absorption_event_sealed_ledger.py",
+      "tests/test_round74_local_ai_design.py",
+      "tests/test_round74_event_model_contract.py"
+    ],
+    "ruff_passed": true,
+    "all_profile_request_digests_distinct": true,
+    "all_profile_system_prompts_distinct": true,
+    "all_profile_prompts_prohibit_size_increase_and_order_authority": true,
+    "sealed_test_accessed": false,
+    "gpu_model_workload_executed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "profile_conditioned_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "ef54e6977f6559ccee17f2693681fb11606ac9b978458e9b12e0a84eaf6a5c40"
+}
