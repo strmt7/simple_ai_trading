@@ -553,6 +553,18 @@ def _run_slot_process(
                     "free_bytes": free_bytes,
                 }
                 monitor_samples.append(sample)
+                state.update(
+                    {
+                        "last_progress_at_utc": (
+                            datetime.now(timezone.utc)
+                            .isoformat()
+                            .replace("+00:00", "Z")
+                        ),
+                        "last_progress": sample,
+                        "monitor_sample_count": len(monitor_samples),
+                    }
+                )
+                _durable_json_replace(state_path, state)
                 print(
                     "round74-cohort-progress: "
                     f"slot={ordinal} elapsed={elapsed:.1f}s "
