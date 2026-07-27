@@ -335,8 +335,10 @@ After parser or taxonomy changes, regenerate the header through the native build
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement. Read
-  `round-074-event-sequence-model-design-v61.json` and
-  `round-074-local-ai-review-design-v47.json`. The model now adds causal
+  `round-074-event-sequence-model-design-v63.json` and
+  `round-074-local-ai-review-design-v49.json`. The model now uses an exact,
+  target-blind 768-window sample per capture run, disjoint 12/6/6 tuning roles,
+  and bounded equal-run DirectML groups. It also adds causal
   continuous-time 5/30/300-second return, realized-volatility, order-flow,
   spread, and imbalance state to each exact event token; this corrects the
   mismatch between a 128-event window that may span only seconds and 30/300-

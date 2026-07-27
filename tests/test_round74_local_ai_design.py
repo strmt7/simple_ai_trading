@@ -90,10 +90,6 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-)
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 ARTIFACT_PATH = (
@@ -109,6 +105,13 @@ WARM_ARTIFACT_PATH = (
     / "model-research"
     / "action-value"
     / "round-074-local-ai-review-design-v48.json"
+)
+INTEGRATION_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v49.json"
 )
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
@@ -223,6 +226,67 @@ def test_round74_warm_ai_design_binds_gpu_reuse_and_latest_model_contract() -> N
     assert preflight["profitability_claim"] is False
     assert status["representative_market_ai_evaluation_completed"] is False
     assert status["ai_uplift_established"] is False
+    assert status["financial_edge_established"] is False
+    assert status["profitability_claim"] is False
+
+
+def test_round74_ai_design_binds_current_model_integration_without_authority() -> None:
+    previous = _load_json(WARM_ARTIFACT_PATH)
+    artifact = _load_json(INTEGRATION_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    architecture = artifact["architecture"]
+    integration = artifact["model_integration"]
+    status = artifact["status"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v49"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    assert source["event_model_design_path"].endswith(
+        "round-074-event-sequence-model-design-v63.json"
+    )
+    assert source["event_model_operator_schema_version"] == (
+        "round-074-event-model-operator-v3"
+    )
+    for label in (
+        "event_model_operator",
+        "event_model",
+        "event_training",
+        "model_integration_contract_generator",
+    ):
+        assert source[f"{label}_sha256"] == _source_file_sha256_at(
+            commit,
+            source[f"{label}_path"],
+        )
+    model_design = _load_json(REPOSITORY / source["event_model_design_path"])
+    model_design_sha256 = model_design.pop("design_sha256")
+    assert model_design_sha256 == _canonical_sha256(model_design)
+    assert source["event_model_design_sha256"] == model_design_sha256
+    assert (
+        "ml_candidate_selection_requires_complete_24_run_tuning_panel"
+        not in architecture
+    )
+    assert (
+        architecture[
+            "ml_candidate_selection_requires_complete_12_run_model_selection_panel"
+        ]
+        is True
+    )
+    assert architecture[
+        "ml_target_blind_representative_window_sampler_implemented"
+    ] is (True)
+    assert architecture["ml_representative_windows_per_capture_run"] == 768
+    assert architecture["ml_default_directml_run_group_size"] == 8
+    assert integration["model_selection_precedes_ai_review"] is True
+    assert integration[
+        "ai_may_increase_risk_select_side_set_leverage_or_submit_orders"
+    ] is (False)
+    assert integration["representative_market_ml_training_completed"] is False
+    assert integration["representative_market_ai_evaluation_completed"] is False
+    assert integration["financial_edge_established"] is False
+    assert integration["profitability_claim"] is False
+    assert integration["ai_uplift_claim"] is False
     assert status["financial_edge_established"] is False
     assert status["profitability_claim"] is False
 
@@ -390,11 +454,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert source["state_half_lives_seconds"] == list(
         ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
     )
-    assert (
-        source["event_training_schema_version"] == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
-    )
+    assert source["event_training_schema_version"] == "round-074-event-training-v12"
     assert source["pretest_policy_schema_version"] == (
-        ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+        "round-074-event-pretest-policy-v11"
     )
     assert source["event_model_operator_schema_version"] == (
         "round-074-event-model-operator-v1"
