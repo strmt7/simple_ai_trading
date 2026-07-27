@@ -45,6 +45,9 @@ _ALLOWED_TRANSITIONS = {
         {"ACKNOWLEDGED", "FILLED", "REJECTED", "UNKNOWN"}
     ),
     "FILLED": frozenset({"FLAT_VERIFIED"}),
+    "REJECTED": frozenset(
+        {"SUBMITTED", "ACKNOWLEDGED", "FILLED", "REJECTED", "UNKNOWN"}
+    ),
 }
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9_.:-]{1,160}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -427,6 +430,8 @@ class Round74ExecutionCalibrationJournal:
             or (
                 transition.executed_quantity > current.intent.quantity
             )
+            or current.state == "REJECTED"
+            and current.intent.path != "exit"
             or transition.state == "FLAT_VERIFIED"
             and current.intent.path != "exit"
         ):
@@ -474,6 +479,18 @@ class Round74ExecutionCalibrationJournal:
             ],
         )
         return self.current(current.intent.client_order_id)
+
+    def current_snapshots(
+        self,
+    ) -> tuple[Round74ExecutionCalibrationSnapshot, ...]:
+        client_order_ids = self.connection.execute(
+            """
+            SELECT client_order_id
+            FROM round74_execution_calibration_intent
+            ORDER BY calibration_run_id, round_trip_id, path
+            """
+        ).fetchall()
+        return tuple(self.current(str(row[0])) for row in client_order_ids)
 
     def verify(self) -> None:
         intent_rows = self.connection.execute(

@@ -13,10 +13,12 @@ from simple_ai_trading.round74_execution_calibration_coordinator import (
     Round74OrderSubmissionRejected,
     Round74OrderSubmissionUnknown,
     capture_round74_execution_calibration_pair,
+    recover_round74_execution_calibration,
 )
 from simple_ai_trading.round74_execution_calibration_journal import (
     Round74ExecutionCalibrationIntent,
     Round74ExecutionCalibrationJournal,
+    Round74ExecutionCalibrationTransition,
 )
 
 
@@ -189,6 +191,40 @@ def _journal() -> Round74ExecutionCalibrationJournal:
     return Round74ExecutionCalibrationJournal(duckdb.connect(":memory:"))
 
 
+def _seed_filled_entry(
+    journal: Round74ExecutionCalibrationJournal,
+    *,
+    run_id: str = "round74-recovery",
+    pair_id: str = "BTCUSDT-recovery",
+) -> Round74ExecutionCalibrationIntent:
+    intent = Round74ExecutionCalibrationIntent(
+        calibration_run_id=run_id,
+        round_trip_id=pair_id,
+        path="entry",
+        symbol="BTCUSDT",
+        side="BUY",
+        client_order_id="sat-r74-cal-recovery-i",
+        quantity=Decimal("1"),
+        reference_quote_notional=Decimal("100"),
+        reduce_only=False,
+        created_wall_ns=time.time_ns(),
+        book_source_sha256="5" * 64,
+    )
+    journal.record_intent(intent)
+    journal.transition(
+        intent.client_order_id,
+        Round74ExecutionCalibrationTransition(
+            state="FILLED",
+            occurred_wall_ns=time.time_ns(),
+            source_payload_sha256="6" * 64,
+            order_id=900,
+            executed_quantity=Decimal("1"),
+            average_fill_price=Decimal("100.02"),
+        ),
+    )
+    return intent
+
+
 def test_coordinator_captures_parser_admissible_flat_pair() -> None:
     transport = _Transport()
     journal = _journal()
@@ -333,3 +369,72 @@ def test_authoritative_entry_rejection_does_not_leave_blocking_exposure() -> Non
 
     assert transport.position_amount == 0
     assert journal.blocking_round_trip_ids() == ()
+
+
+def test_recovery_closes_exact_journal_owned_entry_and_verifies_flat() -> None:
+    transport = _Transport()
+    transport.position_amount = Decimal("1")
+    journal = _journal()
+    _seed_filled_entry(journal)
+
+    result = recover_round74_execution_calibration(
+        transport=transport,
+        journal=journal,
+    )
+
+    assert result.complete is True
+    assert result.recovered_round_trip_ids == (
+        "round74-recovery:BTCUSDT-recovery",
+    )
+    assert len(transport.orders) == 1
+    assert next(iter(transport.orders.values()))["reduceOnly"] is True
+    assert transport.position_amount == 0
+    assert journal.blocking_round_trip_ids() == ()
+
+
+def test_recovery_refuses_position_that_exceeds_journal_ownership() -> None:
+    transport = _Transport()
+    transport.position_amount = Decimal("2")
+    journal = _journal()
+    _seed_filled_entry(journal)
+
+    with pytest.raises(RuntimeError, match="refuses non-owned position"):
+        recover_round74_execution_calibration(
+            transport=transport,
+            journal=journal,
+        )
+
+    assert transport.orders == {}
+    assert journal.blocking_round_trip_ids() == (
+        "round74-recovery:BTCUSDT-recovery",
+    )
+
+
+def test_recovery_keeps_unfound_prepared_entry_blocking() -> None:
+    transport = _Transport()
+    journal = _journal()
+    intent = Round74ExecutionCalibrationIntent(
+        calibration_run_id="round74-recovery",
+        round_trip_id="BTCUSDT-unknown",
+        path="entry",
+        symbol="BTCUSDT",
+        side="BUY",
+        client_order_id="sat-r74-cal-unknown-i",
+        quantity=Decimal("1"),
+        reference_quote_notional=Decimal("100"),
+        reduce_only=False,
+        created_wall_ns=time.time_ns(),
+        book_source_sha256="7" * 64,
+    )
+    journal.record_intent(intent)
+
+    result = recover_round74_execution_calibration(
+        transport=transport,
+        journal=journal,
+    )
+
+    assert result.complete is False
+    assert result.blocking_round_trip_ids == (
+        "round74-recovery:BTCUSDT-unknown",
+    )
+    assert transport.orders == {}
