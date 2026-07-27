@@ -882,6 +882,62 @@ class Round74EventWindowAccumulator:
         return window
 
 
+class Round74GlobalEventWindowAccumulator:
+    """Assemble causal cross-asset context ending at one symbol's event."""
+
+    def __init__(
+        self,
+        *,
+        sequence_length: int = 128,
+        stride: int = 16,
+        maximum_gap_ns: int = ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
+    ) -> None:
+        self.sequence_length = int(sequence_length)
+        self.stride = int(stride)
+        self.maximum_gap_ns = int(maximum_gap_ns)
+        if self.sequence_length < 2:
+            raise ValueError("Round 74 global event window requires multiple tokens")
+        if self.stride < 1:
+            raise ValueError("Round 74 global event window stride must be positive")
+        if self.maximum_gap_ns < 1:
+            raise ValueError("Round 74 global event window gap limit must be positive")
+        self._buffer: deque[Round74EventToken] = deque(
+            maxlen=self.sequence_length
+        )
+        self._since_yield: dict[str, int] = {}
+        self._prior_receipt_ns = -1
+
+    def consume(self, token: Round74EventToken) -> Round74EventWindow | None:
+        token.validate()
+        if token.received_monotonic_ns < self._prior_receipt_ns:
+            raise ValueError("Round 74 global event token order regressed")
+        if (
+            self._prior_receipt_ns >= 0
+            and token.received_monotonic_ns - self._prior_receipt_ns
+            > self.maximum_gap_ns
+        ):
+            self._buffer.clear()
+            self._since_yield.clear()
+        self._prior_receipt_ns = token.received_monotonic_ns
+        self._buffer.append(token)
+        if len(self._buffer) < self.sequence_length:
+            return None
+        counter = self._since_yield.get(token.symbol, 0)
+        if counter:
+            self._since_yield[token.symbol] = counter - 1
+            return None
+        window = Round74EventWindow(
+            symbol=token.symbol,
+            endpoint_frame_index=token.frame_index,
+            endpoint_message_index=token.message_index,
+            endpoint_received_monotonic_ns=token.received_monotonic_ns,
+            feature_values=tuple(item.feature_values for item in self._buffer),
+        )
+        window.validate(self.sequence_length)
+        self._since_yield[token.symbol] = self.stride - 1
+        return window
+
+
 def iter_round74_event_windows(
     tokens: Sequence[Round74EventToken] | Iterator[Round74EventToken],
     *,
@@ -892,6 +948,26 @@ def iter_round74_event_windows(
     """Yield per-symbol windows without crossing a long receipt gap."""
 
     accumulator = Round74EventWindowAccumulator(
+        sequence_length=sequence_length,
+        stride=stride,
+        maximum_gap_ns=maximum_gap_ns,
+    )
+    for token in tokens:
+        window = accumulator.consume(token)
+        if window is not None:
+            yield window
+
+
+def iter_round74_global_event_windows(
+    tokens: Sequence[Round74EventToken] | Iterator[Round74EventToken],
+    *,
+    sequence_length: int = 128,
+    stride: int = 16,
+    maximum_gap_ns: int = ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
+) -> Iterator[Round74EventWindow]:
+    """Yield global causal context while keeping endpoint-symbol stride."""
+
+    accumulator = Round74GlobalEventWindowAccumulator(
         sequence_length=sequence_length,
         stride=stride,
         maximum_gap_ns=maximum_gap_ns,
@@ -1044,7 +1120,9 @@ __all__ = [
     "Round74EventToken",
     "Round74EventWindow",
     "Round74EventWindowAccumulator",
+    "Round74GlobalEventWindowAccumulator",
     "iter_round74_event_windows",
+    "iter_round74_global_event_windows",
     "iter_round74_v10_event_observations",
     "iter_round74_v10_event_tokens",
 ]

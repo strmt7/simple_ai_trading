@@ -12,8 +12,10 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
     Round74EventSequenceEncoder,
     Round74EventWindowAccumulator,
+    Round74GlobalEventWindowAccumulator,
     Round74MultiSymbolEventReplay,
     iter_round74_event_windows,
+    iter_round74_global_event_windows,
     iter_round74_v10_event_tokens,
 )
 from simple_ai_trading.impact_absorption_store import ImpactAbsorptionStore
@@ -612,6 +614,78 @@ def test_incremental_event_windows_are_identical_to_offline_iteration() -> None:
 
     assert observed == expected
     assert [window.endpoint_message_index for window in observed] == [1, 3]
+
+
+def test_global_event_windows_preserve_cross_asset_lead_lag_context() -> None:
+    replay = Round74MultiSymbolEventReplay(
+        tick_sizes={
+            "BTCUSDT": "0.1",
+            "ETHUSDT": "0.1",
+            "SOLUSDT": "0.1",
+        },
+        depth_snapshots={
+            "BTCUSDT": _snapshot(),
+            "ETHUSDT": _snapshot(),
+            "SOLUSDT": _snapshot(),
+        },
+        feature_ready_wall_ns=WALL_BASE + 1,
+    )
+    tokens = []
+    for index, (symbol, monotonic_ns) in enumerate(
+        (
+            ("BTCUSDT", 100),
+            ("ETHUSDT", 200),
+            ("BTCUSDT", 300),
+            ("SOLUSDT", 400),
+        )
+    ):
+        payload = _trade(1_020 + index)
+        payload["s"] = symbol
+        observation = replay.consume_observation(
+            frame_index=0,
+            message_index=index,
+            record=_record(
+                lane="binance_futures_market",
+                sequence=index,
+                monotonic_ns=monotonic_ns,
+                stream_name=f"{symbol.lower()}@aggTrade",
+                payload=payload,
+            ),
+        )
+        assert observation is not None and observation.token is not None
+        tokens.append(observation.token)
+
+    expected = list(
+        iter_round74_global_event_windows(
+            tokens,
+            sequence_length=3,
+            stride=1,
+            maximum_gap_ns=1_000,
+        )
+    )
+    accumulator = Round74GlobalEventWindowAccumulator(
+        sequence_length=3,
+        stride=1,
+        maximum_gap_ns=1_000,
+    )
+    observed = [
+        window
+        for token in tokens
+        if (window := accumulator.consume(token)) is not None
+    ]
+
+    assert observed == expected
+    assert [window.symbol for window in observed] == ["BTCUSDT", "SOLUSDT"]
+    assert observed[0].feature_values == tuple(
+        token.feature_values for token in tokens[:3]
+    )
+    assert observed[1].feature_values == tuple(
+        token.feature_values for token in tokens[1:]
+    )
+    assert any(
+        values[ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_ethusdt")] == 1.0
+        for values in observed[0].feature_values
+    )
 
 
 def test_event_sequence_fails_closed_on_regression_lane_and_duplicate_json() -> None:
