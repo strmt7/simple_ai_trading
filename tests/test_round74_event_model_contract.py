@@ -76,7 +76,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v17.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v18.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -462,6 +462,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["training_and_tuning_sample_overlap_permitted"] is False
     assert training["minimum_role_transition_purge_seconds"] == 310.5
     assert training["mixed_partition_scaler_or_target_context_permitted"] is False
+    assert training["one_capture_run_per_batch_required"] is True
+    assert training["mixed_capture_run_batch_permitted"] is False
+    assert training["repeated_capture_run_batch_permitted"] is False
     assert training["candidate_panel"] == [
         "event_pooling_mlp",
         "causal_event_tcn",
@@ -476,6 +479,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         "for classification heads"
     )
     assert training["classification_mean_logit_pooling_permitted"] is False
+    assert training["run_balanced_loss_primary"] is True
+    assert training["high_activity_run_receives_extra_selection_weight"] is False
+    assert training["worst_run_loss_is_reported"] is True
+    assert training["worst_run_loss_is_primary_optimization_objective"] is False
     assert training["probability_calibration_order"] == (
         "after seed-ensemble probability aggregation"
     )
@@ -743,6 +750,17 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert (
         verification["post_aggregation_probability_calibration_contract_sealed"]
         is True
+    )
+    assert verification["tuning_metric_unit"] == "one-hour capture run"
+    assert verification["synthetic_tuning_run_count"] == 1
+    assert verification["each_tuning_run_has_equal_selection_weight"] is True
+    assert verification["mixed_or_repeated_capture_run_policy"] == "fail closed"
+    repeated = evidence["repeated_result"]
+    assert repeated["candidate_run_balanced_tuning_proper_loss"] == (
+        repeated["candidate_worst_run_tuning_proper_loss"]
+    )
+    assert repeated["candidate_run_balanced_tuning_proper_loss"] == (
+        repeated["candidate_pooled_tuning_proper_loss"]
     )
     assert verification["maximum_entry_state_lateness_ns"] == 250_000_000
     assert verification["maximum_exit_state_lateness_ns"] == 250_000_000
