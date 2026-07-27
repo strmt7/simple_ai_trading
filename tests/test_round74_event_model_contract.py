@@ -66,6 +66,7 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
     ROUND74_SEALED_LEDGER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
@@ -120,7 +121,7 @@ from simple_ai_trading.round74_event_model_operator import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v60.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v61.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -128,7 +129,7 @@ AI_RUNTIME_PREFLIGHT_PATH = (
 )
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-format-bound-v10-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-gap-reset-v11-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -406,6 +407,11 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert features["continuous_time_decay_uses_receipt_nanoseconds"] is True
     assert features["fixed_event_rate_assumption_permitted"] is False
     assert features["state_future_receipt_or_target_access"] is False
+    assert features["state_reset_after_receipt_gap_nanoseconds"] == (
+        ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS
+    )
+    assert features["unobserved_gap_interpolation_permitted"] is False
+    assert features["gap_crossing_return_used_in_slow_state"] is False
     scaler = features["feature_scaler"]
     assert scaler["implemented_now"] is True
     assert scaler["fit_on_training_partition_only"] is True

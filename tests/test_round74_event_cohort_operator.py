@@ -41,7 +41,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v5.json"
+    / "round-074-event-cohort-operator-v6.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -77,6 +77,13 @@ V4_OPERATOR_SUPERSESSION = (
     / "model-research"
     / "action-value"
     / "round-074-event-cohort-operator-v4-supersession-2026-07-27.json"
+)
+V5_OPERATOR_SUPERSESSION = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-event-cohort-operator-v5-supersession-2026-07-27.json"
 )
 
 
@@ -242,6 +249,26 @@ def test_round74_cohort_operator_v4_was_superseded_before_slot_zero() -> None:
     assert basis["cohort_market_data_collected"] is False
     assert evidence["authority"]["model_training_or_evaluation_performed"] is False
     assert evidence["authority"]["profitability_or_edge_claim"] is False
+
+
+def test_round74_cohort_operator_v5_was_superseded_before_slot_zero() -> None:
+    evidence = json.loads(V5_OPERATOR_SUPERSESSION.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["superseded_operator"]["dataset_schema_version"] == (
+        "round-074-event-dataset-v8"
+    )
+    assert evidence["replacement_operator"]["dataset_schema_version"] == (
+        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+    )
+    basis = evidence["correction_basis"]
+    assert basis["raw_capture_plan_changed"] is False
+    assert basis["task_schedule_changed"] is False
+    assert basis["selected_from_market_model_or_target_outcome"] is False
+    assert basis["slot_zero_started"] is False
+    assert basis["cohort_market_data_collected"] is False
 
 
 def test_round74_cohort_operator_binds_corrected_plan_and_resources() -> None:
