@@ -15,6 +15,7 @@ from simple_ai_trading.impact_absorption_event_targets import (
     round74_event_action_payoff,
     round74_funding_schedule_evidence_claims,
     round74_latency_evidence_claims,
+    round74_quantity_rules_evidence_claims,
     round74_slippage_evidence_claims,
 )
 from simple_ai_trading.impact_absorption_targets import (
@@ -144,6 +145,7 @@ def _spec(
         if slippage_by_symbol is not None
         else {symbol: slippage_bps for symbol in SYMBOLS}
     )
+    rules = _rules()
     reference_notional = 100.0
     return Round74EventTargetSpec.create(
         reference_quote_notional=reference_notional,
@@ -153,6 +155,11 @@ def _spec(
         funding_boundary_intervals_monotonic_ns=normalized_funding_intervals,
         funding_schedule_coverage_monotonic_ns=coverage,
         additional_slippage_bps_per_side_by_symbol=slippage,
+        quantity_rules_evidence=_evidence(
+            "quantity_rules",
+            round74_quantity_rules_evidence_claims(rules),
+            payload_sha256="f" * 64,
+        ),
         commission_evidence=_evidence(
             "commission",
             round74_commission_evidence_claims(fees),
@@ -380,6 +387,7 @@ def test_round74_target_spec_uses_symbol_specific_latency_and_slippage() -> None
     evidence = payload["evidence"]
     assert isinstance(evidence, dict)
     assert set(evidence) == {
+        "quantity_rules",
         "commission",
         "entry_exit_latency",
         "residual_slippage",
@@ -425,6 +433,24 @@ def test_round74_target_evidence_is_self_hashing_and_environment_consistent() ->
     )
     with pytest.raises(ValueError, match="environments differ"):
         replace(spec, slippage_evidence=testnet_slippage)
+
+
+def test_round74_target_engine_rejects_rules_not_bound_by_evidence() -> None:
+    rules = _rules()
+    rules["BTCUSDT"] = Round73MarketQuantityRules.create(
+        symbol="BTCUSDT",
+        step_size="0.01",
+        minimum_quantity="0.01",
+        maximum_quantity="1000",
+        minimum_notional="10",
+    )
+
+    with pytest.raises(ValueError, match="quantity-rules claims differ"):
+        Round74EventTargetEngine(
+            spec=_spec(),
+            anchors=[],
+            quantity_rules=rules,
+        )
 
 
 def test_round74_target_engine_builds_complete_pathwise_panel() -> None:

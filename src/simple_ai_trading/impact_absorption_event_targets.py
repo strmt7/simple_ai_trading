@@ -26,7 +26,7 @@ from .impact_absorption_targets import (
 )
 
 
-ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v8"
+ROUND74_EVENT_TARGET_SCHEMA_VERSION = "round-074-executable-event-target-v9"
 ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION = (
     "round-074-target-evidence-v1"
 )
@@ -42,6 +42,7 @@ ROUND74_EVENT_TARGET_ENVIRONMENTS = (
     "binance_usdm_testnet",
 )
 ROUND74_EVENT_TARGET_EVIDENCE_SOURCES = {
+    "quantity_rules": "binance_usdm_fapi_v1_exchange_info",
     "commission": "binance_usdm_fapi_v1_commission_rate",
     "entry_exit_latency": (
         "round74_host_submission_to_execution_latency_v1"
@@ -106,6 +107,24 @@ def round74_commission_evidence_claims(
             str(symbol).strip().upper(): float(value)
             for symbol, value in sorted(taker_fee_bps_by_symbol.items())
         }
+    }
+
+
+def round74_quantity_rules_evidence_claims(
+    quantity_rules: Mapping[str, Round73MarketQuantityRules],
+) -> dict[str, object]:
+    return {
+        "market_quantity_rules_by_symbol": {
+            str(symbol).strip().upper(): {
+                "step_size": format(value.step_size, "f"),
+                "minimum_quantity": format(value.minimum_quantity, "f"),
+                "maximum_quantity": format(value.maximum_quantity, "f"),
+                "minimum_notional": format(value.minimum_notional, "f"),
+            }
+            for symbol, value in sorted(quantity_rules.items())
+        },
+        "quantity_filter": "MARKET_LOT_SIZE",
+        "notional_filter": "MIN_NOTIONAL",
     }
 
 
@@ -319,6 +338,7 @@ class Round74EventTargetSpec:
     additional_slippage_bps_per_side_by_symbol: tuple[
         tuple[str, float], ...
     ]
+    quantity_rules_evidence: Round74EventTargetEvidence
     commission_evidence: Round74EventTargetEvidence
     entry_exit_latency_evidence: Round74EventTargetEvidence
     slippage_evidence: Round74EventTargetEvidence
@@ -351,6 +371,7 @@ class Round74EventTargetSpec:
         ],
         funding_schedule_coverage_monotonic_ns: Mapping[str, Sequence[int]],
         additional_slippage_bps_per_side_by_symbol: Mapping[str, float],
+        quantity_rules_evidence: Round74EventTargetEvidence,
         commission_evidence: Round74EventTargetEvidence,
         entry_exit_latency_evidence: Round74EventTargetEvidence,
         slippage_evidence: Round74EventTargetEvidence,
@@ -444,6 +465,7 @@ class Round74EventTargetSpec:
             funding_boundary_intervals_monotonic_ns=funding,
             funding_schedule_coverage_monotonic_ns=funding_coverage,
             additional_slippage_bps_per_side_by_symbol=slippage,
+            quantity_rules_evidence=quantity_rules_evidence,
             commission_evidence=commission_evidence,
             entry_exit_latency_evidence=entry_exit_latency_evidence,
             slippage_evidence=slippage_evidence,
@@ -580,6 +602,14 @@ class Round74EventTargetSpec:
                 ),
             ),
         )
+        if (
+            not isinstance(
+                self.quantity_rules_evidence,
+                Round74EventTargetEvidence,
+            )
+            or self.quantity_rules_evidence.kind != "quantity_rules"
+        ):
+            raise ValueError("Round 74 target quantity-rules evidence differs")
         if any(
             not isinstance(evidence, Round74EventTargetEvidence)
             or evidence.kind != kind
@@ -590,7 +620,10 @@ class Round74EventTargetSpec:
         if len(
             {
                 evidence.environment
-                for _kind, evidence, _claims in evidence_panel
+                for evidence in (
+                    self.quantity_rules_evidence,
+                    *(item[1] for item in evidence_panel),
+                )
             }
         ) != 1:
             raise ValueError("Round 74 target evidence environments differ")
@@ -695,6 +728,7 @@ class Round74EventTargetSpec:
                 self.additional_slippage_bps_per_side_by_symbol
             ),
             "evidence": {
+                "quantity_rules": self.quantity_rules_evidence.as_dict(),
                 "commission": self.commission_evidence.as_dict(),
                 "entry_exit_latency": (
                     self.entry_exit_latency_evidence.as_dict()
@@ -758,6 +792,7 @@ class Round74EventTargetSpec:
             raise ValueError("Round 74 target mapping payload differs")
         assert isinstance(evidence, Mapping)
         if set(evidence) != {
+            "quantity_rules",
             "commission",
             "entry_exit_latency",
             "residual_slippage",
@@ -800,6 +835,9 @@ class Round74EventTargetSpec:
                 str(symbol): float(value)
                 for symbol, value in slippage.items()
             },
+            quantity_rules_evidence=Round74EventTargetEvidence.from_dict(
+                evidence["quantity_rules"]
+            ),
             commission_evidence=Round74EventTargetEvidence.from_dict(
                 evidence["commission"]
             ),
@@ -1380,6 +1418,10 @@ class Round74EventTargetEngine:
             for symbol in ROUND74_EVENT_TARGET_SYMBOLS
         }
         self.quantity_rules = validated_rules
+        if not self.spec.quantity_rules_evidence.binds(
+            round74_quantity_rules_evidence_claims(validated_rules)
+        ):
+            raise ValueError("Round 74 target quantity-rules claims differ")
         self.funding_boundary_intervals = {
             symbol: tuple(intervals)
             for symbol, intervals in (
@@ -2165,5 +2207,6 @@ __all__ = [
     "round74_event_action_payoff",
     "round74_funding_schedule_evidence_claims",
     "round74_latency_evidence_claims",
+    "round74_quantity_rules_evidence_claims",
     "round74_slippage_evidence_claims",
 ]

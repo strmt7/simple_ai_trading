@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
+from decimal import Decimal
 import hashlib
 
 import pytest
@@ -12,6 +14,7 @@ from simple_ai_trading.impact_absorption_event_evidence import (
     Round74BinanceClockProbe,
     build_round74_commission_evidence,
     build_round74_funding_evidence,
+    build_round74_quantity_rules_evidence,
     load_round74_binance_clock_probes,
 )
 from simple_ai_trading.impact_absorption_store import (
@@ -22,6 +25,7 @@ from simple_ai_trading.impact_absorption_store import (
 from simple_ai_trading.impact_absorption_event_targets import (
     round74_commission_evidence_claims,
     round74_funding_schedule_evidence_claims,
+    round74_quantity_rules_evidence_claims,
 )
 from simple_ai_trading.impact_capture_frame import (
     ImpactCaptureFrameRecord,
@@ -86,6 +90,55 @@ def _commission_payloads() -> dict[str, dict[str, object]]:
             ("0.0004", "0.00045", "0.0005"),
             strict=True,
         )
+    }
+
+
+def _exchange_info_payload() -> dict[str, object]:
+    rows = []
+    for symbol, step, minimum, maximum, notional in zip(
+        SYMBOLS,
+        ("0.001", "0.001", "0.1"),
+        ("0.001", "0.001", "0.1"),
+        ("1000", "10000", "100000"),
+        ("100", "20", "5"),
+        strict=True,
+    ):
+        rows.append(
+            {
+                "symbol": symbol,
+                "pair": symbol,
+                "contractType": "PERPETUAL",
+                "status": "TRADING",
+                "quoteAsset": "USDT",
+                "marginAsset": "USDT",
+                "quantityPrecision": 3,
+                "orderTypes": ["LIMIT", "MARKET", "STOP_MARKET"],
+                "filters": [
+                    {
+                        "filterType": "PRICE_FILTER",
+                        "minPrice": "0.01",
+                        "maxPrice": "1000000",
+                        "tickSize": "0.01",
+                    },
+                    {
+                        "filterType": "MARKET_LOT_SIZE",
+                        "minQty": minimum,
+                        "maxQty": maximum,
+                        "stepSize": step,
+                    },
+                    {
+                        "filterType": "MIN_NOTIONAL",
+                        "notional": notional,
+                    },
+                ],
+            }
+        )
+    rows.append({"symbol": "DOGEUSDT", "status": "TRADING"})
+    return {
+        "timezone": "UTC",
+        "serverTime": EXCHANGE_MS,
+        "rateLimits": [],
+        "symbols": rows,
     }
 
 
@@ -237,6 +290,93 @@ def test_commission_evidence_is_derived_from_exact_symbol_payloads() -> None:
     assert bundle.evidence.binds(
         round74_commission_evidence_claims(bundle.as_mapping())
     )
+
+
+def test_quantity_rules_are_derived_from_executable_exchange_filters() -> None:
+    bundle = build_round74_quantity_rules_evidence(
+        payload=_exchange_info_payload(),
+        environment="binance_usdm_mainnet",
+        observed_wall_ns=WALL_NS,
+    )
+    rules = bundle.as_mapping()
+
+    assert rules["BTCUSDT"].step_size == Decimal("0.001")
+    assert rules["ETHUSDT"].minimum_notional == Decimal("20")
+    assert rules["SOLUSDT"].maximum_quantity == Decimal("100000")
+    assert bundle.evidence.record_count == 3
+    assert bundle.evidence.binds(
+        round74_quantity_rules_evidence_claims(rules)
+    )
+
+
+def test_quantity_rules_source_digest_is_canonical() -> None:
+    payload = _exchange_info_payload()
+    reordered = dict(reversed(tuple(payload.items())))
+
+    first = build_round74_quantity_rules_evidence(
+        payload=payload,
+        environment="binance_usdm_mainnet",
+        observed_wall_ns=WALL_NS,
+    )
+    second = build_round74_quantity_rules_evidence(
+        payload=reordered,
+        environment="binance_usdm_mainnet",
+        observed_wall_ns=WALL_NS,
+    )
+
+    assert (
+        first.evidence.source_query_or_protocol_sha256
+        == second.evidence.source_query_or_protocol_sha256
+    )
+    assert (
+        first.evidence.source_payload_sha256
+        == second.evidence.source_payload_sha256
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "missing_symbol",
+        "nontrading",
+        "duplicate_filter",
+        "absent_market_filter",
+        "precision_only",
+        "wrong_assets",
+        "credential",
+    ),
+)
+def test_quantity_rules_reject_ambiguous_exchange_metadata(
+    mutation: str,
+) -> None:
+    payload = deepcopy(_exchange_info_payload())
+    rows = payload["symbols"]
+    assert isinstance(rows, list)
+    if mutation == "missing_symbol":
+        rows.pop(2)
+    elif mutation == "nontrading":
+        rows[0]["status"] = "SETTLING"
+    elif mutation == "duplicate_filter":
+        rows[1]["filters"].append(deepcopy(rows[1]["filters"][1]))
+    elif mutation in {"absent_market_filter", "precision_only"}:
+        rows[2]["filters"] = [
+            item
+            for item in rows[2]["filters"]
+            if item["filterType"] != "MARKET_LOT_SIZE"
+        ]
+        if mutation == "absent_market_filter":
+            rows[2].pop("quantityPrecision")
+    elif mutation == "wrong_assets":
+        rows[1]["marginAsset"] = "BUSD"
+    else:
+        rows[0]["api_key"] = "must-not-persist"
+
+    with pytest.raises(ValueError):
+        build_round74_quantity_rules_evidence(
+            payload=payload,
+            environment="binance_usdm_mainnet",
+            observed_wall_ns=WALL_NS,
+        )
 
 
 @pytest.mark.parametrize(
