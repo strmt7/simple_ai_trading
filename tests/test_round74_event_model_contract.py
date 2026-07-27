@@ -73,7 +73,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v12.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v13.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -285,7 +285,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     cohort = design["cohort_admission_contract"]
     assert cohort["implemented_now"] is True
     assert cohort["plan_sha256"] == (
-        "c724663d7502fc387caa8a4f49e61da28c7934c13e293472c450970ffcca124d"
+        "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236"
     )
     assert cohort["role_counts"] == {
         "training": 120,

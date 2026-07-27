@@ -57,7 +57,7 @@ def test_round74_cohort_plan_is_hash_bound_and_predeclared() -> None:
     payload = plan.as_dict()
 
     assert payload["plan_sha256"] == (
-        "c724663d7502fc387caa8a4f49e61da28c7934c13e293472c450970ffcca124d"
+        "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236"
     )
     assert plan.total_slots == 168
     assert (plan.training_slots, plan.tuning_slots, plan.test_slots) == (

@@ -1,6 +1,6 @@
 {
   "schema_version": "round-074-event-cohort-plan-v1",
-  "implementation_git_commit": "3399f49a243c283807b4b723417ae680f0f60d20",
+  "implementation_git_commit": "3480a8dd6dd163659146cb527ed9b381b94b6e87",
   "scheduled_start_wall_ns": 1785161700000000000,
   "role_counts": {
     "training": 120,
@@ -33,7 +33,7 @@
     "orders_submitted": false
   },
   "prerequisite": {
-    "artifact_sha256": "1f54db7e1ecae8f479bfe0c3d3b959fde1b96397b0850a96ac806b28cf278191",
+    "artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
     "window_start_wall_ns": 1785156900000000000,
     "window_end_wall_ns": 1785160620000000000,
     "must_pass_before_first_slot": true,
@@ -60,5 +60,5 @@
     "profitability_claim": false,
     "trading_authority": false
   },
-  "plan_sha256": "c724663d7502fc387caa8a4f49e61da28c7934c13e293472c450970ffcca124d"
+  "plan_sha256": "648b3fc1e6078a3f160e735e42e7bbda569aca8f51e5c20e4e616edfaa2ef236"
 }
