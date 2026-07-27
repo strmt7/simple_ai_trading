@@ -643,6 +643,7 @@ def train_calibrate_and_select_round74_development_policy(
         output_directory=output,
         compute_backend=compute_backend,
         config=config,
+        feature_scaler=prepared.scaler,
     )
     bundle = calibrate_and_select_round74_development_policy(
         tuning_roles,
