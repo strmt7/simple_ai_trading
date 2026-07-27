@@ -15,6 +15,7 @@ from .impact_absorption_event_action_policy import (
     Round74ActionThresholdEvaluation,
 )
 from .impact_absorption_event_calibration import (
+    ROUND74_TUNING_POLICY_SELECTION_RUNS,
     build_round74_tuning_subpartition,
 )
 from .impact_absorption_event_model import ROUND74_EVENT_MODEL_CANDIDATES
@@ -38,7 +39,7 @@ from .storage import write_bytes_atomic
 
 
 ROUND74_REPRESENTATION_COMPARISON_SCHEMA_VERSION = (
-    "round-074-representation-comparison-v1"
+    "round-074-representation-comparison-v2"
 )
 
 
@@ -157,6 +158,54 @@ def _profile_policy_map(
     return result
 
 
+def _paired_run_net_deltas(
+    baseline: Round74ActionThresholdEvaluation,
+    challenger: Round74ActionThresholdEvaluation,
+) -> tuple[str, tuple[float, ...]]:
+    baseline_trace = baseline.trace
+    challenger_trace = challenger.trace
+    baseline_run_ids = tuple(baseline_trace.expected_run_ids)
+    challenger_run_ids = tuple(challenger_trace.expected_run_ids)
+    if (
+        baseline_run_ids != challenger_run_ids
+        or len(baseline_run_ids) != ROUND74_TUNING_POLICY_SELECTION_RUNS
+    ):
+        raise ValueError("Round 74 representation economic run identity differs")
+
+    def run_payoffs(
+        evaluation: Round74ActionThresholdEvaluation,
+    ) -> tuple[float, ...]:
+        trace = evaluation.trace
+        values = {run_id: 0.0 for run_id in baseline_run_ids}
+        if (
+            len(trace.run_id) != len(trace.net_payoff_bps)
+            or any(run_id not in values for run_id in trace.run_id)
+        ):
+            raise ValueError("Round 74 representation economic trace differs")
+        for run_id, payoff in zip(
+            trace.run_id,
+            trace.net_payoff_bps,
+            strict=True,
+        ):
+            selected = float(payoff)
+            if not math.isfinite(selected):
+                raise ValueError("Round 74 representation economic payoff differs")
+            values[run_id] += selected
+        return tuple(values[run_id] for run_id in baseline_run_ids)
+
+    baseline_payoffs = run_payoffs(baseline)
+    challenger_payoffs = run_payoffs(challenger)
+    deltas = tuple(
+        candidate - incumbent
+        for incumbent, candidate in zip(
+            baseline_payoffs,
+            challenger_payoffs,
+            strict=True,
+        )
+    )
+    return _canonical_sha256(list(baseline_run_ids)), deltas
+
+
 def round74_representation_economic_gate(
     baseline_policies: Sequence[Round74ActionPolicySelection],
     challenger_policies: Sequence[Round74ActionPolicySelection],
@@ -177,9 +226,25 @@ def round74_representation_economic_gate(
             reasons.append("conservative_challenger_policy_not_accepted")
         if baseline_evaluation is not None and challenger_evaluation is None:
             reasons.append("accepted_baseline_profile_became_rejected")
+        paired_run_ids_sha256: str | None = None
+        paired_run_net_deltas_bps: tuple[float, ...] | None = None
+        minimum_paired_run_net_delta_bps: float | None = None
+        challenger_worse_run_count: int | None = None
+        all_paired_runs_net_noninferior: bool | None = None
         if baseline_evaluation is not None and challenger_evaluation is not None:
             baseline_metrics = baseline_evaluation.trace.metrics
             challenger_metrics = challenger_evaluation.trace.metrics
+            paired_run_ids_sha256, paired_run_net_deltas_bps = (
+                _paired_run_net_deltas(
+                    baseline_evaluation,
+                    challenger_evaluation,
+                )
+            )
+            minimum_paired_run_net_delta_bps = min(paired_run_net_deltas_bps)
+            challenger_worse_run_count = sum(
+                value < 0.0 for value in paired_run_net_deltas_bps
+            )
+            all_paired_runs_net_noninferior = challenger_worse_run_count == 0
             comparisons = (
                 (
                     challenger_evaluation.objective_bps
@@ -207,6 +272,8 @@ def round74_representation_economic_gate(
                 ),
             )
             reasons.extend(reason for passed, reason in comparisons if not passed)
+            if profile == "conservative" and not all_paired_runs_net_noninferior:
+                reasons.append("conservative_paired_run_net_payoff_degraded")
         reports.append(
             {
                 "profile": profile,
@@ -254,6 +321,19 @@ def round74_representation_economic_gate(
                             .mean_run_maximum_adverse_excursion_bps
                         ),
                     }
+                ),
+                "paired_run_ids_sha256": paired_run_ids_sha256,
+                "paired_run_net_deltas_bps": (
+                    None
+                    if paired_run_net_deltas_bps is None
+                    else list(paired_run_net_deltas_bps)
+                ),
+                "minimum_paired_run_net_delta_bps": (
+                    minimum_paired_run_net_delta_bps
+                ),
+                "challenger_worse_run_count": challenger_worse_run_count,
+                "all_paired_runs_net_noninferior": (
+                    all_paired_runs_net_noninferior
                 ),
                 "noninferior": not reasons,
                 "reasons": reasons,
@@ -336,6 +416,11 @@ def _validate_profile_reports(
         "challenger_selection_sha256",
         "baseline_selected_metrics",
         "challenger_selected_metrics",
+        "paired_run_ids_sha256",
+        "paired_run_net_deltas_bps",
+        "minimum_paired_run_net_delta_bps",
+        "challenger_worse_run_count",
+        "all_paired_runs_net_noninferior",
         "noninferior",
         "reasons",
         "sealed_test_accessed",
@@ -387,6 +472,66 @@ def _validate_profile_reports(
                 )
             ):
                 raise ValueError("Round 74 representation profile metrics differ")
+        paired_run_ids_sha256 = value.get("paired_run_ids_sha256")
+        paired_run_net_deltas = value.get("paired_run_net_deltas_bps")
+        minimum_paired_run_net_delta = value.get(
+            "minimum_paired_run_net_delta_bps"
+        )
+        worse_run_count = value.get("challenger_worse_run_count")
+        all_run_noninferior = value.get("all_paired_runs_net_noninferior")
+        both_accepted = (
+            value.get("baseline_accepted") is True
+            and value.get("challenger_accepted") is True
+        )
+        if not both_accepted:
+            if any(
+                item is not None
+                for item in (
+                    paired_run_ids_sha256,
+                    paired_run_net_deltas,
+                    minimum_paired_run_net_delta,
+                    worse_run_count,
+                    all_run_noninferior,
+                )
+            ):
+                raise ValueError("Round 74 representation paired economics differ")
+            continue
+        if (
+            not _is_sha256(paired_run_ids_sha256)
+            or not isinstance(paired_run_net_deltas, list)
+            or len(paired_run_net_deltas) != ROUND74_TUNING_POLICY_SELECTION_RUNS
+            or any(
+                isinstance(item, bool)
+                or not isinstance(item, (int, float))
+                or not math.isfinite(float(item))
+                for item in paired_run_net_deltas
+            )
+            or isinstance(minimum_paired_run_net_delta, bool)
+            or not isinstance(minimum_paired_run_net_delta, (int, float))
+            or not math.isfinite(float(minimum_paired_run_net_delta))
+            or isinstance(worse_run_count, bool)
+            or not isinstance(worse_run_count, int)
+            or not 0 <= worse_run_count <= ROUND74_TUNING_POLICY_SELECTION_RUNS
+            or not isinstance(all_run_noninferior, bool)
+        ):
+            raise ValueError("Round 74 representation paired economics differ")
+        expected_minimum = min(float(item) for item in paired_run_net_deltas)
+        expected_worse_count = sum(
+            float(item) < 0.0 for item in paired_run_net_deltas
+        )
+        if (
+            float(minimum_paired_run_net_delta) != expected_minimum
+            or worse_run_count != expected_worse_count
+            or all_run_noninferior is not (expected_worse_count == 0)
+            or (
+                value["profile"] == "conservative"
+                and (
+                    "conservative_paired_run_net_payoff_degraded" in reasons
+                )
+                is all_run_noninferior
+            )
+        ):
+            raise ValueError("Round 74 representation paired economics differ")
     return all(value["noninferior"] is True for value in selected)
 
 

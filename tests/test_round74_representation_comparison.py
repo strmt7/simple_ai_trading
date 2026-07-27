@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -19,6 +20,7 @@ class _Policy:
         adverse_selection_rate: float,
         mean_run_maximum_adverse_excursion_bps: float,
         identity: int,
+        run_payoffs: tuple[float, ...],
     ) -> None:
         metrics = SimpleNamespace(
             total_net_bps=total_net_bps,
@@ -33,7 +35,12 @@ class _Policy:
             quantile=0.5,
             threshold_score=1.0,
             objective_bps=objective_bps,
-            trace=SimpleNamespace(metrics=metrics),
+            trace=SimpleNamespace(
+                metrics=metrics,
+                expected_run_ids=tuple(f"{index:032x}" for index in range(1, 7)),
+                run_id=tuple(f"{index:032x}" for index in range(1, 7)),
+                net_payoff_bps=run_payoffs,
+            ),
         )
         self.profile = profile
         self.accepted = True
@@ -46,18 +53,30 @@ class _Policy:
         return None
 
 
-def _policies(*, conservative_drawdown: float = 2.0, identity: int = 1):
+def _policies(
+    *,
+    conservative_drawdown: float = 2.0,
+    conservative_run_payoffs: tuple[float, ...] = (5.0,) * 6,
+    identity: int = 1,
+):
     return tuple(
         _Policy(
             profile,
             objective_bps=5.0,
-            total_net_bps=30.0,
+            total_net_bps=sum(
+                conservative_run_payoffs if profile == "conservative" else (5.0,) * 6
+            ),
             maximum_drawdown_bps=(
                 conservative_drawdown if profile == "conservative" else 3.0
             ),
             adverse_selection_rate=0.1,
             mean_run_maximum_adverse_excursion_bps=1.0,
             identity=identity + index,
+            run_payoffs=(
+                conservative_run_payoffs
+                if profile == "conservative"
+                else (5.0,) * 6
+            ),
         )
         for index, profile in enumerate(
             ("conservative", "regular", "aggressive")
@@ -110,6 +129,38 @@ def test_representation_economic_gate_rejects_conservative_drawdown_increase() -
     assert "maximum_drawdown_increased" in conservative["reasons"]
     assert all(report["sealed_test_accessed"] is False for report in degraded)
 
+    mismatched = _policies(identity=30)
+    mismatched[0].evaluations[0].trace.expected_run_ids = tuple(
+        reversed(mismatched[0].evaluations[0].trace.expected_run_ids)
+    )
+    with pytest.raises(ValueError, match="economic run identity differs"):
+        subject.round74_representation_economic_gate(baseline, mismatched)
+
+
+def test_representation_economic_gate_rejects_hidden_conservative_run_loss() -> None:
+    baseline = _policies(identity=100)
+    challenger = _policies(
+        conservative_run_payoffs=(4.0, 5.3, 5.3, 5.3, 5.3, 5.3),
+        identity=110,
+    )
+
+    reports = subject.round74_representation_economic_gate(
+        baseline,
+        challenger,
+    )
+
+    conservative = reports[0]
+    assert conservative["challenger_selected_metrics"]["total_net_bps"] > (
+        conservative["baseline_selected_metrics"]["total_net_bps"]
+    )
+    assert conservative["minimum_paired_run_net_delta_bps"] == -1.0
+    assert conservative["challenger_worse_run_count"] == 1
+    assert conservative["all_paired_runs_net_noninferior"] is False
+    assert conservative["noninferior"] is False
+    assert (
+        "conservative_paired_run_net_payoff_degraded" in conservative["reasons"]
+    )
+
 
 def test_representation_comparison_cannot_overstate_authority() -> None:
     proper = subject.round74_representation_proper_loss_gate(
@@ -159,6 +210,17 @@ def test_representation_comparison_cannot_overstate_authority() -> None:
             promoted=True,
             selected_representation="global_cross_asset",
         ).validate()
+
+    forged_economics = deepcopy(payload)
+    forged_economics["profile_economic_gates"][0][
+        "minimum_paired_run_net_delta_bps"
+    ] = -1.0
+    forged_economics.pop("comparison_sha256")
+    forged_economics["comparison_sha256"] = subject._canonical_sha256(
+        forged_economics
+    )
+    with pytest.raises(ValueError, match="paired economics differ"):
+        subject.Round74RepresentationComparison.from_dict(forged_economics)
 
 
 def test_representation_coordinator_fixes_challenger_architecture(
