@@ -32,7 +32,7 @@ from simple_ai_trading.impact_absorption_event_training import (
 
 
 WALL_NS = 1_800_000_000_000_000_000
-PURGE_NS = 300_000_000_000
+PURGE_NS = 310_000_000_000
 
 
 def _readonly(value: np.ndarray) -> np.ndarray:
