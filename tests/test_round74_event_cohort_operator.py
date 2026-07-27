@@ -242,6 +242,38 @@ def test_round74_v6_host_schedule_remains_hash_bound() -> None:
     assert limitations["profitability_or_edge_claim"] is False
 
 
+def test_round74_v7_host_schedule_is_exact_and_pre_execution_only() -> None:
+    evidence = json.loads(CURRENT_HOST_SCHEDULE.read_text(encoding="utf-8"))
+    claimed = evidence.pop("artifact_sha256")
+
+    assert claimed == _canonical_sha256(evidence)
+    assert evidence["cohort_plan_sha256"] == ROUND74_EVENT_COHORT_PLAN_SHA256
+    assert evidence["operator_contract_artifact_sha256"] == (
+        "c4c8b9bafdfec6cbfb95d96edf789e73d109e8d4117108ac69df407fd24b4962"
+    )
+    scheduler = evidence["host_scheduler"]
+    assert scheduler["task_name"] == "SimpleAITrading-Round74-EventCohort-v7"
+    assert scheduler["state"] == "Ready"
+    assert scheduler["enabled"] is True
+    assert scheduler["next_run_time_utc"] == "2026-07-27T23:00:00Z"
+    assert scheduler["last_trigger_utc"] == "2026-08-05T15:45:00Z"
+    assert scheduler["repetition_interval"] == "PT1H15M"
+    assert scheduler["stop_at_duration_end"] is False
+    assert scheduler["multiple_instances"] == "IgnoreNew"
+    assert scheduler["start_when_available"] is False
+    assert scheduler["task_execution_time_limit"] == "PT1H14M"
+    assert evidence["superseded_host_scheduler"]["state"] == "Disabled"
+    readiness = evidence["future_slot_zero_readiness"]
+    assert readiness["ready_for_current_slot"] is True
+    assert readiness["wal_absent"] is True
+    assert readiness["no_active_capture_process"] is True
+    limitations = evidence["limitations"]
+    assert limitations["future_execution_proven_now"] is False
+    assert limitations["cohort_slot_admitted_now"] is False
+    assert limitations["failed_v5_capture_admitted"] is False
+    assert limitations["profitability_or_edge_claim"] is False
+
+
 def test_round74_v5_slot_zero_failure_is_hash_bound_and_never_reused() -> None:
     evidence = json.loads(V5_SLOT_ZERO_FAILURE.read_text(encoding="utf-8"))
     claimed = evidence.pop("artifact_sha256")
