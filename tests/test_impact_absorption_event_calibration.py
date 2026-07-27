@@ -36,7 +36,7 @@ def _partition(tuning_runs: int = 24) -> Round74EventRunPartition:
                 capture_report_sha256=f"{index + 1:064x}",
                 capture_start_wall_ns=start,
                 capture_end_wall_ns=start + duration,
-                eligible_anchor_start_wall_ns=start + 300_000_000_000,
+                eligible_anchor_start_wall_ns=start + 320_000_000_000,
                 eligible_anchor_end_wall_ns=start + 800_000_000_000,
             )
         )
