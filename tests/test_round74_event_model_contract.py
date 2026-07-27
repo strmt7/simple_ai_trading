@@ -69,6 +69,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
+    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION,
@@ -119,7 +120,7 @@ from simple_ai_trading.round74_event_model_operator import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v58.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v59.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -127,7 +128,7 @@ AI_RUNTIME_PREFLIGHT_PATH = (
 )
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-attention-v8-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-multi-timescale-v9-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -257,6 +258,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["event_training_sha256"] == _file_sha256(
         source["event_training_path"]
     )
+    assert source["contract_generator_sha256"] == _file_sha256(
+        source["contract_generator_path"]
+    )
     assert source["storage_sha256"] == _file_sha256(source["storage_path"])
     assert (
         source["event_sequence_schema_version"] == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
@@ -364,7 +368,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["target_context_panel_schema_version"] == (
         ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
     )
-    assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 43
+    assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
     assert source["feature_names_sha256"] == (ROUND74_EVENT_FEATURE_NAMES_SHA256)
     data_scope = design["data_scope"]
     assert data_scope["symbols"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
@@ -374,8 +378,12 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     cohort = design["cohort_admission_contract"]
     assert cohort["implemented_now"] is True
     assert cohort["plan_sha256"] == (
-        "c19caee6042531f0a86b9c2f3ef9b1de9380889eeb34758e6a27922fc6fee9e9"
+        "acf3e4feb8a918b03ab8d85c9ce730022aed1581181301ed513bd4ab4399dfcb"
     )
+    assert cohort["post_capture_dataset_schema_version"] == (
+        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+    )
+    assert cohort["raw_capture_schedule_changed_for_multiscale_features"] is False
     assert cohort["role_counts"] == {
         "training": 120,
         "tuning": 24,
@@ -391,6 +399,13 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     features = design["causal_feature_contract"]
     assert features["per_event_asset_identity_retained"] is True
     assert features["window_may_cross_long_gap"] is False
+    assert features["absolute_top_20_bid_and_ask_quote_depth_retained"] is True
+    assert features["continuous_time_state_half_lives_seconds"] == list(
+        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+    )
+    assert features["continuous_time_decay_uses_receipt_nanoseconds"] is True
+    assert features["fixed_event_rate_assumption_permitted"] is False
+    assert features["state_future_receipt_or_target_access"] is False
     scaler = features["feature_scaler"]
     assert scaler["implemented_now"] is True
     assert scaler["fit_on_training_partition_only"] is True
@@ -815,7 +830,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert training["policy_binds_entire_causal_source_chain"] is True
     assert training["cross_platform_bitwise_reproducibility_claim"] is False
     linear = design["candidate_panel"]["event_pooling_linear"]
-    assert linear["parameter_count"] == 13_000
+    assert linear["parameter_count"] == 19_900
     assert linear["nonlinear_encoder"] is False
     assert linear["monotone_distributional_heads_shared_with_other_candidates"] is True
     assert design["candidate_panel"]["complexity_has_promotion_privilege"] is False
@@ -830,7 +845,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         <= (temporal["causal_receptive_field_events"])
     )
     attention = design["candidate_panel"]["causal_event_attention"]
-    assert attention["parameter_count"] == 151_876
+    assert attention["parameter_count"] == 153_532
     assert attention["hidden_channels"] == ROUND74_EVENT_ATTENTION_HIDDEN_CHANNELS
     assert attention["attention_heads"] == ROUND74_EVENT_ATTENTION_HEADS
     assert attention["layers"] == ROUND74_EVENT_ATTENTION_LAYERS
@@ -1108,10 +1123,12 @@ def test_round74_event_replay_evidence_is_exact_read_only_and_pre_target() -> No
         == binding["event_sequence_replay_execution_git_commit"]
     )
     assert replay["artifact_sha256"] == binding["event_sequence_replay_artifact_sha256"]
+    assert binding["event_sequence_replay_current_source_bound"] is False
     assert (
         replay["event_sequence_source_sha256"]
-        == design["source_binding"]["event_sequence_sha256"]
+        != design["source_binding"]["event_sequence_sha256"]
     )
+    assert "sequence-v2 only" in binding["event_sequence_replay_reuse_scope"]
     evidence = replay["replay"]
     assert evidence["observation_count"] == 50_444
     assert evidence["token_count"] == evidence["token_limit"] == 50_000
@@ -1259,12 +1276,10 @@ def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None
     )
     assert verification["frozen_sequence_fully_covered"] is True
     assert evidence["input_contract"]["masked_action_targets"] == 1
-    for candidate_id, candidate in evidence["candidates"].items():
-        assert (
-            candidate["parameter_count"]
-            == design["candidate_panel"][candidate_id]["parameter_count"]
-        )
+    for candidate in evidence["candidates"].values():
+        assert candidate["parameter_count"] > 0
         assert candidate["parameter_max_abs_change"] > 0.0
+    assert binding["event_model_directml_current_source_bound"] is False
     interpretation = evidence["interpretation"]
     assert interpretation["real_market_targets_used"] is False
     assert interpretation["model_fit_performed"] is False
@@ -1359,6 +1374,15 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     assert inputs["real_market_targets_used"] is False
     assert inputs["test_batches_consumed"] == 0
     assert inputs["candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert inputs["candidate_parameter_counts"] == {
+        candidate_id: design["candidate_panel"][candidate_id]["parameter_count"]
+        for candidate_id in ROUND74_EVENT_MODEL_CANDIDATES
+    }
+    assert inputs["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES)
+    assert inputs["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert inputs["state_half_lives_seconds"] == list(
+        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+    )
     assert inputs["seeds"] == list(ROUND74_EVENT_TRAINING_DEFAULT_SEEDS)
     assert inputs["training_capture_runs"] == 2
     assert inputs["optimization_population"] == {

@@ -81,6 +81,18 @@ from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_dataset import (
+    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_scaling import (
+    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
+)
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_FEATURE_NAMES_SHA256,
+    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
+    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
+)
 from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
@@ -96,7 +108,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v44.json"
+    / "round-074-local-ai-review-design-v45.json"
 )
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
@@ -172,9 +184,13 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "review_preparation",
         "worker",
         "runtime",
+        "event_sequence",
+        "event_scaler",
+        "event_dataset",
         "event_model",
         "event_training",
         "event_model_operator",
+        "contract_generator",
     ):
         assert source[f"{label}_sha256"] == _file_sha256(source[f"{label}_path"])
     assert source["model_manifest_schema_version"] == (
@@ -266,6 +282,20 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         == ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION
     )
     assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
+    assert source["event_sequence_schema_version"] == (
+        ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+    )
+    assert source["event_scaler_schema_version"] == (
+        ROUND74_EVENT_SCALER_SCHEMA_VERSION
+    )
+    assert source["event_dataset_schema_version"] == (
+        ROUND74_EVENT_DATASET_SCHEMA_VERSION
+    )
+    assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
+    assert source["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert source["state_half_lives_seconds"] == list(
+        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+    )
     assert (
         source["event_training_schema_version"] == ROUND74_EVENT_TRAINING_SCHEMA_VERSION
     )
@@ -324,6 +354,17 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute_claimed == _canonical_sha256(compute_evidence)
     assert compute_claimed == compute["artifact_sha256"]
     assert compute["candidate_ids"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert compute["candidate_parameter_counts"] == {
+        "event_pooling_linear": 19_900,
+        "event_pooling_mlp": 40_228,
+        "causal_event_tcn": 130_532,
+        "causal_event_attention": 153_532,
+    }
+    assert compute["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES)
+    assert compute["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert compute["state_half_lives_seconds"] == list(
+        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+    )
     assert compute["fresh_process_execution_count"] == 2
     assert compute["peer_update_count"] == 12
     assert compute["accelerated_backend"] == "directml"
@@ -406,9 +447,19 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is True
     )
     assert architecture["ml_candidate_panel_includes_causal_attention"] is True
-    assert architecture["ml_attention_candidate_parameter_count"] == 151_876
+    assert architecture["ml_attention_candidate_parameter_count"] == 153_532
     assert architecture["ml_attention_strict_causal_mask"] is True
     assert architecture["ml_attention_directml_preflight_completed"] is True
+    assert architecture["ml_continuous_time_multiscale_state_implemented"] is True
+    assert architecture["ml_multiscale_state_half_lives_seconds"] == list(
+        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+    )
+    assert architecture["ml_multiscale_state_future_or_target_access"] is False
+    assert (
+        architecture["ai_receives_target_free_multiscale_candidate_context_only"]
+        is True
+    )
+    assert architecture["multiscale_directml_preflight_completed"] is True
     assert architecture["ml_gradient_population_unit"] == "capture_run"
     assert architecture["ml_row_pooled_optimizer_steps_permitted"] is False
     assert architecture["ml_one_minibatch_per_run_per_optimizer_step"] is True
