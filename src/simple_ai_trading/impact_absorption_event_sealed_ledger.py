@@ -25,9 +25,7 @@ from .types import config_paths
 
 ROUND74_SEALED_LEDGER_SCHEMA_VERSION = "round-074-sealed-ledger-v1"
 ROUND74_SEALED_CLAIM_SCHEMA_VERSION = "round-074-sealed-claim-v1"
-ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = (
-    "round-074-sealed-dataset-identity-v1"
-)
+ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION = "round-074-sealed-dataset-identity-v1"
 ROUND74_SEALED_RESULT_OUTCOMES = (
     "candidate_passed_predeclared_gates",
     "candidate_failed_predeclared_gates",
@@ -299,8 +297,7 @@ class Round74SealedDatasetIdentity:
     def validate(self) -> None:
         expected_runs = ROUND74_EVENT_COHORT_DEFAULT_ROLE_COUNTS["test"]
         if (
-            self.schema_version
-            != ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
+            self.schema_version != ROUND74_SEALED_DATASET_IDENTITY_SCHEMA_VERSION
             or _SHA256.fullmatch(self.test_access_sha256) is None
             or _SHA256.fullmatch(self.partition_sha256) is None
             or _SHA256.fullmatch(self.scaler_sha256) is None
