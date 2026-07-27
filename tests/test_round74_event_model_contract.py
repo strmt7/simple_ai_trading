@@ -11,6 +11,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 )
 from simple_ai_trading.impact_absorption_ai_bridge import (
     ROUND74_AI_BRIDGE_SCHEMA_VERSION,
+    ROUND74_AI_RECENT_BLOCK_EVENTS,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
@@ -76,7 +77,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v18.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v19.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -526,6 +527,13 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["actual_model_inference_attempted_now"] is False
     assert ai["post_inference_full_gpu_residency_required"] is True
     assert ai["causal_calibrated_model_bridge_implemented_now"] is True
+    assert ai["causal_recent_direction_summary_implemented_now"] is True
+    assert ai["causal_recent_direction_block_events"] == (
+        ROUND74_AI_RECENT_BLOCK_EVENTS
+    )
+    assert (
+        ai["causal_recent_direction_realized_target_or_future_access"] is False
+    )
     assert ai["bridge_may_access_realized_targets"] is False
     assert ai["raw_uncalibrated_probability_permitted"] is False
     assert ai["request_binds_probability_calibration_sha256"] is True
