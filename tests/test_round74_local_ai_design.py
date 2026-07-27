@@ -108,7 +108,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v46.json"
+    / "round-074-local-ai-review-design-v47.json"
 )
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
