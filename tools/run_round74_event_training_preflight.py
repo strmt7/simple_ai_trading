@@ -20,9 +20,11 @@ from simple_ai_trading.impact_absorption_event_dataset import (
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_SIDES,
     ROUND74_EVENT_SEQUENCE_LENGTH,
+    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
 from simple_ai_trading.impact_absorption_event_training import (
     Round74EventTrainingConfig,
@@ -185,7 +187,7 @@ def _run(repository: Path) -> dict[str, object]:
         backend = policy["backend"]
         optimization_population = policy["optimization_population"]
         result: dict[str, object] = {
-            "schema_version": "round-074-event-training-preflight-run-v5",
+            "schema_version": "round-074-event-training-preflight-run-v6",
             "execution_git_commit": _git_commit(repository),
             "backend": {
                 key: backend[key]
@@ -227,6 +229,17 @@ def _run(repository: Path) -> dict[str, object]:
                     tuning.regime_unpredictability_eligibility.sum()
                 ),
                 "candidate_ids": list(config.candidate_ids),
+                "candidate_parameter_counts": {
+                    candidate_id: panel[candidate_id][
+                        "parameter_count_per_peer"
+                    ]
+                    for candidate_id in config.candidate_ids
+                },
+                "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
+                "feature_names_sha256": ROUND74_EVENT_FEATURE_NAMES_SHA256,
+                "state_half_lives_seconds": list(
+                    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+                ),
                 "seeds": list(config.seeds),
                 "epochs": config.maximum_epochs,
                 "minibatch_rows": config.minibatch_rows,
