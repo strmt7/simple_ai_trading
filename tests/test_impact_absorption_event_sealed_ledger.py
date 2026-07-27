@@ -865,6 +865,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     selection.validate()
     inference = _candidate_inference(batch, calibration, selection)
     progress: list[Mapping[str, object]] = []
+    finalized_models: list[str] = []
 
     panel = prepare_round74_target_free_ai_reviews(
         inference,
@@ -872,6 +873,9 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         probability_calibration=calibration,
         same_entry_latency_budget_ns=1_000_000,
         review_runner=_blocked_review,
+        model_batch_finalizer=lambda binding: finalized_models.append(
+            binding.model_name
+        ),
         progress_callback=progress.append,
         wall_time_ns=lambda: 1_900_000_000_000_000_000,
     )
@@ -888,6 +892,8 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert panel.reviews[0][1].queue_delay_ns == 1_000_000_000_000
     assert panel.reviews[0][1].effective_review_latency_ns == 6_000_000_000_000
     assert len(panel.reviews) == 2
+    assert panel.model_batch_unload_enforced is True
+    assert finalized_models == ["fino1:8b", "qwen3:8b"]
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
         review.runtime_status == "blocked_capability"

@@ -19,6 +19,7 @@ from simple_ai_trading.impact_absorption_ai_protocol import (
 from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeConfig,
     review_round74_ai_candidate,
+    unload_round74_ai_model,
 )
 from simple_ai_trading.impact_absorption_ai_worker import (
     Round74AIWorkerEnvelope,
@@ -501,3 +502,64 @@ def test_runtime_rejects_non_loopback_or_relaxed_resource_policy() -> None:
             model_name="fino1:8b",
             minimum_free_vram_gb=7.9,
         ).validate()
+
+
+def test_declared_model_batch_unload_is_digest_bound_and_verified() -> None:
+    loaded = OllamaResidencyReport(
+        requested_model="fino1:8b",
+        status="gpu_resident",
+        loaded_model="fino1:8b",
+        digest=MODEL_DIGEST,
+        size_bytes=1_000,
+        size_vram_bytes=1_000,
+        vram_to_model_ratio=1.0,
+    )
+    reports = iter([loaded, loaded, _unloaded_residency("", "fino1:8b", 1.0)])
+    requests: list[tuple[str, dict[str, object], float]] = []
+    sleeps: list[float] = []
+
+    def post(
+        url: str,
+        payload: dict[str, object],
+        timeout_seconds: float,
+    ) -> object:
+        requests.append((url, payload, timeout_seconds))
+        return {"done": True}
+
+    unloaded = unload_round74_ai_model(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        residency_inspector=lambda *_args, **_kwargs: next(reports),
+        provider_poster=post,
+        monotonic=lambda: 0.0,
+        sleeper=sleeps.append,
+    )
+
+    assert unloaded is True
+    assert requests == [
+        (
+            "http://127.0.0.1:11434/api/generate",
+            {"model": "fino1:8b", "keep_alive": 0, "stream": False},
+            10.0,
+        )
+    ]
+    assert sleeps == [0.25]
+
+
+def test_declared_model_batch_unload_does_not_load_an_absent_model() -> None:
+    posted = False
+
+    def post(*_args: object, **_kwargs: object) -> object:
+        nonlocal posted
+        posted = True
+        return {"done": True}
+
+    unloaded = unload_round74_ai_model(
+        Round74AIRuntimeConfig(model_name="fino1:8b"),
+        _manifest(),
+        residency_inspector=_unloaded_residency,
+        provider_poster=post,
+    )
+
+    assert unloaded is False
+    assert posted is False
