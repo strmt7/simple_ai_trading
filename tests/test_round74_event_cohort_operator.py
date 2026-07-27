@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import hashlib
+from io import StringIO
 import json
 from pathlib import Path
 import shutil
@@ -138,6 +139,7 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
         )
     execution = contract["slot_execution_contract"]
     assert execution["automatic_retry_permitted"] is False
+    assert execution["heartbeat_state_persisted_during_capture"] is True
     assert execution["partition_written_only_after_all_168_bindings"] is True
     partition = contract["partition_contract"]
     assert partition["target_schema_version"] == "round-074-executable-event-target-v10"
@@ -472,6 +474,52 @@ def test_round74_cohort_process_failure_precedes_supervisor_json_parse() -> None
             stop_method="terminate",
             stdout_lines=[],
         )
+
+
+def test_round74_cohort_persists_live_progress_before_child_completion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from simple_ai_trading import round74_event_cohort_operator as operator
+
+    class ControlledProcess:
+        pid = 41184
+
+        def __init__(self) -> None:
+            self.stdout = StringIO("")
+            self.stderr = StringIO("")
+            self.poll_count = 0
+
+        def poll(self) -> int | None:
+            self.poll_count += 1
+            return None if self.poll_count == 1 else 1
+
+        def wait(self, *, timeout: int) -> int:
+            assert timeout == 60
+            return 1
+
+    plan = load_round74_cohort_operator_plan(REPOSITORY)
+    controlled_process = ControlledProcess()
+    monkeypatch.setattr(operator.subprocess, "Popen", lambda *_args, **_kwargs: controlled_process)
+    monkeypatch.setattr(operator.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(
+        operator.time,
+        "time_ns",
+        lambda: plan.slot(0).scheduled_start_wall_ns,
+    )
+
+    with pytest.raises(ValueError, match=r"return_code=1.*stdout=empty"):
+        operator._run_slot_process(tmp_path, plan, ordinal=0)
+
+    state = json.loads(
+        (operator._slot_root(tmp_path, 0) / "state.json").read_text(encoding="utf-8")
+    )
+    assert state["phase"] == "running"
+    assert state["process_id"] == controlled_process.pid
+    assert state["monitor_sample_count"] == 1
+    assert state["last_progress"]["elapsed_seconds"] >= 0.0
+    assert state["last_progress"]["database_and_wal_growth_bytes"] == 0
+    assert state["last_progress_at_utc"].endswith("Z")
 
 
 def test_round74_cohort_failure_terminalizes_reserved_slot(
