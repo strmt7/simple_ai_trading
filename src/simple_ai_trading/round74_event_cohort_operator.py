@@ -428,6 +428,23 @@ def _validate_slot_audit(
         raise ValueError("Round 74 cohort fresh audit identity differs")
 
 
+def _raise_for_capture_process_failure(
+    *,
+    return_code: int,
+    breaches: list[str],
+    stop_method: str,
+    stdout_lines: list[str],
+) -> None:
+    if return_code == 0 and not breaches:
+        return
+    stdout_state = "present" if "".join(stdout_lines).strip() else "empty"
+    raise ValueError(
+        "Round 74 cohort capture process failed: "
+        f"return_code={return_code} breaches={breaches} "
+        f"stop={stop_method or 'not_requested'} stdout={stdout_state}"
+    )
+
+
 def _run_slot_process(
     repository: Path,
     plan: Round74EventCohortPlan,
@@ -563,15 +580,16 @@ def _run_slot_process(
         if stdout_thread.is_alive() or stderr_thread.is_alive():
             raise RuntimeError("Round 74 cohort output drain did not terminate")
 
+    _raise_for_capture_process_failure(
+        return_code=return_code,
+        breaches=breaches,
+        stop_method=stop_method,
+        stdout_lines=stdout_lines,
+    )
     supervisor = _strict_json_object(
         "".join(stdout_lines),
         "Round 74 cohort supervisor",
     )
-    if return_code != 0 or breaches:
-        raise ValueError(
-            "Round 74 cohort capture process failed: "
-            f"return_code={return_code} breaches={breaches} stop={stop_method}"
-        )
     attempts = supervisor.get("attempts")
     if (
         not isinstance(attempts, list)
@@ -718,6 +736,29 @@ def run_round74_cohort_current_slot(repository: Path) -> int:
             failure["result_sha256"] = _canonical_sha256(failure)
             if not (slot_root / "result.json").exists():
                 _durable_json_replace(slot_root / "result.json", failure)
+            state_path = slot_root / "state.json"
+            prior_state: dict[str, object] = {}
+            if state_path.exists():
+                try:
+                    prior_state = _strict_json_object(
+                        state_path.read_text(encoding="utf-8"),
+                        "Round 74 cohort slot state",
+                    )
+                except (OSError, ValueError):
+                    prior_state = {}
+            terminal_state = {
+                **prior_state,
+                "schema_version": ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION,
+                "plan_sha256": plan.plan_sha256,
+                "slot_ordinal": ordinal,
+                "role": plan.slot(ordinal).role,
+                "phase": "terminal",
+                "outcome": "failed",
+                "error": failure["error"],
+                "result_sha256": failure["result_sha256"],
+                "automatic_retry_permitted": False,
+            }
+            _durable_json_replace(state_path, terminal_state)
         _persist_halt(
             root,
             slot_ordinal=ordinal,

@@ -34,7 +34,9 @@ from simple_ai_trading.round74_event_cohort_operator import (
     ROUND74_EVENT_COHORT_PLAN_SHA256,
     ROUND74_EVENT_COHORT_PROCESS_IO_LIMIT_BYTES,
     _load_contiguous_bindings,
+    _raise_for_capture_process_failure,
     load_round74_cohort_operator_plan,
+    run_round74_cohort_current_slot,
     select_round74_cohort_slot,
     validate_round74_active_prerequisite,
 )
@@ -47,7 +49,7 @@ OPERATOR_CONTRACT = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-event-cohort-operator-v7.json"
+    / "round-074-event-cohort-operator-v8.json"
 )
 HOST_SCHEDULE = (
     REPOSITORY
@@ -401,3 +403,107 @@ def test_round74_cohort_requires_every_prior_binding(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="prior slot 0 is missing"):
         _load_contiguous_bindings(tmp_path, plan, before_ordinal=1)
+
+
+def test_round74_cohort_process_failure_precedes_supervisor_json_parse() -> None:
+    _raise_for_capture_process_failure(
+        return_code=0,
+        breaches=[],
+        stop_method="",
+        stdout_lines=['{"status":"completed"}'],
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"return_code=-15 breaches=\['slot_capture_deadline_exceeded'\] "
+            r"stop=terminate stdout=empty"
+        ),
+    ):
+        _raise_for_capture_process_failure(
+            return_code=-15,
+            breaches=["slot_capture_deadline_exceeded"],
+            stop_method="terminate",
+            stdout_lines=[],
+        )
+
+
+def test_round74_cohort_failure_terminalizes_reserved_slot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from simple_ai_trading import round74_event_cohort_operator as operator
+
+    plan = load_round74_cohort_operator_plan(REPOSITORY)
+    monkeypatch.setattr(
+        operator,
+        "load_round74_cohort_operator_plan",
+        lambda _repository: plan,
+    )
+    monkeypatch.setattr(operator.time, "time_ns", lambda: plan.scheduled_start_wall_ns)
+    monkeypatch.setattr(
+        operator,
+        "validate_round74_active_prerequisite",
+        lambda _repository: {},
+    )
+    monkeypatch.setattr(
+        operator,
+        "_load_contiguous_bindings",
+        lambda _repository, _plan, *, before_ordinal: [],
+    )
+    monkeypatch.setattr(
+        operator,
+        "inspect_round74_cohort_readiness",
+        lambda _repository, *, now_wall_ns: {"ready_for_current_slot": True},
+    )
+
+    def fail_reserved_slot(
+        repository: Path,
+        _plan: object,
+        *,
+        ordinal: int,
+    ) -> tuple[dict[str, object], dict[str, object]]:
+        slot_root = operator._slot_root(repository, ordinal)
+        reservation = {
+            "schema_version": operator.ROUND74_EVENT_COHORT_OPERATOR_STATE_SCHEMA_VERSION,
+            "plan_sha256": plan.plan_sha256,
+            "slot_ordinal": ordinal,
+            "role": plan.slot(ordinal).role,
+            "reserved_at_utc": "2026-07-27T16:00:00Z",
+            "automatic_retry_permitted": False,
+        }
+        operator._durable_json_replace(
+            slot_root / "attempt-reservation.json",
+            reservation,
+        )
+        operator._durable_json_replace(
+            slot_root / "state.json",
+            {**reservation, "phase": "running", "process_id": 41184},
+        )
+        raise ValueError(
+            "Round 74 cohort capture process failed: "
+            "return_code=-15 breaches=['slot_capture_deadline_exceeded'] "
+            "stop=terminate stdout=empty"
+        )
+
+    monkeypatch.setattr(operator, "_run_slot_process", fail_reserved_slot)
+
+    with pytest.raises(ValueError, match="slot_capture_deadline_exceeded"):
+        run_round74_cohort_current_slot(tmp_path)
+
+    slot_root = operator._slot_root(tmp_path, 0)
+    result = json.loads((slot_root / "result.json").read_text(encoding="utf-8"))
+    state = json.loads((slot_root / "state.json").read_text(encoding="utf-8"))
+    halt = json.loads(
+        (operator._campaign_root(tmp_path) / "halt.json").read_text(encoding="utf-8")
+    )
+
+    assert result["outcome"] == "failed"
+    assert result["automatic_retry_permitted"] is False
+    assert state["phase"] == "terminal"
+    assert state["outcome"] == "failed"
+    assert state["process_id"] == 41184
+    assert state["result_sha256"] == result["result_sha256"]
+    assert state["automatic_retry_permitted"] is False
+    assert halt["slot_ordinal"] == 0
+    assert halt["automatic_retry_permitted"] is False
