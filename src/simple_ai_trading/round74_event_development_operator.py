@@ -1,0 +1,531 @@
+"""Coordinate post-cohort Round 74 training, calibration, and policy selection.
+
+This module is development-only. It cannot load a sealed test batch, place an
+order, or grant paper, testnet, or live execution authority.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+import hashlib
+import json
+from pathlib import Path
+import warnings
+
+import numpy as np
+import torch
+from torch import nn
+
+from .compute import require_backend, resolve_backend, torch_device_for_backend
+from .impact_absorption_event_action_policy import (
+    ROUND74_ACTION_PROFILES,
+    Round74ActionPolicySelection,
+    build_round74_action_inference_context,
+    derive_round74_action_candidates,
+    select_round74_action_policy_batches,
+)
+from .impact_absorption_event_calibration import (
+    Round74ProbabilityCalibration,
+    fit_round74_probability_calibration,
+)
+from .impact_absorption_event_dataset import Round74EventTrainingBatch
+from .impact_absorption_event_model import Round74EventModelOutput
+from .impact_absorption_event_training import (
+    Round74EventTrainingConfig,
+    Round74PretestPolicyArtifact,
+    load_round74_pretest_policy,
+    train_and_seal_round74_pretest_policy_from_prepared_roles,
+)
+from .round74_event_model_operator import (
+    Round74PreparedDevelopmentData,
+    Round74PreparedTuningRoles,
+)
+from .storage import write_bytes_atomic
+
+
+ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION = "round-074-development-policy-operator-v1"
+ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION = (
+    "round-074-development-policy-bundle-v1"
+)
+
+_SHA256 = "0123456789abcdef"
+
+
+def _canonical_bytes(value: object) -> bytes:
+    return json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("ascii")
+
+
+def _canonical_sha256(value: object) -> str:
+    return hashlib.sha256(_canonical_bytes(value)).hexdigest()
+
+
+def _is_sha256(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in _SHA256 for character in value)
+    )
+
+
+def _module_sha256(filename: str) -> str:
+    payload = (Path(__file__).parent / filename).read_bytes()
+    normalized = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(normalized).hexdigest()
+
+
+def _to_device_array(value: np.ndarray, device: object) -> torch.Tensor:
+    copied = np.array(value, dtype=np.float32, order="C", copy=True)
+    return torch.from_numpy(copied).to(device)
+
+
+def _concatenate_outputs(
+    outputs: Sequence[Round74EventModelOutput],
+) -> Round74EventModelOutput:
+    selected = tuple(outputs)
+    if not selected:
+        raise ValueError("Round 74 development model output is empty")
+
+    def concatenate(name: str) -> torch.Tensor:
+        return torch.cat(tuple(getattr(value, name) for value in selected), dim=0)
+
+    result = Round74EventModelOutput(
+        payoff_quantiles_bps=concatenate("payoff_quantiles_bps"),
+        maximum_adverse_excursion_quantiles_bps=concatenate(
+            "maximum_adverse_excursion_quantiles_bps"
+        ),
+        positive_payoff_logits=concatenate("positive_payoff_logits"),
+        adverse_selection_logits=concatenate("adverse_selection_logits"),
+        regime_unpredictability_logits=concatenate("regime_unpredictability_logits"),
+    )
+    result.validate(int(result.payoff_quantiles_bps.shape[0]))
+    return result
+
+
+def _infer_batch(
+    model: nn.Module,
+    batch: Round74EventTrainingBatch,
+    *,
+    minibatch_rows: int,
+    device: object,
+) -> Round74EventModelOutput:
+    batch.validate()
+    if (
+        isinstance(minibatch_rows, bool)
+        or not isinstance(minibatch_rows, int)
+        or minibatch_rows < 1
+    ):
+        raise ValueError("Round 74 development inference minibatch differs")
+    outputs: list[Round74EventModelOutput] = []
+    model.eval()
+    with torch.no_grad():
+        for start in range(0, batch.rows, minibatch_rows):
+            stop = min(start + minibatch_rows, batch.rows)
+            features = _to_device_array(batch.feature_values[start:stop], device)
+            outputs.append(model(features))
+    result = _concatenate_outputs(outputs)
+    if int(result.payoff_quantiles_bps.shape[0]) != batch.rows:
+        raise RuntimeError("Round 74 development inference row count differs")
+    return result
+
+
+def _calibration_source_sha256(
+    *,
+    policy: Mapping[str, object],
+    roles: Round74PreparedTuningRoles,
+) -> str:
+    artifact = policy.get("model_artifact")
+    if not isinstance(artifact, Mapping):
+        raise ValueError("Round 74 development model artifact differs")
+    value = {
+        "schema_version": ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION,
+        "pretest_policy_sha256": policy.get("policy_sha256"),
+        "model_sha256": artifact.get("sha256"),
+        "tuning_subpartition_sha256": roles.subpartition.subpartition_sha256,
+        "calibration_batch_sha256": [
+            batch.batch_sha256 for batch in roles.calibration_batches
+        ],
+        "event_model_module_sha256": _module_sha256("impact_absorption_event_model.py"),
+        "calibration_module_sha256": _module_sha256(
+            "impact_absorption_event_calibration.py"
+        ),
+        "development_operator_module_sha256": _module_sha256(
+            "round74_event_development_operator.py"
+        ),
+    }
+    return _canonical_sha256(value)
+
+
+@dataclass(frozen=True)
+class Round74DevelopmentPolicyBundle:
+    """Hash-bound development result for all three risk profiles."""
+
+    pretest_policy_sha256: str
+    pretest_model_sha256: str
+    tuning_subpartition_sha256: str
+    model_selection_batch_sha256: tuple[str, ...]
+    calibration_batch_sha256: tuple[str, ...]
+    policy_selection_batch_sha256: tuple[str, ...]
+    probability_calibration: Round74ProbabilityCalibration
+    action_policies: tuple[Round74ActionPolicySelection, ...]
+    backend_kind: str
+    backend_device: str
+    backend_vendor: str
+    warning_count: int
+    schema_version: str = ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        digest_values = (
+            self.pretest_policy_sha256,
+            self.pretest_model_sha256,
+            self.tuning_subpartition_sha256,
+            *self.model_selection_batch_sha256,
+            *self.calibration_batch_sha256,
+            *self.policy_selection_batch_sha256,
+        )
+        if (
+            self.schema_version != ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION
+            or any(not _is_sha256(value) for value in digest_values)
+            or len(self.model_selection_batch_sha256) != 12
+            or len(self.calibration_batch_sha256) != 6
+            or len(self.policy_selection_batch_sha256) != 6
+            or len(
+                set(
+                    (
+                        *self.model_selection_batch_sha256,
+                        *self.calibration_batch_sha256,
+                        *self.policy_selection_batch_sha256,
+                    )
+                )
+            )
+            != 24
+            or not self.backend_kind.strip()
+            or not self.backend_device.strip()
+            or not self.backend_vendor.strip()
+            or isinstance(self.warning_count, bool)
+            or self.warning_count < 0
+        ):
+            raise ValueError("Round 74 development policy bundle differs")
+        self.probability_calibration.validate()
+        if (
+            self.probability_calibration.pretest_policy_sha256
+            != self.pretest_policy_sha256
+            or self.probability_calibration.tuning_subpartition_sha256
+            != self.tuning_subpartition_sha256
+            or tuple(policy.profile for policy in self.action_policies)
+            != ROUND74_ACTION_PROFILES
+        ):
+            raise ValueError("Round 74 development policy identity differs")
+        for policy in self.action_policies:
+            policy.validate()
+            if (
+                policy.pretest_policy_sha256 != self.pretest_policy_sha256
+                or policy.probability_calibration_sha256
+                != self.probability_calibration.calibration_sha256
+                or policy.tuning_subpartition_sha256 != self.tuning_subpartition_sha256
+                or policy.target_batch_sha256 != self.policy_selection_batch_sha256
+            ):
+                raise ValueError("Round 74 development action policy differs")
+
+    @property
+    def bundle_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        value: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "operator_schema_version": ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION,
+            "pretest_policy_sha256": self.pretest_policy_sha256,
+            "pretest_model_sha256": self.pretest_model_sha256,
+            "tuning_subpartition_sha256": self.tuning_subpartition_sha256,
+            "model_selection_batch_sha256": list(self.model_selection_batch_sha256),
+            "calibration_batch_sha256": list(self.calibration_batch_sha256),
+            "policy_selection_batch_sha256": list(self.policy_selection_batch_sha256),
+            "probability_calibration": self.probability_calibration.as_dict(),
+            "action_policies": [policy.as_dict() for policy in self.action_policies],
+            "backend": {
+                "kind": self.backend_kind,
+                "device": self.backend_device,
+                "vendor": self.backend_vendor,
+                "warning_count": self.warning_count,
+            },
+            "authority": {
+                "representative_market_training_completed": True,
+                "sealed_test_accessed": False,
+                "financial_edge_tested": False,
+                "profitability_claim": False,
+                "ai_uplift_claim": False,
+                "paper_trading_authority": False,
+                "testnet_trading_authority": False,
+                "live_trading_authority": False,
+            },
+        }
+        if include_sha256:
+            value["bundle_sha256"] = _canonical_sha256(value)
+        return value
+
+
+@dataclass(frozen=True)
+class Round74DevelopmentPolicyArtifact:
+    bundle_sha256: str
+    bundle_path: Path
+    pretest_policy: Round74PretestPolicyArtifact
+    bundle: Round74DevelopmentPolicyBundle
+
+
+def _fit_calibration(
+    outputs: Sequence[Round74EventModelOutput],
+    batches: Sequence[Round74EventTrainingBatch],
+    *,
+    roles: Round74PreparedTuningRoles,
+    policy: Mapping[str, object],
+    backend_kind: str,
+    backend_device: str,
+    device: object,
+) -> Round74ProbabilityCalibration:
+    combined = _concatenate_outputs(outputs)
+    selected_batches = tuple(batches)
+
+    def concatenate(name: str) -> torch.Tensor:
+        return _to_device_array(
+            np.concatenate(
+                tuple(np.asarray(getattr(batch, name)) for batch in selected_batches),
+                axis=0,
+            ),
+            device,
+        )
+
+    payoff = concatenate("net_payoff_bps")
+    return fit_round74_probability_calibration(
+        positive_payoff_logits=combined.positive_payoff_logits,
+        positive_payoff_labels=(payoff > 0.0).to(dtype=torch.float32),
+        adverse_selection_logits=combined.adverse_selection_logits,
+        adverse_selection_labels=concatenate("adverse_selection"),
+        action_eligibility=concatenate("action_eligibility"),
+        regime_unpredictability_logits=(combined.regime_unpredictability_logits),
+        regime_unpredictability_labels=concatenate("regime_unpredictability"),
+        regime_eligibility=concatenate("regime_unpredictability_eligibility"),
+        row_run_ids=tuple(
+            run_id for batch in selected_batches for run_id in batch.run_id
+        ),
+        tuning_subpartition=roles.subpartition,
+        pretest_policy_sha256=str(policy["policy_sha256"]),
+        calibration_source_sha256=_calibration_source_sha256(
+            policy=policy,
+            roles=roles,
+        ),
+        backend_kind=backend_kind,
+        backend_device=backend_device,
+    )
+
+
+def calibrate_and_select_round74_development_policy(
+    tuning_roles: Round74PreparedTuningRoles,
+    *,
+    pretest_policy_path: str | Path,
+    compute_backend: str = "auto",
+    minibatch_rows: int = 128,
+) -> Round74DevelopmentPolicyBundle:
+    """Calibrate and select all profiles without loading sealed test data."""
+
+    tuning_roles.validate()
+    model, policy = load_round74_pretest_policy(pretest_policy_path)
+    development = policy.get("development_data")
+    artifact = policy.get("model_artifact")
+    authority = policy.get("authority")
+    if not all(
+        isinstance(value, Mapping) for value in (development, artifact, authority)
+    ):
+        raise ValueError("Round 74 development pretest policy differs")
+    assert isinstance(development, Mapping)
+    assert isinstance(artifact, Mapping)
+    assert isinstance(authority, Mapping)
+    training_batch_sha256 = development.get("training_batch_sha256")
+    tuning_batch_sha256 = development.get("tuning_batch_sha256")
+    if (
+        not isinstance(training_batch_sha256, list)
+        or len(training_batch_sha256) != 120
+        or not isinstance(tuning_batch_sha256, list)
+        or tuning_batch_sha256
+        != [batch.batch_sha256 for batch in tuning_roles.model_selection_batches]
+        or development.get("representative_window_policy_applied") is not True
+        or development.get("test_batches_consumed") != 0
+        or authority.get("sealed_test_evaluated") is not False
+    ):
+        raise ValueError("Round 74 development tuning role binding differs")
+    backend = require_backend(resolve_backend(compute_backend))
+    device = torch_device_for_backend(backend)
+    model = model.to(device)
+    prior_deterministic = torch.are_deterministic_algorithms_enabled()
+    warning_messages: list[str] = []
+    try:
+        torch.use_deterministic_algorithms(True)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            calibration_outputs = tuple(
+                _infer_batch(
+                    model,
+                    batch,
+                    minibatch_rows=minibatch_rows,
+                    device=device,
+                )
+                for batch in tuning_roles.calibration_batches
+            )
+            calibration = _fit_calibration(
+                calibration_outputs,
+                tuning_roles.calibration_batches,
+                roles=tuning_roles,
+                policy=policy,
+                backend_kind=backend.kind,
+                backend_device=str(device),
+                device=device,
+            )
+            policy_outputs = tuple(
+                _infer_batch(
+                    model,
+                    batch,
+                    minibatch_rows=minibatch_rows,
+                    device=device,
+                )
+                for batch in tuning_roles.policy_selection_batches
+            )
+            contexts = tuple(
+                build_round74_action_inference_context(batch)
+                for batch in tuning_roles.policy_selection_batches
+            )
+            action_policies = tuple(
+                select_round74_action_policy_batches(
+                    tuning_roles.policy_selection_batches,
+                    tuple(
+                        derive_round74_action_candidates(
+                            output,
+                            context,
+                            calibration,
+                            pretest_policy_sha256=str(policy["policy_sha256"]),
+                            profile=profile,
+                        )
+                        for output, context in zip(
+                            policy_outputs,
+                            contexts,
+                            strict=True,
+                        )
+                    ),
+                    tuning_roles.subpartition,
+                )
+                for profile in ROUND74_ACTION_PROFILES
+            )
+            warning_messages.extend(str(item.message) for item in caught)
+    finally:
+        torch.use_deterministic_algorithms(prior_deterministic)
+        model.to("cpu")
+    fallback = tuple(
+        message
+        for message in warning_messages
+        if "not currently supported on the DML backend" in message
+        or "fall back to run on the CPU" in message
+    )
+    if fallback:
+        raise RuntimeError(f"Round 74 development used CPU fallback: {fallback}")
+    result = Round74DevelopmentPolicyBundle(
+        pretest_policy_sha256=str(policy["policy_sha256"]),
+        pretest_model_sha256=str(artifact["sha256"]),
+        tuning_subpartition_sha256=tuning_roles.subpartition.subpartition_sha256,
+        model_selection_batch_sha256=tuple(
+            batch.batch_sha256 for batch in tuning_roles.model_selection_batches
+        ),
+        calibration_batch_sha256=tuple(
+            batch.batch_sha256 for batch in tuning_roles.calibration_batches
+        ),
+        policy_selection_batch_sha256=tuple(
+            batch.batch_sha256 for batch in tuning_roles.policy_selection_batches
+        ),
+        probability_calibration=calibration,
+        action_policies=action_policies,
+        backend_kind=backend.kind,
+        backend_device=str(device),
+        backend_vendor=backend.vendor,
+        warning_count=len(warning_messages),
+    )
+    result.validate()
+    return result
+
+
+def train_calibrate_and_select_round74_development_policy(
+    prepared: Round74PreparedDevelopmentData,
+    tuning_roles: Round74PreparedTuningRoles,
+    *,
+    output_directory: str | Path,
+    compute_backend: str = "auto",
+    config: Round74EventTrainingConfig | None = None,
+    inference_minibatch_rows: int = 128,
+) -> Round74DevelopmentPolicyArtifact:
+    """Run the complete development path and write one immutable bundle."""
+
+    prepared.validate()
+    tuning_roles.validate()
+    prepared_tuning_sha256 = tuple(
+        batch.batch_sha256 for batch in prepared.tuning_batches
+    )
+    role_tuning_sha256 = tuple(
+        batch.batch_sha256
+        for batch in (
+            *tuning_roles.model_selection_batches,
+            *tuning_roles.calibration_batches,
+            *tuning_roles.policy_selection_batches,
+        )
+    )
+    if (
+        prepared_tuning_sha256 != role_tuning_sha256
+        or prepared.partition.partition_sha256
+        != tuning_roles.subpartition.parent_partition_sha256
+    ):
+        raise ValueError("Round 74 development prepared-role binding differs")
+    output = Path(output_directory)
+    pretest = train_and_seal_round74_pretest_policy_from_prepared_roles(
+        prepared.training_batches,
+        tuning_roles,
+        output_directory=output,
+        compute_backend=compute_backend,
+        config=config,
+    )
+    bundle = calibrate_and_select_round74_development_policy(
+        tuning_roles,
+        pretest_policy_path=pretest.policy_path,
+        compute_backend=compute_backend,
+        minibatch_rows=inference_minibatch_rows,
+    )
+    payload = _canonical_bytes(bundle.as_dict()) + b"\n"
+    path = output / f"round74-development-policy-{bundle.bundle_sha256}.json"
+    if path.exists():
+        if path.read_bytes() != payload:
+            raise FileExistsError("Round 74 immutable development bundle differs")
+    else:
+        write_bytes_atomic(path, payload)
+    persisted = json.loads(path.read_text(encoding="ascii"))
+    claimed = persisted.pop("bundle_sha256", None)
+    if claimed != _canonical_sha256(persisted):
+        raise RuntimeError("Round 74 persisted development bundle differs")
+    return Round74DevelopmentPolicyArtifact(
+        bundle_sha256=bundle.bundle_sha256,
+        bundle_path=path,
+        pretest_policy=pretest,
+        bundle=bundle,
+    )
+
+
+__all__ = [
+    "ROUND74_DEVELOPMENT_OPERATOR_SCHEMA_VERSION",
+    "ROUND74_DEVELOPMENT_POLICY_BUNDLE_SCHEMA_VERSION",
+    "Round74DevelopmentPolicyArtifact",
+    "Round74DevelopmentPolicyBundle",
+    "calibrate_and_select_round74_development_policy",
+    "train_calibrate_and_select_round74_development_policy",
+]
