@@ -110,7 +110,9 @@ def _partition() -> Round74EventRunPartition:
     entries = []
     for index, role in enumerate(("training", "tuning", "test")):
         start = WALL + index * 2_000 * NS
-        anchor = start + (12_700_000_000 if index == 0 else 310 * NS)
+        anchor = start + (
+            12_700_000_000 if index == 0 else 310_500_000_000
+        )
         entries.append(
             Round74EventRunPartitionEntry(
                 run_id=f"{index + 1:032x}",

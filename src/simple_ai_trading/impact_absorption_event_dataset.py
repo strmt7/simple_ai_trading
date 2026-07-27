@@ -27,18 +27,20 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
 from .impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS,
+    ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS,
     Round74EventTargetAnchor,
     Round74EventTargetEngine,
     Round74EventTargetOutcome,
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v4"
-ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v3"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v5"
+ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v4"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
     max(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS) * 1_000_000_000
     + 2 * ROUND74_EVENT_TARGET_MAXIMUM_LATENCY_NS
+    + 2 * ROUND74_EVENT_TARGET_MAXIMUM_STATE_LATENESS_NS
 )
 ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS = (
     ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
