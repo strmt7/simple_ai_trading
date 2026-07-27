@@ -1,0 +1,80 @@
+{
+  "schema_version": "round-074-exchange-info-capture-v1",
+  "artifact_sha256": "6615f010cf6b951985b6b4bbf837aa3f15bd1f6002238f07eab8b6551f761d4d",
+  "captured_at_utc": "2026-07-27T05:51:02.622933Z",
+  "execution_git_commit": "d41c9eb8003aa4314e49cad6c744d7057d7e44cc",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "security_type": "NONE",
+    "request_weight": 1,
+    "timeout_seconds": 15.0,
+    "retry_count": 0,
+    "credential_material_sent": false,
+    "request_started_wall_ns": 1785131461887310700,
+    "request_started_monotonic_ns": 518784343000000
+  },
+  "response": {
+    "status": 200,
+    "received_wall_ns": 1785131462622933400,
+    "received_monotonic_ns": 518785093000000,
+    "elapsed_monotonic_ns": 750000000,
+    "body_bytes": 1042597,
+    "headers": {
+      "content_type": "application/json",
+      "date": "Mon, 27 Jul 2026 05:51:02 GMT",
+      "x_mbx_used_weight_1m": "1"
+    },
+    "raw_payload_persisted": false
+  },
+  "source_binding": {
+    "parser_path": "src/simple_ai_trading/impact_absorption_exchange_info_evidence.py",
+    "parser_sha256": "e8d7d3d1d4217ad824fe535ce1e0d6bef7e36315a5b7135d7c1ae7380cfa6260",
+    "capture_tool_path": "tools/capture_round74_exchange_info_evidence.py",
+    "capture_tool_sha256": "f972e09107614eebc01178ed2c6e4b0788befbf217e171645c82a64d981d4eb6"
+  },
+  "quantity_rules": {
+    "market_quantity_rules_by_symbol": {
+      "BTCUSDT": {
+        "step_size": "0.001",
+        "minimum_quantity": "0.001",
+        "maximum_quantity": "120",
+        "minimum_notional": "50"
+      },
+      "ETHUSDT": {
+        "step_size": "0.001",
+        "minimum_quantity": "0.001",
+        "maximum_quantity": "2000",
+        "minimum_notional": "20"
+      },
+      "SOLUSDT": {
+        "step_size": "0.01",
+        "minimum_quantity": "0.01",
+        "maximum_quantity": "80000",
+        "minimum_notional": "5"
+      }
+    },
+    "quantity_filter": "MARKET_LOT_SIZE",
+    "notional_filter": "MIN_NOTIONAL"
+  },
+  "target_evidence": {
+    "schema_version": "round-074-target-evidence-v1",
+    "kind": "quantity_rules",
+    "source_id": "binance_usdm_fapi_v1_exchange_info",
+    "environment": "binance_usdm_mainnet",
+    "observed_wall_ns": 1785131462622933400,
+    "record_count": 3,
+    "source_query_or_protocol_sha256": "912903e513666ce800ae767961b6a8d2f7e961a4b0adbbd4cbb4239440487a5f",
+    "source_payload_sha256": "b23e076ecee1e6aa77ed54aa42c5019ff87c11ce91c4c0b37b16b9b03199684a",
+    "claims_sha256": "9f578f0faf99cf6e4dbeaea011953d2d34564fda8bef6af09eb38ca94acfb66b",
+    "evidence_sha256": "1b9e3b01a5a5862a92d696e8f75afc3170eaee48348b014a8a9681d171480c82"
+  },
+  "authority": {
+    "model_training": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

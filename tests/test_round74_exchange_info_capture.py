@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import subprocess
 
+import pytest
+
 from simple_ai_trading.impact_absorption_event_targets import (
     ROUND74_EVENT_TARGET_SYMBOLS,
     Round74EventTargetEvidence,
@@ -21,12 +23,8 @@ from tools.capture_round74_exchange_info_evidence import (
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
-ARTIFACT_PATH = (
-    REPOSITORY
-    / "docs"
-    / "model-research"
-    / "action-value"
-    / "round-074-exchange-info-evidence-2026-07-27.json"
+ARTIFACT_DIRECTORY = (
+    REPOSITORY / "docs" / "model-research" / "action-value"
 )
 
 
@@ -40,8 +38,19 @@ def _git_blob_sha256(commit: str, relative_path: str) -> str:
     return hashlib.sha256(result.stdout).hexdigest()
 
 
-def test_round74_exchange_info_capture_is_real_hash_bound_evidence() -> None:
-    artifact = json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+@pytest.mark.parametrize(
+    "artifact_name",
+    (
+        "round-074-exchange-info-evidence-2026-07-27.json",
+        "round-074-exchange-info-evidence-2026-07-27-v2.json",
+    ),
+)
+def test_round74_exchange_info_capture_is_real_hash_bound_evidence(
+    artifact_name: str,
+) -> None:
+    artifact = json.loads(
+        (ARTIFACT_DIRECTORY / artifact_name).read_text(encoding="utf-8")
+    )
     claimed = artifact.pop("artifact_sha256")
     assert claimed == _canonical_sha256(artifact)
     assert (
