@@ -21,14 +21,19 @@ from typing import Any
 from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_FEATURE_NAMES,
+    ROUND74_EVENT_FEATURE_NAMES_SHA256,
+    ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
+)
 from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 
 
-EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v16"
-RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v5"
+EVIDENCE_SCHEMA_VERSION = "round-074-event-training-directml-preflight-evidence-v17"
+RUN_SCHEMA_VERSION = "round-074-event-training-preflight-run-v6"
 SOURCE_PATHS = {
     "event_sequence": "src/simple_ai_trading/impact_absorption_event_sequence.py",
     "event_scaling": "src/simple_ai_trading/impact_absorption_event_scaling.py",
@@ -160,6 +165,7 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
     ):
         raise RuntimeError("Round 74 DirectML backend did not pass its strict gate")
     candidate_ids = inputs.get("candidate_ids")
+    candidate_parameter_counts = inputs.get("candidate_parameter_counts")
     seeds = inputs.get("seeds")
     training_batch_sha256 = inputs.get("training_batch_sha256")
     optimization_population = inputs.get("optimization_population")
@@ -168,6 +174,24 @@ def _validate_run(run: dict[str, Any], *, commit: str) -> None:
         or len(candidate_ids) < 2
         or len(candidate_ids) != len(set(candidate_ids))
         or not all(isinstance(value, str) and value for value in candidate_ids)
+        or not isinstance(candidate_parameter_counts, dict)
+        or list(candidate_parameter_counts) != candidate_ids
+        or any(
+            isinstance(value, bool) or not isinstance(value, int) or value <= 0
+            for value in candidate_parameter_counts.values()
+        )
+        or any(
+            later <= earlier
+            for earlier, later in zip(
+                candidate_parameter_counts.values(),
+                tuple(candidate_parameter_counts.values())[1:],
+            )
+        )
+        or inputs.get("feature_count") != len(ROUND74_EVENT_FEATURE_NAMES)
+        or inputs.get("feature_names_sha256")
+        != ROUND74_EVENT_FEATURE_NAMES_SHA256
+        or inputs.get("state_half_lives_seconds")
+        != list(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS)
         or not isinstance(seeds, list)
         or not seeds
         or not all(isinstance(value, int) and value > 0 for value in seeds)
