@@ -1,0 +1,82 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v59",
+  "artifact_kind": "compact_isolated_worker_latency_delta",
+  "supersedes_artifact_sha256": "ccd152a0614508d758692dfc22fd43c1290866b3744be71d6fb6f196813cf805",
+  "implementation_git_commit": "954a2b4da58f129651a2684031c09cb513c4dd4f",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "worker": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_worker.py",
+      "sha256": "8375b72b6cb9b2bf9cf1175155dd95f68500acfbc5d3a4e64e7c88c51d0c4b06",
+      "session_response_schema_version": "round-074-ai-worker-session-response-v1"
+    },
+    "runtime": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_runtime.py",
+      "sha256": "b128c151a64200dd3c372f609999e650bfbba328e6b80b9dc2ea79e195319cf7",
+      "schema_version": "round-074-ai-runtime-outcome-v4"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "0025fc2cbc8b8fa9ad45477cd0cb3fa9b68626989388e21cc020361cab764151",
+      "schema_version": "round-074-ai-review-panel-v12"
+    },
+    "runtime_preflight_publisher": {
+      "path": "tools/publish_round74_ai_runtime_preflight.py",
+      "sha256": "86cbb8f0d4fb47f0ae56ad7dce39f745524b4a99a56aa76224fda3eb75725095",
+      "schema_version": "round-074-local-ai-runtime-preflight-v6"
+    }
+  },
+  "worker_session_contract": {
+    "transport": "multiprocessing_connection_send_bytes_recv_bytes",
+    "serialization": "strict_canonical_json_without_pickle",
+    "process_scope": "one_supervised_spawned_process_per_pinned_model_batch",
+    "model_identity_bound_on_first_request": true,
+    "model_identity_change_permitted": false,
+    "maximum_request_bytes": 1000000,
+    "maximum_response_bytes": 1000000,
+    "per_request_timeout_enforced_by_parent": true,
+    "timeout_terminates_worker_process": true,
+    "worker_error_terminates_worker_process": true,
+    "next_independent_request_may_start_fresh_worker": true,
+    "exact_model_unloaded_after_batch": true,
+    "remote_inference_permitted": false
+  },
+  "host_preflight": {
+    "path": "docs/model-research/action-value/round-074-local-ai-runtime-preflight-v6-2026-07-27.json",
+    "artifact_sha256": "ef3330fe0d4e5ad124397e9c511773e3e8578dc7b2284ed8d9c573e47a837954",
+    "prior_path": "docs/model-research/action-value/round-074-local-ai-runtime-preflight-v5-2026-07-27.json",
+    "prior_artifact_sha256": "417aeb73ae74af68f1136a39dbfeaa982e6e149e4a94ac5458e17f6eac2afe82",
+    "model_count": 2,
+    "request_count": 4,
+    "worker_session_restart_count": 0,
+    "fino_warm_prior_elapsed_ns": 6469000000,
+    "fino_warm_current_elapsed_ns": 2641000000,
+    "fino_warm_latency_reduction_bps": 5917,
+    "qwen_warm_prior_elapsed_ns": 4250000000,
+    "qwen_warm_current_elapsed_ns": 2531000000,
+    "qwen_warm_latency_reduction_bps": 4044,
+    "cold_and_warm_decisions_equal_per_model": true,
+    "decisions_equal_to_prior_preflight_per_model": true,
+    "all_requests_fully_gpu_resident": true,
+    "resident_models_after": []
+  },
+  "verification": {
+    "focused_tests_passed": 105,
+    "byte_frame_reuse_tested": true,
+    "identity_drift_rejection_tested": true,
+    "runtime_session_integration_tested": true,
+    "host_two_model_session_reuse_verified": true,
+    "post_execution_residency_empty": true,
+    "sealed_test_accessed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "691ff6e0544a01f006a70a87e0e32459253fe69857838aa102ab44b0705b9865"
+}

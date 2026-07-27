@@ -163,6 +163,13 @@ MICROSTRUCTURE_HYPOTHESES_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v58.json"
 )
+WORKER_SESSION_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v59.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -827,6 +834,70 @@ def test_round74_ai_design_delta_keeps_microstructure_hypotheses_out_of_round() 
     assert verification["source_level_mismatch_recorded"]
     assert not verification["current_model_or_feature_contract_changed"]
     assert not verification["gpu_model_workload_executed"]
+    assert not verification["sealed_test_accessed"]
+    assert all(value is False for value in artifact["status"].values())
+
+
+def test_round74_ai_design_delta_binds_supervised_worker_latency_reduction() -> None:
+    previous = _load_json(MICROSTRUCTURE_HYPOTHESES_ARTIFACT_PATH)
+    artifact = _load_json(WORKER_SESSION_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    session = artifact["worker_session_contract"]
+    preflight = artifact["host_preflight"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v59"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in ("worker", "runtime", "review_panel", "runtime_preflight_publisher"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["runtime"]["schema_version"] == (
+        "round-074-ai-runtime-outcome-v4"
+    )
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v12"
+    )
+    assert session["serialization"] == "strict_canonical_json_without_pickle"
+    assert session["model_identity_bound_on_first_request"]
+    assert not session["model_identity_change_permitted"]
+    assert session["per_request_timeout_enforced_by_parent"]
+    assert session["timeout_terminates_worker_process"]
+    assert session["worker_error_terminates_worker_process"]
+    assert session["exact_model_unloaded_after_batch"]
+    assert not session["remote_inference_permitted"]
+    preflight_artifact = _load_json(REPOSITORY / preflight["path"])
+    prior_artifact = _load_json(REPOSITORY / preflight["prior_path"])
+    assert preflight["artifact_sha256"] == preflight_artifact["artifact_sha256"]
+    assert preflight["prior_artifact_sha256"] == prior_artifact["artifact_sha256"]
+    assert preflight["model_count"] == 2
+    assert preflight["request_count"] == 4
+    assert preflight["worker_session_restart_count"] == 0
+    assert (
+        preflight["fino_warm_current_elapsed_ns"]
+        < preflight["fino_warm_prior_elapsed_ns"]
+    )
+    assert (
+        preflight["qwen_warm_current_elapsed_ns"]
+        < preflight["qwen_warm_prior_elapsed_ns"]
+    )
+    assert preflight["fino_warm_latency_reduction_bps"] == 5917
+    assert preflight["qwen_warm_latency_reduction_bps"] == 4044
+    assert preflight["cold_and_warm_decisions_equal_per_model"]
+    assert preflight["decisions_equal_to_prior_preflight_per_model"]
+    assert preflight["all_requests_fully_gpu_resident"]
+    assert preflight["resident_models_after"] == []
+    assert verification["focused_tests_passed"] == 105
+    assert verification["byte_frame_reuse_tested"]
+    assert verification["identity_drift_rejection_tested"]
+    assert verification["runtime_session_integration_tested"]
+    assert verification["host_two_model_session_reuse_verified"]
+    assert verification["post_execution_residency_empty"]
     assert not verification["sealed_test_accessed"]
     assert all(value is False for value in artifact["status"].values())
 

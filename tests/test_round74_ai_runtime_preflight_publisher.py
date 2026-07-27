@@ -17,6 +17,13 @@ EVIDENCE_PATH = (
     / "action-value"
     / "round-074-local-ai-runtime-preflight-v5-2026-07-27.json"
 )
+SESSION_EVIDENCE_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-runtime-preflight-v6-2026-07-27.json"
+)
 SPEC = importlib.util.spec_from_file_location(
     "publish_round74_ai_runtime_preflight",
     TOOL_PATH,
@@ -178,3 +185,65 @@ def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None
     assert not evidence["interpretation"]["paper_trading_authority"]
     assert not evidence["interpretation"]["testnet_trading_authority"]
     assert not evidence["interpretation"]["live_trading_authority"]
+
+
+def test_persisted_session_preflight_reuses_workers_and_reduces_warm_latency() -> None:
+    prior = json.loads(EVIDENCE_PATH.read_text(encoding="ascii"))
+    evidence = json.loads(SESSION_EVIDENCE_PATH.read_text(encoding="ascii"))
+    claimed = evidence.pop("artifact_sha256")
+    commit = evidence["execution_git_commit"]
+    source = evidence["source_binding"]
+    outcomes = evidence["model_outcomes"]
+    isolation = evidence["runtime_isolation"]
+    verification = evidence["verification"]
+
+    assert claimed == PUBLISHER._canonical_sha256(evidence)
+    assert evidence["schema_version"] == "round-074-local-ai-runtime-preflight-v6"
+    for label in PUBLISHER.SOURCE_PATHS:
+        assert source[f"{label}_sha256"] == _source_sha256_at(
+            commit,
+            source[f"{label}_path"],
+        )
+    assert evidence["input_contract"]["worker_process_mode"] == (
+        "persistent_model_batch"
+    )
+    assert isolation["resident_models_before"] == []
+    assert isolation["resident_models_after"] == []
+    assert isolation["isolated_worker_process_per_model_batch"]
+    assert isolation["isolated_worker_reused_within_model_batch"]
+    assert isolation["isolated_worker_restart_count"] == 0
+    assert isolation["isolated_worker_processes_closed_after_batches"]
+    assert len(outcomes) == len(prior["model_outcomes"]) == 4
+    for index, outcome in enumerate(outcomes):
+        capability = outcome["outcome"]["capability"]
+        prior_outcome = prior["model_outcomes"][index]
+        assert outcome["model_name"] == prior_outcome["model_name"]
+        assert outcome["phase"] == prior_outcome["phase"]
+        assert outcome["outcome"]["status"] == "accepted"
+        assert outcome["outcome"]["worker_result"]["decision"] == (
+            prior_outcome["outcome"]["worker_result"]["decision"]
+        )
+        assert capability["worker_process_mode"] == "persistent_model_batch"
+        assert capability["worker_session_request_ordinal"] == (
+            1 if outcome["phase"] == "cold" else 2
+        )
+        assert capability["worker_session_restart_count_before_request"] == 0
+        assert capability["worker_session_restart_count_after_request"] == 0
+    assert outcomes[1]["outcome"]["elapsed_ns"] < (
+        prior["model_outcomes"][1]["outcome"]["elapsed_ns"]
+    )
+    assert outcomes[3]["outcome"]["elapsed_ns"] < (
+        prior["model_outcomes"][3]["outcome"]["elapsed_ns"]
+    )
+    assert outcomes[1]["outcome"]["elapsed_ns"] * 10_000 // (
+        prior["model_outcomes"][1]["outcome"]["elapsed_ns"]
+    ) == 4_082
+    assert outcomes[3]["outcome"]["elapsed_ns"] * 10_000 // (
+        prior["model_outcomes"][3]["outcome"]["elapsed_ns"]
+    ) == 5_955
+    assert verification["all_model_batches_reused_one_isolated_worker_process"]
+    assert verification["all_worker_session_restart_counts_zero"]
+    assert not evidence["interpretation"]["representative_market_ai_evaluation_completed"]
+    assert not evidence["interpretation"]["ai_uplift_established"]
+    assert not evidence["interpretation"]["financial_edge_established"]
+    assert not evidence["interpretation"]["profitability_claim"]
