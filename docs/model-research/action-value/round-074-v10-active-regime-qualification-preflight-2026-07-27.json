@@ -1,10 +1,19 @@
 {
-  "artifact_schema_version": "round-074-v10-active-regime-qualification-preflight-v2",
-  "artifact_sha256": "1f54db7e1ecae8f479bfe0c3d3b959fde1b96397b0850a96ac806b28cf278191",
-  "created_at_utc": "2026-07-26T19:16:54Z",
+  "artifact_schema_version": "round-074-v10-active-regime-qualification-preflight-v3",
+  "artifact_sha256": "5d5afce7f2ab42fa6dd3f31ea3460997b620225df216fd2d0534b42c33059428",
+  "created_at_utc": "2026-07-27T01:10:15Z",
   "implementation_git_commit": "a986a2e3d6c69abe9d6f497b432645545c6825e6",
+  "supersedes_artifact_sha256": "1f54db7e1ecae8f479bfe0c3d3b959fde1b96397b0850a96ac806b28cf278191",
   "supersedes_missed_preflight_artifact_sha256": "64d196d7a16bcff5c47fef41d2ea3717b67ab95de4a4088a51dc592cda36ba12",
   "missed_window_evidence_artifact_sha256": "d53cc2b399c0a9844fc8795b47db23c1a440f461686eaec17c050fd5376fece7",
+  "pre_attempt_correction": {
+    "prior_command_started": false,
+    "prior_market_stream_observed": false,
+    "prior_activity_classification_observed": false,
+    "correction_selected_from_market_outcome": false,
+    "defect": "The v2 invocation omitted an explicit database-size cap and therefore inherited the 8589934592-byte default, while the declared database already occupied 9433526272 bytes. The writer would reject startup because database bytes plus its 536870912-byte reserve exceeded that default.",
+    "correction": "Freeze an explicit cap from the observed database and WAL baseline plus the existing 536870912-byte one-hour growth ceiling and 536870912-byte writer reserve. No market, label, or model outcome was observed or used."
+  },
   "fresh_attempt_basis": {
     "prior_attempt_started": false,
     "prior_market_stream_observed": false,
@@ -75,6 +84,8 @@
       "3600",
       "--maximum-reconnects",
       "0",
+      "--database-size-cap-bytes",
+      "10507268096",
       "--progress-interval-seconds",
       "30",
       "--json"
@@ -83,6 +94,13 @@
     "operator_progress_check_interval_maximum_seconds": 120
   },
   "resource_contract": {
+    "baseline_observed_at_utc": "2026-07-27T01:10:15Z",
+    "baseline_database_bytes": 9433526272,
+    "baseline_wal_bytes": 0,
+    "inherited_default_database_size_cap_bytes": 8589934592,
+    "inherited_default_would_reject_before_stream_start": true,
+    "configured_database_size_cap_bytes": 10507268096,
+    "configured_database_size_cap_formula": "baseline_database_bytes + baseline_wal_bytes + database_and_wal_growth_limit_bytes_per_hour + 536870912_byte_writer_reserve",
     "process_io_transfer_limit_bytes_per_hour": 4294967296,
     "database_and_wal_growth_limit_bytes_per_hour": 536870912,
     "short_run_minimum_process_io_limit_bytes": 4294967296,

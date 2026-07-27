@@ -338,6 +338,14 @@ def test_round74_fresh_active_preflight_does_not_select_on_missed_window() -> No
     claimed = artifact.pop("artifact_sha256")
 
     assert claimed == _canonical_sha256(artifact)
+    assert artifact["artifact_schema_version"].endswith("-v3")
+    correction = artifact["pre_attempt_correction"]
+    assert correction["prior_command_started"] is False
+    assert correction["prior_market_stream_observed"] is False
+    assert correction["correction_selected_from_market_outcome"] is False
+    assert artifact["supersedes_artifact_sha256"] == (
+        "1f54db7e1ecae8f479bfe0c3d3b959fde1b96397b0850a96ac806b28cf278191"
+    )
     basis = artifact["fresh_attempt_basis"]
     assert basis["prior_attempt_started"] is False
     assert basis["prior_market_stream_observed"] is False
@@ -363,7 +371,19 @@ def test_round74_fresh_active_preflight_does_not_select_on_missed_window() -> No
     invocation = artifact["capture_invocation"]
     assert "--schema-version" in invocation["arguments"]
     assert "v10" in invocation["arguments"]
+    cap_index = invocation["arguments"].index("--database-size-cap-bytes")
+    assert invocation["arguments"][cap_index + 1] == "10507268096"
     assert invocation["operator_progress_check_interval_maximum_seconds"] == 120
+    resources = artifact["resource_contract"]
+    assert resources["baseline_database_bytes"] == 9433526272
+    assert resources["baseline_wal_bytes"] == 0
+    assert resources["inherited_default_would_reject_before_stream_start"] is True
+    assert resources["configured_database_size_cap_bytes"] == (
+        resources["baseline_database_bytes"]
+        + resources["baseline_wal_bytes"]
+        + resources["database_and_wal_growth_limit_bytes_per_hour"]
+        + 536870912
+    )
     authorization = artifact["authorization"]
     assert authorization[
         "one_v10_active_regime_qualification_attempt_in_fixed_window"
