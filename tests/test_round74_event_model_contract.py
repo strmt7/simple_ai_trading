@@ -67,6 +67,7 @@ from simple_ai_trading.impact_absorption_event_targets import (
 )
 from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
+    ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     ROUND74_EVENT_TRAINING_DEFAULT_SEEDS,
     ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
@@ -81,7 +82,7 @@ from simple_ai_trading.impact_absorption_event_financial_metrics import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v21.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v22.json"
 DIRECTML_PATH = (
     RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 )
@@ -287,6 +288,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         source["pretest_policy_schema_version"]
         == ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
     )
+    assert source["target_context_panel_schema_version"] == (
+        ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+    )
     assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 43
     assert source["feature_names_sha256"] == (
         ROUND74_EVENT_FEATURE_NAMES_SHA256
@@ -417,6 +421,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert dataset["development_batch_may_carry_test_access_digest"] is False
+    assert dataset["per_capture_run_target_context_uniformity_required"] is True
+    assert dataset["cross_run_target_context_change_permitted"] is True
+    assert dataset["pretest_policy_binds_exact_sorted_target_context_panel"] is True
     action = design["action_policy_contract"]
     assert action["implemented_now"] is True
     assert action["representative_market_policy_selected_now"] is False
@@ -491,6 +498,9 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     )
     assert training["pooled_loss_used_for_checkpoint_reload_verification"] is False
     assert training["unequal_tuning_run_size_regression_tested"] is True
+    assert training["per_capture_run_target_context_uniformity_required"] is True
+    assert training["cross_run_target_context_change_permitted"] is True
+    assert training["exact_sorted_target_context_panel_bound_into_policy"] is True
     assert training["high_activity_run_receives_extra_selection_weight"] is False
     assert training["worst_run_loss_is_reported"] is True
     assert training["worst_run_loss_is_primary_optimization_objective"] is False
@@ -792,6 +802,12 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
     )
     assert verification["pooled_loss_used_for_checkpoint_reload_verification"] is False
     assert verification["unequal_tuning_run_size_regression_test_passed"] is True
+    assert verification["target_context_panel_schema_version"] == (
+        ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+    )
+    assert verification["per_run_target_context_uniformity_required"] is True
+    assert verification["cross_run_target_context_change_permitted"] is True
+    assert verification["pretest_policy_binds_exact_sorted_target_context_panel"] is True
     assert verification["tcn_receptive_field_events"] == (
         ROUND74_EVENT_TCN_RECEPTIVE_FIELD
     )
