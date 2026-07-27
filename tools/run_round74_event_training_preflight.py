@@ -97,10 +97,7 @@ def _batch(
         partition_sha256="1" * 64,
         scaler_sha256="2" * 64,
         run_id=tuple(f"{identity:032x}" for _ in range(rows)),
-        symbol=tuple(
-            ("BTCUSDT", "ETHUSDT", "SOLUSDT")[row % 3]
-            for row in range(rows)
-        ),
+        symbol=tuple(("BTCUSDT", "ETHUSDT", "SOLUSDT")[row % 3] for row in range(rows)),
         decision_monotonic_ns=_readonly(times.copy()),
         decision_wall_ns=_readonly(times + start_wall_ns),
         endpoint_frame_index=_readonly(np.arange(rows, dtype=np.int64)),
@@ -207,9 +204,7 @@ def _run(repository: Path) -> dict[str, object]:
                 )
             },
             "input_contract": {
-                "training_batch_sha256": [
-                    batch.batch_sha256 for batch in training
-                ],
+                "training_batch_sha256": [batch.batch_sha256 for batch in training],
                 "tuning_batch_sha256": tuning.batch_sha256,
                 "training_rows": sum(batch.rows for batch in training),
                 "tuning_rows": tuning.rows,
@@ -230,9 +225,7 @@ def _run(repository: Path) -> dict[str, object]:
                 ),
                 "candidate_ids": list(config.candidate_ids),
                 "candidate_parameter_counts": {
-                    candidate_id: panel[candidate_id][
-                        "parameter_count_per_peer"
-                    ]
+                    candidate_id: panel[candidate_id]["parameter_count_per_peer"]
                     for candidate_id in config.candidate_ids
                 },
                 "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
@@ -264,9 +257,7 @@ def _run(repository: Path) -> dict[str, object]:
                     for candidate_id in config.candidate_ids
                 },
                 "candidate_pooled_tuning_proper_loss": {
-                    candidate_id: panel[candidate_id]["ensemble_tuning_metrics"][
-                        "loss"
-                    ]
+                    candidate_id: panel[candidate_id]["ensemble_tuning_metrics"]["loss"]
                     for candidate_id in config.candidate_ids
                 },
                 "peer_best_run_balanced_tuning_proper_loss": {

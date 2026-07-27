@@ -449,8 +449,7 @@ class Round74EventTrainingBatch:
             or any(value not in ROUND74_EVENT_SYMBOLS for value in self.symbol)
             or any(_SHA256.fullmatch(value) is None for value in self.sample_sha256)
             or any(
-                _SHA256.fullmatch(value) is None
-                for value in self.feature_window_sha256
+                _SHA256.fullmatch(value) is None for value in self.feature_window_sha256
             )
             or any(
                 _SHA256.fullmatch(value) is None for value in self.target_context_sha256
@@ -532,8 +531,7 @@ class Round74EventTrainingBatch:
                 for value in action_timing_arrays
             )
             or any(
-                np.any(value[action_mask == 1.0] < 0)
-                for value in action_timing_arrays
+                np.any(value[action_mask == 1.0] < 0) for value in action_timing_arrays
             )
             or np.any(
                 self.actual_exit_monotonic_ns[action_mask == 1.0]
@@ -722,9 +720,7 @@ def build_round74_event_training_batch(
             sample.feature_window_sha256 for sample in selected
         ),
         target_context_sha256=tuple(contexts),
-        test_access_sha256=tuple(
-            sample.test_access_sha256 for sample in selected
-        ),
+        test_access_sha256=tuple(sample.test_access_sha256 for sample in selected),
         feature_values=_readonly(feature_values),
         actual_entry_monotonic_ns=_readonly(actual_entry),
         actual_exit_monotonic_ns=_readonly(actual_exit),

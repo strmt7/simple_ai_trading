@@ -74,14 +74,8 @@ ROUND74_EVENT_FEATURE_NAMES = (
     "log1p_bid_depth_quote_20",
     "log1p_ask_depth_quote_20",
     "mid_log_return_bps",
-    *(
-        f"depth_signed_pressure_{band}_scaled"
-        for band in ROUND74_EVENT_BANDS
-    ),
-    *(
-        f"depth_absolute_flow_{band}_scaled"
-        for band in ROUND74_EVENT_BANDS
-    ),
+    *(f"depth_signed_pressure_{band}_scaled" for band in ROUND74_EVENT_BANDS),
+    *(f"depth_absolute_flow_{band}_scaled" for band in ROUND74_EVENT_BANDS),
     "trade_signed_quote_scaled",
     "trade_absolute_quote_scaled",
     "trade_price_to_mid_bps",
@@ -257,19 +251,13 @@ class _Round74TimeScaleState:
             raise ValueError("Round 74 time-scale state receipt order regressed")
         elapsed_seconds = (selected_ns - self._prior_ns) / 1_000_000_000.0
         output: list[float] = []
-        for index, half_life in enumerate(
-            ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
-        ):
+        for index, half_life in enumerate(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS):
             beta = math.log(2.0) / float(half_life)
             decay = math.exp(-beta * elapsed_seconds)
             interval_weight = -math.expm1(-beta * elapsed_seconds) / beta
-            exposure = (
-                decay * self._exposure_seconds[index] + interval_weight
-            )
+            exposure = decay * self._exposure_seconds[index] + interval_weight
             self._exposure_seconds[index] = exposure
-            self._return_bps[index] = (
-                decay * self._return_bps[index] + values[0]
-            )
+            self._return_bps[index] = decay * self._return_bps[index] + values[0]
             self._return_squared_bps[index] = (
                 decay * self._return_squared_bps[index] + values[0] * values[0]
             )
@@ -293,13 +281,9 @@ class _Round74TimeScaleState:
             if exposure <= 0.0:
                 output.extend((0.0,) * 7)
                 continue
-            projected_return = (
-                self._return_bps[index] / exposure * float(half_life)
-            )
+            projected_return = self._return_bps[index] / exposure * float(half_life)
             projected_variance = (
-                self._return_squared_bps[index]
-                / exposure
-                * float(half_life)
+                self._return_squared_bps[index] / exposure * float(half_life)
             )
             output.extend(
                 (
@@ -307,9 +291,7 @@ class _Round74TimeScaleState:
                     math.sqrt(max(0.0, projected_variance)),
                     _signed_log1p(self._trade_pressure[index] / exposure),
                     _signed_log1p(self._depth_pressure[index] / exposure),
-                    _signed_log1p(
-                        self._liquidation_pressure[index] / exposure
-                    ),
+                    _signed_log1p(self._liquidation_pressure[index] / exposure),
                     self._spread_integral[index] / exposure,
                     self._l1_imbalance_integral[index] / exposure,
                 )
@@ -341,14 +323,17 @@ class Round74EventToken:
             raise ValueError("Round 74 event token symbol is unsupported")
         if self.event_type not in ROUND74_EVENT_TYPES:
             raise ValueError("Round 74 event token type is unsupported")
-        if min(
-            self.frame_index,
-            self.message_index,
-            self.received_monotonic_ns,
-            self.received_wall_ns,
-            self.exchange_event_time_ms,
-            self.source_sequence_number,
-        ) < 0:
+        if (
+            min(
+                self.frame_index,
+                self.message_index,
+                self.received_monotonic_ns,
+                self.received_wall_ns,
+                self.exchange_event_time_ms,
+                self.source_sequence_number,
+            )
+            < 0
+        ):
             raise ValueError("Round 74 event token metadata is negative")
         if len(self.feature_values) != len(ROUND74_EVENT_FEATURE_NAMES):
             raise ValueError("Round 74 event token feature count differs")
@@ -404,12 +389,15 @@ class Round74ReplayObservation:
             raise ValueError("Round 74 observation symbol differs")
         if self.event_type not in ROUND74_EVENT_TYPES:
             raise ValueError("Round 74 observation event type differs")
-        if min(
-            self.frame_index,
-            self.message_index,
-            self.received_monotonic_ns,
-            self.received_wall_ns,
-        ) < 0:
+        if (
+            min(
+                self.frame_index,
+                self.message_index,
+                self.received_monotonic_ns,
+                self.received_wall_ns,
+            )
+            < 0
+        ):
             raise ValueError("Round 74 observation metadata is negative")
         is_depth = self.event_type == "depthUpdate"
         if is_depth != (self.depth_state is not None):
@@ -425,8 +413,7 @@ class Round74ReplayObservation:
                 or self.token.event_type != self.event_type
                 or self.token.frame_index != self.frame_index
                 or self.token.message_index != self.message_index
-                or self.token.received_monotonic_ns
-                != self.received_monotonic_ns
+                or self.token.received_monotonic_ns != self.received_monotonic_ns
                 or self.token.received_wall_ns != self.received_wall_ns
             ):
                 raise ValueError("Round 74 observation token identity differs")
@@ -522,8 +509,7 @@ class Round74EventSequenceEncoder:
         self._prior_record_ns = received_ns
 
         event_flags = tuple(
-            1.0 if event_type == candidate else 0.0
-            for candidate in ROUND74_EVENT_TYPES
+            1.0 if event_type == candidate else 0.0 for candidate in ROUND74_EVENT_TYPES
         )
         symbol_flags = tuple(
             1.0 if self.symbol == candidate else 0.0
@@ -552,9 +538,7 @@ class Round74EventSequenceEncoder:
             for change in depth_event.changes:
                 band = pre_event_level_band(pre_state, change)
                 signed = (
-                    change.added_quote
-                    if change.side == "bid"
-                    else -change.added_quote
+                    change.added_quote if change.side == "bid" else -change.added_quote
                 )
                 signed += (
                     -change.removed_quote
@@ -562,9 +546,7 @@ class Round74EventSequenceEncoder:
                     else change.removed_quote
                 )
                 depth_signed[band] += signed
-                depth_absolute[band] += (
-                    change.added_quote + change.removed_quote
-                )
+                depth_absolute[band] += change.added_quote + change.removed_quote
             self._l2_state = self.book.state()
             self._bid = float(self._l2_state.best_bid)
             self._ask = float(self._l2_state.best_ask)
@@ -595,9 +577,7 @@ class Round74EventSequenceEncoder:
             )
             exchange_event_time_ms = int(trade.event_time_ms)
             sign = 1.0 if trade.aggressive_side == "buy" else -1.0
-            trade_absolute = _signed_log1p(
-                _safe_ratio(trade.quote_notional, pre_depth)
-            )
+            trade_absolute = _signed_log1p(_safe_ratio(trade.quote_notional, pre_depth))
             trade_signed = sign * trade_absolute
             trade_pressure = sign * _safe_ratio(
                 trade.quote_notional,
@@ -626,9 +606,7 @@ class Round74EventSequenceEncoder:
             )
             liquidation_signed = _signed_log1p(liquidation_pressure)
 
-        mid, spread_bps, l1_imbalance, microprice_offset_bps = (
-            self._market_state()
-        )
+        mid, spread_bps, l1_imbalance, microprice_offset_bps = self._market_state()
         mid_log_return_bps = (
             0.0
             if self._prior_mid is None
@@ -797,9 +775,7 @@ class Round74MultiSymbolEventReplay:
             received_wall_ns=int(record.received_wall_ns),
             token=token,
             depth_state=(
-                encoder.latest_l2_state
-                if event_type == "depthUpdate"
-                else None
+                encoder.latest_l2_state if event_type == "depthUpdate" else None
             ),
             depth_update_is_stale=(
                 encoder.last_depth_update_is_stale
@@ -939,8 +915,7 @@ def iter_round74_v10_event_observations(
     if (
         str(report_row[0]) != IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION
         or str(report_row[1]) != IMPACT_CAPTURE_V10_CONTRACT_SHA256
-        or hashlib.sha256(report_text.encode("ascii")).hexdigest()
-        != str(report_row[3])
+        or hashlib.sha256(report_text.encode("ascii")).hexdigest() != str(report_row[3])
     ):
         raise ValueError("Round 74 v10 replay capture report identity differs")
     report = _strict_json_object(report_text)
@@ -965,9 +940,8 @@ def iter_round74_v10_event_observations(
         """,
         [run_id],
     ).fetchall()
-    if (
-        tuple(str(row[0]) for row in segment_rows) != IMPACT_CAPTURE_SYMBOLS
-        or any(str(row[1]) != "valid" for row in segment_rows)
+    if tuple(str(row[0]) for row in segment_rows) != IMPACT_CAPTURE_SYMBOLS or any(
+        str(row[1]) != "valid" for row in segment_rows
     ):
         raise ValueError("Round 74 v10 replay symbol segments are not valid")
     tick_sizes = {str(row[0]): float(row[2]) for row in segment_rows}

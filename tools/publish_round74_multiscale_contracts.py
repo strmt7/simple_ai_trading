@@ -186,7 +186,9 @@ def _parameter_counts(preflight: dict[str, Any]) -> dict[str, int]:
         or set(counts) != set(candidate_ids)
     ):
         raise ValueError("multi-timescale preflight input contract differs")
-    selected = {candidate_id: int(counts[candidate_id]) for candidate_id in candidate_ids}
+    selected = {
+        candidate_id: int(counts[candidate_id]) for candidate_id in candidate_ids
+    }
     if any(
         later <= earlier
         for earlier, later in zip(
@@ -229,9 +231,7 @@ def _operator_contract(
     partition["event_scaler_schema_version"] = ROUND74_EVENT_SCALER_SCHEMA_VERSION
     partition["feature_count"] = len(ROUND74_EVENT_FEATURE_NAMES)
     partition["feature_names_sha256"] = ROUND74_EVENT_FEATURE_NAMES_SHA256
-    partition["state_half_lives_seconds"] = list(
-        ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
-    )
+    partition["state_half_lives_seconds"] = list(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS)
     value["supersession_scope"] = {
         "raw_capture_plan_changed": False,
         "slot_schedule_or_roles_changed": False,
@@ -364,9 +364,7 @@ def _update_model_design(
             ],
             "event_training_directml_model_source_bound": True,
             "event_training_directml_training_source_bound": True,
-            "event_training_directml_feature_count": len(
-                ROUND74_EVENT_FEATURE_NAMES
-            ),
+            "event_training_directml_feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
             "event_training_directml_feature_names_sha256": (
                 ROUND74_EVENT_FEATURE_NAMES_SHA256
             ),
@@ -377,9 +375,9 @@ def _update_model_design(
             "event_training_directml_runner_sha256": preflight["source_binding"][
                 "preflight_runner_sha256"
             ],
-            "event_training_directml_publisher_sha256": preflight[
-                "source_binding"
-            ]["publisher_sha256"],
+            "event_training_directml_publisher_sha256": preflight["source_binding"][
+                "publisher_sha256"
+            ],
             "event_training_directml_dataset_legacy_checkout_sha256": preflight[
                 "source_binding"
             ]["event_dataset_sha256"],
@@ -423,8 +421,7 @@ def _update_model_design(
     cohort.update(
         {
             "plan_path": (
-                "docs/model-research/action-value/"
-                "round-074-event-cohort-plan-v4.json"
+                "docs/model-research/action-value/round-074-event-cohort-plan-v4.json"
             ),
             "plan_sha256": operator["cohort_plan_sha256"],
             "plan_implementation_git_commit": "6efe56902524941c35654902b889ad85cd50f1b1",
@@ -433,9 +430,9 @@ def _update_model_design(
             "operator_supersession_artifact_sha256": operator_supersession[
                 "artifact_sha256"
             ],
-            "operator_supersession_path": str(
-                OPERATOR_SUPERSESSION_OUTPUT
-            ).replace("\\", "/"),
+            "operator_supersession_path": str(OPERATOR_SUPERSESSION_OUTPUT).replace(
+                "\\", "/"
+            ),
             "raw_capture_schedule_changed_for_multiscale_features": False,
             "post_capture_dataset_schema_version": (
                 ROUND74_EVENT_DATASET_SCHEMA_VERSION
@@ -518,9 +515,7 @@ def _update_ai_design(
             "action_policy_schema_version": ROUND74_ACTION_POLICY_SCHEMA_VERSION,
             "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
             "feature_names_sha256": ROUND74_EVENT_FEATURE_NAMES_SHA256,
-            "state_half_lives_seconds": list(
-                ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
-            ),
+            "state_half_lives_seconds": list(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS),
             "contract_generator_path": GENERATOR_PATH,
             "contract_generator_sha256": _source_hash(repository, GENERATOR_PATH),
         }
@@ -536,17 +531,13 @@ def _update_ai_design(
             "candidate_parameter_counts": counts,
             "feature_count": len(ROUND74_EVENT_FEATURE_NAMES),
             "feature_names_sha256": ROUND74_EVENT_FEATURE_NAMES_SHA256,
-            "state_half_lives_seconds": list(
-                ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
-            ),
+            "state_half_lives_seconds": list(ROUND74_EVENT_STATE_HALF_LIVES_SECONDS),
         }
     )
     architecture = value["architecture"]
     architecture.update(
         {
-            "ml_attention_candidate_parameter_count": counts[
-                "causal_event_attention"
-            ],
+            "ml_attention_candidate_parameter_count": counts["causal_event_attention"],
             "ml_continuous_time_multiscale_state_implemented": True,
             "ml_multiscale_state_half_lives_seconds": list(
                 ROUND74_EVENT_STATE_HALF_LIVES_SECONDS

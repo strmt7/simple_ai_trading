@@ -291,7 +291,10 @@ def test_event_sequence_preserves_subsecond_order_and_financial_signs() -> None:
         250,
         300,
     ]
-    assert len({item.received_wall_ns // 1_000_000_000 for item in (ticker, trade, depth)}) == 1
+    assert (
+        len({item.received_wall_ns // 1_000_000_000 for item in (ticker, trade, depth)})
+        == 1
+    )
     assert _feature(trade, "event_is_aggregate_trade") == 1.0
     assert _feature(trade, "symbol_is_btcusdt") == 1.0
     assert _feature(trade, "symbol_is_ethusdt") == 0.0
@@ -392,9 +395,8 @@ def test_event_sequence_adds_causal_multi_timescale_liquidity_state() -> None:
     assert _feature(second, "ewm_return_projection_5s_bps") > 0.0
     assert _feature(second, "ewm_realized_volatility_300s_bps") > 0.0
     assert _feature(second, "ewm_signed_trade_pressure_per_second_30s") > 0.0
-    assert (
-        _feature(third, "ewm_signed_trade_pressure_per_second_5s")
-        < _feature(second, "ewm_signed_trade_pressure_per_second_5s")
+    assert _feature(third, "ewm_signed_trade_pressure_per_second_5s") < _feature(
+        second, "ewm_signed_trade_pressure_per_second_5s"
     )
     assert _feature(third, "ewm_spread_300s_bps") > 0.0
     assert _feature(third, "log1p_bid_depth_quote_20") > 0.0
