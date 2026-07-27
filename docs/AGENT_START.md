@@ -335,14 +335,17 @@ After parser or taxonomy changes, regenerate the header through the native build
   Baseline labels and AI replay both normalize exact walked entry notional to
   the same reference capital; requested size is never substituted for realized
   deployed notional after quantity quantization or delayed price movement. Read
-  `round-074-event-sequence-model-design-v54.json` and
-  `round-074-local-ai-review-design-v40.json`. Their source and evidence file
+  `round-074-event-sequence-model-design-v55.json` and
+  `round-074-local-ai-review-design-v41.json`. Their source and evidence file
   hashes canonicalize text line endings to LF, so Windows and Linux verify the
   same committed content. The sealed entry point reserves
   a metadata-only identity before loading target-bearing test batches, then
   invokes the concrete two-model target-free review adapter and read-only,
   per-run exact-L2 replay adapter only while the reservation is live. Both
   adapters reconcile the full claim, model, partition, and output identities.
+  The post-cohort model operator fits scaling from each unique training event,
+  replays one read-only in-memory batch per capture run, and never writes an
+  overlapping feature/target cache or reads the test role during development.
   This is implemented mechanics,
   not AI inference, uplift, edge, profitability, or trading authority.
 - Live Binance AI reviews are exact-case, asynchronous, hash-chained, and

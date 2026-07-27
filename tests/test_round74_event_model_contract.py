@@ -109,11 +109,14 @@ from simple_ai_trading.impact_absorption_exchange_info_evidence import (
 from simple_ai_trading.impact_absorption_target_assembly import (
     ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION,
 )
+from simple_ai_trading.round74_event_model_operator import (
+    ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v54.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v55.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
@@ -202,6 +205,13 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_target_assembly_schema_version"]
         == ROUND74_SOURCE_TARGET_ASSEMBLY_SCHEMA_VERSION
+    )
+    assert source["event_model_operator_sha256"] == _file_sha256(
+        source["event_model_operator_path"]
+    )
+    assert (
+        source["event_model_operator_schema_version"]
+        == ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION
     )
     assert source["event_execution_calibration_sha256"] == _file_sha256(
         source["event_execution_calibration_path"]
@@ -652,6 +662,22 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert dataset["model_payoff_label_uses_reference_capital_normalization"] is True
     assert dataset["model_mae_label_uses_reference_capital_normalization"] is True
     assert dataset["raw_position_bps_substituted_for_reference_capital_bps"] is False
+    assert dataset["bounded_post_cohort_model_operator_implemented_now"] is True
+    assert (
+        dataset["source_target_assembly_roundtrip_serialization_implemented"]
+        is True
+    )
+    assert dataset["per_capture_run_source_target_assembly_required"] is True
+    assert dataset["scaler_fit_source"] == (
+        "each unique raw training event exactly once"
+    )
+    assert dataset["scaler_fit_may_read_tuning_or_test_events"] is False
+    assert dataset["training_source_replay_passes"] == 2
+    assert dataset["tuning_source_replay_passes"] == 1
+    assert dataset["test_source_replay_passes_during_development"] == 0
+    assert dataset["one_in_memory_batch_per_capture_run"] is True
+    assert dataset["intermediate_feature_or_target_cache_written"] is False
+    assert dataset["source_database_write_access_required"] is False
     action = design["action_policy_contract"]
     assert action["implemented_now"] is True
     assert action["representative_market_policy_selected_now"] is False
@@ -1041,6 +1067,16 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is True
     )
     assert authority["source_derived_target_assembly_implementation"] is True
+    assert (
+        authority["bounded_post_cohort_model_data_operator_implementation"]
+        is True
+    )
+    assert (
+        authority[
+            "source_target_assembly_roundtrip_serialization_implementation"
+        ]
+        is True
+    )
     assert (
         authority[
             "complete_empty_bounded_funding_response_implementation"
