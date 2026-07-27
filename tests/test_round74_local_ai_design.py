@@ -96,7 +96,14 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v43.json"
+    / "round-074-local-ai-review-design-v44.json"
+)
+RUNTIME_PREFLIGHT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-runtime-preflight-v1-2026-07-27.json"
 )
 
 
@@ -346,6 +353,35 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert compute["ai_inference_exercised"] is False
     assert compute["exact_capital_accounting_sources_bound"] is True
     assert compute["market_accounting_or_edge_claim"] is False
+    runtime_binding = artifact["runtime_preflight_evidence_binding"]
+    runtime_path = REPOSITORY / runtime_binding["path"]
+    assert runtime_path == RUNTIME_PREFLIGHT_PATH
+    assert runtime_binding["file_sha256"] == _file_sha256(runtime_binding["path"])
+    runtime_evidence = _load_json(runtime_path)
+    runtime_claimed = runtime_evidence.pop("artifact_sha256")
+    assert runtime_claimed == _canonical_sha256(runtime_evidence)
+    assert runtime_claimed == runtime_binding["artifact_sha256"]
+    assert (
+        runtime_evidence["execution_git_commit"]
+        == runtime_binding["execution_git_commit"]
+    )
+    assert runtime_binding["protocol_sha256"] == source["protocol_sha256"]
+    assert runtime_binding["model_names"] == ["fino1:8b", "qwen3:8b"]
+    assert runtime_binding["all_models_accepted_by_protocol"] is True
+    assert runtime_binding["all_models_fully_gpu_resident"] is True
+    for key in (
+        "all_models_remote_inference_used",
+        "all_models_execution_authority",
+        "all_models_may_increase_risk",
+        "all_models_may_select_side",
+        "all_models_may_set_leverage",
+        "all_models_may_submit_or_cancel_orders",
+        "representative_market_ai_evaluation_completed",
+        "ai_uplift_established",
+        "financial_edge_established",
+        "profitability_claim",
+    ):
+        assert runtime_binding[key] is False
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
         ROUND74_AI_REVIEW_HORIZONS_SECONDS
@@ -765,6 +801,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         == default_models[0].manifest.manifest_sha256
     )
     assert len(finance["local_ollama_artifact"]["manifest_sha256"]) == 64
+    assert finance["host_runtime_preflight_passed"] is True
     assert control["model_id"] == "Qwen/Qwen3-8B"
     assert len(control["repository_revision"]) == 40
     assert control["license_id"] == "Apache-2.0"
@@ -773,6 +810,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         == 6_076_825_600
     )
     assert control["trading_edge_established"] is False
+    assert control["host_runtime_preflight_passed"] is True
     assert (
         control["local_ollama_control_artifact"]["review_protocol_manifest_sha256"]
         == default_models[1].manifest.manifest_sha256
@@ -799,8 +837,6 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["protocol_implemented"] is True
     for key in (
         "candidate_weight_hash_verified",
-        "actual_multibillion_parameter_inference_completed",
-        "host_latency_preflight_completed",
         "representative_market_ai_evaluation_completed",
         "ai_uplift_established",
         "financial_edge_established",
@@ -810,6 +846,8 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
         "live_trading_authority",
     ):
         assert status[key] is False
+    assert status["actual_multibillion_parameter_inference_completed"] is True
+    assert status["host_latency_preflight_completed"] is True
     assert status["candidate_weights_downloaded"] is True
     assert status["candidate_manifest_hash_verified"] is True
     assert status["current_four_candidate_ml_compute_preflight_completed"] is True
@@ -861,26 +899,62 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["real_authenticated_commission_evidence_captured"] is False
     assert status["real_public_funding_evidence_captured"] is True
     assert status["real_testnet_execution_calibration_completed"] is False
-    assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
-    assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
+    host = artifact["host_preflight"]
+    assert host["actual_model_inference_attempted"] is True
+    assert host["actual_multibillion_parameter_inference_completed"] is True
+    assert host["host_runtime_preflight_passed"] is True
+    assert host["status"] == "passed"
+    assert host["accepted_model_count"] == 2
+    assert host["post_inference_ollama_full_gpu_residency_verified_now"] is True
+    assert host["vram_to_model_ratio_by_model"] == {
+        "fino1:8b": 1.0,
+        "qwen3:8b": 1.0,
+    }
+    assert host["approved_risk_size_bps_by_model"] == {
+        "fino1:8b": 0,
+        "qwen3:8b": 15,
+    }
+    assert (
+        host["minimum_observed_free_vram_gib"]
+        >= (host["minimum_required_free_vram_gib"])
+    )
+    assert (
+        host["minimum_observed_free_system_ram_gib"]
+        >= (host["minimum_required_free_system_ram_gib"])
+    )
+    assert host["decision_schema_version"] == ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
     assert artifact["host_preflight"]["request_schema_version"] == (
         ROUND74_AI_REVIEW_REQUEST_SCHEMA_VERSION
     )
+    for key in (
+        "representative_market_ai_evaluation_completed",
+        "ai_uplift_established",
+        "financial_edge_established",
+        "profitability_claim",
+    ):
+        assert host[key] is False
     latest = artifact["latest_capability_recheck"]
-    assert latest["source"] == "detect_ai_capabilities"
-    assert latest["model_name"] == "fino1:8b"
-    assert latest["model_parameters_b"] == 8.0
+    assert latest["source"] == "round-074-local-ai-runtime-preflight-v1"
+    assert latest["model_names"] == ["fino1:8b", "qwen3:8b"]
+    assert latest["model_parameters_b"] == [8.0, 8.0]
     assert latest["provider_available"] is True
-    assert latest["model_available"] is True
-    assert latest["model_local"] is True
+    assert latest["models_available"] is True
+    assert latest["models_local"] is True
     assert latest["gpu_vendor"] == "amd"
     assert latest["compute_backend"] == "directml"
     assert latest["compute_device"] == "privateuseone:0"
-    assert latest["free_vram_gib"] >= latest["minimum_free_vram_gib"]
-    assert latest["free_system_ram_gib"] < latest["minimum_free_system_ram_gib"]
-    assert latest["status"] == "blocked_capability"
-    assert latest["actual_model_inference_attempted"] is False
-    assert latest["host_runtime_preflight_passed"] is False
+    assert (
+        latest["minimum_free_vram_gib_observed"]
+        >= (latest["minimum_free_vram_gib_required"])
+    )
+    assert (
+        latest["minimum_free_system_ram_gib_observed"]
+        >= (latest["minimum_free_system_ram_gib_required"])
+    )
+    assert latest["status"] == "passed"
+    assert latest["actual_model_inference_attempted"] is True
+    assert latest["host_runtime_preflight_passed"] is True
+    assert latest["all_models_fully_gpu_resident"] is True
 
 
 def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:

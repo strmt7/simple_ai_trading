@@ -119,9 +119,12 @@ from simple_ai_trading.round74_event_model_operator import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v57.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v58.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
+AI_RUNTIME_PREFLIGHT_PATH = (
+    RESEARCH / "round-074-local-ai-runtime-preflight-v1-2026-07-27.json"
+)
 TRAINING_PATH = (
     RESEARCH
     / "round-074-event-training-directml-preflight-attention-v8-2026-07-27.json"
@@ -901,8 +904,12 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["isolated_worker_implemented_now"] is True
     assert ai["fail_closed_parent_runtime_implemented_now"] is True
     assert ai["host_resource_preflight_completed_now"] is True
-    assert ai["host_resource_preflight_passed_now"] is False
-    assert ai["actual_model_inference_attempted_now"] is False
+    assert ai["host_resource_preflight_passed_now"] is True
+    assert ai["host_resource_preflight_failure"] is None
+    assert ai["actual_model_inference_attempted_now"] is True
+    assert ai["host_latency_preflight_completed_now"] is True
+    assert ai["representative_market_ai_evaluation_completed_now"] is False
+    assert ai["ai_uplift_established_now"] is False
     assert ai["post_inference_full_gpu_residency_required"] is True
     assert ai["causal_calibrated_model_bridge_implemented_now"] is True
     assert ai["causal_recent_direction_summary_implemented_now"] is True
@@ -913,7 +920,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert ai["bridge_may_access_realized_targets"] is False
     assert ai["raw_uncalibrated_probability_permitted"] is False
     assert ai["request_binds_probability_calibration_sha256"] is True
-    assert ai["actual_multibillion_parameter_inference_completed_now"] is False
+    assert ai["actual_multibillion_parameter_inference_completed_now"] is True
     assert ai["supported_review_horizons_seconds"] == [30, 300]
     assert ai["one_and_five_second_ml_paths_wait_for_ai"] is False
     assert ai["ai_receives_only_a_preexisting_target_free_ml_candidate"] is True
@@ -1076,7 +1083,7 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True
     assert authority["local_ai_host_resource_preflight"] is True
-    assert authority["actual_multibillion_parameter_ai_inference"] is False
+    assert authority["actual_multibillion_parameter_ai_inference"] is True
     for key in (
         "target_generation",
         "model_training",
@@ -1138,6 +1145,81 @@ def test_round74_event_replay_evidence_is_exact_read_only_and_pre_target() -> No
     assert interpretation["targets_constructed"] is False
     assert interpretation["models_evaluated"] is False
     assert interpretation["financial_edge_tested"] is False
+
+
+def test_round74_local_ai_runtime_preflight_is_hash_bound_and_nonpromotional() -> None:
+    design = _load_hash_bound(DESIGN_PATH, "design_sha256")
+    evidence = _load_hash_bound(AI_RUNTIME_PREFLIGHT_PATH, "artifact_sha256")
+    binding = design["host_evidence_binding"]["local_ai_runtime_preflight"]
+
+    assert (
+        binding["path"] == AI_RUNTIME_PREFLIGHT_PATH.relative_to(REPOSITORY).as_posix()
+    )
+    assert binding["file_sha256"] == _file_sha256(binding["path"])
+    assert binding["artifact_sha256"] == evidence["artifact_sha256"]
+    assert binding["schema_version"] == evidence["schema_version"]
+    assert binding["execution_git_commit"] == evidence["execution_git_commit"]
+    assert binding["publisher_path"] == evidence["source_binding"]["publisher_path"]
+    assert binding["publisher_sha256"] == evidence["source_binding"]["publisher_sha256"]
+    assert binding["protocol_sha256"] == design["source_binding"]["ai_protocol_sha256"]
+    assert binding["model_count"] == 2
+    assert binding["model_names"] == ["fino1:8b", "qwen3:8b"]
+    assert binding["decision_schema_versions"] == [
+        ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
+        ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION,
+    ]
+    assert binding["all_models_accepted_by_protocol"] is True
+    assert binding["all_models_fully_gpu_resident"] is True
+    for key in (
+        "all_models_remote_inference_used",
+        "all_models_execution_authority",
+        "all_models_may_increase_risk",
+        "all_models_may_select_side",
+        "all_models_may_set_leverage",
+        "all_models_may_submit_or_cancel_orders",
+        "representative_market_ai_evaluation_completed",
+        "ai_uplift_established",
+        "financial_edge_established",
+        "profitability_claim",
+    ):
+        assert binding[key] is False
+    assert binding["resident_models_before"] == []
+    assert binding["resident_models_after"] == []
+
+    assert evidence["verification"]["all_models_accepted_by_protocol"] is True
+    assert evidence["verification"]["all_models_fully_gpu_resident"] is True
+    assert evidence["runtime_isolation"]["model_process_terminated"] is False
+    assert evidence["runtime_isolation"]["official_keep_alive_zero_api_used"] is True
+    assert evidence["runtime_isolation"]["resident_models_after"] == []
+    assert [value["model_name"] for value in evidence["model_outcomes"]] == [
+        "fino1:8b",
+        "qwen3:8b",
+    ]
+    for outcome in evidence["model_outcomes"]:
+        runtime = outcome["outcome"]
+        worker = runtime["worker_result"]
+        decision = worker["decision"]
+        assert runtime["status"] == "accepted"
+        assert runtime["capability"]["model_parameters_b"] >= 8.0
+        assert worker["full_gpu_residency_verified"] is True
+        assert worker["residency"]["vram_to_model_ratio"] == 1.0
+        assert worker["remote_inference_used"] is False
+        assert worker["execution_authority"] is False
+        assert decision["schema_version"] == ROUND74_AI_REVIEW_DECISION_SCHEMA_VERSION
+        assert decision["may_increase_risk"] is False
+        assert decision["may_select_side"] is False
+        assert decision["may_set_leverage"] is False
+        assert decision["may_submit_or_cancel_orders"] is False
+    for key in (
+        "representative_market_ai_evaluation_completed",
+        "ai_uplift_established",
+        "financial_edge_established",
+        "profitability_claim",
+        "paper_trading_authority",
+        "testnet_trading_authority",
+        "live_trading_authority",
+    ):
+        assert evidence["interpretation"][key] is False
 
 
 def test_round74_directml_evidence_is_amd_accelerated_and_nonfinancial() -> None:
@@ -1256,10 +1338,7 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         "equal capture-run gradient weight"
         in (binding["event_training_directml_reuse_scope"])
     )
-    assert (
-        "not market fit"
-        in (binding["event_training_directml_reuse_scope"])
-    )
+    assert "not market fit" in (binding["event_training_directml_reuse_scope"])
     assert source["preflight_runner_sha256"] == _file_sha256(
         source["preflight_runner_path"]
     )
