@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 from pathlib import Path
+import subprocess  # nosec B404
 from types import ModuleType
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 TOOL_PATH = REPOSITORY / "tools/publish_round74_ai_runtime_preflight.py"
+EVIDENCE_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-runtime-preflight-v5-2026-07-27.json"
+)
 SPEC = importlib.util.spec_from_file_location(
     "publish_round74_ai_runtime_preflight",
     TOOL_PATH,
@@ -15,6 +25,18 @@ assert SPEC is not None and SPEC.loader is not None
 PUBLISHER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PUBLISHER)
 assert isinstance(PUBLISHER, ModuleType)
+
+
+def _source_sha256_at(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    payload = completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def test_preflight_schema_tracks_current_ai_contract() -> None:
@@ -62,3 +84,97 @@ def test_synthetic_request_is_hash_stable_after_round_trip() -> None:
 
     assert restored == request
     assert restored.request_sha256 == request.request_sha256
+
+
+def test_persisted_preflight_is_source_bound_isolated_and_nonfinancial() -> None:
+    evidence = json.loads(EVIDENCE_PATH.read_text(encoding="ascii"))
+    claimed = evidence.pop("artifact_sha256")
+    commit = evidence["execution_git_commit"]
+    source = evidence["source_binding"]
+    inputs = evidence["input_contract"]
+    outcomes = evidence["model_outcomes"]
+    verification = evidence["verification"]
+
+    assert claimed == PUBLISHER._canonical_sha256(evidence)
+    assert evidence["schema_version"] == PUBLISHER.SCHEMA_VERSION
+    for label in PUBLISHER.SOURCE_PATHS:
+        assert source[f"{label}_sha256"] == _source_sha256_at(
+            commit,
+            source[f"{label}_path"],
+        )
+    assert inputs["review_request_schema_version"] == (
+        "round-074-ai-review-request-v5"
+    )
+    assert inputs["prompt_payload_schema_version"] == (
+        "round-074-ai-prompt-payload-v7"
+    )
+    assert inputs["system_prompt_schema_version"] == (
+        "round-074-ai-system-prompt-v1"
+    )
+    assert inputs["review_panel_schema_version"] == (
+        "round-074-ai-review-panel-v11"
+    )
+    assert inputs["risk_profile"] == "conservative"
+    assert inputs["temporal_block_count"] == 4
+    assert inputs["temporal_feature_count"] == 14
+    assert inputs["temporal_order"] == "oldest_to_newest"
+    assert not inputs["real_market_events_used"]
+    assert not inputs["real_market_targets_used"]
+    assert not inputs["test_partition_accessed"]
+    assert len(outcomes) == 4
+    assert [
+        (value["role"], value["model_name"], value["phase"])
+        for value in outcomes
+    ] == [
+        ("finance_primary", "fino1:8b", "cold"),
+        ("finance_primary", "fino1:8b", "warm"),
+        ("general_control", "qwen3:8b", "cold"),
+        ("general_control", "qwen3:8b", "warm"),
+    ]
+    for outcome in outcomes:
+        result = outcome["outcome"]
+        worker = result["worker_result"]
+        decision = worker["decision"]
+        capability = result["capability"]
+        assert result["status"] == "accepted"
+        assert result["approved_risk_size_bps"] <= result["proposed_risk_size_bps"]
+        assert worker["prompt_eval_count"] > 0
+        assert worker["eval_count"] > 0
+        assert worker["residency"]["status"] == "gpu_resident"
+        assert worker["residency"]["vram_to_model_ratio"] == 1.0
+        assert not decision["may_increase_risk"]
+        assert not decision["may_select_side"]
+        assert not decision["may_set_leverage"]
+        assert not decision["may_submit_or_cancel_orders"]
+        if outcome["phase"] == "cold":
+            assert capability["free_ram_gb"] >= 16.0
+            assert capability["free_vram_gb"] >= 8.0
+        else:
+            assert capability["pre_inference_exact_model_fully_gpu_resident"]
+            assert capability["pre_inference_warm_ram_headroom_passed"]
+            assert capability[
+                "pre_inference_warm_equivalent_preload_ram_headroom_passed"
+            ]
+            assert (
+                capability["pre_inference_warm_equivalent_preload_ram_gb"] >= 16.0
+            )
+    for cold, warm in ((outcomes[0], outcomes[1]), (outcomes[2], outcomes[3])):
+        cold_worker = cold["outcome"]["worker_result"]
+        warm_worker = warm["outcome"]["worker_result"]
+        assert cold_worker["decision"] == warm_worker["decision"]
+        assert cold_worker["prompt_eval_count"] == warm_worker["prompt_eval_count"]
+        assert warm_worker["load_duration_ns"] < cold_worker["load_duration_ns"]
+        assert warm["outcome"]["elapsed_ns"] < cold["outcome"]["elapsed_ns"]
+    assert verification["model_count"] == 2
+    assert verification["request_count"] == 4
+    assert verification["all_models_accepted_by_protocol"]
+    assert verification["all_models_fully_gpu_resident"]
+    assert evidence["runtime_isolation"]["resident_models_before"] == []
+    assert evidence["runtime_isolation"]["resident_models_after"] == []
+    assert not evidence["interpretation"]["representative_market_ai_evaluation_completed"]
+    assert not evidence["interpretation"]["ai_uplift_established"]
+    assert not evidence["interpretation"]["financial_edge_established"]
+    assert not evidence["interpretation"]["profitability_claim"]
+    assert not evidence["interpretation"]["paper_trading_authority"]
+    assert not evidence["interpretation"]["testnet_trading_authority"]
+    assert not evidence["interpretation"]["live_trading_authority"]

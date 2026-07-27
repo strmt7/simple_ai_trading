@@ -1,0 +1,92 @@
+{
+  "schema_version": "round-074-local-ai-review-design-v56",
+  "artifact_kind": "compact_runtime_contract_delta",
+  "supersedes_artifact_sha256": "e2e03838aa1eba071621dc565981f4c6e23678cbb619062590490da62b73f048",
+  "implementation_git_commit": "16aee6ebeabbfecf5d96272b005f609b511d5618",
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "protocol": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_protocol.py",
+      "sha256": "12155cee698695fa6c80e58148b60a32e05ab8aa5c6c7498b05167017b37b7a0",
+      "review_request_schema_version": "round-074-ai-review-request-v5",
+      "prompt_payload_schema_version": "round-074-ai-prompt-payload-v7",
+      "system_prompt_schema_version": "round-074-ai-system-prompt-v1"
+    },
+    "bridge": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_bridge.py",
+      "sha256": "7c6a3b48fee8d8612c9ca275d5e3f60963147e9adbbf47202fbf90fc2e7b6054",
+      "schema_version": "round-074-ai-bridge-v4"
+    },
+    "runtime": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_runtime.py",
+      "sha256": "dfaadbb82a547830cefb205d7dafd82a5811b514c2c86214608b92a3155bf8a3",
+      "schema_version": "round-074-ai-runtime-outcome-v3"
+    },
+    "review_panel": {
+      "path": "src/simple_ai_trading/impact_absorption_ai_review_preparation.py",
+      "sha256": "4a6eb4bb78389dd9c97834ecf6f44a9d3b0cc0de957c5fc40d469c6c6bcb935c",
+      "schema_version": "round-074-ai-review-panel-v11"
+    },
+    "runtime_preflight_publisher": {
+      "path": "tools/publish_round74_ai_runtime_preflight.py",
+      "sha256": "41f51b2cf37e0e796be3a1816d75044a12c9581832312824b4570c63ad10b678",
+      "schema_version": "round-074-local-ai-runtime-preflight-v5"
+    }
+  },
+  "decision_semantic_delta": {
+    "allow_unchanged_requires_none_reason_only": true,
+    "any_risk_reason_requires_reduce_veto_or_abstain": true,
+    "model_output_can_increase_risk": false,
+    "model_output_can_select_side_or_leverage": false,
+    "model_output_can_submit_or_cancel_orders": false
+  },
+  "state_aware_ram_gate": {
+    "cold_minimum_free_ram_gb": 16.0,
+    "cold_minimum_free_vram_gb": 8.0,
+    "warm_minimum_operational_free_ram_gb": 8.0,
+    "warm_minimum_equivalent_preload_ram_gb": 16.0,
+    "warm_equivalent_preload_ram_definition": "current_free_ram_plus_bound_exact_model_size",
+    "warm_requires_exact_fully_gpu_resident_model": true,
+    "warm_can_bypass_cold_vram_requirement": true,
+    "unknown_or_insufficient_warm_headroom_fails_closed": true
+  },
+  "host_preflight": {
+    "path": "docs/model-research/action-value/round-074-local-ai-runtime-preflight-v5-2026-07-27.json",
+    "artifact_sha256": "417aeb73ae74af68f1136a39dbfeaa982e6e149e4a94ac5458e17f6eac2afe82",
+    "model_count": 2,
+    "request_count": 4,
+    "all_requests_accepted_by_protocol": true,
+    "all_requests_fully_gpu_resident": true,
+    "resident_models_after": [],
+    "fino_cold_elapsed_ns": 12734000000,
+    "fino_warm_elapsed_ns": 6469000000,
+    "fino_decision": "reduce",
+    "fino_size_multiplier_bps": 5000,
+    "qwen_cold_elapsed_ns": 10328000000,
+    "qwen_warm_elapsed_ns": 4250000000,
+    "qwen_decision": "veto",
+    "qwen_size_multiplier_bps": 0,
+    "real_market_events_used": false,
+    "real_market_targets_used": false,
+    "test_partition_accessed": false
+  },
+  "verification": {
+    "focused_tests_passed": 56,
+    "persisted_preflight_digest_verified": true,
+    "execution_commit_source_hashes_verified": true,
+    "cold_and_warm_decisions_equal_per_model": true,
+    "warm_load_duration_below_cold_per_model": true,
+    "post_execution_residency_empty": true,
+    "sealed_test_accessed": false
+  },
+  "status": {
+    "prospective_cohort_complete": false,
+    "representative_market_ai_evaluation_complete": false,
+    "ai_uplift_established": false,
+    "financial_edge_established": false,
+    "profitability_claim": false,
+    "promotion_authority": false,
+    "trading_authority": false
+  },
+  "artifact_sha256": "7de41342f0791f1f1d3b71df46539ce1db1c310ba11ffcbc6bc8f2471e4a0730"
+}
