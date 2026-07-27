@@ -86,11 +86,19 @@ from simple_ai_trading.impact_absorption_event_evidence import (
     ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION,
     ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_execution_evidence import (
+    ROUND74_EXECUTION_CALIBRATION_MAXIMUM_BOOK_AGE_NS,
+    ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL,
+    ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE,
+    ROUND74_EXECUTION_CALIBRATION_QUANTILE,
+    ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
+    ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v37.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v38.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = RESEARCH / "round-074-event-training-directml-preflight-2026-07-27.json"
@@ -144,6 +152,13 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert (
         source["event_target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+    )
+    assert source["event_execution_calibration_sha256"] == _file_sha256(
+        source["event_execution_calibration_path"]
+    )
+    assert (
+        source["event_execution_calibration_schema_version"]
+        == ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION
     )
     assert source["event_dataset_sha256"] == _file_sha256(source["event_dataset_path"])
     assert source["event_action_policy_sha256"] == _file_sha256(
@@ -401,6 +416,32 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert costs["post_audit_clock_extraction_decompresses_only_probe_frames"] is True
     assert costs["real_authenticated_commission_evidence_captured_now"] is False
     assert costs["real_public_funding_evidence_captured_now"] is False
+    assert (
+        costs[
+            "execution_calibration_requires_flat_before_entry_and_after_reduce_only_exit"
+        ]
+        is True
+    )
+    assert costs["execution_calibration_client_order_id_prefix"] == "sat-r74-cal-"
+    assert costs["execution_calibration_reconciles_order_update_and_account_trade_fills"] is True
+    assert "fresh captured L2" in costs["execution_calibration_expected_price_source"]
+    assert costs["execution_calibration_maximum_book_age_nanoseconds"] == (
+        ROUND74_EXECUTION_CALIBRATION_MAXIMUM_BOOK_AGE_NS
+    )
+    assert costs["execution_calibration_minimum_completed_pairs_per_symbol"] == (
+        ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL
+    )
+    assert (
+        costs["execution_calibration_minimum_completed_pairs_per_symbol_entry_side"]
+        == ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE
+    )
+    assert costs["execution_tail_quantile"] == ROUND74_EXECUTION_CALIBRATION_QUANTILE
+    assert costs["execution_tail_confidence"] == (
+        ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE
+    )
+    assert "distribution-free" in costs["execution_tail_estimator"]
+    assert costs["execution_calibration_parser_places_orders"] is False
+    assert costs["real_testnet_execution_calibration_completed_now"] is False
     assert costs["structured_evidence_claims_must_match_exact_configured_values"] is True
     assert costs["mixed_mainnet_and_testnet_evidence_per_target_spec_permitted"] is False
     assert costs["midpoint_payoff_reported_before_execution_friction"] is True
@@ -738,8 +779,10 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["funding_clock_uncertainty_interval_implementation"] is True
     assert authority["binance_source_evidence_parser_implementation"] is True
     assert authority["audited_clock_probe_loader_implementation"] is True
+    assert authority["execution_calibration_evidence_parser_implementation"] is True
     assert authority["real_authenticated_commission_evidence_captured"] is False
     assert authority["real_public_funding_evidence_captured"] is False
+    assert authority["real_testnet_execution_calibration_completed"] is False
     assert authority["probability_calibration_directml_compute_preflight"] is True
     assert authority["local_ai_isolated_worker_implementation"] is True
     assert authority["local_ai_fail_closed_parent_runtime_implementation"] is True

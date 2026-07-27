@@ -59,6 +59,13 @@ from simple_ai_trading.impact_absorption_event_evidence import (
     ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION,
     ROUND74_BINANCE_EVIDENCE_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_execution_evidence import (
+    ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL,
+    ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE,
+    ROUND74_EXECUTION_CALIBRATION_QUANTILE,
+    ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE,
+    ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION,
+)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -67,7 +74,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v23.json"
+    / "round-074-local-ai-review-design-v24.json"
 )
 
 
@@ -96,6 +103,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "action_policy",
         "targets",
         "target_source_evidence",
+        "execution_calibration_evidence",
         "uplift_evaluator",
         "sealed_ledger",
         "sealed_evaluator",
@@ -173,6 +181,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert (
         source["target_clock_probe_schema_version"]
         == ROUND74_BINANCE_CLOCK_PROBE_SCHEMA_VERSION
+    )
+    assert (
+        source["execution_calibration_schema_version"]
+        == ROUND74_EXECUTION_CALIBRATION_SCHEMA_VERSION
     )
     architecture = artifact["architecture"]
     assert architecture["supported_review_horizons_seconds"] == list(
@@ -337,6 +349,47 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ]
         is True
     )
+    assert (
+        architecture[
+            "execution_calibration_requires_flat_before_entry_and_after_reduce_only_exit"
+        ]
+        is True
+    )
+    assert architecture["execution_calibration_client_order_ids_are_bot_namespaced"] is True
+    assert (
+        architecture[
+            "execution_calibration_reconciles_terminal_quantity_average_price_and_account_fills"
+        ]
+        is True
+    )
+    assert (
+        architecture[
+            "execution_calibration_expected_price_is_derived_from_fresh_captured_l2_book_walk"
+        ]
+        is True
+    )
+    assert architecture["execution_calibration_minimum_completed_pairs_per_symbol"] == (
+        ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL
+    )
+    assert (
+        architecture[
+            "execution_calibration_minimum_completed_pairs_per_symbol_entry_side"
+        ]
+        == ROUND74_EXECUTION_CALIBRATION_MINIMUM_PAIRS_PER_SYMBOL_SIDE
+    )
+    assert architecture["execution_tail_quantile"] == (
+        ROUND74_EXECUTION_CALIBRATION_QUANTILE
+    )
+    assert architecture["execution_tail_confidence"] == (
+        ROUND74_EXECUTION_CALIBRATION_QUANTILE_CONFIDENCE
+    )
+    assert "distribution-free" in architecture["execution_tail_estimator"]
+    assert (
+        architecture[
+            "execution_calibration_parser_places_orders_or_grants_trading_authority"
+        ]
+        is False
+    )
     assert architecture["bounded_capture_run_panel_replay_implemented"] is True
     assert architecture["durable_one_use_sealed_ledger_implemented"] is True
     assert architecture["sealed_ml_ai_evaluator_implemented"] is True
@@ -446,8 +499,10 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["funding_clock_uncertainty_interval_implemented"] is True
     assert status["binance_source_evidence_parser_implemented"] is True
     assert status["audited_clock_probe_loader_implemented"] is True
+    assert status["execution_calibration_evidence_parser_implemented"] is True
     assert status["real_authenticated_commission_evidence_captured"] is False
     assert status["real_public_funding_evidence_captured"] is False
+    assert status["real_testnet_execution_calibration_completed"] is False
     assert artifact["host_preflight"]["actual_model_inference_attempted"] is False
     assert artifact["host_preflight"]["approved_risk_size_bps"] == 0
     assert artifact["host_preflight"]["request_schema_version"] == (
