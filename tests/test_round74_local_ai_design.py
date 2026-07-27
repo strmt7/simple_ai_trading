@@ -96,7 +96,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v41.json"
+    / "round-074-local-ai-review-design-v42.json"
 )
 
 
@@ -289,8 +289,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     exchange_claimed = exchange.pop("artifact_sha256")
     assert exchange_claimed == _canonical_sha256(exchange)
     assert exchange_claimed == market["exchange_info_artifact_sha256"]
-    assert exchange["target_evidence"]["evidence_sha256"] == (
-        market["exchange_info_target_evidence_sha256"]
+    assert (
+        exchange["target_evidence"]["evidence_sha256"]
+        == (market["exchange_info_target_evidence_sha256"])
     )
     assert market["exchange_info_raw_payload_persisted"] is False
     funding_path = REPOSITORY / market["funding_path"]
@@ -299,16 +300,12 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     funding_claimed = funding.pop("artifact_sha256")
     assert funding_claimed == _canonical_sha256(funding)
     assert funding_claimed == market["funding_artifact_sha256"]
-    assert funding["target_evidence"]["evidence_sha256"] == (
-        market["funding_target_evidence_sha256"]
-    )
-    assert funding["capture_binding"]["run_id"] == (
-        market["funding_capture_run_id"]
-    )
     assert (
-        funding["scope"]["capture_run_may_be_used_for_financial_evaluation"]
-        is False
+        funding["target_evidence"]["evidence_sha256"]
+        == (market["funding_target_evidence_sha256"])
     )
+    assert funding["capture_binding"]["run_id"] == (market["funding_capture_run_id"])
+    assert funding["scope"]["capture_run_may_be_used_for_financial_evaluation"] is False
     compute = artifact["model_compute_evidence_binding"]
     assert (
         compute["file_sha256_normalization"] == (artifact["file_sha256_normalization"])
@@ -367,7 +364,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["ai_prompt_summary_values_per_feature"] == 4
     assert architecture["ai_review_requires_preexisting_ml_candidate"] is True
-    assert architecture["ml_candidate_panel_includes_linear_microstructure_control"] is True
+    assert (
+        architecture["ml_candidate_panel_includes_linear_microstructure_control"]
+        is True
+    )
     assert architecture["ml_gradient_population_unit"] == "capture_run"
     assert architecture["ml_row_pooled_optimizer_steps_permitted"] is False
     assert architecture["ml_one_minibatch_per_run_per_optimizer_step"] is True
@@ -430,7 +430,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["ml_candidate_selection_uses_ai_output"] is False
     assert architecture["ml_candidate_selection_uses_sealed_test"] is False
-    assert architecture["ai_receives_only_the_preselected_target_free_ml_candidate"] is True
+    assert (
+        architecture["ai_receives_only_the_preselected_target_free_ml_candidate"]
+        is True
+    )
     assert architecture["ai_may_choose_the_ml_candidate_architecture"] is False
     assert (
         architecture["calibrated_probability_selection_uses_equal_capture_run_weights"]
@@ -441,7 +444,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is False
     )
     assert architecture["calibration_exact_run_ids_bound"] is True
-    assert architecture["runtime_elapsed_nanoseconds_bound_into_each_review_hash"] is True
+    assert (
+        architecture["runtime_elapsed_nanoseconds_bound_into_each_review_hash"] is True
+    )
     assert (
         architecture["same_entry_latency_budget_bound_into_each_review_and_panel_hash"]
         is True
@@ -457,9 +462,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     assert architecture["same_entry_latency_eligibility_is_diagnostic_only"] is True
     assert architecture["latency_adjusted_delayed_entry_replay_implemented"] is True
     assert (
-        architecture[
-            "raw_sample_and_feature_window_hashes_preserved_into_replay_plan"
-        ]
+        architecture["raw_sample_and_feature_window_hashes_preserved_into_replay_plan"]
         is True
     )
     assert (
@@ -483,7 +486,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         architecture["fixed_payoff_imputation_for_censored_selected_action_permitted"]
         is False
     )
-    assert architecture["action_threshold_quantiles_use_equal_capture_run_weights"] is True
+    assert (
+        architecture["action_threshold_quantiles_use_equal_capture_run_weights"] is True
+    )
     assert architecture["action_threshold_estimator"] == (
         "median of each active run's within-run linear quantile"
     )
@@ -504,7 +509,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "historical queue delay plus measured parent runtime elapsed"
     )
     assert (
-        architecture["inference_service_time_alone_may_establish_same_entry_eligibility"]
+        architecture[
+            "inference_service_time_alone_may_establish_same_entry_eligibility"
+        ]
         is False
     )
     assert architecture["sealed_familywise_alpha"] == ROUND74_SEALED_FAMILYWISE_ALPHA
@@ -525,7 +532,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "censor target and reject any selected action configuration with incomplete "
         "coverage"
     )
-    assert architecture["entry_and_exit_latency_are_separately_bound_per_symbol"] is True
+    assert (
+        architecture["entry_and_exit_latency_are_separately_bound_per_symbol"] is True
+    )
     assert (
         architecture["residual_slippage_is_bound_per_symbol_and_reference_notional"]
         is True
@@ -543,23 +552,25 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["mixed_target_evidence_environments_permitted"] is False
     assert architecture["quantity_rules_are_parsed_from_exchange_info"] is True
-    assert architecture["quantity_rules_evidence_is_required_and_target_hash_bound"] is True
+    assert (
+        architecture["quantity_rules_evidence_is_required_and_target_hash_bound"]
+        is True
+    )
     assert (
         architecture["quantity_rules_use_market_lot_size_and_min_notional_filters"]
         is True
     )
-    assert architecture["quantity_precision_may_substitute_for_market_lot_size"] is False
-    assert architecture["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
-    assert architecture["real_public_exchange_info_evidence_captured"] is True
-    assert architecture["source_derived_target_assembly_implemented"] is True
     assert (
-        architecture["bounded_post_cohort_model_data_operator_implemented"]
-        is True
+        architecture["quantity_precision_may_substitute_for_market_lot_size"] is False
     )
     assert (
-        architecture[
-            "source_target_assembly_roundtrip_serialization_implemented"
-        ]
+        architecture["exchange_info_requires_trading_perpetual_usdt_contracts"] is True
+    )
+    assert architecture["real_public_exchange_info_evidence_captured"] is True
+    assert architecture["source_derived_target_assembly_implemented"] is True
+    assert architecture["bounded_post_cohort_model_data_operator_implemented"] is True
+    assert (
+        architecture["source_target_assembly_roundtrip_serialization_implemented"]
         is True
     )
     assert architecture["model_scaler_reads_unique_training_events_only"] is True
@@ -588,24 +599,43 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ]
         is True
     )
-    assert architecture["fees_plus_residual_slippage_may_be_labeled_total_cost"] is False
-    assert architecture["target_accounting_reconciles_in_quote_and_basis_points"] is True
-    assert architecture["adverse_selection_uses_midpoint_move_before_execution_friction"] is True
-    assert architecture["funding_boundary_is_rechecked_against_actual_exit_timestamp"] is True
     assert (
-        architecture["requested_exit_before_funding_cannot_hide_actual_exit_after_funding"]
+        architecture["fees_plus_residual_slippage_may_be_labeled_total_cost"] is False
+    )
+    assert (
+        architecture["target_accounting_reconciles_in_quote_and_basis_points"] is True
+    )
+    assert (
+        architecture["adverse_selection_uses_midpoint_move_before_execution_friction"]
+        is True
+    )
+    assert (
+        architecture["funding_boundary_is_rechecked_against_actual_exit_timestamp"]
+        is True
+    )
+    assert (
+        architecture[
+            "requested_exit_before_funding_cannot_hide_actual_exit_after_funding"
+        ]
         is True
     )
     assert architecture["per_symbol_funding_schedule_coverage_is_mandatory"] is True
-    assert architecture["targets_outside_verified_funding_coverage_are_censored"] is True
-    assert architecture["funding_times_are_bounded_monotonic_uncertainty_intervals"] is True
+    assert (
+        architecture["targets_outside_verified_funding_coverage_are_censored"] is True
+    )
+    assert (
+        architecture["funding_times_are_bounded_monotonic_uncertainty_intervals"]
+        is True
+    )
     assert (
         architecture[
             "positions_overlapping_any_funding_uncertainty_interval_are_censored"
         ]
         is True
     )
-    assert architecture["exact_timestamp_false_precision_for_funding_permitted"] is False
+    assert (
+        architecture["exact_timestamp_false_precision_for_funding_permitted"] is False
+    )
     assert (
         architecture[
             "commission_evidence_is_parsed_from_exact_signed_endpoint_responses"
@@ -613,21 +643,18 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         is True
     )
     assert architecture["credential_material_may_enter_evidence_or_artifacts"] is False
-    assert architecture["funding_history_full_limit_page_is_accepted_as_complete"] is False
+    assert (
+        architecture["funding_history_full_limit_page_is_accepted_as_complete"] is False
+    )
     assert (
         architecture[
             "empty_explicitly_bounded_funding_response_is_accepted_as_complete"
         ]
         is True
     )
+    assert architecture["missing_symbol_funding_response_is_accepted_as_empty"] is False
     assert (
-        architecture["missing_symbol_funding_response_is_accepted_as_empty"]
-        is False
-    )
-    assert (
-        architecture[
-            "funding_evidence_record_count_includes_symbol_responses_and_rows"
-        ]
+        architecture["funding_evidence_record_count_includes_symbol_responses_and_rows"]
         is True
     )
     assert (
@@ -655,7 +682,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         ]
         is True
     )
-    assert architecture["execution_calibration_client_order_ids_are_bot_namespaced"] is True
+    assert (
+        architecture["execution_calibration_client_order_ids_are_bot_namespaced"]
+        is True
+    )
     assert (
         architecture[
             "execution_calibration_reconciles_terminal_quantity_average_price_and_account_fills"
@@ -820,10 +850,7 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["quantity_rules_runtime_evidence_match_gate_implemented"] is True
     assert status["source_derived_target_assembly_implemented"] is True
     assert status["bounded_post_cohort_model_data_operator_implemented"] is True
-    assert (
-        status["source_target_assembly_roundtrip_serialization_implemented"]
-        is True
-    )
+    assert status["source_target_assembly_roundtrip_serialization_implemented"] is True
     assert status["complete_empty_bounded_funding_response_implemented"] is True
     assert status["real_public_exchange_info_evidence_captured"] is True
     assert status["real_authenticated_commission_evidence_captured"] is False
@@ -950,9 +977,7 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         is True
     )
     assert (
-        evaluation[
-            "future_target_eligibility_may_delete_a_model_selected_observation"
-        ]
+        evaluation["future_target_eligibility_may_delete_a_model_selected_observation"]
         is False
     )
     assert (
@@ -975,13 +1000,24 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         is True
     )
     assert evaluation["pooled_total_trade_bps_is_selection_objective"] is False
-    assert evaluation["historical_queue_delay_included_in_same_entry_eligibility"] is True
-    assert evaluation["queue_model_is_separate_for_each_alternative_candidate_model"] is True
+    assert (
+        evaluation["historical_queue_delay_included_in_same_entry_eligibility"] is True
+    )
+    assert (
+        evaluation["queue_model_is_separate_for_each_alternative_candidate_model"]
+        is True
+    )
     assert evaluation["queue_wait_may_be_omitted_from_reported_ai_latency"] is False
-    assert evaluation["sealed_profitability_uses_three_configuration_familywise_bound"] is True
+    assert (
+        evaluation["sealed_profitability_uses_three_configuration_familywise_bound"]
+        is True
+    )
     assert evaluation["paired_ai_uplift_uses_two_model_familywise_bound"] is True
     assert evaluation["unadjusted_95_percent_lower_bound_is_diagnostic_only"] is True
-    assert evaluation["same_target_cost_and_timing_claim_binds_target_engine_source"] is True
+    assert (
+        evaluation["same_target_cost_and_timing_claim_binds_target_engine_source"]
+        is True
+    )
     assert evaluation["funding_schedule_or_source_evidence_may_be_omitted"] is False
     assert (
         evaluation[
@@ -989,9 +1025,17 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         ]
         is False
     )
-    assert evaluation["paired_paths_share_exact_implementation_shortfall_decomposition"] is True
-    assert evaluation["paired_target_eligibility_uses_actual_exit_funding_recheck"] is True
-    assert evaluation["paired_target_eligibility_requires_verified_funding_coverage"] is True
+    assert (
+        evaluation["paired_paths_share_exact_implementation_shortfall_decomposition"]
+        is True
+    )
+    assert (
+        evaluation["paired_target_eligibility_uses_actual_exit_funding_recheck"] is True
+    )
+    assert (
+        evaluation["paired_target_eligibility_requires_verified_funding_coverage"]
+        is True
+    )
     assert (
         evaluation[
             "paired_target_eligibility_uses_identical_funding_uncertainty_intervals"
