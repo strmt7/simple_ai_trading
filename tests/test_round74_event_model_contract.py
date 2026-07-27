@@ -16,6 +16,9 @@ from simple_ai_trading.impact_absorption_ai_bridge import (
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_execution_replay import (
+    ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_runtime import (
     ROUND74_AI_RUNTIME_OUTCOME_SCHEMA_VERSION,
 )
@@ -108,12 +111,12 @@ from simple_ai_trading.impact_absorption_target_assembly import (
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 RESEARCH = REPOSITORY / "docs" / "model-research" / "action-value"
-DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v47.json"
+DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v48.json"
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 TRAINING_PATH = (
     RESEARCH
-    / "round-074-event-training-directml-preflight-run-balanced-v2-2026-07-27.json"
+    / "round-074-event-training-directml-preflight-ai-exact-replay-v4-2026-07-27.json"
 )
 CALIBRATION_PATH = (
     RESEARCH
@@ -194,6 +197,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["ai_uplift_evaluator_sha256"] == _file_sha256(
         source["ai_uplift_evaluator_path"]
     )
+    assert source["ai_execution_replay_sha256"] == _file_sha256(
+        source["ai_execution_replay_path"]
+    )
     assert source["sealed_ledger_sha256"] == _file_sha256(source["sealed_ledger_path"])
     assert source["sealed_evaluator_sha256"] == _file_sha256(
         source["sealed_evaluator_path"]
@@ -242,6 +248,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["ai_uplift_evaluator_schema_version"] == ROUND74_AI_UPLIFT_SCHEMA_VERSION
+    )
+    assert source["ai_execution_replay_plan_schema_version"] == (
+        ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
     )
     assert (
         source["sealed_ledger_schema_version"] == ROUND74_SEALED_LEDGER_SCHEMA_VERSION
@@ -846,11 +855,23 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
         is False
     )
     assert ai["late_accepted_review_policy"] == (
-        "retain the validated decision for audit but apply zero exposure at the ML entry"
+        "retain the validated decision and rewalk the first eligible delayed L2 book "
+        "within the frozen 30-second historical replay ceiling"
     )
-    assert ai["same_entry_latency_eligibility_rate_gate"] == 0.99
+    assert ai["same_entry_latency_eligibility_rate_gate"] is None
+    assert ai["same_entry_latency_eligibility_is_diagnostic_only"] is True
     assert ai["same_entry_latency_eligibility_is_distinct_from_runtime_success"] is True
-    assert ai["latency_adjusted_delayed_entry_replay_implemented_now"] is False
+    assert ai["latency_adjusted_delayed_entry_replay_implemented_now"] is True
+    assert ai["raw_feature_window_identity_preserved_into_ai_replay_plan"] is True
+    assert (
+        ai["ai_size_reduction_applied_before_quantity_quantization_and_book_walk"]
+        is True
+    )
+    assert ai["delayed_entry_uses_first_observed_post_latency_l2_state"] is True
+    assert ai["delayed_exit_and_path_risk_use_the_same_exact_replay"] is True
+    assert ai["baseline_payoff_scaling_without_book_rewalk_permitted"] is False
+    assert ai["nonexecuted_replay_statuses_apply_zero_exposure"] is True
+    assert ai["sealed_ai_metrics_bind_each_execution_replay_sha256"] is True
     assert ai["historical_ai_queue_model_implemented_now"] is True
     assert ai["ai_queue_model"] == (
         "one FIFO single-server queue per alternative candidate model in historical "
@@ -909,6 +930,8 @@ def test_round74_event_target_and_evaluation_contracts_fail_closed() -> None:
     assert authority["future_censored_action_rejection_implementation"] is True
     assert authority["equal_run_action_threshold_and_objective_implementation"] is True
     assert authority["historical_ai_queue_latency_implementation"] is True
+    assert authority["exact_delayed_ai_execution_replay_implementation"] is True
+    assert authority["sealed_exact_ai_execution_evidence_implementation"] is True
     assert authority["sealed_multiple_comparison_control_implementation"] is True
     assert authority["mandatory_funding_schedule_binding_implementation"] is True
     assert authority["symbol_specific_execution_evidence_implementation"] is True

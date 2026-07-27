@@ -32,6 +32,9 @@ from simple_ai_trading.impact_absorption_ai_review_preparation import (
 from simple_ai_trading.impact_absorption_ai_uplift import (
     ROUND74_AI_UPLIFT_SCHEMA_VERSION,
 )
+from simple_ai_trading.impact_absorption_ai_execution_replay import (
+    ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION,
+)
 from simple_ai_trading.impact_absorption_ai_worker import (
     ROUND74_AI_WORKER_ENVELOPE_SCHEMA_VERSION,
     ROUND74_AI_WORKER_RESULT_SCHEMA_VERSION,
@@ -88,7 +91,7 @@ ARTIFACT_PATH = (
     / "docs"
     / "model-research"
     / "action-value"
-    / "round-074-local-ai-review-design-v33.json"
+    / "round-074-local-ai-review-design-v34.json"
 )
 
 
@@ -120,6 +123,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "target_assembly",
         "execution_calibration_evidence",
         "uplift_evaluator",
+        "execution_replay",
         "sealed_ledger",
         "sealed_evaluator",
         "financial_metrics",
@@ -172,6 +176,9 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["uplift_evaluator_schema_version"] == (
         ROUND74_AI_UPLIFT_SCHEMA_VERSION
+    )
+    assert source["execution_replay_plan_schema_version"] == (
+        ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION
     )
     assert source["sealed_ledger_schema_version"] == (
         ROUND74_SEALED_LEDGER_SCHEMA_VERSION
@@ -366,7 +373,24 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert architecture["late_accepted_review_retains_auditable_decision"] is True
     assert architecture["late_accepted_review_receives_same_entry_exposure"] is False
-    assert architecture["latency_adjusted_delayed_entry_replay_implemented"] is False
+    assert architecture["same_entry_latency_eligibility_is_diagnostic_only"] is True
+    assert architecture["latency_adjusted_delayed_entry_replay_implemented"] is True
+    assert (
+        architecture[
+            "raw_sample_and_feature_window_hashes_preserved_into_replay_plan"
+        ]
+        is True
+    )
+    assert (
+        architecture[
+            "ai_size_reduction_applied_before_quantity_quantization_and_l2_walk"
+        ]
+        is True
+    )
+    assert architecture["baseline_fill_or_payoff_reuse_permitted"] is False
+    assert architecture["historical_review_expiration_ceiling_nanoseconds"] == (
+        30_000_000_000
+    )
     assert (
         architecture["future_target_eligibility_may_delete_a_model_selected_action"]
         is False
@@ -672,7 +696,10 @@ def test_round74_local_ai_candidates_are_pinned_but_unpromoted() -> None:
     assert status["sealed_ml_ai_evaluator_implemented"] is True
     assert status["target_free_candidate_inference_implemented"] is True
     assert status["two_model_review_preparation_implemented"] is True
-    assert status["same_entry_latency_uplift_gate_implemented"] is True
+    assert status["same_entry_latency_uplift_gate_implemented"] is False
+    assert status["same_entry_latency_retained_as_diagnostic"] is True
+    assert status["exact_delayed_execution_replay_implemented"] is True
+    assert status["sealed_exact_execution_evidence_implemented"] is True
     assert status["future_censorship_promotion_gate_implemented"] is True
     assert status["equal_run_action_selection_implemented"] is True
     assert status["historical_ai_queue_latency_implemented"] is True
@@ -750,14 +777,23 @@ def test_round74_local_ai_evaluation_cannot_win_by_all_veto() -> None:
         is True
     )
     assert evaluation["late_accepted_review_policy"] == (
-        "retain the validated decision for audit but apply zero exposure at the ML entry"
+        "retain the validated decision and perform exact delayed-book replay within "
+        "the frozen historical latency ceiling"
     )
-    assert evaluation["same_entry_latency_eligibility_rate_gate"] == 0.99
+    assert evaluation["same_entry_latency_eligibility_rate_gate"] is None
+    assert evaluation["same_entry_latency_eligibility_is_diagnostic_only"] is True
     assert (
         evaluation["same_entry_latency_eligibility_is_distinct_from_runtime_success"]
         is True
     )
-    assert evaluation["latency_adjusted_delayed_entry_replay_implemented"] is False
+    assert evaluation["latency_adjusted_delayed_entry_replay_implemented"] is True
+    assert evaluation["exact_replay_required_for_every_positive_exposure"] is True
+    assert evaluation["exact_replay_hash_bound_per_paired_observation"] is True
+    assert evaluation["baseline_payoff_scaling_without_book_rewalk_permitted"] is False
+    assert (
+        evaluation["delayed_entry_exit_path_risk_and_adverse_selection_recomputed"]
+        is True
+    )
     assert (
         evaluation[
             "future_target_eligibility_may_delete_a_model_selected_observation"
