@@ -26,6 +26,7 @@ def _run() -> dict[str, object]:
         "event_pooling_linear",
         "event_pooling_mlp",
         "causal_event_tcn",
+        "causal_event_attention",
     ]
     losses = dict.fromkeys(candidate_ids, 0.5)
     peers = {candidate_id: [0.4, 0.5, 0.6] for candidate_id in candidate_ids}
@@ -58,6 +59,19 @@ def _run() -> dict[str, object]:
             "training_eligible_regime_targets": 28,
             "tuning_eligible_regime_targets": 8,
             "candidate_ids": candidate_ids,
+            "candidate_parameter_counts": {
+                "event_pooling_linear": 19_900,
+                "event_pooling_mlp": 40_228,
+                "causal_event_tcn": 130_532,
+                "causal_event_attention": 153_532,
+            },
+            "feature_count": len(PUBLISHER.ROUND74_EVENT_FEATURE_NAMES),
+            "feature_names_sha256": (
+                PUBLISHER.ROUND74_EVENT_FEATURE_NAMES_SHA256
+            ),
+            "state_half_lives_seconds": list(
+                PUBLISHER.ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
+            ),
             "seeds": [7411, 7423, 7433],
             "epochs": 1,
             "minibatch_rows": 2,
@@ -106,12 +120,17 @@ def _run() -> dict[str, object]:
                 "selected_candidate_id": "event_pooling_linear",
                 "selected_tuning_metrics": {"run_balanced_loss": 0.5},
                 "ordered_candidate_ids": candidate_ids,
-                "planned_comparison_count": 2,
+                "planned_comparison_count": 3,
                 "required_paired_capture_run_count": 24,
                 "minimum_mean_proper_loss_improvement": 1e-5,
                 "maximum_permitted_paired_run_loss_degradation": 1e-5,
                 "statistical_independence_or_significance_claim": False,
                 "promotion_reports": [
+                    {
+                        "paired_capture_run_count": 1,
+                        "complete_tuning_panel": False,
+                        "promoted": False,
+                    },
                     {
                         "paired_capture_run_count": 1,
                         "complete_tuning_panel": False,
@@ -139,7 +158,7 @@ def test_strict_json_rejects_duplicate_and_nonfinite_values() -> None:
         PUBLISHER._strict_json('{"value":NaN}')
 
 
-def test_validate_run_accepts_complete_three_candidate_panel() -> None:
+def test_validate_run_accepts_complete_four_candidate_panel() -> None:
     run = json.loads(json.dumps(_run(), sort_keys=True))
     PUBLISHER._validate_run(run, commit="a" * 40)
     assert run["input_contract"]["training_capture_runs"] == 2

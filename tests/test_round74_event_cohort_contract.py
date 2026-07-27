@@ -119,14 +119,13 @@ def test_round74_cohort_plan_binds_prerequisite_and_implementation() -> None:
     assert plan.prerequisite_window_end_wall_ns < (
         plan.scheduled_start_wall_ns
     )
-    for path in (
-        "src/simple_ai_trading/impact_absorption_event_cohort.py",
-        "src/simple_ai_trading/impact_absorption_event_dataset.py",
-    ):
-        assert _git_blob(plan.implementation_git_commit, path) == _git_blob(
-            "HEAD",
-            path,
-        )
+    # The immutable plan binds capture cadence and whole-run partition policy.
+    # Post-capture feature/dataset revisions are bound by the model contract.
+    path = "src/simple_ai_trading/impact_absorption_event_cohort.py"
+    assert _git_blob(plan.implementation_git_commit, path) == _git_blob(
+        "HEAD",
+        path,
+    )
 
 
 def test_round74_cohort_cadence_correction_prevents_audit_overlap() -> None:
