@@ -338,6 +338,11 @@ def _non_replay_evidence(
         requested_entry_monotonic_ns=None,
         actual_entry_monotonic_ns=None,
         actual_exit_monotonic_ns=None,
+        reference_quote_notional=None,
+        actual_entry_quote_notional=None,
+        actual_deployed_capital_bps=0.0,
+        position_net_payoff_bps=0.0,
+        position_maximum_adverse_excursion_bps=0.0,
         capital_scaled_net_payoff_bps=0.0,
         capital_scaled_maximum_adverse_excursion_bps=0.0,
         adverse_selection=False,
@@ -469,6 +474,11 @@ def replay_round74_ai_execution_run(
         net_bps = 0.0
         adverse_excursion_bps = 0.0
         adverse_selection = False
+        reference_quote_notional: float | None = None
+        actual_entry_quote_notional: float | None = None
+        actual_deployed_capital_bps = 0.0
+        position_net_payoff_bps = 0.0
+        position_adverse_excursion_bps = 0.0
         if outcome.eligible:
             assert outcome.actual_entry_monotonic_ns is not None
             assert outcome.actual_exit_monotonic_ns is not None
@@ -480,13 +490,25 @@ def replay_round74_ai_execution_run(
                 status = "executed"
                 target_reason = ""
                 applied_multiplier = row.requested_size_multiplier_bps
-                scale = applied_multiplier / 10_000.0
+                assert outcome.reference_quote_notional is not None
+                assert outcome.entry_quote_notional is not None
                 assert outcome.net_payoff_bps is not None
                 assert outcome.maximum_adverse_excursion_bps is not None
+                assert outcome.capital_scaled_net_payoff_bps is not None
+                assert outcome.capital_scaled_maximum_adverse_excursion_bps is not None
                 assert outcome.adverse_selection is not None
-                net_bps = float(outcome.net_payoff_bps) * scale
-                adverse_excursion_bps = (
-                    float(outcome.maximum_adverse_excursion_bps) * scale
+                reference_quote_notional = float(outcome.reference_quote_notional)
+                actual_entry_quote_notional = float(outcome.entry_quote_notional)
+                actual_deployed_capital_bps = (
+                    actual_entry_quote_notional / reference_quote_notional * 10_000.0
+                )
+                position_net_payoff_bps = float(outcome.net_payoff_bps)
+                position_adverse_excursion_bps = float(
+                    outcome.maximum_adverse_excursion_bps
+                )
+                net_bps = float(outcome.capital_scaled_net_payoff_bps)
+                adverse_excursion_bps = float(
+                    outcome.capital_scaled_maximum_adverse_excursion_bps
                 )
                 adverse_selection = bool(outcome.adverse_selection)
                 open_until[key] = outcome.actual_exit_monotonic_ns
@@ -511,6 +533,11 @@ def replay_round74_ai_execution_run(
             requested_entry_monotonic_ns=(outcome.requested_entry_monotonic_ns),
             actual_entry_monotonic_ns=outcome.actual_entry_monotonic_ns,
             actual_exit_monotonic_ns=outcome.actual_exit_monotonic_ns,
+            reference_quote_notional=reference_quote_notional,
+            actual_entry_quote_notional=actual_entry_quote_notional,
+            actual_deployed_capital_bps=actual_deployed_capital_bps,
+            position_net_payoff_bps=position_net_payoff_bps,
+            position_maximum_adverse_excursion_bps=(position_adverse_excursion_bps),
             capital_scaled_net_payoff_bps=net_bps,
             capital_scaled_maximum_adverse_excursion_bps=(adverse_excursion_bps),
             adverse_selection=adverse_selection,

@@ -375,10 +375,13 @@ def _execution_replays(
             requested_entry_monotonic_ns=10 if executed else None,
             actual_entry_monotonic_ns=11 if executed else None,
             actual_exit_monotonic_ns=20 if executed else None,
+            reference_quote_notional=1_000.0 if executed else None,
+            actual_entry_quote_notional=1_000.0 if executed else None,
+            actual_deployed_capital_bps=10_000.0 if executed else 0.0,
+            position_net_payoff_bps=1.0 if executed else 0.0,
+            position_maximum_adverse_excursion_bps=(1.0 if executed else 0.0),
             capital_scaled_net_payoff_bps=1.0 if executed else 0.0,
-            capital_scaled_maximum_adverse_excursion_bps=(
-                1.0 if executed else 0.0
-            ),
+            capital_scaled_maximum_adverse_excursion_bps=(1.0 if executed else 0.0),
             adverse_selection=False,
         )
         evidence.validate()
