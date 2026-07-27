@@ -114,6 +114,13 @@ PROFILED_ARTIFACT_PATH = (
     / "action-value"
     / "round-074-local-ai-review-design-v51.json"
 )
+UNITS_ARTIFACT_PATH = (
+    REPOSITORY
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "round-074-local-ai-review-design-v52.json"
+)
 RUNTIME_PREFLIGHT_PATH = (
     REPOSITORY
     / "docs"
@@ -414,6 +421,51 @@ def test_round74_ai_design_delta_binds_frozen_risk_profile() -> None:
     assert not verification["sealed_test_accessed"]
     assert not verification["gpu_model_workload_executed"]
     assert all(value is False for value in status.values())
+
+
+def test_round74_ai_design_delta_disambiguates_feature_units() -> None:
+    previous = _load_json(PROFILED_ARTIFACT_PATH)
+    artifact = _load_json(UNITS_ARTIFACT_PATH)
+    claimed = artifact.pop("artifact_sha256")
+    commit = str(artifact["implementation_git_commit"])
+    source = artifact["source_binding"]
+    units = artifact["unit_contract_delta"]
+    verification = artifact["verification"]
+
+    assert claimed == _canonical_sha256(artifact)
+    assert artifact["schema_version"] == "round-074-local-ai-review-design-v52"
+    assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
+    for label in ("protocol", "review_panel"):
+        binding = source[label]
+        assert binding["sha256"] == _source_file_sha256_at(
+            commit,
+            binding["path"],
+        )
+    assert source["protocol"]["review_request_schema_version"] == (
+        "round-074-ai-review-request-v4"
+    )
+    assert source["protocol"]["prompt_payload_schema_version"] == (
+        "round-074-ai-prompt-payload-v4"
+    )
+    assert source["review_panel"]["schema_version"] == (
+        "round-074-ai-review-panel-v6"
+    )
+    assert units["standardized_feature_value_units"] == (
+        "dimensionless_training_scaler_z_scores"
+    )
+    assert units["forecast_value_units"] == "basis_points"
+    assert units["maximum_adverse_excursion_value_units"] == "basis_points"
+    assert not units["feature_names_with_financial_unit_suffixes_are_raw_values"]
+    assert units["prompt_explicitly_prohibits_raw_unit_interpretation_of_z_scores"]
+    assert units["prompt_payload_hash_binds_unit_metadata"]
+    assert units["request_remains_target_free"]
+    assert not units["financial_uplift_assumed"]
+    assert verification["focused_tests_passed"] == 97
+    assert verification["unit_metadata_asserted"]
+    assert verification["system_instruction_asserted"]
+    assert not verification["sealed_test_accessed"]
+    assert not verification["gpu_model_workload_executed"]
+    assert all(value is False for value in artifact["status"].values())
 
 
 def _file_sha256(relative_path: str) -> str:
