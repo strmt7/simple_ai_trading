@@ -901,3 +901,44 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     artifact.model_path.write_bytes(artifact.model_path.read_bytes() + b"x")
     with pytest.raises(ValueError, match="model artifact differs"):
         load_round74_pretest_policy(artifact.policy_path)
+
+
+def test_round74_fixed_architecture_mode_has_no_second_model_search(
+    tmp_path: Path,
+) -> None:
+    training = _batch("training", start_wall_ns=WALL_NS, identity=1)
+    tuning = _batch(
+        "tuning",
+        start_wall_ns=WALL_NS + PURGE_NS + 2_000_000_000,
+        identity=2,
+    )
+    config = replace(
+        _config(),
+        candidate_ids=("event_pooling_linear",),
+        architecture_selection_mode="fixed",
+    )
+    artifact = train_and_seal_round74_pretest_policy(
+        [training],
+        [tuning],
+        output_directory=tmp_path,
+        compute_backend="cpu",
+        config=config,
+    )
+    _model, policy = load_round74_pretest_policy(artifact.policy_path)
+
+    assert artifact.selected_candidate_id == "event_pooling_linear"
+    assert list(policy["candidate_panel"]) == ["event_pooling_linear"]
+    assert policy["training_policy"]["architecture_selection_mode"] == "fixed"
+    assert policy["selection"]["architecture_selection_mode"] == "fixed"
+    assert policy["selection"]["planned_comparison_count"] == 0
+    assert policy["selection"]["required_paired_capture_run_count"] == 0
+    assert policy["selection"]["promotion_reports"] == []
+    assert policy["selection"]["criterion"].startswith(
+        "fixed baseline-selected architecture"
+    )
+
+    with pytest.raises(ValueError, match="configuration differs"):
+        replace(
+            config,
+            candidate_ids=("event_pooling_linear", "event_pooling_mlp"),
+        ).validate()
