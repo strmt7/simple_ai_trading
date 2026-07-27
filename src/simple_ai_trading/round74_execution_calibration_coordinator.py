@@ -110,6 +110,10 @@ class Round74OrderSubmissionUnknown(RuntimeError):
     """Raised only when an order request may have reached the matching engine."""
 
 
+class Round74OrderSubmissionRejected(RuntimeError):
+    """Raised when Binance authoritatively rejects an order before execution."""
+
+
 class Round74ExecutionCalibrationTransport(Protocol):
     """Minimal non-mainnet exchange surface; implementations own no policy."""
 
@@ -336,6 +340,20 @@ def _execute_leg(
             reduce_only=reduce_only,
             client_order_id=client_order_id,
         )
+    except Round74OrderSubmissionRejected:
+        _transition(
+            journal,
+            client_order_id=client_order_id,
+            state="REJECTED",
+            source_payload={
+                "stage": "submission",
+                "outcome": "authoritatively-rejected",
+            },
+            reason="order submission authoritatively rejected",
+        )
+        raise RuntimeError(
+            "Round 74 execution order was authoritatively rejected"
+        ) from None
     except Round74OrderSubmissionUnknown:
         _transition(
             journal,
@@ -735,6 +753,7 @@ __all__ = [
     "ROUND74_EXECUTION_TERMINAL_TIMEOUT_SECONDS",
     "Round74ExecutionCalibrationResult",
     "Round74ExecutionCalibrationTransport",
+    "Round74OrderSubmissionRejected",
     "Round74OrderSubmissionUnknown",
     "capture_round74_execution_calibration_pair",
 ]

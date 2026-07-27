@@ -10,6 +10,7 @@ import duckdb
 import pytest
 
 from simple_ai_trading.round74_execution_calibration_coordinator import (
+    Round74OrderSubmissionRejected,
     Round74OrderSubmissionUnknown,
     capture_round74_execution_calibration_pair,
 )
@@ -37,10 +38,12 @@ class _Transport:
         terminal_events: bool = True,
         existing_orders: bool = False,
         unknown_paths: tuple[str, ...] = (),
+        rejected_paths: tuple[str, ...] = (),
     ) -> None:
         self.terminal_events = terminal_events
         self.existing_orders = existing_orders
         self.unknown_paths = unknown_paths
+        self.rejected_paths = rejected_paths
         self.position_amount = Decimal("0")
         self.orders: dict[str, dict[str, object]] = {}
         self.terminals: dict[str, dict[str, object]] = {}
@@ -140,6 +143,12 @@ class _Transport:
             }
         ]
         path = "exit" if reduce_only else "entry"
+        if path in self.rejected_paths:
+            if reduce_only:
+                self.position_amount -= signed_quantity
+            else:
+                self.position_amount = Decimal("0")
+            raise Round74OrderSubmissionRejected("safe generic rejection")
         if path in self.unknown_paths:
             raise Round74OrderSubmissionUnknown("do not persist this")
         return time.monotonic_ns(), {"orderId": order_id}
@@ -155,7 +164,7 @@ class _Transport:
         assert timeout_seconds > 0
         if not self.terminal_events:
             return None
-        return time.monotonic_ns(), self.terminals[client_order_id]
+        return time.monotonic_ns() + 1, self.terminals[client_order_id]
 
     def query_order(
         self,
@@ -304,3 +313,23 @@ def test_coordinator_refuses_new_pair_while_prior_intent_is_unresolved() -> None
             reference_quote_notional=Decimal("100"),
         )
     assert transport.orders == {}
+
+
+def test_authoritative_entry_rejection_does_not_leave_blocking_exposure() -> None:
+    transport = _Transport(rejected_paths=("entry",))
+    journal = _journal()
+
+    with pytest.raises(RuntimeError, match="authoritatively rejected"):
+        capture_round74_execution_calibration_pair(
+            transport=transport,
+            journal=journal,
+            calibration_run_id="round74-test",
+            round_trip_id="BTCUSDT-5",
+            symbol="BTCUSDT",
+            entry_side="BUY",
+            quantity=Decimal("1"),
+            reference_quote_notional=Decimal("100"),
+        )
+
+    assert transport.position_amount == 0
+    assert journal.blocking_round_trip_ids() == ()
