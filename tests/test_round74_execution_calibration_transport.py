@@ -14,6 +14,7 @@ from simple_ai_trading.round74_execution_calibration_coordinator import (
     Round74OrderSubmissionUnknown,
 )
 from simple_ai_trading.round74_execution_calibration_transport import (
+    ROUND74_EXECUTION_TRANSPORT_MAXIMUM_RESPONSE_BYTES,
     ROUND74_EXECUTION_TRANSPORT_REST_BASE_URL,
     ROUND74_EXECUTION_TRANSPORT_WS_BASE_URL,
     Round74BinanceTestnetExecutionTransport,
@@ -41,6 +42,7 @@ class _Session:
         self.order_status = 200
         self.order_payload: object = {"orderId": 1001}
         self.raise_order_timeout = False
+        self.exchange_information_padding = ""
 
     def request(
         self,
@@ -74,6 +76,43 @@ class _Session:
             )
         if path == "/fapi/v1/openOrders":
             return _Response([], {})
+        if path == "/fapi/v1/exchangeInfo":
+            return _Response(
+                {
+                    "padding": self.exchange_information_padding,
+                    "symbols": [
+                        {
+                            "symbol": "BTCUSDT",
+                            "pair": "BTCUSDT",
+                            "contractType": "PERPETUAL",
+                            "status": "TRADING",
+                            "quoteAsset": "USDT",
+                            "marginAsset": "USDT",
+                            "filters": [
+                                {
+                                    "filterType": "MARKET_LOT_SIZE",
+                                    "minQty": "0.001",
+                                    "maxQty": "1000",
+                                    "stepSize": "0.001",
+                                },
+                                {
+                                    "filterType": "MIN_NOTIONAL",
+                                    "notional": "5",
+                                },
+                            ],
+                        }
+                    ]
+                },
+                {},
+            )
+        if path == "/fapi/v1/premiumIndex":
+            return _Response(
+                {
+                    "symbol": params["symbol"],
+                    "markPrice": "100.00",
+                },
+                {},
+            )
         if path == "/fapi/v1/depth":
             return _Response(
                 {
@@ -193,6 +232,13 @@ def test_transport_uses_only_official_testnet_surfaces_and_signed_calls() -> Non
     with transport:
         assert transport.position("BTCUSDT")["positionAmt"] == "0"
         assert transport.open_orders("BTCUSDT") == ()
+        assert (
+            transport.exchange_information("BTCUSDT")["symbol_payload"][
+                "status"
+            ]
+            == "TRADING"
+        )
+        assert transport.mark_price("BTCUSDT")["mark_price"] == "100.00"
         assert transport.book("BTCUSDT")["update_id"] == 42
         received_ns, ack = transport.submit_market_order(
             symbol="BTCUSDT",
@@ -250,6 +296,24 @@ def test_transport_uses_only_official_testnet_surfaces_and_signed_calls() -> Non
     )
     assert "ephemeral-key" not in serialized_public_state
     assert "ephemeral-secret" not in serialized_public_state
+
+
+def test_transport_allows_bounded_full_exchange_information_payload() -> None:
+    session = _Session()
+    session.exchange_information_padding = "x" * (
+        ROUND74_EXECUTION_TRANSPORT_MAXIMUM_RESPONSE_BYTES + 1
+    )
+    transport = Round74BinanceTestnetExecutionTransport(
+        api_key="key",
+        api_secret="secret",
+        session_factory=lambda: session,
+        websocket_factory=lambda _url, **_kwargs: _WebSocket([]),
+    )
+
+    result = transport.exchange_information("BTCUSDT")
+
+    assert result["symbol"] == "BTCUSDT"
+    transport.close()
 
 
 def test_transport_classifies_order_timeout_as_unknown_without_retry() -> None:
