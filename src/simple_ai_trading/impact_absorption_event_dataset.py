@@ -34,7 +34,7 @@ from .impact_absorption_event_targets import (
 )
 
 
-ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v8"
+ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v9"
 ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v4"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
