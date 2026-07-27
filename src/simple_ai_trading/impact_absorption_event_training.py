@@ -39,8 +39,11 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v3"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v3"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v4"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v4"
+ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
+    "round-074-target-context-panel-v1"
+)
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
@@ -236,7 +239,8 @@ class Round74PretestPolicyArtifact:
 class _DevelopmentIdentity:
     partition_sha256: str
     scaler_sha256: str
-    target_context_sha256: str
+    target_context_sha256: tuple[str, ...]
+    target_context_panel_sha256: str
     training_batch_sha256: tuple[str, ...]
     tuning_batch_sha256: tuple[str, ...]
     training_rows: int
@@ -296,6 +300,10 @@ def _validate_role_batches(
             raise ValueError(
                 f"Round 74 {required_role} batch mixes capture runs"
             )
+        if len(set(batch.target_context_sha256)) != 1:
+            raise ValueError(
+                f"Round 74 {required_role} batch mixes target contexts"
+            )
         run_id = next(iter(batch_runs))
         if run_id in capture_runs:
             raise ValueError(
@@ -351,19 +359,26 @@ def _validate_development_batches(
     all_batches = (*training, *tuning)
     partitions = {batch.partition_sha256 for batch in all_batches}
     scalers = {batch.scaler_sha256 for batch in all_batches}
-    contexts = {
+    contexts = tuple(sorted({
         context for batch in all_batches for context in batch.target_context_sha256
-    }
+    }))
     if len(partitions) != 1:
         raise ValueError("Round 74 development partition identity differs")
     if len(scalers) != 1:
         raise ValueError("Round 74 development scaler identity differs")
-    if len(contexts) != 1:
-        raise ValueError("Round 74 development target context differs")
+    target_context_panel_sha256 = _canonical_sha256(
+        {
+            "schema_version": (
+                ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+            ),
+            "target_context_sha256": list(contexts),
+        }
+    )
     return _DevelopmentIdentity(
         partition_sha256=next(iter(partitions)),
         scaler_sha256=next(iter(scalers)),
-        target_context_sha256=next(iter(contexts)),
+        target_context_sha256=contexts,
+        target_context_panel_sha256=target_context_panel_sha256,
         training_batch_sha256=tuple(batch.batch_sha256 for batch in training),
         tuning_batch_sha256=tuple(batch.batch_sha256 for batch in tuning),
         training_rows=int(training_rows),
@@ -920,7 +935,14 @@ def train_and_seal_round74_pretest_policy(
         "development_data": {
             "partition_sha256": development.partition_sha256,
             "scaler_sha256": development.scaler_sha256,
-            "target_context_sha256": development.target_context_sha256,
+            "target_context_panel_schema_version": (
+                ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+            ),
+            "target_context_panel_sha256": (
+                development.target_context_panel_sha256
+            ),
+            "target_context_sha256": list(development.target_context_sha256),
+            "target_context_count": len(development.target_context_sha256),
             "training_batch_sha256": list(development.training_batch_sha256),
             "tuning_batch_sha256": list(development.tuning_batch_sha256),
             "training_rows": development.training_rows,
@@ -1229,6 +1251,34 @@ def load_round74_pretest_policy(
             raise ValueError("Round 74 pretest data identity differs")
     training_batch_hashes = set(development["training_batch_sha256"])
     tuning_batch_hashes = set(development["tuning_batch_sha256"])
+    target_contexts = development.get("target_context_sha256")
+    if (
+        not isinstance(target_contexts, list)
+        or not target_contexts
+        or target_contexts != sorted(target_contexts)
+        or len(target_contexts) != len(set(target_contexts))
+        or any(
+            not isinstance(value, str) or _SHA256.fullmatch(value) is None
+            for value in target_contexts
+        )
+    ):
+        raise ValueError("Round 74 pretest target-context panel differs")
+    target_context_panel_sha256 = _canonical_sha256(
+        {
+            "schema_version": (
+                ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+            ),
+            "target_context_sha256": target_contexts,
+        }
+    )
+    if (
+        development.get("target_context_panel_schema_version")
+        != ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
+        or development.get("target_context_panel_sha256")
+        != target_context_panel_sha256
+        or development.get("target_context_count") != len(target_contexts)
+    ):
+        raise ValueError("Round 74 pretest target-context panel differs")
     development_times = tuple(
         development.get(name)
         for name in (
@@ -1243,7 +1293,10 @@ def load_round74_pretest_policy(
         != {
             "partition_sha256",
             "scaler_sha256",
+            "target_context_panel_schema_version",
+            "target_context_panel_sha256",
             "target_context_sha256",
+            "target_context_count",
             "training_batch_sha256",
             "tuning_batch_sha256",
             "training_rows",
@@ -1262,7 +1315,6 @@ def load_round74_pretest_policy(
             for name in (
                 "partition_sha256",
                 "scaler_sha256",
-                "target_context_sha256",
             )
         )
         or any(
@@ -1448,6 +1500,7 @@ def load_round74_pretest_policy(
 
 __all__ = [
     "ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION",
+    "ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION",
     "ROUND74_EVENT_TRAINING_DEFAULT_SEEDS",
     "ROUND74_EVENT_TRAINING_LOSS_WEIGHTS",
     "ROUND74_EVENT_TRAINING_SCHEMA_VERSION",
