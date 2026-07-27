@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 import sys
 
+import requests
+
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 if str(REPOSITORY) not in sys.path:
@@ -70,11 +72,13 @@ def main(argv: list[str] | None = None) -> int:
             "Round 74 commission credentials are absent from the required "
             "ephemeral environment variables"
         )
-    result = capture_round74_mainnet_commission(
-        api_key=api_key,
-        api_secret=api_secret,
-        timeout_seconds=arguments.timeout_seconds,
-    )
+    with requests.Session() as session:
+        result = capture_round74_mainnet_commission(
+            api_key=api_key,
+            api_secret=api_secret,
+            timeout_seconds=arguments.timeout_seconds,
+            request=session.request,
+        )
     artifact: dict[str, object] = {
         "schema_version": ROUND74_COMMISSION_ARTIFACT_SCHEMA_VERSION,
         "capture": result.as_dict(),
