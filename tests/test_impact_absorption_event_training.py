@@ -220,9 +220,7 @@ def test_round74_ensemble_averages_probabilities_not_logits() -> None:
         torch.sigmoid(output.regime_unpredictability_logits),
         torch.full_like(output.regime_unpredictability_logits, 0.7),
     )
-    mean_logit = (
-        torch.logit(torch.tensor(0.5)) + torch.logit(torch.tensor(0.9))
-    ) / 2.0
+    mean_logit = (torch.logit(torch.tensor(0.5)) + torch.logit(torch.tensor(0.9))) / 2.0
     assert not torch.allclose(torch.sigmoid(mean_logit), torch.tensor(0.7))
 
 
@@ -231,15 +229,18 @@ def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
         "event_pooling_linear",
         "event_pooling_mlp",
         "causal_event_tcn",
+        "causal_event_attention",
     )
     parameter_counts = {
         "event_pooling_linear": 13_000,
         "event_pooling_mlp": 31_396,
         "causal_event_tcn": 129_060,
+        "causal_event_attention": 151_876,
     }
     linear = (1.0,) * 24
     mlp = (0.9,) * 24
     tcn = (0.8,) * 24
+    attention = (0.7,) * 24
 
     winner, reports = _complexity_gated_candidate_id(
         candidate_ids,
@@ -247,13 +248,14 @@ def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
             "event_pooling_linear": linear,
             "event_pooling_mlp": mlp,
             "causal_event_tcn": tcn,
+            "causal_event_attention": attention,
         },
         parameter_counts,
         minimum_mean_loss_improvement=1e-5,
     )
 
-    assert winner == "causal_event_tcn"
-    assert len(reports) == ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT == 2
+    assert winner == "causal_event_attention"
+    assert len(reports) == ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT == 3
     assert reports[0]["incumbent_candidate_id"] == "event_pooling_linear"
     assert reports[0]["challenger_win_count"] == 24
     assert reports[0]["challenger_loss_count"] == 0
@@ -264,6 +266,9 @@ def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
     assert reports[1]["incumbent_candidate_id"] == "event_pooling_mlp"
     assert reports[1]["challenger_win_count"] == 24
     assert reports[1]["promoted"] is True
+    assert reports[2]["incumbent_candidate_id"] == "causal_event_tcn"
+    assert reports[2]["challenger_win_count"] == 24
+    assert reports[2]["promoted"] is True
 
 
 def test_round74_complexity_gate_rejects_point_better_but_weak_challengers() -> None:
@@ -271,11 +276,13 @@ def test_round74_complexity_gate_rejects_point_better_but_weak_challengers() -> 
         "event_pooling_linear",
         "event_pooling_mlp",
         "causal_event_tcn",
+        "causal_event_attention",
     )
     parameter_counts = {
         "event_pooling_linear": 13_000,
         "event_pooling_mlp": 31_396,
         "causal_event_tcn": 129_060,
+        "causal_event_attention": 151_876,
     }
     linear = (1.0,) * 24
     weak = (0.8,) * 17 + (1.2,) * 7
@@ -286,6 +293,7 @@ def test_round74_complexity_gate_rejects_point_better_but_weak_challengers() -> 
             "event_pooling_linear": linear,
             "event_pooling_mlp": weak,
             "causal_event_tcn": weak,
+            "causal_event_attention": weak,
         },
         parameter_counts,
         minimum_mean_loss_improvement=1e-5,
@@ -305,16 +313,19 @@ def test_round74_complexity_gate_excludes_exact_ties() -> None:
             "event_pooling_linear",
             "event_pooling_mlp",
             "causal_event_tcn",
+            "causal_event_attention",
         ),
         {
             "event_pooling_linear": (1.0,) * 24,
             "event_pooling_mlp": (0.9,) * 18 + (1.0,) * 6,
             "causal_event_tcn": (1.0,) * 24,
+            "causal_event_attention": (1.0,) * 24,
         },
         {
             "event_pooling_linear": 13_000,
             "event_pooling_mlp": 31_396,
             "causal_event_tcn": 129_060,
+            "causal_event_attention": 151_876,
         },
         minimum_mean_loss_improvement=1e-5,
     )
@@ -329,6 +340,8 @@ def test_round74_complexity_gate_excludes_exact_ties() -> None:
     assert reports[0]["promoted"] is True
     assert reports[1]["incumbent_candidate_id"] == "event_pooling_mlp"
     assert reports[1]["promoted"] is False
+    assert reports[2]["incumbent_candidate_id"] == "event_pooling_mlp"
+    assert reports[2]["promoted"] is False
 
 
 def _write_rehashed_policy(path: Path, policy: dict[str, object]) -> Path:
@@ -487,9 +500,7 @@ def test_round74_trainer_records_and_skips_fully_censored_minibatches(
     _model, policy = load_round74_pretest_policy(artifact.policy_path)
 
     for report in policy["candidate_panel"].values():
-        optimization = report["peer_reports"][0]["history"][0][
-            "optimization_metrics"
-        ]
+        optimization = report["peer_reports"][0]["history"][0]["optimization_metrics"]
         assert optimization["fully_censored_minibatches"] == 1.0
         assert optimization["fully_censored_rows"] == 2.0
         assert optimization["eligible_action_targets"] > 0.0
@@ -528,8 +539,7 @@ def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
     assert policy["optimization_population"] == {
         "unit": "capture_run",
         "optimizer_step": (
-            "one eligible minibatch per training capture run with "
-            "gradient accumulation"
+            "one eligible minibatch per training capture run with gradient accumulation"
         ),
         "gradient_divisor": "training_capture_run_count",
         "shorter_run_policy": (
@@ -540,9 +550,7 @@ def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
         "row_pooled_optimizer_steps_permitted": False,
     }
     for report in policy["candidate_panel"].values():
-        optimization = report["peer_reports"][0]["history"][0][
-            "optimization_metrics"
-        ]
+        optimization = report["peer_reports"][0]["history"][0]["optimization_metrics"]
         assert optimization["run_count"] == 2.0
         assert optimization["optimizer_steps"] == 3.0
         assert optimization["run_contributions_per_optimizer_step"] == 2.0
@@ -550,9 +558,7 @@ def test_round74_trainer_balances_optimizer_contributions_by_capture_run(
         assert optimization["maximum_run_minibatch_contributions"] == 3.0
         assert optimization["minimum_eligible_minibatches_per_run"] == 1.0
         assert optimization["maximum_eligible_minibatches_per_run"] == 3.0
-        assert optimization["worst_run_loss"] >= (
-            optimization["run_balanced_loss"]
-        )
+        assert optimization["worst_run_loss"] >= (optimization["run_balanced_loss"])
 
 
 def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
@@ -600,6 +606,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         "event_pooling_linear",
         "event_pooling_mlp",
         "causal_event_tcn",
+        "causal_event_attention",
     }
     assert policy["selection"]["backtest_metric_used_for_selection"] is False
     assert policy["selection"]["criterion"].startswith(
@@ -610,6 +617,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         "event_pooling_linear",
         "event_pooling_mlp",
         "causal_event_tcn",
+        "causal_event_attention",
     ]
     assert policy["selection"]["planned_comparison_count"] == (
         ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
@@ -617,20 +625,19 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert policy["selection"]["required_paired_capture_run_count"] == (
         ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
-    assert policy["selection"]["statistical_independence_or_significance_claim"] is False
-    assert len(policy["selection"]["promotion_reports"]) == 2
+    assert (
+        policy["selection"]["statistical_independence_or_significance_claim"] is False
+    )
+    assert len(policy["selection"]["promotion_reports"]) == 3
     assert all(
-        report["complete_tuning_panel"] is False
-        and report["promoted"] is False
+        report["complete_tuning_panel"] is False and report["promoted"] is False
         for report in policy["selection"]["promotion_reports"]
     )
     for report in policy["candidate_panel"].values():
         assert len(report["ensemble_tuning_run_losses"]) == 2
     selected_metrics = policy["selection"]["selected_tuning_metrics"]
     assert selected_metrics["run_count"] == 2.0
-    assert selected_metrics["worst_run_loss"] >= (
-        selected_metrics["run_balanced_loss"]
-    )
+    assert selected_metrics["worst_run_loss"] >= (selected_metrics["run_balanced_loss"])
     assert selected_metrics["run_balanced_loss"] != selected_metrics["loss"]
     assert artifact.tuning_loss == selected_metrics["run_balanced_loss"]
     assert all(
@@ -658,12 +665,8 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     with pytest.raises(ValueError, match="source binding differs"):
         load_round74_pretest_policy(changed_source_path)
 
-    changed_context_panel = json.loads(
-        artifact.policy_path.read_text(encoding="ascii")
-    )
-    changed_context_panel["development_data"]["target_context_sha256"].append(
-        "5" * 64
-    )
+    changed_context_panel = json.loads(artifact.policy_path.read_text(encoding="ascii"))
+    changed_context_panel["development_data"]["target_context_sha256"].append("5" * 64)
     changed_context_path = _write_rehashed_policy(
         tmp_path,
         changed_context_panel,
@@ -671,9 +674,7 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     with pytest.raises(ValueError, match="target-context panel differs"):
         load_round74_pretest_policy(changed_context_path)
 
-    changed_promotion = json.loads(
-        artifact.policy_path.read_text(encoding="ascii")
-    )
+    changed_promotion = json.loads(artifact.policy_path.read_text(encoding="ascii"))
     changed_promotion["selection"]["promotion_reports"][0]["promoted"] = True
     changed_promotion_path = _write_rehashed_policy(
         tmp_path,

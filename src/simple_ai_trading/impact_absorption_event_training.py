@@ -39,15 +39,11 @@ from .impact_absorption_event_model import (
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v9"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v8"
-ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = (
-    "round-074-target-context-panel-v1"
-)
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v10"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v9"
+ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
-ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = (
-    len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
-)
+ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 24
 ROUND74_EVENT_TRAINING_LOSS_WEIGHTS = {
     "maximum_adverse_excursion": 0.35,
@@ -89,8 +85,7 @@ def _optimization_population_policy() -> dict[str, object]:
     return {
         "unit": "capture_run",
         "optimizer_step": (
-            "one eligible minibatch per training capture run with "
-            "gradient accumulation"
+            "one eligible minibatch per training capture run with gradient accumulation"
         ),
         "gradient_divisor": "training_capture_run_count",
         "shorter_run_policy": (
@@ -230,9 +225,7 @@ class Round74EventEnsemble(nn.Module):
             maximum_adverse_excursion_quantiles_bps=tensor_mean(
                 "maximum_adverse_excursion_quantiles_bps"
             ),
-            positive_payoff_logits=predictive_mixture_logit(
-                "positive_payoff_logits"
-            ),
+            positive_payoff_logits=predictive_mixture_logit("positive_payoff_logits"),
             adverse_selection_logits=predictive_mixture_logit(
                 "adverse_selection_logits"
             ),
@@ -319,18 +312,12 @@ def _validate_role_batches(
             )
         batch_runs = set(batch.run_id)
         if len(batch_runs) != 1:
-            raise ValueError(
-                f"Round 74 {required_role} batch mixes capture runs"
-            )
+            raise ValueError(f"Round 74 {required_role} batch mixes capture runs")
         if len(set(batch.target_context_sha256)) != 1:
-            raise ValueError(
-                f"Round 74 {required_role} batch mixes target contexts"
-            )
+            raise ValueError(f"Round 74 {required_role} batch mixes target contexts")
         run_id = next(iter(batch_runs))
         if run_id in capture_runs:
-            raise ValueError(
-                f"Round 74 {required_role} capture run is repeated"
-            )
+            raise ValueError(f"Round 74 {required_role} capture run is repeated")
         capture_runs.add(run_id)
         first = _row_key(batch, 0)
         last = _row_key(batch, batch.rows - 1)
@@ -381,18 +368,22 @@ def _validate_development_batches(
     all_batches = (*training, *tuning)
     partitions = {batch.partition_sha256 for batch in all_batches}
     scalers = {batch.scaler_sha256 for batch in all_batches}
-    contexts = tuple(sorted({
-        context for batch in all_batches for context in batch.target_context_sha256
-    }))
+    contexts = tuple(
+        sorted(
+            {
+                context
+                for batch in all_batches
+                for context in batch.target_context_sha256
+            }
+        )
+    )
     if len(partitions) != 1:
         raise ValueError("Round 74 development partition identity differs")
     if len(scalers) != 1:
         raise ValueError("Round 74 development scaler identity differs")
     target_context_panel_sha256 = _canonical_sha256(
         {
-            "schema_version": (
-                ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
-            ),
+            "schema_version": (ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION),
             "target_context_sha256": list(contexts),
         }
     )
@@ -463,9 +454,7 @@ def _minibatch_target_counts(
     if step != 1 or stop <= start:
         raise ValueError("Round 74 minibatch slice differs")
     action_weight = int(batch.action_eligibility[row_slice].sum())
-    regime_weight = int(
-        batch.regime_unpredictability_eligibility[row_slice].sum()
-    )
+    regime_weight = int(batch.regime_unpredictability_eligibility[row_slice].sum())
     if (action_weight == 0) != (regime_weight == 0):
         raise ValueError("Round 74 minibatch target eligibility differs")
     return action_weight, regime_weight, stop - start
@@ -607,9 +596,7 @@ def _finalize_metrics(totals: Mapping[str, float]) -> dict[str, float]:
     )
     metrics["eligible_action_targets"] = action_weight
     metrics["eligible_regime_targets"] = regime_weight
-    metrics["fully_censored_minibatches"] = float(
-        totals["fully_censored_minibatches"]
-    )
+    metrics["fully_censored_minibatches"] = float(totals["fully_censored_minibatches"])
     metrics["fully_censored_rows"] = float(totals["fully_censored_rows"])
     if not all(math.isfinite(value) for value in metrics.values()):
         raise RuntimeError("Round 74 aggregate metrics are nonfinite")
@@ -644,8 +631,8 @@ def _evaluate_model(
                         row_slice,
                     )
                     continue
-                _loss, components, action_weight, regime_weight = (
-                    _loss_for_minibatch(model, batch, row_slice, device)
+                _loss, components, action_weight, regime_weight = _loss_for_minibatch(
+                    model, batch, row_slice, device
                 )
                 _accumulate_metrics(
                     totals,
@@ -712,9 +699,7 @@ def _train_peer(
     for epoch in range(1, config.maximum_epochs + 1):
         model.train()
         optimization_totals = _empty_metric_sums()
-        per_run_totals = tuple(
-            _empty_metric_sums() for _batch in training_batches
-        )
+        per_run_totals = tuple(_empty_metric_sums() for _batch in training_batches)
         schedules = _run_balanced_minibatch_schedules(
             training_batches,
             config.minibatch_rows,
@@ -732,8 +717,8 @@ def _train_peer(
                 strict=True,
             ):
                 row_slice = schedule[(step + epoch - 1) % len(schedule)]
-                loss, components, action_weight, regime_weight = (
-                    _loss_for_minibatch(model, batch, row_slice, device)
+                loss, components, action_weight, regime_weight = _loss_for_minibatch(
+                    model, batch, row_slice, device
                 )
                 (loss / run_count).backward()
                 _accumulate_metrics(
@@ -766,8 +751,7 @@ def _train_peer(
             raise RuntimeError("Round 74 model parameters are nonfinite")
         optimization_metrics = _finalize_metrics(optimization_totals)
         optimization_run_losses = tuple(
-            _finalize_metrics(run_totals)["loss"]
-            for run_totals in per_run_totals
+            _finalize_metrics(run_totals)["loss"] for run_totals in per_run_totals
         )
         optimization_metrics.update(
             {
@@ -833,9 +817,7 @@ def _train_peer(
         rel_tol=1e-7,
         abs_tol=1e-7,
     ):
-        raise RuntimeError(
-            "Round 74 best-state run-balanced reload metric differs"
-        )
+        raise RuntimeError("Round 74 best-state run-balanced reload metric differs")
     return best_state, {
         "seed": seed,
         "best_epoch": best_epoch,
@@ -954,22 +936,21 @@ def _complexity_gated_candidate_id(
     ):
         raise ValueError("Round 74 complexity-promotion panel differs")
     parameter_counts = tuple(candidate_parameter_counts[value] for value in ordered)
-    if (
-        any(
-            isinstance(value, bool) or not isinstance(value, int) or value <= 0
-            for value in parameter_counts
-        )
-        or any(
-            later <= earlier
-            for earlier, later in zip(
-                parameter_counts,
-                parameter_counts[1:],
-            )
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or value <= 0
+        for value in parameter_counts
+    ) or any(
+        later <= earlier
+        for earlier, later in zip(
+            parameter_counts,
+            parameter_counts[1:],
         )
     ):
         raise ValueError("Round 74 complexity order differs")
     losses = {
-        candidate_id: tuple(float(value) for value in candidate_run_losses[candidate_id])
+        candidate_id: tuple(
+            float(value) for value in candidate_run_losses[candidate_id]
+        )
         for candidate_id in ordered
     }
     run_counts = {len(value) for value in losses.values()}
@@ -1003,14 +984,12 @@ def _complexity_gated_candidate_id(
         mean_improvement = sum(improvements) / len(improvements)
         maximum_loss_degradation = max(-value for value in improvements)
         complete_tuning_panel = (
-            len(improvements)
-            == ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
+            len(improvements) == ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
         )
         all_runs_noninferior = maximum_loss_degradation <= minimum_improvement
         promoted = (
             complete_tuning_panel
-            and
-            mean_improvement > minimum_improvement
+            and mean_improvement > minimum_improvement
             and all_runs_noninferior
         )
         reports.append(
@@ -1028,9 +1007,7 @@ def _complexity_gated_candidate_id(
                 "mean_proper_loss_improvement": mean_improvement,
                 "minimum_mean_proper_loss_improvement": minimum_improvement,
                 "maximum_paired_run_loss_degradation": maximum_loss_degradation,
-                "maximum_permitted_paired_run_loss_degradation": (
-                    minimum_improvement
-                ),
+                "maximum_permitted_paired_run_loss_degradation": (minimum_improvement),
                 "all_paired_runs_noninferior": all_runs_noninferior,
                 "promoted": promoted,
             }
@@ -1163,9 +1140,7 @@ def train_and_seal_round74_pretest_policy(
         )
     winner, promotion_reports = _select_candidate_with_complexity_gate(
         candidate_fits,
-        minimum_mean_loss_improvement=(
-            selected_config.minimum_tuning_improvement
-        ),
+        minimum_mean_loss_improvement=(selected_config.minimum_tuning_improvement),
     )
     model_state = _flatten_ensemble_state(winner)
     # safetensors 0.8 metadata uses map ordering that is not byte-stable.
@@ -1204,9 +1179,7 @@ def train_and_seal_round74_pretest_policy(
             "target_context_panel_schema_version": (
                 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
             ),
-            "target_context_panel_sha256": (
-                development.target_context_panel_sha256
-            ),
+            "target_context_panel_sha256": (development.target_context_panel_sha256),
             "target_context_sha256": list(development.target_context_sha256),
             "target_context_count": len(development.target_context_sha256),
             "training_batch_sha256": list(development.training_batch_sha256),
@@ -1272,9 +1245,7 @@ def train_and_seal_round74_pretest_policy(
             "selected_candidate_id": winner.candidate_id,
             "selected_tuning_metrics": winner.ensemble_metrics,
             "ordered_candidate_ids": list(selected_config.candidate_ids),
-            "planned_comparison_count": (
-                ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT
-            ),
+            "planned_comparison_count": (ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT),
             "required_paired_capture_run_count": (
                 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
             ),
@@ -1474,12 +1445,8 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest optimization population differs")
     if dict(ensemble_aggregation) != {
         "peer_weights": "equal",
-        "payoff_and_adverse_excursion_quantiles": (
-            "arithmetic_mean_of_peer_quantiles"
-        ),
-        "classification_heads": (
-            "arithmetic_mean_of_peer_probabilities_then_logit"
-        ),
+        "payoff_and_adverse_excursion_quantiles": ("arithmetic_mean_of_peer_quantiles"),
+        "classification_heads": ("arithmetic_mean_of_peer_probabilities_then_logit"),
         "mean_peer_logits_permitted": False,
         "probability_calibration_fitted_after_ensemble_aggregation": True,
     }:
@@ -1555,17 +1522,14 @@ def load_round74_pretest_policy(
         raise ValueError("Round 74 pretest target-context panel differs")
     target_context_panel_sha256 = _canonical_sha256(
         {
-            "schema_version": (
-                ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
-            ),
+            "schema_version": (ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION),
             "target_context_sha256": target_contexts,
         }
     )
     if (
         development.get("target_context_panel_schema_version")
         != ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
-        or development.get("target_context_panel_sha256")
-        != target_context_panel_sha256
+        or development.get("target_context_panel_sha256") != target_context_panel_sha256
         or development.get("target_context_count") != len(target_contexts)
     ):
         raise ValueError("Round 74 pretest target-context panel differs")
@@ -1680,8 +1644,7 @@ def load_round74_pretest_policy(
                 and math.isfinite(float(value))
                 for value in metrics.values()
             )
-            or float(metrics.get("run_count", 0.0))
-            != float(len(tuning_batch_hashes))
+            or float(metrics.get("run_count", 0.0)) != float(len(tuning_batch_hashes))
             or float(metrics.get("worst_run_loss", math.inf))
             < float(metrics.get("run_balanced_loss", -math.inf))
             or not isinstance(raw_run_losses, list)
@@ -1693,8 +1656,7 @@ def load_round74_pretest_policy(
                 for value in raw_run_losses
             )
             or not math.isclose(
-                sum(float(value) for value in raw_run_losses)
-                / len(raw_run_losses),
+                sum(float(value) for value in raw_run_losses) / len(raw_run_losses),
                 float(metrics.get("run_balanced_loss", math.inf)),
                 rel_tol=1e-12,
                 abs_tol=1e-12,
@@ -1720,9 +1682,7 @@ def load_round74_pretest_policy(
         reconstructed_config.candidate_ids,
         candidate_run_losses,
         candidate_parameter_counts,
-        minimum_mean_loss_improvement=(
-            reconstructed_config.minimum_tuning_improvement
-        ),
+        minimum_mean_loss_improvement=(reconstructed_config.minimum_tuning_improvement),
     )
     if (
         set(selection)
@@ -1758,8 +1718,7 @@ def load_round74_pretest_policy(
         != reconstructed_config.minimum_tuning_improvement
         or selection.get("maximum_permitted_paired_run_loss_degradation")
         != reconstructed_config.minimum_tuning_improvement
-        or selection.get("statistical_independence_or_significance_claim")
-        is not False
+        or selection.get("statistical_independence_or_significance_claim") is not False
         or selection.get("promotion_reports") != list(expected_promotion_reports)
         or selection.get("complexity_promotion_privilege") is not False
         or selection.get("backtest_metric_used_for_selection") is not False
