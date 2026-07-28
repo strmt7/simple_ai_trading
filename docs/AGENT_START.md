@@ -364,8 +364,15 @@ After parser or taxonomy changes, regenerate the header through the native build
   zero eligible model time. The prospective implementation uses 720
   predeclared slots and exact role-level eligible-time quotas; a qualifying
   transport-ended prefix must be included, but no feature or target may cross
-  an epoch boundary. The implementation is validated, but no new plan is
-  frozen and no campaign is open. Read
+  an epoch boundary. A separate attempt 003 then completed the full 20-minute
+  prerequisite with 543,530 exact messages, zero reconnects, 3.05% peak queue
+  use, and no WAL left behind. Independent exact-wire and causal-depth replay
+  produced 536,739 tokens and 1,200.071 seconds of conservative usable time,
+  so both the 600-second minimum and complete target-tail gates passed. This
+  validates the capture, epoch-audit, and deterministic-adjudication mechanics,
+  but the prerequisite is not cohort data. No new plan is frozen and no
+  campaign is open. Read
+  `round-074-segmented-prerequisite-attempt-003-success-2026-07-28.json` and
   `round-074-segmented-transport-epoch-redesign-validation-2026-07-28.json`,
   then read
   `round-074-event-sequence-model-design-v64.json`, which composes the complete
