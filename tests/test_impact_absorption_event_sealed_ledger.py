@@ -620,6 +620,10 @@ def test_segmented_reservation_and_bootstrap_keep_every_test_segment(
     assert bootstrap.blocks == 90
     assert bootstrap.optimization_population == "eligible_target"
     assert bootstrap.point_mean_run_net_bps == pytest.approx(1.0)
+    assert bootstrap.mean_block_length_runs == 10
+    assert bootstrap.resampling_method == "circular_stationary_bootstrap"
+    assert bootstrap.as_dict()["chronological_dependence_preserved"] is True
+    assert bootstrap.as_dict()["iid_capture_run_resampling_permitted"] is False
     with pytest.raises(ValueError, match="dataset identity differs"):
         build_round74_sealed_dataset_identity(
             (batch,),
@@ -1197,6 +1201,33 @@ def test_sealed_bootstrap_controls_three_configuration_familywise_error() -> Non
     assert evidence.as_dict()["paired_ai_model_count"] == 2
 
 
+def test_sealed_stationary_bootstrap_preserves_chronological_dependence() -> None:
+    clustered = np.asarray((4.0,) * 12 + (-2.0,) * 12)
+    interleaved = np.asarray((4.0, -2.0) * 12)
+    clustered_evidence = sealed_subject._run_bootstrap(
+        TEST_RUNS,
+        clustered,
+        expected_run_ids=TEST_RUNS,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+    interleaved_evidence = sealed_subject._run_bootstrap(
+        TEST_RUNS,
+        interleaved,
+        expected_run_ids=TEST_RUNS,
+        seed=sealed_subject.ROUND74_SEALED_BOOTSTRAP_SEED,
+    )
+
+    assert clustered_evidence.point_mean_run_net_bps == pytest.approx(1.0)
+    assert interleaved_evidence.point_mean_run_net_bps == pytest.approx(1.0)
+    assert clustered_evidence.mean_block_length_runs == 5
+    assert clustered_evidence.restart_probability == pytest.approx(0.2)
+    assert (
+        clustered_evidence.one_sided_95_lower_mean_run_net_bps
+        < interleaved_evidence.one_sided_95_lower_mean_run_net_bps
+    )
+    assert clustered_evidence.as_dict()["circular_wraparound"] is True
+
+
 def test_target_free_two_model_review_panel_preserves_blocked_observations() -> None:
     batch = _test_batch()
     calibration = _calibration()
@@ -1216,9 +1247,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         probability_calibration=calibration,
         same_entry_latency_budget_ns=1_000_000,
         review_runner=_blocked_review,
-        model_batch_preparer=lambda binding: prepared_models.append(
-            binding.model_name
-        ),
+        model_batch_preparer=lambda binding: prepared_models.append(binding.model_name),
         model_batch_finalizer=lambda binding: finalized_models.append(
             binding.model_name
         ),

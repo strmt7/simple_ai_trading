@@ -76,7 +76,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v14"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v15"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v2"
 )
@@ -750,6 +750,9 @@ class Round74RunBlockBootstrap:
     two_ai_model_bonferroni_lower_mean_run_net_bps: float
     one_sided_95_lower_mean_run_net_bps: float
     one_sided_95_upper_mean_run_net_bps: float
+    mean_block_length_runs: int
+    restart_probability: float
+    resampling_method: str = "circular_stationary_bootstrap"
     optimization_population: str = "capture_run"
 
     def validate(self) -> None:
@@ -761,8 +764,7 @@ class Round74RunBlockBootstrap:
             self.one_sided_95_upper_mean_run_net_bps,
         )
         if (
-            self.optimization_population
-            not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
+            self.optimization_population not in ROUND74_SEALED_OPTIMIZATION_POPULATIONS
             or (
                 self.optimization_population == "capture_run"
                 and self.blocks != ROUND74_SEALED_TEST_RUNS
@@ -773,6 +775,17 @@ class Round74RunBlockBootstrap:
             )
             or self.draws != ROUND74_SEALED_BOOTSTRAP_DRAWS
             or self.seed < 0
+            or isinstance(self.mean_block_length_runs, bool)
+            or not isinstance(self.mean_block_length_runs, int)
+            or self.mean_block_length_runs
+            != _stationary_bootstrap_mean_block_length(self.blocks)
+            or not math.isclose(
+                self.restart_probability,
+                1.0 / self.mean_block_length_runs,
+                rel_tol=1e-15,
+                abs_tol=1e-15,
+            )
+            or self.resampling_method != "circular_stationary_bootstrap"
             or any(not math.isfinite(float(value)) for value in values)
             or not self.one_sided_95_lower_mean_run_net_bps
             <= self.one_sided_95_upper_mean_run_net_bps
@@ -792,6 +805,10 @@ class Round74RunBlockBootstrap:
             ),
             "paired_ai_model_count": ROUND74_SEALED_AI_MODEL_COUNT,
             "resampling_unit": "whole_capture_run",
+            "block_length_policy": "ceil_sqrt_expected_capture_run_count",
+            "chronological_dependence_preserved": True,
+            "iid_capture_run_resampling_permitted": False,
+            "circular_wraparound": True,
         }
 
 
@@ -1403,12 +1420,71 @@ class Round74SealedEvaluationOutcome:
             or self.finalized_claim.result_sha256 != self.report.report_sha256
             or self.finalized_claim.reservation_id != self.report.reservation_id
             or self.finalized_claim.dataset_sha256 != self.report.dataset_sha256
-            or self.finalized_claim.test_access_sha256
-            != self.report.test_access_sha256
+            or self.finalized_claim.test_access_sha256 != self.report.test_access_sha256
             or self.finalized_claim.optimization_population
             != self.report.optimization_population
         ):
             raise ValueError("Round 74 sealed evaluation outcome differs")
+
+
+def _stationary_bootstrap_mean_block_length(blocks: int) -> int:
+    if isinstance(blocks, bool) or not isinstance(blocks, int) or blocks < 2:
+        raise ValueError("Round 74 stationary bootstrap block count differs")
+    return max(2, math.ceil(math.sqrt(blocks)))
+
+
+def _stationary_bootstrap_means(
+    values: np.ndarray,
+    *,
+    draws: int,
+    seed: int,
+    mean_block_length: int,
+) -> np.ndarray:
+    selected = np.asarray(values, dtype=np.float64)
+    if (
+        selected.ndim != 1
+        or len(selected) < 2
+        or not np.isfinite(selected).all()
+        or isinstance(draws, bool)
+        or not isinstance(draws, int)
+        or draws < 1
+        or isinstance(seed, bool)
+        or not isinstance(seed, int)
+        or seed < 0
+        or isinstance(mean_block_length, bool)
+        or not isinstance(mean_block_length, int)
+        or not 2 <= mean_block_length <= len(selected)
+    ):
+        raise ValueError("Round 74 stationary bootstrap inputs differ")
+    generator = np.random.default_rng(seed)
+    sampled = np.empty(draws, dtype=np.float64)
+    restart_probability = 1.0 / mean_block_length
+    completed = 0
+    while completed < draws:
+        rows = min(512, draws - completed)
+        indexes = np.empty((rows, len(selected)), dtype=np.intp)
+        indexes[:, 0] = generator.integers(
+            0,
+            len(selected),
+            size=rows,
+            endpoint=False,
+        )
+        restart = generator.random((rows, len(selected) - 1)) < restart_probability
+        restart_at = generator.integers(
+            0,
+            len(selected),
+            size=(rows, len(selected) - 1),
+            endpoint=False,
+        )
+        for column in range(1, len(selected)):
+            indexes[:, column] = np.where(
+                restart[:, column - 1],
+                restart_at[:, column - 1],
+                (indexes[:, column - 1] + 1) % len(selected),
+            )
+        sampled[completed : completed + rows] = selected[indexes].mean(axis=1)
+        completed += rows
+    return sampled
 
 
 def _run_bootstrap(
@@ -1429,19 +1505,13 @@ def _run_bootstrap(
             totals[run_index[run_id]] += value
         except KeyError as exc:
             raise ValueError("Round 74 sealed bootstrap run differs") from exc
-    generator = np.random.default_rng(seed)
-    sampled = np.empty(ROUND74_SEALED_BOOTSTRAP_DRAWS, dtype=np.float64)
-    completed = 0
-    while completed < ROUND74_SEALED_BOOTSTRAP_DRAWS:
-        rows = min(512, ROUND74_SEALED_BOOTSTRAP_DRAWS - completed)
-        indexes = generator.integers(
-            0,
-            len(totals),
-            size=(rows, len(totals)),
-            endpoint=False,
-        )
-        sampled[completed : completed + rows] = totals[indexes].mean(axis=1)
-        completed += rows
+    mean_block_length = _stationary_bootstrap_mean_block_length(len(totals))
+    sampled = _stationary_bootstrap_means(
+        totals,
+        draws=ROUND74_SEALED_BOOTSTRAP_DRAWS,
+        seed=seed,
+        mean_block_length=mean_block_length,
+    )
     result = Round74RunBlockBootstrap(
         blocks=len(totals),
         draws=ROUND74_SEALED_BOOTSTRAP_DRAWS,
@@ -1462,6 +1532,8 @@ def _run_bootstrap(
         ),
         one_sided_95_lower_mean_run_net_bps=float(np.quantile(sampled, 0.05)),
         one_sided_95_upper_mean_run_net_bps=float(np.quantile(sampled, 0.95)),
+        mean_block_length_runs=mean_block_length,
+        restart_probability=1.0 / mean_block_length,
         optimization_population=optimization_population,
     )
     result.validate()
