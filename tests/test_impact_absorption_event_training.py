@@ -31,6 +31,9 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     ROUND74_EVENT_CLOCK_FEATURE_INDICES,
     ROUND74_EVENT_CLOCK_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_VIEWS,
+    ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES,
+    ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+    ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES,
     ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     Round74EventEnsemble,
     Round74EventTargetLossScale,
@@ -42,6 +45,7 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     _feature_view_promotion_report,
     _loss_for_minibatch,
     _losses_for_minibatch_group,
+    _order_flow_challenger_feature_view,
     fit_round74_event_target_loss_scale,
     load_round74_pretest_policy,
     load_round74_pretest_scaler,
@@ -355,6 +359,35 @@ def test_causal_pretraining_device_group_preserves_equal_run_gradient() -> None:
         )
 
 
+def test_market_state_pretraining_keeps_the_unmasked_next_event_target() -> None:
+    values = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=94,
+        rows=3,
+    ).feature_values
+    model = build_round74_event_model("causal_event_tcn")
+    head = _Round74NextEventHead(64)
+    masked_indices = tuple(
+        sorted(
+            {
+                *ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+                *ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+            }
+        )
+    )
+
+    row_loss, event_loss, continuous_loss = _next_event_row_losses(
+        model,
+        head,
+        torch.from_numpy(values.copy()),
+        masked_feature_indices=masked_indices,
+    )
+
+    assert row_loss.shape == event_loss.shape == continuous_loss.shape == (3,)
+    assert torch.isfinite(row_loss).all()
+
+
 def test_segmented_pretraining_reuses_one_split_across_peers(
     tmp_path: Path,
 ) -> None:
@@ -427,6 +460,12 @@ def test_segmented_pretraining_reuses_one_split_across_peers(
     assert len(split_sha256) == 1
     assert len(feature_batches) == 1
     assert len(partition_rows) == 1
+    assert policy["feature_view_selection"]["selected_tuning_metrics"] == (
+        policy["initialization_panel"]["random"]["ensemble_tuning_metrics"]
+    )
+    assert policy["feature_view_selection"]["selected_feature_view"] == (
+        policy["initialization_panel"]["random"]["feature_view"]
+    )
 
     tampered = json.loads(artifact.policy_path.read_text(encoding="ascii"))
     tampered["initialization_panel"]["causal_next_event_pretrained"][
@@ -937,11 +976,68 @@ def test_round74_clock_neutral_view_masks_only_exchange_clock_features() -> None
     expected = values.clone()
     expected[:, :, list(ROUND74_EVENT_CLOCK_FEATURE_INDICES)] = 0.0
     torch.testing.assert_close(peer.last_values, expected)
-    assert len(ROUND74_EVENT_CLOCK_FEATURE_NAMES) == 9
+    assert len(ROUND74_EVENT_CLOCK_FEATURE_NAMES) == 11
     assert tuple(
         ROUND74_EVENT_FEATURE_NAMES[index]
         for index in ROUND74_EVENT_CLOCK_FEATURE_INDICES
     ) == ROUND74_EVENT_CLOCK_FEATURE_NAMES
+    assert {
+        "utc_second_of_day_sine",
+        "utc_second_of_day_cosine",
+    }.issubset(ROUND74_EVENT_CLOCK_FEATURE_NAMES)
+    assert not {
+        "utc_second_of_day_sine",
+        "utc_second_of_day_cosine",
+    } & set(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES)
+
+
+def test_round74_state_views_mask_the_fixed_order_flow_panel() -> None:
+    values = torch.arange(
+        2 * 3 * len(ROUND74_EVENT_FEATURE_NAMES),
+        dtype=torch.float32,
+    ).reshape(2, 3, len(ROUND74_EVENT_FEATURE_NAMES))
+    for feature_view, masked_indices in (
+        (
+            "market_state_clock_neutral",
+            tuple(
+                sorted(
+                    {
+                        *ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+                        *ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+                    }
+                )
+            ),
+        ),
+        ("market_state_with_clock", ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES),
+    ):
+        ensemble = Round74EventEnsemble(
+            "event_pooling_linear",
+            1,
+            feature_view=feature_view,
+        )
+        peer = _RecordingClassificationPeer()
+        ensemble.peers = torch.nn.ModuleList((peer,))
+
+        ensemble(values)
+
+        assert peer.last_values is not None
+        expected = values.clone()
+        expected[:, :, list(masked_indices)] = 0.0
+        torch.testing.assert_close(peer.last_values, expected)
+    assert len(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES) == 31
+    assert len(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES) == 33
+    assert tuple(
+        ROUND74_EVENT_FEATURE_NAMES[index]
+        for index in ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES
+    ) == ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES
+    assert not set(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES) & set(
+        ROUND74_EVENT_CLOCK_FEATURE_INDICES
+    )
+    assert (
+        set(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES)
+        | set(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES)
+        | set(ROUND74_EVENT_CLOCK_FEATURE_NAMES)
+    ) == set(ROUND74_EVENT_FEATURE_NAMES)
 
 
 def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> None:
@@ -953,26 +1049,32 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
         "run:SOLUSDT:30": 1.0,
     }
     promoted = _feature_view_promotion_report(
+        "clock_neutral",
+        "full",
         neutral,
         full,
-        neutral_group_losses=groups,
-        full_group_losses={key: 0.9 for key in groups},
+        incumbent_group_losses=groups,
+        challenger_group_losses={key: 0.9 for key in groups},
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
     incomplete = _feature_view_promotion_report(
+        "clock_neutral",
+        "full",
         neutral[:-1],
         full[:-1],
-        neutral_group_losses=groups,
-        full_group_losses={key: 0.9 for key in groups},
+        incumbent_group_losses=groups,
+        challenger_group_losses={key: 0.9 for key in groups},
         minimum_mean_loss_improvement=1e-5,
         required_paired_run_count=12,
     )
     subgroup_degradation = _feature_view_promotion_report(
+        "clock_neutral",
+        "full",
         neutral,
         full,
-        neutral_group_losses=groups,
-        full_group_losses={
+        incumbent_group_losses=groups,
+        challenger_group_losses={
             "run:BTCUSDT:1": 0.9,
             "run:ETHUSDT:5": 0.9,
             "run:SOLUSDT:30": 1.1,
@@ -990,6 +1092,12 @@ def test_round74_feature_view_gate_is_complete_and_subgroup_noninferior() -> Non
         "all_paired_run_symbol_horizon_groups_noninferior"
     ] is False
     assert subgroup_degradation["promoted"] is False
+    assert _order_flow_challenger_feature_view(
+        "market_state_clock_neutral"
+    ) == "clock_neutral"
+    assert _order_flow_challenger_feature_view("market_state_with_clock") == "full"
+    with pytest.raises(ValueError, match="clock-control winner"):
+        _order_flow_challenger_feature_view("full")
 
 
 def test_round74_complexity_gate_requires_consistent_complete_panel() -> None:
@@ -1518,29 +1626,56 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
         "causal_event_tcn",
         "causal_event_attention",
     }
-    assert set(policy["feature_view_panel"]) == set(ROUND74_EVENT_FEATURE_VIEWS)
+    assert set(policy["feature_view_panel"]) == {
+        "market_state_clock_neutral",
+        "clock_neutral",
+        "market_state_with_clock",
+    }
+    assert policy["feature_view_selection"]["supported_feature_views"] == list(
+        ROUND74_EVENT_FEATURE_VIEWS
+    )
+    assert policy["feature_view_selection"]["evaluated_feature_views"] == [
+        "market_state_clock_neutral",
+        "market_state_with_clock",
+        "clock_neutral",
+    ]
     assert all(
-        report["feature_view"] == "clock_neutral"
+        report["feature_view"] == "market_state_clock_neutral"
         for report in policy["candidate_panel"].values()
     )
     assert (
         policy["feature_view_selection"]["selected_feature_view"]
         == artifact.selected_feature_view
-        == "clock_neutral"
+        == "market_state_clock_neutral"
     )
     assert (
-        policy["feature_view_selection"]["promotion_report"][
+        policy["feature_view_selection"]["order_flow_promotion_report"][
             "complete_tuning_panel"
         ]
         is False
     )
     assert (
-        policy["feature_view_selection"]["neutral_default_on_gate_failure"] is True
+        policy["feature_view_selection"]["clock_promotion_report"][
+            "complete_tuning_panel"
+        ]
+        is False
+    )
+    assert (
+        policy["feature_view_selection"]["state_first_incumbent"]
+        == "market_state_clock_neutral"
+    )
+    assert (
+        policy["feature_view_selection"]["clock_default_on_gate_failure"]
+        == "market_state_clock_neutral"
+    )
+    assert (
+        policy["feature_view_selection"]["order_flow_default_on_gate_failure"]
+        == "market_state_clock_neutral"
     )
     assert set(policy["initialization_panel"]) == {"random"}
     assert (
         policy["initialization_panel"]["random"]
-        == policy["feature_view_panel"]["clock_neutral"]
+        == policy["feature_view_panel"]["market_state_clock_neutral"]
     )
     assert (
         policy["initialization_selection"]["reason"]
@@ -1662,6 +1797,19 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     )
     with pytest.raises(ValueError, match="feature-view selection differs"):
         load_round74_pretest_policy(changed_feature_view_path)
+
+    changed_feature_membership = json.loads(
+        artifact.policy_path.read_text(encoding="ascii")
+    )
+    changed_feature_membership["feature_view_selection"][
+        "order_flow_feature_names"
+    ][0] = "spread_bps"
+    changed_feature_membership_path = _write_rehashed_policy(
+        tmp_path,
+        changed_feature_membership,
+    )
+    with pytest.raises(ValueError, match="feature-view selection differs"):
+        load_round74_pretest_policy(changed_feature_membership_path)
 
     changed_initialization = json.loads(
         artifact.policy_path.read_text(encoding="ascii")

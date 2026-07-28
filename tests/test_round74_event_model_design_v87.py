@@ -5,12 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_CLOCK_FEATURE_NAMES,
-    ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256,
-    ROUND74_EVENT_FEATURE_VIEWS,
-)
-
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
@@ -19,6 +13,18 @@ DESIGN_PATH = (
     / "model-research"
     / "action-value"
     / "round-074-event-sequence-model-design-v87.json"
+)
+V87_FEATURE_VIEWS = ("clock_neutral", "full")
+V87_EXCHANGE_CLOCK_FEATURE_NAMES = (
+    "exchange_clock_60s_opening_10s",
+    "exchange_clock_300s_opening_10s",
+    "exchange_clock_900s_opening_10s",
+    "exchange_clock_60s_phase_sine",
+    "exchange_clock_60s_phase_cosine",
+    "exchange_clock_300s_phase_sine",
+    "exchange_clock_300s_phase_cosine",
+    "exchange_clock_900s_phase_sine",
+    "exchange_clock_900s_phase_cosine",
 )
 
 
@@ -68,12 +74,15 @@ def test_round74_v87_binds_mandatory_exchange_clock_ablation() -> None:
     )
     assert source["event_feature_contract"][
         "exchange_clock_feature_names_sha256"
-    ] == ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256
+    ] == _canonical_sha256(V87_EXCHANGE_CLOCK_FEATURE_NAMES)
+    assert source["event_feature_contract"]["exchange_clock_feature_count"] == len(
+        V87_EXCHANGE_CLOCK_FEATURE_NAMES
+    )
 
     feature_view = design["feature_view_contract"]
-    assert feature_view["ordered_views"] == list(ROUND74_EVENT_FEATURE_VIEWS)
+    assert feature_view["ordered_views"] == list(V87_FEATURE_VIEWS)
     assert feature_view["clock_neutral_masked_features"] == list(
-        ROUND74_EVENT_CLOCK_FEATURE_NAMES
+        V87_EXCHANGE_CLOCK_FEATURE_NAMES
     )
     assert feature_view["training_calibration_sealed_test_and_inference_parity"] is True
 

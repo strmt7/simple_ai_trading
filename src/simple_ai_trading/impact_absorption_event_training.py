@@ -56,14 +56,28 @@ from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v24"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v23"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v25"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v24"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
-ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v1"
-ROUND74_EVENT_FEATURE_VIEWS = ("clock_neutral", "full")
+ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v2"
+ROUND74_EVENT_FEATURE_VIEWS = (
+    "market_state_clock_neutral",
+    "clock_neutral",
+    "market_state_with_clock",
+    "full",
+)
+_ROUND74_EVENT_INTRADAY_CLOCK_FEATURE_NAMES = frozenset(
+    {
+        "utc_second_of_day_sine",
+        "utc_second_of_day_cosine",
+    }
+)
 ROUND74_EVENT_CLOCK_FEATURE_NAMES = tuple(
-    name for name in ROUND74_EVENT_FEATURE_NAMES if name.startswith("exchange_clock_")
+    name
+    for name in ROUND74_EVENT_FEATURE_NAMES
+    if name.startswith("exchange_clock_")
+    or name in _ROUND74_EVENT_INTRADAY_CLOCK_FEATURE_NAMES
 )
 ROUND74_EVENT_CLOCK_FEATURE_INDICES = tuple(
     ROUND74_EVENT_FEATURE_NAMES.index(name) for name in ROUND74_EVENT_CLOCK_FEATURE_NAMES
@@ -75,6 +89,70 @@ ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256 = hashlib.sha256(
         separators=(",", ":"),
     ).encode("ascii")
 ).hexdigest()
+_ROUND74_EVENT_ORDER_FLOW_EXACT_NAMES = frozenset(
+    {
+        "log1p_interarrival_us",
+        "trade_signed_quote_scaled",
+        "trade_absolute_quote_scaled",
+        "trade_price_to_mid_bps",
+        "liquidation_signed_quote_scaled",
+        "bbo_bid_qty_change_scaled",
+        "bbo_ask_qty_change_scaled",
+        "log1p_ms_since_aggregate_trade",
+        "log1p_ms_since_liquidation",
+    }
+)
+_ROUND74_EVENT_ORDER_FLOW_PREFIXES = (
+    "event_is_",
+    "depth_signed_pressure_",
+    "depth_absolute_flow_",
+    "ewm_signed_trade_pressure_",
+    "ewm_signed_depth_pressure_",
+    "ewm_signed_liquidation_pressure_",
+)
+ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES = tuple(
+    name
+    for name in ROUND74_EVENT_FEATURE_NAMES
+    if name in _ROUND74_EVENT_ORDER_FLOW_EXACT_NAMES
+    or name.startswith(_ROUND74_EVENT_ORDER_FLOW_PREFIXES)
+)
+ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES = tuple(
+    ROUND74_EVENT_FEATURE_NAMES.index(name)
+    for name in ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES
+)
+ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES_SHA256 = hashlib.sha256(
+    json.dumps(
+        ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+).hexdigest()
+ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES = tuple(
+    name
+    for index, name in enumerate(ROUND74_EVENT_FEATURE_NAMES)
+    if index not in ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES
+    and index not in ROUND74_EVENT_CLOCK_FEATURE_INDICES
+)
+ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES_SHA256 = hashlib.sha256(
+    json.dumps(
+        ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    ).encode("ascii")
+).hexdigest()
+ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES = {
+    "market_state_clock_neutral": tuple(
+        sorted(
+            {
+                *ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+                *ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+            }
+        )
+    ),
+    "clock_neutral": ROUND74_EVENT_CLOCK_FEATURE_INDICES,
+    "market_state_with_clock": ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES,
+    "full": (),
+}
 ROUND74_EVENT_TRAINING_DEFAULT_SEEDS = (7411, 7423, 7433)
 ROUND74_COMPLEXITY_PROMOTION_COMPARISON_COUNT = len(ROUND74_EVENT_MODEL_CANDIDATES) - 1
 ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS = 12
@@ -90,10 +168,28 @@ _SHA256 = re.compile(r"[0-9a-f]{64}")
 _SAFE_FILENAME = re.compile(r"[a-z0-9][a-z0-9._-]{0,159}")
 
 if (
-    len(ROUND74_EVENT_CLOCK_FEATURE_NAMES) != 9
-    or len(set(ROUND74_EVENT_CLOCK_FEATURE_INDICES)) != 9
+    len(ROUND74_EVENT_CLOCK_FEATURE_NAMES) != 11
+    or len(set(ROUND74_EVENT_CLOCK_FEATURE_INDICES)) != 11
+    or len(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES) != 31
+    or len(set(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES)) != 31
+    or len(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES) != 33
+    or set(ROUND74_EVENT_CLOCK_FEATURE_INDICES)
+    & set(ROUND74_EVENT_ORDER_FLOW_FEATURE_INDICES)
+    or set(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES)
+    & (
+        set(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES)
+        | set(ROUND74_EVENT_CLOCK_FEATURE_NAMES)
+    )
+    or (
+        set(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES)
+        | set(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES)
+        | set(ROUND74_EVENT_CLOCK_FEATURE_NAMES)
+    )
+    != set(ROUND74_EVENT_FEATURE_NAMES)
+    or set(ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES)
+    != set(ROUND74_EVENT_FEATURE_VIEWS)
 ):
-    raise RuntimeError("Round 74 exchange-clock feature panel differs")
+    raise RuntimeError("Round 74 state-first feature panel differs")
 
 
 def _canonical_json_bytes(value: object) -> bytes:
@@ -320,7 +416,7 @@ class Round74EventTrainingConfig:
             "execution_mode": self.execution_mode,
             "architecture_selection_mode": self.architecture_selection_mode,
             "feature_view_selection_mode": (
-                "mandatory_clock_neutral_incumbent_ablation_gate"
+                "mandatory_state_first_clock_control_then_order_flow_ablation_gates"
             ),
             "initialization_selection_mode": (
                 "mandatory_random_incumbent_causal_pretraining_ablation_gate"
@@ -656,10 +752,11 @@ def _round74_feature_view_pre_hook(
     ):
         raise ValueError("Round 74 feature-view tensor dimensions differ")
     feature_view = getattr(module, "feature_view", None)
-    if feature_view == "full":
-        return (values,)
-    if feature_view != "clock_neutral":
+    if feature_view not in ROUND74_EVENT_FEATURE_VIEWS:
         raise ValueError("Round 74 model feature view differs")
+    masked_indices = ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES[feature_view]
+    if not masked_indices:
+        return (values,)
     mask = getattr(module, "_round74_feature_view_mask", None)
     if not isinstance(mask, torch.Tensor) or mask.shape != (
         1,
@@ -683,7 +780,7 @@ def _bind_round74_feature_view(model: nn.Module, feature_view: str) -> nn.Module
         (1, 1, len(ROUND74_EVENT_FEATURE_NAMES)),
         dtype=torch.float32,
     )
-    mask[:, :, list(ROUND74_EVENT_CLOCK_FEATURE_INDICES)] = 0.0
+    mask[:, :, list(ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES[selected])] = 0.0
     model.register_buffer(
         "_round74_feature_view_mask",
         mask,
@@ -1704,11 +1801,9 @@ def _train_peer(
             model,
             training_batches,
             device=device,
-            masked_feature_indices=(
-                ROUND74_EVENT_CLOCK_FEATURE_INDICES
-                if feature_view == "clock_neutral"
-                else ()
-            ),
+            masked_feature_indices=ROUND74_EVENT_FEATURE_VIEW_MASKED_INDICES[
+                feature_view
+            ],
             config=config.pretraining,
             split=pretraining_split,
         )
@@ -2309,23 +2404,31 @@ def _select_candidate_with_complexity_gate(
 
 
 def _feature_view_promotion_report(
-    neutral_run_losses: Sequence[float],
-    full_run_losses: Sequence[float],
+    incumbent_feature_view: str,
+    challenger_feature_view: str,
+    incumbent_run_losses: Sequence[float],
+    challenger_run_losses: Sequence[float],
     *,
-    neutral_group_losses: Mapping[str, float],
-    full_group_losses: Mapping[str, float],
+    incumbent_group_losses: Mapping[str, float],
+    challenger_group_losses: Mapping[str, float],
     minimum_mean_loss_improvement: float,
     required_paired_run_count: int,
 ) -> dict[str, object]:
+    if (
+        incumbent_feature_view not in ROUND74_EVENT_FEATURE_VIEWS
+        or challenger_feature_view not in ROUND74_EVENT_FEATURE_VIEWS
+        or incumbent_feature_view == challenger_feature_view
+    ):
+        raise ValueError("Round 74 feature-view promotion identity differs")
     raw_report = _paired_promotion_report(
-        "clock_neutral",
-        "full",
-        neutral_run_losses,
-        full_run_losses,
+        incumbent_feature_view,
+        challenger_feature_view,
+        incumbent_run_losses,
+        challenger_run_losses,
         minimum_improvement=float(minimum_mean_loss_improvement),
         required_paired_run_count=required_paired_run_count,
-        incumbent_group_losses=neutral_group_losses,
-        challenger_group_losses=full_group_losses,
+        incumbent_group_losses=incumbent_group_losses,
+        challenger_group_losses=challenger_group_losses,
     )
     return {
         (
@@ -2340,30 +2443,55 @@ def _feature_view_promotion_report(
 
 
 def _select_feature_view_with_ablation_gate(
-    neutral_fit: _CandidateFit,
-    full_fit: _CandidateFit,
+    incumbent_fit: _CandidateFit,
+    challenger_fit: _CandidateFit,
     *,
     minimum_mean_loss_improvement: float,
     required_paired_run_count: int,
 ) -> tuple[_CandidateFit, dict[str, object]]:
     if (
-        neutral_fit.candidate_id != full_fit.candidate_id
-        or neutral_fit.feature_view != "clock_neutral"
-        or full_fit.feature_view != "full"
-        or neutral_fit.parameter_count_per_peer != full_fit.parameter_count_per_peer
-        or len(neutral_fit.peer_states) != len(full_fit.peer_states)
+        incumbent_fit.candidate_id != challenger_fit.candidate_id
+        or incumbent_fit.feature_view not in ROUND74_EVENT_FEATURE_VIEWS
+        or challenger_fit.feature_view not in ROUND74_EVENT_FEATURE_VIEWS
+        or incumbent_fit.feature_view == challenger_fit.feature_view
+        or incumbent_fit.parameter_count_per_peer
+        != challenger_fit.parameter_count_per_peer
+        or len(incumbent_fit.peer_states) != len(challenger_fit.peer_states)
     ):
         raise ValueError("Round 74 feature-view ablation panel differs")
     report = _feature_view_promotion_report(
-        neutral_fit.ensemble_run_losses,
-        full_fit.ensemble_run_losses,
-        neutral_group_losses=neutral_fit.ensemble_group_losses,
-        full_group_losses=full_fit.ensemble_group_losses,
+        incumbent_fit.feature_view,
+        challenger_fit.feature_view,
+        incumbent_fit.ensemble_run_losses,
+        challenger_fit.ensemble_run_losses,
+        incumbent_group_losses=incumbent_fit.ensemble_group_losses,
+        challenger_group_losses=challenger_fit.ensemble_group_losses,
         minimum_mean_loss_improvement=minimum_mean_loss_improvement,
         required_paired_run_count=required_paired_run_count,
     )
-    winner = full_fit if report["promoted"] is True else neutral_fit
+    winner = challenger_fit if report["promoted"] is True else incumbent_fit
     return winner, report
+
+
+def _order_flow_challenger_feature_view(clock_winner_view: str) -> str:
+    if clock_winner_view == "market_state_clock_neutral":
+        return "clock_neutral"
+    if clock_winner_view == "market_state_with_clock":
+        return "full"
+    raise ValueError("Round 74 clock-control winner feature view differs")
+
+
+def _feature_view_selection_criterion(required_paired_run_count: int) -> str:
+    if required_paired_run_count < 1:
+        raise ValueError("Round 74 feature-view paired-run count differs")
+    return (
+        "a fixed state-first sequence evaluates market state anchored "
+        "by L2 liquidity, then controls for clock and intraday-phase "
+        f"features before admitting order flow; each challenger uses all "
+        f"{required_paired_run_count} paired model-selection capture runs "
+        "and requires strict mean proper-loss improvement with no run or "
+        "run-symbol-horizon subgroup degradation beyond the numerical floor"
+    )
 
 
 def _candidate_fit_report(fit: _CandidateFit) -> dict[str, object]:
@@ -2668,7 +2796,7 @@ def train_and_seal_round74_pretest_policy(
                 candidate_fits.append(
                     _fit_candidate(
                         candidate_id,
-                        "clock_neutral",
+                        "market_state_clock_neutral",
                         training_batches,
                         tuning_batches,
                         config=selected_config,
@@ -2719,9 +2847,9 @@ def train_and_seal_round74_pretest_policy(
         torch.use_deterministic_algorithms(True)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            full_feature_fit = _fit_candidate(
+            clock_feature_fit = _fit_candidate(
                 architecture_winner.candidate_id,
-                "full",
+                "market_state_with_clock",
                 training_batches,
                 tuning_batches,
                 config=selected_config,
@@ -2739,15 +2867,48 @@ def train_and_seal_round74_pretest_policy(
         if selected_config.execution_mode == "segmented_cohort"
         else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
-    winner, feature_view_promotion_report = (
+    clock_winner, clock_promotion_report = (
         _select_feature_view_with_ablation_gate(
             architecture_winner,
-            full_feature_fit,
+            clock_feature_fit,
             minimum_mean_loss_improvement=(
                 selected_config.minimum_tuning_improvement
             ),
             required_paired_run_count=feature_view_required_runs,
         )
+    )
+    order_flow_challenger_view = _order_flow_challenger_feature_view(
+        clock_winner.feature_view
+    )
+    try:
+        torch.use_deterministic_algorithms(True)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            order_flow_fit = _fit_candidate(
+                architecture_winner.candidate_id,
+                order_flow_challenger_view,
+                training_batches,
+                tuning_batches,
+                config=selected_config,
+                device=device,
+                target_loss_scale=target_loss_scale,
+            )
+            warning_messages.extend(str(item.message) for item in caught)
+    finally:
+        torch.use_deterministic_algorithms(prior_deterministic)
+        random.setstate(prior_python_random)
+        np.random.set_state(prior_numpy_random)
+        torch.set_rng_state(prior_torch_random)
+    winner, order_flow_promotion_report = _select_feature_view_with_ablation_gate(
+        clock_winner,
+        order_flow_fit,
+        minimum_mean_loss_improvement=selected_config.minimum_tuning_improvement,
+        required_paired_run_count=feature_view_required_runs,
+    )
+    feature_view_fits = (
+        architecture_winner,
+        clock_feature_fit,
+        order_flow_fit,
     )
     random_initialization_fit = winner
     pretraining_supported = winner.candidate_id in {
@@ -2926,10 +3087,8 @@ def train_and_seal_round74_pretest_policy(
             for fit in candidate_fits
         },
         "feature_view_panel": {
-            architecture_winner.feature_view: _candidate_fit_report(
-                architecture_winner
-            ),
-            full_feature_fit.feature_view: _candidate_fit_report(full_feature_fit),
+            fit.feature_view: _candidate_fit_report(fit)
+            for fit in feature_view_fits
         },
         "selection": {
             "architecture_selection_mode": (
@@ -2950,21 +3109,32 @@ def train_and_seal_round74_pretest_policy(
         },
         "feature_view_selection": {
             "schema_version": ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION,
-            "criterion": (
-                "the full exchange-clock view challenges a clock-neutral "
-                f"incumbent on all {feature_view_required_runs} paired "
-                "model-selection capture runs; promotion requires a strict "
-                "mean proper-loss improvement and no run or run-symbol-horizon "
-                "subgroup degradation beyond the numerical floor"
+            "criterion": _feature_view_selection_criterion(
+                feature_view_required_runs
+            ),
+            "market_state_feature_names": list(
+                ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES
+            ),
+            "market_state_feature_names_sha256": (
+                ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES_SHA256
+            ),
+            "order_flow_feature_names": list(
+                ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES
+            ),
+            "order_flow_feature_names_sha256": (
+                ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES_SHA256
             ),
             "clock_feature_names": list(ROUND74_EVENT_CLOCK_FEATURE_NAMES),
             "clock_feature_names_sha256": (
                 ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256
             ),
-            "ordered_feature_views": list(ROUND74_EVENT_FEATURE_VIEWS),
-            "selected_feature_view": winner.feature_view,
-            "selected_candidate_id": winner.candidate_id,
-            "selected_tuning_metrics": winner.ensemble_metrics,
+            "supported_feature_views": list(ROUND74_EVENT_FEATURE_VIEWS),
+            "evaluated_feature_views": [
+                fit.feature_view for fit in feature_view_fits
+            ],
+            "selected_feature_view": random_initialization_fit.feature_view,
+            "selected_candidate_id": random_initialization_fit.candidate_id,
+            "selected_tuning_metrics": random_initialization_fit.ensemble_metrics,
             "required_paired_capture_run_count": feature_view_required_runs,
             "minimum_mean_proper_loss_improvement": (
                 selected_config.minimum_tuning_improvement
@@ -2972,9 +3142,12 @@ def train_and_seal_round74_pretest_policy(
             "maximum_permitted_paired_run_loss_degradation": (
                 selected_config.minimum_tuning_improvement
             ),
-            "promotion_report": feature_view_promotion_report,
-            "architecture_fixed_before_ablation": True,
-            "neutral_default_on_gate_failure": True,
+            "clock_promotion_report": clock_promotion_report,
+            "order_flow_promotion_report": order_flow_promotion_report,
+            "architecture_fixed_before_layer_gates": True,
+            "state_first_incumbent": "market_state_clock_neutral",
+            "clock_default_on_gate_failure": "market_state_clock_neutral",
+            "order_flow_default_on_gate_failure": clock_winner.feature_view,
             "statistical_independence_or_significance_claim": False,
             "backtest_metric_used_for_selection": False,
             "test_targets_used": False,
@@ -3270,7 +3443,10 @@ def load_round74_pretest_policy(
         or any(value not in ROUND74_EVENT_MODEL_CANDIDATES for value in candidate_ids)
         or set(candidate_panel) != set(candidate_ids)
         or candidate_id not in candidate_panel
-        or set(feature_view_panel) != set(ROUND74_EVENT_FEATURE_VIEWS)
+        or len(feature_view_panel) != 3
+        or not set(feature_view_panel).issubset(ROUND74_EVENT_FEATURE_VIEWS)
+        or "market_state_clock_neutral" not in feature_view_panel
+        or "market_state_with_clock" not in feature_view_panel
         or selected_feature_view not in ROUND74_EVENT_FEATURE_VIEWS
         or feature_view_selection.get("selected_candidate_id") != candidate_id
         or _SAFE_FILENAME.fullmatch(filename) is None
@@ -3600,7 +3776,7 @@ def load_round74_pretest_policy(
                 raw_report,
                 panel_key=str(panel_candidate),
                 expected_candidate_id=str(panel_candidate),
-                expected_feature_view="clock_neutral",
+                expected_feature_view="market_state_clock_neutral",
                 seeds=seeds,
                 tuning_run_count=len(tuning_batch_hashes),
                 execution_mode=reconstructed_config.execution_mode,
@@ -3672,7 +3848,8 @@ def load_round74_pretest_policy(
         feature_view_group_losses[str(feature_view)] = group_losses
         feature_view_parameter_counts[str(feature_view)] = parameter_count
     if (
-        feature_view_panel["clock_neutral"] != architecture_selected_report
+        feature_view_panel["market_state_clock_neutral"]
+        != architecture_selected_report
         or len(set(feature_view_parameter_counts.values())) != 1
         or len(
             {
@@ -3688,25 +3865,60 @@ def load_round74_pretest_policy(
         if reconstructed_config.execution_mode == "segmented_cohort"
         else ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS
     )
-    expected_feature_view_report = _feature_view_promotion_report(
-        feature_view_run_losses["clock_neutral"],
-        feature_view_run_losses["full"],
-        neutral_group_losses=feature_view_group_losses["clock_neutral"],
-        full_group_losses=feature_view_group_losses["full"],
+    expected_clock_report = _feature_view_promotion_report(
+        "market_state_clock_neutral",
+        "market_state_with_clock",
+        feature_view_run_losses["market_state_clock_neutral"],
+        feature_view_run_losses["market_state_with_clock"],
+        incumbent_group_losses=feature_view_group_losses[
+            "market_state_clock_neutral"
+        ],
+        challenger_group_losses=feature_view_group_losses[
+            "market_state_with_clock"
+        ],
+        minimum_mean_loss_improvement=(
+            reconstructed_config.minimum_tuning_improvement
+        ),
+        required_paired_run_count=feature_view_required_runs,
+    )
+    expected_clock_view = (
+        "market_state_with_clock"
+        if expected_clock_report["promoted"] is True
+        else "market_state_clock_neutral"
+    )
+    expected_order_flow_challenger_view = _order_flow_challenger_feature_view(
+        expected_clock_view
+    )
+    expected_feature_view_keys = {
+        "market_state_clock_neutral",
+        "market_state_with_clock",
+        expected_order_flow_challenger_view,
+    }
+    if set(feature_view_panel) != expected_feature_view_keys:
+        raise ValueError("Round 74 pretest feature-view panel differs")
+    expected_order_flow_report = _feature_view_promotion_report(
+        expected_clock_view,
+        expected_order_flow_challenger_view,
+        feature_view_run_losses[expected_clock_view],
+        feature_view_run_losses[expected_order_flow_challenger_view],
+        incumbent_group_losses=feature_view_group_losses[
+            expected_clock_view
+        ],
+        challenger_group_losses=feature_view_group_losses[
+            expected_order_flow_challenger_view
+        ],
         minimum_mean_loss_improvement=(
             reconstructed_config.minimum_tuning_improvement
         ),
         required_paired_run_count=feature_view_required_runs,
     )
     expected_feature_view = (
-        "full" if expected_feature_view_report["promoted"] is True else "clock_neutral"
+        expected_order_flow_challenger_view
+        if expected_order_flow_report["promoted"] is True
+        else expected_clock_view
     )
-    expected_feature_view_criterion = (
-        "the full exchange-clock view challenges a clock-neutral "
-        f"incumbent on all {feature_view_required_runs} paired "
-        "model-selection capture runs; promotion requires a strict "
-        "mean proper-loss improvement and no run or run-symbol-horizon "
-        "subgroup degradation beyond the numerical floor"
+    expected_feature_view_criterion = _feature_view_selection_criterion(
+        feature_view_required_runs
     )
     selected_feature_report = feature_view_panel[expected_feature_view]
     assert isinstance(selected_feature_report, Mapping)
@@ -3715,18 +3927,26 @@ def load_round74_pretest_policy(
         != {
             "schema_version",
             "criterion",
+            "market_state_feature_names",
+            "market_state_feature_names_sha256",
+            "order_flow_feature_names",
+            "order_flow_feature_names_sha256",
             "clock_feature_names",
             "clock_feature_names_sha256",
-            "ordered_feature_views",
+            "supported_feature_views",
+            "evaluated_feature_views",
             "selected_feature_view",
             "selected_candidate_id",
             "selected_tuning_metrics",
             "required_paired_capture_run_count",
             "minimum_mean_proper_loss_improvement",
             "maximum_permitted_paired_run_loss_degradation",
-            "promotion_report",
-            "architecture_fixed_before_ablation",
-            "neutral_default_on_gate_failure",
+            "order_flow_promotion_report",
+            "clock_promotion_report",
+            "architecture_fixed_before_layer_gates",
+            "state_first_incumbent",
+            "order_flow_default_on_gate_failure",
+            "clock_default_on_gate_failure",
             "statistical_independence_or_significance_claim",
             "backtest_metric_used_for_selection",
             "test_targets_used",
@@ -3735,12 +3955,26 @@ def load_round74_pretest_policy(
         != ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION
         or feature_view_selection.get("criterion")
         != expected_feature_view_criterion
+        or feature_view_selection.get("market_state_feature_names")
+        != list(ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES)
+        or feature_view_selection.get("market_state_feature_names_sha256")
+        != ROUND74_EVENT_MARKET_STATE_FEATURE_NAMES_SHA256
+        or feature_view_selection.get("order_flow_feature_names")
+        != list(ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES)
+        or feature_view_selection.get("order_flow_feature_names_sha256")
+        != ROUND74_EVENT_ORDER_FLOW_FEATURE_NAMES_SHA256
         or feature_view_selection.get("clock_feature_names")
         != list(ROUND74_EVENT_CLOCK_FEATURE_NAMES)
         or feature_view_selection.get("clock_feature_names_sha256")
         != ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256
-        or feature_view_selection.get("ordered_feature_views")
+        or feature_view_selection.get("supported_feature_views")
         != list(ROUND74_EVENT_FEATURE_VIEWS)
+        or feature_view_selection.get("evaluated_feature_views")
+        != [
+            "market_state_clock_neutral",
+            "market_state_with_clock",
+            expected_order_flow_challenger_view,
+        ]
         or selected_feature_view != expected_feature_view
         or feature_view_selection.get("selected_candidate_id") != expected_winner
         or feature_view_selection.get("selected_tuning_metrics")
@@ -3753,11 +3987,18 @@ def load_round74_pretest_policy(
             "maximum_permitted_paired_run_loss_degradation"
         )
         != reconstructed_config.minimum_tuning_improvement
-        or feature_view_selection.get("promotion_report")
-        != expected_feature_view_report
-        or feature_view_selection.get("architecture_fixed_before_ablation")
+        or feature_view_selection.get("clock_promotion_report")
+        != expected_clock_report
+        or feature_view_selection.get("order_flow_promotion_report")
+        != expected_order_flow_report
+        or feature_view_selection.get("architecture_fixed_before_layer_gates")
         is not True
-        or feature_view_selection.get("neutral_default_on_gate_failure") is not True
+        or feature_view_selection.get("state_first_incumbent")
+        != "market_state_clock_neutral"
+        or feature_view_selection.get("clock_default_on_gate_failure")
+        != "market_state_clock_neutral"
+        or feature_view_selection.get("order_flow_default_on_gate_failure")
+        != expected_clock_view
         or feature_view_selection.get(
             "statistical_independence_or_significance_claim"
         )

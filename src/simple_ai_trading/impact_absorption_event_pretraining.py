@@ -34,7 +34,7 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 
 
-ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION = "round-074-causal-next-event-pretraining-v2"
+ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION = "round-074-causal-next-event-pretraining-v3"
 ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS = (
     "random",
     "causal_next_event_pretrained",
@@ -492,7 +492,7 @@ def _next_event_row_losses(
     )
     encoded = encode_round74_event_sequence(model, selected)
     event_logits, continuous_delta = head(encoded[:, :-1, :])
-    next_event_one_hot = selected[
+    next_event_one_hot = values[
         :,
         1:,
         :ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT,
