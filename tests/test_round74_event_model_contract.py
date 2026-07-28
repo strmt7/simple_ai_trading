@@ -113,6 +113,9 @@ SEGMENTED_POLICY_POPULATION_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v78.json"
 )
 SHARED_CAPITAL_DESIGN_PATH = RESEARCH / "round-074-event-sequence-model-design-v79.json"
+OPEN_RISK_DRAWDOWN_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v80.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -337,6 +340,66 @@ def test_round74_shared_capital_replay_is_bounded_and_source_bound() -> None:
     assert authority["paper_trading_authority"] is False
     assert authority["testnet_trading_authority"] is False
     assert authority["live_trading_authority"] is False
+
+
+def test_round74_open_risk_drawdown_is_conservative_and_source_bound() -> None:
+    previous = _load_hash_bound(SHARED_CAPITAL_DESIGN_PATH, "design_sha256")
+    design = _load_hash_bound(OPEN_RISK_DRAWDOWN_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    contract = design["conservative_drawdown_contract"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v80"
+    assert design["base_design"]["design_sha256"] == previous["design_sha256"]
+    assert design["base_design"]["unchanged_except_declared_delta"] is True
+    for prefix in (
+        "financial_metrics",
+        "action_policy",
+        "ai_uplift",
+        "sealed_evaluation",
+    ):
+        assert source[f"{prefix}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{prefix}_path"],
+        )
+    assert source["financial_metrics_schema_version"] == (
+        "round-074-realized-payoff-metrics-v2"
+    )
+    assert source["action_policy_schema_version"] == "round-074-action-policy-v11"
+    assert source["ai_uplift_schema_version"] == ("round-074-ai-uplift-development-v8")
+    assert source["sealed_evaluation_schema_version"] == (
+        "round-074-sealed-evaluation-v11"
+    )
+    assert contract["capital_basis"] == (
+        "shared_unlevered_three_symbol_sleeves_from_v79"
+    )
+    assert contract["position_capital_fraction"] == (1.0 / len(ROUND74_EVENT_SYMBOLS))
+    assert contract["reported_maximum_drawdown_is_at_least_realized_drawdown"]
+    assert contract[
+        "reported_maximum_drawdown_is_at_least_maximum_concurrent_adverse_excursion"
+    ]
+    assert contract["open_position_interval"] == (
+        "half_open_entry_inclusive_exit_exclusive"
+    )
+    assert contract["exits_processed_before_entries_at_identical_timestamp"]
+    assert contract["realized_equity_carried_across_capture_runs"]
+    assert not contract["open_position_state_carried_across_capture_runs"]
+    assert contract["ai_veto_or_reduction_uses_same_capital_scale_as_baseline"]
+    assert not contract["leverage_applied"]
+    assert not contract["mark_to_market_equity_curve_reconstructed"]
+    assert not contract["individual_mae_minima_assumed_simultaneous"]
+    assert design["evidence_boundary"]["synthetic_data_only"]
+    assert not design["evidence_boundary"]["real_cohort_data_used"]
+    assert not design["evidence_boundary"]["financial_backtest_performed"]
+    assert authority["conservative_open_risk_drawdown_implementation"]
+    assert not authority["financial_edge_tested"]
+    assert not authority["profitability_claim"]
+    assert not authority["drawdown_performance_claim"]
+    assert not authority["ai_uplift_claim"]
+    assert not authority["paper_trading_authority"]
+    assert not authority["testnet_trading_authority"]
+    assert not authority["live_trading_authority"]
 
 
 def test_round74_tuning_role_correction_is_disjoint_and_source_bound() -> None:
