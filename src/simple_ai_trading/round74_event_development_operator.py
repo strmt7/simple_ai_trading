@@ -623,6 +623,9 @@ def _fit_calibration(
             combined.maximum_adverse_excursion_quantiles_bps
         ),
         maximum_adverse_excursion_bps=maximum_adverse_excursion,
+        row_symbols=tuple(
+            symbol for batch in selected_batches for symbol in batch.symbol
+        ),
         row_run_ids=tuple(
             run_id for batch in selected_batches for run_id in batch.run_id
         ),

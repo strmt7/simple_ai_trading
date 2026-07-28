@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from simple_ai_trading.impact_absorption_event_calibration import (
+    ROUND74_RISK_QUANTILE_CALIBRATION_PRIOR_SCHEMA_VERSION,
     ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_CALIBRATION_RUNS,
     ROUND74_TUNING_MODEL_SELECTION_RUNS,
@@ -27,6 +28,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_PAYOFF_QUANTILES,
     ROUND74_EVENT_PAYOFF_SIDES,
+    ROUND74_EVENT_SYMBOLS,
 )
 
 
@@ -324,9 +326,15 @@ def _risk_calibration_panel() -> tuple[
     torch.Tensor,
     torch.Tensor,
     tuple[str, ...],
+    tuple[str, ...],
 ]:
     runs = _tuning_subpartition().calibration_run_ids
-    row_runs = tuple(run_id for run_id in runs for _ in range(2))
+    row_runs = tuple(
+        run_id for run_id in runs for _symbol in ROUND74_EVENT_SYMBOLS for _ in range(2)
+    )
+    row_symbols = tuple(
+        symbol for _run_id in runs for symbol in ROUND74_EVENT_SYMBOLS for _ in range(2)
+    )
     horizons = len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
     sides = len(ROUND74_EVENT_PAYOFF_SIDES)
     quantiles = len(ROUND74_EVENT_PAYOFF_QUANTILES)
@@ -347,7 +355,7 @@ def _risk_calibration_panel() -> tuple[
             dtype=torch.float32,
         )
         .reshape(2, 1, 1)
-        .repeat(len(runs), horizons, sides)
+        .repeat(len(runs) * len(ROUND74_EVENT_SYMBOLS), horizons, sides)
     )
     mae_targets = (
         torch.tensor(
@@ -355,14 +363,30 @@ def _risk_calibration_panel() -> tuple[
             dtype=torch.float32,
         )
         .reshape(2, 1, 1)
-        .repeat(len(runs), horizons, sides)
+        .repeat(len(runs) * len(ROUND74_EVENT_SYMBOLS), horizons, sides)
     )
     eligibility = torch.ones((rows, horizons, sides), dtype=torch.float32)
-    return payoff, payoff_targets, mae, mae_targets, eligibility, row_runs
+    return (
+        payoff,
+        payoff_targets,
+        mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    )
 
 
 def test_risk_quantile_calibration_widens_only_deployed_tails() -> None:
-    payoff, targets, mae, mae_targets, eligibility, row_runs = _risk_calibration_panel()
+    (
+        payoff,
+        targets,
+        mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel()
     calibration = fit_round74_risk_quantile_calibration(
         payoff_quantiles_bps=payoff,
         net_payoff_bps=targets,
@@ -370,6 +394,7 @@ def test_risk_quantile_calibration_widens_only_deployed_tails() -> None:
         maximum_adverse_excursion_bps=mae_targets,
         action_eligibility=eligibility,
         row_run_ids=row_runs,
+        row_symbols=row_symbols,
         expected_run_ids=_tuning_subpartition().calibration_run_ids,
         optimization_population="capture_run",
     )
@@ -397,10 +422,30 @@ def test_risk_quantile_calibration_widens_only_deployed_tails() -> None:
     assert (
         Round74RiskQuantileCalibration.from_dict(calibration.as_dict()) == calibration
     )
+    prior = replace(
+        calibration,
+        schema_version=ROUND74_RISK_QUANTILE_CALIBRATION_PRIOR_SCHEMA_VERSION,
+    )
+    assert Round74RiskQuantileCalibration.from_dict(prior.as_dict()) == prior
 
 
-def test_risk_quantile_calibration_rejects_undercovered_fitted_tail() -> None:
-    payoff, targets, mae, mae_targets, eligibility, row_runs = _risk_calibration_panel()
+def test_risk_quantile_calibration_uses_worst_run_symbol_group() -> None:
+    (
+        payoff,
+        targets,
+        mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel()
+    sol_mask = torch.tensor(
+        tuple(symbol == "SOLUSDT" for symbol in row_symbols),
+        dtype=torch.bool,
+    )
+    targets[sol_mask] -= 4.0
+    mae_targets[sol_mask] += 4.0
+
     calibration = fit_round74_risk_quantile_calibration(
         payoff_quantiles_bps=payoff,
         net_payoff_bps=targets,
@@ -408,6 +453,37 @@ def test_risk_quantile_calibration_rejects_undercovered_fitted_tail() -> None:
         maximum_adverse_excursion_bps=mae_targets,
         action_eligibility=eligibility,
         row_run_ids=row_runs,
+        row_symbols=row_symbols,
+        expected_run_ids=_tuning_subpartition().calibration_run_ids,
+        optimization_population="capture_run",
+    )
+
+    assert calibration.payoff_lower_offsets_bps[0][0] == pytest.approx((5.0, 6.0))
+    assert calibration.mae_upper_offsets_bps[0][0] == pytest.approx(5.0)
+    assert calibration.payoff_lower_empirical_coverage_after[0][0] == (
+        pytest.approx((1.0, 1.0))
+    )
+    assert calibration.mae_upper_empirical_coverage_after[0][0] == pytest.approx(1.0)
+
+
+def test_risk_quantile_calibration_rejects_undercovered_fitted_tail() -> None:
+    (
+        payoff,
+        targets,
+        mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel()
+    calibration = fit_round74_risk_quantile_calibration(
+        payoff_quantiles_bps=payoff,
+        net_payoff_bps=targets,
+        maximum_adverse_excursion_quantiles_bps=mae,
+        maximum_adverse_excursion_bps=mae_targets,
+        action_eligibility=eligibility,
+        row_run_ids=row_runs,
+        row_symbols=row_symbols,
         expected_run_ids=_tuning_subpartition().calibration_run_ids,
         optimization_population="capture_run",
     )
@@ -429,7 +505,15 @@ def test_risk_quantile_calibration_rejects_undercovered_fitted_tail() -> None:
 
 
 def test_composite_calibration_hash_binds_risk_targets_and_offsets() -> None:
-    payoff, targets, mae, mae_targets, eligibility, row_runs = _risk_calibration_panel()
+    (
+        payoff,
+        targets,
+        mae,
+        mae_targets,
+        eligibility,
+        row_runs,
+        row_symbols,
+    ) = _risk_calibration_panel()
     action_logits = torch.tensor(
         (-2.0, 2.0),
         dtype=torch.float32,
@@ -460,6 +544,7 @@ def test_composite_calibration_hash_binds_risk_targets_and_offsets() -> None:
         net_payoff_bps=targets,
         maximum_adverse_excursion_quantiles_bps=mae,
         maximum_adverse_excursion_bps=mae_targets,
+        row_symbols=row_symbols,
         row_run_ids=row_runs,
         tuning_subpartition=subpartition,
         pretest_policy_sha256="1" * 64,
