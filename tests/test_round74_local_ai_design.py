@@ -67,9 +67,6 @@ from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
-    ROUND74_EVENT_FEATURE_NAMES,
-    ROUND74_EVENT_FEATURE_NAMES_SHA256,
-    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
 
@@ -796,8 +793,10 @@ def test_round74_ai_design_delta_keeps_microstructure_hypotheses_out_of_round() 
     assert claimed == _canonical_sha256(artifact)
     assert artifact["schema_version"] == "round-074-local-ai-review-design-v58"
     assert artifact["supersedes_artifact_sha256"] == previous["artifact_sha256"]
-    assert features["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES)
-    assert features["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert features["feature_count"] == 66
+    assert features["feature_names_sha256"] == (
+        "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a"
+    )
     assert features["level_imbalance_5_10_20_present"]
     assert features["rank_banded_depth_pressure_present"]
     assert features["rank_banded_absolute_depth_flow_present"]
@@ -819,9 +818,7 @@ def test_round74_ai_design_delta_keeps_microstructure_hypotheses_out_of_round() 
     assert not inference["new_hypothesis_may_bypass_current_prospective_cohort"]
     assert inference["fresh_preregistration_required_after_any_feature_change"]
     assert verification["primary_papers_reviewed"] == 3
-    assert verification["current_feature_names_inspected"] == len(
-        ROUND74_EVENT_FEATURE_NAMES
-    )
+    assert verification["current_feature_names_inspected"] == 66
     assert verification["source_level_mismatch_recorded"]
     assert not verification["current_model_or_feature_contract_changed"]
     assert not verification["gpu_model_workload_executed"]
@@ -1170,14 +1167,16 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
     )
     assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
     assert source["event_sequence_schema_version"] == (
-        ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+        "round-074-causal-event-sequence-v4"
     )
     assert source["event_scaler_schema_version"] == (
         ROUND74_EVENT_SCALER_SCHEMA_VERSION
     )
     assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
-    assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
-    assert source["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert source["feature_count"] == 66
+    assert source["feature_names_sha256"] == (
+        "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a"
+    )
     assert source["state_half_lives_seconds"] == list(
         ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
     )
@@ -1242,8 +1241,10 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "causal_event_tcn": 130_532,
         "causal_event_attention": 153_532,
     }
-    assert compute["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES)
-    assert compute["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert compute["feature_count"] == 66
+    assert compute["feature_names_sha256"] == (
+        "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a"
+    )
     assert compute["state_half_lives_seconds"] == list(
         ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
     )

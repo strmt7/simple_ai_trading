@@ -49,10 +49,7 @@ from simple_ai_trading.impact_absorption_event_sealed_ledger import (
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
-    ROUND74_EVENT_FEATURE_NAMES,
-    ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
-    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
     ROUND74_EVENT_SYMBOLS,
 )
@@ -832,8 +829,8 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         source["contract_generator_path"]
     )
     assert source["storage_sha256"] == _file_sha256(source["storage_path"])
-    assert (
-        source["event_sequence_schema_version"] == ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+    assert source["event_sequence_schema_version"] == (
+        "round-074-causal-event-sequence-v4"
     )
     assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
     assert source["event_scaler_schema_version"] == ROUND74_EVENT_SCALER_SCHEMA_VERSION
@@ -918,8 +915,10 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     assert source["target_context_panel_schema_version"] == (
         ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION
     )
-    assert source["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
-    assert source["feature_names_sha256"] == (ROUND74_EVENT_FEATURE_NAMES_SHA256)
+    assert source["feature_count"] == 66
+    assert source["feature_names_sha256"] == (
+        "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a"
+    )
     data_scope = design["data_scope"]
     assert data_scope["symbols"] == ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
     assert data_scope["exact_local_receipt_order_required"] is True
@@ -1931,8 +1930,10 @@ def test_round74_training_preflight_is_repeated_amd_compute_only() -> None:
         candidate_id: design["candidate_panel"][candidate_id]["parameter_count"]
         for candidate_id in ROUND74_EVENT_MODEL_CANDIDATES
     }
-    assert inputs["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES)
-    assert inputs["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert inputs["feature_count"] == 66
+    assert inputs["feature_names_sha256"] == (
+        "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a"
+    )
     assert inputs["state_half_lives_seconds"] == list(
         ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
     )

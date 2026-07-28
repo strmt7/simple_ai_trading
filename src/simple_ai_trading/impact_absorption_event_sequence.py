@@ -29,13 +29,14 @@ from .impact_absorption import (
 from .impact_capture_frame import ImpactCaptureFrameRecord
 
 
-ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v4"
+ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION = "round-074-causal-event-sequence-v5"
 ROUND74_EVENT_SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 ROUND74_EVENT_SEQUENCE_LENGTH = 128
 ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS = (1, 5, 30, 300)
 ROUND74_EVENT_PAYOFF_SIDES = ("long", "short")
 ROUND74_EVENT_PAYOFF_QUANTILES = (0.10, 0.25, 0.50, 0.75, 0.90)
 ROUND74_EVENT_STATE_HALF_LIVES_SECONDS = (5, 30, 300)
+ROUND74_EVENT_CLOCK_PERIODS_SECONDS = (60, 300, 900)
 ROUND74_EVENT_TYPES = (
     "depthUpdate",
     "bookTicker",
@@ -103,6 +104,15 @@ ROUND74_EVENT_FEATURE_NAMES = (
     "log1p_ms_since_aggregate_trade",
     "log1p_ms_since_mark_price",
     "log1p_ms_since_liquidation",
+    *(
+        feature_name
+        for period_seconds in ROUND74_EVENT_CLOCK_PERIODS_SECONDS
+        for feature_name in (
+            f"exchange_clock_{period_seconds}s_phase_sine",
+            f"exchange_clock_{period_seconds}s_phase_cosine",
+            f"exchange_clock_{period_seconds}s_opening_10s",
+        )
+    ),
     "utc_second_of_day_sine",
     "utc_second_of_day_cosine",
 )
@@ -131,6 +141,22 @@ def _strict_json_object(raw_text: str) -> Mapping[str, object]:
     if not isinstance(parsed, Mapping):
         raise ValueError("event-sequence payload must be a JSON object")
     return parsed
+
+
+def _exchange_clock_features(event_time_ms: int) -> tuple[float, ...]:
+    features: list[float] = []
+    for period_seconds in ROUND74_EVENT_CLOCK_PERIODS_SECONDS:
+        period_ms = period_seconds * 1_000
+        phase_ms = int(event_time_ms) % period_ms
+        angle = 2.0 * math.pi * phase_ms / period_ms
+        features.extend(
+            (
+                math.sin(angle),
+                math.cos(angle),
+                1.0 if phase_ms < 10_000 else 0.0,
+            )
+        )
+    return tuple(features)
 
 
 def _decode_websocket_record(
@@ -650,8 +676,9 @@ class Round74EventSequenceEncoder:
             for candidate in ROUND74_EVENT_TYPES
         )
         self._last_event_ns[event_type] = received_ns
-        second_of_day = (int(record.received_wall_ns) // 1_000_000_000) % 86_400
-        angle = 2.0 * math.pi * second_of_day / 86_400.0
+        exchange_clock = _exchange_clock_features(exchange_event_time_ms)
+        utc_phase_ms = exchange_event_time_ms % 86_400_000
+        angle = 2.0 * math.pi * utc_phase_ms / 86_400_000.0
         values = (
             *event_flags,
             *symbol_flags,
@@ -687,6 +714,7 @@ class Round74EventSequenceEncoder:
             ask_qty_change,
             *time_scale,
             *temporal,
+            *exchange_clock,
             math.sin(angle),
             math.cos(angle),
         )
@@ -1102,6 +1130,7 @@ def iter_round74_v10_event_tokens(
 
 __all__ = [
     "ROUND74_EVENT_BANDS",
+    "ROUND74_EVENT_CLOCK_PERIODS_SECONDS",
     "ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS",
     "ROUND74_EVENT_FEATURE_NAMES",
     "ROUND74_EVENT_FEATURE_NAMES_SHA256",

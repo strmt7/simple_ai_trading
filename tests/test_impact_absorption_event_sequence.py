@@ -6,6 +6,7 @@ import math
 import pytest
 
 from simple_ai_trading.impact_absorption_event_sequence import (
+    ROUND74_EVENT_CLOCK_PERIODS_SECONDS,
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
@@ -313,6 +314,77 @@ def test_event_sequence_preserves_subsecond_order_and_financial_signs() -> None:
     )
     assert depth.as_dict()["target_constructed"] is False
     assert depth.as_dict()["model_evaluated"] is False
+
+
+def test_event_sequence_clock_phase_uses_exchange_time_not_host_wall_time() -> None:
+    encoder = _encoder(ready_offset_ns=1)
+    event_time_ms = 15 * 60 * 1_000 + 9_500
+    token = encoder.consume(
+        frame_index=0,
+        message_index=0,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=0,
+            monotonic_ns=100,
+            stream_name="btcusdt@bookTicker",
+            payload=_ticker(event_time_ms),
+        ),
+    )
+
+    assert token is not None
+    assert ROUND74_EVENT_CLOCK_PERIODS_SECONDS == (60, 300, 900)
+    for period_seconds in ROUND74_EVENT_CLOCK_PERIODS_SECONDS:
+        period_ms = period_seconds * 1_000
+        angle = 2.0 * math.pi * (event_time_ms % period_ms) / period_ms
+        assert _feature(
+            token, f"exchange_clock_{period_seconds}s_phase_sine"
+        ) == pytest.approx(math.sin(angle))
+        assert _feature(
+            token, f"exchange_clock_{period_seconds}s_phase_cosine"
+        ) == pytest.approx(math.cos(angle))
+        assert _feature(
+            token, f"exchange_clock_{period_seconds}s_opening_10s"
+        ) == 1.0
+
+    utc_angle = 2.0 * math.pi * (event_time_ms % 86_400_000) / 86_400_000.0
+    assert _feature(token, "utc_second_of_day_sine") == pytest.approx(
+        math.sin(utc_angle)
+    )
+    assert _feature(token, "utc_second_of_day_cosine") == pytest.approx(
+        math.cos(utc_angle)
+    )
+
+
+def test_event_sequence_clock_opening_window_has_exact_ten_second_boundary() -> None:
+    encoder = _encoder(ready_offset_ns=1)
+    before = encoder.consume(
+        frame_index=0,
+        message_index=0,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=0,
+            monotonic_ns=100,
+            stream_name="btcusdt@bookTicker",
+            payload=_ticker(9_999),
+        ),
+    )
+    at_boundary = encoder.consume(
+        frame_index=0,
+        message_index=1,
+        record=_record(
+            lane="binance_futures_public",
+            sequence=1,
+            monotonic_ns=200,
+            stream_name="btcusdt@bookTicker",
+            payload=_ticker(10_000),
+        ),
+    )
+
+    assert before is not None and at_boundary is not None
+    for period_seconds in ROUND74_EVENT_CLOCK_PERIODS_SECONDS:
+        feature_name = f"exchange_clock_{period_seconds}s_opening_10s"
+        assert _feature(before, feature_name) == 1.0
+        assert _feature(at_boundary, feature_name) == 0.0
 
 
 def test_event_sequence_retains_mark_and_liquidation_context() -> None:

@@ -15,9 +15,6 @@ from simple_ai_trading.impact_absorption_event_scaling import (
     ROUND74_EVENT_SCALER_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_sequence import (
-    ROUND74_EVENT_FEATURE_NAMES,
-    ROUND74_EVENT_FEATURE_NAMES_SHA256,
-    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
 from simple_ai_trading.round74_active_qualification import (
@@ -226,13 +223,15 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
     assert partition["target_schema_version"] == "round-074-executable-event-target-v10"
     assert partition["dataset_schema_version"] == "round-074-event-dataset-v9"
     assert partition["event_sequence_schema_version"] == (
-        ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+        "round-074-causal-event-sequence-v4"
     )
     assert partition["event_scaler_schema_version"] == (
         ROUND74_EVENT_SCALER_SCHEMA_VERSION
     )
-    assert partition["feature_count"] == len(ROUND74_EVENT_FEATURE_NAMES) == 66
-    assert partition["feature_names_sha256"] == ROUND74_EVENT_FEATURE_NAMES_SHA256
+    assert partition["feature_count"] == 66
+    assert partition["feature_names_sha256"] == (
+        "a753db09a2d6a089af16ad40eb2d0d4781921d635a0822b9fd0523bcddb28f4a"
+    )
     assert partition["state_half_lives_seconds"] == list(
         ROUND74_EVENT_STATE_HALF_LIVES_SECONDS
     )
