@@ -44,12 +44,22 @@ ROUND74_SEGMENTED_REFERENCE_WINDOWS_PER_SYMBOL = 256
 ROUND74_SEGMENTED_TUNING_SUBPARTITION_SCHEMA_VERSION = (
     "round-074-segmented-tuning-subpartition-v1"
 )
+ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION = (
+    "round-074-segmented-model-selection-stages-v1"
+)
 ROUND74_SEGMENTED_TEST_POPULATION_SCHEMA_VERSION = (
     "round-074-segmented-test-population-v1"
 )
 ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS = (12, 6, 6)
 ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHT_TOTAL = sum(
     ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS
+)
+ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS = (
+    "architecture",
+    "clock_features",
+    "order_flow_features",
+    "state_conditioned_flow",
+    "causal_pretraining",
 )
 
 
@@ -102,6 +112,27 @@ def _segmented_tuning_required_anchor_ns() -> tuple[int, int, int]:
         required * weight // denominator
         for weight in ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS
     )
+
+
+def _segmented_model_selection_stage_bounds() -> tuple[int, ...]:
+    model_start, model_end, _calibration_end, _tuning_end = (
+        _segmented_tuning_subrole_bounds()
+    )
+    scheduled_model_slots = model_end - model_start
+    stage_count = len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+    return tuple(
+        model_start
+        + (scheduled_model_slots * index + stage_count - 1) // stage_count
+        for index in range(stage_count + 1)
+    )
+
+
+def _segmented_model_selection_stage_required_anchor_ns() -> int:
+    model_required_anchor_ns = _segmented_tuning_required_anchor_ns()[0]
+    stage_count = len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+    return (
+        model_required_anchor_ns + stage_count - 1
+    ) // stage_count
 
 
 @dataclass(frozen=True)
@@ -327,6 +358,235 @@ class Round74SegmentedTuningSubpartition:
             raise ValueError("Round 74 segmented tuning subpartition policy differs")
         if selected.subpartition_sha256 != claimed:
             raise ValueError("Round 74 segmented tuning subpartition identity differs")
+        return selected
+
+
+@dataclass(frozen=True)
+class Round74SegmentedModelSelectionStages:
+    """Five target-blind promotion panels fixed by scheduled slot ordinal."""
+
+    parent_tuning_subpartition_sha256: str
+    parent_partition_sha256: str
+    cohort_plan_sha256: str
+    stage_run_ids: tuple[tuple[str, ...], ...]
+    stage_slot_ordinals: tuple[tuple[int, ...], ...]
+    stage_eligible_anchor_ns: tuple[tuple[int, ...], ...]
+    schema_version: str = ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION
+
+    def validate(self) -> None:
+        stage_count = len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+        bounds = _segmented_model_selection_stage_bounds()
+        required_anchor_ns = (
+            _segmented_model_selection_stage_required_anchor_ns()
+        )
+        if (
+            self.schema_version
+            != ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION
+            or not _is_sha256(self.parent_tuning_subpartition_sha256)
+            or not _is_sha256(self.parent_partition_sha256)
+            or not _is_sha256(self.cohort_plan_sha256)
+            or len(self.stage_run_ids) != stage_count
+            or len(self.stage_slot_ordinals) != stage_count
+            or len(self.stage_eligible_anchor_ns) != stage_count
+        ):
+            raise ValueError("Round 74 segmented model-selection stages differ")
+        all_runs: list[str] = []
+        all_ordinals: list[int] = []
+        for index, (run_ids, ordinals, durations) in enumerate(
+            zip(
+                self.stage_run_ids,
+                self.stage_slot_ordinals,
+                self.stage_eligible_anchor_ns,
+                strict=True,
+            )
+        ):
+            if (
+                not run_ids
+                or len(run_ids) != len(ordinals)
+                or len(run_ids) != len(durations)
+                or any(
+                    len(run_id) != 32
+                    or any(
+                        character not in "0123456789abcdef"
+                        for character in run_id
+                    )
+                    for run_id in run_ids
+                )
+                or any(
+                    isinstance(ordinal, bool)
+                    or not isinstance(ordinal, int)
+                    or not bounds[index] <= ordinal < bounds[index + 1]
+                    for ordinal in ordinals
+                )
+                or any(
+                    isinstance(duration, bool)
+                    or not isinstance(duration, int)
+                    or duration <= 0
+                    for duration in durations
+                )
+                or sum(durations) < required_anchor_ns
+            ):
+                raise ValueError(
+                    "Round 74 segmented model-selection stage differs"
+                )
+            all_runs.extend(run_ids)
+            all_ordinals.extend(ordinals)
+        if (
+            len(set(all_runs)) != len(all_runs)
+            or len(set(all_ordinals)) != len(all_ordinals)
+            or any(
+                current <= prior
+                for prior, current in zip(
+                    all_ordinals,
+                    all_ordinals[1:],
+                    strict=False,
+                )
+            )
+        ):
+            raise ValueError("Round 74 segmented model-selection reuse differs")
+
+    @property
+    def stage_partition_sha256(self) -> str:
+        self.validate()
+        return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    def batches_for_stage(
+        self,
+        stage_id: str,
+        batches_by_run_id: Mapping[str, Round74EventTrainingBatch],
+    ) -> tuple[Round74EventTrainingBatch, ...]:
+        self.validate()
+        try:
+            stage_index = ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS.index(
+                str(stage_id)
+            )
+        except ValueError as exc:
+            raise ValueError(
+                "Round 74 segmented model-selection stage id differs"
+            ) from exc
+        selected = dict(batches_by_run_id)
+        expected = {
+            run_id for run_ids in self.stage_run_ids for run_id in run_ids
+        }
+        if set(selected) != expected:
+            raise ValueError(
+                "Round 74 segmented model-selection batch panel differs"
+            )
+        batches = tuple(
+            selected[run_id] for run_id in self.stage_run_ids[stage_index]
+        )
+        if any(
+            batch.role != "tuning"
+            or set(batch.run_id) != {run_id}
+            or batch.partition_sha256 != self.parent_partition_sha256
+            for batch, run_id in zip(
+                batches,
+                self.stage_run_ids[stage_index],
+                strict=True,
+            )
+        ):
+            raise ValueError(
+                "Round 74 segmented model-selection batch identity differs"
+            )
+        return batches
+
+    def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
+        self.validate()
+        bounds = _segmented_model_selection_stage_bounds()
+        required_anchor_ns = (
+            _segmented_model_selection_stage_required_anchor_ns()
+        )
+        payload: dict[str, object] = {
+            "schema_version": self.schema_version,
+            "parent_tuning_subpartition_sha256": (
+                self.parent_tuning_subpartition_sha256
+            ),
+            "parent_partition_sha256": self.parent_partition_sha256,
+            "cohort_plan_sha256": self.cohort_plan_sha256,
+            "assignment_basis": "immutable_scheduled_slot_ordinal_ranges",
+            "split_unit": "whole_admitted_transport_segment",
+            "stage_order": list(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS),
+            "scheduled_slot_bounds": list(bounds),
+            "required_eligible_anchor_ns_per_stage": required_anchor_ns,
+            "stages": [
+                {
+                    "stage_id": stage_id,
+                    "run_ids": list(run_ids),
+                    "slot_ordinals": list(ordinals),
+                    "eligible_anchor_ns": list(durations),
+                    "observed_eligible_anchor_ns": sum(durations),
+                }
+                for stage_id, run_ids, ordinals, durations in zip(
+                    ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
+                    self.stage_run_ids,
+                    self.stage_slot_ordinals,
+                    self.stage_eligible_anchor_ns,
+                    strict=True,
+                )
+            ],
+            "chronological": True,
+            "target_label_or_model_output_used_for_assignment": False,
+            "cross_stage_run_reuse_permitted": False,
+            "all_parent_model_selection_segments_included": True,
+            "calibration_or_policy_selection_segment_included": False,
+            "sealed_test_segment_included": False,
+        }
+        if include_sha256:
+            payload["stage_partition_sha256"] = _canonical_sha256(payload)
+        return payload
+
+    @classmethod
+    def from_dict(
+        cls,
+        value: Mapping[str, object],
+    ) -> Round74SegmentedModelSelectionStages:
+        payload = dict(value)
+        claimed = payload.pop("stage_partition_sha256", None)
+        stages = payload.get("stages")
+        if (
+            not _is_sha256(claimed)
+            or claimed != _canonical_sha256(payload)
+            or not isinstance(stages, list)
+            or len(stages) != len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS)
+            or any(not isinstance(stage, Mapping) for stage in stages)
+        ):
+            raise ValueError(
+                "Round 74 segmented model-selection stage payload differs"
+            )
+        try:
+            selected = cls(
+                parent_tuning_subpartition_sha256=str(
+                    payload["parent_tuning_subpartition_sha256"]
+                ),
+                parent_partition_sha256=str(payload["parent_partition_sha256"]),
+                cohort_plan_sha256=str(payload["cohort_plan_sha256"]),
+                stage_run_ids=tuple(
+                    tuple(str(run_id) for run_id in stage["run_ids"])
+                    for stage in stages
+                ),
+                stage_slot_ordinals=tuple(
+                    tuple(int(ordinal) for ordinal in stage["slot_ordinals"])
+                    for stage in stages
+                ),
+                stage_eligible_anchor_ns=tuple(
+                    tuple(int(duration) for duration in stage["eligible_anchor_ns"])
+                    for stage in stages
+                ),
+                schema_version=str(payload["schema_version"]),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "Round 74 segmented model-selection stage payload differs"
+            ) from exc
+        selected.validate()
+        if selected.as_dict(include_sha256=False) != payload:
+            raise ValueError(
+                "Round 74 segmented model-selection stage policy differs"
+            )
+        if selected.stage_partition_sha256 != claimed:
+            raise ValueError(
+                "Round 74 segmented model-selection stage identity differs"
+            )
         return selected
 
 
@@ -582,6 +842,76 @@ def build_round74_segmented_tuning_subpartition(
         policy_selection_eligible_anchor_ns=tuple(duration_groups[2]),
     )
     selected.validate()
+    return selected
+
+
+def build_round74_segmented_model_selection_stages(
+    subpartition: Round74SegmentedTuningSubpartition,
+) -> Round74SegmentedModelSelectionStages:
+    """Split the model-selection role without inspecting features or targets."""
+
+    if not isinstance(subpartition, Round74SegmentedTuningSubpartition):
+        raise TypeError(
+            "Round 74 segmented tuning subpartition is required"
+        )
+    subpartition.validate()
+    bounds = _segmented_model_selection_stage_bounds()
+    run_groups: list[list[str]] = [
+        [] for _stage in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+    ]
+    ordinal_groups: list[list[int]] = [
+        [] for _stage in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+    ]
+    duration_groups: list[list[int]] = [
+        [] for _stage in ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+    ]
+    for run_id, ordinal, duration in zip(
+        subpartition.model_selection_run_ids,
+        subpartition.model_selection_slot_ordinals,
+        subpartition.model_selection_eligible_anchor_ns,
+        strict=True,
+    ):
+        matching = tuple(
+            index
+            for index in range(len(ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS))
+            if bounds[index] <= ordinal < bounds[index + 1]
+        )
+        if len(matching) != 1:
+            raise ValueError(
+                "Round 74 segmented model-selection slot assignment differs"
+            )
+        stage_index = matching[0]
+        run_groups[stage_index].append(run_id)
+        ordinal_groups[stage_index].append(ordinal)
+        duration_groups[stage_index].append(duration)
+    selected = Round74SegmentedModelSelectionStages(
+        parent_tuning_subpartition_sha256=subpartition.subpartition_sha256,
+        parent_partition_sha256=subpartition.parent_partition_sha256,
+        cohort_plan_sha256=subpartition.cohort_plan_sha256,
+        stage_run_ids=tuple(tuple(group) for group in run_groups),
+        stage_slot_ordinals=tuple(tuple(group) for group in ordinal_groups),
+        stage_eligible_anchor_ns=tuple(tuple(group) for group in duration_groups),
+    )
+    selected.validate()
+    if (
+        tuple(run_id for group in selected.stage_run_ids for run_id in group)
+        != subpartition.model_selection_run_ids
+        or tuple(
+            ordinal
+            for group in selected.stage_slot_ordinals
+            for ordinal in group
+        )
+        != subpartition.model_selection_slot_ordinals
+        or tuple(
+            duration
+            for group in selected.stage_eligible_anchor_ns
+            for duration in group
+        )
+        != subpartition.model_selection_eligible_anchor_ns
+    ):
+        raise RuntimeError(
+            "Round 74 segmented model-selection coverage differs"
+        )
     return selected
 
 
@@ -959,15 +1289,19 @@ def select_round74_segmented_matched_event_windows(
 
 
 __all__ = [
+    "ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS",
+    "ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS",
     "ROUND74_SEGMENTED_REFERENCE_WINDOWS_PER_SYMBOL",
     "ROUND74_SEGMENTED_TEST_POPULATION_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_TUNING_SUBPARTITION_SCHEMA_VERSION",
     "ROUND74_SEGMENTED_TUNING_SUBROLE_WEIGHTS",
     "ROUND74_SEGMENTED_WINDOW_SELECTION_SCHEMA_VERSION",
+    "Round74SegmentedModelSelectionStages",
     "Round74SegmentedTestPopulation",
     "Round74SegmentedTuningSubpartition",
     "assemble_round74_segmented_role_batches",
+    "build_round74_segmented_model_selection_stages",
     "build_round74_segmented_sealed_dataset_identity",
     "build_round74_segmented_test_population",
     "build_round74_segmented_tuning_subpartition",
