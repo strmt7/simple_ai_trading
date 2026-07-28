@@ -1,0 +1,121 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v93",
+  "created_at_utc": "2026-07-28T19:47:37.865960Z",
+  "implementation_git_commit": "b373ac902c0edbaa107a7f230608649eb57129e6",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v92.json",
+    "file_sha256": "fd809744d170512d63a1884a183980940ffbcefb20ccf9e52c5aa80e64124176",
+    "design_sha256": "eb23b3f230afecbf42b5ece1b2d3a4fbfe0cfbc159e8975ef8e4a9bca79315f5",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_scaling_path": "src/simple_ai_trading/impact_absorption_event_scaling.py",
+    "event_scaling_sha256": "8832c3723430359afd9df272f0c2c3c3be847937b134cdd2a1f36ffa207815f7",
+    "event_training_path": "src/simple_ai_trading/impact_absorption_event_training.py",
+    "event_training_sha256": "8b3886b2387b28351ed0a5e81ff58ac0aa29535b08da82515ffb7fb7db61ac57",
+    "event_model_operator_path": "src/simple_ai_trading/round74_event_model_operator.py",
+    "event_model_operator_sha256": "22956d2391956a3c56862c26c447469420bb918274825dc5f843b4748d73579c",
+    "development_operator_path": "src/simple_ai_trading/round74_event_development_operator.py",
+    "development_operator_sha256": "878fa75c024981a41b3baa43a49249c5719ee73f0539efa2b0629202b4cf5aa8",
+    "segmented_model_operator_path": "src/simple_ai_trading/round74_segmented_model_operator.py",
+    "segmented_model_operator_sha256": "080eb3bae7f55f4df17b8b067b992091623e279239152332dffd461227f59d14",
+    "event_training_test_path": "tests/test_impact_absorption_event_training.py",
+    "event_training_test_sha256": "8a844489233f4b660abe1dd31d5e593b29d25abcb7ef2f00dac90b62c30d5833",
+    "segmented_model_operator_test_path": "tests/test_round74_segmented_model_operator.py",
+    "segmented_model_operator_test_sha256": "402a11cdef31517a1be16468db5a98c235a9ae0632b6d9cf37d67bb3a304ac67",
+    "directml_evidence_path": "docs/model-research/action-value/round-074-full-selection-provenance-directml-preflight-2026-07-28.json",
+    "directml_evidence_file_sha256": "229b3c9ed51217c90c8bc7faaedfdbdd5321ace7f278913add31cbb81bee29cd"
+  },
+  "declared_delta": {
+    "canonical_training_split_required_by_segmented_training": true,
+    "canonical_training_split_embedded_in_pretest_policy": true,
+    "canonical_training_split_reloaded_and_revalidated": true,
+    "development_operator_forwards_segmented_training_split": true,
+    "event_training_schema_version": "round-074-event-training-v29",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v28",
+    "selection_protocol_schema_version": "round-074-event-selection-protocol-v3",
+    "training_split_schema_version": "round-074-segmented-training-selection-split-v1",
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false,
+    "candidate_architectures_changed": false,
+    "cohort_roles_or_scheduled_slots_changed": false,
+    "sealed_test_consumed": false
+  },
+  "artifact_completeness_contract": {
+    "policy_contains_training_split_sha256": true,
+    "policy_contains_complete_training_split_payload": true,
+    "payload_contains_parent_partition_sha256": true,
+    "payload_contains_cohort_plan_sha256": true,
+    "payload_contains_optimizer_run_ids": true,
+    "payload_contains_purged_run_ids": true,
+    "payload_contains_early_stopping_run_ids": true,
+    "payload_contains_all_corresponding_slot_ordinals": true,
+    "payload_contains_optimizer_last_eligible_anchor_wall_ns": true,
+    "payload_contains_early_stopping_first_eligible_anchor_wall_ns": true,
+    "payload_contains_minimum_purge_contract": true,
+    "loader_recomputes_training_split_sha256": true,
+    "loader_rejects_static_policy_drift_after_valid_rehash": true
+  },
+  "cross_artifact_binding_contract": {
+    "training_split_parent_partition_equals_development_partition": true,
+    "training_split_parent_partition_equals_promotion_stage_partition": true,
+    "training_split_cohort_plan_equals_promotion_stage_cohort_plan": true,
+    "training_split_optimizer_run_ids_equal_protocol_optimizer_run_ids": true,
+    "training_split_purged_run_ids_equal_protocol_purged_run_ids": true,
+    "training_split_early_stopping_run_ids_equal_protocol_early_stopping_run_ids": true,
+    "scaler_fit_selection_sha256_equals_training_split_sha256": true,
+    "scaler_fit_run_ids_equal_training_split_optimizer_run_ids": true,
+    "missing_segmented_training_split_rejected": true,
+    "legacy_cohort_with_segmented_training_split_rejected": true
+  },
+  "research_inheritance": {
+    "base_v92_primary_source_review_inherited": true,
+    "new_predictive_or_financial_hypothesis_introduced": false,
+    "change_type": "artifact_reproducibility_and_fail_closed_provenance",
+    "prior_transfer_limits_remain_in_force": true
+  },
+  "verification": {
+    "focused_training_development_segmented_and_scaler_test_count": 54,
+    "connected_test_count_before_v93_integrity_test": 106,
+    "v93_design_integrity_test_count": 1,
+    "expected_connected_test_count_with_v93_integrity": 107,
+    "ruff_lint_passed": true,
+    "git_diff_check_passed": true,
+    "current_commit_amd_directml_preflight_passed": true,
+    "current_commit_directml_cpu_fallback_warning_count": 0,
+    "current_commit_directml_model_hash_matches_prior": true,
+    "current_commit_directml_prediction_hash_matches_prior": true,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "e111bbea1a3157fe2431b9d2c6be22020dac32f8019cb3a0bdab39f1deb90ba8"
+}
