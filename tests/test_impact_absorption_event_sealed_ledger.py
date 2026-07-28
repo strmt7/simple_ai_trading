@@ -1425,12 +1425,30 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     progress: list[Mapping[str, object]] = []
     prepared_models: list[str] = []
     finalized_models: list[str] = []
+    model_invocations: list[str] = []
+
+    def counted_blocked_review(
+        config: object,
+        manifest: object,
+        request: object,
+        *,
+        deterministic_risk_gate_passed: bool,
+        observed_wall_ns: int,
+    ) -> Round74AIRuntimeOutcome:
+        model_invocations.append(request.sample_sha256)
+        return _blocked_review(
+            config,
+            manifest,
+            request,
+            deterministic_risk_gate_passed=deterministic_risk_gate_passed,
+            observed_wall_ns=observed_wall_ns,
+        )
 
     panel = prepare_round74_target_free_ai_reviews(
         inference,
         action_selection=selection,
         probability_calibration=calibration,
-        review_runner=_blocked_review,
+        review_runner=counted_blocked_review,
         model_batch_preparer=lambda binding: prepared_models.append(binding.model_name),
         model_batch_finalizer=lambda binding: finalized_models.append(
             binding.model_name
@@ -1448,21 +1466,33 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert len(panel.rows) == 24
     assert panel.reviews[0][0].queue_delay_ns == 0
     assert panel.reviews[0][1].queue_delay_ns == 1_000_000_000_000
-    assert panel.reviews[0][1].effective_review_latency_ns == 6_000_000_000_000
+    assert (
+        panel.reviews[0][1].queue_delay_ns
+        <= panel.reviews[0][1].effective_review_latency_ns
+        < panel.reviews[0][1].queue_delay_ns + 1_000_000_000
+    )
     assert len(panel.reviews) == 2
     assert panel.model_batch_unload_enforced is True
     assert prepared_models == ["fino1:8b", "qwen3:8b"]
     assert finalized_models == ["fino1:8b", "qwen3:8b"]
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
-        review.runtime_status == "blocked_capability"
+        review.runtime_status in {"blocked_capability", "blocked_expired"}
         and review.action_latency_eligible is False
         and review.size_multiplier_bps == 0
+        and review.decision is None
         for reviews in panel.reviews
         for review in reviews
     )
+    assert any(
+        review.queue_expired_before_inference
+        for reviews in panel.reviews
+        for review in reviews
+    )
+    assert 0 < len(model_invocations) < 48
     assert len(progress) == 48
     assert progress[-1]["completed_reviews"] == 48
+    assert any(value["queue_expired_before_inference"] for value in progress)
     assert set(panel.reviews_by_manifest()) == {
         binding.manifest.manifest_sha256 for binding in default_models
     }
@@ -1540,7 +1570,14 @@ def test_prepared_review_provider_binds_reserved_claim_and_model_panel(
     assert tuple(reviews) == manifests
     assert all(len(value) == batch.rows for value in reviews.values())
     assert all(
-        review.runtime_status == "blocked_capability"
+        review.runtime_status in {"blocked_capability", "blocked_expired"}
+        and review.action_latency_eligible is False
+        and review.size_multiplier_bps == 0
+        for model_reviews in reviews.values()
+        for review in model_reviews
+    )
+    assert any(
+        review.queue_expired_before_inference
         for model_reviews in reviews.values()
         for review in model_reviews
     )

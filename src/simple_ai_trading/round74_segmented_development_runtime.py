@@ -45,7 +45,7 @@ from .round74_segmented_model_operator import (
 
 
 ROUND74_SEGMENTED_DEVELOPMENT_RUN_SCHEMA_VERSION = (
-    "round-074-segmented-development-run-v2"
+    "round-074-segmented-development-run-v3"
 )
 ROUND74_SEGMENTED_DEVELOPMENT_DATABASE_RELATIVE_PATH = Path(
     "data/round74-segmented-event-cohort-v3.duckdb"

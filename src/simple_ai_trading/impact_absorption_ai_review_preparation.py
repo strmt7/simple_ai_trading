@@ -25,6 +25,7 @@ from .impact_absorption_ai_runtime import (
 from .impact_absorption_ai_uplift import (
     Round74AIPairedReviewEvidence,
     Round74AIPretestQualificationPanel,
+    round74_ai_action_validity_latency_ns,
 )
 from .impact_absorption_event_action_policy import Round74ActionPolicySelection
 from .impact_absorption_event_calibration import Round74ProbabilityCalibration
@@ -39,7 +40,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v13"
+ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION = "round-074-ai-review-panel-v14"
 ROUND74_AI_REVIEW_VALIDITY_NS = 30_000_000_000
 ROUND74_AI_REVIEW_UNIT_RISK_BPS = 10_000
 
@@ -331,6 +332,16 @@ class Round74AIReviewPanel:
                 "single_server_per_candidate_model_in_historical_decision_order"
             ),
             "queue_delay_included_in_action_latency_eligibility": True,
+            "queue_timeout_action": "reject_before_model_inference",
+            "queue_timeout_boundary": (
+                "queue_delay_ns_greater_than_or_equal_to_action_validity_latency_ns"
+            ),
+            "queue_expired_observation_policy": (
+                "blocked_expired_paired_zero_exposure"
+            ),
+            "candidate_model_runtime_interpretation": (
+                "each_model_is_an_independent_overlay_candidate_not_an_ensemble"
+            ),
             "latency_adjusted_replay_performed": False,
             "target_fields_accessed": False,
             "trading_authority": False,
@@ -498,6 +509,14 @@ def prepare_round74_target_free_ai_reviews(
                 batch_cleanup_required = True
                 selected_batch_preparer(binding)
             for row in rows:
+                queue_delay_ns = max(
+                    0,
+                    model_available_wall_ns - row.decision_wall_ns,
+                )
+                queue_expired_before_inference = (
+                    queue_delay_ns
+                    >= round74_ai_action_validity_latency_ns(row.horizon_seconds)
+                )
                 context = inference.contexts[row.panel_index]
                 output = inference.model_outputs[row.panel_index]
                 feature_values = torch.from_numpy(
@@ -534,7 +553,15 @@ def prepare_round74_target_free_ai_reviews(
                     proposed_risk_size_bps=ROUND74_AI_REVIEW_UNIT_RISK_BPS,
                 )
                 batch_attempted = True
-                if worker_session is None:
+                if queue_expired_before_inference:
+                    outcome = review_round74_ai_candidate(
+                        binding.runtime,
+                        binding.manifest,
+                        request,
+                        deterministic_risk_gate_passed=True,
+                        observed_wall_ns=request.expires_wall_ns + 1,
+                    )
+                elif worker_session is None:
                     outcome = review_runner(
                         binding.runtime,
                         binding.manifest,
@@ -552,10 +579,13 @@ def prepare_round74_target_free_ai_reviews(
                         worker_session=worker_session,
                     )
                 outcome.validate()
-                queue_delay_ns = max(
-                    0,
-                    model_available_wall_ns - row.decision_wall_ns,
-                )
+                if (
+                    queue_expired_before_inference
+                    and outcome.status != "blocked_expired"
+                ):
+                    raise ValueError(
+                        "Round 74 expired AI queue request was not rejected"
+                    )
                 model_available_wall_ns = (
                     max(model_available_wall_ns, row.decision_wall_ns)
                     + outcome.elapsed_ns
@@ -589,6 +619,9 @@ def prepare_round74_target_free_ai_reviews(
                             ),
                             "action_latency_eligible": (
                                 evidence.action_latency_eligible
+                            ),
+                            "queue_expired_before_inference": (
+                                queue_expired_before_inference
                             ),
                         }
                     )

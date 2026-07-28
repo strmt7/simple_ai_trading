@@ -46,7 +46,7 @@ from .round74_event_model_operator import Round74PreparedTuningRoles
 
 
 ROUND74_AI_QUALIFICATION_OPERATOR_SCHEMA_VERSION = (
-    "round-074-ai-qualification-operator-v2"
+    "round-074-ai-qualification-operator-v3"
 )
 
 ReviewRunner = Callable[..., Round74AIRuntimeOutcome]

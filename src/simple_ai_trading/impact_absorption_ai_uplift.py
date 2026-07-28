@@ -44,12 +44,12 @@ from .impact_absorption_event_targets import (
 from .storage import write_json_atomic
 
 
-ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v12"
+ROUND74_AI_UPLIFT_SCHEMA_VERSION = "round-074-ai-uplift-development-v13"
 ROUND74_AI_QUALIFICATION_POPULATION_SCHEMA_VERSION = (
     "round-074-ai-qualification-population-v1"
 )
 ROUND74_AI_PRETEST_QUALIFICATION_SCHEMA_VERSION = (
-    "round-074-ai-pretest-qualification-v2"
+    "round-074-ai-pretest-qualification-v3"
 )
 ROUND74_AI_EXECUTION_REPLAY_EVIDENCE_SCHEMA_VERSION = (
     "round-074-ai-execution-replay-evidence-v2"
@@ -193,6 +193,12 @@ class Round74AIPairedReviewEvidence:
         )
         if self.action_latency_eligible != expected_latency_eligible:
             raise ValueError("Round 74 AI action-latency eligibility differs")
+        if self.queue_expired_before_inference and (
+            self.runtime_status != "blocked_expired"
+            or self.decision is not None
+            or self.size_multiplier_bps != 0
+        ):
+            raise ValueError("Round 74 expired AI queue request differs")
         if self.runtime_status == "accepted":
             if self.decision is None:
                 raise ValueError("Round 74 AI accepted review lacks a decision")
@@ -207,6 +213,10 @@ class Round74AIPairedReviewEvidence:
     def review_sha256(self) -> str:
         self.validate()
         return _canonical_sha256(self.as_dict(include_sha256=False))
+
+    @property
+    def queue_expired_before_inference(self) -> bool:
+        return self.queue_delay_ns >= self.action_validity_latency_ns
 
     def as_dict(self, *, include_sha256: bool = True) -> dict[str, object]:
         self.validate()
@@ -228,6 +238,7 @@ class Round74AIPairedReviewEvidence:
             "effective_review_latency_ns": self.effective_review_latency_ns,
             "action_validity_latency_ns": self.action_validity_latency_ns,
             "action_latency_eligible": self.action_latency_eligible,
+            "queue_expired_before_inference": (self.queue_expired_before_inference),
             "size_multiplier_bps": self.size_multiplier_bps,
             "decision": (
                 self.decision.as_dict() if self.decision is not None else None
@@ -286,6 +297,9 @@ class Round74AIPairedReviewEvidence:
         action_validity_latency_ns = round74_ai_action_validity_latency_ns(
             horizon_seconds
         )
+        queue_expired_before_inference = queue_delay_ns >= action_validity_latency_ns
+        if queue_expired_before_inference and outcome.status != "blocked_expired":
+            raise ValueError("Round 74 expired AI queue request differs")
         decision: Round74AIReviewDecision | None = None
         multiplier = 0
         latency_eligible = (
@@ -1262,6 +1276,10 @@ class Round74AIUpliftDevelopmentReport:
                 "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
             ),
             "action_latency_includes_historical_queue_delay": True,
+            "queue_timeout_action": "reject_before_model_inference",
+            "queue_expired_observation_policy": (
+                "paired_zero_exposure_not_observation_deletion"
+            ),
             "expired_action_policy": "paired_zero_exposure_not_observation_deletion",
             "latency_adjusted_replay_performed": True,
             "baseline_payoff_scaled_without_rewalking_book": False,
@@ -1294,6 +1312,10 @@ class Round74AIUpliftDevelopmentReport:
                 "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
             ),
             "action_latency_includes_historical_queue_delay": True,
+            "queue_timeout_action": "reject_before_model_inference",
+            "queue_expired_observation_policy": (
+                "paired_zero_exposure_not_observation_deletion"
+            ),
             "expired_action_policy": "paired_zero_exposure_not_observation_deletion",
             "latency_adjusted_replay_performed": True,
             "baseline_payoff_scaled_without_rewalking_book": False,

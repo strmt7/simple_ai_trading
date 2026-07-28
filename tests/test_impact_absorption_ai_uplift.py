@@ -827,6 +827,23 @@ def test_exact_execution_evidence_is_causal_and_fail_closed() -> None:
 
 
 def test_queue_wait_is_included_in_action_latency() -> None:
+    try:
+        Round74AIPairedReviewEvidence.from_runtime(
+            row_index=0,
+            feature_row_sha256=FEATURES[0],
+            run_id=RUNS[0],
+            symbol="BTCUSDT",
+            side=1,
+            horizon_seconds=30,
+            request=_runtime_request(),
+            outcome=_runtime_outcome(),
+            queue_delay_ns=ACTION_VALIDITY_LATENCY_NS,
+        )
+    except ValueError as exc:
+        assert "expired AI queue request differs" in str(exc)
+    else:
+        raise AssertionError("expired queued AI inference was accepted")
+
     evidence = Round74AIPairedReviewEvidence.from_runtime(
         row_index=0,
         feature_row_sha256=FEATURES[0],
@@ -835,7 +852,7 @@ def test_queue_wait_is_included_in_action_latency() -> None:
         side=1,
         horizon_seconds=30,
         request=_runtime_request(),
-        outcome=_runtime_outcome(),
+        outcome=_runtime_outcome(status="blocked_expired"),
         queue_delay_ns=ACTION_VALIDITY_LATENCY_NS,
     )
 
@@ -843,5 +860,7 @@ def test_queue_wait_is_included_in_action_latency() -> None:
     assert evidence.queue_delay_ns == ACTION_VALIDITY_LATENCY_NS
     assert evidence.effective_review_latency_ns == ACTION_VALIDITY_LATENCY_NS + 1_000
     assert evidence.action_latency_eligible is False
-    assert evidence.decision is not None
-    assert evidence.size_multiplier_bps == 5_000
+    assert evidence.queue_expired_before_inference is True
+    assert evidence.runtime_status == "blocked_expired"
+    assert evidence.decision is None
+    assert evidence.size_multiplier_bps == 0
