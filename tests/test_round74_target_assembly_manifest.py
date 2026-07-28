@@ -116,7 +116,19 @@ def _manifest(
     root: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> subject.Round74TargetAssemblyManifest:
+    def skip_scenario_audit(
+        _value: object,
+        *,
+        run_id: str,
+    ) -> None:
+        assert run_id == RUN_ID
+
     monkeypatch.setattr(subject, "Round74SourceTargetAssembly", _Assembly)
+    monkeypatch.setattr(
+        subject,
+        "_audit_execution_scenario_artifact",
+        skip_scenario_audit,
+    )
     evidence_by_label = {
         "cohort_capture": {},
         "exchange_info": {"quantity_rules": "4" * 64},
