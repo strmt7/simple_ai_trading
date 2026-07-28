@@ -30,6 +30,7 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     ROUND74_COMPLEXITY_PROMOTION_REQUIRED_TUNING_RUNS,
     ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION,
     Round74EventEnsemble,
+    Round74EventTargetLossScale,
     Round74EventTrainingConfig,
     _complexity_gated_candidate_id,
     _eligible_target_minibatch_schedule,
@@ -37,6 +38,7 @@ from simple_ai_trading.impact_absorption_event_training import (  # noqa: E402
     _empty_metric_sums,
     _loss_for_minibatch,
     _losses_for_minibatch_group,
+    fit_round74_event_target_loss_scale,
     load_round74_pretest_policy,
     load_round74_pretest_scaler,
     train_and_seal_round74_pretest_policy,
@@ -173,6 +175,52 @@ def _scaler() -> Round74EventFeatureScaler:
         fit_sample_rows=10,
         fit_sample_index_sha256="5" * 64,
     )
+
+
+def test_target_loss_scale_is_training_only_complete_and_reloadable() -> None:
+    training = _batch(
+        "training",
+        start_wall_ns=WALL_NS,
+        identity=701,
+        rows=9,
+    )
+    selected = fit_round74_event_target_loss_scale(
+        (training,),
+        require_complete_panel=True,
+    )
+    reloaded = Round74EventTargetLossScale.from_dict(selected.as_dict())
+
+    assert reloaded.as_dict() == selected.as_dict()
+    assert selected.training_batch_sha256 == (training.batch_sha256,)
+    assert bool((selected.eligible_target_count > 0).all())
+    assert bool((selected.payoff_scale_bps > 0.0).all())
+    assert bool((selected.maximum_adverse_excursion_scale_bps > 0.0).all())
+    assert selected.as_dict()["tuning_targets_used"] is False
+    assert selected.as_dict()["test_targets_used"] is False
+    with pytest.raises(ValueError, match="subgroup panel is incomplete"):
+        fit_round74_event_target_loss_scale(
+            (
+                _batch(
+                    "training",
+                    start_wall_ns=WALL_NS,
+                    identity=702,
+                    rows=2,
+                ),
+            ),
+            require_complete_panel=True,
+        )
+    with pytest.raises(ValueError, match="non-training role"):
+        fit_round74_event_target_loss_scale(
+            (
+                _batch(
+                    "tuning",
+                    start_wall_ns=WALL_NS,
+                    identity=703,
+                    rows=9,
+                ),
+            ),
+            require_complete_panel=True,
+        )
 
 
 def test_segmented_training_supports_complexity_gate_and_no_run_cycling() -> None:
@@ -1112,6 +1160,12 @@ def test_round74_pretest_policy_is_safe_hash_bound_and_non_authoritative(
     assert development["target_context_sha256"] == ["3" * 64, "4" * 64]
     assert development["target_context_count"] == 2
     assert len(development["target_context_panel_sha256"]) == 64
+    target_loss_scale = policy["target_loss_scale"]
+    assert target_loss_scale["training_batch_sha256"] == [training.batch_sha256]
+    assert target_loss_scale["fit_partition_role"] == "training"
+    assert target_loss_scale["tuning_targets_used"] is False
+    assert target_loss_scale["test_targets_used"] is False
+    assert target_loss_scale["forecast_units_changed"] is False
     assert policy["backend"]["kind"] == "cpu"
     assert set(policy["candidate_panel"]) == {
         "event_pooling_linear",

@@ -519,6 +519,8 @@ def _round74_event_model_loss_impl(
     regime_unpredictable: torch.Tensor,
     action_eligibility: torch.Tensor | None = None,
     regime_unpredictability_eligibility: torch.Tensor | None = None,
+    payoff_loss_scale_bps: torch.Tensor | None = None,
+    maximum_adverse_excursion_loss_scale_bps: torch.Tensor | None = None,
     maximum_adverse_excursion_weight: float = 0.35,
     positive_weight: float = 0.25,
     adverse_weight: float = 0.20,
@@ -554,6 +556,12 @@ def _round74_event_model_loss_impl(
         regime_unpredictability_eligibility = (action_eligibility.sum(dim=2) > 0.0).to(
             net_payoff_bps.dtype
         )
+    if payoff_loss_scale_bps is None:
+        payoff_loss_scale_bps = torch.ones_like(net_payoff_bps)
+    if maximum_adverse_excursion_loss_scale_bps is None:
+        maximum_adverse_excursion_loss_scale_bps = torch.ones_like(
+            maximum_adverse_excursion_bps
+        )
     if action_eligibility.shape != expected_action_shape:
         raise ValueError("Round 74 action-eligibility shape differs")
     if regime_unpredictability_eligibility.shape != (
@@ -561,6 +569,11 @@ def _round74_event_model_loss_impl(
         len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS),
     ):
         raise ValueError("Round 74 unpredictability-eligibility shape differs")
+    if (
+        payoff_loss_scale_bps.shape != expected_action_shape
+        or maximum_adverse_excursion_loss_scale_bps.shape != expected_action_shape
+    ):
+        raise ValueError("Round 74 target-loss scale shape differs")
     if not inputs_validated:
         targets = (
             net_payoff_bps,
@@ -569,6 +582,8 @@ def _round74_event_model_loss_impl(
             regime_unpredictable,
             action_eligibility,
             regime_unpredictability_eligibility,
+            payoff_loss_scale_bps,
+            maximum_adverse_excursion_loss_scale_bps,
         )
         if not all(bool(torch.isfinite(value).all()) for value in targets):
             raise ValueError("Round 74 event-model targets contain nonfinite values")
@@ -578,6 +593,10 @@ def _round74_event_model_loss_impl(
             raise ValueError("Round 74 adverse-selection targets are outside [0, 1]")
         if bool(((regime_unpredictable < 0.0) | (regime_unpredictable > 1.0)).any()):
             raise ValueError("Round 74 unpredictability targets are outside [0, 1]")
+        if bool((payoff_loss_scale_bps <= 0.0).any()) or bool(
+            (maximum_adverse_excursion_loss_scale_bps <= 0.0).any()
+        ):
+            raise ValueError("Round 74 target-loss scale is not positive")
         if bool(
             ((action_eligibility != 0.0) & (action_eligibility != 1.0)).any()
         ) or bool(
@@ -613,7 +632,7 @@ def _round74_event_model_loss_impl(
     payoff_pinball_values = torch.maximum(
         quantile_levels * payoff_errors,
         (quantile_levels - 1.0) * payoff_errors,
-    )
+    ) / payoff_loss_scale_bps.unsqueeze(3)
     payoff_pinball = (payoff_pinball_values * action_eligibility.unsqueeze(3)).sum() / (
         action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES)
     )
@@ -623,7 +642,7 @@ def _round74_event_model_loss_impl(
     adverse_excursion_pinball_values = torch.maximum(
         quantile_levels * adverse_excursion_errors,
         (quantile_levels - 1.0) * adverse_excursion_errors,
-    )
+    ) / maximum_adverse_excursion_loss_scale_bps.unsqueeze(3)
     adverse_excursion_pinball = (
         adverse_excursion_pinball_values * action_eligibility.unsqueeze(3)
     ).sum() / (action_weight * len(ROUND74_EVENT_PAYOFF_QUANTILES))
@@ -674,6 +693,8 @@ def round74_event_model_loss(
     regime_unpredictable: torch.Tensor,
     action_eligibility: torch.Tensor | None = None,
     regime_unpredictability_eligibility: torch.Tensor | None = None,
+    payoff_loss_scale_bps: torch.Tensor | None = None,
+    maximum_adverse_excursion_loss_scale_bps: torch.Tensor | None = None,
     maximum_adverse_excursion_weight: float = 0.35,
     positive_weight: float = 0.25,
     adverse_weight: float = 0.20,
@@ -689,6 +710,10 @@ def round74_event_model_loss(
         regime_unpredictable=regime_unpredictable,
         action_eligibility=action_eligibility,
         regime_unpredictability_eligibility=regime_unpredictability_eligibility,
+        payoff_loss_scale_bps=payoff_loss_scale_bps,
+        maximum_adverse_excursion_loss_scale_bps=(
+            maximum_adverse_excursion_loss_scale_bps
+        ),
         maximum_adverse_excursion_weight=maximum_adverse_excursion_weight,
         positive_weight=positive_weight,
         adverse_weight=adverse_weight,
@@ -705,6 +730,8 @@ def _round74_event_model_loss_from_validated_inputs(
     regime_unpredictable: torch.Tensor,
     action_eligibility: torch.Tensor,
     regime_unpredictability_eligibility: torch.Tensor,
+    payoff_loss_scale_bps: torch.Tensor,
+    maximum_adverse_excursion_loss_scale_bps: torch.Tensor,
     maximum_adverse_excursion_weight: float,
     positive_weight: float,
     adverse_weight: float,
@@ -720,6 +747,10 @@ def _round74_event_model_loss_from_validated_inputs(
         regime_unpredictable=regime_unpredictable,
         action_eligibility=action_eligibility,
         regime_unpredictability_eligibility=regime_unpredictability_eligibility,
+        payoff_loss_scale_bps=payoff_loss_scale_bps,
+        maximum_adverse_excursion_loss_scale_bps=(
+            maximum_adverse_excursion_loss_scale_bps
+        ),
         maximum_adverse_excursion_weight=maximum_adverse_excursion_weight,
         positive_weight=positive_weight,
         adverse_weight=adverse_weight,
