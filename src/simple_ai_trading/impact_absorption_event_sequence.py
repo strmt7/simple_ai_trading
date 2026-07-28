@@ -62,6 +62,10 @@ ROUND74_EVENT_FEATURE_NAMES = (
     "symbol_is_btcusdt",
     "symbol_is_ethusdt",
     "symbol_is_solusdt",
+    *(
+        f"exchange_clock_{period_seconds}s_opening_10s"
+        for period_seconds in ROUND74_EVENT_CLOCK_PERIODS_SECONDS
+    ),
     "depth_update_is_stale",
     "log1p_interarrival_us",
     "spread_bps",
@@ -110,7 +114,6 @@ ROUND74_EVENT_FEATURE_NAMES = (
         for feature_name in (
             f"exchange_clock_{period_seconds}s_phase_sine",
             f"exchange_clock_{period_seconds}s_phase_cosine",
-            f"exchange_clock_{period_seconds}s_opening_10s",
         )
     ),
     "utc_second_of_day_sine",
@@ -143,20 +146,18 @@ def _strict_json_object(raw_text: str) -> Mapping[str, object]:
     return parsed
 
 
-def _exchange_clock_features(event_time_ms: int) -> tuple[float, ...]:
-    features: list[float] = []
+def _exchange_clock_features(
+    event_time_ms: int,
+) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    opening_flags: list[float] = []
+    phases: list[float] = []
     for period_seconds in ROUND74_EVENT_CLOCK_PERIODS_SECONDS:
         period_ms = period_seconds * 1_000
         phase_ms = int(event_time_ms) % period_ms
         angle = 2.0 * math.pi * phase_ms / period_ms
-        features.extend(
-            (
-                math.sin(angle),
-                math.cos(angle),
-                1.0 if phase_ms < 10_000 else 0.0,
-            )
-        )
-    return tuple(features)
+        opening_flags.append(1.0 if phase_ms < 10_000 else 0.0)
+        phases.extend((math.sin(angle), math.cos(angle)))
+    return tuple(opening_flags), tuple(phases)
 
 
 def _decode_websocket_record(
@@ -676,12 +677,15 @@ class Round74EventSequenceEncoder:
             for candidate in ROUND74_EVENT_TYPES
         )
         self._last_event_ns[event_type] = received_ns
-        exchange_clock = _exchange_clock_features(exchange_event_time_ms)
+        exchange_clock_openings, exchange_clock_phases = _exchange_clock_features(
+            exchange_event_time_ms
+        )
         utc_phase_ms = exchange_event_time_ms % 86_400_000
         angle = 2.0 * math.pi * utc_phase_ms / 86_400_000.0
         values = (
             *event_flags,
             *symbol_flags,
+            *exchange_clock_openings,
             stale_depth,
             math.log1p(interarrival_us),
             spread_bps,
@@ -714,7 +718,7 @@ class Round74EventSequenceEncoder:
             ask_qty_change,
             *time_scale,
             *temporal,
-            *exchange_clock,
+            *exchange_clock_phases,
             math.sin(angle),
             math.cos(angle),
         )

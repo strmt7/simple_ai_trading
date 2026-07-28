@@ -63,9 +63,6 @@ from simple_ai_trading.impact_absorption_event_model import (
     ROUND74_EVENT_MODEL_CANDIDATES,
     ROUND74_EVENT_MODEL_SCHEMA_VERSION,
 )
-from simple_ai_trading.impact_absorption_event_scaling import (
-    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
@@ -1170,7 +1167,7 @@ def test_round74_local_ai_design_is_source_bound_and_fail_closed() -> None:
         "round-074-causal-event-sequence-v4"
     )
     assert source["event_scaler_schema_version"] == (
-        ROUND74_EVENT_SCALER_SCHEMA_VERSION
+        "round-074-event-feature-scaler-v4"
     )
     assert source["event_dataset_schema_version"] == "round-074-event-dataset-v9"
     assert source["feature_count"] == 66

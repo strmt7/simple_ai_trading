@@ -11,9 +11,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from simple_ai_trading.impact_absorption_event_scaling import (
-    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
 )
@@ -226,7 +223,7 @@ def test_round74_cohort_operator_contract_binds_executable_bytes() -> None:
         "round-074-causal-event-sequence-v4"
     )
     assert partition["event_scaler_schema_version"] == (
-        ROUND74_EVENT_SCALER_SCHEMA_VERSION
+        "round-074-event-feature-scaler-v4"
     )
     assert partition["feature_count"] == 66
     assert partition["feature_names_sha256"] == (

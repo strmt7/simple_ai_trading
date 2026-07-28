@@ -32,9 +32,6 @@ from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_HORIZONS_SECONDS,
     ROUND74_ACTION_PROFILES,
 )
-from simple_ai_trading.impact_absorption_event_scaling import (
-    ROUND74_EVENT_SCALER_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_sealed_evaluation import (
     ROUND74_SEALED_AI_MODEL_COUNT,
     ROUND74_SEALED_BOOTSTRAP_DRAWS,
@@ -833,7 +830,9 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
         "round-074-causal-event-sequence-v4"
     )
     assert source["event_model_schema_version"] == ROUND74_EVENT_MODEL_SCHEMA_VERSION
-    assert source["event_scaler_schema_version"] == ROUND74_EVENT_SCALER_SCHEMA_VERSION
+    assert source["event_scaler_schema_version"] == (
+        "round-074-event-feature-scaler-v4"
+    )
     assert source["event_target_schema_version"] == ROUND74_EVENT_TARGET_SCHEMA_VERSION
     assert source["event_target_evidence_schema_version"] == (
         ROUND74_EVENT_TARGET_EVIDENCE_SCHEMA_VERSION

@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from simple_ai_trading.impact_absorption_event_scaling import (
+    ROUND74_EVENT_BINARY_FEATURE_COUNT,
     Round74EventFeatureScaler,
     fit_round74_event_feature_scaler,
     fit_round74_event_feature_scaler_stream,
@@ -20,10 +21,19 @@ def _training(rows: int = 100) -> np.ndarray:
     values = generator.normal(
         size=(rows, len(ROUND74_EVENT_FEATURE_NAMES))
     ).astype(np.float64)
-    values[:, :8] = 0.0
+    values[:, :ROUND74_EVENT_BINARY_FEATURE_COUNT] = 0.0
     for index in range(rows):
         values[index, index % 5] = 1.0
         values[index, 5 + index % 3] = 1.0
+    values[::6, ROUND74_EVENT_FEATURE_NAMES.index("exchange_clock_60s_opening_10s")] = (
+        1.0
+    )
+    values[
+        ::30, ROUND74_EVENT_FEATURE_NAMES.index("exchange_clock_300s_opening_10s")
+    ] = 1.0
+    values[
+        ::90, ROUND74_EVENT_FEATURE_NAMES.index("exchange_clock_900s_opening_10s")
+    ] = 1.0
     values[:, ROUND74_EVENT_FEATURE_NAMES.index("depth_update_is_stale")] = 0.0
     return values
 
@@ -37,12 +47,34 @@ def test_round74_scaler_preserves_one_hot_and_zeros_constant_features() -> None:
 
     transformed = scaler.transform(training[:7])
 
-    np.testing.assert_array_equal(transformed[:, :8], training[:7, :8])
+    np.testing.assert_array_equal(
+        transformed[:, :ROUND74_EVENT_BINARY_FEATURE_COUNT],
+        training[:7, :ROUND74_EVENT_BINARY_FEATURE_COUNT],
+    )
     constant_index = ROUND74_EVENT_FEATURE_NAMES.index("depth_update_is_stale")
     assert scaler.constant_mask[constant_index]
     assert np.all(transformed[:, constant_index] == 0.0)
     assert transformed.dtype == np.float32
     assert np.isfinite(transformed).all()
+
+
+def test_round74_scaler_preserves_rare_exchange_opening_indicators() -> None:
+    training = _training()
+    scaler = fit_round74_event_feature_scaler(
+        training,
+        partition_role="training",
+    )
+    transformed = scaler.transform(training)
+
+    for period_seconds in (60, 300, 900):
+        feature_index = ROUND74_EVENT_FEATURE_NAMES.index(
+            f"exchange_clock_{period_seconds}s_opening_10s"
+        )
+        assert not scaler.constant_mask[feature_index]
+        np.testing.assert_array_equal(
+            transformed[:, feature_index],
+            training[:, feature_index],
+        )
 
 
 def test_round74_scaler_clip_statistics_are_training_only() -> None:

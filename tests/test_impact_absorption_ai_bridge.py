@@ -46,7 +46,8 @@ def _features() -> torch.Tensor:
     eth = ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_ethusdt")
     values[0, :, btc] = 1.0
     values[1, :, eth] = 1.0
-    values[0, :, 10] = torch.linspace(
+    spread_index = ROUND74_EVENT_FEATURE_NAMES.index("spread_bps")
+    values[0, :, spread_index] = torch.linspace(
         -1.0,
         1.0,
         ROUND74_EVENT_SEQUENCE_LENGTH,
@@ -212,9 +213,10 @@ def test_bridge_builds_target_free_request_from_causal_prediction() -> None:
         request.feature_last[ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_btcusdt")]
         == 1.0
     )
-    assert request.feature_mean[10] == pytest.approx(0.0, abs=1e-7)
-    assert request.feature_standard_deviation[10] > 0.0
-    assert request.feature_recent_change[10] > 0.0
+    spread_index = ROUND74_EVENT_FEATURE_NAMES.index("spread_bps")
+    assert request.feature_mean[spread_index] == pytest.approx(0.0, abs=1e-7)
+    assert request.feature_standard_deviation[spread_index] > 0.0
+    assert request.feature_recent_change[spread_index] > 0.0
     assert (
         request.feature_recent_change[
             ROUND74_EVENT_FEATURE_NAMES.index("symbol_is_btcusdt")
