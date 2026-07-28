@@ -3,7 +3,7 @@
 Forecasts become research candidates here, not orders. Candidate derivation
 cannot receive realized targets. A separate selector may replay candidates only
 on the predeclared policy-selection runs and uses exact captured entry/exit
-times to prevent same-symbol overlap.
+times with an explicit shared-capital allocation.
 """
 
 from __future__ import annotations
@@ -51,11 +51,11 @@ from .impact_absorption_event_targets import (
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v9"
-ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION = "round-074-action-policy-v8"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v10"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
+ROUND74_ACTION_POSITION_CAPITAL_FRACTION = 1.0 / len(ROUND74_EVENT_SYMBOLS)
 
 _SHA256 = re.compile(r"[0-9a-f]{64}")
 _RUN_ID = re.compile(r"[0-9a-f]{32}")
@@ -1143,7 +1143,7 @@ class Round74ActionTraceMetrics:
 
 @dataclass(frozen=True)
 class Round74ActionTrace:
-    """Exact, unlevered research replay with one open trade per symbol."""
+    """Exact unlevered replay with one equal-capital sleeve per symbol."""
 
     threshold_score: float
     expected_run_ids: tuple[str, ...]
@@ -1161,6 +1161,7 @@ class Round74ActionTrace:
     skipped_target_ineligible: int
     skipped_same_symbol_overlap: int
     metrics: Round74ActionTraceMetrics
+    position_capital_fraction: float = ROUND74_ACTION_POSITION_CAPITAL_FRACTION
     trading_authority: bool = False
     execution_claim: bool = False
     profitability_claim: bool = False
@@ -1222,6 +1223,13 @@ class Round74ActionTrace:
             or any(value not in (0, 1) for value in self.adverse_selection)
             or self.skipped_target_ineligible < 0
             or self.skipped_same_symbol_overlap < 0
+            or not math.isclose(
+                float(self.position_capital_fraction),
+                ROUND74_ACTION_POSITION_CAPITAL_FRACTION,
+                rel_tol=0.0,
+                abs_tol=1e-15,
+            )
+            or self.position_capital_fraction * len(ROUND74_EVENT_SYMBOLS) > 1.0
             or any(
                 (
                     self.trading_authority,
@@ -1250,6 +1258,17 @@ class Round74ActionTrace:
             self.expected_run_ids
         ):
             raise ValueError("Round 74 action trace count differs")
+        recalculated = _trace_metrics(
+            run_ids=self.run_id,
+            symbols=self.symbol,
+            net_payoff_bps=self.net_payoff_bps,
+            maximum_adverse_excursion_bps=self.maximum_adverse_excursion_bps,
+            adverse_selection=self.adverse_selection,
+            exit_monotonic_ns=self.exit_monotonic_ns,
+            expected_run_ids=self.expected_run_ids,
+        )
+        if not _trace_metrics_reconcile(recalculated, self.metrics):
+            raise ValueError("Round 74 action trace metrics reconciliation differs")
 
     def as_dict(self) -> dict[str, object]:
         self.validate()
@@ -1270,7 +1289,14 @@ class Round74ActionTrace:
             "skipped_target_ineligible": self.skipped_target_ineligible,
             "skipped_same_symbol_overlap": (self.skipped_same_symbol_overlap),
             "metrics": self.metrics.as_dict(),
-            "replay_semantics": "one_open_trade_per_run_and_symbol",
+            "position_capital_fraction": self.position_capital_fraction,
+            "maximum_concurrent_positions": len(ROUND74_EVENT_SYMBOLS),
+            "maximum_concurrent_gross_capital_fraction": (
+                self.position_capital_fraction * len(ROUND74_EVENT_SYMBOLS)
+            ),
+            "replay_semantics": (
+                "one_equal_capital_sleeve_per_run_and_symbol"
+            ),
             "exact_target_entry_exit_times_used": True,
             "drawdown_order": (
                 "expected_run_then_actual_exit_monotonic_ns_then_signal_order"
@@ -1302,6 +1328,9 @@ class Round74ActionTrace:
             "skipped_target_ineligible",
             "skipped_same_symbol_overlap",
             "metrics",
+            "position_capital_fraction",
+            "maximum_concurrent_positions",
+            "maximum_concurrent_gross_capital_fraction",
             "replay_semantics",
             "exact_target_entry_exit_times_used",
             "drawdown_order",
@@ -1353,11 +1382,29 @@ class Round74ActionTrace:
 
         threshold = payload["threshold_score"]
         metrics = payload["metrics"]
+        position_capital_fraction = payload["position_capital_fraction"]
+        maximum_concurrent_positions = payload["maximum_concurrent_positions"]
+        maximum_concurrent_gross_capital_fraction = payload[
+            "maximum_concurrent_gross_capital_fraction"
+        ]
         if (
             isinstance(threshold, bool)
             or not isinstance(threshold, (int, float))
             or not math.isfinite(float(threshold))
             or not isinstance(metrics, Mapping)
+            or isinstance(position_capital_fraction, bool)
+            or not isinstance(position_capital_fraction, (int, float))
+            or not math.isfinite(float(position_capital_fraction))
+            or isinstance(maximum_concurrent_positions, bool)
+            or not isinstance(maximum_concurrent_positions, int)
+            or isinstance(maximum_concurrent_gross_capital_fraction, bool)
+            or not isinstance(
+                maximum_concurrent_gross_capital_fraction,
+                (int, float),
+            )
+            or not math.isfinite(
+                float(maximum_concurrent_gross_capital_fraction)
+            )
         ):
             raise ValueError("Round 74 action trace types differ")
         selected = cls(
@@ -1377,6 +1424,7 @@ class Round74ActionTrace:
             skipped_target_ineligible=integer("skipped_target_ineligible"),
             skipped_same_symbol_overlap=integer("skipped_same_symbol_overlap"),
             metrics=Round74ActionTraceMetrics.from_dict(metrics),
+            position_capital_fraction=float(position_capital_fraction),
             trading_authority=payload["trading_authority"],
             execution_claim=payload["execution_claim"],
             profitability_claim=payload["profitability_claim"],
@@ -1384,7 +1432,18 @@ class Round74ActionTrace:
             leverage_applied=payload["leverage_applied"],
         )
         selected.validate()
-        if _canonical_json(selected.as_dict()) != _canonical_json(payload):
+        if (
+            maximum_concurrent_positions != len(ROUND74_EVENT_SYMBOLS)
+            or not math.isclose(
+                float(maximum_concurrent_gross_capital_fraction),
+                1.0,
+                rel_tol=0.0,
+                abs_tol=1e-15,
+            )
+            or payload["replay_semantics"]
+            != "one_equal_capital_sleeve_per_run_and_symbol"
+            or _canonical_json(selected.as_dict()) != _canonical_json(payload)
+        ):
             raise ValueError("Round 74 action trace policy differs")
         return selected
 
@@ -1463,6 +1522,31 @@ def _trace_metrics(
     )
     result.validate()
     return result
+
+
+def _trace_metrics_reconcile(
+    expected: Round74ActionTraceMetrics,
+    observed: Round74ActionTraceMetrics,
+) -> bool:
+    """Compare recomputed metrics without rejecting harmless float summation order."""
+
+    for name in expected.__dataclass_fields__:
+        left = getattr(expected, name)
+        right = getattr(observed, name)
+        if left is None or right is None:
+            if left is not right:
+                return False
+        elif isinstance(left, float) or isinstance(right, float):
+            if not math.isclose(
+                float(left),
+                float(right),
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            ):
+                return False
+        elif left != right:
+            return False
+    return True
 
 
 def _round74_batch_order_key(
@@ -1680,14 +1764,14 @@ def _simulate_round74_action_trace_batches(
                         side_index,
                     ]
                 )
-                payoff = float(
+                payoff = ROUND74_ACTION_POSITION_CAPITAL_FRACTION * float(
                     batch.net_payoff_bps[
                         row_index,
                         horizon_index,
                         side_index,
                     ]
                 )
-                adverse_excursion = float(
+                adverse_excursion = ROUND74_ACTION_POSITION_CAPITAL_FRACTION * float(
                     batch.maximum_adverse_excursion_bps[
                         row_index,
                         horizon_index,
@@ -1717,8 +1801,10 @@ def _simulate_round74_action_trace_batches(
                 assert outcome.adverse_selection is not None
                 entry = int(outcome.actual_entry_monotonic_ns)
                 exit_value = int(outcome.actual_exit_monotonic_ns)
-                payoff = float(outcome.capital_scaled_net_payoff_bps)
-                adverse_excursion = float(
+                payoff = ROUND74_ACTION_POSITION_CAPITAL_FRACTION * float(
+                    outcome.capital_scaled_net_payoff_bps
+                )
+                adverse_excursion = ROUND74_ACTION_POSITION_CAPITAL_FRACTION * float(
                     outcome.capital_scaled_maximum_adverse_excursion_bps
                 )
                 adverse_selection = int(outcome.adverse_selection)
@@ -1980,17 +2066,9 @@ class Round74ActionPolicySelection:
     def validate(self) -> None:
         spec = round74_action_profile(self.profile)
         if (
-            self.schema_version
-            not in {
-                ROUND74_ACTION_POLICY_SCHEMA_VERSION,
-                ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION,
-            }
+            self.schema_version != ROUND74_ACTION_POLICY_SCHEMA_VERSION
             or self.optimization_population
             not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
-            or (
-                self.schema_version == ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION
-                and self.optimization_population != "capture_run"
-            )
             or any(
                 _SHA256.fullmatch(value) is None
                 for value in (
@@ -2087,8 +2165,7 @@ class Round74ActionPolicySelection:
             "portfolio_claim": False,
             "leverage_applied": False,
         }
-        if self.schema_version != ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION:
-            value["optimization_population"] = self.optimization_population
+        value["optimization_population"] = self.optimization_population
         if include_sha256:
             value["selection_sha256"] = _canonical_sha256(value)
         return value
@@ -2106,7 +2183,6 @@ class Round74ActionPolicySelection:
             or claimed != _canonical_sha256(payload)
         ):
             raise ValueError("Round 74 action policy digest differs")
-        legacy = payload.get("schema_version") == ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION
         expected_keys = {
             "schema_version",
             "profile",
@@ -2130,9 +2206,8 @@ class Round74ActionPolicySelection:
             "profitability_claim",
             "portfolio_claim",
             "leverage_applied",
+            "optimization_population",
         }
-        if not legacy:
-            expected_keys.add("optimization_population")
         if set(payload) != expected_keys:
             raise ValueError("Round 74 action policy payload differs")
 
@@ -2190,9 +2265,7 @@ class Round74ActionPolicySelection:
                 else None
             ),
             optimization_population=(
-                "capture_run"
-                if legacy
-                else str(payload["optimization_population"])
+                str(payload["optimization_population"])
             ),
             schema_version=str(payload["schema_version"]),
             sealed_test_accessed=payload["sealed_test_accessed"],
@@ -2522,8 +2595,8 @@ __all__ = [
     "ROUND74_ACTION_DEFAULT_PROFILE",
     "ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION",
     "ROUND74_ACTION_HORIZONS_SECONDS",
-    "ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION",
     "ROUND74_ACTION_POLICY_SCHEMA_VERSION",
+    "ROUND74_ACTION_POSITION_CAPITAL_FRACTION",
     "ROUND74_ACTION_PROFILES",
     "Round74ActionCandidateBatch",
     "Round74ActionExecutionOutcomeRow",

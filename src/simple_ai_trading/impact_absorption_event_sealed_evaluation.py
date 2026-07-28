@@ -1426,11 +1426,19 @@ def _exact_replay_strategy_metrics(
     return _strategy_metrics_from_execution_values(
         trace,
         np.asarray(
-            [row.capital_scaled_net_payoff_bps for row in rows],
+            [
+                trace.position_capital_fraction
+                * row.capital_scaled_net_payoff_bps
+                for row in rows
+            ],
             dtype=np.float64,
         ),
         np.asarray(
-            [row.capital_scaled_maximum_adverse_excursion_bps for row in rows],
+            [
+                trace.position_capital_fraction
+                * row.capital_scaled_maximum_adverse_excursion_bps
+                for row in rows
+            ],
             dtype=np.float64,
         ),
         retained,
@@ -1994,7 +2002,11 @@ def _ai_overlay(
     )
     baseline_values = np.asarray(trace.net_payoff_bps, dtype=np.float64)
     exact_values = np.asarray(
-        [value.capital_scaled_net_payoff_bps for value in executions],
+        [
+            trace.position_capital_fraction
+            * value.capital_scaled_net_payoff_bps
+            for value in executions
+        ],
         dtype=np.float64,
     )
     delta = exact_values - baseline_values

@@ -42,22 +42,23 @@ SAME_ENTRY_LATENCY_BUDGET_NS = 1_000_000
 
 
 def _trace() -> Round74ActionTrace:
+    portfolio_payoffs = tuple(value / 3.0 for value in PAYOFFS)
     metrics = Round74ActionTraceMetrics(
         trades=6,
         active_runs=6,
         distinct_symbols=3,
-        total_net_bps=6.0,
-        mean_run_net_bps=1.0,
-        mean_net_bps=1.0,
-        median_net_bps=2.0,
+        total_net_bps=2.0,
+        mean_run_net_bps=1.0 / 3.0,
+        mean_net_bps=1.0 / 3.0,
+        median_net_bps=2.0 / 3.0,
         win_rate=4.0 / 6.0,
         profit_factor=4.0,
-        maximum_drawdown_bps=1.0,
-        gross_profit_bps=8.0,
-        gross_loss_bps=2.0,
-        worst_trade_bps=-1.0,
-        mean_maximum_adverse_excursion_bps=1.0,
-        mean_run_maximum_adverse_excursion_bps=1.0,
+        maximum_drawdown_bps=1.0 / 3.0,
+        gross_profit_bps=8.0 / 3.0,
+        gross_loss_bps=2.0 / 3.0,
+        worst_trade_bps=-1.0 / 3.0,
+        mean_maximum_adverse_excursion_bps=1.0 / 3.0,
+        mean_run_maximum_adverse_excursion_bps=1.0 / 3.0,
         adverse_selection_rate=0.0,
         profitable_run_ratio=4.0 / 6.0,
         maximum_symbol_trade_share=1.0 / 3.0,
@@ -73,8 +74,8 @@ def _trace() -> Round74ActionTrace:
         side=(1,) * 6,
         entry_monotonic_ns=(10,) * 6,
         exit_monotonic_ns=(20,) * 6,
-        net_payoff_bps=PAYOFFS,
-        maximum_adverse_excursion_bps=(1.0,) * 6,
+        net_payoff_bps=portfolio_payoffs,
+        maximum_adverse_excursion_bps=(1.0 / 3.0,) * 6,
         adverse_selection=(0,) * 6,
         skipped_target_ineligible=0,
         skipped_same_symbol_overlap=0,
@@ -356,7 +357,7 @@ def test_ai_overlay_can_only_improve_by_vetoing_preexisting_losses() -> None:
     )
 
     assert report.development_gate_passed
-    assert report.ai_metrics.total_net_bps == 8.0
+    assert report.ai_metrics.total_net_bps == 8.0 / 3.0
     assert report.ai_metrics.maximum_drawdown_bps == 0.0
     assert report.ai_metrics.retained_trades == 4
     assert report.ai_metrics.distinct_retained_symbols == 3
