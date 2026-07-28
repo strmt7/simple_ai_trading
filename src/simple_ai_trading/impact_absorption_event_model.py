@@ -28,7 +28,7 @@ from .impact_absorption_event_sequence import (
 )
 
 
-ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v6"
+ROUND74_EVENT_MODEL_SCHEMA_VERSION = "round-074-event-payoff-model-v7"
 ROUND74_EVENT_MODEL_CANDIDATES = (
     "event_pooling_linear",
     "event_pooling_mlp",
@@ -338,9 +338,14 @@ class Round74CausalEventTCN(nn.Module):
             encoded = block(encoded)
         return encoded
 
+    def encode_event_sequence(self, values: torch.Tensor) -> torch.Tensor:
+        """Return causal per-event states in batch, event, channel order."""
+
+        return self._encode_events(values).transpose(1, 2)
+
     def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
-        encoded = self._encode_events(values)
-        return self.heads(self.readout(encoded[:, :, -1]))
+        encoded = self.encode_event_sequence(values)
+        return self.heads(self.readout(encoded[:, -1, :]))
 
 
 class _Round74CausalAttentionBlock(nn.Module):
@@ -492,9 +497,68 @@ class Round74CausalEventAttention(nn.Module):
             )
         return self.final_norm(encoded)
 
+    def encode_event_sequence(self, values: torch.Tensor) -> torch.Tensor:
+        """Return causal per-event states in batch, event, channel order."""
+
+        return self._encode_events(values)
+
     def forward(self, values: torch.Tensor) -> Round74EventModelOutput:
-        encoded = self._encode_events(values)
+        encoded = self.encode_event_sequence(values)
         return self.heads(self.readout(encoded[:, -1, :]))
+
+
+def round74_event_model_pretraining_channels(model: nn.Module) -> int | None:
+    """Return the causal encoder width, or None for pooled controls."""
+
+    if isinstance(model, Round74CausalEventTCN):
+        return int(model.projection.out_channels)
+    if isinstance(model, Round74CausalEventAttention):
+        return int(model.hidden_channels)
+    return None
+
+
+def round74_event_encoder_parameters(
+    model: nn.Module,
+) -> tuple[nn.Parameter, ...]:
+    """Return only parameters that produce causal per-event states."""
+
+    if isinstance(model, Round74CausalEventTCN):
+        modules: tuple[nn.Module, ...] = (model.projection, *model.blocks)
+        parameters = tuple(
+            parameter for module in modules for parameter in module.parameters()
+        )
+    elif isinstance(model, Round74CausalEventAttention):
+        modules = (model.input_projection, *model.blocks, model.final_norm)
+        parameters = (
+            model.position_embedding,
+            *(parameter for module in modules for parameter in module.parameters()),
+        )
+    else:
+        raise ValueError("Round 74 model has no causal event encoder")
+    if not parameters or len({id(parameter) for parameter in parameters}) != len(
+        parameters
+    ):
+        raise RuntimeError("Round 74 causal encoder parameter panel differs")
+    return parameters
+
+
+def encode_round74_event_sequence(
+    model: nn.Module,
+    values: torch.Tensor,
+) -> torch.Tensor:
+    """Expose causal states without giving pooled controls a fake sequence."""
+
+    if isinstance(model, (Round74CausalEventTCN, Round74CausalEventAttention)):
+        encoded = model.encode_event_sequence(values)
+    else:
+        raise ValueError("Round 74 model has no causal event encoder")
+    if (
+        encoded.ndim != 3
+        or encoded.shape[:2] != values.shape[:2]
+        or not bool(torch.isfinite(encoded).all())
+    ):
+        raise ValueError("Round 74 causal event encoding differs")
+    return encoded
 
 
 def build_round74_event_model(candidate_id: str) -> nn.Module:
@@ -914,6 +978,9 @@ __all__ = [
     "Round74EventPoolingLinear",
     "Round74EventPoolingMLP",
     "build_round74_event_model",
+    "encode_round74_event_sequence",
+    "round74_event_encoder_parameters",
+    "round74_event_model_pretraining_channels",
     "round74_event_model_loss",
     "round74_event_model_preflight",
 ]
