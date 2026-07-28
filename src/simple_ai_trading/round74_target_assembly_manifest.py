@@ -15,6 +15,11 @@ from .impact_absorption_execution_scenario import (
     ROUND74_PUBLIC_EXECUTION_SCENARIO_SCHEMA_VERSION,
     ROUND74_PUBLIC_EXECUTION_SCENARIO_SELECTED_NAME,
     ROUND74_PUBLIC_EXECUTION_SCENARIO_SLIPPAGE_SOURCE_ID,
+    load_round74_execution_aggregate_source,
+    load_round74_public_execution_scenario_artifact,
+)
+from .round74_public_target_sources import (
+    audit_round74_public_target_source_payload,
 )
 
 
@@ -418,6 +423,8 @@ def audit_round74_target_assembly_manifest(
     if selected_root.is_symlink() or not selected_root.is_dir():
         raise ValueError("Round 74 target source artifact root differs")
     root = selected_root.resolve()
+    execution_aggregate = None
+    execution_scenario = None
     for binding in manifest.source_artifacts:
         path = root.joinpath(*PurePosixPath(binding.relative_path).parts)
         if path.is_symlink() or not path.is_file():
@@ -468,6 +475,64 @@ def audit_round74_target_assembly_manifest(
                 payload,
                 run_id=manifest.run_id,
             )
+        if binding.label in {
+            "cohort_capture",
+            "exchange_info",
+            "commission",
+            "funding",
+        }:
+            audit_round74_public_target_source_payload(
+                label=binding.label,
+                value=payload,
+                run_id=manifest.run_id,
+                cohort_binding_sha256=manifest.cohort_binding_sha256,
+            )
+        elif binding.label == "execution_calibration":
+            execution_aggregate = load_round74_execution_aggregate_source(
+                resolved
+            )
+            if (
+                execution_aggregate.artifact_sha256
+                != binding.artifact_sha256
+                or execution_aggregate.artifact_file_sha256
+                != binding.artifact_file_sha256
+            ):
+                raise ValueError(
+                    "Round 74 target execution aggregate binding differs"
+                )
+        elif binding.label == "execution_scenario":
+            execution_scenario = (
+                load_round74_public_execution_scenario_artifact(resolved)
+            )
+            if (
+                execution_scenario.artifact_sha256
+                != binding.artifact_sha256
+                or execution_scenario.artifact_file_sha256
+                != binding.artifact_file_sha256
+                or execution_scenario.bundle.run_id != manifest.run_id
+                or execution_scenario.bundle.cohort_binding_sha256
+                != manifest.cohort_binding_sha256
+                or execution_scenario.bundle.scenario_contract_sha256
+                != manifest.scenario_contract_sha256
+            ):
+                raise ValueError(
+                    "Round 74 target execution scenario binding differs"
+                )
+    if (
+        execution_aggregate is None
+        or execution_scenario is None
+        or execution_scenario.bundle.testnet_aggregate_artifact_sha256
+        != execution_aggregate.artifact_sha256
+        or execution_scenario.bundle.testnet_aggregate_artifact_file_sha256
+        != execution_aggregate.artifact_file_sha256
+        or execution_scenario.bundle.testnet_latency_evidence_sha256
+        != (
+            execution_aggregate.bundle.entry_exit_latency_evidence.evidence_sha256
+        )
+        or execution_scenario.bundle.testnet_slippage_evidence_sha256
+        != execution_aggregate.bundle.residual_slippage_evidence.evidence_sha256
+    ):
+        raise ValueError("Round 74 target execution source chain differs")
     return manifest.assembly
 
 
