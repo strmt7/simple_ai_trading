@@ -20,6 +20,7 @@ import numpy as np
 import torch
 
 from .impact_absorption_event_calibration import (
+    ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS,
     Round74ProbabilityCalibration,
     Round74TuningSubpartition,
     apply_round74_probability_calibration,
@@ -50,7 +51,8 @@ from .impact_absorption_event_targets import (
 
 ROUND74_ACTION_CONTEXT_SCHEMA_VERSION = "round-074-action-context-v5"
 ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION = "round-074-action-execution-panel-v1"
-ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v8"
+ROUND74_ACTION_POLICY_SCHEMA_VERSION = "round-074-action-policy-v9"
+ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION = "round-074-action-policy-v8"
 ROUND74_ACTION_HORIZONS_SECONDS = (30, 300)
 ROUND74_ACTION_PROFILES = ("conservative", "regular", "aggressive")
 ROUND74_ACTION_DEFAULT_PROFILE = "conservative"
@@ -1863,6 +1865,9 @@ class Round74ActionThresholdEvaluation:
     accepted: bool
     rejection_reasons: tuple[str, ...]
     trace: Round74ActionTrace
+    objective_semantics: str = (
+        "mean_run_net_bps_minus_worst_drawdown_and_mean_run_mae_penalties"
+    )
 
     def validate(self) -> None:
         self.trace.validate()
@@ -1874,6 +1879,11 @@ class Round74ActionThresholdEvaluation:
             or not math.isfinite(float(self.objective_bps))
             or self.trace.threshold_score != self.threshold_score
             or self.accepted == bool(self.rejection_reasons)
+            or self.objective_semantics
+            not in {
+                "mean_run_net_bps_minus_worst_drawdown_and_mean_run_mae_penalties",
+                "total_net_bps_minus_worst_drawdown_and_total_mae_penalties",
+            }
         ):
             raise ValueError("Round 74 action threshold evaluation differs")
 
@@ -1883,9 +1893,7 @@ class Round74ActionThresholdEvaluation:
             "quantile": self.quantile,
             "threshold_score": self.threshold_score,
             "objective_bps": self.objective_bps,
-            "objective_semantics": (
-                "mean_run_net_bps_minus_worst_drawdown_and_mean_run_mae_penalties"
-            ),
+            "objective_semantics": self.objective_semantics,
             "accepted": self.accepted,
             "rejection_reasons": list(self.rejection_reasons),
             "trace": self.trace.as_dict(),
@@ -1936,6 +1944,7 @@ class Round74ActionThresholdEvaluation:
             accepted=accepted,
             rejection_reasons=tuple(reasons),
             trace=Round74ActionTrace.from_dict(trace),
+            objective_semantics=str(payload["objective_semantics"]),
         )
         selected.validate()
         if _canonical_json(selected.as_dict()) != _canonical_json(payload):
@@ -1959,6 +1968,7 @@ class Round74ActionPolicySelection:
     evaluations: tuple[Round74ActionThresholdEvaluation, ...]
     rejection_reasons: tuple[str, ...]
     execution_outcome_panel_sha256: str | None = None
+    optimization_population: str = "capture_run"
     schema_version: str = ROUND74_ACTION_POLICY_SCHEMA_VERSION
     sealed_test_accessed: bool = False
     trading_authority: bool = False
@@ -1970,7 +1980,17 @@ class Round74ActionPolicySelection:
     def validate(self) -> None:
         spec = round74_action_profile(self.profile)
         if (
-            self.schema_version != ROUND74_ACTION_POLICY_SCHEMA_VERSION
+            self.schema_version
+            not in {
+                ROUND74_ACTION_POLICY_SCHEMA_VERSION,
+                ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION,
+            }
+            or self.optimization_population
+            not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS
+            or (
+                self.schema_version == ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION
+                and self.optimization_population != "capture_run"
+            )
             or any(
                 _SHA256.fullmatch(value) is None
                 for value in (
@@ -2067,6 +2087,8 @@ class Round74ActionPolicySelection:
             "portfolio_claim": False,
             "leverage_applied": False,
         }
+        if self.schema_version != ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION:
+            value["optimization_population"] = self.optimization_population
         if include_sha256:
             value["selection_sha256"] = _canonical_sha256(value)
         return value
@@ -2084,6 +2106,7 @@ class Round74ActionPolicySelection:
             or claimed != _canonical_sha256(payload)
         ):
             raise ValueError("Round 74 action policy digest differs")
+        legacy = payload.get("schema_version") == ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION
         expected_keys = {
             "schema_version",
             "profile",
@@ -2108,6 +2131,8 @@ class Round74ActionPolicySelection:
             "portfolio_claim",
             "leverage_applied",
         }
+        if not legacy:
+            expected_keys.add("optimization_population")
         if set(payload) != expected_keys:
             raise ValueError("Round 74 action policy payload differs")
 
@@ -2163,6 +2188,11 @@ class Round74ActionPolicySelection:
                 str(payload["execution_outcome_panel_sha256"])
                 if payload["execution_outcome_panel_sha256"] is not None
                 else None
+            ),
+            optimization_population=(
+                "capture_run"
+                if legacy
+                else str(payload["optimization_population"])
             ),
             schema_version=str(payload["schema_version"]),
             sealed_test_accessed=payload["sealed_test_accessed"],
@@ -2221,16 +2251,95 @@ def _equal_run_score_threshold(
     return float(np.median(np.asarray(run_quantiles, dtype=np.float64)))
 
 
+def _eligible_target_score_threshold(
+    scores_by_run: Mapping[str, Sequence[float]],
+    *,
+    quantile: float,
+    expected_run_ids: Sequence[str],
+) -> float:
+    """Weight every duration-normalized eligible target exactly once."""
+
+    expected = tuple(expected_run_ids)
+    selected_quantile = float(quantile)
+    if (
+        not expected
+        or len(set(expected)) != len(expected)
+        or not 0.0 < selected_quantile < 1.0
+        or any(run_id not in expected for run_id in scores_by_run)
+    ):
+        raise ValueError("Round 74 eligible-target threshold identity differs")
+    panels = tuple(
+        np.asarray(tuple(scores_by_run.get(run_id, ())), dtype=np.float64)
+        for run_id in expected
+    )
+    if any(
+        values.ndim != 1
+        or not np.isfinite(values).all()
+        or np.any(values < 0.0)
+        for values in panels
+    ):
+        raise ValueError("Round 74 eligible-target threshold score differs")
+    active = tuple(values for values in panels if values.size)
+    if not active:
+        raise ValueError("Round 74 eligible-target threshold has no active target")
+    return float(
+        np.quantile(
+            np.concatenate(active),
+            selected_quantile,
+            method="linear",
+        )
+    )
+
+
+def _action_selection_objective(
+    metrics: Round74ActionTraceMetrics,
+    spec: Round74ActionProfileSpec,
+    *,
+    optimization_population: str,
+    expected_run_count: int,
+) -> tuple[float, str]:
+    if optimization_population == "capture_run":
+        return (
+            float(
+                metrics.mean_run_net_bps
+                - spec.objective_drawdown_penalty * metrics.maximum_drawdown_bps
+                - spec.objective_adverse_excursion_penalty
+                * metrics.mean_run_maximum_adverse_excursion_bps
+            ),
+            "mean_run_net_bps_minus_worst_drawdown_and_mean_run_mae_penalties",
+        )
+    if (
+        optimization_population != "eligible_target"
+        or isinstance(expected_run_count, bool)
+        or expected_run_count < 1
+    ):
+        raise ValueError("Round 74 action optimization population differs")
+    return (
+        float(
+            metrics.total_net_bps
+            - spec.objective_drawdown_penalty * metrics.maximum_drawdown_bps
+            - spec.objective_adverse_excursion_penalty
+            * metrics.mean_run_maximum_adverse_excursion_bps
+            * expected_run_count
+        ),
+        "total_net_bps_minus_worst_drawdown_and_total_mae_penalties",
+    )
+
+
 def select_round74_action_policy_batches(
     batches: Sequence[Round74EventTrainingBatch],
     candidate_batches: Sequence[Round74ActionCandidateBatch],
     tuning_subpartition: Round74TuningSubpartition,
     *,
     execution_panel: Round74ActionExecutionPanel | None = None,
+    optimization_population: str = "capture_run",
 ) -> Round74ActionPolicySelection:
     """Select one threshold from a bounded six-run tuning batch panel."""
 
     tuning_subpartition.validate()
+    selected_population = str(optimization_population)
+    if selected_population not in ROUND74_CALIBRATION_OPTIMIZATION_POPULATIONS:
+        raise ValueError("Round 74 action optimization population differs")
     expected_runs = tuning_subpartition.policy_selection_run_ids
     requested_batches = tuple(batches)
     requested_candidate_batches = tuple(candidate_batches)
@@ -2278,7 +2387,12 @@ def select_round74_action_policy_batches(
     evaluations: list[Round74ActionThresholdEvaluation] = []
     if has_active_scores:
         for quantile in spec.threshold_quantiles:
-            threshold = _equal_run_score_threshold(
+            threshold_function = (
+                _equal_run_score_threshold
+                if selected_population == "capture_run"
+                else _eligible_target_score_threshold
+            )
+            threshold = threshold_function(
                 scores_by_run,
                 quantile=quantile,
                 expected_run_ids=expected_runs,
@@ -2294,11 +2408,11 @@ def select_round74_action_policy_batches(
             )
             reasons = _trace_gate_reasons(trace, spec)
             metrics = trace.metrics
-            objective = float(
-                metrics.mean_run_net_bps
-                - spec.objective_drawdown_penalty * metrics.maximum_drawdown_bps
-                - spec.objective_adverse_excursion_penalty
-                * metrics.mean_run_maximum_adverse_excursion_bps
+            objective, objective_semantics = _action_selection_objective(
+                metrics,
+                spec,
+                optimization_population=selected_population,
+                expected_run_count=len(expected_runs),
             )
             evaluations.append(
                 Round74ActionThresholdEvaluation(
@@ -2308,6 +2422,7 @@ def select_round74_action_policy_batches(
                     accepted=not reasons,
                     rejection_reasons=reasons,
                     trace=trace,
+                    objective_semantics=objective_semantics,
                 )
             )
     else:
@@ -2321,6 +2436,12 @@ def select_round74_action_policy_batches(
                 expected_run_count=6,
                 execution_rows=execution_rows,
             )
+            _, objective_semantics = _action_selection_objective(
+                trace.metrics,
+                spec,
+                optimization_population=selected_population,
+                expected_run_count=len(expected_runs),
+            )
             evaluations.append(
                 Round74ActionThresholdEvaluation(
                     quantile=quantile,
@@ -2329,6 +2450,7 @@ def select_round74_action_policy_batches(
                     accepted=False,
                     rejection_reasons=("no_target_free_candidates",),
                     trace=trace,
+                    objective_semantics=objective_semantics,
                 )
             )
     accepted = [value for value in evaluations if value.accepted]
@@ -2370,6 +2492,7 @@ def select_round74_action_policy_batches(
         execution_outcome_panel_sha256=(
             execution_panel.panel_sha256 if execution_panel is not None else None
         ),
+        optimization_population=selected_population,
     )
     result.validate()
     return result
@@ -2381,6 +2504,7 @@ def select_round74_action_policy(
     tuning_subpartition: Round74TuningSubpartition,
     *,
     execution_panel: Round74ActionExecutionPanel | None = None,
+    optimization_population: str = "capture_run",
 ) -> Round74ActionPolicySelection:
     """Select through the panel implementation for single-batch callers."""
 
@@ -2389,6 +2513,7 @@ def select_round74_action_policy(
         (candidates,),
         tuning_subpartition,
         execution_panel=execution_panel,
+        optimization_population=optimization_population,
     )
 
 
@@ -2397,6 +2522,7 @@ __all__ = [
     "ROUND74_ACTION_DEFAULT_PROFILE",
     "ROUND74_ACTION_EXECUTION_PANEL_SCHEMA_VERSION",
     "ROUND74_ACTION_HORIZONS_SECONDS",
+    "ROUND74_ACTION_POLICY_LEGACY_SCHEMA_VERSION",
     "ROUND74_ACTION_POLICY_SCHEMA_VERSION",
     "ROUND74_ACTION_PROFILES",
     "Round74ActionCandidateBatch",

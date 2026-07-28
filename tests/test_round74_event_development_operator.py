@@ -147,6 +147,7 @@ class _Calibration:
     pretest_policy_sha256 = _digest(700)
     tuning_subpartition_sha256 = _Subpartition.subpartition_sha256
     calibration_sha256 = _digest(702)
+    optimization_population = "capture_run"
 
     def validate(self) -> None:
         return None
@@ -171,6 +172,7 @@ class _Policy:
         self.tuning_subpartition_sha256 = _Subpartition.subpartition_sha256
         self.target_batch_sha256 = target_sha256
         self.execution_outcome_panel_sha256 = execution_outcome_panel_sha256
+        self.optimization_population = "capture_run"
 
     def validate(self) -> None:
         return None
@@ -385,8 +387,10 @@ def test_round74_development_coordinator_reuses_policy_outputs_for_all_profiles(
         _subpartition: object,
         *,
         execution_panel: _ExecutionPanel,
+        optimization_population: str,
     ) -> _Policy:
         assert len(batches) == len(candidates) == 6
+        assert optimization_population == "capture_run"
         profile = str(candidates[0].profile)
         assert all(candidate.profile == profile for candidate in candidates)
         return _Policy(

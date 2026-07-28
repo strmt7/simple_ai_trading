@@ -26,7 +26,6 @@ from simple_ai_trading.impact_absorption_event_cohort import (
     ROUND74_EVENT_COHORT_PLAN_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_calibration import (
-    ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION,
     ROUND74_TUNING_SUBPARTITION_SCHEMA_VERSION,
 )
 from simple_ai_trading.impact_absorption_event_action_policy import (
@@ -511,7 +510,7 @@ def test_round74_event_model_design_is_source_bound_and_causal() -> None:
     )
     assert (
         source["temperature_calibration_schema_version"]
-        == ROUND74_TEMPERATURE_CALIBRATION_SCHEMA_VERSION
+        == "round-074-temperature-calibration-v2"
     )
     assert source["event_training_schema_version"] == "round-074-event-training-v12"
     assert source["pretest_policy_schema_version"] == (
