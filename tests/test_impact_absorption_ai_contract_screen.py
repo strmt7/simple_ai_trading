@@ -9,6 +9,7 @@ from simple_ai_trading.ai_runtime import OllamaResidencyReport
 from simple_ai_trading.impact_absorption_ai_contract_screen import (
     ROUND74_AI_CONTRACT_CASE_IDS,
     evaluate_round74_ai_contract_outcome,
+    evaluate_round74_ai_mirror_consistency,
     round74_ai_contract_cases,
 )
 from simple_ai_trading.impact_absorption_ai_protocol import (
@@ -161,3 +162,26 @@ def test_round74_ai_contract_scores_retention_and_risk_semantics() -> None:
         ]
         is False
     )
+
+
+def test_round74_ai_contract_scores_mirrored_side_consistency() -> None:
+    cases = round74_ai_contract_cases()
+    decision = Round74AIReviewDecision(
+        verdict="reduce",
+        size_multiplier_bps=7_500,
+        confidence_bps=8_000,
+        reason_codes=("forecast_uncertainty",),
+    )
+    results = [
+        evaluate_round74_ai_contract_outcome(case, _outcome(case, decision))
+        for case in cases[:2]
+    ]
+
+    checks = evaluate_round74_ai_mirror_consistency(results)
+
+    assert checks[0]["pair_id"] == "benign"
+    assert checks[0]["passed"] is True
+    assert checks[0]["size_multiplier_difference_bps"] == 0
+    assert checks[1]["pair_id"] == "unpredictable"
+    assert checks[1]["complete"] is False
+    assert checks[1]["passed"] is False
