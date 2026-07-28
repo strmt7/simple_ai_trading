@@ -18,9 +18,12 @@ from simple_ai_trading.impact_absorption_store import (
 )
 import simple_ai_trading.round74_segmented_model_operator as subject
 from simple_ai_trading.round74_segmented_model_operator import (
+    ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS,
     ROUND74_SEGMENTED_REFERENCE_ELIGIBLE_ANCHOR_NS,
+    Round74SegmentedModelSelectionStages,
     Round74SegmentedTestPopulation,
     Round74SegmentedTuningSubpartition,
+    build_round74_segmented_model_selection_stages,
     build_round74_segmented_test_population,
     build_round74_segmented_tuning_subpartition,
     round74_segmented_window_policy,
@@ -96,7 +99,13 @@ def _segmented_tuning_partition() -> tuple[
     Round74EventRunPartition,
     dict[str, Round74SegmentedCohortRunBinding],
 ]:
-    model_ordinals = tuple(range(514, 559))
+    model_ordinals = (
+        *range(514, 523),
+        *range(525, 534),
+        *range(535, 544),
+        *range(546, 555),
+        *range(556, 565),
+    )
     calibration_ordinals = tuple(range(566, 589))
     policy_ordinals = tuple(range(592, 615))
     scheduled = (
@@ -381,6 +390,62 @@ def test_segmented_tuning_subroles_include_every_admitted_scheduled_segment() ->
             partition,
             bindings_by_run_id=incomplete,
         )
+
+
+def test_segmented_model_selection_stages_are_disjoint_and_target_blind() -> None:
+    partition, bindings = _segmented_tuning_partition()
+    subpartition = build_round74_segmented_tuning_subpartition(
+        partition,
+        bindings_by_run_id=bindings,
+    )
+
+    selected = build_round74_segmented_model_selection_stages(subpartition)
+    payload = selected.as_dict()
+
+    assert isinstance(selected, Round74SegmentedModelSelectionStages)
+    assert payload["stage_order"] == list(
+        ROUND74_SEGMENTED_MODEL_SELECTION_STAGE_IDS
+    )
+    assert payload["scheduled_slot_bounds"] == [514, 525, 535, 546, 556, 566]
+    assert payload["required_eligible_anchor_ns_per_stage"] == 7_894_800_000_000
+    assert [len(run_ids) for run_ids in selected.stage_run_ids] == [9, 9, 9, 9, 9]
+    assert [
+        sum(durations) for durations in selected.stage_eligible_anchor_ns
+    ] == [8_100_000_000_000] * 5
+    assert tuple(
+        run_id for run_ids in selected.stage_run_ids for run_id in run_ids
+    ) == subpartition.model_selection_run_ids
+    assert payload["target_label_or_model_output_used_for_assignment"] is False
+    assert payload["cross_stage_run_reuse_permitted"] is False
+    assert payload["all_parent_model_selection_segments_included"] is True
+    assert Round74SegmentedModelSelectionStages.from_dict(payload) == selected
+
+    tampered = dict(payload)
+    tampered["cross_stage_run_reuse_permitted"] = True
+    with pytest.raises(ValueError, match="payload differs"):
+        Round74SegmentedModelSelectionStages.from_dict(tampered)
+
+
+def test_segmented_model_selection_stage_rejects_insufficient_duration() -> None:
+    partition, bindings = _segmented_tuning_partition()
+    subpartition = build_round74_segmented_tuning_subpartition(
+        partition,
+        bindings_by_run_id=bindings,
+    )
+    shortened = replace(
+        subpartition,
+        model_selection_run_ids=subpartition.model_selection_run_ids[:-1],
+        model_selection_slot_ordinals=(
+            subpartition.model_selection_slot_ordinals[:-1]
+        ),
+        model_selection_eligible_anchor_ns=(
+            subpartition.model_selection_eligible_anchor_ns[:-1]
+        ),
+    )
+    shortened.validate()
+
+    with pytest.raises(ValueError, match="stage differs"):
+        build_round74_segmented_model_selection_stages(shortened)
 
 
 def test_segmented_test_population_rejects_any_admitted_segment_omission() -> None:
