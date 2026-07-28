@@ -129,6 +129,11 @@ def _manifest(
         "_audit_execution_scenario_artifact",
         skip_scenario_audit,
     )
+    monkeypatch.setattr(
+        subject,
+        "audit_round74_public_target_source_payload",
+        lambda **_values: None,
+    )
     evidence_by_label = {
         "cohort_capture": {},
         "exchange_info": {"quantity_rules": "4" * 64},
@@ -155,6 +160,45 @@ def _manifest(
             evidence=evidence_by_label[label],
         )
         for label in subject.ROUND74_TARGET_SOURCE_LABELS
+    )
+    aggregate = sources[4]
+    scenario = sources[5]
+    monkeypatch.setattr(
+        subject,
+        "load_round74_execution_aggregate_source",
+        lambda _path: SimpleNamespace(
+            artifact_sha256=aggregate.artifact_sha256,
+            artifact_file_sha256=aggregate.artifact_file_sha256,
+            bundle=SimpleNamespace(
+                entry_exit_latency_evidence=SimpleNamespace(
+                    evidence_sha256="9" * 64
+                ),
+                residual_slippage_evidence=SimpleNamespace(
+                    evidence_sha256="a" * 64
+                ),
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        subject,
+        "load_round74_public_execution_scenario_artifact",
+        lambda _path: SimpleNamespace(
+            artifact_sha256=scenario.artifact_sha256,
+            artifact_file_sha256=scenario.artifact_file_sha256,
+            bundle=SimpleNamespace(
+                run_id=RUN_ID,
+                cohort_binding_sha256="b" * 64,
+                scenario_contract_sha256=SCENARIO_SHA256,
+                testnet_aggregate_artifact_sha256=(
+                    aggregate.artifact_sha256
+                ),
+                testnet_aggregate_artifact_file_sha256=(
+                    aggregate.artifact_file_sha256
+                ),
+                testnet_latency_evidence_sha256="9" * 64,
+                testnet_slippage_evidence_sha256="a" * 64,
+            ),
+        ),
     )
     return subject.Round74TargetAssemblyManifest(
         run_id=RUN_ID,

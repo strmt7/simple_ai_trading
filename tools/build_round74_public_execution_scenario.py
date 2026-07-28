@@ -21,6 +21,11 @@ from simple_ai_trading.impact_absorption_store import (
     ImpactAbsorptionStore,
     validate_impact_store_resources,
 )
+from simple_ai_trading.round74_public_target_sources import (
+    ROUND74_COHORT_CAPTURE_SOURCE_SCHEMA_VERSION,
+    audit_round74_cohort_capture_source_payload,
+    load_round74_canonical_source_artifact,
+)
 from simple_ai_trading.round74_segmented_development_runtime import (
     _guard_idle_database,
 )
@@ -52,9 +57,29 @@ def _load_binding(path: Path) -> object:
         raise ValueError("Round 74 public execution binding file differs")
     selected = path.resolve()
     try:
-        raw_text = selected.read_bytes().decode("ascii")
-    except (OSError, UnicodeDecodeError) as exc:
+        raw = selected.read_bytes()
+        raw_text = raw.decode("ascii")
+        payload = json.loads(raw_text)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise ValueError("Round 74 public execution binding bytes differ") from exc
+    if (
+        isinstance(payload, Mapping)
+        and payload.get("schema_version")
+        == ROUND74_COHORT_CAPTURE_SOURCE_SCHEMA_VERSION
+    ):
+        source = load_round74_canonical_source_artifact(
+            selected,
+            label="cohort capture",
+        )
+        run_id = str(source.payload.get("run_id", ""))
+        binding_sha256 = str(
+            source.payload.get("cohort_binding_sha256", "")
+        )
+        return audit_round74_cohort_capture_source_payload(
+            source.payload,
+            run_id=run_id,
+            cohort_binding_sha256=binding_sha256,
+        )
     return load_round74_segmented_cohort_binding(raw_text)
 
 
