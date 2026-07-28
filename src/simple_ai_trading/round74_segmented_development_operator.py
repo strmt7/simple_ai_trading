@@ -53,7 +53,7 @@ ROUND74_SEGMENTED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION = (
     "round-074-segmented-development-preparation-v1"
 )
 ROUND74_SEGMENTED_QUALIFIED_DEVELOPMENT_SCHEMA_VERSION = (
-    "round-074-segmented-qualified-development-v2"
+    "round-074-segmented-qualified-development-v3"
 )
 
 

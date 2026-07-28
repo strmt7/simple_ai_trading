@@ -58,7 +58,7 @@ def test_preflight_schema_tracks_current_ai_contract() -> None:
         "round-074-ai-system-prompt-v1"
     )
     assert PUBLISHER.ROUND74_AI_REVIEW_PANEL_SCHEMA_VERSION == (
-        "round-074-ai-review-panel-v12"
+        "round-074-ai-review-panel-v14"
     )
 
 
