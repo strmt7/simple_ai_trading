@@ -13,6 +13,7 @@ from .impact_absorption_ai_runtime import ROUND74_AI_RUNTIME_STATUSES
 from .impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
+    Round74AIQualificationPopulation,
 )
 from .impact_absorption_event_action_policy import (
     Round74ActionInferenceContext,
@@ -36,7 +37,7 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
 
 ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION = (
-    "round-074-ai-execution-replay-plan-v1"
+    "round-074-ai-execution-replay-plan-v2"
 )
 ROUND74_AI_EXECUTION_PRE_REPLAY_STATUSES = frozenset(
     {
@@ -213,10 +214,21 @@ def build_round74_ai_execution_replay_instructions(
     *,
     contexts: Sequence[Round74ActionInferenceContext],
     reviews: Sequence[Round74AIPairedReviewEvidence],
+    trace: Round74ActionTrace | None = None,
 ) -> tuple[Round74AIExecutionReplayInstruction, ...]:
     """Bind selected actions to raw capture anchors without reading targets."""
 
-    trace = _selected_trace(action_selection)
+    action_selection.validate()
+    selected_trace = (
+        _selected_trace(action_selection) if trace is None else trace
+    )
+    selected_trace.validate()
+    if (
+        action_selection.selected_threshold_score is None
+        or selected_trace.threshold_score
+        != action_selection.selected_threshold_score
+    ):
+        raise ValueError("Round 74 AI execution trace threshold differs")
     selected_contexts = tuple(contexts)
     if not selected_contexts:
         raise ValueError("Round 74 AI execution context panel is empty")
@@ -237,8 +249,9 @@ def build_round74_ai_execution_replay_instructions(
     for review in review_rows:
         review.validate()
     if (
-        len(review_rows) != trace.metrics.trades
-        or tuple(review.row_index for review in review_rows) != trace.row_index
+        len(review_rows) != selected_trace.metrics.trades
+        or tuple(review.row_index for review in review_rows)
+        != selected_trace.row_index
         or len({review.row_index for review in review_rows}) != len(review_rows)
     ):
         raise ValueError("Round 74 AI execution review coverage differs")
@@ -250,14 +263,16 @@ def build_round74_ai_execution_replay_instructions(
             raise ValueError("Round 74 AI execution row is absent") from exc
         if (
             context.feature_row_sha256[local_index]
-            != trace.feature_row_sha256[trace_index]
-            or review.feature_row_sha256 != trace.feature_row_sha256[trace_index]
-            or context.run_id[local_index] != trace.run_id[trace_index]
-            or review.run_id != trace.run_id[trace_index]
-            or context.symbol[local_index] != trace.symbol[trace_index]
-            or review.symbol != trace.symbol[trace_index]
-            or review.side != trace.side[trace_index]
-            or review.horizon_seconds != trace.horizon_seconds[trace_index]
+            != selected_trace.feature_row_sha256[trace_index]
+            or review.feature_row_sha256
+            != selected_trace.feature_row_sha256[trace_index]
+            or context.run_id[local_index] != selected_trace.run_id[trace_index]
+            or review.run_id != selected_trace.run_id[trace_index]
+            or context.symbol[local_index] != selected_trace.symbol[trace_index]
+            or review.symbol != selected_trace.symbol[trace_index]
+            or review.side != selected_trace.side[trace_index]
+            or review.horizon_seconds
+            != selected_trace.horizon_seconds[trace_index]
             or review.pretest_policy_sha256 != action_selection.pretest_policy_sha256
             or review.probability_calibration_sha256
             != action_selection.probability_calibration_sha256
@@ -610,6 +625,82 @@ def replay_round74_ai_execution_store_run(
     )
 
 
+def _replay_store_instruction_panel(
+    *,
+    store: object,
+    partition: Round74EventRunPartition,
+    run_ids: tuple[str, ...],
+    assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
+    instructions_by_manifest: Mapping[
+        str,
+        Sequence[Round74AIExecutionReplayInstruction],
+    ],
+    expected_manifests: tuple[str, ...],
+    action_selection_sha256: str,
+) -> dict[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
+    partition.validate()
+    normalized = {
+        str(manifest): tuple(instructions)
+        for manifest, instructions in instructions_by_manifest.items()
+    }
+    if tuple(normalized) != expected_manifests:
+        raise ValueError("Round 74 AI replay manifest panel differs")
+    result: dict[str, tuple[Round74AIExecutionReplayEvidence, ...]] = {}
+    for manifest, rows in normalized.items():
+        for row in rows:
+            row.validate()
+        if (
+            len({row.row_index for row in rows}) != len(rows)
+            or len({row.instruction_sha256 for row in rows}) != len(rows)
+            or any(
+                row.model_manifest_sha256 != manifest
+                or row.partition_sha256 != partition.partition_sha256
+                or row.action_selection_sha256 != action_selection_sha256
+                or row.run_id not in run_ids
+                for row in rows
+            )
+        ):
+            raise ValueError("Round 74 AI replay instruction panel differs")
+        evidence_by_row: dict[int, Round74AIExecutionReplayEvidence] = {}
+        for run_id in run_ids:
+            run_rows = tuple(row for row in rows if row.run_id == run_id)
+            if not run_rows:
+                continue
+            run_evidence = replay_round74_ai_execution_store_run(
+                store,
+                partition=partition,
+                run_id=run_id,
+                assembly=assembly_by_run_id[run_id],
+                instructions=run_rows,
+            )
+            if len(run_evidence) != len(run_rows) or tuple(
+                value.row_index for value in run_evidence
+            ) != tuple(row.row_index for row in run_rows):
+                raise ValueError("Round 74 AI replay run coverage differs")
+            for row, evidence in zip(run_rows, run_evidence, strict=True):
+                evidence.validate()
+                if (
+                    evidence.row_index != row.row_index
+                    or evidence.feature_row_sha256 != row.feature_row_sha256
+                    or evidence.run_id != row.run_id
+                    or evidence.symbol != row.symbol
+                    or evidence.side != row.side
+                    or evidence.horizon_seconds != row.horizon_seconds
+                    or evidence.source_review_sha256 != row.source_review_sha256
+                    or evidence.partition_sha256 != row.partition_sha256
+                ):
+                    raise ValueError("Round 74 AI replay evidence identity differs")
+                evidence_by_row[row.row_index] = evidence
+        try:
+            ordered = tuple(evidence_by_row[row.row_index] for row in rows)
+        except KeyError as exc:
+            raise ValueError("Round 74 AI replay evidence is incomplete") from exc
+        if len(evidence_by_row) != len(rows):
+            raise ValueError("Round 74 AI replay evidence panel differs")
+        result[manifest] = ordered
+    return result
+
+
 @dataclass(frozen=True)
 class Round74SealedStoreExecutionReplayProvider:
     """Replay reserved AI actions from one read-only event store."""
@@ -663,70 +754,103 @@ class Round74SealedStoreExecutionReplayProvider:
             or tuple(instructions_by_manifest) != claim.ai_manifest_sha256
         ):
             raise ValueError("Round 74 sealed replay provider identity differs")
-        result: dict[str, tuple[Round74AIExecutionReplayEvidence, ...]] = {}
-        for manifest, manifest_instructions in instructions_by_manifest.items():
-            rows = tuple(manifest_instructions)
-            for row in rows:
-                row.validate()
-            if (
-                len({row.row_index for row in rows}) != len(rows)
-                or len({row.instruction_sha256 for row in rows}) != len(rows)
-                or any(
-                    row.model_manifest_sha256 != manifest
-                    or row.partition_sha256 != claim.partition_sha256
-                    or row.action_selection_sha256 != claim.action_selection_sha256
-                    or row.run_id not in claim.test_run_ids
-                    for row in rows
-                )
-            ):
-                raise ValueError("Round 74 sealed replay instruction panel differs")
-            evidence_by_row: dict[int, Round74AIExecutionReplayEvidence] = {}
-            for run_id in claim.test_run_ids:
-                run_rows = tuple(row for row in rows if row.run_id == run_id)
-                if not run_rows:
-                    continue
-                run_evidence = replay_round74_ai_execution_store_run(
-                    self.store,
-                    partition=self.partition,
-                    run_id=run_id,
-                    assembly=self.assembly_by_run_id[run_id],
-                    instructions=run_rows,
-                )
-                if len(run_evidence) != len(run_rows) or tuple(
-                    value.row_index for value in run_evidence
-                ) != tuple(row.row_index for row in run_rows):
-                    raise ValueError("Round 74 sealed replay run coverage differs")
-                for row, evidence in zip(run_rows, run_evidence, strict=True):
-                    evidence.validate()
-                    if (
-                        evidence.row_index != row.row_index
-                        or evidence.feature_row_sha256 != row.feature_row_sha256
-                        or evidence.run_id != row.run_id
-                        or evidence.symbol != row.symbol
-                        or evidence.side != row.side
-                        or evidence.horizon_seconds != row.horizon_seconds
-                        or evidence.source_review_sha256 != row.source_review_sha256
-                        or evidence.partition_sha256 != row.partition_sha256
-                    ):
-                        raise ValueError(
-                            "Round 74 sealed replay evidence identity differs"
-                        )
-                    evidence_by_row[row.row_index] = evidence
-            try:
-                ordered = tuple(evidence_by_row[row.row_index] for row in rows)
-            except KeyError as exc:
-                raise ValueError(
-                    "Round 74 sealed replay evidence is incomplete"
-                ) from exc
-            if len(evidence_by_row) != len(rows):
-                raise ValueError("Round 74 sealed replay evidence panel differs")
-            result[manifest] = ordered
-        return result
+        return _replay_store_instruction_panel(
+            store=self.store,
+            partition=self.partition,
+            run_ids=claim.test_run_ids,
+            assembly_by_run_id=self.assembly_by_run_id,
+            instructions_by_manifest=instructions_by_manifest,
+            expected_manifests=claim.ai_manifest_sha256,
+            action_selection_sha256=claim.action_selection_sha256,
+        )
+
+
+@dataclass(frozen=True)
+class Round74AIQualificationStoreExecutionReplayProvider:
+    """Replay only the preassigned AI-qualification tuning runs."""
+
+    store: object
+    partition: Round74EventRunPartition
+    qualification_population: Round74AIQualificationPopulation
+    assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly]
+
+    def __post_init__(self) -> None:
+        from .impact_absorption_store import ImpactAbsorptionStore
+
+        if not isinstance(self.store, ImpactAbsorptionStore):
+            raise TypeError(
+                "Round 74 AI qualification replay requires an event store"
+            )
+        if not self.store.read_only:
+            raise ValueError(
+                "Round 74 AI qualification replay requires read-only data"
+            )
+        self.partition.validate()
+        self.qualification_population.validate()
+        entries = tuple(
+            self.partition.entry(run_id)
+            for run_id in self.qualification_population.run_ids
+        )
+        assemblies = dict(self.assembly_by_run_id)
+        if (
+            any(entry.role != "tuning" for entry in entries)
+            or tuple(entry.run_id for entry in entries)
+            != self.qualification_population.run_ids
+            or set(assemblies) != set(self.qualification_population.run_ids)
+            or any(
+                not isinstance(assemblies[run_id], Round74SourceTargetAssembly)
+                for run_id in self.qualification_population.run_ids
+            )
+        ):
+            raise ValueError(
+                "Round 74 AI qualification replay population differs"
+            )
+        object.__setattr__(
+            self,
+            "assembly_by_run_id",
+            MappingProxyType(assemblies),
+        )
+
+    def __call__(
+        self,
+        *,
+        qualification_population: Round74AIQualificationPopulation,
+        action_selection: Round74ActionPolicySelection,
+        instructions_by_manifest: Mapping[
+            str,
+            Sequence[Round74AIExecutionReplayInstruction],
+        ],
+    ) -> dict[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
+        qualification_population.validate()
+        action_selection.validate()
+        manifests = tuple(instructions_by_manifest)
+        if (
+            qualification_population.population_sha256
+            != self.qualification_population.population_sha256
+            or action_selection.tuning_subpartition_sha256
+            != qualification_population.parent_tuning_subpartition_sha256
+            or len(manifests) != 2
+            or len(set(manifests)) != 2
+            or any(_SHA256.fullmatch(value) is None for value in manifests)
+        ):
+            raise ValueError(
+                "Round 74 AI qualification replay identity differs"
+            )
+        return _replay_store_instruction_panel(
+            store=self.store,
+            partition=self.partition,
+            run_ids=qualification_population.run_ids,
+            assembly_by_run_id=self.assembly_by_run_id,
+            instructions_by_manifest=instructions_by_manifest,
+            expected_manifests=manifests,
+            action_selection_sha256=action_selection.selection_sha256,
+        )
 
 
 __all__ = [
     "ROUND74_AI_EXECUTION_PRE_REPLAY_STATUSES",
     "ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION",
+    "Round74AIQualificationStoreExecutionReplayProvider",
     "Round74AIExecutionReplayInstruction",
     "Round74SealedStoreExecutionReplayProvider",
     "build_round74_ai_execution_replay_instructions",
