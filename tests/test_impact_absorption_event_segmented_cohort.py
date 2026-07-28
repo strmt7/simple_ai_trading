@@ -8,19 +8,22 @@ import pytest
 
 from simple_ai_trading.impact_absorption import ROUND74_CAPTURE_DESIGN_SHA256
 from simple_ai_trading.impact_absorption_event_dataset import (
+    ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS,
     ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS,
     ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS,
 )
 from simple_ai_trading.impact_absorption_event_segmented_cohort import (
     ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS,
+    ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS,
     ROUND74_SEGMENTED_COHORT_MISSED_REASON,
-    ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS,
+    ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS,
     ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS,
     ROUND74_SEGMENTED_COHORT_TOTAL_SLOTS,
     Round74SegmentedCohortCoverage,
     Round74SegmentedCohortPlan,
     Round74SegmentedCohortRunBinding,
     Round74SegmentedCohortSlotOutcome,
+    Round74SegmentedTransportEpochAudit,
     bind_round74_segmented_probe_supervisor,
     build_round74_segmented_event_run_partition,
     iter_round74_v10_segment_event_observations,
@@ -38,6 +41,10 @@ from simple_ai_trading.impact_absorption_store import (
 
 
 _SECOND_NS = 1_000_000_000
+_DEFAULT_USABLE_DURATION_NS = 1_180 * _SECOND_NS
+_TRANSPORT_ERROR = (
+    "public_source:ConnectionClosedError:no close frame received or sent"
+)
 
 
 def _canonical_sha256(value: object) -> str:
@@ -61,78 +68,95 @@ def _plan() -> Round74SegmentedCohortPlan:
     )
 
 
-def _supervisor(
+def _supervisor_and_epoch(
     plan: Round74SegmentedCohortPlan,
     ordinal: int,
-) -> tuple[dict[str, object], dict[str, object]]:
+    *,
+    terminal_status: str = "completed",
+    usable_duration_ns: int = _DEFAULT_USABLE_DURATION_NS,
+    include_force_order: bool = True,
+) -> tuple[dict[str, object], Round74SegmentedTransportEpochAudit]:
     slot = plan.slot(ordinal)
     run_id = f"{ordinal + 1:032x}"
+    is_completed = terminal_status == "completed"
+    terminal_error = "" if is_completed else _TRANSPORT_ERROR
     event_counts = {
         "aggTrade": 30,
         "bookTicker": 100,
         "depthUpdate": 60,
         "markPriceUpdate": 30,
-        "forceOrder": 1,
         "serverTime": 10,
         "exchangeInfo": 1,
         "depthSnapshot": 3,
         "openInterest": 15,
     }
+    if include_force_order:
+        event_counts["forceOrder"] = 1
+    symbol_event_counts: dict[str, dict[str, int]] = {
+        "BTCUSDT": {
+            "aggTrade": 10,
+            "bookTicker": 34,
+            "depthSnapshot": 1,
+            "depthUpdate": 20,
+            "markPriceUpdate": 10,
+            "openInterest": 5,
+            "synchronizedDepthUpdate": 19,
+        },
+        "ETHUSDT": {
+            "aggTrade": 10,
+            "bookTicker": 33,
+            "depthSnapshot": 1,
+            "depthUpdate": 20,
+            "markPriceUpdate": 10,
+            "openInterest": 5,
+            "synchronizedDepthUpdate": 19,
+        },
+        "SOLUSDT": {
+            "aggTrade": 10,
+            "bookTicker": 33,
+            "depthSnapshot": 1,
+            "depthUpdate": 20,
+            "markPriceUpdate": 10,
+            "openInterest": 5,
+            "synchronizedDepthUpdate": 19,
+        },
+    }
+    if include_force_order:
+        symbol_event_counts["BTCUSDT"]["forceOrder"] = 1
+        symbol_event_counts["ETHUSDT"]["forceOrder"] = 0
+        symbol_event_counts["SOLUSDT"]["forceOrder"] = 0
+    capture_start = slot.scheduled_start_wall_ns
+    feature_ready = capture_start + 5 * _SECOND_NS
+    usable_end = feature_ready + usable_duration_ns
+    capture_end = (
+        slot.scheduled_end_wall_ns + 5 * _SECOND_NS
+        if is_completed
+        else usable_end + 5 * _SECOND_NS
+    )
     report = {
         "schema_version": IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION,
         "design_sha256": ROUND74_CAPTURE_DESIGN_SHA256,
         "capture_contract_sha256": IMPACT_CAPTURE_V10_CONTRACT_SHA256,
         "run_id": run_id,
         "mode": "probe",
-        "status": "completed",
+        "status": "completed" if is_completed else "failed",
         "qualification_passed": False,
-        "capture_gate_passed": True,
-        "data_qualification_passed": True,
+        "capture_gate_passed": is_completed,
+        "data_qualification_passed": is_completed,
         "resource_safety_passed": True,
         "storage_efficiency_passed": True,
         "audit_passed": True,
         "audit_errors": [],
         "resource_safety_errors": [],
-        "error": "",
-        "failure_class": "none",
+        "error": terminal_error,
+        "failure_class": "none" if is_completed else "transport",
         "payload_cap_reached": False,
         "database_size_cap_reached": False,
-        "started_wall_ns": slot.scheduled_start_wall_ns,
-        "ended_wall_ns": slot.scheduled_end_wall_ns + 5 * _SECOND_NS,
-        "elapsed_seconds": 1_205.0,
+        "started_wall_ns": capture_start,
+        "ended_wall_ns": capture_end,
+        "elapsed_seconds": (capture_end - capture_start) / _SECOND_NS,
         "event_counts": event_counts,
-        "symbol_event_counts": {
-            "BTCUSDT": {
-                "aggTrade": 10,
-                "bookTicker": 34,
-                "depthSnapshot": 1,
-                "depthUpdate": 20,
-                "forceOrder": 1,
-                "markPriceUpdate": 10,
-                "openInterest": 5,
-                "synchronizedDepthUpdate": 19,
-            },
-            "ETHUSDT": {
-                "aggTrade": 10,
-                "bookTicker": 33,
-                "depthSnapshot": 1,
-                "depthUpdate": 20,
-                "forceOrder": 0,
-                "markPriceUpdate": 10,
-                "openInterest": 5,
-                "synchronizedDepthUpdate": 19,
-            },
-            "SOLUSDT": {
-                "aggTrade": 10,
-                "bookTicker": 33,
-                "depthSnapshot": 1,
-                "depthUpdate": 20,
-                "forceOrder": 0,
-                "markPriceUpdate": 10,
-                "openInterest": 5,
-                "synchronizedDepthUpdate": 19,
-            },
-        },
+        "symbol_event_counts": symbol_event_counts,
         "writer_message_count": sum(event_counts.values()),
         "writer_frame_count": 12,
         "writer_compressed_payload_bytes": 4_096,
@@ -142,55 +166,74 @@ def _supervisor(
         "design_sha256": ROUND74_CAPTURE_DESIGN_SHA256,
         "capture_schema_version": IMPACT_CAPTURE_V10_SCHEMA_VERSION,
         "capture_contract_sha256": IMPACT_CAPTURE_V10_CONTRACT_SHA256,
-        "status": "completed",
+        "status": "completed" if is_completed else "failed",
         "qualification_passed": False,
-        "selected_run_id": run_id,
+        "selected_run_id": run_id if is_completed else "",
         "attempt_count": 1,
         "reconnect_count": 0,
         "reconnect_delays_seconds": [],
         "attempts": [report],
         "startup_errors": [],
-        "terminal_error": "",
+        "terminal_error": terminal_error,
         "attempt_evidence_combined": False,
     }
-    audit = {
-        "schema_version": "round-074-capture-audit-v1",
-        "passed": True,
-        "errors": [],
-        "run_id": run_id,
-        "run_status": "completed",
-        "stored_report_schema_version": IMPACT_CAPTURE_V10_REPORT_SCHEMA_VERSION,
-        "stored_report_sha256": _canonical_sha256(report),
-        "capture_contract_sha256": IMPACT_CAPTURE_V10_CONTRACT_SHA256,
-        "message_count": report["writer_message_count"],
-        "frame_count": report["writer_frame_count"],
-        "compressed_payload_bytes": report["writer_compressed_payload_bytes"],
-        "last_frame_sha256": "d" * 64,
-    }
-    return supervisor, audit
+    epoch = Round74SegmentedTransportEpochAudit(
+        run_id=run_id,
+        terminal_status=terminal_status,
+        terminal_error=terminal_error,
+        report_sha256=_canonical_sha256(report),
+        fresh_frame_audit_sha256="d" * 64,
+        capture_start_wall_ns=capture_start,
+        capture_end_wall_ns=capture_end,
+        feature_ready_wall_ns=feature_ready,
+        usable_end_wall_ns=usable_end,
+        message_count=int(report["writer_message_count"]),
+        frame_count=int(report["writer_frame_count"]),
+        compressed_payload_bytes=int(report["writer_compressed_payload_bytes"]),
+        observation_count=220,
+        token_count=200,
+        fresh_depth_update_counts=(
+            ("BTCUSDT", 20),
+            ("ETHUSDT", 20),
+            ("SOLUSDT", 20),
+        ),
+        last_fresh_depth_wall_ns=(
+            ("BTCUSDT", usable_end + 2 * _SECOND_NS),
+            ("ETHUSDT", usable_end + _SECOND_NS),
+            ("SOLUSDT", usable_end),
+        ),
+    )
+    epoch.validate()
+    return supervisor, epoch
 
 
 def _binding(
     plan: Round74SegmentedCohortPlan,
     ordinal: int,
+    *,
+    terminal_status: str = "completed",
 ) -> Round74SegmentedCohortRunBinding:
-    supervisor, audit = _supervisor(plan, ordinal)
+    supervisor, epoch = _supervisor_and_epoch(
+        plan,
+        ordinal,
+        terminal_status=terminal_status,
+    )
     return bind_round74_segmented_probe_supervisor(
         plan,
         slot_ordinal=ordinal,
         supervisor_payload=supervisor,
-        fresh_audit_payload=audit,
+        fresh_epoch_audit_payload=epoch.as_dict(),
     )
 
 
 def _outcomes(
     plan: Round74SegmentedCohortPlan,
     *,
-    one_below_training_quorum: bool = False,
+    admitted_counts: dict[str, int] | None = None,
 ) -> tuple[Round74SegmentedCohortSlotOutcome, ...]:
-    admitted_remaining = dict(ROUND74_SEGMENTED_COHORT_ROLE_QUORUMS)
-    if one_below_training_quorum:
-        admitted_remaining["training"] -= 1
+    admitted_remaining = dict(
+        admitted_counts or {"training": 455, "tuning": 92, "test": 92}
+    )
     selected: list[Round74SegmentedCohortSlotOutcome] = []
     for ordinal in range(plan.total_slots):
         role = plan.role_for_ordinal(ordinal)
@@ -236,13 +279,24 @@ def test_segmented_plan_is_exact_hash_bound_and_round_trips() -> None:
     plan.validate()
     payload = plan.as_dict()
 
-    assert plan.total_slots == 540
-    assert ROUND74_SEGMENTED_COHORT_TOTAL_SLOTS == 540
+    assert plan.total_slots == 720
+    assert ROUND74_SEGMENTED_COHORT_TOTAL_SLOTS == 720
     assert ROUND74_SEGMENTED_COHORT_CAPTURE_DURATION_NS == 1_200 * _SECOND_NS
     assert ROUND74_SEGMENTED_COHORT_SLOT_PERIOD_NS == 1_500 * _SECOND_NS
-    assert payload["role_counts"] == {"training": 386, "tuning": 77, "test": 77}
-    assert payload["role_quorums"] == {"training": 360, "tuning": 72, "test": 72}
-    assert payload["capture_contract"]["underlying_mode"] == "probe"
+    assert payload["role_counts"] == {
+        "training": 514,
+        "tuning": 103,
+        "test": 103,
+    }
+    assert payload["role_required_eligible_anchor_ns"] == {
+        "training": 394_740_000_000_000,
+        "tuning": 78_948_000_000_000,
+        "test": 78_948_000_000_000,
+    }
+    assert (
+        payload["capture_contract"]["segment_admission_mode"]
+        == "independently_audited_connection_epoch"
+    )
     assert payload["capture_contract"]["maximum_reconnects"] == 0
     assert payload["missingness_policy"]["all_admitted_units_included"] is True
     assert load_round74_segmented_cohort_plan(json.dumps(payload)).as_dict() == payload
@@ -256,36 +310,67 @@ def test_segmented_plan_is_exact_hash_bound_and_round_trips() -> None:
         load_round74_segmented_cohort_plan(duplicate)
 
     tampered = deepcopy(payload)
-    tampered["role_quorums"]["training"] = 359
+    tampered["role_required_eligible_anchor_ns"]["training"] -= 1
     with pytest.raises(ValueError, match="digest differs"):
         load_round74_segmented_cohort_plan(json.dumps(tampered))
 
 
-def test_segmented_probe_binding_requires_fresh_exact_audit() -> None:
+def test_transport_epoch_audit_is_exact_hash_bound() -> None:
     plan = _plan()
-    supervisor, audit = _supervisor(plan, 0)
+    _, epoch = _supervisor_and_epoch(plan, 0)
+    payload = epoch.as_dict()
+
+    assert epoch.admission_supported is True
+    assert (
+        epoch.usable_duration_ns
+        == epoch.usable_end_wall_ns - epoch.feature_ready_wall_ns
+    )
+    assert (
+        epoch.eligible_anchor_duration_ns
+        == epoch.usable_duration_ns
+        - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
+    )
+    assert Round74SegmentedTransportEpochAudit.from_dict(payload).as_dict() == payload
+
+    tampered = deepcopy(payload)
+    tampered["last_fresh_depth_wall_ns"]["SOLUSDT"] -= 1
+    with pytest.raises(ValueError, match="digest differs"):
+        Round74SegmentedTransportEpochAudit.from_dict(tampered)
+
+
+def test_segmented_probe_binding_requires_both_fresh_audits() -> None:
+    plan = _plan()
+    supervisor, epoch = _supervisor_and_epoch(plan, 0)
     binding = bind_round74_segmented_probe_supervisor(
         plan,
         slot_ordinal=0,
         supervisor_payload=supervisor,
-        fresh_audit_payload=audit,
+        fresh_epoch_audit_payload=epoch.as_dict(),
     )
 
     assert binding.run_id == "0" * 31 + "1"
-    assert binding.fresh_audit_sha256 == _canonical_sha256(audit)
+    assert binding.fresh_frame_audit_sha256 == epoch.fresh_frame_audit_sha256
+    assert binding.fresh_epoch_audit_sha256 == epoch.epoch_audit_sha256
     assert (
         load_round74_segmented_cohort_binding(json.dumps(binding.as_dict())).as_dict()
         == binding.as_dict()
     )
 
-    mismatched = deepcopy(audit)
+    mismatched = deepcopy(epoch.as_dict())
     mismatched["message_count"] = int(mismatched["message_count"]) - 1
-    with pytest.raises(ValueError, match="fresh audit differs"):
+    mismatched["epoch_audit_sha256"] = _canonical_sha256(
+        {
+            key: value
+            for key, value in mismatched.items()
+            if key != "epoch_audit_sha256"
+        }
+    )
+    with pytest.raises(ValueError, match="cohort epoch audit differs"):
         bind_round74_segmented_probe_supervisor(
             plan,
             slot_ordinal=0,
             supervisor_payload=supervisor,
-            fresh_audit_payload=mismatched,
+            fresh_epoch_audit_payload=mismatched,
         )
 
     qualification = deepcopy(supervisor)
@@ -295,11 +380,86 @@ def test_segmented_probe_binding_requires_fresh_exact_audit() -> None:
             plan,
             slot_ordinal=0,
             supervisor_payload=qualification,
-            fresh_audit_payload=audit,
+            fresh_epoch_audit_payload=epoch.as_dict(),
         )
 
 
-def test_segmented_outcome_never_attaches_failed_prefix() -> None:
+def test_transport_ended_epoch_is_admitted_only_after_minimum_usable_time() -> None:
+    plan = _plan()
+    supervisor, epoch = _supervisor_and_epoch(
+        plan,
+        0,
+        terminal_status="transport_ended",
+        usable_duration_ns=700 * _SECOND_NS,
+    )
+    binding = bind_round74_segmented_probe_supervisor(
+        plan,
+        slot_ordinal=0,
+        supervisor_payload=supervisor,
+        fresh_epoch_audit_payload=epoch.as_dict(),
+    )
+
+    assert binding.terminal_status == "transport_ended"
+    assert binding.terminal_error == _TRANSPORT_ERROR
+    assert binding.usable_duration_ns == 700 * _SECOND_NS
+
+    short_supervisor, short_epoch = _supervisor_and_epoch(
+        plan,
+        0,
+        terminal_status="transport_ended",
+        usable_duration_ns=(
+            ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS - 1
+        ),
+    )
+    assert short_epoch.admission_supported is False
+    with pytest.raises(ValueError, match="epoch audit differs"):
+        bind_round74_segmented_probe_supervisor(
+            plan,
+            slot_ordinal=0,
+            supervisor_payload=short_supervisor,
+            fresh_epoch_audit_payload=short_epoch.as_dict(),
+        )
+
+
+def test_force_order_is_optional_but_unknown_event_types_are_rejected() -> None:
+    plan = _plan()
+    supervisor, epoch = _supervisor_and_epoch(
+        plan,
+        0,
+        include_force_order=False,
+    )
+    bind_round74_segmented_probe_supervisor(
+        plan,
+        slot_ordinal=0,
+        supervisor_payload=supervisor,
+        fresh_epoch_audit_payload=epoch.as_dict(),
+    )
+
+    unknown_supervisor = deepcopy(supervisor)
+    report = unknown_supervisor["attempts"][0]
+    assert isinstance(report, dict)
+    report["event_counts"]["unknownEvent"] = 1
+    report["writer_message_count"] += 1
+    unknown_epoch = deepcopy(epoch.as_dict())
+    unknown_epoch["report_sha256"] = _canonical_sha256(report)
+    unknown_epoch["message_count"] += 1
+    unknown_epoch["epoch_audit_sha256"] = _canonical_sha256(
+        {
+            key: value
+            for key, value in unknown_epoch.items()
+            if key != "epoch_audit_sha256"
+        }
+    )
+    with pytest.raises(ValueError, match="event coverage differs"):
+        bind_round74_segmented_probe_supervisor(
+            plan,
+            slot_ordinal=0,
+            supervisor_payload=unknown_supervisor,
+            fresh_epoch_audit_payload=unknown_epoch,
+        )
+
+
+def test_excluded_outcome_never_attaches_any_prefix() -> None:
     plan = _plan()
     excluded = Round74SegmentedCohortSlotOutcome(
         plan_sha256=plan.plan_sha256,
@@ -318,21 +478,30 @@ def test_segmented_outcome_never_attaches_failed_prefix() -> None:
         Round74SegmentedCohortSlotOutcome(
             **{
                 **excluded.__dict__,
-                "binding": _binding(plan, 0),
+                "binding": _binding(
+                    plan,
+                    0,
+                    terminal_status="transport_ended",
+                ),
             }
         ).validate()
 
 
-def test_segmented_coverage_uses_every_admitted_unit_and_is_gap_isolated() -> None:
+def test_segmented_coverage_uses_every_admitted_epoch_and_exact_time() -> None:
     plan = _plan()
     outcomes = _outcomes(plan)
     coverage = Round74SegmentedCohortCoverage.build(plan, outcomes)
     payload = coverage.as_dict()
 
-    assert len(coverage.partition.entries) == 360 + 72 + 72
-    assert payload["role_counts"]["training"]["admitted"] == 360
-    assert payload["role_counts"]["tuning"]["admitted"] == 72
-    assert payload["role_counts"]["test"]["admitted"] == 72
+    assert len(coverage.partition.entries) == 455 + 92 + 92
+    assert payload["role_counts"]["training"]["admitted"] == 455
+    assert payload["role_counts"]["tuning"]["admitted"] == 92
+    assert payload["role_counts"]["test"]["admitted"] == 92
+    for role in ("training", "tuning", "test"):
+        assert (
+            payload["role_counts"][role]["observed_eligible_anchor_ns"]
+            >= ROUND74_SEGMENTED_COHORT_REQUIRED_ELIGIBLE_ANCHOR_NS[role]
+        )
     assert payload["all_admitted_units_included"] is True
     assert payload["transport_excluded_or_missed_units_included"] is False
     assert payload["cross_unit_feature_or_target_permitted"] is False
@@ -345,7 +514,8 @@ def test_segmented_coverage_uses_every_admitted_unit_and_is_gap_isolated() -> No
     tuning_first = next(entry for entry in entries if entry.role == "tuning")
     assert (
         training_last.eligible_anchor_end_wall_ns
-        <= training_last.capture_end_wall_ns - ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
+        <= training_last.capture_end_wall_ns
+        - ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS
     )
     assert (
         tuning_first.eligible_anchor_start_wall_ns
@@ -353,7 +523,9 @@ def test_segmented_coverage_uses_every_admitted_unit_and_is_gap_isolated() -> No
         + ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
     )
     assert tuple(entry.run_id for entry in entries) == tuple(
-        outcome.binding.run_id for outcome in outcomes if outcome.binding is not None
+        outcome.binding.run_id
+        for outcome in outcomes
+        if outcome.binding is not None
     )
     assert (
         load_round74_segmented_cohort_coverage(
@@ -365,11 +537,14 @@ def test_segmented_coverage_uses_every_admitted_unit_and_is_gap_isolated() -> No
     )
 
 
-def test_segmented_coverage_fails_when_any_role_misses_quorum() -> None:
+def test_segmented_coverage_fails_when_eligible_time_is_short() -> None:
     plan = _plan()
-    outcomes = _outcomes(plan, one_below_training_quorum=True)
+    outcomes = _outcomes(
+        plan,
+        admitted_counts={"training": 453, "tuning": 92, "test": 92},
+    )
 
-    with pytest.raises(ValueError, match="role quorum failed"):
+    with pytest.raises(ValueError, match="eligible anchor time quota failed"):
         build_round74_segmented_event_run_partition(plan, outcomes)
 
 
