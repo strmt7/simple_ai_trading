@@ -370,16 +370,21 @@ After parser or taxonomy changes, regenerate the header through the native build
   produced 536,739 tokens and 1,200.071 seconds of conservative usable time,
   so both the 600-second minimum and complete target-tail gates passed. This
   validates the capture, epoch-audit, and deterministic-adjudication mechanics,
-  but the prerequisite is not cohort data. Segmented plan v2 is now frozen at
-  SHA-256 `d4cd88393fe4b0a4299609d52be9995f6027202a09ea95b4c8d87316f39f0b26`.
-  It starts at 2026-07-28 07:30 UTC and predeclares 720 slots at 25-minute
-  cadence. Windows task `SimpleAITrading-Round74-Segmented-v2` is registered
+  but the prerequisite is not cohort data. Segmented plan v2 was disabled
+  before its first slot after a pre-start review found that its partition
+  charged the full role embargo inside the next epoch without counting elapsed
+  inter-epoch wall time. Its task never ran, and neither a v2 database nor state
+  directory exists. Never reactivate or reuse v2. Gap-aware segmented plan v3
+  is frozen at SHA-256
+  `6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60`.
+  It starts at 2026-07-28 08:00 UTC and predeclares 720 slots at 25-minute
+  cadence. Windows task `SimpleAITrading-Round74-Segmented-v3` is registered
   for that exact schedule with no retry, no slot shifting, bounded resources,
   durable heartbeats, independent post-capture audit, and deterministic
   adjudication. The campaign is open, but no slot has started and no cohort
-  data exists at the host-schedule artifact. Read
+  data exists at the current host-schedule artifact. Read
   `round-074-segmented-prerequisite-attempt-003-success-2026-07-28.json` and
-  `round-074-segmented-cohort-host-schedule-v1-2026-07-28.json`, then
+  `round-074-segmented-cohort-host-schedule-v2-2026-07-28.json`, then
   `round-074-segmented-transport-epoch-redesign-validation-2026-07-28.json`,
   then read
   `round-074-event-sequence-model-design-v64.json`, which composes the complete
