@@ -1,0 +1,90 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v80",
+  "created_at_utc": "2026-07-28T09:08:04Z",
+  "implementation_git_commit": "5b89e5430e5cb7d27a39c75e1b94b2fa3d9e412d",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v79.json",
+    "design_sha256": "3ecfc51b641e610f86b05165d25ae7384708fe8b67414af0abff05c4fee0bdcd",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "financial_metrics_path": "src/simple_ai_trading/impact_absorption_event_financial_metrics.py",
+    "financial_metrics_sha256": "510e45a7edac920cd218d2cefd1ac52452b0ea3bee3d7dfed5f8124127b103f5",
+    "financial_metrics_schema_version": "round-074-realized-payoff-metrics-v2",
+    "action_policy_path": "src/simple_ai_trading/impact_absorption_event_action_policy.py",
+    "action_policy_sha256": "8a6cc71fddc3cc67c15f7a269dd753eb9be50c8f457621e4711c8438ce91e914",
+    "action_policy_schema_version": "round-074-action-policy-v11",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "bbcc9cb51d48a0926d09eb21a77f9d78288735cae122ddda0d811de7dea5f1ca",
+    "ai_uplift_schema_version": "round-074-ai-uplift-development-v8",
+    "sealed_evaluation_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluation_sha256": "d9682066ed2c15779e71fcb1093d08eb511b4852fd1793485b61fa46bd89b515",
+    "sealed_evaluation_schema_version": "round-074-sealed-evaluation-v11"
+  },
+  "conservative_drawdown_contract": {
+    "capital_basis": "shared_unlevered_three_symbol_sleeves_from_v79",
+    "position_capital_fraction": 0.3333333333333333,
+    "reported_maximum_drawdown_components": [
+      "realized_equity_peak_to_current_realized_equity",
+      "sum_of_capital_scaled_individual_maximum_adverse_excursions_for_open_trades"
+    ],
+    "reported_maximum_drawdown_is_at_least_realized_drawdown": true,
+    "reported_maximum_drawdown_is_at_least_maximum_concurrent_adverse_excursion": true,
+    "realized_drawdown_reported_separately": true,
+    "maximum_concurrent_adverse_excursion_reported_separately": true,
+    "open_position_interval": "half_open_entry_inclusive_exit_exclusive",
+    "exits_processed_before_entries_at_identical_timestamp": true,
+    "realized_equity_carried_across_capture_runs": true,
+    "open_position_state_carried_across_capture_runs": false,
+    "baseline_uses_recorded_trace_entry_and_exit_times": true,
+    "exact_replay_uses_actual_entry_and_exit_times_when_available": true,
+    "exact_replay_missing_actual_time_falls_back_to_bound_baseline_time": true,
+    "ai_veto_or_reduction_uses_same_capital_scale_as_baseline": true,
+    "leverage_applied": false,
+    "mark_to_market_equity_curve_reconstructed": false,
+    "individual_mae_minima_assumed_simultaneous": false,
+    "bound_interpretation": "conservative_upper_bound_not_an_exact_mark_to_market_path"
+  },
+  "research_constraints": [
+    {
+      "url": "https://www.sec.gov/rules-regulations/staff-guidance/trading-markets-frequently-asked-questions/divisionsmarketregfaq-0",
+      "use": "Automated pre-trade controls must aggregate exposure and enforce preset capital thresholds."
+    },
+    {
+      "url": "https://www.bis.org/basel_consolidated_guidelines/chapter/RMA/30.htm",
+      "use": "Risk systems require comprehensive stress testing rather than reliance on a single realized-loss statistic."
+    },
+    {
+      "url": "https://www.bis.org/basel_framework/chapter/MAR/30.htm",
+      "use": "Market-risk controls must include rigorous desk-level and bank-wide stress processes, including liquidity considerations."
+    }
+  ],
+  "verification": {
+    "relevant_tests_passed": 78,
+    "focused_financial_metric_tests_passed": 9,
+    "ruff_check_passed": true,
+    "ruff_format_check_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_cohort_data_used": false,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_inference_permitted": false,
+    "ai_model_evaluated": false
+  },
+  "authority": {
+    "conservative_open_risk_drawdown_implementation": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "22a4d288e824bc6b1614a3dfa11e2e7cb76e14885090c3955b685636c0eef0bd"
+}
