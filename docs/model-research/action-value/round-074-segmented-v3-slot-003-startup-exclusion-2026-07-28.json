@@ -1,0 +1,86 @@
+{
+  "schema_version": "round-074-segmented-campaign-slot-evidence-v1",
+  "campaign": {
+    "plan_schema_version": "round-074-segmented-event-cohort-plan-v3",
+    "plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "plan_file_sha256": "2a67f9637cb64e2a865ce94679beffa201a28095d0557a0553a59da6ce446913",
+    "scheduled_task": "SimpleAITrading-Round74-Segmented-v3",
+    "slot_ordinal": 3,
+    "role": "training",
+    "scheduled_start_wall_ns": 1785230100000000000
+  },
+  "reservation": {
+    "reserved_wall_ns": 1785230102627842200,
+    "reservation_sha256": "b7879f4f523a9ae47300e0a0dc0b2258892bfe875ca547e286d5f80d53eef565",
+    "reservation_file_sha256": "f0addfd95be94df39b1d6b28d623cf57cea8e848f4b74e6c41c2fa912c6a0991",
+    "automatic_retry_permitted": false
+  },
+  "capture": {
+    "attempt_count": 1,
+    "persisted_attempt_count": 0,
+    "selected_run_id": "",
+    "status": "failed",
+    "capture_return_code": 2,
+    "failure_class": "startup_transport",
+    "reconnect_count": 0,
+    "message_count": 0,
+    "frame_count": 0,
+    "credentials_used": false,
+    "orders_submitted": false
+  },
+  "adjudication": {
+    "status": "transport_excluded",
+    "reason_code": "startup_transport",
+    "adjudication_sha256": "a305749ecaf7805bcf132520d37a7886c3aa228ee2b61d32adc6342837e0a805",
+    "outcome_sha256": "c7b2ee994d498cec2287447bbc6d46bb499384ecd283c53262f14b29c2cb0c26",
+    "epoch_audit_present": false,
+    "binding_present": false,
+    "evidence_sha256": "8c4ad1f2ecdbdf4d6b6c82d2e1417c9bea446cebf229a8fdac41789e1c2b59f8"
+  },
+  "operator_interference": {
+    "cause": "independent_post_slot_002_read_only_database_reconciliation_overlapped_slot_003_startup",
+    "duckdb_lock_holder_pid": 67840,
+    "database_mutation_by_verifier": false,
+    "startup_error_class": "IOException",
+    "startup_error_reason": "database_file_in_use_by_another_process",
+    "operator_caused": true,
+    "manual_retry_permitted": false,
+    "manual_retry_performed": false,
+    "slot_shift_permitted": false,
+    "slot_shifted": false
+  },
+  "stored_evidence": {
+    "result_sha256": "cf9f901d106a34696914e53f7c23eaefeddb8550f17a5efa21c08918b5233af7",
+    "result_file_sha256": "396966e20bf914e2f6f3319d188590d2f73712b3cc9e519a2e20bb39fe7f5e42",
+    "state_file_sha256": "1e1748e4c9a9753e4bdc072aadf015a1ff34497bd5b904c9ca465d5aaeb6c31e",
+    "capture_stdout_sha256": "df44d16054ad80771a8a79ce0ee27e144293f35379b2e4a89c52c3dbcc6b2260",
+    "capture_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "verification": {
+    "verified_at_utc": "2026-07-28T09:16:16.990721Z",
+    "result_sha256_verified": true,
+    "stdout_sha256_verified": true,
+    "stderr_sha256_verified": true,
+    "adjudication_reload_verified": true,
+    "outcome_reload_verified": true,
+    "automatic_retry_performed": false,
+    "slot_shifted": false
+  },
+  "authority": {
+    "eligible_for_training": false,
+    "eligible_for_calibration": false,
+    "eligible_for_policy_selection": false,
+    "eligible_for_test": false,
+    "representative_cohort_complete": false,
+    "model_training_performed": false,
+    "profitability_or_edge_claim": false,
+    "orders_submitted": false,
+    "credentials_used": false,
+    "trading_authority": false
+  },
+  "operator_notes": [
+    "Slot 003 contains no capture run and no market evidence. It is permanently excluded from every model, calibration, policy-selection, AI, backtest, and sealed-test population.",
+    "The failure was caused by operator-side post-slot verification, not by Binance transport. It is retained as an explicit process-control failure.",
+    "Future database reconciliation must not begin or remain active near a scheduled slot boundary."
+  ]
+}
