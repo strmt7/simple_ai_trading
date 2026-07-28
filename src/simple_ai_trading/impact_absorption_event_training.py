@@ -42,6 +42,8 @@ from .impact_absorption_event_pretraining import (
     ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS,
     ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
     Round74EventPretrainingConfig,
+    Round74EventPretrainingSplit,
+    build_round74_event_pretraining_split,
     pretrain_round74_event_encoder,
 )
 from .impact_absorption_event_scaling import Round74EventFeatureScaler
@@ -54,8 +56,8 @@ from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 from .storage import write_bytes_atomic
 
 
-ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v23"
-ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v22"
+ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v24"
+ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = "round-074-event-pretest-policy-v23"
 ROUND74_EVENT_TARGET_CONTEXT_PANEL_SCHEMA_VERSION = "round-074-target-context-panel-v1"
 ROUND74_EVENT_TARGET_LOSS_SCALE_SCHEMA_VERSION = "round-074-target-loss-scale-v1"
 ROUND74_EVENT_FEATURE_VIEW_SCHEMA_VERSION = "round-074-feature-view-v1"
@@ -1680,10 +1682,13 @@ def _train_peer(
     config: Round74EventTrainingConfig,
     device: object,
     target_loss_scale: Round74EventTargetLossScale,
+    pretraining_split: Round74EventPretrainingSplit | None = None,
 ) -> tuple[dict[str, torch.Tensor], dict[str, object]]:
     target_loss_scale.validate()
     if initialization_id not in ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS:
         raise ValueError("Round 74 model initialization differs")
+    if initialization_id == "random" and pretraining_split is not None:
+        raise ValueError("Round 74 random initialization received a pretraining split")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -1705,6 +1710,7 @@ def _train_peer(
                 else ()
             ),
             config=config.pretraining,
+            split=pretraining_split,
         )
     else:
         pretraining_report = {
@@ -2006,6 +2012,14 @@ def _fit_candidate(
 ) -> _CandidateFit:
     states: list[dict[str, torch.Tensor]] = []
     reports: list[dict[str, object]] = []
+    pretraining_split = (
+        build_round74_event_pretraining_split(
+            training_batches,
+            config=config.pretraining,
+        )
+        if initialization_id == "causal_next_event_pretrained"
+        else None
+    )
     for seed in config.seeds:
         state, report = _train_peer(
             candidate_id,
@@ -2017,6 +2031,7 @@ def _fit_candidate(
             config=config,
             device=device,
             target_loss_scale=target_loss_scale,
+            pretraining_split=pretraining_split,
         )
         states.append(state)
         reports.append(report)
@@ -3773,6 +3788,9 @@ def load_round74_pretest_policy(
     initialization_run_losses: dict[str, tuple[float, ...]] = {}
     initialization_group_losses: dict[str, dict[str, float]] = {}
     initialization_parameter_counts: dict[str, int] = {}
+    pretraining_split_sha256: set[str] = set()
+    pretraining_feature_batch_sha256: set[tuple[str, ...]] = set()
+    pretraining_partition_rows: set[tuple[int, int]] = set()
     for initialization_id, raw_report in initialization_panel.items():
         if (
             initialization_id not in ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS
@@ -3823,15 +3841,21 @@ def load_round74_pretest_policy(
                 pretraining_feature_batches = pretraining_report.get(
                     "training_feature_batch_sha256"
                 )
+                if not isinstance(pretraining_feature_batches, list):
+                    raise ValueError(
+                        "Round 74 causal pretraining report differs"
+                    )
                 if (
-                    not isinstance(pretraining_feature_batches, list)
-                    or len(pretraining_feature_batches) != len(training_batch_hashes)
-                    or len(pretraining_feature_batches)
-                    != len(set(pretraining_feature_batches))
+                    len(pretraining_feature_batches) != len(training_batch_hashes)
                     or any(
-                        _SHA256.fullmatch(str(value)) is None
+                        not isinstance(value, str)
+                        or _SHA256.fullmatch(value) is None
                         for value in pretraining_feature_batches
                     )
+                    or len(pretraining_feature_batches)
+                    != len(set(pretraining_feature_batches))
+                    or pretraining_feature_batches
+                    != sorted(pretraining_feature_batches)
                     or pretraining_report.get("training_capture_run_count")
                     != len(training_batch_hashes)
                     or pretraining_report.get("encoder_state_restored") is not True
@@ -3857,12 +3881,38 @@ def load_round74_pretest_policy(
                     raise ValueError(
                         "Round 74 causal pretraining report differs"
                     )
+                pretraining_split_sha256.add(
+                    str(pretraining_report["split_sha256"])
+                )
+                pretraining_feature_batch_sha256.add(
+                    tuple(str(value) for value in pretraining_feature_batches)
+                )
+                training_rows = pretraining_report.get("training_rows")
+                validation_rows = pretraining_report.get("validation_rows")
+                if (
+                    isinstance(training_rows, bool)
+                    or not isinstance(training_rows, int)
+                    or training_rows < 1
+                    or isinstance(validation_rows, bool)
+                    or not isinstance(validation_rows, int)
+                    or validation_rows < 1
+                ):
+                    raise ValueError(
+                        "Round 74 causal pretraining partition differs"
+                    )
+                pretraining_partition_rows.add((training_rows, validation_rows))
         initialization_metrics[str(initialization_id)] = metrics
         initialization_run_losses[str(initialization_id)] = run_losses
         initialization_group_losses[str(initialization_id)] = group_losses
         initialization_parameter_counts[str(initialization_id)] = parameter_count
     if len(set(initialization_parameter_counts.values())) != 1:
         raise ValueError("Round 74 pretest initialization parameter count differs")
+    if pretraining_evaluated and (
+        len(pretraining_split_sha256) != 1
+        or len(pretraining_feature_batch_sha256) != 1
+        or len(pretraining_partition_rows) != 1
+    ):
+        raise ValueError("Round 74 causal pretraining peer split differs")
     if pretraining_evaluated:
         initialization_required_runs = feature_view_required_runs
         expected_initialization_promotion_report = _paired_promotion_report(

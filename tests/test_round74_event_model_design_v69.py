@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess  # nosec B404
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +15,7 @@ DESIGN = (
     / "round-074-event-sequence-model-design-v69.json"
 )
 PREVIOUS = DESIGN.with_name("round-074-event-sequence-model-design-v68.json")
+IMPLEMENTATION_COMMIT = "87f6bac42201c02cd465ce53a5f0097da39fbdba"
 
 
 def _canonical_sha256(value: object) -> str:
@@ -34,6 +36,17 @@ def _normalized_lf_sha256(path: Path) -> str:
     ).hexdigest()
 
 
+def _git_file_sha256(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    payload = completed.stdout.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def test_round74_v69_binds_reloadable_scaler_and_latency_component() -> None:
     design = json.loads(DESIGN.read_text(encoding="ascii"))
     claimed = design.pop("design_sha256")
@@ -49,13 +62,13 @@ def test_round74_v69_binds_reloadable_scaler_and_latency_component() -> None:
         == json.loads(PREVIOUS.read_text(encoding="ascii"))["design_sha256"]
     )
     assert scaler["training_source_normalized_lf_sha256"] == (
-        _normalized_lf_sha256(ROOT / scaler["training_source_path"])
+        _git_file_sha256(IMPLEMENTATION_COMMIT, scaler["training_source_path"])
     )
-    assert latency["source_normalized_lf_sha256"] == _normalized_lf_sha256(
-        ROOT / latency["source_path"]
+    assert latency["source_normalized_lf_sha256"] == _git_file_sha256(
+        IMPLEMENTATION_COMMIT, latency["source_path"]
     )
-    assert latency["test_normalized_lf_sha256"] == _normalized_lf_sha256(
-        ROOT / latency["test_path"]
+    assert latency["test_normalized_lf_sha256"] == _git_file_sha256(
+        IMPLEMENTATION_COMMIT, latency["test_path"]
     )
     assert scaler["cohort_mode_requires_exact_fitted_scaler"] is True
     assert scaler["reload_equivalence_verified_before_policy_publication"] is True

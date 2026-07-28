@@ -8,12 +8,6 @@ import subprocess  # nosec B404
 from simple_ai_trading.impact_absorption_event_action_policy import (
     ROUND74_ACTION_PROFILES,
 )
-from simple_ai_trading.round74_delayed_execution_panel import (
-    ROUND74_DELAYED_EXECUTION_REPLAY_SCHEMA_VERSION,
-)
-from simple_ai_trading.round74_online_decision_latency import (
-    ROUND74_ONLINE_DECISION_LATENCY_SCHEMA_VERSION,
-)
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -68,10 +62,10 @@ def test_round74_v70_binds_exact_profile_delayed_policy_economics() -> None:
         )
     assert source["action_policy_schema_version"] == "round-074-action-policy-v8"
     assert source["online_decision_latency_schema_version"] == (
-        ROUND74_ONLINE_DECISION_LATENCY_SCHEMA_VERSION
+        "round-074-online-decision-latency-v1"
     )
     assert source["delayed_execution_schema_version"] == (
-        ROUND74_DELAYED_EXECUTION_REPLAY_SCHEMA_VERSION
+        "round-074-delayed-execution-replay-v1"
     )
     assert source["development_operator_schema_version"] == (
         "round-074-development-policy-operator-v2"

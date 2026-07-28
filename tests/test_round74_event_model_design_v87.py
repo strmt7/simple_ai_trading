@@ -9,8 +9,6 @@ from simple_ai_trading.impact_absorption_event_training import (
     ROUND74_EVENT_CLOCK_FEATURE_NAMES,
     ROUND74_EVENT_CLOCK_FEATURE_NAMES_SHA256,
     ROUND74_EVENT_FEATURE_VIEWS,
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
 )
 
 
@@ -63,10 +61,10 @@ def test_round74_v87_binds_mandatory_exchange_clock_ablation() -> None:
         source["tests"]["path"],
     )
     assert source["training"]["training_schema_version"] == (
-        ROUND74_EVENT_TRAINING_SCHEMA_VERSION
+        "round-074-event-training-v22"
     )
     assert source["training"]["pretest_policy_schema_version"] == (
-        ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+        "round-074-event-pretest-policy-v21"
     )
     assert source["event_feature_contract"][
         "exchange_clock_feature_names_sha256"

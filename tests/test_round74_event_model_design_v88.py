@@ -5,18 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_event_model import (
-    ROUND74_EVENT_MODEL_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_pretraining import (
-    ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-)
-
-
 REPOSITORY = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
     REPOSITORY
@@ -62,17 +50,15 @@ def test_round74_v88_binds_paired_causal_pretraining_gate() -> None:
             commit,
             source[section]["path"],
         )
-    assert source["model"]["model_schema_version"] == (
-        ROUND74_EVENT_MODEL_SCHEMA_VERSION
-    )
+    assert source["model"]["model_schema_version"] == "round-074-event-payoff-model-v7"
     assert source["pretraining"]["schema_version"] == (
-        ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION
+        "round-074-causal-next-event-pretraining-v1"
     )
     assert source["training"]["training_schema_version"] == (
-        ROUND74_EVENT_TRAINING_SCHEMA_VERSION
+        "round-074-event-training-v23"
     )
     assert source["training"]["pretest_policy_schema_version"] == (
-        ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION
+        "round-074-event-pretest-policy-v22"
     )
 
     pretraining = design["pretraining_contract"]

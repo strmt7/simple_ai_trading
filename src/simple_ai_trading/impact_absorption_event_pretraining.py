@@ -34,7 +34,7 @@ from .impact_absorption_event_sequence import (
 from .impact_absorption_store import IMPACT_CAPTURE_SYMBOLS
 
 
-ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION = "round-074-causal-next-event-pretraining-v1"
+ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION = "round-074-causal-next-event-pretraining-v2"
 ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS = (
     "random",
     "causal_next_event_pretrained",
@@ -53,6 +53,13 @@ def _canonical_sha256(value: object) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _is_sha256(value: object) -> bool:
+    selected = str(value)
+    return len(selected) == 64 and all(
+        character in "0123456789abcdef" for character in selected
+    )
+
+
 @dataclass(frozen=True)
 class Round74EventPretrainingConfig:
     """Bounded, chronological, training-only representation policy."""
@@ -67,6 +74,7 @@ class Round74EventPretrainingConfig:
     validation_fraction: float = 0.20
     purge_anchor_count: int = ROUND74_EVENT_SEQUENCE_LENGTH
     minimum_partition_rows_per_symbol: int = 8
+    device_run_group_size: int = 8
 
     def validate(self) -> None:
         integer_values = (
@@ -75,6 +83,7 @@ class Round74EventPretrainingConfig:
             self.minibatch_rows,
             self.purge_anchor_count,
             self.minimum_partition_rows_per_symbol,
+            self.device_run_group_size,
         )
         numeric_values = (
             self.minimum_validation_improvement,
@@ -91,6 +100,8 @@ class Round74EventPretrainingConfig:
             or self.minibatch_rows < 1
             or self.purge_anchor_count < ROUND74_EVENT_SEQUENCE_LENGTH
             or self.minimum_partition_rows_per_symbol < 1
+            or self.device_run_group_size < 1
+            or self.device_run_group_size > 32
             or not all(math.isfinite(float(value)) for value in numeric_values)
             or self.minimum_validation_improvement < 0.0
             or self.learning_rate <= 0.0
@@ -116,6 +127,7 @@ class Round74EventPretrainingConfig:
             "minimum_partition_rows_per_symbol": (
                 self.minimum_partition_rows_per_symbol
             ),
+            "device_run_group_size": self.device_run_group_size,
             "fit_partition_role": "training",
             "validation_partition_role": "purged_tail_within_training",
             "event_target": "next_event_type",
@@ -123,6 +135,9 @@ class Round74EventPretrainingConfig:
             "event_loss": "categorical_log_loss_divided_by_log_event_type_count",
             "continuous_loss": "dimension_mean_huber_beta_1",
             "run_weighting": "equal_capture_run",
+            "device_grouping": (
+                "concatenated forward with separate per-run loss means"
+            ),
             "shorter_run_policy": "deterministic_epoch_rotated_cycling",
             "supervised_targets_used": False,
             "tuning_features_used": False,
@@ -153,6 +168,7 @@ class Round74EventPretrainingConfig:
                 minimum_partition_rows_per_symbol=int(
                     payload["minimum_partition_rows_per_symbol"]
                 ),
+                device_run_group_size=int(payload["device_run_group_size"]),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError("Round 74 event pretraining policy differs") from exc
@@ -162,10 +178,13 @@ class Round74EventPretrainingConfig:
 
 
 @dataclass(frozen=True)
-class _Round74PretrainingSplit:
+class Round74EventPretrainingSplit:
     training_indices: tuple[np.ndarray, ...]
     validation_indices: tuple[np.ndarray, ...]
     split_sha256: str
+    config_sha256: str
+    training_feature_object_ids: tuple[tuple[int, ...], ...]
+    training_feature_batch_sha256: tuple[str, ...]
     training_rows: int
     validation_rows: int
 
@@ -239,6 +258,23 @@ def _feature_batch_sha256(batch: Round74EventTrainingBatch) -> str:
     ):
         _update_array_digest(digest, values)
     return digest.hexdigest()
+
+
+def _feature_object_ids(batch: Round74EventTrainingBatch) -> tuple[int, ...]:
+    return tuple(
+        id(value)
+        for value in (
+            batch.run_id,
+            batch.symbol,
+            batch.feature_window_sha256,
+            batch.decision_monotonic_ns,
+            batch.decision_wall_ns,
+            batch.endpoint_frame_index,
+            batch.endpoint_message_index,
+            batch.anchor_index,
+            batch.feature_values,
+        )
+    )
 
 
 def _split_batch(
@@ -335,7 +371,7 @@ def build_round74_event_pretraining_split(
     batches: Sequence[Round74EventTrainingBatch],
     *,
     config: Round74EventPretrainingConfig | None = None,
-) -> _Round74PretrainingSplit:
+) -> Round74EventPretrainingSplit:
     """Build per-run, per-symbol chronological tails from training data only."""
 
     selected = config or Round74EventPretrainingConfig()
@@ -361,13 +397,74 @@ def build_round74_event_pretraining_split(
             "runs": reports,
         }
     )
-    return _Round74PretrainingSplit(
+    return Round74EventPretrainingSplit(
         training_indices=tuple(training_indices),
         validation_indices=tuple(validation_indices),
         split_sha256=split_sha256,
+        config_sha256=_canonical_sha256(selected.as_dict()),
+        training_feature_object_ids=tuple(
+            _feature_object_ids(batch) for batch in batches
+        ),
+        training_feature_batch_sha256=tuple(
+            sorted(str(report["feature_batch_sha256"]) for report in reports)
+        ),
         training_rows=sum(len(value) for value in training_indices),
         validation_rows=sum(len(value) for value in validation_indices),
     )
+
+
+def _validate_pretraining_split(
+    split: Round74EventPretrainingSplit,
+    batches: Sequence[Round74EventTrainingBatch],
+    config: Round74EventPretrainingConfig,
+) -> None:
+    if (
+        not isinstance(split, Round74EventPretrainingSplit)
+        or not _is_sha256(split.split_sha256)
+        or split.config_sha256 != _canonical_sha256(config.as_dict())
+        or split.training_feature_object_ids
+        != tuple(_feature_object_ids(batch) for batch in batches)
+        or len(split.training_indices) != len(batches)
+        or len(split.validation_indices) != len(batches)
+        or len(split.training_feature_batch_sha256) != len(batches)
+        or len(split.training_feature_batch_sha256)
+        != len(set(split.training_feature_batch_sha256))
+        or any(
+            not _is_sha256(value)
+            for value in split.training_feature_batch_sha256
+        )
+        or split.training_rows
+        != sum(len(indices) for indices in split.training_indices)
+        or split.validation_rows
+        != sum(len(indices) for indices in split.validation_indices)
+        or split.training_rows < 1
+        or split.validation_rows < 1
+    ):
+        raise ValueError("Round 74 pretraining split contract differs")
+    for batch, training, validation in zip(
+        batches,
+        split.training_indices,
+        split.validation_indices,
+        strict=True,
+    ):
+        if (
+            training.dtype != np.int64
+            or validation.dtype != np.int64
+            or training.flags.writeable
+            or validation.flags.writeable
+            or len(training) < 1
+            or len(validation) < 1
+            or int(training[0]) < 0
+            or int(validation[0]) < 0
+            or int(training[-1]) >= batch.rows
+            or int(validation[-1]) >= batch.rows
+            or np.any(np.diff(training) <= 0)
+            or np.any(np.diff(validation) <= 0)
+            or np.intersect1d(training, validation).size
+            or int(batch.decision_wall_ns[training[-1]])
+            >= int(batch.decision_wall_ns[validation[0]])
+        ):
+            raise ValueError("Round 74 pretraining split indices differ")
 
 
 def _feature_view_values(
@@ -382,7 +479,7 @@ def _feature_view_values(
     return selected
 
 
-def _next_event_loss(
+def _next_event_row_losses(
     model: nn.Module,
     head: _Round74NextEventHead,
     values: torch.Tensor,
@@ -407,23 +504,49 @@ def _next_event_loss(
         raise ValueError("Round 74 pretraining event target differs")
     event_target = next_event_one_hot.argmax(dim=2)
     event_log_probability = F.log_softmax(event_logits, dim=2)
-    event_loss = -event_log_probability.gather(
+    event_row_loss = -event_log_probability.gather(
         2,
         event_target.unsqueeze(2),
-    ).mean() / math.log(float(ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT))
+    ).squeeze(2).mean(dim=1) / math.log(
+        float(ROUND74_EVENT_PRETRAINING_EVENT_TYPE_COUNT)
+    )
     continuous = selected[:, :, ROUND74_EVENT_BINARY_FEATURE_COUNT:]
     target_delta = continuous[:, 1:, :] - continuous[:, :-1, :]
     residual = continuous_delta - target_delta
     absolute = residual.abs()
-    continuous_loss = torch.where(
+    continuous_row_loss = torch.where(
         absolute < 1.0,
         0.5 * residual.square(),
         absolute - 0.5,
-    ).mean()
-    loss = event_loss + continuous_loss
-    if not all(bool(torch.isfinite(value)) for value in (loss, event_loss, continuous_loss)):
+    ).mean(dim=(1, 2))
+    row_loss = event_row_loss + continuous_row_loss
+    if (
+        row_loss.shape != (values.shape[0],)
+        or event_row_loss.shape != row_loss.shape
+        or continuous_row_loss.shape != row_loss.shape
+        or not all(
+            bool(torch.isfinite(value).all())
+            for value in (row_loss, event_row_loss, continuous_row_loss)
+        )
+    ):
         raise ValueError("Round 74 pretraining loss is nonfinite")
-    return loss, event_loss, continuous_loss
+    return row_loss, event_row_loss, continuous_row_loss
+
+
+def _next_event_loss(
+    model: nn.Module,
+    head: _Round74NextEventHead,
+    values: torch.Tensor,
+    *,
+    masked_feature_indices: Sequence[int],
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    row_loss, event_row_loss, continuous_row_loss = _next_event_row_losses(
+        model,
+        head,
+        values,
+        masked_feature_indices=masked_feature_indices,
+    )
+    return row_loss.mean(), event_row_loss.mean(), continuous_row_loss.mean()
 
 
 def _index_minibatches(indices: np.ndarray, rows: int) -> tuple[np.ndarray, ...]:
@@ -438,6 +561,20 @@ def _device_values(
     return torch.from_numpy(
         np.ascontiguousarray(batch.feature_values[indices])
     ).to(device)
+
+
+def _device_group_values(
+    selections: Sequence[tuple[Round74EventTrainingBatch, np.ndarray]],
+    device: object,
+) -> tuple[torch.Tensor, tuple[int, ...]]:
+    if not selections:
+        raise ValueError("Round 74 pretraining device group is empty")
+    row_counts = tuple(len(indices) for _batch, indices in selections)
+    values = np.concatenate(
+        tuple(batch.feature_values[indices] for batch, indices in selections),
+        axis=0,
+    )
+    return torch.from_numpy(np.ascontiguousarray(values)).to(device), row_counts
 
 
 def _evaluate_pretraining(
@@ -504,6 +641,7 @@ def pretrain_round74_event_encoder(
     device: object,
     masked_feature_indices: Sequence[int] = (),
     config: Round74EventPretrainingConfig | None = None,
+    split: Round74EventPretrainingSplit | None = None,
 ) -> dict[str, object]:
     """Initialize one causal encoder and return a target-free audit report."""
 
@@ -512,10 +650,11 @@ def pretrain_round74_event_encoder(
     hidden_channels = round74_event_model_pretraining_channels(model)
     if hidden_channels is None:
         raise ValueError("Round 74 model does not support causal pretraining")
-    split = build_round74_event_pretraining_split(
+    selected_split = split or build_round74_event_pretraining_split(
         training_batches,
         config=selected,
     )
+    _validate_pretraining_split(selected_split, training_batches, selected)
     encoder_parameters = round74_event_encoder_parameters(model)
     initial_encoder_sha256 = _encoder_state_sha256(encoder_parameters)
     head = _Round74NextEventHead(hidden_channels).to(device)
@@ -534,7 +673,7 @@ def pretrain_round74_event_encoder(
     history: list[dict[str, object]] = []
     schedules = tuple(
         _index_minibatches(indices, selected.minibatch_rows)
-        for indices in split.training_indices
+        for indices in selected_split.training_indices
     )
     optimizer_steps = max(len(schedule) for schedule in schedules)
     run_count = len(training_batches)
@@ -549,21 +688,59 @@ def pretrain_round74_event_encoder(
             step_loss = 0.0
             step_event_loss = 0.0
             step_continuous_loss = 0.0
-            for batch, schedule in zip(training_batches, schedules, strict=True):
-                indices = schedule[(step + epoch - 1) % len(schedule)]
-                values = _device_values(batch, indices, device)
-                loss, event_loss, continuous_loss = _next_event_loss(
-                    model,
-                    head,
-                    values,
-                    masked_feature_indices=masked_feature_indices,
+            selections = tuple(
+                (
+                    batch,
+                    schedule[(step + epoch - 1) % len(schedule)],
                 )
-                (loss / run_count).backward()
-                step_loss += float(loss.detach().cpu()) / run_count
-                step_event_loss += float(event_loss.detach().cpu()) / run_count
-                step_continuous_loss += (
-                    float(continuous_loss.detach().cpu()) / run_count
+                for batch, schedule in zip(
+                    training_batches,
+                    schedules,
+                    strict=True,
                 )
+            )
+            for start in range(
+                0,
+                run_count,
+                selected.device_run_group_size,
+            ):
+                group = selections[start : start + selected.device_run_group_size]
+                values, row_counts = _device_group_values(group, device)
+                row_loss, event_row_loss, continuous_row_loss = (
+                    _next_event_row_losses(
+                        model,
+                        head,
+                        values,
+                        masked_feature_indices=masked_feature_indices,
+                    )
+                )
+                run_losses: list[torch.Tensor] = []
+                run_event_losses: list[torch.Tensor] = []
+                run_continuous_losses: list[torch.Tensor] = []
+                offset = 0
+                for row_count in row_counts:
+                    stop = offset + row_count
+                    run_losses.append(row_loss[offset:stop].mean())
+                    run_event_losses.append(event_row_loss[offset:stop].mean())
+                    run_continuous_losses.append(
+                        continuous_row_loss[offset:stop].mean()
+                    )
+                    offset = stop
+                if offset != values.shape[0]:
+                    raise RuntimeError(
+                        "Round 74 pretraining device group rows differ"
+                    )
+                group_loss = torch.stack(run_losses).sum() / run_count
+                group_loss.backward()
+                step_loss += float(torch.stack(run_losses).sum().detach().cpu()) / (
+                    run_count
+                )
+                step_event_loss += float(
+                    torch.stack(run_event_losses).sum().detach().cpu()
+                ) / run_count
+                step_continuous_loss += float(
+                    torch.stack(run_continuous_losses).sum().detach().cpu()
+                ) / run_count
             gradient_norm = torch.nn.utils.clip_grad_norm_(
                 optimized_parameters,
                 max_norm=selected.gradient_clip_norm,
@@ -579,7 +756,7 @@ def pretrain_round74_event_encoder(
             model,
             head,
             training_batches,
-            split.validation_indices,
+            selected_split.validation_indices,
             config=selected,
             device=device,
             masked_feature_indices=masked_feature_indices,
@@ -624,7 +801,7 @@ def pretrain_round74_event_encoder(
         model,
         head,
         training_batches,
-        split.validation_indices,
+        selected_split.validation_indices,
         config=selected,
         device=device,
         masked_feature_indices=masked_feature_indices,
@@ -648,16 +825,13 @@ def pretrain_round74_event_encoder(
         "schema_version": ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION,
         "initialization_id": "causal_next_event_pretrained",
         "config": selected.as_dict(),
-        "split_sha256": split.split_sha256,
-        "training_feature_batch_sha256": [
-            value
-            for value in sorted(
-                _feature_batch_sha256(batch) for batch in training_batches
-            )
-        ],
+        "split_sha256": selected_split.split_sha256,
+        "training_feature_batch_sha256": list(
+            selected_split.training_feature_batch_sha256
+        ),
         "training_capture_run_count": len(training_batches),
-        "training_rows": split.training_rows,
-        "validation_rows": split.validation_rows,
+        "training_rows": selected_split.training_rows,
+        "validation_rows": selected_split.validation_rows,
         "masked_feature_indices": [int(value) for value in masked_feature_indices],
         "initial_encoder_sha256": initial_encoder_sha256,
         "final_encoder_sha256": final_encoder_sha256,
@@ -681,6 +855,7 @@ __all__ = [
     "ROUND74_EVENT_PRETRAINING_INITIALIZATION_IDS",
     "ROUND74_EVENT_PRETRAINING_SCHEMA_VERSION",
     "Round74EventPretrainingConfig",
+    "Round74EventPretrainingSplit",
     "build_round74_event_pretraining_split",
     "pretrain_round74_event_encoder",
 ]
