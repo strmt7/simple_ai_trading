@@ -7,7 +7,7 @@ import hashlib
 import json
 import math
 from types import MappingProxyType
-from typing import Mapping
+from typing import Mapping, Sequence
 
 from .impact_absorption_ai_protocol import (
     ROUND74_AI_REVIEW_REASON_CODES,
@@ -34,6 +34,7 @@ ROUND74_AI_CONTRACT_CASE_IDS = (
     "forecast_model_inconsistency",
 )
 _RETAIN_MINIMUM_MULTIPLIER_BPS = 5_000
+_MIRROR_MAXIMUM_SIZE_MULTIPLIER_DIFFERENCE_BPS = 1_000
 _REQUEST_VALIDITY_NS = 20_000_000_000
 _REQUEST_TEMPLATE_KEYS = frozenset(
     {
@@ -515,11 +516,92 @@ def evaluate_round74_ai_contract_outcome(
     }
 
 
+def evaluate_round74_ai_mirror_consistency(
+    results: Sequence[Mapping[str, object]],
+) -> tuple[dict[str, object], ...]:
+    """Compare the two preregistered side-mirrored case pairs."""
+
+    by_case: dict[str, Mapping[str, object]] = {}
+    for result in results:
+        case_id = str(result.get("case_id", ""))
+        if case_id in by_case:
+            raise ValueError("Round 74 AI mirror result is duplicated")
+        by_case[case_id] = result
+    output: list[dict[str, object]] = []
+    for pair_id, long_id, short_id in (
+        ("benign", "benign_mirror_long", "benign_mirror_short"),
+        (
+            "unpredictable",
+            "unpredictable_mirror_long",
+            "unpredictable_mirror_short",
+        ),
+    ):
+        long_result = by_case.get(long_id)
+        short_result = by_case.get(short_id)
+        complete = long_result is not None and short_result is not None
+        long_decision = None if long_result is None else long_result.get("decision")
+        short_decision = None if short_result is None else short_result.get("decision")
+        accepted = bool(
+            complete
+            and long_result is not None
+            and short_result is not None
+            and long_result.get("runtime_accepted") is True
+            and short_result.get("runtime_accepted") is True
+            and isinstance(long_decision, Mapping)
+            and isinstance(short_decision, Mapping)
+        )
+        verdict_match = bool(
+            accepted
+            and long_decision is not None
+            and short_decision is not None
+            and long_decision.get("verdict") == short_decision.get("verdict")
+        )
+        reason_codes_match = bool(
+            accepted
+            and long_decision is not None
+            and short_decision is not None
+            and long_decision.get("reason_codes")
+            == short_decision.get("reason_codes")
+        )
+        size_difference = None
+        if accepted and long_decision is not None and short_decision is not None:
+            size_difference = abs(
+                int(long_decision["size_multiplier_bps"])
+                - int(short_decision["size_multiplier_bps"])
+            )
+        passed = bool(
+            accepted
+            and verdict_match
+            and reason_codes_match
+            and size_difference is not None
+            and size_difference
+            <= _MIRROR_MAXIMUM_SIZE_MULTIPLIER_DIFFERENCE_BPS
+        )
+        output.append(
+            {
+                "pair_id": pair_id,
+                "long_case_id": long_id,
+                "short_case_id": short_id,
+                "complete": complete,
+                "runtime_accepted": accepted,
+                "verdict_match": verdict_match,
+                "reason_codes_match": reason_codes_match,
+                "size_multiplier_difference_bps": size_difference,
+                "maximum_size_multiplier_difference_bps": (
+                    _MIRROR_MAXIMUM_SIZE_MULTIPLIER_DIFFERENCE_BPS
+                ),
+                "passed": passed,
+            }
+        )
+    return tuple(output)
+
+
 __all__ = [
     "ROUND74_AI_CONTRACT_CASE_IDS",
     "ROUND74_AI_CONTRACT_CASE_SCHEMA_VERSION",
     "ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION",
     "Round74AIContractCase",
+    "evaluate_round74_ai_mirror_consistency",
     "evaluate_round74_ai_contract_outcome",
     "round74_ai_contract_cases",
 ]

@@ -18,6 +18,7 @@ if str(SOURCE) not in sys.path:
 from simple_ai_trading.impact_absorption_ai_contract_screen import (  # noqa: E402
     ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION,
     evaluate_round74_ai_contract_outcome,
+    evaluate_round74_ai_mirror_consistency,
     round74_ai_contract_cases,
 )
 from simple_ai_trading.impact_absorption_ai_review_preparation import (  # noqa: E402
@@ -161,6 +162,7 @@ def main() -> int:
             )
             incomplete_reason = "model_cleanup_failure"
     completed = len(results) == len(cases)
+    mirror_checks = evaluate_round74_ai_mirror_consistency(results)
     report: dict[str, object] = {
         "schema_version": ROUND74_AI_CONTRACT_SCREEN_SCHEMA_VERSION,
         "created_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -182,6 +184,9 @@ def main() -> int:
         "all_runtime_failures_closed": all(result["fail_closed"] for result in results),
         "all_semantic_expectations_passed": completed
         and all(result["semantic_passed"] for result in results),
+        "mirror_checks": list(mirror_checks),
+        "all_mirror_checks_passed": completed
+        and all(check["passed"] for check in mirror_checks),
         "results": results,
         "model_unload_action_performed": unload_action_performed,
         "model_absent_after_cleanup_verified": (
