@@ -1,0 +1,122 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v76",
+  "created_at_utc": "2026-07-28T07:39:01Z",
+  "implementation_git_commit": "f50551fb59f0a45bb7980faa8f6d87a27d5a6901",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v75.json",
+    "design_sha256": "acf0c4be3a97a9d2fc08bc04be71ca5ebcc8ae49f51d4390467a67d6585c0dc2",
+    "unchanged_except_where_v76_explicitly_supersedes": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "text_bytes_crlf_and_cr_normalized_to_lf_before_sha256",
+    "files": {
+      "src/simple_ai_trading/impact_absorption_event_dataset.py": "ec577f11b922d8e8cc0f0f68691b861cfb1d276d568ca82b118b9a25ec1dbdce",
+      "src/simple_ai_trading/impact_absorption_event_segmented_cohort.py": "3cdad1797cc80fff3dd4a43ec4c55faa861dcc145298c8b70d18e5e8795f314d",
+      "src/simple_ai_trading/round74_segmented_model_operator.py": "2dca3f91086bf2f95080ce1960c437270913e6890b19d2045d569c8a98f91afe",
+      "src/simple_ai_trading/impact_absorption_event_training.py": "c85d0fd39d70da44ca7d7cccbb4798a3869d7db348dd4270f6ceabdf658d52d9"
+    },
+    "partition_schema_version": "round-074-run-partition-v5",
+    "segmented_window_schema_version": "round-074-segmented-duration-normalized-window-selection-v1",
+    "training_schema_version": "round-074-event-training-v18",
+    "pretest_policy_schema_version": "round-074-event-pretest-policy-v17"
+  },
+  "research_basis": [
+    {
+      "title": "A Survey on Principles, Models and Methods for Learning from Irregularly Sampled Time Series",
+      "url": "https://arxiv.org/abs/2012.00168",
+      "bounded_use": "Irregular observation intervals require an explicit time representation; this does not establish a profitable financial model."
+    },
+    {
+      "title": "Trade arrival dynamics and quote imbalance in a limit order book",
+      "url": "https://arxiv.org/abs/1312.0514",
+      "bounded_use": "Trade arrivals and quote state are jointly informative, so raw event count is not treated as elapsed market exposure."
+    },
+    {
+      "title": "DeepLOB: Deep Convolutional Neural Networks for Limit Order Books",
+      "url": "https://arxiv.org/abs/1808.03668",
+      "bounded_use": "Supports causal sequence modeling of limit-order-book structure; it does not validate this implementation or venue transfer."
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "url": "https://papers.ssrn.com/sol3/Papers.cfm?abstract_id=2326253",
+      "bounded_use": "Repeated strategy selection can manufacture apparent performance, so v76 changes population mechanics without selecting on P&L."
+    }
+  ],
+  "superseded_mechanics": {
+    "fixed_windows_per_epoch": 768,
+    "fixed_windows_failure": "Variable-duration connection epochs received equal sample mass.",
+    "run_balanced_cycling_failure": "Short epochs were cycled to match the longest epoch and therefore received equal optimizer influence.",
+    "legacy_replay_failure": "The legacy completed-run iterator could not admit independently audited transport-ended epochs.",
+    "full_embargo_inside_next_epoch_failure": "Elapsed inter-epoch wall time was ignored at role transitions."
+  },
+  "implemented_contract": {
+    "embargo_axis": "elapsed_wall_time_after_prior_audited_usable_end",
+    "window_quota_formula": "floor(eligible_anchor_ns * 256 / 3289500000000)",
+    "window_quota_axis": "audited eligible anchor wall time",
+    "temporal_selection": "one endpoint nearest each equal wall-time stratum midpoint per symbol",
+    "target_feature_model_activity_used_for_quota_or_rank": false,
+    "exact_endpoint_collision_policy": "reject",
+    "cross_epoch_state_feature_or_target_permitted": false,
+    "transport_ended_epoch_replay": "fresh exact-wire and causal-depth audit required on every replay",
+    "training_population": "eligible targets",
+    "short_epoch_cycling_permitted": false,
+    "gradient": "one exact eligible-target-weighted cohort gradient per epoch accumulated through bounded device groups",
+    "early_stopping_metric": "pooled eligible-target proper loss",
+    "segmented_architecture_search_permitted": false,
+    "fixed_architecture_required": true
+  },
+  "quota_examples": {
+    "attempt_003_eligible_anchor_ns": 889570761000,
+    "attempt_003_windows_per_symbol": 69,
+    "attempt_003_total_windows": 207,
+    "minimum_admitted_eligible_anchor_ns": 289500000000,
+    "minimum_admitted_windows_per_symbol": 22,
+    "minimum_admitted_total_windows": 66,
+    "one_hour_reference_eligible_anchor_ns": 3289500000000,
+    "one_hour_reference_windows_per_symbol": 256
+  },
+  "verification": {
+    "focused_tests_passed": 32,
+    "focused_test_files": [
+      "tests/test_round74_event_model_contract.py",
+      "tests/test_round74_segmented_model_operator.py",
+      "tests/test_impact_absorption_event_training.py"
+    ],
+    "ruff_passed": true,
+    "directml_environment": {
+      "torch": "2.4.1",
+      "torch_directml": "0.2.5.dev240914",
+      "installation_completed_seconds": 17.5,
+      "end_to_end_segmented_policy_test_backend": "cpu",
+      "directml_behavior_tested_by_v76": false
+    },
+    "end_to_end_synthetic_policy_train_seal_reload_passed": true,
+    "real_cohort_training_performed": false,
+    "financial_backtest_performed": false
+  },
+  "active_evidence_boundary": {
+    "main_plan": "round-074-segmented-event-cohort-plan-v3",
+    "main_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "scheduled_start_utc": "2026-07-28T08:00:00Z",
+    "cohort_slots_observed_by_v76": 0,
+    "cohort_data_admitted": false,
+    "labels_available": false,
+    "model_fit_available": false,
+    "sealed_test_available": false
+  },
+  "authority": {
+    "implementation_complete_for_duration_normalized_sampling": true,
+    "implementation_complete_for_segment_isolated_replay": true,
+    "implementation_complete_for_eligible_target_weighting": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "roi_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "72e4fe99a52545e3f85756ccebd585f1ddb5cfebdc1ca7b7a11d9b9bb7dfa7a6"
+}

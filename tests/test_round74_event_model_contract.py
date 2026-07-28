@@ -104,6 +104,9 @@ TUNING_SEPARATION_DESIGN_PATH = (
 MODEL_INTEGRATION_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v63.json"
 )
+DURATION_NORMALIZED_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v76.json"
+)
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
 AI_RUNTIME_PREFLIGHT_PATH = (
@@ -166,6 +169,32 @@ def _file_sha256_at(commit: str, relative_path: str) -> str:
     payload = completed.stdout
     canonical = payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def test_round74_duration_normalized_design_is_hash_bound_and_nonfinancial() -> None:
+    design = _load_hash_bound(DURATION_NORMALIZED_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    implementation = design["implemented_contract"]
+    authority = design["authority"]
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v76"
+    assert design["base_design"]["design_sha256"] == (
+        "acf0c4be3a97a9d2fc08bc04be71ca5ebcc8ae49f51d4390467a67d6585c0dc2"
+    )
+    for path, claimed in source["files"].items():
+        assert claimed == _file_sha256_at(design["implementation_git_commit"], path)
+    assert source["partition_schema_version"] == "round-074-run-partition-v5"
+    assert source["training_schema_version"] == "round-074-event-training-v18"
+    assert implementation["short_epoch_cycling_permitted"] is False
+    assert implementation["target_feature_model_activity_used_for_quota_or_rank"] is False
+    assert implementation["cross_epoch_state_feature_or_target_permitted"] is False
+    assert design["verification"]["focused_tests_passed"] == 32
+    assert design["verification"]["real_cohort_training_performed"] is False
+    assert design["verification"]["financial_backtest_performed"] is False
+    assert authority["financial_edge_tested"] is False
+    assert authority["profitability_claim"] is False
+    assert authority["ai_uplift_claim"] is False
+    assert authority["live_trading_authority"] is False
 
 
 def test_round74_tuning_role_correction_is_disjoint_and_source_bound() -> None:
