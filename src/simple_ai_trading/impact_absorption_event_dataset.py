@@ -36,7 +36,7 @@ from .impact_absorption_event_targets import (
 
 
 ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v10"
-ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v4"
+ROUND74_EVENT_PARTITION_SCHEMA_VERSION = "round-074-run-partition-v5"
 ROUND74_EVENT_PARTITION_ROLES = ("training", "tuning", "test")
 ROUND74_EVENT_WINDOW_REPRESENTATIONS = ("per_symbol", "global_cross_asset")
 ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS = (
@@ -158,7 +158,7 @@ class Round74EventRunPartition:
                     prior.eligible_anchor_end_wall_ns
                     > prior.capture_end_wall_ns - int(self.purge_ns)
                     or entry.eligible_anchor_start_wall_ns
-                    < entry.capture_start_wall_ns + int(self.embargo_ns)
+                    < prior.capture_end_wall_ns + int(self.embargo_ns)
                 ):
                     raise ValueError("Round 74 partition transition is not purged")
             prior = entry
@@ -179,6 +179,7 @@ class Round74EventRunPartition:
             "random_row_split_permitted": False,
             "purge_ns": int(self.purge_ns),
             "embargo_ns": int(self.embargo_ns),
+            "embargo_axis": "elapsed_wall_time_after_prior_audited_usable_end",
             "maximum_target_span_ns": (ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS),
             "entries": [entry.as_dict() for entry in self.entries],
         }

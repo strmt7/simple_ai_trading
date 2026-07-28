@@ -1345,9 +1345,7 @@ def build_round74_segmented_event_run_partition(
         if binding is None:
             continue
         role_changed = prior_role is not None and binding.role != prior_role
-        anchor_start = binding.feature_ready_wall_ns + (
-            ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS if role_changed else 0
-        )
+        anchor_start = binding.feature_ready_wall_ns
         anchor_end = (
             binding.usable_end_wall_ns
             - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
@@ -1366,6 +1364,11 @@ def build_round74_segmented_event_run_partition(
                     previous.capture_end_wall_ns
                     - ROUND74_EVENT_PARTITION_MINIMUM_PURGE_NS,
                 ),
+            )
+            anchor_start = max(
+                anchor_start,
+                previous.capture_end_wall_ns
+                + ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS,
             )
         entries.append(
             Round74EventRunPartitionEntry(

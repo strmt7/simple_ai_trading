@@ -217,11 +217,13 @@ def _binding(
     ordinal: int,
     *,
     terminal_status: str = "completed",
+    usable_duration_ns: int = _DEFAULT_USABLE_DURATION_NS,
 ) -> Round74SegmentedCohortRunBinding:
     supervisor, epoch = _supervisor_and_epoch(
         plan,
         ordinal,
         terminal_status=terminal_status,
+        usable_duration_ns=usable_duration_ns,
     )
     return bind_round74_segmented_probe_supervisor(
         plan,
@@ -524,8 +526,12 @@ def test_segmented_coverage_uses_every_admitted_epoch_and_exact_time() -> None:
     )
     assert (
         tuning_first.eligible_anchor_start_wall_ns
-        >= tuning_first.capture_start_wall_ns
+        >= training_last.capture_end_wall_ns
         + ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
+    )
+    assert (
+        tuning_first.eligible_anchor_start_wall_ns
+        == tuning_first.capture_start_wall_ns
     )
     assert tuple(entry.run_id for entry in entries) == tuple(
         outcome.binding.run_id
@@ -539,6 +545,54 @@ def test_segmented_coverage_uses_every_admitted_epoch_and_exact_time() -> None:
             outcomes=outcomes,
         ).as_dict()
         == payload
+    )
+
+
+def test_segmented_role_embargo_counts_elapsed_inter_epoch_gap() -> None:
+    plan = _plan()
+    outcomes = list(
+        _outcomes(
+            plan,
+            admitted_counts={"training": 514, "tuning": 103, "test": 103},
+        )
+    )
+    tuning_ordinal = 514
+    binding = _binding(
+        plan,
+        tuning_ordinal,
+        terminal_status="transport_ended",
+        usable_duration_ns=ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS,
+    )
+    outcomes[tuning_ordinal] = Round74SegmentedCohortSlotOutcome(
+        plan_sha256=plan.plan_sha256,
+        slot_ordinal=tuning_ordinal,
+        role="tuning",
+        status="admitted",
+        reason_code="admitted",
+        evidence_sha256=_canonical_sha256(
+            {"ordinal": tuning_ordinal, "status": "admitted-short"}
+        ),
+        binding=binding,
+    )
+
+    partition = build_round74_segmented_event_run_partition(plan, outcomes)
+    training_last = partition.entry(f"{tuning_ordinal:032x}")
+    tuning_first = partition.entry(f"{tuning_ordinal + 1:032x}")
+
+    assert (
+        tuning_first.eligible_anchor_start_wall_ns
+        == tuning_first.capture_start_wall_ns
+    )
+    assert (
+        tuning_first.eligible_anchor_start_wall_ns
+        - training_last.capture_end_wall_ns
+        >= ROUND74_EVENT_PARTITION_MINIMUM_EMBARGO_NS
+    )
+    assert (
+        tuning_first.eligible_anchor_end_wall_ns
+        - tuning_first.eligible_anchor_start_wall_ns
+        == ROUND74_SEGMENTED_COHORT_MINIMUM_USABLE_EPOCH_NS
+        - ROUND74_EVENT_PARTITION_MAXIMUM_TARGET_SPAN_NS
     )
 
 
