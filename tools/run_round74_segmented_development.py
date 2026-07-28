@@ -73,7 +73,6 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--inference-minibatch-rows", type=int, default=128)
     parser.add_argument("--progress-interval-seconds", type=float, default=30.0)
     parser.add_argument("--disable-ai", action="store_true")
-    parser.add_argument("--ai-same-entry-latency-budget-ns", type=int)
     return parser
 
 
@@ -123,9 +122,6 @@ def main(argv: list[str] | None = None) -> int:
             inference_minibatch_rows=arguments.inference_minibatch_rows,
             progress_interval_seconds=arguments.progress_interval_seconds,
             enable_ai=not arguments.disable_ai,
-            same_entry_latency_budget_ns=(
-                arguments.ai_same_entry_latency_budget_ns
-            ),
         )
     except (
         BackendUnavailableError,

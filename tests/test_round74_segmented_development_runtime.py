@@ -66,9 +66,7 @@ def test_segmented_runtime_releases_training_batches_before_accepted_ai_profiles
     monkeypatch.setattr(
         subject,
         "prepare_round74_segmented_development",
-        lambda *_args, **_kwargs: (
-            events.append("prepare") or preparation
-        ),
+        lambda *_args, **_kwargs: events.append("prepare") or preparation,
     )
     monkeypatch.setattr(
         subject,
@@ -129,7 +127,6 @@ def test_segmented_runtime_releases_training_batches_before_accepted_ai_profiles
         qualification_output_directory=tmp_path / "qualification",
         compute_backend="cpu",
         inference_minibatch_rows=32,
-        same_entry_latency_budget_ns=1_000_000,
         enable_ai=True,
         progress=lambda stage, **values: progress_rows.append((stage, values)),
     )
@@ -147,30 +144,18 @@ def test_segmented_runtime_releases_training_batches_before_accepted_ai_profiles
     ]
     assert len(provider_calls) == 1
     assert provider_calls[0]["assembly_by_run_id"] == {"ai": assemblies["ai"]}
-    assert [
-        call["qualification_output_path"].name for call in qualification_calls
-    ] == [
+    assert [call["qualification_output_path"].name for call in qualification_calls] == [
         "round74-ai-pretest-qualification-conservative.json",
         "round74-ai-pretest-qualification-aggressive.json",
     ]
-    assert any(
-        stage == "training_batches_released" for stage, _values in progress_rows
-    )
+    assert any(stage == "training_batches_released" for stage, _values in progress_rows)
 
 
-@pytest.mark.parametrize(
-    ("enable_ai", "budget"),
-    (
-        (True, None),
-        (True, 0),
-        (False, 1),
-    ),
-)
-def test_segmented_runtime_rejects_ambiguous_ai_latency_policy(
+@pytest.mark.parametrize("enable_ai", (None, 1, "yes"))
+def test_segmented_runtime_rejects_invalid_ai_toggle(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    enable_ai: bool,
-    budget: int | None,
+    enable_ai: object,
 ) -> None:
     repository = tmp_path / "repository"
     repository.mkdir()
@@ -198,6 +183,5 @@ def test_segmented_runtime_rejects_ambiguous_ai_latency_policy(
             qualification_output_directory=repository / "qualification",
             terminal_observed_wall_ns=1,
             progress=lambda *_args, **_kwargs: None,
-            enable_ai=enable_ai,
-            same_entry_latency_budget_ns=budget,
+            enable_ai=enable_ai,  # type: ignore[arg-type]
         )

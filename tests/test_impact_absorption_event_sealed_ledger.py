@@ -35,6 +35,7 @@ from simple_ai_trading.impact_absorption_ai_runtime import (
     Round74AIRuntimeOutcome,
 )
 from simple_ai_trading.impact_absorption_ai_uplift import (
+    ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     Round74AIPretestQualificationPanel,
@@ -364,8 +365,8 @@ def _reviews(
             runtime_elapsed_ns=1_000,
             queue_delay_ns=0,
             effective_review_latency_ns=1_000,
-            same_entry_latency_budget_ns=1_000_000,
-            same_entry_latency_eligible=True,
+            action_validity_latency_ns=ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
+            action_latency_eligible=True,
             size_multiplier_bps=10_000,
             decision=decision,
         )
@@ -391,7 +392,14 @@ def _execution_replays(
             if review.runtime_status == "accepted" and review.decision is not None
             else 0
         )
-        executed = requested_multiplier > 0
+        executed = requested_multiplier > 0 and review.action_latency_eligible
+        status = (
+            "executed"
+            if executed
+            else (
+                "historical_review_expired" if requested_multiplier > 0 else "ai_veto"
+            )
+        )
         evidence = Round74AIExecutionReplayEvidence(
             row_index=review.row_index,
             feature_row_sha256=review.feature_row_sha256,
@@ -403,7 +411,7 @@ def _execution_replays(
             partition_sha256=partition_sha256,
             source_capture_report_sha256=f"{3_000 + index:064x}",
             target_spec_sha256="f" * 64,
-            status="executed" if executed else "ai_veto",
+            status=status,
             requested_size_multiplier_bps=requested_multiplier,
             applied_size_multiplier_bps=(requested_multiplier if executed else 0),
             exact_l2_replay_performed=executed,
@@ -493,8 +501,8 @@ def _ai_pretest_qualification(
                 runtime_elapsed_ns=1_000,
                 queue_delay_ns=0,
                 effective_review_latency_ns=1_000,
-                same_entry_latency_budget_ns=1_000_000,
-                same_entry_latency_eligible=True,
+                action_validity_latency_ns=(ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS),
+                action_latency_eligible=True,
                 size_multiplier_bps=multiplier,
                 decision=decision,
             )
@@ -688,7 +696,7 @@ def _replay_instruction(
         model_manifest_sha256=manifest,
         runtime_status="blocked_capability",
         effective_review_latency_ns=0,
-        same_entry_latency_eligible=False,
+        action_latency_eligible=False,
         requested_size_multiplier_bps=0,
         pre_replay_status="runtime_veto",
         partition_sha256=partition_sha256,
@@ -1059,10 +1067,9 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     reviews = reviews_by_manifest[manifests[0]]
     reviews[0] = replace(
         reviews[0],
-        runtime_elapsed_ns=1_000_001,
-        effective_review_latency_ns=1_000_001,
-        same_entry_latency_eligible=False,
-        size_multiplier_bps=0,
+        runtime_elapsed_ns=ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS + 1,
+        effective_review_latency_ns=ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS + 1,
+        action_latency_eligible=False,
     )
     reviews[0].validate()
     execution_replays_by_manifest = {
@@ -1105,8 +1112,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         assert ledger.claim_matches(claim, required_status="reserved")
         assert tuple(instructions_by_manifest) == manifests
         assert all(
-            instruction.action_selection_sha256
-            == claim.action_selection_sha256
+            instruction.action_selection_sha256 == claim.action_selection_sha256
             for instructions in instructions_by_manifest.values()
             for instruction in instructions
         )
@@ -1152,10 +1158,10 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     overlay = outcome.report.ai_overlays[0]
     assert not overlay.uplift_gate_passed
     assert overlay.runtime_success_rate == 1.0
-    assert overlay.same_entry_latency_eligible_reviews == 23
-    assert overlay.retained_trades == 24
-    assert overlay.exact_replay_required_reviews == 24
-    assert overlay.exact_replay_completed_reviews == 24
+    assert overlay.action_latency_eligible_reviews == 23
+    assert overlay.retained_trades == 23
+    assert overlay.exact_replay_required_reviews == 23
+    assert overlay.exact_replay_completed_reviews == 23
     assert len(overlay.paired_runs) == 24
     assert tuple(value.run_id for value in overlay.paired_runs) == TEST_RUNS
     assert sum(value.paired_observations for value in overlay.paired_runs) == 24
@@ -1166,8 +1172,7 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
     assert (
         sum(value.paired_observations for value in overlay.paired_symbol_horizons) == 24
     )
-    assert "same_entry_latency_eligibility_rate_not_met" not in overlay.gate_reasons
-    assert overlay.strategy_metrics.total_net_bps == 8.0
+    assert overlay.strategy_metrics.total_net_bps == pytest.approx(23.0 / 3.0)
     assert (
         "positive_paired_delta_familywise_confidence_lower_bound_not_met"
         in overlay.gate_reasons
@@ -1189,9 +1194,9 @@ def test_sealed_evaluator_scores_bound_model_and_finalizes_once(
         contexts=(build_round74_action_inference_context(batch),),
         reviews=tuple(reviews),
     )
-    assert instructions[0].pre_replay_status == "replay_required"
+    assert instructions[0].pre_replay_status == "historical_review_expired"
     assert instructions[0].requested_size_multiplier_bps == 10_000
-    assert not instructions[0].same_entry_latency_eligible
+    assert not instructions[0].action_latency_eligible
 
 
 def test_sealed_ai_overlay_rejects_aggregate_gain_that_harms_subgroups() -> None:
@@ -1425,7 +1430,6 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         inference,
         action_selection=selection,
         probability_calibration=calibration,
-        same_entry_latency_budget_ns=1_000_000,
         review_runner=_blocked_review,
         model_batch_preparer=lambda binding: prepared_models.append(binding.model_name),
         model_batch_finalizer=lambda binding: finalized_models.append(
@@ -1442,7 +1446,6 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
         "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
     )
     assert len(panel.rows) == 24
-    assert panel.same_entry_latency_budget_ns == 1_000_000
     assert panel.reviews[0][0].queue_delay_ns == 0
     assert panel.reviews[0][1].queue_delay_ns == 1_000_000_000_000
     assert panel.reviews[0][1].effective_review_latency_ns == 6_000_000_000_000
@@ -1453,7 +1456,7 @@ def test_target_free_two_model_review_panel_preserves_blocked_observations() -> 
     assert all(len(value) == 24 for value in panel.reviews)
     assert all(
         review.runtime_status == "blocked_capability"
-        and review.same_entry_latency_eligible is False
+        and review.action_latency_eligible is False
         and review.size_multiplier_bps == 0
         for reviews in panel.reviews
         for review in reviews
@@ -1484,7 +1487,6 @@ def test_target_free_review_panel_finalizes_after_preload_failure() -> None:
             inference,
             action_selection=selection,
             probability_calibration=calibration,
-            same_entry_latency_budget_ns=1_000_000,
             review_runner=_blocked_review,
             model_batch_preparer=lambda _binding: (_ for _ in ()).throw(
                 RuntimeError("preload failed")
@@ -1521,7 +1523,6 @@ def test_prepared_review_provider_binds_reserved_claim_and_model_panel(
     progress: list[Mapping[str, object]] = []
     provider = Round74PreparedSealedAIReviewProvider(
         probability_calibration=calibration,
-        same_entry_latency_budget_ns=1_000_000,
         model_bindings=bindings,
         ai_pretest_qualification=qualification,
         review_runner=_blocked_review,
@@ -1817,9 +1818,7 @@ def test_ai_qualification_operator_uses_disjoint_tuning_scope(
         eligible_anchor_ns=(900_000_000_000,) * len(TEST_RUNS),
     )
     population.validate()
-    contexts = tuple(
-        build_round74_action_inference_context(batch) for batch in batches
-    )
+    contexts = tuple(build_round74_action_inference_context(batch) for batch in batches)
     outputs = tuple(_model_output(batch.rows) for batch in batches)
     candidates = tuple(
         derive_round74_action_candidates(
@@ -1864,7 +1863,9 @@ def test_ai_qualification_operator_uses_disjoint_tuning_scope(
             tuple[Round74AIExecutionReplayInstruction, ...],
         ],
     ) -> Mapping[str, tuple[Round74AIExecutionReplayEvidence, ...]]:
-        assert qualification_population.population_sha256 == population.population_sha256
+        assert (
+            qualification_population.population_sha256 == population.population_sha256
+        )
         assert action_selection.selection_sha256 == selection.selection_sha256
         return {
             manifest: tuple(
@@ -1887,7 +1888,6 @@ def test_ai_qualification_operator_uses_disjoint_tuning_scope(
         pretest_policy_path=tmp_path / "not-read-by-injected-inference.json",
         execution_replay_provider=replay_provider,
         qualification_output_path=output_path,
-        same_entry_latency_budget_ns=1_000_000,
         review_runner=_blocked_review,
         model_batch_preparer=lambda _binding: None,
         model_batch_finalizer=lambda _binding: None,
@@ -1987,9 +1987,7 @@ def test_prepared_ai_qualification_wrapper_forwards_only_fourth_subrole(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ai_run_ids = TEST_RUNS[:2]
-    batches = tuple(
-        _test_batch(role="tuning", runs=(run_id,)) for run_id in ai_run_ids
-    )
+    batches = tuple(_test_batch(role="tuning", runs=(run_id,)) for run_id in ai_run_ids)
     subpartition = SimpleNamespace(
         parent_partition_sha256=batches[0].partition_sha256,
         model_selection_run_ids=(),
@@ -2036,7 +2034,6 @@ def test_prepared_ai_qualification_wrapper_forwards_only_fourth_subrole(
         pretest_policy_path="policy.json",
         execution_replay_provider=lambda **_kwargs: {},
         qualification_output_path="qualification.json",
-        same_entry_latency_budget_ns=1_000_000,
     )
 
     assert result is sentinel

@@ -67,12 +67,10 @@ def _state(
     bids = tuple((mid - 0.1 - index * 0.1, quantity) for index in range(20))
     asks = tuple((mid + 0.1 + index * 0.1, quantity) for index in range(20))
     bid_depths = tuple(
-        sum(price * qty for price, qty in bids[:levels])
-        for levels in (5, 10, 20)
+        sum(price * qty for price, qty in bids[:levels]) for levels in (5, 10, 20)
     )
     ask_depths = tuple(
-        sum(price * qty for price, qty in asks[:levels])
-        for levels in (5, 10, 20)
+        sum(price * qty for price, qty in asks[:levels]) for levels in (5, 10, 20)
     )
     imbalances = tuple(
         (bid - ask) / (bid + ask)
@@ -126,9 +124,11 @@ def _spec(
     funding_coverage: dict[str, tuple[int, int]] | None = None,
     funding_evidence_sha256: str = "e" * 64,
 ) -> Round74EventTargetSpec:
-    funding = funding_boundaries if funding_boundaries is not None else {
-        symbol: () for symbol in SYMBOLS
-    }
+    funding = (
+        funding_boundaries
+        if funding_boundaries is not None
+        else {symbol: () for symbol in SYMBOLS}
+    )
     normalized_funding_intervals = (
         funding_intervals
         if funding_intervals is not None
@@ -137,9 +137,11 @@ def _spec(
             for symbol, boundaries in funding.items()
         }
     )
-    coverage = funding_coverage if funding_coverage is not None else {
-        symbol: (0, 1_000_000_000_000) for symbol in SYMBOLS
-    }
+    coverage = (
+        funding_coverage
+        if funding_coverage is not None
+        else {symbol: (0, 1_000_000_000_000) for symbol in SYMBOLS}
+    )
     fees = {symbol: fee_bps for symbol in SYMBOLS}
     entries = (
         entry_latencies
@@ -195,9 +197,7 @@ def _spec(
         funding_schedule_evidence=_evidence(
             "funding_schedule",
             round74_funding_schedule_evidence_claims(
-                funding_boundary_intervals_monotonic_ns=(
-                    normalized_funding_intervals
-                ),
+                funding_boundary_intervals_monotonic_ns=(normalized_funding_intervals),
                 funding_schedule_coverage_monotonic_ns=coverage,
             ),
             payload_sha256=funding_evidence_sha256,
@@ -351,12 +351,10 @@ def test_round74_payoff_charges_both_actual_walked_legs() -> None:
         exit_walk.quote_notional - entry.quote_notional
     )
     assert payoff.commission_quote == pytest.approx(
-        5.0 / 10_000.0
-        * (entry.quote_notional + exit_walk.quote_notional)
+        5.0 / 10_000.0 * (entry.quote_notional + exit_walk.quote_notional)
     )
     assert payoff.additional_slippage_quote == pytest.approx(
-        1.0 / 10_000.0
-        * (entry.quote_notional + exit_walk.quote_notional)
+        1.0 / 10_000.0 * (entry.quote_notional + exit_walk.quote_notional)
     )
     assert payoff.midpoint_payoff_quote == pytest.approx(0.0)
     assert payoff.book_walk_implementation_shortfall_quote == pytest.approx(
@@ -366,12 +364,10 @@ def test_round74_payoff_charges_both_actual_walked_legs() -> None:
         payoff.commission_quote + payoff.additional_slippage_quote
     )
     assert payoff.total_implementation_shortfall_quote == pytest.approx(
-        payoff.book_walk_implementation_shortfall_quote
-        + payoff.explicit_cost_quote
+        payoff.book_walk_implementation_shortfall_quote + payoff.explicit_cost_quote
     )
     assert payoff.net_payoff_quote == pytest.approx(
-        payoff.midpoint_payoff_quote
-        - payoff.total_implementation_shortfall_quote
+        payoff.midpoint_payoff_quote - payoff.total_implementation_shortfall_quote
     )
     assert payoff.net_payoff_quote < payoff.gross_payoff_quote
 
@@ -408,9 +404,7 @@ def test_execution_override_rewalks_delayed_book_with_quantized_size() -> None:
     assert delayed_outcome.requested_entry_monotonic_ns == 2_100_000_000
     assert delayed_outcome.actual_entry_monotonic_ns == 2_100_000_000
     assert delayed_outcome.base_quantity == pytest.approx(0.5)
-    assert delayed_outcome.entry_average_price != (
-        baseline_outcome.entry_average_price
-    )
+    assert delayed_outcome.entry_average_price != (baseline_outcome.entry_average_price)
     assert delayed_outcome.entry_quote_notional == pytest.approx(
         delayed_outcome.base_quantity * delayed_outcome.entry_average_price
     )
@@ -482,7 +476,7 @@ def test_ai_execution_replay_uses_delayed_book_and_capital_scaled_size() -> None
         model_manifest_sha256="8" * 64,
         runtime_status="accepted",
         effective_review_latency_ns=NS,
-        same_entry_latency_eligible=False,
+        action_latency_eligible=True,
         requested_size_multiplier_bps=5_000,
         pre_replay_status="replay_required",
         partition_sha256="7" * 64,
@@ -591,8 +585,7 @@ def test_round74_target_spec_uses_symbol_specific_latency_and_slippage() -> None
     engine = Round74EventTargetEngine(
         spec=spec,
         anchors=[
-            _anchor(symbol=symbol, index=index)
-            for index, symbol in enumerate(SYMBOLS)
+            _anchor(symbol=symbol, index=index) for index, symbol in enumerate(SYMBOLS)
         ],
         quantity_rules=_rules(),
     )
@@ -604,9 +597,7 @@ def test_round74_target_spec_uses_symbol_specific_latency_and_slippage() -> None
             if outcome.symbol == symbol
         }
         for symbol in SYMBOLS
-    } == {
-        symbol: {NS + entry_latencies[symbol]} for symbol in SYMBOLS
-    }
+    } == {symbol: {NS + entry_latencies[symbol]} for symbol in SYMBOLS}
 
 
 def test_round74_target_evidence_is_self_hashing_and_environment_consistent() -> None:
@@ -927,9 +918,7 @@ def test_round74_target_engine_censors_funding_crossing_and_capacity() -> None:
 
     assert sum(outcome.eligible for outcome in funding) == 2
     assert {
-        outcome.ineligible_reason
-        for outcome in funding
-        if not outcome.eligible
+        outcome.ineligible_reason for outcome in funding if not outcome.eligible
     } == {"funding_boundary"}
 
     capacity_engine = Round74EventTargetEngine(
@@ -956,14 +945,9 @@ def test_round74_target_engine_censors_funding_crossing_and_capacity() -> None:
         state=_state(update_id=3, quantity=0.001),
     )
     capacity = capacity_engine.finish()
-    assert (
-        funding_engine.target_context_sha256
-        != capacity_engine.target_context_sha256
-    )
+    assert funding_engine.target_context_sha256 != capacity_engine.target_context_sha256
     assert not any(outcome.eligible for outcome in capacity)
-    assert {
-        outcome.ineligible_reason for outcome in capacity
-    } == {"entry_capacity"}
+    assert {outcome.ineligible_reason for outcome in capacity} == {"entry_capacity"}
 
 
 @pytest.mark.parametrize(
@@ -1048,12 +1032,8 @@ def test_round74_target_engine_rechecks_funding_at_actual_exit(
     outcomes = engine.finish()
 
     assert not any(outcome.eligible for outcome in outcomes)
-    assert {outcome.ineligible_reason for outcome in outcomes} == {
-        expected_reason
-    }
-    one_second = [
-        outcome for outcome in outcomes if outcome.horizon_seconds == 1
-    ]
+    assert {outcome.ineligible_reason for outcome in outcomes} == {expected_reason}
+    one_second = [outcome for outcome in outcomes if outcome.horizon_seconds == 1]
     assert {outcome.requested_exit_monotonic_ns for outcome in one_second} == {
         2_200_000_000
     }
@@ -1087,9 +1067,7 @@ def test_round74_target_engine_censors_late_state_and_rejects_bad_order() -> Non
         state=_state(update_id=3),
     )
     late = late_engine.finish()
-    assert {outcome.ineligible_reason for outcome in late} == {
-        "entry_state_late"
-    }
+    assert {outcome.ineligible_reason for outcome in late} == {"entry_state_late"}
 
     order_engine = Round74EventTargetEngine(
         spec=_spec(),
@@ -1189,9 +1167,7 @@ def test_round74_target_engine_censors_missing_path_state() -> None:
     outcomes = engine.finish()
 
     assert not any(outcome.eligible for outcome in outcomes)
-    assert {outcome.ineligible_reason for outcome in outcomes} == {
-        "path_state_gap"
-    }
+    assert {outcome.ineligible_reason for outcome in outcomes} == {"path_state_gap"}
 
 
 def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
@@ -1207,13 +1183,16 @@ def test_round74_target_spec_rejects_unverified_or_oversampled_inputs() -> None:
         symbol: [0, 1_000_000_000_000] for symbol in SYMBOLS
     }
     assert spec_payload["funding_schedule_is_mandatory_and_hash_bound"] is True
-    assert _spec(
-        funding_boundaries={
-            "BTCUSDT": (3 * NS,),
-            "ETHUSDT": (),
-            "SOLUSDT": (),
-        }
-    ).spec_sha256 != restored.spec_sha256
+    assert (
+        _spec(
+            funding_boundaries={
+                "BTCUSDT": (3 * NS,),
+                "ETHUSDT": (),
+                "SOLUSDT": (),
+            }
+        ).spec_sha256
+        != restored.spec_sha256
+    )
     tampered = dict(spec_payload)
     tampered["reference_quote_notional"] = 101.0
     with pytest.raises(ValueError, match="payload digest"):

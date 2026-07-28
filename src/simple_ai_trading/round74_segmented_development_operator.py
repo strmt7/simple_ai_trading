@@ -114,19 +114,16 @@ class Round74SegmentedPreparedDevelopment:
             *self.tuning_subpartition.ai_qualification_run_ids,
         )
         prepared_training_run_ids = tuple(
-            next(iter(set(batch.run_id)))
-            for batch in self.prepared.training_batches
+            next(iter(set(batch.run_id))) for batch in self.prepared.training_batches
         )
         prepared_tuning_run_ids = tuple(
-            next(iter(set(batch.run_id)))
-            for batch in self.prepared.tuning_batches
+            next(iter(set(batch.run_id))) for batch in self.prepared.tuning_batches
         )
         if (
             self.schema_version
             != ROUND74_SEGMENTED_DEVELOPMENT_PREPARATION_SCHEMA_VERSION
             or self.partition_sha256 != self.training_split.parent_partition_sha256
-            or self.partition_sha256
-            != self.tuning_subpartition.parent_partition_sha256
+            or self.partition_sha256 != self.tuning_subpartition.parent_partition_sha256
             or self.tuning_roles.subpartition.subpartition_sha256
             != self.tuning_subpartition.subpartition_sha256
             or prepared_training_run_ids != training_run_ids
@@ -135,8 +132,7 @@ class Round74SegmentedPreparedDevelopment:
             != "segmented_optimization_training_runs"
             or self.prepared.scaler.fit_source_run_ids
             != self.training_split.optimization_run_ids
-            or self.prepared.scaler.fit_source_partition_sha256
-            != self.partition_sha256
+            or self.prepared.scaler.fit_source_partition_sha256 != self.partition_sha256
             or self.prepared.scaler.fit_source_selection_sha256
             != self.training_split.split_sha256
             or not isinstance(self.sealed_test_accessed, bool)
@@ -161,9 +157,7 @@ class Round74SegmentedPreparedDevelopment:
                 self.tuning_subpartition.subpartition_sha256
             ),
             "prepared_development_sha256": self.prepared.preparation_sha256,
-            "prepared_tuning_roles_sha256": (
-                self.tuning_roles.role_assignment_sha256
-            ),
+            "prepared_tuning_roles_sha256": (self.tuning_roles.role_assignment_sha256),
             "feature_scaler_sha256": self.prepared.scaler.scaler_sha256,
             "window_selection_policy": round74_segmented_window_policy(),
             "source_replay_passes": {
@@ -266,9 +260,7 @@ class Round74SegmentedQualifiedDevelopment:
             "schema_version": self.schema_version,
             "preparation_sha256": self.preparation_sha256,
             "development_bundle_sha256": self.policy.bundle_sha256,
-            "pretest_policy_sha256": (
-                self.policy.bundle.pretest_policy_sha256
-            ),
+            "pretest_policy_sha256": (self.policy.bundle.pretest_policy_sha256),
             "profile_results": {
                 profile: {
                     "ml_action_policy_accepted": (
@@ -296,16 +288,12 @@ class Round74SegmentedQualifiedDevelopment:
                     "qualification_sha256": (
                         None
                         if profile not in qualifications
-                        else qualifications[
-                            profile
-                        ].qualification.qualification_sha256
+                        else qualifications[profile].qualification.qualification_sha256
                     ),
                     "qualification_passed": (
                         False
                         if profile not in qualifications
-                        else qualifications[
-                            profile
-                        ].qualification.qualification_passed
+                        else qualifications[profile].qualification.qualification_passed
                     ),
                 }
                 for profile in self.requested_profiles
@@ -362,12 +350,8 @@ def prepare_round74_segmented_development(
         for entry in development_entries
         if entry.role == "tuning"
     }
-    training_assemblies = {
-        run_id: assemblies[run_id] for run_id in training_bindings
-    }
-    tuning_assemblies = {
-        run_id: assemblies[run_id] for run_id in tuning_bindings
-    }
+    training_assemblies = {run_id: assemblies[run_id] for run_id in training_bindings}
+    tuning_assemblies = {run_id: assemblies[run_id] for run_id in tuning_bindings}
     training_split = build_round74_segmented_training_split(
         partition,
         bindings_by_run_id=training_bindings,
@@ -477,7 +461,6 @@ def train_and_qualify_round74_segmented_development(
     target_assembly_by_run_id: Mapping[str, Round74SourceTargetAssembly],
     output_directory: str | Path,
     qualification_output_directory: str | Path,
-    same_entry_latency_budget_ns: int,
     compute_backend: str = "auto",
     config: Round74EventTrainingConfig | None = None,
     inference_minibatch_rows: int = 128,
@@ -537,7 +520,6 @@ def train_and_qualify_round74_segmented_development(
                     qualification_directory
                     / f"round74-ai-pretest-qualification-{profile}.json"
                 ),
-                same_entry_latency_budget_ns=same_entry_latency_budget_ns,
                 compute_backend=compute_backend,
                 inference_minibatch_rows=inference_minibatch_rows,
             ),

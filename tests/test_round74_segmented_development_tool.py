@@ -45,8 +45,6 @@ def test_segmented_tool_reports_dependency_failure_without_authority(
             str(model_output),
             "--qualification-output",
             str(qualification_output),
-            "--ai-same-entry-latency-budget-ns",
-            "1000000",
         ]
     )
 

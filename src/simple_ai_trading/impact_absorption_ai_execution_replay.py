@@ -14,6 +14,7 @@ from .impact_absorption_ai_uplift import (
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     Round74AIQualificationPopulation,
+    round74_ai_action_validity_latency_ns,
 )
 from .impact_absorption_event_action_policy import (
     Round74ActionInferenceContext,
@@ -27,7 +28,6 @@ from .impact_absorption_event_sequence import (
     Round74ReplayObservation,
 )
 from .impact_absorption_event_targets import (
-    ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS,
     Round74EventExecutionOverride,
     Round74EventTargetAnchor,
     Round74EventTargetEngine,
@@ -37,7 +37,7 @@ from .impact_absorption_target_assembly import Round74SourceTargetAssembly
 
 
 ROUND74_AI_EXECUTION_REPLAY_PLAN_SCHEMA_VERSION = (
-    "round-074-ai-execution-replay-plan-v2"
+    "round-074-ai-execution-replay-plan-v3"
 )
 ROUND74_AI_EXECUTION_PRE_REPLAY_STATUSES = frozenset(
     {
@@ -110,7 +110,7 @@ class Round74AIExecutionReplayInstruction:
     model_manifest_sha256: str
     runtime_status: str
     effective_review_latency_ns: int
-    same_entry_latency_eligible: bool
+    action_latency_eligible: bool
     requested_size_multiplier_bps: int
     pre_replay_status: str
     partition_sha256: str
@@ -155,7 +155,13 @@ class Round74AIExecutionReplayInstruction:
             or isinstance(self.effective_review_latency_ns, bool)
             or not isinstance(self.effective_review_latency_ns, int)
             or self.effective_review_latency_ns < 0
-            or not isinstance(self.same_entry_latency_eligible, bool)
+            or not isinstance(self.action_latency_eligible, bool)
+            or self.action_latency_eligible
+            != (
+                self.runtime_status == "accepted"
+                and self.effective_review_latency_ns
+                <= round74_ai_action_validity_latency_ns(self.horizon_seconds)
+            )
             or isinstance(self.requested_size_multiplier_bps, bool)
             or not isinstance(self.requested_size_multiplier_bps, int)
             or not 0 <= self.requested_size_multiplier_bps <= 10_000
@@ -166,8 +172,7 @@ class Round74AIExecutionReplayInstruction:
             if (
                 self.runtime_status != "accepted"
                 or self.requested_size_multiplier_bps <= 0
-                or self.effective_review_latency_ns
-                > ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+                or not self.action_latency_eligible
             ):
                 raise ValueError("Round 74 AI replay-required instruction differs")
         elif self.pre_replay_status == "runtime_veto":
@@ -185,8 +190,7 @@ class Round74AIExecutionReplayInstruction:
         elif (
             self.runtime_status != "accepted"
             or self.requested_size_multiplier_bps <= 0
-            or self.effective_review_latency_ns
-            <= ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
+            or self.action_latency_eligible
         ):
             raise ValueError("Round 74 AI expired-review instruction differs")
 
@@ -219,14 +223,11 @@ def build_round74_ai_execution_replay_instructions(
     """Bind selected actions to raw capture anchors without reading targets."""
 
     action_selection.validate()
-    selected_trace = (
-        _selected_trace(action_selection) if trace is None else trace
-    )
+    selected_trace = _selected_trace(action_selection) if trace is None else trace
     selected_trace.validate()
     if (
         action_selection.selected_threshold_score is None
-        or selected_trace.threshold_score
-        != action_selection.selected_threshold_score
+        or selected_trace.threshold_score != action_selection.selected_threshold_score
     ):
         raise ValueError("Round 74 AI execution trace threshold differs")
     selected_contexts = tuple(contexts)
@@ -250,8 +251,7 @@ def build_round74_ai_execution_replay_instructions(
         review.validate()
     if (
         len(review_rows) != selected_trace.metrics.trades
-        or tuple(review.row_index for review in review_rows)
-        != selected_trace.row_index
+        or tuple(review.row_index for review in review_rows) != selected_trace.row_index
         or len({review.row_index for review in review_rows}) != len(review_rows)
     ):
         raise ValueError("Round 74 AI execution review coverage differs")
@@ -271,8 +271,7 @@ def build_round74_ai_execution_replay_instructions(
             or context.symbol[local_index] != selected_trace.symbol[trace_index]
             or review.symbol != selected_trace.symbol[trace_index]
             or review.side != selected_trace.side[trace_index]
-            or review.horizon_seconds
-            != selected_trace.horizon_seconds[trace_index]
+            or review.horizon_seconds != selected_trace.horizon_seconds[trace_index]
             or review.pretest_policy_sha256 != action_selection.pretest_policy_sha256
             or review.probability_calibration_sha256
             != action_selection.probability_calibration_sha256
@@ -286,10 +285,7 @@ def build_round74_ai_execution_replay_instructions(
             multiplier = review.decision.size_multiplier_bps
             if multiplier == 0:
                 status = "ai_veto"
-            elif (
-                review.effective_review_latency_ns
-                > ROUND74_EVENT_TARGET_MAXIMUM_ADDITIONAL_ENTRY_LATENCY_NS
-            ):
+            elif not review.action_latency_eligible:
                 status = "historical_review_expired"
             else:
                 status = "replay_required"
@@ -311,7 +307,7 @@ def build_round74_ai_execution_replay_instructions(
             model_manifest_sha256=review.model_manifest_sha256,
             runtime_status=review.runtime_status,
             effective_review_latency_ns=review.effective_review_latency_ns,
-            same_entry_latency_eligible=review.same_entry_latency_eligible,
+            action_latency_eligible=review.action_latency_eligible,
             requested_size_multiplier_bps=multiplier,
             pre_replay_status=status,
             partition_sha256=partition_sha256,
@@ -778,13 +774,9 @@ class Round74AIQualificationStoreExecutionReplayProvider:
         from .impact_absorption_store import ImpactAbsorptionStore
 
         if not isinstance(self.store, ImpactAbsorptionStore):
-            raise TypeError(
-                "Round 74 AI qualification replay requires an event store"
-            )
+            raise TypeError("Round 74 AI qualification replay requires an event store")
         if not self.store.read_only:
-            raise ValueError(
-                "Round 74 AI qualification replay requires read-only data"
-            )
+            raise ValueError("Round 74 AI qualification replay requires read-only data")
         self.partition.validate()
         self.qualification_population.validate()
         entries = tuple(
@@ -802,9 +794,7 @@ class Round74AIQualificationStoreExecutionReplayProvider:
                 for run_id in self.qualification_population.run_ids
             )
         ):
-            raise ValueError(
-                "Round 74 AI qualification replay population differs"
-            )
+            raise ValueError("Round 74 AI qualification replay population differs")
         object.__setattr__(
             self,
             "assembly_by_run_id",
@@ -833,9 +823,7 @@ class Round74AIQualificationStoreExecutionReplayProvider:
             or len(set(manifests)) != 2
             or any(_SHA256.fullmatch(value) is None for value in manifests)
         ):
-            raise ValueError(
-                "Round 74 AI qualification replay identity differs"
-            )
+            raise ValueError("Round 74 AI qualification replay identity differs")
         return _replay_store_instruction_panel(
             store=self.store,
             partition=self.partition,

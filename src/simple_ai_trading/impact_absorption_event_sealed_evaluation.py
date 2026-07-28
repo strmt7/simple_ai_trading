@@ -24,6 +24,7 @@ import torch
 
 from .compute import require_backend, resolve_backend, torch_device_for_backend
 from .impact_absorption_ai_uplift import (
+    ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
     Round74AIExecutionReplayEvidence,
     Round74AIPairedReviewEvidence,
     Round74AIPretestQualificationPanel,
@@ -77,7 +78,7 @@ from .impact_absorption_event_targets import (
 from .impact_absorption_event_training import load_round74_pretest_policy
 
 
-ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v16"
+ROUND74_SEALED_EVALUATION_SCHEMA_VERSION = "round-074-sealed-evaluation-v17"
 ROUND74_TARGET_FREE_INFERENCE_SCHEMA_VERSION = (
     "round-074-target-free-candidate-inference-v3"
 )
@@ -1023,9 +1024,8 @@ class Round74SealedAIOverlay:
     reviewed_candidates: int
     runtime_accepted_reviews: int
     runtime_success_rate: float
-    same_entry_latency_budget_ns: int
-    same_entry_latency_eligible_reviews: int
-    same_entry_latency_eligibility_rate: float
+    action_latency_eligible_reviews: int
+    action_latency_eligibility_rate: float
     exact_replay_required_reviews: int
     exact_replay_completed_reviews: int
     exact_replay_target_ineligible_reviews: int
@@ -1084,7 +1084,7 @@ class Round74SealedAIOverlay:
                 for value in (
                     self.reviewed_candidates,
                     self.runtime_accepted_reviews,
-                    self.same_entry_latency_eligible_reviews,
+                    self.action_latency_eligible_reviews,
                     self.exact_replay_required_reviews,
                     self.exact_replay_completed_reviews,
                     self.exact_replay_target_ineligible_reviews,
@@ -1095,16 +1095,13 @@ class Round74SealedAIOverlay:
                 )
             )
             or self.runtime_accepted_reviews > self.reviewed_candidates
-            or self.same_entry_latency_eligible_reviews > self.runtime_accepted_reviews
+            or self.action_latency_eligible_reviews > self.runtime_accepted_reviews
             or self.exact_replay_completed_reviews != self.exact_replay_required_reviews
             or self.exact_replay_required_reviews
             > self.strategy_metrics.paired_observations
             or self.exact_replay_target_ineligible_reviews
             > self.exact_replay_completed_reviews
             or self.delayed_overlap_vetoes > self.exact_replay_completed_reviews
-            or isinstance(self.same_entry_latency_budget_ns, bool)
-            or not isinstance(self.same_entry_latency_budget_ns, int)
-            or self.same_entry_latency_budget_ns <= 0
             or self.retained_trades + self.vetoed_trades
             != self.strategy_metrics.paired_observations
             or self.reduced_trades > self.retained_trades
@@ -1139,7 +1136,7 @@ class Round74SealedAIOverlay:
                 abs_tol=1e-12,
             )
             or not 0.0 <= self.runtime_success_rate <= 1.0
-            or not 0.0 <= self.same_entry_latency_eligibility_rate <= 1.0
+            or not 0.0 <= self.action_latency_eligibility_rate <= 1.0
             or not 0.0 <= self.retained_trade_ratio <= 1.0
             or (
                 self.reviewed_candidates > 0
@@ -1151,9 +1148,8 @@ class Round74SealedAIOverlay:
                         abs_tol=1e-12,
                     )
                     or not math.isclose(
-                        self.same_entry_latency_eligibility_rate,
-                        self.same_entry_latency_eligible_reviews
-                        / self.reviewed_candidates,
+                        self.action_latency_eligibility_rate,
+                        self.action_latency_eligible_reviews / self.reviewed_candidates,
                         rel_tol=1e-12,
                         abs_tol=1e-12,
                     )
@@ -1212,13 +1208,9 @@ class Round74SealedAIOverlay:
             "reviewed_candidates": self.reviewed_candidates,
             "runtime_accepted_reviews": self.runtime_accepted_reviews,
             "runtime_success_rate": self.runtime_success_rate,
-            "same_entry_latency_budget_ns": self.same_entry_latency_budget_ns,
-            "same_entry_latency_eligible_reviews": (
-                self.same_entry_latency_eligible_reviews
-            ),
-            "same_entry_latency_eligibility_rate": (
-                self.same_entry_latency_eligibility_rate
-            ),
+            "action_validity_maximum_ns": ROUND74_AI_ACTION_VALIDITY_MAXIMUM_NS,
+            "action_latency_eligible_reviews": (self.action_latency_eligible_reviews),
+            "action_latency_eligibility_rate": (self.action_latency_eligibility_rate),
             "exact_replay_required_reviews": self.exact_replay_required_reviews,
             "exact_replay_completed_reviews": self.exact_replay_completed_reviews,
             "exact_replay_target_ineligible_reviews": (
@@ -1238,9 +1230,11 @@ class Round74SealedAIOverlay:
             "uplift_gate_passed": self.uplift_gate_passed,
             "gate_reasons": list(self.gate_reasons),
             "may_create_or_replace_ml_actions": False,
-            "same_entry_fill_requires_measured_latency_eligibility": False,
-            "same_entry_latency_includes_historical_queue_delay": True,
-            "same_entry_latency_is_diagnostic_only": True,
+            "action_validity_policy": (
+                "minimum_of_forecast_horizon_and_target_maximum_delayed_entry"
+            ),
+            "action_latency_includes_historical_queue_delay": True,
+            "expired_action_policy": "paired_zero_exposure_not_observation_deletion",
             "latency_adjusted_replay_performed": True,
             "baseline_payoff_scaled_without_rewalking_book": False,
         }
@@ -1931,9 +1925,7 @@ class Round74TargetFreeCandidateInference:
         ordered_run_ids: list[str] = []
         feature_rows: set[str] = set()
         prior_key: tuple[int, str, int, int, int, str, int] | None = None
-        required_role = (
-            "test" if self.data_scope == "sealed_test" else "tuning"
-        )
+        required_role = "test" if self.data_scope == "sealed_test" else "tuning"
         for context, output, candidates in zip(
             self.contexts,
             self.model_outputs,
@@ -1988,9 +1980,7 @@ class Round74TargetFreeCandidateInference:
                     ordered_run_ids.append(run_id)
             prior_key = last_key
         expected_run_ids = (
-            self.expected_run_ids
-            if self.expected_run_ids
-            else tuple(ordered_run_ids)
+            self.expected_run_ids if self.expected_run_ids else tuple(ordered_run_ids)
         )
         if (
             tuple(ordered_run_ids) != expected_run_ids
@@ -2034,9 +2024,7 @@ class Round74TargetFreeCandidateInference:
                 if self.expected_run_ids
                 else tuple(
                     dict.fromkeys(
-                        run_id
-                        for context in self.contexts
-                        for run_id in context.run_id
+                        run_id for context in self.contexts for run_id in context.run_id
                     )
                 )
             ),
@@ -2201,9 +2189,7 @@ def infer_round74_target_free_candidates(
         optimization_population=action_selection.optimization_population,
         data_scope=selected_scope,
         expected_run_ids=(
-            selected_expected_run_ids
-            if selected_expected_run_ids
-            else observed_run_ids
+            selected_expected_run_ids if selected_expected_run_ids else observed_run_ids
         ),
     )
     result.validate()
@@ -2551,11 +2537,8 @@ def _ai_overlay(
         if all_reviews
         else 0.0
     )
-    latency_budgets = {value.same_entry_latency_budget_ns for value in all_reviews}
-    if len(latency_budgets) != 1:
-        raise ValueError("Round 74 sealed AI latency budget differs")
     latency_eligible_reviews = sum(
-        value.same_entry_latency_eligible for value in all_reviews
+        value.action_latency_eligible for value in all_reviews
     )
     latency_eligibility_rate = (
         latency_eligible_reviews / len(all_reviews) if all_reviews else 0.0
@@ -2599,9 +2582,8 @@ def _ai_overlay(
             value.runtime_status == "accepted" for value in all_reviews
         ),
         runtime_success_rate=runtime_success_rate,
-        same_entry_latency_budget_ns=next(iter(latency_budgets)),
-        same_entry_latency_eligible_reviews=latency_eligible_reviews,
-        same_entry_latency_eligibility_rate=latency_eligibility_rate,
+        action_latency_eligible_reviews=latency_eligible_reviews,
+        action_latency_eligibility_rate=latency_eligibility_rate,
         exact_replay_required_reviews=sum(
             value.requested_size_multiplier_bps > 0
             and value.status

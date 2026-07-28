@@ -839,8 +839,7 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         for index, entry in enumerate(entries[:5])
     }
     assemblies = {
-        run_id: object.__new__(Round74SourceTargetAssembly)
-        for run_id in bindings
+        run_id: object.__new__(Round74SourceTargetAssembly) for run_id in bindings
     }
     label_passes: list[tuple[str, tuple[str, ...]]] = []
 
@@ -896,9 +895,7 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         ("training", (training_run_id,)),
         ("tuning", tuning_run_ids),
     ]
-    assert result.tuning_roles.ai_qualification_batches == (
-        batches[tuning_run_ids[3]],
-    )
+    assert result.tuning_roles.ai_qualification_batches == (batches[tuning_run_ids[3]],)
     assert result.as_dict()["source_replay_passes"]["sealed_test_runs"] == 0
 
     trained_policy = object()
@@ -931,9 +928,10 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
     )
     assert len(training_calls) == 1
     assert training_calls[0]["config"].execution_mode == "segmented_cohort"
-    assert tuple(
-        training_calls[0]["execution_target_assembly_by_run_id"]
-    ) == tuning_subpartition.policy_selection_run_ids
+    assert (
+        tuple(training_calls[0]["execution_target_assembly_by_run_id"])
+        == tuning_subpartition.policy_selection_run_ids
+    )
     with pytest.raises(
         ValueError,
         match="segmented development requires segmented mode",
@@ -1027,7 +1025,6 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         target_assembly_by_run_id=assemblies,
         output_directory="unused",
         qualification_output_directory="qualification",
-        same_entry_latency_budget_ns=1,
     )
 
     qualified.validate()
@@ -1043,8 +1040,7 @@ def test_segmented_development_preparation_excludes_test_and_uses_one_label_pass
         tuning_subpartition.ai_qualification_run_ids
     )
     assert [
-        kwargs["qualification_output_path"].name
-        for kwargs in qualification_calls
+        kwargs["qualification_output_path"].name for kwargs in qualification_calls
     ] == [
         "round74-ai-pretest-qualification-conservative.json",
         "round74-ai-pretest-qualification-aggressive.json",
