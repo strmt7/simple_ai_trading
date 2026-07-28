@@ -1,0 +1,160 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v85",
+  "created_at_utc": "2026-07-28T11:57:34Z",
+  "implementation_git_commit": "151cc2bd9347d1cbf5291ccc06c11d9e38e32ac7",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v84.json",
+    "file_sha256": "efb5538be8e8d8f47b94e301f3f7f12fbcc67588164ccd5f9eb1155c884d9fdb",
+    "design_sha256": "f7d256120bfaef6d518ee6a12f256a9559ffbd0e11b0adfaba62ba46857a7f04",
+    "unchanged_except_declared_delta": true
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "event_model": {
+      "path": "src/simple_ai_trading/impact_absorption_event_model.py",
+      "sha256": "2fd4925d78fca80a422d386bdcd09cdbd70d02de73ddde66cc44e701da4f076c",
+      "model_schema_version": "round-074-event-payoff-model-v6"
+    },
+    "event_training": {
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py",
+      "sha256": "4f9023c8e7ac70c1d8f07ee103e7103ea7e34a67f225e0595b7dcab4c2780762",
+      "training_schema_version": "round-074-event-training-v21",
+      "pretest_policy_schema_version": "round-074-event-pretest-policy-v20",
+      "target_loss_scale_schema_version": "round-074-target-loss-scale-v1"
+    },
+    "tests": [
+      {
+        "path": "tests/test_impact_absorption_event_model.py",
+        "sha256": "56f44a157f296200527f2d452842f14168fc9e6c6fc2624f83ed8ae9b3a223c2"
+      },
+      {
+        "path": "tests/test_impact_absorption_event_training.py",
+        "sha256": "ab4f9844370ec59f18ca55d37182a3adf45491fbf3e60eb45ec8fa5976378557"
+      }
+    ]
+  },
+  "research_basis": [
+    {
+      "title": "A Multi-Task Learning Approach to Linear Multivariate Forecasting",
+      "url": "https://proceedings.mlr.press/v258/nochumsohn25a.html",
+      "bounded_use": "The reported use of prediction-error-scaled gradients motivates preventing differently scaled forecasting tasks from dominating a shared objective; it does not validate this implementation."
+    },
+    {
+      "title": "DeepAR: Probabilistic Forecasting with Autoregressive Recurrent Networks",
+      "url": "https://arxiv.org/abs/1704.04110",
+      "bounded_use": "Global probabilistic forecasting across related series motivates scale-aware training while preserving forecasts in their original units."
+    },
+    {
+      "title": "TLOB: A Novel Transformer Model with Dual Attention for Stock Price Trend Prediction with Limit Order Book Data",
+      "url": "https://arxiv.org/abs/2502.15757",
+      "bounded_use": "Its discussion of horizon bias, declining predictability, and spread-aware performance deterioration motivates explicit horizon treatment and retaining after-cost financial gates."
+    },
+    {
+      "title": "Deep Limit Order Book Forecasting",
+      "url": "https://arxiv.org/abs/2403.09267",
+      "bounded_use": "The distinction between forecasting accuracy and actionable complete transactions supports keeping model-loss selection separate from the later execution-aware financial test."
+    }
+  ],
+  "target_loss_scale_contract": {
+    "fit_role": "training",
+    "tuning_targets_used": false,
+    "test_targets_used": false,
+    "group_key": "symbol_x_horizon_seconds_x_side",
+    "symbols": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "horizons_seconds": [
+      1,
+      5,
+      30,
+      300
+    ],
+    "sides": [
+      "long",
+      "short"
+    ],
+    "group_count": 24,
+    "eligible_targets_only": true,
+    "payoff_scale": "maximum of empirical interquartile range, median absolute target, and absolute target median",
+    "maximum_adverse_excursion_scale": "maximum of empirical interquartile range, median absolute target, and absolute target median",
+    "degenerate_group_fallback": "training-population empirical robust scale",
+    "representative_mode_missing_group_policy": "reject",
+    "preflight_missing_group_policy": "training-population fallback with explicit group identity",
+    "positive_scale_required": true,
+    "finite_scale_required": true,
+    "training_batch_digests_sorted_unique_and_hash_bound": true,
+    "scale_artifact_reload_verified": true
+  },
+  "proper_loss_contract": {
+    "payoff_quantile_pinball_divided_by_group_scale": true,
+    "maximum_adverse_excursion_pinball_divided_by_group_scale": true,
+    "positive_payoff_bce_scaled": false,
+    "adverse_selection_bce_scaled": false,
+    "regime_unpredictability_bce_scaled": false,
+    "forecast_output_units": "basis_points",
+    "target_output_units_changed": false,
+    "action_policy_units_changed": false,
+    "financial_replay_units_changed": false,
+    "positive_group_scale_is_prediction_independent": true,
+    "proper_scoring_within_each_group_preserved": true,
+    "candidate_panel_changed": false,
+    "candidate_promotion_gate_changed": false,
+    "sealed_financial_gate_changed": false
+  },
+  "efficiency_contract": {
+    "scale_fit_passes_over_training_targets": 1,
+    "scale_cells": 24,
+    "scale_validation_boundary": [
+      "fit",
+      "reload",
+      "peer_training",
+      "model_evaluation"
+    ],
+    "per_minibatch_full_scale_revalidation": false,
+    "row_scale_materialization_dtype": "float32",
+    "stored_scale_dtype": "float64",
+    "gpu_model_forward_changed": false
+  },
+  "verification": {
+    "connected_tests_passed": 91,
+    "distributional_component_inverse_scale_test_passed": true,
+    "classification_component_invariance_test_passed": true,
+    "nonpositive_scale_rejection_test_passed": true,
+    "training_only_fit_test_passed": true,
+    "representative_missing_group_rejection_test_passed": true,
+    "target_scale_reload_test_passed": true,
+    "pretest_policy_binding_and_reload_test_passed": true,
+    "calibration_action_sealed_ledger_contract_tests_passed": true,
+    "ruff_check_passed": true,
+    "ruff_format_passed": true,
+    "git_diff_check_passed": true,
+    "full_repository_suite_run": false
+  },
+  "evidence_boundary": {
+    "synthetic_data_only": true,
+    "real_prospective_cohort_capture_active_but_not_used_for_model_evaluation": true,
+    "real_cohort_training_performed": false,
+    "financial_backtest_performed": false,
+    "target_scale_improves_gradient_comparability": true,
+    "target_scale_improves_predictive_accuracy_claim": false,
+    "profitability_or_edge_inference_permitted": false,
+    "drawdown_inference_permitted": false,
+    "ai_model_evaluated": false,
+    "ai_uplift_inference_permitted": false
+  },
+  "authority": {
+    "training_only_target_scale_implementation": true,
+    "pretest_policy_scale_binding_implementation": true,
+    "representative_market_evidence": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_performance_claim": false,
+    "ai_uplift_claim": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "8c17aefcc6b521b15f7653bdbaf1654e1b89a88a659d434740c8e30cf742abfe"
+}
