@@ -1,0 +1,46 @@
+{
+  "schema_version": "round-074-causal-pretraining-directml-preflight-v1",
+  "observed_at_utc": "2026-07-28T14:33:45.6881685Z",
+  "implementation_git_commit": "b0579d9ddcad3277c7e78b7efe1fab9411d3596d",
+  "design_git_commit": "eed22c6",
+  "design_sha256": "ef4baaf2d0bdc76cff375fab95179c4e8cfed90124a1a779ff56eafdca17b364",
+  "host": {
+    "gpu_name": "AMD Radeon RX 9070 XT",
+    "gpu_driver_version": "32.0.31021.5001",
+    "reported_adapter_ram_used": false,
+    "reported_adapter_ram_omission_reason": "Win32_VideoController AdapterRAM is a 32-bit value and did not represent this adapter reliably",
+    "torch_version": "2.4.1+cpu",
+    "torch_directml_version": "0.2.5.dev240914",
+    "numpy_version": "2.2.6",
+    "torch_device": "privateuseone:0"
+  },
+  "preflight": {
+    "architecture": "causal_event_tcn",
+    "input_source": "deterministic synthetic contract fixture",
+    "capture_run_count": 1,
+    "input_rows": 450,
+    "sequence_length": 128,
+    "feature_count": 75,
+    "maximum_epochs": 1,
+    "epochs_completed": 1,
+    "best_epoch": 1,
+    "minibatch_rows": 128,
+    "encoder_state_changed": true,
+    "supervised_targets_used": false,
+    "completed_without_exception": true,
+    "observed_cpu_fallback_warning": false
+  },
+  "evidence_boundary": {
+    "directml_operator_compatibility_only": true,
+    "real_market_data_used": false,
+    "real_cohort_pretraining_performed": false,
+    "predictive_accuracy_measured": false,
+    "calibration_measured": false,
+    "financial_backtest_performed": false,
+    "profitability_or_edge_claim": false,
+    "drawdown_inference_permitted": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  }
+}
