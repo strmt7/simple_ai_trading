@@ -1,0 +1,101 @@
+{
+  "schema_version": "round-074-event-sequence-model-design-v98",
+  "created_at_utc": "2026-07-28T21:37:59.4649176Z",
+  "implementation_git_commit": "22b87b9d620511fba93687bf0caede05bd0b400f",
+  "base_design": {
+    "path": "docs/model-research/action-value/round-074-event-sequence-model-design-v97.json",
+    "file_sha256": "6be8ae0ad7d1846478d299e1d44cd66bbb79b6346897105da5bf10f2296aac08",
+    "design_sha256": "1cbdff740693870e96ce4dd16d82b3100781a72f32a60350ecb08a07cb727f13",
+    "unchanged_except_declared_delta": true
+  },
+  "local_ai_design": {
+    "path": "docs/model-research/action-value/round-074-local-ai-review-design-v65.json",
+    "file_sha256": "47baa14786ed2f9f57d3b5a13eb9ceeaf2edd0a2a83baae279f09ea69537015e",
+    "design_sha256": "23fc9f0f4697deab0707d6543bb997cf299558c6a6258de85da1c2bceaa83917"
+  },
+  "source_binding": {
+    "file_sha256_normalization": "git_blob_bytes",
+    "qualification_operator_path": "src/simple_ai_trading/round74_ai_qualification_operator.py",
+    "qualification_operator_sha256": "8c61f29ccb9d987499b6fcb4eddc10bb4e288c03a34c0aa231f9d981f957ae5a",
+    "ai_uplift_path": "src/simple_ai_trading/impact_absorption_ai_uplift.py",
+    "ai_uplift_sha256": "7d714b205e5425197c2521324378ee05090e1eaf91bdca222922fc86f8d3df14",
+    "sealed_evaluation_path": "src/simple_ai_trading/impact_absorption_event_sealed_evaluation.py",
+    "sealed_evaluation_sha256": "96a2218281eaca2075610f4ba12d5bc362f00c05c82df6692160b49616ced81e"
+  },
+  "declared_delta": {
+    "disjoint_ai_qualification_operator_added": true,
+    "target_free_inference_scopes_are_explicit": true,
+    "frozen_ml_threshold_reused_without_reselection": true,
+    "multiple_trades_per_run_supported": true,
+    "inactive_expected_runs_preserved_in_paired_statistics": true,
+    "sealed_action_selection_digest_preserved_during_replay": true,
+    "model_training_or_architecture_changed": false,
+    "feature_names_or_values_changed": false,
+    "supervised_targets_changed": false,
+    "proper_loss_changed": false,
+    "action_profile_financial_gates_changed": false,
+    "sealed_test_consumed": false
+  },
+  "selection_order": [
+    "fit candidate models on training optimization runs",
+    "early-stop on disjoint training early-stopping runs",
+    "compare predeclared components on tuning model-selection runs",
+    "fit calibration on disjoint calibration runs",
+    "select the ML action threshold on disjoint policy-selection runs",
+    "run both pinned AI overlays on disjoint AI-qualification runs",
+    "persist and reload the two-model qualification",
+    "reserve and read the one-use sealed test"
+  ],
+  "financial_semantics": {
+    "action_count_unit": "executed nonoverlapping position",
+    "multiple_positions_per_capture_run_permitted": true,
+    "minimum_trade_count_is_a_gate_not_a_forced_trade_target": true,
+    "ai_can_create_new_positions": false,
+    "ai_can_change_side_or_horizon": false,
+    "ai_can_increase_ml_size": false,
+    "baseline_and_ai_use_exact_delayed_level_2_execution_outcomes": true
+  },
+  "verification": {
+    "connected_contract_tests_passed": 80,
+    "multi_trade_qualification_operator_test_passed": true,
+    "sealed_digest_regression_test_passed": true,
+    "tuning_only_exact_replay_provider_test_passed": true,
+    "ruff_lint_passed": true,
+    "python_compilation_passed": true,
+    "git_diff_check_passed": true,
+    "directml_training_path_changed": false,
+    "full_representative_training_performed": false,
+    "sealed_test_evaluated": false
+  },
+  "campaign_isolation": {
+    "prospective_campaign_plan_sha256": "6c0e67a1f61247308f43112a2adcef169055abd099eb3c17a544b29372ea6c60",
+    "confirmed_admitted_training_epochs_at_document_time": 25,
+    "first_scheduled_tuning_slot": 514,
+    "tuning_data_observed_at_design_time": false,
+    "campaign_database_opened_by_model_work": false,
+    "campaign_source_files_changed": false,
+    "development_branch_only": true,
+    "live_or_testnet_orders_submitted": false
+  },
+  "evidence_boundary": {
+    "implementation_complete_for_declared_delta": true,
+    "representative_training_data_complete": false,
+    "model_or_ai_trained_on_representative_cohort": false,
+    "predictive_accuracy_evaluated": false,
+    "probability_calibration_evaluated": false,
+    "after_cost_backtest_performed": false,
+    "financial_edge_tested": false,
+    "profitability_claim": false,
+    "drawdown_claim": false,
+    "ai_uplift_claim": false
+  },
+  "authority": {
+    "model_selection_authority": false,
+    "calibration_authority": false,
+    "sealed_test_authority": false,
+    "paper_trading_authority": false,
+    "testnet_trading_authority": false,
+    "live_trading_authority": false
+  },
+  "design_sha256": "41e0cec7d74bfb61159b4af870e59ee778bb5872e17266e1a13fccf416937d3e"
+}
