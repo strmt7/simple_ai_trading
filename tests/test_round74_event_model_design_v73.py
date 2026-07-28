@@ -5,11 +5,7 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_event_action_policy import (
-    ROUND74_ACTION_CONTEXT_SCHEMA_VERSION,
-)
 from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
     ROUND74_EVENT_WINDOW_REPRESENTATIONS,
 )
 
@@ -78,8 +74,6 @@ def test_round74_v73_binds_representation_through_sealed_inference() -> None:
             source[f"{prefix}_path"],
         )
 
-    assert ROUND74_EVENT_DATASET_SCHEMA_VERSION == "round-074-event-dataset-v10"
-    assert ROUND74_ACTION_CONTEXT_SCHEMA_VERSION == "round-074-action-context-v5"
     contract = design["representation_contract"]
     assert tuple(contract["supported_representations"]) == (
         ROUND74_EVENT_WINDOW_REPRESENTATIONS

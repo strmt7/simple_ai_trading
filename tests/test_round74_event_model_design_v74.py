@@ -5,16 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.impact_absorption_event_dataset import (
-    ROUND74_EVENT_DATASET_SCHEMA_VERSION,
-)
-from simple_ai_trading.impact_absorption_event_training import (
-    ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION,
-    ROUND74_EVENT_TRAINING_SCHEMA_VERSION,
-)
-from simple_ai_trading.round74_event_model_operator import (
-    ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION,
-)
 REPOSITORY = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
     REPOSITORY
@@ -53,6 +43,16 @@ def _git_file_sha256(commit: str, relative_path: str) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _git_file_text(commit: str, relative_path: str) -> str:
+    completed = subprocess.run(  # nosec B603
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=REPOSITORY,
+        check=True,
+        capture_output=True,
+    )
+    return completed.stdout.decode("ascii")
+
+
 def test_round74_v74_binds_one_pass_fixed_architecture_comparison() -> None:
     design = json.loads(DESIGN_PATH.read_text(encoding="ascii"))
     claimed = design.pop("design_sha256")
@@ -75,13 +75,36 @@ def test_round74_v74_binds_one_pass_fixed_architecture_comparison() -> None:
             source[f"{prefix}_path"],
         )
 
-    assert ROUND74_EVENT_DATASET_SCHEMA_VERSION == "round-074-event-dataset-v10"
-    assert ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION == (
-        "round-074-event-model-operator-v5"
+    implementation_commit = design["implementation_git_commit"]
+    event_dataset = _git_file_text(
+        implementation_commit,
+        source["event_dataset_path"],
     )
-    assert ROUND74_EVENT_TRAINING_SCHEMA_VERSION == "round-074-event-training-v17"
-    assert ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION == (
-        "round-074-event-pretest-policy-v16"
+    model_operator = _git_file_text(
+        implementation_commit,
+        source["model_operator_path"],
+    )
+    event_training = _git_file_text(
+        implementation_commit,
+        source["event_training_path"],
+    )
+    assert (
+        'ROUND74_EVENT_DATASET_SCHEMA_VERSION = "round-074-event-dataset-v10"'
+        in event_dataset
+    )
+    assert (
+        'ROUND74_EVENT_MODEL_OPERATOR_SCHEMA_VERSION = '
+        '"round-074-event-model-operator-v5"'
+        in model_operator
+    )
+    assert (
+        'ROUND74_EVENT_TRAINING_SCHEMA_VERSION = "round-074-event-training-v17"'
+        in event_training
+    )
+    assert (
+        'ROUND74_EVENT_PRETEST_POLICY_SCHEMA_VERSION = '
+        '"round-074-event-pretest-policy-v16"'
+        in event_training
     )
     replay = design["one_pass_matched_replay"]
     assert replay["raw_observation_iterator_calls_per_run"] == 1

@@ -6,7 +6,6 @@ from pathlib import Path
 import subprocess  # nosec B404
 
 from simple_ai_trading.impact_absorption_event_sequence import (
-    ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     Round74EventWindowAccumulator,
 )
 
@@ -55,7 +54,7 @@ def test_round74_v71_binds_one_online_and_replay_window_path() -> None:
         source["event_sequence_path"],
     )
     assert source["event_sequence_schema_version"] == (
-        ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION
+        "round-074-causal-event-sequence-v4"
     )
     assert Round74EventWindowAccumulator.__module__.endswith(
         "impact_absorption_event_sequence"

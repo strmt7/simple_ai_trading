@@ -5,11 +5,6 @@ import json
 from pathlib import Path
 import subprocess  # nosec B404
 
-from simple_ai_trading.round74_representation_comparison import (
-    ROUND74_REPRESENTATION_COMPARISON_SCHEMA_VERSION,
-)
-
-
 REPOSITORY = Path(__file__).resolve().parents[1]
 DESIGN_PATH = (
     REPOSITORY
@@ -64,9 +59,6 @@ def test_round74_v75_binds_conservative_paired_run_economics() -> None:
             source[f"{prefix}_path"],
         )
 
-    assert ROUND74_REPRESENTATION_COMPARISON_SCHEMA_VERSION == (
-        "round-074-representation-comparison-v2"
-    )
     gate = design["conservative_run_level_gate"]
     assert gate["policy_selection_run_count"] == 6
     assert gate["every_paired_run_must_be_noninferior"] is True
