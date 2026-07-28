@@ -51,6 +51,7 @@ from simple_ai_trading.impact_absorption_event_sequence import (
     ROUND74_EVENT_DEFAULT_MAX_WINDOW_GAP_NS,
     ROUND74_EVENT_FEATURE_NAMES,
     ROUND74_EVENT_FEATURE_NAMES_SHA256,
+    ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS,
     ROUND74_EVENT_SEQUENCE_SCHEMA_VERSION,
     ROUND74_EVENT_STATE_HALF_LIVES_SECONDS,
     ROUND74_EVENT_SYMBOLS,
@@ -121,6 +122,9 @@ RISK_TAIL_CALIBRATION_DESIGN_PATH = (
 )
 WORST_SYMBOL_TAIL_DESIGN_PATH = (
     RESEARCH / "round-074-event-sequence-model-design-v82.json"
+)
+SUBGROUP_PROMOTION_DESIGN_PATH = (
+    RESEARCH / "round-074-event-sequence-model-design-v83.json"
 )
 DIRECTML_PATH = RESEARCH / "round-074-event-model-directml-preflight-2026-07-26.json"
 REPLAY_PATH = RESEARCH / "round-074-event-sequence-host-replay-2026-07-26.json"
@@ -556,6 +560,79 @@ def test_round74_worst_symbol_tail_calibration_is_complete_and_source_bound() ->
     assert authority["backward_compatible_v1_payload_loader"]
     assert not authority["representative_market_evidence"]
     assert not authority["symbol_conditional_future_coverage"]
+    assert not authority["financial_edge_tested"]
+    assert not authority["profitability_claim"]
+    assert not authority["drawdown_performance_claim"]
+    assert not authority["ai_uplift_claim"]
+    assert not authority["paper_trading_authority"]
+    assert not authority["testnet_trading_authority"]
+    assert not authority["live_trading_authority"]
+
+
+def test_round74_model_promotion_rejects_hidden_subgroup_degradation() -> None:
+    previous = _load_hash_bound(WORST_SYMBOL_TAIL_DESIGN_PATH, "design_sha256")
+    design = _load_hash_bound(SUBGROUP_PROMOTION_DESIGN_PATH, "design_sha256")
+    source = design["source_binding"]
+    contract = design["run_symbol_horizon_promotion_contract"]
+    verification = design["verification"]
+    authority = design["authority"]
+    commit = str(design["implementation_git_commit"])
+
+    assert design["schema_version"] == "round-074-event-sequence-model-design-v83"
+    assert design["base_design"]["design_sha256"] == previous["design_sha256"]
+    assert design["base_design"]["unchanged_except_declared_delta"]
+    for prefix in ("event_training", "test"):
+        assert source[f"{prefix}_sha256"] == _file_sha256_at(
+            commit,
+            source[f"{prefix}_path"],
+        )
+    assert source["event_training_schema_version"] == ("round-074-event-training-v19")
+    assert source["pretest_policy_schema_version"] == (
+        "round-074-event-pretest-policy-v18"
+    )
+    assert contract["candidate_panel"] == list(ROUND74_EVENT_MODEL_CANDIDATES)
+    assert contract["model_selection_capture_runs"] == 12
+    assert contract["symbols"] == list(ROUND74_EVENT_SYMBOLS)
+    assert contract["horizons_seconds"] == list(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    assert contract["required_cohort_group_count"] == (
+        12 * len(ROUND74_EVENT_SYMBOLS) * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    )
+    assert contract["long_and_short_sides_pooled_within_each_group"]
+    assert contract["proper_loss_components_and_weights_match_training_objective"]
+    assert contract["one_additional_bounded_inference_pass_per_candidate"]
+    assert contract["minibatch_output_reused_across_symbol_horizon_groups"]
+    assert contract["complete_symbol_panel_required_outside_preflight"]
+    assert contract["missing_or_ineligible_required_group_fails_closed"]
+    assert contract["group_keys_must_match_across_candidates"]
+    assert contract["all_group_losses_must_be_finite"]
+    assert contract["promotion_requires_complete_12_run_panel"]
+    assert contract["promotion_requires_mean_run_loss_improvement_above_floor"]
+    assert contract["promotion_requires_every_capture_run_noninferior"]
+    assert contract["promotion_requires_every_run_symbol_horizon_group_noninferior"]
+    assert contract["worst_degraded_group_recorded"]
+    assert not contract["fixed_architecture_mode_changed_by_this_delta"]
+    assert not contract["backtest_pnl_used_for_architecture_selection"]
+    assert not contract["sealed_test_rows_accessed"]
+    assert not contract["ai_output_used_for_architecture_selection"]
+    assert verification["focused_training_tests_passed"] == 18
+    assert (
+        verification["downstream_policy_runtime_representation_contract_tests_passed"]
+        == 44
+    )
+    assert verification["adversarial_hidden_sol_horizon_degradation_test_passed"]
+    assert verification["train_seal_reload_test_passed"]
+    assert verification["directml_host_probe"]["backend_kind"] == "directml"
+    assert verification["directml_host_probe"]["group_count"] == (
+        len(ROUND74_EVENT_SYMBOLS) * len(ROUND74_EVENT_PAYOFF_HORIZONS_SECONDS)
+    )
+    assert verification["directml_host_probe"]["all_group_losses_finite"]
+    assert not verification["full_repository_suite_run"]
+    assert design["evidence_boundary"]["synthetic_data_only"]
+    assert not design["evidence_boundary"]["financial_backtest_performed"]
+    assert not design["evidence_boundary"]["profitability_or_edge_inference_permitted"]
+    assert authority["run_symbol_horizon_proper_loss_gate_implementation"]
+    assert authority["directml_group_evaluation_preflight"]
+    assert not authority["representative_market_evidence"]
     assert not authority["financial_edge_tested"]
     assert not authority["profitability_claim"]
     assert not authority["drawdown_performance_claim"]
